@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import asyncio
 import functools
 import io
+import json
 import unittest.mock
 import uuid
 from collections.abc import Generator
@@ -14,7 +16,7 @@ from unittest.mock import AsyncMock
 import pytest
 from pytest_mock import MockerFixture
 from starlette.applications import Starlette
-from starlette.datastructures import UploadFile
+from starlette.datastructures import FormData, UploadFile
 from starlette.responses import StreamingResponse
 
 import reflex as rx
@@ -939,7 +941,7 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker: MockerFix
     Args:
         tmp_path: Temporary path.
         state: The state class.
-        delta: Expected delta
+        delta: Expected delta after processing all files.
         token: a Token.
         mocker: pytest mocker object.
     """
@@ -947,16 +949,12 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker: MockerFix
         "reflex.state.State.class_subclasses",
         {state if state is FileUploadState else FileStateBase1},
     )
-    state._tmp_path = tmp_path
     # The App state must be the "root" of the state tree
     app = App()
     app.event_namespace.emit = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
-    current_state = await app.state_manager.get_state(_substate_key(token, state))
+    async with app.modify_state(_substate_key(token, state)) as root_state:
+        root_state.get_substate(state.get_full_name().split("."))._tmp_path = tmp_path
     data = b"This is binary data"
-
-    # Create a binary IO object and write data to it
-    bio = io.BytesIO()
-    bio.write(data)
 
     request_mock = unittest.mock.Mock()
     request_mock.headers = {
@@ -966,44 +964,231 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker: MockerFix
 
     file1 = UploadFile(
         filename="image1.jpg",
-        file=bio,
+        file=io.BytesIO(data),
     )
     file2 = UploadFile(
         filename="image2.jpg",
-        file=bio,
+        file=io.BytesIO(data),
     )
 
     async def form():  # noqa: RUF029
-        files_mock = unittest.mock.Mock()
-
-        def getlist(key: str):
-            assert key == "files"
-            return [file1, file2]
-
-        files_mock.getlist = getlist
-
-        return files_mock
+        return FormData([("files", file1), ("files", file2)])
 
     request_mock.form = form
 
     upload_fn = upload(app)
     streaming_response = await upload_fn(request_mock)
     assert isinstance(streaming_response, StreamingResponse)
+    # Handler yields after each file, producing intermediate + final updates.
+    updates = []
     async for state_update in streaming_response.body_iterator:
-        assert (
-            state_update
-            == StateUpdate(delta=delta, events=[], final=True).json() + "\n"
+        updates.append(json.loads(str(state_update)))
+    # 2 intermediate yields + 1 final
+    assert len(updates) == 3
+    assert all(not u["final"] for u in updates[:-1])
+    assert updates[-1]["final"]
+
+    # The last intermediate update should contain the full cumulative delta.
+    assert updates[1]["delta"] == delta
+
+    await app.state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_upload_file_keeps_form_open_until_stream_completes(
+    tmp_path,
+    token: str,
+    mocker: MockerFixture,
+):
+    """Test that upload files are not eagerly copied into memory.
+
+    Uses two distinct BinaryIO instances, sets _tmp_path via modify_state,
+    and verifies that both file handles remain open during streaming and are
+    closed (along with correct file content) after the stream completes.
+
+    Args:
+        tmp_path: Temporary path.
+        token: A token.
+        mocker: pytest mocker object.
+    """
+    mocker.patch(
+        "reflex.state.State.class_subclasses",
+        {FileUploadState},
+    )
+    app = App()
+    app.event_namespace.emit = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
+
+    # Set _tmp_path via modify_state instead of setting class attribute directly.
+    async with app.modify_state(_substate_key(token, FileUploadState)) as root_state:
+        root_state.get_substate(
+            FileUploadState.get_full_name().split(".")
+        )._tmp_path = tmp_path
+
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": f"{FileUploadState.get_full_name()}.multi_handle_upload",
+    }
+
+    data1 = b"contents of image one"
+    data2 = b"contents of image two"
+    bio1 = io.BytesIO(data1)
+    bio2 = io.BytesIO(data2)
+    file1 = UploadFile(filename="image1.jpg", file=bio1)
+    file2 = UploadFile(filename="image2.jpg", file=bio2)
+
+    form_data = FormData([("files", file1), ("files", file2)])
+    original_close = form_data.close
+    form_close = AsyncMock(side_effect=original_close)
+    form_data.close = form_close
+
+    async def form():  # noqa: RUF029
+        return form_data
+
+    request_mock.form = form
+
+    upload_fn = upload(app)
+    streaming_response = await upload_fn(request_mock)
+
+    assert isinstance(streaming_response, StreamingResponse)
+    # Before streaming starts, nothing should be read or closed.
+    assert form_close.await_count == 0
+    assert not bio1.closed
+    assert not bio2.closed
+
+    # Drive the response through the full ASGI lifecycle so that
+    # _UploadStreamingResponse.__call__ invokes the on_finish callback.
+    scope = {"type": "http"}
+    done = asyncio.Event()
+
+    async def receive():
+        await done.wait()
+        return {"type": "http.disconnect"}
+
+    async def send(message):  # noqa: RUF029
+        if message.get("type") == "http.response.body" and not message.get("body"):
+            done.set()
+
+    await streaming_response(scope, receive, send)
+
+    # After the ASGI call completes, form_data.close() should have been called,
+    # closing both underlying file handles.
+    assert form_close.await_count == 1
+    assert bio1.closed
+    assert bio2.closed
+
+    # Verify files were written to the tmp dir with the correct content.
+    assert (tmp_path / "image1.jpg").read_bytes() == data1
+    assert (tmp_path / "image2.jpg").read_bytes() == data2
+
+    await app.state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_upload_file_closes_form_on_event_creation_cancellation(
+    token: str,
+    mocker: MockerFixture,
+):
+    """Test that cancellation during upload event creation closes form data."""
+    mocker.patch(
+        "reflex.state.State.class_subclasses",
+        {FileUploadState},
+    )
+    app = App()
+
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": f"{FileUploadState.get_full_name()}.multi_handle_upload",
+    }
+
+    file1 = UploadFile(filename="image1.jpg", file=io.BytesIO(b"data"))
+    form_data = FormData([("files", file1)])
+    original_close = form_data.close
+    form_close = AsyncMock(side_effect=original_close)
+    form_data.close = form_close
+
+    async def form():  # noqa: RUF029
+        return form_data
+
+    async def cancelled_get_state(*_args, **_kwargs):
+        await asyncio.sleep(0)
+        raise asyncio.CancelledError
+
+    request_mock.form = form
+    mocker.patch.object(app.state_manager, "get_state", side_effect=cancelled_get_state)
+
+    upload_fn = upload(app)
+    with pytest.raises(asyncio.CancelledError):
+        await upload_fn(request_mock)
+
+    assert form_close.await_count == 1
+    assert file1.file.closed
+
+    await app.state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_upload_file_closes_form_if_response_cancelled_before_stream_starts(
+    tmp_path,
+    token: str,
+    mocker: MockerFixture,
+):
+    """Test that response cancellation before iteration still closes form data."""
+    mocker.patch(
+        "reflex.state.State.class_subclasses",
+        {FileUploadState},
+    )
+    app = App()
+    app.event_namespace.emit = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
+
+    async with app.modify_state(_substate_key(token, FileUploadState)) as root_state:
+        root_state.get_substate(
+            FileUploadState.get_full_name().split(".")
+        )._tmp_path = tmp_path
+
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": f"{FileUploadState.get_full_name()}.multi_handle_upload",
+    }
+
+    bio = io.BytesIO(b"contents of image one")
+    file1 = UploadFile(filename="image1.jpg", file=bio)
+    form_data = FormData([("files", file1)])
+    original_close = form_data.close
+    form_close = AsyncMock(side_effect=original_close)
+    form_data.close = form_close
+
+    async def form():  # noqa: RUF029
+        return form_data
+
+    async def receive():
+        await asyncio.sleep(0)
+        return {"type": "http.disconnect"}
+
+    async def send(_message):
+        await asyncio.sleep(0)
+        raise asyncio.CancelledError
+
+    request_mock.form = form
+
+    upload_fn = upload(app)
+    streaming_response = await upload_fn(request_mock)
+
+    assert isinstance(streaming_response, StreamingResponse)
+    assert form_close.await_count == 0
+    assert not bio.closed
+
+    with pytest.raises(asyncio.CancelledError):
+        await streaming_response(
+            {"type": "http", "asgi": {"spec_version": "2.4"}},
+            receive,
+            send,
         )
 
-    if environment.REFLEX_OPLOCK_ENABLED.get():
-        await app.state_manager.close()
-
-    current_state = await app.state_manager.get_state(_substate_key(token, state))
-    state_dict = current_state.dict()[state.get_full_name()]
-    assert state_dict["img_list" + FIELD_MARKER] == [
-        "image1.jpg",
-        "image2.jpg",
-    ]
+    assert form_close.await_count == 1
+    assert bio.closed
 
     await app.state_manager.close()
 
@@ -1021,7 +1206,6 @@ async def test_upload_file_without_annotation(state, tmp_path, token):
         tmp_path: Temporary path.
         token: a Token.
     """
-    state._tmp_path = tmp_path
     app = App(_state=State)
 
     request_mock = unittest.mock.Mock()
@@ -1030,16 +1214,10 @@ async def test_upload_file_without_annotation(state, tmp_path, token):
         "reflex-event-handler": f"{state.get_full_name()}.handle_upload2",
     }
 
+    file1 = UploadFile(filename="image1.jpg", file=io.BytesIO(b"data"))
+
     async def form():  # noqa: RUF029
-        files_mock = unittest.mock.Mock()
-
-        def getlist(key: str):
-            assert key == "files"
-            return [unittest.mock.Mock(filename="image1.jpg")]
-
-        files_mock.getlist = getlist
-
-        return files_mock
+        return FormData([("files", file1)])
 
     request_mock.form = form
 
@@ -1067,7 +1245,6 @@ async def test_upload_file_background(state, tmp_path, token):
         tmp_path: Temporary path.
         token: a Token.
     """
-    state._tmp_path = tmp_path
     app = App(_state=State)
 
     request_mock = unittest.mock.Mock()
@@ -1076,16 +1253,10 @@ async def test_upload_file_background(state, tmp_path, token):
         "reflex-event-handler": f"{state.get_full_name()}.bg_upload",
     }
 
+    file1 = UploadFile(filename="image1.jpg", file=io.BytesIO(b"data"))
+
     async def form():  # noqa: RUF029
-        files_mock = unittest.mock.Mock()
-
-        def getlist(key: str):
-            assert key == "files"
-            return [unittest.mock.Mock(filename="image1.jpg")]
-
-        files_mock.getlist = getlist
-
-        return files_mock
+        return FormData([("files", file1)])
 
     request_mock.form = form
 

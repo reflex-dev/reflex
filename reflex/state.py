@@ -984,11 +984,11 @@ class BaseState(EvenMoreBasicBaseState):
     def get_parent_state(cls) -> type[BaseState] | None:
         """Get the parent state.
 
-        Raises:
-            ValueError: If more than one parent state is found.
-
         Returns:
             The parent state.
+
+        Raises:
+            ValueError: If more than one parent state is found.
         """
         parent_states = [
             base
@@ -1361,6 +1361,15 @@ class BaseState(EvenMoreBasicBaseState):
         Args:
             args: a dict of args
         """
+        # Skip dynamic args that have already been registered by a previous route.
+        args = {
+            k: v
+            for k, v in args.items()
+            if not (
+                (computed_var := cls.computed_vars.get(k)) is not None
+                and isinstance(computed_var, DynamicRouteVar)
+            )
+        }
         if not args:
             return
 
@@ -1845,7 +1854,7 @@ class BaseState(EvenMoreBasicBaseState):
 
         # For background tasks, proxy the state.
         if handler.is_background:
-            substate = StateProxy(substate)
+            substate = StateProxy(substate, event)
 
         # Run the event generator and yield state updates.
         async for update in self._process_event(
@@ -1862,11 +1871,11 @@ class BaseState(EvenMoreBasicBaseState):
             handler: EventHandler.
             events: The events to be checked.
 
-        Raises:
-            TypeError: If any of the events are not valid.
-
         Returns:
             The events as they are if valid.
+
+        Raises:
+            TypeError: If any of the events are not valid.
         """
 
         def _is_valid_type(events: Any) -> bool:

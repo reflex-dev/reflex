@@ -9,7 +9,6 @@ import copy
 import dataclasses
 import functools
 import inspect
-import io
 import json
 import operator
 import sys
@@ -19,6 +18,7 @@ import urllib.parse
 from collections.abc import (
     AsyncGenerator,
     AsyncIterator,
+    Awaitable,
     Callable,
     Coroutine,
     Mapping,
@@ -42,6 +42,7 @@ from starlette.middleware import cors
 from starlette.requests import ClientDisconnect, Request
 from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.staticfiles import StaticFiles
+from typing_extensions import Unpack
 
 from reflex import constants
 from reflex.admin import AdminDash
@@ -83,6 +84,7 @@ from reflex.event import (
     get_hydrate_event,
     noop,
 )
+from reflex.istate.manager import StateModificationContext
 from reflex.istate.proxy import StateProxy
 from reflex.page import DECORATED_PAGES
 from reflex.route import (
@@ -609,11 +611,11 @@ class App(MiddlewareMixin, LifespanMixin):
     def __call__(self) -> ASGIApp:
         """Run the backend api instance.
 
-        Raises:
-            ValueError: If the app has not been initialized.
-
         Returns:
             The backend api.
+
+        Raises:
+            ValueError: If the app has not been initialized.
         """
         from reflex.assets import remove_stale_external_asset_symlinks
         from reflex.vars.base import GLOBAL_CACHE
@@ -928,11 +930,11 @@ class App(MiddlewareMixin, LifespanMixin):
 
         Based on conflicts that React Router would throw if not intercepted.
 
-        Raises:
-            RouteValueError: exception showing which conflict exist with the route to be added
-
         Args:
             new_route: the route being newly added.
+
+        Raises:
+            RouteValueError: exception showing which conflict exist with the route to be added
         """
         from reflex.utils.exceptions import RouteValueError
 
@@ -1571,6 +1573,7 @@ class App(MiddlewareMixin, LifespanMixin):
         token: str,
         background: bool = False,
         previous_dirty_vars: dict[str, set[str]] | None = None,
+        **context: Unpack[StateModificationContext],
     ) -> AsyncIterator[BaseState]:
         """Modify the state out of band.
 
@@ -1591,7 +1594,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # Get exclusive access to the state.
         async with self.state_manager.modify_state_with_links(
-            token, previous_dirty_vars=previous_dirty_vars
+            token, previous_dirty_vars=previous_dirty_vars, **context
         ) as state:
             # No other event handler can modify the state while in this context.
             yield state
@@ -1624,7 +1627,7 @@ class App(MiddlewareMixin, LifespanMixin):
         if not handler.is_background:
             return None
 
-        substate = StateProxy(substate)
+        substate = StateProxy(substate, event)
 
         async def _coro():
             """Coroutine to process the event and emit updates inside an asyncio.Task.
@@ -1763,11 +1766,11 @@ async def process(
         headers: The client headers.
         client_ip: The client_ip.
 
-    Raises:
-        Exception: If a reflex specific error occurs during processing the event.
-
     Yields:
         The state updates after processing the event.
+
+    Raises:
+        Exception: If a reflex specific error occurs during processing the event.
     """
     from reflex.utils import telemetry
 
@@ -1891,6 +1894,27 @@ async def health(_request: Request) -> JSONResponse:
     return JSONResponse(content=health_status, status_code=status_code)
 
 
+class _UploadStreamingResponse(StreamingResponse):
+    """Streaming response that always releases upload form resources."""
+
+    _on_finish: Callable[[], Awaitable[None]]
+
+    def __init__(
+        self,
+        *args: Any,
+        on_finish: Callable[[], Awaitable[None]],
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        self._on_finish = on_finish
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        try:
+            await super().__call__(scope, receive, send)
+        finally:
+            await self._on_finish()
+
+
 def upload(app: App):
     """Upload a file.
 
@@ -1920,87 +1944,98 @@ def upload(app: App):
 
         # Get the files from the request.
         try:
-            files = await request.form()
+            form_data = await request.form()
         except ClientDisconnect:
             return Response()  # user cancelled
-        files = files.getlist("files")
-        if not files:
-            msg = "No files were uploaded."
-            raise UploadValueError(msg)
 
-        token = request.headers.get("reflex-client-token")
-        handler = request.headers.get("reflex-event-handler")
+        form_data_closed = False
 
-        if not token or not handler:
-            raise HTTPException(
-                status_code=400,
-                detail="Missing reflex-client-token or reflex-event-handler header.",
+        async def _close_form_data() -> None:
+            """Close the parsed form data exactly once."""
+            nonlocal form_data_closed
+            if form_data_closed:
+                return
+            form_data_closed = True
+            await form_data.close()
+
+        async def _create_upload_event() -> Event:
+            """Create an upload event using the live Starlette temp files.
+
+            Returns:
+                The upload event backed by the original temp files.
+            """
+            files = form_data.getlist("files")
+            if not files:
+                msg = "No files were uploaded."
+                raise UploadValueError(msg)
+
+            token = request.headers.get("reflex-client-token")
+            handler = request.headers.get("reflex-event-handler")
+
+            if not token or not handler:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Missing reflex-client-token or reflex-event-handler header.",
+                )
+
+            # Get the state for the session.
+            substate_token = _substate_key(token, handler.rpartition(".")[0])
+            state = await app.state_manager.get_state(substate_token)
+
+            handler_upload_param = ()
+
+            _current_state, event_handler = state._get_event_handler(handler)
+
+            if event_handler.is_background:
+                msg = f"@rx.event(background=True) is not supported for upload handler `{handler}`."
+                raise UploadTypeError(msg)
+            func = event_handler.fn
+            if isinstance(func, functools.partial):
+                func = func.func
+            for k, v in get_type_hints(func).items():
+                if types.is_generic_alias(v) and types._issubclass(
+                    get_args(v)[0],
+                    UploadFile,
+                ):
+                    handler_upload_param = (k, v)
+                    break
+
+            if not handler_upload_param:
+                msg = (
+                    f"`{handler}` handler should have a parameter annotated as "
+                    "list[rx.UploadFile]"
+                )
+                raise UploadValueError(msg)
+
+            # Keep the parsed form data alive until the upload event finishes so
+            # the underlying Starlette temp files remain available to the handler.
+            file_uploads = []
+            for file in files:
+                if not isinstance(file, StarletteUploadFile):
+                    raise UploadValueError(
+                        "Uploaded file is not an UploadFile." + str(file)
+                    )
+                file_uploads.append(
+                    UploadFile(
+                        file=file.file,
+                        path=Path(file.filename.lstrip("/")) if file.filename else None,
+                        size=file.size,
+                        headers=file.headers,
+                    )
+                )
+
+            return Event(
+                token=token,
+                name=handler,
+                payload={handler_upload_param[0]: file_uploads},
             )
 
-        # Get the state for the session.
-        substate_token = _substate_key(token, handler.rpartition(".")[0])
-        state = await app.state_manager.get_state(substate_token)
-
-        handler_upload_param = ()
-
-        _current_state, event_handler = state._get_event_handler(handler)
-
-        if event_handler.is_background:
-            msg = f"@rx.event(background=True) is not supported for upload handler `{handler}`."
-            raise UploadTypeError(msg)
-        func = event_handler.fn
-        if isinstance(func, functools.partial):
-            func = func.func
-        for k, v in get_type_hints(func).items():
-            if types.is_generic_alias(v) and types._issubclass(
-                get_args(v)[0],
-                UploadFile,
-            ):
-                handler_upload_param = (k, v)
-                break
-
-        if not handler_upload_param:
-            msg = (
-                f"`{handler}` handler should have a parameter annotated as "
-                "list[rx.UploadFile]"
-            )
-            raise UploadValueError(msg)
-
-        # Make a copy of the files as they are closed after the request.
-        # This behaviour changed from fastapi 0.103.0 to 0.103.1 as the
-        # AsyncExitStack was removed from the request scope and is now
-        # part of the routing function which closes this before the
-        # event is handled.
-        file_copies = []
-        for file in files:
-            if not isinstance(file, StarletteUploadFile):
-                raise UploadValueError(
-                    "Uploaded file is not an UploadFile." + str(file)
-                )
-            content_copy = io.BytesIO()
-            content_copy.write(await file.read())
-            content_copy.seek(0)
-            file_copies.append(
-                UploadFile(
-                    file=content_copy,
-                    path=Path(file.filename.lstrip("/")) if file.filename else None,
-                    size=file.size,
-                    headers=file.headers,
-                )
-            )
-
-        for file in files:
-            if not isinstance(file, StarletteUploadFile):
-                raise UploadValueError(
-                    "Uploaded file is not an UploadFile." + str(file)
-                )
-            await file.close()
-
-        event = Event(
-            token=token,
-            name=handler,
-            payload={handler_upload_param[0]: file_copies},
-        )
+        event: Event | None = None
+        try:
+            event = await _create_upload_event()
+        finally:
+            if event is None:
+                await _close_form_data()
 
         async def _ndjson_updates():
             """Process the upload event, generating ndjson updates.
@@ -2010,7 +2045,7 @@ def upload(app: App):
             """
             # Process the event.
             async with app.state_manager.modify_state_with_links(
-                event.substate_token
+                event.substate_token, event=event
             ) as state:
                 async for update in state._process(event):
                     # Postprocess the event.
@@ -2018,9 +2053,10 @@ def upload(app: App):
                     yield update.json() + "\n"
 
         # Stream updates to client
-        return StreamingResponse(
+        return _UploadStreamingResponse(
             _ndjson_updates(),
             media_type="application/x-ndjson",
+            on_finish=_close_form_data,
         )
 
     return upload_file
@@ -2154,14 +2190,12 @@ class EventNamespace(AsyncNamespace):
     async def on_event(self, sid: str, data: Any):
         """Event for receiving front-end websocket events.
 
-        Raises:
-            RuntimeError: If the Socket.IO is badly initialized.
-
         Args:
             sid: The Socket.IO session id.
             data: The event data.
 
         Raises:
+            RuntimeError: If the Socket.IO is badly initialized.
             EventDeserializationError: If the event data is not a dictionary.
         """
         fields = data

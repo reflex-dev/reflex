@@ -19,7 +19,7 @@ from reflex.utils.exceptions import InvalidStateManagerModeError
 class StateModificationContext(TypedDict, total=False):
     """The context for modifying state."""
 
-    event: ReadOnly[Event]
+    event: ReadOnly[Event | None]
 
 
 EmptyContext = StateModificationContext()
@@ -39,11 +39,11 @@ class StateManager(ABC):
         Args:
             state: The state class to use.
 
-        Raises:
-            InvalidStateManagerModeError: If the state manager mode is invalid.
-
         Returns:
             The state manager (either disk, memory or redis).
+
+        Raises:
+            InvalidStateManagerModeError: If the state manager mode is invalid.
         """
         config = get_config()
         if prerequisites.parse_redis_url() is not None:

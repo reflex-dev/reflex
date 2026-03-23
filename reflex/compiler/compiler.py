@@ -28,7 +28,7 @@ from reflex.utils import console, path_ops
 from reflex.utils.exceptions import ReflexError
 from reflex.utils.exec import is_prod_mode
 from reflex.utils.format import to_title_case
-from reflex.utils.imports import ImportVar
+from reflex.utils.imports import ImportVar, ParsedImportDict
 from reflex.utils.prerequisites import get_web_dir
 from reflex.vars.base import LiteralVar, Var
 
@@ -387,6 +387,47 @@ def _compile_memo_components(
     )
 
 
+def _get_shared_components_recursive(
+    component: BaseComponent,
+    rendered_components: dict[str, None],
+    all_import_dicts: list[ParsedImportDict],
+):
+    """Get the shared components for a component and its children.
+
+    A shared component is a StatefulComponent that appears in 2 or more
+    pages and is a candidate for writing to a common file and importing
+    into each page where it is used.
+
+    Args:
+        component: The component to collect shared StatefulComponents for.
+        rendered_components: A dict to store the rendered shared components in.
+        all_import_dicts: A list to store the imports of all shared components in.
+    """
+    for child in component.children:
+        # Depth-first traversal.
+        _get_shared_components_recursive(child, rendered_components, all_import_dicts)
+
+    # When the component is referenced by more than one page, render it
+    # to be included in the STATEFUL_COMPONENTS module.
+    # Skip this step in dev mode, thereby avoiding potential hot reload errors for larger apps
+    if isinstance(component, StatefulComponent) and component.references > 1:
+        # Reset this flag to render the actual component.
+        component.rendered_as_shared = False
+
+        # Include dynamic imports in the shared component.
+        if dynamic_imports := component._get_all_dynamic_imports():
+            rendered_components.update(dict.fromkeys(dynamic_imports))
+
+        # Include custom code in the shared component.
+        rendered_components.update(component._get_all_custom_code(export=True))
+
+        # Include all imports in the shared component.
+        all_import_dicts.append(component._get_all_imports())
+
+        # Indicate that this component now imports from the shared file.
+        component.rendered_as_shared = True
+
+
 def _compile_stateful_components(
     page_components: list[BaseComponent],
 ) -> str:
@@ -406,46 +447,10 @@ def _compile_stateful_components(
     all_import_dicts = []
     rendered_components = {}
 
-    def get_shared_components_recursive(component: BaseComponent):
-        """Get the shared components for a component and its children.
-
-        A shared component is a StatefulComponent that appears in 2 or more
-        pages and is a candidate for writing to a common file and importing
-        into each page where it is used.
-
-        Args:
-            component: The component to collect shared StatefulComponents for.
-        """
-        for child in component.children:
-            # Depth-first traversal.
-            get_shared_components_recursive(child)
-
-        # When the component is referenced by more than one page, render it
-        # to be included in the STATEFUL_COMPONENTS module.
-        # Skip this step in dev mode, thereby avoiding potential hot reload errors for larger apps
-        if (
-            isinstance(component, StatefulComponent)
-            and component.references > 1
-            and is_prod_mode()
-        ):
-            # Reset this flag to render the actual component.
-            component.rendered_as_shared = False
-
-            # Include dynamic imports in the shared component.
-            if dynamic_imports := component._get_all_dynamic_imports():
-                rendered_components.update(dict.fromkeys(dynamic_imports))
-
-            # Include custom code in the shared component.
-            rendered_components.update(component._get_all_custom_code(export=True))
-
-            # Include all imports in the shared component.
-            all_import_dicts.append(component._get_all_imports())
-
-            # Indicate that this component now imports from the shared file.
-            component.rendered_as_shared = True
-
     for page_component in page_components:
-        get_shared_components_recursive(page_component)
+        _get_shared_components_recursive(
+            page_component, rendered_components, all_import_dicts
+        )
 
     # Don't import from the file that we're about to create.
     all_imports = utils.merge_imports(*all_import_dicts)
@@ -611,7 +616,7 @@ def compile_stateful_components(
         progress_function()
         page_components.append(page_component)
 
-    code = _compile_stateful_components(page_components)
+    code = _compile_stateful_components(page_components) if is_prod_mode() else ""
     return output_path, code, page_components
 
 

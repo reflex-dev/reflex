@@ -8,17 +8,19 @@ import importlib
 import inspect
 import json
 import logging
+import multiprocessing
 import re
 import subprocess
 import sys
 import typing
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
+from concurrent.futures import ProcessPoolExecutor
+from functools import cache
 from hashlib import md5
 from inspect import getfullargspec
 from itertools import chain
-from multiprocessing import Pool, cpu_count
 from pathlib import Path
-from types import ModuleType, SimpleNamespace, UnionType
+from types import MappingProxyType, ModuleType, SimpleNamespace, UnionType
 from typing import Any, get_args, get_origin
 
 from reflex.components.component import Component
@@ -236,6 +238,159 @@ def _get_type_hint(
     return res
 
 
+@cache
+def _get_source(obj: Any) -> str:
+    """Get and cache the source for a Python object.
+
+    Args:
+        obj: The object whose source should be retrieved.
+
+    Returns:
+        The source code for the object.
+    """
+    return inspect.getsource(obj)
+
+
+@cache
+def _get_class_prop_comments(clz: type[Component]) -> Mapping[str, tuple[str, ...]]:
+    """Parse and cache prop comments for a component class.
+
+    Args:
+        clz: The class to extract prop comments from.
+
+    Returns:
+        An immutable mapping of prop name to comment lines.
+    """
+    props_comments: dict[str, tuple[str, ...]] = {}
+    comments = []
+    for line in _get_source(clz).splitlines():
+        reached_functions = re.search(r"def ", line)
+        if reached_functions:
+            # We've reached the functions, so stop.
+            break
+
+        if line == "":
+            # We hit a blank line, so clear comments to avoid commented out prop appearing in next prop docs.
+            comments.clear()
+            continue
+
+        # Get comments for prop
+        if line.strip().startswith("#"):
+            # Remove noqa from the comments.
+            line = line.partition(" # noqa")[0]
+            comments.append(line)
+            continue
+
+        # Check if this line has a prop.
+        match = re.search(r"\w+:", line)
+        if match is None:
+            # This line doesn't have a var, so continue.
+            continue
+
+        # Get the prop.
+        prop = match.group(0).strip(":")
+        if comments:
+            props_comments[prop] = tuple(
+                comment.strip().strip("#") for comment in comments
+            )
+        comments.clear()
+
+    return MappingProxyType(props_comments)
+
+
+@cache
+def _get_full_argspec(func: Callable) -> inspect.FullArgSpec:
+    """Get and cache the full argspec for a callable.
+
+    Args:
+        func: The callable to inspect.
+
+    Returns:
+        The full argument specification.
+    """
+    return getfullargspec(func)
+
+
+@cache
+def _get_signature_return_annotation(func: Callable) -> Any:
+    """Get and cache a callable's return annotation.
+
+    Args:
+        func: The callable to inspect.
+
+    Returns:
+        The callable's return annotation.
+    """
+    return inspect.signature(func).return_annotation
+
+
+@cache
+def _get_module_star_imports(module_name: str) -> Mapping[str, Any]:
+    """Resolve names imported by `from module import *`.
+
+    Args:
+        module_name: The module to inspect.
+
+    Returns:
+        An immutable mapping of imported names to values.
+    """
+    module = importlib.import_module(module_name)
+    exported_names = getattr(module, "__all__", None)
+    if exported_names is not None:
+        return MappingProxyType({
+            name: getattr(module, name) for name in exported_names
+        })
+    return MappingProxyType({
+        name: value for name, value in vars(module).items() if not name.startswith("_")
+    })
+
+
+@cache
+def _get_module_selected_imports(
+    module_name: str, imported_names: tuple[str, ...]
+) -> Mapping[str, Any]:
+    """Resolve a set of imported names from a module.
+
+    Args:
+        module_name: The module to import from.
+        imported_names: The names to resolve.
+
+    Returns:
+        An immutable mapping of imported names to values.
+    """
+    module = importlib.import_module(module_name)
+    return MappingProxyType({name: getattr(module, name) for name in imported_names})
+
+
+@cache
+def _get_class_annotation_globals(target_class: type) -> Mapping[str, Any]:
+    """Get globals needed to resolve class annotations.
+
+    Args:
+        target_class: The class whose annotation globals should be resolved.
+
+    Returns:
+        An immutable mapping of globals for the class MRO.
+    """
+    available_vars: dict[str, Any] = {}
+    for module_name in {cls.__module__ for cls in target_class.__mro__}:
+        available_vars.update(sys.modules[module_name].__dict__)
+    return MappingProxyType(available_vars)
+
+
+@cache
+def _get_class_event_triggers(target_class: type) -> frozenset[str]:
+    """Get and cache event trigger names for a class.
+
+    Args:
+        target_class: The class to inspect.
+
+    Returns:
+        The event trigger names defined on the class.
+    """
+    return frozenset(target_class.get_event_triggers())
+
+
 def _generate_imports(
     typing_imports: Iterable[str],
 ) -> list[ast.ImportFrom | ast.Import]:
@@ -267,41 +422,10 @@ def _generate_docstrings(clzs: list[type[Component]], props: list[str]) -> str:
         The docstring for the create method.
     """
     props_comments = {}
-    comments = []
     for clz in clzs:
-        for line in inspect.getsource(clz).splitlines():
-            reached_functions = re.search(r"def ", line)
-            if reached_functions:
-                # We've reached the functions, so stop.
-                break
-
-            if line == "":
-                # We hit a blank line, so clear comments to avoid commented out prop appearing in next prop docs.
-                comments.clear()
-                continue
-
-            # Get comments for prop
-            if line.strip().startswith("#"):
-                # Remove noqa from the comments.
-                line = line.partition(" # noqa")[0]
-                comments.append(line)
-                continue
-
-            # Check if this line has a prop.
-            match = re.search(r"\w+:", line)
-            if match is None:
-                # This line doesn't have a var, so continue.
-                continue
-
-            # Get the prop.
-            prop = match.group(0).strip(":")
+        for prop, comment_lines in _get_class_prop_comments(clz).items():
             if prop in props:
-                if not comments:  # do not include undocumented props
-                    continue
-                props_comments[prop] = [
-                    comment.strip().strip("#") for comment in comments
-                ]
-            comments.clear()
+                props_comments[prop] = list(comment_lines)
     clz = clzs[0]
     new_docstring = []
     for line in (clz.create.__doc__ or "").splitlines():
@@ -327,7 +451,7 @@ def _extract_func_kwargs_as_ast_nodes(
     Returns:
         The list of kwargs as ast arg nodes.
     """
-    spec = getfullargspec(func)
+    spec = _get_full_argspec(func)
     kwargs = []
 
     for kwarg in spec.kwonlyargs:
@@ -361,23 +485,28 @@ def _extract_class_props_as_ast_nodes(
     Returns:
         The list of props as ast arg nodes
     """
-    spec = getfullargspec(func)
-    all_props = []
+    spec = _get_full_argspec(func)
+    func_kwonlyargs = set(spec.kwonlyargs)
+    all_props: set[str] = set()
     kwargs = []
     for target_class in clzs:
-        event_triggers = target_class.get_event_triggers()
+        event_triggers = _get_class_event_triggers(target_class)
         # Import from the target class to ensure type hints are resolvable.
-        exec(f"from {target_class.__module__} import *", type_hint_globals)
+        type_hint_globals.update(_get_module_star_imports(target_class.__module__))
+        annotation_globals = {
+            **type_hint_globals,
+            **_get_class_annotation_globals(target_class),
+        }
         for name, value in target_class.__annotations__.items():
             if (
-                name in spec.kwonlyargs
+                name in func_kwonlyargs
                 or name in EXCLUDED_PROPS
                 or name in all_props
                 or name in event_triggers
                 or (isinstance(value, str) and "ClassVar" in value)
             ):
                 continue
-            all_props.append(name)
+            all_props.add(name)
 
             default = None
             if extract_real_default:
@@ -389,11 +518,6 @@ def _extract_class_props_as_ast_nodes(
                     if isinstance(default, Var):
                         default = default._decode()
 
-            modules = {cls.__module__ for cls in target_class.__mro__}
-            available_vars = {}
-            for module in modules:
-                available_vars.update(sys.modules[module].__dict__)
-
             kwargs.append((
                 ast.arg(
                     arg=name,
@@ -402,7 +526,7 @@ def _extract_class_props_as_ast_nodes(
                             name,
                             _get_type_hint(
                                 value,
-                                type_hint_globals | available_vars,
+                                annotation_globals,
                             ),
                         )
                     ),
@@ -486,8 +610,18 @@ def type_to_ast(typ: Any, cls: type) -> ast.expr:
     )
 
 
-def _get_parent_imports(func: Callable):
-    imports_ = {"reflex.vars": ["Var"]}
+@cache
+def _get_parent_imports(func: Callable) -> Mapping[str, tuple[str, ...]]:
+    """Get parent imports needed to resolve forwarded type hints.
+
+    Args:
+        func: The callable whose annotations are being analyzed.
+
+    Returns:
+        An immutable mapping of module names to imported symbol names.
+    """
+    imports_: dict[str, set[str]] = {"reflex.vars": {"Var"}}
+    module_dir = set(dir(importlib.import_module(func.__module__)))
     for type_hint in inspect.get_annotations(func).values():
         try:
             match = re.match(r"\w+\[([\w\d]+)\]", type_hint)
@@ -495,9 +629,12 @@ def _get_parent_imports(func: Callable):
             continue
         if match:
             type_hint = match.group(1)
-            if type_hint in importlib.import_module(func.__module__).__dir__():
-                imports_.setdefault(func.__module__, []).append(type_hint)
-    return imports_
+            if type_hint in module_dir:
+                imports_.setdefault(func.__module__, set()).add(type_hint)
+    return MappingProxyType({
+        module_name: tuple(sorted(imported_names))
+        for module_name, imported_names in imports_.items()
+    })
 
 
 def _generate_component_create_functiondef(
@@ -532,7 +669,7 @@ def _generate_component_create_functiondef(
     if clz.__module__ != clz.create.__module__:
         imports_ = _get_parent_imports(clz.create)
         for name, values in imports_.items():
-            exec(f"from {name} import {','.join(values)}", type_hint_globals)
+            type_hint_globals.update(_get_module_selected_imports(name, values))
 
     kwargs = _extract_func_kwargs_as_ast_nodes(clz.create, type_hint_globals)
 
@@ -629,7 +766,7 @@ def _generate_component_create_functiondef(
                     ast.Name(
                         id=ast.unparse(
                             figure_out_return_type(
-                                inspect.signature(event_specs).return_annotation
+                                _get_signature_return_annotation(event_specs)
                             )
                             if not isinstance(
                                 event_specs := event_triggers[trigger], Sequence
@@ -638,7 +775,7 @@ def _generate_component_create_functiondef(
                                 ast.Name("Union"),
                                 ast.Tuple([
                                     figure_out_return_type(
-                                        inspect.signature(event_spec).return_annotation
+                                        _get_signature_return_annotation(event_spec)
                                     )
                                     for event_spec in event_specs
                                 ]),
@@ -689,7 +826,7 @@ def _generate_staticmethod_call_functiondef(
     clz: type[Component] | type[SimpleNamespace],
     type_hint_globals: dict[str, Any],
 ) -> ast.FunctionDef | None:
-    fullspec = getfullargspec(clz.__call__)
+    fullspec = _get_full_argspec(clz.__call__)
 
     call_args = ast.arguments(
         args=[
@@ -791,7 +928,9 @@ class StubGenerator(ast.NodeTransformer):
     """A node transformer that will generate the stubs for a given module."""
 
     def __init__(
-        self, module: ModuleType, classes: dict[str, type[Component | SimpleNamespace]]
+        self,
+        module: ModuleType,
+        classes: dict[str, type[Component | SimpleNamespace]],
     ):
         """Initialize the stub generator.
 
@@ -808,8 +947,6 @@ class StubGenerator(ast.NodeTransformer):
         self.typing_imports = DEFAULT_TYPING_IMPORTS.copy()
         # Whether those typing imports have been inserted yet.
         self.inserted_imports = False
-        # Collected import statements from the module.
-        self.import_statements: list[str] = []
         # This dict is used when evaluating type hints.
         self.type_hint_globals = module.__dict__.copy()
 
@@ -872,11 +1009,9 @@ class StubGenerator(ast.NodeTransformer):
         Returns:
             The modified import node(s).
         """
-        self.import_statements.append(ast.unparse(node))
         if not self.inserted_imports:
             self.inserted_imports = True
             default_imports = _generate_imports(self.typing_imports)
-            self.import_statements.extend(ast.unparse(i) for i in default_imports)
             return [*default_imports, node]
         return node
 
@@ -909,7 +1044,6 @@ class StubGenerator(ast.NodeTransformer):
         Returns:
             The modified ClassDef node.
         """
-        exec("\n".join(self.import_statements), self.type_hint_globals)
         self.current_class = node.name
         self._remove_docstring(node)
 
@@ -1075,6 +1209,141 @@ class InitStubGenerator(StubGenerator):
         return [node]
 
 
+def _path_to_module_name(path: Path) -> str:
+    """Convert a file path to a dotted module name.
+
+    Args:
+        path: The file path to convert.
+
+    Returns:
+        The dotted module name.
+    """
+    return _relative_to_pwd(path).with_suffix("").as_posix().replace("/", ".")
+
+
+def _write_pyi_file(module_path: Path, source: str) -> str:
+    relpath = str(_relative_to_pwd(module_path)).replace("\\", "/")
+    pyi_content = (
+        "\n".join([
+            f'"""Stub file for {relpath}"""',
+            "# ------------------- DO NOT EDIT ----------------------",
+            "# This file was generated by `reflex/utils/pyi_generator.py`!",
+            "# ------------------------------------------------------",
+            "",
+        ])
+        + source
+    )
+
+    pyi_path = module_path.with_suffix(".pyi")
+    pyi_path.write_text(pyi_content)
+    logger.info(f"Wrote {relpath}")
+    return md5(pyi_content.encode()).hexdigest()
+
+
+def _get_init_lazy_imports(mod: tuple | ModuleType, new_tree: ast.AST):
+    # retrieve the _SUBMODULES and _SUBMOD_ATTRS from an init file if present.
+    sub_mods: set[str] | None = getattr(mod, "_SUBMODULES", None)
+    sub_mod_attrs: dict[str, list[str | tuple[str, str]]] | None = getattr(
+        mod, "_SUBMOD_ATTRS", None
+    )
+    extra_mappings: dict[str, str] | None = getattr(mod, "_EXTRA_MAPPINGS", None)
+
+    if not sub_mods and not sub_mod_attrs and not extra_mappings:
+        return None
+    sub_mods_imports = []
+    sub_mod_attrs_imports = []
+    extra_mappings_imports = []
+
+    if sub_mods:
+        sub_mods_imports = [f"from . import {mod}" for mod in sorted(sub_mods)]
+        sub_mods_imports.append("")
+
+    if sub_mod_attrs:
+        flattened_sub_mod_attrs = {
+            imported: module
+            for module, attrs in sub_mod_attrs.items()
+            for imported in attrs
+        }
+        # construct the import statement and handle special cases for aliases
+        sub_mod_attrs_imports = [
+            f"from .{module} import "
+            + (
+                (
+                    (imported[0] + " as " + imported[1])
+                    if imported[0] != imported[1]
+                    else imported[0]
+                )
+                if isinstance(imported, tuple)
+                else imported
+            )
+            for imported, module in flattened_sub_mod_attrs.items()
+        ]
+        sub_mod_attrs_imports.append("")
+
+    if extra_mappings:
+        for alias, import_path in extra_mappings.items():
+            module_name, import_name = import_path.rsplit(".", 1)
+            extra_mappings_imports.append(
+                f"from {module_name} import {import_name} as {alias}"
+            )
+
+    text = (
+        "\n"
+        + "\n".join([
+            *sub_mods_imports,
+            *sub_mod_attrs_imports,
+            *extra_mappings_imports,
+        ])
+        + "\n"
+    )
+    text += ast.unparse(new_tree) + "\n\n"
+    text += f"__all__ = {getattr(mod, '__all__', [])!r}\n"
+    return text
+
+
+def _scan_file(module_path: Path) -> tuple[str, str] | None:
+    """Process a single Python file and generate its .pyi stub.
+
+    Args:
+        module_path: Path to the Python source file.
+
+    Returns:
+        Tuple of (pyi_path, content_hash) or None if no stub needed.
+    """
+    module_import = _path_to_module_name(module_path)
+    module = importlib.import_module(module_import)
+    logger.debug(f"Read {module_path}")
+    class_names = {
+        name: obj
+        for name, obj in vars(module).items()
+        if isinstance(obj, type)
+        and (
+            rx_types.safe_issubclass(obj, Component)
+            or rx_types.safe_issubclass(obj, SimpleNamespace)
+        )
+        and obj != Component
+        and inspect.getmodule(obj) == module
+    }
+    is_init_file = _relative_to_pwd(module_path).name == "__init__.py"
+    if not class_names and not is_init_file:
+        return None
+
+    if is_init_file:
+        new_tree = InitStubGenerator(module, class_names).visit(
+            ast.parse(_get_source(module))
+        )
+        init_imports = _get_init_lazy_imports(module, new_tree)
+        if not init_imports:
+            return None
+        content_hash = _write_pyi_file(module_path, init_imports)
+    else:
+        new_tree = StubGenerator(module, class_names).visit(
+            ast.parse(_get_source(module))
+        )
+        content_hash = _write_pyi_file(module_path, ast.unparse(new_tree))
+    return str(module_path.with_suffix(".pyi").resolve()), content_hash
+
+
 class PyiGenerator:
     """A .pyi file generator that will scan all defined Component in Reflex and
     generate the appropriate stub.
@@ -1085,133 +1354,37 @@ class PyiGenerator:
     current_module: Any = {}
     written_files: list[tuple[str, str]] = []
 
-    def _write_pyi_file(self, module_path: Path, source: str) -> str:
-        relpath = str(_relative_to_pwd(module_path)).replace("\\", "/")
-        pyi_content = (
-            "\n".join([
-                f'"""Stub file for {relpath}"""',
-                "# ------------------- DO NOT EDIT ----------------------",
-                "# This file was generated by `reflex/utils/pyi_generator.py`!",
-                "# ------------------------------------------------------",
-                "",
-            ])
-            + source
-        )
-
-        pyi_path = module_path.with_suffix(".pyi")
-        pyi_path.write_text(pyi_content)
-        logger.info(f"Wrote {relpath}")
-        return md5(pyi_content.encode()).hexdigest()
-
-    def _get_init_lazy_imports(self, mod: tuple | ModuleType, new_tree: ast.AST):
-        # retrieve the _SUBMODULES and _SUBMOD_ATTRS from an init file if present.
-        sub_mods: set[str] | None = getattr(mod, "_SUBMODULES", None)
-        sub_mod_attrs: dict[str, list[str | tuple[str, str]]] | None = getattr(
-            mod, "_SUBMOD_ATTRS", None
-        )
-        extra_mappings: dict[str, str] | None = getattr(mod, "_EXTRA_MAPPINGS", None)
-
-        if not sub_mods and not sub_mod_attrs and not extra_mappings:
-            return None
-        sub_mods_imports = []
-        sub_mod_attrs_imports = []
-        extra_mappings_imports = []
-
-        if sub_mods:
-            sub_mods_imports = [f"from . import {mod}" for mod in sorted(sub_mods)]
-            sub_mods_imports.append("")
-
-        if sub_mod_attrs:
-            flattened_sub_mod_attrs = {
-                imported: module
-                for module, attrs in sub_mod_attrs.items()
-                for imported in attrs
-            }
-            # construct the import statement and handle special cases for aliases
-            sub_mod_attrs_imports = [
-                f"from .{module} import "
-                + (
-                    (
-                        (imported[0] + " as " + imported[1])
-                        if imported[0] != imported[1]
-                        else imported[0]
-                    )
-                    if isinstance(imported, tuple)
-                    else imported
-                )
-                for imported, module in flattened_sub_mod_attrs.items()
-            ]
-            sub_mod_attrs_imports.append("")
-
-        if extra_mappings:
-            for alias, import_path in extra_mappings.items():
-                module_name, import_name = import_path.rsplit(".", 1)
-                extra_mappings_imports.append(
-                    f"from {module_name} import {import_name} as {alias}"
-                )
-
-        text = (
-            "\n"
-            + "\n".join([
-                *sub_mods_imports,
-                *sub_mod_attrs_imports,
-                *extra_mappings_imports,
-            ])
-            + "\n"
-        )
-        text += ast.unparse(new_tree) + "\n\n"
-        text += f"__all__ = {getattr(mod, '__all__', [])!r}\n"
-        return text
-
-    def _scan_file(self, module_path: Path) -> tuple[str, str] | None:
-        module_import = (
-            _relative_to_pwd(module_path)
-            .with_suffix("")
-            .as_posix()
-            .replace("/", ".")
-            .replace("\\", ".")
-        )
-        module = importlib.import_module(module_import)
-        logger.debug(f"Read {module_path}")
-        class_names = {
-            name: obj
-            for name, obj in vars(module).items()
-            if isinstance(obj, type)
-            and (
-                rx_types.safe_issubclass(obj, Component)
-                or rx_types.safe_issubclass(obj, SimpleNamespace)
-            )
-            and obj != Component
-            and inspect.getmodule(obj) == module
-        }
-        is_init_file = _relative_to_pwd(module_path).name == "__init__.py"
-        if not class_names and not is_init_file:
-            return None
-
-        if is_init_file:
-            new_tree = InitStubGenerator(module, class_names).visit(
-                ast.parse(inspect.getsource(module))
-            )
-            init_imports = self._get_init_lazy_imports(module, new_tree)
-            if not init_imports:
-                return None
-            content_hash = self._write_pyi_file(module_path, init_imports)
-        else:
-            new_tree = StubGenerator(module, class_names).visit(
-                ast.parse(inspect.getsource(module))
-            )
-            content_hash = self._write_pyi_file(module_path, ast.unparse(new_tree))
-        return str(module_path.with_suffix(".pyi").resolve()), content_hash
-
-    def _scan_files_multiprocess(self, files: list[Path]):
-        with Pool(processes=cpu_count()) as pool:
-            self.written_files.extend(f for f in pool.map(self._scan_file, files) if f)
-
     def _scan_files(self, files: list[Path]):
+        max_workers = min(multiprocessing.cpu_count() or 1, len(files), 8)
+        use_parallel = (
+            max_workers > 1 and "fork" in multiprocessing.get_all_start_methods()
+        )
+
+        if not use_parallel:
+            # Serial fallback: _scan_file handles its own imports.
+            for file in files:
+                result = _scan_file(file)
+                if result is not None:
+                    self.written_files.append(result)
+            return
+
+        # Pre-import all modules sequentially to populate sys.modules
+        # so forked workers inherit the cache and skip redundant imports.
+        importable_files: list[Path] = []
         for file in files:
-            pyi_path = self._scan_file(file)
-            if pyi_path:
-                self.written_files.append(pyi_path)
+            module_import = _path_to_module_name(file)
+            try:
+                importlib.import_module(module_import)
+                importable_files.append(file)
+            except Exception:
+                logger.exception(f"Failed to import {module_import}")
+
+        # Generate stubs in parallel using forked worker processes.
+        ctx = multiprocessing.get_context("fork")
+        with ProcessPoolExecutor(max_workers=max_workers, mp_context=ctx) as executor:
+            self.written_files.extend(
+                r for r in executor.map(_scan_file, importable_files) if r is not None
+            )
 
     def scan_all(
         self,
@@ -1261,10 +1434,7 @@ class PyiGenerator:
                     continue
                 subprocess.run(["git", "checkout", changed_file])
 
-        if True:
-            self._scan_files(file_targets)
-        else:
-            self._scan_files_multiprocess(file_targets)
+        self._scan_files(file_targets)
 
         file_paths, hashes = (
             [f[0] for f in self.written_files],
@@ -1273,7 +1443,6 @@ class PyiGenerator:
 
         # Fix generated pyi files with ruff.
         if file_paths:
-            subprocess.run(["ruff", "format", *file_paths])
             subprocess.run(["ruff", "check", "--fix", *file_paths])
             subprocess.run(["ruff", "format", *file_paths])
 

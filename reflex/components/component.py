@@ -1166,11 +1166,11 @@ class Component(BaseComponent, ABC):
             style: A dict from component to styling.
             theme: The theme to apply. (for retro-compatibility with deprecated _apply_theme API)
 
-        Raises:
-            UserWarning: If `_add_style` has been overridden.
-
         Returns:
             The component with the additional style.
+
+        Raises:
+            UserWarning: If `_add_style` has been overridden.
         """
         # 1. Default style from `_add_style`/`add_style`.
         if type(self)._add_style != Component._add_style:
