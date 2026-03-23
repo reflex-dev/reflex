@@ -1,6 +1,15 @@
 """Tests for reflex-docgen."""
 
-from reflex_docgen import generate_documentation, get_component_event_handlers
+import dataclasses
+import inspect
+from typing import Annotated
+
+from reflex_docgen import (
+    generate_class_documentation,
+    generate_documentation,
+    get_component_event_handlers,
+)
+from typing_extensions import Doc
 
 from reflex.components.component import (
     DEFAULT_TRIGGERS_AND_DESC,
@@ -80,3 +89,216 @@ def test_description_none_when_no_docstring():
     """generate_documentation should set description to None when __doc__ is None."""
     doc = generate_documentation(_UndocumentedComponent)
     assert doc.description is None
+
+
+# ---------------------------------------------------------------------------
+# Tests for generate_class_documentation
+# ---------------------------------------------------------------------------
+
+
+@dataclasses.dataclass
+class _SampleDataclass:
+    """A sample dataclass for testing."""
+
+    name: Annotated[str, Doc("The name of the item.")] = "default"
+    count: int = 5
+    items: Annotated[list[str], Doc("A list of items.")] = dataclasses.field(
+        default_factory=list
+    )
+    _private: str = "hidden"
+
+    def public_method(self) -> None:
+        """Do something useful.
+
+        Args:
+            None.
+        """
+
+    def _private_method(self) -> None:
+        """Should not appear."""
+
+    @classmethod
+    def class_method(cls, x: int) -> str:
+        """A class method.
+
+        Returns:
+            A string.
+        """
+        return str(x)
+
+    @staticmethod
+    def static_method(y: int) -> int:
+        """A static method.
+
+        Args:
+            y: The input.
+
+        Returns:
+            The output.
+        """
+        return y * 2
+
+
+def test_dataclass_fields_doc_metadata():
+    """Doc() metadata is extracted and types are unwrapped from Annotated."""
+    doc = generate_class_documentation(_SampleDataclass)
+
+    fields_by_name = {f.name: f for f in doc.fields}
+
+    # name field: Annotated[str, Doc(...)]
+    assert "name" in fields_by_name
+    name_field = fields_by_name["name"]
+    assert name_field.description == "The name of the item."
+    assert name_field.type is str
+    assert "Annotated" not in name_field.type_display
+    assert name_field.type_display == "str"
+    assert name_field.default == "'default'"
+
+    # count field: plain int
+    assert "count" in fields_by_name
+    count_field = fields_by_name["count"]
+    assert count_field.description is None
+    assert count_field.type is int
+    assert count_field.default == "5"
+
+    # items field: Annotated[list[str], Doc(...)]
+    assert "items" in fields_by_name
+    items_field = fields_by_name["items"]
+    assert items_field.description == "A list of items."
+    assert "Annotated" not in items_field.type_display
+
+
+def test_dataclass_private_fields_skipped():
+    """Fields starting with _ are excluded."""
+    doc = generate_class_documentation(_SampleDataclass)
+    field_names = {f.name for f in doc.fields}
+    assert "_private" not in field_names
+
+
+@dataclasses.dataclass
+class _DataclassWithPrivateMarker:
+    """Test PRIVATE marker in doc."""
+
+    visible: Annotated[str, Doc("A visible field.")] = ""
+    hidden: Annotated[str, Doc("PRIVATE: internal use only.")] = ""
+
+
+def test_private_marker_in_doc():
+    """Fields with PRIVATE in their doc are excluded."""
+    doc = generate_class_documentation(_DataclassWithPrivateMarker)
+    field_names = {f.name for f in doc.fields}
+    assert "visible" in field_names
+    assert "hidden" not in field_names
+
+
+def test_dataclass_methods():
+    """Methods: name, signature, and truncated description are correct."""
+    doc = generate_class_documentation(_SampleDataclass)
+    methods_by_name = {m.name: m for m in doc.methods}
+
+    # public_method
+    assert "public_method" in methods_by_name
+    pub = methods_by_name["public_method"]
+    assert pub.description == "Do something useful."
+    assert "self" in pub.signature
+
+    # class_method
+    assert "class_method" in methods_by_name
+    cm = methods_by_name["class_method"]
+    assert cm.description == "A class method."
+    assert "x" in cm.signature
+
+    # static_method
+    assert "static_method" in methods_by_name
+    sm = methods_by_name["static_method"]
+    assert sm.description == "A static method."
+    assert "y" in sm.signature
+
+    # _private_method should not appear
+    assert "_private_method" not in methods_by_name
+
+
+def test_dataclass_class_name_and_description():
+    """Name matches module.qualname and description matches cleandoc."""
+    doc = generate_class_documentation(_SampleDataclass)
+    assert doc.name == f"{_SampleDataclass.__module__}.{_SampleDataclass.__qualname__}"
+    assert _SampleDataclass.__doc__ is not None
+    assert doc.description == inspect.cleandoc(_SampleDataclass.__doc__)
+
+
+def test_string_annotations_resolve():
+    """Classes using from __future__ import annotations still resolve correctly."""
+    import reflex as rx
+
+    doc = generate_class_documentation(rx.App)
+    # Should have fields (App is a dataclass with many Annotated fields)
+    assert len(doc.fields) > 0
+    # No Annotated should appear in type_display
+    for f in doc.fields:
+        assert "Annotated" not in f.type_display, (
+            f"Annotated in type_display of {f.name}: {f.type_display}"
+        )
+
+
+def test_rx_base_fields():
+    """rx.Base subclass fields are extracted via __fields__."""
+    from reflex.state import BaseState
+
+    doc = generate_class_documentation(BaseState)
+    assert len(doc.fields) > 0
+    field_names = {f.name for f in doc.fields}
+    # Private fields should be excluded
+    for name in field_names:
+        assert not name.startswith("_")
+
+
+def test_class_with_class_vars():
+    """Class variables are extracted from __class_vars__."""
+    from reflex.base import Base
+
+    # Base has __class_vars__ (from pydantic v1)
+    doc = generate_class_documentation(Base)
+    # Just verify the attribute is populated (may be empty if Base has no class vars)
+    assert isinstance(doc.class_fields, tuple)
+
+
+def test_plain_class_empty_fields():
+    """A plain class (not dataclass, no __fields__) returns empty fields."""
+
+    class PlainClass:
+        """A plain class."""
+
+        def do_stuff(self) -> None:
+            """Do stuff."""
+
+    doc = generate_class_documentation(PlainClass)
+    assert doc.fields == ()
+    assert doc.class_fields == ()
+    assert len(doc.methods) == 1
+    assert doc.methods[0].name == "do_stuff"
+
+
+def test_no_docstring_description_is_none():
+    """Classes without docstrings have None description."""
+
+    class NoDoc:
+        pass
+
+    doc = generate_class_documentation(NoDoc)
+    assert doc.description is None
+
+
+@dataclasses.dataclass
+class _DataclassWithFieldDoc:
+    """Test field.doc attribute priority."""
+
+    name: Annotated[str, Doc("From Annotated")] = dataclasses.field(
+        default="x", doc="From field.doc"
+    )
+
+
+def test_field_doc_takes_priority():
+    """field.doc takes priority over Doc() metadata."""
+    doc = generate_class_documentation(_DataclassWithFieldDoc)
+    fields_by_name = {f.name: f for f in doc.fields}
+    assert fields_by_name["name"].description == "From field.doc"
