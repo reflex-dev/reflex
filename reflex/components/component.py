@@ -550,23 +550,82 @@ def _deterministic_hash(value: object) -> str:
     raise TypeError(msg)
 
 
-DEFAULT_TRIGGERS: Mapping[str, types.ArgsSpec | Sequence[types.ArgsSpec]] = {
-    EventTriggers.ON_FOCUS: no_args_event_spec,
-    EventTriggers.ON_BLUR: no_args_event_spec,
-    EventTriggers.ON_CLICK: pointer_event_spec,  # pyright: ignore [reportAssignmentType]
-    EventTriggers.ON_CONTEXT_MENU: pointer_event_spec,  # pyright: ignore [reportAssignmentType]
-    EventTriggers.ON_DOUBLE_CLICK: pointer_event_spec,  # pyright: ignore [reportAssignmentType]
-    EventTriggers.ON_MOUSE_DOWN: no_args_event_spec,
-    EventTriggers.ON_MOUSE_ENTER: no_args_event_spec,
-    EventTriggers.ON_MOUSE_LEAVE: no_args_event_spec,
-    EventTriggers.ON_MOUSE_MOVE: no_args_event_spec,
-    EventTriggers.ON_MOUSE_OUT: no_args_event_spec,
-    EventTriggers.ON_MOUSE_OVER: no_args_event_spec,
-    EventTriggers.ON_MOUSE_UP: no_args_event_spec,
-    EventTriggers.ON_SCROLL: no_args_event_spec,
-    EventTriggers.ON_SCROLL_END: no_args_event_spec,
-    EventTriggers.ON_MOUNT: no_args_event_spec,
-    EventTriggers.ON_UNMOUNT: no_args_event_spec,
+@dataclasses.dataclass(kw_only=True, frozen=True, slots=True)
+class TriggerDefinition:
+    """A default event trigger with its args spec and description."""
+
+    spec: types.ArgsSpec | Sequence[types.ArgsSpec]
+    description: str
+
+
+DEFAULT_TRIGGERS_AND_DESC: Mapping[str, TriggerDefinition] = {
+    EventTriggers.ON_FOCUS: TriggerDefinition(
+        spec=no_args_event_spec,
+        description="Fired when the element (or some element inside of it) receives focus. For example, it is called when the user clicks on a text input.",
+    ),
+    EventTriggers.ON_BLUR: TriggerDefinition(
+        spec=no_args_event_spec,
+        description="Fired when focus has left the element (or left some element inside of it). For example, it is called when the user clicks outside of a focused text input.",
+    ),
+    EventTriggers.ON_CLICK: TriggerDefinition(
+        spec=pointer_event_spec,  # pyright: ignore [reportArgumentType]
+        description="Fired when the user clicks on an element. For example, it's called when the user clicks on a button.",
+    ),
+    EventTriggers.ON_CONTEXT_MENU: TriggerDefinition(
+        spec=pointer_event_spec,  # pyright: ignore [reportArgumentType]
+        description="Fired when the user right-clicks on an element.",
+    ),
+    EventTriggers.ON_DOUBLE_CLICK: TriggerDefinition(
+        spec=pointer_event_spec,  # pyright: ignore [reportArgumentType]
+        description="Fired when the user double-clicks on an element.",
+    ),
+    EventTriggers.ON_MOUSE_DOWN: TriggerDefinition(
+        spec=no_args_event_spec,
+        description="Fired when the user presses a mouse button on an element.",
+    ),
+    EventTriggers.ON_MOUSE_ENTER: TriggerDefinition(
+        spec=no_args_event_spec,
+        description="Fired when the mouse pointer enters the element.",
+    ),
+    EventTriggers.ON_MOUSE_LEAVE: TriggerDefinition(
+        spec=no_args_event_spec,
+        description="Fired when the mouse pointer leaves the element.",
+    ),
+    EventTriggers.ON_MOUSE_MOVE: TriggerDefinition(
+        spec=no_args_event_spec,
+        description="Fired when the mouse pointer moves over the element.",
+    ),
+    EventTriggers.ON_MOUSE_OUT: TriggerDefinition(
+        spec=no_args_event_spec,
+        description="Fired when the mouse pointer moves out of the element.",
+    ),
+    EventTriggers.ON_MOUSE_OVER: TriggerDefinition(
+        spec=no_args_event_spec,
+        description="Fired when the mouse pointer moves onto the element.",
+    ),
+    EventTriggers.ON_MOUSE_UP: TriggerDefinition(
+        spec=no_args_event_spec,
+        description="Fired when the user releases a mouse button on an element.",
+    ),
+    EventTriggers.ON_SCROLL: TriggerDefinition(
+        spec=no_args_event_spec,
+        description="Fired when the user scrolls the element.",
+    ),
+    EventTriggers.ON_SCROLL_END: TriggerDefinition(
+        spec=no_args_event_spec,
+        description="Fired when scrolling ends on the element.",
+    ),
+    EventTriggers.ON_MOUNT: TriggerDefinition(
+        spec=no_args_event_spec,
+        description="Fired when the component is mounted to the page.",
+    ),
+    EventTriggers.ON_UNMOUNT: TriggerDefinition(
+        spec=no_args_event_spec,
+        description="Fired when the component is removed from the page. Only called during navigation, not on page refresh.",
+    ),
+}
+DEFAULT_TRIGGERS = {
+    name: trigger.spec for name, trigger in DEFAULT_TRIGGERS_AND_DESC.items()
 }
 
 T = TypeVar("T", bound="Component")

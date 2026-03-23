@@ -5,7 +5,7 @@ from typing import Annotated, Any, get_type_hints
 
 from typing_extensions import Doc
 
-from reflex.components.component import DEFAULT_TRIGGERS, Component
+from reflex.components.component import DEFAULT_TRIGGERS_AND_DESC, Component
 from reflex.event import EventHandler
 
 
@@ -111,9 +111,13 @@ def get_component_event_handlers(
             description=(
                 field.doc.rstrip(".") + "."
                 if (field := fields.get(name)) is not None and field.doc
-                else None
+                else (
+                    DEFAULT_TRIGGERS_AND_DESC[name].description
+                    if name in DEFAULT_TRIGGERS_AND_DESC
+                    else None
+                )
             ),
-            is_inherited=name in DEFAULT_TRIGGERS,
+            is_inherited=name in DEFAULT_TRIGGERS_AND_DESC,
         )
         for name in event_triggers
     )
