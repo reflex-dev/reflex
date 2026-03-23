@@ -3,7 +3,6 @@
 import dataclasses
 import inspect
 import sys
-from typing import Annotated
 
 import pytest
 from reflex_docgen import (
@@ -11,7 +10,6 @@ from reflex_docgen import (
     generate_documentation,
     get_component_event_handlers,
 )
-from typing_extensions import Doc
 
 from reflex.components.component import (
     DEFAULT_TRIGGERS_AND_DESC,
@@ -100,13 +98,16 @@ def test_description_none_when_no_docstring():
 
 @dataclasses.dataclass
 class _SampleDataclass:
-    """A sample dataclass for testing."""
+    """A sample dataclass for testing.
 
-    name: Annotated[str, Doc("The name of the item.")] = "default"
+    Attributes:
+        name: The name of the item.
+        items: A list of items.
+    """
+
+    name: str = "default"
     count: int = 5
-    items: Annotated[list[str], Doc("A list of items.")] = dataclasses.field(
-        default_factory=list
-    )
+    items: list[str] = dataclasses.field(default_factory=list)
     _private: str = "hidden"
 
     def public_method(self) -> None:
@@ -142,12 +143,12 @@ class _SampleDataclass:
 
 
 def test_dataclass_fields_doc_metadata():
-    """Doc() metadata is extracted and types are unwrapped from Annotated."""
+    """Docstring Attributes descriptions are extracted for fields."""
     doc = generate_class_documentation(_SampleDataclass)
 
     fields_by_name = {f.name: f for f in doc.fields}
 
-    # name field: Annotated[str, Doc(...)]
+    # name field: described in docstring Attributes section
     assert "name" in fields_by_name
     name_field = fields_by_name["name"]
     assert name_field.description == "The name of the item."
@@ -163,7 +164,7 @@ def test_dataclass_fields_doc_metadata():
     assert count_field.type is int
     assert count_field.default == "5"
 
-    # items field: Annotated[list[str], Doc(...)]
+    # items field: described in docstring Attributes section
     assert "items" in fields_by_name
     items_field = fields_by_name["items"]
     assert items_field.description == "A list of items."
@@ -179,10 +180,15 @@ def test_dataclass_private_fields_skipped():
 
 @dataclasses.dataclass
 class _DataclassWithPrivateMarker:
-    """Test PRIVATE marker in doc."""
+    """Test PRIVATE marker in doc.
 
-    visible: Annotated[str, Doc("A visible field.")] = ""
-    hidden: Annotated[str, Doc("PRIVATE: internal use only.")] = ""
+    Attributes:
+        visible: A visible field.
+        hidden: PRIVATE: internal use only.
+    """
+
+    visible: str = ""
+    hidden: str = ""
 
 
 def test_private_marker_in_doc():
@@ -233,7 +239,7 @@ def test_string_annotations_resolve():
     import reflex as rx
 
     doc = generate_class_documentation(rx.App)
-    # Should have fields (App is a dataclass with many Annotated fields)
+    # Should have fields (App is a dataclass with many fields)
     assert len(doc.fields) > 0
     # No Annotated should appear in type_display
     for f in doc.fields:
@@ -242,8 +248,8 @@ def test_string_annotations_resolve():
         )
 
 
-def test_rx_base_fields():
-    """rx.Base subclass fields are extracted via __fields__."""
+def test_rx_state_fields():
+    """rx.State subclass fields are extracted via __fields__."""
     from reflex.state import BaseState
 
     doc = generate_class_documentation(BaseState)
@@ -265,7 +271,7 @@ def test_class_with_class_vars():
 
 
 def test_plain_class_empty_fields():
-    """A plain class (not dataclass, no __fields__) returns empty fields."""
+    """A plain class (not dataclass, not rx.State) returns empty fields."""
 
     class PlainClass:
         """A plain class."""
@@ -295,15 +301,17 @@ def test_no_docstring_description_is_none():
     reason="Requires Python 3.14 for dataclass field doc support",
 )
 def test_field_doc_takes_priority():
-    """field.doc takes priority over Doc() metadata."""
+    """field.doc takes priority over docstring Attributes section."""
 
     @dataclasses.dataclass
     class _DataclassWithFieldDoc:
-        """Test field.doc attribute priority."""
+        """Test field.doc attribute priority.
 
-        name: Annotated[str, Doc("From Annotated")] = dataclasses.field(
-            default="x", doc="From field.doc"
-        )
+        Attributes:
+            name: From docstring.
+        """
+
+        name: str = dataclasses.field(default="x", doc="From field.doc")
 
     doc = generate_class_documentation(_DataclassWithFieldDoc)
     fields_by_name = {f.name: f for f in doc.fields}

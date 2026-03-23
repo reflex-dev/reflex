@@ -22,7 +22,7 @@ from typing import (
     overload,
 )
 
-from typing_extensions import Doc, Self, TypeAliasType, TypedDict, TypeVarTuple, Unpack
+from typing_extensions import Self, TypeAliasType, TypedDict, TypeVarTuple, Unpack
 
 from reflex import constants
 from reflex.components.field import BaseField
@@ -61,19 +61,22 @@ from reflex.vars.object import ObjectVar
     frozen=True,
 )
 class Event:
-    """An event that describes any state change in the app."""
+    """An event that describes any state change in the app.
 
-    token: Annotated[str, Doc("The token to specify the client that the event is for.")]
+    Attributes:
+        token: The token to specify the client that the event is for.
+        name: The event name.
+        router_data: The routing data where event occurred.
+        payload: The event payload.
+    """
 
-    name: Annotated[str, Doc("The event name.")]
+    token: str
 
-    router_data: Annotated[
-        dict[str, Any], Doc("The routing data where event occurred.")
-    ] = dataclasses.field(default_factory=dict)
+    name: str
 
-    payload: Annotated[dict[str, Any], Doc("The event payload.")] = dataclasses.field(
-        default_factory=dict
-    )
+    router_data: dict[str, Any] = dataclasses.field(default_factory=dict)
+
+    payload: dict[str, Any] = dataclasses.field(default_factory=dict)
 
     @property
     def substate_token(self) -> str:
@@ -98,12 +101,13 @@ EVENT_ACTIONS_MARKER = "_rx_event_actions"
     kw_only=True,
 )
 class EventActionsMixin:
-    """Mixin for DOM event actions."""
+    """Mixin for DOM event actions.
 
-    event_actions: Annotated[
-        dict[str, bool | int],
-        Doc("Whether to `preventDefault` or `stopPropagation` on the event."),
-    ] = dataclasses.field(default_factory=dict)
+    Attributes:
+        event_actions: Whether to `preventDefault` or `stopPropagation` on the event.
+    """
+
+    event_actions: dict[str, bool | int] = dataclasses.field(default_factory=dict)
 
     @property
     def stop_propagation(self) -> Self:
@@ -176,19 +180,16 @@ class EventActionsMixin:
     kw_only=True,
 )
 class EventHandler(EventActionsMixin):
-    """An event handler responds to an event to update the state."""
+    """An event handler responds to an event to update the state.
 
-    fn: Annotated[Any, Doc("The function to call in response to the event.")] = (
-        dataclasses.field(default=None)
-    )
+    Attributes:
+        fn: The function to call in response to the event.
+        state_full_name: The full name of the state class this event handler is attached to. Empty string means this event handler is a server side event.
+    """
 
-    state_full_name: Annotated[
-        str,
-        Doc(
-            "The full name of the state class this event handler is attached to."
-            " Empty string means this event handler is a server side event."
-        ),
-    ] = dataclasses.field(default="")
+    fn: Any = dataclasses.field(default=None)
+
+    state_full_name: str = dataclasses.field(default="")
 
     def __hash__(self):
         """Get the hash of the event handler.
@@ -316,20 +317,18 @@ class EventSpec(EventActionsMixin):
 
     Whereas an Event object is passed during runtime, a spec is used
     during compile time to outline the structure of an event.
+
+    Attributes:
+        handler: The event handler.
+        client_handler_name: The handler on the client to process event.
+        args: The arguments to pass to the function.
     """
 
-    handler: Annotated[EventHandler, Doc("The event handler.")] = dataclasses.field(
-        default=None
-    )  # pyright: ignore [reportAssignmentType]
+    handler: EventHandler = dataclasses.field(default=None)  # pyright: ignore [reportAssignmentType]
 
-    client_handler_name: Annotated[
-        str, Doc("The handler on the client to process event.")
-    ] = dataclasses.field(default="")
+    client_handler_name: str = dataclasses.field(default="")
 
-    args: Annotated[
-        tuple[tuple[Var, Var], ...],
-        Doc("The arguments to pass to the function."),
-    ] = dataclasses.field(default_factory=tuple)
+    args: tuple[tuple[Var, Var], ...] = dataclasses.field(default_factory=tuple)
 
     def __init__(
         self,

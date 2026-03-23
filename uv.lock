@@ -672,6 +672,15 @@ wheels = [
 ]
 
 [[package]]
+name = "griffelib"
+version = "2.0.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/71/d7/2b805e89cdc609e5b304361d80586b272ef00f6287ee63de1e571b1f71ec/griffelib-2.0.1.tar.gz", hash = "sha256:59f39eabb4c777483a3823e39e8f9e03e69df271a7e49aee64e91a8cfa91bdf5", size = 166383, upload-time = "2026-03-23T21:05:25.882Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4b/4c/cc8c68196db727cfc1432f2ad5de50aa6707e630d44b2e6361dc06d8f134/griffelib-2.0.1-py3-none-any.whl", hash = "sha256:b769eed581c0e857d362fc8fcd8e57ecd2330c124b6104ac8b4c1c86d76970aa", size = 142377, upload-time = "2026-03-23T21:04:01.116Z" },
+]
+
+[[package]]
 name = "h11"
 version = "0.16.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2140,6 +2149,7 @@ name = "reflex-docgen"
 version = "0.0.1"
 source = { editable = "packages/reflex-docgen" }
 dependencies = [
+    { name = "griffelib" },
     { name = "reflex" },
     { name = "typing-extensions" },
     { name = "typing-inspection" },
@@ -2147,6 +2157,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "griffelib", specifier = ">=2.0.1" },
     { name = "reflex", editable = "." },
     { name = "typing-extensions" },
     { name = "typing-inspection", specifier = ">=0.4.2" },

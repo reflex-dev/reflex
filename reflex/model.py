@@ -6,9 +6,7 @@ import re
 from collections import defaultdict
 from contextlib import suppress
 from importlib.util import find_spec
-from typing import TYPE_CHECKING, Annotated, Any, ClassVar
-
-from typing_extensions import Doc
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from reflex.config import get_config
 from reflex.environment import environment
@@ -177,16 +175,15 @@ if find_spec("sqlalchemy"):
         return sqlalchemy.orm.Session(get_engine(url))
 
     class ModelRegistry:
-        """Registry for all models."""
+        """Registry for all models.
+
+        Attributes:
+            _metadata: Cache the metadata to avoid re-creating it.
+        """
 
         models: ClassVar[set[SQLModelOrSqlAlchemy]] = set()
 
-        _metadata: ClassVar[
-            Annotated[
-                sqlalchemy.MetaData | None,
-                Doc("Cache the metadata to avoid re-creating it."),
-            ]
-        ] = None
+        _metadata: ClassVar[sqlalchemy.MetaData | None] = None
 
         @classmethod
         def register(cls, model: SQLModelOrSqlAlchemyT) -> SQLModelOrSqlAlchemyT:
@@ -357,11 +354,13 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
         }
 
     class Model(sqlmodel.SQLModel):
-        """Base class to define a table in the database."""
+        """Base class to define a table in the database.
 
-        id: Annotated[int | None, Doc("The primary key for the table.")] = (
-            sqlmodel.Field(default=None, primary_key=True)
-        )
+        Attributes:
+            id: The primary key for the table.
+        """
+
+        id: int | None = sqlmodel.Field(default=None, primary_key=True)
 
         model_config = {  # pyright: ignore [reportAssignmentType]
             "arbitrary_types_allowed": True,

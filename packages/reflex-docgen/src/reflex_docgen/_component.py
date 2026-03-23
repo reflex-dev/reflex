@@ -1,9 +1,7 @@
 """Generate documentation for Reflex components."""
 
 from dataclasses import dataclass
-from typing import Annotated, Any
-
-from typing_extensions import Doc
+from typing import Any
 
 from reflex.components.component import DEFAULT_TRIGGERS_AND_DESC, Component
 from reflex.event import EventHandler
@@ -11,45 +9,56 @@ from reflex.event import EventHandler
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class PropDocumentation:
-    """Hold information about a prop."""
+    """Hold information about a prop.
 
-    name: Annotated[str, Doc("The name of the prop.")]
+    Attributes:
+        name: The name of the prop.
+        type: The type of the prop.
+        description: The description of the prop.
+        default_value: The default value of the prop.
+    """
 
-    type: Annotated[Any, Doc("The type of the prop.")]
+    name: str
 
-    description: Annotated[str | None, Doc("The description of the prop.")]
+    type: Any
 
-    default_value: Annotated[str | None, Doc("The default value of the prop.")]
+    description: str | None
+
+    default_value: str | None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class EventHandlerDocumentation:
-    """Hold information about an event handler."""
+    """Hold information about an event handler.
 
-    name: Annotated[str, Doc("The name of the event handler.")]
+    Attributes:
+        name: The name of the event handler.
+        description: The description of the event handler.
+        is_inherited: Whether the event handler is inherited from DEFAULT_TRIGGERS.
+    """
 
-    description: Annotated[str | None, Doc("The description of the event handler.")]
+    name: str
 
-    is_inherited: Annotated[
-        bool, Doc("Whether the event handler is inherited from DEFAULT_TRIGGERS.")
-    ]
+    description: str | None
+
+    is_inherited: bool
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ComponentDocumentation:
-    """Documentation for a Reflex component."""
+    """Documentation for a Reflex component.
 
-    name: Annotated[str, Doc("The name of the component.")]
-    description: Annotated[str | None, Doc("The docstring of the component class.")] = (
-        None
-    )
-    props: Annotated[
-        tuple[PropDocumentation, ...], Doc("The list of props for the component.")
-    ] = ()
-    event_handlers: Annotated[
-        tuple[EventHandlerDocumentation, ...],
-        Doc("The list of event handlers for the component."),
-    ] = ()
+    Attributes:
+        name: The name of the component.
+        description: The docstring of the component class.
+        props: The list of props for the component.
+        event_handlers: The list of event handlers for the component.
+    """
+
+    name: str
+    description: str | None = None
+    props: tuple[PropDocumentation, ...] = ()
+    event_handlers: tuple[EventHandlerDocumentation, ...] = ()
 
 
 def get_component_props(
@@ -72,8 +81,7 @@ def get_component_props(
         doc = component_field.doc
         default_value = None
 
-        # If the field has a doc attribute and no Annotated[..., Doc(...)] was found,
-        # use the field's doc as the description.
+        # If the field has a doc attribute, use it as the description.
         if doc is not None:
             for default_indicator in ["Defaults to", "Default:"]:
                 if default_indicator in doc:
