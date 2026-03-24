@@ -1,6 +1,6 @@
 ---
 components:
-    - rx.recharts.ErrorBar
+  - rx.recharts.ErrorBar
 ---
 
 ```python exec
@@ -93,7 +93,7 @@ def error():
         data=data,
         fill="#8884d8",
         name="A"),
-    rx.recharts.x_axis(data_key="x", name="x", type_="number"), 
+    rx.recharts.x_axis(data_key="x", name="x", type_="number"),
     rx.recharts.y_axis(data_key="y", name="y", type_="number"),
     width = "100%",
     height = 300,

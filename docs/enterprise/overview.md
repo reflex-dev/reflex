@@ -19,6 +19,7 @@ Reflex Enterprise is a package containing paid features built on top of Reflex.
 
 ```md alert info
 # Despite being an enterprise package, free users can use the components from this package. A badge "Built with Reflex" will be shown in the bottom right corner of the app.
+
 For more information on the badge, visit [Built with Reflex]({enterprise.built_with_reflex.path}).
 ```
 
@@ -43,16 +44,16 @@ categories_data = [
         "count": 2,
         "components": [
             {
-                "feature": "show_built_with_reflex", 
-                "description": "Toggle the 'Built with Reflex' badge in your app", 
-                "cloud_tier": "Enterprise", 
+                "feature": "show_built_with_reflex",
+                "description": "Toggle the 'Built with Reflex' badge in your app",
+                "cloud_tier": "Enterprise",
                 "self_hosted_tier": "Enterprise",
                 "link": "/docs/enterprise/built-with-reflex",
             },
             {
-                "feature": "use_single_port", 
-                "description": "Enable single-port deployment by proxying backend to frontend", 
-                "cloud_tier": "Free", 
+                "feature": "use_single_port",
+                "description": "Enable single-port deployment by proxying backend to frontend",
+                "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
                 "link": "/docs/enterprise/single-port-proxy",
             },
@@ -78,7 +79,7 @@ categories_data = [
                 "link": "/docs/enterprise/ag-chart",
             },
         ]
-    },    
+    },
     {
         "category": "Interactive Components",
         "description": "Interactive UI features including drag-and-drop and mapping",
@@ -219,8 +220,8 @@ if rxe is not None:
     grid = rxe.ag_grid(
     column_defs=[
         {
-            "field": "category", 
-            "header_name": "Category", 
+            "field": "category",
+            "header_name": "Category",
             "cell_renderer": "agGroupCellRenderer",
             "suppress_menu": True,
             "width": 220,
@@ -241,9 +242,9 @@ if rxe is not None:
         "detail_grid_options": {
             "column_defs": [
                 {
-                    "field": "feature", 
-                    "header_name": "Component/Feature", 
-                    "cell_renderer": custom_link_renderer, 
+                    "field": "feature",
+                    "header_name": "Component/Feature",
+                    "cell_renderer": custom_link_renderer,
                     "width": 250
                 },
                 {"field": "description", "header_name": "Description", "width": 350},
@@ -280,12 +281,14 @@ Using `rxe.App` as your `app` is required to use any of the components provided 
 ### In the main file
 
 Instead of the usual `rx.App()` to create your app, use the following:
+
 ```python
 import reflex_enterprise as rxe
 app = rxe.App()
 ```
 
 ### In rxconfig.py
+
 ```python
 import reflex_enterprise as rxe
 config = rxe.Config(

@@ -1,16 +1,15 @@
 ---
 components:
-    - rx.inset
+  - rx.inset
 
 Inset: |
-    lambda **props: rx.card(
-        rx.inset(
-            rx.image(src=f"{REFLEX_ASSETS_CDN}other/reflex_banner.png", height="auto"),
-            **props,
-        ),
-        width="500px",
-    )
-    
+  lambda **props: rx.card(
+      rx.inset(
+          rx.image(src=f"{REFLEX_ASSETS_CDN}other/reflex_banner.png", height="auto"),
+          **props,
+      ),
+      width="500px",
+  )
 ---
 
 ```python exec

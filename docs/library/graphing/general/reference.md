@@ -1,8 +1,8 @@
 ---
 components:
-    - rx.recharts.ReferenceLine
-    - rx.recharts.ReferenceDot
-    - rx.recharts.ReferenceArea
+  - rx.recharts.ReferenceLine
+  - rx.recharts.ReferenceDot
+  - rx.recharts.ReferenceArea
 ---
 
 # Reference
@@ -98,10 +98,10 @@ def reference():
         fill="#8884d8",
         name="A"),
     rx.recharts.reference_area(x1= 150, x2=180, y1=150, y2=300, fill="#8884d8", fill_opacity=0.3),
-    rx.recharts.x_axis(data_key="x", name="x", type_="number"), 
+    rx.recharts.x_axis(data_key="x", name="x", type_="number"),
     rx.recharts.y_axis(data_key="y", name="y", type_="number"),
     rx.recharts.graphing_tooltip(),
-    width = "100%", 
+    width = "100%",
     height = 300,
   )
 ```
@@ -222,8 +222,8 @@ data_3 = [
 def reference_dot():
     return rx.recharts.scatter_chart(
         rx.recharts.scatter(
-            data=data_3, 
-            fill=rx.color("accent", 9), 
+            data=data_3,
+            fill=rx.color("accent", 9),
             name="A",
         ),
         rx.recharts.x_axis(

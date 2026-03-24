@@ -14,12 +14,14 @@ Components are made up of children and props.
 
 ```md definition
 # Children
-* Text or other Reflex components nested inside a component.
-* Passed as **positional arguments**.
+
+- Text or other Reflex components nested inside a component.
+- Passed as **positional arguments**.
 
 # Props
-* Attributes that affect the behavior and appearance of a component.
-* Passed as **keyword arguments**.
+
+- Attributes that affect the behavior and appearance of a component.
+- Passed as **keyword arguments**.
 ```
 
 Let's take a look at the `rx.text` component.

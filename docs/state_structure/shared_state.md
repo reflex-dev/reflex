@@ -20,7 +20,7 @@ A token can be any string that uniquely identifies a group of clients that shoul
 ```
 
 ```md alert warning
-# Linked token cannot contain underscore (_) characters.
+# Linked token cannot contain underscore (\_) characters.
 
 Underscore characters are currently used as an internal delimiter for tokens and will raise an exception if used for linked states.
 

@@ -1,7 +1,7 @@
 ---
 components:
-    - rx.input
-    - rx.input.slot
+  - rx.input
+  - rx.input.slot
 ---
 
 ```python exec
@@ -11,7 +11,6 @@ import reflex as rx
 # Input
 
 A text field is an input field that users can type into. This component uses Radix's [text field](https://www.radix-ui.com/themes/docs/components/text-field) component.
-
 
 ## Overview
 

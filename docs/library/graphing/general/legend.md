@@ -1,6 +1,6 @@
 ---
 components:
-    - rx.recharts.Legend
+  - rx.recharts.Legend
 ---
 
 # Legend
@@ -65,7 +65,7 @@ def legend_simple():
         data_key="uv",
         stroke="#8884d8",
         fill="#8884d8"
-    ), 
+    ),
     rx.recharts.bar(
         data_key="amt",
         bar_size=20,
@@ -75,8 +75,8 @@ def legend_simple():
         data_key="pv",
         type_="monotone",
         stroke="#ff7300"
-    ), 
-    rx.recharts.x_axis(data_key="name"), 
+    ),
+    rx.recharts.x_axis(data_key="name"),
     rx.recharts.y_axis(),
     rx.recharts.legend(),
     data=data,
@@ -141,18 +141,18 @@ def legend_props():
       data_key="pv",
       type_="monotone",
       stroke=rx.color("accent", 7),
-    ), 
+    ),
     rx.recharts.line(
       data_key="amt",
       type_="monotone",
       stroke=rx.color("green", 7),
-    ), 
+    ),
     rx.recharts.line(
       data_key="uv",
       type_="monotone",
       stroke=rx.color("red", 7),
-    ), 
-    rx.recharts.x_axis(data_key="name"), 
+    ),
+    rx.recharts.x_axis(data_key="name"),
     rx.recharts.y_axis(),
     rx.recharts.legend(
       width=60,

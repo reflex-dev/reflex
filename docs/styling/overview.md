@@ -15,6 +15,7 @@ There are three main ways to add style to your app and they take precedence in t
 
 ```md alert success
 # Style keys can be any valid CSS property name.
+
 To be consistent with Python standards, you can specify keys in `snake_case`.
 ```
 
@@ -70,9 +71,9 @@ app = rx.App(style=style)
 
 Using style dictionaries like this, you can easily create a consistent theme for your app.
 
-
 ```md alert warning
 # Watch out for underscores in class names and IDs
+
 Reflex automatically converts `snake_case` identifiers into `camelCase` format when applying styles. To ensure consistency, it is recommended to use the dash character or camelCase identifiers in your own class names and IDs. To style third-party libraries relying on underscore class names, an external stylesheet should be used. See [custom stylesheets]({styling.custom_stylesheets.path}) for how to reference external CSS files.
 ```
 
@@ -154,7 +155,6 @@ rx.box(
 ```
 
 The style dictionaries are applied in the order they are passed in. This means that styles defined later will override styles defined earlier.
-
 
 ## Theming
 

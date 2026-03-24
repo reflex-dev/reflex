@@ -322,6 +322,7 @@ def dynamic_list_example():
 The `rxe.dnd.draggable` component makes any element draggable:
 
 **Key Properties:**
+
 - `type`: String identifier for drag type matching
 - `item`: Data object passed to drop handlers
 - `on_end`: Called when drag operation ends
@@ -331,6 +332,7 @@ The `rxe.dnd.draggable` component makes any element draggable:
 The `rxe.dnd.drop_target` component creates areas that accept draggable items:
 
 **Key Properties:**
+
 - `accept`: List of drag types this target accepts
 - `on_drop`: Called when item is dropped
 - `on_hover`: Called when item hovers over target
@@ -340,9 +342,11 @@ The `rxe.dnd.drop_target` component creates areas that accept draggable items:
 Access real-time drag/drop state:
 
 **Draggable Parameters (`rxe.dnd.Draggable.collected_params`):**
+
 - `is_dragging`: Boolean indicating if item is being dragged
 
 **Drop Target Parameters (`rxe.dnd.DropTarget.collected_params`):**
+
 - `is_over`: Boolean indicating if draggable is hovering
 - `can_drop`: Boolean indicating if drop is allowed
 

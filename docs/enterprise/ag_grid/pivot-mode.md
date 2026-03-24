@@ -126,5 +126,3 @@ def sandbox_page():
 ```
 
 📊 **Dataset source:** [wind_dataset.csv](https://raw.githubusercontent.com/plotly/datasets/master/wind_dataset.csv)
-
-

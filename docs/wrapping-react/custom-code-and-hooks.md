@@ -1,4 +1,3 @@
-
 When wrapping a React component, you may need to define custom code or hooks that are specific to the component. This is done by defining the `add_custom_code`or `add_hooks` methods in your component class.
 
 ## Custom Code
@@ -29,15 +28,17 @@ console.log(customVariable);
 ```
 
 ## Custom Hooks
+
 Custom hooks are any hooks that need to be included in your component. This can include things like `useEffect`, `useState`, or any other hooks from the library you are wrapping.
 
 - Simple hooks can be added as strings.
 - More complex hooks that need to have special import or be written in a specific order can be added as `rx.Var` with a `VarData` object to specify the position of the hook.
-    - The `imports` attribute of the `VarData` object can be used to specify any imports that need to be included in the component.
-    - The `position` attribute of the `VarData` object can be set to `Hooks.HookPosition.PRE_TRIGGER` or `Hooks.HookPosition.POST_TRIGGER` to specify the position of the hook in the component.
+  - The `imports` attribute of the `VarData` object can be used to specify any imports that need to be included in the component.
+  - The `position` attribute of the `VarData` object can be set to `Hooks.HookPosition.PRE_TRIGGER` or `Hooks.HookPosition.POST_TRIGGER` to specify the position of the hook in the component.
 
 ```md alert info
-# The `position` attribute is only used for hooks that need to be written in a specific order. 
+# The `position` attribute is only used for hooks that need to be written in a specific order.
+
 - If an event handler need to refer to a variable defined in a hook, the hook should be written before the event handler.
 - If a hook need to refer to the memoized event handler by name, the hook should be written after the event handler.
 ```

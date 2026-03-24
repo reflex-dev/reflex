@@ -89,7 +89,7 @@ class AdvancedSelectionState(rx.State):
     def handle_selection(self, ranges: list[dict], started: bool, finished: bool):
         if finished and ranges:
             total_cells = sum(
-                (r.get("endRow", 0) - r.get("startRow", 0) + 1) * 
+                (r.get("endRow", 0) - r.get("startRow", 0) + 1) *
                 len(r.get("columns", []))
                 for r in ranges
             )
@@ -164,10 +164,10 @@ class FillHandleState(rx.State):
         field = data.get("colId", "")
         new_value = data.get("newValue", "")
         old_value = data.get("oldValue", "")
-        
+
         change_msg = f"Row {row_index + 1}, {field}: '{old_value}' → '{new_value}'"
         self.change_log = [change_msg] + self.change_log[:9]  # Keep last 10 changes
-        
+
         # Update the data
         if 0 <= row_index < len(self.data):
             self.data[row_index][field] = new_value

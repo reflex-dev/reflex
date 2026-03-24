@@ -1,6 +1,6 @@
 ---
 components:
-    - rx.markdown
+  - rx.markdown
 ---
 
 ```python exec
@@ -69,6 +69,7 @@ rx.markdown(
 Plugins can be used to extend the functionality of the markdown renderer.
 
 By default Reflex uses the following plugins:
+
 - `remark-gfm` for Github Flavored Markdown support (`use_gfm`).
 - `remark-math` and `rehype-katex` for math equation support (`use_math`, `use_katex`).
 - `rehype-unwrap-images` to remove paragraph tags around images (`use_unwrap_images`).

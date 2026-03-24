@@ -207,6 +207,7 @@ def var_value_example():
 ```
 
 In this example:
+
 1. We have two separate states: `CounterState` which manages a counter, and `DisplayState` which displays information
 2. When you click "Increment", it calls `CounterState.increment()` to increase the counter value
 3. When you click "Show Count", it calls `DisplayState.show_count()` which uses `get_var_value` to retrieve just the count value from `CounterState` without loading the entire state

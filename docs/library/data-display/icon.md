@@ -1,6 +1,6 @@
 ---
 components:
-    - rx.lucide.Icon
+  - rx.lucide.Icon
 ---
 
 ```python exec
@@ -11,7 +11,6 @@ from pcweb.components.icons.lucide.lucide import lucide_icons
 # Icon
 
 The Icon component is used to display an icon from a library of icons. This implementation is based on the [Lucide Icons](https://lucide.dev/icons) where you can find a list of all available icons.
-
 
 ## Icons List
 
@@ -69,7 +68,7 @@ Reflex also supports using dynamic values directly as the `tag` prop in `rx.icon
 ```python exec
 class DynamicIconState(rx.State):
     current_icon: str = "heart"
-    
+
     def change_icon(self):
         icons = ["heart", "star", "bell", "calendar", "settings"]
         import random
@@ -107,7 +106,6 @@ rx.flex(
     gap="2"
 )
 ```
-
 
 ### Size
 
@@ -175,7 +173,6 @@ rx.flex(
     gap="2",
 )
 ```
-
 
 ## Final Example
 

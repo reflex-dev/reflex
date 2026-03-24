@@ -300,32 +300,35 @@ def app_settings_example():
 
 Here's a comparison of the different client-side storage options in Reflex:
 
-| Feature | rx.Cookie | rx.LocalStorage | rx.SessionStorage |
-|---------|-----------|----------------|------------------|
-| Persistence | Until cookie expires | Until explicitly deleted | Until browser/tab is closed |
-| Storage Limit | ~4KB | ~5MB | ~5MB |
-| Sent with Requests | Yes | No | No |
-| Accessibility | Server & Client | Client Only | Client Only |
-| Expiration | Configurable | Never | End of session |
-| Scope | Configurable (domain, path) | Origin (domain) | Tab/Window |
-| Syncing Across Tabs | No | Yes (with sync=True) | No |
-| Use Case | Authentication, Server-side state | User preferences, App state | Temporary session data |
+| Feature             | rx.Cookie                         | rx.LocalStorage             | rx.SessionStorage           |
+| ------------------- | --------------------------------- | --------------------------- | --------------------------- |
+| Persistence         | Until cookie expires              | Until explicitly deleted    | Until browser/tab is closed |
+| Storage Limit       | ~4KB                              | ~5MB                        | ~5MB                        |
+| Sent with Requests  | Yes                               | No                          | No                          |
+| Accessibility       | Server & Client                   | Client Only                 | Client Only                 |
+| Expiration          | Configurable                      | Never                       | End of session              |
+| Scope               | Configurable (domain, path)       | Origin (domain)             | Tab/Window                  |
+| Syncing Across Tabs | No                                | Yes (with sync=True)        | No                          |
+| Use Case            | Authentication, Server-side state | User preferences, App state | Temporary session data      |
 
 # When to Use Each Storage Type
 
 ## Use rx.Cookie When:
+
 - You need the data to be accessible on the server side (cookies are sent with HTTP requests)
 - You're handling user authentication
 - You need fine-grained control over expiration and scope
 - You need to limit the data to specific paths in your app
 
 ## Use rx.LocalStorage When:
+
 - You need to store larger amounts of data (up to ~5MB)
 - You want the data to persist indefinitely (until explicitly deleted)
 - You need to share data between different tabs/windows of your app
 - You want to store user preferences that should be remembered across browser sessions
 
 ## Use rx.SessionStorage When:
+
 - You need temporary data that should be cleared when the browser/tab is closed
 - You want to isolate data to a specific tab/window
 - You're storing sensitive information that shouldn't persist after the session ends

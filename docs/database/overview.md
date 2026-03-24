@@ -3,7 +3,7 @@
 Reflex uses [sqlmodel](https://sqlmodel.tiangolo.com) to provide a built-in ORM wrapping SQLAlchemy.
 
 The examples on this page refer specifically to how Reflex uses various tools to
-expose an integrated database interface.  Only basic use cases will be covered
+expose an integrated database interface. Only basic use cases will be covered
 below, but you can refer to the
 [sqlmodel tutorial](https://sqlmodel.tiangolo.com/tutorial/select/)
 for more examples and information, just replace `SQLModel` with `rx.Model` and
@@ -46,7 +46,7 @@ that it is a table.
 class User(rx.Model, table=True):
     username: str
     email: str
-    password: str   
+    password: str
 ```
 
 ## Migrations
@@ -60,7 +60,7 @@ to initialize alembic and create a migration script with the current schema.
 After making changes to the schema, use
 `reflex db makemigrations --message 'something changed'`
 to generate a script in the `alembic/versions` directory that will update the
-database schema.  It is recommended that generated scripts be inspected before applying them.
+database schema. It is recommended that generated scripts be inspected before applying them.
 
 Bear in mind that your newest models will not be detected by the `reflex db makemigrations`
 command unless imported and used somewhere within the application.

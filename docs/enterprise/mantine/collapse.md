@@ -29,7 +29,7 @@ def collapse_example():
             description="Click the button to toggle the collapse.",
         ),
         rx.button(
-            "Toggle Collapse", 
+            "Toggle Collapse",
             on_click=lambda: CollapseState.toggle_collapse,
         ),
     )

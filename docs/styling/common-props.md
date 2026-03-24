@@ -167,7 +167,7 @@ props = {
         "values": ["auto", "1", "5", "200"],
         "link": "https://developer.mozilla.org/en-US/docs/Web/CSS/z-index",
     },
-    
+
 
 }
 
@@ -184,18 +184,18 @@ def show_props(key, props_dict):
                 ),
                 href=prop_details["link"],
                 is_external=True,
-            ), 
+            ),
             justify="start",),
         rx.table.cell(prop_details["description"], justify="start", style=cell_style),
         rx.table.cell(rx.hstack(*[rx.code(value, style=get_code_style("violet")) for value in prop_details["values"]], flex_wrap="wrap"), justify="start",),
         justify="center",
         align="center",
-        
+
     )
 
 ```
 
-Any [CSS](https://developer.mozilla.org/en-US/docs/Web/CSS) prop can be used in a component in Reflex. This is a short list of the most commonly used props. To see all CSS props that can be used check out this [documentation](https://developer.mozilla.org/en-US/docs/Web/CSS). 
+Any [CSS](https://developer.mozilla.org/en-US/docs/Web/CSS) prop can be used in a component in Reflex. This is a short list of the most commonly used props. To see all CSS props that can be used check out this [documentation](https://developer.mozilla.org/en-US/docs/Web/CSS).
 
 Hyphens in CSS property names may be replaced by underscores to use as valid python identifiers, i.e. the CSS prop `z-index` would be used as `z_index` in Reflex.
 
@@ -209,7 +209,7 @@ rx.table.root(
             rx.table.column_header_cell(
                 "Description",
                 justify="center",
-                
+
             ),
             rx.table.column_header_cell(
                 "Potential Values",

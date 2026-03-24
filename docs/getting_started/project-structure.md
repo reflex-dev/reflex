@@ -48,7 +48,9 @@ For example, if you save an image to `assets/image.png` you can display it from 
 ```python
 rx.image(src=f"{REFLEX_ASSETS_CDN}other/image.png")
 ```
+
 j
+
 ## Main Project
 
 Initializing your project creates a directory with the same name as your app. This is where you will write your app's logic.

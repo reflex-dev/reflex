@@ -1,8 +1,8 @@
 ---
 components:
-    - rx.list.item
-    - rx.list.ordered
-    - rx.list.unordered
+  - rx.list.item
+  - rx.list.ordered
+  - rx.list.unordered
 ---
 
 ```python exec
@@ -23,7 +23,7 @@ rx.list.unordered(
 )
 ```
 
- `list.ordered` has numbers to display the list items.
+`list.ordered` has numbers to display the list items.
 
 ```python demo
 rx.list.ordered(

@@ -25,7 +25,7 @@ def enterprise_component_grid():
             ]
         },
         {
-            "title": "AG Chart", 
+            "title": "AG Chart",
             "description": "Interactive charts and data visualization",
             "link": enterprise.ag_chart.path,
             "components": [
@@ -34,7 +34,7 @@ def enterprise_component_grid():
         },
         {
             "title": "Interactive Components",
-            "description": "Drag-and-drop and mapping functionality", 
+            "description": "Drag-and-drop and mapping functionality",
             "link": enterprise.drag_and_drop.path,
             "components": [
                 ("Drag and Drop", enterprise.drag_and_drop.path),
@@ -64,7 +64,7 @@ def enterprise_component_grid():
             ]
         }
     ]
-    
+
     cards = []
     for section in sections:
         cards.append(
@@ -97,7 +97,7 @@ def enterprise_component_grid():
                 class_name="flex flex-col border border-slate-5 rounded-xl bg-slate-2 shadow-large overflow-hidden",
             )
         )
-    
+
     return rx.box(
         *cards,
         class_name="grid grid-cols-1 lg:grid-cols-2 gap-6",

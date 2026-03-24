@@ -85,12 +85,12 @@ inefficient when accessing many linked objects for serialization purposes.
 There are several alternative loading mechanisms available that can be set on
 the relationship object or when performing the query.
 
-* "joined" or `joinload` - generates a single query to load all related objects
+- "joined" or `joinload` - generates a single query to load all related objects
   at once.
-* "subquery" or `subqueryload` - generates a single query to load all related
+- "subquery" or `subqueryload` - generates a single query to load all related
   objects at once, but uses a subquery to do the join, instead of a join in the
   main query.
-* "selectin" or `selectinload` - emits a second (or more) SELECT statement which
+- "selectin" or `selectinload` - emits a second (or more) SELECT statement which
   assembles the primary key identifiers of the parent objects into an IN clause,
   so that all members of related collections / scalar references are loaded at
   once by primary key

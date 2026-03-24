@@ -110,12 +110,12 @@ class PyplotState(rx.State):
     def set_num_points(self, num_points: list[int | float]):
         self.num_points = int(num_points[0])
         yield PyplotState.randomize()
-    
+
     @rx.var
     def fig_light(self) -> Figure:
         fig = create_plot("light", self.plot_data, self.scale)
         return fig
-    
+
     @rx.var
     def fig_dark(self) -> Figure:
         fig = create_plot("dark", self.plot_data, self.scale)

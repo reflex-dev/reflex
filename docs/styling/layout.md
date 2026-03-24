@@ -16,7 +16,6 @@ Layout components such as `rx.flex`, `rx.container`, `rx.box`, etc. are used to 
 
 **When to use:** Use `rx.box` when you need to apply specific styles or constraints to a part of your interface.
 
-
 ```python demo
 rx.box(
     rx.box(
@@ -90,7 +89,6 @@ The `rx.flex` component is used to create a flexible box layout, inspired by [CS
 
 **When to use:** Use `rx.flex` when you need a responsive layout that adjusts the size and position of child components dynamically.
 
-
 ```python demo
 rx.flex(
     rx.card("Card 1"),
@@ -100,7 +98,6 @@ rx.flex(
     width="100%",
 )
 ```
-
 
 ## Grid
 

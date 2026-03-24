@@ -1,9 +1,9 @@
 ---
 components:
-    - rx.progress
+  - rx.progress
 
 Progress: |
-    lambda **props: rx.progress(value=50, **props)
+  lambda **props: rx.progress(value=50, **props)
 ---
 
 # Progress
@@ -13,6 +13,7 @@ Progress is used to display the progress status for a task that takes a long tim
 ```python exec
 import reflex as rx
 ```
+
 ## Basic Example
 
 `rx.progress` expects the `value` prop to set the progress value.
@@ -47,7 +48,7 @@ class ProgressState(rx.State):
 
 def live_progress():
     return rx.hstack(
-        rx.progress(value=ProgressState.value), 
+        rx.progress(value=ProgressState.value),
         rx.button("Start", on_click=ProgressState.start_progress),
         width="50%"
     )

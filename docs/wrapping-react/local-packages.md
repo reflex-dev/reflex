@@ -33,7 +33,6 @@ class Hello(rx.Component):
         )
 ```
 
-
 # Local Components
 
 You can also wrap components that you have written yourself. For local components (when the code source is directly in the project), we recommend putting it beside the files that is wrapping it.
@@ -42,15 +41,15 @@ If there is a file `hello.jsx` in the same directory as the component with this 
 
 ```javascript
 // /path/to/components/hello.jsx
-import React from 'react';
+import React from "react";
 
-export function Hello({name, onGreet}) {
+export function Hello({ name, onGreet }) {
   return (
     <div>
       <h1>Hello, {name}!</h1>
       <button onClick={() => onGreet(name)}>Greet</button>
     </div>
-  )
+  );
 }
 ```
 
@@ -92,11 +91,11 @@ When wrapping local components, keep the following in mind:
 Local components are useful when shimming small pieces of functionality that are
 simpler or more performant when implemented directly in Javascript, such as:
 
-* Spammy events: keys, touch, mouse, scroll -- these are often better processed on the client side.
-* Using canvas, graphics or WebGPU
-* Working with other Web APIs like storage, screen capture, audio/midi
-* Integrating with complex third-party libraries
-  * For application-specific use, it may be easier to wrap a local component that
+- Spammy events: keys, touch, mouse, scroll -- these are often better processed on the client side.
+- Using canvas, graphics or WebGPU
+- Working with other Web APIs like storage, screen capture, audio/midi
+- Integrating with complex third-party libraries
+  - For application-specific use, it may be easier to wrap a local component that
     provides the needed subset of the library's functionality in a simpler API for use in Reflex.
 
 # Local Packages
@@ -108,13 +107,13 @@ or URL after an `@` following the package name.
 Any local paths are relative to the `.web` folder, so you can use `../` prefix
 to reference the Reflex project root.
 
-Some examples of valid specifiers for a package called 
+Some examples of valid specifiers for a package called
 [`@masenf/hello-react`](https://github.com/masenf/hello-react) are:
 
-* GitHub: `@masenf/hello-react@github:masenf/hello-react`
-* URL: `@masenf/hello-react@https://github.com/masenf/hello-react/archive/refs/heads/main.tar.gz`
-* Local Archive: `@masenf/hello-react@../hello-react.tgz`
-* Local Directory: `@masenf/hello-react@../hello-react`
+- GitHub: `@masenf/hello-react@github:masenf/hello-react`
+- URL: `@masenf/hello-react@https://github.com/masenf/hello-react/archive/refs/heads/main.tar.gz`
+- Local Archive: `@masenf/hello-react@../hello-react.tgz`
+- Local Directory: `@masenf/hello-react@../hello-react`
 
 It is important that the package name matches the name in `package.json` so
 Reflex can generate the correct import statement in the generated javascript
@@ -142,11 +141,11 @@ for use.
 
 Some important notes regarding this approach:
 
-* The repo or archive must contain a `package.json` file.
-* `prepare` or `build` scripts will NOT be executed. The distribution archive,
+- The repo or archive must contain a `package.json` file.
+- `prepare` or `build` scripts will NOT be executed. The distribution archive,
   directory, or repo must already contain the built javascript files (this is common).
 
-```md alert
+````md alert
 # Ensure CSS files are exported in `package.json`
 
 In addition to exporting the module containing the component, any CSS files
@@ -165,7 +164,8 @@ intended to be imported by the wrapped component must also be listed in the
       "import": "./dist/style.css",
       "require": "./dist/style.css"
     }
-  },
+  }
   // ...
 }
 ```
+````

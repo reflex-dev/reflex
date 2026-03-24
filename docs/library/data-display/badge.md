@@ -1,10 +1,11 @@
 ---
 components:
-    - rx.badge
+  - rx.badge
 
 Badge: |
-    lambda **props: rx.badge("Basic Badge", **props)
+  lambda **props: rx.badge("Basic Badge", **props)
 ---
+
 # Badge
 
 ```python exec

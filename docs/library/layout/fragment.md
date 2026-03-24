@@ -1,6 +1,6 @@
 ---
 components:
-    - rx.fragment
+  - rx.fragment
 ---
 
 # Fragment
@@ -16,11 +16,10 @@ Refer to the React docs at [React/Fragment]({constants.FRAGMENT_COMPONENT_INFO_U
 
 ```python demo
 rx.fragment(
-    rx.text("Component1"), 
+    rx.text("Component1"),
     rx.text("Component2")
 )
 ```
-
 
 ```md video https://youtube.com/embed/ITOZkzjtjUA?start=3196&end=3340
 # Video: Fragment

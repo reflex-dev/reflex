@@ -10,11 +10,9 @@ default_url = "http://localhost:3000"
 
 Reflex requires Python 3.10+.
 
-
 ```md video https://youtube.com/embed/ITOZkzjtjUA?start=758&end=1206
 # Video: Installation
 ```
-
 
 ## Virtual Environment
 
@@ -22,16 +20,15 @@ We **highly recommend** creating a virtual environment for your project.
 
 [uv]({constants.UV_URL}) is the recommended modern option. [venv]({constants.VENV_URL}), [conda]({constants.CONDA_URL}) and [poetry]({constants.POETRY_URL}) are some alternatives.
 
-
 # Install Reflex on your system
 
 ---md tabs
 
 --tab macOS/Linux
+
 ## Install on macOS/Linux
 
 We will go with [uv]({constants.UV_URL}) here.
-
 
 ### Prerequisites
 
@@ -46,11 +43,10 @@ After installation, restart your terminal or run `source ~/.bashrc` (or `source 
 Alternatively, install via [Homebrew, PyPI, or other methods](https://docs.astral.sh/uv/getting-started/installation/).
 
 **macOS (Apple Silicon) users:** Install [Rosetta 2](https://support.apple.com/en-us/HT211861). Run this command:
-    
+
 `/usr/sbin/softwareupdate --install-rosetta --agree-to-license`
 
-
-### Create the project directory 
+### Create the project directory
 
 Replace `{app_name}` with your project name. Switch to the new directory.
 
@@ -77,9 +73,9 @@ uv add reflex
 uv run reflex init
 ```
 
-
 --
 --tab Windows
+
 ## Install on Windows
 
 For Windows users, we recommend using [Windows Subsystem for Linux (WSL)](https://learn.microsoft.com/en-us/windows/wsl/about) for optimal performance.
@@ -102,7 +98,7 @@ After installation, restart your terminal (PowerShell or Command Prompt).
 
 Alternatively, install via [WinGet, Scoop, or other methods](https://docs.astral.sh/uv/getting-started/installation/).
 
-### Create the project directory 
+### Create the project directory
 
 Replace `{app_name}` with your project name. Switch to the new directory.
 
@@ -131,12 +127,13 @@ uv run reflex init
 
 ```md alert warning
 # Error `Install Failed - You are missing a DLL required to run bun.exe` Windows
+
 Bun requires runtime components of Visual C++ libraries to run on Windows. This issue is fixed by installing [Microsoft Visual C++ 2015 Redistributable](https://www.microsoft.com/en-us/download/details.aspx?id=53840).
 ```
+
 --
 
 ---
-
 
 Running `uv run reflex init` will return the option to start with a blank Reflex app, premade templates built by the Reflex team, or to try our [AI builder]({constants.REFLEX_BUILD_URL}).
 
@@ -147,11 +144,10 @@ Get started with a template:
 (0) A blank Reflex app.
 (1) Premade templates built by the Reflex team.
 (2) Try our AI builder.
-Which template would you like to use? (0): 
+Which template would you like to use? (0):
 ```
 
-From here select an option. 
-
+From here select an option.
 
 ## Run the App
 
@@ -169,4 +165,4 @@ Reflex prints logs to the terminal. To increase log verbosity to help with debug
 uv run reflex run --loglevel debug
 ```
 
-Reflex will *hot reload* any code changes in real time when running in development mode. Your code edits will show up on [http://localhost:3000](http://localhost:3000) automatically.
+Reflex will _hot reload_ any code changes in real time when running in development mode. Your code edits will show up on [http://localhost:3000](http://localhost:3000) automatically.

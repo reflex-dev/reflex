@@ -22,7 +22,7 @@ When you wrap a component function with `@rx.memo`, the component will only re-r
 # Define a state class to track count
 class DemoState(rx.State):
     count: int = 0
-    
+
     @rx.event
     def increment(self):
         self.count += 1
@@ -61,7 +61,7 @@ You can also use `rx.memo` with components that have event handlers:
 # Define a state class to track clicks
 class ButtonState(rx.State):
     clicks: int = 0
-    
+
     @rx.event
     def increment(self):
         self.clicks += 1
@@ -76,7 +76,7 @@ def index():
     return rx.vstack(
         rx.text("Clicks: 0"),  # This will update with state.clicks
         my_button(
-            text="Click me", 
+            text="Click me",
             on_click=ButtonState.increment
         ),
         spacing="4",
@@ -92,11 +92,11 @@ When used with state variables, memoized components will only re-render when the
 class AppState(rx.State):
     name: str = "World"
     count: int = 0
-    
+
     @rx.event
     def increment(self):
         self.count += 1
-        
+
     @rx.event
     def set_name(self, name: str):
         self.name = name
@@ -113,7 +113,7 @@ def index():
         rx.text("Count: 0"),  # Will display the count
         rx.button("Increment Count", on_click=AppState.increment),
         rx.input(
-            placeholder="Enter your name", 
+            placeholder="Enter your name",
             on_change=AppState.set_name,
             value="World",  # Will be bound to AppState.name
         ),
@@ -129,7 +129,7 @@ You can also pass arguments to event handlers in memoized components:
 # Define a state class to track messages
 class MessageState(rx.State):
     message: str = ""
-    
+
     @rx.event
     def set_message(self, text: str):
         self.message = text
@@ -156,10 +156,12 @@ def index():
 ## Performance Considerations
 
 Use `rx.memo` for:
+
 - Components with expensive rendering logic
 - Components that render the same result given the same props
 - Components that re-render too often due to parent component updates
 
 Avoid using `rx.memo` for:
+
 - Simple components where the memoization overhead might exceed the performance gain
 - Components that almost always receive different props on re-render

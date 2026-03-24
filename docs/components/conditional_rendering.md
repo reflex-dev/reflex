@@ -68,11 +68,9 @@ def cond_prop():
     )
 ```
 
-
 ## Var Operations
 
 You can use [var operations]({docs.vars.var_operations.path}) with the `cond` component for more complex conditions. See the full [cond reference]({library.dynamic_rendering.cond.path}) for more details.
-
 
 ## Multiple Conditional Statements
 

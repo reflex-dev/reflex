@@ -2,24 +2,24 @@
 import reflex as rx
 from reflex_image_zoom import image_zoom
 from pcweb.pages.pricing.calculator import compute_table_base
-from pcweb.pages.docs import hosting 
+from pcweb.pages.docs import hosting
 ```
 
-## Overview 
+## Overview
 
-Billing for Reflex Cloud is monthly per project. Project owners and admins are able to view and manage the billing page. 
+Billing for Reflex Cloud is monthly per project. Project owners and admins are able to view and manage the billing page.
 
-The billing for a project is comprised of two parts - number of `seats` and `compute`. 
+The billing for a project is comprised of two parts - number of `seats` and `compute`.
 
 ## Seats
 
-Projects on a paid plan can invite collaborators to join their project. 
+Projects on a paid plan can invite collaborators to join their project.
 
-Each additional collaborator is considered a `seat` and is charged on a flat monthly rate. Project owners and admins can manage permissions and roles for each seat in the settings tab on the project page. 
+Each additional collaborator is considered a `seat` and is charged on a flat monthly rate. Project owners and admins can manage permissions and roles for each seat in the settings tab on the project page.
 
 ## Compute
 
-Reflex Cloud is billed on a per second basis so you only pay for when your app is being used by your end users. When your app is idle, you are not charged. 
+Reflex Cloud is billed on a per second basis so you only pay for when your app is being used by your end users. When your app is idle, you are not charged.
 
 For more information on compute pricing, please see the [compute]({hosting.compute.path}) page.
 

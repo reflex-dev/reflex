@@ -43,34 +43,34 @@ about the current page, session, or state.
 
 The `self.router` attribute has several sub-attributes that provide various information:
 
-* `router.page`: data about the current page and route
-  * `host`: The hostname and port serving the current page (frontend).
-  * `path`: The path of the current page (for dynamic pages, this will contain the slug)
-  * `raw_path`: The path of the page displayed in the browser (including params and dynamic values)
-  * `full_path`: `path` with `host` prefixed
-  * `full_raw_path`: `raw_path` with `host` prefixed
-  * `params`: Dictionary of query params associated with the request
+- `router.page`: data about the current page and route
+  - `host`: The hostname and port serving the current page (frontend).
+  - `path`: The path of the current page (for dynamic pages, this will contain the slug)
+  - `raw_path`: The path of the page displayed in the browser (including params and dynamic values)
+  - `full_path`: `path` with `host` prefixed
+  - `full_raw_path`: `raw_path` with `host` prefixed
+  - `params`: Dictionary of query params associated with the request
 
-* `router.session`: data about the current session
-  * `client_token`: UUID associated with the current tab's token. Each tab has a unique token.
-  * `session_id`: The ID associated with the client's websocket connection. Each tab has a unique session ID.
-  * `client_ip`: The IP address of the client. Many users may share the same IP address.
+- `router.session`: data about the current session
+  - `client_token`: UUID associated with the current tab's token. Each tab has a unique token.
+  - `session_id`: The ID associated with the client's websocket connection. Each tab has a unique session ID.
+  - `client_ip`: The IP address of the client. Many users may share the same IP address.
 
-* `router.headers`: headers associated with the websocket connection. These values can only change when the websocket is re-established (for example, during page refresh).
-  * `host`: The hostname and port serving the websocket (backend).
-  * `origin`: The origin of the request.
-  * `upgrade`: The upgrade header for websocket connections.
-  * `connection`: The connection header.
-  * `cookie`: The cookie header.
-  * `pragma`: The pragma header.
-  * `cache_control`: The cache control header.
-  * `user_agent`: The user agent string of the client.
-  * `sec_websocket_version`: The websocket version.
-  * `sec_websocket_key`: The websocket key.
-  * `sec_websocket_extensions`: The websocket extensions.
-  * `accept_encoding`: The accepted encodings.
-  * `accept_language`: The accepted languages.
-  * `raw_headers`: A mapping of all HTTP headers as a frozen dictionary. This provides access to any header that was sent with the request, not just the common ones listed above.
+- `router.headers`: headers associated with the websocket connection. These values can only change when the websocket is re-established (for example, during page refresh).
+  - `host`: The hostname and port serving the websocket (backend).
+  - `origin`: The origin of the request.
+  - `upgrade`: The upgrade header for websocket connections.
+  - `connection`: The connection header.
+  - `cookie`: The cookie header.
+  - `pragma`: The pragma header.
+  - `cache_control`: The cache control header.
+  - `user_agent`: The user agent string of the client.
+  - `sec_websocket_version`: The websocket version.
+  - `sec_websocket_key`: The websocket key.
+  - `sec_websocket_extensions`: The websocket extensions.
+  - `accept_encoding`: The accepted encodings.
+  - `accept_language`: The accepted languages.
+  - `raw_headers`: A mapping of all HTTP headers as a frozen dictionary. This provides access to any header that was sent with the request, not just the common ones listed above.
 
 ### Example Values on this Page
 

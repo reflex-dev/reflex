@@ -1,6 +1,6 @@
 ---
 components:
-    - rx.center
+  - rx.center
 ---
 
 ```python exec

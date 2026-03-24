@@ -5,10 +5,9 @@ from pcweb.pages import docs
 
 # Tutorial: Data Dashboard
 
-During this tutorial you will build a small data dashboard, where you can input data and it will be rendered in table and a graph. This tutorial does not assume any existing Reflex knowledge, but we do recommend checking out the quick [Basics Guide]({docs.getting_started.basics.path}) first. 
+During this tutorial you will build a small data dashboard, where you can input data and it will be rendered in table and a graph. This tutorial does not assume any existing Reflex knowledge, but we do recommend checking out the quick [Basics Guide]({docs.getting_started.basics.path}) first.
 
 The techniques you’ll learn in the tutorial are fundamental to building any Reflex app, and fully understanding it will give you a deep understanding of Reflex.
-
 
 This tutorial is divided into several sections:
 
@@ -24,7 +23,6 @@ This tutorial is divided into several sections:
 In this tutorial, you are building an interactive data dashboard with Reflex.
 
 You can see what the finished app and code will look like here:
-
 
 ```python exec
 from collections import Counter
@@ -51,12 +49,12 @@ class State5(rx.State):
             f"User {form_data['name']} has been added.",
             position="bottom-right",
         )
-    
+
     def transform_data(self):
         """Transform user gender group data into a format suitable for visualization in graphs."""
         # Count users of each gender group
         gender_counts = Counter(user.gender for user in self.users)
-        
+
         # Transform into list of dict so it can be used in the graph
         self.users_for_graph = [
             {
@@ -65,7 +63,7 @@ class State5(rx.State):
             }
             for gender_group, count in gender_counts.items()
         ]
-        
+
 
 def show_user5(user: User):
     """Show a user in a table row."""
@@ -199,12 +197,12 @@ class State(rx.State):
     def add_user(self, form_data: dict):
         self.users.append(User(**form_data))
         self.transform_data()
-    
+
     def transform_data(self):
         """Transform user gender group data into a format suitable for visualization in graphs."""
         # Count users of each gender group
         gender_counts = Counter(user.gender for user in self.users)
-        
+
         # Transform into list of dict so it can be used in the graph
         self.users_for_graph = [
             {
@@ -213,7 +211,7 @@ class State(rx.State):
             }
             for gender_group, count in gender_counts.items()
         ]
-        
+
 
 def show_user(user: User):
     """Show a user in a table row."""
@@ -340,13 +338,11 @@ app.add_page(
 
 Don't worry if you don't understand the code above, in this tutorial we are going to walk you through the whole thing step by step.
 
-
 ## Setup for the tutorial
 
 Check out the [installation docs]({docs.getting_started.installation.path}) to get Reflex set up on your machine. Follow these to create a folder called `dashboard_tutorial`, which you will `cd` into and `pip install reflex`.
 
 We will choose template `0` when we run `reflex init` to get the blank template. Finally run `reflex run` to start the app and confirm everything is set up correctly.
-
 
 ## Overview
 
@@ -360,7 +356,7 @@ There is also an `assets` folder where static files such as images and styleshee
 
 Most importantly there is a folder also called `dashboard_tutorial` which contains all the code for your app. Inside of this folder there is a file named `dashboard_tutorial.py`. To begin this tutorial we will delete all the code in this file so that we can start from scratch and explain every step as we go.
 
-The first thing we need to do is import `reflex`. Once we have done this we can create a component, which is a reusable piece of user interface code. Components are used to render, manage, and update the UI elements in your application. 
+The first thing we need to do is import `reflex`. Once we have done this we can create a component, which is a reusable piece of user interface code. Components are used to render, manage, and update the UI elements in your application.
 
 Let's look at the example below. Here we have a function called `index` that returns a `text` component (an in-built Reflex UI component) that displays the text "Hello World!".
 
@@ -380,7 +376,7 @@ app.add_page(index)
 This code will render a page with the text "Hello World!" when you run your app like below:
 
 ```python eval
-rx.text("Hello World!", 
+rx.text("Hello World!",
     border_width="2px",
     border_radius="10px",
     padding="1em"
@@ -447,7 +443,7 @@ def index() -> rx.Component:
     )
 ```
 
-Components in Reflex have `props`, which can be used to customize the component and are passed in as keyword arguments to the component function. 
+Components in Reflex have `props`, which can be used to customize the component and are passed in as keyword arguments to the component function.
 
 The `rx.table.root` component has for example the `variant` and `size` props, which customize the table as seen below.
 
@@ -515,7 +511,6 @@ This is where `State` comes in. `State` is a Python class that stores variables 
 
 To define a state class, subclass `rx.State` and define fields that store the state of your app. The state variables (vars) should have a type annotation, and can be initialized with a default value. Check out the [basics]({docs.getting_started.basics.path}) section for a simple example of how state works.
 
-
 In the example below we define a `State` class called `State` that has a variable called `users` that is a list of lists of strings. Each list in the `users` list represents a user and contains their name, email and gender.
 
 ```python
@@ -530,7 +525,8 @@ To iterate over a state var that is a list, we use the [`rx.foreach`]({docs.comp
 
 ```md alert info
 # Why can we not just splat this in a `for` loop
-You might be wondering why a `foreach` is even needed to render this state variable and why we cannot just splat a `for` loop. Check out this [documentation]({docs.getting_started.basics.path}#compile-time-vs.-runtime-(important)) to learn why.
+
+You might be wondering why a `foreach` is even needed to render this state variable and why we cannot just splat a `for` loop. Check out this [documentation](<{docs.getting_started.basics.path}#compile-time-vs.-runtime-(important)>) to learn why.
 ```
 
 Here the render function is `show_user` which takes in a single user and returns a `table.row` component that displays the users name, email and gender.
@@ -573,7 +569,6 @@ rx.table.root(
 )
 ```
 
-
 ```python
 class State(rx.State):
     users: list[list[str]] = [
@@ -612,13 +607,13 @@ As you can see the output above looks the same as before, except now the data is
 
 ### Using a proper class structure for our data
 
-So far our data has been defined in a list of lists, where the data is accessed by index i.e. `user[0]`, `user[1]`. This is not very maintainable as our app gets bigger. 
+So far our data has been defined in a list of lists, where the data is accessed by index i.e. `user[0]`, `user[1]`. This is not very maintainable as our app gets bigger.
 
 A better way to structure our data in Reflex is to use a class to represent a user. This way we can access the data using attributes i.e. `user.name`, `user.email`.
 
 In Reflex when we create these classes to showcase our data, the class must inherit from `rx.Base`.
 
-`rx.Base` is also necessary if we want to have a state var that is an iterable with different types. For example if we wanted to have `age` as an `int` we would have to use `rx.base` as we could not do this with a state var defined as `list[list[str]]`. 
+`rx.Base` is also necessary if we want to have a state var that is an iterable with different types. For example if we wanted to have `age` as an `int` we would have to use `rx.base` as we could not do this with a state var defined as `list[list[str]]`.
 
 The `show_user` render function is also updated to access the data by named attributes, instead of indexing.
 
@@ -668,7 +663,6 @@ rx.table.root(
 )
 ```
 
-
 ```python
 class User(rx.Base):
     """The user model."""
@@ -711,11 +705,9 @@ def index() -> rx.Component:
 )
 ```
 
-
 Next let's add a form to the app so we can add new users to the table.
 
-
-## Using a Form to Add Data 
+## Using a Form to Add Data
 
 We build a form using `rx.form`, which takes several components such as `rx.input` and `rx.select`, which represent the form fields that allow you to add information to submit with the form. Check out the [form]({docs.library.forms.form.path}) docs for more information on form components.
 
@@ -742,7 +734,6 @@ rx.form(
 
 This form is all very compact as you can see from the example, so we need to add some styling to make it look better. We can do this by adding a `vstack` component around the form fields. The `vstack` component stacks the form fields vertically. Check out the [layout]({docs.styling.layout.path}) docs for more information on how to layout your app.
 
-
 ```python demo
 rx.form(
     rx.vstack(
@@ -762,18 +753,17 @@ rx.form(
 )
 ```
 
-Now you have probably realised that we have all the form fields, but we have no way to submit the form. We can add a submit button to the form by adding a `rx.button` component to the `vstack` component. The `rx.button` component takes in the text that is displayed on the button and the `type` prop which is the type of button. The `type` prop is set to `submit` so that the form is submitted when the button is clicked. 
+Now you have probably realised that we have all the form fields, but we have no way to submit the form. We can add a submit button to the form by adding a `rx.button` component to the `vstack` component. The `rx.button` component takes in the text that is displayed on the button and the `type` prop which is the type of button. The `type` prop is set to `submit` so that the form is submitted when the button is clicked.
 
 In addition to this we need a way to update the `users` state variable when the form is submitted. All state changes are handled through functions in the state class, called [event handlers]({docs.events.events_overview.path}).
 
 Components have special props called event triggers, such as `on_submit`, that can be used to make components interactive. Event triggers connect components to event handlers, which update the state. Different event triggers expect the event handler that you hook them up to, to take in different arguments (and some do not take in any arguments).
 
-The `on_submit` event trigger of `rx.form` is hooked up to the `add_user` event handler that is defined in the `State` class. This event trigger expects to pass a `dict`, containing the form data, to the event handler that it is hooked up to. The `add_user` event handler takes in the form data as a dictionary and appends it to the `users` state variable. 
-
+The `on_submit` event trigger of `rx.form` is hooked up to the `add_user` event handler that is defined in the `State` class. This event trigger expects to pass a `dict`, containing the form data, to the event handler that it is hooked up to. The `add_user` event handler takes in the form data as a dictionary and appends it to the `users` state variable.
 
 ```python
 class State(rx.State):
-    
+
     ...
 
     def add_user(self, form_data: dict):
@@ -806,7 +796,6 @@ Finally we must add the new `form()` component we have defined to the `index()` 
 
 Below is the full code for the app so far. If you try this form out you will see that you can add new users to the table by filling out the form and clicking the submit button. The form data will also appear as a toast (a small window in the corner of the page) on the screen when submitted.
 
-
 ```python exec
 class State3(rx.State):
     users: list[User] = [
@@ -816,7 +805,7 @@ class State3(rx.State):
 
     def add_user(self, form_data: dict):
         self.users.append(User(**form_data))
-        
+
 
         return rx.toast.info(
             f"User has been added: {form_data}.",
@@ -940,7 +929,6 @@ def index() -> rx.Component:
     )
 ```
 
-
 ### Putting the Form in an Overlay
 
 In Reflex, we like to make the user interaction as intuitive as possible. Placing the form we just constructed in an overlay creates a focused interaction by dimming the background, and ensures a cleaner layout when you have multiple action points such as editing and deleting as well.
@@ -1034,7 +1022,6 @@ rx.dialog.root(
 ```
 
 At this point we have an app that allows you to add users to a table by filling out a form. The form is placed in a dialog that can be opened by clicking the "Add User" button. We change the name of the component from `form` to `add_customer_button` and update this in our `index` component. The full app so far and code are below.
-
 
 ```python exec
 def add_customer_button() -> rx.Component:
@@ -1136,7 +1123,7 @@ class State(rx.State):
     def add_user(self, form_data: dict):
         self.users.append(User(**form_data))
 
-        
+
 
 def show_user(user: User):
     """Show a person in a table row."""
@@ -1223,15 +1210,13 @@ def index() -> rx.Component:
     )
 ```
 
-
 ## Plotting Data in a Graph
 
-The last part of this tutorial is to plot the user data in a graph. We will use Reflex's built-in graphing library recharts to plot the number of users of each gender. 
+The last part of this tutorial is to plot the user data in a graph. We will use Reflex's built-in graphing library recharts to plot the number of users of each gender.
 
 ### Transforming the data for the graph
 
 The graphing components in Reflex expect to take in a list of dictionaries. Each dictionary represents a data point on the graph and contains the x and y values. We will create a new event handler in the state called `transform_data` to transform the user data into the format that the graphing components expect. We must also create a new state variable called `users_for_graph` to store the transformed data, which will be used to render the graph.
-
 
 ```python
 from collections import Counter
@@ -1243,12 +1228,12 @@ class State(rx.State):
     def add_user(self, form_data: dict):
         self.users.append(User(**form_data))
         self.transform_data()
-    
+
     def transform_data(self):
         """Transform user gender group data into a format suitable for visualization in graphs."""
         # Count users of each gender group
         gender_counts = Counter(user.gender for user in self.users)
-        
+
         # Transform into list of dict so it can be used in the graph
         self.users_for_graph = [
             {
@@ -1259,7 +1244,7 @@ class State(rx.State):
         ]
 ```
 
-As we can see above the `transform_data` event handler uses the `Counter` class from the `collections` module to count the number of users of each gender. We then create a list of dictionaries from this which we set to the state var `users_for_graph`. 
+As we can see above the `transform_data` event handler uses the `Counter` class from the `collections` module to count the number of users of each gender. We then create a list of dictionaries from this which we set to the state var `users_for_graph`.
 
 Finally we can see that whenever we add a new user through submitting the form and running the `add_user` event handler, we call the `transform_data` event handler to update the `users_for_graph` state variable.
 
@@ -1305,12 +1290,12 @@ class State4(rx.State):
             f"User {form_data['name']} has been added.",
             position="bottom-right",
         )
-    
+
     def transform_data(self):
         """Transform user gender group data into a format suitable for visualization in graphs."""
         # Count users of each gender group
         gender_counts = Counter(user.gender for user in self.users)
-        
+
         # Transform into list of dict so it can be used in the graph
         self.users_for_graph = [
             {
@@ -1429,12 +1414,12 @@ class State(rx.State):
     def add_user(self, form_data: dict):
         self.users.append(User(**form_data))
         self.transform_data()
-    
+
     def transform_data(self):
         """Transform user gender group data into a format suitable for visualization in graphs."""
         # Count users of each gender group
         gender_counts = Counter(user.gender for user in self.users)
-        
+
         # Transform into list of dict so it can be used in the graph
         self.users_for_graph = [
             {
@@ -1443,7 +1428,7 @@ class State(rx.State):
             }
             for gender_group, count in gender_counts.items()
         ]
-        
+
 
 def show_user(user: User):
     """Show a person in a table row."""
@@ -1547,16 +1532,15 @@ def index() -> rx.Component:
 
 One thing you may have noticed about your app is that the graph does not appear initially when you run the app, and that you must add a user to the table for it to first appear. This occurs because the `transform_data` event handler is only called when a user is added to the table. In the next section we will explore a solution to this.
 
-
 ## Final Cleanup
 
 ### Revisiting app.add_page
 
-At the beginning of this tutorial we mentioned that the `app.add_page` function is required for every Reflex app. This function is used to add a component to a page. 
+At the beginning of this tutorial we mentioned that the `app.add_page` function is required for every Reflex app. This function is used to add a component to a page.
 
 The `app.add_page` currently looks like this `app.add_page(index)`. We could change the route that the page renders on by setting the `route` prop such as `route="/custom-route"`, this would change the route to `http://localhost:3000/custom-route` for this page.
 
-We can also set a `title` to be shown in the browser tab and a `description` as shown in search results. 
+We can also set a `title` to be shown in the browser tab and a `description` as shown in search results.
 
 To solve the problem we had above about our graph not loading when the page loads, we can use `on_load` inside of `app.add_page` to call the `transform_data` event handler when the page loads. This would look like `on_load=State.transform_data`. Below see what our `app.add_page` would look like with some of the changes above added.
 
@@ -1600,7 +1584,7 @@ app.add_page(
 
 At the beginning of the tutorial we also mentioned that we defined our app using `app=rx.App()`. We can also pass in some props to the `rx.App` component to customize the app.
 
-The most important one is `theme` which allows you to customize the look and feel of the app. The `theme` prop takes in an `rx.theme` component which has several props that can be set. 
+The most important one is `theme` which allows you to customize the look and feel of the app. The `theme` prop takes in an `rx.theme` component which has several props that can be set.
 
 The `radius` prop sets the global radius value for the app that is inherited by all components that have a `radius` prop. It can be overwritten locally for a specific component by manually setting the `radius` prop.
 
@@ -1617,8 +1601,6 @@ app = rx.App(
 ```
 
 Unfortunately in this tutorial here we cannot actually apply this to the live example on the page, but if you copy and paste the code below into a reflex app locally you can see it in action.
-
-
 
 ## Conclusion
 
@@ -1658,7 +1640,6 @@ rx.vstack(
     )
 ```
 
-
 ```python
 import reflex as rx
 from collections import Counter
@@ -1681,12 +1662,12 @@ class State(rx.State):
     def add_user(self, form_data: dict):
         self.users.append(User(**form_data))
         self.transform_data()
-    
+
     def transform_data(self):
         """Transform user gender group data into a format suitable for visualization in graphs."""
         # Count users of each gender group
         gender_counts = Counter(user.gender for user in self.users)
-        
+
         # Transform into list of dict so it can be used in the graph
         self.users_for_graph = [
             {
@@ -1695,7 +1676,7 @@ class State(rx.State):
             }
             for gender_group, count in gender_counts.items()
         ]
-        
+
 
 def show_user(user: User):
     """Show a user in a table row."""
@@ -1820,20 +1801,18 @@ app.add_page(
 )
 ```
 
-And that is it for your first dashboard tutorial. In this tutorial we have created 
+And that is it for your first dashboard tutorial. In this tutorial we have created
 
 - a table to display user data
 - a form to add new users to the table
 - a dialog to showcase the form
 - a graph to visualize the user data
 
-In addition to the above we have we have 
+In addition to the above we have we have
 
 - explored state to allow you to show dynamic data that changes over time
 - explored events to allow you to make your app interactive and respond to user actions
 - added styling to the app to make it look better
-
-
 
 ## Advanced Section (Hooking this up to a Database)
 

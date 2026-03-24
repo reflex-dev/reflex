@@ -1,6 +1,6 @@
 ---
 components:
-    - rx.link
+  - rx.link
 ---
 
 ```python exec
@@ -22,7 +22,6 @@ You can also provide local links to other pages in your project without writing 
 rx.link("Example", href="/docs/library",)
 ```
 
-
 The `link` component can be used to wrap other components to make them link to other pages.
 
 ```python demo
@@ -42,7 +41,8 @@ rx.link("Example", href="/docs/library/typography/link#example")
 ```
 
 ```md alert info
-# Redirecting the user using State 
+# Redirecting the user using State
+
 It is also possible to redirect the user to a new path within the application, using `rx.redirect()`. Check out the docs [here]({api_reference.special_events.path}).
 ```
 

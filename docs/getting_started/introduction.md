@@ -341,10 +341,10 @@ By continuing with our documentation, you will learn how to build awesome apps w
 
 For a glimpse of the possibilities, check out these resources:
 
-* For a more real-world example, check out either the [dashboard tutorial]({getting_started.dashboard_tutorial.path}) or the [chatapp tutorial]({getting_started.chatapp_tutorial.path}).
-* Check out our open-source [templates]({getting_started.open_source_templates.path})!
-* We have an AI Builder that can generate full Reflex apps or help with your existing app! Check it out at [Reflex Build]({constants.REFLEX_BUILD_URL})!
-* Deploy your app with a single command using [Reflex Cloud]({hosting.deploy_quick_start.path})!
+- For a more real-world example, check out either the [dashboard tutorial]({getting_started.dashboard_tutorial.path}) or the [chatapp tutorial]({getting_started.chatapp_tutorial.path}).
+- Check out our open-source [templates]({getting_started.open_source_templates.path})!
+- We have an AI Builder that can generate full Reflex apps or help with your existing app! Check it out at [Reflex Build]({constants.REFLEX_BUILD_URL})!
+- Deploy your app with a single command using [Reflex Cloud]({hosting.deploy_quick_start.path})!
 
 If you want to learn more about how Reflex works, check out the [How Reflex Works]({advanced_onboarding.how_reflex_works.path}) section.
 

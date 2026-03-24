@@ -1,9 +1,10 @@
 ---
 components:
-    - rx.avatar
+  - rx.avatar
 Avatar: |
-    lambda **props: rx.hstack(rx.avatar(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", **props), rx.avatar(fallback="RX", **props), spacing="3")
+  lambda **props: rx.hstack(rx.avatar(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", **props), rx.avatar(fallback="RX", **props), spacing="3")
 ---
+
 # Avatar
 
 ```python exec

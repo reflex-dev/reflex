@@ -23,7 +23,6 @@ rx.image(
 
 Check the docs for the component you are using to see what props are available and how they affect the component (see the `rx.image` [reference]({docs.library.media.image.path}#api-reference) page for example).
 
-
 ## Common Props
 
 Components support many standard HTML properties as props. For example: the HTML [id]({"https://www.w3schools.com/html/html_id.asp"}) property is exposed directly as the prop `id`. The HTML [className]({"https://www.w3schools.com/jsref/prop_html_classname.asp"}) property is exposed as the prop `class_name` (note the Pythonic snake_casing!).
@@ -55,7 +54,6 @@ rx.button(
 ```
 
 See the [styling docs]({docs.styling.overview.path}) to learn more about customizing the appearance of your app.
-
 
 ## Binding Props to State
 

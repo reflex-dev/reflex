@@ -1,15 +1,13 @@
 ---
 components:
-    - rx.moment
-
+  - rx.moment
 ---
 
 # Moment
 
 Displaying date and relative time to now sometimes can be more complicated than necessary.
 
-To make it easy, Reflex is wrapping [react-moment](https://www.npmjs.com/package/react-moment)  under `rx.moment`.
-
+To make it easy, Reflex is wrapping [react-moment](https://www.npmjs.com/package/react-moment) under `rx.moment`.
 
 ```python exec
 import reflex as rx
@@ -58,6 +56,7 @@ rx.moment(MomentState.date_now, from_now=True)
 ```python demo
 rx.moment(MomentState.date_now, to_now=True)
 ```
+
 You can also set a duration (in milliseconds) with `from_now_during` where the date will display as relative, then after that, it will be displayed as defined in `format`.
 
 ```python demo

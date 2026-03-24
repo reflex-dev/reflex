@@ -23,22 +23,22 @@ The `cloud.yml` file uses YAML format and supports the following structure. **Al
 
 ```yaml
 # Basic deployment settings
-name: my-app-prod                    # Optional: defaults to project folder name
-description: 'Production deployment' # Optional: empty by default
-projectname: my-client-project          # Optional: defaults to personal project
+name: my-app-prod # Optional: defaults to project folder name
+description: "Production deployment" # Optional: empty by default
+projectname: my-client-project # Optional: defaults to personal project
 
 # Infrastructure settings
-regions:                            # Optional: defaults to sjc: 1
-  sjc: 1                           # San Jose (# of machines)
-  lhr: 2                           # London (# of machines)
-vmtype: c2m2                       # Optional: defaults to c1m1
+regions: # Optional: defaults to sjc: 1
+  sjc: 1 # San Jose (# of machines)
+  lhr: 2 # London (# of machines)
+vmtype: c2m2 # Optional: defaults to c1m1
 
 # Custom domain and environment
-hostname: myapp                    # Optional: myapp.reflex.dev
-envfile: .env.production           # Optional: defaults to .env
+hostname: myapp # Optional: myapp.reflex.dev
+envfile: .env.production # Optional: defaults to .env
 
 # Additional dependencies
-packages:                          # Optional: empty by default
+packages: # Optional: empty by default
   - procps
 ```
 
@@ -92,10 +92,11 @@ For details of specific sections click the links in the table.
 Organize deployments using projects:
 
 ```yaml
-projectname: client-alpha    # Groups related deployments
+projectname: client-alpha # Groups related deployments
 ```
 
 You can also specify a project uuid instead of name:
+
 ```yaml
 project: 12345678-1234-1234-1234-1234567890ab
 ```
@@ -108,9 +109,9 @@ Install additional system packages your application requires. Package names are 
 
 ```yaml
 packages:
-  - procps=2.0.32-1  # Version pinning is optional
-  - imagemagick 
-  - ffmpeg      
+  - procps=2.0.32-1 # Version pinning is optional
+  - imagemagick
+  - ffmpeg
 ```
 
 ### Include SQLite
@@ -127,6 +128,7 @@ This is not persistent and will be lost on restart. It is recommended to use a d
 
 Deployment strategy:
 Available strategies:
+
 - `immediate`: [Default] Deploy immediately
 - `rolling`: Deploy in a rolling manner
 - `bluegreen`: Deploy in a blue-green manner
@@ -139,17 +141,19 @@ strategy: immediate
 ## Multi-Environment Setup
 
 **Development (`cloud-dev.yml`):**
+
 ```yaml
 name: myapp-dev
-description: 'Development environment'
+description: "Development environment"
 vmtype: c1m1
 envfile: .env.development
 ```
 
 **Staging (`cloud-staging.yml`):**
+
 ```yaml
 name: myapp-staging
-description: 'Staging environment'
+description: "Staging environment"
 regions:
   sjc: 1
 vmtype: c2m2
@@ -157,9 +161,10 @@ envfile: .env.staging
 ```
 
 **Production (`cloud-prod.yml`):**
+
 ```yaml
 name: myapp-production
-description: 'Production environment'
+description: "Production environment"
 regions:
   sjc: 2
   lhr: 1
@@ -178,4 +183,3 @@ reflex deploy
 reflex deploy --config cloud-prod.yml
 reflex deploy --config cloud-staging.yml
 ```
-

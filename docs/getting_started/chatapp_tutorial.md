@@ -37,9 +37,6 @@ In this tutorial you'll learn how to:
 3. Use state to add interactivity to your app.
 4. Deploy your app to share with others.
 
-
-
-
 ## Setting up Your Project
 
 ```md video https://youtube.com/embed/ITOZkzjtjUA?start=175&end=445
@@ -64,7 +61,6 @@ Now, we will install Reflex and create a new project. This will create a new dir
 
 > **Note:** When prompted to select a template, choose option 0 for a blank project.
 
-
 ```bash
 chatapp $ pip install reflex
 chatapp $ reflex init
@@ -77,6 +73,7 @@ assets          chatapp         rxconfig.py     venv
 ```python eval
 rx.box(height="20px")
 ```
+
 You can run the template app to make sure everything is working.
 
 ```bash
@@ -96,9 +93,6 @@ You should see your app running at [http://localhost:3000]({"http://localhost:30
 Reflex also starts the backend server which handles all the state management and communication with the frontend. You can test the backend server is running by navigating to [http://localhost:8000/ping]({"http://localhost:8000/ping"}).
 
 Now that we have our project set up, in the next section we will start building our app!
-
-
-
 
 ## Basic Frontend
 
@@ -360,11 +354,6 @@ app.add_page(index)
 
 The app is looking good, but it's not very useful yet! In the next section, we will add some functionality to the app.
 
-
-
-
-
-
 ## State
 
 Now let’s make the chat app interactive by adding state. The state is where we define all the variables that can change in the app and all the functions that can modify them. You can learn more about state in the [state docs]({state.overview.path}).
@@ -555,8 +544,6 @@ async def answer(self):
 
 In the next section, we will finish our chatbot by adding AI!
 
-
-
 ## Final App
 
 We will use OpenAI's API to give our chatbot some intelligence.
@@ -565,6 +552,7 @@ We will use OpenAI's API to give our chatbot some intelligence.
 
 First, ensure you have an active OpenAI subscription.
 Next, install the latest openai package:
+
 ```bash
 pip install --upgrade openai
 ```
@@ -592,7 +580,6 @@ Making your chatbot intelligent requires connecting to a language model API. Thi
 1. First, the user types a prompt that is updated via the `on_change` event handler.
 2. Next, when a prompt is ready, the user can choose to submit it by clicking the `Ask` button which in turn triggers the `State.answer` method inside our `state.py` file.
 3. Finally, if the method is triggered, the `prompt` is sent via a request to OpenAI client and returns an answer that we can trim and use to update the chat history!
-
 
 ```python
 # chatapp.py
@@ -723,7 +710,6 @@ app = rx.App()
 app.add_page(index)
 ```
 
-
 The `state.py` file:
 
 ```python
@@ -764,7 +750,6 @@ class State(rx.State):
                 yield
 ```
 
-
 The `style.py` file:
 
 ```python
@@ -796,7 +781,6 @@ answer_style = message_style | dict(
 input_style = dict(border_width="1px", padding="0.5em", box_shadow=shadow, width="350px")
 button_style = dict(background_color=rx.color("accent", 10), box_shadow=shadow)
 ```
-
 
 ### Next Steps
 

@@ -30,6 +30,7 @@ def pill_page():
 ```
 
 ## Pill Group
+
 `rxe.mantine.pill.group` allows grouping multiple `rxe.mantine.pill` components together, with a predefined layout.
 
 ```python demo exec
@@ -43,7 +44,6 @@ def pill_group_page():
         rxe.mantine.pill("Pill 2"),
     )
 ```
-
 
 # PillsInput
 

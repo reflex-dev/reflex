@@ -6,15 +6,13 @@ from reflex_image_zoom import image_zoom
 
 # Custom Domains
 
-
-With the Enterprise tier of Reflex Cloud you can use your own custom domain to host your app. 
+With the Enterprise tier of Reflex Cloud you can use your own custom domain to host your app.
 
 ## Prerequisites
 
-You must purchase a domain from a domain registrar such as GoDaddy, Cloudflare, Namecheap, or AWS. 
+You must purchase a domain from a domain registrar such as GoDaddy, Cloudflare, Namecheap, or AWS.
 
 For this tutorial we will use GoDaddy and the example domain `tomgotsman.us`.
-
 
 ## Steps
 
@@ -50,11 +48,13 @@ image_zoom(rx.image(src=f"{REFLEX_ASSETS_CDN}other/custom-domains-DNS-after.webp
 
 ```md alert warning
 # It may alert you that this record will resolve on ######.tomgotsman.us.tomgotsman.us.
+
 If this happens ensure that you select to only have the record resolve on ######.tomgotsman.us.
 ```
 
 ```md alert warning
 # Your domain provider may not support an Apex CNAME record, in this case just use an A record.
+
 ![Image showing failed CNAME record](/custom-domains-CNAME-fail.png)
 ```
 

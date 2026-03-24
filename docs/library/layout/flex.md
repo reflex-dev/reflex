@@ -10,8 +10,8 @@ import reflex as rx
 # Flex
 
 The Flex component is used to make [flexbox layouts](https://developer.mozilla.org/en-US/docs/Learn/CSS/CSS_layout/Flexbox).
-It makes it simple to arrange  child components in horizontal or vertical directions, apply wrapping,
-justify and align  content, and automatically size components based on available space, making it
+It makes it simple to arrange child components in horizontal or vertical directions, apply wrapping,
+justify and align content, and automatically size components based on available space, making it
 ideal for building responsive layouts.
 
 By default, children are arranged horizontally (`direction="row"`) without wrapping.
@@ -65,8 +65,8 @@ rx.flex(
 
 Two props control how children are aligned within the Flex component:
 
-* `align` controls how children are aligned along the cross axis (vertical for `row` and horizontal for `column`).
-* `justify` controls how children are aligned along the main axis (horizontal for `row` and vertical for `column`).
+- `align` controls how children are aligned along the cross axis (vertical for `row` and horizontal for `column`).
+- `justify` controls how children are aligned along the main axis (horizontal for `row` and vertical for `column`).
 
 The following example visually demonstrates the effect of these props with different `wrap` and `direction` values.
 
@@ -166,7 +166,7 @@ When `flex_shrink="0"`, the box will not shrink to less than the `flex_basis`.
 These props are used when creating flexible responsive layouts.
 
 Move the slider below and see how adjusting the width of the flex container
-affects the computed  sizes of the flex items based on the props that are set.
+affects the computed sizes of the flex items based on the props that are set.
 
 ```python demo exec
 class FlexGrowShrinkState(rx.State):

@@ -230,9 +230,11 @@ class Person:
     email: str
     group: str
 ```
+
 ## Sorting and Filtering (Searching)
 
 In this example we show two approaches to sort and filter data:
+
 1. Using SQL-like operations for database-backed models (simulated)
 2. Using Python operations for in-memory data
 
@@ -241,7 +243,6 @@ Both approaches use the same UI components: `rx.select` for sorting and `rx.inpu
 ### Approach 1: Database Filtering and Sorting
 
 For database-backed models, we typically use SQL queries with `select`, `where`, and `order_by`. In this example, we'll simulate this behavior with mock data.
-
 
 ```python demo exec
 # Simulating database operations with mock data
@@ -755,7 +756,6 @@ def loading_data_table_example2():
 
 ```
 
-
 ## Pagination
 
 Pagination is an important part of database management, especially when working with large datasets. It helps in enabling efficient data retrieval by breaking down results into manageable loads.
@@ -959,6 +959,7 @@ def loading_data_table_example3():
     )
 
 ```
+
 ## More advanced examples
 
 The real power of the `rx.table` comes where you are able to visualise, add and edit data live in your app. Check out these apps and code to see how this is done: app: https://customer-data-app.reflex.run code: https://github.com/reflex-dev/templates/tree/main/customer_data_app and code: https://github.com/reflex-dev/templates/tree/main/sales.

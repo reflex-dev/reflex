@@ -18,7 +18,7 @@ Additionally, the limit that prevent the user from checking more boxes than allo
 
 ```python
 class CBoxeState(rx.State):
-    
+
     choices: dict[str, bool] = \{k: False for k in ["Choice A", "Choice B", "Choice C"]}
     _check_limit = 2
 
@@ -52,7 +52,7 @@ def render_checkboxes(values, limit, handler):
 
 
 def index() -> rx.Component:
-    
+
     return rx.center(
         rx.vstack(
             rx.text("Make your choices (2 max):"),

@@ -14,6 +14,7 @@ The map components in Reflex Enterprise provide interactive mapping capabilities
 
 ```md alert info
 # All map components are built using Leaflet and react-leaflet, providing a familiar and powerful mapping experience.
+
 For advanced Leaflet features, refer to the [Leaflet documentation](https://leafletjs.com/reference.html).
 ```
 
@@ -71,6 +72,7 @@ rxe.map(
 ```
 
 **Key Properties:**
+
 - `center`: Initial map center coordinates
 - `zoom`: Initial zoom level (0-18+ depending on tile provider)
 - `bounds`: Alternative to center/zoom, fits map to bounds
@@ -86,7 +88,6 @@ rxe.map.tile_layer(
     attribution='&copy; OpenStreetMap contributors'
 )
 ```
-
 
 ### Markers
 
@@ -327,6 +328,7 @@ def map_api_example():
 ### Common API Methods
 
 **View Control:**
+
 - `fly_to(latlng, zoom, options)` - Smooth animated movement to location
 - `set_view(latlng, zoom, options)` - Instant movement to location
 - `set_zoom(zoom)` - Change zoom level
@@ -334,16 +336,19 @@ def map_api_example():
 - `fit_bounds(bounds, options)` - Fit map to specific bounds
 
 **Location Services:**
+
 - `locate(options)` - Get user's current location
 - `stop_locate()` - Stop location tracking
 
 **Information Retrieval:**
+
 - `get_center(callback)` - Get current map center
 - `get_zoom(callback)` - Get current zoom level
 - `get_bounds(callback)` - Get current map bounds
 - `get_size(callback)` - Get map container size
 
 **Layer Management:**
+
 - `add_layer(layer)` - Add a layer to the map
 - `remove_layer(layer)` - Remove a layer from the map
 - `has_layer(layer)` - Check if layer exists on map
@@ -352,12 +357,14 @@ def map_api_example():
 
 ```md alert info
 # The Map API provides access to the complete Leaflet map API. Any method available on a Leaflet map instance can be called through the MapAPI instance.
+
 Function names are automatically converted from snake_case (Python) to camelCase (JavaScript).
 ```
 
 This means you can use any method from the [Leaflet Map documentation](https://leafletjs.com/reference.html#map). For example:
 
 **Python (snake_case) → JavaScript (camelCase):**
+
 - `map_api.pan_to(latlng)` → `map.panTo(latlng)`
 - `map_api.set_max_bounds(bounds)` → `map.setMaxBounds(bounds)`
 - `map_api.get_pixel_bounds()` → `map.getPixelBounds()`
@@ -505,6 +512,7 @@ class CallbackMapState(rx.State):
 The map components support a comprehensive set of events:
 
 **Map Events:**
+
 - `on_click`, `on_dblclick` - Mouse click events
 - `on_zoom`, `on_zoom_start`, `on_zoom_end` - Zoom events
 - `on_move`, `on_move_start`, `on_move_end` - Pan events
@@ -512,12 +520,15 @@ The map components support a comprehensive set of events:
 - `on_load`, `on_unload` - Map lifecycle
 
 **Location Events:**
+
 - `on_locationfound`, `on_locationerror` - Geolocation
 
 **Layer Events:**
+
 - `on_layeradd`, `on_layerremove` - Layer management
 
 **Popup Events:**
+
 - `on_popupopen`, `on_popupclose` - Popup lifecycle
 - `on_tooltipopen`, `on_tooltipclose` - Tooltip lifecycle
 
@@ -549,7 +560,6 @@ def dynamic_markers():
         # ... map configuration
     )
 ```
-
 
 ## Best Practices
 

@@ -1,6 +1,6 @@
 ---
 components:
-    - rx.recharts.GraphingTooltip
+  - rx.recharts.GraphingTooltip
 ---
 
 # Tooltip
@@ -63,7 +63,7 @@ def tooltip_simple():
         data_key="uv",
         stroke="#8884d8",
         fill="#8884d8"
-    ), 
+    ),
     rx.recharts.bar(
         data_key="amt",
         bar_size=20,
@@ -73,8 +73,8 @@ def tooltip_simple():
         data_key="pv",
         type_="monotone",
         stroke="#ff7300"
-    ), 
-    rx.recharts.x_axis(data_key="name"), 
+    ),
+    rx.recharts.x_axis(data_key="name"),
     rx.recharts.y_axis(),
     rx.recharts.cartesian_grid(stroke_dasharray="3 3"),
     rx.recharts.graphing_tooltip(),
@@ -153,13 +153,13 @@ def tooltip_custom_styling():
       view_box = {"width" : 675, " height" : 300 },
       allow_escape_view_box={"x": True, "y": False},
       wrapper_style={
-        "backgroundColor": rx.color("accent", 3), 
+        "backgroundColor": rx.color("accent", 3),
         "borderRadius": "8px",
         "padding": "10px",
       },
       content_style={
-        "backgroundColor": rx.color("accent", 4), 
-        "borderRadius": "4px", 
+        "backgroundColor": rx.color("accent", 4),
+        "borderRadius": "4px",
         "padding": "8px",
       },
       position = {"x" : 600, "y" : 0},

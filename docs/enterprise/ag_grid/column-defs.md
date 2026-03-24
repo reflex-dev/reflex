@@ -17,6 +17,7 @@ AgGrid allows you to define the columns of your grid, passed to the prop `column
 ```
 
 Here we define a grid with 3 columns:
+
 ```python
 column_defs = [
     {"field": "direction"},
@@ -26,6 +27,7 @@ column_defs = [
 ```
 
 To set default properties for all your columns, you can define `default_col_def` in your grid:
+
 ```python
 default_col_def = {
     "sortable": True,

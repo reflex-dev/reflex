@@ -1,6 +1,6 @@
 ---
 components:
-    - rx.script
+  - rx.script
 ---
 
 ```python exec
@@ -34,5 +34,9 @@ rx.script(src="//gc.zgo.at/count.js", custom_attrs=\{"data-goatcounter": "https:
 This code renders to something like the following to enable stat counting with a third party service.
 
 ```jsx
-<script src="//gc.zgo.at/count.js" data-goatcounter="https://reflextoys.goatcounter.com/count" data-nscript="afterInteractive"></script>
+<script
+  src="//gc.zgo.at/count.js"
+  data-goatcounter="https://reflextoys.goatcounter.com/count"
+  data-nscript="afterInteractive"
+></script>
 ```

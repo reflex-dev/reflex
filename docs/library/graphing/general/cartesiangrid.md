@@ -1,7 +1,7 @@
 ---
 components:
-    - rx.recharts.CartesianGrid
-    # - rx.recharts.CartesianAxis
+  - rx.recharts.CartesianGrid
+  # - rx.recharts.CartesianAxis
 ---
 
 ```python exec
@@ -16,8 +16,8 @@ The Cartesian Grid is a component in Recharts that provides a visual reference f
 
 The `stroke_dasharray` prop in Recharts is used to create dashed or dotted lines for various chart elements like lines, axes, or grids. It's based on the SVG stroke-dasharray attribute. The `stroke_dasharray` prop accepts a comma-separated string of numbers that define a repeating pattern of dashes and gaps along the length of the stroke.
 
-- `stroke_dasharray="5,5"`:  creates a line with 5-pixel dashes and 5-pixel gaps
-- `stroke_dasharray="10,5,5,5"`:  creates a more complex pattern with 10-pixel dashes, 5-pixel gaps, 5-pixel dashes, and 5-pixel gaps
+- `stroke_dasharray="5,5"`: creates a line with 5-pixel dashes and 5-pixel gaps
+- `stroke_dasharray="10,5,5,5"`: creates a more complex pattern with 10-pixel dashes, 5-pixel gaps, 5-pixel dashes, and 5-pixel gaps
 
 Here's a simple example using it on a Line component:
 
@@ -156,6 +156,7 @@ def cgrid_hidden():
 The `horizontal_points` and `vertical_points` props allow you to specify custom grid lines on the chart, offering fine-grained control over the grid's appearance.
 
 These props accept arrays of numbers, where each number represents a pixel offset:
+
 - For `horizontal_points`, the offset is measured from the top edge of the chart
 - For `vertical_points`, the offset is measured from the left edge of the chart
 

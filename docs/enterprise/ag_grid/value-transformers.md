@@ -13,6 +13,7 @@ from pcweb.pages.docs import enterprise
 AgGrid allow you to apply transformers based on the column of your grid. This allow you to perform operations on the data before displaying it on the grid, without having to pre-process the data on the backend, reducing the load on your application.
 
 TOC:
+
 - [Value Getter](#value-getter)
 - [Value Formatter](#value-formatter)
 
@@ -72,5 +73,3 @@ def ag_grid_value_formatter():
         width="100%",
     )
 ```
-
-

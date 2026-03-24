@@ -55,6 +55,7 @@ def about():
 ```
 
 The sitemap configuration supports the following options:
+
 - `loc`: Custom URL for the page (required for dynamic routes)
 - `lastmod`: Last modification date (datetime object)
 - `changefreq`: How frequently the page changes (`"always"`, `"hourly"`, `"daily"`, `"weekly"`, `"monthly"`, `"yearly"`, `"never"`)
@@ -176,7 +177,6 @@ config = rx.Config(
 )
 ```
 
-
 ## Plugin Architecture
 
 All plugins inherit from the base `Plugin` class and can implement several lifecycle methods:
@@ -186,19 +186,19 @@ class Plugin:
     def get_frontend_development_dependencies(self, **context) -> list[str]:
         """Get NPM packages required by the plugin for development."""
         return []
-    
+
     def get_frontend_dependencies(self, **context) -> list[str]:
         """Get NPM packages required by the plugin."""
         return []
-    
+
     def get_static_assets(self, **context) -> Sequence[tuple[Path, str | bytes]]:
         """Get static assets required by the plugin."""
         return []
-    
+
     def get_stylesheet_paths(self, **context) -> Sequence[str]:
         """Get paths to stylesheets required by the plugin."""
         return []
-    
+
     def pre_compile(self, **context) -> None:
         """Called before compilation to perform custom tasks."""
         pass
@@ -215,14 +215,14 @@ from pathlib import Path
 class CustomPlugin(Plugin):
     def get_frontend_dependencies(self, **context):
         return ["my-custom-package@1.0.0"]
-    
+
     def pre_compile(self, **context):
         # Custom logic before compilation
         print("Running custom plugin logic...")
-        
+
         # Add a custom task
         context["add_save_task"](self.create_custom_file)
-    
+
     def create_custom_file(self):
         return "public/custom.txt", "Custom content"
 ```

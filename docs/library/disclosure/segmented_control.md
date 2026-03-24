@@ -1,7 +1,7 @@
 ---
 components:
-    - rx.segmented_control.root
-    - rx.segmented_control.item
+  - rx.segmented_control.root
+  - rx.segmented_control.item
 ---
 
 ```python exec

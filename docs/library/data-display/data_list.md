@@ -1,38 +1,38 @@
 ---
 components:
-    - rx.data_list.root
-    - rx.data_list.item
-    - rx.data_list.label
-    - rx.data_list.value
+  - rx.data_list.root
+  - rx.data_list.item
+  - rx.data_list.label
+  - rx.data_list.value
 DataListRoot: |
-    lambda **props: rx.data_list.root(
-        rx.foreach(
-            [["Status", "Authorized"], ["ID", "U-474747"], ["Name", "Developer Success"], ["Email", "foo@reflex.dev"]],
-            lambda item: rx.data_list.item(rx.data_list.label(item[0]), rx.data_list.value(item[1])),
-        ),
-        **props,
-    )
+  lambda **props: rx.data_list.root(
+      rx.foreach(
+          [["Status", "Authorized"], ["ID", "U-474747"], ["Name", "Developer Success"], ["Email", "foo@reflex.dev"]],
+          lambda item: rx.data_list.item(rx.data_list.label(item[0]), rx.data_list.value(item[1])),
+      ),
+      **props,
+  )
 DataListItem: |
-    lambda **props: rx.data_list.root(
-        rx.foreach(
-            [["Status", "Authorized"], ["ID", "U-474747"], ["Name", "Developer Success"], ["Email", "foo@reflex.dev"]],
-            lambda item: rx.data_list.item(rx.data_list.label(item[0]), rx.data_list.value(item[1]), **props),
-        ),
-    )
+  lambda **props: rx.data_list.root(
+      rx.foreach(
+          [["Status", "Authorized"], ["ID", "U-474747"], ["Name", "Developer Success"], ["Email", "foo@reflex.dev"]],
+          lambda item: rx.data_list.item(rx.data_list.label(item[0]), rx.data_list.value(item[1]), **props),
+      ),
+  )
 DataListLabel: |
-    lambda **props: rx.data_list.root(
-        rx.foreach(
-            [["Status", "Authorized"], ["ID", "U-474747"], ["Name", "Developer Success"], ["Email", "foo@reflex.dev"]],
-            lambda item: rx.data_list.item(rx.data_list.label(item[0], **props), rx.data_list.value(item[1])),
-        ),
-    )
+  lambda **props: rx.data_list.root(
+      rx.foreach(
+          [["Status", "Authorized"], ["ID", "U-474747"], ["Name", "Developer Success"], ["Email", "foo@reflex.dev"]],
+          lambda item: rx.data_list.item(rx.data_list.label(item[0], **props), rx.data_list.value(item[1])),
+      ),
+  )
 DataListValue: |
-    lambda **props: rx.data_list.root(
-        rx.foreach(
-            [["Status", "Authorized"], ["ID", "U-474747"], ["Name", "Developer Success"], ["Email", "foo@reflex.dev"]],
-            lambda item: rx.data_list.item(rx.data_list.label(item[0]), rx.data_list.value(item[1], **props)),
-        ),
-    )
+  lambda **props: rx.data_list.root(
+      rx.foreach(
+          [["Status", "Authorized"], ["ID", "U-474747"], ["Name", "Developer Success"], ["Email", "foo@reflex.dev"]],
+          lambda item: rx.data_list.item(rx.data_list.label(item[0]), rx.data_list.value(item[1], **props)),
+      ),
+  )
 ---
 
 ```python exec

@@ -70,8 +70,6 @@ rx.table.root(
 )
 ```
 
-
-
 For more information about assets, see the [Assets Overview](/docs/assets/overview/).
 
 ## Download

@@ -9,6 +9,7 @@ import reflex as rx
 Decentralized event handlers allow you to define event handlers outside of state classes, providing more flexible code organization. This feature was introduced in Reflex v0.7.10 and enables a more modular approach to event handling.
 
 With decentralized event handlers, you can:
+
 - Organize event handlers by feature rather than by state class
 - Separate UI logic from state management
 - Create more maintainable and scalable applications
@@ -41,6 +42,7 @@ def decentralized_event_example():
 ```
 
 In this example:
+
 1. We define a `MyState` class with a `count` variable
 2. We create a decentralized event handler `increment` that takes a `MyState` instance as its first parameter
 3. We use the event handler in buttons, passing different amounts to increment by
@@ -74,6 +76,7 @@ rx.button("Increment", on_click=increment(5))
 ```
 
 Key differences:
+
 - Traditional event handlers use `self` to reference the state instance
 - Decentralized event handlers explicitly take a state instance as the first parameter
 - Both approaches use the same syntax for triggering events in components

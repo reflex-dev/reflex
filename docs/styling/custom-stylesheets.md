@@ -29,10 +29,10 @@ app = rx.App(
 
 ```md alert warning
 # Always use a leading slash (/) when referencing files in the assets directory.
+
 Without a leading slash the path is considered relative to the current page route and may
 not work for routes containing more than one path component, like `/blog/my-cool-post`.
 ```
-
 
 ## Styling with CSS
 
@@ -40,8 +40,8 @@ You can use CSS variables directly in your Reflex app by passing them alongside 
 
 ```css
 :root {
-    --primary-color: blue;
-    --accent-color: green;
+  --primary-color: blue;
+  --accent-color: green;
 }
 ```
 
@@ -99,11 +99,11 @@ $padding: 16px;
 .container {
   background-color: $primary-color;
   padding: $padding;
-  
+
   .button {
     background-color: $secondary-color;
     padding: $padding / 2;
-    
+
     &:hover {
       opacity: 0.8;
     }
@@ -167,14 +167,14 @@ Now we have the font ready, let's create the stylesheet `myfont.css`.
 
 ```css
 @font-face {
-    font-family: MyFont;
-    src: url("/fonts/MyFont.otf") format("opentype");
+  font-family: MyFont;
+  src: url("/fonts/MyFont.otf") format("opentype");
 }
 
 @font-face {
-    font-family: MyFont;
-    font-weight: bold;
-    src: url("/fonts/MyFont.otf") format("opentype");
+  font-family: MyFont;
+  font-weight: bold;
+  src: url("/fonts/MyFont.otf") format("opentype");
 }
 ```
 

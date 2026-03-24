@@ -13,7 +13,7 @@ import reflex as rx
 
 class AutoScrollState(rx.State):
     messages: list[str] = ["Initial message"]
-    
+
     def add_message(self):
         self.messages.append(f"New message #{len(self.messages) + 1}")
 

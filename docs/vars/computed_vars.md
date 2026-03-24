@@ -39,11 +39,11 @@ We recommend always using type annotations for computed vars.
 
 ## Cached Vars
 
-By default, all computed vars are cached (`cache=True`). A cached var is only 
-recomputed when the other state vars it depends on change. This is useful for 
+By default, all computed vars are cached (`cache=True`). A cached var is only
+recomputed when the other state vars it depends on change. This is useful for
 expensive computations, but in some cases it may not update when you expect it to.
 
-To create a computed var that recomputes on every state update regardless of 
+To create a computed var that recomputes on every state update regardless of
 dependencies, use `@rx.var(cache=False)`.
 
 Previous versions of Reflex had a `@rx.cached_var` decorator, which is now replaced
@@ -92,8 +92,8 @@ def cached_var_example():
 
 In this example `last_touch_time` uses `cache=False` to ensure it updates any
 time the state is modified. `last_counter_a_update` is a cached computed var (using
-the default `cache=True`) that only depends on `counter_a`, so it only gets recomputed 
-when `counter_a` changes. Similarly `last_counter_b_update` only depends on `counter_b`, 
+the default `cache=True`) that only depends on `counter_a`, so it only gets recomputed
+when `counter_a` changes. Similarly `last_counter_b_update` only depends on `counter_b`,
 and thus is updated only when `counter_b` changes.
 
 ## Async Computed Vars

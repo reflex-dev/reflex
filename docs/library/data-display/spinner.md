@@ -1,6 +1,6 @@
 ---
 components:
-    - rx.spinner
+  - rx.spinner
 ---
 
 # Spinner
@@ -52,5 +52,3 @@ rx.button(
     disabled=True
 )
 ```
-
-

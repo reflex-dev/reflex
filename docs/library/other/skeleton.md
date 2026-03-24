@@ -1,7 +1,7 @@
 ---
 description: Skeleton, a loading placeholder component for content that is not yet available.
 components:
-    - rx.skeleton
+  - rx.skeleton
 ---
 
 ```python exec

@@ -1,6 +1,6 @@
 ---
 components:
-    - rx.recharts.RadialBarChart
+  - rx.recharts.RadialBarChart
 ---
 
 # Radial Bar Chart
@@ -8,6 +8,7 @@ components:
 ```python exec
 import reflex as rx
 ```
+
 ## Simple Example
 
 This example demonstrates how to use a `radial_bar_chart` with a `radial_bar`. The `radial_bar_chart` takes in `data` and then the `radial_bar` takes in a `data_key`. A radial bar chart is a circular visualization where data categories are represented by bars extending outward from a central point, with the length of each bar proportional to its value.
@@ -41,7 +42,7 @@ def radial_bar_simple():
 
 ## Advanced Example
 
-The `start_angle` and `end_angle` define the circular arc over which the bars are distributed, while `inner_radius` and `outer_radius` determine the radial extent of the bars from the center. 
+The `start_angle` and `end_angle` define the circular arc over which the bars are distributed, while `inner_radius` and `outer_radius` determine the radial extent of the bars from the center.
 
 ```python demo graphing
 

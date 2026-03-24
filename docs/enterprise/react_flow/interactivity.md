@@ -41,7 +41,6 @@ def set_edges(self, edges: list[Edge]):
 
 - set_edges updates edges when they are modified or deleted.
 
-
 ## Render the Interactive Flow
 
 Finally, we render the flow using **rxe.flow**, passing in the state and event handlers. Additional UI features include zoom/pan controls, a background grid, and a mini-map for navigation.

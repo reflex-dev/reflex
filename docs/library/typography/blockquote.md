@@ -1,6 +1,6 @@
 ---
 components:
-    - rx.blockquote
+  - rx.blockquote
 ---
 
 ```python exec

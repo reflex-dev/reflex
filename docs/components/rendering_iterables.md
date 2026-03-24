@@ -56,10 +56,12 @@ The first argument of the `rx.foreach` function is the state var that you want t
 
 ```md definition
 # Regular For Loop
-* Use when iterating over constants.
+
+- Use when iterating over constants.
 
 # Foreach
-* Use when iterating over state vars.
+
+- Use when iterating over state vars.
 ```
 
 The above example could have been written using a regular Python `for` loop, since the data is constant.
@@ -98,7 +100,7 @@ def dynamic_buttons_foreach():
 
 ## Render Function
 
-The function to render each item can be defined either as a separate function or as a lambda function. In the example below, we define the function `colored_box` separately and pass it to the `rx.foreach` function. 
+The function to render each item can be defined either as a separate function or as a lambda function. In the example below, we define the function `colored_box` separately and pass it to the `rx.foreach` function.
 
 ```python demo exec
 class IterState2(rx.State):
@@ -191,6 +193,7 @@ def dict_foreach():
 
 ```md alert warning
 # Dict Type Annotation.
+
 It is essential to provide the correct full type annotation for the dictionary in the state definition (e.g., `dict[str, str]` instead of `dict`) to ensure `rx.foreach` works as expected. Proper typing allows Reflex to infer and validate the structure of the data during rendering.
 ```
 
@@ -214,7 +217,7 @@ def get_badge(technology: rx.Var[str]) -> rx.Component:
 
 def project_item(project: rx.Var[dict[str, list]]) -> rx.Component:
     return rx.box(
-        rx.hstack(            
+        rx.hstack(
             rx.foreach(project["technologies"], get_badge)
         ),
     )
@@ -277,7 +280,7 @@ class ToDoListItem:
 
 class ForeachCondState(rx.State):
     to_do_list: list[ToDoListItem] = [
-        ToDoListItem(item_name="Space suit", is_packed=True), 
+        ToDoListItem(item_name="Space suit", is_packed=True),
         ToDoListItem(item_name="Helmet", is_packed=True),
         ToDoListItem(item_name="Back Pack", is_packed=False),
         ]
@@ -285,7 +288,7 @@ class ForeachCondState(rx.State):
 
 def render_item(item: rx.Var[ToDoListItem]):
     return rx.cond(
-        item.is_packed, 
+        item.is_packed,
         rx.list.item(item.item_name + ' ✔'),
         rx.list.item(item.item_name),
     )

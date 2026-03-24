@@ -178,7 +178,6 @@ def select_form_example():
     )
 ```
 
-
 ### Using Select within a Drawer component
 
 If using within a [Drawer](/docs/library/overlay/drawer) component, set the `position` prop to `"popper"` to ensure the select menu is displayed correctly.

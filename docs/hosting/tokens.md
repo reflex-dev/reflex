@@ -16,7 +16,6 @@ image_zoom(rx.image(src=f"{REFLEX_ASSETS_CDN}other/hosting_tokens_1.webp", alt="
 
 Clicking `Account Settings` will redirect you to both the `Settings` and `Tokens` dashboards. Click the `Tokens` tab at the top to access your tokens or create new ones.
 
-
 ```python eval
 image_zoom(rx.image(src=f"{REFLEX_ASSETS_CDN}other/hosting_tokens_2.webp", alt="Adding tokens to Reflex Cloud", padding="1em 0em"))
 ```

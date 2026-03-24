@@ -182,7 +182,7 @@ meta = [
 ]
 
 app = rx.App()
-"""  
+"""
 
 )
 
@@ -216,7 +216,6 @@ for [dynamic pages]({docs.pages.dynamic_routing.path}) this will contain the slu
 
 To get the actual URL displayed in the browser, use `router.page.raw_path`. This
 will contain all query parameters and dynamic path segments.
-
 
 In the above example, `current_page_route` will contain the route pattern (e.g., `/posts/[id]`), while `current_page_url`
 will contain the actual URL (e.g., `/posts/123`).

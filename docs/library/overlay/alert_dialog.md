@@ -278,7 +278,6 @@ def alert_dialog2():
 )
 ```
 
-
 ## Form Submission to a Database from an Alert Dialog
 
 This example adds new users to a database from an alert dialog using a form.
@@ -287,11 +286,11 @@ This example adds new users to a database from an alert dialog using a form.
 2. The `add_user_to_db` method adds a new user to the database, checking for existing emails.
 3. On form submission, it calls the `add_user_to_db` method.
 4. The UI component has:
+
 - A button to open an alert dialog
 - An alert dialog containing a form to add a new user
 - Input fields for name and email
 - Submit and Cancel buttons
-
 
 ```python demo exec
 class User1(rx.Model, table=True):
@@ -300,7 +299,7 @@ class User1(rx.Model, table=True):
     email: str
 
 class State(rx.State):
-   
+
     current_user: User1 = User1()
 
     @rx.event
@@ -314,7 +313,7 @@ class State(rx.State):
         #         return rx.window_alert("User with this email already exists")
         #     session.add(User1(**self.current_user))
         #     session.commit()
-        
+
         return rx.toast.info(f"User {self.current_user['name']} has been added.", position="bottom-right")
 
 
@@ -357,7 +356,7 @@ def index() -> rx.Component:
                     ),
                     direction="column",
                     spacing="4",
-                ),                     
+                ),
                 on_submit=State.add_user_to_db,
                 reset_on_submit=False,
             ),

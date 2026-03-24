@@ -31,13 +31,13 @@ class MyCustomWrapper(rxe.ModelWrapper[MyModel]):
 ```
 
 In the custom model wrapper, you can override the following methods:
+
 - `_get_columns_defs`
 - `_get_data`
 - `_row_count`
 - `on_value_setter`
 
 to modify how the model wrapper will behave.
-
 
 ## SSRM Model Wrapper
 

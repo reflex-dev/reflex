@@ -1,6 +1,6 @@
 ---
 components:
-    - rx.text.em
+  - rx.text.em
 ---
 
 ```python exec

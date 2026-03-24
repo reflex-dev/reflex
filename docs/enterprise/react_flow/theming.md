@@ -10,8 +10,9 @@ The Flow component uses CSS variables for theming. You can override these variab
 .react-flow {
   --xy-background-color: #f7f9fb;
   --xy-node-border-default: 1px solid #ededed;
-  --xy-node-boxshadow-default: 0px 3.54px 4.55px 0px #00000005,
-    0px 3.54px 4.55px 0px #0000000d, 0px 0.51px 1.01px 0px #0000001a;
+  --xy-node-boxshadow-default:
+    0px 3.54px 4.55px 0px #00000005, 0px 3.54px 4.55px 0px #0000000d,
+    0px 0.51px 1.01px 0px #0000001a;
   --xy-node-border-radius-default: 8px;
   --xy-handle-background-color-default: #ffffff;
   --xy-handle-border-color-default: #aaaaaa;
@@ -67,8 +68,8 @@ node = {
 ```css
 /* In your CSS file */
 .my-custom-node {
-    background-color: #ffcc00;
-    border: 2px solid #ff9900;
-    border-radius: 10px;
+  background-color: #ffcc00;
+  border: 2px solid #ff9900;
+  border-radius: 10px;
 }
 ```

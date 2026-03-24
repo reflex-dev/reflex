@@ -196,4 +196,3 @@ def pricing_cards() -> rx.Component:
         align_items="center",
     )
 ```
-

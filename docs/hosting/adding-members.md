@@ -10,11 +10,9 @@ A project is a collection of applications (apps / websites).
 
 Every project has its own billing page that are accessible to Admins.
 
-
-
 ## Adding Team Members
 
-To see the team members of a project click on the `Members` tab in the Cloud UI on the project page. 
+To see the team members of a project click on the `Members` tab in the Cloud UI on the project page.
 
 If you are a User you have the ability to create, deploy and delete apps, but you do not have the power to add or delete users from that project. You must be an Admin for that.
 
@@ -29,10 +27,10 @@ rx.box(height="20px")
 ```
 
 ```md alert warning
-# Currently a User must already have logged in once before they can be added to a project. 
+# Currently a User must already have logged in once before they can be added to a project.
+
 At this time a User must be logged in to be added to a project. In future there will be automatic email invites sent to add new users who have never logged in before.
 ```
-
 
 ## Other project settings
 

@@ -1,9 +1,8 @@
 ---
 components:
-    - rx.separator
+  - rx.separator
 Separator: |
-    lambda **props: rx.separator(**props)
-
+  lambda **props: rx.separator(**props)
 ---
 
 ```python exec

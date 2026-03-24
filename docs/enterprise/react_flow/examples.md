@@ -6,7 +6,6 @@ This section showcases examples of interactive flow components built with Reflex
 
 In this example, we demonstrate how to dynamically add nodes to a flow when a connection is dropped onto the canvas. When the user drops a connection, a new node is created at the drop point, and an edge is added between the source node and the new node.
 
-
 ```python demo exec
 import reflex as rx
 

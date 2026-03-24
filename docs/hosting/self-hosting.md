@@ -37,12 +37,13 @@ Then run your app in production mode:
 reflex run --env prod
 ```
 
-Production mode creates an optimized build of your app.  By default, the static
+Production mode creates an optimized build of your app. By default, the static
 frontend of the app (HTML, Javascript, CSS) will be exposed on port `3000` and
 the backend (event handlers) will be listening on port `8000`.
 
 ```md alert warning
 # Reverse Proxy and Websockets
+
 Because the backend uses websockets, some reverse proxy servers, like [nginx](https://nginx.org/en/docs/http/websocket.html) or [apache](https://httpd.apache.org/docs/2.4/mod/mod_proxy.html#protoupgrade), must be configured to pass the `Upgrade` header to allow backend connectivity.
 ```
 

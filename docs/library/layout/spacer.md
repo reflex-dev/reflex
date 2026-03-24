@@ -1,6 +1,6 @@
 ---
 components:
-    - rx.spacer
+  - rx.spacer
 ---
 
 ```python exec

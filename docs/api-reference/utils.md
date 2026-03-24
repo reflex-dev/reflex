@@ -54,7 +54,7 @@ class TaskInfo:
 
 class RunInThreadState(rx.State):
     tasks: list[TaskInfo] = []
-    
+
     @rx.event(background=True)
     async def run_quick_task(self):
         """Run a quick task that completes within the timeout."""
@@ -62,7 +62,7 @@ class RunInThreadState(rx.State):
             task_ix = len(self.tasks)
             self.tasks.append(TaskInfo(status="Running quick task..."))
             task_info = self.tasks[task_ix]
-        
+
         try:
             result = await rx.run_in_thread(quick_blocking_function)
             async with self:
@@ -72,7 +72,7 @@ class RunInThreadState(rx.State):
             async with self:
                 task_info.result = f"Error: {str(e)}"
                 task_info.status = "Failed"
-    
+
     @rx.event(background=True)
     async def run_slow_task(self):
         """Run a slow task that exceeds the timeout."""
@@ -80,7 +80,7 @@ class RunInThreadState(rx.State):
             task_ix = len(self.tasks)
             self.tasks.append(TaskInfo(status="Running slow task..."))
             task_info = self.tasks[task_ix]
-        
+
         try:
             # Run with a timeout of 1 second (not enough time)
             result = await asyncio.wait_for(
@@ -151,17 +151,17 @@ import time
 
 class FileProcessingState(rx.State):
     progress: str = "Ready"
-    
+
     @rx.event(background=True)
     async def process_large_file(self):
         async with self:
             self.progress = "Processing file..."
-        
+
         def process_file():
             # Simulate processing a large file
             time.sleep(5)
             return "File processed successfully!"
-        
+
         # Save the result to a local variable to avoid blocking the event loop.
         result = await rx.run_in_thread(process_file)
         async with self:

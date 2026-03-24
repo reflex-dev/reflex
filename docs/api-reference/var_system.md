@@ -15,7 +15,7 @@ rx.cond(
 )
 ```
 
- The conditional to roughly the following in Javascript:
+The conditional to roughly the following in Javascript:
 
 ```js
 state.threshold >= 50 ? "Pass" : "Fail";

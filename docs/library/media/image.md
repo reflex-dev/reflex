@@ -1,6 +1,6 @@
 ---
 components:
-    - rx.image
+  - rx.image
 ---
 
 ```python exec
@@ -54,10 +54,12 @@ def image_pil_example():
 
 ```md alert info
 # rx.image only accepts URLs and Pillow Images
+
 A cv2 image must be converted to a PIL image to be passed directly to `rx.image` as a State variable, or saved to the `assets` folder and then passed to the `rx.image` component.
 ```
 
 ```md alert info
 # How to let your user upload an image
+
 To let a user upload an image to your app check out the [upload docs]({library.forms.upload.path}).
 ```

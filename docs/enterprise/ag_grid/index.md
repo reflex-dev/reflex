@@ -525,8 +525,6 @@ The following props are available for `column_defs` as well as many others that 
 - `cell_editor`: `AGEditors | str | None`: Provide your own cell editor component for this column's cells. (Check out the Editing section of this page for more information)
 - `cell_editor_params`: `dict[str, list[Any]] | None`: Params to be passed to the cellEditor component.
 
-
-
 ## Functionality you need is not available/working in Reflex
 
 All AGGrid options found in this [documentation](https://www.ag-grid.com/react-data-grid/reference/) are mapped in rxe.ag_grid, but some features might not have been fully tested, due to the sheer number of existing features in the underlying AG Grid library.
@@ -582,19 +580,19 @@ The react code for the `select_all()` event handler is `selectAll = (source?: Se
 
 To use this in Reflex as you can see, it should be called in snake case rather than camel case. The `void` means it doesn't return anything. The `source?` indicates that it takes an optional `source` argument.
 
-
-```md alert info
+````md alert info
 # Another way to use the AG Grid API
+
 It is also possible to use the AG Grid API directly with the event trigger (`on_click`) of the component. This removes the need to create a variable `my_api`. This is shown in the example below. It is necessary to use the `id` of the `ag_grid` component that is to be referenced.
 
 ```python
 rx.button("Select all", on_click=rxe.ag_grid.api(id="ag_grid_basic_row_selection").select_all()),
 ```
+````
 
 ### More examples
 
 The following example lets a user [export the data as a csv](https://www.ag-grid.com/javascript-data-grid/grid-api/#reference-export-exportDataAsCsv) and [adjust the size of columns to fit the available horizontal space](https://www.ag-grid.com/javascript-data-grid/grid-api/#reference-columnSizing-sizeColumnsToFit). (Try resizing the screen and then clicking the resize columns button)
-
 
 ```python demo exec
 import reflex as rx
@@ -635,7 +633,6 @@ The react code for both of these is shown below. The key point to see is that bo
 `exportDataAsCsv = (params?: CsvExportParams) => void;`
 
 `sizeColumnsToFit = (paramsOrGridWidth?: ISizeColumnsToFitParams  |  number) => void;`
-
 
 ### Example with a Return Value
 

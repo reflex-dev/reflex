@@ -1,6 +1,6 @@
 ---
 components:
-    - rx.data_table
+  - rx.data_table
 ---
 
 ```python exec
@@ -18,7 +18,6 @@ In this example we will read data from a csv file, convert it to a pandas datafr
 We will also add a search, pagination, sorting to the data_table to make it more accessible.
 
 If you want to [add, edit or remove data]({library.tables_and_data_grids.table.path}) in your app or deal with anything but static data then the [`rx.table`]({library.tables_and_data_grids.table.path}) might be a better fit for your use case.
-
 
 ```python demo box
 rx.data_table(
@@ -50,7 +49,7 @@ rx.data_table(
     pagination= True,
     search= True,
     sort= True,
-)  
+)
 ```
 
 📊 **Dataset source:** [nba.csv](https://media.geeksforgeeks.org/wp-content/uploads/nba.csv)
@@ -64,10 +63,10 @@ class State(rx.State):
         ["Christiano", "Ronaldo", "Al-Nasir"]
      ]
     columns: List[str] = ["First Name", "Last Name"]
-    
-def index():  
+
+def index():
     return rx.data_table(
         data=State.data,
         columns=State.columns,
-    )   
+    )
 ```

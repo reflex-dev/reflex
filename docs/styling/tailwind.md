@@ -48,13 +48,14 @@ config = rx.Config(
 )
 ```
 
-```md alert info
+```````md alert info
 ## Migration from Legacy Configuration
 
 If you're currently using the legacy `tailwind` configuration parameter, you should migrate to using the plugin system:
 
 **Old approach (legacy):**
-``````python
+
+```python
 config = rx.Config(
     app_name="my_app",
     tailwind={
@@ -62,10 +63,12 @@ config = rx.Config(
         "theme": {"extend": {"colors": {"primary": "#3b82f6"}}},
     },
 )
-``````
+```
+```````
 
 **New approach (plugin-based):**
-``````python
+
+```python
 tailwind_config = {
     "plugins": ["@tailwindcss/typography"],
     "theme": {"extend": {"colors": {"primary": "#3b82f6"}}},
@@ -77,8 +80,9 @@ config = rx.Config(
         rx.plugins.TailwindV4Plugin(tailwind_config),
     ],
 )
-``````
 ```
+
+````
 
 ### Choosing Between Tailwind Versions
 
@@ -90,7 +94,7 @@ Reflex supports both Tailwind CSS v3 and v4:
 ```python
 # For Tailwind CSS v4 (recommended for new projects)
 config = rx.Config(
-    app_name="myapp", 
+    app_name="myapp",
     plugins=[rx.plugins.TailwindV4Plugin()],
 )
 
@@ -99,7 +103,7 @@ config = rx.Config(
     app_name="myapp",
     plugins=[rx.plugins.TailwindV3Plugin()],
 )
-```
+````
 
 All Tailwind configuration options are supported.
 
@@ -140,7 +144,7 @@ Begin by creating a CSS file inside your `assets` folder. Inside the CSS file, i
 
 We define a couple of custom CSS variables (`--background` and `--foreground`) that will be used throughout your app for styling. These variables can be dynamically updated based on the theme.
 
-Tailwind defaults to light mode, but to handle dark mode, you can define a separate set of CSS variables under the `.dark` class. 
+Tailwind defaults to light mode, but to handle dark mode, you can define a separate set of CSS variables under the `.dark` class.
 
 Tailwind Directives (`@tailwind base`, `@tailwind components`, `@tailwind utilities`): These are essential Tailwind CSS imports that enable the default base styles, components, and utility classes.
 
@@ -253,4 +257,3 @@ def tailwind_demo():
 Reflex core components are built on Radix Themes, which means they come with pre-defined styling. When you apply Tailwind classes to these components, you may encounter styling conflicts or unexpected behavior as the Tailwind styles compete with the built-in Radix styles.
 
 For the best experience when using Tailwind CSS in your Reflex application, we recommend using the lower-level `rx.el` components. These components don't have pre-applied styles, giving you complete control over styling with Tailwind classes without any conflicts. Check the list of HTML components [here]({library.other.html.path}).
-

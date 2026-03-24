@@ -11,7 +11,6 @@ It typically provides links or buttons to the main sections of a website or appl
 Navigation bars are useful for web apps because they provide a consistent and intuitive way for users to navigate through the app.
 Having a clear and consistent navigation structure can greatly improve the user experience by making it easy for users to find the information they need and access the different features of the app.
 
-
 ```md video https://youtube.com/embed/ITOZkzjtjUA?start=2365&end=2627
 # Video: Example of Using the Navbar Recipe
 ```
@@ -69,7 +68,6 @@ def navbar() -> rx.Component:
 		width="100%"
 	)
 ```
-
 
 ## Dropdown
 

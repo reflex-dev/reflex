@@ -2,19 +2,18 @@
 import reflex as rx
 from pcweb.constants import REFLEX_ASSETS_CDN
 from reflex_image_zoom import image_zoom
-from pcweb.pages.docs import hosting 
+from pcweb.pages.docs import hosting
 from pcweb.pages import docs
 from pcweb.styles.styles import get_code_style, cell_style
 ```
 
 # App
 
-In Reflex Cloud an "app" (or "application" or "website") refers to a web application built using the Reflex framework, which can be deployed and managed within the Cloud platform. 
+In Reflex Cloud an "app" (or "application" or "website") refers to a web application built using the Reflex framework, which can be deployed and managed within the Cloud platform.
 
 You can deploy an app using the `reflex deploy` command.
 
 There are many actions you can take in the Cloud UI to manage your app. Below are some of the most common actions you may want to take.
-
 
 ## Stopping an App
 
@@ -26,6 +25,7 @@ image_zoom(rx.image(src=f"{REFLEX_ASSETS_CDN}other/stopping_app.webp", padding_b
 
 ```md alert info
 # CLI Command to stop an app
+
 `reflex cloud apps stop [OPTIONS] [APP_ID]`
 ```
 
@@ -47,9 +47,9 @@ Here there is a `Delete app` button. Pressing this button will delete the app an
 
 ```md alert info
 # CLI Command to delete an app
+
 `reflex cloud apps delete [OPTIONS] [APP_ID]`
 ```
-
 
 ## Other app settings
 

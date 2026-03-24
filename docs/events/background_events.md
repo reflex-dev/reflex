@@ -14,6 +14,7 @@ A background task is defined by decorating an async `State` method with
 
 ```md alert warning
 # `@rx.event(background=True)` used to be called `@rx.background`.
+
 In Reflex version 0.6.5 and later, the `@rx.background` decorator has been renamed to `@rx.event(background=True)`.
 ```
 
@@ -120,10 +121,10 @@ class State(rx.State):
         while True:
             if self.router.session.client_token not in app.event_namespace.token_to_sid:
                 print("WebSocket connection closed or user navigated away. Stopping background task.")
-                break 
-            
+                break
+
             print("Running background task...")
-            await asyncio.sleep(2)  
+            await asyncio.sleep(2)
 
 
 @rx.page(on_load=State.loop_function)
@@ -145,9 +146,6 @@ It is up to the developer to ensure that duplicate tasks are not created under
 the circumstances that are undesirable. In the example above, the `_n_tasks`
 backend var is used to control whether `my_task` will enter the increment loop,
 or exit early.
-
-
-
 
 ## Background Task Limitations
 

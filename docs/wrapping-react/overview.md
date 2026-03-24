@@ -16,7 +16,7 @@ Once you wrap your component, you [publish it]({custom_components.overview.path}
 
 ## Simple Example
 
-Simple components that don't have any interaction can be wrapped with just a few lines of code. 
+Simple components that don't have any interaction can be wrapped with just a few lines of code.
 
 Below we show how to wrap the [Spline]({constants.SPLINE_URL}) library can be used to create 3D scenes and animations.
 
@@ -48,7 +48,6 @@ spline = Spline.create
 def index():
     return spline(scene="https://prod.spline.design/joLpOOYbGL-10EJ4/scene.splinecode")
 ```
-
 
 ## ColorPicker Example
 
@@ -118,7 +117,7 @@ def index():
 
 ## What Not To Wrap
 
-There are some libraries on npm that are not do not expose React components and therefore are very hard to wrap with Reflex. 
+There are some libraries on npm that are not do not expose React components and therefore are very hard to wrap with Reflex.
 
 A library like [spline](https://www.npmjs.com/package/@splinetool/runtime) below is going to be difficult to wrap with Reflex because it does not expose a React component.
 
@@ -133,12 +132,12 @@ const spline = new Application(canvas);
 spline.load('https://prod.spline.design/6Wq1Q7YGyM-iab9i/scene.splinecode');
 ```
 
-You should look out for JSX, a syntax extension to JavaScript, which has angle brackets `(<h1>Hello, world!</h1>)`. If you see JSX, it's likely that the library is a React component and can be wrapped with Reflex. 
+You should look out for JSX, a syntax extension to JavaScript, which has angle brackets `(<h1>Hello, world!</h1>)`. If you see JSX, it's likely that the library is a React component and can be wrapped with Reflex.
 
 If the library does not expose a react component you need to try and find a JS React wrapper for the library, such as [react-spline](https://www.npmjs.com/package/@splinetool/react-spline).
 
 ```javascript
-import Spline from '@splinetool/react-spline';
+import Spline from "@splinetool/react-spline";
 
 export default function App() {
   return (
@@ -148,7 +147,5 @@ export default function App() {
   );
 }
 ```
-
-
 
 In the next page, we will go step by step through a more complex example of wrapping a React component.

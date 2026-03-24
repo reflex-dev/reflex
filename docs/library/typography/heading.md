@@ -1,6 +1,6 @@
 ---
 components:
-    - rx.heading
+  - rx.heading
 ---
 
 ```python exec
@@ -24,7 +24,7 @@ rx.flex(
     rx.heading("Level 3", as_="h3"),
     direction="column",
     spacing="3",
-)             
+)
 ```
 
 ## Size
@@ -107,14 +107,14 @@ rx.flex(
     rx.box(
         rx.heading("Without trim", margin_bottom="4px", size="3",),
         rx.text("The goal of typography is to relate font size, line height, and line width in a proportional way that maximizes beauty and makes reading easier and more pleasant."),
-        style={"background": "var(--gray-a2)", 
+        style={"background": "var(--gray-a2)",
                 "border": "1px dashed var(--gray-a7)",},
         padding="16px",
     ),
     rx.box(
         rx.heading("With trim", margin_bottom="4px", size="3", trim="start"),
         rx.text("The goal of typography is to relate font size, line height, and line width in a proportional way that maximizes beauty and makes reading easier and more pleasant."),
-        style={"background": "var(--gray-a2)", 
+        style={"background": "var(--gray-a2)",
                 "border": "1px dashed var(--gray-a7)",},
         padding="16px",
     ),

@@ -1,9 +1,8 @@
-# More React Libraries 
-
+# More React Libraries
 
 ## AG Charts
 
-Here we wrap the AG Charts library from the NPM package [ag-charts-react](https://www.npmjs.com/package/ag-charts-react). 
+Here we wrap the AG Charts library from the NPM package [ag-charts-react](https://www.npmjs.com/package/ag-charts-react).
 
 In the react code below we can see the first `2` lines are importing React and ReactDOM, and this can be ignored when wrapping your component.
 
@@ -11,26 +10,25 @@ We import the `AgCharts` component from the `ag-charts-react` library on line 5.
 
 Line `7` defines a functional React component, which on line `26` returns `AgCharts` which is similar in the Reflex code to using the `chart` component.
 
-Line `9` uses the `useState` hook to create a state variable `chartOptions` and its setter function `setChartOptions` (equivalent to the event handler `set_chart_options` in reflex). The initial state variable is of type dict and has two key value pairs `data` and `series`. 
+Line `9` uses the `useState` hook to create a state variable `chartOptions` and its setter function `setChartOptions` (equivalent to the event handler `set_chart_options` in reflex). The initial state variable is of type dict and has two key value pairs `data` and `series`.
 
 When we see `useState` in React code, it correlates to state variables in your State. As you can see in our Reflex code we have a state variable `chart_options` which is a dictionary, like in our React code.
 
-Moving to line `26` we see that the `AgCharts` has a prop `options`. In order to use this in Reflex we must wrap this prop. We do this with `options: rx.Var[dict]` in the `AgCharts` component. 
+Moving to line `26` we see that the `AgCharts` has a prop `options`. In order to use this in Reflex we must wrap this prop. We do this with `options: rx.Var[dict]` in the `AgCharts` component.
 
 Lines `31` and `32` are rendering the component inside the root element. This can be ignored when we are wrapping a component as it is done in Reflex by creating an `index` function and adding it to the app.
 
-
 ---md tabs
 
---tab React Code    
+--tab React Code
 
 ```javascript
 1 | import React, \{ useState } from 'react';
 2 | import ReactDOM from 'react-dom/client';
-3 | 
+3 |
 4 | // React Chart Component
 5 | import \{ AgCharts } from 'ag-charts-react';
-6 | 
+6 |
 7 | const ChartExample = () => {
 8 |     // Chart Options: Control & configure the chart
 9 |     const [chartOptions, setChartOptions] = useState({
@@ -46,14 +44,14 @@ Lines `31` and `32` are rendering the component inside the root element. This ca
 19|         // Series: Defines which chart type and data to use
 20|         series: [\{ type: 'bar', xKey: 'month', yKey: 'iceCreamSales' }],
 21|     });
-22| 
+22|
 23|     // React Chart Component
 24|     return (
 25|         // AgCharts component with options passed as prop
 26|         <AgCharts options=\{chartOptions} />
 27|     );
 28| }
-29| 
+29|
 30| // Render component inside root element
 31| const root = ReactDOM.createRoot(document.getElementById('root'));
 32| root.render(<ChartExample />);
@@ -69,7 +67,7 @@ class AgCharts(rx.Component):
     """ A simple line chart component using AG Charts """
 
     library = "ag-charts-react"
-    
+
     tag = "AgCharts"
 
     options: rx.Var[dict]
@@ -100,10 +98,10 @@ def index() -> rx.Component:
 app = rx.App()
 app.add_page(index)
 ```
+
 --
 
 ---
-
 
 ## React Leaflet
 
@@ -127,12 +125,12 @@ Lines `24` and `25` defines and exports a React functional component named `Home
 
 ---md tabs
 
---tab React Code 
+--tab React Code
 
 ```javascript
 1 | import dynamic from "next/dynamic";
 2 | import "leaflet/dist/leaflet.css";
-3 | 
+3 |
 4 | const MapComponent = dynamic(
 5 |   () => {
 6 |     return import("react-leaflet").then((\{ MapContainer, TileLayer }) => {
@@ -161,7 +159,7 @@ Lines `24` and `25` defines and exports a React functional component named `Home
 --
 --tab Reflex Code
 
-```python 
+```python
 import reflex as rx
 
 class MapContainer(rx.NoSSRComponent):
@@ -176,7 +174,7 @@ class MapContainer(rx.NoSSRComponent):
 
     scroll_wheel_zoom: rx.Var[bool]
 
-    # Can also pass a url like: https://unpkg.com/leaflet/dist/leaflet.css 
+    # Can also pass a url like: https://unpkg.com/leaflet/dist/leaflet.css
     def add_imports(self):
         return \{"": ["leaflet/dist/leaflet.css"]}
 
@@ -197,7 +195,7 @@ tile_layer = TileLayer.create
 def index() -> rx.Component:
     return map_container(
                 tile_layer(url="https://\{s}.tile.openstreetmap.org/\{z}/\{x}/\{y}.png"),
-                center=[51.505, -0.09], 
+                center=[51.505, -0.09],
                 zoom=13,
                 #scroll_wheel_zoom=True
                 width="100%",
@@ -209,10 +207,10 @@ app = rx.App()
 app.add_page(index)
 
 ```
+
 --
 
 ---
-
 
 ## React PDF Renderer
 
@@ -221,7 +219,6 @@ In this example we are wrapping the React renderer for creating PDF files on the
 This example is similar to the previous examples, and again Dynamic Imports are required for this library. This is done in Reflex by using the `NoSSRComponent` class when defining the component. There is more information on why this is needed on the `Dynamic Imports` section of this [page]({docs.wrapping_react.library_and_tags.path}).
 
 The main difference with this example is that the `style` prop, used on lines `20`, `21` and `24` in React code, is a reserved name in Reflex so can not be wrapped. A different name must be used when wrapping this prop and then this name must be changed back to the original with the `rename_props` method. In this example we name the prop `theme` in our Reflex code and then change it back to `style` with the `rename_props` method in both the `Page` and `View` components.
-
 
 ```md alert info
 # List of reserved names in Reflex
@@ -293,7 +290,7 @@ _State class associated with this component instance_
 
 ---md tabs
 
---tab React Code    
+--tab React Code
 
 ```javascript
 1 | import ReactDOM from 'react-dom';
@@ -325,13 +322,13 @@ _State class associated with this component instance_
 27|     </Page>
 28|   </Document>
 29| );
-30| 
+30|
 31| const App = () => (
 32|   <PDFViewer>
 33|     <MyDocument />
 34|   </PDFViewer>
 35| );
-36| 
+36|
 37| ReactDOM.render(<App />, document.getElementById('root'));
 ```
 
@@ -342,14 +339,14 @@ _State class associated with this component instance_
 import reflex as rx
 
 class Document(rx.Component):
-    
+
     library = "@react-pdf/renderer"
 
     tag = "Document"
-    
+
 
 class Page(rx.Component):
-    
+
     library = "@react-pdf/renderer"
 
     tag = "Page"
@@ -364,14 +361,14 @@ class Page(rx.Component):
 
 
 class Text(rx.Component):
-    
+
     library = "@react-pdf/renderer"
 
     tag = "Text"
 
 
 class View(rx.Component):
-    
+
     library = "@react-pdf/renderer"
 
     tag = "View"
@@ -385,7 +382,7 @@ class View(rx.Component):
 
 
 class StyleSheet(rx.Component):
-    
+
     library = "@react-pdf/renderer"
 
     tag = "StyleSheet"
@@ -396,7 +393,7 @@ class StyleSheet(rx.Component):
 
 
 class PDFViewer(rx.NoSSRComponent):
-    
+
     library = "@react-pdf/renderer"
 
     tag = "PDFViewer"
@@ -424,7 +421,7 @@ styles = style_sheet({
 
 
 def index() -> rx.Component:
-    return pdf_viewer( 
+    return pdf_viewer(
         document(
             page(
                 view(
@@ -444,6 +441,7 @@ def index() -> rx.Component:
 app = rx.App()
 app.add_page(index)
 ```
+
 --
 
 ---

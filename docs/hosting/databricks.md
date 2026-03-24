@@ -30,14 +30,8 @@ This guide walks you through deploying a Reflex web application on Databricks us
 Create a new file called `app.yaml` directly in Databricks (not in GitHub):
 
 ```yaml
-command: [
-  "reflex", 
-  "run",
-  "--env",
-  "prod",
-  "--backend-port",
-  "$DATABRICKS_APP_PORT"
-]
+command:
+  ["reflex", "run", "--env", "prod", "--backend-port", "$DATABRICKS_APP_PORT"]
 
 env:
   - name: "HOME"
@@ -57,7 +51,7 @@ env:
 ### Obtain Required Tokens
 
 1. **Reflex Access Token**
-   - Visit [Reflex Cloud Tokens]({constants.REFLEX_CLOUD_URL.rstrip("/")}/tokens/)
+   - Visit [Reflex Cloud Tokens](<{constants.REFLEX_CLOUD_URL.rstrip("/")}/tokens/>)
    - Navigate to Account Settings → Tokens
    - Create a new token and copy the value
    - Replace `your-token-here` in the configuration
@@ -92,7 +86,7 @@ app = rxe.App(
 ```
 
 ```md alert info
-# Also add  `reflex-enterprise` and `asgiproxy`  to your `requirements.txt` file.
+# Also add `reflex-enterprise` and `asgiproxy` to your `requirements.txt` file.
 ```
 
 ## Step 4: Create Databricks App

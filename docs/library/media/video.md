@@ -1,6 +1,6 @@
 ---
 components:
-    - rx.video
+  - rx.video
 ---
 
 # Video
@@ -22,8 +22,8 @@ rx.video(
 
 If we had a local file in the `assets` folder named `test.mp4` we could set `url="/test.mp4"` to view the video.
 
-
 ```md alert info
 # How to let your user upload a video
+
 To let a user upload a video to your app check out the [upload docs]({library.forms.upload.path}).
 ```

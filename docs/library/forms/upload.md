@@ -16,7 +16,6 @@ from pcweb.constants import REFLEX_ASSETS_CDN
 
 Reflex makes it simple to add file upload functionality to your app. You can let users select files, store them on your server, and display or process them as needed. Below is a minimal example that demonstrates how to upload files, save them to disk, and display uploaded images using application state.
 
-
 ## Basic File Upload Example
 
 You can let users upload files and keep track of them in your app’s state. The example below allows users to upload files, saves them using the backend, and then displays the uploaded files as images.
@@ -59,18 +58,21 @@ To upload the file(s), you need to bind an event handler and pass the special
 Reflex provides two key functions for handling uploaded files:
 
 ### rx.get_upload_dir()
+
 - **Purpose**: Returns a `Path` object pointing to the server-side directory where uploaded files should be saved
 - **Usage**: Used in backend event handlers to determine where to save uploaded files
 - **Default Location**: `./uploaded_files` (can be customized via `REFLEX_UPLOADED_FILES_DIR` environment variable)
 - **Type**: Returns `pathlib.Path`
 
 ### rx.get_upload_url(filename)
+
 - **Purpose**: Returns the URL string that can be used in frontend components to access uploaded files
 - **Usage**: Used in frontend components (like `rx.image`, `rx.video`) to display uploaded files
 - **URL Format**: `/_upload/filename`
 - **Type**: Returns `str`
 
 ### Key Differences
+
 - **rx.get_upload_dir()** -> Backend file path for saving files
 - **rx.get_upload_url()** -> Frontend URL for displaying files
 
@@ -280,7 +282,6 @@ def index():
     )
 ```
 
-
 ### Customizing the Upload
 
 In the example below, the upload component accepts a maximum number of 5 files of specific types.
@@ -443,6 +444,7 @@ your_project/
 ```
 
 The files are automatically served at:
+
 - `/_upload/image1.png` ← `rx.get_upload_url("image1.png")`
 - `/_upload/document.pdf` ← `rx.get_upload_url("document.pdf")`
 - `/_upload/video.mp4` ← `rx.get_upload_url("video.mp4")`

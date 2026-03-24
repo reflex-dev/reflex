@@ -165,11 +165,11 @@ def counter_increment():
     )
 ```
 
-When an event trigger is activated, the event handler is called, which updates the state. The UI is automatically re-rendered to reflect the new state. 
-
+When an event trigger is activated, the event handler is called, which updates the state. The UI is automatically re-rendered to reflect the new state.
 
 ```md alert info
 # What is the `@rx.event` decorator?
+
 Adding the `@rx.event` decorator above the event handler is strongly recommended. This decorator enables proper static type checking, which ensures event handlers receive the correct number and types of arguments. This was introduced in Reflex version 0.6.5.
 ```
 

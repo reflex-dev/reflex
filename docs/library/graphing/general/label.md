@@ -1,7 +1,7 @@
 ---
 components:
-    - rx.recharts.Label
-    - rx.recharts.LabelList
+  - rx.recharts.Label
+  - rx.recharts.LabelList
 ---
 
 # Label
@@ -161,13 +161,13 @@ def label_list():
         data_key="uv",
         stroke="#8884d8",
         fill="#8884d8"
-    ), 
+    ),
     rx.recharts.bar(
         rx.recharts.label_list(data_key="pv", position="top"),
         data_key="pv",
         stroke="#82ca9d",
-        fill="#82ca9d" 
-    ), 
+        fill="#82ca9d"
+    ),
     rx.recharts.x_axis(
         data_key="name"
     ),
@@ -178,5 +178,3 @@ def label_list():
     height = 300,
   )
 ```
-
-

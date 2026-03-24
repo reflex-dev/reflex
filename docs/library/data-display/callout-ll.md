@@ -1,10 +1,9 @@
 ---
 components:
-    - rx.callout.root
-    - rx.callout.icon
-    - rx.callout.text
+  - rx.callout.root
+  - rx.callout.icon
+  - rx.callout.text
 ---
-
 
 ```python exec
 import reflex as rx

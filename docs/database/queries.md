@@ -54,7 +54,7 @@ database or persist an existing object.
 class AddUser(rx.State):
     username: str
     email: str
-    
+
     @rx.event
     def add_user(self):
         with rx.session() as session:
@@ -112,7 +112,7 @@ ensure all fields are up to date before exiting the session.
 ```python
 class AddUserForm(rx.State):
     user: User | None = None
-    
+
     @rx.event
     def add_user(self, form_data: dict[str, Any]):
         with rx.session() as session:
@@ -134,7 +134,7 @@ may either be created or updated accordingly.
 ```python
 class AddUserForm(rx.State):
     ...
-    
+
     @rx.event
     def update_user(self, form_data: dict[str, Any]):
         if self.user is None:
@@ -156,7 +156,7 @@ necessary for particularly complex queries, or when using database-specific
 features.
 
 SQLModel exposes the `session.execute()` method that can be used to execute raw
-SQL strings.  If parameter binding is needed, the query may be wrapped in
+SQL strings. If parameter binding is needed, the query may be wrapped in
 [`sqlalchemy.text`](https://docs.sqlalchemy.org/en/14/core/sqlelement.html#sqlalchemy.sql.expression.text),
 which allows colon-prefix names to be used as placeholders.
 
@@ -205,7 +205,7 @@ import reflex as rx
 
 class AsyncUserState(rx.State):
     users: list[User] = []
-    
+
     @rx.event(background=True)
     async def get_users_async(self):
         async with rx.asession() as asession:
@@ -240,7 +240,7 @@ To add a new record to the database asynchronously:
 class AsyncAddUser(rx.State):
     username: str
     email: str
-    
+
     @rx.event(background=True)
     async def add_user(self):
         async with rx.asession() as asession:
@@ -295,7 +295,7 @@ Similar to the regular session, you can refresh an object to ensure all fields a
 ```python
 class AsyncAddUserForm(rx.State):
     user: User | None = None
-    
+
     @rx.event(background=True)
     async def add_user(self, form_data: dict[str, str]):
         async with rx.asession() as asession:
@@ -313,7 +313,7 @@ You can also execute raw SQL asynchronously:
 ```python
 class AsyncRawSQL(rx.State):
     users: list[list] = []
-    
+
     @rx.event(background=True)
     async def insert_user_raw(self, username, email):
         async with rx.asession() as asession:
@@ -325,7 +325,7 @@ class AsyncRawSQL(rx.State):
                 dict(username=username, email=email),
             )
             await asession.commit()
-    
+
     @rx.event(background=True)
     async def get_raw_users(self):
         async with rx.asession() as asession:
@@ -336,6 +336,7 @@ class AsyncRawSQL(rx.State):
 
 ```md alert info
 # Important Notes for Async Database Operations
+
 - Always use the `@rx.event(background=True)` decorator for async event handlers
 - Most operations against the `asession` must be awaited, including `commit()`, `execute()`, `refresh()`, and `delete()`
 - The `add()` method does not need to be awaited

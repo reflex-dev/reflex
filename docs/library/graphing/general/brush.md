@@ -1,6 +1,6 @@
 ---
 components:
-    - rx.recharts.Brush
+  - rx.recharts.Brush
 ---
 
 # Brush
@@ -8,6 +8,7 @@ components:
 ```python exec
 import reflex as rx
 ```
+
 ## Simple Example
 
 The brush component allows us to view charts that have a large number of data points. To view and analyze them efficiently, the brush provides a slider with two handles that helps the viewer to select some range of data points to be displayed.

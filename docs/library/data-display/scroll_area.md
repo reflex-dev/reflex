@@ -1,28 +1,26 @@
 ---
 components:
-    - rx.scroll_area
+  - rx.scroll_area
 
 ScrollArea: |
-    lambda **props: rx.scroll_area(
-        rx.flex(
-            rx.text(
-                """Three fundamental aspects of typography are legibility, readability, and aesthetics. Although in a non-technical sense "legible" and "readable"are often used synonymously, typographically they are separate but related concepts.""",
-                size="5",
-            ),
-            rx.text(
-                """Legibility describes how easily individual characters can be distinguished from one another. It is described by Walter Tracy as "the quality of being decipherable and recognisable". For instance, if a "b" and an "h", or a "3" and an "8", are difficult to distinguish at small sizes, this is a problem of legibility.""",
-                size="5",
-            ),
-            direction="column",
-            spacing="4",
-            height="100px",
-            width="50%",
-        ),
-        **props
-    )
-
+  lambda **props: rx.scroll_area(
+      rx.flex(
+          rx.text(
+              """Three fundamental aspects of typography are legibility, readability, and aesthetics. Although in a non-technical sense "legible" and "readable"are often used synonymously, typographically they are separate but related concepts.""",
+              size="5",
+          ),
+          rx.text(
+              """Legibility describes how easily individual characters can be distinguished from one another. It is described by Walter Tracy as "the quality of being decipherable and recognisable". For instance, if a "b" and an "h", or a "3" and an "8", are difficult to distinguish at small sizes, this is a problem of legibility.""",
+              size="5",
+          ),
+          direction="column",
+          spacing="4",
+          height="100px",
+          width="50%",
+      ),
+      **props
+  )
 ---
-
 
 ```python exec
 import random
@@ -97,7 +95,7 @@ rx.grid(
         ),
         type="always",
         scrollbars="vertical",
-        style={"height": 150}, 
+        style={"height": 150},
     ),
     rx.scroll_area(
         rx.flex(
@@ -120,7 +118,7 @@ rx.grid(
         ),
         type="always",
         scrollbars="horizontal",
-        style={"height": 150}, 
+        style={"height": 150},
     ),
     rx.scroll_area(
         rx.flex(
@@ -143,7 +141,7 @@ rx.grid(
         ),
         type="always",
         scrollbars="both",
-        style={"height": 150}, 
+        style={"height": 150},
     ),
     columns="3",
     spacing="2",
@@ -179,7 +177,7 @@ rx.grid(
         ),
         type="auto",
         scrollbars="vertical",
-        style={"height": 150}, 
+        style={"height": 150},
     ),
     rx.scroll_area(
         rx.flex(
@@ -196,7 +194,7 @@ rx.grid(
         ),
         type="always",
         scrollbars="vertical",
-        style={"height": 150}, 
+        style={"height": 150},
     ),
     rx.scroll_area(
         rx.flex(
@@ -213,7 +211,7 @@ rx.grid(
         ),
         type="scroll",
         scrollbars="vertical",
-        style={"height": 150}, 
+        style={"height": 150},
     ),
     rx.scroll_area(
         rx.flex(
@@ -230,7 +228,7 @@ rx.grid(
         ),
         type="hover",
         scrollbars="vertical",
-        style={"height": 150}, 
+        style={"height": 150},
     ),
     columns="4",
     spacing="2",

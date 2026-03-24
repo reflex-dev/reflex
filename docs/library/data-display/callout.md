@@ -1,21 +1,20 @@
 ---
 components:
-    - rx.callout
-    - rx.callout.root
-    - rx.callout.icon
-    - rx.callout.text
+  - rx.callout
+  - rx.callout.root
+  - rx.callout.icon
+  - rx.callout.text
 
 Callout: |
-    lambda **props: rx.callout("Basic Callout", icon="search", **props)
+  lambda **props: rx.callout("Basic Callout", icon="search", **props)
 
 CalloutRoot: |
-    lambda **props: rx.callout.root(
-        rx.callout.icon(rx.icon(tag="info")),
-        rx.callout.text("You will need admin privileges to install and access this application."),
-        **props
-    )
+  lambda **props: rx.callout.root(
+      rx.callout.icon(rx.icon(tag="info")),
+      rx.callout.text("You will need admin privileges to install and access this application."),
+      **props
+  )
 ---
-
 
 ```python exec
 import reflex as rx
