@@ -904,6 +904,15 @@ wheels = [
 ]
 
 [[package]]
+name = "mistletoe"
+version = "1.5.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/31/ae/d33647e2a26a8899224f36afc5e7b7a670af30f1fd87231e9f07ca19d673/mistletoe-1.5.1.tar.gz", hash = "sha256:c5571ce6ca9cfdc7ce9151c3ae79acb418e067812000907616427197648030a3", size = 111769, upload-time = "2025-12-07T16:19:01.066Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/20/60/0980fefdc4d12c18c1bbab9d62852f27aded8839233c7b0a9827aaf395f5/mistletoe-1.5.1-py3-none-any.whl", hash = "sha256:d3e97664798261503f685f6a6281b092628367cf3128fc68a015a993b0c4feb3", size = 55331, upload-time = "2025-12-07T16:18:59.65Z" },
+]
+
+[[package]]
 name = "narwhals"
 version = "2.18.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2150,6 +2159,7 @@ version = "0.0.1"
 source = { editable = "packages/reflex-docgen" }
 dependencies = [
     { name = "griffelib" },
+    { name = "mistletoe" },
     { name = "reflex" },
     { name = "typing-extensions" },
     { name = "typing-inspection" },
@@ -2158,6 +2168,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "griffelib", specifier = ">=2.0.1" },
+    { name = "mistletoe", specifier = ">=1.4.0" },
     { name = "reflex", editable = "." },
     { name = "typing-extensions" },
     { name = "typing-inspection", specifier = ">=0.4.2" },
