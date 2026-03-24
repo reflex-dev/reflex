@@ -3,7 +3,6 @@
 import textwrap
 from typing import Any, cast
 
-from reflex_components.base import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf, field
 from reflex.components.tags import Tag
 from reflex.components.tags.match_tag import MatchTag
@@ -13,6 +12,7 @@ from reflex.utils.exceptions import MatchTypeError
 from reflex.utils.imports import ImportDict
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
+from reflex_components.base import Fragment
 
 
 class Match(MemoizationLeaf):

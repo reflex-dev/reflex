@@ -5,12 +5,12 @@ from __future__ import annotations
 from typing import Any, cast
 
 import reflex as rx
-from reflex_components.base.fragment import Fragment
 from reflex.components.component import StatefulComponent, field
 from reflex.constants.compiler import Hooks
 from reflex.event import key_event, no_args_event_spec
 from reflex.vars.base import Var, VarData
 from reflex.vars.object import ObjectVar
+from reflex_components.base.fragment import Fragment
 
 
 def _on_resize_spec() -> tuple[Var[int], Var[int]]:

@@ -1,9 +1,9 @@
 import pytest
 from reflex_components.datadisplay.code import CodeBlock
 from reflex_components.datadisplay.shiki_code_block import ShikiHighLevelCodeBlock
-from reflex_components.markdown.markdown import Markdown, MarkdownComponentMap
-from reflex_components.radix.themes.layout.box import Box
-from reflex_components.radix.themes.typography.heading import Heading
+from reflex_markdown.markdown import Markdown, MarkdownComponentMap
+from reflex_radix.themes.layout.box import Box
+from reflex_radix.themes.typography.heading import Heading
 
 from reflex.components.component import Component, memo
 from reflex.vars.base import Var

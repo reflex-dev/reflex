@@ -1240,42 +1240,48 @@ def _write_pyi_file(module_path: Path, source: str) -> str:
     return md5(pyi_content.encode()).hexdigest()
 
 
-# Component subpackages that have moved to the reflex_components package.
-_MOVED_COMPONENT_SUBMODULES: frozenset[str] = frozenset({
-    "base",
-    "core",
-    "datadisplay",
-    "el",
-    "gridjs",
-    "lucide",
-    "markdown",
-    "moment",
-    "plotly",
-    "radix",
-    "react_player",
-    "react_router",
-    "recharts",
-    "sonner",
-})
+# Mapping from component subpackage name to its target Python package.
+_COMPONENT_SUBPACKAGE_TARGETS: dict[str, str] = {
+    # reflex-components (base package)
+    "base": "reflex_components.base",
+    "core": "reflex_components.core",
+    "datadisplay": "reflex_components.datadisplay",
+    "el": "reflex_components.el",
+    "gridjs": "reflex_components.gridjs",
+    "lucide": "reflex_components.lucide",
+    "moment": "reflex_components.moment",
+    # Standalone packages
+    "markdown": "reflex_markdown",
+    "plotly": "reflex_plotly",
+    "radix": "reflex_radix",
+    "react_player": "reflex_react_player",
+    "react_router": "reflex_react_router",
+    "recharts": "reflex_recharts",
+    "sonner": "reflex_sonner",
+}
 
 
 def _rewrite_component_import(module: str) -> str:
-    """Rewrite a lazy-loader module path to an absolute ``reflex_components`` import when needed.
+    """Rewrite a lazy-loader module path to the correct absolute package import.
 
     Args:
         module: The module path from ``_SUBMOD_ATTRS`` (e.g. ``"components.radix.themes.base"``).
 
     Returns:
-        An absolute import path (``"reflex_components.radix.themes.base"``) for moved
+        An absolute import path (``"reflex_radix.themes.base"``) for moved
         components, or a relative path (``".components.component"``) for everything else.
     """
     if module == "components":
+        # "components": ["el", "radix", ...] — these are re-exported submodules.
+        # Can't map to a single package, but the pyi generator handles each attr individually.
         return "reflex_components"
     if module.startswith("components."):
         rest = module[len("components.") :]
         first_part = rest.split(".")[0]
-        if first_part in _MOVED_COMPONENT_SUBMODULES:
-            return f"reflex_components.{rest}"
+        target = _COMPONENT_SUBPACKAGE_TARGETS.get(first_part)
+        if target is not None:
+            remainder = rest[len(first_part) :]
+            return f"{target}{remainder}"
     return f".{module}"
 
 
@@ -1304,19 +1310,27 @@ def _get_init_lazy_imports(mod: tuple | ModuleType, new_tree: ast.AST):
             for imported in attrs
         }
         # construct the import statement and handle special cases for aliases
-        sub_mod_attrs_imports = [
-            f"from {_rewrite_component_import(module)} import "
-            + (
-                (
+        for imported, module in flattened_sub_mod_attrs.items():
+            # For "components": ["el", "radix", ...], resolve each attr to its package.
+            if (
+                module == "components"
+                and isinstance(imported, str)
+                and imported in _COMPONENT_SUBPACKAGE_TARGETS
+            ):
+                target = _COMPONENT_SUBPACKAGE_TARGETS[imported]
+                sub_mod_attrs_imports.append(f"import {target} as {imported}")
+                continue
+
+            rewritten = _rewrite_component_import(module)
+            if isinstance(imported, tuple):
+                suffix = (
                     (imported[0] + " as " + imported[1])
                     if imported[0] != imported[1]
                     else imported[0]
                 )
-                if isinstance(imported, tuple)
-                else imported
-            )
-            for imported, module in flattened_sub_mod_attrs.items()
-        ]
+            else:
+                suffix = imported
+            sub_mod_attrs_imports.append(f"from {rewritten} import {suffix}")
         sub_mod_attrs_imports.append("")
 
     if extra_mappings:

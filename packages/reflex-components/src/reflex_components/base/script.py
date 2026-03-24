@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from reflex.components import el as elements
-from reflex_components.core.helmet import helmet
 from reflex.utils import console
+from reflex_components import el as elements
+from reflex_components.core.helmet import helmet
 
 
 class Script(elements.Script):

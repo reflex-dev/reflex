@@ -4,8 +4,8 @@ from reflex_components.core.banner import (
     ConnectionPulser,
     WebsocketTargetURL,
 )
-from reflex_components.radix.themes.base import RadixThemesComponent
-from reflex_components.radix.themes.typography.text import Text
+from reflex_radix.themes.base import RadixThemesComponent
+from reflex_radix.themes.typography.text import Text
 
 
 def test_websocket_target_url():

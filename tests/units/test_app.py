@@ -18,7 +18,7 @@ from pytest_mock import MockerFixture
 from reflex_components.base.bare import Bare
 from reflex_components.base.fragment import Fragment
 from reflex_components.core.cond import Cond
-from reflex_components.radix.themes.typography.text import Text
+from reflex_radix.themes.typography.text import Text
 from starlette.applications import Starlette
 from starlette.datastructures import FormData, UploadFile
 from starlette.responses import StreamingResponse

@@ -4,7 +4,7 @@ from typing import Any, ClassVar
 import pytest
 from reflex_components.base.bare import Bare
 from reflex_components.base.fragment import Fragment
-from reflex_components.radix.themes.layout.box import Box
+from reflex_radix.themes.layout.box import Box
 
 import reflex as rx
 from reflex.base import Base
@@ -861,7 +861,7 @@ def test_custom_component_wrapper():
             color=color,
         )
 
-    from reflex_components.radix.themes.typography.text import Text
+    from reflex_radix.themes.typography.text import Text
 
     ccomponent = my_component(
         rx.text("child"), width=LiteralVar.create(1), color=LiteralVar.create("red")

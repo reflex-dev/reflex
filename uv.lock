@@ -16,6 +16,13 @@ members = [
     "reflex",
     "reflex-components",
     "reflex-docgen",
+    "reflex-markdown",
+    "reflex-plotly",
+    "reflex-radix",
+    "reflex-react-player",
+    "reflex-react-router",
+    "reflex-recharts",
+    "reflex-sonner",
 ]
 
 [[package]]
@@ -2044,6 +2051,13 @@ dependencies = [
     { name = "redis" },
     { name = "reflex-components" },
     { name = "reflex-hosting-cli" },
+    { name = "reflex-markdown" },
+    { name = "reflex-plotly" },
+    { name = "reflex-radix" },
+    { name = "reflex-react-player" },
+    { name = "reflex-react-router" },
+    { name = "reflex-recharts" },
+    { name = "reflex-sonner" },
     { name = "rich" },
     { name = "sqlmodel" },
     { name = "starlette" },
@@ -2112,6 +2126,13 @@ requires-dist = [
     { name = "redis", specifier = ">=5.2.1,<8.0" },
     { name = "reflex-components", editable = "packages/reflex-components" },
     { name = "reflex-hosting-cli", specifier = ">=0.1.61" },
+    { name = "reflex-markdown", editable = "packages/reflex-markdown" },
+    { name = "reflex-plotly", editable = "packages/reflex-plotly" },
+    { name = "reflex-radix", editable = "packages/reflex-radix" },
+    { name = "reflex-react-player", editable = "packages/reflex-react-player" },
+    { name = "reflex-react-router", editable = "packages/reflex-react-router" },
+    { name = "reflex-recharts", editable = "packages/reflex-recharts" },
+    { name = "reflex-sonner", editable = "packages/reflex-sonner" },
     { name = "rich", specifier = ">=13,<15" },
     { name = "sqlmodel", specifier = ">=0.0.27,<0.1" },
     { name = "sqlmodel", marker = "extra == 'db'", specifier = ">=0.0.24,<0.1" },
@@ -2199,6 +2220,41 @@ sdist = { url = "https://files.pythonhosted.org/packages/83/2f/6d9acd7afd3971da8
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f7/67/415e1f7fe09e77027e9e0063f39053d74f1299e671e837c9a7745453676d/reflex_hosting_cli-0.1.62-py3-none-any.whl", hash = "sha256:73d517fa827b1d52dcb81ba9024671acfd4889015a436ed223d2eda3c07eab89", size = 45049, upload-time = "2026-03-10T01:12:15.033Z" },
 ]
+
+[[package]]
+name = "reflex-markdown"
+version = "0.0.1"
+source = { editable = "packages/reflex-markdown" }
+
+[[package]]
+name = "reflex-plotly"
+version = "0.0.1"
+source = { editable = "packages/reflex-plotly" }
+
+[[package]]
+name = "reflex-radix"
+version = "0.0.1"
+source = { editable = "packages/reflex-radix" }
+
+[[package]]
+name = "reflex-react-player"
+version = "0.0.1"
+source = { editable = "packages/reflex-react-player" }
+
+[[package]]
+name = "reflex-react-router"
+version = "0.0.1"
+source = { editable = "packages/reflex-react-router" }
+
+[[package]]
+name = "reflex-recharts"
+version = "0.0.1"
+source = { editable = "packages/reflex-recharts" }
+
+[[package]]
+name = "reflex-sonner"
+version = "0.0.1"
+source = { editable = "packages/reflex-sonner" }
 
 [[package]]
 name = "requests"

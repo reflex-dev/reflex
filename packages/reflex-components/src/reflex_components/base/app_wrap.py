@@ -1,8 +1,8 @@
 """Top-level component that wraps the entire app."""
 
-from reflex_components.base.fragment import Fragment
 from reflex.components.component import Component
 from reflex.vars.base import Var
+from reflex_components.base.fragment import Fragment
 
 
 class AppWrap(Fragment):

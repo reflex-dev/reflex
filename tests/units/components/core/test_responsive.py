@@ -5,7 +5,7 @@ from reflex_components.core.responsive import (
     tablet_and_desktop,
     tablet_only,
 )
-from reflex_components.radix.themes.layout.box import Box
+from reflex_radix.themes.layout.box import Box
 
 
 def test_mobile_only():

@@ -1,8 +1,8 @@
 """Display the title of the current page."""
 
 from reflex.components.component import field
-from reflex_components.el.elements.base import BaseHTML
 from reflex.vars.base import Var
+from reflex_components.el.elements.base import BaseHTML
 
 
 class RawLink(BaseHTML):

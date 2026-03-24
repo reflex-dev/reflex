@@ -17,6 +17,13 @@ DEFAULT_TARGETS = [
     "reflex/experimental",
     "reflex/__init__.py",
     "packages/reflex-components/src/reflex_components",
+    "packages/reflex-markdown/src/reflex_markdown",
+    "packages/reflex-plotly/src/reflex_plotly",
+    "packages/reflex-radix/src/reflex_radix",
+    "packages/reflex-react-player/src/reflex_react_player",
+    "packages/reflex-react-router/src/reflex_react_router",
+    "packages/reflex-recharts/src/reflex_recharts",
+    "packages/reflex-sonner/src/reflex_sonner",
 ]
 
 

@@ -7,7 +7,6 @@ from hashlib import md5
 from typing import Any, ClassVar, Literal
 
 from reflex.components.component import field
-from reflex_components.el.element import Element
 from reflex.components.tags.tag import Tag
 from reflex.constants import Dirs, EventTriggers
 from reflex.event import (
@@ -27,6 +26,7 @@ from reflex.utils.imports import ImportDict
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.number import ternary_operation
+from reflex_components.el.element import Element
 
 from .base import BaseHTML
 

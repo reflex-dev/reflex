@@ -38,6 +38,13 @@ dependencies = [
   "typing_extensions >=4.13.0",
   "wrapt >=1.17.0,<3.0",
   "reflex-components",
+  "reflex-markdown",
+  "reflex-plotly",
+  "reflex-radix",
+  "reflex-react-player",
+  "reflex-react-router",
+  "reflex-recharts",
+  "reflex-sonner",
 ]
 
 classifiers = [
@@ -117,7 +124,16 @@ dependencies = ["plotly", "ruff", "pre_commit", "toml"]
 require-runtime-dependencies = true
 
 [tool.pyright]
-extraPaths = ["packages/reflex-components/src"]
+extraPaths = [
+  "packages/reflex-components/src",
+  "packages/reflex-markdown/src",
+  "packages/reflex-plotly/src",
+  "packages/reflex-radix/src",
+  "packages/reflex-react-player/src",
+  "packages/reflex-react-router/src",
+  "packages/reflex-recharts/src",
+  "packages/reflex-sonner/src",
+]
 reportIncompatibleMethodOverride = false
 
 [tool.ruff]
@@ -296,7 +312,7 @@ hooks = [
 
 [tool.uv]
 required-version = ">=0.7.0"
-sources = { reflex-docgen = { workspace = true }, reflex-components = { workspace = true } }
+sources = { reflex-docgen = { workspace = true }, reflex-components = { workspace = true }, reflex-markdown = { workspace = true }, reflex-plotly = { workspace = true }, reflex-radix = { workspace = true }, reflex-react-player = { workspace = true }, reflex-react-router = { workspace = true }, reflex-recharts = { workspace = true }, reflex-sonner = { workspace = true } }
 
 [tool.uv.workspace]
 members = ["packages/*"]

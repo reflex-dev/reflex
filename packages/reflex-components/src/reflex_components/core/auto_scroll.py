@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import dataclasses
 
-from reflex_components.el.elements.typography import Div
 from reflex.constants.compiler import MemoizationDisposition, MemoizationMode
 from reflex.utils.imports import ImportDict
 from reflex.vars.base import Var, get_unique_variable_name
+from reflex_components.el.elements.typography import Div
 
 
 class AutoScroll(Div):

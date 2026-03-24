@@ -42,8 +42,8 @@ from reflex_components.core.banner import (
 )
 from reflex_components.core.breakpoints import set_breakpoints
 from reflex_components.core.sticky import sticky
-from reflex_components.radix import themes
-from reflex_components.sonner.toast import toast
+from reflex_radix import themes
+from reflex_sonner.toast import toast
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp as EngineIOApp
 from socketio import AsyncNamespace, AsyncServer
@@ -156,7 +156,7 @@ def default_backend_exception_handler(exception: Exception) -> EventSpec:
         EventSpec: The window alert event.
 
     """
-    from reflex_components.sonner.toast import toast
+    from reflex_sonner.toast import toast
 
     error = traceback.format_exc()
 

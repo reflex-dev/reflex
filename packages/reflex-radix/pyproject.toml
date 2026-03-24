@@ -1,0 +1,13 @@
+[project]
+name = "reflex-radix"
+version = "0.0.1"
+description = "Reflex radix components."
+readme = "README.md"
+authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
+maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
+requires-python = ">=3.10"
+dependencies = []
+
+[build-system]
+requires = ["uv_build>=0.10.11,<0.12.0"]
+build-backend = "uv_build"

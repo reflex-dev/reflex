@@ -1,4 +1,4 @@
-"""Reflex UI components package."""
+"""Reflex base UI components package."""
 
 from __future__ import annotations
 
@@ -11,14 +11,7 @@ _SUBMODULES: set[str] = {
     "el",
     "gridjs",
     "lucide",
-    "markdown",
     "moment",
-    "plotly",
-    "radix",
-    "react_player",
-    "react_router",
-    "recharts",
-    "sonner",
 }
 
 _SUBMOD_ATTRS: dict[str, list[str]] = {}

@@ -4,7 +4,7 @@ from typing import Any
 import pytest
 from reflex_components.base.fragment import Fragment
 from reflex_components.core.cond import Cond, cond
-from reflex_components.radix.themes.typography.text import Text
+from reflex_radix.themes.typography.text import Text
 
 from reflex.constants.state import FIELD_MARKER
 from reflex.state import BaseState

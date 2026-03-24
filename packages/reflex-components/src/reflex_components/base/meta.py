@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from reflex_components.base.bare import Bare
 from reflex.components.component import field
+from reflex.vars.base import Var
+from reflex_components.base.bare import Bare
 from reflex_components.el import elements
 from reflex_components.el.elements.metadata import Meta as Meta  # for compatibility
-from reflex.vars.base import Var
 
 
 class Title(elements.Title):

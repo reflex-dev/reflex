@@ -5,8 +5,8 @@ from reflex_components.core.foreach import (
     ForeachVarError,
     foreach,
 )
-from reflex_components.radix.themes.layout.box import box
-from reflex_components.radix.themes.typography.text import text
+from reflex_radix.themes.layout.box import box
+from reflex_radix.themes.typography.text import text
 
 import reflex as rx
 from reflex import el

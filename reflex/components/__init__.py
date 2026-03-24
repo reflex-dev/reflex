@@ -1,9 +1,9 @@
 """Import all the components.
 
-Components have been moved to the ``reflex_components`` package.
-This module re-exports them for backwards compatibility and installs
-an import redirect hook so that ``from reflex.components.<subpkg> import X``
-continues to work by delegating to ``reflex_components.<subpkg>``.
+Components have been split across multiple packages.
+This module installs an import redirect hook so that
+``from reflex.components.<subpkg> import X`` continues to work
+by delegating to the appropriate package.
 """
 
 from __future__ import annotations
@@ -16,23 +16,31 @@ from types import ModuleType
 
 from reflex.utils import lazy_loader
 
-# Subpackages that have moved to the reflex_components package.
-_MOVED_SUBMODULES: frozenset[str] = frozenset({
-    "base",
-    "core",
-    "datadisplay",
-    "el",
-    "gridjs",
-    "lucide",
-    "markdown",
-    "moment",
-    "plotly",
-    "radix",
-    "react_player",
-    "react_router",
-    "recharts",
-    "sonner",
-})
+# Mapping from subpackage name to the target top-level package.
+_SUBPACKAGE_TARGETS: dict[str, str] = {
+    # reflex-components (base package)
+    "base": "reflex_components.base",
+    "core": "reflex_components.core",
+    "datadisplay": "reflex_components.datadisplay",
+    "el": "reflex_components.el",
+    "gridjs": "reflex_components.gridjs",
+    "lucide": "reflex_components.lucide",
+    "moment": "reflex_components.moment",
+    # reflex-radix
+    "radix": "reflex_radix",
+    # reflex-markdown
+    "markdown": "reflex_markdown",
+    # reflex-plotly
+    "plotly": "reflex_plotly",
+    # reflex-react-player
+    "react_player": "reflex_react_player",
+    # reflex-react-router
+    "react_router": "reflex_react_router",
+    # reflex-recharts
+    "recharts": "reflex_recharts",
+    # reflex-sonner
+    "sonner": "reflex_sonner",
+}
 
 
 class _AliasLoader(importlib.abc.Loader):
@@ -57,7 +65,7 @@ class _AliasLoader(importlib.abc.Loader):
 
 
 class _ComponentsRedirect(importlib.abc.MetaPathFinder):
-    """Import hook: redirects ``reflex.components.<moved>`` to ``reflex_components.<moved>``."""
+    """Import hook: redirects ``reflex.components.<subpkg>`` to the real package."""
 
     def find_spec(
         self,
@@ -70,9 +78,11 @@ class _ComponentsRedirect(importlib.abc.MetaPathFinder):
             len(parts) >= 3
             and parts[0] == "reflex"
             and parts[1] == "components"
-            and parts[2] in _MOVED_SUBMODULES
+            and parts[2] in _SUBPACKAGE_TARGETS
         ):
-            target_name = "reflex_components." + ".".join(parts[2:])
+            base = _SUBPACKAGE_TARGETS[parts[2]]
+            rest = ".".join(parts[3:])
+            target_name = f"{base}.{rest}" if rest else base
             return importlib.machinery.ModuleSpec(
                 fullname,
                 _AliasLoader(target_name),
@@ -102,21 +112,19 @@ _lazy_getattr, __dir__, __all__ = lazy_loader.attach(
 
 
 def __getattr__(name: str) -> object:
-    """Resolve attributes: first try local lazy loader, then delegate to reflex_components.
+    """Resolve attributes: first try local lazy loader, then delegate to component packages.
 
     Returns:
-        The requested attribute from this module or reflex_components.
+        The requested attribute from this module or a component package.
 
     Raises:
-        AttributeError: If the attribute is not found in either this module or reflex_components.
+        AttributeError: If the attribute is not found.
     """
     try:
         return _lazy_getattr(name)
     except AttributeError:
         pass
-    if name in _MOVED_SUBMODULES:
-        import reflex_components
-
-        return getattr(reflex_components, name)
+    if name in _SUBPACKAGE_TARGETS:
+        return importlib.import_module(_SUBPACKAGE_TARGETS[name])
     msg = f"module {__name__!r} has no attribute {name!r}"
     raise AttributeError(msg)

@@ -4,9 +4,9 @@ from typing import Any, Literal
 
 from reflex import Component, ComponentNamespace
 from reflex.components.component import field
-from reflex_components.el.elements.inline import ReferrerPolicy
 from reflex.constants.colors import Color
 from reflex.vars.base import Var
+from reflex_components.el.elements.inline import ReferrerPolicy
 
 from .base import BaseHTML
 

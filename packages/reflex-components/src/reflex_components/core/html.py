@@ -1,8 +1,8 @@
 """A html component."""
 
 from reflex.components.component import field
-from reflex_components.el.elements.typography import Div
 from reflex.vars.base import Var
+from reflex_components.el.elements.typography import Div
 
 
 class Html(Div):

@@ -1,9 +1,9 @@
 """Scripts classes."""
 
 from reflex.components.component import field
+from reflex.vars.base import Var
 from reflex_components.el.elements.inline import ReferrerPolicy
 from reflex_components.el.elements.media import CrossOrigin
-from reflex.vars.base import Var
 
 from .base import BaseHTML
 

@@ -3,8 +3,8 @@
 from typing import Literal
 
 from reflex.components.component import field
-from reflex_components.el.element import Element
 from reflex.vars.base import Var
+from reflex_components.el.element import Element
 
 AutoCapitalize = Literal["off", "none", "on", "sentences", "words", "characters"]
 ContentEditable = Literal["inherit", "plaintext-only"] | bool
