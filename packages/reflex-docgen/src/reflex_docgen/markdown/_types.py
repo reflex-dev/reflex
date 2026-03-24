@@ -229,6 +229,22 @@ class FrontMatter:
 
     raw: str
 
+    def get_data(self) -> dict[str, object]:
+        """Parse the raw YAML frontmatter into a dictionary.
+
+        Returns:
+            The parsed YAML data.
+        """
+        import yaml
+
+        result = yaml.safe_load(self.raw)
+        if result is None:
+            return {}
+        if not isinstance(result, dict):
+            msg = f"Expected frontmatter to be a YAML mapping, got {type(result).__name__}"
+            raise TypeError(msg)
+        return result
+
     def as_markdown(self) -> str:
         """Render back to markdown.
 

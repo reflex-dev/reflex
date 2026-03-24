@@ -2160,6 +2160,7 @@ source = { editable = "packages/reflex-docgen" }
 dependencies = [
     { name = "griffelib" },
     { name = "mistletoe" },
+    { name = "pyyaml" },
     { name = "reflex" },
     { name = "typing-extensions" },
     { name = "typing-inspection" },
@@ -2169,6 +2170,7 @@ dependencies = [
 requires-dist = [
     { name = "griffelib", specifier = ">=2.0.1" },
     { name = "mistletoe", specifier = ">=1.4.0" },
+    { name = "pyyaml", specifier = ">=6.0" },
     { name = "reflex", editable = "." },
     { name = "typing-extensions" },
     { name = "typing-inspection", specifier = ">=0.4.2" },
