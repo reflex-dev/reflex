@@ -58,9 +58,8 @@ class StateManagerMemory(StateManager):
         return state
 
     def _track_token(self, token: str):
-        """Track a token for fixed-time expiration."""
-        if token not in self._token_expires_at:
-            self._token_expires_at[token] = time.time() + self.token_expiration
+        """Refresh the expiration deadline for an active token."""
+        self._token_expires_at[token] = time.time() + self.token_expiration
         self._ensure_expiration_task()
 
     def _purge_token(self, token: str):
@@ -186,7 +185,12 @@ class StateManagerMemory(StateManager):
             async with state_lock:
                 state = self._get_or_create_state(token)
                 self._track_token(token)
-                yield state
+                try:
+                    yield state
+                finally:
+                    # Treat modify_state like a read followed by a write so the
+                    # expiration window starts after the state is no longer busy.
+                    self._track_token(token)
         finally:
             # Re-run expiration after the lock is released in case only locked
             # tokens were being tracked when the worker last ran.
