@@ -11,6 +11,7 @@ from reflex_docgen.markdown._types import (
     BoldSpan,
     CodeBlock,
     CodeSpan,
+    ComponentPreview,
     DirectiveBlock,
     Document,
     FrontMatter,
@@ -38,6 +39,10 @@ if TYPE_CHECKING:
 _FRONTMATTER_RE = re.compile(r"\A---\n(.*?\n)---\n", re.DOTALL)
 
 
+#: Known frontmatter keys that are not component preview lambdas.
+_KNOWN_KEYS = frozenset({"components", "only_low_level", "title"})
+
+
 def _extract_frontmatter(source: str) -> tuple[FrontMatter | None, str]:
     """Extract YAML frontmatter from the beginning of a markdown string.
 
@@ -50,7 +55,45 @@ def _extract_frontmatter(source: str) -> tuple[FrontMatter | None, str]:
     m = _FRONTMATTER_RE.match(source)
     if m is None:
         return None, source
-    return FrontMatter(raw=m.group(1).strip()), source[m.end() :]
+
+    import yaml
+
+    data = yaml.safe_load(m.group(1))
+    if not isinstance(data, dict):
+        data = {}
+
+    # components
+    raw_components = data.get("components", [])
+    if not isinstance(raw_components, list):
+        raw_components = []
+    components = tuple(str(c) for c in raw_components)
+
+    # only_low_level
+    raw_oll = data.get("only_low_level", [])
+    if isinstance(raw_oll, list):
+        only_low_level = bool(raw_oll and raw_oll[0])
+    else:
+        only_low_level = bool(raw_oll)
+
+    # title
+    raw_title = data.get("title")
+    title = str(raw_title) if raw_title is not None else None
+
+    # component previews — any key not in _KNOWN_KEYS with a string value
+    previews: list[ComponentPreview] = []
+    for key, value in data.items():
+        if key not in _KNOWN_KEYS and isinstance(value, str):
+            previews.append(ComponentPreview(name=key, source=value.strip()))
+
+    return (
+        FrontMatter(
+            components=components,
+            only_low_level=only_low_level,
+            title=title,
+            component_previews=tuple(previews),
+        ),
+        source[m.end() :],
+    )
 
 
 def _convert_span(token: object) -> Span:

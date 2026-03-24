@@ -220,30 +220,33 @@ def _fence_for(content: str) -> str:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class ComponentPreview:
+    """A component preview lambda from frontmatter.
+
+    Attributes:
+        name: The component class name (e.g. "Button", "DialogRoot").
+        source: The lambda source string.
+    """
+
+    name: str
+    source: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class FrontMatter:
     """YAML frontmatter extracted from a markdown document.
 
     Attributes:
-        raw: The raw YAML string (without delimiters).
+        components: Component paths to document (e.g. ``["rx.button"]``).
+        only_low_level: Whether to show only low-level component variants.
+        title: An optional page title.
+        component_previews: Preview lambdas keyed by component class name.
     """
 
-    raw: str
-
-    def get_data(self) -> dict[str, object]:
-        """Parse the raw YAML frontmatter into a dictionary.
-
-        Returns:
-            The parsed YAML data.
-        """
-        import yaml
-
-        result = yaml.safe_load(self.raw)
-        if result is None:
-            return {}
-        if not isinstance(result, dict):
-            msg = f"Expected frontmatter to be a YAML mapping, got {type(result).__name__}"
-            raise TypeError(msg)
-        return result
+    components: tuple[str, ...]
+    only_low_level: bool
+    title: str | None
+    component_previews: tuple[ComponentPreview, ...]
 
     def as_markdown(self) -> str:
         """Render back to markdown.
@@ -251,7 +254,18 @@ class FrontMatter:
         Returns:
             A markdown string.
         """
-        return f"---\n{self.raw}\n---"
+        import yaml
+
+        data: dict[str, object] = {}
+        if self.components:
+            data["components"] = list(self.components)
+        if self.only_low_level:
+            data["only_low_level"] = [True]
+        if self.title is not None:
+            data["title"] = self.title
+        for preview in self.component_previews:
+            data[preview.name] = preview.source
+        return f"---\n{yaml.dump(data, default_flow_style=False, sort_keys=False).rstrip()}\n---"
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

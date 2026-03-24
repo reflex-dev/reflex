@@ -5,6 +5,7 @@ from reflex_docgen.markdown._types import Block as Block
 from reflex_docgen.markdown._types import BoldSpan as BoldSpan
 from reflex_docgen.markdown._types import CodeBlock as CodeBlock
 from reflex_docgen.markdown._types import CodeSpan as CodeSpan
+from reflex_docgen.markdown._types import ComponentPreview as ComponentPreview
 from reflex_docgen.markdown._types import DirectiveBlock as DirectiveBlock
 from reflex_docgen.markdown._types import Document as Document
 from reflex_docgen.markdown._types import FrontMatter as FrontMatter
@@ -30,6 +31,7 @@ __all__ = [
     "BoldSpan",
     "CodeBlock",
     "CodeSpan",
+    "ComponentPreview",
     "DirectiveBlock",
     "Document",
     "FrontMatter",

@@ -6,6 +6,7 @@ import pytest
 from reflex_docgen.markdown import (
     BoldSpan,
     CodeSpan,
+    ComponentPreview,
     FrontMatter,
     ImageSpan,
     ItalicSpan,
@@ -30,7 +31,7 @@ def test_basic_frontmatter():
     source = "---\ntitle: Test\n---\n# Hello\n"
     doc = parse_document(source)
     assert doc.frontmatter is not None
-    assert doc.frontmatter.raw == "title: Test"
+    assert doc.frontmatter.title == "Test"
 
 
 def test_multiline_frontmatter():
@@ -38,8 +39,9 @@ def test_multiline_frontmatter():
     source = "---\ncomponents:\n  - rx.button\n\nButton: |\n  lambda **props: rx.button(**props)\n---\n# Button\n"
     doc = parse_document(source)
     assert doc.frontmatter is not None
-    assert "components:" in doc.frontmatter.raw
-    assert "rx.button" in doc.frontmatter.raw
+    assert doc.frontmatter.components == ("rx.button",)
+    assert len(doc.frontmatter.component_previews) == 1
+    assert doc.frontmatter.component_previews[0].name == "Button"
 
 
 def test_frontmatter_not_in_blocks():
@@ -47,6 +49,90 @@ def test_frontmatter_not_in_blocks():
     source = "---\ntitle: Test\n---\n# Hello\n"
     doc = parse_document(source)
     assert not any(isinstance(b, FrontMatter) for b in doc.blocks)
+
+
+def test_empty_frontmatter():
+    """Empty frontmatter (no content between ---) is not recognized."""
+    doc = parse_document("---\n---\n# Hello\n")
+    assert doc.frontmatter is None
+
+
+def test_only_low_level_list_true():
+    """only_low_level as a YAML list with True is parsed."""
+    source = "---\nonly_low_level:\n  - True\n---\n# Dialog\n"
+    fm = parse_document(source).frontmatter
+    assert fm is not None
+    assert fm.only_low_level is True
+
+
+def test_only_low_level_scalar():
+    """only_low_level as a scalar boolean is parsed."""
+    source = "---\nonly_low_level: true\n---\n# Dialog\n"
+    fm = parse_document(source).frontmatter
+    assert fm is not None
+    assert fm.only_low_level is True
+
+
+def test_only_low_level_default_false():
+    """only_low_level defaults to False when absent."""
+    source = "---\ncomponents:\n  - rx.box\n---\n# Box\n"
+    fm = parse_document(source).frontmatter
+    assert fm is not None
+    assert fm.only_low_level is False
+
+
+def test_component_previews():
+    """A component preview lambda is extracted from frontmatter."""
+    source = '---\ncomponents:\n  - rx.button\n\nButton: |\n  lambda **props: rx.button("Click me", **props)\n---\n# Button\n'
+    fm = parse_document(source).frontmatter
+    assert fm is not None
+    assert len(fm.component_previews) == 1
+    preview = fm.component_previews[0]
+    assert preview.name == "Button"
+    assert "rx.button" in preview.source
+    assert preview.source.startswith("lambda")
+
+
+def test_multiple_previews():
+    """Multiple component preview lambdas are extracted."""
+    source = "---\ncomponents:\n  - rx.input\n\nInput: |\n  lambda **props: rx.input(**props)\n\nInputSlot: |\n  lambda **props: rx.input(rx.input.slot(**props))\n---\n# Input\n"
+    fm = parse_document(source).frontmatter
+    assert fm is not None
+    assert len(fm.component_previews) == 2
+    names = [p.name for p in fm.component_previews]
+    assert "Input" in names
+    assert "InputSlot" in names
+
+
+def test_as_markdown_frontmatter_with_previews():
+    """FrontMatter with component previews renders correctly."""
+    fm = FrontMatter(
+        components=("rx.button",),
+        only_low_level=False,
+        title=None,
+        component_previews=(
+            ComponentPreview(
+                name="Button",
+                source='lambda **props: rx.button("Click", **props)',
+            ),
+        ),
+    )
+    md = fm.as_markdown()
+    assert md.startswith("---\n")
+    assert md.endswith("\n---")
+    assert "rx.button" in md
+    assert "Button:" in md
+
+
+def test_as_markdown_frontmatter_with_only_low_level():
+    """FrontMatter with only_low_level renders the field."""
+    fm = FrontMatter(
+        components=(),
+        only_low_level=True,
+        title=None,
+        component_previews=(),
+    )
+    assert "only_low_level" in fm.as_markdown()
 
 
 def test_h1():
@@ -350,7 +436,7 @@ Use `on_click` for click events.
 """
     doc = parse_document(source)
     assert doc.frontmatter is not None
-    assert "rx.button" in doc.frontmatter.raw
+    assert doc.frontmatter.components == ("rx.button",)
     assert len(doc.headings) == 2
     assert doc.headings[0].children == (TextSpan(text="Button"),)
     assert doc.headings[1].children == (TextSpan(text="Variants"),)
@@ -573,7 +659,16 @@ def test_as_markdown_thematic_break():
 
 def test_as_markdown_frontmatter():
     """FrontMatter renders with --- delimiters."""
-    assert FrontMatter(raw="title: Test").as_markdown() == "---\ntitle: Test\n---"
+    fm = FrontMatter(
+        components=(),
+        only_low_level=False,
+        title="Test",
+        component_previews=(),
+    )
+    md = fm.as_markdown()
+    assert md.startswith("---\n")
+    assert md.endswith("\n---")
+    assert "title: Test" in md
 
 
 def test_as_markdown_document_roundtrip():
