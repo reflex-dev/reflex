@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, TypedDict
 
-from reflex.components.component import Component
+from reflex.components.component import Component, field
 from reflex.components.core.cond import cond
 from reflex.event import EventHandler, no_args_event_spec
 from reflex.utils import console
@@ -136,83 +136,100 @@ class ReactPlayer(Component):
 
     is_default = True
 
-    # The url of a video or song to play
-    src: Var[str | list[str] | list[dict[str, str]]]
+    src: Var[str | list[str] | list[dict[str, str]]] = field(
+        doc="The url of a video or song to play"
+    )
 
-    # Set to true or false to pause or play the media
-    playing: Var[bool]
+    playing: Var[bool] = field(doc="Set to true or false to pause or play the media")
 
-    # Set to true or false to loop the media
-    loop: Var[bool]
+    loop: Var[bool] = field(doc="Set to true or false to loop the media")
 
-    # Set to true or false to display native player controls.
-    controls: Var[bool] = Var.create(True)
+    controls: Var[bool] = field(
+        default=Var.create(True),
+        doc="Set to true or false to display native player controls.",
+    )
 
-    # Set to true to show just the video thumbnail, which loads the full player on click
-    light: Var[bool]
+    light: Var[bool] = field(
+        doc="Set to true to show just the video thumbnail, which loads the full player on click"
+    )
 
-    # Set the volume of the player, between 0 and 1
-    volume: Var[float]
+    volume: Var[float] = field(doc="Set the volume of the player, between 0 and 1")
 
-    # Mutes the player
-    muted: Var[bool]
+    muted: Var[bool] = field(doc="Mutes the player")
 
-    # Player-specific configuration parameters.
-    config: Var[dict[str, Any]]
+    config: Var[dict[str, Any]] = field(doc="Player-specific configuration parameters.")
 
-    # Set to true to disable the default remote playback option on supported devices.
-    disable_remote_playback: Var[bool]
+    disable_remote_playback: Var[bool] = field(
+        doc="Set to true to disable the default remote playback option on supported devices."
+    )
 
-    # Called when media is loaded and ready to play. If playing is set to true, media will play immediately.
-    on_ready: EventHandler[no_args_event_spec]
+    on_ready: EventHandler[no_args_event_spec] = field(
+        doc="Called when media is loaded and ready to play. If playing is set to true, media will play immediately."
+    )
 
-    # Called when media starts playing.
-    on_start: EventHandler[no_args_event_spec]
+    on_start: EventHandler[no_args_event_spec] = field(
+        doc="Called when media starts playing."
+    )
 
-    # Called when playing is set to true.
-    on_play: EventHandler[no_args_event_spec]
+    on_play: EventHandler[no_args_event_spec] = field(
+        doc="Called when playing is set to true."
+    )
 
-    # Called when media starts or resumes playing after pausing or buffering.
-    on_playing: EventHandler[no_args_event_spec]
+    on_playing: EventHandler[no_args_event_spec] = field(
+        doc="Called when media starts or resumes playing after pausing or buffering."
+    )
 
-    # Called while the video is loading only. Contains played and loaded progress as a fraction, and playedSeconds and loadedSeconds in seconds. eg { played: 0.12, playedSeconds: 11.3, loaded: 0.34, loadedSeconds: 16.7 }
-    on_progress: EventHandler[_on_progress_signature]
+    on_progress: EventHandler[_on_progress_signature] = field(
+        doc="Called while the video is loading only. Contains played and loaded progress as a fraction, and playedSeconds and loadedSeconds in seconds. eg { played: 0.12, playedSeconds: 11.3, loaded: 0.34, loadedSeconds: 16.7 }"
+    )
 
-    # Called when the media's current time changes (~4Hz, use .throttle to limit calls to backend).
-    on_time_update: EventHandler[_on_time_update_signature]
+    on_time_update: EventHandler[_on_time_update_signature] = field(
+        doc="Called when the media's current time changes (~4Hz, use .throttle to limit calls to backend)."
+    )
 
-    # Callback containing duration of the media, in seconds.
-    on_duration_change: EventHandler[_on_duration_change_signature]
+    on_duration_change: EventHandler[_on_duration_change_signature] = field(
+        doc="Callback containing duration of the media, in seconds."
+    )
 
-    # Called when media is paused.
-    on_pause: EventHandler[no_args_event_spec]
+    on_pause: EventHandler[no_args_event_spec] = field(
+        doc="Called when media is paused."
+    )
 
-    # Called when media starts buffering.
-    on_waiting: EventHandler[no_args_event_spec]
+    on_waiting: EventHandler[no_args_event_spec] = field(
+        doc="Called when media starts buffering."
+    )
 
-    # Called when the media is seeking.
-    on_seeking: EventHandler[no_args_event_spec]
+    on_seeking: EventHandler[no_args_event_spec] = field(
+        doc="Called when the media is seeking."
+    )
 
-    # Called when media seeks with seconds parameter.
-    on_seeked: EventHandler[_on_time_update_signature]
+    on_seeked: EventHandler[_on_time_update_signature] = field(
+        doc="Called when media seeks with seconds parameter."
+    )
 
-    # Called when playback rate of the player changed. Only supported by YouTube, Vimeo (if enabled), Wistia, and file paths.
-    on_rate_change: EventHandler[_on_rate_change_signature]
+    on_rate_change: EventHandler[_on_rate_change_signature] = field(
+        doc="Called when playback rate of the player changed. Only supported by YouTube, Vimeo (if enabled), Wistia, and file paths."
+    )
 
-    # Called when media finishes playing. Does not fire when loop is set to true.
-    on_ended: EventHandler[no_args_event_spec]
+    on_ended: EventHandler[no_args_event_spec] = field(
+        doc="Called when media finishes playing. Does not fire when loop is set to true."
+    )
 
-    # Called when an error occurs whilst attempting to play media.
-    on_error: EventHandler[no_args_event_spec]
+    on_error: EventHandler[no_args_event_spec] = field(
+        doc="Called when an error occurs whilst attempting to play media."
+    )
 
-    # Called when user clicks the light mode preview.
-    on_click_preview: EventHandler[no_args_event_spec]
+    on_click_preview: EventHandler[no_args_event_spec] = field(
+        doc="Called when user clicks the light mode preview."
+    )
 
-    # Called when picture-in-picture mode is enabled.
-    on_enter_picture_in_picture: EventHandler[no_args_event_spec]
+    on_enter_picture_in_picture: EventHandler[no_args_event_spec] = field(
+        doc="Called when picture-in-picture mode is enabled."
+    )
 
-    # Called when picture-in-picture mode is disabled.
-    on_leave_picture_in_picture: EventHandler[no_args_event_spec]
+    on_leave_picture_in_picture: EventHandler[no_args_event_spec] = field(
+        doc="Called when picture-in-picture mode is disabled."
+    )
 
     @classmethod
     def create(cls, *children, **props) -> ReactPlayer:

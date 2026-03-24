@@ -2,6 +2,7 @@
 
 from typing import Literal
 
+from reflex.components.component import field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.components.radix.themes.base import (
@@ -21,23 +22,25 @@ class Button(elements.Button, RadixLoadingProp, RadixThemesComponent):
 
     tag = "Button"
 
-    # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: Var[bool]
+    as_child: Var[bool] = field(
+        doc="Change the default rendered element for the one passed as a child, merging their props and behavior."
+    )
 
-    # Button size "1" - "4"
-    size: Var[Responsive[LiteralButtonSize]]
+    size: Var[Responsive[LiteralButtonSize]] = field(doc='Button size "1" - "4"')
 
-    # Variant of button: "solid" | "soft" | "outline" | "ghost"
-    variant: Var[LiteralVariant]
+    variant: Var[LiteralVariant] = field(
+        doc='Variant of button: "solid" | "soft" | "outline" | "ghost"'
+    )
 
-    # Override theme color for button
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor] = field(doc="Override theme color for button")
 
-    # Whether to render the button with higher contrast color against background
-    high_contrast: Var[bool]
+    high_contrast: Var[bool] = field(
+        doc="Whether to render the button with higher contrast color against background"
+    )
 
-    # Override theme radius for button: "none" | "small" | "medium" | "large" | "full"
-    radius: Var[LiteralRadius]
+    radius: Var[LiteralRadius] = field(
+        doc='Override theme radius for button: "none" | "small" | "medium" | "large" | "full"'
+    )
 
 
 button = Button.create

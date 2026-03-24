@@ -1,6 +1,6 @@
 """Lucide Icon component."""
 
-from reflex.components.component import Component
+from reflex.components.component import Component, field
 from reflex.utils import console, format
 from reflex.utils.imports import ImportVar
 from reflex.vars.base import LiteralVar, Var
@@ -20,8 +20,7 @@ class Icon(LucideIconComponent):
 
     tag = "None"
 
-    # The size of the icon in pixels.
-    size: Var[int]
+    size: Var[int] = field(doc="The size of the icon in pixels.")
 
     @classmethod
     def create(cls, *children, **props) -> Component:

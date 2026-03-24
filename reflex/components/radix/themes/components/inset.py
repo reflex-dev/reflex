@@ -2,6 +2,7 @@
 
 from typing import Literal
 
+from reflex.components.component import field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.components.radix.themes.base import RadixThemesComponent
@@ -15,32 +16,27 @@ class Inset(elements.Div, RadixThemesComponent):
 
     tag = "Inset"
 
-    # The side
-    side: Var[Responsive[Literal["x", "y", "top", "bottom", "right", "left"]]]
+    side: Var[Responsive[Literal["x", "y", "top", "bottom", "right", "left"]]] = field(
+        doc="The side"
+    )
 
-    # How to clip the element's content: "border-box" | "padding-box"
-    clip: Var[Responsive[Literal["border-box", "padding-box"]]]
+    clip: Var[Responsive[Literal["border-box", "padding-box"]]] = field(
+        doc='How to clip the element\'s content: "border-box" | "padding-box"'
+    )
 
-    # Padding
-    p: Var[Responsive[int | str]]
+    p: Var[Responsive[int | str]] = field(doc="Padding")
 
-    # Padding on the x axis
-    px: Var[Responsive[int | str]]
+    px: Var[Responsive[int | str]] = field(doc="Padding on the x axis")
 
-    # Padding on the y axis
-    py: Var[Responsive[int | str]]
+    py: Var[Responsive[int | str]] = field(doc="Padding on the y axis")
 
-    # Padding on the top
-    pt: Var[Responsive[int | str]]
+    pt: Var[Responsive[int | str]] = field(doc="Padding on the top")
 
-    # Padding on the right
-    pr: Var[Responsive[int | str]]
+    pr: Var[Responsive[int | str]] = field(doc="Padding on the right")
 
-    # Padding on the bottom
-    pb: Var[Responsive[int | str]]
+    pb: Var[Responsive[int | str]] = field(doc="Padding on the bottom")
 
-    # Padding on the left
-    pl: Var[Responsive[int | str]]
+    pl: Var[Responsive[int | str]] = field(doc="Padding on the left")
 
 
 inset = Inset.create

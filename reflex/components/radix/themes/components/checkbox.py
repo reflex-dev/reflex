@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from reflex.components.component import Component, ComponentNamespace
+from reflex.components.component import Component, ComponentNamespace, field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.radix.themes.base import (
     LiteralAccentColor,
@@ -23,44 +23,46 @@ class Checkbox(RadixThemesComponent):
 
     tag = "Checkbox"
 
-    # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: Var[bool]
+    as_child: Var[bool] = field(
+        doc="Change the default rendered element for the one passed as a child, merging their props and behavior."
+    )
 
-    # Checkbox size "1" - "3"
-    size: Var[Responsive[LiteralCheckboxSize]]
+    size: Var[Responsive[LiteralCheckboxSize]] = field(doc='Checkbox size "1" - "3"')
 
-    # Variant of checkbox: "classic" | "surface" | "soft"
-    variant: Var[LiteralCheckboxVariant]
+    variant: Var[LiteralCheckboxVariant] = field(
+        doc='Variant of checkbox: "classic" | "surface" | "soft"'
+    )
 
-    # Override theme color for checkbox
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor] = field(
+        doc="Override theme color for checkbox"
+    )
 
-    # Whether to render the checkbox with higher contrast color against background
-    high_contrast: Var[bool]
+    high_contrast: Var[bool] = field(
+        doc="Whether to render the checkbox with higher contrast color against background"
+    )
 
-    # Whether the checkbox is checked by default
-    default_checked: Var[bool]
+    default_checked: Var[bool] = field(doc="Whether the checkbox is checked by default")
 
-    # Whether the checkbox is checked
-    checked: Var[bool]
+    checked: Var[bool] = field(doc="Whether the checkbox is checked")
 
-    # Whether the checkbox is disabled
-    disabled: Var[bool]
+    disabled: Var[bool] = field(doc="Whether the checkbox is disabled")
 
-    # Whether the checkbox is required
-    required: Var[bool]
+    required: Var[bool] = field(doc="Whether the checkbox is required")
 
-    # The name of the checkbox control when submitting the form.
-    name: Var[str]
+    name: Var[str] = field(
+        doc="The name of the checkbox control when submitting the form."
+    )
 
-    # The value of the checkbox control when submitting the form.
-    value: Var[str]
+    value: Var[str] = field(
+        doc="The value of the checkbox control when submitting the form."
+    )
 
     # Props to rename
     _rename_props = {"onChange": "onCheckedChange"}
 
-    # Fired when the checkbox is checked or unchecked.
-    on_change: EventHandler[passthrough_event_spec(bool)]
+    on_change: EventHandler[passthrough_event_spec(bool)] = field(
+        doc="Fired when the checkbox is checked or unchecked."
+    )
 
 
 class HighLevelCheckbox(RadixThemesComponent):
@@ -68,50 +70,52 @@ class HighLevelCheckbox(RadixThemesComponent):
 
     tag = "Checkbox"
 
-    # The text label for the checkbox.
-    text: Var[str]
+    text: Var[str] = field(doc="The text label for the checkbox.")
 
-    # The gap between the checkbox and the label.
-    spacing: Var[LiteralSpacing]
+    spacing: Var[LiteralSpacing] = field(
+        doc="The gap between the checkbox and the label."
+    )
 
-    # The size of the checkbox "1" - "3".
-    size: Var[LiteralCheckboxSize]
+    size: Var[LiteralCheckboxSize] = field(doc='The size of the checkbox "1" - "3".')
 
-    # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: Var[bool]
+    as_child: Var[bool] = field(
+        doc="Change the default rendered element for the one passed as a child, merging their props and behavior."
+    )
 
-    # Variant of checkbox: "classic" | "surface" | "soft"
-    variant: Var[LiteralCheckboxVariant]
+    variant: Var[LiteralCheckboxVariant] = field(
+        doc='Variant of checkbox: "classic" | "surface" | "soft"'
+    )
 
-    # Override theme color for checkbox
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor] = field(
+        doc="Override theme color for checkbox"
+    )
 
-    # Whether to render the checkbox with higher contrast color against background
-    high_contrast: Var[bool]
+    high_contrast: Var[bool] = field(
+        doc="Whether to render the checkbox with higher contrast color against background"
+    )
 
-    # Whether the checkbox is checked by default
-    default_checked: Var[bool]
+    default_checked: Var[bool] = field(doc="Whether the checkbox is checked by default")
 
-    # Whether the checkbox is checked
-    checked: Var[bool]
+    checked: Var[bool] = field(doc="Whether the checkbox is checked")
 
-    # Whether the checkbox is disabled
-    disabled: Var[bool]
+    disabled: Var[bool] = field(doc="Whether the checkbox is disabled")
 
-    # Whether the checkbox is required
-    required: Var[bool]
+    required: Var[bool] = field(doc="Whether the checkbox is required")
 
-    # The name of the checkbox control when submitting the form.
-    name: Var[str]
+    name: Var[str] = field(
+        doc="The name of the checkbox control when submitting the form."
+    )
 
-    # The value of the checkbox control when submitting the form.
-    value: Var[str]
+    value: Var[str] = field(
+        doc="The value of the checkbox control when submitting the form."
+    )
 
     # Props to rename
     _rename_props = {"onChange": "onCheckedChange"}
 
-    # Fired when the checkbox is checked or unchecked.
-    on_change: EventHandler[passthrough_event_spec(bool)]
+    on_change: EventHandler[passthrough_event_spec(bool)] = field(
+        doc="Fired when the checkbox is checked or unchecked."
+    )
 
     @classmethod
     def create(cls, text: Var[str] = Var.create(""), **props) -> Component:

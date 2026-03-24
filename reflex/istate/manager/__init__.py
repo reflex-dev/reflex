@@ -27,9 +27,12 @@ EmptyContext = StateModificationContext()
 
 @dataclasses.dataclass
 class StateManager(ABC):
-    """A class to manage many client states."""
+    """A class to manage many client states.
 
-    # The state class to use.
+    Attributes:
+        state: The state class to use.
+    """
+
     state: type[BaseState]
 
     @classmethod

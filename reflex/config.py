@@ -30,9 +30,6 @@ from reflex.plugins.sitemap import SitemapPlugin
 from reflex.utils import console
 from reflex.utils.exceptions import ConfigError
 
-if TYPE_CHECKING:
-    from pyleak.base import LeakAction
-
 
 @dataclasses.dataclass(kw_only=True)
 class DBConfig:
@@ -149,91 +146,89 @@ _sensitive_env_vars = {"DB_URL", "ASYNC_DB_URL", "REDIS_URL"}
 
 @dataclasses.dataclass(kw_only=True)
 class BaseConfig:
-    """Base config for the Reflex app."""
+    """Base config for the Reflex app.
 
-    # The name of the app (should match the name of the app directory).
+    Attributes:
+        app_name: The name of the app (should match the name of the app directory).
+        app_module_import: The path to the app module.
+        loglevel: The log level to use.
+        frontend_port: The port to run the frontend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
+        frontend_path: The path to run the frontend on. For example, "/app" will run the frontend on http://localhost:3000/app
+        backend_port: The port to run the backend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
+        api_url: The backend url the frontend will connect to. This must be updated if the backend is hosted elsewhere, or in production.
+        deploy_url: The url the frontend will be hosted on.
+        backend_host: The url the backend will be hosted on.
+        db_url: The database url used by rx.Model.
+        async_db_url: The async database url used by rx.Model.
+        redis_url: The redis url.
+        telemetry_enabled: Telemetry opt-in.
+        bun_path: The bun path.
+        static_page_generation_timeout: Timeout to do a production build of a frontend page.
+        cors_allowed_origins: Comma separated list of origins that are allowed to connect to the backend API.
+        vite_allowed_hosts: Allowed hosts for the Vite dev server. Set to True to allow all hosts, or provide a list of hostnames (e.g. ["myservice.local"]) to allow specific ones. Prevents 403 errors in Docker, Codespaces, reverse proxies, etc.
+        react_strict_mode: Whether to use React strict mode.
+        frontend_packages: Additional frontend packages to install.
+        state_manager_mode: Indicate which type of state manager to use.
+        redis_lock_expiration: Maximum expiration lock time for redis state manager.
+        redis_lock_warning_threshold: Maximum lock time before warning for redis state manager.
+        redis_token_expiration: Token expiration time for redis state manager.
+        env_file: Path to file containing key-values pairs to override in the environment; Dotenv format.
+        state_auto_setters: Whether to automatically create setters for state base vars.
+        show_built_with_reflex: Whether to display the sticky "Built with Reflex" badge on all pages.
+        is_reflex_cloud: Whether the app is running in the reflex cloud environment.
+        extra_overlay_function: Extra overlay function to run after the app is built. Formatted such that `from path_0.path_1... import path[-1]`, and calling it with no arguments would work. For example, "reflex.components.moment.moment".
+        plugins: List of plugins to use in the app.
+        disable_plugins: List of plugin types to disable in the app.
+        transport: The transport method for client-server communication.
+    """
+
     app_name: str
 
-    # The path to the app module.
     app_module_import: str | None = None
 
-    # The log level to use.
     loglevel: constants.LogLevel = constants.LogLevel.DEFAULT
 
-    # The port to run the frontend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
     frontend_port: int | None = None
 
-    # The path to run the frontend on. For example, "/app" will run the frontend on http://localhost:3000/app
     frontend_path: str = ""
 
-    # The port to run the backend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
     backend_port: int | None = None
 
-    # The backend url the frontend will connect to. This must be updated if the backend is hosted elsewhere, or in production.
     api_url: str = f"http://localhost:{constants.DefaultPorts.BACKEND_PORT}"
 
-    # The url the frontend will be hosted on.
     deploy_url: str | None = f"http://localhost:{constants.DefaultPorts.FRONTEND_PORT}"
 
-    # The url the backend will be hosted on.
     backend_host: str = "0.0.0.0"
 
-    # The database url used by rx.Model.
     db_url: str | None = "sqlite:///reflex.db"
 
-    # The async database url used by rx.Model.
     async_db_url: str | None = None
 
-    # The redis url
     redis_url: str | None = None
 
-    # Telemetry opt-in.
     telemetry_enabled: bool = True
 
-    # PyLeak monitoring configuration for detecting event loop blocking and resource leaks.
-    enable_pyleak_monitoring: bool = False
-
-    # Threshold in seconds for detecting event loop blocking operations.
-    pyleak_blocking_threshold: float = 0.1
-
-    # Grace period in seconds for thread leak detection cleanup.
-    pyleak_thread_grace_period: float = 0.2
-
-    # Action to take when PyLeak detects issues
-    pyleak_action: "LeakAction | None" = None
-
-    # The bun path
     bun_path: ExistingPath = constants.Bun.DEFAULT_PATH
 
-    # Timeout to do a production build of a frontend page.
     static_page_generation_timeout: int = 60
 
-    # Comma separated list of origins that are allowed to connect to the backend API.
-    cors_allowed_origins: Annotated[Sequence[str], SequenceOptions(delimiter=",")] = (
-        dataclasses.field(default=("*",))
-    )
+    cors_allowed_origins: Annotated[
+        Sequence[str],
+        SequenceOptions(delimiter=","),
+    ] = dataclasses.field(default=("*",))
 
-    # Allowed hosts for the Vite dev server. Set to True to allow all hosts,
-    # or provide a list of hostnames (e.g. ["myservice.local"]) to allow specific ones.
-    # Prevents 403 errors in Docker, Codespaces, reverse proxies, etc.
     vite_allowed_hosts: bool | list[str] = False
 
-    # Whether to use React strict mode.
     react_strict_mode: bool = True
 
-    # Additional frontend packages to install.
     frontend_packages: list[str] = dataclasses.field(default_factory=list)
 
-    # Indicate which type of state manager to use
     state_manager_mode: constants.StateManagerMode = constants.StateManagerMode.DISK
 
-    # Maximum expiration lock time for redis state manager
     redis_lock_expiration: int = constants.Expiration.LOCK
 
-    # Maximum lock time before warning for redis state manager.
     redis_lock_warning_threshold: int = constants.Expiration.LOCK_WARNING_THRESHOLD
 
-    # Token expiration time for redis state manager
     redis_token_expiration: int = constants.Expiration.TOKEN
 
     # Attributes that were explicitly set by the user.
@@ -241,28 +236,20 @@ class BaseConfig:
         default_factory=set, init=False
     )
 
-    # Path to file containing key-values pairs to override in the environment; Dotenv format.
     env_file: str | None = None
 
-    # Whether to automatically create setters for state base vars
     state_auto_setters: bool | None = None
 
-    # Whether to display the sticky "Built with Reflex" badge on all pages.
     show_built_with_reflex: bool | None = None
 
-    # Whether the app is running in the reflex cloud environment.
     is_reflex_cloud: bool = False
 
-    # Extra overlay function to run after the app is built. Formatted such that `from path_0.path_1... import path[-1]`, and calling it with no arguments would work. For example, "reflex.components.moment.moment".
     extra_overlay_function: str | None = None
 
-    # List of plugins to use in the app.
     plugins: list[Plugin] = dataclasses.field(default_factory=list)
 
-    # List of plugin types to disable in the app.
     disable_plugins: list[type[Plugin]] = dataclasses.field(default_factory=list)
 
-    # The transport method for client-server communication.
     transport: Literal["websocket", "polling"] = "websocket"
 
     # Whether to skip plugin checks.

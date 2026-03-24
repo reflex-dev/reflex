@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from reflex.components.component import Component
+from reflex.components.component import Component, field
 from reflex.components.radix.themes.base import RadixThemesComponent
 from reflex.constants.compiler import MemoizationMode
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
@@ -37,62 +37,79 @@ class Tooltip(RadixThemesComponent):
 
     tag = "Tooltip"
 
-    # The content of the tooltip.
-    content: Var[str]
+    content: Var[str] = field(doc="The content of the tooltip.")
 
-    # The open state of the tooltip when it is initially rendered. Use when you do not need to control its open state.
-    default_open: Var[bool]
+    default_open: Var[bool] = field(
+        doc="The open state of the tooltip when it is initially rendered. Use when you do not need to control its open state."
+    )
 
-    # The controlled open state of the tooltip. Must be used in conjunction with `on_open_change`.
-    open: Var[bool]
+    open: Var[bool] = field(
+        doc="The controlled open state of the tooltip. Must be used in conjunction with `on_open_change`."
+    )
 
-    # The preferred side of the trigger to render against when open. Will be reversed when collisions occur and `avoid_collisions` is enabled.The position of the tooltip. Defaults to "top".
-    side: Var[LiteralSideType]
+    side: Var[LiteralSideType] = field(
+        doc='The preferred side of the trigger to render against when open. Will be reversed when collisions occur and `avoid_collisions` is enabled.The position of the tooltip. Defaults to "top".'
+    )
 
-    # The distance in pixels from the trigger. Defaults to 0.
-    side_offset: Var[float | int]
+    side_offset: Var[float | int] = field(
+        doc="The distance in pixels from the trigger. Defaults to 0."
+    )
 
-    # The preferred alignment against the trigger. May change when collisions occur. Defaults to "center".
-    align: Var[LiteralAlignType]
+    align: Var[LiteralAlignType] = field(
+        doc='The preferred alignment against the trigger. May change when collisions occur. Defaults to "center".'
+    )
 
-    # An offset in pixels from the "start" or "end" alignment options.
-    align_offset: Var[float | int]
+    align_offset: Var[float | int] = field(
+        doc='An offset in pixels from the "start" or "end" alignment options.'
+    )
 
-    # When true, overrides the side and align preferences to prevent collisions with boundary edges. Defaults to True.
-    avoid_collisions: Var[bool]
+    avoid_collisions: Var[bool] = field(
+        doc="When true, overrides the side and align preferences to prevent collisions with boundary edges. Defaults to True."
+    )
 
-    # The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
-    collision_padding: Var[float | int | dict[str, float | int]]
+    collision_padding: Var[float | int | dict[str, float | int]] = field(
+        doc='The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.'
+    )
 
-    # The padding between the arrow and the edges of the content. If your content has border-radius, this will prevent it from overflowing the corners. Defaults to 0.
-    arrow_padding: Var[float | int]
+    arrow_padding: Var[float | int] = field(
+        doc="The padding between the arrow and the edges of the content. If your content has border-radius, this will prevent it from overflowing the corners. Defaults to 0."
+    )
 
-    # The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless. Defaults to "partial".
-    sticky: Var[LiteralStickyType]
+    sticky: Var[LiteralStickyType] = field(
+        doc='The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless. Defaults to "partial".'
+    )
 
-    # Whether to hide the content when the trigger becomes fully occluded. Defaults to False.
-    hide_when_detached: Var[bool]
+    hide_when_detached: Var[bool] = field(
+        doc="Whether to hide the content when the trigger becomes fully occluded. Defaults to False."
+    )
 
-    # Override the duration in milliseconds to customize the open delay for a specific tooltip. Default is 700.
-    delay_duration: Var[float | int]
+    delay_duration: Var[float | int] = field(
+        doc="Override the duration in milliseconds to customize the open delay for a specific tooltip. Default is 700."
+    )
 
-    # Prevents Tooltip content from remaining open when hovering.
-    disable_hoverable_content: Var[bool]
+    disable_hoverable_content: Var[bool] = field(
+        doc="Prevents Tooltip content from remaining open when hovering."
+    )
 
-    # Used to force mounting when more control is needed. Useful when controlling animation with React animation libraries.
-    force_mount: Var[bool]
+    force_mount: Var[bool] = field(
+        doc="Used to force mounting when more control is needed. Useful when controlling animation with React animation libraries."
+    )
 
-    # By default, screenreaders will announce the content inside the component. If this is not descriptive enough, or you have content that cannot be announced, use aria-label as a more descriptive label.
-    aria_label: Var[str]
+    aria_label: Var[str] = field(
+        doc="By default, screenreaders will announce the content inside the component. If this is not descriptive enough, or you have content that cannot be announced, use aria-label as a more descriptive label."
+    )
 
-    # Fired when the open state changes.
-    on_open_change: EventHandler[passthrough_event_spec(bool)]
+    on_open_change: EventHandler[passthrough_event_spec(bool)] = field(
+        doc="Fired when the open state changes."
+    )
 
-    # Fired when the escape key is pressed.
-    on_escape_key_down: EventHandler[no_args_event_spec]
+    on_escape_key_down: EventHandler[no_args_event_spec] = field(
+        doc="Fired when the escape key is pressed."
+    )
 
-    # Fired when the pointer is down outside the tooltip.
-    on_pointer_down_outside: EventHandler[no_args_event_spec]
+    on_pointer_down_outside: EventHandler[no_args_event_spec] = field(
+        doc="Fired when the pointer is down outside the tooltip."
+    )
 
     _memoization_mode = MemoizationMode(recursive=False)
 

@@ -345,28 +345,41 @@ class App(MiddlewareMixin, LifespanMixin):
         theme=rx.theme(accent_color="blue"),
     )
     ```
+
+    Attributes:
+        theme: The global [theme](https://reflex.dev/docs/styling/theming/#theme) for the entire app.
+        style: The [global style](https://reflex.dev/docs/styling/overview/#global-styles}) for the app.
+        stylesheets: A list of URLs to [stylesheets](https://reflex.dev/docs/styling/custom-stylesheets/) to include in the app.
+        reset_style: Whether to include CSS reset for margin and padding. Defaults to True.
+        overlay_component: A component that is present on every page. Defaults to the Connection Error banner.
+        app_wraps: App wraps to be applied to the whole app. Expected to be a dictionary of (order, name) to a function that takes whether the state is enabled and optionally returns a component.
+        extra_app_wraps: Extra app wraps to be applied to the whole app.
+        head_components: Components to add to the head of every page.
+        sio: The Socket.IO AsyncServer instance.
+        html_lang: The language to add to the html root tag of every page.
+        html_custom_attrs: Attributes to add to the html root tag of every page.
+        enable_state: Whether to enable state for the app. If False, the app will not use state.
+        admin_dash: Admin dashboard to view and manage the database.
+        frontend_exception_handler: Frontend error handler function.
+        backend_exception_handler: Backend error handler function.
+        toaster: Put the toast provider in the app wrap.
+        api_transformer: Transform the ASGI app before running it.
     """
 
-    # The global [theme](https://reflex.dev/docs/styling/theming/#theme) for the entire app.
     theme: Component | None = dataclasses.field(
         default_factory=lambda: themes.theme(accent_color="blue")
     )
 
-    # The [global style](https://reflex.dev/docs/styling/overview/#global-styles}) for the app.
     style: ComponentStyle = dataclasses.field(default_factory=dict)
 
-    # A list of URLs to [stylesheets](https://reflex.dev/docs/styling/custom-stylesheets/) to include in the app.
     stylesheets: list[str] = dataclasses.field(default_factory=list)
 
-    # Whether to include CSS reset for margin and padding (defaults to True).
     reset_style: bool = dataclasses.field(default=True)
 
-    # A component that is present on every page (defaults to the Connection Error banner).
     overlay_component: Component | ComponentCallable | None = dataclasses.field(
         default=None
     )
 
-    # App wraps to be applied to the whole app. Expected to be a dictionary of (order, name) to a function that takes whether the state is enabled and optionally returns a component.
     app_wraps: dict[tuple[int, str], Callable[[bool], Component | None]] = (
         dataclasses.field(
             default_factory=lambda: {
@@ -383,21 +396,16 @@ class App(MiddlewareMixin, LifespanMixin):
         )
     )
 
-    # Extra app wraps to be applied to the whole app.
     extra_app_wraps: dict[tuple[int, str], Callable[[bool], Component | None]] = (
         dataclasses.field(default_factory=dict)
     )
 
-    # Components to add to the head of every page.
     head_components: list[Component] = dataclasses.field(default_factory=list)
 
-    # The Socket.IO AsyncServer instance.
     sio: AsyncServer | None = None
 
-    # The language to add to the html root tag of every page.
     html_lang: str | None = None
 
-    # Attributes to add to the html root tag of every page.
     html_custom_attrs: dict[str, str] | None = None
 
     # A map from a route to an unevaluated page.
@@ -417,7 +425,6 @@ class App(MiddlewareMixin, LifespanMixin):
     # The state class to use for the app.
     _state: type[BaseState] | None = None
 
-    # Whether to enable state for the app. If False, the app will not use state.
     enable_state: bool = True
 
     # Class to manage many client states.
@@ -428,7 +435,6 @@ class App(MiddlewareMixin, LifespanMixin):
         default_factory=dict
     )
 
-    # Admin dashboard to view and manage the database.
     admin_dash: AdminDash | None = None
 
     # The async server name space.
@@ -437,20 +443,16 @@ class App(MiddlewareMixin, LifespanMixin):
     # Background tasks that are currently running.
     _background_tasks: set[asyncio.Task] = dataclasses.field(default_factory=set)
 
-    # Frontend Error Handler Function
     frontend_exception_handler: Callable[[Exception], None] = (
         default_frontend_exception_handler
     )
 
-    # Backend Error Handler Function
     backend_exception_handler: Callable[
         [Exception], EventSpec | list[EventSpec] | None
     ] = default_backend_exception_handler
 
-    # Put the toast provider in the app wrap.
     toaster: Component | None = dataclasses.field(default_factory=toast.provider)
 
-    # Transform the ASGI app before running it.
     api_transformer: (
         Sequence[Callable[[ASGIApp], ASGIApp] | Starlette]
         | Callable[[ASGIApp], ASGIApp]

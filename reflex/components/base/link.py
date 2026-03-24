@@ -1,5 +1,6 @@
 """Display the title of the current page."""
 
+from reflex.components.component import field
 from reflex.components.el.elements.base import BaseHTML
 from reflex.vars.base import Var
 
@@ -9,11 +10,9 @@ class RawLink(BaseHTML):
 
     tag = "link"
 
-    # The href.
-    href: Var[str]
+    href: Var[str] = field(doc="The href.")
 
-    # The type of link.
-    rel: Var[str]
+    rel: Var[str] = field(doc="The type of link.")
 
 
 class ScriptTag(BaseHTML):
@@ -21,23 +20,18 @@ class ScriptTag(BaseHTML):
 
     tag = "script"
 
-    # The type of script represented.
-    type_: Var[str]
+    type_: Var[str] = field(doc="The type of script represented.")
 
-    # The URI of an external script.
-    source: Var[str]
+    source: Var[str] = field(doc="The URI of an external script.")
 
-    # Metadata to verify the content of the script.
-    integrity: Var[str]
+    integrity: Var[str] = field(doc="Metadata to verify the content of the script.")
 
-    # Whether to allow cross-origin requests.
-    crossorigin: Var[str]
+    crossorigin: Var[str] = field(doc="Whether to allow cross-origin requests.")
 
-    # Indicates which referrer to send when fetching the script.
-    referrer_policy: Var[str]
+    referrer_policy: Var[str] = field(
+        doc="Indicates which referrer to send when fetching the script."
+    )
 
-    # Whether to asynchronously load the script.
-    is_async: Var[bool]
+    is_async: Var[bool] = field(doc="Whether to asynchronously load the script.")
 
-    # Whether to defer loading the script.
-    defer: Var[bool]
+    defer: Var[bool] = field(doc="Whether to defer loading the script.")

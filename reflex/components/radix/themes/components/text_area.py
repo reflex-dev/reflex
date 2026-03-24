@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from reflex.components.component import Component
+from reflex.components.component import Component, field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.debounce import DebounceInput
 from reflex.components.el import elements
@@ -23,65 +23,69 @@ class TextArea(RadixThemesComponent, elements.Textarea):
 
     tag = "TextArea"
 
-    # The size of the text area: "1" | "2" | "3"
-    size: Var[Responsive[LiteralTextAreaSize]]
+    size: Var[Responsive[LiteralTextAreaSize]] = field(
+        doc='The size of the text area: "1" | "2" | "3"'
+    )
 
-    # The variant of the text area
-    variant: Var[Literal["classic", "surface", "soft"]]
+    variant: Var[Literal["classic", "surface", "soft"]] = field(
+        doc="The variant of the text area"
+    )
 
-    # The resize behavior of the text area: "none" | "vertical" | "horizontal" | "both"
-    resize: Var[Responsive[LiteralTextAreaResize]]
+    resize: Var[Responsive[LiteralTextAreaResize]] = field(
+        doc='The resize behavior of the text area: "none" | "vertical" | "horizontal" | "both"'
+    )
 
-    # The color of the text area
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor] = field(doc="The color of the text area")
 
-    # The radius of the text area: "none" | "small" | "medium" | "large" | "full"
-    radius: Var[LiteralRadius]
+    radius: Var[LiteralRadius] = field(
+        doc='The radius of the text area: "none" | "small" | "medium" | "large" | "full"'
+    )
 
-    # Whether the form control should have autocomplete enabled
-    auto_complete: Var[bool]
+    auto_complete: Var[bool] = field(
+        doc="Whether the form control should have autocomplete enabled"
+    )
 
-    # Automatically focuses the textarea when the page loads
-    auto_focus: Var[bool]
+    auto_focus: Var[bool] = field(
+        doc="Automatically focuses the textarea when the page loads"
+    )
 
-    # The default value of the textarea when initially rendered
-    default_value: Var[str]
+    default_value: Var[str] = field(
+        doc="The default value of the textarea when initially rendered"
+    )
 
-    # Name part of the textarea to submit in 'dir' and 'name' pair when form is submitted
-    dirname: Var[str]
+    dirname: Var[str] = field(
+        doc="Name part of the textarea to submit in 'dir' and 'name' pair when form is submitted"
+    )
 
-    # Disables the textarea
-    disabled: Var[bool]
+    disabled: Var[bool] = field(doc="Disables the textarea")
 
-    # Associates the textarea with a form (by id)
-    form: Var[str]
+    form: Var[str] = field(doc="Associates the textarea with a form (by id)")
 
-    # Maximum number of characters allowed in the textarea
-    max_length: Var[int]
+    max_length: Var[int] = field(
+        doc="Maximum number of characters allowed in the textarea"
+    )
 
-    # Minimum number of characters required in the textarea
-    min_length: Var[int]
+    min_length: Var[int] = field(
+        doc="Minimum number of characters required in the textarea"
+    )
 
-    # Name of the textarea, used when submitting the form
-    name: Var[str]
+    name: Var[str] = field(doc="Name of the textarea, used when submitting the form")
 
-    # Placeholder text in the textarea
-    placeholder: Var[str]
+    placeholder: Var[str] = field(doc="Placeholder text in the textarea")
 
-    # Indicates whether the textarea is read-only
-    read_only: Var[bool]
+    read_only: Var[bool] = field(doc="Indicates whether the textarea is read-only")
 
-    # Indicates that the textarea is required
-    required: Var[bool]
+    required: Var[bool] = field(doc="Indicates that the textarea is required")
 
-    # Visible number of lines in the text control
-    rows: Var[str]
+    rows: Var[str] = field(doc="Visible number of lines in the text control")
 
-    # The controlled value of the textarea, read only unless used with on_change
-    value: Var[str]
+    value: Var[str] = field(
+        doc="The controlled value of the textarea, read only unless used with on_change"
+    )
 
-    # How the text in the textarea is to be wrapped when submitting the form
-    wrap: Var[str]
+    wrap: Var[str] = field(
+        doc="How the text in the textarea is to be wrapped when submitting the form"
+    )
 
     @classmethod
     def create(cls, *children, **props) -> Component:

@@ -2,7 +2,7 @@
 
 from typing import Any, ClassVar
 
-from reflex.components.component import ComponentNamespace
+from reflex.components.component import ComponentNamespace, field
 from reflex.components.el import elements
 from reflex.constants.compiler import MemoizationMode
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
@@ -23,17 +23,19 @@ class DialogRoot(DialogElement):
     tag = "Root"
     alias = "RadixPrimitiveDialogRoot"
 
-    # The controlled open state of the dialog.
-    open: Var[bool]
+    open: Var[bool] = field(doc="The controlled open state of the dialog.")
 
-    # Fired when the open state changes.
-    on_open_change: EventHandler[passthrough_event_spec(bool)]
+    on_open_change: EventHandler[passthrough_event_spec(bool)] = field(
+        doc="Fired when the open state changes."
+    )
 
-    # The open state of the dialog when it is initially rendered. Use when you do not need to control its open state.
-    default_open: Var[bool]
+    default_open: Var[bool] = field(
+        doc="The open state of the dialog when it is initially rendered. Use when you do not need to control its open state."
+    )
 
-    # The modality of the dialog. When set to true, interaction with outside elements will be disabled and only dialog content will be visible to screen readers.
-    modal: Var[bool]
+    modal: Var[bool] = field(
+        doc="The modality of the dialog. When set to true, interaction with outside elements will be disabled and only dialog content will be visible to screen readers."
+    )
 
     _valid_children: ClassVar[list[str]] = [
         "DialogTrigger",
@@ -47,11 +49,13 @@ class DialogPortal(DialogElement):
     tag = "Portal"
     alias = "RadixPrimitiveDialogPortal"
 
-    # Used to force mounting when more control is needed. Useful when controlling animation with React animation libraries. If used on this part, it will be inherited by Dialog.Overlay and Dialog.Content.
-    force_mount: Var[bool]
+    force_mount: Var[bool] = field(
+        doc="Used to force mounting when more control is needed. Useful when controlling animation with React animation libraries. If used on this part, it will be inherited by Dialog.Overlay and Dialog.Content."
+    )
 
-    # Specify a container element to portal the content into.
-    container: Var[Any]
+    container: Var[Any] = field(
+        doc="Specify a container element to portal the content into."
+    )
 
     _valid_parents: ClassVar[list[str]] = ["DialogRoot"]
 
@@ -62,11 +66,13 @@ class DialogOverlay(DialogElement):
     tag = "Overlay"
     alias = "RadixPrimitiveDialogOverlay"
 
-    # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: Var[bool]
+    as_child: Var[bool] = field(
+        doc="Change the default rendered element for the one passed as a child, merging their props and behavior."
+    )
 
-    # Used to force mounting when more control is needed. Useful when controlling animation with React animation libraries. It inherits from Dialog.Portal.
-    force_mount: Var[bool]
+    force_mount: Var[bool] = field(
+        doc="Used to force mounting when more control is needed. Useful when controlling animation with React animation libraries. It inherits from Dialog.Portal."
+    )
 
     _valid_parents: ClassVar[list[str]] = ["DialogPortal"]
 
@@ -77,8 +83,9 @@ class DialogTrigger(DialogElement, RadixPrimitiveTriggerComponent):
     tag = "Trigger"
     alias = "RadixPrimitiveDialogTrigger"
 
-    # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: Var[bool]
+    as_child: Var[bool] = field(
+        doc="Change the default rendered element for the one passed as a child, merging their props and behavior."
+    )
 
     _memoization_mode = MemoizationMode(recursive=False)
 
@@ -91,26 +98,33 @@ class DialogContent(elements.Div, DialogElement):
     tag = "Content"
     alias = "RadixPrimitiveDialogContent"
 
-    # Used to force mounting when more control is needed. Useful when controlling animation with React animation libraries. It inherits from Dialog.Portal.
-    force_mount: Var[bool]
+    force_mount: Var[bool] = field(
+        doc="Used to force mounting when more control is needed. Useful when controlling animation with React animation libraries. It inherits from Dialog.Portal."
+    )
 
-    # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: Var[bool]
+    as_child: Var[bool] = field(
+        doc="Change the default rendered element for the one passed as a child, merging their props and behavior."
+    )
 
-    # Fired when the dialog is opened.
-    on_open_auto_focus: EventHandler[no_args_event_spec]
+    on_open_auto_focus: EventHandler[no_args_event_spec] = field(
+        doc="Fired when the dialog is opened."
+    )
 
-    # Fired when the dialog is closed.
-    on_close_auto_focus: EventHandler[no_args_event_spec]
+    on_close_auto_focus: EventHandler[no_args_event_spec] = field(
+        doc="Fired when the dialog is closed."
+    )
 
-    # Fired when the escape key is pressed.
-    on_escape_key_down: EventHandler[no_args_event_spec]
+    on_escape_key_down: EventHandler[no_args_event_spec] = field(
+        doc="Fired when the escape key is pressed."
+    )
 
-    # Fired when the pointer is down outside the dialog.
-    on_pointer_down_outside: EventHandler[no_args_event_spec]
+    on_pointer_down_outside: EventHandler[no_args_event_spec] = field(
+        doc="Fired when the pointer is down outside the dialog."
+    )
 
-    # Fired when the pointer interacts outside the dialog.
-    on_interact_outside: EventHandler[no_args_event_spec]
+    on_interact_outside: EventHandler[no_args_event_spec] = field(
+        doc="Fired when the pointer interacts outside the dialog."
+    )
 
     _valid_parents: ClassVar[list[str]] = ["DialogPortal"]
 
@@ -121,8 +135,9 @@ class DialogTitle(DialogElement):
     tag = "Title"
     alias = "RadixPrimitiveDialogTitle"
 
-    # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: Var[bool]
+    as_child: Var[bool] = field(
+        doc="Change the default rendered element for the one passed as a child, merging their props and behavior."
+    )
 
 
 class DialogDescription(DialogElement):
@@ -131,8 +146,9 @@ class DialogDescription(DialogElement):
     tag = "Description"
     alias = "RadixPrimitiveDialogDescription"
 
-    # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: Var[bool]
+    as_child: Var[bool] = field(
+        doc="Change the default rendered element for the one passed as a child, merging their props and behavior."
+    )
 
 
 class DialogClose(DialogElement, RadixPrimitiveTriggerComponent):
@@ -141,8 +157,9 @@ class DialogClose(DialogElement, RadixPrimitiveTriggerComponent):
     tag = "Close"
     alias = "RadixPrimitiveDialogClose"
 
-    # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: Var[bool]
+    as_child: Var[bool] = field(
+        doc="Change the default rendered element for the one passed as a child, merging their props and behavior."
+    )
 
 
 class Dialog(ComponentNamespace):

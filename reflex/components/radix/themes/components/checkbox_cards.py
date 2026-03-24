@@ -3,6 +3,7 @@
 from types import SimpleNamespace
 from typing import Literal
 
+from reflex.components.component import field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.radix.themes.base import LiteralAccentColor, RadixThemesComponent
 from reflex.vars.base import Var
@@ -13,23 +14,27 @@ class CheckboxCardsRoot(RadixThemesComponent):
 
     tag = "CheckboxCards.Root"
 
-    # The size of the checkbox cards: "1" | "2" | "3"
-    size: Var[Responsive[Literal["1", "2", "3"]]]
+    size: Var[Responsive[Literal["1", "2", "3"]]] = field(
+        doc='The size of the checkbox cards: "1" | "2" | "3"'
+    )
 
-    # Variant of button: "classic" | "surface" | "soft"
-    variant: Var[Literal["classic", "surface"]]
+    variant: Var[Literal["classic", "surface"]] = field(
+        doc='Variant of button: "classic" | "surface" | "soft"'
+    )
 
-    # Override theme color for button
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor] = field(doc="Override theme color for button")
 
-    # Uses a higher contrast color for the component.
-    high_contrast: Var[bool]
+    high_contrast: Var[bool] = field(
+        doc="Uses a higher contrast color for the component."
+    )
 
-    # The number of columns:
-    columns: Var[Responsive[str | Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]]]
+    columns: Var[
+        Responsive[str | Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]]
+    ] = field(doc="The number of columns:")
 
-    # The gap between the checkbox cards:
-    gap: Var[Responsive[str | Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]]]
+    gap: Var[Responsive[str | Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]]] = (
+        field(doc="The gap between the checkbox cards:")
+    )
 
 
 class CheckboxCardsItem(RadixThemesComponent):
