@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from reflex.components.component import ComponentNamespace
+from reflex.components.component import ComponentNamespace, field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.components.radix.themes.base import (
@@ -19,20 +19,25 @@ class HoverCardRoot(RadixThemesComponent):
 
     tag = "HoverCard.Root"
 
-    # The open state of the hover card when it is initially rendered. Use when you do not need to control its open state.
-    default_open: Var[bool]
+    default_open: Var[bool] = field(
+        doc="The open state of the hover card when it is initially rendered. Use when you do not need to control its open state."
+    )
 
-    # The controlled open state of the hover card. Must be used in conjunction with onOpenChange.
-    open: Var[bool]
+    open: Var[bool] = field(
+        doc="The controlled open state of the hover card. Must be used in conjunction with onOpenChange."
+    )
 
-    # The duration from when the mouse enters the trigger until the hover card opens.
-    open_delay: Var[int]
+    open_delay: Var[int] = field(
+        doc="The duration from when the mouse enters the trigger until the hover card opens."
+    )
 
-    # The duration from when the mouse leaves the trigger until the hover card closes.
-    close_delay: Var[int]
+    close_delay: Var[int] = field(
+        doc="The duration from when the mouse leaves the trigger until the hover card closes."
+    )
 
-    # Fired when the open state changes.
-    on_open_change: EventHandler[passthrough_event_spec(bool)]
+    on_open_change: EventHandler[passthrough_event_spec(bool)] = field(
+        doc="Fired when the open state changes."
+    )
 
 
 class HoverCardTrigger(RadixThemesTriggerComponent):
@@ -48,32 +53,39 @@ class HoverCardContent(elements.Div, RadixThemesComponent):
 
     tag = "HoverCard.Content"
 
-    # The preferred side of the trigger to render against when open. Will be reversed when collisions occur and avoidCollisions is enabled.
-    side: Var[Responsive[Literal["top", "right", "bottom", "left"]]]
+    side: Var[Responsive[Literal["top", "right", "bottom", "left"]]] = field(
+        doc="The preferred side of the trigger to render against when open. Will be reversed when collisions occur and avoidCollisions is enabled."
+    )
 
-    # The distance in pixels from the trigger.
-    side_offset: Var[int]
+    side_offset: Var[int] = field(doc="The distance in pixels from the trigger.")
 
-    # The preferred alignment against the trigger. May change when collisions occur.
-    align: Var[Literal["start", "center", "end"]]
+    align: Var[Literal["start", "center", "end"]] = field(
+        doc="The preferred alignment against the trigger. May change when collisions occur."
+    )
 
-    # An offset in pixels from the "start" or "end" alignment options.
-    align_offset: Var[int]
+    align_offset: Var[int] = field(
+        doc='An offset in pixels from the "start" or "end" alignment options.'
+    )
 
-    # Whether or not the hover card should avoid collisions with its trigger.
-    avoid_collisions: Var[bool]
+    avoid_collisions: Var[bool] = field(
+        doc="Whether or not the hover card should avoid collisions with its trigger."
+    )
 
-    # The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { top: 20, left: 20 }.
-    collision_padding: Var[float | int | dict[str, float | int]]
+    collision_padding: Var[float | int | dict[str, float | int]] = field(
+        doc="The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { top: 20, left: 20 }."
+    )
 
-    # The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless
-    sticky: Var[Literal["partial", "always"]]
+    sticky: Var[Literal["partial", "always"]] = field(
+        doc='The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless'
+    )
 
-    # Whether to hide the content when the trigger becomes fully occluded.
-    hide_when_detached: Var[bool]
+    hide_when_detached: Var[bool] = field(
+        doc="Whether to hide the content when the trigger becomes fully occluded."
+    )
 
-    # Hovercard size "1" - "3"
-    size: Var[Responsive[Literal["1", "2", "3"]]]
+    size: Var[Responsive[Literal["1", "2", "3"]]] = field(
+        doc='Hovercard size "1" - "3"'
+    )
 
 
 class HoverCard(ComponentNamespace):

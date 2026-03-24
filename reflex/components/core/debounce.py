@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from reflex.components.component import Component
+from reflex.components.component import Component, field
 from reflex.constants import EventTriggers
 from reflex.event import EventHandler, no_args_event_spec
 from reflex.vars import VarData
@@ -25,29 +25,34 @@ class DebounceInput(Component):
     tag = "DebounceInput"
     is_default = True
 
-    # Minimum input characters before triggering the on_change event
-    min_length: Var[int]
+    min_length: Var[int] = field(
+        doc="Minimum input characters before triggering the on_change event"
+    )
 
-    # Time to wait between end of input and triggering on_change
-    debounce_timeout: Var[int] = Var.create(DEFAULT_DEBOUNCE_TIMEOUT)
+    debounce_timeout: Var[int] = field(
+        default=Var.create(DEFAULT_DEBOUNCE_TIMEOUT),
+        doc="Time to wait between end of input and triggering on_change",
+    )
 
-    # If true, notify when Enter key is pressed
-    force_notify_by_enter: Var[bool]
+    force_notify_by_enter: Var[bool] = field(
+        doc="If true, notify when Enter key is pressed"
+    )
 
-    # If true, notify when form control loses focus
-    force_notify_on_blur: Var[bool]
+    force_notify_on_blur: Var[bool] = field(
+        doc="If true, notify when form control loses focus"
+    )
 
-    # If provided, create a fully-controlled input
-    value: Var[str | int | float]
+    value: Var[str | int | float] = field(
+        doc="If provided, create a fully-controlled input"
+    )
 
-    # The ref to attach to the created input
-    input_ref: Var[str]
+    input_ref: Var[str] = field(doc="The ref to attach to the created input")
 
-    # The element to wrap
-    element: Var[type[Component]]
+    element: Var[type[Component]] = field(doc="The element to wrap")
 
-    # Fired when the input value changes
-    on_change: EventHandler[no_args_event_spec]
+    on_change: EventHandler[no_args_event_spec] = field(
+        doc="Fired when the input value changes"
+    )
 
     @classmethod
     def create(cls, *children: Component, **props: Any) -> Component:
@@ -105,9 +110,9 @@ class DebounceInput(Component):
         props.setdefault("style", {}).update(child.style)
         if child.class_name is not None:
             props["class_name"] = f"{props.get('class_name', '')} {child.class_name}"
-        for field in ("key", "special_props"):
-            if getattr(child, field) is not None:
-                props[field] = getattr(child, field)
+        for prop_name in ("key", "special_props"):
+            if getattr(child, prop_name) is not None:
+                props[prop_name] = getattr(child, prop_name)
         child_ref = child.get_ref()
         if props.get("input_ref") is None and child_ref:
             props["input_ref"] = Var(_js_expr=child_ref, _var_type=str)

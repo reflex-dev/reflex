@@ -2,6 +2,7 @@
 
 from typing import ClassVar, Literal
 
+from reflex.components.component import field
 from reflex.vars.base import Var
 
 from .base import BaseHTML
@@ -24,29 +25,33 @@ class A(BaseHTML):  # Inherits common attributes from BaseMeta
 
     tag = "a"
 
-    # Specifies that the target (the file specified in the href attribute) will be downloaded when a user clicks on the hyperlink.
-    download: Var[str | bool]
+    download: Var[str | bool] = field(
+        doc="Specifies that the target (the file specified in the href attribute) will be downloaded when a user clicks on the hyperlink."
+    )
 
-    # Specifies the URL of the page the link goes to
-    href: Var[str]
+    href: Var[str] = field(doc="Specifies the URL of the page the link goes to")
 
-    # Specifies the language of the linked document
-    href_lang: Var[str]
+    href_lang: Var[str] = field(doc="Specifies the language of the linked document")
 
-    # Specifies what media/device the linked document is optimized for
-    media: Var[str]
+    media: Var[str] = field(
+        doc="Specifies what media/device the linked document is optimized for"
+    )
 
-    # Specifies which referrer is sent when fetching the resource
-    ping: Var[str]
+    ping: Var[str] = field(
+        doc="Specifies which referrer is sent when fetching the resource"
+    )
 
-    # Specifies the relationship between the current document and the linked document
-    referrer_policy: Var[ReferrerPolicy]
+    referrer_policy: Var[ReferrerPolicy] = field(
+        doc="Specifies the relationship between the current document and the linked document"
+    )
 
-    # Specifies the relationship between the linked document and the current document
-    rel: Var[str]
+    rel: Var[str] = field(
+        doc="Specifies the relationship between the linked document and the current document"
+    )
 
-    # Specifies where to open the linked document
-    target: Var[str | Literal["_self", "_blank", "_parent", "_top"]]
+    target: Var[str | Literal["_self", "_blank", "_parent", "_top"]] = field(
+        doc="Specifies where to open the linked document"
+    )
 
     _invalid_children: ClassVar[list[str]] = ["A"]
 
@@ -98,8 +103,9 @@ class Data(BaseHTML):
 
     tag = "data"
 
-    # Specifies the machine-readable translation of the data element.
-    value: Var[str | int | float]
+    value: Var[str | int | float] = field(
+        doc="Specifies the machine-readable translation of the data element."
+    )
 
 
 class Dfn(BaseHTML):
@@ -137,8 +143,7 @@ class Q(BaseHTML):
 
     tag = "q"
 
-    # Specifies the source URL of the quote.
-    cite: Var[str]
+    cite: Var[str] = field(doc="Specifies the source URL of the quote.")
 
 
 class Rp(BaseHTML):
@@ -206,8 +211,7 @@ class Time(BaseHTML):
 
     tag = "time"
 
-    # Specifies the date and/or time of the element.
-    date_time: Var[str]
+    date_time: Var[str] = field(doc="Specifies the date and/or time of the element.")
 
 
 class U(BaseHTML):

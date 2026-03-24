@@ -264,6 +264,14 @@ def interpret_env_var_value(
     """
     field_type = value_inside_optional(field_type)
 
+    # Unwrap Annotated to get the base type for env var interpretation.
+    # Preserve SequenceOptions and PathExistsFlag markers.
+    annotated_metadata: tuple[Any, ...] = ()
+    if get_origin(field_type) is Annotated:
+        annotated_args = get_args(field_type)
+        annotated_metadata = annotated_args[1:]
+        field_type = annotated_args[0]
+
     if is_union(field_type):
         errors = []
         for arg in (union_types := get_args(field_type)):
@@ -291,6 +299,8 @@ def interpret_env_var_value(
     if field_type is float:
         return interpret_float_env(value, field_name)
     if field_type is Path:
+        if PathExistsFlag in annotated_metadata:
+            return interpret_existing_path_env(value, field_name)
         return interpret_path_env(value, field_name)
     if field_type is ExistingPath:
         return interpret_existing_path_env(value, field_name)
@@ -325,15 +335,12 @@ def interpret_env_var_value(
                     continue
         msg = f"Invalid literal value: {value!r} for {field_name}, expected one of {literal_values}"
         raise EnvironmentVarValueError(msg)
-    # If the field is Annotated with SequenceOptions, extract the options
+    # If the field was Annotated with SequenceOptions, extract the options
     sequence_options = DEFAULT_SEQUENCE_OPTIONS
-    if get_origin(field_type) is Annotated:
-        annotated_args = get_args(field_type)
-        field_type = annotated_args[0]
-        for arg in annotated_args[1:]:
-            if isinstance(arg, SequenceOptions):
-                sequence_options = arg
-                break
+    for arg in annotated_metadata:
+        if isinstance(arg, SequenceOptions):
+            sequence_options = arg
+            break
     if get_origin(field_type) in (list, Sequence):
         items = value.split(sequence_options.delimiter)
         if sequence_options.strip:

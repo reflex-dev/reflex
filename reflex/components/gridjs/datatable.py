@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
-from reflex.components.component import NoSSRComponent
+from reflex.components.component import NoSSRComponent, field
 from reflex.components.tags import Tag
 from reflex.utils import types
 from reflex.utils.imports import ImportDict
@@ -28,24 +28,21 @@ class DataTable(Gridjs):
 
     alias = "DataTableGrid"
 
-    # The data to display. Either a list of lists or a pandas dataframe.
-    data: Any
+    data: Any = field(
+        doc="The data to display. Either a list of lists or a pandas dataframe."
+    )
 
-    # The list of columns to display. Required if data is a list and should not be provided
-    # if the data field is a dataframe
-    columns: Var[Sequence]
+    columns: Var[Sequence] = field(
+        doc="The list of columns to display. Required if data is a list and should not be provided if the data field is a dataframe"
+    )
 
-    # Enable a search bar.
-    search: Var[bool]
+    search: Var[bool] = field(doc="Enable a search bar.")
 
-    # Enable sorting on columns.
-    sort: Var[bool]
+    sort: Var[bool] = field(doc="Enable sorting on columns.")
 
-    # Enable resizable columns.
-    resizable: Var[bool]
+    resizable: Var[bool] = field(doc="Enable resizable columns.")
 
-    # Enable pagination.
-    pagination: Var[bool | dict]
+    pagination: Var[bool | dict] = field(doc="Enable pagination.")
 
     @classmethod
     def create(cls, *children, **props):

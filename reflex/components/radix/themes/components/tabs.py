@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, ClassVar, Literal
 
-from reflex.components.component import Component, ComponentNamespace
+from reflex.components.component import Component, ComponentNamespace, field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.colors import color
 from reflex.components.radix.themes.base import LiteralAccentColor, RadixThemesComponent
@@ -20,26 +20,30 @@ class TabsRoot(RadixThemesComponent):
 
     tag = "Tabs.Root"
 
-    # The value of the tab that should be active when initially rendered. Use when you do not need to control the state of the tabs.
-    default_value: Var[str]
+    default_value: Var[str] = field(
+        doc="The value of the tab that should be active when initially rendered. Use when you do not need to control the state of the tabs."
+    )
 
-    # The controlled value of the tab that should be active. Use when you need to control the state of the tabs.
-    value: Var[str]
+    value: Var[str] = field(
+        doc="The controlled value of the tab that should be active. Use when you need to control the state of the tabs."
+    )
 
-    # The orientation of the tabs.
-    orientation: Var[Literal["horizontal", "vertical"]]
+    orientation: Var[Literal["horizontal", "vertical"]] = field(
+        doc="The orientation of the tabs."
+    )
 
-    # Reading direction of the tabs.
-    dir: Var[Literal["ltr", "rtl"]]
+    dir: Var[Literal["ltr", "rtl"]] = field(doc="Reading direction of the tabs.")
 
-    # The mode of activation for the tabs. "automatic" will activate the tab when focused. "manual" will activate the tab when clicked.
-    activation_mode: Var[Literal["automatic", "manual"]]
+    activation_mode: Var[Literal["automatic", "manual"]] = field(
+        doc='The mode of activation for the tabs. "automatic" will activate the tab when focused. "manual" will activate the tab when clicked.'
+    )
 
     # Props to rename
     _rename_props = {"onChange": "onValueChange"}
 
-    # Fired when the value of the tabs changes.
-    on_change: EventHandler[passthrough_event_spec(str)]
+    on_change: EventHandler[passthrough_event_spec(str)] = field(
+        doc="Fired when the value of the tabs changes."
+    )
 
     def add_style(self) -> dict[str, Any] | None:
         """Add style for the component.
@@ -59,11 +63,9 @@ class TabsList(RadixThemesComponent):
 
     tag = "Tabs.List"
 
-    # Tabs size "1" - "2"
-    size: Var[Responsive[Literal["1", "2"]]]
+    size: Var[Responsive[Literal["1", "2"]]] = field(doc='Tabs size "1" - "2"')
 
-    # When true, the tabs will loop when reaching the end.
-    loop: Var[bool]
+    loop: Var[bool] = field(doc="When true, the tabs will loop when reaching the end.")
 
     def add_style(self):
         """Add style for the component.
@@ -84,14 +86,13 @@ class TabsTrigger(RadixThemesComponent):
 
     tag = "Tabs.Trigger"
 
-    # The value of the tab. Must be unique for each tab.
-    value: Var[str]
+    value: Var[str] = field(doc="The value of the tab. Must be unique for each tab.")
 
-    # Whether the tab is disabled
-    disabled: Var[bool]
+    disabled: Var[bool] = field(doc="Whether the tab is disabled")
 
-    # The color of the line under the tab when active.
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor] = field(
+        doc="The color of the line under the tab when active."
+    )
 
     _valid_parents: ClassVar[list[str]] = ["TabsList"]
 
@@ -130,11 +131,11 @@ class TabsContent(RadixThemesComponent):
 
     tag = "Tabs.Content"
 
-    # The value of the tab. Must be unique for each tab.
-    value: Var[str]
+    value: Var[str] = field(doc="The value of the tab. Must be unique for each tab.")
 
-    # Used to force mounting when more control is needed. Useful when controlling animation with React animation libraries.
-    force_mount: Var[bool]
+    force_mount: Var[bool] = field(
+        doc="Used to force mounting when more control is needed. Useful when controlling animation with React animation libraries."
+    )
 
     def add_style(self) -> dict[str, Any] | None:
         """Add style for the component.

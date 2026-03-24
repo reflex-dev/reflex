@@ -6,6 +6,7 @@ from collections.abc import Sequence
 from types import SimpleNamespace
 from typing import ClassVar, Literal
 
+from reflex.components.component import field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.radix.themes.base import LiteralAccentColor, RadixThemesComponent
 from reflex.event import EventHandler
@@ -31,29 +32,35 @@ class SegmentedControlRoot(RadixThemesComponent):
 
     tag = "SegmentedControl.Root"
 
-    # The size of the segmented control: "1" | "2" | "3"
-    size: Var[Responsive[Literal["1", "2", "3"]]]
+    size: Var[Responsive[Literal["1", "2", "3"]]] = field(
+        doc='The size of the segmented control: "1" | "2" | "3"'
+    )
 
-    # Variant of button: "classic" | "surface"
-    variant: Var[Literal["classic", "surface"]]
+    variant: Var[Literal["classic", "surface"]] = field(
+        doc='Variant of button: "classic" | "surface"'
+    )
 
-    # The type of the segmented control, either "single" for selecting one option or "multiple" for selecting multiple options.
-    type: Var[Literal["single", "multiple"]]
+    type: Var[Literal["single", "multiple"]] = field(
+        doc='The type of the segmented control, either "single" for selecting one option or "multiple" for selecting multiple options.'
+    )
 
-    # Override theme color for button
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor] = field(doc="Override theme color for button")
 
-    # The radius of the segmented control: "none" | "small" | "medium" | "large" | "full"
-    radius: Var[Literal["none", "small", "medium", "large", "full"]]
+    radius: Var[Literal["none", "small", "medium", "large", "full"]] = field(
+        doc='The radius of the segmented control: "none" | "small" | "medium" | "large" | "full"'
+    )
 
-    # The default value of the segmented control.
-    default_value: Var[str | Sequence[str]]
+    default_value: Var[str | Sequence[str]] = field(
+        doc="The default value of the segmented control."
+    )
 
-    # The current value of the segmented control.
-    value: Var[str | Sequence[str]]
+    value: Var[str | Sequence[str]] = field(
+        doc="The current value of the segmented control."
+    )
 
-    # Handles the `onChange` event for the SegmentedControl component.
-    on_change: EventHandler[on_value_change]
+    on_change: EventHandler[on_value_change] = field(
+        doc="Handles the `onChange` event for the SegmentedControl component."
+    )
 
     _rename_props = {"onChange": "onValueChange"}
 
@@ -63,8 +70,7 @@ class SegmentedControlItem(RadixThemesComponent):
 
     tag = "SegmentedControl.Item"
 
-    # The value of the item.
-    value: Var[str]
+    value: Var[str] = field(doc="The value of the item.")
 
     _valid_parents: ClassVar[list[str]] = ["SegmentedControlRoot"]
 

@@ -263,19 +263,25 @@ class Markdown(Component):
 
     is_default = True
 
-    # The component map from a tag to a lambda that creates a component.
     component_map: dict[str, Any] = field(
-        default_factory=dict, is_javascript_property=False
+        doc="The component map from a tag to a lambda that creates a component.",
+        default_factory=dict,
+        is_javascript_property=False,
     )
 
-    # The hash of the component map, generated at create() time.
-    component_map_hash: str = field(default="", is_javascript_property=False)
+    component_map_hash: str = field(
+        doc="The hash of the component map, generated at create() time.",
+        default="",
+        is_javascript_property=False,
+    )
 
-    # Remark plugins to use when rendering the content. Provide (plugin, options) if the plugin requires options.
-    remark_plugins: Var[Sequence[Var | tuple[Var, Var]]]
+    remark_plugins: Var[Sequence[Var | tuple[Var, Var]]] = field(
+        doc="Remark plugins to use when rendering the content. Provide (plugin, options) if the plugin requires options."
+    )
 
-    # Rehype (HTML processor) plugins to use when rendering the content. Provide (plugin, options) if the plugin requires options.
-    rehype_plugins: Var[Sequence[Var | tuple[Var, Var]]]
+    rehype_plugins: Var[Sequence[Var | tuple[Var, Var]]] = field(
+        doc="Rehype (HTML processor) plugins to use when rendering the content. Provide (plugin, options) if the plugin requires options."
+    )
 
     @classmethod
     def create(
