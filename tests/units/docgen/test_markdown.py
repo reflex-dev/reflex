@@ -371,7 +371,7 @@ _ALL_MD_FILES = sorted(_DOCS_DIR.rglob("*.md"))
 )
 def test_parse_all_doc_files(md_file: Path):
     """Every markdown file in docs/ should parse without errors."""
-    source = md_file.read_text()
+    source = md_file.read_text(encoding="utf-8")
     doc = parse_document(source)
     # Sanity check: a non-empty file should produce at least one block.
     if source.strip():
