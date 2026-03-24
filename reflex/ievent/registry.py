@@ -19,10 +19,21 @@ class RegisteredEventHandler:
 REGISTERED_HANDLERS: dict[str, RegisteredEventHandler] = {}
 
 
-def register(handler: EventHandler, states: tuple[type[BaseState], ...] = ()) -> None:
-    """Register an event handler with its full name and associated states."""
+def register(
+    handler: EventHandler, states: tuple[type[BaseState], ...] = ()
+) -> EventHandler:
+    """Register an event handler with its full name and associated states.
+
+    Args:
+        handler: The event handler to register.
+        states: The states associated with the event handler.
+
+    Returns:
+        The registered event handler.
+    """
     from reflex.utils.format import format_event_handler
 
     REGISTERED_HANDLERS[format_event_handler(handler)] = RegisteredEventHandler(
         handler=handler, states=states
     )
+    return handler

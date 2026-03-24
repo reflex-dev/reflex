@@ -90,7 +90,7 @@ from reflex.event import (
     IndividualEventType,
     noop,
 )
-from reflex.ievent.processor import EventProcessor
+from reflex.ievent.processor import BaseStateEventProcessor, EventProcessor
 from reflex.istate.manager.token import BaseStateToken
 from reflex.page import DECORATED_PAGES
 from reflex.route import (
@@ -624,7 +624,7 @@ class App(MiddlewareMixin, LifespanMixin):
     @contextlib.asynccontextmanager
     async def _setup_event_processor(self) -> AsyncIterator[None]:
         # Create the event processor.
-        self._event_processor = EventProcessor(
+        self._event_processor = BaseStateEventProcessor(
             middleware=self, backend_exception_handler=self.backend_exception_handler
         )
         async with self._event_processor.configure(
@@ -2190,7 +2190,7 @@ class EventNamespace(AsyncNamespace):
             if (path := router_data.get(constants.RouteVar.PATH))
             else "404"
         ).removeprefix("/")
-        await self.app.event_processor.enqueue(token=event.token, event=event)
+        await self.app.event_processor.enqueue(event.token, event)
 
     async def on_ping(self, sid: str):
         """Event for testing the API endpoint.

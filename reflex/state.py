@@ -627,8 +627,7 @@ class BaseState(EvenMoreBasicBaseState):
 
         for name, fn in events.items():
             handler = cls._create_event_handler(fn)
-            cls.event_handlers[name] = handler
-            register(handler, states=(cls,))
+            cls.event_handlers[name] = register(handler, states=(cls,))
             setattr(cls, name, handler)
 
         # Initialize per-class var dependency tracking.
@@ -652,9 +651,8 @@ class BaseState(EvenMoreBasicBaseState):
         from reflex.ievent.registry import register
 
         handler = cls._create_event_handler(fn)
-        cls.event_handlers[name] = handler
+        cls.event_handlers[name] = register(handler, states=(cls,))
         setattr(cls, name, handler)
-        register(handler, states=(cls,))
 
     @staticmethod
     def _copy_fn(fn: Callable) -> Callable:
@@ -1169,8 +1167,9 @@ class BaseState(EvenMoreBasicBaseState):
         """Create the setvar method for the state."""
         from reflex.ievent.registry import register
 
-        cls.setvar = cls.event_handlers["setvar"] = EventHandlerSetVar(state_cls=cls)
-        register(cls.setvar, states=(cls,))
+        cls.setvar = cls.event_handlers["setvar"] = register(
+            EventHandlerSetVar(state_cls=cls), states=(cls,)
+        )
 
     @classmethod
     def _create_setter(cls, name: str, prop: Var):

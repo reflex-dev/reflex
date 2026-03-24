@@ -35,6 +35,7 @@ from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
+from reflex.istate.proxy import StateProxy
 from reflex.state import (
     BaseState,
     ImmutableMutableProxy,
@@ -43,7 +44,6 @@ from reflex.state import (
     OnLoadInternalState,
     RouterData,
     State,
-    StateProxy,
     StateUpdate,
 )
 from reflex.testing import chdir
@@ -1684,35 +1684,6 @@ async def test_state_with_invalid_yield(capsys: pytest.CaptureFixture[str], mock
         )
     captured = capsys.readouterr()
     assert "must only return/yield: None, Events or other EventHandlers" in captured.err
-
-
-@pytest_asyncio.fixture(
-    loop_scope="function", scope="function", params=["in_process", "disk", "redis"]
-)
-async def state_manager(request) -> AsyncGenerator[StateManager, None]:
-    """Instance of state manager parametrized for redis and in-process.
-
-    Args:
-        request: pytest request object.
-
-    Yields:
-        A state manager instance
-    """
-    state_manager = StateManager.create()
-    if request.param == "redis":
-        if not isinstance(state_manager, StateManagerRedis):
-            state_manager = StateManagerRedis(redis=mock_redis())
-    elif request.param == "disk":
-        # explicitly NOT using redis
-        state_manager = StateManagerDisk()
-        assert not state_manager._states_locks
-    else:
-        state_manager = StateManagerMemory()
-        assert not state_manager._states_locks
-
-    yield state_manager
-
-    await state_manager.close()
 
 
 @pytest.fixture

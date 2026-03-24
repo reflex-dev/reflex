@@ -10,6 +10,12 @@ from importlib.util import find_spec
 from typing import TYPE_CHECKING, Any
 
 from reflex.ievent.context import event_context
+from reflex.ievent.processor import EventProcessor
+from reflex.ievent.processor.event_processor import (
+    EventQueueEntry,
+    RegisteredEventHandler,
+)
+from reflex.istate.data import RouterData
 from reflex.istate.proxy import StateProxy
 from reflex.utils import console, types
 from reflex.utils.monitoring import is_pyleak_enabled, monitor_loopblocks
@@ -26,11 +32,11 @@ def _check_valid_yield(events: Any, handler_name: str = "unknown") -> Any:
         events: The events to be checked.
         handler_name: The name of the handler that yielded the events, used for error messages.
 
-    Raises:
-        TypeError: If any of the events are not valid.
-
     Returns:
         The events as they are if valid.
+
+    Raises:
+        TypeError: If any of the events are not valid.
     """
     from reflex.event import Event, EventHandler, EventSpec
 
@@ -177,7 +183,10 @@ async def chain_updates(
     if fixed_events := fix_events(
         _check_valid_yield(events, handler_name=handler_name), token
     ):
-        await ctx.enqueue(*fixed_events)
+        # Frontend events.
+        await ctx.emit_event(*(e for e in fixed_events if e.name.startswith("_")))
+        # Backend events.
+        await ctx.enqueue(*(e for e in fixed_events if not e.name.startswith("_")))
 
     if root_state is not None:
         # Get the delta after processing the event.
@@ -258,4 +267,90 @@ async def process_event(
         await chain_updates(events, root_state=root_state, handler_name=handler_name)
 
 
-__all__ = ["chain_updates", "process_event"]
+class BaseStateEventProcessor(EventProcessor):
+    """Event processor for BaseState-derived states.
+
+    This processor is used to process events for BaseState-derived states, and
+    is responsible for maintaining the event queue and emitting deltas to the
+    frontend.
+    """
+
+    async def _process_event_queue_entry(
+        self, *, entry: EventQueueEntry, registered_handler: RegisteredEventHandler
+    ) -> None:
+        """Process a single event queue entry.
+
+        This function runs in a new task for each event.
+
+        Args:
+            entry: The event queue entry to process.
+            registered_handler: The registered handler for the event.
+        """
+        # Set up the event context for this task.
+        ctx = entry.ctx
+        event_context.set(ctx)
+        event = entry.event
+        router_data = event.router_data or {}
+        # Get the state for the session exclusively.
+        async with ctx.state_manager.modify_state_with_links(
+            entry.event.substate_token, event=entry.event
+        ) as state:
+            # TODO: handle "reload" trigger of brand new state instances
+
+            # re-assign only when the value is set and different
+            if router_data and state.router_data != router_data:
+                # assignment will recurse into substates and force recalculation of
+                # dependent ComputedVar (dynamic route variables)
+                state.router_data = router_data
+                state.router = RouterData.from_router_data(router_data)
+
+            # Preprocess the event.
+            if (
+                self.middleware is not None
+                and (update := await self.middleware._preprocess(state, event))
+                is not None
+            ):
+                # If there was an update, yield it.
+                if update.delta:
+                    await ctx.emit_delta(update.delta)
+                if update.events:
+                    await ctx.enqueue(*update.events)
+                return
+
+            # Get the event's substate.
+            substate = await state.get_state(event.substate_token.cls)
+            root_state = state._get_root_state()
+
+            # Process non-background events while holding the lock.
+            if not registered_handler.handler.is_background:
+                await process_event(
+                    handler=registered_handler.handler,
+                    payload=event.payload,
+                    state=substate,
+                    root_state=root_state,
+                )
+                return
+        # Otherwise drop the state lock and start processing the background task with a proxy state.
+        await process_event(
+            handler=registered_handler.handler,
+            state=StateProxy(substate),
+            payload=event.payload,
+            root_state=root_state,
+        )
+
+    async def _handle_backend_exception(self, ex: Exception):
+        """Handle an exception raised during event processing by calling the backend exception handler if it exists.
+
+        Args:
+            ex: The exception that was raised.
+        """
+        if self.backend_exception_handler is not None and (
+            events := self.backend_exception_handler(ex)
+        ):
+            await chain_updates(
+                events=events,
+                handler_name=self.backend_exception_handler.__qualname__,
+            )
+
+
+__all__ = ["BaseStateEventProcessor", "chain_updates", "process_event"]

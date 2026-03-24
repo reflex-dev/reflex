@@ -66,13 +66,13 @@ if TYPE_CHECKING:
 class Event:
     """An event that describes any state change in the app."""
 
-    # The token to specify the client that the event is for.
+    # The token to specify the client that the event is for (TODO: remove).
     token: str
 
     # The event name.
     name: str
 
-    # The routing data where event occurred
+    # The routing data where event occurred (TODO: remove).
     router_data: dict[str, Any] = dataclasses.field(default_factory=dict)
 
     # The event payload.
@@ -98,6 +98,58 @@ class Event:
             ident=self.token,
             cls=root_state.get_class_substate(tuple(substate.split("."))),
         )
+
+    @classmethod
+    def from_event_type(
+        cls, events: "IndividualEventType | list[IndividualEventType] | None"
+    ) -> "list[Event]":
+        """Create a list of Events from event-like objects.
+
+        Args:
+            events: The event-like objects to create Events from.
+
+        Returns:
+            A list of Events created from the event-like objects.
+        """
+        # If the event handler returns nothing, return an empty list.
+        if events is None:
+            return []
+
+        # If the handler returns a single event, wrap it in a list.
+        if not isinstance(events, list):
+            events = [events]
+
+        # Fix the events created by the handler.
+        out = []
+        for e in events:
+            if callable(e) and getattr(e, "__name__", "") == "<lambda>":
+                # A lambda was returned, assume the user wants to call it with no args.
+                e = e()
+            if isinstance(e, Event):
+                # If the event is already an event, append it to the list.
+                out.append(e)
+                continue
+            # Otherwise, create an event from the event spec.
+            if isinstance(e, EventHandler):
+                e = e()
+            if not isinstance(e, EventSpec):
+                msg = f"Unexpected event type, {type(e)}."
+                raise ValueError(msg)
+            name = format.format_event_handler(e.handler)
+            # TODO: allow real python types to be passed through the backend queue.
+            payload = {k._js_expr: v._decode() for k, v in e.args}
+
+            # Create an event and append it to the list.
+            out.append(
+                Event(
+                    token="none",
+                    name=name,
+                    payload=payload,
+                    router_data={},
+                )
+            )
+
+        return out
 
 
 _EVENT_FIELDS: set[str] = {f.name for f in dataclasses.fields(Event)}
@@ -266,7 +318,11 @@ class EventHandler(EventActionsMixin):
         from reflex.utils.exceptions import EventHandlerTypeError
 
         # Get the function args.
-        fn_args = list(self._parameters)[1:]
+        if self.state_full_name:
+            # Skip the `self` arg for state-bound event handlers.
+            fn_args = list(self._parameters)[1:]
+        else:
+            fn_args = list(self._parameters)
 
         if not isinstance(
             repeated_arg := next(

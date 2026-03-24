@@ -1,28 +1,67 @@
 """Base EventProcessor class for handling backend event queue."""
 
 import asyncio
+import contextlib
 import dataclasses
+import inspect
 import time
 import traceback
 from collections.abc import Callable, Mapping
-from contextvars import Context, copy_context
+from contextvars import Token, copy_context
 from typing import TYPE_CHECKING, Any, Self
 
 import rich.markup
 
 from reflex.app_mixins.middleware import MiddlewareMixin
-from reflex.ievent.context import EmitDeltaProtocol, EventContext, event_context
-from reflex.ievent.processor import base_state_processor
+from reflex.ievent.context import EventContext, event_context
 from reflex.ievent.registry import REGISTERED_HANDLERS, RegisteredEventHandler
-from reflex.istate.data import RouterData
 from reflex.istate.manager import StateManager
-from reflex.istate.proxy import StateProxy
 from reflex.utils import console
-from reflex.utils.tasks import ensure_task
 
 if TYPE_CHECKING:
     from reflex.app import EventNamespace
     from reflex.event import Event, EventSpec
+
+
+@dataclasses.dataclass(kw_only=True, slots=True)
+class DrainTimeoutManager:
+    """Manages an optional combined timeout over multiple calls.
+
+    Each time the context is entered, yield the remaining time until the
+    overall timeout is reached, or 0 if the timeout has already been reached.
+    This allows multiple operations to share a single overall timeout, even if
+    they are not executed sequentially.
+    """
+
+    drain_deadline: float | None = None
+
+    @classmethod
+    def with_timeout(cls, timeout: float | None) -> "DrainTimeoutManager":
+        """Create a DrainTimeoutManager with a specified timeout.
+
+        Args:
+            timeout: The overall amount of time in seconds to wait.
+
+        Returns:
+            A DrainTimeoutManager instance with the drain deadline set.
+        """
+        if timeout is None:
+            return cls(drain_deadline=None)
+        return cls(drain_deadline=time.time() + timeout)
+
+    def __enter__(self) -> float:
+        """Enter the context and yield the remaining time.
+
+        Returns:
+            The remaining time in seconds until the overall timeout is reached, or 0 if the timeout
+            has already been reached.
+        """
+        if self.drain_deadline is not None:
+            return max(0, self.drain_deadline - time.time())
+        return 0
+
+    def __exit__(self, *exc_info) -> None:
+        """Exit the context. No cleanup necessary."""
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
@@ -35,24 +74,41 @@ class EventQueueEntry:
 
 @dataclasses.dataclass(kw_only=True, slots=True)
 class EventProcessor:
-    """Responsible for queuing and processing events."""
+    """Responsible for queuing and processing events.
+
+    Attributes:
+        middleware: An optional middleware mixin to apply to all events processed by this processor.
+        backend_exception_handler: An optional function to handle exceptions raised during event processing. The function should take an Exception as input and return an EventSpec or list of EventSpecs to be emitted in response, or None to not emit any events.
+        graceful_shutdown_timeout: An optional amount of time in seconds to wait for the queue to drain before forcefully cancelling tasks when stopping the processor. If None, the processor will not wait and will cancel tasks immediately.
+
+        _queue: The asyncio queue for events to be processed.
+        _queue_task: The task responsible for processing the event queue.
+        _root_context: The root event context to use for events enqueued without an explicit context.
+        _attached_root_context_token: The context variable token for the attached root context, used to reset the context variable on shutdown.
+        _tasks: A mapping of active transaction ids to their corresponding event handler tasks, used for tracking and cancellation on shutdown.
+    """
 
     middleware: MiddlewareMixin | None = None
     backend_exception_handler: (
         Callable[[Exception], EventSpec | list[EventSpec] | None] | None
     ) = None
+    graceful_shutdown_timeout: float | None = None
 
-    _queue: asyncio.Queue[EventQueueEntry] = dataclasses.field(
-        default_factory=asyncio.Queue, init=False
+    _queue: asyncio.Queue[EventQueueEntry] | None = dataclasses.field(
+        default=None, init=False
     )
     _queue_task: asyncio.Task | None = dataclasses.field(default=None, init=False)
-    _root_context: Context | None = dataclasses.field(default=None, init=False)
+    _root_context: EventContext | None = dataclasses.field(default=None, init=False)
+    _attached_root_context_token: Token | None = dataclasses.field(
+        default=None, init=False
+    )
     _tasks: dict[str, asyncio.Task] = dataclasses.field(
         default_factory=dict, init=False
     )
 
     def configure(
         self,
+        *,
         state_manager: StateManager | None = None,
         event_namespace: EventNamespace | None = None,
     ) -> Self:
@@ -73,13 +129,15 @@ class EventProcessor:
         from reflex.state import StateUpdate
 
         if self._root_context is not None:
-            msg = "Event processor is already running"
+            msg = (
+                "Event processor is already configured, call .configure(...) only once."
+            )
             raise RuntimeError(msg)
 
-        emit_delta: EmitDeltaProtocol | None = None
+        emit_delta_impl = emit_event_impl = None
         if event_namespace is not None:
 
-            async def _emit_delta(
+            async def emit_delta(
                 token: str, delta: Mapping[str, Mapping[str, Any]]
             ) -> None:
                 """Emit a delta to the frontend.
@@ -93,52 +151,36 @@ class EventProcessor:
                     token=token,
                 )
 
-            emit_delta = _emit_delta
+            emit_delta_impl = emit_delta
 
-            async def enqueue(token: str, *events: Event) -> None:
-                """Enqueue an event handler to be executed.
+            async def emit_event(token: str, *events: Event) -> None:
+                """Emit an event to be processed on the frontend.
 
-                Args:
-                    token: The client token associated with the event.
-                    events: The events to enqueue.
-                """
-                for event in events:
-                    if event.name.startswith("_"):
-                        # Frontend events that start with "_" are emitted directly.
-                        await event_namespace.emit_update(
-                            update=StateUpdate(events=[event]),
-                            token=token,
-                        )
-                    else:
-                        # Backend events will be processed by the internal queue.
-                        await self.enqueue(token=token, event=event)
-
-        else:
-
-            async def enqueue(token: str, *events: Event) -> None:
-                """Enqueue an event handler to be executed.
+                If no such handler exists, the event will not be processed.
 
                 Args:
-                    token: The client token associated with the event.
-                    events: The events to enqueue.
+                    token: The client token to emit the event to.
+                    events: The events to emit.
                 """
-                for event in events:
-                    await self.enqueue(token=token, event=event)
+                await event_namespace.emit_update(
+                    update=StateUpdate(events=list(events), final=True),
+                    token=token,
+                )
+
+            emit_event_impl = emit_event
 
         if state_manager is None:
             # For testing use cases, default to a new in-memory state manager if one is not provided.
             state_manager = StateManagerMemory()
 
-        event_context.set(
-            EventContext(
-                token="",
-                parent_txid=None,
-                state_manager=state_manager,
-                enqueue_impl=enqueue,
-                emit_delta_impl=emit_delta,
-            ),
+        self._root_context = EventContext(
+            token="",
+            parent_txid=None,
+            state_manager=state_manager,
+            enqueue_impl=self.enqueue,
+            emit_delta_impl=emit_delta_impl,
+            emit_event_impl=emit_event_impl,
         )
-        self._root_context = copy_context()
         return self
 
     async def __aenter__(self) -> "EventProcessor":
@@ -147,28 +189,49 @@ class EventProcessor:
         Returns:
             The event processor instance.
         """
-        self._ensure_queue_task()
+        await self.start()
         return self
 
     async def __aexit__(self, *exc_info) -> None:
         """Exit the event processor context manager and stop the processor."""
         await self.stop()
 
-    async def stop(self):
-        """Stop the event processor and cancel all running tasks."""
+    async def start(self) -> None:
+        """Start the event processor."""
+        if self._root_context is None:
+            msg = "Event processor is not configured, call .configure(...) first."
+            raise RuntimeError(msg)
+        if self._queue is not None:
+            msg = "Event processor is already started"
+            raise RuntimeError(msg)
+        if self._attached_root_context_token is not None:
+            msg = "EventProcessor context cannot be nested."
+            raise RuntimeError(msg)
+        self._attached_root_context_token = event_context.set(self._root_context)
+        self._queue = asyncio.Queue()
+        self._ensure_queue_task()
+
+    async def _stop_tasks(self, timeout: float | None = None) -> None:
+        """Stop all running tasks with an optional drain time.
+
+        Args:
+            timeout: An optional amount of time in seconds to wait for the
+                queue to drain before cancelling tasks. If None, the processor will
+                not wait and will cancel tasks immediately.
+        """
         from reflex.utils import telemetry
 
-        if self._root_context is None:
-            msg = "Event processor is not running"
-            raise RuntimeError(msg)
-        # Cancel the queue processing task.
-        if self._queue_task is not None:
-            self._queue_task.cancel()
-        # Cancel all running event handler tasks.
-        for task in self._tasks.values():
+        if timeout is not None and self._tasks:
+            with contextlib.suppress(asyncio.TimeoutError):
+                await asyncio.wait_for(
+                    asyncio.gather(*self._tasks.values()),
+                    timeout=timeout,
+                )
+        # Cancel all outstanding event handler tasks.
+        for task in (outstanding_tasks := list(self._tasks.values())):
             task.cancel()
-        # Warn for any non CancelledError exceptions that were raised in the tasks.
-        for task in self._tasks.copy().values():
+        # Wait for all tasks to finish and log any exceptions that were raised.
+        for task in outstanding_tasks:
             try:
                 await task
             except asyncio.CancelledError:  # noqa: PERF203
@@ -177,8 +240,9 @@ class EventProcessor:
                 telemetry.send_error(ex, context="backend")
                 if self.backend_exception_handler is not None:
                     try:
-                        await self._handle_backend_exception(
-                            ex, ctx=task.get_context().run(event_context.get)
+                        await task.get_context().run(
+                            self._handle_backend_exception,
+                            ex,
                         )
                     except Exception:
                         console.error(
@@ -187,53 +251,134 @@ class EventProcessor:
                             )
                         )
                     else:
-                        return
+                        continue
                 console.error(
                     rich.markup.escape(
                         f"Error in event handler task {task.get_name()} during shutdown:\n{traceback.format_exc()}"
                     )
                 )
 
-    def _ensure_queue_task(self) -> None:
-        """Ensure the queue processing task is running."""
+    async def stop(self, graceful_shutdown_timeout: float | None = None) -> None:
+        """Stop the event processor and cancel all running tasks.
+
+        Args:
+            graceful_shutdown_timeout: An optional amount of time in seconds to wait for the
+                queue to drain before cancelling tasks. If None, the processor will
+                not wait and will cancel tasks immediately.
+        """
+        from reflex.utils import telemetry
+
+        if self._attached_root_context_token is not None:
+            event_context.reset(self._attached_root_context_token)
+            self._attached_root_context_token = None
+        # Optional grace period for tasks to finish before cancellation.
+        if graceful_shutdown_timeout is None:
+            graceful_shutdown_timeout = self.graceful_shutdown_timeout
+        drain_timeout = DrainTimeoutManager.with_timeout(graceful_shutdown_timeout)
+        with drain_timeout as remaining_time, contextlib.suppress(asyncio.TimeoutError):
+            if remaining_time > 0:
+                # Drain the queue first of any pending events.
+                await self.join(timeout=remaining_time)
+        # Stopping tasks may raise exceptions and chain additional deltas so the queue remains open.
+        with drain_timeout as remaining_time, contextlib.suppress(asyncio.TimeoutError):
+            await self._stop_tasks(timeout=remaining_time)
+        # Cancel queue processing now that all tasks have been cancelled.
+        if self._queue is not None:
+            self._queue.shutdown()
+        with drain_timeout as remaining_time, contextlib.suppress(asyncio.TimeoutError):
+            if remaining_time > 0:
+                await self.join(timeout=remaining_time)
+        with drain_timeout as remaining_time, contextlib.suppress(asyncio.TimeoutError):
+            # Stop all tasks again now that the queue is shut down, no additional events can be queued.
+            await self._stop_tasks(timeout=remaining_time)
+        self._queue = None
+        if self._queue_task is not None:
+            self._queue_task.cancel()
+            try:
+                await self._queue_task
+            except (asyncio.CancelledError, RuntimeError):
+                pass
+            except Exception as ex:
+                telemetry.send_error(ex, context="backend")
+                console.error(
+                    rich.markup.escape(
+                        f"Error in event processor queue task during shutdown:\n{traceback.format_exc()}"
+                    )
+                )
+            self._queue_task = None
+
+    async def join(self, timeout: float | None = None) -> None:
+        """Wait for the event processor to finish processing all events in the queue.
+
+        Args:
+            timeout: An optional amount of time in seconds to wait for the queue to
+                drain before returning. If None, this method will wait indefinitely
+                until the queue is fully drained.
+        """
+        if self._queue is not None:
+            await asyncio.wait_for(self._queue.join(), timeout=timeout)
+
+    def _ensure_queue_task(self) -> asyncio.Queue[EventQueueEntry]:
+        """Ensure the queue processing task is running.
+
+        Returns:
+            The event queue.
+
+        Raises:
+            RuntimeError: If the event processor is not running and no queue is provided.
+        """
         if self._root_context is None:
+            msg = "Event processor is not configured, call .configure(...) first."
+            raise RuntimeError(msg)
+        if self._queue is None:
             msg = "Event processor is not running, call .start(...) first."
             raise RuntimeError(msg)
-        ensure_task(
-            self,
-            "_queue_task",
-            self._process_queue,
-            task_context=self._root_context,
-        )
+        if self._queue_task is None:
+            task_context = copy_context()
+            task_context.run(event_context.set, self._root_context)
+            self._queue_task = task_context.run(
+                asyncio.create_task,
+                self._process_queue(),
+                name=f"reflex_event_queue_processor|{time.time()}",
+            )
+        return self._queue
 
     async def enqueue(
-        self, token: str, event: Event, ev_ctx: EventContext | None = None
+        self, token: str, *events: Event, ev_ctx: EventContext | None = None
     ) -> None:
         """Enqueue an event to be processed.
 
         Args:
             token: The client token associated with the event.
-            event: The event to enqueue.
-            ev_ctx: The event context to use for this event.
+            events: Remaining positional args are events to be enqueued.
+            ev_ctx: The event context to use for these events.
         """
-        self._ensure_queue_task()
         if ev_ctx is None:
             try:
                 ev_ctx = event_context.get().fork(token=token)
             except LookupError as le:
                 if self._root_context is not None:
-                    ev_ctx = self._root_context.run(event_context.get).fork(token=token)
+                    ev_ctx = self._root_context.fork(token=token)
                 else:
                     msg = "Event processor is not running, call .start(...) first."
                     raise RuntimeError(msg) from le
-        await self._queue.put(EventQueueEntry(event=event, ctx=ev_ctx))
+        queue = self._ensure_queue_task()
+        for event in events:
+            await queue.put(EventQueueEntry(event=event, ctx=ev_ctx))
 
     async def _process_event_queue_entry(
-        self, entry: EventQueueEntry, registered_handler: RegisteredEventHandler
+        self, *, entry: EventQueueEntry, registered_handler: RegisteredEventHandler
     ) -> None:
         """Process a single event queue entry.
 
         This function runs in a new task for each event.
+
+        The default implementation just calls the registered handler function
+        with the event payload as keyword arguments.
+
+        Subclasses, such as BaseStateEventProcessor, can override this function
+        to provide additional functionality such as state management, event
+        chaining, and delta calculation.
 
         Args:
             entry: The event queue entry to process.
@@ -243,95 +388,56 @@ class EventProcessor:
         ctx = entry.ctx
         event_context.set(ctx)
         event = entry.event
-        router_data = event.router_data or {}
-        # Get the state for the session exclusively.
-        async with ctx.state_manager.modify_state_with_links(
-            entry.event.substate_token, event=entry.event
-        ) as state:
-            # TODO: handle "reload" trigger of brand new state instances
-
-            # re-assign only when the value is set and different
-            if router_data and state.router_data != router_data:
-                # assignment will recurse into substates and force recalculation of
-                # dependent ComputedVar (dynamic route variables)
-                state.router_data = router_data
-                state.router = RouterData.from_router_data(router_data)
-
-            # Preprocess the event.
-            if (
-                self.middleware is not None
-                and (update := await self.middleware._preprocess(state, event))
-                is not None
-            ):
-                # If there was an update, yield it.
-                if update.delta:
-                    await ctx.emit_delta(update.delta)
-                if update.events:
-                    await ctx.enqueue(*update.events)
-                return
-
-            # Get the event's substate.
-            substate = await state.get_state(event.substate_token.cls)
-            root_state = state._get_root_state()
-
-            # Process non-background events while holding the lock.
-            if not registered_handler.handler.is_background:
-                await base_state_processor.process_event(
-                    handler=registered_handler.handler,
-                    payload=event.payload,
-                    state=substate,
-                    root_state=root_state,
-                )
-                return
-        # Otherwise drop the state lock and start processing the background task with a proxy state.
-        await base_state_processor.process_event(
-            handler=registered_handler.handler,
-            state=StateProxy(substate),
-            payload=event.payload,
-            root_state=root_state,
-        )
+        result = registered_handler.handler.fn(**event.payload)
+        if inspect.isawaitable(result):
+            await result
 
     async def _process_queue(self):
         """Process events from the queue in a task."""
-        while True:
-            entry = await self._queue.get()
-            try:
+        if (queue := self._queue) is None:
+            msg = "Event processor is not running, call .start(...) first."
+            raise RuntimeError(msg)
+        with contextlib.suppress(asyncio.QueueShutDown):
+            while True:
+                entry = await queue.get()
                 try:
-                    registered_handler = REGISTERED_HANDLERS[entry.event.name]
-                except KeyError as ke:
-                    msg = f"No registered handler found for event: {entry.event.name}"
-                    raise KeyError(msg) from ke
-                # Create a new task to handle this event.
-                task = asyncio.create_task(
-                    self._process_event_queue_entry(entry, registered_handler),
-                    name=(
-                        f"reflex_event|{entry.event.name}|{entry.ctx.token}|{time.time()}"
-                    ),
-                )
-                self._tasks[entry.ctx.txid] = task
-                task.add_done_callback(self._finish_task)
-            except Exception:
-                # Log the error and continue processing the next events.
-                console.error(
-                    rich.markup.escape(
-                        f"Error processing event queue entry for {entry.event} [txid={entry.ctx.txid}]:\n{traceback.format_exc()}"
+                    try:
+                        registered_handler = REGISTERED_HANDLERS[entry.event.name]
+                    except KeyError as ke:
+                        msg = (
+                            f"No registered handler found for event: {entry.event.name}"
+                        )
+                        raise KeyError(msg) from ke
+                    # Create a new task to handle this event.
+                    task = asyncio.create_task(
+                        self._process_event_queue_entry(
+                            entry=entry, registered_handler=registered_handler
+                        ),
+                        name=(
+                            f"reflex_event|{entry.event.name}|{entry.ctx.token}|{time.time()}"
+                        ),
                     )
-                )
+                    self._tasks[entry.ctx.txid] = task
+                    task.add_done_callback(self._finish_task)
+                except Exception:
+                    # Log the error and continue processing the next events.
+                    console.error(
+                        rich.markup.escape(
+                            f"Error processing event queue entry for {entry.event} [txid={entry.ctx.txid}]:\n{traceback.format_exc()}"
+                        )
+                    )
+                queue.task_done()
+        if self._queue_task is asyncio.current_task():
+            self._queue_task = None
 
-    async def _handle_backend_exception(self, ex: Exception, ctx: EventContext):
+    async def _handle_backend_exception(self, ex: Exception):
         """Handle an exception raised during event processing by calling the backend exception handler if it exists.
 
         Args:
             ex: The exception that was raised.
-            ctx: The event context for the event that caused the exception.
         """
-        if self.backend_exception_handler is not None and (
-            events := self.backend_exception_handler(ex)
-        ):
-            await base_state_processor.chain_updates(
-                events=events,
-                handler_name=self.backend_exception_handler.__qualname__,
-            )
+        if self.backend_exception_handler is not None:
+            self.backend_exception_handler(ex)
 
     def _finish_task(self, task: asyncio.Task):
         """Callback for finishing a _process_event_queue_entry task.
@@ -361,7 +467,7 @@ class EventProcessor:
                     # Create a new task in the same context to invoke the exception handler.
                     t = self._tasks[task_ctx.txid] = task.get_context().run(
                         asyncio.create_task,
-                        self._handle_backend_exception(ex, task_ctx),
+                        self._handle_backend_exception(ex),
                         name=f"reflex_backend_exception_handler|task=[{task.get_name()}]|{time.time()}",
                     )
                     t.add_done_callback(self._finish_task)
