@@ -1,9 +1,9 @@
 """Test that DebounceInput collapses nested forms."""
 
 import pytest
+from reflex_components.core.debounce import DEFAULT_DEBOUNCE_TIMEOUT
 
 import reflex as rx
-from reflex.components.core.debounce import DEFAULT_DEBOUNCE_TIMEOUT
 from reflex.state import BaseState
 from reflex.vars.base import LiteralVar, Var
 

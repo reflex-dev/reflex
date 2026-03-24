@@ -1,4 +1,4 @@
-from reflex.components.recharts.charts import (
+from reflex_components.recharts.charts import (
     AreaChart,
     BarChart,
     LineChart,
@@ -7,7 +7,7 @@ from reflex.components.recharts.charts import (
     RadialBarChart,
     ScatterChart,
 )
-from reflex.components.recharts.general import ResponsiveContainer
+from reflex_components.recharts.general import ResponsiveContainer
 
 
 def test_area_chart():

@@ -83,7 +83,7 @@ DEFAULT_TYPING_IMPORTS = {
 # TODO: fix import ordering and unused imports with ruff later
 DEFAULT_IMPORTS = {
     "typing": sorted(DEFAULT_TYPING_IMPORTS),
-    "reflex.components.core.breakpoints": ["Breakpoints"],
+    "reflex_components.core.breakpoints": ["Breakpoints"],
     "reflex.event": [
         "EventChain",
         "EventHandler",
@@ -1240,6 +1240,45 @@ def _write_pyi_file(module_path: Path, source: str) -> str:
     return md5(pyi_content.encode()).hexdigest()
 
 
+# Component subpackages that have moved to the reflex_components package.
+_MOVED_COMPONENT_SUBMODULES: frozenset[str] = frozenset({
+    "base",
+    "core",
+    "datadisplay",
+    "el",
+    "gridjs",
+    "lucide",
+    "markdown",
+    "moment",
+    "plotly",
+    "radix",
+    "react_player",
+    "react_router",
+    "recharts",
+    "sonner",
+})
+
+
+def _rewrite_component_import(module: str) -> str:
+    """Rewrite a lazy-loader module path to an absolute ``reflex_components`` import when needed.
+
+    Args:
+        module: The module path from ``_SUBMOD_ATTRS`` (e.g. ``"components.radix.themes.base"``).
+
+    Returns:
+        An absolute import path (``"reflex_components.radix.themes.base"``) for moved
+        components, or a relative path (``".components.component"``) for everything else.
+    """
+    if module == "components":
+        return "reflex_components"
+    if module.startswith("components."):
+        rest = module[len("components.") :]
+        first_part = rest.split(".")[0]
+        if first_part in _MOVED_COMPONENT_SUBMODULES:
+            return f"reflex_components.{rest}"
+    return f".{module}"
+
+
 def _get_init_lazy_imports(mod: tuple | ModuleType, new_tree: ast.AST):
     # retrieve the _SUBMODULES and _SUBMOD_ATTRS from an init file if present.
     sub_mods: set[str] | None = getattr(mod, "_SUBMODULES", None)
@@ -1266,7 +1305,7 @@ def _get_init_lazy_imports(mod: tuple | ModuleType, new_tree: ast.AST):
         }
         # construct the import statement and handle special cases for aliases
         sub_mod_attrs_imports = [
-            f"from .{module} import "
+            f"from {_rewrite_component_import(module)} import "
             + (
                 (
                     (imported[0] + " as " + imported[1])

@@ -1,4 +1,4 @@
-from reflex.components.base.link import RawLink, ScriptTag
+from reflex_components.base.link import RawLink, ScriptTag
 
 
 def test_raw_link():

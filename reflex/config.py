@@ -176,7 +176,7 @@ class BaseConfig:
         state_auto_setters: Whether to automatically create setters for state base vars.
         show_built_with_reflex: Whether to display the sticky "Built with Reflex" badge on all pages.
         is_reflex_cloud: Whether the app is running in the reflex cloud environment.
-        extra_overlay_function: Extra overlay function to run after the app is built. Formatted such that `from path_0.path_1... import path[-1]`, and calling it with no arguments would work. For example, "reflex.components.moment.moment".
+        extra_overlay_function: Extra overlay function to run after the app is built. Formatted such that `from path_0.path_1... import path[-1]`, and calling it with no arguments would work. For example, "reflex_components.moment.moment".
         plugins: List of plugins to use in the app.
         disable_plugins: List of plugin types to disable in the app.
         transport: The transport method for client-server communication.

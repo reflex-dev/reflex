@@ -1,8 +1,8 @@
 import pandas as pd
 import pytest
+from reflex_components.gridjs.datatable import DataTable
 
 import reflex as rx
-from reflex.components.gridjs.datatable import DataTable
 from reflex.constants.state import FIELD_MARKER
 from reflex.utils import types
 from reflex.utils.exceptions import UntypedComputedVarError

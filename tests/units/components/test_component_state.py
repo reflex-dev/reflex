@@ -1,9 +1,9 @@
 """Ensure that Components returned by ComponentState.create have independent State classes."""
 
 import pytest
+from reflex_components.base.bare import Bare
 
 import reflex as rx
-from reflex.components.base.bare import Bare
 from reflex.utils.exceptions import ReflexRuntimeError
 
 

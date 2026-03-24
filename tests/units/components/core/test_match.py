@@ -1,10 +1,10 @@
 import re
 
 import pytest
+from reflex_components.core.match import Match
 
 import reflex as rx
 from reflex.components.component import Component
-from reflex.components.core.match import Match
 from reflex.constants.state import FIELD_MARKER
 from reflex.state import BaseState
 from reflex.utils.exceptions import MatchTypeError
@@ -141,7 +141,7 @@ def test_match_on_component_without_default():
     """Test that matching cases with return values as components returns a Fragment
     as the default case if not provided.
     """
-    from reflex.components.base.fragment import Fragment
+    from reflex_components.base.fragment import Fragment
 
     match_case_tuples = (
         (1, rx.text("first value")),
@@ -264,7 +264,7 @@ def test_match_case_tuple_elements(match_case):
             ),
             (
                 'Match cases should have the same return types. Case 3 with return value `jsx(RadixThemesText,{as:"p"},"first value")` '
-                "of type <class 'reflex.components.radix.themes.typography.text.Text'> is not <class 'reflex.vars.base.Var'>"
+                "of type <class 'reflex_components.radix.themes.typography.text.Text'> is not <class 'reflex.vars.base.Var'>"
             ),
         ),
     ],

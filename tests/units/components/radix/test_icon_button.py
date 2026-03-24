@@ -1,7 +1,7 @@
 import pytest
+from reflex_components.lucide.icon import Icon
+from reflex_components.radix.themes.components.icon_button import IconButton
 
-from reflex.components.lucide.icon import Icon
-from reflex.components.radix.themes.components.icon_button import IconButton
 from reflex.style import Style
 from reflex.vars.base import LiteralVar
 

@@ -79,10 +79,11 @@ class IterTag(Tag):
             ValueError: If the render function doesn't return a component.
         """
         # Import here to avoid circular imports.
+        from reflex_components.base.fragment import Fragment
+        from reflex_components.core.cond import Cond
+        from reflex_components.core.foreach import Foreach
+
         from reflex.compiler.compiler import _into_component_once
-        from reflex.components.base.fragment import Fragment
-        from reflex.components.core.cond import Cond
-        from reflex.components.core.foreach import Foreach
 
         # Get the render function arguments.
         args = inspect.getfullargspec(self.render_fn).args

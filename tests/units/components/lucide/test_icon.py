@@ -1,10 +1,10 @@
 import pytest
-
-from reflex.components.lucide.icon import (
+from reflex_components.lucide.icon import (
     LUCIDE_ICON_LIST,
     LUCIDE_ICON_MAPPING_OVERRIDE,
     Icon,
 )
+
 from reflex.utils import format
 
 

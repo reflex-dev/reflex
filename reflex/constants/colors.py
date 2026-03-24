@@ -68,7 +68,7 @@ def format_color(
     if isinstance(alpha, bool):
         return f"var(--{color}-{'a' if alpha else ''}{shade})"
 
-    from reflex.components.core import cond
+    from reflex_components.core import cond
 
     alpha_var = cond(alpha, "a", "")
     return f"var(--{color}-{alpha_var}{shade})"

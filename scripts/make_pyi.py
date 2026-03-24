@@ -12,7 +12,12 @@ logger = logging.getLogger("pyi_generator")
 LAST_RUN_COMMIT_SHA_FILE = Path(".pyi_generator_last_run").resolve()
 GENERATOR_FILE = Path(__file__).resolve()
 GENERATOR_DIFF_FILE = Path(".pyi_generator_diff").resolve()
-DEFAULT_TARGETS = ["reflex/components", "reflex/experimental", "reflex/__init__.py"]
+DEFAULT_TARGETS = [
+    "reflex/components",
+    "reflex/experimental",
+    "reflex/__init__.py",
+    "packages/reflex-components/src/reflex_components",
+]
 
 
 def _git_diff(args: list[str]) -> str:

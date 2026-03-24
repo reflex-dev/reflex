@@ -15,6 +15,10 @@ from unittest.mock import AsyncMock
 
 import pytest
 from pytest_mock import MockerFixture
+from reflex_components.base.bare import Bare
+from reflex_components.base.fragment import Fragment
+from reflex_components.core.cond import Cond
+from reflex_components.radix.themes.typography.text import Text
 from starlette.applications import Starlette
 from starlette.datastructures import FormData, UploadFile
 from starlette.responses import StreamingResponse
@@ -29,10 +33,6 @@ from reflex.app import (
     upload,
 )
 from reflex.components import Component
-from reflex.components.base.bare import Bare
-from reflex.components.base.fragment import Fragment
-from reflex.components.core.cond import Cond
-from reflex.components.radix.themes.typography.text import Text
 from reflex.constants.state import FIELD_MARKER
 from reflex.environment import environment
 from reflex.event import Event
@@ -1842,7 +1842,7 @@ def test_call_app():
 
 
 def test_app_with_optional_endpoints():
-    from reflex.components.core.upload import Upload
+    from reflex_components.core.upload import Upload
 
     app = App()
     Upload.is_used = True

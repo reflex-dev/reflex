@@ -1,4 +1,4 @@
-from reflex.components.datadisplay.dataeditor import DataEditor
+from reflex_components.datadisplay.dataeditor import DataEditor
 
 
 def test_dataeditor():

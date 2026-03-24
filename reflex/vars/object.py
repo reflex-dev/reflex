@@ -251,7 +251,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
         Returns:
             The item from the object.
         """
-        from reflex.components.core.cond import cond
+        from reflex_components.core.cond import cond
 
         if default is None:
             default = Var.create(None)

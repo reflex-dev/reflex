@@ -1,7 +1,7 @@
 import pytest
+from reflex_components.datadisplay.code import CodeBlock
 
 import reflex as rx
-from reflex.components.datadisplay.code import CodeBlock
 from reflex.constants.colors import Color
 from reflex.constants.state import FIELD_MARKER
 from reflex.vars.base import LiteralVar

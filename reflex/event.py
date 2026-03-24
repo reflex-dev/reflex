@@ -880,7 +880,7 @@ class FileUpload:
         Raises:
             ValueError: If the on_upload_progress is not a valid event handler.
         """
-        from reflex.components.core.upload import (
+        from reflex_components.core.upload import (
             DEFAULT_UPLOAD_ID,
             upload_files_context_var_data,
         )
@@ -1258,7 +1258,7 @@ def download(
         ValueError: If the URL provided is invalid, both URL and data are provided,
             or the data is not an expected type.
     """
-    from reflex.components.core.cond import cond
+    from reflex_components.core.cond import cond
 
     if isinstance(url, str):
         if not url.startswith("/"):

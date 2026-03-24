@@ -1,7 +1,6 @@
 from typing import Any
 
-from reflex import event
-from reflex.components.core.upload import (
+from reflex_components.core.upload import (
     StyledUpload,
     Upload,
     UploadNamespace,
@@ -9,6 +8,8 @@ from reflex.components.core.upload import (
     cancel_upload,
     get_upload_url,
 )
+
+from reflex import event
 from reflex.event import EventSpec
 from reflex.state import State
 from reflex.vars.base import LiteralVar, Var

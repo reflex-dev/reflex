@@ -70,8 +70,9 @@ def load_dynamic_serializer():
             The generated code
         """
         # Causes a circular import, so we import here.
+        from reflex_components.base.bare import Bare
+
         from reflex.compiler import compiler, templates, utils
-        from reflex.components.base.bare import Bare
 
         component = Bare.create(Var.create(component))
 

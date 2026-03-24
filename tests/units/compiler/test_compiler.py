@@ -4,11 +4,11 @@ from pathlib import Path
 
 import pytest
 from pytest_mock import MockerFixture
+from reflex_components.base import document
+from reflex_components.el.elements.metadata import Link
 
 from reflex import constants
 from reflex.compiler import compiler, utils
-from reflex.components.base import document
-from reflex.components.el.elements.metadata import Link
 from reflex.constants.compiler import PageNames
 from reflex.utils.imports import ImportVar, ParsedImportDict
 from reflex.vars.base import Var

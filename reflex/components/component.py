@@ -17,13 +17,13 @@ from hashlib import md5
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, ClassVar, TypeVar, cast, get_args, get_origin
 
+from reflex_components.core.breakpoints import Breakpoints
 from rich.markup import escape
 from typing_extensions import dataclass_transform
 
 import reflex.state
 from reflex import constants
 from reflex.compiler.templates import stateful_component_template
-from reflex.components.core.breakpoints import Breakpoints
 from reflex.components.dynamic import load_dynamic_serializer
 from reflex.components.field import BaseField, FieldBasedMeta
 from reflex.components.tags import Tag
@@ -1140,8 +1140,8 @@ class Component(BaseComponent, ABC):
             The component.
         """
         # Import here to avoid circular imports.
-        from reflex.components.base.bare import Bare
-        from reflex.components.base.fragment import Fragment
+        from reflex_components.base.bare import Bare
+        from reflex_components.base.fragment import Fragment
 
         # Filter out None props
         props = {key: value for key, value in props.items() if value is not None}
@@ -1350,10 +1350,10 @@ class Component(BaseComponent, ABC):
             children: The children of the component.
 
         """
-        from reflex.components.base.fragment import Fragment
-        from reflex.components.core.cond import Cond
-        from reflex.components.core.foreach import Foreach
-        from reflex.components.core.match import Match
+        from reflex_components.base.fragment import Fragment
+        from reflex_components.core.cond import Cond
+        from reflex_components.core.foreach import Foreach
+        from reflex_components.core.match import Match
 
         no_valid_parents_defined = all(child._valid_parents == [] for child in children)
         if (
@@ -2417,7 +2417,7 @@ class StatefulComponent(BaseComponent):
         Returns:
             The stateful component or None if the component should not be memoized.
         """
-        from reflex.components.core.foreach import Foreach
+        from reflex_components.core.foreach import Foreach
 
         if component._memoization_mode.disposition == MemoizationDisposition.NEVER:
             # Never memoize this component.
@@ -2498,10 +2498,10 @@ class StatefulComponent(BaseComponent):
         Returns:
             The Var from the child component or the child itself (for regular cases).
         """
-        from reflex.components.base.bare import Bare
-        from reflex.components.core.cond import Cond
-        from reflex.components.core.foreach import Foreach
-        from reflex.components.core.match import Match
+        from reflex_components.base.bare import Bare
+        from reflex_components.core.cond import Cond
+        from reflex_components.core.foreach import Foreach
+        from reflex_components.core.match import Match
 
         if isinstance(child, Bare):
             return child.contents
@@ -2851,7 +2851,7 @@ def empty_component() -> Component:
     Returns:
         An empty component.
     """
-    from reflex.components.base.bare import Bare
+    from reflex_components.base.bare import Bare
 
     return Bare.create("")
 

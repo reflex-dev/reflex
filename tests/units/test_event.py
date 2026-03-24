@@ -640,7 +640,7 @@ def test_event_decorator_backward_compatibility():
 
 def test_event_var_in_rx_cond():
     """Test that EventVar and EventChainVar cannot be used in rx.cond()."""
-    from reflex.components.core.cond import cond as rx_cond
+    from reflex_components.core.cond import cond as rx_cond
 
     class S(BaseState):
         @event
