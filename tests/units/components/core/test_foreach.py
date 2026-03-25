@@ -1,12 +1,12 @@
 import pytest
-from reflex_components.core.foreach import (
+from reflex_components_core.core.foreach import (
     Foreach,
     ForeachRenderError,
     ForeachVarError,
     foreach,
 )
-from reflex_radix.themes.layout.box import box
-from reflex_radix.themes.typography.text import text
+from reflex_components_radix.themes.layout.box import box
+from reflex_components_radix.themes.typography.text import text
 
 import reflex as rx
 from reflex import el

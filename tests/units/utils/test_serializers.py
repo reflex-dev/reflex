@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from reflex_components.core.colors import Color
+from reflex_components_core.core.colors import Color
 
 from reflex.base import Base
 from reflex.utils import serializers

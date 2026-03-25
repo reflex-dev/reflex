@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any, Literal
 
-from reflex_components.core.breakpoints import Breakpoints, breakpoints_values
+from reflex_components_core.core.breakpoints import Breakpoints, breakpoints_values
 
 from reflex import constants
 from reflex.event import EventChain, EventHandler, EventSpec, run_script

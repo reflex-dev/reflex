@@ -1,6 +1,6 @@
 [project]
 name = "reflex-docgen"
-version = "0.0.1"
+dynamic = ["version"]
 description = "Generate documentation for Reflex components."
 readme = "README.md"
 authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
@@ -18,6 +18,10 @@ dependencies = [
 [tool.uv.sources]
 reflex = { workspace = true }
 
+[tool.hatch.version]
+source = "vcs"
+raw-options = { root = "../..", tag_regex = "^reflex-docgen-v(?P<version>.+)$" }
+
 [build-system]
-requires = ["uv_build>=0.10.11,<0.11.0"]
-build-backend = "uv_build"
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"

@@ -31,19 +31,19 @@ from timeit import default_timer as timer
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, BinaryIO, ParamSpec, get_args, get_type_hints
 
-from reflex_components.base.app_wrap import AppWrap
-from reflex_components.base.error_boundary import ErrorBoundary
-from reflex_components.base.fragment import Fragment
-from reflex_components.base.strict_mode import StrictMode
-from reflex_components.core.banner import (
+from reflex_components_core.base.app_wrap import AppWrap
+from reflex_components_core.base.error_boundary import ErrorBoundary
+from reflex_components_core.base.fragment import Fragment
+from reflex_components_core.base.strict_mode import StrictMode
+from reflex_components_core.core.banner import (
     backend_disabled,
     connection_pulser,
     connection_toaster,
 )
-from reflex_components.core.breakpoints import set_breakpoints
-from reflex_components.core.sticky import sticky
-from reflex_radix import themes
-from reflex_sonner.toast import toast
+from reflex_components_core.core.breakpoints import set_breakpoints
+from reflex_components_core.core.sticky import sticky
+from reflex_components_radix import themes
+from reflex_components_sonner.toast import toast
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp as EngineIOApp
 from socketio import AsyncNamespace, AsyncServer
@@ -156,7 +156,7 @@ def default_backend_exception_handler(exception: Exception) -> EventSpec:
         EventSpec: The window alert event.
 
     """
-    from reflex_sonner.toast import toast
+    from reflex_components_sonner.toast import toast
 
     error = traceback.format_exc()
 
@@ -696,7 +696,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def _add_optional_endpoints(self):
         """Add optional api endpoints (_upload)."""
-        from reflex_components.core.upload import Upload, get_upload_dir
+        from reflex_components_core.core.upload import Upload, get_upload_dir
 
         if not self._api:
             return
@@ -815,7 +815,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         if route == constants.Page404.SLUG:
             if component is None:
-                from reflex_components.el.elements import span
+                from reflex_components_core.el.elements import span
 
                 component = span("404: Page not found")
             component = self._generate_component(component)

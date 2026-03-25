@@ -19,29 +19,29 @@ from reflex.utils import lazy_loader
 # Mapping from subpackage name to the target top-level package.
 _SUBPACKAGE_TARGETS: dict[str, str] = {
     # reflex-components (base package)
-    "base": "reflex_components.base",
-    "core": "reflex_components.core",
-    "datadisplay": "reflex_components.datadisplay",
-    "el": "reflex_components.el",
+    "base": "reflex_components_core.base",
+    "core": "reflex_components_core.core",
+    "datadisplay": "reflex_components_core.datadisplay",
+    "el": "reflex_components_core.el",
     # Standalone packages
-    "gridjs": "reflex_gridjs",
-    "lucide": "reflex_lucide",
-    "markdown": "reflex_markdown",
-    "moment": "reflex_moment",
-    "plotly": "reflex_plotly",
-    "radix": "reflex_radix",
-    "react_player": "reflex_react_player",
-    "react_router": "reflex_react_router",
-    "recharts": "reflex_recharts",
-    "sonner": "reflex_sonner",
+    "gridjs": "reflex_components_gridjs",
+    "lucide": "reflex_components_lucide",
+    "markdown": "reflex_components_markdown",
+    "moment": "reflex_components_moment",
+    "plotly": "reflex_components_plotly",
+    "radix": "reflex_components_radix",
+    "react_player": "reflex_components_react_player",
+    "react_router": "reflex_components_react_router",
+    "recharts": "reflex_components_recharts",
+    "sonner": "reflex_components_sonner",
 }
 
 # Deeper overrides for subpackages that were split from datadisplay.
 # Checked before the general _SUBPACKAGE_TARGETS mapping.
 _DEEP_OVERRIDES: dict[str, str] = {
-    "datadisplay.code": "reflex_code.code",
-    "datadisplay.shiki_code_block": "reflex_code.shiki_code_block",
-    "datadisplay.dataeditor": "reflex_dataeditor.dataeditor",
+    "datadisplay.code": "reflex_components_code.code",
+    "datadisplay.shiki_code_block": "reflex_components_code.shiki_code_block",
+    "datadisplay.dataeditor": "reflex_components_dataeditor.dataeditor",
 }
 
 
@@ -80,7 +80,7 @@ class _ComponentsRedirect(importlib.abc.MetaPathFinder):
             subpkg = parts[2]
             rest_parts = parts[3:]
 
-            # Check deep overrides first (e.g. datadisplay.code -> reflex_code.code).
+            # Check deep overrides first (e.g. datadisplay.code -> reflex_components_code.code).
             if rest_parts:
                 deep_key = f"{subpkg}.{rest_parts[0]}"
                 override = _DEEP_OVERRIDES.get(deep_key)

@@ -1,5 +1,5 @@
 import pytest
-from reflex_lucide.icon import LUCIDE_ICON_LIST, LUCIDE_ICON_MAPPING_OVERRIDE, Icon
+from reflex_components_lucide.icon import LUCIDE_ICON_LIST, LUCIDE_ICON_MAPPING_OVERRIDE, Icon
 
 from reflex.utils import format
 

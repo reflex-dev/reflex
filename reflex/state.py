@@ -2554,7 +2554,7 @@ def dynamic(func: Callable[[T], Component]):
     state_class: type[T] = values[0]
 
     def wrapper() -> Component:
-        from reflex_components.base.fragment import fragment
+        from reflex_components_core.base.fragment import fragment
 
         return fragment(state_class._evaluate(lambda state: func(state)))
 

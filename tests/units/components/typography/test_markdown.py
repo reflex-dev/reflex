@@ -1,5 +1,5 @@
 import pytest
-from reflex_markdown.markdown import Markdown
+from reflex_components_markdown.markdown import Markdown
 
 import reflex as rx
 

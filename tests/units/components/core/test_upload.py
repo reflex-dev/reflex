@@ -1,6 +1,6 @@
 from typing import Any
 
-from reflex_components.core.upload import (
+from reflex_components_core.core.upload import (
     StyledUpload,
     Upload,
     UploadNamespace,

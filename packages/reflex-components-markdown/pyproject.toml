@@ -1,0 +1,17 @@
+[project]
+name = "reflex-components-markdown"
+dynamic = ["version"]
+description = "Reflex markdown components."
+readme = "README.md"
+authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
+maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
+requires-python = ">=3.10"
+dependencies = []
+
+[tool.hatch.version]
+source = "vcs"
+raw-options = { root = "../..", tag_regex = "^reflex-components-markdown-v(?P<version>.+)$" }
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"

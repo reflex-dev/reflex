@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 from pytest_mock import MockerFixture
-from reflex_components.base import document
-from reflex_components.el.elements.metadata import Link
+from reflex_components_core.base import document
+from reflex_components_core.el.elements.metadata import Link
 
 from reflex import constants
 from reflex.compiler import compiler, utils

@@ -34,7 +34,7 @@ from typing import (  # noqa: UP035
 from typing import get_origin as get_origin_og
 from typing import get_type_hints as get_type_hints_og
 
-from reflex_components.core.breakpoints import Breakpoints
+from reflex_components_core.core.breakpoints import Breakpoints
 from typing_extensions import Self as Self
 from typing_extensions import override as override
 

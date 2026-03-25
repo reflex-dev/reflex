@@ -12,12 +12,12 @@ from pathlib import Path
 from typing import Any, TypedDict
 from urllib.parse import urlparse
 
-from reflex_components.base import Description, Image, Scripts
-from reflex_components.base.document import Links, ScrollRestoration
-from reflex_components.base.document import Meta as ReactMeta
-from reflex_components.el.elements.metadata import Head, Link, Meta, Title
-from reflex_components.el.elements.other import Html
-from reflex_components.el.elements.sectioning import Body
+from reflex_components_core.base import Description, Image, Scripts
+from reflex_components_core.base.document import Links, ScrollRestoration
+from reflex_components_core.base.document import Meta as ReactMeta
+from reflex_components_core.el.elements.metadata import Head, Link, Meta, Title
+from reflex_components_core.el.elements.other import Html
+from reflex_components_core.el.elements.sectioning import Body
 
 from reflex import constants
 from reflex.components.component import Component, ComponentStyle, CustomComponent

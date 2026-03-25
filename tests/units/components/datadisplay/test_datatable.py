@@ -1,6 +1,6 @@
 import pandas as pd
 import pytest
-from reflex_gridjs.datatable import DataTable
+from reflex_components_gridjs.datatable import DataTable
 
 import reflex as rx
 from reflex.constants.state import FIELD_MARKER

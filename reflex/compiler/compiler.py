@@ -8,7 +8,7 @@ from inspect import getmodule
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from reflex_components.base.fragment import Fragment
+from reflex_components_core.base.fragment import Fragment
 
 from reflex import constants
 from reflex.compiler import templates, utils

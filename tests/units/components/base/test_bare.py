@@ -1,5 +1,5 @@
 import pytest
-from reflex_components.base.bare import Bare
+from reflex_components_core.base.bare import Bare
 
 from reflex.vars.base import Var
 

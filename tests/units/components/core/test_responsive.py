@@ -1,11 +1,11 @@
-from reflex_components.core.responsive import (
+from reflex_components_core.core.responsive import (
     desktop_only,
     mobile_and_tablet,
     mobile_only,
     tablet_and_desktop,
     tablet_only,
 )
-from reflex_radix.themes.layout.box import Box
+from reflex_components_radix.themes.layout.box import Box
 
 
 def test_mobile_only():

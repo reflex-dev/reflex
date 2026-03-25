@@ -1,4 +1,4 @@
-from reflex_radix.themes.layout.base import LayoutComponent
+from reflex_components_radix.themes.layout.base import LayoutComponent
 
 
 def test_layout_component():

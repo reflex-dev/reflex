@@ -70,7 +70,7 @@ def load_dynamic_serializer():
             The generated code
         """
         # Causes a circular import, so we import here.
-        from reflex_components.base.bare import Bare
+        from reflex_components_core.base.bare import Bare
 
         from reflex.compiler import compiler, templates, utils
 

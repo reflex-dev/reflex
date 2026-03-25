@@ -1,4 +1,4 @@
-from reflex_radix.primitives.form import Form
+from reflex_components_radix.primitives.form import Form
 
 from reflex.event import EventChain, prevent_default
 from reflex.vars.base import Var

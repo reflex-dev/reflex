@@ -1,4 +1,4 @@
-from reflex_recharts import (
+from reflex_components_recharts import (
     Pie,
     PolarAngleAxis,
     PolarGrid,

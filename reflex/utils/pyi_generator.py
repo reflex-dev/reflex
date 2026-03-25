@@ -83,7 +83,7 @@ DEFAULT_TYPING_IMPORTS = {
 # TODO: fix import ordering and unused imports with ruff later
 DEFAULT_IMPORTS = {
     "typing": sorted(DEFAULT_TYPING_IMPORTS),
-    "reflex_components.core.breakpoints": ["Breakpoints"],
+    "reflex_components_core.core.breakpoints": ["Breakpoints"],
     "reflex.event": [
         "EventChain",
         "EventHandler",
@@ -1243,25 +1243,25 @@ def _write_pyi_file(module_path: Path, source: str) -> str:
 # Mapping from component subpackage name to its target Python package.
 _COMPONENT_SUBPACKAGE_TARGETS: dict[str, str] = {
     # reflex-components (base package)
-    "base": "reflex_components.base",
-    "core": "reflex_components.core",
-    "datadisplay": "reflex_components.datadisplay",
-    "el": "reflex_components.el",
-    "gridjs": "reflex_gridjs",
-    "lucide": "reflex_lucide",
-    "moment": "reflex_moment",
+    "base": "reflex_components_core.base",
+    "core": "reflex_components_core.core",
+    "datadisplay": "reflex_components_core.datadisplay",
+    "el": "reflex_components_core.el",
+    "gridjs": "reflex_components_gridjs",
+    "lucide": "reflex_components_lucide",
+    "moment": "reflex_components_moment",
     # Deep overrides (datadisplay split)
-    "datadisplay.code": "reflex_code.code",
-    "datadisplay.shiki_code_block": "reflex_code.shiki_code_block",
-    "datadisplay.dataeditor": "reflex_dataeditor.dataeditor",
+    "datadisplay.code": "reflex_components_code.code",
+    "datadisplay.shiki_code_block": "reflex_components_code.shiki_code_block",
+    "datadisplay.dataeditor": "reflex_components_dataeditor.dataeditor",
     # Standalone packages
-    "markdown": "reflex_markdown",
-    "plotly": "reflex_plotly",
-    "radix": "reflex_radix",
-    "react_player": "reflex_react_player",
-    "react_router": "reflex_react_router",
-    "recharts": "reflex_recharts",
-    "sonner": "reflex_sonner",
+    "markdown": "reflex_components_markdown",
+    "plotly": "reflex_components_plotly",
+    "radix": "reflex_components_radix",
+    "react_player": "reflex_components_react_player",
+    "react_router": "reflex_components_react_router",
+    "recharts": "reflex_components_recharts",
+    "sonner": "reflex_components_sonner",
 }
 
 
@@ -1272,13 +1272,13 @@ def _rewrite_component_import(module: str) -> str:
         module: The module path from ``_SUBMOD_ATTRS`` (e.g. ``"components.radix.themes.base"``).
 
     Returns:
-        An absolute import path (``"reflex_radix.themes.base"``) for moved
+        An absolute import path (``"reflex_components_radix.themes.base"``) for moved
         components, or a relative path (``".components.component"``) for everything else.
     """
     if module == "components":
         # "components": ["el", "radix", ...] — these are re-exported submodules.
         # Can't map to a single package, but the pyi generator handles each attr individually.
-        return "reflex_components"
+        return "reflex_components_core"
     if module.startswith("components."):
         rest = module[len("components.") :]
         # Try progressively deeper matches (e.g. "datadisplay.code" before "datadisplay").
