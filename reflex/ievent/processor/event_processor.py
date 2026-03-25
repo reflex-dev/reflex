@@ -219,44 +219,28 @@ class EventProcessor:
                 queue to drain before cancelling tasks. If None, the processor will
                 not wait and will cancel tasks immediately.
         """
-        from reflex.utils import telemetry
-
+        finished_tasks = set()
+        # Graceful drain time, wait for tasks to finish and handle any exceptions.
         if timeout is not None and self._tasks:
             with contextlib.suppress(asyncio.TimeoutError):
-                await asyncio.wait_for(
-                    asyncio.gather(*self._tasks.values()),
-                    timeout=timeout,
-                )
+                async for task in asyncio.as_completed(
+                    self._tasks.values(), timeout=timeout
+                ):
+                    # Exceptions are handled in _finish_task and ignored here.
+                    with contextlib.suppress(Exception):
+                        await task
+                    finished_tasks.add(task)
         # Cancel all outstanding event handler tasks.
-        for task in (outstanding_tasks := list(self._tasks.values())):
+        outstanding_tasks = [
+            task for task in self._tasks.values() if task not in finished_tasks
+        ]
+        for task in outstanding_tasks:
             task.cancel()
         # Wait for all tasks to finish and log any exceptions that were raised.
         for task in outstanding_tasks:
-            try:
+            with contextlib.suppress(Exception, asyncio.CancelledError):
+                # Exceptions are handled in _finish_task.
                 await task
-            except asyncio.CancelledError:  # noqa: PERF203
-                pass
-            except Exception as ex:
-                telemetry.send_error(ex, context="backend")
-                if self.backend_exception_handler is not None:
-                    try:
-                        await task.get_context().run(
-                            self._handle_backend_exception,
-                            ex,
-                        )
-                    except Exception:
-                        console.error(
-                            rich.markup.escape(
-                                f"Error in backend exception handler for {task.get_name()} during shutdown:\n{traceback.format_exc()}"
-                            )
-                        )
-                    else:
-                        continue
-                console.error(
-                    rich.markup.escape(
-                        f"Error in event handler task {task.get_name()} during shutdown:\n{traceback.format_exc()}"
-                    )
-                )
 
     async def stop(self, graceful_shutdown_timeout: float | None = None) -> None:
         """Stop the event processor and cancel all running tasks.
