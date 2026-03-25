@@ -408,6 +408,26 @@ def _evaluate_memo_function(
     return fn(*positional_args, **keyword_args)
 
 
+def _normalize_component_return(value: Any) -> Component | None:
+    """Normalize a component-like memo return value into a Component.
+
+    Args:
+        value: The value returned from the memo function.
+
+    Returns:
+        The normalized component, or ``None`` if the value is not component-like.
+    """
+    if isinstance(value, Component):
+        return value
+
+    if isinstance(value, Var) and type_utils.typehint_issubclass(
+        value._var_type, Component
+    ):
+        return Bare.create(value)
+
+    return None
+
+
 def _lift_rest_props(component: Component) -> Component:
     """Convert RestProp children into special props.
 
@@ -597,11 +617,11 @@ def _create_component_definition(
         TypeError: If the function does not return a component.
     """
     params = _analyze_params(fn, for_component=True)
-    component = _evaluate_memo_function(fn, params)
-    if not isinstance(component, Component):
+    component = _normalize_component_return(_evaluate_memo_function(fn, params))
+    if component is None:
         msg = (
             f"Component-returning `@rx._x.memo` `{fn.__name__}` must return an "
-            f"`rx.Component`, got `{type(component).__name__}`."
+            "`rx.Component` or `rx.Var[rx.Component]`."
         )
         raise TypeError(msg)
 

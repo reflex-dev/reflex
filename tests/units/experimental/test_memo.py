@@ -105,6 +105,30 @@ def test_component_returning_memo_with_children_and_rest():
     assert "jsx(RadixThemesBox,{...rest}" in code
 
 
+def test_component_returning_memo_accepts_component_var_result():
+    """Component-returning memos should accept component-typed var results."""
+
+    @rx._x.memo
+    def conditional_slot(
+        show: rx.Var[bool],
+        first: rx.Var[rx.Component],
+        second: rx.Var[rx.Component],
+    ) -> rx.Component:
+        return rx.cond(show, first, second)
+
+    definition = EXPERIMENTAL_MEMOS["ConditionalSlot"]
+    assert isinstance(definition, ExperimentalMemoComponentDefinition)
+    assert definition.component.render() == {
+        "contents": "(showRxMemo ? firstRxMemo : secondRxMemo)"
+    }
+
+    _, code, _ = compiler.compile_memo_components(
+        (), tuple(EXPERIMENTAL_MEMOS.values())
+    )
+    assert "export const ConditionalSlot = memo(({show:showRxMemo" in code
+    assert "(showRxMemo ? firstRxMemo : secondRxMemo)" in code
+
+
 def test_var_returning_memo_with_rest_props():
     """Var-returning memos should capture extra keyword args into RestProp."""
 
