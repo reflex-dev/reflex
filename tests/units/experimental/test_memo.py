@@ -79,15 +79,18 @@ def test_component_returning_memo_with_children_and_rest():
         rx.text("child 1"),
         rx.text("child 2"),
         title="Hello",
+        foo="extra",
         class_name="extra",
     )
 
     assert isinstance(component, ExperimentalMemoComponent)
     assert len(component.children) == 2
+    assert component.get_props() == ("title", "foo")
 
     rendered = component.render()
     assert rendered["name"] == "MyCard"
     assert 'title:"Hello"' in rendered["props"]
+    assert 'foo:"extra"' in rendered["props"]
     assert 'className:"extra"' in rendered["props"]
 
     definition = EXPERIMENTAL_MEMOS["MyCard"]
@@ -113,11 +116,12 @@ def test_var_returning_memo_with_rest_props():
         return base.to(dict).merge(overrides)
 
     base = Var(_js_expr="base", _var_type=dict[str, str])
-    merged = merge_styles(base=base, color="red")
+    merged = merge_styles(base=base, color="red", class_name="primary")
 
     assert "merge_styles" in str(merged)
     assert '["base"] : base' in str(merged)
     assert '["color"] : "red"' in str(merged)
+    assert '["className"] : "primary"' in str(merged)
 
     _, code, _ = compiler.compile_memo_components(
         (), tuple(EXPERIMENTAL_MEMOS.values())
@@ -151,7 +155,7 @@ def test_var_returning_memo_with_children_and_rest():
 
     assert "label_slot" in str(rendered)
     assert '["children"]' in str(rendered)
-    assert '["class_name"] : "slot"' in str(rendered)
+    assert '["className"] : "slot"' in str(rendered)
 
     _, code, _ = compiler.compile_memo_components(
         (), tuple(EXPERIMENTAL_MEMOS.values())

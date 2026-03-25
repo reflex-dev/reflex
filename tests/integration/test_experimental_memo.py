@@ -5,9 +5,6 @@ from collections.abc import Generator
 import pytest
 from selenium.webdriver.common.by import By
 
-import reflex.app as reflex_app
-import reflex.state as reflex_state
-from reflex import constants
 from reflex.testing import AppHarness
 
 
@@ -84,22 +81,15 @@ def ExperimentalMemoApp():
 
 
 @pytest.fixture
-def experimental_memo_app(tmp_path, monkeypatch) -> Generator[AppHarness, None, None]:
+def experimental_memo_app(tmp_path) -> Generator[AppHarness, None, None]:
     """Start ExperimentalMemoApp app at tmp_path via AppHarness.
 
     Args:
         tmp_path: pytest tmp_path fixture.
-        monkeypatch: pytest monkeypatch fixture.
 
     Yields:
         Running AppHarness instance.
     """
-    monkeypatch.setenv(
-        constants.PYTEST_CURRENT_TEST,
-        "tests/integration/test_experimental_memo.py::test_experimental_memo_app",
-    )
-    monkeypatch.setattr(reflex_app, "is_testing_env", lambda: True)
-    monkeypatch.setattr(reflex_state, "is_testing_env", lambda: True)
     with AppHarness.create(
         root=tmp_path,
         app_source=ExperimentalMemoApp,

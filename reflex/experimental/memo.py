@@ -30,7 +30,7 @@ from reflex.vars.function import (
 from reflex.vars.object import RestProp
 
 
-@dataclasses.dataclass(frozen=True, slots=True)
+@dataclasses.dataclass(frozen=True, slots=True, kw_only=True)
 class MemoParam:
     """Metadata about a memo parameter."""
 
@@ -112,7 +112,7 @@ class ExperimentalMemoComponent(Component):
             props[camel_cased_key] = literal_value
             setattr(self, camel_cased_key, literal_value)
 
-        prop_names = dict.fromkeys(props)
+        prop_names = tuple(props)
         object.__setattr__(self, "get_props", lambda: prop_names)
 
 
@@ -634,6 +634,8 @@ def _bind_function_runtime_args(
     """
     children_param = _get_children_param(definition.params)
     rest_param = _get_rest_param(definition.params)
+
+    # Validate positional children usage and reserved keywords.
     if "children" in kwargs:
         msg = f"`{definition.python_name}` only accepts children positionally."
         raise TypeError(msg)
@@ -656,6 +658,7 @@ def _bind_function_runtime_args(
         )
         raise TypeError(msg)
 
+    # Bind declared props before collecting any rest props.
     explicit_params = [
         param
         for param in definition.params
@@ -672,6 +675,7 @@ def _bind_function_runtime_args(
             msg = f"`{definition.python_name}` is missing required prop `{param.name}`."
             raise TypeError(msg)
 
+    # Reject unknown props unless a rest prop is declared.
     if remaining_props and rest_param is None:
         unexpected_prop = next(iter(remaining_props))
         msg = (
@@ -680,18 +684,25 @@ def _bind_function_runtime_args(
         )
         raise TypeError(msg)
 
+    # Return ordered explicit args when no packed props object is needed.
     if children_param is None and rest_param is None:
         return tuple(explicit_values[param.name] for param in explicit_params)
 
+    # Build the props object passed to the imported FunctionVar.
     children_value: Any | None = None
     if children_param is not None:
         children_value = args[0] if len(args) == 1 else Fragment.create(*args)
+
+    # Convert rest-prop keys to camelCase to match component memo behavior.
+    camel_cased_remaining_props = {
+        format.to_camel_case(key): value for key, value in remaining_props.items()
+    }
 
     bound_props = {}
     if children_param is not None:
         bound_props[children_param.name] = children_value
     bound_props.update(explicit_values)
-    bound_props.update(remaining_props)
+    bound_props.update(camel_cased_remaining_props)
     return (bound_props,)
 
 
@@ -761,6 +772,7 @@ def _create_component_wrapper(
 
     @wraps(definition.fn)
     def wrapper(*children: Any, **props: Any) -> ExperimentalMemoComponent:
+        # Validate positional children usage and reserved keywords.
         if "children" in props:
             msg = f"`{definition.python_name}` only accepts children positionally."
             raise TypeError(msg)
@@ -780,6 +792,7 @@ def _create_component_wrapper(
             )
             raise TypeError(msg)
 
+        # Bind declared props before collecting any rest props.
         explicit_values = {}
         remaining_props = props.copy()
         for param in explicit_params:
@@ -791,6 +804,7 @@ def _create_component_wrapper(
                 msg = f"`{definition.python_name}` is missing required prop `{param.name}`."
                 raise TypeError(msg)
 
+        # Reject unknown props unless a rest prop is declared.
         if remaining_props and rest_param is None:
             unexpected_prop = next(iter(remaining_props))
             msg = (
@@ -799,6 +813,7 @@ def _create_component_wrapper(
             )
             raise TypeError(msg)
 
+        # Build the component props passed into the memo wrapper.
         return ExperimentalMemoComponent._create(
             children=list(children),
             memo_definition=definition,
