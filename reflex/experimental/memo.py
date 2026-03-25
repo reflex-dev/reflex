@@ -5,7 +5,7 @@ from __future__ import annotations
 import dataclasses
 import inspect
 from collections.abc import Callable
-from functools import wraps
+from functools import update_wrapper
 from typing import Any, get_args, get_origin, get_type_hints
 
 from reflex import constants
@@ -721,57 +721,100 @@ def _is_component_child(value: Any) -> bool:
     )
 
 
-def _create_function_wrapper(
-    definition: ExperimentalMemoFunctionDefinition,
-) -> Callable[..., Var]:
-    """Create the Python wrapper for a var-returning memo.
+class _ExperimentalMemoFunctionWrapper:
+    """Callable wrapper for a var-returning experimental memo."""
 
-    Args:
-        definition: The function memo definition.
+    def __init__(self, definition: ExperimentalMemoFunctionDefinition):
+        """Initialize the wrapper.
 
-    Returns:
-        The wrapper callable.
-    """
-    imported_var = definition.imported_var
+        Args:
+            definition: The function memo definition.
+        """
+        self._definition = definition
+        self._imported_var = definition.imported_var
+        update_wrapper(self, definition.fn)
 
-    @wraps(definition.fn)
-    def wrapper(*args: Any, **kwargs: Any) -> Var:
-        return imported_var.call(
-            *_bind_function_runtime_args(definition, *args, **kwargs)
+    def __call__(self, *args: Any, **kwargs: Any) -> Var:
+        """Call the wrapped memo and return a var.
+
+        Args:
+            *args: Positional children, if supported.
+            **kwargs: Explicit props and rest props.
+
+        Returns:
+            The function call var.
+        """
+        return self.call(*args, **kwargs)
+
+    def call(self, *args: Any, **kwargs: Any) -> Var:
+        """Call the imported memo function.
+
+        Args:
+            *args: Positional children, if supported.
+            **kwargs: Explicit props and rest props.
+
+        Returns:
+            The function call var.
+        """
+        return self._imported_var.call(
+            *_bind_function_runtime_args(self._definition, *args, **kwargs)
         )
 
-    def partial(*args: Any, **kwargs: Any) -> FunctionVar:
-        return imported_var.partial(
-            *_bind_function_runtime_args(definition, *args, **kwargs)
+    def partial(self, *args: Any, **kwargs: Any) -> FunctionVar:
+        """Partially apply the imported memo function.
+
+        Args:
+            *args: Positional children, if supported.
+            **kwargs: Explicit props and rest props.
+
+        Returns:
+            The partially applied function var.
+        """
+        return self._imported_var.partial(
+            *_bind_function_runtime_args(self._definition, *args, **kwargs)
         )
 
-    object.__setattr__(wrapper, "call", wrapper)
-    object.__setattr__(wrapper, "partial", partial)
-    object.__setattr__(wrapper, "_as_var", lambda: imported_var)
-    return wrapper
+    def _as_var(self) -> FunctionVar:
+        """Expose the imported function var.
+
+        Returns:
+            The imported function var.
+        """
+        return self._imported_var
 
 
-def _create_component_wrapper(
-    definition: ExperimentalMemoComponentDefinition,
-) -> Callable[..., ExperimentalMemoComponent]:
-    """Create the Python wrapper for a component-returning memo.
+class _ExperimentalMemoComponentWrapper:
+    """Callable wrapper for a component-returning experimental memo."""
 
-    Args:
-        definition: The component memo definition.
+    def __init__(self, definition: ExperimentalMemoComponentDefinition):
+        """Initialize the wrapper.
 
-    Returns:
-        The wrapper callable.
-    """
-    children_param = _get_children_param(definition.params)
-    rest_param = _get_rest_param(definition.params)
-    explicit_params = [
-        param
-        for param in definition.params
-        if not param.is_children and not param.is_rest
-    ]
+        Args:
+            definition: The component memo definition.
+        """
+        self._definition = definition
+        self._children_param = _get_children_param(definition.params)
+        self._rest_param = _get_rest_param(definition.params)
+        self._explicit_params = [
+            param
+            for param in definition.params
+            if not param.is_children and not param.is_rest
+        ]
+        update_wrapper(self, definition.fn)
 
-    @wraps(definition.fn)
-    def wrapper(*children: Any, **props: Any) -> ExperimentalMemoComponent:
+    def __call__(self, *children: Any, **props: Any) -> ExperimentalMemoComponent:
+        """Call the wrapped memo and return a component.
+
+        Args:
+            *children: Positional children passed to the memo.
+            **props: Explicit props and rest props.
+
+        Returns:
+            The rendered memo component.
+        """
+        definition = self._definition
+        rest_param = self._rest_param
+
         # Validate positional children usage and reserved keywords.
         if "children" in props:
             msg = f"`{definition.python_name}` only accepts children positionally."
@@ -782,7 +825,7 @@ def _create_component_wrapper(
                 f"arguments. Do not pass `{rest_param.name}=` directly."
             )
             raise TypeError(msg)
-        if children and children_param is None:
+        if children and self._children_param is None:
             msg = f"`{definition.python_name}` only accepts keyword props."
             raise TypeError(msg)
         if any(not _is_component_child(child) for child in children):
@@ -795,7 +838,7 @@ def _create_component_wrapper(
         # Bind declared props before collecting any rest props.
         explicit_values = {}
         remaining_props = props.copy()
-        for param in explicit_params:
+        for param in self._explicit_params:
             if param.name in remaining_props:
                 explicit_values[param.name] = remaining_props.pop(param.name)
             elif param.default is not inspect.Parameter.empty:
@@ -821,10 +864,41 @@ def _create_component_wrapper(
             **remaining_props,
         )
 
-    object.__setattr__(
-        wrapper, "_as_var", lambda: _component_import_var(definition.export_name)
-    )
-    return wrapper
+    def _as_var(self) -> Var:
+        """Expose the imported component var.
+
+        Returns:
+            The imported component var.
+        """
+        return _component_import_var(self._definition.export_name)
+
+
+def _create_function_wrapper(
+    definition: ExperimentalMemoFunctionDefinition,
+) -> _ExperimentalMemoFunctionWrapper:
+    """Create the Python wrapper for a var-returning memo.
+
+    Args:
+        definition: The function memo definition.
+
+    Returns:
+        The wrapper callable.
+    """
+    return _ExperimentalMemoFunctionWrapper(definition)
+
+
+def _create_component_wrapper(
+    definition: ExperimentalMemoComponentDefinition,
+) -> _ExperimentalMemoComponentWrapper:
+    """Create the Python wrapper for a component-returning memo.
+
+    Args:
+        definition: The component memo definition.
+
+    Returns:
+        The wrapper callable.
+    """
+    return _ExperimentalMemoComponentWrapper(definition)
 
 
 def memo(fn: Callable[..., Any]) -> Callable[..., Any]:

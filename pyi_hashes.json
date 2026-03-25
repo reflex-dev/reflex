@@ -119,5 +119,5 @@
   "reflex/components/recharts/polar.pyi": "b8b1a3e996e066facdf4f8c9eb363137",
   "reflex/components/recharts/recharts.pyi": "d5c9fc57a03b419748f0408c23319eee",
   "reflex/components/sonner/toast.pyi": "dca44901640cda9d58c62ff8434faa3e",
-  "reflex/experimental/memo.pyi": "87dc52b4ffa791d54c85816016445790"
+  "reflex/experimental/memo.pyi": "aab342a879269a0a7b67df46a7913cb7"
 }
