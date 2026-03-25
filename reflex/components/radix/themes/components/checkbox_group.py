@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from types import SimpleNamespace
 from typing import Literal
 
+from reflex.components.component import field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.radix.themes.base import LiteralAccentColor, RadixThemesComponent
 from reflex.vars.base import Var
@@ -14,23 +15,27 @@ class CheckboxGroupRoot(RadixThemesComponent):
 
     tag = "CheckboxGroup.Root"
 
-    # Use the size prop to control the checkbox size.
-    size: Var[Responsive[Literal["1", "2", "3"]]]
+    size: Var[Responsive[Literal["1", "2", "3"]]] = field(
+        doc="Use the size prop to control the checkbox size."
+    )
 
-    # Variant of button: "classic" | "surface" | "soft"
-    variant: Var[Literal["classic", "surface", "soft"]]
+    variant: Var[Literal["classic", "surface", "soft"]] = field(
+        doc='Variant of button: "classic" | "surface" | "soft"'
+    )
 
-    # Override theme color for button
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor] = field(doc="Override theme color for button")
 
-    # Uses a higher contrast color for the component.
-    high_contrast: Var[bool]
+    high_contrast: Var[bool] = field(
+        doc="Uses a higher contrast color for the component."
+    )
 
-    # determines which checkboxes, if any, are checked by default.
-    default_value: Var[Sequence[str]]
+    default_value: Var[Sequence[str]] = field(
+        doc="determines which checkboxes, if any, are checked by default."
+    )
 
-    # used to assign a name to the entire group of checkboxes
-    name: Var[str]
+    name: Var[str] = field(
+        doc="used to assign a name to the entire group of checkboxes"
+    )
 
 
 class CheckboxGroupItem(RadixThemesComponent):
@@ -38,11 +43,13 @@ class CheckboxGroupItem(RadixThemesComponent):
 
     tag = "CheckboxGroup.Item"
 
-    # specifies the value associated with a particular checkbox option.
-    value: Var[str]
+    value: Var[str] = field(
+        doc="specifies the value associated with a particular checkbox option."
+    )
 
-    # Use the native disabled attribute to create a disabled checkbox.
-    disabled: Var[bool]
+    disabled: Var[bool] = field(
+        doc="Use the native disabled attribute to create a disabled checkbox."
+    )
 
 
 class CheckboxGroup(SimpleNamespace):

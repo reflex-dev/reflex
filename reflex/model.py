@@ -175,11 +175,14 @@ if find_spec("sqlalchemy"):
         return sqlalchemy.orm.Session(get_engine(url))
 
     class ModelRegistry:
-        """Registry for all models."""
+        """Registry for all models.
+
+        Attributes:
+            _metadata: Cache the metadata to avoid re-creating it.
+        """
 
         models: ClassVar[set[SQLModelOrSqlAlchemy]] = set()
 
-        # Cache the metadata to avoid re-creating it.
         _metadata: ClassVar[sqlalchemy.MetaData | None] = None
 
         @classmethod
@@ -351,9 +354,12 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
         }
 
     class Model(sqlmodel.SQLModel):
-        """Base class to define a table in the database."""
+        """Base class to define a table in the database.
 
-        # The primary key for the table.
+        Attributes:
+            id: The primary key for the table.
+        """
+
         id: int | None = sqlmodel.Field(default=None, primary_key=True)
 
         model_config = {  # pyright: ignore [reportAssignmentType]

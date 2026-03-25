@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Literal
 
+from reflex.components.component import field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.radix.themes.base import (
     CommonMarginProps,
@@ -21,8 +22,10 @@ class LayoutComponent(CommonMarginProps, CommonPaddingProps, RadixThemesComponen
     let you create flexible columns, rows and grids.
     """
 
-    # Whether the element will take up the smallest possible space: "0" | "1"
-    flex_shrink: Var[Responsive[LiteralBoolNumber]]
+    flex_shrink: Var[Responsive[LiteralBoolNumber]] = field(
+        doc='Whether the element will take up the smallest possible space: "0" | "1"'
+    )
 
-    # Whether the element will take up the largest possible space: "0" | "1"
-    flex_grow: Var[Responsive[LiteralBoolNumber]]
+    flex_grow: Var[Responsive[LiteralBoolNumber]] = field(
+        doc='Whether the element will take up the largest possible space: "0" | "1"'
+    )

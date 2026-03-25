@@ -1,5 +1,6 @@
 """Metadata classes."""
 
+from reflex.components.component import field
 from reflex.components.el.element import Element
 from reflex.components.el.elements.inline import ReferrerPolicy
 from reflex.components.el.elements.media import CrossOrigin
@@ -28,32 +29,35 @@ class Link(BaseHTML):
 
     tag = "link"
 
-    # Specifies the CORS settings for the linked resource
-    cross_origin: Var[CrossOrigin]
+    cross_origin: Var[CrossOrigin] = field(
+        doc="Specifies the CORS settings for the linked resource"
+    )
 
-    # Specifies the URL of the linked document/resource
-    href: Var[str]
+    href: Var[str] = field(doc="Specifies the URL of the linked document/resource")
 
-    # Specifies the language of the text in the linked document
-    href_lang: Var[str]
+    href_lang: Var[str] = field(
+        doc="Specifies the language of the text in the linked document"
+    )
 
-    # Allows a browser to check the fetched link for integrity
-    integrity: Var[str]
+    integrity: Var[str] = field(
+        doc="Allows a browser to check the fetched link for integrity"
+    )
 
-    # Specifies on what device the linked document will be displayed
-    media: Var[str]
+    media: Var[str] = field(
+        doc="Specifies on what device the linked document will be displayed"
+    )
 
-    # Specifies the referrer policy of the linked document
-    referrer_policy: Var[ReferrerPolicy]
+    referrer_policy: Var[ReferrerPolicy] = field(
+        doc="Specifies the referrer policy of the linked document"
+    )
 
-    # Specifies the relationship between the current document and the linked one
-    rel: Var[str]
+    rel: Var[str] = field(
+        doc="Specifies the relationship between the current document and the linked one"
+    )
 
-    # Specifies the sizes of icons for visual media
-    sizes: Var[str]
+    sizes: Var[str] = field(doc="Specifies the sizes of icons for visual media")
 
-    # Specifies the MIME type of the linked document
-    type: Var[str]
+    type: Var[str] = field(doc="Specifies the MIME type of the linked document")
 
 
 class Meta(BaseHTML):  # Inherits common attributes from BaseHTML
@@ -61,20 +65,19 @@ class Meta(BaseHTML):  # Inherits common attributes from BaseHTML
 
     tag = "meta"  # The HTML tag for this element is <meta>
 
-    # Specifies the character encoding for the HTML document
-    char_set: Var[str]
+    char_set: Var[str] = field(
+        doc="Specifies the character encoding for the HTML document"
+    )
 
-    # Defines the content of the metadata
-    content: Var[str]
+    content: Var[str] = field(doc="Defines the content of the metadata")
 
-    # Provides an HTTP header for the information/value of the content attribute
-    http_equiv: Var[str]
+    http_equiv: Var[str] = field(
+        doc="Provides an HTTP header for the information/value of the content attribute"
+    )
 
-    # Specifies a name for the metadata
-    name: Var[str]
+    name: Var[str] = field(doc="Specifies a name for the metadata")
 
-    # The type of metadata value.
-    property: Var[str]
+    property: Var[str] = field(doc="The type of metadata value.")
 
 
 class Title(Element):

@@ -549,23 +549,28 @@ class ShikiCodeBlock(Component, MarkdownComponentMap):
 
     lib_dependencies: list[str] = ["shiki@3.3.0"]
 
-    # The language to use.
-    language: Var[LiteralCodeLanguage] = Var.create("python")
+    language: Var[LiteralCodeLanguage] = field(
+        default=Var.create("python"), doc="The language to use."
+    )
 
-    # The theme to use ("light" or "dark").
-    theme: Var[LiteralCodeTheme] = Var.create("one-light")
+    theme: Var[LiteralCodeTheme] = field(
+        default=Var.create("one-light"), doc='The theme to use ("light" or "dark").'
+    )
 
-    # The set of themes to use for different modes.
-    themes: Var[list[dict[str, Any]] | dict[str, str]]
+    themes: Var[list[dict[str, Any]] | dict[str, str]] = field(
+        doc="The set of themes to use for different modes."
+    )
 
-    # The code to display.
-    code: Var[str]
+    code: Var[str] = field(doc="The code to display.")
 
-    # The transformers to use for the syntax highlighter.
-    transformers: Var[list[ShikiBaseTransformers | dict[str, Any]]] = Var.create([])
+    transformers: Var[list[ShikiBaseTransformers | dict[str, Any]]] = field(
+        default=Var.create([]),
+        doc="The transformers to use for the syntax highlighter.",
+    )
 
-    # The decorations to use for the syntax highlighter.
-    decorations: Var[list[ShikiDecorations]] = Var.create([])
+    decorations: Var[list[ShikiDecorations]] = field(
+        default=Var.create([]), doc="The decorations to use for the syntax highlighter."
+    )
 
     @classmethod
     def create(
@@ -712,14 +717,19 @@ class ShikiCodeBlock(Component, MarkdownComponentMap):
 class ShikiHighLevelCodeBlock(ShikiCodeBlock):
     """High level component for the shiki syntax highlighter."""
 
-    # If this is enabled, the default transformers(shikijs transformer) will be used.
-    use_transformers: Var[bool]
+    use_transformers: Var[bool] = field(
+        doc="If this is enabled, the default transformers(shikijs transformer) will be used."
+    )
 
-    # If this is enabled line numbers will be shown next to the code block.
-    show_line_numbers: Var[bool]
+    show_line_numbers: Var[bool] = field(
+        doc="If this is enabled line numbers will be shown next to the code block."
+    )
 
-    # Whether a copy button should appear.
-    can_copy: bool = field(default=False, is_javascript_property=False)
+    can_copy: bool = field(
+        doc="Whether a copy button should appear.",
+        default=False,
+        is_javascript_property=False,
+    )
 
     # copy_button: A custom copy button to override the default one.
     copy_button: Component | bool | None = field(

@@ -2,7 +2,7 @@
 
 from typing import ClassVar, Literal
 
-from reflex.components.component import ComponentNamespace
+from reflex.components.component import ComponentNamespace, field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.components.radix.themes.base import CommonPaddingProps, RadixThemesComponent
@@ -14,11 +14,11 @@ class TableRoot(elements.Table, RadixThemesComponent):
 
     tag = "Table.Root"
 
-    # The size of the table: "1" | "2" | "3"
-    size: Var[Responsive[Literal["1", "2", "3"]]]
+    size: Var[Responsive[Literal["1", "2", "3"]]] = field(
+        doc='The size of the table: "1" | "2" | "3"'
+    )
 
-    # The variant of the table
-    variant: Var[Literal["surface", "ghost"]]
+    variant: Var[Literal["surface", "ghost"]] = field(doc="The variant of the table")
 
 
 class TableHeader(elements.Thead, RadixThemesComponent):
@@ -36,8 +36,9 @@ class TableRow(elements.Tr, RadixThemesComponent):
 
     tag = "Table.Row"
 
-    # The alignment of the row
-    align: Var[Literal["start", "center", "end", "baseline"]]
+    align: Var[Literal["start", "center", "end", "baseline"]] = field(
+        doc="The alignment of the row"
+    )
 
     _invalid_children: ClassVar[list[str]] = ["TableBody", "TableHeader", "TableRow"]
 
@@ -47,14 +48,13 @@ class TableColumnHeaderCell(elements.Th, RadixThemesComponent):
 
     tag = "Table.ColumnHeaderCell"
 
-    # The justification of the column
-    justify: Var[Literal["start", "center", "end"]]
+    justify: Var[Literal["start", "center", "end"]] = field(
+        doc="The justification of the column"
+    )
 
-    # The minimum width of the cell
-    min_width: Var[Responsive[str]]
+    min_width: Var[Responsive[str]] = field(doc="The minimum width of the cell")
 
-    # The maximum width of the cell
-    max_width: Var[Responsive[str]]
+    max_width: Var[Responsive[str]] = field(doc="The maximum width of the cell")
 
     _invalid_children: ClassVar[list[str]] = [
         "TableBody",
@@ -86,14 +86,13 @@ class TableCell(elements.Td, CommonPaddingProps, RadixThemesComponent):
 
     tag = "Table.Cell"
 
-    # The justification of the column
-    justify: Var[Literal["start", "center", "end"]]
+    justify: Var[Literal["start", "center", "end"]] = field(
+        doc="The justification of the column"
+    )
 
-    # The minimum width of the cell
-    min_width: Var[Responsive[str]]
+    min_width: Var[Responsive[str]] = field(doc="The minimum width of the cell")
 
-    # The maximum width of the cell
-    max_width: Var[Responsive[str]]
+    max_width: Var[Responsive[str]] = field(doc="The maximum width of the cell")
 
     _invalid_children: ClassVar[list[str]] = [
         "TableBody",
@@ -109,14 +108,13 @@ class TableRowHeaderCell(elements.Th, CommonPaddingProps, RadixThemesComponent):
 
     tag = "Table.RowHeaderCell"
 
-    # The justification of the column
-    justify: Var[Literal["start", "center", "end"]]
+    justify: Var[Literal["start", "center", "end"]] = field(
+        doc="The justification of the column"
+    )
 
-    # The minimum width of the cell
-    min_width: Var[Responsive[str]]
+    min_width: Var[Responsive[str]] = field(doc="The minimum width of the cell")
 
-    # The maximum width of the cell
-    max_width: Var[Responsive[str]]
+    max_width: Var[Responsive[str]] = field(doc="The maximum width of the cell")
 
     _invalid_children: ClassVar[list[str]] = [
         "TableBody",

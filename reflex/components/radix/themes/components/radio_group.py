@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from typing import Literal
 
 import reflex as rx
-from reflex.components.component import Component, ComponentNamespace
+from reflex.components.component import Component, ComponentNamespace, field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.radix.themes.base import (
     LiteralAccentColor,
@@ -28,38 +28,43 @@ class RadioGroupRoot(RadixThemesComponent):
 
     tag = "RadioGroup.Root"
 
-    # The size of the radio group: "1" | "2" | "3"
-    size: Var[Responsive[Literal["1", "2", "3"]]] = LiteralVar.create("2")
+    size: Var[Responsive[Literal["1", "2", "3"]]] = field(
+        default=LiteralVar.create("2"),
+        doc='The size of the radio group: "1" | "2" | "3"',
+    )
 
-    # The variant of the radio group
-    variant: Var[Literal["classic", "surface", "soft"]] = LiteralVar.create("classic")
+    variant: Var[Literal["classic", "surface", "soft"]] = field(
+        default=LiteralVar.create("classic"), doc="The variant of the radio group"
+    )
 
-    # The color of the radio group
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor] = field(doc="The color of the radio group")
 
-    # Whether to render the radio group with higher contrast color against background
-    high_contrast: Var[bool]
+    high_contrast: Var[bool] = field(
+        doc="Whether to render the radio group with higher contrast color against background"
+    )
 
-    # The controlled value of the radio item to check. Should be used in conjunction with on_change.
-    value: Var[str]
+    value: Var[str] = field(
+        doc="The controlled value of the radio item to check. Should be used in conjunction with on_change."
+    )
 
-    # The initial value of checked radio item. Should be used in conjunction with on_change.
-    default_value: Var[str]
+    default_value: Var[str] = field(
+        doc="The initial value of checked radio item. Should be used in conjunction with on_change."
+    )
 
-    # Whether the radio group is disabled
-    disabled: Var[bool]
+    disabled: Var[bool] = field(doc="Whether the radio group is disabled")
 
-    # The name of the group. Submitted with its owning form as part of a name/value pair.
-    name: Var[str]
+    name: Var[str] = field(
+        doc="The name of the group. Submitted with its owning form as part of a name/value pair."
+    )
 
-    # Whether the radio group is required
-    required: Var[bool]
+    required: Var[bool] = field(doc="Whether the radio group is required")
 
     # Props to rename
     _rename_props = {"onChange": "onValueChange"}
 
-    # Fired when the value of the radio group changes.
-    on_change: EventHandler[passthrough_event_spec(str)]
+    on_change: EventHandler[passthrough_event_spec(str)] = field(
+        doc="Fired when the value of the radio group changes."
+    )
 
 
 class RadioGroupItem(RadixThemesComponent):
@@ -67,54 +72,62 @@ class RadioGroupItem(RadixThemesComponent):
 
     tag = "RadioGroup.Item"
 
-    # The value of the radio item to check. Should be used in conjunction with on_change.
-    value: Var[str]
+    value: Var[str] = field(
+        doc="The value of the radio item to check. Should be used in conjunction with on_change."
+    )
 
-    # When true, prevents the user from interacting with the radio item.
-    disabled: Var[bool]
+    disabled: Var[bool] = field(
+        doc="When true, prevents the user from interacting with the radio item."
+    )
 
-    # When true, indicates that the user must check the radio item before the owning form can be submitted.
-    required: Var[bool]
+    required: Var[bool] = field(
+        doc="When true, indicates that the user must check the radio item before the owning form can be submitted."
+    )
 
 
 class HighLevelRadioGroup(RadixThemesComponent):
     """High level wrapper for the RadioGroup component."""
 
-    # The items of the radio group.
-    items: Var[Sequence[str]]
+    items: Var[Sequence[str]] = field(doc="The items of the radio group.")
 
-    # The direction of the radio group.
-    direction: Var[LiteralFlexDirection] = LiteralVar.create("row")
+    direction: Var[LiteralFlexDirection] = field(
+        default=LiteralVar.create("row"), doc="The direction of the radio group."
+    )
 
-    # The gap between the items of the radio group.
-    spacing: Var[LiteralSpacing] = LiteralVar.create("2")
+    spacing: Var[LiteralSpacing] = field(
+        default=LiteralVar.create("2"),
+        doc="The gap between the items of the radio group.",
+    )
 
-    # The size of the radio group.
-    size: Var[Literal["1", "2", "3"]] = LiteralVar.create("2")
+    size: Var[Literal["1", "2", "3"]] = field(
+        default=LiteralVar.create("2"), doc="The size of the radio group."
+    )
 
-    # The variant of the radio group
-    variant: Var[Literal["classic", "surface", "soft"]] = LiteralVar.create("classic")
+    variant: Var[Literal["classic", "surface", "soft"]] = field(
+        default=LiteralVar.create("classic"), doc="The variant of the radio group"
+    )
 
-    # The color of the radio group
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor] = field(doc="The color of the radio group")
 
-    # Whether to render the radio group with higher contrast color against background
-    high_contrast: Var[bool]
+    high_contrast: Var[bool] = field(
+        doc="Whether to render the radio group with higher contrast color against background"
+    )
 
-    # The controlled value of the radio item to check. Should be used in conjunction with on_change.
-    value: Var[str]
+    value: Var[str] = field(
+        doc="The controlled value of the radio item to check. Should be used in conjunction with on_change."
+    )
 
-    # The initial value of checked radio item. Should be used in conjunction with on_change.
-    default_value: Var[str]
+    default_value: Var[str] = field(
+        doc="The initial value of checked radio item. Should be used in conjunction with on_change."
+    )
 
-    # Whether the radio group is disabled
-    disabled: Var[bool]
+    disabled: Var[bool] = field(doc="Whether the radio group is disabled")
 
-    # The name of the group. Submitted with its owning form as part of a name/value pair.
-    name: Var[str]
+    name: Var[str] = field(
+        doc="The name of the group. Submitted with its owning form as part of a name/value pair."
+    )
 
-    # Whether the radio group is required
-    required: Var[bool]
+    required: Var[bool] = field(doc="Whether the radio group is required")
 
     # Props to rename
     _rename_props = {"onChange": "onValueChange"}

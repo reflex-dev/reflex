@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from reflex.components.component import Component
+from reflex.components.component import Component, field
 from reflex.components.tags.tag import Tag
 from reflex.utils import format
 from reflex.vars.base import Var
@@ -11,8 +11,9 @@ from reflex.vars.base import Var
 class RadixPrimitiveComponent(Component):
     """Basic component for radix Primitives."""
 
-    # Change the default rendered element for the one passed as a child.
-    as_child: Var[bool]
+    as_child: Var[bool] = field(
+        doc="Change the default rendered element for the one passed as a child."
+    )
 
 
 class RadixPrimitiveComponentWithClassName(RadixPrimitiveComponent):
