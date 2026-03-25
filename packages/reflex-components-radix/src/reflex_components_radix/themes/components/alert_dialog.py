@@ -9,7 +9,10 @@ from reflex.components.component import ComponentNamespace, field
 from reflex.constants.compiler import MemoizationMode
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
 from reflex.vars.base import Var
-from reflex_components_radix.themes.base import RadixThemesComponent, RadixThemesTriggerComponent
+from reflex_components_radix.themes.base import (
+    RadixThemesComponent,
+    RadixThemesTriggerComponent,
+)
 
 LiteralContentSize = Literal["1", "2", "3", "4"]
 

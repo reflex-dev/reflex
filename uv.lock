@@ -14,20 +14,20 @@ resolution-markers = [
 [manifest]
 members = [
     "reflex",
-    "reflex-code",
-    "reflex-components",
-    "reflex-dataeditor",
+    "reflex-components-code",
+    "reflex-components-core",
+    "reflex-components-dataeditor",
+    "reflex-components-gridjs",
+    "reflex-components-lucide",
+    "reflex-components-markdown",
+    "reflex-components-moment",
+    "reflex-components-plotly",
+    "reflex-components-radix",
+    "reflex-components-react-player",
+    "reflex-components-react-router",
+    "reflex-components-recharts",
+    "reflex-components-sonner",
     "reflex-docgen",
-    "reflex-gridjs",
-    "reflex-lucide",
-    "reflex-markdown",
-    "reflex-moment",
-    "reflex-plotly",
-    "reflex-radix",
-    "reflex-react-player",
-    "reflex-react-router",
-    "reflex-recharts",
-    "reflex-sonner",
 ]
 
 [[package]]
@@ -2040,7 +2040,6 @@ wheels = [
 
 [[package]]
 name = "reflex"
-version = "0.9.0.dev1"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },
@@ -2054,20 +2053,20 @@ dependencies = [
     { name = "python-multipart" },
     { name = "python-socketio" },
     { name = "redis" },
-    { name = "reflex-code" },
-    { name = "reflex-components" },
-    { name = "reflex-dataeditor" },
-    { name = "reflex-gridjs" },
+    { name = "reflex-components-code" },
+    { name = "reflex-components-core" },
+    { name = "reflex-components-dataeditor" },
+    { name = "reflex-components-gridjs" },
+    { name = "reflex-components-lucide" },
+    { name = "reflex-components-markdown" },
+    { name = "reflex-components-moment" },
+    { name = "reflex-components-plotly" },
+    { name = "reflex-components-radix" },
+    { name = "reflex-components-react-player" },
+    { name = "reflex-components-react-router" },
+    { name = "reflex-components-recharts" },
+    { name = "reflex-components-sonner" },
     { name = "reflex-hosting-cli" },
-    { name = "reflex-lucide" },
-    { name = "reflex-markdown" },
-    { name = "reflex-moment" },
-    { name = "reflex-plotly" },
-    { name = "reflex-radix" },
-    { name = "reflex-react-player" },
-    { name = "reflex-react-router" },
-    { name = "reflex-recharts" },
-    { name = "reflex-sonner" },
     { name = "rich" },
     { name = "sqlmodel" },
     { name = "starlette" },
@@ -2134,20 +2133,20 @@ requires-dist = [
     { name = "python-multipart", specifier = ">=0.0.20,<1.0" },
     { name = "python-socketio", specifier = ">=5.12.0,<6.0" },
     { name = "redis", specifier = ">=5.2.1,<8.0" },
-    { name = "reflex-code", editable = "packages/reflex-code" },
-    { name = "reflex-components", editable = "packages/reflex-components" },
-    { name = "reflex-dataeditor", editable = "packages/reflex-dataeditor" },
-    { name = "reflex-gridjs", editable = "packages/reflex-gridjs" },
+    { name = "reflex-components-code", editable = "packages/reflex-components-code" },
+    { name = "reflex-components-core", editable = "packages/reflex-components-core" },
+    { name = "reflex-components-dataeditor", editable = "packages/reflex-components-dataeditor" },
+    { name = "reflex-components-gridjs", editable = "packages/reflex-components-gridjs" },
+    { name = "reflex-components-lucide", editable = "packages/reflex-components-lucide" },
+    { name = "reflex-components-markdown", editable = "packages/reflex-components-markdown" },
+    { name = "reflex-components-moment", editable = "packages/reflex-components-moment" },
+    { name = "reflex-components-plotly", editable = "packages/reflex-components-plotly" },
+    { name = "reflex-components-radix", editable = "packages/reflex-components-radix" },
+    { name = "reflex-components-react-player", editable = "packages/reflex-components-react-player" },
+    { name = "reflex-components-react-router", editable = "packages/reflex-components-react-router" },
+    { name = "reflex-components-recharts", editable = "packages/reflex-components-recharts" },
+    { name = "reflex-components-sonner", editable = "packages/reflex-components-sonner" },
     { name = "reflex-hosting-cli", specifier = ">=0.1.61" },
-    { name = "reflex-lucide", editable = "packages/reflex-lucide" },
-    { name = "reflex-markdown", editable = "packages/reflex-markdown" },
-    { name = "reflex-moment", editable = "packages/reflex-moment" },
-    { name = "reflex-plotly", editable = "packages/reflex-plotly" },
-    { name = "reflex-radix", editable = "packages/reflex-radix" },
-    { name = "reflex-react-player", editable = "packages/reflex-react-player" },
-    { name = "reflex-react-router", editable = "packages/reflex-react-router" },
-    { name = "reflex-recharts", editable = "packages/reflex-recharts" },
-    { name = "reflex-sonner", editable = "packages/reflex-sonner" },
     { name = "rich", specifier = ">=13,<15" },
     { name = "sqlmodel", specifier = ">=0.0.27,<0.1" },
     { name = "sqlmodel", marker = "extra == 'db'", specifier = ">=0.0.24,<0.1" },
@@ -2193,23 +2192,59 @@ dev = [
 ]
 
 [[package]]
-name = "reflex-code"
-version = "0.0.1"
-source = { editable = "packages/reflex-code" }
+name = "reflex-components-code"
+source = { editable = "packages/reflex-components-code" }
 
 [[package]]
-name = "reflex-components"
-version = "0.0.1"
-source = { editable = "packages/reflex-components" }
+name = "reflex-components-core"
+source = { editable = "packages/reflex-components-core" }
 
 [[package]]
-name = "reflex-dataeditor"
-version = "0.0.1"
-source = { editable = "packages/reflex-dataeditor" }
+name = "reflex-components-dataeditor"
+source = { editable = "packages/reflex-components-dataeditor" }
+
+[[package]]
+name = "reflex-components-gridjs"
+source = { editable = "packages/reflex-components-gridjs" }
+
+[[package]]
+name = "reflex-components-lucide"
+source = { editable = "packages/reflex-components-lucide" }
+
+[[package]]
+name = "reflex-components-markdown"
+source = { editable = "packages/reflex-components-markdown" }
+
+[[package]]
+name = "reflex-components-moment"
+source = { editable = "packages/reflex-components-moment" }
+
+[[package]]
+name = "reflex-components-plotly"
+source = { editable = "packages/reflex-components-plotly" }
+
+[[package]]
+name = "reflex-components-radix"
+source = { editable = "packages/reflex-components-radix" }
+
+[[package]]
+name = "reflex-components-react-player"
+source = { editable = "packages/reflex-components-react-player" }
+
+[[package]]
+name = "reflex-components-react-router"
+source = { editable = "packages/reflex-components-react-router" }
+
+[[package]]
+name = "reflex-components-recharts"
+source = { editable = "packages/reflex-components-recharts" }
+
+[[package]]
+name = "reflex-components-sonner"
+source = { editable = "packages/reflex-components-sonner" }
 
 [[package]]
 name = "reflex-docgen"
-version = "0.0.1"
 source = { editable = "packages/reflex-docgen" }
 dependencies = [
     { name = "griffelib" },
@@ -2231,11 +2266,6 @@ requires-dist = [
 ]
 
 [[package]]
-name = "reflex-gridjs"
-version = "0.0.1"
-source = { editable = "packages/reflex-gridjs" }
-
-[[package]]
 name = "reflex-hosting-cli"
 version = "0.1.62"
 source = { registry = "https://pypi.org/simple" }
@@ -2250,51 +2280,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/83/2f/6d9acd7afd3971da8
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f7/67/415e1f7fe09e77027e9e0063f39053d74f1299e671e837c9a7745453676d/reflex_hosting_cli-0.1.62-py3-none-any.whl", hash = "sha256:73d517fa827b1d52dcb81ba9024671acfd4889015a436ed223d2eda3c07eab89", size = 45049, upload-time = "2026-03-10T01:12:15.033Z" },
 ]
-
-[[package]]
-name = "reflex-lucide"
-version = "0.0.1"
-source = { editable = "packages/reflex-lucide" }
-
-[[package]]
-name = "reflex-markdown"
-version = "0.0.1"
-source = { editable = "packages/reflex-markdown" }
-
-[[package]]
-name = "reflex-moment"
-version = "0.0.1"
-source = { editable = "packages/reflex-moment" }
-
-[[package]]
-name = "reflex-plotly"
-version = "0.0.1"
-source = { editable = "packages/reflex-plotly" }
-
-[[package]]
-name = "reflex-radix"
-version = "0.0.1"
-source = { editable = "packages/reflex-radix" }
-
-[[package]]
-name = "reflex-react-player"
-version = "0.0.1"
-source = { editable = "packages/reflex-react-player" }
-
-[[package]]
-name = "reflex-react-router"
-version = "0.0.1"
-source = { editable = "packages/reflex-react-router" }
-
-[[package]]
-name = "reflex-recharts"
-version = "0.0.1"
-source = { editable = "packages/reflex-recharts" }
-
-[[package]]
-name = "reflex-sonner"
-version = "0.0.1"
-source = { editable = "packages/reflex-sonner" }
 
 [[package]]
 name = "requests"

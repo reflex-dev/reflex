@@ -1,4 +1,13 @@
-from reflex_components_recharts import Area, Bar, Brush, Line, Scatter, XAxis, YAxis, ZAxis
+from reflex_components_recharts import (
+    Area,
+    Bar,
+    Brush,
+    Line,
+    Scatter,
+    XAxis,
+    YAxis,
+    ZAxis,
+)
 
 
 def test_xaxis():

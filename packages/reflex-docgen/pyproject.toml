@@ -19,9 +19,12 @@ dependencies = [
 reflex = { workspace = true }
 
 [tool.hatch.version]
-source = "vcs"
-raw-options = { root = "../..", tag_regex = "^reflex-docgen-v(?P<version>.+)$" }
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+pattern-prefix = "reflex-docgen-"
+fallback-version = "0.0.0dev0"
 
 [build-system]
-requires = ["hatchling", "hatch-vcs"]
+requires = ["hatchling", "uv-dynamic-versioning"]
 build-backend = "hatchling.build"

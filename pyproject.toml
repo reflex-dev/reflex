@@ -115,11 +115,14 @@ dev = [
 
 
 [build-system]
-requires = ["hatchling", "hatch-vcs"]
+requires = ["hatchling", "uv-dynamic-versioning"]
 build-backend = "hatchling.build"
 
 [tool.hatch.version]
-source = "vcs"
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+fallback-version = "0.0.0dev0"
 
 [tool.hatch.build]
 include = ["reflex", "scripts/hatch_build.py"]
