@@ -1208,7 +1208,7 @@ class BaseState(EvenMoreBasicBaseState):
             event_handler = cls._create_event_handler(
                 prop._get_setter(name), **create_event_handler_kwargs
             )
-            cls.event_handlers[setter_name] = register(event_handler)
+            cls.event_handlers[setter_name] = register(event_handler, states=(cls,))
             setattr(cls, setter_name, event_handler)
 
     @classmethod
