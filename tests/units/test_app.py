@@ -15,19 +15,15 @@ from unittest.mock import AsyncMock
 
 import pytest
 from pytest_mock import MockerFixture
+from sqlalchemy.engine.base import Engine
 from starlette.applications import Starlette
 from starlette.datastructures import FormData, UploadFile
 from starlette.responses import StreamingResponse
+from starlette_admin.auth import AuthProvider
 
 import reflex as rx
 from reflex import AdminDash, constants
-from reflex.app import (
-    App,
-    ComponentCallable,
-    default_overlay_component,
-    process,
-    upload,
-)
+from reflex.app import App, ComponentCallable, default_overlay_component, upload
 from reflex.components import Component
 from reflex.components.base.bare import Bare
 from reflex.components.base.fragment import Fragment
@@ -36,13 +32,14 @@ from reflex.components.radix.themes.typography.text import Text
 from reflex.constants.state import FIELD_MARKER
 from reflex.environment import environment
 from reflex.event import Event
+from reflex.ievent.context import EventContext
+from reflex.ievent.processor import BaseStateEventProcessor
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
-from reflex.middleware import HydrateMiddleware
 from reflex.model import Model
-from reflex.state import BaseState, OnLoadInternalState, RouterData, State, StateUpdate
+from reflex.state import BaseState, OnLoadInternalState, RouterData, State
 from reflex.style import Style
 from reflex.utils import console, exceptions, format
 from reflex.vars.base import computed_var
@@ -205,12 +202,16 @@ def test_default_app(app: App):
     Args:
         app: The app to test.
     """
-    assert app._middlewares == [HydrateMiddleware()]
+    assert app._middlewares == []
     assert app.style == Style()
     assert app.admin_dash is None
 
 
-def test_multiple_states_error(monkeypatch, test_state, redundant_test_state):
+def test_multiple_states_error(
+    monkeypatch: pytest.MonkeyPatch,
+    test_state: BaseState,
+    redundant_test_state: BaseState,
+):
     """Test that an error is thrown when multiple classes subclass rx.BaseState.
 
     Args:
@@ -223,7 +224,9 @@ def test_multiple_states_error(monkeypatch, test_state, redundant_test_state):
         App()
 
 
-def test_add_page_default_route(app: App, index_page, about_page):
+def test_add_page_default_route(
+    app: App, index_page: ComponentCallable, about_page: ComponentCallable
+):
     """Test adding a page to an app.
 
     Args:
@@ -241,7 +244,7 @@ def test_add_page_default_route(app: App, index_page, about_page):
     assert app._pages.keys() == {"index", "about"}
 
 
-def test_add_page_set_route(app: App, index_page):
+def test_add_page_set_route(app: App, index_page: ComponentCallable):
     """Test adding a page to an app.
 
     Args:
@@ -255,7 +258,7 @@ def test_add_page_set_route(app: App, index_page):
     assert app._pages.keys() == {"test"}
 
 
-def test_add_page_set_route_dynamic(index_page):
+def test_add_page_set_route_dynamic(index_page: ComponentCallable):
     """Test adding a page with dynamic route variable to an app.
 
     Args:
@@ -275,7 +278,7 @@ def test_add_page_set_route_dynamic(index_page):
     assert constants.ROUTER in app._state()._var_dependencies
 
 
-def test_add_page_set_route_nested(app: App, index_page):
+def test_add_page_set_route_nested(app: App, index_page: ComponentCallable):
     """Test adding a page to an app.
 
     Args:
@@ -288,7 +291,7 @@ def test_add_page_set_route_nested(app: App, index_page):
     assert app._unevaluated_pages.keys() == {route}
 
 
-def test_add_page_invalid_api_route(app: App, index_page):
+def test_add_page_invalid_api_route(app: App, index_page: ComponentCallable):
     """Test adding a page with an invalid route to an app.
 
     Args:
@@ -363,7 +366,7 @@ def test_add_duplicate_page_route_error(app: App, first_page, second_page, route
     or not find_spec("pydantic"),
     reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
 )
-def test_initialize_with_admin_dashboard(test_model):
+def test_initialize_with_admin_dashboard(test_model: Model):
     """Test setting the admin dashboard of an app.
 
     Args:
@@ -382,9 +385,9 @@ def test_initialize_with_admin_dashboard(test_model):
     reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
 )
 def test_initialize_with_custom_admin_dashboard(
-    test_get_engine,
-    test_custom_auth_admin,
-    test_model_auth,
+    test_get_engine: Engine,
+    test_custom_auth_admin: type[AuthProvider],
+    test_model_auth: Model,
 ):
     """Test setting the custom admin dashboard of an app.
 
@@ -492,25 +495,35 @@ async def test_set_and_get_state(test_state: type[ATestState]):
 
 
 @pytest.mark.asyncio
-async def test_dynamic_var_event(test_state: type[ATestState], token: str):
+async def test_dynamic_var_event(
+    test_state: type[ATestState],
+    mock_base_state_event_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, dict[str, dict[str, Any]]]],
+    token: str,
+):
     """Test that the default handler of a dynamic generated var
     works as expected.
 
     Args:
         test_state: State Fixture.
+        mock_base_state_event_processor: BaseStateEventProcessor Fixture.
+        emitted_deltas: List to store emitted deltas.
         token: a Token.
     """
     state = test_state()  # pyright: ignore [reportCallIssue]
     state.add_var("int_val", int, 0)
-    async for result in state._process(
-        Event(
-            token=token,
-            name=f"{test_state.get_name()}.set_int_val",
-            router_data={"pathname": "/", "query": {}},
-            payload={"value": 50},
+    async with mock_base_state_event_processor as processor:
+        await processor.enqueue(
+            token,
+            Event(
+                token=token,
+                name=f"{test_state.get_name()}.set_int_val",
+                payload={"value": 50},
+            ),
         )
-    ):
-        assert result.delta == {test_state.get_name(): {"int_val" + FIELD_MARKER: 50}}
+    assert emitted_deltas == [
+        (token, {test_state.get_name(): {"int_val" + FIELD_MARKER: 50}})
+    ]
 
 
 @pytest.fixture
@@ -685,6 +698,8 @@ async def test_list_mutation_detection__plain_list(
     event_tuples: list[tuple[str, list[str]]],
     list_mutation_state: State,
     token: str,
+    mock_base_state_event_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, dict[str, dict[str, Any]]]],
 ):
     """Test list mutation detection
     when reassignment is not explicitly included in the logic.
@@ -693,19 +708,23 @@ async def test_list_mutation_detection__plain_list(
         event_tuples: From parametrization.
         list_mutation_state: A state with list mutation features.
         token: a Token.
+        mock_base_state_event_processor: BaseStateEventProcessor Fixture.
+        emitted_deltas: List to store emitted deltas.
     """
     for event_name, expected_delta in event_tuples:
-        async for result in list_mutation_state._process(
-            Event(
-                token=token,
-                name=f"{list_mutation_state.get_name()}.{event_name}",
-                router_data={"pathname": "/", "query": {}},
-                payload={},
+        async with mock_base_state_event_processor as processor:
+            await processor.enqueue(
+                token,
+                Event(
+                    token="",
+                    name=f"{list_mutation_state.get_name()}.{event_name}",
+                    payload={},
+                ),
             )
-        ):
-            # prefix keys in expected_delta with the state name
-            expected_delta = {list_mutation_state.get_name(): expected_delta}
-            assert result.delta == expected_delta
+        # prefix keys in expected_delta with the state name
+        expected_delta = {list_mutation_state.get_name(): expected_delta}
+        assert emitted_deltas == [(token, expected_delta)]
+        emitted_deltas.clear()  # Clear emitted deltas for the next iteration
 
 
 @pytest.fixture
@@ -877,6 +896,8 @@ async def test_dict_mutation_detection__plain_list(
     event_tuples: list[tuple[str, list[str]]],
     dict_mutation_state: State,
     token: str,
+    mock_base_state_event_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, dict[str, dict[str, Any]]]],
 ):
     """Test dict mutation detection
     when reassignment is not explicitly included in the logic.
@@ -885,20 +906,23 @@ async def test_dict_mutation_detection__plain_list(
         event_tuples: From parametrization.
         dict_mutation_state: A state with dict mutation features.
         token: a Token.
+        mock_base_state_event_processor: BaseStateEventProcessor Fixture.
+        emitted_deltas: List to store emitted deltas.
     """
     for event_name, expected_delta in event_tuples:
-        async for result in dict_mutation_state._process(
-            Event(
-                token=token,
-                name=f"{dict_mutation_state.get_name()}.{event_name}",
-                router_data={"pathname": "/", "query": {}},
-                payload={},
+        async with mock_base_state_event_processor as processor:
+            await processor.enqueue(
+                token,
+                Event(
+                    token="",
+                    name=f"{dict_mutation_state.get_name()}.{event_name}",
+                    payload={},
+                ),
             )
-        ):
-            # prefix keys in expected_delta with the state name
-            expected_delta = {dict_mutation_state.get_name(): expected_delta}
-
-            assert result.delta == expected_delta
+        # prefix keys in expected_delta with the state name
+        expected_delta = {dict_mutation_state.get_name(): expected_delta}
+        assert emitted_deltas == [(token, expected_delta)]
+        emitted_deltas.clear()  # Clear emitted deltas for the next iteration
 
 
 @pytest.mark.asyncio
@@ -932,7 +956,7 @@ async def test_dict_mutation_detection__plain_list(
     ],
 )
 async def test_upload_file(
-    tmp_path,
+    tmp_path: Path,
     state,
     delta,
     token: str,
@@ -1000,7 +1024,7 @@ async def test_upload_file(
 
 @pytest.mark.asyncio
 async def test_upload_file_keeps_form_open_until_stream_completes(
-    tmp_path,
+    tmp_path: Path,
     token: str,
     mocker: MockerFixture,
     app_module_mock: unittest.mock.Mock,
@@ -1138,7 +1162,7 @@ async def test_upload_file_closes_form_on_event_creation_cancellation(
 
 @pytest.mark.asyncio
 async def test_upload_file_closes_form_if_response_cancelled_before_stream_starts(
-    tmp_path,
+    tmp_path: Path,
     token: str,
     mocker: MockerFixture,
     app_module_mock: unittest.mock.Mock,
@@ -1209,7 +1233,11 @@ async def test_upload_file_closes_form_if_response_cancelled_before_stream_start
     "state",
     [FileUploadState, ChildFileUploadState, GrandChildFileUploadState],
 )
-async def test_upload_file_without_annotation(state, tmp_path, token):
+async def test_upload_file_without_annotation(
+    state: FileUploadState | ChildFileUploadState | GrandChildFileUploadState,
+    tmp_path: Path,
+    token: str,
+):
     """Test that an error is thrown when there's no param annotated with rx.UploadFile or list[UploadFile].
 
     Args:
@@ -1248,7 +1276,11 @@ async def test_upload_file_without_annotation(state, tmp_path, token):
     "state",
     [FileUploadState, ChildFileUploadState, GrandChildFileUploadState],
 )
-async def test_upload_file_background(state, tmp_path, token):
+async def test_upload_file_background(
+    state: FileUploadState | ChildFileUploadState | GrandChildFileUploadState,
+    tmp_path: Path,
+    token: str,
+):
     """Test that an error is thrown handler is a background task.
 
     Args:
@@ -1282,7 +1314,7 @@ async def test_upload_file_background(state, tmp_path, token):
     await app.state_manager.close()
 
 
-class DynamicState(BaseState):
+class DynamicState(State):
     """State class for testing dynamic route var.
 
     This is defined at module level because event handlers cannot be addressed
@@ -1319,8 +1351,6 @@ class DynamicState(BaseState):
             same as self.dynamic
         """
         return self.dynamic  # pyright: ignore[reportAttributeAccessIssue]
-
-    on_load_internal = OnLoadInternalState.on_load_internal.fn  # pyright: ignore [reportFunctionMemberAccess]
 
 
 def test_dynamic_arg_shadow(
@@ -1373,7 +1403,10 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     index_page: ComponentCallable,
     token: str,
     app_module_mock: unittest.mock.Mock,
-    mocker: MockerFixture,
+    mock_root_event_context: EventContext,
+    mock_base_state_event_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, dict[str, dict[str, Any]]]],
+    emitted_events: list[tuple[str, tuple[Event, ...]]],
 ):
     """Create app with dynamic route var, and simulate navigation.
 
@@ -1384,12 +1417,16 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         index_page: The index page.
         token: a Token.
         app_module_mock: Mocked app module.
-        mocker: pytest mocker object.
+        mock_root_event_context: Mocked root event context.
+        mock_base_state_event_processor: Mocked BaseStateEventProcessor.
+        emitted_deltas: List to store emitted deltas.
+        emitted_events: List to store emitted events.
     """
     DynamicState._app_ref = None
     arg_name = "dynamic"
     route = f"test/[{arg_name}]"
-    app = app_module_mock.app = App(_state=DynamicState)
+    app = app_module_mock.app = App()
+    app._state_manager = mock_root_event_context.state_manager
     assert app._state is not None
     assert arg_name not in app._state.vars
     app.add_page(index_page, route=route, on_load=DynamicState.on_load)
@@ -1402,8 +1439,6 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     assert constants.ROUTER in app._state()._var_dependencies
 
     substate_token = BaseStateToken(ident=token, cls=DynamicState)
-    sid = "mock_sid"
-    client_ip = "127.0.0.1"
     async with app.state_manager.modify_state(substate_token) as state:
         state.router_data = {"simulate": "hydrated"}
         assert state.dynamic == ""  # pyright: ignore[reportAttributeAccessIssue]
@@ -1418,7 +1453,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                 {
                     "pathname": "/" + route,
                     "query": {arg_name: val},
-                    "asPath": "/test/something",
+                    "asPath": f"/test/{val}",
                 },
             ),
             payload=kwargs.pop("payload", {}),
@@ -1435,56 +1470,52 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     prev_exp_val = ""
     for exp_index, exp_val in enumerate(exp_vals):
         on_load_internal = _event(
-            name=f"{state.get_full_name()}.{constants.CompileVars.ON_LOAD_INTERNAL.rpartition('.')[2]}",
+            name=f"{OnLoadInternalState.get_full_name()}.{constants.CompileVars.ON_LOAD_INTERNAL.rpartition('.')[2]}",
             val=exp_val,
         )
-        exp_router_data = {
-            "headers": {},
-            "ip": client_ip,
-            "sid": sid,
-            "token": token,
-            **on_load_internal.router_data,
-        }
-        exp_router = RouterData.from_router_data(exp_router_data)
-        process_coro = process(
-            app,
-            event=on_load_internal,
-            sid=sid,
-            headers={},
-            client_ip=client_ip,
-        )
-        update = await process_coro.__anext__()
-        # route change (on_load_internal) triggers: [call on_load events, call set_is_hydrated(True)]
-        assert update == StateUpdate(
-            delta={
-                state.get_name(): {
-                    arg_name + FIELD_MARKER: exp_val,
-                    f"comp_{arg_name}" + FIELD_MARKER: exp_val,
-                    constants.CompileVars.IS_HYDRATED + FIELD_MARKER: False,
-                    "router" + FIELD_MARKER: exp_router,
-                }
-            },
-            events=[
-                _dynamic_state_event(
-                    name="on_load",
-                    val=exp_val,
-                ),
-                _event(
-                    name=f"{State.get_name()}.set_is_hydrated",
-                    payload={"value": True},
-                    val=exp_val,
-                    router_data={},
-                ),
-            ],
-        )
+        exp_router = RouterData.from_router_data(on_load_internal.router_data)
+        async with mock_base_state_event_processor as processor:
+            await processor.enqueue(
+                token,
+                on_load_internal,
+            )
+            await processor.join()
+        assert emitted_deltas == [
+            (
+                token,
+                {
+                    State.get_full_name(): {
+                        arg_name + FIELD_MARKER: exp_val,
+                        constants.CompileVars.IS_HYDRATED + FIELD_MARKER: False,
+                        "router" + FIELD_MARKER: exp_router,
+                    },
+                    DynamicState.get_full_name(): {
+                        f"comp_{arg_name}" + FIELD_MARKER: exp_val,
+                    },
+                },
+            ),
+            (
+                token,
+                {
+                    DynamicState.get_full_name(): {
+                        "loaded" + FIELD_MARKER: exp_index + 1,
+                    },
+                },
+            ),
+            (
+                token,
+                {
+                    State.get_full_name(): {
+                        "is_hydrated" + FIELD_MARKER: True,
+                    },
+                },
+            ),
+        ]
+        assert emitted_events == []
         if isinstance(app.state_manager, StateManagerRedis):
             # When redis is used, the state is not updated until the processing is complete
             state = await app.state_manager.get_state(substate_token)
             assert state.dynamic == prev_exp_val  # pyright: ignore[reportAttributeAccessIssue]
-
-        # complete the processing
-        with pytest.raises(StopAsyncIteration):
-            await process_coro.__anext__()
 
         if environment.REFLEX_OPLOCK_ENABLED.get():
             await app.state_manager.close()
@@ -1493,125 +1524,89 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         state = await app.state_manager.get_state(substate_token)
         assert state.dynamic == exp_val  # pyright: ignore[reportAttributeAccessIssue]
 
-        process_coro = process(
-            app,
-            event=_dynamic_state_event(name="on_load", val=exp_val),
-            sid=sid,
-            headers={},
-            client_ip=client_ip,
-        )
-        on_load_update = await process_coro.__anext__()
-        assert on_load_update == StateUpdate(
-            delta={
-                state.get_name(): {
-                    "loaded" + FIELD_MARKER: exp_index + 1,
-                },
-            },
-            events=[],
-        )
-        # complete the processing
-        with pytest.raises(StopAsyncIteration):
-            await process_coro.__anext__()
-        process_coro = process(
-            app,
-            event=_dynamic_state_event(
-                name="set_is_hydrated", payload={"value": True}, val=exp_val
-            ),
-            sid=sid,
-            headers={},
-            client_ip=client_ip,
-        )
-        on_set_is_hydrated_update = await process_coro.__anext__()
-        assert on_set_is_hydrated_update == StateUpdate(
-            delta={
-                state.get_name(): {
-                    "is_hydrated" + FIELD_MARKER: True,
-                },
-            },
-            events=[],
-        )
-        # complete the processing
-        with pytest.raises(StopAsyncIteration):
-            await process_coro.__anext__()
-
         # a simple state update event should NOT trigger on_load or route var side effects
-        process_coro = process(
-            app,
-            event=_dynamic_state_event(name="on_counter", val=exp_val),
-            sid=sid,
-            headers={},
-            client_ip=client_ip,
-        )
-        update = await process_coro.__anext__()
-        assert update == StateUpdate(
-            delta={
-                state.get_name(): {
-                    "counter" + FIELD_MARKER: exp_index + 1,
-                }
-            },
-            events=[],
-        )
-        # complete the processing
-        with pytest.raises(StopAsyncIteration):
-            await process_coro.__anext__()
-
+        emitted_deltas.clear()
+        emitted_events.clear()
+        async with mock_base_state_event_processor as processor:
+            await processor.enqueue(
+                token,
+                _dynamic_state_event(name="on_counter", val=exp_val),
+            )
+        assert emitted_deltas == [
+            (
+                token,
+                {
+                    DynamicState.get_full_name(): {
+                        "counter" + FIELD_MARKER: exp_index + 1,
+                    }
+                },
+            )
+        ]
+        assert emitted_events == []
+        emitted_deltas.clear()
+        emitted_events.clear()
         prev_exp_val = exp_val
 
     if environment.REFLEX_OPLOCK_ENABLED.get():
         await app.state_manager.close()
     state = await app.state_manager.get_state(substate_token)
-    assert isinstance(state, DynamicState)
-    assert state.loaded == len(exp_vals)
-    assert state.counter == len(exp_vals)
+    assert isinstance(state, State)
+    dynamic_state = await state.get_state(DynamicState)
+    assert isinstance(dynamic_state, DynamicState)
+    assert dynamic_state.loaded == len(exp_vals)
+    assert dynamic_state.counter == len(exp_vals)
 
     await app.state_manager.close()
 
 
 @pytest.mark.asyncio
 async def test_process_events(
-    mocker: MockerFixture, token: str, app_module_mock: unittest.mock.Mock
+    token: str,
+    app_module_mock: unittest.mock.Mock,
+    mock_base_state_event_processor: BaseStateEventProcessor,
+    mock_root_event_context: EventContext,
+    emitted_deltas: list[tuple[str, dict[str, dict[str, Any]]]],
 ):
     """Test that an event is processed properly and that it is postprocessed
     n+1 times. Also check that the processing flag of the last stateupdate is set to
     False.
 
     Args:
-        mocker: mocker object.
         token: a Token.
         app_module_mock: The mock for the app module, used to patch the app instance.
+        mock_base_state_event_processor: BaseStateEventProcessor Fixture.
+        mock_root_event_context: The mock for the root event context, used to patch the app
+            state manager.
+        emitted_deltas: List to store emitted deltas.
     """
-    router_data = {
-        "pathname": "/",
-        "query": {},
-        "token": token,
-        "sid": "mock_sid",
-        "headers": {},
-        "ip": "127.0.0.1",
-    }
-    app = app_module_mock.app = App(_state=GenState)
-
-    mocker.patch.object(app, "_postprocess", AsyncMock())
     event = Event(
         token=token,
         name=f"{GenState.get_name()}.go",
         payload={"c": 5},
-        router_data=router_data,
+        router_data={},
     )
-    async with app.state_manager.modify_state(event.substate_token) as state:
+    async with mock_root_event_context.state_manager.modify_state(
+        BaseStateToken(ident=token, cls=GenState),
+    ) as state:
         state.router_data = {"simulate": "hydrated"}
 
-    async for _update in process(app, event, "mock_sid", {}, "127.0.0.1"):
-        pass
+    async with mock_base_state_event_processor as processor:
+        await processor.enqueue(
+            token,
+            event,
+        )
 
     if environment.REFLEX_OPLOCK_ENABLED.get():
-        await app.state_manager.close()
+        await mock_root_event_context.state_manager.close()
 
-    gen_state = await app.state_manager.get_state(event.substate_token)
+    gen_state = await mock_root_event_context.state_manager.get_state(
+        event.substate_token
+    )
     assert isinstance(gen_state, GenState)
     assert gen_state.value == 5
-    assert app._postprocess.call_count == 6  # pyright: ignore [reportAttributeAccessIssue]
+    assert len(emitted_deltas) == 5
 
-    await app.state_manager.close()
+    await mock_root_event_context.state_manager.close()
 
 
 @pytest.mark.parametrize(
@@ -1672,7 +1667,7 @@ def test_overlay_component(
 
 
 @pytest.fixture
-def compilable_app(tmp_path) -> Generator[tuple[App, Path], None, None]:
+def compilable_app(tmp_path: Path) -> Generator[tuple[App, Path], None, None]:
     """Fixture for an app that can be compiled.
 
     Args:
@@ -1710,7 +1705,9 @@ module.exports = {
     [True, False],
 )
 def test_app_wrap_compile_theme(
-    react_strict_mode: bool, compilable_app: tuple[App, Path], mocker
+    react_strict_mode: bool,
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
 ):
     """Test that the radix theme component wraps the app.
 
@@ -1761,7 +1758,9 @@ def test_app_wrap_compile_theme(
     [True, False],
 )
 def test_app_wrap_priority(
-    react_strict_mode: bool, compilable_app: tuple[App, Path], mocker
+    react_strict_mode: bool,
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
 ):
     """Test that the app wrap components are wrapped in the correct order.
 

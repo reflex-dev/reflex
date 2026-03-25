@@ -16,6 +16,7 @@ from reflex.ievent.processor.event_processor import (
     RegisteredEventHandler,
 )
 from reflex.istate.data import RouterData
+from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import StateProxy
 from reflex.utils import console, types
 from reflex.utils.monitoring import is_pyleak_enabled, monitor_loopblocks
@@ -181,10 +182,13 @@ async def chain_updates(
 
     # Convert valid EventHandler and EventSpec into Event
     if fixed_events := fix_events(
-        _check_valid_yield(events, handler_name=handler_name), token
+        _check_valid_yield(events, handler_name=handler_name),
+        token,
+        router_data=root_state.router_data if root_state else None,
     ):
         # Frontend events.
-        await ctx.emit_event(*(e for e in fixed_events if e.name.startswith("_")))
+        if frontend_events := [e for e in fixed_events if e.name.startswith("_")]:
+            await ctx.emit_event(*frontend_events)
         # Backend events.
         await ctx.enqueue(*(e for e in fixed_events if not e.name.startswith("_")))
 
@@ -293,7 +297,11 @@ class BaseStateEventProcessor(EventProcessor):
         router_data = event.router_data or {}
         # Get the state for the session exclusively.
         async with ctx.state_manager.modify_state_with_links(
-            entry.event.substate_token, event=entry.event
+            BaseStateToken(
+                ident=ctx.token,
+                cls=registered_handler.states[0],
+            ),
+            event=entry.event,
         ) as state:
             # TODO: handle "reload" trigger of brand new state instances
 
@@ -302,7 +310,8 @@ class BaseStateEventProcessor(EventProcessor):
                 # assignment will recurse into substates and force recalculation of
                 # dependent ComputedVar (dynamic route variables)
                 state.router_data = router_data
-                state.router = RouterData.from_router_data(router_data)
+                if state.router != (router := RouterData.from_router_data(router_data)):
+                    state.router = router
 
             # Preprocess the event.
             if (
@@ -318,7 +327,7 @@ class BaseStateEventProcessor(EventProcessor):
                 return
 
             # Get the event's substate.
-            substate = await state.get_state(event.substate_token.cls)
+            substate = await state.get_state(event.state_cls)
             root_state = state._get_root_state()
 
             # Process non-background events while holding the lock.

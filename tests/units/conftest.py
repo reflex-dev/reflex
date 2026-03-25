@@ -12,7 +12,7 @@ import pytest_asyncio
 from reflex.app import App
 from reflex.event import Event, EventSpec
 from reflex.ievent.context import EventContext
-from reflex.ievent.processor import EventProcessor
+from reflex.ievent.processor import BaseStateEventProcessor, EventProcessor
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
@@ -273,6 +273,22 @@ def mock_event_processor_obj() -> EventProcessor:
 
 
 @pytest.fixture
+def mock_base_state_event_processor_obj() -> BaseStateEventProcessor:
+    """Create a BaseState event processor.
+
+    Returns:
+        A fresh BaseState event processor.
+    """
+
+    def handle_backend_exception(ex: Exception) -> None:
+        raise ex
+
+    return BaseStateEventProcessor(
+        backend_exception_handler=handle_backend_exception, graceful_shutdown_timeout=1
+    )
+
+
+@pytest.fixture
 def emitted_deltas() -> list[tuple[str, Mapping[str, Mapping[str, Any]]]]:
     """Create a list to store emitted deltas.
 
@@ -294,14 +310,14 @@ def emitted_events() -> list[tuple[str, tuple[Event, ...]]]:
 
 @pytest.fixture
 def mock_root_event_context(
-    mock_event_processor_obj: EventProcessor,
+    mock_base_state_event_processor_obj: BaseStateEventProcessor,
     emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
     emitted_events: list[tuple[str, tuple[Event, ...]]],
 ) -> EventContext:
     """Create a mock event context.
 
     Args:
-        mock_event_processor_obj: The mock event processor to use for the context's enqueue implementation.
+        mock_base_state_event_processor_obj: The mock event processor to use for the context's enqueue implementation.
         emitted_deltas: The list to store emitted deltas.
         emitted_events: The list to store emitted events.
 
@@ -332,7 +348,7 @@ def mock_root_event_context(
     return EventContext(
         token="",
         state_manager=StateManagerMemory(),
-        enqueue_impl=mock_event_processor_obj.enqueue,
+        enqueue_impl=mock_base_state_event_processor_obj.enqueue,
         emit_delta_impl=emit_delta_impl,
         emit_event_impl=emit_event_impl,
     )
@@ -364,3 +380,32 @@ def mock_event_processor(
     """
     mock_event_processor_obj._root_context = mock_root_event_context
     return mock_event_processor_obj
+
+
+@pytest.fixture
+def mock_base_state_event_processor(
+    mock_root_event_context: EventContext,
+    mock_base_state_event_processor_obj: BaseStateEventProcessor,
+) -> BaseStateEventProcessor:
+    """Create a BaseState event processor with a mock root context.
+
+    Set the mock context as the task's current context, and set the processor's
+    root context to the mock context.
+
+    Events can be queued against the processor via `await
+    mock_base_state_event_processor.enqueue(token, *events)`.
+
+    The `state_manager` fixture is used by the `mock_root_event_context` so any
+    updates will be reflected in the context's state manager, and any deltas or
+    frontend events can be checked via the context's `emitted_deltas` and
+    `emitted_events` attributes.
+
+    Args:
+        mock_root_event_context: The mock event context to use as the root context for the processor.
+        mock_base_state_event_processor_obj: The mock BaseState event processor to use for the processor's enqueue implementation.
+
+    Returns:
+        An un-started event processor with a mock root context.
+    """
+    mock_base_state_event_processor_obj._root_context = mock_root_event_context
+    return mock_base_state_event_processor_obj

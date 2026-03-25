@@ -319,7 +319,7 @@ def _override_base_method(fn: Callable[PARAMS, RETURN]) -> Callable[PARAMS, RETU
     return fn
 
 
-all_base_state_classes: dict[str, None] = {}
+all_base_state_classes: dict[str, type[BaseState]] = {}
 
 CLASS_VAR_NAMES = frozenset({
     "vars",
@@ -634,7 +634,7 @@ class BaseState(EvenMoreBasicBaseState):
         cls._var_dependencies = {}
         cls._init_var_dependency_dicts()
 
-        all_base_state_classes[cls.get_full_name()] = None
+        all_base_state_classes[cls.get_full_name()] = cls
 
     @classmethod
     def _add_event_handler(
@@ -1180,6 +1180,7 @@ class BaseState(EvenMoreBasicBaseState):
             prop: The var to create a setter for.
         """
         from reflex.config import get_config
+        from reflex.ievent.registry import register
 
         config = get_config()
         create_event_handler_kwargs = {}
@@ -1207,7 +1208,7 @@ class BaseState(EvenMoreBasicBaseState):
             event_handler = cls._create_event_handler(
                 prop._get_setter(name), **create_event_handler_kwargs
             )
-            cls.event_handlers[setter_name] = event_handler
+            cls.event_handlers[setter_name] = register(event_handler)
             setattr(cls, setter_name, event_handler)
 
     @classmethod
@@ -1887,7 +1888,9 @@ class BaseState(EvenMoreBasicBaseState):
             return key.__wrapped__
 
         if isinstance(key, str):
-            return getattr(self, key)
+            if isinstance(val := getattr(self, key), MutableProxy):
+                return val.__wrapped__
+            return val
 
         msg = f"Invalid key type: {type(key)}. Expected str."
         raise TypeError(msg)

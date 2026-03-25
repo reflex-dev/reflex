@@ -79,25 +79,23 @@ class Event:
     payload: dict[str, Any] = dataclasses.field(default_factory=dict)
 
     @property
+    def state_cls(self) -> "type[BaseState]":
+        """The state class for the event."""
+        from reflex.state import all_base_state_classes
+
+        substate_name = self.name.rpartition(".")[0]
+
+        return all_base_state_classes[substate_name]
+
+    @property
     def substate_token(self) -> BaseStateToken:
         """Get the substate token for the event.
 
         Returns:
             The substate token.
         """
-        from reflex.istate.manager.token import BaseStateToken
-        from reflex.state import State
-        from reflex.utils.prerequisites import get_app
-
-        app = get_app().app
-
-        root_state = State if app._state is None else app._state
-
-        substate = self.name.rpartition(".")[0]
-        return BaseStateToken(
-            ident=self.token,
-            cls=root_state.get_class_substate(tuple(substate.split("."))),
-        )
+        msg = "Event.substate_token should no longer be used."
+        raise NotImplementedError(msg)
 
     @classmethod
     def from_event_type(

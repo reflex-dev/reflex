@@ -18,6 +18,7 @@ import wrapt
 from typing_extensions import Self
 
 from reflex.base import Base
+from reflex.ievent.context import event_context
 from reflex.istate.manager.token import BaseStateToken
 from reflex.utils import prerequisites
 from reflex.utils.exceptions import ImmutableStateError
@@ -76,7 +77,7 @@ class StateProxy(wrapt.ObjectProxy):
         self._self_app = prerequisites.get_and_validate_app().app
         self._self_substate_path = tuple(state_instance.get_full_name().split("."))
         self._self_substate_token = BaseStateToken(
-            ident=state_instance.router.session.client_token,
+            ident=event_context.get().token,
             cls=state_instance.__class__,
         )
         self._self_actx = None
