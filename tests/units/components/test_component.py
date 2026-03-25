@@ -931,10 +931,6 @@ def test_invalid_event_handler_args(component2, test_state: type[TestState]):
         component2.create(on_blur=lambda: 1)
     with pytest.raises(ValueError):
         component2.create(on_blur=lambda: [1])
-    with pytest.raises(ValueError):
-        component2.create(
-            on_blur=lambda: (test_state.do_something_arg(1), test_state.do_something)
-        )
 
     # lambda signature must match event trigger.
     with pytest.raises(EventFnArgMismatchError):
@@ -1006,6 +1002,9 @@ def test_valid_event_handler_args(component2, test_state: type[TestState]):
     # Return EventSpec and EventHandler (no arg).
     component2.create(
         on_blur=lambda: [test_state.do_something_arg(1), test_state.do_something]
+    )
+    component2.create(
+        on_blur=lambda: (test_state.do_something_arg(1), test_state.do_something)
     )
     component2.create(
         on_blur=lambda: [test_state.do_something_arg(1), test_state.do_something()]

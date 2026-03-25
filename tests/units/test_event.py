@@ -1,5 +1,6 @@
 import json
 from collections.abc import Callable
+from typing import Any, cast
 
 import pytest
 
@@ -12,6 +13,7 @@ from reflex.event import (
     EventChainVar,
     EventHandler,
     EventSpec,
+    LambdaEventCallback,
     call_event_handler,
     event,
     fix_events,
@@ -714,6 +716,88 @@ def test_event_chain_create_allows_plain_function_var():
     chain_event = chain.events[0]
     assert isinstance(chain_event, Var)
     assert frontend_handler.equals(chain_event)
+
+
+def test_event_chain_create_partials_function_var_with_non_empty_args_spec():
+    """FunctionVars should receive trigger args as partial arguments."""
+    frontend_handler = rx.vars.FunctionStringVar.create("(event) => console.log(event)")
+
+    chain = EventChain.create(frontend_handler, args_spec=lambda e: [e])
+
+    assert isinstance(chain, EventChain)
+    assert len(chain.events) == 1
+    chain_event = chain.events[0]
+    assert isinstance(chain_event, Var)
+    assert not frontend_handler.equals(chain_event)
+    assert "(_e, ...args)" in str(chain_event)
+
+
+def test_event_chain_create_lambda_returned_function_var_keeps_original_signature():
+    """FunctionVars returned from lambdas should not be partially applied."""
+    frontend_handler = rx.vars.FunctionStringVar.create("(event) => console.log(event)")
+
+    def return_function_var(e: Var[Any]) -> Any:
+        return frontend_handler
+
+    chain = EventChain.create(
+        cast(LambdaEventCallback[Any], return_function_var),
+        args_spec=lambda e: [e],
+    )
+
+    assert isinstance(chain, EventChain)
+    assert len(chain.events) == 1
+    chain_event = chain.events[0]
+    assert isinstance(chain_event, Var)
+    assert frontend_handler.equals(chain_event)
+    assert "(_e, ...args)" not in str(LiteralVar.create(chain))
+
+
+def test_event_chain_create_lambda_allows_mixed_event_sequences():
+    """Lambdas should be able to return mixed event sequences."""
+
+    class MixedState(BaseState):
+        @event
+        def do_a_thing(self):
+            pass
+
+    log_after_timeout = make_timeout_logger()
+
+    def return_mixed_events(e: Var[Any]) -> Any:
+        return (MixedState.do_a_thing, log_after_timeout)
+
+    chain = EventChain.create(
+        cast(LambdaEventCallback[Any], return_mixed_events),
+        args_spec=lambda e: [e],
+    )
+    rendered = str(LiteralVar.create(chain))
+
+    assert isinstance(chain, EventChain)
+    assert "addEvents(" in rendered
+    assert "Timeout reached!" in rendered
+    assert rendered.index("addEvents(") < rendered.index("Timeout reached!")
+
+
+def test_event_chain_create_lambda_preserves_explicit_event_chain():
+    """Explicit EventChains returned from lambdas should be preserved."""
+    inner = EventChain.create(
+        make_timeout_logger(),
+        args_spec=lambda: (),
+        event_actions={"preventDefault": True},
+    )
+
+    def return_explicit_chain(e: Var[Any]) -> Any:
+        return inner
+
+    chain = EventChain.create(
+        cast(LambdaEventCallback[Any], return_explicit_chain),
+        args_spec=lambda e: [e],
+    )
+
+    assert isinstance(chain, EventChain)
+    assert len(chain.events) == 1
+    chain_event = chain.events[0]
+    assert isinstance(chain_event, Var)
+    assert chain_event.equals(Var.create(inner))
 
 
 def test_event_chain_create_wraps_plain_function_var_kwargs():

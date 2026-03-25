@@ -1,5 +1,7 @@
 """Define event classes to connect the frontend and backend."""
 
+from __future__ import annotations
+
 import dataclasses
 import inspect
 import sys
@@ -237,7 +239,7 @@ class EventHandler(EventActionsMixin):
         """
         return getattr(self.fn, BACKGROUND_TASK_MARKER, False)
 
-    def __call__(self, *args: Any, **kwargs: Any) -> "EventSpec":
+    def __call__(self, *args: Any, **kwargs: Any) -> EventSpec:
         """Pass arguments to the handler to get an event spec.
 
         This method configures event handlers that take in arguments.
@@ -345,7 +347,7 @@ class EventSpec(EventActionsMixin):
         object.__setattr__(self, "client_handler_name", client_handler_name)
         object.__setattr__(self, "args", args or ())
 
-    def with_args(self, args: tuple[tuple[Var, Var], ...]) -> "EventSpec":
+    def with_args(self, args: tuple[tuple[Var, Var], ...]) -> EventSpec:
         """Copy the event spec, with updated args.
 
         Args:
@@ -361,7 +363,7 @@ class EventSpec(EventActionsMixin):
             event_actions=self.event_actions.copy(),
         )
 
-    def add_args(self, *args: Var) -> "EventSpec":
+    def add_args(self, *args: Var) -> EventSpec:
         """Add arguments to the event spec.
 
         Args:
@@ -452,7 +454,7 @@ class CallableEventSpec(EventSpec):
 class EventChain(EventActionsMixin):
     """Container for a chain of events that will be executed in order."""
 
-    events: Sequence["EventSpec | EventVar | FunctionVar | EventCallback"] = (
+    events: Sequence[EventSpec | EventVar | FunctionVar | EventCallback] = (
         dataclasses.field(default_factory=list)
     )
 
@@ -463,11 +465,11 @@ class EventChain(EventActionsMixin):
     @classmethod
     def create(
         cls,
-        value: "EventType",
+        value: EventType,
         args_spec: ArgsSpec | Sequence[ArgsSpec],
         key: str | None = None,
         **event_chain_kwargs,
-    ) -> "EventChain | Var":
+    ) -> EventChain | Var:
         """Create an event chain from a variety of input types.
 
         Args:
@@ -1312,7 +1314,7 @@ def download(
 
 def call_script(
     javascript_code: str | Var[str],
-    callback: "EventType[Any] | None" = None,
+    callback: EventType[Any] | None = None,
 ) -> EventSpec:
     """Create an event handler that executes arbitrary javascript code.
 
@@ -1353,7 +1355,7 @@ def call_script(
 
 def call_function(
     javascript_code: str | Var,
-    callback: "EventType[Any] | None" = None,
+    callback: EventType[Any] | None = None,
 ) -> EventSpec:
     """Create an event handler that executes arbitrary javascript code.
 
@@ -1389,7 +1391,7 @@ def call_function(
 
 def run_script(
     javascript_code: str | Var,
-    callback: "EventType[Any] | None" = None,
+    callback: EventType[Any] | None = None,
 ) -> EventSpec:
     """Create an event handler that executes arbitrary javascript code.
 
@@ -1407,7 +1409,7 @@ def run_script(
     return call_function(ArgsFunctionOperation.create((), javascript_code), callback)
 
 
-def get_event(state: "BaseState", event: str):
+def get_event(state: BaseState, event: str):
     """Get the event from the given state.
 
     Args:
@@ -1420,7 +1422,7 @@ def get_event(state: "BaseState", event: str):
     return f"{state.get_name()}.{event}"
 
 
-def get_hydrate_event(state: "BaseState") -> str:
+def get_hydrate_event(state: BaseState) -> str:
     """Get the name of the hydrate event for the state.
 
     Args:
@@ -1773,11 +1775,11 @@ def call_event_fn(
     fn: Callable,
     arg_spec: ArgsSpec | Sequence[ArgsSpec],
     key: str | None = None,
-) -> list[EventSpec | FunctionVar]:
+) -> list[EventSpec | FunctionVar | EventVar]:
     """Call a function to a list of event specs.
 
-    The function should return a single EventSpec, a list of EventSpecs, or a
-    single Var.
+    The function should return a single event-like value or a heterogeneous
+    sequence of event-like values.
 
     Args:
         fn: The function to call.
@@ -1785,7 +1787,7 @@ def call_event_fn(
         key: The key to pass to the event handler.
 
     Returns:
-        The event specs from calling the function or a Var.
+        The event-like values from calling the function.
 
     Raises:
         EventHandlerValueError: If the lambda returns an unusable value.
@@ -1806,9 +1808,9 @@ def call_event_fn(
     # Call the function with the parsed args.
     out = fn(*[*parsed_args][:number_of_fn_args])
 
-    # Convert the output to a list.
-    if not isinstance(out, list):
-        out = [out]
+    # Normalize common heterogeneous event collections into individual events
+    # while keeping other scalar values for validation below.
+    out = list(out) if isinstance(out, (list, tuple)) else [out]
 
     # Convert any event specs to event specs.
     events = []
@@ -1828,7 +1830,8 @@ def call_event_fn(
                 hint = " Hint: use `fn.partial(...)` instead of calling the FunctionVar directly."
             msg = (
                 f"Invalid event chain for {key}: {fn} -> {e}: A lambda inside an EventChain "
-                "list must return `EventSpec | EventHandler | FunctionVar` or heterogeneous list of these types. "
+                "list must return `EventSpec | EventHandler | EventChain | EventVar | FunctionVar` "
+                "or a heterogeneous sequence of these types. "
                 f"Got: {type(e)}.{hint}"
             )
             raise EventHandlerValueError(msg)
@@ -1979,7 +1982,7 @@ class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
         cls,
         value: EventSpec | EventHandler,
         _var_data: VarData | None = None,
-    ) -> "LiteralEventVar":
+    ) -> LiteralEventVar:
         """Create a new LiteralEventVar instance.
 
         Args:
@@ -2066,7 +2069,7 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
         cls,
         value: EventChain,
         _var_data: VarData | None = None,
-    ) -> "LiteralEventChainVar":
+    ) -> LiteralEventChainVar:
         """Create a new LiteralEventChainVar instance.
 
         Args:
@@ -2189,39 +2192,39 @@ class EventCallback(Generic[Unpack[P]], EventActionsMixin):
 
     @overload
     def __call__(
-        self: "EventCallback[Unpack[Q]]",
-    ) -> "EventCallback[Unpack[Q]]": ...
+        self: EventCallback[Unpack[Q]],
+    ) -> EventCallback[Unpack[Q]]: ...
 
     @overload
     def __call__(
-        self: "EventCallback[V, Unpack[Q]]", value: V | Var[V]
-    ) -> "EventCallback[Unpack[Q]]": ...
+        self: EventCallback[V, Unpack[Q]], value: V | Var[V]
+    ) -> EventCallback[Unpack[Q]]: ...
 
     @overload
     def __call__(
-        self: "EventCallback[V, V2, Unpack[Q]]",
+        self: EventCallback[V, V2, Unpack[Q]],
         value: V | Var[V],
         value2: V2 | Var[V2],
-    ) -> "EventCallback[Unpack[Q]]": ...
+    ) -> EventCallback[Unpack[Q]]: ...
 
     @overload
     def __call__(
-        self: "EventCallback[V, V2, V3, Unpack[Q]]",
+        self: EventCallback[V, V2, V3, Unpack[Q]],
         value: V | Var[V],
         value2: V2 | Var[V2],
         value3: V3 | Var[V3],
-    ) -> "EventCallback[Unpack[Q]]": ...
+    ) -> EventCallback[Unpack[Q]]: ...
 
     @overload
     def __call__(
-        self: "EventCallback[V, V2, V3, V4, Unpack[Q]]",
+        self: EventCallback[V, V2, V3, V4, Unpack[Q]],
         value: V | Var[V],
         value2: V2 | Var[V2],
         value3: V3 | Var[V3],
         value4: V4 | Var[V4],
-    ) -> "EventCallback[Unpack[Q]]": ...
+    ) -> EventCallback[Unpack[Q]]: ...
 
-    def __call__(self, *values) -> "EventCallback":  # pyright: ignore [reportInconsistentOverload]
+    def __call__(self, *values) -> EventCallback:  # pyright: ignore [reportInconsistentOverload]
         """Call the function with the values.
 
         Args:
@@ -2234,11 +2237,11 @@ class EventCallback(Generic[Unpack[P]], EventActionsMixin):
 
     @overload
     def __get__(
-        self: "EventCallback[Unpack[P]]", instance: None, owner: Any
-    ) -> "EventCallback[Unpack[P]]": ...
+        self: EventCallback[Unpack[P]], instance: None, owner: Any
+    ) -> EventCallback[Unpack[P]]: ...
 
     @overload
-    def __get__(self, instance: Any, owner: Any) -> "Callable[[Unpack[P]]]": ...
+    def __get__(self, instance: Any, owner: Any) -> Callable[[Unpack[P]]]: ...
 
     def __get__(self, instance: Any, owner: Any) -> Callable:
         """Get the function with the instance bound to it.
@@ -2262,19 +2265,19 @@ class LambdaEventCallback(Protocol[Unpack[P]]):
     __code__: types.CodeType
 
     @overload
-    def __call__(self: "LambdaEventCallback[()]") -> Any: ...
+    def __call__(self: LambdaEventCallback[()]) -> Any: ...
 
     @overload
-    def __call__(self: "LambdaEventCallback[V]", value: "Var[V]", /) -> Any: ...
+    def __call__(self: LambdaEventCallback[V], value: Var[V], /) -> Any: ...
 
     @overload
     def __call__(
-        self: "LambdaEventCallback[V, V2]", value: Var[V], value2: Var[V2], /
+        self: LambdaEventCallback[V, V2], value: Var[V], value2: Var[V2], /
     ) -> Any: ...
 
     @overload
     def __call__(
-        self: "LambdaEventCallback[V, V2, V3]",
+        self: LambdaEventCallback[V, V2, V3],
         value: Var[V],
         value2: Var[V2],
         value3: Var[V3],
