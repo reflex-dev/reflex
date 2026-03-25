@@ -69,7 +69,7 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
     return () => {
       mediaQuery.removeEventListener("change", handleChange);
     };
-  });
+  }, []);
 
   // Save theme to localStorage whenever it changes
   // Skip saving only if theme key already exists and we haven't initialized yet
