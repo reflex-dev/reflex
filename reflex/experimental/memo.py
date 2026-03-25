@@ -5,7 +5,7 @@ from __future__ import annotations
 import dataclasses
 import inspect
 from collections.abc import Callable
-from functools import update_wrapper
+from functools import cache, update_wrapper
 from typing import Any, get_args, get_origin, get_type_hints
 
 from reflex import constants
@@ -103,8 +103,6 @@ class ExperimentalMemoComponent(Component):
 
         super()._post_init(**kwargs)
 
-        self.tag = definition.export_name
-
         props: dict[str, Any] = {}
         for key, value in {**declared_props, **rest_props}.items():
             camel_cased_key = format.to_camel_case(key)
@@ -114,6 +112,28 @@ class ExperimentalMemoComponent(Component):
 
         prop_names = tuple(props)
         object.__setattr__(self, "get_props", lambda: prop_names)
+
+
+@cache
+def _get_experimental_memo_component_class(
+    export_name: str,
+) -> type[ExperimentalMemoComponent]:
+    """Get the component subclass for an experimental memo export.
+
+    Args:
+        export_name: The exported React component name.
+
+    Returns:
+        A cached component subclass with the tag set at class definition time.
+    """
+    return type(
+        f"ExperimentalMemoComponent_{export_name}",
+        (ExperimentalMemoComponent,),
+        {
+            "__module__": __name__,
+            "tag": export_name,
+        },
+    )
 
 
 EXPERIMENTAL_MEMOS: dict[str, ExperimentalMemoDefinition] = {}
@@ -877,7 +897,7 @@ class _ExperimentalMemoComponentWrapper:
             raise TypeError(msg)
 
         # Build the component props passed into the memo wrapper.
-        return ExperimentalMemoComponent._create(
+        return _get_experimental_memo_component_class(definition.export_name)._create(
             children=list(children),
             memo_definition=definition,
             **explicit_values,

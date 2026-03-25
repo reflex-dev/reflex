@@ -82,10 +82,14 @@ def test_component_returning_memo_with_children_and_rest():
         foo="extra",
         class_name="extra",
     )
+    component_again = my_card(title="World")
 
     assert isinstance(component, ExperimentalMemoComponent)
     assert len(component.children) == 2
     assert component.get_props() == ("title", "foo")
+    assert type(component) is type(component_again)
+    assert type(component).tag == "MyCard"
+    assert type(component).get_fields()["tag"].default == "MyCard"
 
     rendered = component.render()
     assert rendered["name"] == "MyCard"
