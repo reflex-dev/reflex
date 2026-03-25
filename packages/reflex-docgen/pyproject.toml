@@ -1,0 +1,21 @@
+[project]
+name = "reflex-docgen"
+version = "0.0.1"
+description = "Generate documentation for Reflex components."
+readme = "README.md"
+authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
+maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
+requires-python = ">=3.10"
+dependencies = [
+    "griffelib>=2.0.1",
+    "reflex",
+    "typing-extensions",
+    "typing-inspection>=0.4.2",
+]
+
+[tool.uv.sources]
+reflex = { workspace = true }
+
+[build-system]
+requires = ["uv_build>=0.10.11,<0.11.0"]
+build-backend = "uv_build"

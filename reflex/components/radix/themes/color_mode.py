@@ -98,13 +98,17 @@ def _set_static_default(props: dict, position: Any, prop: str, default: str):
 class ColorModeIconButton(IconButton):
     """Icon Button for toggling light / dark mode via toggle_color_mode."""
 
-    # The position of the icon button. Follow document flow if None.
     position: LiteralPosition | Var[LiteralPosition] | None = field(
-        default=None, is_javascript_property=False
+        doc="The position of the icon button. Follow document flow if None.",
+        default=None,
+        is_javascript_property=False,
     )
 
-    # Allow picking the "system" value for the color mode.
-    allow_system: bool = field(default=False, is_javascript_property=False)
+    allow_system: bool = field(
+        doc='Allow picking the "system" value for the color mode.',
+        default=False,
+        is_javascript_property=False,
+    )
 
     @classmethod
     def create(

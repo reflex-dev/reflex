@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, ClassVar, Literal
 
 from reflex.components import Component
+from reflex.components.component import field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.tags import Tag
 from reflex.utils.imports import ImportDict, ImportVar
@@ -52,58 +53,45 @@ LiteralAccentColor = Literal[
 class CommonMarginProps(Component):
     """Many radix-themes elements accept shorthand margin props."""
 
-    # Margin: "0" - "9" # noqa: ERA001
-    m: Var[LiteralSpacing]
+    m: Var[LiteralSpacing] = field(doc='Margin: "0" - "9" # noqa: ERA001')
 
-    # Margin horizontal: "0" - "9"
-    mx: Var[LiteralSpacing]
+    mx: Var[LiteralSpacing] = field(doc='Margin horizontal: "0" - "9"')
 
-    # Margin vertical: "0" - "9"
-    my: Var[LiteralSpacing]
+    my: Var[LiteralSpacing] = field(doc='Margin vertical: "0" - "9"')
 
-    # Margin top: "0" - "9"
-    mt: Var[LiteralSpacing]
+    mt: Var[LiteralSpacing] = field(doc='Margin top: "0" - "9"')
 
-    # Margin right: "0" - "9"
-    mr: Var[LiteralSpacing]
+    mr: Var[LiteralSpacing] = field(doc='Margin right: "0" - "9"')
 
-    # Margin bottom: "0" - "9"
-    mb: Var[LiteralSpacing]
+    mb: Var[LiteralSpacing] = field(doc='Margin bottom: "0" - "9"')
 
-    # Margin left: "0" - "9"
-    ml: Var[LiteralSpacing]
+    ml: Var[LiteralSpacing] = field(doc='Margin left: "0" - "9"')
 
 
 class CommonPaddingProps(Component):
     """Many radix-themes elements accept shorthand padding props."""
 
-    # Padding: "0" - "9" # noqa: ERA001
-    p: Var[Responsive[LiteralSpacing]]
+    p: Var[Responsive[LiteralSpacing]] = field(doc='Padding: "0" - "9" # noqa: ERA001')
 
-    # Padding horizontal: "0" - "9"
-    px: Var[Responsive[LiteralSpacing]]
+    px: Var[Responsive[LiteralSpacing]] = field(doc='Padding horizontal: "0" - "9"')
 
-    # Padding vertical: "0" - "9"
-    py: Var[Responsive[LiteralSpacing]]
+    py: Var[Responsive[LiteralSpacing]] = field(doc='Padding vertical: "0" - "9"')
 
-    # Padding top: "0" - "9"
-    pt: Var[Responsive[LiteralSpacing]]
+    pt: Var[Responsive[LiteralSpacing]] = field(doc='Padding top: "0" - "9"')
 
-    # Padding right: "0" - "9"
-    pr: Var[Responsive[LiteralSpacing]]
+    pr: Var[Responsive[LiteralSpacing]] = field(doc='Padding right: "0" - "9"')
 
-    # Padding bottom: "0" - "9"
-    pb: Var[Responsive[LiteralSpacing]]
+    pb: Var[Responsive[LiteralSpacing]] = field(doc='Padding bottom: "0" - "9"')
 
-    # Padding left: "0" - "9"
-    pl: Var[Responsive[LiteralSpacing]]
+    pl: Var[Responsive[LiteralSpacing]] = field(doc='Padding left: "0" - "9"')
 
 
 class RadixLoadingProp(Component):
     """Base class for components that can be in a loading state."""
 
-    # If set, show an rx.spinner instead of the component children.
-    loading: Var[bool]
+    loading: Var[bool] = field(
+        doc="If set, show an rx.spinner instead of the component children."
+    )
 
 
 class RadixThemesComponent(Component):
@@ -188,26 +176,33 @@ class Theme(RadixThemesComponent):
 
     tag = "Theme"
 
-    # Whether to apply the themes background color to the theme node. Defaults to True.
-    has_background: Var[bool]
+    has_background: Var[bool] = field(
+        doc="Whether to apply the themes background color to the theme node. Defaults to True."
+    )
 
-    # Override light or dark mode theme: "inherit" | "light" | "dark". Defaults to "inherit".
-    appearance: Var[LiteralAppearance]
+    appearance: Var[LiteralAppearance] = field(
+        doc='Override light or dark mode theme: "inherit" | "light" | "dark". Defaults to "inherit".'
+    )
 
-    # The color used for default buttons, typography, backgrounds, etc
-    accent_color: Var[LiteralAccentColor]
+    accent_color: Var[LiteralAccentColor] = field(
+        doc="The color used for default buttons, typography, backgrounds, etc"
+    )
 
-    # The shade of gray, defaults to "auto".
-    gray_color: Var[LiteralGrayColor]
+    gray_color: Var[LiteralGrayColor] = field(
+        doc='The shade of gray, defaults to "auto".'
+    )
 
-    # Whether panel backgrounds are translucent: "solid" | "translucent" (default)
-    panel_background: Var[LiteralPanelBackground]
+    panel_background: Var[LiteralPanelBackground] = field(
+        doc='Whether panel backgrounds are translucent: "solid" | "translucent" (default)'
+    )
 
-    # Element border radius: "none" | "small" | "medium" | "large" | "full". Defaults to "medium".
-    radius: Var[LiteralRadius]
+    radius: Var[LiteralRadius] = field(
+        doc='Element border radius: "none" | "small" | "medium" | "large" | "full". Defaults to "medium".'
+    )
 
-    # Scale of all theme items: "90%" | "95%" | "100%" | "105%" | "110%". Defaults to "100%"
-    scaling: Var[LiteralScaling]
+    scaling: Var[LiteralScaling] = field(
+        doc='Scale of all theme items: "90%" | "95%" | "100%" | "105%" | "110%". Defaults to "100%"'
+    )
 
     @classmethod
     def create(
@@ -261,8 +256,7 @@ class ThemePanel(RadixThemesComponent):
 
     tag = "ThemePanel"
 
-    # Whether the panel is open. Defaults to False.
-    default_open: Var[bool]
+    default_open: Var[bool] = field(doc="Whether the panel is open. Defaults to False.")
 
     def add_imports(self) -> dict[str, str]:
         """Add imports for the ThemePanel component.

@@ -7,7 +7,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any, Literal
 
-from reflex.components.component import Component, ComponentNamespace
+from reflex.components.component import Component, ComponentNamespace, field
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import Theme
 from reflex.components.radix.themes.layout.flex import Flex
@@ -34,47 +34,59 @@ class DrawerRoot(DrawerComponent):
 
     alias = "Vaul" + tag
 
-    # The open state of the drawer when it is initially rendered. Use when you do not need to control its open state.
-    default_open: Var[bool]
+    default_open: Var[bool] = field(
+        doc="The open state of the drawer when it is initially rendered. Use when you do not need to control its open state."
+    )
 
-    # Whether the drawer is open or not.
-    open: Var[bool]
+    open: Var[bool] = field(doc="Whether the drawer is open or not.")
 
-    # Fires when the drawer is opened or closed.
-    on_open_change: EventHandler[passthrough_event_spec(bool)]
+    on_open_change: EventHandler[passthrough_event_spec(bool)] = field(
+        doc="Fires when the drawer is opened or closed."
+    )
 
-    # When `False`, it allows interaction with elements outside of the drawer without closing it. Defaults to `True`.
-    modal: Var[bool]
+    modal: Var[bool] = field(
+        doc="When `False`, it allows interaction with elements outside of the drawer without closing it. Defaults to `True`."
+    )
 
-    # Direction of the drawer. This adjusts the animations and the drag direction. Defaults to `"bottom"`
-    direction: Var[LiteralDirectionType]
+    direction: Var[LiteralDirectionType] = field(
+        doc='Direction of the drawer. This adjusts the animations and the drag direction. Defaults to `"bottom"`'
+    )
 
-    # Gets triggered after the open or close animation ends, it receives an open argument with the open state of the drawer by the time the function was triggered.
-    on_animation_end: EventHandler[passthrough_event_spec(bool)]
+    on_animation_end: EventHandler[passthrough_event_spec(bool)] = field(
+        doc="Gets triggered after the open or close animation ends, it receives an open argument with the open state of the drawer by the time the function was triggered."
+    )
 
-    # When `False`, dragging, clicking outside, pressing esc, etc. will not close the drawer. Use this in combination with the open prop, otherwise you won't be able to open/close the drawer.
-    dismissible: Var[bool]
+    dismissible: Var[bool] = field(
+        doc="When `False`, dragging, clicking outside, pressing esc, etc. will not close the drawer. Use this in combination with the open prop, otherwise you won't be able to open/close the drawer."
+    )
 
-    # When `True`, dragging will only be possible by the handle.
-    handle_only: Var[bool]
+    handle_only: Var[bool] = field(
+        doc="When `True`, dragging will only be possible by the handle."
+    )
 
-    # Array of numbers from 0 to 100 that corresponds to % of the screen a given snap point should take up. Should go from least visible. Also Accept px values, which doesn't take screen height into account.
-    snap_points: Sequence[str | float] | None
+    snap_points: Sequence[str | float] | None = field(
+        doc="Array of numbers from 0 to 100 that corresponds to % of the screen a given snap point should take up. Should go from least visible. Also Accept px values, which doesn't take screen height into account."
+    )
 
-    # Index of a snapPoint from which the overlay fade should be applied. Defaults to the last snap point.
-    fade_from_index: Var[int]
+    fade_from_index: Var[int] = field(
+        doc="Index of a snapPoint from which the overlay fade should be applied. Defaults to the last snap point."
+    )
 
-    # Duration for which the drawer is not draggable after scrolling content inside of the drawer. Defaults to 500ms
-    scroll_lock_timeout: Var[int]
+    scroll_lock_timeout: Var[int] = field(
+        doc="Duration for which the drawer is not draggable after scrolling content inside of the drawer. Defaults to 500ms"
+    )
 
-    # When `True`, it prevents scroll restoration. Defaults to `True`.
-    prevent_scroll_restoration: Var[bool]
+    prevent_scroll_restoration: Var[bool] = field(
+        doc="When `True`, it prevents scroll restoration. Defaults to `True`."
+    )
 
-    # Enable background scaling, it requires container element with `vaul-drawer-wrapper` attribute to scale its background.
-    should_scale_background: Var[bool]
+    should_scale_background: Var[bool] = field(
+        doc="Enable background scaling, it requires container element with `vaul-drawer-wrapper` attribute to scale its background."
+    )
 
-    # Number between 0 and 1 that determines when the drawer should be closed.
-    close_threshold: Var[float]
+    close_threshold: Var[float] = field(
+        doc="Number between 0 and 1 that determines when the drawer should be closed."
+    )
 
 
 class DrawerTrigger(DrawerComponent):
@@ -84,8 +96,10 @@ class DrawerTrigger(DrawerComponent):
 
     alias = "Vaul" + tag
 
-    # Defaults to true, if the first child acts as the trigger.
-    as_child: Var[bool] = Var.create(True)
+    as_child: Var[bool] = field(
+        default=Var.create(True),
+        doc="Defaults to true, if the first child acts as the trigger.",
+    )
 
     _memoization_mode = MemoizationMode(recursive=False)
 
@@ -140,20 +154,25 @@ class DrawerContent(DrawerComponent):
             "display": "flex",
         }
 
-    # Fired when the drawer content is opened.
-    on_open_auto_focus: EventHandler[no_args_event_spec]
+    on_open_auto_focus: EventHandler[no_args_event_spec] = field(
+        doc="Fired when the drawer content is opened."
+    )
 
-    # Fired when the drawer content is closed.
-    on_close_auto_focus: EventHandler[no_args_event_spec]
+    on_close_auto_focus: EventHandler[no_args_event_spec] = field(
+        doc="Fired when the drawer content is closed."
+    )
 
-    # Fired when the escape key is pressed.
-    on_escape_key_down: EventHandler[no_args_event_spec]
+    on_escape_key_down: EventHandler[no_args_event_spec] = field(
+        doc="Fired when the escape key is pressed."
+    )
 
-    # Fired when the pointer is down outside the drawer content.
-    on_pointer_down_outside: EventHandler[no_args_event_spec]
+    on_pointer_down_outside: EventHandler[no_args_event_spec] = field(
+        doc="Fired when the pointer is down outside the drawer content."
+    )
 
-    # Fired when interacting outside the drawer content.
-    on_interact_outside: EventHandler[no_args_event_spec]
+    on_interact_outside: EventHandler[no_args_event_spec] = field(
+        doc="Fired when interacting outside the drawer content."
+    )
 
     @classmethod
     def create(cls, *children, **props):

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Literal
 
+from reflex.components.component import field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.components.radix.themes.base import RadixThemesComponent
@@ -21,8 +22,10 @@ class Container(elements.Div, RadixThemesComponent):
 
     tag = "Container"
 
-    # The size of the container: "1" - "4" (default "3")
-    size: Var[Responsive[LiteralContainerSize]] = LiteralVar.create("3")
+    size: Var[Responsive[LiteralContainerSize]] = field(
+        default=LiteralVar.create("3"),
+        doc='The size of the container: "1" - "4" (default "3")',
+    )
 
     @classmethod
     def create(

@@ -2,6 +2,7 @@
 
 from typing import Literal
 
+from reflex.components.component import field
 from reflex.vars.base import Var
 
 from .base import BaseHTML
@@ -18,8 +19,7 @@ class Col(BaseHTML):
 
     tag = "col"
 
-    # Number of columns the col element spans
-    span: Var[int]
+    span: Var[int] = field(doc="Number of columns the col element spans")
 
 
 class Colgroup(BaseHTML):
@@ -27,8 +27,7 @@ class Colgroup(BaseHTML):
 
     tag = "colgroup"
 
-    # Number of columns the colgroup element spans
-    span: Var[int]
+    span: Var[int] = field(doc="Number of columns the colgroup element spans")
 
 
 class Table(BaseHTML):
@@ -36,11 +35,11 @@ class Table(BaseHTML):
 
     tag = "table"
 
-    # Alignment of the table
-    align: Var[Literal["left", "center", "right"]]
+    align: Var[Literal["left", "center", "right"]] = field(doc="Alignment of the table")
 
-    # Provides a summary of the table's purpose and structure
-    summary: Var[str]
+    summary: Var[str] = field(
+        doc="Provides a summary of the table's purpose and structure"
+    )
 
 
 class Tbody(BaseHTML):
@@ -54,17 +53,15 @@ class Td(BaseHTML):
 
     tag = "td"
 
-    # Alignment of the content within the table cell
-    align: Var[Literal["left", "center", "right", "justify", "char"]]
+    align: Var[Literal["left", "center", "right", "justify", "char"]] = field(
+        doc="Alignment of the content within the table cell"
+    )
 
-    # Number of columns a cell should span
-    col_span: Var[int]
+    col_span: Var[int] = field(doc="Number of columns a cell should span")
 
-    # IDs of the headers associated with this cell
-    headers: Var[str]
+    headers: Var[str] = field(doc="IDs of the headers associated with this cell")
 
-    # Number of rows a cell should span
-    row_span: Var[int]
+    row_span: Var[int] = field(doc="Number of rows a cell should span")
 
 
 class Tfoot(BaseHTML):
@@ -78,20 +75,19 @@ class Th(BaseHTML):
 
     tag = "th"
 
-    # Alignment of the content within the table header cell
-    align: Var[Literal["left", "center", "right", "justify", "char"]]
+    align: Var[Literal["left", "center", "right", "justify", "char"]] = field(
+        doc="Alignment of the content within the table header cell"
+    )
 
-    # Number of columns a header cell should span
-    col_span: Var[int]
+    col_span: Var[int] = field(doc="Number of columns a header cell should span")
 
-    # IDs of the headers associated with this header cell
-    headers: Var[str]
+    headers: Var[str] = field(doc="IDs of the headers associated with this header cell")
 
-    # Number of rows a header cell should span
-    row_span: Var[int]
+    row_span: Var[int] = field(doc="Number of rows a header cell should span")
 
-    # Scope of the header cell (row, col, rowgroup, colgroup)
-    scope: Var[str]
+    scope: Var[str] = field(
+        doc="Scope of the header cell (row, col, rowgroup, colgroup)"
+    )
 
 
 class Thead(BaseHTML):

@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from reflex.components.component import ComponentNamespace
+from reflex.components.component import ComponentNamespace, field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.components.radix.themes.base import (
@@ -19,17 +19,19 @@ class PopoverRoot(RadixThemesComponent):
 
     tag = "Popover.Root"
 
-    # The controlled open state of the popover.
-    open: Var[bool]
+    open: Var[bool] = field(doc="The controlled open state of the popover.")
 
-    # The modality of the popover. When set to true, interaction with outside elements will be disabled and only popover content will be visible to screen readers.
-    modal: Var[bool]
+    modal: Var[bool] = field(
+        doc="The modality of the popover. When set to true, interaction with outside elements will be disabled and only popover content will be visible to screen readers."
+    )
 
-    # Fired when the open state changes.
-    on_open_change: EventHandler[passthrough_event_spec(bool)]
+    on_open_change: EventHandler[passthrough_event_spec(bool)] = field(
+        doc="Fired when the open state changes."
+    )
 
-    # The open state of the popover when it is initially rendered. Use when you do not need to control its open state.
-    default_open: Var[bool]
+    default_open: Var[bool] = field(
+        doc="The open state of the popover when it is initially rendered. Use when you do not need to control its open state."
+    )
 
 
 class PopoverTrigger(RadixThemesTriggerComponent):
@@ -45,50 +47,63 @@ class PopoverContent(elements.Div, RadixThemesComponent):
 
     tag = "Popover.Content"
 
-    # Size of the button: "1" | "2" | "3" | "4"
-    size: Var[Responsive[Literal["1", "2", "3", "4"]]]
+    size: Var[Responsive[Literal["1", "2", "3", "4"]]] = field(
+        doc='Size of the button: "1" | "2" | "3" | "4"'
+    )
 
-    # The preferred side of the anchor to render against when open. Will be reversed when collisions occur and avoidCollisions is enabled.
-    side: Var[Literal["top", "right", "bottom", "left"]]
+    side: Var[Literal["top", "right", "bottom", "left"]] = field(
+        doc="The preferred side of the anchor to render against when open. Will be reversed when collisions occur and avoidCollisions is enabled."
+    )
 
-    # The distance in pixels from the anchor.
-    side_offset: Var[int]
+    side_offset: Var[int] = field(doc="The distance in pixels from the anchor.")
 
-    # The preferred alignment against the anchor. May change when collisions occur.
-    align: Var[Literal["start", "center", "end"]]
+    align: Var[Literal["start", "center", "end"]] = field(
+        doc="The preferred alignment against the anchor. May change when collisions occur."
+    )
 
-    # The vertical distance in pixels from the anchor.
-    align_offset: Var[int]
+    align_offset: Var[int] = field(
+        doc="The vertical distance in pixels from the anchor."
+    )
 
-    # When true, overrides the side andalign preferences to prevent collisions with boundary edges.
-    avoid_collisions: Var[bool]
+    avoid_collisions: Var[bool] = field(
+        doc="When true, overrides the side andalign preferences to prevent collisions with boundary edges."
+    )
 
-    # The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
-    collision_padding: Var[float | int | dict[str, float | int]]
+    collision_padding: Var[float | int | dict[str, float | int]] = field(
+        doc='The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.'
+    )
 
-    # The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless. Defaults to "partial".
-    sticky: Var[Literal["partial", "always"]]
+    sticky: Var[Literal["partial", "always"]] = field(
+        doc='The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless. Defaults to "partial".'
+    )
 
-    # Whether to hide the content when the trigger becomes fully occluded. Defaults to False.
-    hide_when_detached: Var[bool]
+    hide_when_detached: Var[bool] = field(
+        doc="Whether to hide the content when the trigger becomes fully occluded. Defaults to False."
+    )
 
-    # Fired when the dialog is opened.
-    on_open_auto_focus: EventHandler[no_args_event_spec]
+    on_open_auto_focus: EventHandler[no_args_event_spec] = field(
+        doc="Fired when the dialog is opened."
+    )
 
-    # Fired when the dialog is closed.
-    on_close_auto_focus: EventHandler[no_args_event_spec]
+    on_close_auto_focus: EventHandler[no_args_event_spec] = field(
+        doc="Fired when the dialog is closed."
+    )
 
-    # Fired when the escape key is pressed.
-    on_escape_key_down: EventHandler[no_args_event_spec]
+    on_escape_key_down: EventHandler[no_args_event_spec] = field(
+        doc="Fired when the escape key is pressed."
+    )
 
-    # Fired when the pointer is down outside the dialog.
-    on_pointer_down_outside: EventHandler[no_args_event_spec]
+    on_pointer_down_outside: EventHandler[no_args_event_spec] = field(
+        doc="Fired when the pointer is down outside the dialog."
+    )
 
-    # Fired when focus moves outside the dialog.
-    on_focus_outside: EventHandler[no_args_event_spec]
+    on_focus_outside: EventHandler[no_args_event_spec] = field(
+        doc="Fired when focus moves outside the dialog."
+    )
 
-    # Fired when the pointer interacts outside the dialog.
-    on_interact_outside: EventHandler[no_args_event_spec]
+    on_interact_outside: EventHandler[no_args_event_spec] = field(
+        doc="Fired when the pointer interacts outside the dialog."
+    )
 
 
 class PopoverClose(RadixThemesTriggerComponent):

@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from reflex.components.base.fragment import Fragment
+from reflex.components.component import field
 from reflex.components.tags.tag import Tag
 from reflex.constants.compiler import Hooks
 from reflex.event import EventChain, EventHandler, passthrough_event_spec
@@ -17,14 +18,17 @@ from reflex.vars.base import Var, VarData
 class Clipboard(Fragment):
     """Clipboard component."""
 
-    # The element ids to attach the event listener to. Defaults to all child components or the document.
-    targets: Var[Sequence[str]]
+    targets: Var[Sequence[str]] = field(
+        doc="The element ids to attach the event listener to. Defaults to all child components or the document."
+    )
 
-    # Called when the user pastes data into the document. Data is a list of tuples of (mime_type, data). Binary types will be base64 encoded as a data uri.
-    on_paste: EventHandler[passthrough_event_spec(list[tuple[str, str]])]
+    on_paste: EventHandler[passthrough_event_spec(list[tuple[str, str]])] = field(
+        doc="Called when the user pastes data into the document. Data is a list of tuples of (mime_type, data). Binary types will be base64 encoded as a data uri."
+    )
 
-    # Save the original event actions for the on_paste event.
-    on_paste_event_actions: Var[dict[str, bool | int]]
+    on_paste_event_actions: Var[dict[str, bool | int]] = field(
+        doc="Save the original event actions for the on_paste event."
+    )
 
     @classmethod
     def create(cls, *children, **props):

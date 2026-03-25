@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Literal
 
-from reflex.components.component import Component
+from reflex.components.component import Component, field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.radix.themes.base import LiteralAccentColor, RadixThemesComponent
 from reflex.event import EventHandler, passthrough_event_spec
@@ -23,59 +23,62 @@ class Slider(RadixThemesComponent):
 
     tag = "Slider"
 
-    # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: Var[bool]
+    as_child: Var[bool] = field(
+        doc="Change the default rendered element for the one passed as a child, merging their props and behavior."
+    )
 
-    # Button size "1" - "3"
-    size: Var[Responsive[Literal["1", "2", "3"]]]
+    size: Var[Responsive[Literal["1", "2", "3"]]] = field(doc='Button size "1" - "3"')
 
-    # Variant of button
-    variant: Var[Literal["classic", "surface", "soft"]]
+    variant: Var[Literal["classic", "surface", "soft"]] = field(doc="Variant of button")
 
-    # Override theme color for button
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor] = field(doc="Override theme color for button")
 
-    # Whether to render the button with higher contrast color against background
-    high_contrast: Var[bool]
+    high_contrast: Var[bool] = field(
+        doc="Whether to render the button with higher contrast color against background"
+    )
 
-    # Override theme radius for button: "none" | "small" | "full"
-    radius: Var[Literal["none", "small", "full"]]
+    radius: Var[Literal["none", "small", "full"]] = field(
+        doc='Override theme radius for button: "none" | "small" | "full"'
+    )
 
-    # The value of the slider when initially rendered. Use when you do not need to control the state of the slider.
-    default_value: Var[Sequence[float | int] | float | int]
+    default_value: Var[Sequence[float | int] | float | int] = field(
+        doc="The value of the slider when initially rendered. Use when you do not need to control the state of the slider."
+    )
 
-    # The controlled value of the slider. Must be used in conjunction with onValueChange.
-    value: Var[Sequence[float | int]]
+    value: Var[Sequence[float | int]] = field(
+        doc="The controlled value of the slider. Must be used in conjunction with onValueChange."
+    )
 
-    # The name of the slider. Submitted with its owning form as part of a name/value pair.
-    name: Var[str]
+    name: Var[str] = field(
+        doc="The name of the slider. Submitted with its owning form as part of a name/value pair."
+    )
 
-    # The width of the slider.
-    width: Var[str | None] = Var.create("100%")
+    width: Var[str | None] = field(
+        default=Var.create("100%"), doc="The width of the slider."
+    )
 
-    # The minimum value of the slider.
-    min: Var[float | int]
+    min: Var[float | int] = field(doc="The minimum value of the slider.")
 
-    # The maximum value of the slider.
-    max: Var[float | int]
+    max: Var[float | int] = field(doc="The maximum value of the slider.")
 
-    # The step value of the slider.
-    step: Var[float | int]
+    step: Var[float | int] = field(doc="The step value of the slider.")
 
-    # Whether the slider is disabled
-    disabled: Var[bool]
+    disabled: Var[bool] = field(doc="Whether the slider is disabled")
 
-    # The orientation of the slider.
-    orientation: Var[Literal["horizontal", "vertical"]]
+    orientation: Var[Literal["horizontal", "vertical"]] = field(
+        doc="The orientation of the slider."
+    )
 
     # Props to rename
     _rename_props = {"onChange": "onValueChange"}
 
-    # Fired when the value of the slider changes.
-    on_change: EventHandler[on_value_event_spec]
+    on_change: EventHandler[on_value_event_spec] = field(
+        doc="Fired when the value of the slider changes."
+    )
 
-    # Fired when a thumb is released after being dragged.
-    on_value_commit: EventHandler[on_value_event_spec]
+    on_value_commit: EventHandler[on_value_event_spec] = field(
+        doc="Fired when a thumb is released after being dragged."
+    )
 
     @classmethod
     def create(

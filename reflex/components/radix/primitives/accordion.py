@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any, ClassVar, Literal
 
-from reflex.components.component import Component, ComponentNamespace
+from reflex.components.component import Component, ComponentNamespace, field
 from reflex.components.core.colors import color
 from reflex.components.core.cond import cond
 from reflex.components.lucide.icon import Icon
@@ -54,11 +54,11 @@ class AccordionComponent(RadixPrimitiveComponent):
 
     library = "@radix-ui/react-accordion@1.2.12"
 
-    # The color scheme of the component.
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor] = field(
+        doc="The color scheme of the component."
+    )
 
-    # The variant of the component.
-    variant: Var[LiteralAccordionVariant]
+    variant: Var[LiteralAccordionVariant] = field(doc="The variant of the component.")
 
     def add_style(self):
         """Add style to the component."""
@@ -71,7 +71,7 @@ class AccordionComponent(RadixPrimitiveComponent):
         return ["color_scheme", "variant"]
 
 
-def on_value_change(value: Var[str | list[str]]) -> tuple[Var[str | list[str]]]:
+def on_value_change_handler(value: Var[str | list[str]]) -> tuple[Var[str | list[str]]]:
     """Handle the on_value_change event.
 
     Args:
@@ -90,43 +90,47 @@ class AccordionRoot(AccordionComponent):
 
     alias = "RadixAccordionRoot"
 
-    # The type of accordion (single or multiple).
-    type: Var[LiteralAccordionType]
+    type: Var[LiteralAccordionType] = field(
+        doc="The type of accordion (single or multiple)."
+    )
 
-    # The value of the item to expand.
-    value: Var[str | Sequence[str]]
+    value: Var[str | Sequence[str]] = field(doc="The value of the item to expand.")
 
-    # The default value of the item to expand.
-    default_value: Var[str | Sequence[str]]
+    default_value: Var[str | Sequence[str]] = field(
+        doc="The default value of the item to expand."
+    )
 
-    # Whether or not the accordion is collapsible.
-    collapsible: Var[bool]
+    collapsible: Var[bool] = field(doc="Whether or not the accordion is collapsible.")
 
-    # Whether or not the accordion is disabled.
-    disabled: Var[bool]
+    disabled: Var[bool] = field(doc="Whether or not the accordion is disabled.")
 
-    # The reading direction of the accordion when applicable.
-    dir: Var[LiteralAccordionDir]
+    dir: Var[LiteralAccordionDir] = field(
+        doc="The reading direction of the accordion when applicable."
+    )
 
-    # The orientation of the accordion.
-    orientation: Var[LiteralAccordionOrientation]
+    orientation: Var[LiteralAccordionOrientation] = field(
+        doc="The orientation of the accordion."
+    )
 
-    # The radius of the accordion corners.
-    radius: Var[LiteralRadius]
+    radius: Var[LiteralRadius] = field(doc="The radius of the accordion corners.")
 
-    # The time in milliseconds to animate open and close
-    duration: Var[int] = LiteralVar.create(DEFAULT_ANIMATION_DURATION)
+    duration: Var[int] = field(
+        default=LiteralVar.create(DEFAULT_ANIMATION_DURATION),
+        doc="The time in milliseconds to animate open and close",
+    )
 
-    # The easing function to use for the animation.
-    easing: Var[str] = LiteralVar.create(DEFAULT_ANIMATION_EASING)
+    easing: Var[str] = field(
+        default=LiteralVar.create(DEFAULT_ANIMATION_EASING),
+        doc="The easing function to use for the animation.",
+    )
 
-    # Whether to show divider lines between items.
-    show_dividers: Var[bool]
+    show_dividers: Var[bool] = field(doc="Whether to show divider lines between items.")
 
     _valid_children: ClassVar[list[str]] = ["AccordionItem"]
 
-    # Fired when the opened the accordions changes.
-    on_value_change: EventHandler[on_value_change]
+    on_value_change: EventHandler[on_value_change_handler] = field(
+        doc="Fired when the opened the accordions changes."
+    )
 
     def _exclude_props(self) -> list[str]:
         return [
@@ -188,17 +192,17 @@ class AccordionItem(AccordionComponent):
 
     alias = "RadixAccordionItem"
 
-    # A unique identifier for the item.
-    value: Var[str]
+    value: Var[str] = field(doc="A unique identifier for the item.")
 
-    # When true, prevents the user from interacting with the item.
-    disabled: Var[bool]
+    disabled: Var[bool] = field(
+        doc="When true, prevents the user from interacting with the item."
+    )
 
-    # The header of the accordion item.
-    header: Var[Component | str]
+    header: Var[Component | str] = field(doc="The header of the accordion item.")
 
-    # The content of the accordion item.
-    content: Var[Component | str | None] = Var.create(None)
+    content: Var[Component | str | None] = field(
+        default=Var.create(None), doc="The content of the accordion item."
+    )
 
     _valid_children: ClassVar[list[str]] = [
         "AccordionHeader",

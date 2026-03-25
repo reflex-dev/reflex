@@ -18,12 +18,12 @@ from reflex.vars.base import LiteralVar, Var
 class Match(MemoizationLeaf):
     """Match cases based on a condition."""
 
-    # The condition to determine which case to match.
-    cond: Var[Any]
+    cond: Var[Any] = field(doc="The condition to determine which case to match.")
 
-    # The list of match cases to be matched.
     match_cases: list[tuple[list[Var], BaseComponent]] = field(
-        default_factory=list, is_javascript_property=False
+        doc="The list of match cases to be matched.",
+        default_factory=list,
+        is_javascript_property=False,
     )
 
     # The catchall case to match.

@@ -211,11 +211,11 @@ class UploadFilesProvider(Component):
 class GhostUpload(Fragment):
     """A ghost upload component."""
 
-    # Fired when files are dropped.
-    on_drop: EventHandler[_on_drop_spec]
+    on_drop: EventHandler[_on_drop_spec] = field(doc="Fired when files are dropped.")
 
-    # Fired when dropped files do not meet the specified criteria.
-    on_drop_rejected: EventHandler[_on_drop_spec]
+    on_drop_rejected: EventHandler[_on_drop_spec] = field(
+        doc="Fired when dropped files do not meet the specified criteria."
+    )
 
 
 class Upload(MemoizationLeaf):
@@ -225,46 +225,46 @@ class Upload(MemoizationLeaf):
 
     tag = ""
 
-    # The list of accepted file types. This should be a dictionary of MIME types as keys and array of file formats as
-    # values.
-    # supported MIME types: https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
-    accept: Var[dict[str, Sequence] | None]
+    accept: Var[dict[str, Sequence] | None] = field(
+        doc="The list of accepted file types. This should be a dictionary of MIME types as keys and array of file formats as values. supported MIME types: https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types"
+    )
 
-    # Whether the dropzone is disabled.
-    disabled: Var[bool]
+    disabled: Var[bool] = field(doc="Whether the dropzone is disabled.")
 
-    # The maximum number of files that can be uploaded.
-    max_files: Var[int]
+    max_files: Var[int] = field(doc="The maximum number of files that can be uploaded.")
 
-    # The maximum file size (bytes) that can be uploaded.
-    max_size: Var[int]
+    max_size: Var[int] = field(
+        doc="The maximum file size (bytes) that can be uploaded."
+    )
 
-    # The minimum file size (bytes) that can be uploaded.
-    min_size: Var[int]
+    min_size: Var[int] = field(
+        doc="The minimum file size (bytes) that can be uploaded."
+    )
 
-    # Whether to allow multiple files to be uploaded.
-    multiple: Var[bool]
+    multiple: Var[bool] = field(doc="Whether to allow multiple files to be uploaded.")
 
-    # Whether to disable click to upload.
-    no_click: Var[bool]
+    no_click: Var[bool] = field(doc="Whether to disable click to upload.")
 
-    # Whether to disable drag and drop.
-    no_drag: Var[bool]
+    no_drag: Var[bool] = field(doc="Whether to disable drag and drop.")
 
-    # Whether to disable using the space/enter keys to upload.
-    no_keyboard: Var[bool]
+    no_keyboard: Var[bool] = field(
+        doc="Whether to disable using the space/enter keys to upload."
+    )
 
     # Marked True when any Upload component is created.
     is_used: ClassVar[bool] = False
 
-    # Fired when files are dropped.
-    on_drop: EventHandler[_on_drop_spec]
+    on_drop: EventHandler[_on_drop_spec] = field(doc="Fired when files are dropped.")
 
-    # Fired when dropped files do not meet the specified criteria.
-    on_drop_rejected: EventHandler[_on_drop_spec]
+    on_drop_rejected: EventHandler[_on_drop_spec] = field(
+        doc="Fired when dropped files do not meet the specified criteria."
+    )
 
-    # Style rules to apply when actively dragging.
-    drag_active_style: Style | None = field(default=None, is_javascript_property=False)
+    drag_active_style: Style | None = field(
+        doc="Style rules to apply when actively dragging.",
+        default=None,
+        is_javascript_property=False,
+    )
 
     @classmethod
     def create(cls, *children, **props) -> Component:
