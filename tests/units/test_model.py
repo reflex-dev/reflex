@@ -7,6 +7,7 @@ import pytest
 import reflex.constants
 import reflex.model
 from reflex.constants.state import FIELD_MARKER
+from reflex.event import Event
 from reflex.model import Model, ModelRegistry
 from reflex.state import BaseState, State
 from tests.units.test_state import (
@@ -221,25 +222,37 @@ class UpcastStateWithSqlAlchemy(BaseState):
 
 
 @pytest.mark.asyncio
-@pytest.mark.usefixtures("mock_app_simple")
 @pytest.mark.parametrize(
     ("handler", "payload"),
     [
         (UpcastStateWithSqlAlchemy.rx_model, {"m": {"foo": "bar"}}),
     ],
 )
-async def test_upcast_event_handler_arg(handler, payload):
+async def test_upcast_event_handler_arg(
+    handler, payload, mock_base_state_event_processor, emitted_deltas
+):
     """Test that upcast event handler args work correctly.
 
     Args:
         handler: The handler to test.
         payload: The payload to test.
+        mock_base_state_event_processor: Fixture for processing events with a BaseState.
+        emitted_deltas: List to store emitted deltas.
     """
-    state = UpcastStateWithSqlAlchemy()
-    async for update in state._process_event(handler, state, payload):
-        assert update.delta == {
-            UpcastStateWithSqlAlchemy.get_full_name(): {"passed" + FIELD_MARKER: True}
-        }
+    async with mock_base_state_event_processor as processor:
+        await processor.enqueue(
+            "test_token", *Event.from_event_type(handler(**payload))
+        )
+    assert emitted_deltas == [
+        (
+            "test_token",
+            {
+                UpcastStateWithSqlAlchemy.get_full_name(): {
+                    "passed" + FIELD_MARKER: True
+                }
+            },
+        ),
+    ]
 
 
 def test_no_rebind_mutable_proxy_for_instrumented_functions():

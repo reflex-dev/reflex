@@ -1,6 +1,7 @@
 """Test fixtures."""
 
 import platform
+import traceback
 import uuid
 from collections.abc import AsyncGenerator, Generator, Mapping
 from typing import Any
@@ -11,7 +12,7 @@ import pytest_asyncio
 
 from reflex.app import App
 from reflex.event import Event, EventSpec
-from reflex.ievent.context import EventContext
+from reflex.ievent.context import EventContext, event_context
 from reflex.ievent.processor import BaseStateEventProcessor, EventProcessor
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
@@ -281,7 +282,8 @@ def mock_base_state_event_processor_obj() -> BaseStateEventProcessor:
     """
 
     def handle_backend_exception(ex: Exception) -> None:
-        raise ex
+        formatted_exc = "\n".join(traceback.format_exception(ex))
+        pytest.fail(f"Event processor raised an unexpected exception:\n{formatted_exc}")
 
     return BaseStateEventProcessor(
         backend_exception_handler=handle_backend_exception, graceful_shutdown_timeout=1
@@ -409,3 +411,25 @@ def mock_base_state_event_processor(
     """
     mock_base_state_event_processor_obj._root_context = mock_root_event_context
     return mock_base_state_event_processor_obj
+
+
+@pytest.fixture
+def attached_mock_event_context(
+    mock_root_event_context: EventContext, token: str
+) -> Generator[EventContext, None, None]:
+    """Fork the mock event context for the given token and attach it.
+
+    Sets the forked context as the current event_context for the duration
+    of the test, then resets it afterwards.
+
+    Args:
+        mock_root_event_context: The mock root event context.
+        token: The client token.
+
+    Yields:
+        The forked EventContext.
+    """
+    ctx = mock_root_event_context.fork(token=token)
+    reset_token = event_context.set(ctx)
+    yield ctx
+    event_context.reset(reset_token)

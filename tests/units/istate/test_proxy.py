@@ -42,7 +42,7 @@ def test_mutable_proxy_pickle_preserves_object_identity():
     assert unpickled["direct"][0] is unpickled["proxied"][0]
 
 
-@pytest.mark.usefixtures("mock_app")
+@pytest.mark.usefixtures("mock_app", "attached_mock_event_context")
 @pytest.mark.asyncio
 async def test_state_proxy_recovery():
     """Ensure that `async with self` can be re-entered after a lock issue."""

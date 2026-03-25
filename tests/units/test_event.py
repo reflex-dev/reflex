@@ -48,7 +48,7 @@ def test_call_event_handler():
 
     test_fn.__qualname__ = "test_fn"
 
-    def fn_with_args(_, arg1, arg2):
+    def fn_with_args(arg1, arg2):
         pass
 
     fn_with_args.__qualname__ = "fn_with_args"
@@ -153,7 +153,7 @@ def test_fix_events(arg1, arg2):
         arg2: The second arg passed to the handler.
     """
 
-    def fn_with_args(_, arg1, arg2):
+    def fn_with_args(arg1, arg2):
         pass
 
     fn_with_args.__qualname__ = "fn_with_args"
