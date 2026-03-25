@@ -20,7 +20,7 @@ from __future__ import annotations
 from typing import Any, Literal, get_args
 
 from reflex_components.core.cond import Cond, color_mode_cond, cond
-from reflex_components.lucide.icon import Icon
+from reflex_lucide.icon import Icon
 
 from reflex.components.component import BaseComponent, field
 from reflex.style import (

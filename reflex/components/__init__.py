@@ -23,23 +23,25 @@ _SUBPACKAGE_TARGETS: dict[str, str] = {
     "core": "reflex_components.core",
     "datadisplay": "reflex_components.datadisplay",
     "el": "reflex_components.el",
-    "gridjs": "reflex_components.gridjs",
-    "lucide": "reflex_components.lucide",
-    "moment": "reflex_components.moment",
-    # reflex-radix
-    "radix": "reflex_radix",
-    # reflex-markdown
+    # Standalone packages
+    "gridjs": "reflex_gridjs",
+    "lucide": "reflex_lucide",
     "markdown": "reflex_markdown",
-    # reflex-plotly
+    "moment": "reflex_moment",
     "plotly": "reflex_plotly",
-    # reflex-react-player
+    "radix": "reflex_radix",
     "react_player": "reflex_react_player",
-    # reflex-react-router
     "react_router": "reflex_react_router",
-    # reflex-recharts
     "recharts": "reflex_recharts",
-    # reflex-sonner
     "sonner": "reflex_sonner",
+}
+
+# Deeper overrides for subpackages that were split from datadisplay.
+# Checked before the general _SUBPACKAGE_TARGETS mapping.
+_DEEP_OVERRIDES: dict[str, str] = {
+    "datadisplay.code": "reflex_code.code",
+    "datadisplay.shiki_code_block": "reflex_code.shiki_code_block",
+    "datadisplay.dataeditor": "reflex_dataeditor.dataeditor",
 }
 
 
@@ -74,20 +76,33 @@ class _ComponentsRedirect(importlib.abc.MetaPathFinder):
         target: object = None,
     ) -> importlib.machinery.ModuleSpec | None:
         parts = fullname.split(".")
-        if (
-            len(parts) >= 3
-            and parts[0] == "reflex"
-            and parts[1] == "components"
-            and parts[2] in _SUBPACKAGE_TARGETS
-        ):
-            base = _SUBPACKAGE_TARGETS[parts[2]]
-            rest = ".".join(parts[3:])
-            target_name = f"{base}.{rest}" if rest else base
-            return importlib.machinery.ModuleSpec(
-                fullname,
-                _AliasLoader(target_name),
-                is_package=True,
-            )
+        if len(parts) >= 3 and parts[0] == "reflex" and parts[1] == "components":
+            subpkg = parts[2]
+            rest_parts = parts[3:]
+
+            # Check deep overrides first (e.g. datadisplay.code -> reflex_code.code).
+            if rest_parts:
+                deep_key = f"{subpkg}.{rest_parts[0]}"
+                override = _DEEP_OVERRIDES.get(deep_key)
+                if override is not None:
+                    extra = ".".join(rest_parts[1:])
+                    target_name = f"{override}.{extra}" if extra else override
+                    return importlib.machinery.ModuleSpec(
+                        fullname,
+                        _AliasLoader(target_name),
+                        is_package=True,
+                    )
+
+            # General subpackage mapping.
+            if subpkg in _SUBPACKAGE_TARGETS:
+                base = _SUBPACKAGE_TARGETS[subpkg]
+                rest = ".".join(rest_parts)
+                target_name = f"{base}.{rest}" if rest else base
+                return importlib.machinery.ModuleSpec(
+                    fullname,
+                    _AliasLoader(target_name),
+                    is_package=True,
+                )
         return None
 
 

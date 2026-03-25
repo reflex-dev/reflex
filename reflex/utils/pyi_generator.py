@@ -1247,9 +1247,13 @@ _COMPONENT_SUBPACKAGE_TARGETS: dict[str, str] = {
     "core": "reflex_components.core",
     "datadisplay": "reflex_components.datadisplay",
     "el": "reflex_components.el",
-    "gridjs": "reflex_components.gridjs",
-    "lucide": "reflex_components.lucide",
-    "moment": "reflex_components.moment",
+    "gridjs": "reflex_gridjs",
+    "lucide": "reflex_lucide",
+    "moment": "reflex_moment",
+    # Deep overrides (datadisplay split)
+    "datadisplay.code": "reflex_code.code",
+    "datadisplay.shiki_code_block": "reflex_code.shiki_code_block",
+    "datadisplay.dataeditor": "reflex_dataeditor.dataeditor",
     # Standalone packages
     "markdown": "reflex_markdown",
     "plotly": "reflex_plotly",
@@ -1277,11 +1281,14 @@ def _rewrite_component_import(module: str) -> str:
         return "reflex_components"
     if module.startswith("components."):
         rest = module[len("components.") :]
-        first_part = rest.split(".")[0]
-        target = _COMPONENT_SUBPACKAGE_TARGETS.get(first_part)
-        if target is not None:
-            remainder = rest[len(first_part) :]
-            return f"{target}{remainder}"
+        # Try progressively deeper matches (e.g. "datadisplay.code" before "datadisplay").
+        parts = rest.split(".")
+        for depth in range(min(len(parts), 2), 0, -1):
+            key = ".".join(parts[:depth])
+            target = _COMPONENT_SUBPACKAGE_TARGETS.get(key)
+            if target is not None:
+                remainder = ".".join(parts[depth:])
+                return f"{target}.{remainder}" if remainder else target
     return f".{module}"
 
 

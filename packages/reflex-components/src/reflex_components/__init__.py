@@ -9,9 +9,6 @@ _SUBMODULES: set[str] = {
     "core",
     "datadisplay",
     "el",
-    "gridjs",
-    "lucide",
-    "moment",
 }
 
 _SUBMOD_ATTRS: dict[str, list[str]] = {}

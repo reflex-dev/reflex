@@ -1,12 +1,12 @@
 import pytest
-from reflex_components.datadisplay.shiki_code_block import (
+from reflex_code.shiki_code_block import (
     ShikiBaseTransformers,
     ShikiCodeBlock,
     ShikiHighLevelCodeBlock,
     ShikiJsTransformer,
 )
 from reflex_components.el.elements.forms import Button
-from reflex_components.lucide.icon import Icon
+from reflex_lucide.icon import Icon
 from reflex_radix.themes.layout.box import Box
 
 from reflex.style import Style

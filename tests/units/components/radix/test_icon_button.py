@@ -1,5 +1,5 @@
 import pytest
-from reflex_components.lucide.icon import Icon
+from reflex_lucide.icon import Icon
 from reflex_radix.themes.components.icon_button import IconButton
 
 from reflex.style import Style

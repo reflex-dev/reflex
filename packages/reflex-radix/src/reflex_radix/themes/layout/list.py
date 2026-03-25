@@ -8,7 +8,7 @@ from typing import Any, Literal
 from reflex_components.core.foreach import Foreach
 from reflex_components.el.elements.base import BaseHTML
 from reflex_components.el.elements.typography import Li, Ol, Ul
-from reflex_components.lucide.icon import Icon
+from reflex_lucide.icon import Icon
 from reflex_markdown.markdown import MarkdownComponentMap
 
 from reflex.components.component import ComponentNamespace, field

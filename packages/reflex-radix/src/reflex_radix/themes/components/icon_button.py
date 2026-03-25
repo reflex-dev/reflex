@@ -7,7 +7,7 @@ from typing import Literal
 from reflex_components.core.breakpoints import Responsive
 from reflex_components.core.match import Match
 from reflex_components.el import elements
-from reflex_components.lucide import Icon
+from reflex_lucide import Icon
 
 from reflex.components.component import Component, field
 from reflex.style import Style

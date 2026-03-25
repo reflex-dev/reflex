@@ -4,7 +4,7 @@ from typing import Literal
 
 from reflex_components.core.breakpoints import Responsive
 from reflex_components.el import elements
-from reflex_components.lucide.icon import Icon
+from reflex_lucide.icon import Icon
 
 import reflex as rx
 from reflex.components.component import Component, ComponentNamespace, field

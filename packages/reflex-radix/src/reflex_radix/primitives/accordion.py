@@ -7,7 +7,7 @@ from typing import Any, ClassVar, Literal
 
 from reflex_components.core.colors import color
 from reflex_components.core.cond import cond
-from reflex_components.lucide.icon import Icon
+from reflex_lucide.icon import Icon
 
 from reflex.components.component import Component, ComponentNamespace, field
 from reflex.constants.compiler import MemoizationMode

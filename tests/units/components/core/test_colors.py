@@ -1,5 +1,5 @@
 import pytest
-from reflex_components.datadisplay.code import CodeBlock
+from reflex_code.code import CodeBlock
 
 import reflex as rx
 from reflex.constants.colors import Color

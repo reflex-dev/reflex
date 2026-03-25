@@ -5,7 +5,7 @@ from __future__ import annotations
 import dataclasses
 from typing import Any, Literal
 
-from reflex_components.lucide.icon import Icon
+from reflex_lucide.icon import Icon
 
 from reflex.components.component import Component, ComponentNamespace, field
 from reflex.components.props import NoExtrasAllowedProps

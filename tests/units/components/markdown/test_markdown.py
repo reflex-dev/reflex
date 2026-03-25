@@ -1,6 +1,6 @@
 import pytest
-from reflex_components.datadisplay.code import CodeBlock
-from reflex_components.datadisplay.shiki_code_block import ShikiHighLevelCodeBlock
+from reflex_code.code import CodeBlock
+from reflex_code.shiki_code_block import ShikiHighLevelCodeBlock
 from reflex_markdown.markdown import Markdown, MarkdownComponentMap
 from reflex_radix.themes.layout.box import Box
 from reflex_radix.themes.typography.heading import Heading

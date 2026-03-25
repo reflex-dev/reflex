@@ -37,8 +37,13 @@ dependencies = [
   "starlette >=0.47.0",
   "typing_extensions >=4.13.0",
   "wrapt >=1.17.0,<3.0",
+  "reflex-code",
   "reflex-components",
+  "reflex-dataeditor",
+  "reflex-gridjs",
+  "reflex-lucide",
   "reflex-markdown",
+  "reflex-moment",
   "reflex-plotly",
   "reflex-radix",
   "reflex-react-player",
@@ -125,8 +130,13 @@ require-runtime-dependencies = true
 
 [tool.pyright]
 extraPaths = [
+  "packages/reflex-code/src",
   "packages/reflex-components/src",
+  "packages/reflex-dataeditor/src",
+  "packages/reflex-gridjs/src",
+  "packages/reflex-lucide/src",
   "packages/reflex-markdown/src",
+  "packages/reflex-moment/src",
   "packages/reflex-plotly/src",
   "packages/reflex-radix/src",
   "packages/reflex-react-player/src",
@@ -312,7 +322,7 @@ hooks = [
 
 [tool.uv]
 required-version = ">=0.7.0"
-sources = { reflex-docgen = { workspace = true }, reflex-components = { workspace = true }, reflex-markdown = { workspace = true }, reflex-plotly = { workspace = true }, reflex-radix = { workspace = true }, reflex-react-player = { workspace = true }, reflex-react-router = { workspace = true }, reflex-recharts = { workspace = true }, reflex-sonner = { workspace = true } }
+sources = { reflex-code = { workspace = true }, reflex-components = { workspace = true }, reflex-dataeditor = { workspace = true }, reflex-docgen = { workspace = true }, reflex-gridjs = { workspace = true }, reflex-lucide = { workspace = true }, reflex-markdown = { workspace = true }, reflex-moment = { workspace = true }, reflex-plotly = { workspace = true }, reflex-radix = { workspace = true }, reflex-react-player = { workspace = true }, reflex-react-router = { workspace = true }, reflex-recharts = { workspace = true }, reflex-sonner = { workspace = true } }
 
 [tool.uv.workspace]
 members = ["packages/*"]

@@ -161,7 +161,7 @@ def _code(value: object):
 
 
 def _codeblock(value: object, **props):
-    from reflex_components.datadisplay.code import CodeBlock
+    from reflex_code.code import CodeBlock
 
     return CodeBlock.create(value, margin_y="1em", wrap_long_lines=True, **props)
 

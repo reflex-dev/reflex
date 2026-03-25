@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from reflex_lucide.icon import Icon
 from reflex_radix.themes.components.dialog import DialogContent, DialogRoot, DialogTitle
 from reflex_radix.themes.layout.flex import Flex
 from reflex_radix.themes.typography.text import Text
@@ -21,7 +22,6 @@ from reflex.vars.sequence import LiteralArrayVar
 from reflex_components.base.fragment import Fragment
 from reflex_components.core.cond import cond
 from reflex_components.el.elements.typography import Div
-from reflex_components.lucide.icon import Icon
 
 connect_error_var_data: VarData = VarData(
     imports=Imports.EVENTS,
