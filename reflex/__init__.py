@@ -266,7 +266,6 @@ _MAPPING: dict = {
     "admin": ["AdminDash"],
     "app": ["App", "UploadFile"],
     "assets": ["asset"],
-    "base": ["Base"],
     "components.component": [
         "Component",
         "NoSSRComponent",

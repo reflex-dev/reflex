@@ -2,7 +2,6 @@
 
 import sys
 from collections.abc import Mapping
-from importlib.util import find_spec
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -52,31 +51,6 @@ def annotations_from_namespace(namespace: Mapping[str, Any]) -> dict[str, Any]:
         if annotate := get_annotate_from_class_namespace(namespace):
             return call_annotate_function(annotate, format=Format.FORWARDREF)
     return namespace.get("__annotations__", {})
-
-
-if find_spec("pydantic") and find_spec("pydantic.v1"):
-    from pydantic.v1.main import ModelMetaclass
-
-    class ModelMetaclassLazyAnnotations(ModelMetaclass):
-        """Compatibility metaclass to resolve python3.14 style lazy annotations."""
-
-        def __new__(mcs, name: str, bases: tuple, namespace: dict, **kwargs):
-            """Resolve python3.14 style lazy annotations before passing off to pydantic v1.
-
-            Args:
-                name: The class name.
-                bases: The base classes.
-                namespace: The class namespace.
-                **kwargs: Additional keyword arguments.
-
-            Returns:
-                The created class.
-            """
-            namespace["__annotations__"] = annotations_from_namespace(namespace)
-            return super().__new__(mcs, name, bases, namespace, **kwargs)
-
-else:
-    ModelMetaclassLazyAnnotations = type  # type: ignore[assignment]
 
 
 def sqlmodel_field_has_primary_key(field_info: "FieldInfo") -> bool:

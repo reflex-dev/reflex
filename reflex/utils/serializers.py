@@ -17,7 +17,6 @@ from pathlib import Path
 from typing import Any, Literal, TypeVar, get_type_hints, overload
 from uuid import UUID
 
-from reflex.base import Base
 from reflex.constants.colors import Color
 from reflex.utils import console, types
 
@@ -262,30 +261,12 @@ def serialize_type(value: type) -> str:
     return value.__name__
 
 
-@serializer(to=dict)
-def serialize_base(value: Base) -> dict:
-    """Serialize a Base instance.
-
-    Args:
-        value : The Base to serialize.
-
-    Returns:
-        The serialized Base.
-    """
-    from reflex.vars.base import Var
-
-    return {
-        k: v for k, v in value.dict().items() if isinstance(v, Var) or not callable(v)
-    }
-
-
 if find_spec("pydantic"):
-    from pydantic import BaseModel as BaseModelV2
-    from pydantic.v1 import BaseModel as BaseModelV1
+    from pydantic import BaseModel
 
     @serializer(to=dict)
-    def serialize_base_model_v1(model: BaseModelV1) -> dict:
-        """Serialize a pydantic v1 BaseModel instance.
+    def serialize_base_model(model: BaseModel) -> dict:
+        """Serialize a pydantic v2 BaseModel instance.
 
         Args:
             model: The BaseModel to serialize.
@@ -293,21 +274,7 @@ if find_spec("pydantic"):
         Returns:
             The serialized BaseModel.
         """
-        return model.dict()
-
-    if BaseModelV1 is not BaseModelV2:
-
-        @serializer(to=dict)
-        def serialize_base_model_v2(model: BaseModelV2) -> dict:
-            """Serialize a pydantic v2 BaseModel instance.
-
-            Args:
-                model: The BaseModel to serialize.
-
-            Returns:
-                The serialized BaseModel.
-            """
-            return model.model_dump()
+        return model.model_dump()
 
 
 @serializer

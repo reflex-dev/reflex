@@ -41,7 +41,7 @@ from .number import (
 )
 
 if TYPE_CHECKING:
-    from .base import BASE_TYPE, DATACLASS_TYPE, SQLA_TYPE
+    from .base import DATACLASS_TYPE, SQLA_TYPE
     from .function import FunctionVar
     from .object import ObjectVar
 
@@ -188,12 +188,6 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
         self: ArrayVar[Sequence[MAPPING_VAR_TYPE]],
         i: int | NumberVar,
     ) -> ObjectVar[MAPPING_VAR_TYPE]: ...
-
-    @overload
-    def __getitem__(
-        self: ArrayVar[Sequence[BASE_TYPE]],
-        i: int | NumberVar,
-    ) -> ObjectVar[BASE_TYPE]: ...
 
     @overload
     def __getitem__(

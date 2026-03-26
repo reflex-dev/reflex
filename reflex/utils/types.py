@@ -40,7 +40,6 @@ from typing_extensions import override as override
 
 import reflex
 from reflex import constants
-from reflex.base import Base
 from reflex.utils import console
 
 # Potential GenericAlias types for isinstance checks.
@@ -54,7 +53,7 @@ GenericType = type | _GenericAlias
 
 # Valid state var types.
 PrimitiveTypes = (int, float, bool, str, list, dict, set, tuple)
-StateVarTypes = (*PrimitiveTypes, Base, type(None))
+StateVarTypes = (*PrimitiveTypes, type(None))
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
@@ -503,11 +502,6 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
                 type_origin = get_origin(type_)
                 if isinstance(type_origin, type) and issubclass(type_origin, Mapped):
                     return get_args(type_)[0]  # SQLAlchemy v2
-                if find_spec("pydantic"):
-                    from pydantic.v1.fields import ModelField
-
-                    if isinstance(type_, ModelField):
-                        return type_.type_  # SQLAlchemy v1.4
                 return type_
     if is_union(cls):
         # Check in each arg of the annotation.

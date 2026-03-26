@@ -76,9 +76,8 @@ def _determine_value_type(var_type: GenericType):
 PYTHON_TYPES = (Mapping,)
 if find_spec("pydantic"):
     import pydantic
-    import pydantic.v1
 
-    PYTHON_TYPES += (pydantic.BaseModel, pydantic.v1.BaseModel)
+    PYTHON_TYPES += (pydantic.BaseModel,)
 
 
 class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):

@@ -852,9 +852,6 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
     def guess_type(self: Var[int] | Var[float] | Var[int | float]) -> NumberVar: ...
 
     @overload
-    def guess_type(self: Var[BASE_TYPE]) -> ObjectVar[BASE_TYPE]: ...
-
-    @overload
     def guess_type(self) -> Self: ...
 
     def guess_type(self) -> Var:
@@ -2329,13 +2326,6 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @overload
     def __get__(
-        self: ComputedVar[BASE_TYPE],
-        instance: None,
-        owner: type,
-    ) -> ObjectVar[BASE_TYPE]: ...
-
-    @overload
-    def __get__(
         self: ComputedVar[SQLA_TYPE],
         instance: None,
         owner: type,
@@ -2599,13 +2589,6 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
         instance: None,
         owner: type,
     ) -> ArrayVar[tuple[LIST_INSIDE, ...]]: ...
-
-    @overload
-    def __get__(
-        self: AsyncComputedVar[BASE_TYPE],
-        instance: None,
-        owner: type,
-    ) -> ObjectVar[BASE_TYPE]: ...
 
     @overload
     def __get__(
@@ -3269,10 +3252,7 @@ if TYPE_CHECKING:
     from _typeshed import DataclassInstance
     from sqlalchemy.orm import DeclarativeBase
 
-    from reflex.base import Base
-
     SQLA_TYPE = TypeVar("SQLA_TYPE", bound=DeclarativeBase | None)
-    BASE_TYPE = TypeVar("BASE_TYPE", bound=Base | None)
     DATACLASS_TYPE = TypeVar("DATACLASS_TYPE", bound=DataclassInstance | None)
     MAPPING_TYPE = TypeVar("MAPPING_TYPE", bound=Mapping | None)
     V = TypeVar("V")
@@ -3431,11 +3411,6 @@ class Field(Generic[FIELD_TYPE]):
         instance: None,
         owner: Any,
     ) -> ObjectVar[MAPPING_TYPE]: ...
-
-    @overload
-    def __get__(
-        self: Field[BASE_TYPE] | Field[BASE_TYPE | None], instance: None, owner: Any
-    ) -> ObjectVar[BASE_TYPE]: ...
 
     @overload
     def __get__(

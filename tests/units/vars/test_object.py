@@ -1,6 +1,7 @@
 import dataclasses
 from collections.abc import Sequence
 
+import pydantic
 import pytest
 from typing_extensions import assert_type
 
@@ -35,8 +36,8 @@ def serialize_bare(obj: Bare) -> dict:
     return {"quantity": obj.quantity}
 
 
-class Base(rx.Base):
-    """A reflex base class with a single attribute."""
+class Base(pydantic.BaseModel):
+    """A pydantic BaseModel class with a single attribute."""
 
     quantity: int = 0
 

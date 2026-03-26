@@ -24,8 +24,34 @@ from types import MappingProxyType, ModuleType, SimpleNamespace, UnionType
 from typing import Any, get_args, get_origin
 
 from reflex.components.component import Component
-from reflex.utils import types as rx_types
 from reflex.vars.base import Var
+
+
+def _is_union(cls: Any) -> bool:
+    origin = getattr(cls, "__origin__", None)
+    if origin is typing.Union:
+        return True
+    return origin is None and isinstance(cls, UnionType)
+
+
+def _is_optional(cls: Any) -> bool:
+    return (
+        cls is None
+        or cls is type(None)
+        or (_is_union(cls) and type(None) in get_args(cls))
+    )
+
+
+def _is_literal(cls: Any) -> bool:
+    return getattr(cls, "__origin__", None) is typing.Literal
+
+
+def _safe_issubclass(cls: Any, cls_check: Any | tuple[Any, ...]) -> bool:
+    try:
+        return issubclass(cls, cls_check)
+    except TypeError:
+        return False
+
 
 logger = logging.getLogger("pyi_generator")
 
@@ -150,10 +176,10 @@ def _get_type_hint(
     if value is type(None) or value is None:
         return "None"
 
-    if rx_types.is_union(value):
+    if _is_union(value):
         if type(None) in value.__args__:
             res_args = [
-                _get_type_hint(arg, type_hint_globals, rx_types.is_optional(arg))
+                _get_type_hint(arg, type_hint_globals, _is_optional(arg))
                 for arg in value.__args__
                 if arg is not type(None)
             ]
@@ -164,7 +190,7 @@ def _get_type_hint(
             return f"{res} | None"
 
         res_args = [
-            _get_type_hint(arg, type_hint_globals, rx_types.is_optional(arg))
+            _get_type_hint(arg, type_hint_globals, _is_optional(arg))
             for arg in value.__args__
         ]
         res_args.sort()
@@ -173,7 +199,7 @@ def _get_type_hint(
     if args:
         inner_container_type_args = (
             sorted(repr(arg) for arg in args)
-            if rx_types.is_literal(value)
+            if _is_literal(value)
             else [
                 _get_type_hint(arg, type_hint_globals, is_optional=False)
                 for arg in args
@@ -196,7 +222,7 @@ def _get_type_hint(
         if value.__name__ == "Var":
             args = list(
                 chain.from_iterable([
-                    get_args(arg) if rx_types.is_union(arg) else [arg] for arg in args
+                    get_args(arg) if _is_union(arg) else [arg] for arg in args
                 ])
             )
 
@@ -211,12 +237,12 @@ def _get_type_hint(
 
     elif isinstance(value, str):
         ev = eval(value, type_hint_globals)
-        if rx_types.is_optional(ev):
+        if _is_optional(ev):
             return _get_type_hint(ev, type_hint_globals, is_optional=False)
 
-        if rx_types.is_union(ev):
+        if _is_union(ev):
             res = [
-                _get_type_hint(arg, type_hint_globals, rx_types.is_optional(arg))
+                _get_type_hint(arg, type_hint_globals, _is_optional(arg))
                 for arg in ev.__args__
             ]
             return f"{' | '.join(res)}"
@@ -227,8 +253,7 @@ def _get_type_hint(
         )
     elif isinstance(value, list):
         res = [
-            _get_type_hint(arg, type_hint_globals, rx_types.is_optional(arg))
-            for arg in value
+            _get_type_hint(arg, type_hint_globals, _is_optional(arg)) for arg in value
         ]
         return f"[{', '.join(res)}]"
     else:
@@ -876,7 +901,7 @@ def _generate_staticmethod_call_functiondef(
                     id=_get_type_hint(
                         anno := fullspec.annotations[name],
                         type_hint_globals,
-                        is_optional=rx_types.is_optional(anno),
+                        is_optional=_is_optional(anno),
                     )
                 ),
             )
@@ -1417,10 +1442,7 @@ def _scan_file(module_path: Path) -> tuple[str, str] | None:
         name: obj
         for name, obj in vars(module).items()
         if isinstance(obj, type)
-        and (
-            rx_types.safe_issubclass(obj, Component)
-            or rx_types.safe_issubclass(obj, SimpleNamespace)
-        )
+        and (_safe_issubclass(obj, Component) or _safe_issubclass(obj, SimpleNamespace))
         and obj != Component
         and inspect.getmodule(obj) == module
     }

@@ -17,7 +17,6 @@ from typing import TYPE_CHECKING, Any, SupportsIndex, TypeVar
 import wrapt
 from typing_extensions import Self
 
-from reflex.base import Base
 from reflex.event import Event
 from reflex.utils import prerequisites
 from reflex.utils.exceptions import ImmutableStateError
@@ -354,9 +353,7 @@ class ReadOnlyStateProxy(StateProxy):
 if find_spec("pydantic"):
     import pydantic
 
-    NEVER_WRAP_BASE_ATTRS = set(Base.__dict__) - {"set"} | set(
-        pydantic.BaseModel.__dict__
-    )
+    NEVER_WRAP_BASE_ATTRS = set(pydantic.BaseModel.__dict__)
 else:
     NEVER_WRAP_BASE_ATTRS = {}
 
@@ -364,7 +361,6 @@ MUTABLE_TYPES = (
     list,
     dict,
     set,
-    Base,
 )
 
 if find_spec("sqlalchemy"):
@@ -373,10 +369,9 @@ if find_spec("sqlalchemy"):
     MUTABLE_TYPES += (DeclarativeBase,)
 
 if find_spec("pydantic"):
-    from pydantic import BaseModel as BaseModelV2
-    from pydantic.v1 import BaseModel as BaseModelV1
+    from pydantic import BaseModel
 
-    MUTABLE_TYPES += (BaseModelV1, BaseModelV2)
+    MUTABLE_TYPES += (BaseModel,)
 
 
 class MutableProxy(wrapt.ObjectProxy):
@@ -577,10 +572,7 @@ class MutableProxy(wrapt.ObjectProxy):
                 )
 
             if (
-                (
-                    not isinstance(self.__wrapped__, Base)
-                    or __name not in NEVER_WRAP_BASE_ATTRS
-                )
+                __name not in NEVER_WRAP_BASE_ATTRS
                 and (func := getattr(value, "__func__", None)) is not None
                 and not inspect.isclass(getattr(value, "__self__", None))
                 # skip SQLAlchemy instrumented methods

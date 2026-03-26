@@ -18,13 +18,13 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 import pytest_asyncio
 from plotly.graph_objects import Figure
+from pydantic import BaseModel as Base
 from pytest_mock import MockerFixture
 
 import reflex as rx
 import reflex.config
 from reflex import constants
 from reflex.app import App
-from reflex.base import Base
 from reflex.constants import CompileVars, RouteVar, SocketEvent
 from reflex.constants.state import FIELD_MARKER
 from reflex.environment import environment
@@ -66,8 +66,7 @@ from .states import GenState
 pytest.importorskip("pydantic")
 
 
-from pydantic import BaseModel as BaseModelV2
-from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic import BaseModel
 
 from tests.units.states.mutation import MutableTestState
 
@@ -3861,7 +3860,7 @@ async def test_deserialize_gc_state_disk(token):
 class Obj(Base):
     """A object containing a callable for testing fallback pickle."""
 
-    _f: Callable
+    f: Callable
 
 
 def test_fallback_pickle():
@@ -3873,7 +3872,7 @@ def test_fallback_pickle():
         _g: Any = None
 
     state = DillState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
-    state._o = Obj(_f=lambda: 42)
+    state._o = Obj(f=lambda: 42)
     state._f = lambda: 420
 
     pk = state._serialize()
@@ -3883,7 +3882,7 @@ def test_fallback_pickle():
     assert unpickled_state._f is not None
     assert unpickled_state._f() == 420
     assert unpickled_state._o is not None
-    assert unpickled_state._o._f() == 42
+    assert unpickled_state._o.f() == 42
 
     # Threading locks are unpicklable normally, and raise TypeError instead of PicklingError.
     state2 = DillState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
@@ -3908,29 +3907,7 @@ def test_typed_state() -> None:
     _ = TypedState(field="str")
 
 
-class ModelV1(BaseModelV1):
-    """A pydantic BaseModel v1."""
-
-    foo: str = "bar"
-
-    def set_foo(self, val: str):
-        """Set the attribute foo.
-
-        Args:
-            val: The value to set.
-        """
-        self.foo = val
-
-    def double_foo(self) -> str:
-        """Concatenate foo with foo.
-
-        Returns:
-            foo + foo
-        """
-        return self.foo + self.foo
-
-
-class ModelV2(BaseModelV2):
+class ModelV2(BaseModel):
     """A pydantic BaseModel v2."""
 
     foo: str = "bar"
@@ -3955,7 +3932,6 @@ class ModelV2(BaseModelV2):
 class PydanticState(rx.State):
     """A state with pydantic BaseModel vars."""
 
-    v1: ModelV1 = ModelV1()
     v2: ModelV2 = ModelV2()
     dc: ModelDC = ModelDC()
 
@@ -3963,17 +3939,6 @@ class PydanticState(rx.State):
 def test_mutable_models():
     """Test that dataclass and pydantic BaseModel v1 and v2 use dep tracking."""
     state = PydanticState()
-    assert isinstance(state.v1, MutableProxy)
-    state.v1.foo = "baz"
-    assert state.dirty_vars == {"v1"}
-    state.dirty_vars.clear()
-    state.v1.set_foo("quuc")
-    assert state.dirty_vars == {"v1"}
-    state.dirty_vars.clear()
-    assert state.v1.double_foo() == "quucquuc"
-    assert state.dirty_vars == set()
-    state.v1.copy(update={"foo": "larp"})
-    assert state.dirty_vars == set()
 
     assert isinstance(state.v2, MutableProxy)
     state.v2.foo = "baz"
@@ -4144,10 +4109,6 @@ class UpcastState(rx.State):
             assert isinstance(o, Object)
         self.passed = True
 
-    def rx_basemodelv1(self, m: ModelV1):  # noqa: D102
-        assert isinstance(m, ModelV1)
-        self.passed = True
-
     def rx_basemodelv2(self, m: ModelV2):  # noqa: D102
         assert isinstance(m, ModelV2)
         self.passed = True
@@ -4197,7 +4158,6 @@ class UpcastState(rx.State):
         (UpcastState.rx_base, {"o": {"foo": "bar"}}),
         (UpcastState.rx_base_or_none, {"o": {"foo": "bar"}}),
         (UpcastState.rx_base_or_none, {"o": None}),
-        (UpcastState.rx_basemodelv1, {"m": {"foo": "bar"}}),
         (UpcastState.rx_basemodelv2, {"m": {"foo": "bar"}}),
         (UpcastState.rx_dataclass, {"dc": {"foo": "bar"}}),
         (UpcastState.py_set, {"s": ["foo", "foo"]}),

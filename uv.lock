@@ -13,6 +13,7 @@ resolution-markers = [
 
 [manifest]
 members = [
+    "hatch-reflex-pyi",
     "reflex",
     "reflex-components-code",
     "reflex-components-core",
@@ -701,6 +702,16 @@ sdist = { url = "https://files.pythonhosted.org/packages/01/ee/02a2c011bdab74c6f
 wheels = [
     { url = "https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl", hash = "sha256:63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86", size = 37515, upload-time = "2025-04-24T03:35:24.344Z" },
 ]
+
+[[package]]
+name = "hatch-reflex-pyi"
+source = { editable = "packages/hatch-reflex-pyi" }
+dependencies = [
+    { name = "hatchling" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "hatchling" }]
 
 [[package]]
 name = "hatchling"
@@ -2128,8 +2139,8 @@ requires-dist = [
     { name = "packaging", specifier = ">=24.2,<27" },
     { name = "platformdirs", specifier = ">=4.3.7,<5.0" },
     { name = "psutil", marker = "sys_platform == 'win32'", specifier = ">=7.0.0,<8.0" },
-    { name = "pydantic", specifier = ">=1.10.21,<3.0" },
-    { name = "pydantic", marker = "extra == 'db'", specifier = ">=1.10.21,<3.0" },
+    { name = "pydantic", specifier = ">=2.12.0,<3.0" },
+    { name = "pydantic", marker = "extra == 'db'", specifier = ">=2.12.0,<3.0" },
     { name = "python-multipart", specifier = ">=0.0.20,<1.0" },
     { name = "python-socketio", specifier = ">=5.12.0,<6.0" },
     { name = "redis", specifier = ">=5.2.1,<8.0" },
@@ -2194,14 +2205,42 @@ dev = [
 [[package]]
 name = "reflex-components-code"
 source = { editable = "packages/reflex-components-code" }
+dependencies = [
+    { name = "reflex-components-core" },
+    { name = "reflex-components-lucide" },
+    { name = "reflex-components-radix" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "reflex-components-core", editable = "packages/reflex-components-core" },
+    { name = "reflex-components-lucide", editable = "packages/reflex-components-lucide" },
+    { name = "reflex-components-radix", editable = "packages/reflex-components-radix" },
+]
 
 [[package]]
 name = "reflex-components-core"
 source = { editable = "packages/reflex-components-core" }
+dependencies = [
+    { name = "reflex-components-lucide" },
+    { name = "reflex-components-sonner" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "reflex-components-lucide", editable = "packages/reflex-components-lucide" },
+    { name = "reflex-components-sonner", editable = "packages/reflex-components-sonner" },
+]
 
 [[package]]
 name = "reflex-components-dataeditor"
 source = { editable = "packages/reflex-components-dataeditor" }
+dependencies = [
+    { name = "reflex-components-core" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "reflex-components-core", editable = "packages/reflex-components-core" }]
 
 [[package]]
 name = "reflex-components-gridjs"
@@ -2214,6 +2253,18 @@ source = { editable = "packages/reflex-components-lucide" }
 [[package]]
 name = "reflex-components-markdown"
 source = { editable = "packages/reflex-components-markdown" }
+dependencies = [
+    { name = "reflex-components-code" },
+    { name = "reflex-components-core" },
+    { name = "reflex-components-radix" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "reflex-components-code", editable = "packages/reflex-components-code" },
+    { name = "reflex-components-core", editable = "packages/reflex-components-core" },
+    { name = "reflex-components-radix", editable = "packages/reflex-components-radix" },
+]
 
 [[package]]
 name = "reflex-components-moment"
@@ -2222,18 +2273,48 @@ source = { editable = "packages/reflex-components-moment" }
 [[package]]
 name = "reflex-components-plotly"
 source = { editable = "packages/reflex-components-plotly" }
+dependencies = [
+    { name = "reflex-components-core" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "reflex-components-core", editable = "packages/reflex-components-core" }]
 
 [[package]]
 name = "reflex-components-radix"
 source = { editable = "packages/reflex-components-radix" }
+dependencies = [
+    { name = "reflex-components-core" },
+    { name = "reflex-components-lucide" },
+    { name = "reflex-components-react-router" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "reflex-components-core", editable = "packages/reflex-components-core" },
+    { name = "reflex-components-lucide", editable = "packages/reflex-components-lucide" },
+    { name = "reflex-components-react-router", editable = "packages/reflex-components-react-router" },
+]
 
 [[package]]
 name = "reflex-components-react-player"
 source = { editable = "packages/reflex-components-react-player" }
+dependencies = [
+    { name = "reflex-components-core" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "reflex-components-core", editable = "packages/reflex-components-core" }]
 
 [[package]]
 name = "reflex-components-react-router"
 source = { editable = "packages/reflex-components-react-router" }
+dependencies = [
+    { name = "reflex-components-core" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "reflex-components-core", editable = "packages/reflex-components-core" }]
 
 [[package]]
 name = "reflex-components-recharts"
@@ -2242,6 +2323,12 @@ source = { editable = "packages/reflex-components-recharts" }
 [[package]]
 name = "reflex-components-sonner"
 source = { editable = "packages/reflex-components-sonner" }
+dependencies = [
+    { name = "reflex-components-lucide" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "reflex-components-lucide", editable = "packages/reflex-components-lucide" }]
 
 [[package]]
 name = "reflex-docgen"

@@ -262,11 +262,11 @@ def test_rx_state_fields():
 
 def test_class_with_class_vars():
     """Class variables are extracted from __class_vars__."""
-    from reflex.base import Base
+    from pydantic import BaseModel
 
-    # Base has __class_vars__ (from pydantic v1)
-    doc = generate_class_documentation(Base)
-    # Just verify the attribute is populated (may be empty if Base has no class vars)
+    # BaseModel has __class_vars__ (from pydantic)
+    doc = generate_class_documentation(BaseModel)
+    # Just verify the attribute is populated (may be empty if BaseModel has no class vars)
     assert isinstance(doc.class_fields, tuple)
 
 

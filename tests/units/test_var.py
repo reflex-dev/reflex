@@ -7,10 +7,10 @@ from typing import cast
 
 import pytest
 from pandas import DataFrame
+from pydantic import BaseModel as Base
 from pytest_mock import MockerFixture
 
 import reflex as rx
-from reflex.base import Base
 from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
 from reflex.constants.state import FIELD_MARKER
 from reflex.environment import PerformanceMode
@@ -392,14 +392,14 @@ def test_list_tuple_contains(var, expected):
     assert str(var.contains(other_var)) == f"{expected}.includes(other)"
 
 
-class Foo(rx.Base):
+class Foo(Base):
     """Foo class."""
 
     bar: int
     baz: str
 
 
-class Bar(rx.Base):
+class Bar(Base):
     """Bar class."""
 
     bar: str
@@ -1177,7 +1177,7 @@ def nested_base():
         baz: int
 
     parent_obj = LiteralObjectVar.create(
-        Foo(bar=Boo(foo="bar", bar=5), baz=5).dict(), Foo
+        Foo(bar=Boo(foo="bar", bar=5), baz=5).model_dump(), Foo
     )
 
     assert (

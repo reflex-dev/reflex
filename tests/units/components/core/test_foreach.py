@@ -1,3 +1,4 @@
+import pydantic
 import pytest
 from reflex_components_core.core.foreach import (
     Foreach,
@@ -10,7 +11,6 @@ from reflex_components_radix.themes.typography.text import text
 
 import reflex as rx
 from reflex import el
-from reflex.base import Base
 from reflex.components.component import Component
 from reflex.constants.state import FIELD_MARKER
 from reflex.state import BaseState, ComponentState
@@ -18,7 +18,7 @@ from reflex.vars.number import NumberVar
 from reflex.vars.sequence import ArrayVar
 
 
-class ForEachTag(Base):
+class ForEachTag(pydantic.BaseModel):
     """A tag for testing the ForEach component."""
 
     name: str = ""

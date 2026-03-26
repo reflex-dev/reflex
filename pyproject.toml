@@ -27,7 +27,7 @@ dependencies = [
   "packaging >=24.2,<27",
   "platformdirs >=4.3.7,<5.0",
   "psutil >=7.0.0,<8.0; sys_platform == 'win32'",
-  "pydantic >=1.10.21,<3.0",
+  "pydantic >=2.12.0,<3.0",
   "python-multipart >=0.0.20,<1.0",
   "python-socketio >=5.12.0,<6.0",
   "redis >=5.2.1,<8.0",
@@ -66,7 +66,7 @@ classifiers = [
 [project.optional-dependencies]
 db = [
   "alembic >=1.15.2,<2.0",
-  "pydantic >=1.10.21,<3.0",
+  "pydantic >=2.12.0,<3.0",
   "sqlmodel >=0.0.24,<0.1",
 ]
 

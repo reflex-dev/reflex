@@ -1922,12 +1922,9 @@ class BaseState(EvenMoreBasicBaseState):
                 elif dataclasses.is_dataclass(hinted_args):
                     payload[arg] = hinted_args(**value)
                 elif find_spec("pydantic"):
-                    from pydantic import BaseModel as BaseModelV2
-                    from pydantic.v1 import BaseModel as BaseModelV1
+                    from pydantic import BaseModel
 
-                    if issubclass(hinted_args, BaseModelV1):
-                        payload[arg] = hinted_args.parse_obj(value)
-                    elif issubclass(hinted_args, BaseModelV2):
+                    if issubclass(hinted_args, BaseModel):
                         payload[arg] = hinted_args.model_validate(value)
             elif isinstance(value, list) and (hinted_args is set or hinted_args is set):
                 payload[arg] = set(value)
