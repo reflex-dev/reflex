@@ -22,7 +22,7 @@ targets.sdist.artifacts = ["*.pyi"]
 targets.wheel.artifacts = ["*.pyi"]
 
 [tool.hatch.build.hooks.reflex-pyi]
-dependencies = ["ruff"]
+dependencies = ["ruff", "reflex-core"]
 
 [build-system]
 requires = ["hatchling", "uv-dynamic-versioning", "hatch-reflex-pyi"]
