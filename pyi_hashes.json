@@ -36,7 +36,7 @@
   "packages/reflex-components-core/src/reflex_components_core/el/elements/sectioning.pyi": "4ce119b25459a01d128bdb5b79b0d128",
   "packages/reflex-components-core/src/reflex_components_core/el/elements/tables.pyi": "9e58353a97dc006d37d2c7c50506fac4",
   "packages/reflex-components-core/src/reflex_components_core/el/elements/typography.pyi": "3325f8a4af0aadb70cbfc50558e2f3b2",
-  "packages/reflex-components-dataeditor/src/reflex_components_dataeditor/dataeditor.pyi": "707afe3ba888c8c6b02bdf727354866e",
+  "packages/reflex-components-dataeditor/src/reflex_components_dataeditor/dataeditor.pyi": "caa83be6f97faa95588bfa9ae9e9331e",
   "packages/reflex-components-gridjs/src/reflex_components_gridjs/datatable.pyi": "32880736442800061a39ce4b55267eaf",
   "packages/reflex-components-lucide/src/reflex_components_lucide/icon.pyi": "e55c023c9ecc907321f163955f4c4875",
   "packages/reflex-components-markdown/src/reflex_components_markdown/markdown.pyi": "bacf19a5b6904281d7238dbd51e6fc1c",
