@@ -220,7 +220,7 @@ lint.flake8-bugbear.extend-immutable-calls = [
 "*/.templates/*.py" = ["D100", "D103", "D104"]
 "*.pyi" = ["D301", "D415", "D417", "D418", "E742", "N", "PGH"]
 "pyi_generator.py" = ["N802"]
-"reflex/constants/*.py" = ["N"]
+"packages/reflex-core/src/reflex_core/constants/*.py" = ["N"]
 "*/.templates/apps/blank/code/*" = ["INP001"]
 "*/blank.py" = ["I001"]
 
