@@ -4,14 +4,16 @@ import dataclasses
 import functools
 import uuid
 from collections.abc import Callable, Mapping
-from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, Protocol
 
-from reflex.istate.manager import StateManager
-from reflex.utils.format import to_snake_case
+from reflex_core.utils.format import to_snake_case
+
+from reflex._internal.context.base import BaseContext
 
 if TYPE_CHECKING:
-    from reflex.event import Event
+    from reflex_core.event import Event
+
+    from reflex.istate.manager import StateManager
 
 
 @functools.lru_cache
@@ -69,8 +71,8 @@ class EmitDeltaProtocol(Protocol):
         ...
 
 
-@dataclasses.dataclass(frozen=True, kw_only=True)
-class EventContext:
+@dataclasses.dataclass(frozen=True, kw_only=True, slots=True, eq=False)
+class EventContext(BaseContext):
     """The context for an event."""
 
     # Identifies the client session.
@@ -142,6 +144,3 @@ class EventContext:
             event: The event to enqueue.
         """
         await self.enqueue_impl(self.token, *event)
-
-
-event_context: ContextVar[EventContext] = ContextVar("event_context")

@@ -9,7 +9,7 @@ from enum import Enum
 from importlib.util import find_spec
 from typing import TYPE_CHECKING, Any
 
-from reflex.ievent.context import event_context
+from reflex.ievent.context import EventContext
 from reflex.ievent.processor import EventProcessor
 from reflex.ievent.processor.event_processor import (
     EventQueueEntry,
@@ -177,7 +177,7 @@ async def chain_updates(
     """
     from reflex.event import Event
 
-    ctx = event_context.get()
+    ctx = EventContext.get()
 
     # Convert valid EventHandler and EventSpec into Event
     if fixed_events := Event.from_event_type(
@@ -289,7 +289,7 @@ class BaseStateEventProcessor(EventProcessor):
         """
         # Set up the event context for this task.
         ctx = entry.ctx
-        event_context.set(ctx)
+        EventContext.set(ctx)
         event = entry.event
         router_data = event.router_data or {}
         # Get the state for the session exclusively.

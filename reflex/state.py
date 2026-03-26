@@ -2213,7 +2213,7 @@ class State(BaseState):
     @event
     async def hydrate(self) -> None:
         """Send the full state to the frontend to synchronize it with the backend."""
-        from reflex.ievent.context import event_context
+        from reflex.ievent.context import EventContext
 
         # Clear client storage, to respect clearing cookies
         self._reset_client_storage()
@@ -2222,7 +2222,7 @@ class State(BaseState):
         self.is_hydrated = False
 
         # Get the initial state if needed.
-        ctx = event_context.get()
+        ctx = EventContext.get()
         if ctx.emit_delta_impl is not None:
             await ctx.emit_delta(delta=await _resolve_delta(self.dict()))
 

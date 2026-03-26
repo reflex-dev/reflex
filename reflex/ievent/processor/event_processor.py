@@ -14,7 +14,7 @@ import rich.markup
 
 from reflex._internal.registry import RegisteredEventHandler, RegistrationContext
 from reflex.app_mixins.middleware import MiddlewareMixin
-from reflex.ievent.context import EventContext, event_context
+from reflex.ievent.context import EventContext
 from reflex.istate.manager import StateManager
 from reflex.utils import console
 
@@ -207,7 +207,7 @@ class EventProcessor:
         if self._attached_root_context_token is not None:
             msg = "EventProcessor context cannot be nested."
             raise RuntimeError(msg)
-        self._attached_root_context_token = event_context.set(self._root_context)
+        self._attached_root_context_token = EventContext.set(self._root_context)
         self._queue = asyncio.Queue()
         self._ensure_queue_task()
 
@@ -253,7 +253,7 @@ class EventProcessor:
         from reflex.utils import telemetry
 
         if self._attached_root_context_token is not None:
-            event_context.reset(self._attached_root_context_token)
+            EventContext.reset(self._attached_root_context_token)
             self._attached_root_context_token = None
         # Optional grace period for tasks to finish before cancellation.
         if graceful_shutdown_timeout is None:
@@ -319,7 +319,7 @@ class EventProcessor:
             raise RuntimeError(msg)
         if self._queue_task is None:
             task_context = copy_context()
-            task_context.run(event_context.set, self._root_context)
+            task_context.run(EventContext.set, self._root_context)
             self._queue_task = task_context.run(
                 asyncio.create_task,
                 self._process_queue(),
@@ -339,7 +339,7 @@ class EventProcessor:
         """
         if ev_ctx is None:
             try:
-                ev_ctx = event_context.get().fork(token=token)
+                ev_ctx = EventContext.get().fork(token=token)
             except LookupError as le:
                 if self._root_context is not None:
                     ev_ctx = self._root_context.fork(token=token)
@@ -370,7 +370,7 @@ class EventProcessor:
         """
         # Set up the event context for this task.
         ctx = entry.ctx
-        event_context.set(ctx)
+        EventContext.set(ctx)
         event = entry.event
         result = registered_handler.handler.fn(**event.payload)
         if inspect.isawaitable(result):
@@ -437,7 +437,7 @@ class EventProcessor:
         """
         from reflex.utils import telemetry
 
-        task_ctx = task.get_context().run(event_context.get)
+        task_ctx = task.get_context().run(EventContext.get)
         self._tasks.pop(task_ctx.txid, None)
         if task.done():
             try:

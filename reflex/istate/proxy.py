@@ -21,7 +21,7 @@ from reflex_core.utils.serializers import can_serialize, serialize, serializer
 from reflex_core.vars.base import Var
 from typing_extensions import Self
 
-from reflex.ievent.context import event_context
+from reflex.ievent.context import EventContext
 from reflex.istate.manager.token import BaseStateToken
 
 if TYPE_CHECKING:
@@ -78,7 +78,7 @@ class StateProxy(wrapt.ObjectProxy):
         self._self_event = event
         self._self_substate_path = tuple(state_instance.get_full_name().split("."))
         self._self_substate_token = BaseStateToken(
-            ident=event_context.get().token,
+            ident=EventContext.get().token,
             cls=state_instance.__class__,
         )
         self._self_actx = None
@@ -133,7 +133,7 @@ class StateProxy(wrapt.ObjectProxy):
             msg = "The state is already mutable. Do not nest `async with self` blocks."
             raise ImmutableStateError(msg)
 
-        ctx = event_context.get()
+        ctx = EventContext.get()
 
         await self._self_actx_lock.acquire()
         try:
@@ -170,7 +170,7 @@ class StateProxy(wrapt.ObjectProxy):
                 root_state._clean()
                 # When the frontend vars are modified emit the delta to the frontend.
                 if delta:
-                    ctx = event_context.get()
+                    ctx = EventContext.get()
                     await ctx.emit_delta(delta)
         finally:
             try:

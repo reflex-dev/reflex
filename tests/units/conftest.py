@@ -16,7 +16,7 @@ from reflex_core.event import Event, EventSpec
 from reflex._internal.registry import RegistrationContext
 from reflex.app import App
 from reflex.experimental.memo import EXPERIMENTAL_MEMOS
-from reflex.ievent.context import EventContext, event_context
+from reflex.ievent.context import EventContext
 from reflex.ievent.processor import BaseStateEventProcessor, EventProcessor
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
@@ -433,10 +433,8 @@ def attached_mock_event_context(
     Yields:
         The forked EventContext.
     """
-    ctx = mock_root_event_context.fork(token=token)
-    reset_token = event_context.set(ctx)
-    yield ctx
-    event_context.reset(reset_token)
+    with mock_root_event_context.fork(token=token) as ctx:
+        yield ctx
 
 
 @pytest_asyncio.fixture

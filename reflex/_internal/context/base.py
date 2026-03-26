@@ -26,6 +26,27 @@ class BaseContext:
         """
         return cls._context_var.get()
 
+    @classmethod
+    def set(cls, context: Self) -> Token[Self]:
+        """Set the context in the context variable.
+
+        Args:
+            context: The context instance to set.
+
+        Returns:
+            The token for resetting the context variable.
+        """
+        return cls._context_var.set(context)
+
+    @classmethod
+    def reset(cls, token: Token[Self]) -> None:
+        """Reset the context variable to a previous state.
+
+        Args:
+            token: The token to reset the context variable to.
+        """
+        cls._context_var.reset(token)
+
     def __enter__(self) -> Self:
         """Enter the context.
 

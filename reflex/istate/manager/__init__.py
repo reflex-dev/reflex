@@ -13,7 +13,6 @@ from reflex_core.utils.exceptions import InvalidStateManagerModeError
 from typing_extensions import ReadOnly, Unpack
 
 from reflex.istate.manager.token import TOKEN_TYPE, StateToken
-from reflex.state import BaseState
 from reflex.utils import console, prerequisites
 
 
@@ -177,6 +176,6 @@ def get_state_manager() -> StateManager:
     Returns:
         The state manager.
     """
-    from reflex.ievent.context import event_context
+    from reflex.ievent.context import EventContext
 
-    return event_context.get().state_manager
+    return EventContext.get().state_manager
