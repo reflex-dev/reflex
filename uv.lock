@@ -709,14 +709,10 @@ name = "hatch-reflex-pyi"
 source = { editable = "packages/hatch-reflex-pyi" }
 dependencies = [
     { name = "hatchling" },
-    { name = "reflex-core" },
 ]
 
 [package.metadata]
-requires-dist = [
-    { name = "hatchling" },
-    { name = "reflex-core", editable = "packages/reflex-core" },
-]
+requires-dist = [{ name = "hatchling" }]
 
 [[package]]
 name = "hatchling"
