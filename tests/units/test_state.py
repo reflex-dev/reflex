@@ -10,7 +10,7 @@ import math
 import os
 import sys
 import threading
-from collections.abc import AsyncGenerator, Callable
+from collections.abc import AsyncGenerator, Callable, Mapping
 from textwrap import dedent
 from typing import Any, ClassVar
 from unittest.mock import AsyncMock, Mock
@@ -25,7 +25,7 @@ import reflex.config
 from reflex import constants
 from reflex.app import App
 from reflex.base import Base
-from reflex.constants import CompileVars, RouteVar, SocketEvent
+from reflex.constants import CompileVars, RouteVar
 from reflex.constants.state import FIELD_MARKER
 from reflex.environment import environment
 from reflex.event import Event, EventHandler
@@ -46,7 +46,6 @@ from reflex.state import (
     OnLoadInternalState,
     RouterData,
     State,
-    StateUpdate,
 )
 from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
@@ -59,7 +58,6 @@ from reflex.utils.exceptions import (
     UnretrievableVarValueError,
 )
 from reflex.utils.format import json_dumps
-from reflex.utils.token_manager import SocketRecord
 from reflex.vars.base import Field, Var, computed_var, field
 from tests.units.mock_redis import mock_redis
 
@@ -2111,16 +2109,18 @@ class ModelDC:
 @pytest.mark.asyncio
 async def test_state_proxy(
     grandchild_state: GrandchildState,
-    mock_app: rx.App,
     token: str,
+    attached_mock_base_state_event_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
     attached_mock_event_context: EventContext,
 ):
     """Test that the state proxy works.
 
     Args:
         grandchild_state: A grandchild state.
-        mock_app: An app that will be returned by `get_app()`
         token: A token.
+        attached_mock_base_state_event_processor: The event processor attached for this test.
+        emitted_deltas: A list to capture emitted deltas.
         attached_mock_event_context: The event context attached for this test.
     """
     child_state = grandchild_state.parent_state
@@ -2133,21 +2133,13 @@ async def test_state_proxy(
         "sid": "test_sid",
     })
     grandchild_state.router = router_data
-    namespace = mock_app.event_namespace
-    assert namespace is not None
-    namespace.sid_to_token[router_data.session.session_id] = token
-    namespace._token_manager.instance_id = "mock"
-    namespace._token_manager.token_to_socket[token] = SocketRecord(
-        instance_id="mock", sid=router_data.session.session_id
-    )
-    if isinstance(mock_app.state_manager, (StateManagerMemory, StateManagerDisk)):
-        mock_app.state_manager.states[parent_state.router.session.client_token] = (
-            parent_state
-        )
-    elif isinstance(mock_app.state_manager, StateManagerRedis):
+    state_manager = attached_mock_event_context.state_manager
+    if isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
+        state_manager.states[parent_state.router.session.client_token] = parent_state
+    elif isinstance(state_manager, StateManagerRedis):
         pickle_state = parent_state._serialize()
         if pickle_state:
-            await mock_app.state_manager.redis.set(
+            await state_manager.redis.set(
                 str(
                     BaseStateToken(
                         ident=parent_state.router.session.client_token,
@@ -2155,13 +2147,12 @@ async def test_state_proxy(
                     )
                 ),
                 pickle_state,
-                ex=mock_app.state_manager.token_expiration,
+                ex=state_manager.token_expiration,
             )
 
     sp = StateProxy(grandchild_state)
     assert sp.__wrapped__ == grandchild_state
     assert sp._self_substate_path == tuple(grandchild_state.get_full_name().split("."))
-    assert sp._self_app is mock_app
     assert not sp._self_mutable
     assert sp._self_actx is None
 
@@ -2192,7 +2183,7 @@ async def test_state_proxy(
     async with sp:
         assert sp._self_actx is not None
         assert sp._self_mutable  # proxy is mutable inside context
-        if isinstance(mock_app.state_manager, (StateManagerMemory, StateManagerDisk)):
+        if isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
             # For in-process store, only one instance of the state exists
             assert sp.__wrapped__ is grandchild_state
         else:
@@ -2204,16 +2195,16 @@ async def test_state_proxy(
     assert sp.value2 == "42"
 
     if environment.REFLEX_OPLOCK_ENABLED.get():
-        await mock_app.state_manager.close()
+        await state_manager.close()
 
     # Get the state from the state manager directly and check that the value is updated
-    gotten_state = await mock_app.state_manager.get_state(
+    gotten_state = await state_manager.get_state(
         BaseStateToken(
             ident=grandchild_state.router.session.client_token,
             cls=type(grandchild_state),
         )
     )
-    if isinstance(mock_app.state_manager, (StateManagerMemory, StateManagerDisk)):
+    if isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
         # For in-process store, only one instance of the state exists
         assert gotten_state is parent_state
     else:
@@ -2224,22 +2215,21 @@ async def test_state_proxy(
     assert gotten_grandchild_state.value2 == "42"
 
     # ensure state update was emitted
-    assert mock_app.event_namespace is not None
-    mock_app.event_namespace.emit.assert_called_once()  # pyright: ignore [reportAttributeAccessIssue]
-    mcall = mock_app.event_namespace.emit.mock_calls[0]  # pyright: ignore [reportAttributeAccessIssue]
-    assert mcall.args[0] == str(SocketEvent.EVENT)
-    assert mcall.args[1] == StateUpdate(
-        delta={
-            TestState.get_full_name(): {"router" + FIELD_MARKER: router_data},
-            grandchild_state.get_full_name(): {
-                "value2" + FIELD_MARKER: "42",
+    await attached_mock_base_state_event_processor.join(timeout=1)
+    assert emitted_deltas == [
+        (
+            token,
+            {
+                TestState.get_full_name(): {"router" + FIELD_MARKER: router_data},
+                grandchild_state.get_full_name(): {
+                    "value2" + FIELD_MARKER: "42",
+                },
+                GrandchildState3.get_full_name(): {
+                    "computed" + FIELD_MARKER: "",
+                },
             },
-            GrandchildState3.get_full_name(): {
-                "computed" + FIELD_MARKER: "",
-            },
-        },
-    )
-    assert mcall.kwargs["to"] == grandchild_state.router.session.session_id
+        )
+    ]
 
 
 class BackgroundTaskState(BaseState):
@@ -3143,21 +3133,21 @@ async def test_preprocess_multiple_load_events(
 
 
 @pytest.mark.asyncio
-async def test_get_state(mock_app: rx.App, token: str):
+async def test_get_state(token: str, attached_mock_event_context: EventContext):
     """Test that a get_state populates the top level state and delta calculation is correct.
 
     Args:
-        mock_app: An app that will be returned by `get_app()`
         token: A token.
+        attached_mock_event_context: An event context with a state manager that has a TestState instance corresponding to the token.
     """
-    mock_app._state = TestState
+    state_manager = attached_mock_event_context.state_manager
 
     # Get instance of ChildState2.
-    test_state = await mock_app.state_manager.get_state(
+    test_state = await state_manager.get_state(
         BaseStateToken(ident=token, cls=ChildState2)
     )
     assert isinstance(test_state, TestState)
-    if isinstance(mock_app.state_manager, (StateManagerMemory, StateManagerDisk)):
+    if isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
         # All substates are available
         assert tuple(sorted(test_state.substates)) == (
             ChildState.get_name(),
@@ -3217,11 +3207,11 @@ async def test_get_state(mock_app: rx.App, token: str):
     }
 
     # Get a fresh instance
-    new_test_state = await mock_app.state_manager.get_state(
+    new_test_state = await state_manager.get_state(
         BaseStateToken(ident=token, cls=ChildState2)
     )
     assert isinstance(new_test_state, TestState)
-    if isinstance(mock_app.state_manager, (StateManagerMemory, StateManagerDisk)):
+    if isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
         # In memory, it's the same instance
         assert new_test_state is test_state
         test_state._clean()
@@ -3258,7 +3248,9 @@ async def test_get_state(mock_app: rx.App, token: str):
 
 
 @pytest.mark.asyncio
-async def test_get_state_from_sibling_not_cached(mock_app: rx.App, token: str):
+async def test_get_state_from_sibling_not_cached(
+    token: str, attached_mock_event_context: EventContext
+):
     """A test simulating update_vars_internal when setting cookies with computed vars.
 
     In that case, a sibling state, UpdateVarsInternalState handles the fetching
@@ -3271,8 +3263,8 @@ async def test_get_state_from_sibling_not_cached(mock_app: rx.App, token: str):
     Explicit regression test for https://github.com/reflex-dev/reflex/issues/2851.
 
     Args:
-        mock_app: An app that will be returned by `get_app()`
         token: A token.
+        attached_mock_event_context: An event context with a state manager that has a TestState instance corresponding to the token.
     """
 
     class Parent(BaseState):
@@ -3311,16 +3303,14 @@ async def test_get_state_from_sibling_not_cached(mock_app: rx.App, token: str):
         has a computed var.
         """
 
-    mock_app._state = Parent
+    state_manager = attached_mock_event_context.state_manager
 
     # Get the top level state via unconnected sibling.
-    root = await mock_app.state_manager.get_state(
-        BaseStateToken(ident=token, cls=Child)
-    )
+    root = await state_manager.get_state(BaseStateToken(ident=token, cls=Child))
     # Set value in parent_var to assert it does not get refetched later.
     root.parent_var = 1
 
-    if isinstance(mock_app.state_manager, StateManagerRedis):
+    if isinstance(state_manager, StateManagerRedis):
         # When redis is used, only states with computed vars are pre-fetched.
         assert Child2.get_name() not in root.substates
         assert Child3.get_name() in root.substates  # (due to @rx.var)
@@ -4226,12 +4216,14 @@ async def test_get_var_value(
 
 
 @pytest.mark.asyncio
-async def test_async_computed_var_get_state(mock_app: rx.App, token: str):
+async def test_async_computed_var_get_state(
+    token: str, attached_mock_event_context: EventContext
+):
     """A test where an async computed var depends on a var in another state.
 
     Args:
-        mock_app: An app that will be returned by `get_app()`
         token: A token.
+        attached_mock_event_context: An event context that will be attached to the app's state manager.
     """
 
     class Parent(BaseState):
@@ -4264,16 +4256,14 @@ async def test_async_computed_var_get_state(mock_app: rx.App, token: str):
             child3 = await self.get_state(Child3)
             return child3.child3_var + p.parent_var
 
-    mock_app._state = Parent
+    state_manager = attached_mock_event_context.state_manager
 
     # Get the top level state via unconnected sibling.
-    root = await mock_app.state_manager.get_state(
-        BaseStateToken(ident=token, cls=Child)
-    )
+    root = await state_manager.get_state(BaseStateToken(ident=token, cls=Child))
     # Set value in parent_var to assert it does not get refetched later.
     root.parent_var = 1
 
-    if isinstance(mock_app.state_manager, StateManagerRedis):
+    if isinstance(state_manager, StateManagerRedis):
         # When redis is used, only states with uncached computed vars are pre-fetched.
         assert Child2.get_name() not in root.substates
         assert Child3.get_name() not in root.substates
@@ -4385,7 +4375,9 @@ def test_computed_var_mutability() -> None:
 
 
 @pytest.mark.asyncio
-async def test_add_dependency_get_state_regression(mock_app: rx.App, token: str):
+async def test_add_dependency_get_state_regression(
+    token: str, attached_mock_event_context: EventContext, mock_app: rx.App
+):
     """Ensure that a state class can be fetched separately when it's is explicit dep."""
 
     class DataState(rx.State):
@@ -4410,8 +4402,7 @@ async def test_add_dependency_get_state_regression(mock_app: rx.App, token: str)
         async def fetch_data_state(self) -> None:
             print(await self.get_state(DataState))
 
-    mock_app._state = rx.State
-    state = await mock_app.state_manager.get_state(
+    state = await attached_mock_event_context.state_manager.get_state(
         BaseStateToken(ident=token, cls=OtherState)
     )
     other_state = await state.get_state(OtherState)
@@ -4426,12 +4417,12 @@ class MutableProxyState(BaseState):
 
 @pytest.mark.asyncio
 async def test_rebind_mutable_proxy(
-    mock_app: rx.App, token: str, attached_mock_event_context: EventContext
+    token: str, attached_mock_event_context: EventContext
 ) -> None:
     """Test that previously bound MutableProxy instances can be rebound correctly."""
-    mock_app._state = MutableProxyState
+    state_manager = attached_mock_event_context.state_manager
 
-    async with mock_app.state_manager.modify_state(
+    async with state_manager.modify_state(
         BaseStateToken(ident=token, cls=MutableProxyState)
     ) as state:
         state.router = RouterData.from_router_data({
@@ -4456,7 +4447,7 @@ async def test_rebind_mutable_proxy(
     assert not isinstance(state_proxy.__wrapped__.data["a"], ImmutableMutableProxy)
 
     # Flush any oplock.
-    await mock_app.state_manager.close()
+    await state_manager.close()
 
     new_state_proxy = StateProxy(state)
     assert state_proxy is not new_state_proxy
@@ -4467,7 +4458,7 @@ async def test_rebind_mutable_proxy(
     async with state_proxy:
         state_proxy.data["a"].append(3)
 
-    async with mock_app.state_manager.modify_state(
+    async with state_manager.modify_state(
         BaseStateToken(ident=token, cls=MutableProxyState)
     ) as state:
         assert isinstance(state, MutableProxyState)

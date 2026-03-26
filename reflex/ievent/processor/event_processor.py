@@ -183,7 +183,7 @@ class EventProcessor:
         )
         return self
 
-    async def __aenter__(self) -> "EventProcessor":
+    async def __aenter__(self) -> Self:
         """Enter the event processor context manager.
 
         Returns:

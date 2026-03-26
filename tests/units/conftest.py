@@ -437,6 +437,22 @@ def attached_mock_event_context(
     event_context.reset(reset_token)
 
 
+@pytest_asyncio.fixture
+async def attached_mock_base_state_event_processor(
+    mock_base_state_event_processor: BaseStateEventProcessor,
+) -> AsyncGenerator[BaseStateEventProcessor]:
+    """Fork the mock event context for the given token, attach it, and set the processor's root context to it.
+
+    Args:
+        mock_base_state_event_processor: The mock BaseState event processor to use for the processor's enqueue implementation.
+
+    Yields:
+        The mock BaseState event processor with the attached context as its root context.
+    """
+    async with mock_base_state_event_processor as processor:
+        yield processor
+
+
 @pytest.fixture
 def forked_registration_context() -> Generator[RegistrationContext, None, None]:
     """Fork the registration context and attach it.

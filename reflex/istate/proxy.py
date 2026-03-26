@@ -162,18 +162,22 @@ class StateProxy(wrapt.ObjectProxy):
             return
         try:
             if self._self_mutable and self._self_actx is not None:
-                await self._self_actx.__aexit__(*exc_info)
-                delta = await self.__wrapped__._get_resolved_delta()
-                self.__wrapped__._clean()
+                root_state = self.__wrapped__._get_root_state()
+                delta = await root_state._get_resolved_delta()
+                root_state._clean()
                 # When the frontend vars are modified emit the delta to the frontend.
                 if delta:
                     ctx = event_context.get()
                     await ctx.emit_delta(delta)
         finally:
-            self._self_actx = None
-            self._self_mutable = False
-            self._self_actx_lock_holder = None
-            self._self_actx_lock.release()
+            try:
+                if self._self_mutable and self._self_actx is not None:
+                    await self._self_actx.__aexit__(*exc_info)
+            finally:
+                self._self_actx = None
+                self._self_mutable = False
+                self._self_actx_lock_holder = None
+                self._self_actx_lock.release()
 
     def __enter__(self):
         """Enter the regular context manager protocol.

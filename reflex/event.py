@@ -27,7 +27,7 @@ from typing_extensions import Self, TypeAliasType, TypedDict, TypeVarTuple, Unpa
 from reflex import constants
 from reflex.components.field import BaseField
 from reflex.constants.compiler import CompileVars, Hooks, Imports
-from reflex.utils import format
+from reflex.utils import console, format
 from reflex.utils.decorator import once
 from reflex.utils.exceptions import (
     EventFnArgMismatchError,
@@ -1932,6 +1932,8 @@ def fix_events(
 ) -> list[Event]:
     """Fix a list of events returned by an event handler.
 
+    Deprecated: use Event.from_event_type instead.
+
     Args:
         events: The events to fix.
         router_data: The optional router data to set in the event.
@@ -1942,6 +1944,12 @@ def fix_events(
     Raises:
         ValueError: If the event type is not what was expected.
     """
+    console.deprecate(
+        feature_name="rx.event.fix_events()",
+        reason="Use Event.from_event_type() instead",
+        deprecation_version="0.9.0",
+        removal_version="1.0",
+    )
     # If the event handler returns nothing, return an empty list.
     if events is None:
         return []

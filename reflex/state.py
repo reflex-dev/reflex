@@ -23,7 +23,6 @@ from typing import (
     ClassVar,
     ParamSpec,
     TypeVar,
-    cast,
     get_type_hints,
 )
 
@@ -41,7 +40,6 @@ from reflex.event import (
     EventHandler,
     EventSpec,
     call_script,
-    fix_events,
 )
 from reflex.istate import HANDLED_PICKLE_ERRORS, debug_failed_pickles
 from reflex.istate.data import RouterData
@@ -2388,8 +2386,8 @@ class OnLoadInternalState(State):
             return None  # Fast path for navigation with no on_load events defined.
         self.is_hydrated = False
         return [
-            *fix_events(
-                cast(list[EventSpec | EventHandler], load_events),
+            *Event.from_event_type(
+                load_events,
                 router_data=self.router_data,
             ),
             State.set_is_hydrated(True),
