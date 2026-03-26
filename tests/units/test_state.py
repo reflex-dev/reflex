@@ -17,6 +17,7 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 import pytest_asyncio
+import reflex_core.config
 from plotly.graph_objects import Figure
 from pydantic import BaseModel as Base
 from pytest_mock import MockerFixture
@@ -26,7 +27,6 @@ from reflex_core.constants.state import FIELD_MARKER
 from reflex_core.vars.base import Field, Var, computed_var, field
 
 import reflex as rx
-import reflex.config
 from reflex.app import App
 from reflex.environment import environment
 from reflex.event import Event, EventHandler
@@ -3550,7 +3550,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex.config.get_config(reload=True)
+        reflex_core.config.get_config(reload=True)
         from reflex.state import State
 
         state_manager = StateManagerRedis(state=State, redis=mock_redis())
@@ -3587,7 +3587,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex.config.get_config(reload=True)
+        reflex_core.config.get_config(reload=True)
         from reflex.state import State
 
         with pytest.raises(InvalidLockWarningThresholdError):
@@ -3613,7 +3613,7 @@ config = rx.Config(
     monkeypatch.setenv("REFLEX_REDIS_URL", "redis://localhost:6379")
 
     with chdir(proj_root):
-        reflex.config.get_config(reload=True)
+        reflex_core.config.get_config(reload=True)
         monkeypatch.setattr(prerequisites, "get_redis", mock_redis)
         from reflex.state import State
 
@@ -3639,7 +3639,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex.config.get_config(reload=True)
+        reflex_core.config.get_config(reload=True)
         from reflex.state import State
 
         class TestState(State):

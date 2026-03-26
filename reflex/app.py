@@ -44,6 +44,8 @@ from reflex_components_core.core.sticky import sticky
 from reflex_components_radix import themes
 from reflex_components_sonner.toast import toast
 from reflex_core import constants
+from reflex_core.config import get_config
+from reflex_core.environment import ExecutorType, environment
 from reflex_core.event import (
     _EVENT_FIELDS,
     Event,
@@ -80,8 +82,6 @@ from reflex.components.component import (
     ComponentStyle,
     evaluate_style_namespaces,
 )
-from reflex.config import get_config
-from reflex.environment import ExecutorType, environment
 from reflex.experimental.memo import EXPERIMENTAL_MEMOS
 from reflex.istate.manager import StateModificationContext
 from reflex.istate.proxy import StateProxy

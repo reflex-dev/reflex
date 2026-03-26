@@ -12,8 +12,8 @@ from datetime import datetime, timezone
 from typing import TypedDict
 
 from reflex_core import constants
+from reflex_core.environment import environment
 
-from reflex.environment import environment
 from reflex.utils import console, processes
 from reflex.utils.decorator import once, once_unless_none
 from reflex.utils.exceptions import ReflexError
@@ -317,7 +317,7 @@ def _send_event(event_data: _Event) -> bool:
 
 
 def _send(event: str, telemetry_enabled: bool | None, **kwargs) -> bool:
-    from reflex.config import get_config
+    from reflex_core.config import get_config
 
     # Get the telemetry_enabled from the config if it is not specified.
     if telemetry_enabled is None:

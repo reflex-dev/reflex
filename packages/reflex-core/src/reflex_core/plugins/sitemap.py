@@ -130,8 +130,8 @@ def generate_links_for_sitemap(
     Returns:
         A list of SitemapLink dictionaries.
     """
-    from reflex.config import get_config
     from reflex.utils import console
+    from reflex_core.config import get_config
 
     deploy_url = get_config().deploy_url
 

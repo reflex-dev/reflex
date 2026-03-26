@@ -38,7 +38,7 @@ class Bun(SimpleNamespace):
         Returns:
             The directory to store the bun.
         """
-        from reflex.environment import environment
+        from reflex_core.environment import environment
 
         return environment.REFLEX_DIR.get() / "bun"
 

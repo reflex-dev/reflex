@@ -201,7 +201,7 @@ class TailwindPlugin(PluginBase):
         Returns:
             The Tailwind CSS configuration.
         """
-        from reflex.config import get_config
+        from reflex_core.config import get_config
 
         rxconfig_config = getattr(get_config(), "tailwind", None)
 

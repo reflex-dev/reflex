@@ -9,10 +9,10 @@ from typing import TYPE_CHECKING
 import click
 from reflex_cli.v2.deployments import hosting_cli
 from reflex_core import constants
+from reflex_core.config import get_config
+from reflex_core.environment import environment
 
-from reflex.config import get_config
 from reflex.custom_components.custom_components import custom_components_cli
-from reflex.environment import environment
 from reflex.utils import console
 
 if TYPE_CHECKING:
@@ -632,9 +632,9 @@ def status():
         return
 
     # Run alembic check command and display output
-    import reflex.config
+    import reflex_core.config
 
-    config = reflex.config.get_config()
+    config = reflex_core.config.get_config()
     console.print(f"[bold]\\[{config.db_url}][/bold]")
 
     # Get migration history using Model method

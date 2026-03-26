@@ -45,7 +45,7 @@ def page(
     Returns:
         The decorated function.
     """
-    from reflex.config import get_config
+    from reflex_core.config import get_config
 
     def decorator(render_fn: Callable):
         kwargs = {}

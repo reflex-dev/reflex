@@ -19,10 +19,10 @@ from typing import NamedTuple
 
 from packaging import version
 from reflex_core import constants
+from reflex_core.config import Config, get_config
+from reflex_core.environment import environment
 
 from reflex import model
-from reflex.config import Config, get_config
-from reflex.environment import environment
 from reflex.utils import console, net, path_ops
 from reflex.utils.decorator import once
 from reflex.utils.misc import get_module_path

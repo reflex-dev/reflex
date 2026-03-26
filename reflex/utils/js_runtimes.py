@@ -8,9 +8,9 @@ from pathlib import Path
 
 from packaging import version
 from reflex_core import constants
+from reflex_core.config import Config, get_config
+from reflex_core.environment import environment
 
-from reflex.config import Config, get_config
-from reflex.environment import environment
 from reflex.utils import console, net, path_ops, processes
 from reflex.utils.decorator import cached_procedure, once
 from reflex.utils.exceptions import SystemPackageMissingError

@@ -13,10 +13,10 @@ from typing import TypedDict
 
 from redis import ResponseError
 from redis.asyncio import Redis
+from reflex_core.config import get_config
+from reflex_core.environment import environment
 from typing_extensions import Unpack, override
 
-from reflex.config import get_config
-from reflex.environment import environment
 from reflex.istate.manager import (
     StateManager,
     StateModificationContext,

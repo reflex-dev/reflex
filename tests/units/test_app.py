@@ -2048,7 +2048,7 @@ def test_app_wrap_compile_theme(
         mocker: pytest mocker object.
     """
     conf = rx.Config(app_name="testing", react_strict_mode=react_strict_mode)
-    mocker.patch("reflex.config._get_config", return_value=conf)
+    mocker.patch("reflex_core.config._get_config", return_value=conf)
     app, web_dir = compilable_app
     mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
     app.theme = rx.theme(accent_color="plum")
@@ -2100,7 +2100,7 @@ def test_app_wrap_priority(
         mocker: pytest mocker object.
     """
     conf = rx.Config(app_name="testing", react_strict_mode=react_strict_mode)
-    mocker.patch("reflex.config._get_config", return_value=conf)
+    mocker.patch("reflex_core.config._get_config", return_value=conf)
 
     app, web_dir = compilable_app
 

@@ -7,9 +7,9 @@ from collections.abc import AsyncIterator
 from typing import TypedDict
 
 from reflex_core import constants
+from reflex_core.config import get_config
 from typing_extensions import ReadOnly, Unpack
 
-from reflex.config import get_config
 from reflex.event import Event
 from reflex.state import BaseState
 from reflex.utils import console, prerequisites

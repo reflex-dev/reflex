@@ -9,9 +9,7 @@ from unittest.mock import patch
 
 import pytest
 from reflex_core import constants
-from reflex_core.plugins import Plugin
-
-from reflex.environment import (
+from reflex_core.environment import (
     EnvironmentVariables,
     EnvVar,
     ExecutorType,
@@ -34,6 +32,8 @@ from reflex.environment import (
     interpret_plugin_class_env,
     interpret_plugin_env,
 )
+from reflex_core.plugins import Plugin
+
 from reflex.utils.exceptions import EnvironmentVarValueError
 
 

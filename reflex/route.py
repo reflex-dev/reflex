@@ -6,8 +6,7 @@ import re
 from collections.abc import Callable
 
 from reflex_core import constants
-
-from reflex.config import get_config
+from reflex_core.config import get_config
 
 
 def verify_route_validity(route: str) -> None:

@@ -9,9 +9,9 @@ from collections.abc import AsyncIterator
 from hashlib import md5
 from pathlib import Path
 
+from reflex_core.environment import environment
 from typing_extensions import Unpack, override
 
-from reflex.environment import environment
 from reflex.istate.manager import (
     StateManager,
     StateModificationContext,

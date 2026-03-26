@@ -119,7 +119,7 @@ def log_file_console():
     Returns:
         A Console object that logs to a file.
     """
-    from reflex.environment import environment
+    from reflex_core.environment import environment
 
     if not (env_log_file := environment.REFLEX_LOG_FILE.get()):
         subseconds = int((time.time() % 1) * 1000)
@@ -141,7 +141,7 @@ def should_use_log_file_console() -> bool:
     Returns:
         True if the log file console should be used, False otherwise.
     """
-    from reflex.environment import environment
+    from reflex_core.environment import environment
 
     return environment.REFLEX_ENABLE_FULL_LOGGING.get()
 

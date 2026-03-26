@@ -32,8 +32,9 @@ from typing import (
     get_type_hints,
 )
 
-from reflex_core import constants, event
+from reflex_core import constants
 from reflex_core.constants.state import FIELD_MARKER
+from reflex_core.environment import PerformanceMode, environment
 from reflex_core.utils.types import _isinstance, is_union, value_inside_optional
 from reflex_core.vars import Field, VarData, field
 from reflex_core.vars.base import (
@@ -49,7 +50,7 @@ from rich.markup import escape
 from typing_extensions import Self
 
 import reflex.istate.dynamic
-from reflex.environment import PerformanceMode, environment
+from reflex import event
 from reflex.event import (
     BACKGROUND_TASK_MARKER,
     EVENT_ACTIONS_MARKER,
@@ -230,7 +231,8 @@ class EventHandlerSetVar(EventHandler):
             EventHandlerValueError: If the given Var name is not a str
             NotImplementedError: If the setter for the given Var is async
         """
-        from reflex.config import get_config
+        from reflex_core.config import get_config
+
         from reflex.utils.exceptions import EventHandlerValueError
 
         config = get_config()
@@ -1082,7 +1084,8 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             VarTypeError: if the variable has an incorrect type
         """
-        from reflex.config import get_config
+        from reflex_core.config import get_config
+
         from reflex.utils.exceptions import VarTypeError
 
         if not types.is_valid_var_type(prop._var_type):
@@ -1186,7 +1189,7 @@ class BaseState(EvenMoreBasicBaseState):
             name: The name of the var.
             prop: The var to create a setter for.
         """
-        from reflex.config import get_config
+        from reflex_core.config import get_config
 
         config = get_config()
         create_event_handler_kwargs = {}
