@@ -61,6 +61,8 @@ class CompileVars(SimpleNamespace):
     IS_HYDRATED = "is_hydrated"
     # The name of the function to add events to the queue.
     ADD_EVENTS = "addEvents"
+    # The name of the function to apply event actions before invoking a target.
+    APPLY_EVENT_ACTIONS = "applyEventActions"
     # The name of the var storing any connection error.
     CONNECT_ERROR = "connectErrors"
     # The name of the function for converting a dict to an event.
@@ -128,7 +130,10 @@ class Imports(SimpleNamespace):
     EVENTS = {
         "react": [ImportVar(tag="useContext")],
         f"$/{Dirs.CONTEXTS_PATH}": [ImportVar(tag="EventLoopContext")],
-        f"$/{Dirs.STATE_PATH}": [ImportVar(tag=CompileVars.TO_EVENT)],
+        f"$/{Dirs.STATE_PATH}": [
+            ImportVar(tag=CompileVars.TO_EVENT),
+            ImportVar(tag=CompileVars.APPLY_EVENT_ACTIONS),
+        ],
     }
 
 
