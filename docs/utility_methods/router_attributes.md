@@ -1,6 +1,6 @@
 ```python exec box
 import reflex as rx
-from pcweb.styles.styles import get_code_style, cell_style
+cell_style = {"font_family": "Instrument Sans", "font_style": "normal", "font_weight": "500", "font_size": "14px", "line_height": "1.5", "letter_spacing": "-0.0125em", "color": "var(--c-slate-11)"}
 
 class RouterState(rx.State):
     pass
@@ -86,7 +86,7 @@ rx.table.root(
             *[
                 rx.table.row(
                     rx.table.cell(item["name"], style=cell_style),
-                    rx.table.cell(rx.code(item["value"], style=get_code_style("violet"))),
+                    rx.table.cell(rx.code(item["value"], style={"color": rx.color("violet", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('violet', 5)}", "background": rx.color("violet", 3)})),
                 )
                 for item in router_data
             ]

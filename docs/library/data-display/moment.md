@@ -12,7 +12,6 @@ To make it easy, Reflex is wrapping [react-moment](https://www.npmjs.com/package
 ```python exec
 import reflex as rx
 from reflex.utils.serializers import serialize_datetime
-from pcweb.templates.docpage import docdemo, docdemobox, doccode, docgraphing
 ```
 
 ## Examples
@@ -77,12 +76,12 @@ rx.moment(MomentState.date_now, format="HH:mm:ss")
 
 With the props `add` and `subtract`, you can pass an `rx.MomentDelta` object to modify the displayed date without affecting the stored date in your state.
 
-```python exec
-add_example = """rx.vstack(
+#### Add
+
+```python demo
+rx.vstack(
     rx.moment(MomentState.date_now, add=rx.MomentDelta(years=2), format="YYYY-MM-DD - HH:mm:ss"),
     rx.moment(MomentState.date_now, add=rx.MomentDelta(quarters=2), format="YYYY-MM-DD - HH:mm:ss"),
-    rx.moment(MomentState.date_now, add=rx.MomentDelta(months=2), format="YYYY-MM-DD - HH:mm:ss"),
-    rx.moment(MomentState.date_now, add=rx.MomentDelta(months=2), format="YYYY-MM-DD - HH:mm:ss"),
     rx.moment(MomentState.date_now, add=rx.MomentDelta(months=2), format="YYYY-MM-DD - HH:mm:ss"),
     rx.moment(MomentState.date_now, add=rx.MomentDelta(weeks=2), format="YYYY-MM-DD - HH:mm:ss"),
     rx.moment(MomentState.date_now, add=rx.MomentDelta(days=2), format="YYYY-MM-DD - HH:mm:ss"),
@@ -90,31 +89,20 @@ add_example = """rx.vstack(
     rx.moment(MomentState.date_now, add=rx.MomentDelta(minutes=2), format="YYYY-MM-DD - HH:mm:ss"),
     rx.moment(MomentState.date_now, add=rx.MomentDelta(seconds=2), format="YYYY-MM-DD - HH:mm:ss"),
 )
-"""
-subtract_example = """rx.vstack(
+```
+
+#### Subtract
+
+```python demo
+rx.vstack(
     rx.moment(MomentState.date_now, subtract=rx.MomentDelta(years=2), format="YYYY-MM-DD - HH:mm:ss"),
     rx.moment(MomentState.date_now, subtract=rx.MomentDelta(quarters=2), format="YYYY-MM-DD - HH:mm:ss"),
-    rx.moment(MomentState.date_now, subtract=rx.MomentDelta(months=2), format="YYYY-MM-DD - HH:mm:ss"),
-    rx.moment(MomentState.date_now, subtract=rx.MomentDelta(months=2), format="YYYY-MM-DD - HH:mm:ss"),
     rx.moment(MomentState.date_now, subtract=rx.MomentDelta(months=2), format="YYYY-MM-DD - HH:mm:ss"),
     rx.moment(MomentState.date_now, subtract=rx.MomentDelta(weeks=2), format="YYYY-MM-DD - HH:mm:ss"),
     rx.moment(MomentState.date_now, subtract=rx.MomentDelta(days=2), format="YYYY-MM-DD - HH:mm:ss"),
     rx.moment(MomentState.date_now, subtract=rx.MomentDelta(hours=2), format="YYYY-MM-DD - HH:mm:ss"),
     rx.moment(MomentState.date_now, subtract=rx.MomentDelta(minutes=2), format="YYYY-MM-DD - HH:mm:ss"),
     rx.moment(MomentState.date_now, subtract=rx.MomentDelta(seconds=2), format="YYYY-MM-DD - HH:mm:ss"),
-)
-"""
-```
-
-```python eval
-rx.tabs(
-    rx.tabs.list(
-        rx.tabs.trigger("Add", value="add"),
-        rx.tabs.trigger("Subtract", value="subtract")
-    ),
-    rx.tabs.content(docdemo(add_example, comp=eval(add_example)), value="add"),
-    rx.tabs.content(docdemo(subtract_example, comp=eval(subtract_example)), value="subtract"),
-    default_value="add",
 )
 ```
 

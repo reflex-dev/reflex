@@ -70,7 +70,6 @@ SelectItem: |
 ```python exec
 import random
 import reflex as rx
-from pcweb.templates.docpage import style_grid
 ```
 
 # Select

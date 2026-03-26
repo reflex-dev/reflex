@@ -1,5 +1,4 @@
 ```python exec
-from pcweb import constants
 import reflex as rx
 app_name = "my_app_name"
 default_url = "http://localhost:3000"
@@ -17,7 +16,7 @@ Reflex requires Python 3.10+.
 
 We **highly recommend** creating a virtual environment for your project.
 
-[uv]({constants.UV_URL}) is the recommended modern option. [venv]({constants.VENV_URL}), [conda]({constants.CONDA_URL}) and [poetry]({constants.POETRY_URL}) are some alternatives.
+[uv](https://docs.astral.sh/uv/) is the recommended modern option. [venv](https://docs.python.org/3/library/venv.html), [conda](https://conda.io/) and [poetry](https://python-poetry.org/) are some alternatives.
 
 # Install Reflex on your system
 
@@ -27,7 +26,7 @@ We **highly recommend** creating a virtual environment for your project.
 
 ## Install on macOS/Linux
 
-We will go with [uv]({constants.UV_URL}) here.
+We will go with [uv](https://docs.astral.sh/uv/) here.
 
 ### Prerequisites
 
@@ -83,7 +82,7 @@ For Windows users, we recommend using [Windows Subsystem for Linux (WSL)](https:
 
 For the rest of this section we will work with native Windows (non-WSL).
 
-We will go with [uv]({constants.UV_URL}) here.
+We will go with [uv](https://docs.astral.sh/uv/) here.
 
 ### Prerequisites
 
@@ -134,7 +133,7 @@ Bun requires runtime components of Visual C++ libraries to run on Windows. This 
 
 ---
 
-Running `uv run reflex init` will return the option to start with a blank Reflex app, premade templates built by the Reflex team, or to try our [AI builder]({constants.REFLEX_BUILD_URL}).
+Running `uv run reflex init` will return the option to start with a blank Reflex app, premade templates built by the Reflex team, or to try our [AI builder](https://build.reflex.dev/).
 
 ```bash
 Initializing the web directory.

@@ -9,7 +9,6 @@ Avatar: |
 
 ```python exec
 import reflex as rx
-from pcweb.templates.docpage import style_grid
 ```
 
 The Avatar component is used to represent a user, and display their profile pictures or fallback texts such as initials.
@@ -30,9 +29,6 @@ rx.avatar(fallback="RX")
 
 ## Styling
 
-```python eval
-style_grid(component_used=rx.avatar, component_used_str="rx.avatar", variants=["solid", "soft"], fallback="RX")
-```
 
 ### Size
 

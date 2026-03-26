@@ -2,11 +2,10 @@
 
 ```python exec
 import reflex as rx
-from pcweb.styles.colors import c_color
 image_style = {
   "width": "400px",
   "border_radius": "12px",
-  "border": f"1px solid {c_color('slate', 5)}",
+  "border": "1px solid var(--c-slate-5)",
 }
 ```
 

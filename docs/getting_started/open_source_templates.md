@@ -6,9 +6,7 @@ Check out what the community is building with Reflex. See 2000+ more public proj
 import reflex as rx
 
 from pcweb.components.code_card import gallery_app_card
-from pcweb.components.webpage.comps import h1_title
 from pcweb.pages.gallery.sidebar import TemplatesState, pagination, sidebar
-from pcweb.templates.webpage import webpage
 
 
 @rx.memo

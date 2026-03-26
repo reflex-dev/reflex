@@ -1,6 +1,17 @@
 ```python exec
 import reflex as rx
-from pcweb.templates.docpage import definition
+def definition(title, *children):
+    return rx.vstack(
+        rx.heading(title, font_size="1em", font_weight="bold", color=rx.color("mauve", 12)),
+        *children,
+        color=rx.color("mauve", 10),
+        padding="1em",
+        border=f"1px solid {rx.color('mauve', 4)}",
+        background_color=rx.color("mauve", 2),
+        border_radius="8px",
+        _hover={"border": f"1px solid {rx.color('mauve', 5)}", "background_color": rx.color("mauve", 3)},
+        align_items="start",
+    )
 ```
 
 # State

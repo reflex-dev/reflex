@@ -29,7 +29,6 @@ RadioGroupItem: |
 
 ```python exec
 import reflex as rx
-from pcweb.templates.docpage import style_grid
 ```
 
 # Radio Group

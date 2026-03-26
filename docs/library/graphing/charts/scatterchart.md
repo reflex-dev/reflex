@@ -8,7 +8,6 @@ components:
 
 ```python exec
 import reflex as rx
-from pcweb.templates.docpage import docgraphing
 ```
 
 A scatter chart always has two value axes to show one set of numerical data along a horizontal (value) axis and another set of numerical values along a vertical (value) axis. The chart displays points at the intersection of an x and y numerical value, combining these values into single data points.

@@ -3,7 +3,7 @@ from datetime import datetime
 
 import reflex as rx
 
-from pcweb.templates.docpage import docdemo, h1_comp, text_comp, docpage
+from pcweb.templates.docpage import docdemo, h1_comp, text_comp
 
 SYNTHETIC_EVENTS = [
     {

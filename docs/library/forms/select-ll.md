@@ -14,7 +14,6 @@ components:
 import random
 import reflex as rx
 import reflex.components.radix.primitives as rdxp
-from pcweb.templates.docpage import style_grid
 ```
 
 # Select

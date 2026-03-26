@@ -1,9 +1,5 @@
 ```python exec
 import reflex as rx
-from pcweb import constants, styles
-from pcweb.styles.colors import c_color
-from pcweb.styles.fonts import base
-from pcweb.flexdown import markdown_with_shiki
 ```
 
 <!-- TODO how do we consistently rename page title? -->
@@ -78,7 +74,7 @@ def tabs():
             ),
         ),
         rx.tabs.content(
-            markdown_with_shiki(
+            rx.markdown(
                 """The frontend is built declaratively using Reflex components. Components are compiled down to JS and served to the users browser, therefore:
 
 - Only use Reflex components, vars, and var operations when building your UI. Any other logic should be put in your `State` (backend).
@@ -90,7 +86,7 @@ def tabs():
             class_name="pt-4"
         ),
         rx.tabs.content(
-            markdown_with_shiki(
+            rx.markdown(
                 """Write your backend in the `State` class. Here you can define functions and variables that can be referenced in the frontend. This code runs directly on the server and is not compiled, so there are no special caveats. Here you can use any Python external library and call any method/function.
                 """,
             ),
@@ -98,7 +94,7 @@ def tabs():
             class_name="pt-4"
         ),
         rx.tabs.content(
-            markdown_with_shiki(
+            rx.markdown(
                 """Each page is a Python function that returns a Reflex component. You can define multiple pages and navigate between them, see the [Routing](/docs/pages/overview) section for more information.
 
 - Start with a single page and scale to 100s of pages.
@@ -335,11 +331,11 @@ For a glimpse of the possibilities, check out these resources:
 
 - For a more real-world example, check out either the [dashboard tutorial](/docs/getting_started/dashboard_tutorial) or the [chatapp tutorial](/docs/getting_started/chatapp_tutorial).
 - Check out our open-source [templates](/docs/getting_started/open_source_templates)!
-- We have an AI Builder that can generate full Reflex apps or help with your existing app! Check it out at [Reflex Build]({constants.REFLEX_BUILD_URL})!
+- We have an AI Builder that can generate full Reflex apps or help with your existing app! Check it out at [Reflex Build](https://build.reflex.dev/)!
 - Deploy your app with a single command using [Reflex Cloud](https://reflex.dev/docs/hosting/deploy-quick-start/)!
 
 If you want to learn more about how Reflex works, check out the [How Reflex Works](/docs/advanced_onboarding/how-reflex-works) section.
 
 ## Join our Community
 
-If you have questions about anything related to Reflex, you're always welcome to ask our community on [GitHub Discussions]({constants.GITHUB_DISCUSSIONS_URL}), [Discord]({constants.DISCORD_URL}), [Forum]({constants.FORUM_URL}), and [X]({constants.TWITTER_URL}).
+If you have questions about anything related to Reflex, you're always welcome to ask our community on [GitHub Discussions](https://github.com/orgs/reflex-dev/discussions), [Discord](https://discord.gg/T5WSbC2YtQ), [Forum](https://forum.reflex.dev), and [X](https://twitter.com/getreflex).

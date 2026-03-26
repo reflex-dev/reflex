@@ -138,7 +138,11 @@ TableRowHeaderCell: |
 
 ```python exec
 import reflex as rx
-from pcweb.models import Customer
+class Customer(rx.Model, table=True):
+    name: str
+    email: str
+    phone: str
+    address: str
 ```
 
 # Table

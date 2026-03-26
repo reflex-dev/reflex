@@ -1,7 +1,3 @@
-```python exec
-from pcweb import constants
-```
-
 # How Reflex Works
 
 We'll use the following basic app that displays Github profile images as an example to explain the different parts of the architecture.

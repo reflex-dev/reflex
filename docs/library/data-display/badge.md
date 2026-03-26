@@ -10,7 +10,6 @@ Badge: |
 
 ```python exec
 import reflex as rx
-from pcweb.templates.docpage import style_grid
 ```
 
 Badges are used to highlight an item's status for quick recognition.
@@ -25,9 +24,6 @@ rx.badge("New")
 
 ## Styling
 
-```python eval
-style_grid(component_used=rx.badge, component_used_str="rx.badge", variants=["solid", "soft", "surface", "outline"], components_passed="England!",)
-```
 
 ### Size
 

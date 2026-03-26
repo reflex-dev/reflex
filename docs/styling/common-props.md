@@ -2,8 +2,8 @@
 
 ```python exec
 import reflex as rx
-from pcweb.styles.styles import get_code_style, cell_style
-from pcweb.styles.colors import c_color
+cell_style = {"font_family": "Instrument Sans", "font_style": "normal", "font_weight": "500", "font_size": "14px", "line_height": "1.5", "letter_spacing": "-0.0125em", "color": "var(--c-slate-11)"}
+c_color = lambda color, shade: f"var(--c-{color}-{shade})"
 
 props = {
     "align": {
@@ -178,7 +178,7 @@ def show_props(key, props_dict):
         rx.table.cell(
             rx.link(
                 rx.hstack(
-                    rx.code(key, style=get_code_style("violet")),
+                    rx.code(key, style={"color": rx.color("violet", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('violet', 5)}", "background": rx.color("violet", 3)}),
                     rx.icon("square_arrow_out_up_right", color=c_color("slate", 9), size=15, flex_shrink="0"),
                     align="center"
                 ),
@@ -187,7 +187,7 @@ def show_props(key, props_dict):
             ),
             justify="start",),
         rx.table.cell(prop_details["description"], justify="start", style=cell_style),
-        rx.table.cell(rx.hstack(*[rx.code(value, style=get_code_style("violet")) for value in prop_details["values"]], flex_wrap="wrap"), justify="start",),
+        rx.table.cell(rx.hstack(*[rx.code(value, style={"color": rx.color("violet", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('violet', 5)}", "background": rx.color("violet", 3)}) for value in prop_details["values"]], flex_wrap="wrap"), justify="start",),
         justify="center",
         align="center",
 

@@ -1,7 +1,5 @@
 ```python exec
 import reflex as rx
-from pcweb.styles.styles import get_code_style
-from pcweb.styles.colors import c_color
 ```
 
 # Files
@@ -33,12 +31,12 @@ rx.table.root(
         rx.table.row(
             rx.table.cell(rx.text("Location", font_weight="bold")),
             rx.table.cell(rx.hstack(
-                rx.code("assets/", style=get_code_style("violet")),
+                rx.code("assets/", style={"color": rx.color("violet", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('violet', 5)}", "background": rx.color("violet", 3)}),
                 rx.text(" folder or next to Python files (shared assets)"),
                 spacing="2",
             )),
             rx.table.cell(rx.hstack(
-                rx.code("uploaded_files/", style=get_code_style("violet")),
+                rx.code("uploaded_files/", style={"color": rx.color("violet", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('violet', 5)}", "background": rx.color("violet", 3)}),
                 rx.text(" directory (configurable)"),
                 spacing="2",
             )),
@@ -46,11 +44,11 @@ rx.table.root(
         rx.table.row(
             rx.table.cell(rx.text("Access Method", font_weight="bold")),
             rx.table.cell(rx.hstack(
-                rx.code("rx.asset()", style=get_code_style("violet")),
+                rx.code("rx.asset()", style={"color": rx.color("violet", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('violet', 5)}", "background": rx.color("violet", 3)}),
                 rx.text(" or direct path reference"),
                 spacing="2",
             )),
-            rx.table.cell(rx.code("rx.get_upload_url()", style=get_code_style("violet"))),
+            rx.table.cell(rx.code("rx.get_upload_url()", style={"color": rx.color("violet", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('violet', 5)}", "background": rx.color("violet", 3)})),
         ),
         rx.table.row(
             rx.table.cell(rx.text("When to Use", font_weight="bold")),

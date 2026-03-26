@@ -4,9 +4,6 @@ import os
 import reflex as rx
 import openai
 
-from pcweb.constants import CHAT_APP_URL
-from pcweb import constants
-
 from docs.getting_started import chat_tutorial_style as style
 from docs.getting_started.chat_tutorial_utils import ChatappState
 
@@ -20,7 +17,7 @@ if "OPENAI_API_KEY" not in os.environ:
 
 This tutorial will walk you through building an AI chat app with Reflex. This app is fairly complex, but don't worry - we'll break it down into small steps.
 
-You can find the full source code for this app [here]({CHAT_APP_URL}).
+You can find the full source code for this app [here](https://github.com/reflex-dev/reflex-chat).
 
 ### What You'll Learn
 
@@ -44,7 +41,7 @@ We will start by creating a new project and setting up our development environme
 ~ $ cd chatapp
 ```
 
-Next, we will create a virtual environment for our project. This is optional, but recommended. In this example, we will use [venv]({constants.VENV_URL}) to create our virtual environment.
+Next, we will create a virtual environment for our project. This is optional, but recommended. In this example, we will use [venv](https://docs.python.org/3/library/venv.html) to create our virtual environment.
 
 ```bash
 chatapp $ python3 -m venv venv
