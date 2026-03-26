@@ -2723,26 +2723,7 @@ def test_mutable_copy_vars(mutable_state: MutableTestState, copy_func: Callable)
         assert not isinstance(var_copy, MutableProxy)
 
 
-@pytest.fixture
-def restore_all_base_state_classes(monkeypatch: pytest.MonkeyPatch):
-    """Fixture to restore BaseState subclasses after test.
-
-    Args:
-        monkeypatch: Pytest monkeypatch object.
-    """
-    from reflex.ievent import registry
-    from reflex.state import all_base_state_classes
-
-    monkeypatch.setattr(
-        "reflex.state.all_base_state_classes", all_base_state_classes.copy()
-    )
-    monkeypatch.setattr(
-        "reflex.ievent.registry.REGISTERED_HANDLERS",
-        registry.REGISTERED_HANDLERS.copy(),
-    )
-
-
-@pytest.mark.usefixtures("restore_all_base_state_classes")
+@pytest.mark.usefixtures("forked_registration_context")
 def test_duplicate_substate_class(mocker: MockerFixture):
     # Neuter pytest escape hatch, because we want to test duplicate detection.
     mocker.patch("reflex.state.is_testing_env", return_value=False)

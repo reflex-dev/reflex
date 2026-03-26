@@ -27,7 +27,6 @@ from typing_extensions import Self, TypeAliasType, TypedDict, TypeVarTuple, Unpa
 from reflex import constants
 from reflex.components.field import BaseField
 from reflex.constants.compiler import CompileVars, Hooks, Imports
-from reflex.constants.state import FRONTEND_EVENT_STATE
 from reflex.utils import format
 from reflex.utils.decorator import once
 from reflex.utils.exceptions import (
@@ -57,6 +56,7 @@ from reflex.vars.object import ObjectVar
 
 if TYPE_CHECKING:
     from reflex.istate.manager.token import BaseStateToken
+    from reflex.state import BaseState
 
 
 @dataclasses.dataclass(
@@ -79,13 +79,12 @@ class Event:
     payload: dict[str, Any] = dataclasses.field(default_factory=dict)
 
     @property
-    def state_cls(self) -> "type[BaseState]":
+    def state_cls(self) -> type[BaseState]:
         """The state class for the event."""
-        from reflex.state import all_base_state_classes
+        from reflex._internal.registry import RegistrationContext
 
         substate_name = self.name.rpartition(".")[0]
-
-        return all_base_state_classes[substate_name]
+        return RegistrationContext.get().base_states[substate_name]
 
     @property
     def substate_token(self) -> BaseStateToken:
@@ -243,9 +242,25 @@ class EventHandler(EventActionsMixin):
     # The function to call in response to the event.
     fn: Any = dataclasses.field(default=None)
 
-    # The full name of the state class this event handler is attached to.
-    # Empty string means this event handler is a server side event.
-    state_full_name: str = dataclasses.field(default="")
+    # The state this EventHandler is directly attached to, if any.
+    state: type[BaseState] | None = dataclasses.field(default=None, repr=False)
+
+    def __post_init__(self):
+        """Register the event handler."""
+        from reflex._internal.registry import RegistrationContext
+
+        RegistrationContext.register_event_handler(
+            self, states=(self.state,) if self.state else ()
+        )
+
+    @property
+    def state_full_name(self) -> str:
+        """Get the full name of the state class this event handler is attached to.
+
+        Returns:
+            The full name of the state class this event handler is attached to.
+        """
+        return self.state.get_full_name() if self.state else ""
 
     def __hash__(self):
         """Get the hash of the event handler.
@@ -253,7 +268,7 @@ class EventHandler(EventActionsMixin):
         Returns:
             The hash of the event handler.
         """
-        return hash((tuple(self.event_actions.items()), self.fn, self.state_full_name))
+        return hash((tuple(self.event_actions.items()), self.fn, self.state))
 
     def get_parameters(self) -> Mapping[str, inspect.Parameter]:
         """Get the parameters of the function.
@@ -316,7 +331,7 @@ class EventHandler(EventActionsMixin):
         from reflex.utils.exceptions import EventHandlerTypeError
 
         # Get the function args.
-        if self.state_full_name:
+        if self.state is not None:
             # Skip the `self` arg for state-bound event handlers.
             fn_args = list(self._parameters)[1:]
         else:
@@ -440,8 +455,10 @@ class EventSpec(EventActionsMixin):
         """
         from reflex.utils.exceptions import EventHandlerTypeError
 
+        n_self_args = 1 if self.handler.state is not None else 0
+
         # Get the remaining unfilled function args.
-        fn_args = list(self.handler._parameters)[1 + len(self.args) :]
+        fn_args = list(self.handler._parameters)[n_self_args + len(self.args) :]
         fn_args = (Var(_js_expr=arg) for arg in fn_args)
 
         # Construct the payload.
@@ -1028,7 +1045,7 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
     fn.__qualname__ = name
     fn.__signature__ = sig  # pyright: ignore [reportFunctionMemberAccess]
     return EventSpec(
-        handler=EventHandler(fn=fn, state_full_name=FRONTEND_EVENT_STATE),
+        handler=EventHandler(fn=fn),
         args=tuple(
             (
                 Var(_js_expr=k),
@@ -1077,7 +1094,7 @@ def redirect(
     """
     return server_side(
         "_redirect",
-        get_fn_signature(redirect),
+        inspect.signature(redirect),
         path=path,
         external=is_external,
         popup=popup,
@@ -1141,7 +1158,7 @@ def set_focus(ref: str) -> EventSpec:
     """
     return server_side(
         "_set_focus",
-        get_fn_signature(set_focus),
+        inspect.signature(set_focus),
         ref=LiteralVar.create(format.format_ref(ref)),
     )
 
@@ -1157,7 +1174,7 @@ def blur_focus(ref: str) -> EventSpec:
     """
     return server_side(
         "_blur_focus",
-        get_fn_signature(blur_focus),
+        inspect.signature(blur_focus),
         ref=LiteralVar.create(format.format_ref(ref)),
     )
 
@@ -1195,7 +1212,7 @@ def set_value(ref: str, value: Any) -> EventSpec:
     """
     return server_side(
         "_set_value",
-        get_fn_signature(set_value),
+        inspect.signature(set_value),
         ref=LiteralVar.create(format.format_ref(ref)),
         value=value,
     )
@@ -1215,7 +1232,7 @@ def remove_cookie(key: str, options: dict[str, Any] | None = None) -> EventSpec:
     options["path"] = options.get("path", "/")
     return server_side(
         "_remove_cookie",
-        get_fn_signature(remove_cookie),
+        inspect.signature(remove_cookie),
         key=key,
         options=options,
     )
@@ -1229,7 +1246,7 @@ def clear_local_storage() -> EventSpec:
     """
     return server_side(
         "_clear_local_storage",
-        get_fn_signature(clear_local_storage),
+        inspect.signature(clear_local_storage),
     )
 
 
@@ -1244,7 +1261,7 @@ def remove_local_storage(key: str) -> EventSpec:
     """
     return server_side(
         "_remove_local_storage",
-        get_fn_signature(remove_local_storage),
+        inspect.signature(remove_local_storage),
         key=key,
     )
 
@@ -1257,7 +1274,7 @@ def clear_session_storage() -> EventSpec:
     """
     return server_side(
         "_clear_session_storage",
-        get_fn_signature(clear_session_storage),
+        inspect.signature(clear_session_storage),
     )
 
 
@@ -1272,7 +1289,7 @@ def remove_session_storage(key: str) -> EventSpec:
     """
     return server_side(
         "_remove_session_storage",
-        get_fn_signature(remove_session_storage),
+        inspect.signature(remove_session_storage),
         key=key,
     )
 
@@ -1369,7 +1386,7 @@ def download(
 
     return server_side(
         "_download",
-        get_fn_signature(download),
+        inspect.signature(download),
         url=url,
         filename=filename,
     )
@@ -1410,7 +1427,7 @@ def call_script(
 
     return server_side(
         "_call_script",
-        get_fn_signature(call_script),
+        inspect.signature(call_script),
         javascript_code=javascript_code,
         **callback_kwargs,
     )
@@ -1446,7 +1463,7 @@ def call_function(
 
     return server_side(
         "_call_function",
-        get_fn_signature(call_function),
+        inspect.signature(call_function),
         function=javascript_code,
         **callback_kwargs,
     )
@@ -1629,13 +1646,14 @@ def call_event_handler(
 
     if isinstance(event_callback, EventSpec):
         parameters = event_callback.handler._parameters
+        n_self_args = 1 if event_callback.handler.state is not None else 0
 
         check_fn_match_arg_spec(
             event_callback.handler.fn,
             parameters,
             event_spec_args,
             key,
-            bool(event_callback.handler.state_full_name) + len(event_callback.args),
+            n_self_args + len(event_callback.args),
             event_callback.handler.fn.__qualname__,
         )
 
@@ -1651,9 +1669,7 @@ def call_event_handler(
         _check_event_args_subclass_of_callback(
             [
                 arg
-                for arg in event_callback_spec_args[
-                    bool(event_callback.handler.state_full_name) :
-                ]
+                for arg in event_callback_spec_args[n_self_args:]
                 if arg not in argument_names
             ],
             event_spec_return_types,
@@ -1665,6 +1681,8 @@ def call_event_handler(
         # Handle partial application of EventSpec args
         return event_callback.add_args(*event_spec_args)
 
+    n_self_args = 1 if event_callback.state is not None else 0
+
     parameters = event_callback._parameters
 
     check_fn_match_arg_spec(
@@ -1672,7 +1690,7 @@ def call_event_handler(
         parameters,
         event_spec_args,
         key,
-        bool(event_callback.state_full_name),
+        n_self_args,
         event_callback.fn.__qualname__,
     )
 
@@ -1685,7 +1703,7 @@ def call_event_handler(
             type_hints_of_provided_callback = {}
 
         _check_event_args_subclass_of_callback(
-            event_callback_spec_args[1:],
+            event_callback_spec_args[n_self_args:],
             event_spec_return_types,
             type_hints_of_provided_callback,
             event_callback.fn.__qualname__,
@@ -1978,22 +1996,6 @@ def fix_events(
         )
 
     return out
-
-
-def get_fn_signature(fn: Callable) -> inspect.Signature:
-    """Get the signature of a function.
-
-    Args:
-        fn: The function.
-
-    Returns:
-        The signature of the function.
-    """
-    signature = inspect.signature(fn)
-    new_param = inspect.Parameter(
-        FRONTEND_EVENT_STATE, inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=Any
-    )
-    return signature.replace(parameters=(new_param, *signature.parameters.values()))
 
 
 # These chains can be used for their side effects when no other events are desired.
@@ -2549,7 +2551,6 @@ class EventNamespace:
     parse_args_spec = staticmethod(parse_args_spec)
     args_specs_from_fields = staticmethod(args_specs_from_fields)
     unwrap_var_annotation = staticmethod(unwrap_var_annotation)
-    get_fn_signature = staticmethod(get_fn_signature)
 
     # Event Spec Functions
     passthrough_event_spec = staticmethod(passthrough_event_spec)

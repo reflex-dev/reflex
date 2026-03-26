@@ -12,9 +12,9 @@ from typing import TYPE_CHECKING, Any, Self
 
 import rich.markup
 
+from reflex._internal.registry import RegisteredEventHandler, RegistrationContext
 from reflex.app_mixins.middleware import MiddlewareMixin
 from reflex.ievent.context import EventContext, event_context
-from reflex.ievent.registry import REGISTERED_HANDLERS, RegisteredEventHandler
 from reflex.istate.manager import StateManager
 from reflex.utils import console
 
@@ -386,7 +386,9 @@ class EventProcessor:
                 entry = await queue.get()
                 try:
                     try:
-                        registered_handler = REGISTERED_HANDLERS[entry.event.name]
+                        registered_handler = RegistrationContext.get().event_handlers[
+                            entry.event.name
+                        ]
                     except KeyError as ke:
                         msg = (
                             f"No registered handler found for event: {entry.event.name}"

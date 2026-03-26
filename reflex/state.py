@@ -173,8 +173,6 @@ def _split_substate_key(substate_key: str) -> tuple[str, str]:
 class EventHandlerSetVar(EventHandler):
     """A special event handler to wrap setvar functionality."""
 
-    state_cls: type[BaseState] = dataclasses.field(init=False)
-
     def __init__(self, state_cls: type[BaseState]):
         """Initialize the EventHandlerSetVar.
 
@@ -183,9 +181,8 @@ class EventHandlerSetVar(EventHandler):
         """
         super().__init__(
             fn=type(self).setvar,
-            state_full_name=state_cls.get_full_name(),
+            state=state_cls,
         )
-        object.__setattr__(self, "state_cls", state_cls)
 
     def __hash__(self):
         """Get the hash of the event handler.
@@ -197,7 +194,7 @@ class EventHandlerSetVar(EventHandler):
             tuple(self.event_actions.items()),
             self.fn,
             self.state_full_name,
-            self.state_cls,
+            self.state,
         ))
 
     def setvar(self, var_name: str, value: Any):
@@ -229,11 +226,11 @@ class EventHandlerSetVar(EventHandler):
         from reflex.utils.exceptions import EventHandlerValueError
 
         config = get_config()
-        if config.state_auto_setters is None:
+        if config.state_auto_setters is None and self.state is not None:
             console.deprecate(
                 feature_name="state_auto_setters defaulting to True",
                 reason="The default value will be changed to False in a future release. Set state_auto_setters explicitly or define setters explicitly. "
-                f"Used {self.state_cls.__name__}.setvar without defining it.",
+                f"Used {self.state.__name__}.setvar without defining it.",
                 deprecation_version="0.8.9",
                 removal_version="0.9.0",
                 dedupe=True,
@@ -244,11 +241,11 @@ class EventHandlerSetVar(EventHandler):
                 msg = f"Var name must be passed as a string, got {args[0]!r}"
                 raise EventHandlerValueError(msg)
 
-            handler = getattr(self.state_cls, constants.SETTER_PREFIX + args[0], None)
+            handler = getattr(self.state, constants.SETTER_PREFIX + args[0], None)
 
             # Check that the requested Var setter exists on the State at compile time.
             if handler is None:
-                msg = f"Variable `{args[0]}` cannot be set on `{self.state_cls.get_full_name()}`"
+                msg = f"Variable `{args[0]}` cannot be set on `{self.state_full_name}`"
                 raise AttributeError(msg)
 
             if inspect.iscoroutinefunction(handler.fn):
@@ -319,7 +316,7 @@ def _override_base_method(fn: Callable[PARAMS, RETURN]) -> Callable[PARAMS, RETU
     return fn
 
 
-all_base_state_classes: dict[str, type[BaseState]] = {}
+all_base_state_classes: dict[str, None] = {}
 
 CLASS_VAR_NAMES = frozenset({
     "vars",
@@ -503,7 +500,7 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             StateValueError: If a substate class shadows another.
         """
-        from reflex.ievent.registry import register
+        from reflex._internal.registry import RegistrationContext
         from reflex.utils.exceptions import StateValueError
 
         super().__init_subclass__(**kwargs)
@@ -627,14 +624,15 @@ class BaseState(EvenMoreBasicBaseState):
 
         for name, fn in events.items():
             handler = cls._create_event_handler(fn)
-            cls.event_handlers[name] = register(handler, states=(cls,))
+            cls.event_handlers[name] = handler
             setattr(cls, name, handler)
 
         # Initialize per-class var dependency tracking.
         cls._var_dependencies = {}
         cls._init_var_dependency_dicts()
 
-        all_base_state_classes[cls.get_full_name()] = cls
+        all_base_state_classes[cls.get_full_name()] = None
+        RegistrationContext.register_base_state(cls)
 
     @classmethod
     def _add_event_handler(
@@ -648,10 +646,8 @@ class BaseState(EvenMoreBasicBaseState):
             name: The name of the event handler.
             fn: The function to call when the event is triggered.
         """
-        from reflex.ievent.registry import register
-
         handler = cls._create_event_handler(fn)
-        cls.event_handlers[name] = register(handler, states=(cls,))
+        cls.event_handlers[name] = handler
         setattr(cls, name, handler)
 
     @staticmethod
@@ -1158,18 +1154,12 @@ class BaseState(EvenMoreBasicBaseState):
         # Check if function has stored event_actions from decorator
         event_actions = getattr(fn, EVENT_ACTIONS_MARKER, {})
 
-        return event_handler_cls(
-            fn=fn, state_full_name=cls.get_full_name(), event_actions=event_actions
-        )
+        return event_handler_cls(fn=fn, state=cls, event_actions=event_actions)
 
     @classmethod
     def _create_setvar(cls):
         """Create the setvar method for the state."""
-        from reflex.ievent.registry import register
-
-        cls.setvar = cls.event_handlers["setvar"] = register(
-            EventHandlerSetVar(state_cls=cls), states=(cls,)
-        )
+        cls.setvar = cls.event_handlers["setvar"] = EventHandlerSetVar(state_cls=cls)
 
     @classmethod
     def _create_setter(cls, name: str, prop: Var):
@@ -1180,7 +1170,6 @@ class BaseState(EvenMoreBasicBaseState):
             prop: The var to create a setter for.
         """
         from reflex.config import get_config
-        from reflex.ievent.registry import register
 
         config = get_config()
         create_event_handler_kwargs = {}
@@ -1208,7 +1197,7 @@ class BaseState(EvenMoreBasicBaseState):
             event_handler = cls._create_event_handler(
                 prop._get_setter(name), **create_event_handler_kwargs
             )
-            cls.event_handlers[setter_name] = register(event_handler, states=(cls,))
+            cls.event_handlers[setter_name] = event_handler
             setattr(cls, setter_name, event_handler)
 
     @classmethod

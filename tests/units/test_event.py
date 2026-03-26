@@ -103,7 +103,7 @@ def test_call_event_handler():
 def test_call_event_handler_partial():
     """Calling an EventHandler with incomplete args returns an EventSpec that can be extended."""
 
-    def fn_with_args(_, arg1, arg2):
+    def fn_with_args(arg1, arg2):
         pass
 
     fn_with_args.__qualname__ = "fn_with_args"
@@ -111,7 +111,7 @@ def test_call_event_handler_partial():
     def spec(a2: Var[str]) -> list[Var[str]]:
         return [a2]
 
-    handler = EventHandler(fn=fn_with_args, state_full_name="BigState")
+    handler = EventHandler(fn=fn_with_args)
     event_spec = handler(make_var("first"))
     event_spec2 = call_event_handler(event_spec, spec)
 
@@ -120,8 +120,7 @@ def test_call_event_handler_partial():
     assert event_spec.args[0][0].equals(Var(_js_expr="arg1"))
     assert event_spec.args[0][1].equals(Var(_js_expr="first"))
     assert (
-        format.format_event(event_spec)
-        == 'ReflexEvent("BigState.fn_with_args", {arg1:first})'
+        format.format_event(event_spec) == 'ReflexEvent("fn_with_args", {arg1:first})'
     )
 
     assert event_spec2 is not event_spec
@@ -133,7 +132,7 @@ def test_call_event_handler_partial():
     assert event_spec2.args[1][1].equals(Var(_js_expr="_a2", _var_type=str))
     assert (
         format.format_event(event_spec2)
-        == 'ReflexEvent("BigState.fn_with_args", {arg1:first,arg2:_a2})'
+        == 'ReflexEvent("fn_with_args", {arg1:first,arg2:_a2})'
     )
 
 

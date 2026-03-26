@@ -9,7 +9,6 @@ import re
 from typing import TYPE_CHECKING, Any
 
 from reflex import constants
-from reflex.constants.state import FRONTEND_EVENT_STATE
 from reflex.utils import exceptions
 
 if TYPE_CHECKING:
@@ -448,25 +447,20 @@ def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
     Returns:
         The state and function name.
     """
-    # Get the class that defines the event handler.
-    parts = handler.fn.__qualname__.split(".")
+    # Get the name of the event function.
+    name = handler.fn.__qualname__
 
     # Get the state full name
-    state_full_name = handler.state_full_name
+    state_full_name = handler.state.get_full_name() if handler.state else ""
 
-    # If there's no enclosing class, just return the function name.
-    if not state_full_name:
-        return ("", parts[-1])
+    # If there's no enclosing state, just return the full name.
+    if handler.state is None:
+        return ("", name)
 
-    # Get the function name
-    name = parts[-1]
+    # Get the event name inside the state.
+    func_name = name.rpartition(".")[2]
 
-    from reflex.state import BaseState
-
-    if state_full_name == FRONTEND_EVENT_STATE and name not in BaseState.__dict__:
-        return ("", to_snake_case(handler.fn.__qualname__))
-
-    return (state_full_name, name)
+    return (state_full_name, func_name)
 
 
 def format_event_handler(handler: EventHandler) -> str:

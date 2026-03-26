@@ -4,12 +4,14 @@ import platform
 import traceback
 import uuid
 from collections.abc import AsyncGenerator, Generator, Mapping
+from copy import deepcopy
 from typing import Any
 from unittest import mock
 
 import pytest
 import pytest_asyncio
 
+from reflex._internal.registry import RegistrationContext
 from reflex.app import App
 from reflex.event import Event, EventSpec
 from reflex.ievent.context import EventContext, event_context
@@ -433,3 +435,17 @@ def attached_mock_event_context(
     reset_token = event_context.set(ctx)
     yield ctx
     event_context.reset(reset_token)
+
+
+@pytest.fixture
+def forked_registration_context() -> Generator[RegistrationContext, None, None]:
+    """Fork the registration context and attach it.
+
+    Sets the forked context as the current registration context for the duration
+    of the test, then resets it afterwards.
+
+    Yields:
+        The forked RegistrationContext.
+    """
+    with deepcopy(RegistrationContext.get()) as ctx:
+        yield ctx
