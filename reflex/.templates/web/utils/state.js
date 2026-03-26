@@ -379,7 +379,6 @@ export const applyEvent = async (event, socket, navigate, params) => {
   }
 
   // Update token and router data (if missing).
-  event.token = getToken();
   if (
     event.router_data === undefined ||
     Object.keys(event.router_data).length === 0

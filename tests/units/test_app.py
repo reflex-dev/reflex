@@ -523,7 +523,6 @@ async def test_dynamic_var_event(
         await processor.enqueue(
             token,
             Event(
-                token=token,
                 name=f"{test_state.get_name()}.set_int_val",
                 payload={"value": 50},
             ),
@@ -723,7 +722,6 @@ async def test_list_mutation_detection__plain_list(
             await processor.enqueue(
                 token,
                 Event(
-                    token="",
                     name=f"{list_mutation_state.get_name()}.{event_name}",
                     payload={},
                 ),
@@ -921,7 +919,6 @@ async def test_dict_mutation_detection__plain_list(
             await processor.enqueue(
                 token,
                 Event(
-                    token="",
                     name=f"{dict_mutation_state.get_name()}.{event_name}",
                     payload={},
                 ),
@@ -1472,7 +1469,6 @@ async def test_dynamic_route_var_route_change_completed_on_load(
 
     def _event(name, val, **kwargs):
         return Event(
-            token=kwargs.pop("token", token),
             name=name,
             router_data=kwargs.pop(
                 "router_data",
@@ -1606,7 +1602,6 @@ async def test_process_events(
         emitted_deltas: List to store emitted deltas.
     """
     event = Event(
-        token=token,
         name=f"{GenState.get_name()}.go",
         payload={"c": 5},
         router_data={},

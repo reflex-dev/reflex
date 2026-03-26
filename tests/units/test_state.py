@@ -822,7 +822,6 @@ async def test_process_event_simple(
         emitted_deltas: List to capture emitted deltas.
     """
     event = Event(
-        token=token,
         name=f"{TestState.get_full_name()}.set_num1",
         payload={"value": 69},
     )
@@ -858,7 +857,6 @@ async def test_process_event_substate(
     """
     # Events should bubble down to the substate.
     event = Event(
-        token=token,
         name=f"{ChildState.get_full_name()}.change_both",
         payload={"value": "hi", "count": 12},
     )
@@ -880,7 +878,6 @@ async def test_process_event_substate(
 
     # Test with the grandchild state.
     event = Event(
-        token=token,
         name=f"{GrandchildState.get_full_name()}.set_value2",
         payload={"value": "new"},
     )
@@ -911,7 +908,6 @@ async def test_process_event_generator(
         emitted_deltas: List to capture emitted deltas.
     """
     event = Event(
-        token=token,
         name=f"{GenState.get_full_name()}.go",
         payload={"c": 5},
     )
@@ -1696,7 +1692,6 @@ async def test_state_with_invalid_yield(
     mock_base_state_event_processor.backend_exception_handler = capture_exception
 
     event = Event(
-        token=token,
         name=f"{StateWithInvalidYield.get_full_name()}.invalid_handler",
         payload={},
     )
@@ -2376,7 +2371,6 @@ async def test_background_task_no_block(
         await processor.enqueue(
             token,
             Event(
-                token=token,
                 name=f"{BackgroundTaskState.get_full_name()}.background_task",
                 payload={},
             ),
@@ -2388,7 +2382,6 @@ async def test_background_task_no_block(
         await processor.enqueue(
             token,
             Event(
-                token=token,
                 name=f"{BackgroundTaskState.get_full_name()}.other",
                 payload={},
             ),
@@ -2429,7 +2422,6 @@ async def test_background_task_reset(
         await processor.enqueue(
             token,
             Event(
-                token=token,
                 name=f"{BackgroundTaskState.get_full_name()}.background_task_reset",
                 payload={},
             ),
@@ -3032,7 +3024,6 @@ async def test_preprocess(
         await processor.enqueue(
             token,
             Event(
-                token=token,
                 name=on_load_internal_name,
                 router_data={
                     RouteVar.PATH: "/",
@@ -3115,7 +3106,6 @@ async def test_preprocess_multiple_load_events(
         await processor.enqueue(
             token,
             Event(
-                token=token,
                 name=on_load_internal_name,
                 router_data={
                     RouteVar.PATH: "/",
@@ -4188,7 +4178,6 @@ async def test_upcast_event_handler_arg(
         emitted_deltas: List to capture emitted deltas.
     """
     event = Event(
-        token=token,
         name=format.format_event_handler(handler),
         payload=payload,
     )

@@ -55,7 +55,6 @@ from reflex.vars.function import (
 from reflex.vars.object import ObjectVar
 
 if TYPE_CHECKING:
-    from reflex.istate.manager.token import BaseStateToken
     from reflex.state import BaseState
 
 
@@ -66,13 +65,10 @@ if TYPE_CHECKING:
 class Event:
     """An event that describes any state change in the app."""
 
-    # The token to specify the client that the event is for (TODO: remove).
-    token: str
-
     # The event name.
     name: str
 
-    # The routing data where event occurred (TODO: remove).
+    # The routing data where event occurred.
     router_data: dict[str, Any] = dataclasses.field(default_factory=dict)
 
     # The event payload.
@@ -86,24 +82,18 @@ class Event:
         substate_name = self.name.rpartition(".")[0]
         return RegistrationContext.get().base_states[substate_name]
 
-    @property
-    def substate_token(self) -> BaseStateToken:
-        """Get the substate token for the event.
-
-        Returns:
-            The substate token.
-        """
-        msg = "Event.substate_token should no longer be used."
-        raise NotImplementedError(msg)
-
     @classmethod
     def from_event_type(
-        cls, events: "IndividualEventType | list[IndividualEventType] | None"
+        cls,
+        events: "IndividualEventType | list[IndividualEventType] | None",
+        *,
+        router_data: dict[str, Any] | None = None,
     ) -> "list[Event]":
         """Create a list of Events from event-like objects.
 
         Args:
             events: The event-like objects to create Events from.
+            router_data: The routing data for the events.
 
         Returns:
             A list of Events created from the event-like objects.
@@ -124,7 +114,12 @@ class Event:
                 e = e()
             if isinstance(e, Event):
                 # If the event is already an event, append it to the list.
-                out.append(e)
+                if router_data is not None and e.router_data != router_data:
+                    out.append(
+                        dataclasses.replace(e, router_data=e.router_data | router_data)
+                    )
+                else:
+                    out.append(e)
                 continue
             # Otherwise, create an event from the event spec.
             if isinstance(e, EventHandler):
@@ -139,10 +134,9 @@ class Event:
             # Create an event and append it to the list.
             out.append(
                 Event(
-                    token="none",
                     name=name,
                     payload=payload,
-                    router_data={},
+                    router_data=router_data or {},
                 )
             )
 
@@ -1934,21 +1928,19 @@ def get_handler_args(
 
 def fix_events(
     events: list[EventSpec | EventHandler] | None,
-    token: str,
     router_data: dict[str, Any] | None = None,
 ) -> list[Event]:
     """Fix a list of events returned by an event handler.
 
     Args:
         events: The events to fix.
-        token: The user token.
         router_data: The optional router data to set in the event.
-
-    Raises:
-        ValueError: If the event type is not what was expected.
 
     Returns:
         The fixed events.
+
+    Raises:
+        ValueError: If the event type is not what was expected.
     """
     # If the event handler returns nothing, return an empty list.
     if events is None:
@@ -1988,7 +1980,6 @@ def fix_events(
         # Create an event and append it to the list.
         out.append(
             Event(
-                token=token,
                 name=name,
                 payload=payload,
                 router_data=event_router_data,

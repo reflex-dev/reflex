@@ -2389,7 +2389,6 @@ class OnLoadInternalState(State):
         return [
             *fix_events(
                 cast(list[EventSpec | EventHandler], load_events),
-                self.router.session.client_token,
                 router_data=self.router_data,
             ),
             State.set_is_hydrated(True),

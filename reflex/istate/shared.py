@@ -166,7 +166,6 @@ class SharedStateBaseInternal(State):
         """
         return [
             Event(
-                token=self.router.session.client_token,
                 name=get_hydrate_event(self._get_root_state()),
             ),
             State.set_is_hydrated(True),

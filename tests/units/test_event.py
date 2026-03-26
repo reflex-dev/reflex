@@ -34,8 +34,7 @@ def make_var(value) -> Var:
 
 def test_create_event():
     """Test creating an event."""
-    event = Event(token="token", name="state.do_thing", payload={"arg": "value"})
-    assert event.token == "token"
+    event = Event(name="state.do_thing", payload={"arg": "value"})
     assert event.name == "state.do_thing"
     assert event.payload == {"arg": "value"}
 
@@ -159,9 +158,8 @@ def test_fix_events(arg1, arg2):
 
     handler = EventHandler(fn=fn_with_args)
     event_spec = handler(arg1, arg2)
-    event = fix_events([event_spec], token="foo")[0]
+    event = fix_events([event_spec])[0]
     assert event.name == fn_with_args.__qualname__
-    assert event.token == "foo"
     assert event.payload == {"arg1": arg1, "arg2": arg2}
 
 

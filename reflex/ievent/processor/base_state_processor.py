@@ -175,15 +175,13 @@ async def chain_updates(
         handler_name: The name of the handler that yielded the events, used for error messages.
         root_state: The root state of the app, no delta emitted if omitted.
     """
-    from reflex.event import fix_events
+    from reflex.event import Event
 
     ctx = event_context.get()
-    token = ctx.token
 
     # Convert valid EventHandler and EventSpec into Event
-    if fixed_events := fix_events(
+    if fixed_events := Event.from_event_type(
         _check_valid_yield(events, handler_name=handler_name),
-        token,
         router_data=root_state.router_data if root_state else None,
     ):
         # Frontend events.

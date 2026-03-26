@@ -2113,6 +2113,13 @@ class EventNamespace(AsyncNamespace):
         Raises:
             EventDeserializationError: If the event data is not a dictionary.
         """
+        # Determine the token for this SID
+        if (token := self.sid_to_token.get(sid)) is None:
+            console.warn(
+                f"Received event from session {sid} with no associated token. This may indicate a bug. Event data: {data}"
+            )
+            return
+
         fields = data
 
         if isinstance(fields, str):
@@ -2136,14 +2143,6 @@ class EventNamespace(AsyncNamespace):
         except (TypeError, ValueError) as ex:
             msg = f"Failed to deserialize event data: {fields}."
             raise exceptions.EventDeserializationError(msg) from ex
-
-        # Correct the token if it doesn't match what we expect for this SID
-        expected_token = self.sid_to_token.get(sid)
-        if expected_token and event.token != expected_token:
-            # Create new event with corrected token since Event is frozen
-            from dataclasses import replace
-
-            event = replace(event, token=expected_token)
 
         # Get the event environment.
         if self.app.sio is None:
@@ -2180,7 +2179,7 @@ class EventNamespace(AsyncNamespace):
         router_data = event.router_data
         router_data.update({
             constants.RouteVar.QUERY: format.format_query_params(event.router_data),
-            constants.RouteVar.CLIENT_TOKEN: event.token,
+            constants.RouteVar.CLIENT_TOKEN: token,
             constants.RouteVar.SESSION_ID: sid,
             constants.RouteVar.HEADERS: headers,
             constants.RouteVar.CLIENT_IP: client_ip,
@@ -2190,7 +2189,7 @@ class EventNamespace(AsyncNamespace):
             if (path := router_data.get(constants.RouteVar.PATH))
             else "404"
         ).removeprefix("/")
-        await self.app.event_processor.enqueue(event.token, event)
+        await self.app.event_processor.enqueue(token, event)
 
     async def on_ping(self, sid: str):
         """Event for testing the API endpoint.
