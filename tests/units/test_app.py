@@ -1,20 +1,23 @@
 from __future__ import annotations
 
+import asyncio
 import functools
 import io
+import json
 import unittest.mock
 import uuid
 from collections.abc import Generator
 from contextlib import nullcontext as does_not_raise
 from importlib.util import find_spec
 from pathlib import Path
+from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, ClassVar
 from unittest.mock import AsyncMock
 
 import pytest
 from pytest_mock import MockerFixture
 from starlette.applications import Starlette
-from starlette.datastructures import UploadFile
+from starlette.datastructures import FormData, Headers, UploadFile
 from starlette.responses import StreamingResponse
 
 import reflex as rx
@@ -55,6 +58,7 @@ from .conftest import chdir
 from .states import GenState
 from .states.upload import (
     ChildFileUploadState,
+    ChunkUploadState,
     FileStateBase1,
     FileUploadState,
     GrandChildFileUploadState,
@@ -939,7 +943,7 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker: MockerFix
     Args:
         tmp_path: Temporary path.
         state: The state class.
-        delta: Expected delta
+        delta: Expected delta after processing all files.
         token: a Token.
         mocker: pytest mocker object.
     """
@@ -947,16 +951,12 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker: MockerFix
         "reflex.state.State.class_subclasses",
         {state if state is FileUploadState else FileStateBase1},
     )
-    state._tmp_path = tmp_path
     # The App state must be the "root" of the state tree
     app = App()
     app.event_namespace.emit = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
-    current_state = await app.state_manager.get_state(_substate_key(token, state))
+    async with app.modify_state(_substate_key(token, state)) as root_state:
+        root_state.get_substate(state.get_full_name().split("."))._tmp_path = tmp_path
     data = b"This is binary data"
-
-    # Create a binary IO object and write data to it
-    bio = io.BytesIO()
-    bio.write(data)
 
     request_mock = unittest.mock.Mock()
     request_mock.headers = {
@@ -966,44 +966,284 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker: MockerFix
 
     file1 = UploadFile(
         filename="image1.jpg",
-        file=bio,
+        file=io.BytesIO(data),
     )
     file2 = UploadFile(
         filename="image2.jpg",
-        file=bio,
+        file=io.BytesIO(data),
     )
 
     async def form():  # noqa: RUF029
-        files_mock = unittest.mock.Mock()
-
-        def getlist(key: str):
-            assert key == "files"
-            return [file1, file2]
-
-        files_mock.getlist = getlist
-
-        return files_mock
+        return FormData([("files", file1), ("files", file2)])
 
     request_mock.form = form
 
     upload_fn = upload(app)
     streaming_response = await upload_fn(request_mock)
     assert isinstance(streaming_response, StreamingResponse)
+    # Handler yields after each file, producing intermediate + final updates.
+    updates = []
     async for state_update in streaming_response.body_iterator:
-        assert (
-            state_update
-            == StateUpdate(delta=delta, events=[], final=True).json() + "\n"
-        )
+        updates.append(json.loads(str(state_update)))
+    # 2 intermediate yields + 1 final
+    assert len(updates) == 3
+    assert all(not u["final"] for u in updates[:-1])
+    assert updates[-1]["final"]
+
+    # The last intermediate update should contain the full cumulative delta.
+    assert updates[1]["delta"] == delta
+
+    await app.state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_upload_file_keeps_form_open_until_stream_completes(
+    tmp_path,
+    token: str,
+    mocker: MockerFixture,
+):
+    """Test that upload files are not eagerly copied into memory.
+
+    Uses two distinct BinaryIO instances, sets _tmp_path via modify_state,
+    and verifies that both file handles remain open during streaming and are
+    closed (along with correct file content) after the stream completes.
+
+    Args:
+        tmp_path: Temporary path.
+        token: A token.
+        mocker: pytest mocker object.
+    """
+    mocker.patch(
+        "reflex.state.State.class_subclasses",
+        {FileUploadState},
+    )
+    app = App()
+    app.event_namespace.emit = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
+
+    # Set _tmp_path via modify_state instead of setting class attribute directly.
+    async with app.modify_state(_substate_key(token, FileUploadState)) as root_state:
+        root_state.get_substate(
+            FileUploadState.get_full_name().split(".")
+        )._tmp_path = tmp_path
+
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": f"{FileUploadState.get_full_name()}.multi_handle_upload",
+    }
+
+    data1 = b"contents of image one"
+    data2 = b"contents of image two"
+    bio1 = io.BytesIO(data1)
+    bio2 = io.BytesIO(data2)
+    file1 = UploadFile(filename="image1.jpg", file=bio1)
+    file2 = UploadFile(filename="image2.jpg", file=bio2)
+
+    form_data = FormData([("files", file1), ("files", file2)])
+    original_close = form_data.close
+    form_close = AsyncMock(side_effect=original_close)
+    form_data.close = form_close
+
+    async def form():  # noqa: RUF029
+        return form_data
+
+    request_mock.form = form
+
+    upload_fn = upload(app)
+    streaming_response = await upload_fn(request_mock)
+
+    assert isinstance(streaming_response, StreamingResponse)
+    # Before streaming starts, nothing should be read or closed.
+    assert form_close.await_count == 0
+    assert not bio1.closed
+    assert not bio2.closed
+
+    # Drive the response through the full ASGI lifecycle so that
+    # _UploadStreamingResponse.__call__ invokes the on_finish callback.
+    scope = {"type": "http"}
+    done = asyncio.Event()
+
+    async def receive():
+        await done.wait()
+        return {"type": "http.disconnect"}
+
+    async def send(message):  # noqa: RUF029
+        if message.get("type") == "http.response.body" and not message.get("body"):
+            done.set()
+
+    await streaming_response(scope, receive, send)
+
+    # After the ASGI call completes, form_data.close() should have been called,
+    # closing both underlying file handles.
+    assert form_close.await_count == 1
+    assert bio1.closed
+    assert bio2.closed
+
+    # Verify files were written to the tmp dir with the correct content.
+    assert (tmp_path / "image1.jpg").read_bytes() == data1
+    assert (tmp_path / "image2.jpg").read_bytes() == data2
+
+    await app.state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_upload_empty_buffered_request_dispatches_alias_handler(
+    token: str,
+    mocker: MockerFixture,
+):
+    """Test that empty uploads still dispatch buffered alias handlers."""
+    mocker.patch(
+        "reflex.state.State.class_subclasses",
+        {FileUploadState},
+    )
+    app = App()
+    app.event_namespace.emit = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
+
+    async with app.modify_state(_substate_key(token, FileUploadState)) as root_state:
+        substate = root_state.get_substate(FileUploadState.get_full_name().split("."))
+        substate.img_list = []
+
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": f"{FileUploadState.get_full_name()}.upload_alias_handler",
+    }
+
+    async def form():  # noqa: RUF029
+        return FormData()
+
+    request_mock.form = form
+
+    upload_fn = upload(app)
+    streaming_response = await upload_fn(request_mock)
+    assert isinstance(streaming_response, StreamingResponse)
+
+    updates = []
+    async for state_update in streaming_response.body_iterator:
+        updates.append(json.loads(str(state_update)))
+
+    assert updates[-1]["final"]
 
     if environment.REFLEX_OPLOCK_ENABLED.get():
         await app.state_manager.close()
 
-    current_state = await app.state_manager.get_state(_substate_key(token, state))
-    state_dict = current_state.dict()[state.get_full_name()]
-    assert state_dict["img_list" + FIELD_MARKER] == [
-        "image1.jpg",
-        "image2.jpg",
-    ]
+    state = await app.state_manager.get_state(_substate_key(token, FileUploadState))
+    substate = (
+        state
+        if isinstance(state, FileUploadState)
+        else state.get_substate(FileUploadState.get_full_name().split("."))
+    )
+    assert isinstance(substate, FileUploadState)
+    assert substate.img_list == ["count:0"]
+
+    await app.state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_upload_file_closes_form_on_event_creation_cancellation(
+    token: str,
+    mocker: MockerFixture,
+):
+    """Test that cancellation before form parsing leaves form data untouched."""
+    mocker.patch(
+        "reflex.state.State.class_subclasses",
+        {FileUploadState},
+    )
+    app = App()
+
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": f"{FileUploadState.get_full_name()}.multi_handle_upload",
+    }
+
+    file1 = UploadFile(filename="image1.jpg", file=io.BytesIO(b"data"))
+    form_data = FormData([("files", file1)])
+    original_close = form_data.close
+    form_close = AsyncMock(side_effect=original_close)
+    form_data.close = form_close
+
+    async def form():  # noqa: RUF029
+        return form_data
+
+    async def cancelled_get_state(*_args, **_kwargs):
+        await asyncio.sleep(0)
+        raise asyncio.CancelledError
+
+    request_mock.form = form
+    mocker.patch.object(app.state_manager, "get_state", side_effect=cancelled_get_state)
+
+    upload_fn = upload(app)
+    with pytest.raises(asyncio.CancelledError):
+        await upload_fn(request_mock)
+
+    assert form_close.await_count == 0
+    assert not file1.file.closed
+
+    await app.state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_upload_file_closes_form_if_response_cancelled_before_stream_starts(
+    tmp_path,
+    token: str,
+    mocker: MockerFixture,
+):
+    """Test that response cancellation before iteration still closes form data."""
+    mocker.patch(
+        "reflex.state.State.class_subclasses",
+        {FileUploadState},
+    )
+    app = App()
+    app.event_namespace.emit = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
+
+    async with app.modify_state(_substate_key(token, FileUploadState)) as root_state:
+        root_state.get_substate(
+            FileUploadState.get_full_name().split(".")
+        )._tmp_path = tmp_path
+
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": f"{FileUploadState.get_full_name()}.multi_handle_upload",
+    }
+
+    bio = io.BytesIO(b"contents of image one")
+    file1 = UploadFile(filename="image1.jpg", file=bio)
+    form_data = FormData([("files", file1)])
+    original_close = form_data.close
+    form_close = AsyncMock(side_effect=original_close)
+    form_data.close = form_close
+
+    async def form():  # noqa: RUF029
+        return form_data
+
+    async def receive():
+        await asyncio.sleep(0)
+        return {"type": "http.disconnect"}
+
+    async def send(_message):
+        await asyncio.sleep(0)
+        raise asyncio.CancelledError
+
+    request_mock.form = form
+
+    upload_fn = upload(app)
+    streaming_response = await upload_fn(request_mock)
+
+    assert isinstance(streaming_response, StreamingResponse)
+    assert form_close.await_count == 0
+    assert not bio.closed
+
+    with pytest.raises(asyncio.CancelledError):
+        await streaming_response(
+            {"type": "http", "asgi": {"spec_version": "2.4"}},
+            receive,
+            send,
+        )
+
+    assert form_close.await_count == 1
+    assert bio.closed
 
     await app.state_manager.close()
 
@@ -1021,7 +1261,6 @@ async def test_upload_file_without_annotation(state, tmp_path, token):
         tmp_path: Temporary path.
         token: a Token.
     """
-    state._tmp_path = tmp_path
     app = App(_state=State)
 
     request_mock = unittest.mock.Mock()
@@ -1030,16 +1269,10 @@ async def test_upload_file_without_annotation(state, tmp_path, token):
         "reflex-event-handler": f"{state.get_full_name()}.handle_upload2",
     }
 
+    file1 = UploadFile(filename="image1.jpg", file=io.BytesIO(b"data"))
+
     async def form():  # noqa: RUF029
-        files_mock = unittest.mock.Mock()
-
-        def getlist(key: str):
-            assert key == "files"
-            return [unittest.mock.Mock(filename="image1.jpg")]
-
-        files_mock.getlist = getlist
-
-        return files_mock
+        return FormData([("files", file1)])
 
     request_mock.form = form
 
@@ -1067,7 +1300,6 @@ async def test_upload_file_background(state, tmp_path, token):
         tmp_path: Temporary path.
         token: a Token.
     """
-    state._tmp_path = tmp_path
     app = App(_state=State)
 
     request_mock = unittest.mock.Mock()
@@ -1076,16 +1308,10 @@ async def test_upload_file_background(state, tmp_path, token):
         "reflex-event-handler": f"{state.get_full_name()}.bg_upload",
     }
 
+    file1 = UploadFile(filename="image1.jpg", file=io.BytesIO(b"data"))
+
     async def form():  # noqa: RUF029
-        files_mock = unittest.mock.Mock()
-
-        def getlist(key: str):
-            assert key == "files"
-            return [unittest.mock.Mock(filename="image1.jpg")]
-
-        files_mock.getlist = getlist
-
-        return files_mock
+        return FormData([("files", file1)])
 
     request_mock.form = form
 
@@ -1096,6 +1322,293 @@ async def test_upload_file_background(state, tmp_path, token):
         err.value.args[0]
         == f"@rx.event(background=True) is not supported for upload handler `{state.get_full_name()}.bg_upload`."
     )
+
+    await app.state_manager.close()
+
+
+def _build_chunk_upload_multipart_body(
+    boundary: str,
+    parts: list[tuple[str, str, str, bytes]],
+) -> bytes:
+    """Build a multipart upload body for chunk upload tests.
+
+    Args:
+        boundary: The multipart boundary string.
+        parts: Tuples of field name, filename, content type, and payload.
+
+    Returns:
+        The encoded multipart body bytes.
+    """
+    body = bytearray()
+    for field_name, filename, content_type, data in parts:
+        body.extend(f"--{boundary}\r\n".encode())
+        body.extend(
+            (
+                f'Content-Disposition: form-data; name="{field_name}"; '
+                f'filename="{filename}"\r\n'
+            ).encode()
+        )
+        body.extend(f"Content-Type: {content_type}\r\n\r\n".encode())
+        body.extend(data)
+        body.extend(b"\r\n")
+    body.extend(f"--{boundary}--\r\n".encode())
+    return bytes(body)
+
+
+def _make_chunk_upload_request(
+    token: str,
+    handler_name: str,
+    body: bytes,
+    *,
+    content_type: str,
+    stream_chunk_size: int = 17,
+):
+    """Create a mocked request for the chunk upload endpoint.
+
+    Returns:
+        A mocked Starlette request object.
+    """
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = Headers({
+        "content-type": content_type,
+        "reflex-client-token": token,
+        "reflex-event-handler": handler_name,
+    })
+    request_mock.query_params = {}
+
+    async def stream():
+        for index in range(0, len(body), stream_chunk_size):
+            yield body[index : index + stream_chunk_size]
+        yield b""
+        await asyncio.sleep(0)
+
+    request_mock.stream = stream
+    return request_mock
+
+
+async def _drain_background_tasks(app: App):
+    """Wait for all background tasks associated with an app.
+
+    Returns:
+        The gathered background task results.
+    """
+    tasks = tuple(app._background_tasks)
+    results = await asyncio.gather(*tasks, return_exceptions=True) if tasks else []
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        # Redis oplocks can keep completed background-task writes in the local
+        # lease cache until the manager is closed.
+        await app.state_manager.close()
+    return results
+
+
+@pytest.mark.asyncio
+async def test_upload_dispatches_chunk_handlers_on_upload_endpoint(
+    tmp_path,
+    token: str,
+    mocker: MockerFixture,
+):
+    """Test that the standard upload endpoint dispatches chunk handlers."""
+    mocker.patch(
+        "reflex.state.State.class_subclasses",
+        {ChunkUploadState},
+    )
+    app = App()
+    mocker.patch(
+        "reflex.utils.prerequisites.get_and_validate_app",
+        return_value=SimpleNamespace(app=app),
+    )
+    app.event_namespace.emit_update = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
+
+    async with app.modify_state(_substate_key(token, ChunkUploadState)) as root_state:
+        substate = root_state.get_substate(ChunkUploadState.get_full_name().split("."))
+        substate._tmp_path = tmp_path
+        substate.chunk_records = []
+        substate.completed_files = []
+
+    upload_fn = upload(app)
+    boundary = "chunk-upload-on-upload-endpoint-boundary"
+    response = await upload_fn(
+        _make_chunk_upload_request(
+            token,
+            f"{ChunkUploadState.get_full_name()}.chunk_handle_upload",
+            _build_chunk_upload_multipart_body(
+                boundary,
+                [
+                    ("files", "alpha.txt", "text/plain", b"abcde"),
+                    ("files", "beta.txt", "text/plain", b"12345"),
+                ],
+            ),
+            content_type=f"multipart/form-data; boundary={boundary}",
+            stream_chunk_size=1,
+        )
+    )
+
+    assert isinstance(response, StreamingResponse)
+    assert response.status_code == 202
+
+    updates = []
+    async for state_update in response.body_iterator:
+        updates.append(json.loads(str(state_update)))
+    assert updates == [{"delta": {}, "events": [], "final": True}]
+
+    task_results = await _drain_background_tasks(app)
+    assert all(result is None for result in task_results)
+
+    state = await app.state_manager.get_state(_substate_key(token, ChunkUploadState))
+    substate = (
+        state
+        if isinstance(state, ChunkUploadState)
+        else state.get_substate(ChunkUploadState.get_full_name().split("."))
+    )
+    assert isinstance(substate, ChunkUploadState)
+    parsed_chunk_records = [
+        (filename, int(offset), int(size), content_type)
+        for filename, offset, size, content_type in (
+            record.rsplit(":", 3) for record in substate.chunk_records
+        )
+    ]
+    assert len(parsed_chunk_records) >= 4
+    assert {filename for filename, *_ in parsed_chunk_records} == {
+        "alpha.txt",
+        "beta.txt",
+    }
+    assert all(
+        content_type == "text/plain" for *_, content_type in parsed_chunk_records
+    )
+    assert (
+        sum(
+            size
+            for filename, _offset, size, _content_type in parsed_chunk_records
+            if filename == "alpha.txt"
+        )
+        == 5
+    )
+    assert (
+        sum(
+            size
+            for filename, _offset, size, _content_type in parsed_chunk_records
+            if filename == "beta.txt"
+        )
+        == 5
+    )
+    assert parsed_chunk_records[0][0] == "alpha.txt"
+    assert parsed_chunk_records[-1][0] == "beta.txt"
+    assert substate.completed_files == ["alpha.txt", "beta.txt"]
+    assert (tmp_path / "alpha.txt").read_bytes() == b"abcde"
+    assert (tmp_path / "beta.txt").read_bytes() == b"12345"
+    assert app.event_namespace.emit_update.await_count >= 1  # pyright: ignore [reportOptionalMemberAccess]
+    assert not app._background_tasks
+
+    await app.state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_upload_empty_chunk_request_dispatches_alias_handler(
+    token: str,
+    mocker: MockerFixture,
+):
+    """Test that empty uploads still dispatch chunk alias handlers."""
+    mocker.patch(
+        "reflex.state.State.class_subclasses",
+        {ChunkUploadState},
+    )
+    app = App()
+    mocker.patch(
+        "reflex.utils.prerequisites.get_and_validate_app",
+        return_value=SimpleNamespace(app=app),
+    )
+    app.event_namespace.emit_update = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
+
+    async with app.modify_state(_substate_key(token, ChunkUploadState)) as root_state:
+        substate = root_state.get_substate(ChunkUploadState.get_full_name().split("."))
+        substate.chunk_records = []
+        substate.completed_files = []
+
+    upload_fn = upload(app)
+    boundary = "chunk-upload-empty-alias-boundary"
+    response = await upload_fn(
+        _make_chunk_upload_request(
+            token,
+            f"{ChunkUploadState.get_full_name()}.chunk_handle_upload_alias",
+            _build_chunk_upload_multipart_body(boundary, []),
+            content_type=f"multipart/form-data; boundary={boundary}",
+        )
+    )
+
+    assert isinstance(response, StreamingResponse)
+    assert response.status_code == 202
+
+    updates = []
+    async for state_update in response.body_iterator:
+        updates.append(json.loads(str(state_update)))
+    assert updates == [{"delta": {}, "events": [], "final": True}]
+
+    task_results = await _drain_background_tasks(app)
+    assert all(result is None for result in task_results)
+
+    state = await app.state_manager.get_state(_substate_key(token, ChunkUploadState))
+    substate = (
+        state
+        if isinstance(state, ChunkUploadState)
+        else state.get_substate(ChunkUploadState.get_full_name().split("."))
+    )
+    assert isinstance(substate, ChunkUploadState)
+    assert substate.chunk_records == []
+    assert substate.completed_files == ["chunks:0"]
+    assert not app._background_tasks
+
+    await app.state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_upload_chunk_invalid_offset_returns_400(
+    token: str,
+    mocker: MockerFixture,
+):
+    """Test that malformed chunk metadata fails the standard upload request."""
+    mocker.patch(
+        "reflex.state.State.class_subclasses",
+        {ChunkUploadState},
+    )
+    app = App()
+    mocker.patch(
+        "reflex.utils.prerequisites.get_and_validate_app",
+        return_value=SimpleNamespace(app=app),
+    )
+    app.event_namespace.emit_update = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
+
+    async with app.modify_state(_substate_key(token, ChunkUploadState)) as root_state:
+        substate = root_state.get_substate(ChunkUploadState.get_full_name().split("."))
+        substate.chunk_records = []
+        substate.completed_files = []
+
+    upload_fn = upload(app)
+    response = await upload_fn(
+        _make_chunk_upload_request(
+            token,
+            f"{ChunkUploadState.get_full_name()}.chunk_handle_upload",
+            b"abc",
+            content_type="text/plain",
+        )
+    )
+
+    assert response.status_code == 400
+    assert json.loads(bytes(response.body).decode()) == {
+        "detail": "Missing boundary in multipart."
+    }
+
+    await _drain_background_tasks(app)
+
+    state = await app.state_manager.get_state(_substate_key(token, ChunkUploadState))
+    substate = (
+        state
+        if isinstance(state, ChunkUploadState)
+        else state.get_substate(ChunkUploadState.get_full_name().split("."))
+    )
+    assert isinstance(substate, ChunkUploadState)
+    assert substate.chunk_records == []
+    assert substate.completed_files == []
+    assert not app._background_tasks
 
     await app.state_manager.close()
 
@@ -1548,6 +2061,7 @@ def test_app_wrap_compile_theme(
             "export function Layout"
         )
     ].strip()
+
     expected = (
         "function AppWrap({children}) {\n"
         "const [addEvents, connectErrors] = useContext(EventLoopContext);\n\n\n\n"
@@ -1556,15 +2070,15 @@ def test_app_wrap_compile_theme(
         + "jsx(ErrorBoundary,{"
         """fallbackRender:((event_args) => (jsx("div", ({css:({ ["height"] : "100%", ["width"] : "100%", ["position"] : "absolute", ["backgroundColor"] : "#fff", ["color"] : "#000", ["display"] : "flex", ["alignItems"] : "center", ["justifyContent"] : "center" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "0.5rem", ["maxWidth"] : "min(80ch, 90vw)", ["borderRadius"] : "0.25rem", ["padding"] : "1rem" })}), (jsx("div", ({css:({ ["opacity"] : "0.5", ["display"] : "flex", ["gap"] : "4vmin", ["alignItems"] : "center" })}), (jsx("svg", ({className:"lucide lucide-frown-icon lucide-frown",fill:"none",stroke:"currentColor","stroke-linecap":"round","stroke-linejoin":"round","stroke-width":"2",viewBox:"0 0 24 24",width:"25vmin",xmlns:"http://www.w3.org/2000/svg"}), (jsx("circle", ({cx:"12",cy:"12",r:"10"}))), (jsx("path", ({d:"M16 16s-1.5-2-4-2-4 2-4 2"}))), (jsx("line", ({x1:"9",x2:"9.01",y1:"9",y2:"9"}))), (jsx("line", ({x1:"15",x2:"15.01",y1:"9",y2:"9"}))))), (jsx("h2", ({css:({ ["fontSize"] : "5vmin", ["fontWeight"] : "bold" })}), "An error occurred while rendering this page.")))), (jsx("p", ({css:({ ["opacity"] : "0.75", ["marginBlock"] : "1rem" })}), "This is an error with the application itself. Refreshing the page might help.")), (jsx("div", ({css:({ ["width"] : "100%", ["background"] : "color-mix(in srgb, currentColor 5%, transparent)", ["maxHeight"] : "15rem", ["overflow"] : "auto", ["borderRadius"] : "0.4rem" })}), (jsx("div", ({css:({ ["padding"] : "0.5rem" })}), (jsx("pre", ({css:({ ["wordBreak"] : "break-word", ["whiteSpace"] : "pre-wrap" })}), event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack)))))), (jsx("button", ({css:({ ["padding"] : "0.35rem 1.35rem", ["marginBlock"] : "0.5rem", ["marginInlineStart"] : "auto", ["background"] : "color-mix(in srgb, currentColor 15%, transparent)", ["borderRadius"] : "0.4rem", ["width"] : "fit-content", ["&:hover"] : ({ ["background"] : "color-mix(in srgb, currentColor 25%, transparent)" }), ["&:active"] : ({ ["background"] : "color-mix(in srgb, currentColor 35%, transparent)" }) }),onClick:((_e) => (addEvents([(ReflexEvent("_call_function", ({ ["function"] : (() => (navigator?.["clipboard"]?.["writeText"](event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack))), ["callback"] : null }), ({  })))], [_e], ({  }))))}), "Copy")), (jsx("hr", ({css:({ ["borderColor"] : "currentColor", ["opacity"] : "0.25" })}))), (jsx(ReactRouterLink, ({to:"https://reflex.dev"}), (jsx("div", ({css:({ ["display"] : "flex", ["alignItems"] : "baseline", ["justifyContent"] : "center", ["fontFamily"] : "monospace", ["--default-font-family"] : "monospace", ["gap"] : "0.5rem" })}), "Built with ", (jsx("svg", ({"aria-label":"Reflex",css:({ ["fill"] : "currentColor" }),height:"12",role:"img",width:"56",xmlns:"http://www.w3.org/2000/svg"}), (jsx("path", ({d:"M0 11.5999V0.399902H8.96V4.8799H6.72V2.6399H2.24V4.8799H6.72V7.1199H2.24V11.5999H0ZM6.72 11.5999V7.1199H8.96V11.5999H6.72Z"}))), (jsx("path", ({d:"M11.2 11.5999V0.399902H17.92V2.6399H13.44V4.8799H17.92V7.1199H13.44V9.3599H17.92V11.5999H11.2Z"}))), (jsx("path", ({d:"M20.16 11.5999V0.399902H26.88V2.6399H22.4V4.8799H26.88V7.1199H22.4V11.5999H20.16Z"}))), (jsx("path", ({d:"M29.12 11.5999V0.399902H31.36V9.3599H35.84V11.5999H29.12Z"}))), (jsx("path", ({d:"M38.08 11.5999V0.399902H44.8V2.6399H40.32V4.8799H44.8V7.1199H40.32V9.3599H44.8V11.5999H38.08Z"}))), (jsx("path", ({d:"M47.04 4.8799V0.399902H49.28V4.8799H47.04ZM53.76 4.8799V0.399902H56V4.8799H53.76ZM49.28 7.1199V4.8799H53.76V7.1199H49.28ZM47.04 11.5999V7.1199H49.28V11.5999H47.04ZM53.76 11.5999V7.1199H56V11.5999H53.76Z"}))), (jsx("title", ({}), "Reflex"))))))))))))),"""
         """onError:((_error, _info) => (addEvents([(ReflexEvent("reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception", ({ ["info"] : ((((_error?.["name"]+": ")+_error?.["message"])+"\\n")+_error?.["stack"]), ["component_stack"] : _info?.["componentStack"] }), ({  })))], [_error, _info], ({  }))))"""
-        "},"
-        "jsx(RadixThemesColorModeProvider,{},"
-        "jsx(Fragment,{},"
-        "jsx(MemoizedToastProvider,{},),"
-        "jsx(RadixThemesTheme,{accentColor:\"plum\",css:{...theme.styles.global[':root'], ...theme.styles.global.body}},"
-        "jsx(Fragment,{},"
-        "jsx(DefaultOverlayComponents,{},),"
-        "jsx(Fragment,{},"
-        "children"
+        + "},"
+        + "jsx(RadixThemesColorModeProvider,{},"
+        + "jsx(Fragment,{},"
+        + "jsx(MemoizedToastProvider,{},),"
+        + "jsx(RadixThemesTheme,{accentColor:\"plum\",css:{...theme.styles.global[':root'], ...theme.styles.global.body}},"
+        + "jsx(Fragment,{},"
+        + "jsx(DefaultOverlayComponents,{},),"
+        + "jsx(Fragment,{},"
+        + "children"
         "))))))" + (")" if react_strict_mode else "") + ")"
         "\n}"
     )
@@ -1621,6 +2135,7 @@ def test_app_wrap_priority(
             "export function Layout"
         )
     ].strip()
+
     expected = (
         "function AppWrap({children}) {\n"
         "const [addEvents, connectErrors] = useContext(EventLoopContext);\n\n\n\n"
@@ -1630,16 +2145,16 @@ def test_app_wrap_priority(
         "jsx(ErrorBoundary,{"
         """fallbackRender:((event_args) => (jsx("div", ({css:({ ["height"] : "100%", ["width"] : "100%", ["position"] : "absolute", ["backgroundColor"] : "#fff", ["color"] : "#000", ["display"] : "flex", ["alignItems"] : "center", ["justifyContent"] : "center" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "0.5rem", ["maxWidth"] : "min(80ch, 90vw)", ["borderRadius"] : "0.25rem", ["padding"] : "1rem" })}), (jsx("div", ({css:({ ["opacity"] : "0.5", ["display"] : "flex", ["gap"] : "4vmin", ["alignItems"] : "center" })}), (jsx("svg", ({className:"lucide lucide-frown-icon lucide-frown",fill:"none",stroke:"currentColor","stroke-linecap":"round","stroke-linejoin":"round","stroke-width":"2",viewBox:"0 0 24 24",width:"25vmin",xmlns:"http://www.w3.org/2000/svg"}), (jsx("circle", ({cx:"12",cy:"12",r:"10"}))), (jsx("path", ({d:"M16 16s-1.5-2-4-2-4 2-4 2"}))), (jsx("line", ({x1:"9",x2:"9.01",y1:"9",y2:"9"}))), (jsx("line", ({x1:"15",x2:"15.01",y1:"9",y2:"9"}))))), (jsx("h2", ({css:({ ["fontSize"] : "5vmin", ["fontWeight"] : "bold" })}), "An error occurred while rendering this page.")))), (jsx("p", ({css:({ ["opacity"] : "0.75", ["marginBlock"] : "1rem" })}), "This is an error with the application itself. Refreshing the page might help.")), (jsx("div", ({css:({ ["width"] : "100%", ["background"] : "color-mix(in srgb, currentColor 5%, transparent)", ["maxHeight"] : "15rem", ["overflow"] : "auto", ["borderRadius"] : "0.4rem" })}), (jsx("div", ({css:({ ["padding"] : "0.5rem" })}), (jsx("pre", ({css:({ ["wordBreak"] : "break-word", ["whiteSpace"] : "pre-wrap" })}), event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack)))))), (jsx("button", ({css:({ ["padding"] : "0.35rem 1.35rem", ["marginBlock"] : "0.5rem", ["marginInlineStart"] : "auto", ["background"] : "color-mix(in srgb, currentColor 15%, transparent)", ["borderRadius"] : "0.4rem", ["width"] : "fit-content", ["&:hover"] : ({ ["background"] : "color-mix(in srgb, currentColor 25%, transparent)" }), ["&:active"] : ({ ["background"] : "color-mix(in srgb, currentColor 35%, transparent)" }) }),onClick:((_e) => (addEvents([(ReflexEvent("_call_function", ({ ["function"] : (() => (navigator?.["clipboard"]?.["writeText"](event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack))), ["callback"] : null }), ({  })))], [_e], ({  }))))}), "Copy")), (jsx("hr", ({css:({ ["borderColor"] : "currentColor", ["opacity"] : "0.25" })}))), (jsx(ReactRouterLink, ({to:"https://reflex.dev"}), (jsx("div", ({css:({ ["display"] : "flex", ["alignItems"] : "baseline", ["justifyContent"] : "center", ["fontFamily"] : "monospace", ["--default-font-family"] : "monospace", ["gap"] : "0.5rem" })}), "Built with ", (jsx("svg", ({"aria-label":"Reflex",css:({ ["fill"] : "currentColor" }),height:"12",role:"img",width:"56",xmlns:"http://www.w3.org/2000/svg"}), (jsx("path", ({d:"M0 11.5999V0.399902H8.96V4.8799H6.72V2.6399H2.24V4.8799H6.72V7.1199H2.24V11.5999H0ZM6.72 11.5999V7.1199H8.96V11.5999H6.72Z"}))), (jsx("path", ({d:"M11.2 11.5999V0.399902H17.92V2.6399H13.44V4.8799H17.92V7.1199H13.44V9.3599H17.92V11.5999H11.2Z"}))), (jsx("path", ({d:"M20.16 11.5999V0.399902H26.88V2.6399H22.4V4.8799H26.88V7.1199H22.4V11.5999H20.16Z"}))), (jsx("path", ({d:"M29.12 11.5999V0.399902H31.36V9.3599H35.84V11.5999H29.12Z"}))), (jsx("path", ({d:"M38.08 11.5999V0.399902H44.8V2.6399H40.32V4.8799H44.8V7.1199H40.32V9.3599H44.8V11.5999H38.08Z"}))), (jsx("path", ({d:"M47.04 4.8799V0.399902H49.28V4.8799H47.04ZM53.76 4.8799V0.399902H56V4.8799H53.76ZM49.28 7.1199V4.8799H53.76V7.1199H49.28ZM47.04 11.5999V7.1199H49.28V11.5999H47.04ZM53.76 11.5999V7.1199H56V11.5999H53.76Z"}))), (jsx("title", ({}), "Reflex"))))))))))))),"""
         """onError:((_error, _info) => (addEvents([(ReflexEvent("reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception", ({ ["info"] : ((((_error?.["name"]+": ")+_error?.["message"])+"\\n")+_error?.["stack"]), ["component_stack"] : _info?.["componentStack"] }), ({  })))], [_error, _info], ({  }))))"""
-        "},"
-        'jsx(RadixThemesText,{as:"p"},'
-        "jsx(RadixThemesColorModeProvider,{},"
-        "jsx(Fragment,{},"
-        "jsx(MemoizedToastProvider,{},),"
-        "jsx(Fragment2,{},"
-        "jsx(Fragment,{},"
-        "jsx(DefaultOverlayComponents,{},),"
-        "jsx(Fragment,{},"
-        "children"
+        + "},"
+        + 'jsx(RadixThemesText,{as:"p"},'
+        + "jsx(RadixThemesColorModeProvider,{},"
+        + "jsx(Fragment,{},"
+        + "jsx(MemoizedToastProvider,{},),"
+        + "jsx(Fragment2,{},"
+        + "jsx(Fragment,{},"
+        + "jsx(DefaultOverlayComponents,{},),"
+        + "jsx(Fragment,{},"
+        + "children"
         ")))))))" + (")" if react_strict_mode else "") + "))\n}"
     )
     assert expected.split(",") == function_app_definition.split(",")

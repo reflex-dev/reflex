@@ -5,7 +5,7 @@ from __future__ import annotations
 import dataclasses
 from typing import Any, Literal
 
-from reflex.components.component import Component, ComponentNamespace
+from reflex.components.component import Component, ComponentNamespace, field
 from reflex.components.lucide.icon import Icon
 from reflex.components.props import NoExtrasAllowedProps
 from reflex.constants.base import Dirs
@@ -125,8 +125,7 @@ class ToastProps(NoExtrasAllowedProps):
     # Class name for the toast.
     class_name: str | None
 
-    # XXX: These still do not seem to work
-    # Custom style for the toast primary button.
+    # XXX: These still do not seem to work Custom style for the toast primary button.
     action_button_styles: Style | None
 
     # Custom style for the toast secondary button.
@@ -176,47 +175,49 @@ class Toaster(Component):
 
     tag = "Toaster"
 
-    # the theme of the toast
-    theme: Var[str] = resolved_color_mode
+    theme: Var[str] = field(default=resolved_color_mode, doc="the theme of the toast")
 
-    # whether to show rich colors
-    rich_colors: Var[bool] = LiteralVar.create(True)
+    rich_colors: Var[bool] = field(
+        default=LiteralVar.create(True), doc="whether to show rich colors"
+    )
 
-    # whether to expand the toast
-    expand: Var[bool] = LiteralVar.create(True)
+    expand: Var[bool] = field(
+        default=LiteralVar.create(True), doc="whether to expand the toast"
+    )
 
-    # the number of toasts that are currently visible
-    visible_toasts: Var[int]
+    visible_toasts: Var[int] = field(
+        doc="the number of toasts that are currently visible"
+    )
 
-    # the position of the toast
-    position: Var[LiteralPosition] = LiteralVar.create("bottom-right")
+    position: Var[LiteralPosition] = field(
+        default=LiteralVar.create("bottom-right"), doc="the position of the toast"
+    )
 
-    # whether to show the close button
-    close_button: Var[bool] = LiteralVar.create(False)
+    close_button: Var[bool] = field(
+        default=LiteralVar.create(False), doc="whether to show the close button"
+    )
 
-    # offset of the toast
-    offset: Var[str]
+    offset: Var[str] = field(doc="offset of the toast")
 
-    # directionality of the toast (default: ltr)
-    dir: Var[str]
+    dir: Var[str] = field(doc="directionality of the toast (default: ltr)")
 
-    # Keyboard shortcut that will move focus to the toaster area.
-    hotkey: Var[str]
+    hotkey: Var[str] = field(
+        doc="Keyboard shortcut that will move focus to the toaster area."
+    )
 
-    # Dark toasts in light mode and vice versa.
-    invert: Var[bool]
+    invert: Var[bool] = field(doc="Dark toasts in light mode and vice versa.")
 
-    # These will act as default options for all toasts. See toast() for all available options.
-    toast_options: Var[ToastProps]
+    toast_options: Var[ToastProps] = field(
+        doc="These will act as default options for all toasts. See toast() for all available options."
+    )
 
-    # Gap between toasts when expanded
-    gap: Var[int]
+    gap: Var[int] = field(doc="Gap between toasts when expanded")
 
-    # Changes the default loading icon
-    loading_icon: Var[Icon]
+    loading_icon: Var[Icon] = field(doc="Changes the default loading icon")
 
-    # Pauses toast timers when the page is hidden, e.g., when the tab is backgrounded, the browser is minimized, or the OS is locked.
-    pause_when_page_is_hidden: Var[bool]
+    pause_when_page_is_hidden: Var[bool] = field(
+        doc="Pauses toast timers when the page is hidden, e.g., when the tab is backgrounded, the browser is minimized, or the OS is locked."
+    )
 
     def add_hooks(self) -> list[Var | str]:
         """Add hooks for the toaster component.
@@ -252,11 +253,11 @@ class Toaster(Component):
             fallback_to_alert: Whether to fallback to an alert if the toaster is not created.
             **props: The options for the toast.
 
-        Raises:
-            ValueError: If the Toaster component is not created.
-
         Returns:
             The toast event.
+
+        Raises:
+            ValueError: If the Toaster component is not created.
         """
         toast_command = (
             ObjectVar.__getattr__(toast_ref.to(dict), level) if level else toast_ref

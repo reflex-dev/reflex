@@ -8,7 +8,9 @@ from unittest import mock
 import pytest
 
 from reflex.app import App
+from reflex.components.component import CUSTOM_COMPONENTS
 from reflex.event import EventSpec
+from reflex.experimental.memo import EXPERIMENTAL_MEMOS
 from reflex.model import ModelRegistry
 from reflex.testing import chdir
 from reflex.utils import prerequisites
@@ -44,6 +46,21 @@ def app_module_mock(monkeypatch) -> mock.Mock:
     get_app_mock = mock.Mock(return_value=app_module_mock)
     monkeypatch.setattr(prerequisites, "get_app", get_app_mock)
     return app_module_mock
+
+
+@pytest.fixture
+def mock_app(app_module_mock: mock.Mock, app: App) -> App:
+    """A mocked dummy app per test.
+
+    Args:
+        app_module_mock: The mock for the main app module.
+        app: A default App instance.
+
+    Returns:
+        The mock app instance.
+    """
+    app_module_mock.app = app
+    return app
 
 
 @pytest.fixture(scope="session")
@@ -194,3 +211,21 @@ def model_registry() -> Generator[type[ModelRegistry], None, None]:
     """
     yield ModelRegistry
     ModelRegistry._metadata = None
+
+
+@pytest.fixture
+def preserve_memo_registries():
+    """Save and restore global memo registries around a test.
+
+    Yields:
+        None
+    """
+    custom_components = dict(CUSTOM_COMPONENTS)
+    experimental_memos = dict(EXPERIMENTAL_MEMOS)
+    try:
+        yield
+    finally:
+        CUSTOM_COMPONENTS.clear()
+        CUSTOM_COMPONENTS.update(custom_components)
+        EXPERIMENTAL_MEMOS.clear()
+        EXPERIMENTAL_MEMOS.update(experimental_memos)

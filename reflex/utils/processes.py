@@ -37,11 +37,11 @@ def kill(pid: int):
 def get_num_workers() -> int:
     """Get the number of backend worker processes.
 
-    Raises:
-        SystemExit: If unable to connect to Redis.
-
     Returns:
         The number of backend worker processes.
+
+    Raises:
+        SystemExit: If unable to connect to Redis.
     """
     if get_config().transport == "polling":
         return 1

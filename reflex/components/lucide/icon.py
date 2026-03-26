@@ -1,12 +1,12 @@
 """Lucide Icon component."""
 
-from reflex.components.component import Component
+from reflex.components.component import Component, field
 from reflex.utils import console, format
 from reflex.utils.imports import ImportVar
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.sequence import LiteralStringVar, StringVar
 
-LUCIDE_LIBRARY = "lucide-react@0.574.0"
+LUCIDE_LIBRARY = "lucide-react@0.577.0"
 
 
 class LucideIconComponent(Component):
@@ -20,8 +20,7 @@ class Icon(LucideIconComponent):
 
     tag = "None"
 
-    # The size of the icon in pixels.
-    size: Var[int]
+    size: Var[int] = field(doc="The size of the icon in pixels.")
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -33,12 +32,12 @@ class Icon(LucideIconComponent):
             *children: The positional arguments
             **props: The keyword arguments
 
+        Returns:
+            The created component.
+
         Raises:
             AttributeError: The errors tied to bad usage of the Icon component.
             TypeError: If the icon name is not a string.
-
-        Returns:
-            The created component.
         """
         if children:
             if len(children) == 1:
@@ -682,6 +681,7 @@ LUCIDE_ICON_LIST = [
     "egg_fried",
     "egg_off",
     "egg",
+    "ellipse",
     "ellipsis_vertical",
     "ellipsis",
     "equal_approximately",
@@ -778,6 +778,7 @@ LUCIDE_ICON_LIST = [
     "fish_symbol",
     "fish",
     "fishing_hook",
+    "fishing_rod",
     "flag_off",
     "flag_triangle_left",
     "flag_triangle_right",
@@ -1116,6 +1117,7 @@ LUCIDE_ICON_LIST = [
     "message_circle_warning",
     "message_circle_x",
     "message_circle",
+    "message_square_check",
     "message_square_code",
     "message_square_dashed",
     "message_square_diff",
@@ -1133,6 +1135,7 @@ LUCIDE_ICON_LIST = [
     "message_square_x",
     "message_square",
     "messages_square",
+    "metronome",
     "mic_off",
     "mic_vocal",
     "mic",
@@ -1173,6 +1176,7 @@ LUCIDE_ICON_LIST = [
     "mouse_pointer_ban",
     "mouse_pointer_click",
     "mouse_pointer",
+    "mouse_right",
     "mouse",
     "move_3d",
     "move_diagonal_2",
@@ -1523,6 +1527,8 @@ LUCIDE_ICON_LIST = [
     "square_arrow_out_down_right",
     "square_arrow_out_up_left",
     "square_arrow_out_up_right",
+    "square_arrow_right_enter",
+    "square_arrow_right_exit",
     "square_arrow_right",
     "square_arrow_up_left",
     "square_arrow_up_right",
@@ -1576,6 +1582,8 @@ LUCIDE_ICON_LIST = [
     "square_user_round",
     "square_user",
     "square_x",
+    "square_centerline_dashed_horizontal",
+    "square_centerline_dashed_vertical",
     "square",
     "squares_exclude",
     "squares_intersect",
@@ -1818,7 +1826,6 @@ LUCIDE_ICON_LIST = [
     "zap",
     "zoom_in",
     "zoom_out",
-    # "mouse_right",
 ]
 
 # The default transformation of some icon names doesn't match how the

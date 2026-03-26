@@ -317,11 +317,11 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
         Args:
             name: The name of the attribute.
 
-        Raises:
-            VarAttributeError: The State var has no such attribute or may have been annotated wrongly.
-
         Returns:
             The attribute of the var.
+
+        Raises:
+            VarAttributeError: The State var has no such attribute or may have been annotated wrongly.
         """
         if name.startswith("__") and name.endswith("__"):
             return getattr(super(type(self), self), name)
@@ -360,6 +360,10 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
             The result of the check.
         """
         return object_has_own_property_operation(self, key)
+
+
+class RestProp(ObjectVar[dict[str, Any]]):
+    """A special object var representing forwarded rest props."""
 
 
 @dataclasses.dataclass(

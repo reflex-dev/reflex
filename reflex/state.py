@@ -14,7 +14,6 @@ import pickle
 import re
 import sys
 import time
-import typing
 import uuid
 import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Sequence
@@ -72,7 +71,6 @@ from reflex.utils.exceptions import (
 )
 from reflex.utils.exceptions import ImmutableStateError as ImmutableStateError
 from reflex.utils.exec import is_testing_env
-from reflex.utils.monitoring import is_pyleak_enabled, monitor_loopblocks
 from reflex.utils.types import _isinstance, is_union, value_inside_optional
 from reflex.vars import Field, VarData, field
 from reflex.vars.base import (
@@ -944,11 +942,11 @@ class BaseState(EvenMoreBasicBaseState):
     def get_parent_state(cls) -> type[BaseState] | None:
         """Get the parent state.
 
-        Raises:
-            ValueError: If more than one parent state is found.
-
         Returns:
             The parent state.
+
+        Raises:
+            ValueError: If more than one parent state is found.
         """
         parent_states = [
             base
@@ -1296,6 +1294,15 @@ class BaseState(EvenMoreBasicBaseState):
         Args:
             args: a dict of args
         """
+        # Skip dynamic args that have already been registered by a previous route.
+        args = {
+            k: v
+            for k, v in args.items()
+            if not (
+                (computed_var := cls.computed_vars.get(k)) is not None
+                and isinstance(computed_var, DynamicRouteVar)
+            )
+        }
         if not args:
             return
 
@@ -1750,7 +1757,7 @@ class BaseState(EvenMoreBasicBaseState):
 
         # For background tasks, proxy the state.
         if handler.is_background:
-            substate = StateProxy(substate)
+            substate = StateProxy(substate, event)
 
         # Run the event generator and yield state updates.
         async for update in self._process_event(
@@ -1767,11 +1774,11 @@ class BaseState(EvenMoreBasicBaseState):
             handler: EventHandler.
             events: The events to be checked.
 
-        Raises:
-            TypeError: If any of the events are not valid.
-
         Returns:
             The events as they are if valid.
+
+        Raises:
+            TypeError: If any of the events are not valid.
         """
 
         def _is_valid_type(events: Any) -> bool:
@@ -1885,14 +1892,10 @@ class BaseState(EvenMoreBasicBaseState):
         from reflex.utils import telemetry
 
         # Get the function to process the event.
-        if is_pyleak_enabled():
-            console.debug(f"Monitoring leaks for handler: {handler.fn.__qualname__}")
-            fn = functools.partial(monitor_loopblocks(handler.fn), state)
-        else:
-            fn = functools.partial(handler.fn, state)
+        fn = functools.partial(handler.fn, state)
 
         try:
-            type_hints = typing.get_type_hints(handler.fn)
+            type_hints = types.get_type_hints(handler.fn)
         except Exception:
             type_hints = {}
 

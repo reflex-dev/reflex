@@ -1,5 +1,6 @@
 """A html component."""
 
+from reflex.components.component import field
 from reflex.components.el.elements.typography import Div
 from reflex.vars.base import Var
 
@@ -11,8 +12,7 @@ class Html(Div):
         The code to render the html component.
     """
 
-    # The HTML to render.
-    dangerouslySetInnerHTML: Var[dict[str, str]]  # noqa: N815
+    dangerouslySetInnerHTML: Var[dict[str, str]] = field(doc="The HTML to render.")  # noqa: N815
 
     @classmethod
     def create(cls, *children, **props):

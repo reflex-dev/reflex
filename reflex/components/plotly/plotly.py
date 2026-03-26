@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, TypedDict, TypeVar
 
-from reflex.components.component import Component, NoSSRComponent
+from reflex.components.component import Component, NoSSRComponent, field
 from reflex.components.core.cond import color_mode_cond
 from reflex.event import EventHandler, no_args_event_spec
 from reflex.utils import console
@@ -72,86 +72,108 @@ class Plotly(NoSSRComponent):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js@3.3.1"]
+    lib_dependencies: list[str] = ["plotly.js@3.4.0"]
 
     tag = "Plot"
 
     is_default = True
 
-    # The figure to display. This can be a plotly figure or a plotly data json.
-    data: Var[Figure]
+    data: Var[Figure] = field(
+        doc="The figure to display. This can be a plotly figure or a plotly data json."
+    )
 
-    # The layout of the graph.
-    layout: Var[dict]
+    layout: Var[dict] = field(doc="The layout of the graph.")
 
-    # The template for visual appearance of the graph.
-    template: Var[Template]
+    template: Var[Template] = field(
+        doc="The template for visual appearance of the graph."
+    )
 
-    # The config of the graph.
-    config: Var[dict]
+    config: Var[dict] = field(doc="The config of the graph.")
 
-    # If true, the graph will resize when the window is resized.
-    use_resize_handler: Var[bool] = LiteralVar.create(True)
+    use_resize_handler: Var[bool] = field(
+        default=LiteralVar.create(True),
+        doc="If true, the graph will resize when the window is resized.",
+    )
 
-    # Fired after the plot is redrawn.
-    on_after_plot: EventHandler[no_args_event_spec]
+    on_after_plot: EventHandler[no_args_event_spec] = field(
+        doc="Fired after the plot is redrawn."
+    )
 
-    # Fired after the plot was animated.
-    on_animated: EventHandler[no_args_event_spec]
+    on_animated: EventHandler[no_args_event_spec] = field(
+        doc="Fired after the plot was animated."
+    )
 
-    # Fired while animating a single frame (does not currently pass data through).
-    on_animating_frame: EventHandler[no_args_event_spec]
+    on_animating_frame: EventHandler[no_args_event_spec] = field(
+        doc="Fired while animating a single frame (does not currently pass data through)."
+    )
 
-    # Fired when an animation is interrupted (to start a new animation for example).
-    on_animation_interrupted: EventHandler[no_args_event_spec]
+    on_animation_interrupted: EventHandler[no_args_event_spec] = field(
+        doc="Fired when an animation is interrupted (to start a new animation for example)."
+    )
 
-    # Fired when the plot is responsively sized.
-    on_autosize: EventHandler[no_args_event_spec]
+    on_autosize: EventHandler[no_args_event_spec] = field(
+        doc="Fired when the plot is responsively sized."
+    )
 
-    # Fired whenever mouse moves over a plot.
-    on_before_hover: EventHandler[no_args_event_spec]
+    on_before_hover: EventHandler[no_args_event_spec] = field(
+        doc="Fired whenever mouse moves over a plot."
+    )
 
-    # Fired when a plotly UI button is clicked.
-    on_button_clicked: EventHandler[no_args_event_spec]
+    on_button_clicked: EventHandler[no_args_event_spec] = field(
+        doc="Fired when a plotly UI button is clicked."
+    )
 
-    # Fired when the plot is clicked.
-    on_click: EventHandler[_event_points_data_signature]
+    on_click: EventHandler[_event_points_data_signature] = field(
+        doc="Fired when the plot is clicked."
+    )
 
-    # Fired when a selection is cleared (via double click).
-    on_deselect: EventHandler[no_args_event_spec]
+    on_deselect: EventHandler[no_args_event_spec] = field(
+        doc="Fired when a selection is cleared (via double click)."
+    )
 
-    # Fired when the plot is double clicked.
-    on_double_click: EventHandler[no_args_event_spec]
+    on_double_click: EventHandler[no_args_event_spec] = field(
+        doc="Fired when the plot is double clicked."
+    )
 
-    # Fired when a plot element is hovered over.
-    on_hover: EventHandler[_event_points_data_signature]
+    on_hover: EventHandler[_event_points_data_signature] = field(
+        doc="Fired when a plot element is hovered over."
+    )
 
-    # Fired after the plot is laid out (zoom, pan, etc).
-    on_relayout: EventHandler[no_args_event_spec]
+    on_relayout: EventHandler[no_args_event_spec] = field(
+        doc="Fired after the plot is laid out (zoom, pan, etc)."
+    )
 
-    # Fired while the plot is being laid out.
-    on_relayouting: EventHandler[no_args_event_spec]
+    on_relayouting: EventHandler[no_args_event_spec] = field(
+        doc="Fired while the plot is being laid out."
+    )
 
-    # Fired after the plot style is changed.
-    on_restyle: EventHandler[no_args_event_spec]
+    on_restyle: EventHandler[no_args_event_spec] = field(
+        doc="Fired after the plot style is changed."
+    )
 
-    # Fired after the plot is redrawn.
-    on_redraw: EventHandler[no_args_event_spec]
+    on_redraw: EventHandler[no_args_event_spec] = field(
+        doc="Fired after the plot is redrawn."
+    )
 
-    # Fired after selecting plot elements.
-    on_selected: EventHandler[_event_points_data_signature]
+    on_selected: EventHandler[_event_points_data_signature] = field(
+        doc="Fired after selecting plot elements."
+    )
 
-    # Fired while dragging a selection.
-    on_selecting: EventHandler[_event_points_data_signature]
+    on_selecting: EventHandler[_event_points_data_signature] = field(
+        doc="Fired while dragging a selection."
+    )
 
-    # Fired while an animation is occurring.
-    on_transitioning: EventHandler[no_args_event_spec]
+    on_transitioning: EventHandler[no_args_event_spec] = field(
+        doc="Fired while an animation is occurring."
+    )
 
-    # Fired when a transition is stopped early.
-    on_transition_interrupted: EventHandler[no_args_event_spec]
+    on_transition_interrupted: EventHandler[no_args_event_spec] = field(
+        doc="Fired when a transition is stopped early."
+    )
 
-    # Fired when a hovered element is no longer hovered.
-    on_unhover: EventHandler[_event_points_data_signature]
+    on_unhover: EventHandler[_event_points_data_signature] = field(
+        doc="Fired when a hovered element is no longer hovered."
+    )
 
     def add_imports(self) -> dict[str, str]:
         """Add imports for the plotly component.
@@ -303,7 +325,7 @@ class PlotlyBasic(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-basic-dist-min@3.3.1"]
+    lib_dependencies: list[str] = ["plotly.js-basic-dist-min@3.4.0"]
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the plotly basic component.
@@ -329,7 +351,7 @@ class PlotlyCartesian(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-cartesian-dist-min@3.3.1"]
+    lib_dependencies: list[str] = ["plotly.js-cartesian-dist-min@3.4.0"]
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the plotly cartesian component.
@@ -355,7 +377,7 @@ class PlotlyGeo(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-geo-dist-min@3.3.1"]
+    lib_dependencies: list[str] = ["plotly.js-geo-dist-min@3.4.0"]
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the plotly geo component.
@@ -381,7 +403,7 @@ class PlotlyGl3d(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-gl3d-dist-min@3.3.1"]
+    lib_dependencies: list[str] = ["plotly.js-gl3d-dist-min@3.4.0"]
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the plotly 3d component.
@@ -407,7 +429,7 @@ class PlotlyGl2d(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-gl2d-dist-min@3.3.1"]
+    lib_dependencies: list[str] = ["plotly.js-gl2d-dist-min@3.4.0"]
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the plotly 2d component.
@@ -433,7 +455,7 @@ class PlotlyMapbox(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-mapbox-dist-min@3.3.1"]
+    lib_dependencies: list[str] = ["plotly.js-mapbox-dist-min@3.4.0"]
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the plotly mapbox component.
@@ -459,7 +481,7 @@ class PlotlyFinance(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-finance-dist-min@3.3.1"]
+    lib_dependencies: list[str] = ["plotly.js-finance-dist-min@3.4.0"]
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the plotly finance component.
@@ -485,7 +507,7 @@ class PlotlyStrict(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-strict-dist-min@3.3.1"]
+    lib_dependencies: list[str] = ["plotly.js-strict-dist-min@3.4.0"]
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the plotly strict component.

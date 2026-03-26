@@ -34,9 +34,10 @@ import reflex.utils.build
 import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
-from reflex.components.component import CustomComponent
+from reflex.components.component import CUSTOM_COMPONENTS, CustomComponent
 from reflex.config import get_config
 from reflex.environment import environment
+from reflex.experimental.memo import EXPERIMENTAL_MEMOS
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
@@ -142,11 +143,11 @@ class AppHarness:
                 If unspecified, then root must already contain a working reflex app and will be used directly.
             app_name: provide the name of the app, otherwise will be derived from app_source or root.
 
-        Raises:
-            ValueError: when app_source is a string and app_name is not provided.
-
         Returns:
             AppHarness instance
+
+        Raises:
+            ValueError: when app_source is a string and app_name is not provided.
         """
         if app_name is None:
             if app_source is None:
@@ -243,6 +244,10 @@ class AppHarness:
         # disable telemetry reporting for tests
 
         os.environ["REFLEX_TELEMETRY_ENABLED"] = "false"
+        # Reset global memo registries so previous AppHarness apps do not
+        # leak compiled component definitions into the next test app.
+        CUSTOM_COMPONENTS.clear()
+        EXPERIMENTAL_MEMOS.clear()
         CustomComponent.create().get_component.cache_clear()
         self.app_path.mkdir(parents=True, exist_ok=True)
         if self.app_source is not None:
@@ -269,15 +274,18 @@ class AppHarness:
                 reflex.utils.prerequisites.initialize_frontend_dependencies()
         with chdir(self.app_path):
             # ensure config and app are reloaded when testing different app
-            reflex.config.get_config(reload=True)
+            config = reflex.config.get_config(reload=True)
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
             os.environ[reflex.constants.APP_HARNESS_FLAG] = "true"
-            # Ensure we actually compile the app during first initialization.
+            # Ensure we compile generated apps, and reload pre-existing app modules
+            # that were already imported so they can re-register memo definitions.
+            should_reload_app = (
+                self.app_source is not None or config.module in sys.modules
+            )
             self.app_instance, self.app_module = (
                 reflex.utils.prerequisites.get_and_validate_app(
-                    # Do not reload the module for pre-existing apps (only apps generated from source)
-                    reload=self.app_source is not None
+                    reload=should_reload_app
                 )
             )
             self.app_asgi = self.app_instance()

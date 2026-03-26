@@ -20,9 +20,12 @@ from .mixin import AppMixin
 
 @dataclasses.dataclass
 class LifespanMixin(AppMixin):
-    """A Mixin that allow tasks to run during the whole app lifespan."""
+    """A Mixin that allow tasks to run during the whole app lifespan.
 
-    # Lifespan tasks that are planned to run.
+    Attributes:
+        lifespan_tasks: Lifespan tasks that are planned to run.
+    """
+
     lifespan_tasks: set[asyncio.Task | Callable] = dataclasses.field(
         default_factory=set
     )

@@ -6,7 +6,7 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any, ClassVar
 
-from reflex.app import UploadFile
+from reflex._upload import UploadChunkIterator, UploadFile
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import (
     Component,
@@ -172,6 +172,11 @@ def get_upload_url(file_path: str | Var[str]) -> Var[str]:
 
 
 _on_drop_spec = passthrough_event_spec(list[UploadFile])
+_on_drop_args_spec = (
+    _on_drop_spec,
+    passthrough_event_spec(UploadChunkIterator),
+)
+_UPLOAD_FILES_CLIENT_HANDLER = "uploadFiles"
 
 
 def _default_drop_rejected(rejected_files: ArrayVar[list[dict[str, Any]]]) -> EventSpec:
@@ -212,10 +217,11 @@ class GhostUpload(Fragment):
     """A ghost upload component."""
 
     # Fired when files are dropped.
-    on_drop: EventHandler[_on_drop_spec]
+    on_drop: EventHandler[_on_drop_args_spec]
 
-    # Fired when dropped files do not meet the specified criteria.
-    on_drop_rejected: EventHandler[_on_drop_spec]
+    on_drop_rejected: EventHandler[_on_drop_spec] = field(
+        doc="Fired when dropped files do not meet the specified criteria."
+    )
 
 
 class Upload(MemoizationLeaf):
@@ -225,46 +231,47 @@ class Upload(MemoizationLeaf):
 
     tag = ""
 
-    # The list of accepted file types. This should be a dictionary of MIME types as keys and array of file formats as
-    # values.
-    # supported MIME types: https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
-    accept: Var[dict[str, Sequence] | None]
+    accept: Var[dict[str, Sequence] | None] = field(
+        doc="The list of accepted file types. This should be a dictionary of MIME types as keys and array of file formats as values. supported MIME types: https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types"
+    )
 
-    # Whether the dropzone is disabled.
-    disabled: Var[bool]
+    disabled: Var[bool] = field(doc="Whether the dropzone is disabled.")
 
-    # The maximum number of files that can be uploaded.
-    max_files: Var[int]
+    max_files: Var[int] = field(doc="The maximum number of files that can be uploaded.")
 
-    # The maximum file size (bytes) that can be uploaded.
-    max_size: Var[int]
+    max_size: Var[int] = field(
+        doc="The maximum file size (bytes) that can be uploaded."
+    )
 
-    # The minimum file size (bytes) that can be uploaded.
-    min_size: Var[int]
+    min_size: Var[int] = field(
+        doc="The minimum file size (bytes) that can be uploaded."
+    )
 
-    # Whether to allow multiple files to be uploaded.
-    multiple: Var[bool]
+    multiple: Var[bool] = field(doc="Whether to allow multiple files to be uploaded.")
 
-    # Whether to disable click to upload.
-    no_click: Var[bool]
+    no_click: Var[bool] = field(doc="Whether to disable click to upload.")
 
-    # Whether to disable drag and drop.
-    no_drag: Var[bool]
+    no_drag: Var[bool] = field(doc="Whether to disable drag and drop.")
 
-    # Whether to disable using the space/enter keys to upload.
-    no_keyboard: Var[bool]
+    no_keyboard: Var[bool] = field(
+        doc="Whether to disable using the space/enter keys to upload."
+    )
 
     # Marked True when any Upload component is created.
     is_used: ClassVar[bool] = False
 
     # Fired when files are dropped.
-    on_drop: EventHandler[_on_drop_spec]
+    on_drop: EventHandler[_on_drop_args_spec]
 
-    # Fired when dropped files do not meet the specified criteria.
-    on_drop_rejected: EventHandler[_on_drop_spec]
+    on_drop_rejected: EventHandler[_on_drop_spec] = field(
+        doc="Fired when dropped files do not meet the specified criteria."
+    )
 
-    # Style rules to apply when actively dragging.
-    drag_active_style: Style | None = field(default=None, is_javascript_property=False)
+    drag_active_style: Style | None = field(
+        doc="Style rules to apply when actively dragging.",
+        default=None,
+        is_javascript_property=False,
+    )
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -310,11 +317,12 @@ class Upload(MemoizationLeaf):
                 if isinstance(event, EventHandler):
                     event = event(upload_files(upload_id))
                 if isinstance(event, EventSpec):
-                    # Call the lambda to get the event chain.
-                    event = call_event_handler(event, _on_drop_spec)
+                    if event.client_handler_name != _UPLOAD_FILES_CLIENT_HANDLER:
+                        # Call the lambda to get the event chain.
+                        event = call_event_handler(event, _on_drop_args_spec)
                 elif isinstance(event, Callable):
                     # Call the lambda to get the event chain.
-                    event = call_event_fn(event, _on_drop_spec)
+                    event = call_event_fn(event, _on_drop_args_spec)
                 if isinstance(event, EventSpec):
                     # Update the provided args for direct use with on_drop.
                     event = event.with_args(

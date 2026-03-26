@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from reflex.components.base.bare import Bare
+from reflex.components.component import field
 from reflex.components.el import elements
 from reflex.components.el.elements.metadata import Meta as Meta  # for compatibility
 from reflex.vars.base import Var
@@ -14,11 +15,11 @@ class Title(elements.Title):
     def render(self) -> dict:
         """Render the title component.
 
-        Raises:
-            ValueError: If the title is not a single string.
-
         Returns:
             The rendered title component.
+
+        Raises:
+            ValueError: If the title is not a single string.
         """
         # Make sure the title is a single string.
         if len(self.children) != 1 or not isinstance(self.children[0], Bare):
@@ -30,12 +31,14 @@ class Title(elements.Title):
 class Description(elements.Meta):
     """A component that displays the title of the current page."""
 
-    # The type of the description.
-    name: Var[str] = Var.create("description")
+    name: Var[str] = field(
+        default=Var.create("description"), doc="The type of the description."
+    )
 
 
 class Image(elements.Meta):
     """A component that displays the title of the current page."""
 
-    # The type of the image.
-    property: Var[str] = Var.create("og:image")
+    property: Var[str] = field(
+        default=Var.create("og:image"), doc="The type of the image."
+    )

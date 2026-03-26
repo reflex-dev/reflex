@@ -78,6 +78,7 @@ class ComponentField(BaseField[FIELD_TYPE]):
         default_factory: Callable[[], FIELD_TYPE] | None = None,
         is_javascript: bool | None = None,
         annotated_type: type[Any] | _MISSING_TYPE = MISSING,
+        doc: str | None = None,
     ) -> None:
         """Initialize the field.
 
@@ -86,8 +87,10 @@ class ComponentField(BaseField[FIELD_TYPE]):
             default_factory: The default factory for the field.
             is_javascript: Whether the field is a javascript property.
             annotated_type: The annotated type for the field.
+            doc: Documentation string for the field.
         """
         super().__init__(default, default_factory, annotated_type)
+        self.doc = doc
         self.is_javascript = is_javascript
 
     def __repr__(self) -> str:
@@ -110,6 +113,7 @@ def field(
     default: FIELD_TYPE | _MISSING_TYPE = MISSING,
     default_factory: Callable[[], FIELD_TYPE] | None = None,
     is_javascript_property: bool | None = None,
+    doc: str | None = None,
 ) -> FIELD_TYPE:
     """Create a field for a component.
 
@@ -117,6 +121,7 @@ def field(
         default: The default value for the field.
         default_factory: The default factory for the field.
         is_javascript_property: Whether the field is a javascript property.
+        doc: Documentation string for the field.
 
     Returns:
         The field for the component.
@@ -131,6 +136,7 @@ def field(
         default=default,
         default_factory=default_factory,
         is_javascript=is_javascript_property,
+        doc=doc,
     )
 
 
@@ -177,11 +183,23 @@ class BaseComponentMeta(FieldBasedMeta, ABCMeta):
                     annotated_type=annotation,
                 )
             else:
+                is_js = value.is_javascript
+                if is_js is None:
+                    if (existing_field := inherited_fields.get(key)) is not None:
+                        is_js = existing_field.is_javascript
+                    else:
+                        is_js = key[0] != "_"
+                default = value.default
+                # If no default or factory provided, default to None
+                # (same behavior as bare annotations without field())
+                if default is MISSING and value.default_factory is None:
+                    default = None
                 value = ComponentField(
-                    default=value.default,
+                    default=default,
                     default_factory=value.default_factory,
-                    is_javascript=value.is_javascript,
+                    is_javascript=is_js,
                     annotated_type=annotation,
+                    doc=value.doc,
                 )
 
             own_fields[key] = value
@@ -251,17 +269,19 @@ class BaseComponent(metaclass=BaseComponentMeta):
     This is something that can be rendered as a Component via the Reflex compiler.
     """
 
-    # The children nested within the component.
     children: list[BaseComponent] = field(
-        default_factory=list, is_javascript_property=False
+        doc="The children nested within the component.",
+        default_factory=list,
+        is_javascript_property=False,
     )
 
     # The library that the component is based on.
     library: str | None = field(default=None, is_javascript_property=False)
 
-    # List here the non-react dependency needed by `library`
     lib_dependencies: list[str] = field(
-        default_factory=list, is_javascript_property=False
+        doc="List here the non-react dependency needed by `library`",
+        default_factory=list,
+        is_javascript_property=False,
     )
 
     # The tag to use when rendering the component.
@@ -530,23 +550,82 @@ def _deterministic_hash(value: object) -> str:
     raise TypeError(msg)
 
 
-DEFAULT_TRIGGERS: Mapping[str, types.ArgsSpec | Sequence[types.ArgsSpec]] = {
-    EventTriggers.ON_FOCUS: no_args_event_spec,
-    EventTriggers.ON_BLUR: no_args_event_spec,
-    EventTriggers.ON_CLICK: pointer_event_spec,  # pyright: ignore [reportAssignmentType]
-    EventTriggers.ON_CONTEXT_MENU: pointer_event_spec,  # pyright: ignore [reportAssignmentType]
-    EventTriggers.ON_DOUBLE_CLICK: pointer_event_spec,  # pyright: ignore [reportAssignmentType]
-    EventTriggers.ON_MOUSE_DOWN: no_args_event_spec,
-    EventTriggers.ON_MOUSE_ENTER: no_args_event_spec,
-    EventTriggers.ON_MOUSE_LEAVE: no_args_event_spec,
-    EventTriggers.ON_MOUSE_MOVE: no_args_event_spec,
-    EventTriggers.ON_MOUSE_OUT: no_args_event_spec,
-    EventTriggers.ON_MOUSE_OVER: no_args_event_spec,
-    EventTriggers.ON_MOUSE_UP: no_args_event_spec,
-    EventTriggers.ON_SCROLL: no_args_event_spec,
-    EventTriggers.ON_SCROLL_END: no_args_event_spec,
-    EventTriggers.ON_MOUNT: no_args_event_spec,
-    EventTriggers.ON_UNMOUNT: no_args_event_spec,
+@dataclasses.dataclass(kw_only=True, frozen=True, slots=True)
+class TriggerDefinition:
+    """A default event trigger with its args spec and description."""
+
+    spec: types.ArgsSpec | Sequence[types.ArgsSpec]
+    description: str
+
+
+DEFAULT_TRIGGERS_AND_DESC: Mapping[str, TriggerDefinition] = {
+    EventTriggers.ON_FOCUS: TriggerDefinition(
+        spec=no_args_event_spec,
+        description="Fired when the element (or some element inside of it) receives focus. For example, it is called when the user clicks on a text input.",
+    ),
+    EventTriggers.ON_BLUR: TriggerDefinition(
+        spec=no_args_event_spec,
+        description="Fired when focus has left the element (or left some element inside of it). For example, it is called when the user clicks outside of a focused text input.",
+    ),
+    EventTriggers.ON_CLICK: TriggerDefinition(
+        spec=pointer_event_spec,  # pyright: ignore [reportArgumentType]
+        description="Fired when the user clicks on an element. For example, it's called when the user clicks on a button.",
+    ),
+    EventTriggers.ON_CONTEXT_MENU: TriggerDefinition(
+        spec=pointer_event_spec,  # pyright: ignore [reportArgumentType]
+        description="Fired when the user right-clicks on an element.",
+    ),
+    EventTriggers.ON_DOUBLE_CLICK: TriggerDefinition(
+        spec=pointer_event_spec,  # pyright: ignore [reportArgumentType]
+        description="Fired when the user double-clicks on an element.",
+    ),
+    EventTriggers.ON_MOUSE_DOWN: TriggerDefinition(
+        spec=no_args_event_spec,
+        description="Fired when the user presses a mouse button on an element.",
+    ),
+    EventTriggers.ON_MOUSE_ENTER: TriggerDefinition(
+        spec=no_args_event_spec,
+        description="Fired when the mouse pointer enters the element.",
+    ),
+    EventTriggers.ON_MOUSE_LEAVE: TriggerDefinition(
+        spec=no_args_event_spec,
+        description="Fired when the mouse pointer leaves the element.",
+    ),
+    EventTriggers.ON_MOUSE_MOVE: TriggerDefinition(
+        spec=no_args_event_spec,
+        description="Fired when the mouse pointer moves over the element.",
+    ),
+    EventTriggers.ON_MOUSE_OUT: TriggerDefinition(
+        spec=no_args_event_spec,
+        description="Fired when the mouse pointer moves out of the element.",
+    ),
+    EventTriggers.ON_MOUSE_OVER: TriggerDefinition(
+        spec=no_args_event_spec,
+        description="Fired when the mouse pointer moves onto the element.",
+    ),
+    EventTriggers.ON_MOUSE_UP: TriggerDefinition(
+        spec=no_args_event_spec,
+        description="Fired when the user releases a mouse button on an element.",
+    ),
+    EventTriggers.ON_SCROLL: TriggerDefinition(
+        spec=no_args_event_spec,
+        description="Fired when the user scrolls the element.",
+    ),
+    EventTriggers.ON_SCROLL_END: TriggerDefinition(
+        spec=no_args_event_spec,
+        description="Fired when scrolling ends on the element.",
+    ),
+    EventTriggers.ON_MOUNT: TriggerDefinition(
+        spec=no_args_event_spec,
+        description="Fired when the component is mounted to the page.",
+    ),
+    EventTriggers.ON_UNMOUNT: TriggerDefinition(
+        spec=no_args_event_spec,
+        description="Fired when the component is removed from the page. Only called during navigation, not on page refresh.",
+    ),
+}
+DEFAULT_TRIGGERS = {
+    name: trigger.spec for name, trigger in DEFAULT_TRIGGERS_AND_DESC.items()
 }
 
 T = TypeVar("T", bound="Component")
@@ -555,12 +634,16 @@ T = TypeVar("T", bound="Component")
 class Component(BaseComponent, ABC):
     """A component with style, event trigger and other props."""
 
-    # The style of the component.
-    style: Style = field(default_factory=Style, is_javascript_property=False)
+    style: Style = field(
+        doc="The style of the component.",
+        default_factory=Style,
+        is_javascript_property=False,
+    )
 
-    # A mapping from event triggers to event chains.
     event_triggers: dict[str, EventChain | Var] = field(
-        default_factory=dict, is_javascript_property=False
+        doc="A mapping from event triggers to event chains.",
+        default_factory=dict,
+        is_javascript_property=False,
     )
 
     # The alias for the tag.
@@ -572,20 +655,33 @@ class Component(BaseComponent, ABC):
     # Whether the import is default or named.
     is_default: bool | None = field(default=False, is_javascript_property=False)
 
-    # A unique key for the component.
-    key: Any = field(default=None, is_javascript_property=False)
+    key: Any = field(
+        doc="A unique key for the component.",
+        default=None,
+        is_javascript_property=False,
+    )
 
-    # The id for the component.
-    id: Any = field(default=None, is_javascript_property=False)
+    id: Any = field(
+        doc="The id for the component.", default=None, is_javascript_property=False
+    )
 
-    # The Var to pass as the ref to the component.
-    ref: Var | None = field(default=None, is_javascript_property=False)
+    ref: Var | None = field(
+        doc="The Var to pass as the ref to the component.",
+        default=None,
+        is_javascript_property=False,
+    )
 
-    # The class name for the component.
-    class_name: Any = field(default=None, is_javascript_property=False)
+    class_name: Any = field(
+        doc="The class name for the component.",
+        default=None,
+        is_javascript_property=False,
+    )
 
-    # Special component props.
-    special_props: list[Var] = field(default_factory=list, is_javascript_property=False)
+    special_props: list[Var] = field(
+        doc="Special component props.",
+        default_factory=list,
+        is_javascript_property=False,
+    )
 
     # components that cannot be children
     _invalid_children: ClassVar[list[str]] = []
@@ -599,14 +695,14 @@ class Component(BaseComponent, ABC):
     # props to change the name of
     _rename_props: ClassVar[dict[str, str]] = {}
 
-    # custom attribute
     custom_attrs: dict[str, Var | Any] = field(
-        default_factory=dict, is_javascript_property=False
+        doc="custom attribute", default_factory=dict, is_javascript_property=False
     )
 
-    # When to memoize this component and its children.
     _memoization_mode: MemoizationMode = field(
-        default_factory=MemoizationMode, is_javascript_property=False
+        doc="When to memoize this component and its children.",
+        default_factory=MemoizationMode,
+        is_javascript_property=False,
     )
 
     # State class associated with this component instance
@@ -1166,11 +1262,11 @@ class Component(BaseComponent, ABC):
             style: A dict from component to styling.
             theme: The theme to apply. (for retro-compatibility with deprecated _apply_theme API)
 
-        Raises:
-            UserWarning: If `_add_style` has been overridden.
-
         Returns:
             The component with the additional style.
+
+        Raises:
+            UserWarning: If `_add_style` has been overridden.
         """
         # 1. Default style from `_add_style`/`add_style`.
         if type(self)._add_style != Component._add_style:
@@ -1915,11 +2011,13 @@ class CustomComponent(Component):
     # Use the components library.
     library = f"$/{Dirs.COMPONENTS_PATH}"
 
-    # The function that creates the component.
-    component_fn: Callable[..., Component] = field(default=Component.create)
+    component_fn: Callable[..., Component] = field(
+        doc="The function that creates the component.", default=Component.create
+    )
 
-    # The props of the component.
-    props: dict[str, Any] = field(default_factory=dict)
+    props: dict[str, Any] = field(
+        doc="The props of the component.", default_factory=dict
+    )
 
     def _post_init(self, **kwargs):
         """Initialize the custom component.
@@ -2293,11 +2391,17 @@ class StatefulComponent(BaseComponent):
         default_factory=Component, is_javascript_property=False
     )
 
-    # How many times this component is referenced in the app.
-    references: int = field(default=0, is_javascript_property=False)
+    references: int = field(
+        doc="How many times this component is referenced in the app.",
+        default=0,
+        is_javascript_property=False,
+    )
 
-    # Whether the component has already been rendered to a shared file.
-    rendered_as_shared: bool = field(default=False, is_javascript_property=False)
+    rendered_as_shared: bool = field(
+        doc="Whether the component has already been rendered to a shared file.",
+        default=False,
+        is_javascript_property=False,
+    )
 
     memo_trigger_hooks: list[str] = field(
         default_factory=list, is_javascript_property=False

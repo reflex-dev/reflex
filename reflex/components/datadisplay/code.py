@@ -382,37 +382,39 @@ for theme_name in dir(Theme):
 class CodeBlock(Component, MarkdownComponentMap):
     """A code block."""
 
-    library = "react-syntax-highlighter@16.1.0"
+    library = "react-syntax-highlighter@16.1.1"
 
     tag = "PrismAsyncLight"
 
     alias = "SyntaxHighlighter"
 
-    # The theme to use ("light" or "dark").
-    theme: Var[Theme | str] = Theme.one_light
-
-    # The language to use.
-    language: Var[LiteralCodeLanguage] = Var.create("python")
-
-    # The code to display.
-    code: Var[str]
-
-    # If this is enabled line numbers will be shown next to the code block.
-    show_line_numbers: Var[bool]
-
-    # The starting line number to use.
-    starting_line_number: Var[int]
-
-    # Whether to wrap long lines.
-    wrap_long_lines: Var[bool]
-
-    # A custom style for the code block.
-    custom_style: dict[str, str | Var | Color] = field(
-        default_factory=dict, is_javascript_property=False
+    theme: Var[Theme | str] = field(
+        default=Theme.one_light, doc='The theme to use ("light" or "dark").'
     )
 
-    # Props passed down to the code tag.
-    code_tag_props: Var[dict[str, str | dict[str, str]]]
+    language: Var[LiteralCodeLanguage] = field(
+        default=Var.create("python"), doc="The language to use."
+    )
+
+    code: Var[str] = field(doc="The code to display.")
+
+    show_line_numbers: Var[bool] = field(
+        doc="If this is enabled line numbers will be shown next to the code block."
+    )
+
+    starting_line_number: Var[int] = field(doc="The starting line number to use.")
+
+    wrap_long_lines: Var[bool] = field(doc="Whether to wrap long lines.")
+
+    custom_style: dict[str, str | Var | Color] = field(
+        doc="A custom style for the code block.",
+        default_factory=dict,
+        is_javascript_property=False,
+    )
+
+    code_tag_props: Var[dict[str, str | dict[str, str]]] = field(
+        doc="Props passed down to the code tag."
+    )
 
     # Whether a copy button should appear.
     can_copy: bool | None = field(

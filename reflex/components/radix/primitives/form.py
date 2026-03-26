@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from reflex.components.component import ComponentNamespace
+from reflex.components.component import ComponentNamespace, field
 from reflex.components.core.debounce import DebounceInput
 from reflex.components.el.elements.forms import Form as HTMLForm
 from reflex.components.radix.themes.components.text_field import TextFieldRoot
@@ -27,8 +27,9 @@ class FormRoot(FormComponent, HTMLForm):
 
     alias = "RadixFormRoot"
 
-    # Fired when the errors are cleared.
-    on_clear_server_errors: EventHandler[no_args_event_spec]
+    on_clear_server_errors: EventHandler[no_args_event_spec] = field(
+        doc="Fired when the errors are cleared."
+    )
 
     def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
@@ -46,11 +47,13 @@ class FormField(FormComponent):
 
     alias = "RadixFormField"
 
-    # The name of the form field, that is passed down to the control and used to match with validation messages.
-    name: Var[str]
+    name: Var[str] = field(
+        doc="The name of the form field, that is passed down to the control and used to match with validation messages."
+    )
 
-    # Flag to mark the form field as invalid, for server side validation.
-    server_invalid: Var[bool]
+    server_invalid: Var[bool] = field(
+        doc="Flag to mark the form field as invalid, for server side validation."
+    )
 
     def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
@@ -92,12 +95,12 @@ class FormControl(FormComponent):
             *children: The children of the form.
             **props: The properties of the form.
 
+        Returns:
+            The form control component.
+
         Raises:
             ValueError: If the number of children is greater than 1.
             TypeError: If a child exists but it is not a TextFieldInput.
-
-        Returns:
-            The form control component.
         """
         if len(children) > 1:
             msg = f"FormControl can only have at most one child, got {len(children)} children"
@@ -130,14 +133,17 @@ class FormMessage(FormComponent):
 
     alias = "RadixFormMessage"
 
-    # Used to target a specific field by name when rendering outside of a Field part.
-    name: Var[str]
+    name: Var[str] = field(
+        doc="Used to target a specific field by name when rendering outside of a Field part."
+    )
 
-    # Used to indicate on which condition the message should be visible.
-    match: Var[LiteralMatcher]
+    match: Var[LiteralMatcher] = field(
+        doc="Used to indicate on which condition the message should be visible."
+    )
 
-    # Forces the message to be shown. This is useful when using server-side validation.
-    force_match: Var[bool]
+    force_match: Var[bool] = field(
+        doc="Forces the message to be shown. This is useful when using server-side validation."
+    )
 
     def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.

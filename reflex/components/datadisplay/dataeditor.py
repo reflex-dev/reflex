@@ -7,7 +7,7 @@ from collections.abc import Mapping, Sequence
 from enum import Enum
 from typing import Any, Literal, TypedDict
 
-from reflex.components.component import Component, NoSSRComponent
+from reflex.components.component import Component, NoSSRComponent, field
 from reflex.components.literals import LiteralRowMarker
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
 from reflex.utils import console, format, types
@@ -186,185 +186,214 @@ class DataEditor(NoSSRComponent):
         "react-responsive-carousel@3.2.23",
     ]
 
-    # Number of rows.
-    rows: Var[int]
+    rows: Var[int] = field(doc="Number of rows.")
 
-    # Headers of the columns for the data grid.
-    columns: Var[Sequence[dict[str, Any]]]
+    columns: Var[Sequence[dict[str, Any]]] = field(
+        doc="Headers of the columns for the data grid."
+    )
 
-    # The data.
-    data: Var[Sequence[Sequence[Any]]]
+    data: Var[Sequence[Sequence[Any]]] = field(doc="The data.")
 
-    # The name of the callback used to find the data to display.
-    get_cell_content: Var[str]
+    get_cell_content: Var[str] = field(
+        doc="The name of the callback used to find the data to display."
+    )
 
-    # Allow selection for copying.
-    get_cells_for_selection: Var[bool]
+    get_cells_for_selection: Var[bool] = field(doc="Allow selection for copying.")
 
-    # Allow paste.
-    on_paste: Var[bool]
+    on_paste: Var[bool] = field(doc="Allow paste.")
 
-    # Controls the drawing of the focus ring.
-    draw_focus_ring: Var[bool]
+    draw_focus_ring: Var[bool] = field(doc="Controls the drawing of the focus ring.")
 
-    # Enables or disables the overlay shadow when scrolling horizontally.
-    fixed_shadow_x: Var[bool]
+    fixed_shadow_x: Var[bool] = field(
+        doc="Enables or disables the overlay shadow when scrolling horizontally."
+    )
 
-    # Enables or disables the overlay shadow when scrolling vertically.
-    fixed_shadow_y: Var[bool]
+    fixed_shadow_y: Var[bool] = field(
+        doc="Enables or disables the overlay shadow when scrolling vertically."
+    )
 
-    # Controls the presence of the fill indicator
-    fill_handle: Var[bool]
+    fill_handle: Var[bool] = field(doc="Controls the presence of the fill indicator")
 
-    # The number of columns which should remain in place when scrolling horizontally. Doesn't include rowMarkers.
-    freeze_columns: Var[int]
+    freeze_columns: Var[int] = field(
+        doc="The number of columns which should remain in place when scrolling horizontally. Doesn't include rowMarkers."
+    )
 
-    # Controls the header of the group header row.
-    group_header_height: Var[int]
+    group_header_height: Var[int] = field(
+        doc="Controls the header of the group header row."
+    )
 
-    # Controls the height of the header row.
-    header_height: Var[int]
+    header_height: Var[int] = field(doc="Controls the height of the header row.")
 
     # Additional header icons:
     # header_icons: Var[Any] # (TODO: must be a map of name: svg) #noqa: ERA001
 
-    # The maximum width a column can be automatically sized to.
-    max_column_auto_width: Var[int]
+    max_column_auto_width: Var[int] = field(
+        doc="The maximum width a column can be automatically sized to."
+    )
 
-    # The maximum width a column can be resized to.
-    max_column_width: Var[int]
+    max_column_width: Var[int] = field(
+        doc="The maximum width a column can be resized to."
+    )
 
-    # The minimum width a column can be resized to.
-    min_column_width: Var[int]
+    min_column_width: Var[int] = field(
+        doc="The minimum width a column can be resized to."
+    )
 
-    # Determines the height of each row.
-    row_height: Var[int]
+    row_height: Var[int] = field(doc="Determines the height of each row.")
 
-    # Kind of row markers. Options are: "none", "number", "checkbox", "both", "checkbox-visible", "clickable-number".
-    row_markers: Var[LiteralRowMarker]
+    row_markers: Var[LiteralRowMarker] = field(
+        doc='Kind of row markers. Options are: "none", "number", "checkbox", "both", "checkbox-visible", "clickable-number".'
+    )
 
-    # Changes the starting index for row markers.
-    row_marker_start_index: Var[int]
+    row_marker_start_index: Var[int] = field(
+        doc="Changes the starting index for row markers."
+    )
 
-    # Sets the width of row markers in pixels, if unset row markers will automatically size.
-    row_marker_width: Var[int]
+    row_marker_width: Var[int] = field(
+        doc="Sets the width of row markers in pixels, if unset row markers will automatically size."
+    )
 
-    # Enable horizontal smooth scrolling.
-    smooth_scroll_x: Var[bool]
+    smooth_scroll_x: Var[bool] = field(doc="Enable horizontal smooth scrolling.")
 
-    # Enable vertical smooth scrolling.
-    smooth_scroll_y: Var[bool]
+    smooth_scroll_y: Var[bool] = field(doc="Enable vertical smooth scrolling.")
 
-    # Controls the drawing of the left hand vertical border of a column. If set to a boolean value it controls all borders.
-    vertical_border: Var[bool]  # TODO: support a mapping (dict[int, bool])
+    vertical_border: Var[  # TODO: support a mapping (dict[int, bool])
+        bool
+    ] = field(
+        doc="Controls the drawing of the left hand vertical border of a column. If set to a boolean value it controls all borders."
+    )
 
-    # Allow columns selections. ("none", "single", "multi")
-    column_select: Var[Literal["none", "single", "multi"]]
+    column_select: Var[Literal["none", "single", "multi"]] = field(
+        doc='Allow columns selections. ("none", "single", "multi")'
+    )
 
-    # Allow range selections. ("none", "cell", "rect", "multi-cell", "multi-rect").
-    range_select: Var[Literal["none", "cell", "rect", "multi-cell", "multi-rect"]]
+    range_select: Var[Literal["none", "cell", "rect", "multi-cell", "multi-rect"]] = (
+        field(
+            doc='Allow range selections. ("none", "cell", "rect", "multi-cell", "multi-rect").'
+        )
+    )
 
-    # Allow row selections. ("none", "single", "multi").
-    row_select: Var[Literal["none", "single", "multi"]]
+    row_select: Var[Literal["none", "single", "multi"]] = field(
+        doc='Allow row selections. ("none", "single", "multi").'
+    )
 
-    # Prevent diagonal scrolling.
-    prevent_diagonal_scrolling: Var[bool]
+    prevent_diagonal_scrolling: Var[bool] = field(doc="Prevent diagonal scrolling.")
 
-    # Allow to scroll past the limit of the actual content on the horizontal axis.
-    overscroll_x: Var[int]
+    overscroll_x: Var[int] = field(
+        doc="Allow to scroll past the limit of the actual content on the horizontal axis."
+    )
 
-    # Allow to scroll past the limit of the actual content on the vertical axis.
-    overscroll_y: Var[int]
+    overscroll_y: Var[int] = field(
+        doc="Allow to scroll past the limit of the actual content on the vertical axis."
+    )
 
-    # Initial scroll offset on the horizontal axis.
-    scroll_offset_x: Var[int]
+    scroll_offset_x: Var[int] = field(
+        doc="Initial scroll offset on the horizontal axis."
+    )
 
-    # Initial scroll offset on the vertical axis.
-    scroll_offset_y: Var[int]
+    scroll_offset_y: Var[int] = field(doc="Initial scroll offset on the vertical axis.")
 
-    # Controls which types of range selections can exist at the same time. ("exclusive", "mixed").
-    range_selection_blending: Var[Literal["exclusive", "mixed"]]
+    range_selection_blending: Var[Literal["exclusive", "mixed"]] = field(
+        doc='Controls which types of range selections can exist at the same time. ("exclusive", "mixed").'
+    )
 
-    # Controls which types of column selections can exist at the same time. ("exclusive", "mixed").
-    column_selection_blending: Var[Literal["exclusive", "mixed"]]
+    column_selection_blending: Var[Literal["exclusive", "mixed"]] = field(
+        doc='Controls which types of column selections can exist at the same time. ("exclusive", "mixed").'
+    )
 
-    # Controls which types of row selections can exist at the same time. ("exclusive", "mixed").
-    row_selection_blending: Var[Literal["exclusive", "mixed"]]
+    row_selection_blending: Var[Literal["exclusive", "mixed"]] = field(
+        doc='Controls which types of row selections can exist at the same time. ("exclusive", "mixed").'
+    )
 
-    # Controls row marker selection behavior. "auto" adapts to touch/mouse, "multi" acts as if Ctrl is pressed. ("auto", "multi").
-    row_selection_mode: Var[Literal["auto", "multi"]]
+    row_selection_mode: Var[Literal["auto", "multi"]] = field(
+        doc='Controls row marker selection behavior. "auto" adapts to touch/mouse, "multi" acts as if Ctrl is pressed. ("auto", "multi").'
+    )
 
-    # Controls how spans are handled in selections. ("default", "allowPartial").
-    span_range_behavior: Var[Literal["default", "allowPartial"]]
+    span_range_behavior: Var[Literal["default", "allowPartial"]] = field(
+        doc='Controls how spans are handled in selections. ("default", "allowPartial").'
+    )
 
-    # global theme
-    theme: Var[DataEditorTheme | dict]
+    theme: Var[DataEditorTheme | dict] = field(doc="global theme")
 
-    # Fired when a cell is activated.
-    on_cell_activated: EventHandler[passthrough_event_spec(tuple[int, int])]
+    on_cell_activated: EventHandler[passthrough_event_spec(tuple[int, int])] = field(
+        doc="Fired when a cell is activated."
+    )
 
-    # Fired when a cell is clicked.
-    on_cell_clicked: EventHandler[passthrough_event_spec(tuple[int, int])]
+    on_cell_clicked: EventHandler[passthrough_event_spec(tuple[int, int])] = field(
+        doc="Fired when a cell is clicked."
+    )
 
-    # Fired when a cell is right-clicked.
-    on_cell_context_menu: EventHandler[passthrough_event_spec(tuple[int, int])]
+    on_cell_context_menu: EventHandler[passthrough_event_spec(tuple[int, int])] = field(
+        doc="Fired when a cell is right-clicked."
+    )
 
-    # Fired when a cell is edited.
-    on_cell_edited: EventHandler[passthrough_event_spec(tuple[int, int], GridCell)]
+    on_cell_edited: EventHandler[passthrough_event_spec(tuple[int, int], GridCell)] = (
+        field(doc="Fired when a cell is edited.")
+    )
 
-    # Fired when a group header is clicked.
     on_group_header_clicked: EventHandler[
         passthrough_event_spec(tuple[int, int], GridCell)
-    ]
+    ] = field(doc="Fired when a group header is clicked.")
 
-    # Fired when a group header is right-clicked.
     on_group_header_context_menu: EventHandler[
         passthrough_event_spec(int, GroupHeaderClickedEventArgs)
-    ]
+    ] = field(doc="Fired when a group header is right-clicked.")
 
-    # Fired when a group header is renamed.
-    on_group_header_renamed: EventHandler[passthrough_event_spec(str, str)]
+    on_group_header_renamed: EventHandler[passthrough_event_spec(str, str)] = field(
+        doc="Fired when a group header is renamed."
+    )
 
-    # Fired when a header is clicked.
-    on_header_clicked: EventHandler[passthrough_event_spec(tuple[int, int])]
+    on_header_clicked: EventHandler[passthrough_event_spec(tuple[int, int])] = field(
+        doc="Fired when a header is clicked."
+    )
 
-    # Fired when a header is right-clicked.
-    on_header_context_menu: EventHandler[passthrough_event_spec(tuple[int, int])]
+    on_header_context_menu: EventHandler[passthrough_event_spec(tuple[int, int])] = (
+        field(doc="Fired when a header is right-clicked.")
+    )
 
-    # Fired when a header menu item is clicked.
-    on_header_menu_click: EventHandler[passthrough_event_spec(int, Rectangle)]
+    on_header_menu_click: EventHandler[passthrough_event_spec(int, Rectangle)] = field(
+        doc="Fired when a header menu item is clicked."
+    )
 
-    # Fired when an item is hovered.
-    on_item_hovered: EventHandler[passthrough_event_spec(tuple[int, int])]
+    on_item_hovered: EventHandler[passthrough_event_spec(tuple[int, int])] = field(
+        doc="Fired when an item is hovered."
+    )
 
-    # Fired when a selection is deleted.
-    on_delete: EventHandler[passthrough_event_spec(GridSelection)]
+    on_delete: EventHandler[passthrough_event_spec(GridSelection)] = field(
+        doc="Fired when a selection is deleted."
+    )
 
-    # Fired when editing is finished.
     on_finished_editing: EventHandler[
         passthrough_event_spec(GridCell | None, tuple[int, int])
-    ]
+    ] = field(doc="Fired when editing is finished.")
 
-    # Fired when a row is appended.
-    on_row_appended: EventHandler[no_args_event_spec]
+    on_row_appended: EventHandler[no_args_event_spec] = field(
+        doc="Fired when a row is appended."
+    )
 
-    # The current grid selection state (columns, rows, and current cell/range). Must be used when on_grid_selection_change is used otherwise updates will not be reflected in the grid.
-    grid_selection: Var[GridSelection]
+    grid_selection: Var[GridSelection] = field(
+        doc="The current grid selection state (columns, rows, and current cell/range). Must be used when on_grid_selection_change is used otherwise updates will not be reflected in the grid."
+    )
 
-    # Fired when the grid selection changes. Will pass the current selection, the selected columns and the selected rows.
-    on_grid_selection_change: EventHandler[passthrough_event_spec(GridSelection)]
+    on_grid_selection_change: EventHandler[passthrough_event_spec(GridSelection)] = (
+        field(
+            doc="Fired when the grid selection changes. Will pass the current selection, the selected columns and the selected rows."
+        )
+    )
 
-    # Fired when the selection is cleared.
-    on_selection_cleared: EventHandler[no_args_event_spec]
+    on_selection_cleared: EventHandler[no_args_event_spec] = field(
+        doc="Fired when the selection is cleared."
+    )
 
-    # Fired when a column is resized.
-    on_column_resize: EventHandler[passthrough_event_spec(GridColumn, int)]
+    on_column_resize: EventHandler[passthrough_event_spec(GridColumn, int)] = field(
+        doc="Fired when a column is resized."
+    )
 
-    # Shows search bar.
-    show_search: Var[bool]
+    show_search: Var[bool] = field(doc="Shows search bar.")
 
-    # Fired when the search close button is clicked.
-    on_search_close: EventHandler[no_args_event_spec]
+    on_search_close: EventHandler[no_args_event_spec] = field(
+        doc="Fired when the search close button is clicked."
+    )
 
     def add_imports(self) -> ImportDict:
         """Add imports for the component.
@@ -467,11 +496,11 @@ class DataEditor(NoSSRComponent):
             *children: The children of the data editor.
             **props: The props of the data editor.
 
-        Raises:
-            ValueError: invalid input.
-
         Returns:
             The DataEditor component.&
+
+        Raises:
+            ValueError: invalid input.
         """
         from reflex.components.el import Div
 

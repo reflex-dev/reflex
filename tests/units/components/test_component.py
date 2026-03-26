@@ -337,7 +337,7 @@ def test_create_component(component1):
         ),
         pytest.param(
             "text",
-            Var(_js_expr="hello", _var_type=None | str),  # noqa: RUF036
+            Var(_js_expr="hello", _var_type=None | str),
             None,
             id="text-union-none-str",
         ),
@@ -367,7 +367,7 @@ def test_create_component(component1):
         ),
         pytest.param(
             "number",
-            Var(_js_expr="1", _var_type=None | int),  # noqa: RUF036
+            Var(_js_expr="1", _var_type=None | int),
             None,
             id="number-union-none-int",
         ),
@@ -403,7 +403,7 @@ def test_create_component(component1):
         ),
         pytest.param(
             "text_or_number",
-            Var(_js_expr="hello", _var_type=None | str),  # noqa: RUF036
+            Var(_js_expr="hello", _var_type=None | str),
             None,
             id="text_or_number-union-none-str",
         ),
@@ -421,7 +421,7 @@ def test_create_component(component1):
         ),
         pytest.param(
             "text_or_number",
-            Var(_js_expr="1", _var_type=None | int),  # noqa: RUF036
+            Var(_js_expr="1", _var_type=None | int),
             None,
             id="text_or_number-union-none-int",
         ),
@@ -931,10 +931,6 @@ def test_invalid_event_handler_args(component2, test_state: type[TestState]):
         component2.create(on_blur=lambda: 1)
     with pytest.raises(ValueError):
         component2.create(on_blur=lambda: [1])
-    with pytest.raises(ValueError):
-        component2.create(
-            on_blur=lambda: (test_state.do_something_arg(1), test_state.do_something)
-        )
 
     # lambda signature must match event trigger.
     with pytest.raises(EventFnArgMismatchError):
@@ -1006,6 +1002,9 @@ def test_valid_event_handler_args(component2, test_state: type[TestState]):
     # Return EventSpec and EventHandler (no arg).
     component2.create(
         on_blur=lambda: [test_state.do_something_arg(1), test_state.do_something]
+    )
+    component2.create(
+        on_blur=lambda: (test_state.do_something_arg(1), test_state.do_something)
     )
     component2.create(
         on_blur=lambda: [test_state.do_something_arg(1), test_state.do_something()]

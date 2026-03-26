@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from reflex.components.component import Component, MemoizationLeaf
+from reflex.components.component import Component, MemoizationLeaf, field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.colors import color
 from reflex.components.core.cond import cond
@@ -31,29 +31,33 @@ class Link(RadixThemesComponent, A, MemoizationLeaf, MarkdownComponentMap):
 
     tag = "Link"
 
-    # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: Var[bool]
+    as_child: Var[bool] = field(
+        doc="Change the default rendered element for the one passed as a child, merging their props and behavior."
+    )
 
-    # Text size: "1" - "9"
-    size: Var[Responsive[LiteralTextSize]]
+    size: Var[Responsive[LiteralTextSize]] = field(doc='Text size: "1" - "9"')
 
-    # Thickness of text: "light" | "regular" | "medium" | "bold"
-    weight: Var[Responsive[LiteralTextWeight]]
+    weight: Var[Responsive[LiteralTextWeight]] = field(
+        doc='Thickness of text: "light" | "regular" | "medium" | "bold"'
+    )
 
-    # Removes the leading trim space: "normal" | "start" | "end" | "both"
-    trim: Var[Responsive[LiteralTextTrim]]
+    trim: Var[Responsive[LiteralTextTrim]] = field(
+        doc='Removes the leading trim space: "normal" | "start" | "end" | "both"'
+    )
 
-    # Sets the visibility of the underline affordance: "auto" | "hover" | "always" | "none"
-    underline: Var[LiteralLinkUnderline]
+    underline: Var[LiteralLinkUnderline] = field(
+        doc='Sets the visibility of the underline affordance: "auto" | "hover" | "always" | "none"'
+    )
 
-    # Overrides the accent color inherited from the Theme.
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor] = field(
+        doc="Overrides the accent color inherited from the Theme."
+    )
 
-    # Whether to render the text with higher contrast color
-    high_contrast: Var[bool]
+    high_contrast: Var[bool] = field(
+        doc="Whether to render the text with higher contrast color"
+    )
 
-    # If True, the link will open in a new tab
-    is_external: Var[bool]
+    is_external: Var[bool] = field(doc="If True, the link will open in a new tab")
 
     def add_imports(self) -> ImportDict:
         """Add imports for the Link component.
@@ -73,11 +77,11 @@ class Link(RadixThemesComponent, A, MemoizationLeaf, MarkdownComponentMap):
             *children: The children of the component.
             **props: The props of the component.
 
-        Raises:
-            ValueError: in case of missing children
-
         Returns:
             Component: The link component
+
+        Raises:
+            ValueError: in case of missing children
         """
         props.setdefault("_hover", {"color": color("accent", 8)})
         href = props.get("href")
