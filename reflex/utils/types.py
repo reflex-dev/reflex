@@ -732,7 +732,7 @@ def _isinstance(
                     for item, arg in zip(obj, args, strict=True)
                 )
             )
-        if origin is dict or safe_issubclass(origin, Mapping):
+        if safe_issubclass(origin, Mapping):
             expected_class = (
                 dict
                 if origin is dict and not treat_mutable_obj_as_immutable
