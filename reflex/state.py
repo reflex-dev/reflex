@@ -2174,7 +2174,7 @@ class BaseState(EvenMoreBasicBaseState):
         """
         if isinstance(key, MutableProxy):
             # Legacy behavior from v0.7.14: handle non-string keys with deprecation warning
-            from reflex.utils import console
+            from reflex_core.utils import console
 
             console.deprecate(
                 feature_name="Non-string keys in get_value",

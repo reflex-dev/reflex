@@ -457,7 +457,7 @@ class Config(BaseConfig):
         """
         import json
 
-        from reflex.utils.serializers import serialize
+        from reflex_core.utils.serializers import serialize
 
         return json.dumps(self, default=serialize)
 

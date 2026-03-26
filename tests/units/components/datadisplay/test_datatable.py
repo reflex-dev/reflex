@@ -3,10 +3,10 @@ import pytest
 from reflex_components_gridjs.datatable import DataTable
 from reflex_core.constants.state import FIELD_MARKER
 from reflex_core.utils.exceptions import UntypedComputedVarError
+from reflex_core.utils.serializers import serialize, serialize_dataframe
 
 import reflex as rx
 from reflex.utils import types
-from reflex.utils.serializers import serialize, serialize_dataframe
 
 
 @pytest.mark.parametrize(

@@ -9,9 +9,8 @@ from reflex_core.components.component import NoSSRComponent, field
 from reflex_core.components.tags import Tag
 from reflex_core.utils import types
 from reflex_core.utils.imports import ImportDict
+from reflex_core.utils.serializers import serialize
 from reflex_core.vars.base import LiteralVar, Var, is_computed_var
-
-from reflex.utils.serializers import serialize
 
 
 class Gridjs(NoSSRComponent):

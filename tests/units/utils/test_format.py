@@ -17,11 +17,10 @@ from reflex_core.event import (
 )
 from reflex_core.style import Style
 from reflex_core.utils import format
+from reflex_core.utils.serializers import serialize_figure
 from reflex_core.vars.base import LiteralVar, Var
 from reflex_core.vars.function import FunctionStringVar
 from reflex_core.vars.object import ObjectVar
-
-from reflex.utils.serializers import serialize_figure
 
 pytest.importorskip("pydantic")
 

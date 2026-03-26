@@ -19,12 +19,11 @@ from reflex_core.components.component import (
     field,
 )
 from reflex_core.components.tags.tag import Tag
+from reflex_core.utils import console
 from reflex_core.utils.imports import ImportDict, ImportTypes, ImportVar
 from reflex_core.vars.base import LiteralVar, Var, VarData
 from reflex_core.vars.number import ternary_operation
 from reflex_core.vars.sequence import LiteralArrayVar
-
-from reflex.utils import console
 
 # Special vars used in the component map.
 _CHILDREN = Var(_js_expr="children", _var_type=str)

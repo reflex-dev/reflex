@@ -14,7 +14,7 @@ def open_browser(target_url: "SplitResult") -> None:
     """
     import webbrowser
 
-    from reflex.utils import console
+    from reflex_core.utils import console
 
     if not webbrowser.open(target_url.geturl()):
         console.warn(

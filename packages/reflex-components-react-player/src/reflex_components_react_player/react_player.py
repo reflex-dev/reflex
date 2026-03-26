@@ -7,10 +7,9 @@ from typing import Any, TypedDict
 from reflex_components_core.core.cond import cond
 from reflex_core.components.component import Component, field
 from reflex_core.event import EventHandler, no_args_event_spec
+from reflex_core.utils import console
 from reflex_core.vars.base import Var
 from reflex_core.vars.object import ObjectVar
-
-from reflex.utils import console
 
 ReactPlayerEvent = ObjectVar[dict[str, dict[str, dict[str, Any]]]]
 
