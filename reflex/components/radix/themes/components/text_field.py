@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from reflex.components.component import Component, ComponentNamespace
+from reflex.components.component import Component, ComponentNamespace, field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.debounce import DebounceInput
 from reflex.components.el import elements
@@ -27,68 +27,69 @@ class TextFieldRoot(elements.Input, RadixThemesComponent):
 
     tag = "TextField.Root"
 
-    # Text field size "1" - "3"
-    size: Var[Responsive[LiteralTextFieldSize]]
+    size: Var[Responsive[LiteralTextFieldSize]] = field(doc='Text field size "1" - "3"')
 
-    # Variant of text field: "classic" | "surface" | "soft"
-    variant: Var[LiteralTextFieldVariant]
+    variant: Var[LiteralTextFieldVariant] = field(
+        doc='Variant of text field: "classic" | "surface" | "soft"'
+    )
 
-    # Override theme color for text field
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor] = field(
+        doc="Override theme color for text field"
+    )
 
-    # Override theme radius for text field: "none" | "small" | "medium" | "large" | "full"
-    radius: Var[LiteralRadius]
+    radius: Var[LiteralRadius] = field(
+        doc='Override theme radius for text field: "none" | "small" | "medium" | "large" | "full"'
+    )
 
-    # Whether the input should have autocomplete enabled
-    auto_complete: Var[bool]
+    auto_complete: Var[bool] = field(
+        doc="Whether the input should have autocomplete enabled"
+    )
 
-    # The value of the input when initially rendered.
-    default_value: Var[str]
+    default_value: Var[str] = field(
+        doc="The value of the input when initially rendered."
+    )
 
-    # Disables the input
-    disabled: Var[bool]
+    disabled: Var[bool] = field(doc="Disables the input")
 
-    # Specifies the maximum number of characters allowed in the input
-    max_length: Var[int]
+    max_length: Var[int] = field(
+        doc="Specifies the maximum number of characters allowed in the input"
+    )
 
-    # Specifies the minimum number of characters required in the input
-    min_length: Var[int]
+    min_length: Var[int] = field(
+        doc="Specifies the minimum number of characters required in the input"
+    )
 
-    # Name of the input, used when sending form data
-    name: Var[str]
+    name: Var[str] = field(doc="Name of the input, used when sending form data")
 
-    # Placeholder text in the input
-    placeholder: Var[str]
+    placeholder: Var[str] = field(doc="Placeholder text in the input")
 
-    # Indicates whether the input is read-only
-    read_only: Var[bool]
+    read_only: Var[bool] = field(doc="Indicates whether the input is read-only")
 
-    # Indicates that the input is required
-    required: Var[bool]
+    required: Var[bool] = field(doc="Indicates that the input is required")
 
-    # Specifies the type of input
-    type: Var[str]
+    type: Var[str] = field(doc="Specifies the type of input")
 
-    # Value of the input
-    value: Var[str | int | float]
+    value: Var[str | int | float] = field(doc="Value of the input")
 
-    # References a datalist for suggested options
-    list: Var[str]
+    list: Var[str] = field(doc="References a datalist for suggested options")
 
-    # Fired when the value of the textarea changes.
-    on_change: EventHandler[input_event]
+    on_change: EventHandler[input_event] = field(
+        doc="Fired when the value of the textarea changes."
+    )
 
-    # Fired when the textarea is focused.
-    on_focus: EventHandler[input_event]
+    on_focus: EventHandler[input_event] = field(
+        doc="Fired when the textarea is focused."
+    )
 
-    # Fired when the textarea is blurred.
-    on_blur: EventHandler[input_event]
+    on_blur: EventHandler[input_event] = field(
+        doc="Fired when the textarea is blurred."
+    )
 
-    # Fired when a key is pressed down.
-    on_key_down: EventHandler[key_event]
+    on_key_down: EventHandler[key_event] = field(
+        doc="Fired when a key is pressed down."
+    )
 
-    # Fired when a key is released.
-    on_key_up: EventHandler[key_event]
+    on_key_up: EventHandler[key_event] = field(doc="Fired when a key is released.")
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -127,11 +128,13 @@ class TextFieldSlot(RadixThemesComponent):
 
     tag = "TextField.Slot"
 
-    # Override theme color for text field slot
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor] = field(
+        doc="Override theme color for text field slot"
+    )
 
-    # Which side of the input the slot should be placed on
-    side: Var[Literal["left", "right"]]
+    side: Var[Literal["left", "right"]] = field(
+        doc="Which side of the input the slot should be placed on"
+    )
 
 
 class TextField(ComponentNamespace):

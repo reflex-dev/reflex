@@ -1,5 +1,6 @@
 """Scripts classes."""
 
+from reflex.components.component import field
 from reflex.components.el.elements.inline import ReferrerPolicy
 from reflex.components.el.elements.media import CrossOrigin
 from reflex.vars.base import Var
@@ -24,29 +25,31 @@ class Script(BaseHTML):
 
     tag = "script"
 
-    # Indicates that the script should be executed asynchronously
-    async_: Var[bool]
+    async_: Var[bool] = field(
+        doc="Indicates that the script should be executed asynchronously"
+    )
 
-    # Character encoding of the external script
-    char_set: Var[str]
+    char_set: Var[str] = field(doc="Character encoding of the external script")
 
-    # Configures the CORS requests for the script
-    cross_origin: Var[CrossOrigin]
+    cross_origin: Var[CrossOrigin] = field(
+        doc="Configures the CORS requests for the script"
+    )
 
-    # Indicates that the script should be executed after the page has finished parsing
-    defer: Var[bool]
+    defer: Var[bool] = field(
+        doc="Indicates that the script should be executed after the page has finished parsing"
+    )
 
-    # Security feature allowing browsers to verify what they fetch
-    integrity: Var[str]
+    integrity: Var[str] = field(
+        doc="Security feature allowing browsers to verify what they fetch"
+    )
 
-    # Specifies which referrer information to send when fetching the script
-    referrer_policy: Var[ReferrerPolicy]
+    referrer_policy: Var[ReferrerPolicy] = field(
+        doc="Specifies which referrer information to send when fetching the script"
+    )
 
-    # URL of an external script
-    src: Var[str]
+    src: Var[str] = field(doc="URL of an external script")
 
-    # Specifies the MIME type of the script
-    type: Var[str]
+    type: Var[str] = field(doc="Specifies the MIME type of the script")
 
 
 canvas = Canvas.create

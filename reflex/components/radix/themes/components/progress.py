@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from reflex.components.component import Component
+from reflex.components.component import Component, field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.radix.themes.base import LiteralAccentColor, RadixThemesComponent
 from reflex.style import Style
@@ -14,32 +14,35 @@ class Progress(RadixThemesComponent):
 
     tag = "Progress"
 
-    # The value of the progress bar: 0 to max (default 100)
-    value: Var[int]
+    value: Var[int] = field(doc="The value of the progress bar: 0 to max (default 100)")
 
-    # The maximum progress value.
-    max: Var[int]
+    max: Var[int] = field(doc="The maximum progress value.")
 
-    # The size of the progress bar: "1" | "2" | "3"
-    size: Var[Responsive[Literal["1", "2", "3"]]]
+    size: Var[Responsive[Literal["1", "2", "3"]]] = field(
+        doc='The size of the progress bar: "1" | "2" | "3"'
+    )
 
-    # The variant of the progress bar: "classic" | "surface" | "soft"
-    variant: Var[Literal["classic", "surface", "soft"]]
+    variant: Var[Literal["classic", "surface", "soft"]] = field(
+        doc='The variant of the progress bar: "classic" | "surface" | "soft"'
+    )
 
-    # The color theme of the progress bar
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor] = field(
+        doc="The color theme of the progress bar"
+    )
 
-    # Whether to render the progress bar with higher contrast color against background
-    high_contrast: Var[bool]
+    high_contrast: Var[bool] = field(
+        doc="Whether to render the progress bar with higher contrast color against background"
+    )
 
-    # Override theme radius for progress bar: "none" | "small" | "medium" | "large" | "full"
-    radius: Var[Literal["none", "small", "medium", "large", "full"]]
+    radius: Var[Literal["none", "small", "medium", "large", "full"]] = field(
+        doc='Override theme radius for progress bar: "none" | "small" | "medium" | "large" | "full"'
+    )
 
-    # The duration of the progress bar animation. Once the duration times out, the progress bar will start an indeterminate animation.
-    duration: Var[str]
+    duration: Var[str] = field(
+        doc="The duration of the progress bar animation. Once the duration times out, the progress bar will start an indeterminate animation."
+    )
 
-    # The color of the progress bar fill animation.
-    fill_color: Var[str]
+    fill_color: Var[str] = field(doc="The color of the progress bar fill animation.")
 
     @staticmethod
     def _color_selector(color: str) -> Style:

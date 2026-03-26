@@ -6,6 +6,7 @@ from collections.abc import Iterator
 from hashlib import md5
 from typing import Any, ClassVar, Literal
 
+from reflex.components.component import field
 from reflex.components.el.element import Element
 from reflex.components.tags.tag import Tag
 from reflex.constants import Dirs, EventTriggers
@@ -72,38 +73,41 @@ class Button(BaseHTML):
 
     tag = "button"
 
-    # Automatically focuses the button when the page loads
-    auto_focus: Var[bool]
+    auto_focus: Var[bool] = field(
+        doc="Automatically focuses the button when the page loads"
+    )
 
-    # Disables the button
-    disabled: Var[bool]
+    disabled: Var[bool] = field(doc="Disables the button")
 
-    # Associates the button with a form (by id)
-    form: Var[str]
+    form: Var[str] = field(doc="Associates the button with a form (by id)")
 
-    # URL to send the form data to (for type="submit" buttons)
-    form_action: Var[str]
+    form_action: Var[str] = field(
+        doc='URL to send the form data to (for type="submit" buttons)'
+    )
 
-    # How the form data should be encoded when submitting to the server (for type="submit" buttons)
-    form_enc_type: Var[str]
+    form_enc_type: Var[str] = field(
+        doc='How the form data should be encoded when submitting to the server (for type="submit" buttons)'
+    )
 
-    # HTTP method to use for sending form data (for type="submit" buttons)
-    form_method: Var[str]
+    form_method: Var[str] = field(
+        doc='HTTP method to use for sending form data (for type="submit" buttons)'
+    )
 
-    # Bypasses form validation when submitting (for type="submit" buttons)
-    form_no_validate: Var[bool]
+    form_no_validate: Var[bool] = field(
+        doc='Bypasses form validation when submitting (for type="submit" buttons)'
+    )
 
-    # Specifies where to display the response after submitting the form (for type="submit" buttons)
-    form_target: Var[str]
+    form_target: Var[str] = field(
+        doc='Specifies where to display the response after submitting the form (for type="submit" buttons)'
+    )
 
-    # Name of the button, used when sending form data
-    name: Var[str]
+    name: Var[str] = field(doc="Name of the button, used when sending form data")
 
-    # Type of the button (submit, reset, or button)
-    type: Var[ButtonType]
+    type: Var[ButtonType] = field(doc="Type of the button (submit, reset, or button)")
 
-    # Value of the button, used when sending form data
-    value: Var[str | int | float]
+    value: Var[str | int | float] = field(
+        doc="Value of the button, used when sending form data"
+    )
 
     _invalid_children: ClassVar[list[str]] = ["Button"]
 
@@ -119,14 +123,13 @@ class Fieldset(Element):
 
     tag = "fieldset"
 
-    # Disables all the form control descendants of the fieldset
-    disabled: Var[bool]
+    disabled: Var[bool] = field(
+        doc="Disables all the form control descendants of the fieldset"
+    )
 
-    # Associates the fieldset with a form (by id)
-    form: Var[str]
+    form: Var[str] = field(doc="Associates the fieldset with a form (by id)")
 
-    # Name of the fieldset, used for scripting
-    name: Var[str]
+    name: Var[str] = field(doc="Name of the fieldset, used for scripting")
 
 
 class Form(BaseHTML):
@@ -134,41 +137,43 @@ class Form(BaseHTML):
 
     tag = "form"
 
-    # MIME types the server accepts for file upload
-    accept: Var[str]
+    accept: Var[str] = field(doc="MIME types the server accepts for file upload")
 
-    # Character encodings to be used for form submission
-    accept_charset: Var[str]
+    accept_charset: Var[str] = field(
+        doc="Character encodings to be used for form submission"
+    )
 
-    # URL where the form's data should be submitted
-    action: Var[str]
+    action: Var[str] = field(doc="URL where the form's data should be submitted")
 
-    # Whether the form should have autocomplete enabled
-    auto_complete: Var[str]
+    auto_complete: Var[str] = field(
+        doc="Whether the form should have autocomplete enabled"
+    )
 
-    # Encoding type for the form data when submitted
-    enc_type: Var[str]
+    enc_type: Var[str] = field(doc="Encoding type for the form data when submitted")
 
-    # HTTP method to use for form submission
-    method: Var[str]
+    method: Var[str] = field(doc="HTTP method to use for form submission")
 
-    # Name of the form
-    name: Var[str]
+    name: Var[str] = field(doc="Name of the form")
 
-    # Indicates that the form should not be validated on submit
-    no_validate: Var[bool]
+    no_validate: Var[bool] = field(
+        doc="Indicates that the form should not be validated on submit"
+    )
 
-    # Where to display the response after submitting the form
-    target: Var[str]
+    target: Var[str] = field(
+        doc="Where to display the response after submitting the form"
+    )
 
-    # If true, the form will be cleared after submit.
-    reset_on_submit: Var[bool] = Var.create(False)
+    reset_on_submit: Var[bool] = field(
+        default=Var.create(False), doc="If true, the form will be cleared after submit."
+    )
 
-    # The name used to make this form's submit handler function unique.
-    handle_submit_unique_name: Var[str]
+    handle_submit_unique_name: Var[str] = field(
+        doc="The name used to make this form's submit handler function unique."
+    )
 
-    # Fired when the form is submitted
-    on_submit: EventHandler[on_submit_event, on_submit_string_event]
+    on_submit: EventHandler[on_submit_event, on_submit_string_event] = field(
+        doc="Fired when the form is submitted"
+    )
 
     @classmethod
     def create(cls, *children, **props):
@@ -304,143 +309,149 @@ class BaseInput(BaseHTML):
 
     tag = "input"
 
-    # Accepted types of files when the input is file type
-    accept: Var[str]
+    accept: Var[str] = field(doc="Accepted types of files when the input is file type")
 
-    # Alternate text for input type="image"
-    alt: Var[str]
+    alt: Var[str] = field(doc='Alternate text for input type="image"')
 
-    # Whether the input should have autocomplete enabled
-    auto_complete: Var[str]
+    auto_complete: Var[str] = field(
+        doc="Whether the input should have autocomplete enabled"
+    )
 
-    # Automatically focuses the input when the page loads
-    auto_focus: Var[bool]
+    auto_focus: Var[bool] = field(
+        doc="Automatically focuses the input when the page loads"
+    )
 
-    # Captures media from the user (camera or microphone)
-    capture: Var[Literal["user", "environment"] | bool]
+    capture: Var[Literal["user", "environment"] | bool] = field(
+        doc="Captures media from the user (camera or microphone)"
+    )
 
-    # Indicates whether the input is checked (for checkboxes and radio buttons)
-    checked: Var[bool]
+    checked: Var[bool] = field(
+        doc="Indicates whether the input is checked (for checkboxes and radio buttons)"
+    )
 
-    # The initial value (for checkboxes and radio buttons)
-    default_checked: Var[bool]
+    default_checked: Var[bool] = field(
+        doc="The initial value (for checkboxes and radio buttons)"
+    )
 
-    # The initial value for a text field
-    default_value: Var[str | int | float]
+    default_value: Var[str | int | float] = field(
+        doc="The initial value for a text field"
+    )
 
-    # Disables the input
-    disabled: Var[bool]
+    disabled: Var[bool] = field(doc="Disables the input")
 
-    # Associates the input with a form (by id)
-    form: Var[str]
+    form: Var[str] = field(doc="Associates the input with a form (by id)")
 
-    # URL to send the form data to (for type="submit" buttons)
-    form_action: Var[str]
+    form_action: Var[str] = field(
+        doc='URL to send the form data to (for type="submit" buttons)'
+    )
 
-    # How the form data should be encoded when submitting to the server (for type="submit" buttons)
-    form_enc_type: Var[str]
+    form_enc_type: Var[str] = field(
+        doc='How the form data should be encoded when submitting to the server (for type="submit" buttons)'
+    )
 
-    # HTTP method to use for sending form data (for type="submit" buttons)
-    form_method: Var[str]
+    form_method: Var[str] = field(
+        doc='HTTP method to use for sending form data (for type="submit" buttons)'
+    )
 
-    # Bypasses form validation when submitting (for type="submit" buttons)
-    form_no_validate: Var[bool]
+    form_no_validate: Var[bool] = field(
+        doc='Bypasses form validation when submitting (for type="submit" buttons)'
+    )
 
-    # Specifies where to display the response after submitting the form (for type="submit" buttons)
-    form_target: Var[str]
+    form_target: Var[str] = field(
+        doc='Specifies where to display the response after submitting the form (for type="submit" buttons)'
+    )
 
-    # References a datalist for suggested options
-    list: Var[str]
+    list: Var[str] = field(doc="References a datalist for suggested options")
 
-    # Specifies the maximum value for the input
-    max: Var[str | int | float]
+    max: Var[str | int | float] = field(doc="Specifies the maximum value for the input")
 
-    # Specifies the maximum number of characters allowed in the input
-    max_length: Var[int | float]
+    max_length: Var[int | float] = field(
+        doc="Specifies the maximum number of characters allowed in the input"
+    )
 
-    # Specifies the minimum number of characters required in the input
-    min_length: Var[int | float]
+    min_length: Var[int | float] = field(
+        doc="Specifies the minimum number of characters required in the input"
+    )
 
-    # Specifies the minimum value for the input
-    min: Var[str | int | float]
+    min: Var[str | int | float] = field(doc="Specifies the minimum value for the input")
 
-    # Indicates whether multiple values can be entered in an input of the type email or file
-    multiple: Var[bool]
+    multiple: Var[bool] = field(
+        doc="Indicates whether multiple values can be entered in an input of the type email or file"
+    )
 
-    # Name of the input, used when sending form data
-    name: Var[str]
+    name: Var[str] = field(doc="Name of the input, used when sending form data")
 
-    # Regex pattern the input's value must match to be valid
-    pattern: Var[str]
+    pattern: Var[str] = field(
+        doc="Regex pattern the input's value must match to be valid"
+    )
 
-    # Placeholder text in the input
-    placeholder: Var[str]
+    placeholder: Var[str] = field(doc="Placeholder text in the input")
 
-    # Indicates whether the input is read-only
-    read_only: Var[bool]
+    read_only: Var[bool] = field(doc="Indicates whether the input is read-only")
 
-    # Indicates that the input is required
-    required: Var[bool]
+    required: Var[bool] = field(doc="Indicates that the input is required")
 
-    # Specifies the visible width of a text control
-    size: Var[str | int | float]
+    size: Var[str | int | float] = field(
+        doc="Specifies the visible width of a text control"
+    )
 
-    # URL for image inputs
-    src: Var[str]
+    src: Var[str] = field(doc="URL for image inputs")
 
-    # Specifies the legal number intervals for an input
-    step: Var[str | int | float]
+    step: Var[str | int | float] = field(
+        doc="Specifies the legal number intervals for an input"
+    )
 
-    # Specifies the type of input
-    type: Var[HTMLInputTypeAttribute]
+    type: Var[HTMLInputTypeAttribute] = field(doc="Specifies the type of input")
 
-    # Value of the input
-    value: Var[str | int | float]
+    value: Var[str | int | float] = field(doc="Value of the input")
 
-    # Fired when a key is pressed down
-    on_key_down: EventHandler[key_event]
+    on_key_down: EventHandler[key_event] = field(doc="Fired when a key is pressed down")
 
-    # Fired when a key is released
-    on_key_up: EventHandler[key_event]
+    on_key_up: EventHandler[key_event] = field(doc="Fired when a key is released")
 
 
 class CheckboxInput(BaseInput):
     """Display the input element."""
 
-    # Fired when the input value changes
-    on_change: EventHandler[checked_input_event]
+    on_change: EventHandler[checked_input_event] = field(
+        doc="Fired when the input value changes"
+    )
 
-    # Fired when the input gains focus
-    on_focus: EventHandler[checked_input_event]
+    on_focus: EventHandler[checked_input_event] = field(
+        doc="Fired when the input gains focus"
+    )
 
-    # Fired when the input loses focus
-    on_blur: EventHandler[checked_input_event]
+    on_blur: EventHandler[checked_input_event] = field(
+        doc="Fired when the input loses focus"
+    )
 
 
 class ValueNumberInput(BaseInput):
     """Display the input element."""
 
-    # Fired when the input value changes
-    on_change: EventHandler[float_input_event, int_input_event, input_event]
+    on_change: EventHandler[float_input_event, int_input_event, input_event] = field(
+        doc="Fired when the input value changes"
+    )
 
-    # Fired when the input gains focus
-    on_focus: EventHandler[float_input_event, int_input_event, input_event]
+    on_focus: EventHandler[float_input_event, int_input_event, input_event] = field(
+        doc="Fired when the input gains focus"
+    )
 
-    # Fired when the input loses focus
-    on_blur: EventHandler[float_input_event, int_input_event, input_event]
+    on_blur: EventHandler[float_input_event, int_input_event, input_event] = field(
+        doc="Fired when the input loses focus"
+    )
 
 
 class Input(BaseInput):
     """Display the input element."""
 
-    # Fired when the input value changes
-    on_change: EventHandler[input_event]
+    on_change: EventHandler[input_event] = field(
+        doc="Fired when the input value changes"
+    )
 
-    # Fired when the input gains focus
-    on_focus: EventHandler[input_event]
+    on_focus: EventHandler[input_event] = field(doc="Fired when the input gains focus")
 
-    # Fired when the input loses focus
-    on_blur: EventHandler[input_event]
+    on_blur: EventHandler[input_event] = field(doc="Fired when the input loses focus")
 
     @classmethod
     def create(cls, *children, **props):
@@ -483,11 +494,11 @@ class Label(BaseHTML):
 
     tag = "label"
 
-    # ID of a form control with which the label is associated
-    html_for: Var[str]
+    html_for: Var[str] = field(
+        doc="ID of a form control with which the label is associated"
+    )
 
-    # Associates the label with a form (by id)
-    form: Var[str]
+    form: Var[str] = field(doc="Associates the label with a form (by id)")
 
 
 class Legend(BaseHTML):
@@ -501,26 +512,23 @@ class Meter(BaseHTML):
 
     tag = "meter"
 
-    # Associates the meter with a form (by id)
-    form: Var[str]
+    form: Var[str] = field(doc="Associates the meter with a form (by id)")
 
-    # High limit of range (above this is considered high value)
-    high: Var[str | int | float]
+    high: Var[str | int | float] = field(
+        doc="High limit of range (above this is considered high value)"
+    )
 
-    # Low limit of range (below this is considered low value)
-    low: Var[str | int | float]
+    low: Var[str | int | float] = field(
+        doc="Low limit of range (below this is considered low value)"
+    )
 
-    # Maximum value of the range
-    max: Var[str | int | float]
+    max: Var[str | int | float] = field(doc="Maximum value of the range")
 
-    # Minimum value of the range
-    min: Var[str | int | float]
+    min: Var[str | int | float] = field(doc="Minimum value of the range")
 
-    # Optimum value in the range
-    optimum: Var[str | int | float]
+    optimum: Var[str | int | float] = field(doc="Optimum value in the range")
 
-    # Current value of the meter
-    value: Var[str | int | float]
+    value: Var[str | int | float] = field(doc="Current value of the meter")
 
 
 class Optgroup(BaseHTML):
@@ -528,11 +536,9 @@ class Optgroup(BaseHTML):
 
     tag = "optgroup"
 
-    # Disables the optgroup
-    disabled: Var[bool]
+    disabled: Var[bool] = field(doc="Disables the optgroup")
 
-    # Label for the optgroup
-    label: Var[str]
+    label: Var[str] = field(doc="Label for the optgroup")
 
 
 class Option(BaseHTML):
@@ -540,17 +546,13 @@ class Option(BaseHTML):
 
     tag = "option"
 
-    # Disables the option
-    disabled: Var[bool]
+    disabled: Var[bool] = field(doc="Disables the option")
 
-    # Label for the option, if the text is not the label
-    label: Var[str]
+    label: Var[str] = field(doc="Label for the option, if the text is not the label")
 
-    # Indicates that the option is initially selected
-    selected: Var[bool]
+    selected: Var[bool] = field(doc="Indicates that the option is initially selected")
 
-    # Value to be sent as form data
-    value: Var[str | int | float]
+    value: Var[str | int | float] = field(doc="Value to be sent as form data")
 
 
 class Output(BaseHTML):
@@ -558,14 +560,13 @@ class Output(BaseHTML):
 
     tag = "output"
 
-    # Associates the output with one or more elements (by their IDs)
-    html_for: Var[str]
+    html_for: Var[str] = field(
+        doc="Associates the output with one or more elements (by their IDs)"
+    )
 
-    # Associates the output with a form (by id)
-    form: Var[str]
+    form: Var[str] = field(doc="Associates the output with a form (by id)")
 
-    # Name of the output element for form submission
-    name: Var[str]
+    name: Var[str] = field(doc="Name of the output element for form submission")
 
 
 class Progress(BaseHTML):
@@ -573,14 +574,11 @@ class Progress(BaseHTML):
 
     tag = "progress"
 
-    # Associates the progress element with a form (by id)
-    form: Var[str]
+    form: Var[str] = field(doc="Associates the progress element with a form (by id)")
 
-    # Maximum value of the progress indicator
-    max: Var[str | int | float]
+    max: Var[str | int | float] = field(doc="Maximum value of the progress indicator")
 
-    # Current value of the progress indicator
-    value: Var[str | int | float]
+    value: Var[str | int | float] = field(doc="Current value of the progress indicator")
 
 
 class Select(BaseHTML):
@@ -588,38 +586,39 @@ class Select(BaseHTML):
 
     tag = "select"
 
-    # Whether the form control should have autocomplete enabled
-    auto_complete: Var[str]
+    auto_complete: Var[str] = field(
+        doc="Whether the form control should have autocomplete enabled"
+    )
 
-    # Automatically focuses the select when the page loads
-    auto_focus: Var[bool]
+    auto_focus: Var[bool] = field(
+        doc="Automatically focuses the select when the page loads"
+    )
 
-    # Disables the select control
-    disabled: Var[bool]
+    disabled: Var[bool] = field(doc="Disables the select control")
 
-    # Associates the select with a form (by id)
-    form: Var[str]
+    form: Var[str] = field(doc="Associates the select with a form (by id)")
 
-    # Indicates that multiple options can be selected
-    multiple: Var[bool]
+    multiple: Var[bool] = field(doc="Indicates that multiple options can be selected")
 
-    # Name of the select, used when submitting the form
-    name: Var[str]
+    name: Var[str] = field(doc="Name of the select, used when submitting the form")
 
-    # Indicates that the select control must have a selected option
-    required: Var[bool]
+    required: Var[bool] = field(
+        doc="Indicates that the select control must have a selected option"
+    )
 
-    # Number of visible options in a drop-down list
-    size: Var[str | int]
+    size: Var[str | int] = field(doc="Number of visible options in a drop-down list")
 
-    # Fired when the select value changes
-    on_change: EventHandler[input_event]
+    on_change: EventHandler[input_event] = field(
+        doc="Fired when the select value changes"
+    )
 
-    # The controlled value of the select, read only unless used with on_change
-    value: Var[str]
+    value: Var[str] = field(
+        doc="The controlled value of the select, read only unless used with on_change"
+    )
 
-    # The default value of the select when initially rendered
-    default_value: Var[str]
+    default_value: Var[str] = field(
+        doc="The default value of the select when initially rendered"
+    )
 
 
 AUTO_HEIGHT_JS = """
@@ -657,74 +656,75 @@ class Textarea(BaseHTML):
 
     tag = "textarea"
 
-    # Whether the form control should have autocomplete enabled
-    auto_complete: Var[str]
+    auto_complete: Var[str] = field(
+        doc="Whether the form control should have autocomplete enabled"
+    )
 
-    # Automatically focuses the textarea when the page loads
-    auto_focus: Var[bool]
+    auto_focus: Var[bool] = field(
+        doc="Automatically focuses the textarea when the page loads"
+    )
 
-    # Automatically fit the content height to the text (use min-height with this prop)
-    auto_height: Var[bool]
+    auto_height: Var[bool] = field(
+        doc="Automatically fit the content height to the text (use min-height with this prop)"
+    )
 
-    # Visible width of the text control, in average character widths
-    cols: Var[str | int]
+    cols: Var[str | int] = field(
+        doc="Visible width of the text control, in average character widths"
+    )
 
-    # The default value of the textarea when initially rendered
-    default_value: Var[str]
+    default_value: Var[str] = field(
+        doc="The default value of the textarea when initially rendered"
+    )
 
-    # Name part of the textarea to submit in 'dir' and 'name' pair when form is submitted
-    dirname: Var[str]
+    dirname: Var[str] = field(
+        doc="Name part of the textarea to submit in 'dir' and 'name' pair when form is submitted"
+    )
 
-    # Disables the textarea
-    disabled: Var[bool]
+    disabled: Var[bool] = field(doc="Disables the textarea")
 
-    # Enter key submits form (shift-enter adds new line)
-    enter_key_submit: Var[bool]
+    enter_key_submit: Var[bool] = field(
+        doc="Enter key submits form (shift-enter adds new line)"
+    )
 
-    # Associates the textarea with a form (by id)
-    form: Var[str]
+    form: Var[str] = field(doc="Associates the textarea with a form (by id)")
 
-    # Maximum number of characters allowed in the textarea
-    max_length: Var[str | int]
+    max_length: Var[str | int] = field(
+        doc="Maximum number of characters allowed in the textarea"
+    )
 
-    # Minimum number of characters required in the textarea
-    min_length: Var[str | int]
+    min_length: Var[str | int] = field(
+        doc="Minimum number of characters required in the textarea"
+    )
 
-    # Name of the textarea, used when submitting the form
-    name: Var[str]
+    name: Var[str] = field(doc="Name of the textarea, used when submitting the form")
 
-    # Placeholder text in the textarea
-    placeholder: Var[str]
+    placeholder: Var[str] = field(doc="Placeholder text in the textarea")
 
-    # Indicates whether the textarea is read-only
-    read_only: Var[bool]
+    read_only: Var[bool] = field(doc="Indicates whether the textarea is read-only")
 
-    # Indicates that the textarea is required
-    required: Var[bool]
+    required: Var[bool] = field(doc="Indicates that the textarea is required")
 
-    # Visible number of lines in the text control
-    rows: Var[str | int]
+    rows: Var[str | int] = field(doc="Visible number of lines in the text control")
 
-    # The controlled value of the textarea, read only unless used with on_change
-    value: Var[str]
+    value: Var[str] = field(
+        doc="The controlled value of the textarea, read only unless used with on_change"
+    )
 
-    # How the text in the textarea is to be wrapped when submitting the form
-    wrap: Var[str]
+    wrap: Var[str] = field(
+        doc="How the text in the textarea is to be wrapped when submitting the form"
+    )
 
-    # Fired when the input value changes
-    on_change: EventHandler[input_event]
+    on_change: EventHandler[input_event] = field(
+        doc="Fired when the input value changes"
+    )
 
-    # Fired when the input gains focus
-    on_focus: EventHandler[input_event]
+    on_focus: EventHandler[input_event] = field(doc="Fired when the input gains focus")
 
-    # Fired when the input loses focus
-    on_blur: EventHandler[input_event]
+    on_blur: EventHandler[input_event] = field(doc="Fired when the input loses focus")
 
-    # Fired when a key is pressed down
-    on_key_down: EventHandler[key_event]
+    on_key_down: EventHandler[key_event] = field(doc="Fired when a key is pressed down")
 
-    # Fired when a key is released
-    on_key_up: EventHandler[key_event]
+    on_key_up: EventHandler[key_event] = field(doc="Fired when a key is released")
 
     @classmethod
     def create(cls, *children, **props):

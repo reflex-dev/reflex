@@ -56,7 +56,6 @@ db = [
   "pydantic >=1.10.21,<3.0",
   "sqlmodel >=0.0.24,<0.1",
 ]
-monitoring = ["pyleak >=0.1.14,<1.0"]
 
 [project.urls]
 homepage = "https://reflex.dev"
@@ -68,6 +67,7 @@ reflex = "reflex.reflex:cli"
 
 [dependency-groups]
 dev = [
+  "reflex-docgen",
   "asynctest",
   "darglint",
   "dill",
@@ -82,7 +82,6 @@ dev = [
   "pre-commit",
   "psutil",
   "psycopg[binary]",
-  "pyleak >=0.1.14,<1.0",
   "pyright",
   "pytest-asyncio",
   "pytest-benchmark",
@@ -286,3 +285,7 @@ hooks = [{ id = "prettier", require_serial = true }]
 
 [tool.uv]
 required-version = ">=0.7.0"
+sources = { reflex-docgen = { workspace = true } }
+
+[tool.uv.workspace]
+members = ["packages/*"]

@@ -18,7 +18,6 @@ import urllib.parse
 from collections.abc import (
     AsyncGenerator,
     AsyncIterator,
-    Awaitable,
     Callable,
     Coroutine,
     Mapping,
@@ -29,22 +28,21 @@ from itertools import chain
 from pathlib import Path
 from timeit import default_timer as timer
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, BinaryIO, ParamSpec, get_args, get_type_hints
+from typing import TYPE_CHECKING, Any, ParamSpec
 
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp as EngineIOApp
 from socketio import AsyncNamespace, AsyncServer
 from starlette.applications import Starlette
-from starlette.datastructures import Headers
-from starlette.datastructures import UploadFile as StarletteUploadFile
-from starlette.exceptions import HTTPException
 from starlette.middleware import cors
-from starlette.requests import ClientDisconnect, Request
-from starlette.responses import JSONResponse, Response, StreamingResponse
+from starlette.requests import Request
+from starlette.responses import JSONResponse, Response
 from starlette.staticfiles import StaticFiles
 from typing_extensions import Unpack
 
 from reflex import constants
+from reflex._upload import UploadFile as UploadFile
+from reflex._upload import upload
 from reflex.admin import AdminDash
 from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
 from reflex.compiler import compiler
@@ -84,6 +82,7 @@ from reflex.event import (
     get_hydrate_event,
     noop,
 )
+from reflex.experimental.memo import EXPERIMENTAL_MEMOS
 from reflex.istate.manager import StateModificationContext
 from reflex.istate.proxy import StateProxy
 from reflex.page import DECORATED_PAGES
@@ -112,7 +111,6 @@ from reflex.utils import (
     js_runtimes,
     path_ops,
     prerequisites,
-    types,
 )
 from reflex.utils.exec import (
     get_compile_context,
@@ -247,46 +245,6 @@ def default_error_boundary(*children: Component, **props) -> Component:
     )
 
 
-@dataclasses.dataclass(frozen=True)
-class UploadFile(StarletteUploadFile):
-    """A file uploaded to the server.
-
-    Args:
-        file: The standard Python file object (non-async).
-        filename: The original file name.
-        size: The size of the file in bytes.
-        headers: The headers of the request.
-    """
-
-    file: BinaryIO
-
-    path: Path | None = dataclasses.field(default=None)
-
-    size: int | None = dataclasses.field(default=None)
-
-    headers: Headers = dataclasses.field(default_factory=Headers)
-
-    @property
-    def filename(self) -> str | None:
-        """Get the name of the uploaded file.
-
-        Returns:
-            The name of the uploaded file.
-        """
-        return self.name
-
-    @property
-    def name(self) -> str | None:
-        """Get the name of the uploaded file.
-
-        Returns:
-            The name of the uploaded file.
-        """
-        if self.path:
-            return self.path.name
-        return None
-
-
 @dataclasses.dataclass(
     frozen=True,
 )
@@ -345,28 +303,41 @@ class App(MiddlewareMixin, LifespanMixin):
         theme=rx.theme(accent_color="blue"),
     )
     ```
+
+    Attributes:
+        theme: The global [theme](https://reflex.dev/docs/styling/theming/#theme) for the entire app.
+        style: The [global style](https://reflex.dev/docs/styling/overview/#global-styles}) for the app.
+        stylesheets: A list of URLs to [stylesheets](https://reflex.dev/docs/styling/custom-stylesheets/) to include in the app.
+        reset_style: Whether to include CSS reset for margin and padding. Defaults to True.
+        overlay_component: A component that is present on every page. Defaults to the Connection Error banner.
+        app_wraps: App wraps to be applied to the whole app. Expected to be a dictionary of (order, name) to a function that takes whether the state is enabled and optionally returns a component.
+        extra_app_wraps: Extra app wraps to be applied to the whole app.
+        head_components: Components to add to the head of every page.
+        sio: The Socket.IO AsyncServer instance.
+        html_lang: The language to add to the html root tag of every page.
+        html_custom_attrs: Attributes to add to the html root tag of every page.
+        enable_state: Whether to enable state for the app. If False, the app will not use state.
+        admin_dash: Admin dashboard to view and manage the database.
+        frontend_exception_handler: Frontend error handler function.
+        backend_exception_handler: Backend error handler function.
+        toaster: Put the toast provider in the app wrap.
+        api_transformer: Transform the ASGI app before running it.
     """
 
-    # The global [theme](https://reflex.dev/docs/styling/theming/#theme) for the entire app.
     theme: Component | None = dataclasses.field(
         default_factory=lambda: themes.theme(accent_color="blue")
     )
 
-    # The [global style](https://reflex.dev/docs/styling/overview/#global-styles}) for the app.
     style: ComponentStyle = dataclasses.field(default_factory=dict)
 
-    # A list of URLs to [stylesheets](https://reflex.dev/docs/styling/custom-stylesheets/) to include in the app.
     stylesheets: list[str] = dataclasses.field(default_factory=list)
 
-    # Whether to include CSS reset for margin and padding (defaults to True).
     reset_style: bool = dataclasses.field(default=True)
 
-    # A component that is present on every page (defaults to the Connection Error banner).
     overlay_component: Component | ComponentCallable | None = dataclasses.field(
         default=None
     )
 
-    # App wraps to be applied to the whole app. Expected to be a dictionary of (order, name) to a function that takes whether the state is enabled and optionally returns a component.
     app_wraps: dict[tuple[int, str], Callable[[bool], Component | None]] = (
         dataclasses.field(
             default_factory=lambda: {
@@ -383,21 +354,16 @@ class App(MiddlewareMixin, LifespanMixin):
         )
     )
 
-    # Extra app wraps to be applied to the whole app.
     extra_app_wraps: dict[tuple[int, str], Callable[[bool], Component | None]] = (
         dataclasses.field(default_factory=dict)
     )
 
-    # Components to add to the head of every page.
     head_components: list[Component] = dataclasses.field(default_factory=list)
 
-    # The Socket.IO AsyncServer instance.
     sio: AsyncServer | None = None
 
-    # The language to add to the html root tag of every page.
     html_lang: str | None = None
 
-    # Attributes to add to the html root tag of every page.
     html_custom_attrs: dict[str, str] | None = None
 
     # A map from a route to an unevaluated page.
@@ -417,7 +383,6 @@ class App(MiddlewareMixin, LifespanMixin):
     # The state class to use for the app.
     _state: type[BaseState] | None = None
 
-    # Whether to enable state for the app. If False, the app will not use state.
     enable_state: bool = True
 
     # Class to manage many client states.
@@ -428,7 +393,6 @@ class App(MiddlewareMixin, LifespanMixin):
         default_factory=dict
     )
 
-    # Admin dashboard to view and manage the database.
     admin_dash: AdminDash | None = None
 
     # The async server name space.
@@ -437,20 +401,16 @@ class App(MiddlewareMixin, LifespanMixin):
     # Background tasks that are currently running.
     _background_tasks: set[asyncio.Task] = dataclasses.field(default_factory=set)
 
-    # Frontend Error Handler Function
     frontend_exception_handler: Callable[[Exception], None] = (
         default_frontend_exception_handler
     )
 
-    # Backend Error Handler Function
     backend_exception_handler: Callable[
         [Exception], EventSpec | list[EventSpec] | None
     ] = default_backend_exception_handler
 
-    # Put the toast provider in the app wrap.
     toaster: Component | None = dataclasses.field(default_factory=toast.provider)
 
-    # Transform the ASGI app before running it.
     api_transformer: (
         Sequence[Callable[[ASGIApp], ASGIApp] | Starlette]
         | Callable[[ASGIApp], ASGIApp]
@@ -1321,7 +1281,10 @@ class App(MiddlewareMixin, LifespanMixin):
             memo_components_output,
             memo_components_result,
             memo_components_imports,
-        ) = compiler.compile_memo_components(dict.fromkeys(CUSTOM_COMPONENTS.values()))
+        ) = compiler.compile_memo_components(
+            dict.fromkeys(CUSTOM_COMPONENTS.values()),
+            tuple(EXPERIMENTAL_MEMOS.values()),
+        )
         compile_results.append((memo_components_output, memo_components_result))
         all_imports.update(memo_components_imports)
         progress.advance(task)
@@ -1892,174 +1855,6 @@ async def health(_request: Request) -> JSONResponse:
         status_code = 503
 
     return JSONResponse(content=health_status, status_code=status_code)
-
-
-class _UploadStreamingResponse(StreamingResponse):
-    """Streaming response that always releases upload form resources."""
-
-    _on_finish: Callable[[], Awaitable[None]]
-
-    def __init__(
-        self,
-        *args: Any,
-        on_finish: Callable[[], Awaitable[None]],
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(*args, **kwargs)
-        self._on_finish = on_finish
-
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        try:
-            await super().__call__(scope, receive, send)
-        finally:
-            await self._on_finish()
-
-
-def upload(app: App):
-    """Upload a file.
-
-    Args:
-        app: The app to upload the file for.
-
-    Returns:
-        The upload function.
-    """
-
-    async def upload_file(request: Request):
-        """Upload a file.
-
-        Args:
-            request: The Starlette request object.
-
-        Returns:
-            StreamingResponse yielding newline-delimited JSON of StateUpdate
-            emitted by the upload handler.
-
-        Raises:
-            UploadValueError: if there are no args with supported annotation.
-            UploadTypeError: if a background task is used as the handler.
-            HTTPException: when the request does not include token / handler headers.
-        """
-        from reflex.utils.exceptions import UploadTypeError, UploadValueError
-
-        # Get the files from the request.
-        try:
-            form_data = await request.form()
-        except ClientDisconnect:
-            return Response()  # user cancelled
-
-        form_data_closed = False
-
-        async def _close_form_data() -> None:
-            """Close the parsed form data exactly once."""
-            nonlocal form_data_closed
-            if form_data_closed:
-                return
-            form_data_closed = True
-            await form_data.close()
-
-        async def _create_upload_event() -> Event:
-            """Create an upload event using the live Starlette temp files.
-
-            Returns:
-                The upload event backed by the original temp files.
-            """
-            files = form_data.getlist("files")
-            if not files:
-                msg = "No files were uploaded."
-                raise UploadValueError(msg)
-
-            token = request.headers.get("reflex-client-token")
-            handler = request.headers.get("reflex-event-handler")
-
-            if not token or not handler:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Missing reflex-client-token or reflex-event-handler header.",
-                )
-
-            # Get the state for the session.
-            substate_token = _substate_key(token, handler.rpartition(".")[0])
-            state = await app.state_manager.get_state(substate_token)
-
-            handler_upload_param = ()
-
-            _current_state, event_handler = state._get_event_handler(handler)
-
-            if event_handler.is_background:
-                msg = f"@rx.event(background=True) is not supported for upload handler `{handler}`."
-                raise UploadTypeError(msg)
-            func = event_handler.fn
-            if isinstance(func, functools.partial):
-                func = func.func
-            for k, v in get_type_hints(func).items():
-                if types.is_generic_alias(v) and types._issubclass(
-                    get_args(v)[0],
-                    UploadFile,
-                ):
-                    handler_upload_param = (k, v)
-                    break
-
-            if not handler_upload_param:
-                msg = (
-                    f"`{handler}` handler should have a parameter annotated as "
-                    "list[rx.UploadFile]"
-                )
-                raise UploadValueError(msg)
-
-            # Keep the parsed form data alive until the upload event finishes so
-            # the underlying Starlette temp files remain available to the handler.
-            file_uploads = []
-            for file in files:
-                if not isinstance(file, StarletteUploadFile):
-                    raise UploadValueError(
-                        "Uploaded file is not an UploadFile." + str(file)
-                    )
-                file_uploads.append(
-                    UploadFile(
-                        file=file.file,
-                        path=Path(file.filename.lstrip("/")) if file.filename else None,
-                        size=file.size,
-                        headers=file.headers,
-                    )
-                )
-
-            return Event(
-                token=token,
-                name=handler,
-                payload={handler_upload_param[0]: file_uploads},
-            )
-
-        event: Event | None = None
-        try:
-            event = await _create_upload_event()
-        finally:
-            if event is None:
-                await _close_form_data()
-
-        async def _ndjson_updates():
-            """Process the upload event, generating ndjson updates.
-
-            Yields:
-                Each state update as JSON followed by a new line.
-            """
-            # Process the event.
-            async with app.state_manager.modify_state_with_links(
-                event.substate_token, event=event
-            ) as state:
-                async for update in state._process(event):
-                    # Postprocess the event.
-                    update = await app._postprocess(state, event, update)
-                    yield update.json() + "\n"
-
-        # Stream updates to client
-        return _UploadStreamingResponse(
-            _ndjson_updates(),
-            media_type="application/x-ndjson",
-            on_finish=_close_form_data,
-        )
-
-    return upload_file
 
 
 class EventNamespace(AsyncNamespace):

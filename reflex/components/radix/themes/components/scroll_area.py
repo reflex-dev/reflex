@@ -2,6 +2,7 @@
 
 from typing import Literal
 
+from reflex.components.component import field
 from reflex.components.radix.themes.base import RadixThemesComponent
 from reflex.vars.base import Var
 
@@ -11,14 +12,17 @@ class ScrollArea(RadixThemesComponent):
 
     tag = "ScrollArea"
 
-    # The alignment of the scroll area
-    scrollbars: Var[Literal["vertical", "horizontal", "both"]]
+    scrollbars: Var[Literal["vertical", "horizontal", "both"]] = field(
+        doc="The alignment of the scroll area"
+    )
 
-    # Describes the nature of scrollbar visibility, similar to how the scrollbar preferences in MacOS control visibility of native scrollbars. "auto" | "always" | "scroll" | "hover"
-    type: Var[Literal["auto", "always", "scroll", "hover"]]
+    type: Var[Literal["auto", "always", "scroll", "hover"]] = field(
+        doc='Describes the nature of scrollbar visibility, similar to how the scrollbar preferences in MacOS control visibility of native scrollbars. "auto" | "always" | "scroll" | "hover"'
+    )
 
-    # If type is set to either "scroll" or "hover", this prop determines the length of time, in milliseconds, before the scrollbars are hidden after the user stops interacting with scrollbars.
-    scroll_hide_delay: Var[int]
+    scroll_hide_delay: Var[int] = field(
+        doc='If type is set to either "scroll" or "hover", this prop determines the length of time, in milliseconds, before the scrollbars are hidden after the user stops interacting with scrollbars.'
+    )
 
 
 scroll_area = ScrollArea.create

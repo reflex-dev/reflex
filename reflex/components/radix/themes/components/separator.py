@@ -2,6 +2,7 @@
 
 from typing import Literal
 
+from reflex.components.component import field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.radix.themes.base import LiteralAccentColor, RadixThemesComponent
 from reflex.vars.base import LiteralVar, Var
@@ -14,17 +15,20 @@ class Separator(RadixThemesComponent):
 
     tag = "Separator"
 
-    # The size of the separator: "1" | "2" | "3" | "4"
-    size: Var[Responsive[LiteralSeparatorSize]] = LiteralVar.create("4")
+    size: Var[Responsive[LiteralSeparatorSize]] = field(
+        default=LiteralVar.create("4"),
+        doc='The size of the separator: "1" | "2" | "3" | "4"',
+    )
 
-    # The color of the separator
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor] = field(doc="The color of the separator")
 
-    # The orientation of the separator.
-    orientation: Var[Responsive[Literal["horizontal", "vertical"]]]
+    orientation: Var[Responsive[Literal["horizontal", "vertical"]]] = field(
+        doc="The orientation of the separator."
+    )
 
-    # When true, signifies that it is purely visual, carries no semantic meaning, and ensures it is not present in the accessibility tree.
-    decorative: Var[bool]
+    decorative: Var[bool] = field(
+        doc="When true, signifies that it is purely visual, carries no semantic meaning, and ensures it is not present in the accessibility tree."
+    )
 
 
 # Alias to divider.

@@ -17,7 +17,7 @@ from .color import ColorVar, LiteralColorVar
 from .datetime import DateTimeVar
 from .function import FunctionStringVar, FunctionVar, VarOperationCall
 from .number import BooleanVar, LiteralBooleanVar, LiteralNumberVar, NumberVar
-from .object import LiteralObjectVar, ObjectVar
+from .object import LiteralObjectVar, ObjectVar, RestProp
 from .sequence import (
     ArrayVar,
     ConcatVarOperation,
@@ -46,6 +46,7 @@ __all__ = [
     "LiteralVar",
     "NumberVar",
     "ObjectVar",
+    "RestProp",
     "StringVar",
     "Var",
     "VarData",

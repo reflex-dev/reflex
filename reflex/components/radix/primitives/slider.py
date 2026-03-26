@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any, Literal
 
-from reflex.components.component import Component, ComponentNamespace
+from reflex.components.component import Component, ComponentNamespace, field
 from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
 from reflex.event import EventHandler, passthrough_event_spec
 from reflex.vars.base import Var
@@ -48,11 +48,13 @@ class SliderRoot(SliderComponent):
 
     min_steps_between_thumbs: Var[int]
 
-    # Fired when the value of a thumb changes.
-    on_value_change: EventHandler[passthrough_event_spec(list[float])]
+    on_value_change: EventHandler[passthrough_event_spec(list[float])] = field(
+        doc="Fired when the value of a thumb changes."
+    )
 
-    # Fired when a thumb is released.
-    on_value_commit: EventHandler[passthrough_event_spec(list[float])]
+    on_value_commit: EventHandler[passthrough_event_spec(list[float])] = field(
+        doc="Fired when a thumb is released."
+    )
 
     def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.

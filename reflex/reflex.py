@@ -211,29 +211,32 @@ def _run(
 
     prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
 
-    # Get the app module.
-    app_task = prerequisites.compile_or_validate_app
-    args = (frontend,)
-    kwargs = {
-        "check_if_schema_up_to_date": True,
-        "prerender_routes": exec.should_prerender_routes(),
-    }
+    if frontend:
+        # Get the app module.
+        app_task = prerequisites.compile_or_validate_app
+        args = (frontend,)
+        kwargs = {
+            "check_if_schema_up_to_date": True,
+            "prerender_routes": exec.should_prerender_routes(),
+        }
 
-    # Granian fails if the app is already imported.
-    if should_use_granian():
-        import concurrent.futures
+        # Granian fails if the app is already imported.
+        if should_use_granian():
+            import concurrent.futures
 
-        compile_future = concurrent.futures.ProcessPoolExecutor(max_workers=1).submit(
-            app_task,
-            *args,
-            **kwargs,
-        )
-        return_result = compile_future.result()
-    else:
-        return_result = app_task(*args, **kwargs)
+            compile_future = concurrent.futures.ProcessPoolExecutor(
+                max_workers=1
+            ).submit(
+                app_task,
+                *args,
+                **kwargs,
+            )
+            return_result = compile_future.result()
+        else:
+            return_result = app_task(*args, **kwargs)
 
-    if not return_result:
-        raise SystemExit(1)
+        if not return_result:
+            raise SystemExit(1)
 
     if env != constants.Env.PROD and env != constants.Env.DEV:
         msg = f"Invalid env: {env}. Must be DEV or PROD."

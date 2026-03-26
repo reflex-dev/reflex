@@ -421,16 +421,6 @@ export const applyEvent = async (event, socket, navigate, params) => {
 export const applyRestEvent = async (event, socket, navigate, params) => {
   let eventSent = false;
   if (event.handler === "uploadFiles") {
-    if (event.payload.files === undefined || event.payload.files.length === 0) {
-      // Submit the event over the websocket to trigger the event handler.
-      return await applyEvent(
-        ReflexEvent(event.name, { files: [] }),
-        socket,
-        navigate,
-        params,
-      );
-    }
-
     // Start upload, but do not wait for it, which would block other events.
     uploadFiles(
       event.name,
@@ -729,6 +719,53 @@ export const ReflexEvent = (
 };
 
 /**
+ * Apply event actions before invoking a target function.
+ * @param {Function} target The function to invoke after applying event actions.
+ * @param {Object.<string, (number|boolean)>} event_actions The actions to apply.
+ * @param {Array<any>|any} args The event args.
+ * @param {string|null} action_key A stable key for debounce/throttle tracking.
+ * @param {Function|null} temporal_handler Returns whether temporal actions may run.
+ * @returns The target result, if it runs immediately.
+ */
+export const applyEventActions = (
+  target,
+  event_actions = {},
+  args = [],
+  action_key = null,
+  temporal_handler = null,
+) => {
+  if (!(args instanceof Array)) {
+    args = [args];
+  }
+
+  const _e = args.find((o) => o?.preventDefault !== undefined);
+
+  if (event_actions?.preventDefault && _e?.preventDefault) {
+    _e.preventDefault();
+  }
+  if (event_actions?.stopPropagation && _e?.stopPropagation) {
+    _e.stopPropagation();
+  }
+  if (event_actions?.temporal && temporal_handler && !temporal_handler()) {
+    return;
+  }
+
+  const invokeTarget = () => target(...args);
+  const resolved_action_key = action_key ?? target.toString();
+
+  if (event_actions?.throttle) {
+    if (!throttle(resolved_action_key, event_actions.throttle)) {
+      return;
+    }
+  }
+  if (event_actions?.debounce) {
+    debounce(resolved_action_key, invokeTarget, event_actions.debounce);
+    return;
+  }
+  return invokeTarget();
+};
+
+/**
  * Package client-side storage values as payload to send to the
  * backend with the hydrate event
  * @param client_storage The client storage object from context.js
@@ -900,51 +937,24 @@ export const useEventLoop = (
   // Function to add new events to the event queue.
   const addEvents = useCallback((events, args, event_actions) => {
     const _events = events.filter((e) => e !== undefined && e !== null);
-    if (!event_actions?.temporal) {
-      // Reconnect socket if needed for non-temporal events.
-      ensureSocketConnected();
-    }
-
-    if (!(args instanceof Array)) {
-      args = [args];
-    }
 
     event_actions = _events.reduce(
       (acc, e) => ({ ...acc, ...e.event_actions }),
       event_actions ?? {},
     );
 
-    const _e = args.filter((o) => o?.preventDefault !== undefined)[0];
+    if (!event_actions?.temporal) {
+      // Reconnect socket if needed for non-temporal events.
+      ensureSocketConnected();
+    }
 
-    if (event_actions?.preventDefault && _e?.preventDefault) {
-      _e.preventDefault();
-    }
-    if (event_actions?.stopPropagation && _e?.stopPropagation) {
-      _e.stopPropagation();
-    }
-    const combined_name = _events.map((e) => e.name).join("+++");
-    if (event_actions?.temporal) {
-      if (!socket.current || !socket.current.connected) {
-        return; // don't queue when the backend is not connected
-      }
-    }
-    if (event_actions?.throttle) {
-      // If throttle returns false, the events are not added to the queue.
-      if (!throttle(combined_name, event_actions.throttle)) {
-        return;
-      }
-    }
-    if (event_actions?.debounce) {
-      // If debounce is used, queue the events after some delay
-      debounce(
-        combined_name,
-        () =>
-          queueEvents(_events, socket, false, navigate, () => params.current),
-        event_actions.debounce,
-      );
-    } else {
-      queueEvents(_events, socket, false, navigate, () => params.current);
-    }
+    return applyEventActions(
+      () => queueEvents(_events, socket, false, navigate, () => params.current),
+      event_actions,
+      args,
+      _events.map((e) => e.name).join("+++"),
+      () => !!socket.current?.connected,
+    );
   }, []);
 
   const sentHydrate = useRef(false); // Avoid double-hydrate due to React strict-mode

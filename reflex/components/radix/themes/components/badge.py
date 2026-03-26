@@ -2,6 +2,7 @@
 
 from typing import Literal
 
+from reflex.components.component import field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.components.radix.themes.base import (
@@ -17,20 +18,21 @@ class Badge(elements.Span, RadixThemesComponent):
 
     tag = "Badge"
 
-    # The variant of the badge
-    variant: Var[Literal["solid", "soft", "surface", "outline"]]
+    variant: Var[Literal["solid", "soft", "surface", "outline"]] = field(
+        doc="The variant of the badge"
+    )
 
-    # The size of the badge
-    size: Var[Responsive[Literal["1", "2", "3"]]]
+    size: Var[Responsive[Literal["1", "2", "3"]]] = field(doc="The size of the badge")
 
-    # Color theme of the badge
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor] = field(doc="Color theme of the badge")
 
-    # Whether to render the badge with higher contrast color against background
-    high_contrast: Var[bool]
+    high_contrast: Var[bool] = field(
+        doc="Whether to render the badge with higher contrast color against background"
+    )
 
-    # Override theme radius for badge: "none" | "small" | "medium" | "large" | "full"
-    radius: Var[LiteralRadius]
+    radius: Var[LiteralRadius] = field(
+        doc='Override theme radius for badge: "none" | "small" | "medium" | "large" | "full"'
+    )
 
 
 badge = Badge.create

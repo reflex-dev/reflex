@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from reflex.components.component import ComponentNamespace
+from reflex.components.component import ComponentNamespace, field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.components.radix.themes.base import (
@@ -21,14 +21,15 @@ class AlertDialogRoot(RadixThemesComponent):
 
     tag = "AlertDialog.Root"
 
-    # The controlled open state of the dialog.
-    open: Var[bool]
+    open: Var[bool] = field(doc="The controlled open state of the dialog.")
 
-    # Fired when the open state changes.
-    on_open_change: EventHandler[passthrough_event_spec(bool)]
+    on_open_change: EventHandler[passthrough_event_spec(bool)] = field(
+        doc="Fired when the open state changes."
+    )
 
-    # The open state of the dialog when it is initially rendered. Use when you do not need to control its open state.
-    default_open: Var[bool]
+    default_open: Var[bool] = field(
+        doc="The open state of the dialog when it is initially rendered. Use when you do not need to control its open state."
+    )
 
 
 class AlertDialogTrigger(RadixThemesTriggerComponent):
@@ -44,20 +45,21 @@ class AlertDialogContent(elements.Div, RadixThemesComponent):
 
     tag = "AlertDialog.Content"
 
-    # The size of the content.
-    size: Var[Responsive[LiteralContentSize]]
+    size: Var[Responsive[LiteralContentSize]] = field(doc="The size of the content.")
 
-    # Whether to force mount the content on open.
-    force_mount: Var[bool]
+    force_mount: Var[bool] = field(doc="Whether to force mount the content on open.")
 
-    # Fired when the dialog is opened.
-    on_open_auto_focus: EventHandler[no_args_event_spec]
+    on_open_auto_focus: EventHandler[no_args_event_spec] = field(
+        doc="Fired when the dialog is opened."
+    )
 
-    # Fired when the dialog is closed.
-    on_close_auto_focus: EventHandler[no_args_event_spec]
+    on_close_auto_focus: EventHandler[no_args_event_spec] = field(
+        doc="Fired when the dialog is closed."
+    )
 
-    # Fired when the escape key is pressed.
-    on_escape_key_down: EventHandler[no_args_event_spec]
+    on_escape_key_down: EventHandler[no_args_event_spec] = field(
+        doc="Fired when the escape key is pressed."
+    )
 
 
 class AlertDialogTitle(RadixThemesComponent):

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import ClassVar, Literal
 
+from reflex.components.component import field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.components.radix.themes.base import (
@@ -23,23 +24,29 @@ class Flex(elements.Div, RadixThemesComponent):
 
     tag = "Flex"
 
-    # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: Var[bool]
+    as_child: Var[bool] = field(
+        doc="Change the default rendered element for the one passed as a child, merging their props and behavior."
+    )
 
-    # How child items are laid out: "row" | "column" | "row-reverse" | "column-reverse"
-    direction: Var[Responsive[LiteralFlexDirection]]
+    direction: Var[Responsive[LiteralFlexDirection]] = field(
+        doc='How child items are laid out: "row" | "column" | "row-reverse" | "column-reverse"'
+    )
 
-    # Alignment of children along the main axis: "start" | "center" | "end" | "baseline" | "stretch"
-    align: Var[Responsive[LiteralAlign]]
+    align: Var[Responsive[LiteralAlign]] = field(
+        doc='Alignment of children along the main axis: "start" | "center" | "end" | "baseline" | "stretch"'
+    )
 
-    # Alignment of children along the cross axis: "start" | "center" | "end" | "between"
-    justify: Var[Responsive[LiteralJustify]]
+    justify: Var[Responsive[LiteralJustify]] = field(
+        doc='Alignment of children along the cross axis: "start" | "center" | "end" | "between"'
+    )
 
-    # Whether children should wrap when they reach the end of their container: "nowrap" | "wrap" | "wrap-reverse"
-    wrap: Var[Responsive[LiteralFlexWrap]]
+    wrap: Var[Responsive[LiteralFlexWrap]] = field(
+        doc='Whether children should wrap when they reach the end of their container: "nowrap" | "wrap" | "wrap-reverse"'
+    )
 
-    # Gap between children: "0" - "9"
-    spacing: Var[Responsive[LiteralSpacing]]
+    spacing: Var[Responsive[LiteralSpacing]] = field(
+        doc='Gap between children: "0" - "9"'
+    )
 
     # Reflex maps the "spacing" prop to "gap" prop.
     _rename_props: ClassVar[dict[str, str]] = {"spacing": "gap"}

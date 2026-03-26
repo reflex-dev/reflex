@@ -3,6 +3,7 @@
 from types import SimpleNamespace
 from typing import Literal
 
+from reflex.components.component import field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.radix.themes.base import LiteralAccentColor, RadixThemesComponent
 from reflex.vars.base import Var
@@ -13,14 +14,17 @@ class DataListRoot(RadixThemesComponent):
 
     tag = "DataList.Root"
 
-    # The orientation of the data list item: "horizontal" | "vertical"
-    orientation: Var[Responsive[Literal["horizontal", "vertical"]]]
+    orientation: Var[Responsive[Literal["horizontal", "vertical"]]] = field(
+        doc='The orientation of the data list item: "horizontal" | "vertical"'
+    )
 
-    # The size of the data list item: "1" | "2" | "3"
-    size: Var[Responsive[Literal["1", "2", "3"]]]
+    size: Var[Responsive[Literal["1", "2", "3"]]] = field(
+        doc='The size of the data list item: "1" | "2" | "3"'
+    )
 
-    # Trims the leading whitespace from the start or end of the text.
-    trim: Var[Responsive[Literal["normal", "start", "end", "both"]]]
+    trim: Var[Responsive[Literal["normal", "start", "end", "both"]]] = field(
+        doc="Trims the leading whitespace from the start or end of the text."
+    )
 
 
 class DataListItem(RadixThemesComponent):
@@ -28,8 +32,9 @@ class DataListItem(RadixThemesComponent):
 
     tag = "DataList.Item"
 
-    # The alignment of the data list item within its container.
-    align: Var[Responsive[Literal["start", "center", "end", "baseline", "stretch"]]]
+    align: Var[Responsive[Literal["start", "center", "end", "baseline", "stretch"]]] = (
+        field(doc="The alignment of the data list item within its container.")
+    )
 
 
 class DataListLabel(RadixThemesComponent):
@@ -37,17 +42,15 @@ class DataListLabel(RadixThemesComponent):
 
     tag = "DataList.Label"
 
-    # The width of the component
-    width: Var[Responsive[str]]
+    width: Var[Responsive[str]] = field(doc="The width of the component")
 
-    # The minimum width of the component
-    min_width: Var[Responsive[str]]
+    min_width: Var[Responsive[str]] = field(doc="The minimum width of the component")
 
-    # The maximum width of the component
-    max_width: Var[Responsive[str]]
+    max_width: Var[Responsive[str]] = field(doc="The maximum width of the component")
 
-    # The color scheme for the DataList component.
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor] = field(
+        doc="The color scheme for the DataList component."
+    )
 
 
 class DataListValue(RadixThemesComponent):

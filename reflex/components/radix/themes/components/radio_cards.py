@@ -3,6 +3,7 @@
 from types import SimpleNamespace
 from typing import ClassVar, Literal
 
+from reflex.components.component import field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.radix.themes.base import LiteralAccentColor, RadixThemesComponent
 from reflex.event import EventHandler, passthrough_event_spec
@@ -14,53 +15,65 @@ class RadioCardsRoot(RadixThemesComponent):
 
     tag = "RadioCards.Root"
 
-    # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: Var[bool]
+    as_child: Var[bool] = field(
+        doc="Change the default rendered element for the one passed as a child, merging their props and behavior."
+    )
 
-    # The size of the checkbox cards: "1" | "2" | "3"
-    size: Var[Responsive[Literal["1", "2", "3"]]]
+    size: Var[Responsive[Literal["1", "2", "3"]]] = field(
+        doc='The size of the checkbox cards: "1" | "2" | "3"'
+    )
 
-    # Variant of button: "classic" | "surface" | "soft"
-    variant: Var[Literal["classic", "surface"]]
+    variant: Var[Literal["classic", "surface"]] = field(
+        doc='Variant of button: "classic" | "surface" | "soft"'
+    )
 
-    # Override theme color for button
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor] = field(doc="Override theme color for button")
 
-    # Uses a higher contrast color for the component.
-    high_contrast: Var[bool]
+    high_contrast: Var[bool] = field(
+        doc="Uses a higher contrast color for the component."
+    )
 
-    # The number of columns:
-    columns: Var[Responsive[str | Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]]]
+    columns: Var[
+        Responsive[str | Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]]
+    ] = field(doc="The number of columns:")
 
-    # The gap between the checkbox cards:
-    gap: Var[Responsive[str | Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]]]
+    gap: Var[Responsive[str | Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]]] = (
+        field(doc="The gap between the checkbox cards:")
+    )
 
     default_value: Var[str]
 
-    # The controlled value of the radio item to check. Should be used in conjunction with onValueChange.
-    value: Var[str]
+    value: Var[str] = field(
+        doc="The controlled value of the radio item to check. Should be used in conjunction with onValueChange."
+    )
 
-    # The name of the group. Submitted with its owning form as part of a name/value pair.
-    name: Var[str]
+    name: Var[str] = field(
+        doc="The name of the group. Submitted with its owning form as part of a name/value pair."
+    )
 
-    # When true, prevents the user from interacting with radio items.
-    disabled: Var[bool]
+    disabled: Var[bool] = field(
+        doc="When true, prevents the user from interacting with radio items."
+    )
 
-    # When true, indicates that the user must check a radio item before the owning form can be submitted.
-    required: Var[bool]
+    required: Var[bool] = field(
+        doc="When true, indicates that the user must check a radio item before the owning form can be submitted."
+    )
 
-    # The orientation of the component.
-    orientation: Var[Literal["horizontal", "vertical", "undefined"]]
+    orientation: Var[Literal["horizontal", "vertical", "undefined"]] = field(
+        doc="The orientation of the component."
+    )
 
-    # The reading direction of the radio group. If omitted,
-    # inherits globally from DirectionProvider or assumes LTR (left-to-right) reading mode.
-    dir: Var[Literal["ltr", "rtl"]]
+    dir: Var[Literal["ltr", "rtl"]] = field(
+        doc="The reading direction of the radio group. If omitted, inherits globally from DirectionProvider or assumes LTR (left-to-right) reading mode."
+    )
 
-    # When true, keyboard navigation will loop from last item to first, and vice versa.
-    loop: Var[bool]
+    loop: Var[bool] = field(
+        doc="When true, keyboard navigation will loop from last item to first, and vice versa."
+    )
 
-    # Event handler called when the value changes.
-    on_value_change: EventHandler[passthrough_event_spec(str)]
+    on_value_change: EventHandler[passthrough_event_spec(str)] = field(
+        doc="Event handler called when the value changes."
+    )
 
 
 class RadioCardsItem(RadixThemesComponent):
@@ -68,17 +81,19 @@ class RadioCardsItem(RadixThemesComponent):
 
     tag = "RadioCards.Item"
 
-    # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: Var[bool]
+    as_child: Var[bool] = field(
+        doc="Change the default rendered element for the one passed as a child, merging their props and behavior."
+    )
 
-    # The value given as data when submitted with a name.
-    value: Var[str]
+    value: Var[str] = field(doc="The value given as data when submitted with a name.")
 
-    # When true, prevents the user from interacting with the radio item.
-    disabled: Var[bool]
+    disabled: Var[bool] = field(
+        doc="When true, prevents the user from interacting with the radio item."
+    )
 
-    # When true, indicates that the user must check the radio item before the owning form can be submitted.
-    required: Var[bool]
+    required: Var[bool] = field(
+        doc="When true, indicates that the user must check the radio item before the owning form can be submitted."
+    )
 
     _valid_parents: ClassVar[list[str]] = ["RadioCardsRoot"]
 

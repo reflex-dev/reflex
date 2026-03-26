@@ -5,6 +5,7 @@ https://www.radix-ui.com/themes/docs/theme/typography
 
 from __future__ import annotations
 
+from reflex.components.component import field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.components.radix.themes.base import LiteralAccentColor, RadixThemesComponent
@@ -18,17 +19,19 @@ class Blockquote(elements.Blockquote, RadixThemesComponent):
 
     tag = "Blockquote"
 
-    # Text size: "1" - "9"
-    size: Var[Responsive[LiteralTextSize]]
+    size: Var[Responsive[LiteralTextSize]] = field(doc='Text size: "1" - "9"')
 
-    # Thickness of text: "light" | "regular" | "medium" | "bold"
-    weight: Var[Responsive[LiteralTextWeight]]
+    weight: Var[Responsive[LiteralTextWeight]] = field(
+        doc='Thickness of text: "light" | "regular" | "medium" | "bold"'
+    )
 
-    # Overrides the accent color inherited from the Theme.
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor] = field(
+        doc="Overrides the accent color inherited from the Theme."
+    )
 
-    # Whether to render the text with higher contrast color
-    high_contrast: Var[bool]
+    high_contrast: Var[bool] = field(
+        doc="Whether to render the text with higher contrast color"
+    )
 
 
 blockquote = Blockquote.create

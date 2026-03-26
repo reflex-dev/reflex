@@ -3596,6 +3596,34 @@ config = rx.Config(
         del sys.modules[constants.Config.MODULE]
 
 
+def test_state_manager_create_respects_explicit_memory_mode_with_redis_url(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+):
+    proj_root = tmp_path / "project1"
+    proj_root.mkdir()
+
+    config_string = """
+import reflex as rx
+config = rx.Config(
+    app_name="project1",
+)
+    """
+
+    (proj_root / "rxconfig.py").write_text(dedent(config_string))
+    monkeypatch.setenv("REFLEX_STATE_MANAGER_MODE", "memory")
+    monkeypatch.setenv("REFLEX_REDIS_URL", "redis://localhost:6379")
+
+    with chdir(proj_root):
+        reflex.config.get_config(reload=True)
+        monkeypatch.setattr(prerequisites, "get_redis", mock_redis)
+        from reflex.state import State
+
+        state_manager = StateManager.create(state=State)
+        assert isinstance(state_manager, StateManagerMemory)
+
+        del sys.modules[constants.Config.MODULE]
+
+
 def test_auto_setters_off(tmp_path):
     proj_root = tmp_path / "project1"
     proj_root.mkdir()

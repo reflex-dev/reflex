@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any, ClassVar
 
-from reflex.components.component import Component
+from reflex.components.component import Component, field
 from reflex.components.recharts.general import ResponsiveContainer
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
@@ -25,23 +25,30 @@ from .recharts import (
 class ChartBase(RechartsCharts):
     """A component that wraps a Recharts charts."""
 
-    # The width of chart container. String or Integer
-    width: Var[str | int] = Var.create("100%")
+    width: Var[str | int] = field(
+        default=Var.create("100%"),
+        doc="The width of chart container. String or Integer",
+    )
 
-    # The height of chart container.
-    height: Var[str | int] = Var.create("100%")
+    height: Var[str | int] = field(
+        default=Var.create("100%"), doc="The height of chart container."
+    )
 
-    # The customized event handler of click on the component in this chart
-    on_click: EventHandler[no_args_event_spec]
+    on_click: EventHandler[no_args_event_spec] = field(
+        doc="The customized event handler of click on the component in this chart"
+    )
 
-    # The customized event handler of mouseenter on the component in this chart
-    on_mouse_enter: EventHandler[no_args_event_spec]
+    on_mouse_enter: EventHandler[no_args_event_spec] = field(
+        doc="The customized event handler of mouseenter on the component in this chart"
+    )
 
-    # The customized event handler of mousemove on the component in this chart
-    on_mouse_move: EventHandler[no_args_event_spec]
+    on_mouse_move: EventHandler[no_args_event_spec] = field(
+        doc="The customized event handler of mousemove on the component in this chart"
+    )
 
-    # The customized event handler of mouseleave on the component in this chart
-    on_mouse_leave: EventHandler[no_args_event_spec]
+    on_mouse_leave: EventHandler[no_args_event_spec] = field(
+        doc="The customized event handler of mouseleave on the component in this chart"
+    )
 
     @staticmethod
     def _ensure_valid_dimension(name: str, value: Any) -> None:
@@ -105,23 +112,29 @@ class ChartBase(RechartsCharts):
 class CategoricalChartBase(ChartBase):
     """A component that wraps a Categorical Recharts charts."""
 
-    # The source data, in which each element is an object.
-    data: Var[Sequence[dict[str, Any]]]
+    data: Var[Sequence[dict[str, Any]]] = field(
+        doc="The source data, in which each element is an object."
+    )
 
-    # The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
-    margin: Var[dict[str, Any]]
+    margin: Var[dict[str, Any]] = field(
+        doc='The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.'
+    )
 
-    # If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
-    sync_id: Var[str]
+    sync_id: Var[str] = field(
+        doc="If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush."
+    )
 
-    # When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function. Default: "index"
-    sync_method: Var[LiteralSyncMethod]
+    sync_method: Var[LiteralSyncMethod] = field(
+        doc="When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function. Default: \"index\""
+    )
 
-    # The layout of area in the chart. 'horizontal' | 'vertical'. Default: "horizontal"
-    layout: Var[LiteralLayout]
+    layout: Var[LiteralLayout] = field(
+        doc="The layout of area in the chart. 'horizontal' | 'vertical'. Default: \"horizontal\""
+    )
 
-    # The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
-    stack_offset: Var[LiteralStackOffset]
+    stack_offset: Var[LiteralStackOffset] = field(
+        doc="The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'"
+    )
 
 
 class AreaChart(CategoricalChartBase):
@@ -131,8 +144,9 @@ class AreaChart(CategoricalChartBase):
 
     alias = "RechartsAreaChart"
 
-    # The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'. Default: "auto"
-    base_value: Var[int | LiteralComposedChartBaseValue]
+    base_value: Var[int | LiteralComposedChartBaseValue] = field(
+        doc="The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'. Default: \"auto\""
+    )
 
     # Valid children components
     _valid_children: ClassVar[list[str]] = [
@@ -157,23 +171,27 @@ class BarChart(CategoricalChartBase):
 
     alias = "RechartsBarChart"
 
-    # The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number. Default: "10%"
-    bar_category_gap: Var[str | int]
+    bar_category_gap: Var[str | int] = field(
+        doc='The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number. Default: "10%"'
+    )
 
-    # The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number. Default: 4
-    bar_gap: Var[str | int]
+    bar_gap: Var[str | int] = field(
+        doc="The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number. Default: 4"
+    )
 
-    # The width of all the bars in the chart. Number
-    bar_size: Var[int]
+    bar_size: Var[int] = field(doc="The width of all the bars in the chart. Number")
 
-    # The maximum width of all the bars in a horizontal BarChart, or maximum height in a vertical BarChart.
-    max_bar_size: Var[int]
+    max_bar_size: Var[int] = field(
+        doc="The maximum width of all the bars in a horizontal BarChart, or maximum height in a vertical BarChart."
+    )
 
-    # The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. Default: "none"
-    stack_offset: Var[LiteralStackOffset]
+    stack_offset: Var[LiteralStackOffset] = field(
+        doc='The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. Default: "none"'
+    )
 
-    # If false set, stacked items will be rendered left to right. If true set, stacked items will be rendered right to left. (Render direction affects SVG layering, not x position.) Default: False
-    reverse_stack_order: Var[bool]
+    reverse_stack_order: Var[bool] = field(
+        doc="If false set, stacked items will be rendered left to right. If true set, stacked items will be rendered right to left. (Render direction affects SVG layering, not x position.) Default: False"
+    )
 
     # Valid children components
     _valid_children: ClassVar[list[str]] = [
@@ -219,20 +237,25 @@ class ComposedChart(CategoricalChartBase):
 
     alias = "RechartsComposedChart"
 
-    # The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'. Default: "auto"
-    base_value: Var[int | LiteralComposedChartBaseValue]
+    base_value: Var[int | LiteralComposedChartBaseValue] = field(
+        doc="The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'. Default: \"auto\""
+    )
 
-    # The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number. Default: "10%"
-    bar_category_gap: Var[str | int]
+    bar_category_gap: Var[str | int] = field(
+        doc='The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number. Default: "10%"'
+    )
 
-    # The gap between two bars in the same category. Default: 4
-    bar_gap: Var[int]
+    bar_gap: Var[int] = field(
+        doc="The gap between two bars in the same category. Default: 4"
+    )
 
-    # The width or height of each bar. If the barSize is not specified, the size of the bar will be calculated by the barCategoryGap, barGap and the quantity of bar groups.
-    bar_size: Var[int]
+    bar_size: Var[int] = field(
+        doc="The width or height of each bar. If the barSize is not specified, the size of the bar will be calculated by the barCategoryGap, barGap and the quantity of bar groups."
+    )
 
-    # If false set, stacked items will be rendered left to right. If true set, stacked items will be rendered right to left. (Render direction affects SVG layering, not x position). Default: False
-    reverse_stack_order: Var[bool]
+    reverse_stack_order: Var[bool] = field(
+        doc="If false set, stacked items will be rendered left to right. If true set, stacked items will be rendered right to left. (Render direction affects SVG layering, not x position). Default: False"
+    )
 
     # Valid children components
     _valid_children: ClassVar[list[str]] = [
@@ -258,8 +281,9 @@ class PieChart(ChartBase):
 
     alias = "RechartsPieChart"
 
-    # The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
-    margin: Var[dict[str, Any]]
+    margin: Var[dict[str, Any]] = field(
+        doc='The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.'
+    )
 
     # Valid children components
     _valid_children: ClassVar[list[str]] = [
@@ -271,17 +295,21 @@ class PieChart(ChartBase):
         "Pie",
     ]
 
-    # The customized event handler of mousedown on the sectors in this group
-    on_mouse_down: EventHandler[no_args_event_spec]
+    on_mouse_down: EventHandler[no_args_event_spec] = field(
+        doc="The customized event handler of mousedown on the sectors in this group"
+    )
 
-    # The customized event handler of mouseup on the sectors in this group
-    on_mouse_up: EventHandler[no_args_event_spec]
+    on_mouse_up: EventHandler[no_args_event_spec] = field(
+        doc="The customized event handler of mouseup on the sectors in this group"
+    )
 
-    # The customized event handler of mouseover on the sectors in this group
-    on_mouse_over: EventHandler[no_args_event_spec]
+    on_mouse_over: EventHandler[no_args_event_spec] = field(
+        doc="The customized event handler of mouseover on the sectors in this group"
+    )
 
-    # The customized event handler of mouseout on the sectors in this group
-    on_mouse_out: EventHandler[no_args_event_spec]
+    on_mouse_out: EventHandler[no_args_event_spec] = field(
+        doc="The customized event handler of mouseout on the sectors in this group"
+    )
 
 
 class RadarChart(ChartBase):
@@ -291,29 +319,37 @@ class RadarChart(ChartBase):
 
     alias = "RechartsRadarChart"
 
-    # The source data, in which each element is an object.
-    data: Var[Sequence[dict[str, Any]]]
+    data: Var[Sequence[dict[str, Any]]] = field(
+        doc="The source data, in which each element is an object."
+    )
 
-    # The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}. Default: {"top": 0, "right": 0, "left": 0, "bottom": 0}
-    margin: Var[dict[str, Any]]
+    margin: Var[dict[str, Any]] = field(
+        doc='The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}. Default: {"top": 0, "right": 0, "left": 0, "bottom": 0}'
+    )
 
-    # The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage. Default: "50%"
-    cx: Var[int | str]
+    cx: Var[int | str] = field(
+        doc='The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage. Default: "50%"'
+    )
 
-    # The The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of height. Number | Percentage. Default: "50%"
-    cy: Var[int | str]
+    cy: Var[int | str] = field(
+        doc='The The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of height. Number | Percentage. Default: "50%"'
+    )
 
-    # The angle of first radial direction line. Default: 90
-    start_angle: Var[int]
+    start_angle: Var[int] = field(
+        doc="The angle of first radial direction line. Default: 90"
+    )
 
-    # The angle of last point in the circle which should be startAngle - 360 or startAngle + 360. We'll calculate the direction of chart by 'startAngle' and 'endAngle'. Default: -270
-    end_angle: Var[int]
+    end_angle: Var[int] = field(
+        doc="The angle of last point in the circle which should be startAngle - 360 or startAngle + 360. We'll calculate the direction of chart by 'startAngle' and 'endAngle'. Default: -270"
+    )
 
-    # The inner radius of first circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage. Default: 0
-    inner_radius: Var[int | str]
+    inner_radius: Var[int | str] = field(
+        doc="The inner radius of first circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage. Default: 0"
+    )
 
-    # The outer radius of last circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage. Default: "80%"
-    outer_radius: Var[int | str]
+    outer_radius: Var[int | str] = field(
+        doc='The outer radius of last circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage. Default: "80%"'
+    )
 
     # Valid children components
     _valid_children: ClassVar[list[str]] = [
@@ -346,38 +382,49 @@ class RadialBarChart(ChartBase):
 
     alias = "RechartsRadialBarChart"
 
-    # The source data which each element is an object.
-    data: Var[Sequence[dict[str, Any]]]
+    data: Var[Sequence[dict[str, Any]]] = field(
+        doc="The source data which each element is an object."
+    )
 
-    # The sizes of whitespace around the chart. Default: {"top": 5, "right": 5, "left": 5 "bottom": 5}
-    margin: Var[dict[str, Any]]
+    margin: Var[dict[str, Any]] = field(
+        doc='The sizes of whitespace around the chart. Default: {"top": 5, "right": 5, "left": 5 "bottom": 5}'
+    )
 
-    # The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage. Default: "50%"
-    cx: Var[int | str]
+    cx: Var[int | str] = field(
+        doc='The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage. Default: "50%"'
+    )
 
-    # The The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of height. Number | Percentage. Default: "50%"
-    cy: Var[int | str]
+    cy: Var[int | str] = field(
+        doc='The The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of height. Number | Percentage. Default: "50%"'
+    )
 
-    # The angle of first radial direction line. Default: 0
-    start_angle: Var[int]
+    start_angle: Var[int] = field(
+        doc="The angle of first radial direction line. Default: 0"
+    )
 
-    # The angle of last point in the circle which should be startAngle - 360 or startAngle + 360. We'll calculate the direction of chart by 'startAngle' and 'endAngle'. Default: 360
-    end_angle: Var[int]
+    end_angle: Var[int] = field(
+        doc="The angle of last point in the circle which should be startAngle - 360 or startAngle + 360. We'll calculate the direction of chart by 'startAngle' and 'endAngle'. Default: 360"
+    )
 
-    # The inner radius of first circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage. Default: "30%"
-    inner_radius: Var[int | str]
+    inner_radius: Var[int | str] = field(
+        doc='The inner radius of first circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage. Default: "30%"'
+    )
 
-    # The outer radius of last circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage. Default: "100%"
-    outer_radius: Var[int | str]
+    outer_radius: Var[int | str] = field(
+        doc='The outer radius of last circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage. Default: "100%"'
+    )
 
-    # The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number. Default: "10%"
-    bar_category_gap: Var[int | str]
+    bar_category_gap: Var[int | str] = field(
+        doc='The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number. Default: "10%"'
+    )
 
-    # The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number. Default: 4
-    bar_gap: Var[str]
+    bar_gap: Var[str] = field(
+        doc="The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number. Default: 4"
+    )
 
-    # The size of each bar. If the barSize is not specified, the size of bar will be calculated by the barCategoryGap, barGap and the quantity of bar groups.
-    bar_size: Var[int]
+    bar_size: Var[int] = field(
+        doc="The size of each bar. If the barSize is not specified, the size of bar will be calculated by the barCategoryGap, barGap and the quantity of bar groups."
+    )
 
     # Valid children components
     _valid_children: ClassVar[list[str]] = [
@@ -397,8 +444,9 @@ class ScatterChart(ChartBase):
 
     alias = "RechartsScatterChart"
 
-    # The sizes of whitespace around the chart. Default: {"top": 5, "right": 5, "bottom": 5, "left": 5}
-    margin: Var[dict[str, Any]]
+    margin: Var[dict[str, Any]] = field(
+        doc='The sizes of whitespace around the chart. Default: {"top": 5, "right": 5, "bottom": 5, "left": 5}'
+    )
 
     # Valid children components
     _valid_children: ClassVar[list[str]] = [
@@ -441,14 +489,15 @@ class FunnelChart(ChartBase):
 
     alias = "RechartsFunnelChart"
 
-    # The layout of bars in the chart. Default: "centric"
-    layout: Var[str]
+    layout: Var[str] = field(doc='The layout of bars in the chart. Default: "centric"')
 
-    # The sizes of whitespace around the chart. Default: {"top": 5, "right": 5, "bottom": 5, "left": 5}
-    margin: Var[dict[str, Any]]
+    margin: Var[dict[str, Any]] = field(
+        doc='The sizes of whitespace around the chart. Default: {"top": 5, "right": 5, "bottom": 5, "left": 5}'
+    )
 
-    # The stroke color of each bar. String | Object
-    stroke: Var[str | Color]
+    stroke: Var[str | Color] = field(
+        doc="The stroke color of each bar. String | Object"
+    )
 
     # Valid children components
     _valid_children: ClassVar[list[str]] = ["Legend", "GraphingTooltip", "Funnel"]
@@ -461,41 +510,53 @@ class Treemap(RechartsCharts):
 
     alias = "RechartsTreemap"
 
-    # The width of chart container. String or Integer. Default: "100%"
-    width: Var[str | int] = Var.create("100%")
+    width: Var[str | int] = field(
+        default=Var.create("100%"),
+        doc='The width of chart container. String or Integer. Default: "100%"',
+    )
 
-    # The height of chart container. String or Integer. Default: "100%"
-    height: Var[str | int] = Var.create("100%")
+    height: Var[str | int] = field(
+        default=Var.create("100%"),
+        doc='The height of chart container. String or Integer. Default: "100%"',
+    )
 
-    # data of treemap. Array
-    data: Var[Sequence[dict[str, Any]]]
+    data: Var[Sequence[dict[str, Any]]] = field(doc="data of treemap. Array")
 
-    # The key of a group of data which should be unique in a treemap. String | Number. Default: "value"
-    data_key: Var[str | int]
+    data_key: Var[str | int] = field(
+        doc='The key of a group of data which should be unique in a treemap. String | Number. Default: "value"'
+    )
 
-    # The key of each sector's name. String. Default: "name"
-    name_key: Var[str]
+    name_key: Var[str] = field(
+        doc='The key of each sector\'s name. String. Default: "name"'
+    )
 
-    # The treemap will try to keep every single rectangle's aspect ratio near the aspectRatio given. Number
-    aspect_ratio: Var[int]
+    aspect_ratio: Var[int] = field(
+        doc="The treemap will try to keep every single rectangle's aspect ratio near the aspectRatio given. Number"
+    )
 
-    # If set false, animation of area will be disabled. Default: True
-    is_animation_active: Var[bool]
+    is_animation_active: Var[bool] = field(
+        doc="If set false, animation of area will be disabled. Default: True"
+    )
 
-    # Specifies when the animation should begin, the unit of this option is ms. Default: 0
-    animation_begin: Var[int]
+    animation_begin: Var[int] = field(
+        doc="Specifies when the animation should begin, the unit of this option is ms. Default: 0"
+    )
 
-    # Specifies the duration of animation, the unit of this option is ms. Default: 1500
-    animation_duration: Var[int]
+    animation_duration: Var[int] = field(
+        doc="Specifies the duration of animation, the unit of this option is ms. Default: 1500"
+    )
 
-    # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'. Default: "ease"
-    animation_easing: Var[LiteralAnimationEasing]
+    animation_easing: Var[LiteralAnimationEasing] = field(
+        doc="The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'. Default: \"ease\""
+    )
 
-    # The customized event handler of animation start
-    on_animation_start: EventHandler[no_args_event_spec]
+    on_animation_start: EventHandler[no_args_event_spec] = field(
+        doc="The customized event handler of animation start"
+    )
 
-    # The customized event handler of animation end
-    on_animation_end: EventHandler[no_args_event_spec]
+    on_animation_end: EventHandler[no_args_event_spec] = field(
+        doc="The customized event handler of animation end"
+    )
 
     @classmethod
     def create(cls, *children, **props) -> Component:
