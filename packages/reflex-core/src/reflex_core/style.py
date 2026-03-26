@@ -5,18 +5,18 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any, Literal
 
-from reflex_components_core.core.breakpoints import Breakpoints, breakpoints_values
+from reflex_core.breakpoints import Breakpoints, breakpoints_values
 
-from reflex import constants
-from reflex.event import EventChain, EventHandler, EventSpec, run_script
-from reflex.utils import format
-from reflex.utils.exceptions import ReflexError
-from reflex.utils.imports import ImportVar
-from reflex.utils.types import typehint_issubclass
-from reflex.vars import VarData
-from reflex.vars.base import LiteralVar, Var
-from reflex.vars.function import FunctionVar
-from reflex.vars.object import ObjectVar
+from reflex_core import constants
+from reflex_core.event import EventChain, EventHandler, EventSpec, run_script
+from reflex_core.utils import format
+from reflex_core.utils.exceptions import ReflexError
+from reflex_core.utils.imports import ImportVar
+from reflex_core.utils.types import typehint_issubclass
+from reflex_core.vars import VarData
+from reflex_core.vars.base import LiteralVar, Var
+from reflex_core.vars.function import FunctionVar
+from reflex_core.vars.object import ObjectVar
 
 SYSTEM_COLOR_MODE: str = "system"
 LIGHT_COLOR_MODE: str = "light"

@@ -7,9 +7,9 @@ from collections.abc import Iterable, Mapping
 from typing import TYPE_CHECKING, Any, Literal
 
 from reflex import constants
-from reflex.constants import Hooks
-from reflex.utils.format import format_state_name, json_dumps
-from reflex.vars.base import VarData
+from reflex_core.constants import Hooks
+from reflex_core.utils.format import format_state_name, json_dumps
+from reflex_core.vars.base import VarData
 
 if TYPE_CHECKING:
     from reflex.compiler.utils import _ImportDict

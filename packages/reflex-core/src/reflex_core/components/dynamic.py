@@ -3,12 +3,12 @@
 from typing import TYPE_CHECKING, Union
 
 from reflex import constants
-from reflex.utils import imports
-from reflex.utils.exceptions import DynamicComponentMissingLibraryError
-from reflex.utils.format import format_library_name
-from reflex.utils.serializers import serializer
-from reflex.vars import Var, get_unique_variable_name
-from reflex.vars.base import VarData, transform
+from reflex_core.utils import imports
+from reflex_core.utils.exceptions import DynamicComponentMissingLibraryError
+from reflex_core.utils.format import format_library_name
+from reflex_core.utils.serializers import serializer
+from reflex_core.vars import Var, get_unique_variable_name
+from reflex_core.vars.base import VarData, transform
 
 if TYPE_CHECKING:
     from reflex.components.component import Component

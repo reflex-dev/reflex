@@ -6,9 +6,9 @@ import dataclasses
 from collections.abc import Iterator, Mapping, Sequence
 from typing import Any
 
-from reflex.event import EventChain
-from reflex.utils import format
-from reflex.vars.base import LiteralVar, Var
+from reflex_core.event import EventChain
+from reflex_core.utils import format
+from reflex_core.vars.base import LiteralVar, Var
 
 
 def render_prop(value: Any) -> Any:

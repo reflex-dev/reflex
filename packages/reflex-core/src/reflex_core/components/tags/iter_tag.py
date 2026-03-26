@@ -7,10 +7,10 @@ import inspect
 from collections.abc import Callable, Iterable
 from typing import TYPE_CHECKING
 
-from reflex.components.tags.tag import Tag
-from reflex.utils.types import GenericType
-from reflex.vars import LiteralArrayVar, Var, get_unique_variable_name
-from reflex.vars.sequence import _determine_value_of_array_index
+from reflex_core.components.tags.tag import Tag
+from reflex_core.utils.types import GenericType
+from reflex_core.vars import LiteralArrayVar, Var, get_unique_variable_name
+from reflex_core.vars.sequence import _determine_value_of_array_index
 
 if TYPE_CHECKING:
     from reflex.components.component import Component
