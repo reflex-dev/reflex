@@ -159,7 +159,8 @@ class HighLevelRadioGroup(RadixThemesComponent):
         default_value = props.pop("default_value", "")
 
         if not isinstance(items, (list, Var)) or (
-            isinstance(items, Var) and not types._issubclass(items._var_type, list)
+            isinstance(items, Var)
+            and not types.typehint_issubclass(items._var_type, list)
         ):
             items_type = type(items) if not isinstance(items, Var) else items._var_type
             msg = f"The radio group component takes in a list, got {items_type} instead"

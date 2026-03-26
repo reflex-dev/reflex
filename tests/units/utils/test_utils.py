@@ -283,8 +283,8 @@ def test_is_backend_base_variable(
         (float, int | float, True),
         (str, int | float, False),
         (list[int], list[int], True),
-        (list[int], list[float], True),
-        (int | float, int | float, False),
+        (list[int], list[float], False),
+        (int | float, int | float, True),
         (int | Var[int], Var[int], False),
         (int, Any, True),
         (Any, Any, True),
@@ -296,7 +296,7 @@ def test_is_backend_base_variable(
     ],
 )
 def test_issubclass(cls: type, cls_check: type, expected: bool):
-    assert types._issubclass(cls, cls_check) == expected
+    assert types.typehint_issubclass(cls, cls_check) == expected
 
 
 @pytest.mark.parametrize("cls", [Literal["test", 1], Literal[1, "test"]])
