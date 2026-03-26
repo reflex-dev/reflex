@@ -20,6 +20,9 @@ source = "uv-dynamic-versioning"
 pattern-prefix = "reflex-core-"
 fallback-version = "0.0.0dev0"
 
+[tool.hatch.build]
+artifacts = [".templates/**"]
+
 [build-system]
 requires = ["hatchling", "uv-dynamic-versioning"]
 build-backend = "hatchling.build"
