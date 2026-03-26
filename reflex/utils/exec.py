@@ -164,7 +164,7 @@ def notify_backend(host: str | None = None):
         host: The backend host. If not provided, falls back to the config value.
     """
     config = get_config()
-    effective_host = host or config.backend_host
+    effective_host = host if host is not None else config.backend_host
     console.print(
         f"Backend running at: [bold green]http://{effective_host}:{config.backend_port}[/bold green]"
     )
