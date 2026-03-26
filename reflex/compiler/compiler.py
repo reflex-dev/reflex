@@ -9,9 +9,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from reflex_components_core.base.fragment import Fragment
+from reflex_core import constants
 from reflex_core.vars.base import LiteralVar, Var
 
-from reflex import constants
 from reflex.compiler import templates, utils
 from reflex.components.component import (
     BaseComponent,

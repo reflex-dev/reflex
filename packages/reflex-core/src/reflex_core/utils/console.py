@@ -10,7 +10,7 @@ import shutil
 import sys
 import time
 from pathlib import Path
-from types import FrameType
+from types import FrameType, ModuleType
 
 from rich.console import Console
 from rich.progress import MofNCompleteColumn, Progress, TaskID, TimeElapsedColumn
@@ -270,11 +270,24 @@ def _exclude_paths_from_frame_info() -> list[Path]:
     import socketio
     import typing_extensions
 
-    import reflex as rx
+    import reflex_core
+
+    try:
+        import reflex as rx
+    except ImportError:
+        rx = None
 
     # Exclude utility modules that should never be the source of deprecated reflex usage.
-    exclude_modules = [click, rx, typing_extensions, socketio, granian]
-    modules_paths = [file for m in exclude_modules if (file := m.__file__)] + [
+    exclude_modules: list[ModuleType | None] = [
+        click,
+        rx,
+        typing_extensions,
+        socketio,
+        granian,
+        reflex_core,
+    ]
+
+    modules_paths = [file for m in exclude_modules if m and (file := m.__file__)] + [
         spec.origin
         for m in [*sys.builtin_module_names, *sys.stdlib_module_names]
         if (spec := importlib.util.find_spec(m)) and spec.origin

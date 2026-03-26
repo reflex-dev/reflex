@@ -12,8 +12,11 @@ from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal
 
-from reflex import constants
-from reflex.constants.base import LogLevel
+from reflex_core import constants
+from reflex_core.constants.base import LogLevel
+from reflex_core.utils import console
+from reflex_core.utils.exceptions import ConfigError
+
 from reflex.environment import EnvironmentVariables as EnvironmentVariables
 from reflex.environment import EnvVar as EnvVar
 from reflex.environment import (
@@ -27,8 +30,6 @@ from reflex.environment import env_var as env_var
 from reflex.environment import environment as environment
 from reflex.plugins import Plugin
 from reflex.plugins.sitemap import SitemapPlugin
-from reflex.utils import console
-from reflex.utils.exceptions import ConfigError
 
 
 @dataclasses.dataclass(kw_only=True)

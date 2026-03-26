@@ -8,8 +8,8 @@ from typing import TYPE_CHECKING
 
 import click
 from reflex_cli.v2.deployments import hosting_cli
+from reflex_core import constants
 
-from reflex import constants
 from reflex.config import get_config
 from reflex.custom_components.custom_components import custom_components_cli
 from reflex.environment import environment

@@ -12,8 +12,8 @@ from pathlib import Path
 from typing import Any
 
 import click
+from reflex_core import constants
 
-from reflex import constants
 from reflex.constants import CustomComponents
 from reflex.utils import console, frontend_skeleton
 
@@ -328,7 +328,8 @@ def _populate_demo_app(name_variants: NameVariants):
     Args:
         name_variants: the tuple including various names such as package name, class name needed for the project.
     """
-    from reflex import constants
+    from reflex_core import constants
+
     from reflex.reflex import _init
 
     demo_app_dir = Path(name_variants.demo_app_dir)

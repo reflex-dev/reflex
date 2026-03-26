@@ -8,9 +8,9 @@ from typing import Any, ClassVar, List, Literal, NoReturn  # noqa: UP035
 import pytest
 from packaging import version
 from pytest_mock import MockerFixture
+from reflex_core import constants
 from reflex_core.vars.base import Var
 
-from reflex import constants
 from reflex.environment import environment
 from reflex.event import EventHandler
 from reflex.state import BaseState

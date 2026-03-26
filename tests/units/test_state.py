@@ -20,11 +20,11 @@ import pytest_asyncio
 from plotly.graph_objects import Figure
 from pydantic import BaseModel as Base
 from pytest_mock import MockerFixture
+from reflex_core import constants
 from reflex_core.vars.base import Field, Var, computed_var, field
 
 import reflex as rx
 import reflex.config
-from reflex import constants
 from reflex.app import App
 from reflex.constants import CompileVars, RouteVar, SocketEvent
 from reflex.constants.state import FIELD_MARKER

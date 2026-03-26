@@ -7,9 +7,8 @@ from types import SimpleNamespace
 from typing import TYPE_CHECKING, Literal, TypedDict
 from xml.etree.ElementTree import Element, SubElement, indent, tostring
 
+from reflex_core import constants
 from typing_extensions import NotRequired
-
-from reflex import constants
 
 from .base import Plugin as PluginBase
 

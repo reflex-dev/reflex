@@ -8,8 +8,8 @@ from typing import Annotated
 from unittest.mock import patch
 
 import pytest
+from reflex_core import constants
 
-from reflex import constants
 from reflex.environment import (
     EnvironmentVariables,
     EnvVar,

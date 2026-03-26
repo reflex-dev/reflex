@@ -24,11 +24,12 @@ from typing import (
     get_type_hints,
 )
 
-from reflex import constants
-from reflex.constants.base import LogLevel
+from reflex_core import constants
+from reflex_core.constants.base import LogLevel
+from reflex_core.utils.exceptions import EnvironmentVarValueError
+from reflex_core.utils.types import GenericType, is_union, value_inside_optional
+
 from reflex.plugins import Plugin
-from reflex.utils.exceptions import EnvironmentVarValueError
-from reflex.utils.types import GenericType, is_union, value_inside_optional
 
 
 def get_default_value_for_field(field: dataclasses.Field) -> Any:

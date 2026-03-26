@@ -3,7 +3,8 @@
 import inspect
 from pathlib import Path
 
-from reflex import constants
+from reflex_core import constants
+
 from reflex.environment import EnvironmentVariables
 
 

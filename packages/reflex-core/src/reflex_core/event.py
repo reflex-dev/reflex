@@ -27,7 +27,7 @@ from typing import (
 
 from typing_extensions import Self, TypeAliasType, TypedDict, TypeVarTuple, Unpack
 
-from reflex import constants
+from reflex_core import constants
 from reflex_core.components.field import BaseField
 from reflex_core.constants.compiler import CompileVars, Hooks, Imports
 from reflex_core.constants.state import FRONTEND_EVENT_STATE

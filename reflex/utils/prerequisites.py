@@ -18,8 +18,8 @@ from types import ModuleType
 from typing import NamedTuple
 
 from packaging import version
+from reflex_core import constants, model
 
-from reflex import constants, model
 from reflex.config import Config, get_config
 from reflex.environment import environment
 from reflex.utils import console, net, path_ops

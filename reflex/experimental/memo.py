@@ -10,6 +10,7 @@ from typing import Any, get_args, get_origin, get_type_hints
 
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
+from reflex_core import constants
 from reflex_core.vars import VarData
 from reflex_core.vars.base import LiteralVar, Var
 from reflex_core.vars.function import (
@@ -21,7 +22,6 @@ from reflex_core.vars.function import (
 )
 from reflex_core.vars.object import RestProp
 
-from reflex import constants
 from reflex.components.component import Component
 from reflex.components.dynamic import bundled_libraries
 from reflex.constants.compiler import SpecialAttributes

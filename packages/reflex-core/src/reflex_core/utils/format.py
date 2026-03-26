@@ -8,7 +8,7 @@ import os
 import re
 from typing import TYPE_CHECKING, Any
 
-from reflex import constants
+from reflex_core import constants
 from reflex_core.constants.state import FRONTEND_EVENT_STATE
 from reflex_core.utils import exceptions
 

@@ -37,7 +37,7 @@ from typing import get_type_hints as get_type_hints_og
 from typing_extensions import Self as Self
 from typing_extensions import override as override
 
-from reflex import constants
+from reflex_core import constants
 from reflex_core.utils import console
 
 # Potential GenericAlias types for isinstance checks.

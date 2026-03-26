@@ -7,7 +7,8 @@ import zipfile
 from pathlib import Path
 from urllib.parse import urlparse
 
-from reflex import constants
+from reflex_core import constants
+
 from reflex.config import get_config
 from reflex.utils import console, net, path_ops, redir
 

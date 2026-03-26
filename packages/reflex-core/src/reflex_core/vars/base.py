@@ -39,7 +39,7 @@ from typing import (
 from rich.markup import escape
 from typing_extensions import dataclass_transform, override
 
-from reflex import constants
+from reflex_core import constants
 from reflex_core.constants.compiler import Hooks
 from reflex_core.constants.state import FIELD_MARKER
 from reflex_core.utils import console, exceptions, imports, serializers, types

@@ -2,7 +2,7 @@
 
 from typing import TYPE_CHECKING, Union
 
-from reflex import constants
+from reflex_core import constants
 from reflex_core.utils import imports
 from reflex_core.utils.exceptions import DynamicComponentMissingLibraryError
 from reflex_core.utils.format import format_library_name

@@ -11,7 +11,8 @@ from contextlib import suppress
 from datetime import datetime, timezone
 from typing import TypedDict
 
-from reflex import constants
+from reflex_core import constants
+
 from reflex.environment import environment
 from reflex.utils import console, processes
 from reflex.utils.decorator import once, once_unless_none

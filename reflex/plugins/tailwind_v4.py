@@ -4,8 +4,9 @@ import dataclasses
 from pathlib import Path
 from types import SimpleNamespace
 
-from reflex.constants.base import Dirs
-from reflex.constants.compiler import Ext, PageNames
+from reflex_core.constants.base import Dirs
+from reflex_core.constants.compiler import Ext, PageNames
+
 from reflex.plugins.shared_tailwind import (
     TailwindConfig,
     TailwindPlugin,

@@ -5,7 +5,8 @@ import random
 import re
 from pathlib import Path
 
-from reflex import constants
+from reflex_core import constants
+
 from reflex.compiler import templates
 from reflex.config import Config, get_config
 from reflex.environment import environment

@@ -5,7 +5,8 @@ from __future__ import annotations
 import re
 from collections.abc import Callable
 
-from reflex import constants
+from reflex_core import constants
+
 from reflex.config import get_config
 
 

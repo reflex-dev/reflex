@@ -2,9 +2,9 @@
 
 from pathlib import Path
 
+from reflex_core import constants
 from reflex_core.utils import console
 
-from reflex import constants
 from reflex.config import get_config
 from reflex.environment import environment
 from reflex.utils import build, exec, prerequisites, telemetry

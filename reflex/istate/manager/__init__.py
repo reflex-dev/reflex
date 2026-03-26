@@ -6,9 +6,9 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 from typing import TypedDict
 
+from reflex_core import constants
 from typing_extensions import ReadOnly, Unpack
 
-from reflex import constants
 from reflex.config import get_config
 from reflex.event import Event
 from reflex.state import BaseState

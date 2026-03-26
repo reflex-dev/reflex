@@ -4,7 +4,8 @@ import re
 import sys
 from pathlib import Path
 
-from reflex import constants
+from reflex_core import constants
+
 from reflex.config import get_config
 from reflex.utils import console
 from reflex.utils.misc import get_module_path

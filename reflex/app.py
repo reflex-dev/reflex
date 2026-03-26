@@ -43,6 +43,7 @@ from reflex_components_core.core.breakpoints import set_breakpoints
 from reflex_components_core.core.sticky import sticky
 from reflex_components_radix import themes
 from reflex_components_sonner.toast import toast
+from reflex_core import constants
 from reflex_core.event import (
     _EVENT_FIELDS,
     Event,
@@ -62,7 +63,6 @@ from starlette.responses import JSONResponse, Response
 from starlette.staticfiles import StaticFiles
 from typing_extensions import Unpack
 
-from reflex import constants
 from reflex._upload import UploadFile as UploadFile
 from reflex._upload import upload
 from reflex.admin import AdminDash
