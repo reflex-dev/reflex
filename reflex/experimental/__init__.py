@@ -8,6 +8,7 @@ from reflex.utils.misc import run_in_thread
 
 from . import hooks as hooks
 from .client_state import ClientStateVar as ClientStateVar
+from .memo import memo as memo
 
 
 class ExperimentalNamespace(SimpleNamespace):
@@ -58,4 +59,5 @@ _x = ExperimentalNamespace(
     client_state=ClientStateVar.create,
     hooks=hooks,
     code_block=code_block,
+    memo=memo,
 )

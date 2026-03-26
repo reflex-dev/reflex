@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from reflex import constants
 from reflex.constants import Hooks
-from reflex.constants.state import CAMEL_CASE_MEMO_MARKER
 from reflex.utils.format import format_state_name, json_dumps
 from reflex.vars.base import VarData
 
@@ -661,6 +660,7 @@ def stateful_components_template(imports: list[_ImportDict], memoized_code: str)
 def memo_components_template(
     imports: list[_ImportDict],
     components: list[dict[str, Any]],
+    functions: list[dict[str, Any]],
     dynamic_imports: Iterable[str],
     custom_codes: Iterable[str],
 ) -> str:
@@ -669,6 +669,7 @@ def memo_components_template(
     Args:
         imports: List of import statements.
         components: List of component definitions.
+        functions: List of function definitions.
         dynamic_imports: List of dynamic import statements.
         custom_codes: List of custom code snippets.
 
@@ -682,7 +683,7 @@ def memo_components_template(
     components_code = ""
     for component in components:
         components_code += f"""
-export const {component["name"]} = memo(({{ {",".join([f"{prop}:{prop}{CAMEL_CASE_MEMO_MARKER}" for prop in component.get("props", [])])} }}) => {{
+export const {component["name"]} = memo(({component["signature"]}) => {{
     {_render_hooks(component.get("hooks", {}))}
     return(
         {_RenderUtils.render(component["render"])}
@@ -690,12 +691,20 @@ export const {component["name"]} = memo(({{ {",".join([f"{prop}:{prop}{CAMEL_CAS
 }});
 """
 
+    functions_code = ""
+    for function in functions:
+        functions_code += (
+            f"\nexport const {function['name']} = {function['function']};\n"
+        )
+
     return f"""
 {imports_str}
 
 {dynamic_imports_str}
 
 {custom_code_str}
+
+{functions_code}
 
 {components_code}"""
 
