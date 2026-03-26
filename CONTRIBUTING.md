@@ -84,7 +84,7 @@ Any extra arguments are forwarded to `act`. `-l` / `--list` lists the selected j
 bash scripts/run_all_tests.sh -l
 ```
 
-If Docker is unavailable and you still want to run against your host environment, set `REFLEX_ACT_ALLOW_SELF_HOSTED=1`. In that mode the script scrubs `CODESPACE_NAME`, `GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN`, and `PYTHONSAFEPATH` to reduce host-specific drift. Set `REFLEX_ACT_SELF_HOSTED_PRESERVE_HOST_ENV=1` if you need the raw host environment instead.
+If Docker is unavailable and you still want to run against your host environment, set `REFLEX_ACT_ALLOW_SELF_HOSTED=1`. In that mode the script scrubs `CODESPACE_NAME`, `GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN`, `GITHUB_CODESPACE_TOKEN`, and `PYTHONSAFEPATH` to reduce host-specific drift. Set `REFLEX_ACT_SELF_HOSTED_PRESERVE_HOST_ENV=1` if you need the raw host environment instead.
 
 Browser-backed workflows still have lower parity in self-hosted mode. If you are running as `root`, prefer a non-root environment; `APP_HARNESS_DRIVER_ARGS=--no-sandbox` is only a local fallback and may still not match GitHub Actions behavior.
 

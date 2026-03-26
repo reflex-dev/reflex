@@ -58,8 +58,16 @@ is_list_mode() {
 }
 
 ensure_act() {
-  if [[ -n "$ACT_BIN" && -x "$ACT_BIN" ]]; then
-    return 0
+  local resolved_act_bin=""
+
+  if [[ -n "$ACT_BIN" ]]; then
+    # Resolve bare command names through PATH before validating executability.
+    resolved_act_bin="$(command -v "$ACT_BIN" 2>/dev/null || true)"
+
+    if [[ -n "$resolved_act_bin" && -x "$resolved_act_bin" ]]; then
+      ACT_BIN="$resolved_act_bin"
+      return 0
+    fi
   fi
 
   cat >&2 <<'EOF'
@@ -79,7 +87,7 @@ self_hosted_mode_enabled() {
 }
 
 require_runner_support() {
-  if is_list_mode "${extra_act_args[@]}"; then
+  if is_list_mode "${extra_act_args[@]+"${extra_act_args[@]}"}"; then
     return 0
   fi
 
@@ -151,13 +159,13 @@ run_job() {
   shift 3
 
   echo "==> ${label}"
-  "${act_env_prefix[@]}" "${ACT_BIN}" \
+  "${act_env_prefix[@]+"${act_env_prefix[@]}"}" "${ACT_BIN}" \
     "${ACT_EVENT}" \
     "${platform_args[@]}" \
     -W ".github/workflows/${workflow}" \
     -j "${job}" \
     "$@" \
-    "${extra_act_args[@]}"
+    "${extra_act_args[@]+"${extra_act_args[@]}"}"
 }
 
 if has_arg "-h" "$@" || has_arg "--help" "$@"; then
