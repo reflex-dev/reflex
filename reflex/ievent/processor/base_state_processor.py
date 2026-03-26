@@ -182,7 +182,6 @@ async def chain_updates(
     # Convert valid EventHandler and EventSpec into Event
     if fixed_events := Event.from_event_type(
         _check_valid_yield(events, handler_name=handler_name),
-        router_data=root_state.router_data if root_state else None,
     ):
         # Frontend events.
         if frontend_events := [e for e in fixed_events if e.name.startswith("_")]:

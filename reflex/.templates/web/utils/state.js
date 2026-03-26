@@ -40,8 +40,6 @@ const cookies = new Cookies();
 // Dictionary holding component references.
 export const refs = {};
 
-// Flag ensures that only one event is processing on the backend concurrently.
-let event_processing = false;
 // Array holding pending events to be processed.
 const event_queue = [];
 
@@ -386,15 +384,18 @@ export const applyEvent = async (event, socket, navigate, params) => {
     // Since we don't have router directly, we need to get info from our hooks
     event.router_data = {
       pathname: window.location.pathname,
-      query: {
-        ...Object.fromEntries(new URLSearchParams(window.location.search)),
-        ...params(),
-      },
       asPath:
         window.location.pathname +
         window.location.search +
         window.location.hash,
     };
+    const query = {
+      ...Object.fromEntries(new URLSearchParams(window.location.search)),
+      ...params(),
+    };
+    if (query && Object.keys(query).length > 0) {
+      event.router_data.query = query;
+    }
   }
 
   // Send the event to the server.
@@ -496,12 +497,9 @@ export const processEvent = async (socket, navigate, params) => {
   }
 
   // Only proceed if we're not already processing an event.
-  if (event_queue.length === 0 || event_processing) {
+  if (event_queue.length === 0) {
     return;
   }
-
-  // Set processing to true to block other events from being processed.
-  event_processing = true;
 
   // Apply the next event in the queue.
   const event = event_queue.shift();
@@ -513,9 +511,7 @@ export const processEvent = async (socket, navigate, params) => {
   } else {
     eventSent = await applyEvent(event, socket, navigate, params);
   }
-  // If no event was sent, set processing to false.
   if (!eventSent) {
-    event_processing = false;
     // recursively call processEvent to drain the queue, since there is
     // no state update to trigger the useEffect event loop.
     await processEvent(socket, navigate, params);
@@ -639,7 +635,7 @@ export const connect = async (
       );
     }
     // Drain any initial events from the queue.
-    while (event_queue.length > 0 && !event_processing) {
+    while (event_queue.length > 0) {
       await processEvent(socket.current, navigate, () => params.current);
     }
   });
@@ -659,12 +655,10 @@ export const connect = async (
     }, 200 * n_connect_errors); // Incremental backoff
   });
 
-  // When the socket disconnects reset the event_processing flag
   socket.current.on("disconnect", (reason, details) => {
     socket.current.wait_connect = false;
     const try_reconnect =
       reason !== "io server disconnect" && reason !== "io client disconnect";
-    event_processing = false;
     window.removeEventListener("unload", disconnectTrigger);
     window.removeEventListener("beforeunload", disconnectTrigger);
     window.removeEventListener("pagehide", pagehideHandler);
@@ -676,27 +670,25 @@ export const connect = async (
 
   // On each received message, queue the updates and events.
   socket.current.on("event", async (update) => {
-    for (const substate in update.delta) {
-      dispatch[substate](update.delta[substate]);
-      // handle events waiting for `is_hydrated`
-      if (
-        substate === state_name &&
-        update.delta[substate]?.is_hydrated_rx_state_
-      ) {
-        queueEvents(on_hydrated_queue, socket, false, navigate, params);
-        on_hydrated_queue.length = 0;
+    if (update.delta && Object.keys(update.delta).length > 0) {
+      for (const substate in update.delta) {
+        dispatch[substate](update.delta[substate]);
+        // handle events waiting for `is_hydrated`
+        if (
+          substate === state_name &&
+          update.delta[substate]?.is_hydrated_rx_state_
+        ) {
+          queueEvents(on_hydrated_queue, socket, false, navigate, params);
+          on_hydrated_queue.length = 0;
+        }
       }
+      applyClientStorageDelta(client_storage, update.delta);
     }
-    applyClientStorageDelta(client_storage, update.delta);
-    if (update.final !== null) {
-      event_processing = !update.final;
-    }
-    if (update.events) {
+    if (update.events && update.events.length > 0) {
       queueEvents(update.events, socket, false, navigate, params);
     }
   });
   socket.current.on("reload", async (event) => {
-    event_processing = false;
     on_hydrated_queue.push(event);
     queueEvents(initialEvents(), socket, true, navigate, params);
   });
@@ -722,7 +714,17 @@ export const ReflexEvent = (
   event_actions = {},
   handler = null,
 ) => {
-  return { name, payload, handler, event_actions };
+  const e = { name };
+  if (payload && Object.keys(payload).length > 0) {
+    e.payload = payload;
+  }
+  if (event_actions && Object.keys(event_actions).length > 0) {
+    e.event_actions = event_actions;
+  }
+  if (handler !== null) {
+    e.handler = handler;
+  }
+  return e;
 };
 
 /**
@@ -1017,7 +1019,7 @@ export const useEventLoop = (
     }
     (async () => {
       // Process all outstanding events.
-      while (event_queue.length > 0 && !event_processing) {
+      while (event_queue.length > 0) {
         await ensureSocketConnected();
         await processEvent(socket.current, navigate, () => params.current);
       }

@@ -65,6 +65,7 @@ from reflex.utils.exceptions import (
 )
 from reflex.utils.exceptions import ImmutableStateError as ImmutableStateError
 from reflex.utils.exec import is_testing_env
+from reflex.utils.serializers import serializer
 from reflex.utils.types import _isinstance
 from reflex.vars import Field, VarData, field
 from reflex.vars.base import (
@@ -2519,16 +2520,20 @@ class StateUpdate:
     # Events to be added to the event queue.
     events: list[Event] = dataclasses.field(default_factory=list)
 
-    # Whether this is the final state update for the event.
-    final: bool | None = True
 
-    def json(self) -> str:
-        """Convert the state update to a JSON string.
+@serializer(to=dict)
+def serialize_state_update(update: StateUpdate) -> dict:
+    """Serialize a StateUpdate to a dictionary.
 
-        Returns:
-            The state update as a JSON string.
-        """
-        return format.json_dumps(self)
+    Args:
+        update: The StateUpdate to serialize.
+
+    Returns:
+        The serialized StateUpdate.
+    """
+    return {
+        k.name: v for k in dataclasses.fields(update) if (v := getattr(update, k.name))
+    }
 
 
 def code_uses_state_contexts(javascript_code: str) -> bool:

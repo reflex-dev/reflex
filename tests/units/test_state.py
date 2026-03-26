@@ -2238,7 +2238,6 @@ async def test_state_proxy(
                 "computed" + FIELD_MARKER: "",
             },
         },
-        final=True,
     )
     assert mcall.kwargs["to"] == grandchild_state.router.session.session_id
 

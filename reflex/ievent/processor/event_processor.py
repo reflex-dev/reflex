@@ -147,7 +147,7 @@ class EventProcessor:
                     delta: The delta to emit, mapping client tokens to variable updates.
                 """
                 await event_namespace.emit_update(
-                    update=StateUpdate(delta=delta, final=True),
+                    update=StateUpdate(delta=delta),
                     token=token,
                 )
 
@@ -163,7 +163,7 @@ class EventProcessor:
                     events: The events to emit.
                 """
                 await event_namespace.emit_update(
-                    update=StateUpdate(events=list(events), final=True),
+                    update=StateUpdate(events=list(events)),
                     token=token,
                 )
 

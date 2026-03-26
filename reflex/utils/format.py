@@ -594,7 +594,7 @@ def format_query_params(router_data: dict[str, Any]) -> dict[str, str]:
     Returns:
         The reformatted query params
     """
-    params = router_data[constants.RouteVar.QUERY]
+    params = router_data.get(constants.RouteVar.QUERY, {})
     return {k.replace("-", "_"): v for k, v in params.items()}
 
 

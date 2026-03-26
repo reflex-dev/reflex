@@ -1655,10 +1655,7 @@ class App(MiddlewareMixin, LifespanMixin):
             if delta:
                 # When the frontend vars are modified emit the delta to the frontend.
                 await self.event_namespace.emit_update(
-                    update=StateUpdate(
-                        delta=delta,
-                        final=True,
-                    ),
+                    update=StateUpdate(delta=delta),
                     token=token.ident,
                 )
 
