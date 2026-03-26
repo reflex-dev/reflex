@@ -5,9 +5,9 @@ from typing import Literal
 from reflex_components_core.core.breakpoints import Responsive
 from reflex_components_core.core.debounce import DebounceInput
 from reflex_components_core.el import elements
+from reflex_core.vars.base import Var
 
 from reflex.components.component import Component, field
-from reflex.vars.base import Var
 from reflex_components_radix.themes.base import (
     LiteralAccentColor,
     LiteralRadius,

@@ -19,6 +19,8 @@ from reflex_components_core.base.document import Meta as ReactMeta
 from reflex_components_core.el.elements.metadata import Head, Link, Meta, Title
 from reflex_components_core.el.elements.other import Html
 from reflex_components_core.el.elements.sectioning import Body
+from reflex_core.vars.base import Field, Var, VarData
+from reflex_core.vars.function import DestructuredArg
 
 from reflex import constants
 from reflex.components.component import Component, ComponentStyle, CustomComponent
@@ -33,8 +35,6 @@ from reflex.style import Style
 from reflex.utils import format, imports, path_ops
 from reflex.utils.imports import ImportVar, ParsedImportDict
 from reflex.utils.prerequisites import get_web_dir
-from reflex.vars.base import Field, Var, VarData
-from reflex.vars.function import DestructuredArg
 
 # To re-export this function.
 merge_imports = imports.merge_imports

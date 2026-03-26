@@ -6,6 +6,10 @@ from collections.abc import Iterator
 from hashlib import md5
 from typing import Any, ClassVar, Literal
 
+from reflex_core.vars import VarData
+from reflex_core.vars.base import LiteralVar, Var
+from reflex_core.vars.number import ternary_operation
+
 from reflex.components.component import field
 from reflex.components.tags.tag import Tag
 from reflex.constants import Dirs, EventTriggers
@@ -23,9 +27,6 @@ from reflex.event import (
     prevent_default,
 )
 from reflex.utils.imports import ImportDict
-from reflex.vars import VarData
-from reflex.vars.base import LiteralVar, Var
-from reflex.vars.number import ternary_operation
 from reflex_components_core.el.element import Element
 
 from .base import BaseHTML

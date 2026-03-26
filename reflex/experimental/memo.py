@@ -10,6 +10,16 @@ from typing import Any, get_args, get_origin, get_type_hints
 
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
+from reflex_core.vars import VarData
+from reflex_core.vars.base import LiteralVar, Var
+from reflex_core.vars.function import (
+    ArgsFunctionOperation,
+    DestructuredArg,
+    FunctionStringVar,
+    FunctionVar,
+    ReflexCallable,
+)
+from reflex_core.vars.object import RestProp
 
 from reflex import constants
 from reflex.components.component import Component
@@ -19,16 +29,6 @@ from reflex.constants.state import CAMEL_CASE_MEMO_MARKER
 from reflex.utils import format
 from reflex.utils import types as type_utils
 from reflex.utils.imports import ImportVar
-from reflex.vars import VarData
-from reflex.vars.base import LiteralVar, Var
-from reflex.vars.function import (
-    ArgsFunctionOperation,
-    DestructuredArg,
-    FunctionStringVar,
-    FunctionVar,
-    ReflexCallable,
-)
-from reflex.vars.object import RestProp
 
 
 @dataclasses.dataclass(frozen=True, slots=True, kw_only=True)

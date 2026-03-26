@@ -119,7 +119,7 @@ DEFAULT_IMPORTS = {
         "PointerEventInfo",
     ],
     "reflex.style": ["Style"],
-    "reflex.vars.base": ["Var"],
+    "reflex_core.vars.base": ["Var"],
 }
 
 
@@ -682,7 +682,7 @@ def _get_parent_imports(func: Callable) -> Mapping[str, tuple[str, ...]]:
     Returns:
         An immutable mapping of module names to imported symbol names.
     """
-    imports_: dict[str, set[str]] = {"reflex.vars": {"Var"}}
+    imports_: dict[str, set[str]] = {"reflex_core.vars": {"Var"}}
     module_dir = set(dir(importlib.import_module(func.__module__)))
     for type_hint in inspect.get_annotations(func).values():
         try:

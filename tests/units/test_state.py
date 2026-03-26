@@ -20,6 +20,7 @@ import pytest_asyncio
 from plotly.graph_objects import Figure
 from pydantic import BaseModel as Base
 from pytest_mock import MockerFixture
+from reflex_core.vars.base import Field, Var, computed_var, field
 
 import reflex as rx
 import reflex.config
@@ -58,7 +59,6 @@ from reflex.utils.exceptions import (
 )
 from reflex.utils.format import json_dumps
 from reflex.utils.token_manager import SocketRecord
-from reflex.vars.base import Field, Var, computed_var, field
 from tests.units.mock_redis import mock_redis
 
 from .states import GenState

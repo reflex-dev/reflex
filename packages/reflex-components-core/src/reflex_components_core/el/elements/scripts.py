@@ -1,7 +1,8 @@
 """Scripts classes."""
 
+from reflex_core.vars.base import Var
+
 from reflex.components.component import field
-from reflex.vars.base import Var
 from reflex_components_core.el.elements.inline import ReferrerPolicy
 from reflex_components_core.el.elements.media import CrossOrigin
 

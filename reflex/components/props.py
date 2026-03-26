@@ -6,6 +6,7 @@ from collections.abc import Callable
 from dataclasses import _MISSING_TYPE, MISSING
 from typing import Any, TypeVar, get_args, get_origin
 
+from reflex_core.vars.object import LiteralObjectVar
 from typing_extensions import dataclass_transform
 
 from reflex.components.field import BaseField, FieldBasedMeta
@@ -14,7 +15,6 @@ from reflex.utils import format
 from reflex.utils.exceptions import InvalidPropValueError
 from reflex.utils.serializers import serializer
 from reflex.utils.types import is_union
-from reflex.vars.object import LiteralObjectVar
 
 PROPS_FIELD_TYPE = TypeVar("PROPS_FIELD_TYPE")
 

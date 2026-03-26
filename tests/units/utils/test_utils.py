@@ -8,6 +8,7 @@ from typing import Any, ClassVar, List, Literal, NoReturn  # noqa: UP035
 import pytest
 from packaging import version
 from pytest_mock import MockerFixture
+from reflex_core.vars.base import Var
 
 from reflex import constants
 from reflex.environment import environment
@@ -16,7 +17,6 @@ from reflex.state import BaseState
 from reflex.utils import exec as utils_exec
 from reflex.utils import frontend_skeleton, js_runtimes, prerequisites, templates, types
 from reflex.utils.exceptions import ReflexError, SystemPackageMissingError
-from reflex.vars.base import Var
 
 
 class ExampleTestState(BaseState):

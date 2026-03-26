@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from reflex_components_core.base.fragment import Fragment
+from reflex_core.vars.base import LiteralVar, Var
 
 from reflex import constants
 from reflex.compiler import templates, utils
@@ -36,7 +37,6 @@ from reflex.utils.exec import is_prod_mode
 from reflex.utils.format import to_title_case
 from reflex.utils.imports import ImportVar, ParsedImportDict
 from reflex.utils.prerequisites import get_web_dir
-from reflex.vars.base import LiteralVar, Var
 
 
 def _apply_common_imports(

@@ -15,11 +15,13 @@ from pathlib import Path
 from typing import Any, NamedTuple, TypedDict
 from urllib.parse import urljoin
 
+from reflex_core.utils import console
+
 from reflex import constants
 from reflex.config import get_config
 from reflex.constants.base import LogLevel
 from reflex.environment import environment
-from reflex.utils import console, path_ops
+from reflex.utils import path_ops
 from reflex.utils.decorator import once
 from reflex.utils.misc import get_module_path
 from reflex.utils.prerequisites import get_web_dir

@@ -20,6 +20,7 @@ from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core.cond import Cond
 from reflex_components_radix.themes.typography.text import Text
+from reflex_core.vars.base import computed_var
 from starlette.applications import Starlette
 from starlette.datastructures import FormData, Headers, UploadFile
 from starlette.responses import StreamingResponse
@@ -52,7 +53,6 @@ from reflex.state import (
 )
 from reflex.style import Style
 from reflex.utils import console, exceptions, format
-from reflex.vars.base import computed_var
 
 from .conftest import chdir
 from .states import GenState

@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+from reflex_core.vars.base import Var
+from reflex_core.vars.function import ArgsFunctionOperation
+from reflex_core.vars.object import ObjectVar
+
 from reflex.components.component import Component, field
 from reflex.event import EventHandler, set_clipboard
 from reflex.state import FrontendEventExceptionState
-from reflex.vars.base import Var
-from reflex.vars.function import ArgsFunctionOperation
-from reflex.vars.object import ObjectVar
 from reflex_components_core.datadisplay.logo import svg_logo
 from reflex_components_core.el import a, button, div, h2, hr, p, pre, svg
 

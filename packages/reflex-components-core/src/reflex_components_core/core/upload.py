@@ -7,6 +7,11 @@ from pathlib import Path
 from typing import Any, ClassVar
 
 from reflex_components_sonner.toast import toast
+from reflex_core.vars import VarData
+from reflex_core.vars.base import Var, get_unique_variable_name
+from reflex_core.vars.function import FunctionVar
+from reflex_core.vars.object import ObjectVar
+from reflex_core.vars.sequence import ArrayVar, LiteralStringVar
 
 from reflex._upload import UploadChunkIterator, UploadFile
 from reflex.components.component import (
@@ -34,11 +39,6 @@ from reflex.event import (
 from reflex.style import Style
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
-from reflex.vars import VarData
-from reflex.vars.base import Var, get_unique_variable_name
-from reflex.vars.function import FunctionVar
-from reflex.vars.object import ObjectVar
-from reflex.vars.sequence import ArrayVar, LiteralStringVar
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core.cond import cond
 from reflex_components_core.el.elements.forms import Input

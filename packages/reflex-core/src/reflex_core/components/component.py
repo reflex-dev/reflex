@@ -17,11 +17,11 @@ from hashlib import md5
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, ClassVar, TypeVar, cast, get_args, get_origin
 
-from reflex_core.breakpoints import Breakpoints
 from rich.markup import escape
 from typing_extensions import dataclass_transform
 
 from reflex_core import constants
+from reflex_core.breakpoints import Breakpoints
 from reflex_core.compiler.templates import stateful_component_template
 from reflex_core.components.dynamic import load_dynamic_serializer
 from reflex_core.components.field import BaseField, FieldBasedMeta
@@ -60,7 +60,11 @@ from reflex_core.vars.base import (
     Var,
     cached_property_no_lock,
 )
-from reflex_core.vars.function import ArgsFunctionOperation, FunctionStringVar, FunctionVar
+from reflex_core.vars.function import (
+    ArgsFunctionOperation,
+    FunctionStringVar,
+    FunctionVar,
+)
 from reflex_core.vars.number import ternary_operation
 from reflex_core.vars.object import ObjectVar
 from reflex_core.vars.sequence import LiteralArrayVar, LiteralStringVar, StringVar

@@ -6,6 +6,9 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
+from reflex_core.vars import VarData
+from reflex_core.vars.base import Var
+from reflex_core.vars.function import FunctionVar
 
 import reflex as rx
 from reflex.compiler import compiler
@@ -19,9 +22,6 @@ from reflex.experimental.memo import (
 )
 from reflex.style import Style
 from reflex.utils.imports import ImportVar
-from reflex.vars import VarData
-from reflex.vars.base import Var
-from reflex.vars.function import FunctionVar
 
 
 @pytest.fixture(autouse=True)

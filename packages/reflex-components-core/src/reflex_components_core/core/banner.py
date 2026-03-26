@@ -4,6 +4,11 @@ from __future__ import annotations
 
 from reflex_components_lucide.icon import Icon
 from reflex_components_sonner.toast import ToastProps, toast_ref
+from reflex_core.vars import VarData
+from reflex_core.vars.base import LiteralVar, Var
+from reflex_core.vars.function import FunctionStringVar
+from reflex_core.vars.number import BooleanVar
+from reflex_core.vars.sequence import LiteralArrayVar
 
 from reflex import constants
 from reflex.components.component import Component
@@ -11,11 +16,6 @@ from reflex.constants import Dirs, Hooks, Imports
 from reflex.constants.compiler import CompileVars
 from reflex.environment import environment
 from reflex.utils.imports import ImportVar
-from reflex.vars import VarData
-from reflex.vars.base import LiteralVar, Var
-from reflex.vars.function import FunctionStringVar
-from reflex.vars.number import BooleanVar
-from reflex.vars.sequence import LiteralArrayVar
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core.cond import cond
 from reflex_components_core.el.elements.inline import Span

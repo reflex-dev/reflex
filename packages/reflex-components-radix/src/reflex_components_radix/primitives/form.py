@@ -6,10 +6,10 @@ from typing import Any, Literal
 
 from reflex_components_core.core.debounce import DebounceInput
 from reflex_components_core.el.elements.forms import Form as HTMLForm
+from reflex_core.vars.base import Var
 
 from reflex.components.component import ComponentNamespace, field
 from reflex.event import EventHandler, no_args_event_spec
-from reflex.vars.base import Var
 from reflex_components_radix.themes.components.text_field import TextFieldRoot
 
 from .base import RadixPrimitiveComponentWithClassName

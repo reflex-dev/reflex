@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from typing import Any
 
+from reflex_core.vars import VarData
+from reflex_core.vars.base import Var
+
 from reflex.components.component import Component, field
 from reflex.constants import EventTriggers
 from reflex.event import EventHandler, no_args_event_spec
-from reflex.vars import VarData
-from reflex.vars.base import Var
 
 DEFAULT_DEBOUNCE_TIMEOUT = 300
 

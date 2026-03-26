@@ -32,6 +32,17 @@ from typing import (
     get_type_hints,
 )
 
+from reflex_core.utils.types import _isinstance, is_union, value_inside_optional
+from reflex_core.vars import Field, VarData, field
+from reflex_core.vars.base import (
+    ComputedVar,
+    DynamicRouteVar,
+    EvenMoreBasicBaseState,
+    Var,
+    computed_var,
+    dispatch,
+    is_computed_var,
+)
 from rich.markup import escape
 from typing_extensions import Self
 
@@ -71,17 +82,6 @@ from reflex.utils.exceptions import (
 )
 from reflex.utils.exceptions import ImmutableStateError as ImmutableStateError
 from reflex.utils.exec import is_testing_env
-from reflex.utils.types import _isinstance, is_union, value_inside_optional
-from reflex.vars import Field, VarData, field
-from reflex.vars.base import (
-    ComputedVar,
-    DynamicRouteVar,
-    EvenMoreBasicBaseState,
-    Var,
-    computed_var,
-    dispatch,
-    is_computed_var,
-)
 
 if TYPE_CHECKING:
     from reflex.components.component import Component

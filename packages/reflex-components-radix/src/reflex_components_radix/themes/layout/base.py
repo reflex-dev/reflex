@@ -5,9 +5,9 @@ from __future__ import annotations
 from typing import Literal
 
 from reflex_components_core.core.breakpoints import Responsive
+from reflex_core.vars.base import Var
 
 from reflex.components.component import field
-from reflex.vars.base import Var
 from reflex_components_radix.themes.base import (
     CommonMarginProps,
     CommonPaddingProps,

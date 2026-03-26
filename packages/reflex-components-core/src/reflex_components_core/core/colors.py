@@ -1,5 +1,7 @@
 """The colors used in Reflex are a wrapper around https://www.radix-ui.com/colors."""
 
+from reflex_core.vars.base import Var
+
 from reflex.constants.base import REFLEX_VAR_OPENING_TAG
 from reflex.constants.colors import (
     COLORS,
@@ -9,7 +11,6 @@ from reflex.constants.colors import (
     ColorType,
     ShadeType,
 )
-from reflex.vars.base import Var
 
 
 def color(

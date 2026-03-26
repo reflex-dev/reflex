@@ -8,14 +8,14 @@ from reflex_components_core.core.foreach import (
 )
 from reflex_components_radix.themes.layout.box import box
 from reflex_components_radix.themes.typography.text import text
+from reflex_core.vars.number import NumberVar
+from reflex_core.vars.sequence import ArrayVar
 
 import reflex as rx
 from reflex import el
 from reflex.components.component import Component
 from reflex.constants.state import FIELD_MARKER
 from reflex.state import BaseState, ComponentState
-from reflex.vars.number import NumberVar
-from reflex.vars.sequence import ArrayVar
 
 
 class ForEachTag(pydantic.BaseModel):

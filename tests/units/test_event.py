@@ -3,6 +3,7 @@ from collections.abc import Callable
 from typing import Any, cast
 
 import pytest
+from reflex_core.vars.base import Field, LiteralVar, Var, VarData, field
 
 import reflex as rx
 from reflex.constants.compiler import Hooks, Imports
@@ -20,7 +21,6 @@ from reflex.event import (
 )
 from reflex.state import BaseState
 from reflex.utils import format
-from reflex.vars.base import Field, LiteralVar, Var, VarData, field
 
 
 def make_var(value) -> Var:

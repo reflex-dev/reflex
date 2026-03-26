@@ -6,9 +6,9 @@ from typing import Literal
 
 from reflex_components_core.core.breakpoints import Responsive
 from reflex_components_core.el import elements
+from reflex_core.vars.base import LiteralVar, Var
 
 from reflex.components.component import field
-from reflex.vars.base import LiteralVar, Var
 from reflex_components_radix.themes.base import RadixThemesComponent
 
 LiteralSectionSize = Literal["1", "2", "3"]

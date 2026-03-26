@@ -8,10 +8,10 @@ from reflex_components_code.shiki_code_block import (
 from reflex_components_core.el.elements.forms import Button
 from reflex_components_lucide.icon import Icon
 from reflex_components_radix.themes.layout.box import Box
+from reflex_core.vars import Var
+from reflex_core.vars.base import LiteralVar
 
 from reflex.style import Style
-from reflex.vars import Var
-from reflex.vars.base import LiteralVar
 
 
 @pytest.mark.parametrize(

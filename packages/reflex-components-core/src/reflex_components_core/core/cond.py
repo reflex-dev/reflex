@@ -4,15 +4,16 @@ from __future__ import annotations
 
 from typing import Any, overload
 
+from reflex_core.utils import types
+from reflex_core.vars import VarData
+from reflex_core.vars.base import LiteralVar, Var
+from reflex_core.vars.number import ternary_operation
+
 from reflex.components.component import BaseComponent, Component, field
 from reflex.components.tags import CondTag, Tag
 from reflex.constants import Dirs
 from reflex.style import LIGHT_COLOR_MODE, resolved_color_mode
-from reflex.utils import types
 from reflex.utils.imports import ImportDict, ImportVar
-from reflex.vars import VarData
-from reflex.vars.base import LiteralVar, Var
-from reflex.vars.number import ternary_operation
 from reflex_components_core.base.fragment import Fragment
 
 _IS_TRUE_IMPORT: ImportDict = {

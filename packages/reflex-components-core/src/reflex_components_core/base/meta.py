@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from reflex_core.vars.base import Var
+
 from reflex.components.component import field
-from reflex.vars.base import Var
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.el import elements
 from reflex_components_core.el.elements.metadata import (

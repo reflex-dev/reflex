@@ -1,7 +1,8 @@
 """Interactive components provided by @radix-ui/themes."""
 
+from reflex_core.vars.base import Var
+
 from reflex.components.component import field
-from reflex.vars.base import Var
 from reflex_components_radix.themes.base import RadixThemesComponent
 
 

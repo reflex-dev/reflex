@@ -3,11 +3,11 @@
 from typing import ClassVar, Literal
 
 from reflex_components_core.core.breakpoints import Responsive
+from reflex_core.vars.base import Var
 
 from reflex.components.component import ComponentNamespace, field
 from reflex.constants.compiler import MemoizationMode
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
-from reflex.vars.base import Var
 from reflex_components_radix.themes.base import (
     LiteralAccentColor,
     RadixThemesComponent,

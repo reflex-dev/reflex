@@ -9,6 +9,28 @@ import pytest
 from pandas import DataFrame
 from pydantic import BaseModel as Base
 from pytest_mock import MockerFixture
+from reflex_core.vars import VarData
+from reflex_core.vars.base import (
+    ComputedVar,
+    LiteralVar,
+    Var,
+    computed_var,
+    var_operation,
+    var_operation_return,
+)
+from reflex_core.vars.function import (
+    ArgsFunctionOperation,
+    DestructuredArg,
+    FunctionStringVar,
+)
+from reflex_core.vars.number import LiteralBooleanVar, LiteralNumberVar, NumberVar
+from reflex_core.vars.object import LiteralObjectVar, ObjectVar
+from reflex_core.vars.sequence import (
+    ArrayVar,
+    ConcatVarOperation,
+    LiteralArrayVar,
+    LiteralStringVar,
+)
 
 import reflex as rx
 from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
@@ -21,28 +43,6 @@ from reflex.utils.exceptions import (
 )
 from reflex.utils.imports import ImportVar
 from reflex.utils.types import get_default_value_for_type
-from reflex.vars import VarData
-from reflex.vars.base import (
-    ComputedVar,
-    LiteralVar,
-    Var,
-    computed_var,
-    var_operation,
-    var_operation_return,
-)
-from reflex.vars.function import (
-    ArgsFunctionOperation,
-    DestructuredArg,
-    FunctionStringVar,
-)
-from reflex.vars.number import LiteralBooleanVar, LiteralNumberVar, NumberVar
-from reflex.vars.object import LiteralObjectVar, ObjectVar
-from reflex.vars.sequence import (
-    ArrayVar,
-    ConcatVarOperation,
-    LiteralArrayVar,
-    LiteralStringVar,
-)
 
 test_vars = [
     Var(_js_expr="prop1", _var_type=int),

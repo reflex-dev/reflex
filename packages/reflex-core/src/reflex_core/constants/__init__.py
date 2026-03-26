@@ -10,12 +10,12 @@ from .base import (
     Reflex,
 )
 from .compiler import (
+    SETTER_PREFIX,
     Hooks,
     Imports,
     MemoizationDisposition,
     MemoizationMode,
     PageNames,
-    SETTER_PREFIX,
 )
 from .event import EventTriggers
 from .state import StateManagerMode

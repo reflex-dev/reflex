@@ -13,10 +13,10 @@ def VarOperations():
     from typing import TypedDict
 
     import pydantic
+    from reflex_core.vars.base import LiteralVar
+    from reflex_core.vars.sequence import ArrayVar
 
     import reflex as rx
-    from reflex.vars.base import LiteralVar
-    from reflex.vars.sequence import ArrayVar
 
     class Object(pydantic.BaseModel):
         name: str = "hello"

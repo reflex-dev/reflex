@@ -43,6 +43,15 @@ from reflex_components_core.core.breakpoints import set_breakpoints
 from reflex_components_core.core.sticky import sticky
 from reflex_components_radix import themes
 from reflex_components_sonner.toast import toast
+from reflex_core.event import (
+    _EVENT_FIELDS,
+    Event,
+    EventSpec,
+    EventType,
+    IndividualEventType,
+    get_hydrate_event,
+    noop,
+)
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp as EngineIOApp
 from socketio import AsyncNamespace, AsyncServer
@@ -73,15 +82,6 @@ from reflex.components.component import (
 )
 from reflex.config import get_config
 from reflex.environment import ExecutorType, environment
-from reflex.event import (
-    _EVENT_FIELDS,
-    Event,
-    EventSpec,
-    EventType,
-    IndividualEventType,
-    get_hydrate_event,
-    noop,
-)
 from reflex.experimental.memo import EXPERIMENTAL_MEMOS
 from reflex.istate.manager import StateModificationContext
 from reflex.istate.proxy import StateProxy
@@ -124,7 +124,7 @@ from reflex.utils.token_manager import RedisTokenManager, TokenManager
 from reflex.utils.types import ASGIApp, Message, Receive, Scope, Send
 
 if TYPE_CHECKING:
-    from reflex.vars import Var
+    from reflex_core.vars import Var
 
     # Define custom types.
     ComponentCallable = Callable[[], Component | tuple[Component, ...] | str | Var]
@@ -577,8 +577,9 @@ class App(MiddlewareMixin, LifespanMixin):
         Raises:
             ValueError: If the app has not been initialized.
         """
+        from reflex_core.vars.base import GLOBAL_CACHE
+
         from reflex.assets import remove_stale_external_asset_symlinks
-        from reflex.vars.base import GLOBAL_CACHE
 
         # Clean up stale symlinks in assets/external/ before compiling, so that
         # rx.asset(shared=True) symlink re-creation doesn't trigger further reloads.

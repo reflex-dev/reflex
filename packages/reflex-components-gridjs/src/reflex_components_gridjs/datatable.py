@@ -5,12 +5,13 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
+from reflex_core.vars.base import LiteralVar, Var, is_computed_var
+
 from reflex.components.component import NoSSRComponent, field
 from reflex.components.tags import Tag
 from reflex.utils import types
 from reflex.utils.imports import ImportDict
 from reflex.utils.serializers import serialize
-from reflex.vars.base import LiteralVar, Var, is_computed_var
 
 
 class Gridjs(NoSSRComponent):

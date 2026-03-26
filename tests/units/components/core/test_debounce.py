@@ -2,10 +2,10 @@
 
 import pytest
 from reflex_components_core.core.debounce import DEFAULT_DEBOUNCE_TIMEOUT
+from reflex_core.vars.base import LiteralVar, Var
 
 import reflex as rx
 from reflex.state import BaseState
-from reflex.vars.base import LiteralVar, Var
 
 
 def test_create_no_child():

@@ -5,9 +5,8 @@ import inspect
 from dataclasses import dataclass
 from typing import Any, get_args, get_type_hints
 
+from reflex_core.vars.base import BaseStateMeta
 from typing_inspection.introspection import AnnotationSource, inspect_annotation
-
-from reflex.vars.base import BaseStateMeta
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

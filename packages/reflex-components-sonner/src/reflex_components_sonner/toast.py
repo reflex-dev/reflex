@@ -6,6 +6,11 @@ import dataclasses
 from typing import Any, Literal
 
 from reflex_components_lucide.icon import Icon
+from reflex_core.vars import VarData
+from reflex_core.vars.base import LiteralVar, Var
+from reflex_core.vars.function import FunctionVar
+from reflex_core.vars.number import ternary_operation
+from reflex_core.vars.object import ObjectVar
 
 from reflex.components.component import Component, ComponentNamespace, field
 from reflex.components.props import NoExtrasAllowedProps
@@ -15,11 +20,6 @@ from reflex.style import Style, resolved_color_mode
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
 from reflex.utils.serializers import serializer
-from reflex.vars import VarData
-from reflex.vars.base import LiteralVar, Var
-from reflex.vars.function import FunctionVar
-from reflex.vars.number import ternary_operation
-from reflex.vars.object import ObjectVar
 
 LiteralPosition = Literal[
     "top-left",

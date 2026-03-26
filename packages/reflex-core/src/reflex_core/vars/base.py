@@ -72,8 +72,8 @@ from reflex_core.utils.types import (
 )
 
 if TYPE_CHECKING:
-    from reflex_core.components.component import BaseComponent
     from reflex.state import BaseState
+    from reflex_core.components.component import BaseComponent
     from reflex_core.constants.colors import Color
 
     from .color import LiteralColorVar

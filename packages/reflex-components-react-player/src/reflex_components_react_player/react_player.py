@@ -5,12 +5,12 @@ from __future__ import annotations
 from typing import Any, TypedDict
 
 from reflex_components_core.core.cond import cond
+from reflex_core.vars.base import Var
+from reflex_core.vars.object import ObjectVar
 
 from reflex.components.component import Component, field
 from reflex.event import EventHandler, no_args_event_spec
 from reflex.utils import console
-from reflex.vars.base import Var
-from reflex.vars.object import ObjectVar
 
 ReactPlayerEvent = ObjectVar[dict[str, dict[str, dict[str, Any]]]]
 

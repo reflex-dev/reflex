@@ -1,7 +1,7 @@
 import pytest
+from reflex_core.vars.base import LiteralVar, Var
 
 from reflex.components.tags import CondTag, Tag, tagless
-from reflex.vars.base import LiteralVar, Var
 
 
 @pytest.mark.parametrize(

@@ -2,8 +2,9 @@
 
 from typing import ClassVar, Literal
 
+from reflex_core.vars.base import Var
+
 from reflex.components.component import field
-from reflex.vars.base import Var
 
 from .base import BaseHTML
 

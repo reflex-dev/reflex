@@ -6,6 +6,9 @@ import pytest
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_radix.themes.layout.box import Box
+from reflex_core.vars import VarData
+from reflex_core.vars.base import LiteralVar, Var
+from reflex_core.vars.object import ObjectVar
 
 import reflex as rx
 from reflex.compiler.utils import compile_custom_component
@@ -36,9 +39,6 @@ from reflex.utils.exceptions import (
     EventHandlerArgTypeMismatchError,
 )
 from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
-from reflex.vars import VarData
-from reflex.vars.base import LiteralVar, Var
-from reflex.vars.object import ObjectVar
 
 
 class TestState(BaseState):

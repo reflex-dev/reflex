@@ -8,10 +8,10 @@ from typing import Any
 import pytest
 from pydantic import BaseModel as Base
 from reflex_components_core.core.colors import Color
+from reflex_core.vars.base import LiteralVar
 
 from reflex.utils import serializers
 from reflex.utils.format import json_dumps
-from reflex.vars.base import LiteralVar
 
 pytest.importorskip("pydantic")
 

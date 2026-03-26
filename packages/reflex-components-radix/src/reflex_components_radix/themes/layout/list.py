@@ -10,9 +10,9 @@ from reflex_components_core.core.markdown_component_map import MarkdownComponent
 from reflex_components_core.el.elements.base import BaseHTML
 from reflex_components_core.el.elements.typography import Li, Ol, Ul
 from reflex_components_lucide.icon import Icon
+from reflex_core.vars.base import Var
 
 from reflex.components.component import ComponentNamespace, field
-from reflex.vars.base import Var
 from reflex_components_radix.themes.typography.text import Text
 
 LiteralListStyleTypeUnordered = Literal[

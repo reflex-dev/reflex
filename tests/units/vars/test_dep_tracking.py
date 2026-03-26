@@ -5,16 +5,16 @@ from __future__ import annotations
 import sys
 
 import pytest
+from reflex_core.vars.dep_tracking import (
+    DependencyTracker,
+    UntrackedLocalVarError,
+    get_cell_value,
+)
 
 import reflex as rx
 import tests.units.states.upload as tus_upload
 from reflex.state import State
 from reflex.utils.exceptions import VarValueError
-from reflex.vars.dep_tracking import (
-    DependencyTracker,
-    UntrackedLocalVarError,
-    get_cell_value,
-)
 
 
 class DependencyTestState(State):
