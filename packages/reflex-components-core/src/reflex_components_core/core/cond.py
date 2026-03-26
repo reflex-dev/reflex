@@ -99,6 +99,10 @@ def cond(condition: Any, c1: Component, /) -> Component: ...
 
 
 @overload
+def cond(condition: Any, c1: Var[Component], c2: Var[Component], /) -> Component: ...  # pyright: ignore [reportOverlappingOverload]
+
+
+@overload
 def cond(condition: Any, c1: Any, c2: Component, /) -> Component: ...  # pyright: ignore [reportOverlappingOverload]
 
 
