@@ -25,6 +25,7 @@ from reflex_core import constants
 from reflex_core.constants import CompileVars, RouteVar, SocketEvent
 from reflex_core.constants.state import FIELD_MARKER
 from reflex_core.event import Event, EventHandler
+from reflex_core.utils import format, types
 from reflex_core.utils.exceptions import (
     InvalidLockWarningThresholdError,
     LockExpiredError,
@@ -57,7 +58,7 @@ from reflex.state import (
     _substate_key,
 )
 from reflex.testing import chdir
-from reflex.utils import format, prerequisites, types
+from reflex.utils import prerequisites
 from reflex.utils.token_manager import SocketRecord
 from tests.units.mock_redis import mock_redis
 

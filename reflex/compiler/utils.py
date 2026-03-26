@@ -23,6 +23,7 @@ from reflex_core import constants
 from reflex_core.components.component import Component, ComponentStyle, CustomComponent
 from reflex_core.constants.state import CAMEL_CASE_MEMO_MARKER, FIELD_MARKER
 from reflex_core.style import Style
+from reflex_core.utils import format, imports
 from reflex_core.utils.imports import ImportVar, ParsedImportDict
 from reflex_core.vars.base import Field, Var, VarData
 from reflex_core.vars.function import DestructuredArg
@@ -33,7 +34,7 @@ from reflex.experimental.memo import (
 )
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.state import BaseState, _resolve_delta
-from reflex.utils import format, imports, path_ops
+from reflex.utils import path_ops
 from reflex.utils.prerequisites import get_web_dir
 
 # To re-export this function.

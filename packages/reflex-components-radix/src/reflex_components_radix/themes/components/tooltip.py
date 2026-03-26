@@ -5,9 +5,9 @@ from typing import Literal
 from reflex_core.components.component import Component, field
 from reflex_core.constants.compiler import MemoizationMode
 from reflex_core.event import EventHandler, no_args_event_spec, passthrough_event_spec
+from reflex_core.utils import format
 from reflex_core.vars.base import Var
 
-from reflex.utils import format
 from reflex_components_radix.themes.base import RadixThemesComponent
 
 LiteralSideType = Literal[

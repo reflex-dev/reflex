@@ -16,11 +16,11 @@ from reflex_core.event import (
     event,
     fix_events,
 )
+from reflex_core.utils import format
 from reflex_core.vars.base import Field, LiteralVar, Var, VarData, field
 
 import reflex as rx
 from reflex.state import BaseState
-from reflex.utils import format
 
 
 def make_var(value) -> Var:
