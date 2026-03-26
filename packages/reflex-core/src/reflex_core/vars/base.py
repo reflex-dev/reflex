@@ -1482,7 +1482,7 @@ class LiteralVar(Var):
         ):
             return resulting_var
 
-        from reflex.event import EventHandler
+        from reflex_core.event import EventHandler
         from reflex_core.utils.format import get_event_handler_parts
 
         if isinstance(value, EventHandler):
@@ -1564,7 +1564,7 @@ class LiteralVar(Var):
         ):
             return resulting_var._get_all_var_data()
 
-        from reflex.event import EventHandler
+        from reflex_core.event import EventHandler
         from reflex_core.utils.format import get_event_handler_parts
 
         if isinstance(value, EventHandler):

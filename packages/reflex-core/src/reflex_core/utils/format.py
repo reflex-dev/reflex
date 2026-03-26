@@ -14,7 +14,7 @@ from reflex_core.utils import exceptions
 
 if TYPE_CHECKING:
     from reflex.components.component import ComponentStyle
-    from reflex.event import ArgsSpec, EventChain, EventHandler, EventSpec, EventType
+    from reflex_core.event import ArgsSpec, EventChain, EventHandler, EventSpec, EventType
 
 WRAP_MAP = {
     "{": "}",
@@ -378,7 +378,7 @@ def format_prop(
         ValueError: If the prop is not a string.
     """
     # import here to avoid circular import.
-    from reflex.event import EventChain
+    from reflex_core.event import EventChain
     from reflex_core.utils import serializers
     from reflex_core.vars import Var
 
@@ -543,7 +543,7 @@ def format_queue_events(
     Raises:
         ValueError: If a lambda function is given which returns a Var.
     """
-    from reflex.event import (
+    from reflex_core.event import (
         EventChain,
         EventHandler,
         EventSpec,
