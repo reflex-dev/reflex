@@ -10,8 +10,8 @@ from typing import Literal
 from reflex_components_core.core.breakpoints import Responsive
 from reflex_components_core.core.colors import color
 from reflex_components_core.core.cond import cond
+from reflex_components_core.core.markdown_component_map import MarkdownComponentMap
 from reflex_components_core.el.elements.inline import A
-from reflex_components_markdown.markdown import MarkdownComponentMap
 from reflex_components_react_router.dom import ReactRouterLink
 
 from reflex.components.component import Component, MemoizationLeaf, field

@@ -6,7 +6,6 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any, ClassVar
 
-from reflex_components_radix.themes.layout.box import Box
 from reflex_components_sonner.toast import toast
 
 from reflex.app import UploadFile
@@ -43,6 +42,7 @@ from reflex.vars.sequence import ArrayVar, LiteralStringVar
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core.cond import cond
 from reflex_components_core.el.elements.forms import Input
+from reflex_components_core.el.elements.typography import Div
 
 DEFAULT_UPLOAD_ID: str = "default"
 
@@ -404,7 +404,7 @@ class Upload(MemoizationLeaf):
         ]
 
         # The dropzone to use.
-        zone = Box.create(
+        zone = Div.create(
             upload,
             *children,
             **{k: v for k, v in props.items() if k not in supported_props},

@@ -6,8 +6,8 @@ https://www.radix-ui.com/themes/docs/theme/typography
 from __future__ import annotations
 
 from reflex_components_core.core.breakpoints import Responsive
+from reflex_components_core.core.markdown_component_map import MarkdownComponentMap
 from reflex_components_core.el import elements
-from reflex_components_markdown.markdown import MarkdownComponentMap
 
 from reflex.components.component import field
 from reflex.vars.base import Var

@@ -1,7 +1,8 @@
 import pytest
 from reflex_components_code.code import CodeBlock
 from reflex_components_code.shiki_code_block import ShikiHighLevelCodeBlock
-from reflex_components_markdown.markdown import Markdown, MarkdownComponentMap
+from reflex_components_core.core.markdown_component_map import MarkdownComponentMap
+from reflex_components_markdown.markdown import Markdown
 from reflex_components_radix.themes.layout.box import Box
 from reflex_components_radix.themes.typography.heading import Heading
 

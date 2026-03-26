@@ -1,6 +1,6 @@
 """Responsive components."""
 
-from reflex_components_radix.themes.layout.box import Box
+from reflex_components_core.el.elements.typography import Div
 
 
 # Add responsive styles shortcuts.
@@ -14,7 +14,7 @@ def mobile_only(*children, **props):
     Returns:
         The component.
     """
-    return Box.create(*children, **props, display=["block", "none", "none", "none"])
+    return Div.create(*children, **props, display=["block", "none", "none", "none"])
 
 
 def tablet_only(*children, **props):
@@ -27,7 +27,7 @@ def tablet_only(*children, **props):
     Returns:
         The component.
     """
-    return Box.create(*children, **props, display=["none", "block", "block", "none"])
+    return Div.create(*children, **props, display=["none", "block", "block", "none"])
 
 
 def desktop_only(*children, **props):
@@ -40,7 +40,7 @@ def desktop_only(*children, **props):
     Returns:
         The component.
     """
-    return Box.create(*children, **props, display=["none", "none", "none", "block"])
+    return Div.create(*children, **props, display=["none", "none", "none", "block"])
 
 
 def tablet_and_desktop(*children, **props):
@@ -53,7 +53,7 @@ def tablet_and_desktop(*children, **props):
     Returns:
         The component.
     """
-    return Box.create(*children, **props, display=["none", "block", "block", "block"])
+    return Div.create(*children, **props, display=["none", "block", "block", "block"])
 
 
 def mobile_and_tablet(*children, **props):
@@ -66,4 +66,4 @@ def mobile_and_tablet(*children, **props):
     Returns:
         The component.
     """
-    return Box.create(*children, **props, display=["block", "block", "block", "none"])
+    return Div.create(*children, **props, display=["block", "block", "block", "none"])

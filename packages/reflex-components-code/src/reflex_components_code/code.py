@@ -6,8 +6,8 @@ import dataclasses
 from typing import ClassVar, Literal
 
 from reflex_components_core.core.cond import color_mode_cond
+from reflex_components_core.core.markdown_component_map import MarkdownComponentMap
 from reflex_components_lucide.icon import Icon
-from reflex_components_markdown.markdown import MarkdownComponentMap
 from reflex_components_radix.themes.components.button import Button
 from reflex_components_radix.themes.layout.box import Box
 

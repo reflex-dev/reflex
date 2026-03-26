@@ -8,8 +8,8 @@ from __future__ import annotations
 from typing import Literal
 
 from reflex_components_core.core.breakpoints import Responsive
+from reflex_components_core.core.markdown_component_map import MarkdownComponentMap
 from reflex_components_core.el import elements
-from reflex_components_markdown.markdown import MarkdownComponentMap
 
 from reflex.components.component import ComponentNamespace, field
 from reflex.vars.base import Var

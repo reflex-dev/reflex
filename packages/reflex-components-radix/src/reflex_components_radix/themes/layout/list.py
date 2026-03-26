@@ -6,10 +6,10 @@ from collections.abc import Iterable
 from typing import Any, Literal
 
 from reflex_components_core.core.foreach import Foreach
+from reflex_components_core.core.markdown_component_map import MarkdownComponentMap
 from reflex_components_core.el.elements.base import BaseHTML
 from reflex_components_core.el.elements.typography import Li, Ol, Ul
 from reflex_components_lucide.icon import Icon
-from reflex_components_markdown.markdown import MarkdownComponentMap
 
 from reflex.components.component import ComponentNamespace, field
 from reflex.vars.base import Var

@@ -10,9 +10,9 @@ from typing import Any, Literal
 
 from reflex_components_core.core.colors import color
 from reflex_components_core.core.cond import color_mode_cond
+from reflex_components_core.core.markdown_component_map import MarkdownComponentMap
 from reflex_components_core.el.elements.forms import Button
 from reflex_components_lucide.icon import Icon
-from reflex_components_markdown.markdown import MarkdownComponentMap
 from reflex_components_radix.themes.layout.box import Box
 
 from reflex.components.component import Component, ComponentNamespace, field

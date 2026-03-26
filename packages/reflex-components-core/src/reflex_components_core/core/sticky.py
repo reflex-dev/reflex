@@ -1,13 +1,11 @@
 """Components for displaying the Reflex sticky logo."""
 
-from reflex_components_radix.themes.typography.text import Text
-
 from reflex.components.component import ComponentNamespace
 from reflex.style import Style
 from reflex_components_core.core.colors import color
 from reflex_components_core.core.cond import color_mode_cond
 from reflex_components_core.core.responsive import desktop_only
-from reflex_components_core.el.elements.inline import A
+from reflex_components_core.el.elements.inline import A, Span
 from reflex_components_core.el.elements.media import Path, Rect, Svg
 
 
@@ -42,7 +40,7 @@ class StickyLogo(Svg):
         })
 
 
-class StickyLabel(Text):
+class StickyLabel(Span):
     """A label that displays the Reflex sticky."""
 
     @classmethod

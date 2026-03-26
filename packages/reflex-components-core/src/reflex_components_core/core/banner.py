@@ -3,13 +3,6 @@
 from __future__ import annotations
 
 from reflex_components_lucide.icon import Icon
-from reflex_components_radix.themes.components.dialog import (
-    DialogContent,
-    DialogRoot,
-    DialogTitle,
-)
-from reflex_components_radix.themes.layout.flex import Flex
-from reflex_components_radix.themes.typography.text import Text
 from reflex_components_sonner.toast import ToastProps, toast_ref
 
 from reflex import constants
@@ -25,6 +18,9 @@ from reflex.vars.number import BooleanVar
 from reflex.vars.sequence import LiteralArrayVar
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core.cond import cond
+from reflex_components_core.el.elements.inline import Span
+from reflex_components_core.el.elements.other import Dialog
+from reflex_components_core.el.elements.sectioning import H2
 from reflex_components_core.el.elements.typography import Div
 
 connect_error_var_data: VarData = VarData(
@@ -211,13 +207,14 @@ class ConnectionBanner(Component):
             The connection banner component.
         """
         if not comp:
-            comp = Flex.create(
-                Text.create(
+            comp = Div.create(
+                Span.create(
                     *default_connection_error(),
                     color="black",
-                    size="4",
+                    font_size="1.125rem",
                 ),
-                justify="center",
+                display="flex",
+                justify_content="center",
                 background_color="crimson",
                 width="100vw",
                 padding="5px",
@@ -241,14 +238,12 @@ class ConnectionModal(Component):
             The connection banner component.
         """
         if not comp:
-            comp = Text.create(*default_connection_error())
+            comp = Span.create(*default_connection_error())
         return cond(
             has_too_many_connection_errors,
-            DialogRoot.create(
-                DialogContent.create(
-                    DialogTitle.create("Connection Error"),
-                    comp,
-                ),
+            Dialog.create(
+                H2.create("Connection Error"),
+                comp,
                 open=has_too_many_connection_errors,
                 z_index=9999,
             ),
