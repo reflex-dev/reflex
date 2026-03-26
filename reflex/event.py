@@ -98,6 +98,95 @@ _EMPTY_EVENT_ACTIONS = LiteralVar.create({})
 
 BACKGROUND_TASK_MARKER = "_reflex_background_task"
 EVENT_ACTIONS_MARKER = "_rx_event_actions"
+UPLOAD_FILES_CLIENT_HANDLER = "uploadFiles"
+
+
+def _handler_name(handler: EventHandler) -> str:
+    """Get a stable fully qualified handler name for errors.
+
+    Args:
+        handler: The handler to name.
+
+    Returns:
+        The fully qualified handler name.
+    """
+    if handler.state_full_name:
+        return f"{handler.state_full_name}.{handler.fn.__name__}"
+    return handler.fn.__qualname__
+
+
+def resolve_upload_handler_param(handler: EventHandler) -> tuple[str, Any]:
+    """Validate and resolve the UploadFile list parameter for a handler.
+
+    Args:
+        handler: The event handler to inspect.
+
+    Returns:
+        The parameter name and annotation for the upload file argument.
+
+    Raises:
+        UploadTypeError: If the handler is a background task.
+        UploadValueError: If the handler does not accept ``list[rx.UploadFile]``.
+    """
+    from reflex._upload import UploadFile
+    from reflex.utils.exceptions import UploadTypeError, UploadValueError
+
+    handler_name = _handler_name(handler)
+    if handler.is_background:
+        msg = (
+            f"@rx.event(background=True) is not supported for upload handler "
+            f"`{handler_name}`."
+        )
+        raise UploadTypeError(msg)
+
+    func = handler.fn.func if isinstance(handler.fn, partial) else handler.fn
+    for name, annotation in get_type_hints(func).items():
+        if name == "return" or get_origin(annotation) is not list:
+            continue
+        args = get_args(annotation)
+        if len(args) == 1 and typehint_issubclass(args[0], UploadFile):
+            return name, annotation
+
+    msg = (
+        f"`{handler_name}` handler should have a parameter annotated as "
+        "list[rx.UploadFile]"
+    )
+    raise UploadValueError(msg)
+
+
+def resolve_upload_chunk_handler_param(handler: EventHandler) -> tuple[str, type]:
+    """Validate and resolve the UploadChunkIterator parameter for a handler.
+
+    Args:
+        handler: The event handler to inspect.
+
+    Returns:
+        The parameter name and annotation for the iterator argument.
+
+    Raises:
+        UploadTypeError: If the handler is not a background task.
+        UploadValueError: If the handler does not accept an UploadChunkIterator.
+    """
+    from reflex._upload import UploadChunkIterator
+    from reflex.utils.exceptions import UploadTypeError, UploadValueError
+
+    handler_name = _handler_name(handler)
+    if not handler.is_background:
+        msg = f"@rx.event(background=True) is required for upload_files_chunk handler `{handler_name}`."
+        raise UploadTypeError(msg)
+
+    func = handler.fn.func if isinstance(handler.fn, partial) else handler.fn
+    for name, annotation in get_type_hints(func).items():
+        if name == "return":
+            continue
+        if annotation is UploadChunkIterator:
+            return name, annotation
+
+    msg = (
+        f"`{handler_name}` handler should have a parameter annotated as "
+        "rx.UploadChunkIterator"
+    )
+    raise UploadValueError(msg)
 
 
 @dataclasses.dataclass(
@@ -295,7 +384,7 @@ class EventHandler(EventActionsMixin):
         values = []
         for arg in [*args, *kwargs.values()]:
             # Special case for file uploads.
-            if isinstance(arg, FileUpload):
+            if isinstance(arg, (FileUpload, UploadFilesChunk)):
                 return arg.as_event_spec(handler=self)
 
             # Otherwise, convert to JSON.
@@ -873,14 +962,22 @@ class FileUpload:
         """
         return [_prog]
 
-    def as_event_spec(self, handler: EventHandler) -> EventSpec:
-        """Get the EventSpec for the file upload.
+    def _as_event_spec(
+        self,
+        handler: EventHandler,
+        *,
+        client_handler_name: str,
+        upload_param_name: str,
+    ) -> EventSpec:
+        """Create an upload EventSpec.
 
         Args:
             handler: The event handler.
+            client_handler_name: The client handler name.
+            upload_param_name: The upload argument name in the event handler.
 
         Returns:
-            The event spec for the handler.
+            The upload EventSpec.
 
         Raises:
             ValueError: If the on_upload_progress is not a valid event handler.
@@ -891,14 +988,19 @@ class FileUpload:
         )
 
         upload_id = self.upload_id if self.upload_id is not None else DEFAULT_UPLOAD_ID
+        upload_files_var = Var(
+            _js_expr="filesById",
+            _var_type=dict[str, Any],
+            _var_data=VarData.merge(upload_files_context_var_data),
+        ).to(ObjectVar)[LiteralVar.create(upload_id)]
         spec_args = [
             (
                 Var(_js_expr="files"),
-                Var(
-                    _js_expr="filesById",
-                    _var_type=dict[str, Any],
-                    _var_data=VarData.merge(upload_files_context_var_data),
-                ).to(ObjectVar)[LiteralVar.create(upload_id)],
+                upload_files_var,
+            ),
+            (
+                Var(_js_expr="upload_param_name"),
+                LiteralVar.create(upload_param_name),
             ),
             (
                 Var(_js_expr="upload_id"),
@@ -911,6 +1013,14 @@ class FileUpload:
                 ),
             ),
         ]
+        if upload_param_name != "files":
+            spec_args.insert(
+                1,
+                (
+                    Var(_js_expr=upload_param_name),
+                    upload_files_var,
+                ),
+            )
         if self.on_upload_progress is not None:
             on_upload_progress = self.on_upload_progress
             if isinstance(on_upload_progress, EventHandler):
@@ -946,14 +1056,63 @@ class FileUpload:
             )
         return EventSpec(
             handler=handler,
-            client_handler_name="uploadFiles",
+            client_handler_name=client_handler_name,
             args=tuple(spec_args),
             event_actions=handler.event_actions.copy(),
+        )
+
+    def as_event_spec(self, handler: EventHandler) -> EventSpec:
+        """Get the EventSpec for the file upload.
+
+        Args:
+            handler: The event handler.
+
+        Returns:
+            The event spec for the handler.
+        """
+        from reflex.utils.exceptions import UploadValueError
+
+        try:
+            upload_param_name, _annotation = resolve_upload_handler_param(handler)
+        except UploadValueError:
+            upload_param_name = "files"
+        return self._as_event_spec(
+            handler,
+            client_handler_name=UPLOAD_FILES_CLIENT_HANDLER,
+            upload_param_name=upload_param_name,
         )
 
 
 # Alias for rx.upload_files
 upload_files = FileUpload
+
+
+@dataclasses.dataclass(
+    init=True,
+    frozen=True,
+)
+class UploadFilesChunk(FileUpload):
+    """Class to represent a streaming file upload."""
+
+    def as_event_spec(self, handler: EventHandler) -> EventSpec:
+        """Get the EventSpec for the streaming file upload.
+
+        Args:
+            handler: The event handler.
+
+        Returns:
+            The event spec for the handler.
+        """
+        upload_param_name, _annotation = resolve_upload_chunk_handler_param(handler)
+        return self._as_event_spec(
+            handler,
+            client_handler_name=UPLOAD_FILES_CLIENT_HANDLER,
+            upload_param_name=upload_param_name,
+        )
+
+
+# Alias for rx.upload_files_chunk
+upload_files_chunk = UploadFilesChunk
 
 
 # Special server-side events.
@@ -2370,6 +2529,7 @@ class EventNamespace:
 
     # File Upload
     FileUpload = FileUpload
+    UploadFilesChunk = UploadFilesChunk
 
     # Type Aliases
     EventType = EventType
@@ -2383,10 +2543,15 @@ class EventNamespace:
     _EVENT_FIELDS = _EVENT_FIELDS
     FORM_DATA = FORM_DATA
     upload_files = upload_files
+    upload_files_chunk = upload_files_chunk
     stop_propagation = stop_propagation
     prevent_default = prevent_default
 
     # Private/Internal Functions
+    resolve_upload_handler_param = staticmethod(resolve_upload_handler_param)
+    resolve_upload_chunk_handler_param = staticmethod(
+        resolve_upload_chunk_handler_param
+    )
     _values_returned_from_event = staticmethod(_values_returned_from_event)
     _check_event_args_subclass_of_callback = staticmethod(
         _check_event_args_subclass_of_callback

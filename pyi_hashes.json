@@ -1,5 +1,5 @@
 {
-  "reflex/__init__.pyi": "0a3ae880e256b9fd3b960e12a2cb51a7",
+  "reflex/__init__.pyi": "a0266c47111e9af7f340186013c7a31e",
   "reflex/components/__init__.pyi": "ac05995852baa81062ba3d18fbc489fb",
   "reflex/components/base/__init__.pyi": "16e47bf19e0d62835a605baa3d039c5a",
   "reflex/components/base/app_wrap.pyi": "22e94feaa9fe675bcae51c412f5b67f1",
@@ -19,7 +19,7 @@
   "reflex/components/core/helmet.pyi": "cb5ac1be02c6f82fcc78ba74651be593",
   "reflex/components/core/html.pyi": "4ebe946f3fc097fc2e31dddf7040ec1c",
   "reflex/components/core/sticky.pyi": "cb763b986a9b0654d1a3f33440dfcf60",
-  "reflex/components/core/upload.pyi": "c90782be1b63276b428bce3fd4ce0af2",
+  "reflex/components/core/upload.pyi": "ca9f7424f3b74b1b56f5c819e8654eeb",
   "reflex/components/core/window_events.pyi": "e7af4bf5341c4afaf60c4a534660f68f",
   "reflex/components/datadisplay/__init__.pyi": "52755871369acbfd3a96b46b9a11d32e",
   "reflex/components/datadisplay/code.pyi": "1d123d19ef08f085422f3023540e7bb1",
