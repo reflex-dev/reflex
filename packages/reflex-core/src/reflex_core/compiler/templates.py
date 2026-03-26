@@ -13,7 +13,7 @@ from reflex_core.vars.base import VarData
 
 if TYPE_CHECKING:
     from reflex.compiler.utils import _ImportDict
-    from reflex.components.component import Component, StatefulComponent
+    from reflex_core.components.component import Component, StatefulComponent
 
 
 def _sort_hooks(

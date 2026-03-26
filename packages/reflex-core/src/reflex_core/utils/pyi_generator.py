@@ -23,7 +23,7 @@ from pathlib import Path
 from types import MappingProxyType, ModuleType, SimpleNamespace, UnionType
 from typing import Any, get_args, get_origin
 
-from reflex.components.component import Component
+from reflex_core.components.component import Component
 from reflex_core.vars.base import Var
 
 

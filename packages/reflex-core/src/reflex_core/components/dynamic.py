@@ -11,7 +11,7 @@ from reflex_core.vars import Var, get_unique_variable_name
 from reflex_core.vars.base import VarData, transform
 
 if TYPE_CHECKING:
-    from reflex.components.component import Component
+    from reflex_core.components.component import Component
 
 
 def get_cdn_url(lib: str) -> str:
@@ -57,7 +57,7 @@ def bundle_library(component: Union["Component", str]):
 def load_dynamic_serializer():
     """Load the serializer for dynamic components."""
     # Causes a circular import, so we import here.
-    from reflex.components.component import Component
+    from reflex_core.components.component import Component
 
     @serializer
     def make_component(component: Component) -> str:

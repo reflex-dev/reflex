@@ -17,17 +17,16 @@ from hashlib import md5
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, ClassVar, TypeVar, cast, get_args, get_origin
 
-from reflex_components_core.core.breakpoints import Breakpoints
+from reflex_core.breakpoints import Breakpoints
 from rich.markup import escape
 from typing_extensions import dataclass_transform
 
-import reflex.state
-from reflex import constants
-from reflex.compiler.templates import stateful_component_template
-from reflex.components.dynamic import load_dynamic_serializer
-from reflex.components.field import BaseField, FieldBasedMeta
-from reflex.components.tags import Tag
-from reflex.constants import (
+from reflex_core import constants
+from reflex_core.compiler.templates import stateful_component_template
+from reflex_core.components.dynamic import load_dynamic_serializer
+from reflex_core.components.field import BaseField, FieldBasedMeta
+from reflex_core.components.tags import Tag
+from reflex_core.constants import (
     Dirs,
     EventTriggers,
     Hooks,
@@ -36,9 +35,9 @@ from reflex.constants import (
     MemoizationMode,
     PageNames,
 )
-from reflex.constants.compiler import SpecialAttributes
-from reflex.constants.state import CAMEL_CASE_MEMO_MARKER, FRONTEND_EVENT_STATE
-from reflex.event import (
+from reflex_core.constants.compiler import SpecialAttributes
+from reflex_core.constants.state import CAMEL_CASE_MEMO_MARKER, FRONTEND_EVENT_STATE
+from reflex_core.event import (
     EventCallback,
     EventChain,
     EventHandler,
@@ -50,21 +49,24 @@ from reflex.event import (
     run_script,
     unwrap_var_annotation,
 )
-from reflex.style import Style, format_as_emotion
-from reflex.utils import console, format, imports, types
-from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict
-from reflex.vars import VarData
-from reflex.vars.base import (
+from reflex_core.style import Style, format_as_emotion
+from reflex_core.utils import console, format, imports, types
+from reflex_core.utils.imports import ImportDict, ImportVar, ParsedImportDict
+from reflex_core.vars import VarData
+from reflex_core.vars.base import (
     CachedVarOperation,
     LiteralNoneVar,
     LiteralVar,
     Var,
     cached_property_no_lock,
 )
-from reflex.vars.function import ArgsFunctionOperation, FunctionStringVar, FunctionVar
-from reflex.vars.number import ternary_operation
-from reflex.vars.object import ObjectVar
-from reflex.vars.sequence import LiteralArrayVar, LiteralStringVar, StringVar
+from reflex_core.vars.function import ArgsFunctionOperation, FunctionStringVar, FunctionVar
+from reflex_core.vars.number import ternary_operation
+from reflex_core.vars.object import ObjectVar
+from reflex_core.vars.sequence import LiteralArrayVar, LiteralStringVar, StringVar
+
+if TYPE_CHECKING:
+    import reflex.state
 
 FIELD_TYPE = TypeVar("FIELD_TYPE")
 
@@ -1118,7 +1120,7 @@ class Component(BaseComponent, ABC):
 
     @classmethod
     def _validate_children(cls, children: tuple | list):
-        from reflex.utils.exceptions import ChildrenTypeError
+        from reflex_core.utils.exceptions import ChildrenTypeError
 
         for child in children:
             if isinstance(child, (tuple, list)):

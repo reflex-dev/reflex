@@ -13,7 +13,7 @@ from reflex_core.vars import LiteralArrayVar, Var, get_unique_variable_name
 from reflex_core.vars.sequence import _determine_value_of_array_index
 
 if TYPE_CHECKING:
-    from reflex.components.component import Component
+    from reflex_core.components.component import Component
 
 
 @dataclasses.dataclass(frozen=True)

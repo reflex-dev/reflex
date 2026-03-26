@@ -13,7 +13,7 @@ from reflex_core.constants.state import FRONTEND_EVENT_STATE
 from reflex_core.utils import exceptions
 
 if TYPE_CHECKING:
-    from reflex.components.component import ComponentStyle
+    from reflex_core.components.component import ComponentStyle
     from reflex_core.event import ArgsSpec, EventChain, EventHandler, EventSpec, EventType
 
 WRAP_MAP = {

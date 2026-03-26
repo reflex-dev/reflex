@@ -20,7 +20,7 @@ def render_prop(value: Any) -> Any:
     Returns:
         The rendered value.
     """
-    from reflex.components.component import BaseComponent
+    from reflex_core.components.component import BaseComponent
 
     if isinstance(value, BaseComponent):
         return value.render()
