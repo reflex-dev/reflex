@@ -328,7 +328,7 @@ hooks = [
 
 [tool.uv]
 required-version = ">=0.7.0"
-sources = { reflex-components-code = { workspace = true }, reflex-components-core = { workspace = true }, reflex-components-dataeditor = { workspace = true }, reflex-components-gridjs = { workspace = true }, reflex-components-lucide = { workspace = true }, reflex-components-markdown = { workspace = true }, reflex-components-moment = { workspace = true }, reflex-components-plotly = { workspace = true }, reflex-components-radix = { workspace = true }, reflex-components-react-player = { workspace = true }, reflex-components-react-router = { workspace = true }, reflex-components-recharts = { workspace = true }, reflex-components-sonner = { workspace = true }, reflex-docgen = { workspace = true } }
+sources = { hatch-reflex-pyi = { workspace = true }, reflex-components-code = { workspace = true }, reflex-components-core = { workspace = true }, reflex-components-dataeditor = { workspace = true }, reflex-components-gridjs = { workspace = true }, reflex-components-lucide = { workspace = true }, reflex-components-markdown = { workspace = true }, reflex-components-moment = { workspace = true }, reflex-components-plotly = { workspace = true }, reflex-components-radix = { workspace = true }, reflex-components-react-player = { workspace = true }, reflex-components-react-router = { workspace = true }, reflex-components-recharts = { workspace = true }, reflex-components-sonner = { workspace = true }, reflex-docgen = { workspace = true } }
 
 [tool.uv.workspace]
 members = ["packages/*"]
