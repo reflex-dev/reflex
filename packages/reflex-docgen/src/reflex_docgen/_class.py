@@ -315,22 +315,31 @@ def generate_class_documentation(cls: type) -> ClassDocumentation:
     Returns:
         The generated documentation for the class.
     """
-    description = inspect.cleandoc(cls.__doc__) if cls.__doc__ else None
+    try:
+        description = inspect.cleandoc(cls.__doc__) if cls.__doc__ else None
 
-    if dataclasses.is_dataclass(cls):
-        fields = _get_dataclass_fields(cls)
-    elif isinstance(cls, BaseStateMeta):
-        fields = _get_state_fields(cls)
-    else:
-        fields = ()
+        if dataclasses.is_dataclass(cls):
+            fields = _get_dataclass_fields(cls)
+        elif isinstance(cls, BaseStateMeta):
+            fields = _get_state_fields(cls)
+        else:
+            fields = ()
 
-    class_fields = _get_class_vars(cls)
-    methods = _get_methods(cls)
+        class_fields = _get_class_vars(cls)
+        methods = _get_methods(cls)
 
-    return ClassDocumentation(
-        name=f"{cls.__module__}.{cls.__qualname__}",
-        description=description,
-        fields=fields,
-        class_fields=class_fields,
-        methods=methods,
-    )
+        return ClassDocumentation(
+            name=f"{cls.__module__}.{cls.__qualname__}",
+            description=description,
+            fields=fields,
+            class_fields=class_fields,
+            methods=methods,
+        )
+    except Exception as e:
+        import sys
+
+        if sys.version_info >= (3, 11):
+            e.add_note(
+                f"Error generating documentation for class {cls.__module__}.{cls.__qualname__}"
+            )
+        raise
