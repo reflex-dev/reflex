@@ -99,7 +99,7 @@ class Reflex(SimpleNamespace):
     LOGS_DIR = DIR / "logs"
 
     # The root directory of the reflex library.
-    ROOT_DIR = Path(__file__).parents[2]
+    ROOT_DIR = Path(__file__).parents[1]
 
     RELEASES_URL = "https://api.github.com/repos/reflex-dev/templates/releases"
 
@@ -143,7 +143,7 @@ class Templates(SimpleNamespace):
         """Folders used by the template system of Reflex."""
 
         # The template directory used during reflex init.
-        BASE = Reflex.ROOT_DIR / Reflex.MODULE_NAME / ".templates"
+        BASE = Reflex.ROOT_DIR / ".templates"
         # The web subdirectory of the template directory.
         WEB_TEMPLATE = BASE / "web"
         # Where the code for the templates is stored.
