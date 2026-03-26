@@ -3,9 +3,14 @@
 import datetime
 from unittest.mock import MagicMock, patch
 
+from reflex_core.plugins.sitemap import (
+    SitemapLink,
+    generate_links_for_sitemap,
+    generate_xml,
+)
+
 import reflex as rx
 from reflex.app import UnevaluatedPage
-from reflex.plugins.sitemap import SitemapLink, generate_links_for_sitemap, generate_xml
 
 
 def test_generate_xml_empty_links():

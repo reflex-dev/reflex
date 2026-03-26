@@ -6,6 +6,8 @@ from typing import Any
 import pytest
 from pytest_mock import MockerFixture
 from reflex_core.constants import Endpoint, Env
+from reflex_core.plugins import Plugin
+from reflex_core.plugins.sitemap import SitemapPlugin
 
 import reflex as rx
 import reflex.config
@@ -17,8 +19,6 @@ from reflex.environment import (
     interpret_enum_env,
     interpret_int_env,
 )
-from reflex.plugins import Plugin
-from reflex.plugins.sitemap import SitemapPlugin
 
 
 def test_requires_app_name():
