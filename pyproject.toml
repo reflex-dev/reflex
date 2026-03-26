@@ -37,6 +37,7 @@ dependencies = [
   "starlette >=0.47.0",
   "typing_extensions >=4.13.0",
   "wrapt >=1.17.0,<3.0",
+  "reflex-core",
   "reflex-components-code",
   "reflex-components-core",
   "reflex-components-dataeditor",
@@ -331,6 +332,7 @@ required-version = ">=0.7.0"
 
 [tool.uv.sources]
 hatch-reflex-pyi.workspace = true
+reflex-core.workspace = true
 reflex-components-code.workspace = true
 reflex-components-core.workspace = true
 reflex-components-dataeditor.workspace = true

@@ -1,19 +1,3 @@
-"""State-related constants."""
+"""Re-export from reflex_core."""
 
-from enum import Enum
-
-
-class StateManagerMode(str, Enum):
-    """State manager constants."""
-
-    DISK = "disk"
-    MEMORY = "memory"
-    REDIS = "redis"
-
-
-# Used for things like console_log, etc.
-FRONTEND_EVENT_STATE = "__reflex_internal_frontend_event_state"
-
-FIELD_MARKER = "_rx_state_"
-MEMO_MARKER = "_rx_memo_"
-CAMEL_CASE_MEMO_MARKER = "RxMemo"
+from reflex_core.constants.state import *  # noqa: F401, F403

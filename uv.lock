@@ -28,6 +28,7 @@ members = [
     "reflex-components-react-router",
     "reflex-components-recharts",
     "reflex-components-sonner",
+    "reflex-core",
     "reflex-docgen",
 ]
 
@@ -708,10 +709,14 @@ name = "hatch-reflex-pyi"
 source = { editable = "packages/hatch-reflex-pyi" }
 dependencies = [
     { name = "hatchling" },
+    { name = "reflex-core" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "hatchling" }]
+requires-dist = [
+    { name = "hatchling" },
+    { name = "reflex-core", editable = "packages/reflex-core" },
+]
 
 [[package]]
 name = "hatchling"
@@ -2077,6 +2082,7 @@ dependencies = [
     { name = "reflex-components-react-router" },
     { name = "reflex-components-recharts" },
     { name = "reflex-components-sonner" },
+    { name = "reflex-core" },
     { name = "reflex-hosting-cli" },
     { name = "rich" },
     { name = "sqlmodel" },
@@ -2157,6 +2163,7 @@ requires-dist = [
     { name = "reflex-components-react-router", editable = "packages/reflex-components-react-router" },
     { name = "reflex-components-recharts", editable = "packages/reflex-components-recharts" },
     { name = "reflex-components-sonner", editable = "packages/reflex-components-sonner" },
+    { name = "reflex-core", editable = "packages/reflex-core" },
     { name = "reflex-hosting-cli", specifier = ">=0.1.61" },
     { name = "rich", specifier = ">=13,<15" },
     { name = "sqlmodel", specifier = ">=0.0.27,<0.1" },
@@ -2329,6 +2336,24 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [{ name = "reflex-components-lucide", editable = "packages/reflex-components-lucide" }]
+
+[[package]]
+name = "reflex-core"
+source = { editable = "packages/reflex-core" }
+dependencies = [
+    { name = "packaging" },
+    { name = "pydantic" },
+    { name = "rich" },
+    { name = "typing-extensions" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "packaging", specifier = ">=24.2,<27" },
+    { name = "pydantic", specifier = ">=1.10.21,<3.0" },
+    { name = "rich", specifier = ">=13,<15" },
+    { name = "typing-extensions", specifier = ">=4.13.0" },
+]
 
 [[package]]
 name = "reflex-docgen"
