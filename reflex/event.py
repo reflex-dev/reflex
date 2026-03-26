@@ -101,7 +101,7 @@ EVENT_ACTIONS_MARKER = "_rx_event_actions"
 UPLOAD_FILES_CLIENT_HANDLER = "uploadFiles"
 
 
-def _handler_name(handler: "EventHandler") -> str:
+def _handler_name(handler: EventHandler) -> str:
     """Get a stable fully qualified handler name for errors.
 
     Args:
@@ -115,7 +115,7 @@ def _handler_name(handler: "EventHandler") -> str:
     return handler.fn.__qualname__
 
 
-def resolve_upload_handler_param(handler: "EventHandler") -> tuple[str, Any]:
+def resolve_upload_handler_param(handler: EventHandler) -> tuple[str, Any]:
     """Validate and resolve the UploadFile list parameter for a handler.
 
     Args:
@@ -154,7 +154,7 @@ def resolve_upload_handler_param(handler: "EventHandler") -> tuple[str, Any]:
     raise UploadValueError(msg)
 
 
-def resolve_upload_chunk_handler_param(handler: "EventHandler") -> tuple[str, type]:
+def resolve_upload_chunk_handler_param(handler: EventHandler) -> tuple[str, type]:
     """Validate and resolve the UploadChunkIterator parameter for a handler.
 
     Args:
