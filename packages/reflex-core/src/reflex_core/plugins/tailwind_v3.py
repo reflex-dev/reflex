@@ -6,8 +6,7 @@ from types import SimpleNamespace
 
 from reflex_core.constants.base import Dirs
 from reflex_core.constants.compiler import Ext, PageNames
-
-from reflex.plugins.shared_tailwind import (
+from reflex_core.plugins.shared_tailwind import (
     TailwindConfig,
     TailwindPlugin,
     tailwind_config_js_template,

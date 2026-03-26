@@ -2,7 +2,7 @@
 
 from typing import TYPE_CHECKING
 
-from reflex.plugins.base import Plugin as BasePlugin
+from reflex_core.plugins.base import Plugin as BasePlugin
 
 if TYPE_CHECKING:
     from starlette.requests import Request
@@ -10,8 +10,8 @@ if TYPE_CHECKING:
     from typing_extensions import Unpack
 
     from reflex.app import App
-    from reflex.plugins.base import PostCompileContext
     from reflex.state import BaseState
+    from reflex_core.plugins.base import PostCompileContext
 
 ACTIVE_CONNECTIONS = "/_active_connections"
 CLONE_STATE = "/_clone_state"
