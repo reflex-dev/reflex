@@ -350,13 +350,6 @@ class ReadOnlyStateProxy(StateProxy):
         raise NotImplementedError(msg)
 
 
-if find_spec("pydantic"):
-    import pydantic
-
-    NEVER_WRAP_BASE_ATTRS = set(pydantic.BaseModel.__dict__)
-else:
-    NEVER_WRAP_BASE_ATTRS = {}
-
 MUTABLE_TYPES = (
     list,
     dict,
@@ -572,8 +565,7 @@ class MutableProxy(wrapt.ObjectProxy):
                 )
 
             if (
-                __name not in NEVER_WRAP_BASE_ATTRS
-                and (func := getattr(value, "__func__", None)) is not None
+                (func := getattr(value, "__func__", None)) is not None
                 and not inspect.isclass(getattr(value, "__self__", None))
                 # skip SQLAlchemy instrumented methods
                 and not getattr(value, "_sa_instrumented", False)
