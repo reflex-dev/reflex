@@ -263,7 +263,7 @@ class SystemPackageMissingError(ReflexError):
         Args:
             package: The missing package.
         """
-        from reflex_core.constants import IS_MACOS
+        from reflex_core.constants.base import IS_MACOS
 
         extra = (
             f" You can do so by running 'brew install {package}'." if IS_MACOS else ""
