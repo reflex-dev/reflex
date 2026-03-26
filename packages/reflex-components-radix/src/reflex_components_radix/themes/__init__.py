@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from reflex.utils import lazy_loader
+from reflex_core.utils import lazy_loader
 
 _SUBMODULES: set[str] = {"components", "layout", "typography"}
 _SUBMOD_ATTRS: dict[str, list[str]] = {

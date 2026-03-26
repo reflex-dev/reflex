@@ -86,7 +86,7 @@ from __future__ import annotations
 
 import sys
 
-from reflex.utils import lazy_loader
+from reflex_core.utils import lazy_loader
 
 if sys.version_info < (3, 11):
     from reflex_core.utils import console

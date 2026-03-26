@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from reflex_core.utils import lazy_loader
+
 from reflex import RADIX_THEMES_COMPONENTS_MAPPING
-from reflex.utils import lazy_loader
 
 _SUBMOD_ATTRS: dict[str, list[str]] = {
     "".join(k.split("components.radix.themes.components.")[-1]): v

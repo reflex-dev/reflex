@@ -14,7 +14,7 @@ import importlib.machinery
 import sys
 from types import ModuleType
 
-from reflex.utils import lazy_loader
+from reflex_core.utils import lazy_loader
 
 # Mapping from subpackage name to the target top-level package.
 _SUBPACKAGE_TARGETS: dict[str, str] = {
