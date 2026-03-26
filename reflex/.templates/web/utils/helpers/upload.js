@@ -27,10 +27,7 @@ export const uploadFiles = async (
   getBackendURL,
   getToken,
 ) => {
-  // return if there's no file to upload
-  if (files === undefined || files.length === 0) {
-    return false;
-  }
+  files = files ?? [];
 
   const upload_ref_name = `__upload_controllers_${upload_id}`;
 

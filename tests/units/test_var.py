@@ -951,6 +951,20 @@ def test_function_var():
     )
     assert str(explicit_return_func.call(1, 2)) == "(((a, b) => {return a + b})(1, 2))"
 
+    unwrapped_arrow_func = FunctionStringVar.create(
+        "(...args) => { const f = x => x + 1; return f(args); }"
+    )
+    assert (
+        str(unwrapped_arrow_func.call(1))
+        == "(((...args) => { const f = x => x + 1; return f(args); })(1))"
+    )
+
+    nested_arrow_expr = FunctionStringVar.create("factory(() => 1)")
+    assert str(nested_arrow_expr.call()) == "(factory(() => 1)())"
+
+    string_arrow_expr = FunctionStringVar.create('factory("=>")')
+    assert str(string_arrow_expr.call()) == '(factory("=>")())'
+
 
 def test_var_operation():
     @var_operation

@@ -1,5 +1,8 @@
-from typing import Any
+from typing import Any, cast
 
+import pytest
+
+import reflex as rx
 from reflex_components_core.core.upload import (
     StyledUpload,
     Upload,
@@ -10,7 +13,7 @@ from reflex_components_core.core.upload import (
 )
 
 from reflex import event
-from reflex.event import EventSpec
+from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.state import State
 from reflex.vars.base import LiteralVar, Var
 
@@ -34,6 +37,31 @@ class UploadStateTest(State):
             not_files: The files dropped.
         """
 
+    @event
+    async def upload_alias_handler(self, uploads: list[rx.UploadFile]):
+        """Handle uploaded files with a non-default parameter name."""
+
+
+class StreamingUploadStateTest(State):
+    """Test state for streaming uploads."""
+
+    @event(background=True)
+    async def chunk_drop_handler(self, chunk_iter: rx.UploadChunkIterator):
+        """Handle streamed upload chunks."""
+
+    @event(background=True)
+    async def chunk_upload_alias_handler(self, stream: rx.UploadChunkIterator):
+        """Handle streamed upload chunks with a non-default parameter name."""
+
+    async def chunk_drop_handler_not_background(
+        self, chunk_iter: rx.UploadChunkIterator
+    ):
+        """Invalid handler used to validate background-task requirement."""
+
+    @event(background=True)
+    async def chunk_drop_handler_missing_annotation(self, chunk_iter):
+        """Invalid handler missing the UploadChunkIterator annotation."""
+
 
 def test_cancel_upload():
     spec = cancel_upload("foo_id")
@@ -47,6 +75,37 @@ def test_get_upload_url():
 
 def test__on_drop_spec():
     assert isinstance(_on_drop_spec(LiteralVar.create([])), tuple)
+
+
+def test_upload_files_chunk_requires_background():
+    with pytest.raises(TypeError) as err:
+        event.resolve_upload_chunk_handler_param(
+            cast(
+                EventHandler, StreamingUploadStateTest.chunk_drop_handler_not_background
+            )
+        )
+
+    assert (
+        err.value.args[0]
+        == "@rx.event(background=True) is required for upload_files_chunk handler "
+        f"`{StreamingUploadStateTest.get_full_name()}.chunk_drop_handler_not_background`."
+    )
+
+
+def test_upload_files_chunk_requires_iterator_annotation():
+    with pytest.raises(ValueError) as err:
+        event.resolve_upload_chunk_handler_param(
+            cast(
+                EventHandler,
+                StreamingUploadStateTest.chunk_drop_handler_missing_annotation,
+            )
+        )
+
+    assert (
+        err.value.args[0]
+        == f"`{StreamingUploadStateTest.get_full_name()}.chunk_drop_handler_missing_annotation` "
+        "handler should have a parameter annotated as rx.UploadChunkIterator"
+    )
 
 
 def test_upload_create():
@@ -83,6 +142,53 @@ def test_upload_create():
     )
     assert isinstance(up_comp_4, Upload)
     assert up_comp_4.is_used
+
+    # reset is_used
+    Upload.is_used = False
+
+    up_comp_5 = Upload.create(
+        id="foo_id",
+        on_drop=StreamingUploadStateTest.chunk_drop_handler(
+            rx.upload_files_chunk(upload_id="foo_id")  # pyright: ignore[reportArgumentType]
+        ),
+    )
+    assert isinstance(up_comp_5, Upload)
+    assert up_comp_5.is_used
+
+    up_comp_6 = Upload.create(
+        id="foo_id",
+        on_drop=StreamingUploadStateTest.chunk_upload_alias_handler(
+            rx.upload_files_chunk(upload_id="foo_id")  # pyright: ignore[reportArgumentType]
+        ),
+    )
+    assert isinstance(up_comp_6, Upload)
+    assert up_comp_6.is_used
+
+
+def test_upload_button_handlers_allow_custom_param_names():
+    legacy_button = rx.button(
+        "Upload",
+        on_click=UploadStateTest.upload_alias_handler(
+            cast(Any, rx.upload_files(upload_id="foo_id"))
+        ),
+    )
+    legacy_chain = cast(EventChain, legacy_button.event_triggers["on_click"])
+    legacy_event = cast(EventSpec, legacy_chain.events[0])
+    legacy_arg_names = [arg[0]._js_expr for arg in legacy_event.args]
+    assert legacy_event.client_handler_name == "uploadFiles"
+    assert legacy_arg_names[:3] == ["files", "uploads", "upload_param_name"]
+
+    chunk_button = rx.button(
+        "Upload",
+        on_click=StreamingUploadStateTest.chunk_upload_alias_handler(
+            rx.upload_files_chunk(upload_id="foo_id")  # pyright: ignore[reportArgumentType]
+        ),
+    )
+    chunk_chain = cast(EventChain, chunk_button.event_triggers["on_click"])
+    chunk_event = cast(EventSpec, chunk_chain.events[0])
+    chunk_arg_names = [arg[0]._js_expr for arg in chunk_event.args]
+    assert chunk_event.client_handler_name == "uploadFiles"
+    assert chunk_arg_names[:3] == ["files", "stream", "upload_param_name"]
 
 
 def test_styled_upload_create():

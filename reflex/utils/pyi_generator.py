@@ -536,13 +536,48 @@ def _extract_class_props_as_ast_nodes(
     return kwargs
 
 
-def type_to_ast(typ: Any, cls: type) -> ast.expr:
+def _get_visible_type_name(
+    typ: Any, type_hint_globals: Mapping[str, Any] | None
+) -> str | None:
+    """Get a visible identifier for a type in the current module.
+
+    Args:
+        typ: The type annotation to resolve.
+        type_hint_globals: The globals visible in the current module.
+
+    Returns:
+        The visible identifier if one exists, otherwise None.
+    """
+    if type_hint_globals is None:
+        return None
+
+    type_name = getattr(typ, "__name__", None)
+    if (
+        type_name is not None
+        and type_name in type_hint_globals
+        and type_hint_globals[type_name] is typ
+    ):
+        return type_name
+
+    for name, value in type_hint_globals.items():
+        if name.isidentifier() and value is typ:
+            return name
+
+    return None
+
+
+def type_to_ast(
+    typ: Any,
+    cls: type,
+    type_hint_globals: Mapping[str, Any] | None = None,
+) -> ast.expr:
     """Converts any type annotation into its AST representation.
     Handles nested generic types, unions, etc.
 
     Args:
         typ: The type annotation to convert.
         cls: The class where the type annotation is used.
+        type_hint_globals: The globals visible where the annotation is used.
 
     Returns:
         The AST representation of the type annotation.
@@ -573,6 +608,8 @@ def type_to_ast(typ: Any, cls: type) -> ast.expr:
 
                 if all(a == b for a, b in zipped) and len(typ_parts) == len(cls_parts):
                     return ast.Name(id=typ.__name__)
+                if visible_name := _get_visible_type_name(typ, type_hint_globals):
+                    return ast.Name(id=visible_name)
                 if (
                     typ.__module__ in DEFAULT_IMPORTS
                     and typ.__name__ in DEFAULT_IMPORTS[typ.__module__]
@@ -595,7 +632,7 @@ def type_to_ast(typ: Any, cls: type) -> ast.expr:
         return ast.Name(id=base_name)
 
     # Convert all type arguments recursively
-    arg_nodes = [type_to_ast(arg, cls) for arg in args]
+    arg_nodes = [type_to_ast(arg, cls, type_hint_globals) for arg in args]
 
     # Special case for single-argument types (like list[T] or Optional[T])
     if len(arg_nodes) == 1:
@@ -694,7 +731,10 @@ def _generate_component_create_functiondef(
             ]
 
             # Convert each argument type to its AST representation
-            type_args = [type_to_ast(arg, cls=clz) for arg in arguments_without_var]
+            type_args = [
+                type_to_ast(arg, cls=clz, type_hint_globals=type_hint_globals)
+                for arg in arguments_without_var
+            ]
 
             # Get all prefixes of the type arguments
             all_count_args_type = [
