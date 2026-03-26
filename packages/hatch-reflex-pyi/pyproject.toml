@@ -21,6 +21,9 @@ source = "uv-dynamic-versioning"
 pattern-prefix = "hatch-reflex-pyi-"
 fallback-version = "0.0.0dev0"
 
+[tool.uv.sources]
+reflex-core.workspace = true
+
 [build-system]
 requires = ["hatchling", "uv-dynamic-versioning"]
 build-backend = "hatchling.build"
