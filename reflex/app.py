@@ -18,7 +18,6 @@ import urllib.parse
 from collections.abc import (
     AsyncGenerator,
     AsyncIterator,
-    Awaitable,
     Callable,
     Coroutine,
     Mapping,
@@ -29,22 +28,21 @@ from itertools import chain
 from pathlib import Path
 from timeit import default_timer as timer
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, BinaryIO, ParamSpec, get_args, get_type_hints
+from typing import TYPE_CHECKING, Any, ParamSpec
 
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp as EngineIOApp
 from socketio import AsyncNamespace, AsyncServer
 from starlette.applications import Starlette
-from starlette.datastructures import Headers
-from starlette.datastructures import UploadFile as StarletteUploadFile
-from starlette.exceptions import HTTPException
 from starlette.middleware import cors
-from starlette.requests import ClientDisconnect, Request
-from starlette.responses import JSONResponse, Response, StreamingResponse
+from starlette.requests import Request
+from starlette.responses import JSONResponse, Response
 from starlette.staticfiles import StaticFiles
 from typing_extensions import Unpack
 
 from reflex import constants
+from reflex._upload import UploadFile as UploadFile
+from reflex._upload import upload
 from reflex.admin import AdminDash
 from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
 from reflex.compiler import compiler
@@ -113,7 +111,6 @@ from reflex.utils import (
     js_runtimes,
     path_ops,
     prerequisites,
-    types,
 )
 from reflex.utils.exec import (
     get_compile_context,
@@ -246,46 +243,6 @@ def default_error_boundary(*children: Component, **props) -> Component:
         *children,
         **props,
     )
-
-
-@dataclasses.dataclass(frozen=True)
-class UploadFile(StarletteUploadFile):
-    """A file uploaded to the server.
-
-    Args:
-        file: The standard Python file object (non-async).
-        filename: The original file name.
-        size: The size of the file in bytes.
-        headers: The headers of the request.
-    """
-
-    file: BinaryIO
-
-    path: Path | None = dataclasses.field(default=None)
-
-    size: int | None = dataclasses.field(default=None)
-
-    headers: Headers = dataclasses.field(default_factory=Headers)
-
-    @property
-    def filename(self) -> str | None:
-        """Get the name of the uploaded file.
-
-        Returns:
-            The name of the uploaded file.
-        """
-        return self.name
-
-    @property
-    def name(self) -> str | None:
-        """Get the name of the uploaded file.
-
-        Returns:
-            The name of the uploaded file.
-        """
-        if self.path:
-            return self.path.name
-        return None
 
 
 @dataclasses.dataclass(
@@ -1898,174 +1855,6 @@ async def health(_request: Request) -> JSONResponse:
         status_code = 503
 
     return JSONResponse(content=health_status, status_code=status_code)
-
-
-class _UploadStreamingResponse(StreamingResponse):
-    """Streaming response that always releases upload form resources."""
-
-    _on_finish: Callable[[], Awaitable[None]]
-
-    def __init__(
-        self,
-        *args: Any,
-        on_finish: Callable[[], Awaitable[None]],
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(*args, **kwargs)
-        self._on_finish = on_finish
-
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        try:
-            await super().__call__(scope, receive, send)
-        finally:
-            await self._on_finish()
-
-
-def upload(app: App):
-    """Upload a file.
-
-    Args:
-        app: The app to upload the file for.
-
-    Returns:
-        The upload function.
-    """
-
-    async def upload_file(request: Request):
-        """Upload a file.
-
-        Args:
-            request: The Starlette request object.
-
-        Returns:
-            StreamingResponse yielding newline-delimited JSON of StateUpdate
-            emitted by the upload handler.
-
-        Raises:
-            UploadValueError: if there are no args with supported annotation.
-            UploadTypeError: if a background task is used as the handler.
-            HTTPException: when the request does not include token / handler headers.
-        """
-        from reflex.utils.exceptions import UploadTypeError, UploadValueError
-
-        # Get the files from the request.
-        try:
-            form_data = await request.form()
-        except ClientDisconnect:
-            return Response()  # user cancelled
-
-        form_data_closed = False
-
-        async def _close_form_data() -> None:
-            """Close the parsed form data exactly once."""
-            nonlocal form_data_closed
-            if form_data_closed:
-                return
-            form_data_closed = True
-            await form_data.close()
-
-        async def _create_upload_event() -> Event:
-            """Create an upload event using the live Starlette temp files.
-
-            Returns:
-                The upload event backed by the original temp files.
-            """
-            files = form_data.getlist("files")
-            if not files:
-                msg = "No files were uploaded."
-                raise UploadValueError(msg)
-
-            token = request.headers.get("reflex-client-token")
-            handler = request.headers.get("reflex-event-handler")
-
-            if not token or not handler:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Missing reflex-client-token or reflex-event-handler header.",
-                )
-
-            # Get the state for the session.
-            substate_token = _substate_key(token, handler.rpartition(".")[0])
-            state = await app.state_manager.get_state(substate_token)
-
-            handler_upload_param = ()
-
-            _current_state, event_handler = state._get_event_handler(handler)
-
-            if event_handler.is_background:
-                msg = f"@rx.event(background=True) is not supported for upload handler `{handler}`."
-                raise UploadTypeError(msg)
-            func = event_handler.fn
-            if isinstance(func, functools.partial):
-                func = func.func
-            for k, v in get_type_hints(func).items():
-                if types.is_generic_alias(v) and types._issubclass(
-                    get_args(v)[0],
-                    UploadFile,
-                ):
-                    handler_upload_param = (k, v)
-                    break
-
-            if not handler_upload_param:
-                msg = (
-                    f"`{handler}` handler should have a parameter annotated as "
-                    "list[rx.UploadFile]"
-                )
-                raise UploadValueError(msg)
-
-            # Keep the parsed form data alive until the upload event finishes so
-            # the underlying Starlette temp files remain available to the handler.
-            file_uploads = []
-            for file in files:
-                if not isinstance(file, StarletteUploadFile):
-                    raise UploadValueError(
-                        "Uploaded file is not an UploadFile." + str(file)
-                    )
-                file_uploads.append(
-                    UploadFile(
-                        file=file.file,
-                        path=Path(file.filename.lstrip("/")) if file.filename else None,
-                        size=file.size,
-                        headers=file.headers,
-                    )
-                )
-
-            return Event(
-                token=token,
-                name=handler,
-                payload={handler_upload_param[0]: file_uploads},
-            )
-
-        event: Event | None = None
-        try:
-            event = await _create_upload_event()
-        finally:
-            if event is None:
-                await _close_form_data()
-
-        async def _ndjson_updates():
-            """Process the upload event, generating ndjson updates.
-
-            Yields:
-                Each state update as JSON followed by a new line.
-            """
-            # Process the event.
-            async with app.state_manager.modify_state_with_links(
-                event.substate_token, event=event
-            ) as state:
-                async for update in state._process(event):
-                    # Postprocess the event.
-                    update = await app._postprocess(state, event, update)
-                    yield update.json() + "\n"
-
-        # Stream updates to client
-        return _UploadStreamingResponse(
-            _ndjson_updates(),
-            media_type="application/x-ndjson",
-            on_finish=_close_form_data,
-        )
-
-    return upload_file
 
 
 class EventNamespace(AsyncNamespace):

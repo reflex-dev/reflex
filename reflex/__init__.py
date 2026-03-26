@@ -297,6 +297,10 @@ _MAPPING: dict = {
     "config": ["Config", "DBConfig"],
     "constants": ["Env"],
     "constants.colors": ["Color"],
+    "_upload": [
+        "UploadChunk",
+        "UploadChunkIterator",
+    ],
     "event": [
         "event",
         "EventChain",
@@ -320,6 +324,7 @@ _MAPPING: dict = {
         "set_value",
         "stop_propagation",
         "upload_files",
+        "upload_files_chunk",
         "window_alert",
     ],
     "istate.storage": [

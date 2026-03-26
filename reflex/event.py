@@ -1,9 +1,12 @@
 """Define event classes to connect the frontend and backend."""
 
+from __future__ import annotations
+
 import dataclasses
 import inspect
 import sys
 import types
+import warnings
 from base64 import b64encode
 from collections.abc import Callable, Mapping, Sequence
 from functools import lru_cache, partial
@@ -90,9 +93,100 @@ class Event:
 
 
 _EVENT_FIELDS: set[str] = {f.name for f in dataclasses.fields(Event)}
+_EMPTY_EVENTS = LiteralVar.create([])
+_EMPTY_EVENT_ACTIONS = LiteralVar.create({})
 
 BACKGROUND_TASK_MARKER = "_reflex_background_task"
 EVENT_ACTIONS_MARKER = "_rx_event_actions"
+UPLOAD_FILES_CLIENT_HANDLER = "uploadFiles"
+
+
+def _handler_name(handler: EventHandler) -> str:
+    """Get a stable fully qualified handler name for errors.
+
+    Args:
+        handler: The handler to name.
+
+    Returns:
+        The fully qualified handler name.
+    """
+    if handler.state_full_name:
+        return f"{handler.state_full_name}.{handler.fn.__name__}"
+    return handler.fn.__qualname__
+
+
+def resolve_upload_handler_param(handler: EventHandler) -> tuple[str, Any]:
+    """Validate and resolve the UploadFile list parameter for a handler.
+
+    Args:
+        handler: The event handler to inspect.
+
+    Returns:
+        The parameter name and annotation for the upload file argument.
+
+    Raises:
+        UploadTypeError: If the handler is a background task.
+        UploadValueError: If the handler does not accept ``list[rx.UploadFile]``.
+    """
+    from reflex._upload import UploadFile
+    from reflex.utils.exceptions import UploadTypeError, UploadValueError
+
+    handler_name = _handler_name(handler)
+    if handler.is_background:
+        msg = (
+            f"@rx.event(background=True) is not supported for upload handler "
+            f"`{handler_name}`."
+        )
+        raise UploadTypeError(msg)
+
+    func = handler.fn.func if isinstance(handler.fn, partial) else handler.fn
+    for name, annotation in get_type_hints(func).items():
+        if name == "return" or get_origin(annotation) is not list:
+            continue
+        args = get_args(annotation)
+        if len(args) == 1 and typehint_issubclass(args[0], UploadFile):
+            return name, annotation
+
+    msg = (
+        f"`{handler_name}` handler should have a parameter annotated as "
+        "list[rx.UploadFile]"
+    )
+    raise UploadValueError(msg)
+
+
+def resolve_upload_chunk_handler_param(handler: EventHandler) -> tuple[str, type]:
+    """Validate and resolve the UploadChunkIterator parameter for a handler.
+
+    Args:
+        handler: The event handler to inspect.
+
+    Returns:
+        The parameter name and annotation for the iterator argument.
+
+    Raises:
+        UploadTypeError: If the handler is not a background task.
+        UploadValueError: If the handler does not accept an UploadChunkIterator.
+    """
+    from reflex._upload import UploadChunkIterator
+    from reflex.utils.exceptions import UploadTypeError, UploadValueError
+
+    handler_name = _handler_name(handler)
+    if not handler.is_background:
+        msg = f"@rx.event(background=True) is required for upload_files_chunk handler `{handler_name}`."
+        raise UploadTypeError(msg)
+
+    func = handler.fn.func if isinstance(handler.fn, partial) else handler.fn
+    for name, annotation in get_type_hints(func).items():
+        if name == "return":
+            continue
+        if annotation is UploadChunkIterator:
+            return name, annotation
+
+    msg = (
+        f"`{handler_name}` handler should have a parameter annotated as "
+        "rx.UploadChunkIterator"
+    )
+    raise UploadValueError(msg)
 
 
 @dataclasses.dataclass(
@@ -242,7 +336,7 @@ class EventHandler(EventActionsMixin):
         """
         return getattr(self.fn, BACKGROUND_TASK_MARKER, False)
 
-    def __call__(self, *args: Any, **kwargs: Any) -> "EventSpec":
+    def __call__(self, *args: Any, **kwargs: Any) -> EventSpec:
         """Pass arguments to the handler to get an event spec.
 
         This method configures event handlers that take in arguments.
@@ -290,7 +384,7 @@ class EventHandler(EventActionsMixin):
         values = []
         for arg in [*args, *kwargs.values()]:
             # Special case for file uploads.
-            if isinstance(arg, FileUpload):
+            if isinstance(arg, (FileUpload, UploadFilesChunk)):
                 return arg.as_event_spec(handler=self)
 
             # Otherwise, convert to JSON.
@@ -352,7 +446,7 @@ class EventSpec(EventActionsMixin):
         object.__setattr__(self, "client_handler_name", client_handler_name)
         object.__setattr__(self, "args", args or ())
 
-    def with_args(self, args: tuple[tuple[Var, Var], ...]) -> "EventSpec":
+    def with_args(self, args: tuple[tuple[Var, Var], ...]) -> EventSpec:
         """Copy the event spec, with updated args.
 
         Args:
@@ -368,7 +462,7 @@ class EventSpec(EventActionsMixin):
             event_actions=self.event_actions.copy(),
         )
 
-    def add_args(self, *args: Var) -> "EventSpec":
+    def add_args(self, *args: Var) -> EventSpec:
         """Add arguments to the event spec.
 
         Args:
@@ -459,8 +553,8 @@ class CallableEventSpec(EventSpec):
 class EventChain(EventActionsMixin):
     """Container for a chain of events that will be executed in order."""
 
-    events: Sequence["EventSpec | EventVar | EventCallback"] = dataclasses.field(
-        default_factory=list
+    events: Sequence[EventSpec | EventVar | FunctionVar | EventCallback] = (
+        dataclasses.field(default_factory=list)
     )
 
     args_spec: Callable | Sequence[Callable] | None = dataclasses.field(default=None)
@@ -470,11 +564,11 @@ class EventChain(EventActionsMixin):
     @classmethod
     def create(
         cls,
-        value: "EventType",
+        value: EventType,
         args_spec: ArgsSpec | Sequence[ArgsSpec],
         key: str | None = None,
         **event_chain_kwargs,
-    ) -> "EventChain | Var":
+    ) -> EventChain | Var:
         """Create an event chain from a variety of input types.
 
         Args:
@@ -491,9 +585,18 @@ class EventChain(EventActionsMixin):
         """
         # If it's an event chain var, return it.
         if isinstance(value, Var):
-            if isinstance(value, EventChainVar):
+            # Only pass through literal/prebuilt chains. Other EventChainVar values may be
+            # FunctionVars cast with `.to(EventChain)` and still need wrapping so
+            # event_chain_kwargs can compose onto the resulting chain.
+            if isinstance(value, LiteralEventChainVar):
+                if event_chain_kwargs:
+                    warnings.warn(
+                        f"event_chain_kwargs {event_chain_kwargs!r} are ignored for "
+                        "EventChainVar values.",
+                        stacklevel=2,
+                    )
                 return value
-            if isinstance(value, EventVar):
+            if isinstance(value, (EventVar, FunctionVar)):
                 value = [value]
             elif safe_issubclass(value._var_type, (EventChain, EventSpec)):
                 return cls.create(
@@ -513,38 +616,29 @@ class EventChain(EventActionsMixin):
         if isinstance(value, (EventHandler, EventSpec)):
             value = [value]
 
+        events: list[EventSpec | EventVar | FunctionVar] = []
+
         # If the input is a list of event handlers, create an event chain.
         if isinstance(value, list):
-            events: list[EventSpec | EventVar] = []
             for v in value:
                 if isinstance(v, (EventHandler, EventSpec)):
                     # Call the event handler to get the event.
                     events.append(call_event_handler(v, args_spec, key=key))
+                elif isinstance(v, (EventVar, EventChainVar)):
+                    events.append(v)
+                elif isinstance(v, FunctionVar):
+                    # Apply the args_spec transformations as partial arguments to the function.
+                    events.append(v.partial(*parse_args_spec(args_spec)[0]))
                 elif isinstance(v, Callable):
                     # Call the lambda to get the event chain.
-                    result = call_event_fn(v, args_spec, key=key)
-                    if isinstance(result, Var):
-                        msg = (
-                            f"Invalid event chain: {v}. Cannot use a Var-returning "
-                            "lambda inside an EventChain list."
-                        )
-                        raise ValueError(msg)
-                    events.extend(result)
-                elif isinstance(v, EventVar):
-                    events.append(v)
+                    events.extend(call_event_fn(v, args_spec, key=key))
                 else:
                     msg = f"Invalid event: {v}"
                     raise ValueError(msg)
 
         # If the input is a callable, create an event chain.
         elif isinstance(value, Callable):
-            result = call_event_fn(value, args_spec, key=key)
-            if isinstance(result, Var):
-                # Recursively call this function if the lambda returned an EventChain Var.
-                return cls.create(
-                    value=result, args_spec=args_spec, key=key, **event_chain_kwargs
-                )
-            events = [*result]
+            events.extend(call_event_fn(value, args_spec, key=key))
 
         # Otherwise, raise an error.
         else:
@@ -868,14 +962,22 @@ class FileUpload:
         """
         return [_prog]
 
-    def as_event_spec(self, handler: EventHandler) -> EventSpec:
-        """Get the EventSpec for the file upload.
+    def _as_event_spec(
+        self,
+        handler: EventHandler,
+        *,
+        client_handler_name: str,
+        upload_param_name: str,
+    ) -> EventSpec:
+        """Create an upload EventSpec.
 
         Args:
             handler: The event handler.
+            client_handler_name: The client handler name.
+            upload_param_name: The upload argument name in the event handler.
 
         Returns:
-            The event spec for the handler.
+            The upload EventSpec.
 
         Raises:
             ValueError: If the on_upload_progress is not a valid event handler.
@@ -886,14 +988,19 @@ class FileUpload:
         )
 
         upload_id = self.upload_id if self.upload_id is not None else DEFAULT_UPLOAD_ID
+        upload_files_var = Var(
+            _js_expr="filesById",
+            _var_type=dict[str, Any],
+            _var_data=VarData.merge(upload_files_context_var_data),
+        ).to(ObjectVar)[LiteralVar.create(upload_id)]
         spec_args = [
             (
                 Var(_js_expr="files"),
-                Var(
-                    _js_expr="filesById",
-                    _var_type=dict[str, Any],
-                    _var_data=VarData.merge(upload_files_context_var_data),
-                ).to(ObjectVar)[LiteralVar.create(upload_id)],
+                upload_files_var,
+            ),
+            (
+                Var(_js_expr="upload_param_name"),
+                LiteralVar.create(upload_param_name),
             ),
             (
                 Var(_js_expr="upload_id"),
@@ -906,6 +1013,14 @@ class FileUpload:
                 ),
             ),
         ]
+        if upload_param_name != "files":
+            spec_args.insert(
+                1,
+                (
+                    Var(_js_expr=upload_param_name),
+                    upload_files_var,
+                ),
+            )
         if self.on_upload_progress is not None:
             on_upload_progress = self.on_upload_progress
             if isinstance(on_upload_progress, EventHandler):
@@ -941,14 +1056,63 @@ class FileUpload:
             )
         return EventSpec(
             handler=handler,
-            client_handler_name="uploadFiles",
+            client_handler_name=client_handler_name,
             args=tuple(spec_args),
             event_actions=handler.event_actions.copy(),
+        )
+
+    def as_event_spec(self, handler: EventHandler) -> EventSpec:
+        """Get the EventSpec for the file upload.
+
+        Args:
+            handler: The event handler.
+
+        Returns:
+            The event spec for the handler.
+        """
+        from reflex.utils.exceptions import UploadValueError
+
+        try:
+            upload_param_name, _annotation = resolve_upload_handler_param(handler)
+        except UploadValueError:
+            upload_param_name = "files"
+        return self._as_event_spec(
+            handler,
+            client_handler_name=UPLOAD_FILES_CLIENT_HANDLER,
+            upload_param_name=upload_param_name,
         )
 
 
 # Alias for rx.upload_files
 upload_files = FileUpload
+
+
+@dataclasses.dataclass(
+    init=True,
+    frozen=True,
+)
+class UploadFilesChunk(FileUpload):
+    """Class to represent a streaming file upload."""
+
+    def as_event_spec(self, handler: EventHandler) -> EventSpec:
+        """Get the EventSpec for the streaming file upload.
+
+        Args:
+            handler: The event handler.
+
+        Returns:
+            The event spec for the handler.
+        """
+        upload_param_name, _annotation = resolve_upload_chunk_handler_param(handler)
+        return self._as_event_spec(
+            handler,
+            client_handler_name=UPLOAD_FILES_CLIENT_HANDLER,
+            upload_param_name=upload_param_name,
+        )
+
+
+# Alias for rx.upload_files_chunk
+upload_files_chunk = UploadFilesChunk
 
 
 # Special server-side events.
@@ -1319,7 +1483,7 @@ def download(
 
 def call_script(
     javascript_code: str | Var[str],
-    callback: "EventType[Any] | None" = None,
+    callback: EventType[Any] | None = None,
 ) -> EventSpec:
     """Create an event handler that executes arbitrary javascript code.
 
@@ -1360,7 +1524,7 @@ def call_script(
 
 def call_function(
     javascript_code: str | Var,
-    callback: "EventType[Any] | None" = None,
+    callback: EventType[Any] | None = None,
 ) -> EventSpec:
     """Create an event handler that executes arbitrary javascript code.
 
@@ -1396,7 +1560,7 @@ def call_function(
 
 def run_script(
     javascript_code: str | Var,
-    callback: "EventType[Any] | None" = None,
+    callback: EventType[Any] | None = None,
 ) -> EventSpec:
     """Create an event handler that executes arbitrary javascript code.
 
@@ -1414,7 +1578,7 @@ def run_script(
     return call_function(ArgsFunctionOperation.create((), javascript_code), callback)
 
 
-def get_event(state: "BaseState", event: str):
+def get_event(state: BaseState, event: str):
     """Get the event from the given state.
 
     Args:
@@ -1427,7 +1591,7 @@ def get_event(state: "BaseState", event: str):
     return f"{state.get_name()}.{event}"
 
 
-def get_hydrate_event(state: "BaseState") -> str:
+def get_hydrate_event(state: BaseState) -> str:
     """Get the name of the hydrate event for the state.
 
     Args:
@@ -1780,11 +1944,11 @@ def call_event_fn(
     fn: Callable,
     arg_spec: ArgsSpec | Sequence[ArgsSpec],
     key: str | None = None,
-) -> list[EventSpec] | Var:
+) -> list[EventSpec | FunctionVar | EventVar]:
     """Call a function to a list of event specs.
 
-    The function should return a single EventSpec, a list of EventSpecs, or a
-    single Var.
+    The function should return a single event-like value or a heterogeneous
+    sequence of event-like values.
 
     Args:
         fn: The function to call.
@@ -1792,7 +1956,7 @@ def call_event_fn(
         key: The key to pass to the event handler.
 
     Returns:
-        The event specs from calling the function or a Var.
+        The event-like values from calling the function.
 
     Raises:
         EventHandlerValueError: If the lambda returns an unusable value.
@@ -1813,13 +1977,9 @@ def call_event_fn(
     # Call the function with the parsed args.
     out = fn(*[*parsed_args][:number_of_fn_args])
 
-    # If the function returns a Var, assume it's an EventChain and render it directly.
-    if isinstance(out, Var):
-        return out
-
-    # Convert the output to a list.
-    if not isinstance(out, list):
-        out = [out]
+    # Normalize common heterogeneous event collections into individual events
+    # while keeping other scalar values for validation below.
+    out = list(out) if isinstance(out, (list, tuple)) else [out]
 
     # Convert any event specs to event specs.
     events = []
@@ -1828,9 +1988,21 @@ def call_event_fn(
             # An un-called EventHandler gets all of the args of the event trigger.
             e = call_event_handler(e, arg_spec, key=key)
 
+        if isinstance(e, EventChain):
+            # Nested EventChain is treated like a FunctionVar.
+            e = Var.create(e)
+
         # Make sure the event spec is valid.
-        if not isinstance(e, EventSpec):
-            msg = f"Lambda {fn} returned an invalid event spec: {e}."
+        if not isinstance(e, (EventSpec, FunctionVar, EventVar)):
+            hint = ""
+            if isinstance(e, VarOperationCall):
+                hint = " Hint: use `fn.partial(...)` instead of calling the FunctionVar directly."
+            msg = (
+                f"Invalid event chain for {key}: {fn} -> {e}: A lambda inside an EventChain "
+                "list must return `EventSpec | EventHandler | EventChain | EventVar | FunctionVar` "
+                "or a heterogeneous sequence of these types. "
+                f"Got: {type(e)}.{hint}"
+            )
             raise EventHandlerValueError(msg)
 
         # Add the event spec to the chain.
@@ -1979,7 +2151,7 @@ class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
         cls,
         value: EventSpec | EventHandler,
         _var_data: VarData | None = None,
-    ) -> "LiteralEventVar":
+    ) -> LiteralEventVar:
         """Create a new LiteralEventVar instance.
 
         Args:
@@ -2066,7 +2238,7 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
         cls,
         value: EventChain,
         _var_data: VarData | None = None,
-    ) -> "LiteralEventChainVar":
+    ) -> LiteralEventChainVar:
         """Create a new LiteralEventChainVar instance.
 
         Args:
@@ -2085,9 +2257,11 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
             else value.args_spec
         )
         sig = inspect.signature(arg_spec)  # pyright: ignore [reportArgumentType]
+        arg_vars = ()
         if sig.parameters:
             arg_def = tuple(f"_{p}" for p in sig.parameters)
-            arg_def_expr = LiteralVar.create([Var(_js_expr=arg) for arg in arg_def])
+            arg_vars = tuple(Var(_js_expr=arg) for arg in arg_def)
+            arg_def_expr = LiteralVar.create(list(arg_vars))
         else:
             # add a default argument for addEvents if none were specified in value.args_spec
             # used to trigger the preventDefault() on the event.
@@ -2108,17 +2282,59 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
         if invocation is not None and not isinstance(invocation, FunctionVar):
             msg = f"EventChain invocation must be a FunctionVar, got {invocation!s} of type {invocation._var_type!s}."
             raise ValueError(msg)
+        assert invocation is not None
+
+        call_args = arg_vars if sig.parameters else (Var(_js_expr="...args"),)
+        statements = [
+            (
+                event.call(*call_args)
+                if isinstance(event, FunctionVar)
+                else invocation.call(
+                    LiteralVar.create([LiteralVar.create(event)]),
+                    arg_def_expr,
+                    _EMPTY_EVENT_ACTIONS,
+                )
+            )
+            for event in value.events
+        ]
+
+        if not statements:
+            statements.append(
+                invocation.call(
+                    _EMPTY_EVENTS,
+                    arg_def_expr,
+                    _EMPTY_EVENT_ACTIONS,
+                )
+            )
+
+        if len(statements) == 1 and not value.event_actions:
+            return_expr = statements[0]
+        else:
+            statement_block = Var(
+                _js_expr=f"{{{''.join(f'{statement};' for statement in statements)}}}",
+            )
+            if value.event_actions:
+                apply_event_actions = FunctionStringVar.create(
+                    CompileVars.APPLY_EVENT_ACTIONS,
+                    _var_data=VarData(
+                        imports=Imports.EVENTS,
+                        hooks={Hooks.EVENTS: None},
+                    ),
+                )
+                return_expr = apply_event_actions.call(
+                    ArgsFunctionOperation.create((), statement_block),
+                    value.event_actions,
+                    *call_args,
+                )
+            else:
+                return_expr = statement_block
 
         return cls(
             _js_expr="",
             _var_type=EventChain,
             _var_data=_var_data,
             _args=FunctionArgs(arg_def),
-            _return_expr=invocation.call(
-                LiteralVar.create([LiteralVar.create(event) for event in value.events]),
-                arg_def_expr,
-                value.event_actions,
-            ),
+            _return_expr=return_expr,
             _var_value=value,
         )
 
@@ -2145,39 +2361,39 @@ class EventCallback(Generic[Unpack[P]], EventActionsMixin):
 
     @overload
     def __call__(
-        self: "EventCallback[Unpack[Q]]",
-    ) -> "EventCallback[Unpack[Q]]": ...
+        self: EventCallback[Unpack[Q]],
+    ) -> EventCallback[Unpack[Q]]: ...
 
     @overload
     def __call__(
-        self: "EventCallback[V, Unpack[Q]]", value: V | Var[V]
-    ) -> "EventCallback[Unpack[Q]]": ...
+        self: EventCallback[V, Unpack[Q]], value: V | Var[V]
+    ) -> EventCallback[Unpack[Q]]: ...
 
     @overload
     def __call__(
-        self: "EventCallback[V, V2, Unpack[Q]]",
+        self: EventCallback[V, V2, Unpack[Q]],
         value: V | Var[V],
         value2: V2 | Var[V2],
-    ) -> "EventCallback[Unpack[Q]]": ...
+    ) -> EventCallback[Unpack[Q]]: ...
 
     @overload
     def __call__(
-        self: "EventCallback[V, V2, V3, Unpack[Q]]",
+        self: EventCallback[V, V2, V3, Unpack[Q]],
         value: V | Var[V],
         value2: V2 | Var[V2],
         value3: V3 | Var[V3],
-    ) -> "EventCallback[Unpack[Q]]": ...
+    ) -> EventCallback[Unpack[Q]]: ...
 
     @overload
     def __call__(
-        self: "EventCallback[V, V2, V3, V4, Unpack[Q]]",
+        self: EventCallback[V, V2, V3, V4, Unpack[Q]],
         value: V | Var[V],
         value2: V2 | Var[V2],
         value3: V3 | Var[V3],
         value4: V4 | Var[V4],
-    ) -> "EventCallback[Unpack[Q]]": ...
+    ) -> EventCallback[Unpack[Q]]: ...
 
-    def __call__(self, *values) -> "EventCallback":  # pyright: ignore [reportInconsistentOverload]
+    def __call__(self, *values) -> EventCallback:  # pyright: ignore [reportInconsistentOverload]
         """Call the function with the values.
 
         Args:
@@ -2190,11 +2406,11 @@ class EventCallback(Generic[Unpack[P]], EventActionsMixin):
 
     @overload
     def __get__(
-        self: "EventCallback[Unpack[P]]", instance: None, owner: Any
-    ) -> "EventCallback[Unpack[P]]": ...
+        self: EventCallback[Unpack[P]], instance: None, owner: Any
+    ) -> EventCallback[Unpack[P]]: ...
 
     @overload
-    def __get__(self, instance: Any, owner: Any) -> "Callable[[Unpack[P]]]": ...
+    def __get__(self, instance: Any, owner: Any) -> Callable[[Unpack[P]]]: ...
 
     def __get__(self, instance: Any, owner: Any) -> Callable:
         """Get the function with the instance bound to it.
@@ -2218,19 +2434,19 @@ class LambdaEventCallback(Protocol[Unpack[P]]):
     __code__: types.CodeType
 
     @overload
-    def __call__(self: "LambdaEventCallback[()]") -> Any: ...
+    def __call__(self: LambdaEventCallback[()]) -> Any: ...
 
     @overload
-    def __call__(self: "LambdaEventCallback[V]", value: "Var[V]", /) -> Any: ...
+    def __call__(self: LambdaEventCallback[V], value: Var[V], /) -> Any: ...
 
     @overload
     def __call__(
-        self: "LambdaEventCallback[V, V2]", value: Var[V], value2: Var[V2], /
+        self: LambdaEventCallback[V, V2], value: Var[V], value2: Var[V2], /
     ) -> Any: ...
 
     @overload
     def __call__(
-        self: "LambdaEventCallback[V, V2, V3]",
+        self: LambdaEventCallback[V, V2, V3],
         value: Var[V],
         value2: Var[V2],
         value3: Var[V3],
@@ -2313,6 +2529,7 @@ class EventNamespace:
 
     # File Upload
     FileUpload = FileUpload
+    UploadFilesChunk = UploadFilesChunk
 
     # Type Aliases
     EventType = EventType
@@ -2326,10 +2543,15 @@ class EventNamespace:
     _EVENT_FIELDS = _EVENT_FIELDS
     FORM_DATA = FORM_DATA
     upload_files = upload_files
+    upload_files_chunk = upload_files_chunk
     stop_propagation = stop_propagation
     prevent_default = prevent_default
 
     # Private/Internal Functions
+    resolve_upload_handler_param = staticmethod(resolve_upload_handler_param)
+    resolve_upload_chunk_handler_param = staticmethod(
+        resolve_upload_chunk_handler_param
+    )
     _values_returned_from_event = staticmethod(_values_returned_from_event)
     _check_event_args_subclass_of_callback = staticmethod(
         _check_event_args_subclass_of_callback
