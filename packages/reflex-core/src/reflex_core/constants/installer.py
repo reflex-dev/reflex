@@ -77,7 +77,7 @@ fetch-retries=0
 def _determine_react_router_version() -> str:
     default_version = "7.13.1"
     if (version := os.getenv("REACT_ROUTER_VERSION")) and version != default_version:
-        from reflex.utils import console
+        from reflex_core.utils import console
 
         console.warn(
             f"You have requested react-router@{version} but the supported version is {default_version}, abandon all hope ye who enter here."
@@ -89,7 +89,7 @@ def _determine_react_router_version() -> str:
 def _determine_react_version() -> str:
     default_version = "19.2.4"
     if (version := os.getenv("REACT_VERSION")) and version != default_version:
-        from reflex.utils import console
+        from reflex_core.utils import console
 
         console.warn(
             f"You have requested react@{version} but the supported version is {default_version}, abandon all hope ye who enter here."

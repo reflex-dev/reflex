@@ -543,7 +543,7 @@ class ExecutorType(enum.Enum):
         Returns:
             The executor.
         """
-        from reflex.utils import console
+        from reflex_core.utils import console
 
         executor_type = environment.REFLEX_COMPILE_EXECUTOR.get()
 
@@ -839,7 +839,7 @@ def _load_dotenv_from_files(files: list[Path]):
     Args:
         files: A list of Path objects representing the environment variable files.
     """
-    from reflex.utils import console
+    from reflex_core.utils import console
 
     if not files:
         return
