@@ -7,12 +7,12 @@ from typing import Literal
 from reflex_components_core.core.breakpoints import Responsive
 from reflex_components_core.core.debounce import DebounceInput
 from reflex_components_core.el import elements
+from reflex_core.components.component import Component, ComponentNamespace, field
+from reflex_core.event import EventHandler, input_event, key_event
+from reflex_core.utils.types import is_optional
 from reflex_core.vars.base import Var
 from reflex_core.vars.number import ternary_operation
 
-from reflex.components.component import Component, ComponentNamespace, field
-from reflex.event import EventHandler, input_event, key_event
-from reflex.utils.types import is_optional
 from reflex_components_radix.themes.base import (
     LiteralAccentColor,
     LiteralRadius,

@@ -4,15 +4,15 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+from reflex_core.components.component import field
+from reflex_core.components.tags.tag import Tag
 from reflex_core.constants.compiler import Hooks
+from reflex_core.event import EventChain, EventHandler, passthrough_event_spec
 from reflex_core.utils.format import format_prop, wrap
 from reflex_core.utils.imports import ImportVar
 from reflex_core.vars import get_unique_variable_name
 from reflex_core.vars.base import Var, VarData
 
-from reflex.components.component import field
-from reflex.components.tags.tag import Tag
-from reflex.event import EventChain, EventHandler, passthrough_event_spec
 from reflex_components_core.base.fragment import Fragment
 
 

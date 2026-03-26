@@ -4,10 +4,7 @@ from typing import Any, cast
 
 import pytest
 from reflex_core.constants.compiler import Hooks, Imports
-from reflex_core.vars.base import Field, LiteralVar, Var, VarData, field
-
-import reflex as rx
-from reflex.event import (
+from reflex_core.event import (
     BACKGROUND_TASK_MARKER,
     Event,
     EventChain,
@@ -19,6 +16,9 @@ from reflex.event import (
     event,
     fix_events,
 )
+from reflex_core.vars.base import Field, LiteralVar, Var, VarData, field
+
+import reflex as rx
 from reflex.state import BaseState
 from reflex.utils import format
 

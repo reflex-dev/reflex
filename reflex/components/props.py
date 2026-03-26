@@ -6,15 +6,15 @@ from collections.abc import Callable
 from dataclasses import _MISSING_TYPE, MISSING
 from typing import Any, TypeVar, get_args, get_origin
 
+from reflex_core.components.field import BaseField, FieldBasedMeta
+from reflex_core.event import EventChain, args_specs_from_fields
 from reflex_core.utils.exceptions import InvalidPropValueError
+from reflex_core.utils.types import is_union
 from reflex_core.vars.object import LiteralObjectVar
 from typing_extensions import dataclass_transform
 
-from reflex.components.field import BaseField, FieldBasedMeta
-from reflex.event import EventChain, args_specs_from_fields
 from reflex.utils import format
 from reflex.utils.serializers import serializer
-from reflex.utils.types import is_union
 
 PROPS_FIELD_TYPE = TypeVar("PROPS_FIELD_TYPE")
 
@@ -28,7 +28,7 @@ def _get_props_subclass(field_type: Any) -> type | None:
     Returns:
         The Props subclass if found, None otherwise.
     """
-    from reflex.utils.types import typehint_issubclass
+    from reflex_core.utils.types import typehint_issubclass
 
     # For direct class types, we can return them directly if they're Props subclasses
     if isinstance(field_type, type):

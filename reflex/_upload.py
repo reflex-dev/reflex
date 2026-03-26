@@ -23,10 +23,11 @@ from typing_extensions import Self
 from reflex.utils import exceptions
 
 if TYPE_CHECKING:
+    from reflex_core.event import EventHandler
+    from reflex_core.utils.types import Receive, Scope, Send
+
     from reflex.app import App
-    from reflex.event import EventHandler
     from reflex.state import BaseState
-    from reflex.utils.types import Receive, Scope, Send
 
 
 @dataclasses.dataclass(frozen=True)
@@ -504,9 +505,8 @@ async def _upload_buffered_file(
     Returns:
         A streaming response for the buffered upload.
     """
+    from reflex_core.event import Event
     from reflex_core.utils.exceptions import UploadValueError
-
-    from reflex.event import Event
 
     try:
         form_data = await request.form()
@@ -610,7 +610,7 @@ async def _upload_chunk_file(
     Returns:
         The streaming upload response.
     """
-    from reflex.event import Event
+    from reflex_core.event import Event
 
     chunk_iter = UploadChunkIterator(maxsize=8)
     event = Event(
@@ -683,7 +683,7 @@ def upload(app: App):
             UploadTypeError: If a non-streaming upload is wired to a background task.
             HTTPException: when the request does not include token / handler headers.
         """
-        from reflex.event import (
+        from reflex_core.event import (
             resolve_upload_chunk_handler_param,
             resolve_upload_handler_param,
         )

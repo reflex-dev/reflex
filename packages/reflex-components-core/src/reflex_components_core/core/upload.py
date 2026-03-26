@@ -7,26 +7,17 @@ from pathlib import Path
 from typing import Any, ClassVar
 
 from reflex_components_sonner.toast import toast
-from reflex_core.constants import Dirs
-from reflex_core.constants.compiler import Hooks, Imports
-from reflex_core.environment import environment
-from reflex_core.utils import format
-from reflex_core.utils.imports import ImportVar
-from reflex_core.vars import VarData
-from reflex_core.vars.base import Var, get_unique_variable_name
-from reflex_core.vars.function import FunctionVar
-from reflex_core.vars.object import ObjectVar
-from reflex_core.vars.sequence import ArrayVar, LiteralStringVar
-
-from reflex._upload import UploadChunkIterator, UploadFile
-from reflex.components.component import (
+from reflex_core.components.component import (
     Component,
     ComponentNamespace,
     MemoizationLeaf,
     StatefulComponent,
     field,
 )
-from reflex.event import (
+from reflex_core.constants import Dirs
+from reflex_core.constants.compiler import Hooks, Imports
+from reflex_core.environment import environment
+from reflex_core.event import (
     CallableEventSpec,
     EventChain,
     EventHandler,
@@ -38,7 +29,16 @@ from reflex.event import (
     run_script,
     upload_files,
 )
-from reflex.style import Style
+from reflex_core.style import Style
+from reflex_core.utils import format
+from reflex_core.utils.imports import ImportVar
+from reflex_core.vars import VarData
+from reflex_core.vars.base import Var, get_unique_variable_name
+from reflex_core.vars.function import FunctionVar
+from reflex_core.vars.object import ObjectVar
+from reflex_core.vars.sequence import ArrayVar, LiteralStringVar
+
+from reflex._upload import UploadChunkIterator, UploadFile
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core.cond import cond
 from reflex_components_core.el.elements.forms import Input

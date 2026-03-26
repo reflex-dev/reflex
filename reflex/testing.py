@@ -26,8 +26,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 import uvicorn
+from reflex_core.components.component import CUSTOM_COMPONENTS, CustomComponent
 from reflex_core.config import get_config
 from reflex_core.environment import environment
+from reflex_core.utils.types import ASGIApp
 from typing_extensions import Self
 
 import reflex
@@ -36,7 +38,6 @@ import reflex.utils.build
 import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
-from reflex.components.component import CUSTOM_COMPONENTS, CustomComponent
 from reflex.experimental.memo import EXPERIMENTAL_MEMOS
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
@@ -50,7 +51,6 @@ from reflex.state import (
 from reflex.utils import console, js_runtimes
 from reflex.utils.export import export
 from reflex.utils.token_manager import TokenManager
-from reflex.utils.types import ASGIApp
 
 try:
     from selenium import webdriver

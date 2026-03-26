@@ -3,9 +3,9 @@
 from pathlib import Path
 
 from reflex_core.environment import environment
+from reflex_core.utils.decorator import cache_result_in_disk, once
 
 from reflex.utils import console, net
-from reflex.utils.decorator import cache_result_in_disk, once
 
 
 def latency(registry: str) -> int:

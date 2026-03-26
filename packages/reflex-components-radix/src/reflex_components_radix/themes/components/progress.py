@@ -3,10 +3,10 @@
 from typing import Literal
 
 from reflex_components_core.core.breakpoints import Responsive
+from reflex_core.components.component import Component, field
+from reflex_core.style import Style
 from reflex_core.vars.base import Var
 
-from reflex.components.component import Component, field
-from reflex.style import Style
 from reflex_components_radix.themes.base import LiteralAccentColor, RadixThemesComponent
 
 

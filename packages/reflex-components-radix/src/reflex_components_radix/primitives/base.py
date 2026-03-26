@@ -2,10 +2,10 @@
 
 from typing import Any
 
+from reflex_core.components.component import Component, field
+from reflex_core.components.tags.tag import Tag
 from reflex_core.vars.base import Var
 
-from reflex.components.component import Component, field
-from reflex.components.tags.tag import Tag
 from reflex.utils import format
 
 

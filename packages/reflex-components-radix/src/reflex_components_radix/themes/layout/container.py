@@ -6,10 +6,10 @@ from typing import Literal
 
 from reflex_components_core.core.breakpoints import Responsive
 from reflex_components_core.el import elements
+from reflex_core.components.component import field
+from reflex_core.style import STACK_CHILDREN_FULL_WIDTH
 from reflex_core.vars.base import LiteralVar, Var
 
-from reflex.components.component import field
-from reflex.style import STACK_CHILDREN_FULL_WIDTH
 from reflex_components_radix.themes.base import RadixThemesComponent
 
 LiteralContainerSize = Literal["1", "2", "3", "4"]

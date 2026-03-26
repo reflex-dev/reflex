@@ -5,11 +5,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, TypedDict, TypeVar
 
 from reflex_components_core.core.cond import color_mode_cond
+from reflex_core.components.component import Component, NoSSRComponent, field
+from reflex_core.event import EventHandler, no_args_event_spec
 from reflex_core.utils.imports import ImportDict, ImportVar
 from reflex_core.vars.base import LiteralVar, Var
 
-from reflex.components.component import Component, NoSSRComponent, field
-from reflex.event import EventHandler, no_args_event_spec
 from reflex.utils import console
 
 try:

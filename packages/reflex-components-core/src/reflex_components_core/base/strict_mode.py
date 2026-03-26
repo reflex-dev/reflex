@@ -1,6 +1,6 @@
 """Module for the StrictMode component."""
 
-from reflex.components.component import Component
+from reflex_core.components.component import Component
 
 
 class StrictMode(Component):

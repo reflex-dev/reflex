@@ -8,14 +8,14 @@ from collections.abc import Callable, Iterable
 from hashlib import md5
 from typing import Any
 
+from reflex_core.components.component import Component, field
+from reflex_core.components.tags import IterTag
 from reflex_core.constants import MemoizationMode
 from reflex_core.constants.state import FIELD_MARKER
 from reflex_core.utils import types
 from reflex_core.utils.exceptions import UntypedVarError
 from reflex_core.vars.base import LiteralVar, Var
 
-from reflex.components.component import Component, field
-from reflex.components.tags import IterTag
 from reflex.state import ComponentState
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core.cond import cond

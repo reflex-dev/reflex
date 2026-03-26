@@ -6,10 +6,10 @@ from collections.abc import AsyncIterator
 from typing import Self, TypeVar
 
 from reflex_core.constants import ROUTER_DATA
+from reflex_core.event import Event, get_hydrate_event
 from reflex_core.utils import console
 from reflex_core.utils.exceptions import ReflexRuntimeError
 
-from reflex.event import Event, get_hydrate_event
 from reflex.state import BaseState, State, _override_base_method, _substate_key
 
 UPDATE_OTHER_CLIENT_TASKS: set[asyncio.Task] = set()

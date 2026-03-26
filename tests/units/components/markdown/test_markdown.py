@@ -5,9 +5,8 @@ from reflex_components_core.core.markdown_component_map import MarkdownComponent
 from reflex_components_markdown.markdown import Markdown
 from reflex_components_radix.themes.layout.box import Box
 from reflex_components_radix.themes.typography.heading import Heading
+from reflex_core.components.component import Component, memo
 from reflex_core.vars.base import Var
-
-from reflex.components.component import Component, memo
 
 
 class CustomMarkdownComponent(Component, MarkdownComponentMap):

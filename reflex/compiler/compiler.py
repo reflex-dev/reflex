@@ -10,30 +10,30 @@ from typing import TYPE_CHECKING, Any
 
 from reflex_components_core.base.fragment import Fragment
 from reflex_core import constants
-from reflex_core.config import get_config
-from reflex_core.constants.compiler import PageNames, ResetStylesheet
-from reflex_core.constants.state import FIELD_MARKER
-from reflex_core.environment import environment
-from reflex_core.utils.exceptions import ReflexError
-from reflex_core.utils.format import to_title_case
-from reflex_core.utils.imports import ImportVar, ParsedImportDict
-from reflex_core.vars.base import LiteralVar, Var
-
-from reflex.compiler import templates, utils
-from reflex.components.component import (
+from reflex_core.components.component import (
     BaseComponent,
     Component,
     ComponentStyle,
     CustomComponent,
     StatefulComponent,
 )
+from reflex_core.config import get_config
+from reflex_core.constants.compiler import PageNames, ResetStylesheet
+from reflex_core.constants.state import FIELD_MARKER
+from reflex_core.environment import environment
+from reflex_core.style import SYSTEM_COLOR_MODE
+from reflex_core.utils.exceptions import ReflexError
+from reflex_core.utils.format import to_title_case
+from reflex_core.utils.imports import ImportVar, ParsedImportDict
+from reflex_core.vars.base import LiteralVar, Var
+
+from reflex.compiler import templates, utils
 from reflex.experimental.memo import (
     ExperimentalMemoComponentDefinition,
     ExperimentalMemoDefinition,
     ExperimentalMemoFunctionDefinition,
 )
 from reflex.state import BaseState
-from reflex.style import SYSTEM_COLOR_MODE
 from reflex.utils import console, path_ops
 from reflex.utils.exec import is_prod_mode
 from reflex.utils.prerequisites import get_web_dir
@@ -88,7 +88,7 @@ def _compile_app(app_root: Component) -> str:
     Returns:
         The compiled app.
     """
-    from reflex.components.dynamic import bundled_libraries
+    from reflex_core.components.dynamic import bundled_libraries
 
     window_libraries = [
         (_normalize_library_name(name), name) for name in bundled_libraries

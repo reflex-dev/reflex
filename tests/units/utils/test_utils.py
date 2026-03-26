@@ -9,11 +9,11 @@ import pytest
 from packaging import version
 from pytest_mock import MockerFixture
 from reflex_core import constants
+from reflex_core.event import EventHandler
 from reflex_core.utils.exceptions import ReflexError, SystemPackageMissingError
 from reflex_core.vars.base import Var
 
 from reflex.environment import environment
-from reflex.event import EventHandler
 from reflex.state import BaseState
 from reflex.utils import exec as utils_exec
 from reflex.utils import frontend_skeleton, js_runtimes, prerequisites, templates, types

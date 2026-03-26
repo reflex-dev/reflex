@@ -4,9 +4,9 @@ from typing import List  # noqa: UP035
 
 import attrs
 import pytest
+from reflex_core.utils.types import GenericType, get_attribute_access_type
 
 import reflex as rx
-from reflex.utils.types import GenericType, get_attribute_access_type
 
 pytest.importorskip("sqlalchemy")
 pytest.importorskip("sqlmodel")

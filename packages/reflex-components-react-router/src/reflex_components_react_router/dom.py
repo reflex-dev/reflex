@@ -5,9 +5,8 @@ from __future__ import annotations
 from typing import ClassVar, Literal, TypedDict
 
 from reflex_components_core.el.elements.inline import A
+from reflex_core.components.component import field
 from reflex_core.vars.base import Var
-
-from reflex.components.component import field
 
 LiteralLinkDiscover = Literal["none", "render"]
 

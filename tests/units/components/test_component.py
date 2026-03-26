@@ -6,8 +6,25 @@ import pytest
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_radix.themes.layout.box import Box
+from reflex_core.components.component import (
+    CUSTOM_COMPONENTS,
+    Component,
+    CustomComponent,
+    StatefulComponent,
+    custom_component,
+)
 from reflex_core.constants import EventTriggers
 from reflex_core.constants.state import FIELD_MARKER
+from reflex_core.event import (
+    EventChain,
+    EventHandler,
+    JavascriptInputEvent,
+    input_event,
+    no_args_event_spec,
+    parse_args_spec,
+    passthrough_event_spec,
+)
+from reflex_core.style import Style
 from reflex_core.utils.exceptions import (
     ChildrenTypeError,
     EventFnArgMismatchError,
@@ -25,24 +42,7 @@ from reflex_core.vars.object import ObjectVar
 
 import reflex as rx
 from reflex.compiler.utils import compile_custom_component
-from reflex.components.component import (
-    CUSTOM_COMPONENTS,
-    Component,
-    CustomComponent,
-    StatefulComponent,
-    custom_component,
-)
-from reflex.event import (
-    EventChain,
-    EventHandler,
-    JavascriptInputEvent,
-    input_event,
-    no_args_event_spec,
-    parse_args_spec,
-    passthrough_event_spec,
-)
 from reflex.state import BaseState
-from reflex.style import Style
 from reflex.utils import imports
 
 

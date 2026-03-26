@@ -5,6 +5,9 @@ from __future__ import annotations
 from collections.abc import Iterator, Sequence
 from typing import Any
 
+from reflex_core.components.component import BaseComponent, Component, ComponentStyle
+from reflex_core.components.tags import Tag
+from reflex_core.components.tags.tagless import Tagless
 from reflex_core.environment import PerformanceMode, environment
 from reflex_core.utils import console
 from reflex_core.utils.decorator import once
@@ -12,10 +15,6 @@ from reflex_core.utils.imports import ParsedImportDict
 from reflex_core.vars import BooleanVar, ObjectVar, Var
 from reflex_core.vars.base import GLOBAL_CACHE, VarData
 from reflex_core.vars.sequence import LiteralStringVar
-
-from reflex.components.component import BaseComponent, Component, ComponentStyle
-from reflex.components.tags import Tag
-from reflex.components.tags.tagless import Tagless
 
 
 @once

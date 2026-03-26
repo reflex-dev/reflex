@@ -6,7 +6,11 @@ import dataclasses
 from typing import Any, Literal
 
 from reflex_components_lucide.icon import Icon
+from reflex_core.components.component import Component, ComponentNamespace, field
+from reflex_core.components.props import NoExtrasAllowedProps
 from reflex_core.constants.base import Dirs
+from reflex_core.event import EventSpec, run_script
+from reflex_core.style import Style, resolved_color_mode
 from reflex_core.utils.imports import ImportVar
 from reflex_core.vars import VarData
 from reflex_core.vars.base import LiteralVar, Var
@@ -14,10 +18,6 @@ from reflex_core.vars.function import FunctionVar
 from reflex_core.vars.number import ternary_operation
 from reflex_core.vars.object import ObjectVar
 
-from reflex.components.component import Component, ComponentNamespace, field
-from reflex.components.props import NoExtrasAllowedProps
-from reflex.event import EventSpec, run_script
-from reflex.style import Style, resolved_color_mode
 from reflex.utils import format
 from reflex.utils.serializers import serializer
 

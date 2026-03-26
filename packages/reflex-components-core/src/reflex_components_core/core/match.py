@@ -3,16 +3,21 @@
 import textwrap
 from typing import Any, cast
 
+from reflex_core.components.component import (
+    BaseComponent,
+    Component,
+    MemoizationLeaf,
+    field,
+)
+from reflex_core.components.tags import Tag
+from reflex_core.components.tags.match_tag import MatchTag
+from reflex_core.style import Style
 from reflex_core.utils import format
 from reflex_core.utils.exceptions import MatchTypeError
 from reflex_core.utils.imports import ImportDict
 from reflex_core.vars import VarData
 from reflex_core.vars.base import LiteralVar, Var
 
-from reflex.components.component import BaseComponent, Component, MemoizationLeaf, field
-from reflex.components.tags import Tag
-from reflex.components.tags.match_tag import MatchTag
-from reflex.style import Style
 from reflex_components_core.base import Fragment
 
 

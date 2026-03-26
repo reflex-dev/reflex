@@ -7,6 +7,9 @@ from collections.abc import Mapping, Sequence
 from enum import Enum
 from typing import Any, Literal, TypedDict
 
+from reflex_core.components.component import Component, NoSSRComponent, field
+from reflex_core.components.literals import LiteralRowMarker
+from reflex_core.event import EventHandler, no_args_event_spec, passthrough_event_spec
 from reflex_core.utils import console, format, types
 from reflex_core.utils.imports import ImportDict, ImportVar
 from reflex_core.utils.serializers import serializer
@@ -14,10 +17,6 @@ from reflex_core.vars import get_unique_variable_name
 from reflex_core.vars.base import Var
 from reflex_core.vars.function import FunctionStringVar
 from reflex_core.vars.sequence import ArrayVar
-
-from reflex.components.component import Component, NoSSRComponent, field
-from reflex.components.literals import LiteralRowMarker
-from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
 
 
 # TODO: Fix the serialization issue for custom types.

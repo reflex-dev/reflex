@@ -11,6 +11,8 @@ from typing import Any, get_args, get_origin, get_type_hints
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
 from reflex_core import constants
+from reflex_core.components.component import Component
+from reflex_core.components.dynamic import bundled_libraries
 from reflex_core.constants.compiler import SpecialAttributes
 from reflex_core.constants.state import CAMEL_CASE_MEMO_MARKER
 from reflex_core.utils.imports import ImportVar
@@ -25,8 +27,6 @@ from reflex_core.vars.function import (
 )
 from reflex_core.vars.object import RestProp
 
-from reflex.components.component import Component
-from reflex.components.dynamic import bundled_libraries
 from reflex.utils import format
 from reflex.utils import types as type_utils
 

@@ -1,8 +1,7 @@
 """Other classes."""
 
+from reflex_core.components.component import field
 from reflex_core.vars.base import Var
-
-from reflex.components.component import field
 
 from .base import BaseHTML
 

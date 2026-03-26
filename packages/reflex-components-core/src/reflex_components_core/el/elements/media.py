@@ -2,11 +2,11 @@
 
 from typing import Any, Literal
 
+from reflex_core.components.component import field
 from reflex_core.constants.colors import Color
 from reflex_core.vars.base import Var
 
 from reflex import Component, ComponentNamespace
-from reflex.components.component import field
 from reflex_components_core.el.elements.inline import ReferrerPolicy
 
 from .base import BaseHTML

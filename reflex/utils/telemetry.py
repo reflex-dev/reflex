@@ -13,10 +13,10 @@ from typing import TypedDict
 
 from reflex_core import constants
 from reflex_core.environment import environment
+from reflex_core.utils.decorator import once, once_unless_none
 from reflex_core.utils.exceptions import ReflexError
 
 from reflex.utils import console, processes
-from reflex.utils.decorator import once, once_unless_none
 from reflex.utils.js_runtimes import get_bun_version, get_node_version
 from reflex.utils.prerequisites import ensure_reflex_installation_id, get_project_hash
 

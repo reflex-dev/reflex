@@ -1,6 +1,6 @@
 """Document components."""
 
-from reflex.components.component import Component
+from reflex_core.components.component import Component
 
 
 class ReactRouterLib(Component):

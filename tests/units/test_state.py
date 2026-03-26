@@ -24,6 +24,7 @@ from pytest_mock import MockerFixture
 from reflex_core import constants
 from reflex_core.constants import CompileVars, RouteVar, SocketEvent
 from reflex_core.constants.state import FIELD_MARKER
+from reflex_core.event import Event, EventHandler
 from reflex_core.utils.exceptions import (
     InvalidLockWarningThresholdError,
     LockExpiredError,
@@ -38,7 +39,6 @@ from reflex_core.vars.base import Field, Var, computed_var, field
 import reflex as rx
 from reflex.app import App
 from reflex.environment import environment
-from reflex.event import Event, EventHandler
 from reflex.istate.data import HeaderData, _FrozenDictStrStr
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk

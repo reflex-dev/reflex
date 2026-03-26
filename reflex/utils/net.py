@@ -5,8 +5,8 @@ import time
 from collections.abc import Callable
 from typing import ParamSpec, TypeVar
 
-from reflex.utils.decorator import once
-from reflex.utils.types import Unset
+from reflex_core.utils.decorator import once
+from reflex_core.utils.types import Unset
 
 from . import console
 

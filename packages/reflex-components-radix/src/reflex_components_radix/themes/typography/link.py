@@ -13,10 +13,10 @@ from reflex_components_core.core.cond import cond
 from reflex_components_core.core.markdown_component_map import MarkdownComponentMap
 from reflex_components_core.el.elements.inline import A
 from reflex_components_react_router.dom import ReactRouterLink
+from reflex_core.components.component import Component, MemoizationLeaf, field
 from reflex_core.utils.imports import ImportDict, ImportVar
 from reflex_core.vars.base import Var
 
-from reflex.components.component import Component, MemoizationLeaf, field
 from reflex_components_radix.themes.base import LiteralAccentColor, RadixThemesComponent
 
 from .base import LiteralTextSize, LiteralTextTrim, LiteralTextWeight

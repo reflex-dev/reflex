@@ -35,6 +35,15 @@ from typing import (
 from reflex_core import constants
 from reflex_core.constants.state import FIELD_MARKER
 from reflex_core.environment import PerformanceMode, environment
+from reflex_core.event import (
+    BACKGROUND_TASK_MARKER,
+    EVENT_ACTIONS_MARKER,
+    Event,
+    EventHandler,
+    EventSpec,
+    call_script,
+    fix_events,
+)
 from reflex_core.utils.exceptions import (
     ComputedVarShadowsBaseVarsError,
     ComputedVarShadowsStateVarError,
@@ -66,15 +75,6 @@ from typing_extensions import Self
 
 import reflex.istate.dynamic
 from reflex import event
-from reflex.event import (
-    BACKGROUND_TASK_MARKER,
-    EVENT_ACTIONS_MARKER,
-    Event,
-    EventHandler,
-    EventSpec,
-    call_script,
-    fix_events,
-)
 from reflex.istate import HANDLED_PICKLE_ERRORS, debug_failed_pickles
 from reflex.istate.data import RouterData
 from reflex.istate.proxy import ImmutableMutableProxy as ImmutableMutableProxy
@@ -85,7 +85,7 @@ from reflex.utils import console, format, prerequisites, types
 from reflex.utils.exec import is_testing_env
 
 if TYPE_CHECKING:
-    from reflex.components.component import Component
+    from reflex_core.components.component import Component
 
 
 Delta = dict[str, Any]
@@ -723,7 +723,7 @@ class BaseState(EvenMoreBasicBaseState):
         console.warn(
             "The _evaluate method is experimental and may be removed in future versions."
         )
-        from reflex.components.component import Component
+        from reflex_core.components.component import Component
 
         of_type = of_type or Component
 

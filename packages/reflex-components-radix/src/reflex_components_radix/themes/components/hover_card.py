@@ -4,11 +4,11 @@ from typing import Literal
 
 from reflex_components_core.core.breakpoints import Responsive
 from reflex_components_core.el import elements
+from reflex_core.components.component import ComponentNamespace, field
 from reflex_core.constants.compiler import MemoizationMode
+from reflex_core.event import EventHandler, passthrough_event_spec
 from reflex_core.vars.base import Var
 
-from reflex.components.component import ComponentNamespace, field
-from reflex.event import EventHandler, passthrough_event_spec
 from reflex_components_radix.themes.base import (
     RadixThemesComponent,
     RadixThemesTriggerComponent,

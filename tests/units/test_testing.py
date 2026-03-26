@@ -6,12 +6,12 @@ from unittest import mock
 
 import pytest
 import reflex_core.config
+from reflex_core.components.component import CUSTOM_COMPONENTS
 from reflex_core.constants import IS_WINDOWS
 
 import reflex.reflex as reflex_cli
 import reflex.testing as reflex_testing
 import reflex.utils.prerequisites
-from reflex.components.component import CUSTOM_COMPONENTS
 from reflex.experimental.memo import EXPERIMENTAL_MEMOS
 from reflex.testing import AppHarness
 

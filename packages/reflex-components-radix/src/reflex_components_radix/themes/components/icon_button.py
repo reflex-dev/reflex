@@ -8,10 +8,10 @@ from reflex_components_core.core.breakpoints import Responsive
 from reflex_components_core.core.match import Match
 from reflex_components_core.el import elements
 from reflex_components_lucide import Icon
+from reflex_core.components.component import Component, field
+from reflex_core.style import Style
 from reflex_core.vars.base import Var
 
-from reflex.components.component import Component, field
-from reflex.style import Style
 from reflex_components_radix.themes.base import (
     LiteralAccentColor,
     LiteralRadius,

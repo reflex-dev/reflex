@@ -16,6 +16,7 @@ from reflex_core.utils.exceptions import (
     UntypedComputedVarError,
 )
 from reflex_core.utils.imports import ImportVar
+from reflex_core.utils.types import get_default_value_for_type
 from reflex_core.vars import VarData
 from reflex_core.vars.base import (
     ComputedVar,
@@ -42,7 +43,6 @@ from reflex_core.vars.sequence import (
 import reflex as rx
 from reflex.environment import PerformanceMode
 from reflex.state import BaseState
-from reflex.utils.types import get_default_value_for_type
 
 test_vars = [
     Var(_js_expr="prop1", _var_type=int),

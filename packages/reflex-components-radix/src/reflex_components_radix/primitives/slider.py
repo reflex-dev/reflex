@@ -5,10 +5,10 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any, Literal
 
+from reflex_core.components.component import Component, ComponentNamespace, field
+from reflex_core.event import EventHandler, passthrough_event_spec
 from reflex_core.vars.base import Var
 
-from reflex.components.component import Component, ComponentNamespace, field
-from reflex.event import EventHandler, passthrough_event_spec
 from reflex_components_radix.primitives.base import RadixPrimitiveComponentWithClassName
 
 LiteralSliderOrientation = Literal["horizontal", "vertical"]

@@ -44,6 +44,12 @@ from reflex_components_core.core.sticky import sticky
 from reflex_components_radix import themes
 from reflex_components_sonner.toast import toast
 from reflex_core import constants
+from reflex_core.components.component import (
+    CUSTOM_COMPONENTS,
+    Component,
+    ComponentStyle,
+    evaluate_style_namespaces,
+)
 from reflex_core.config import get_config
 from reflex_core.environment import ExecutorType, environment
 from reflex_core.event import (
@@ -56,6 +62,7 @@ from reflex_core.event import (
     noop,
 )
 from reflex_core.utils.imports import ImportVar
+from reflex_core.utils.types import ASGIApp, Message, Receive, Scope, Send
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp as EngineIOApp
 from socketio import AsyncNamespace, AsyncServer
@@ -76,12 +83,6 @@ from reflex.compiler.compiler import (
     ExecutorSafeFunctions,
     compile_theme,
     readable_name_from_component,
-)
-from reflex.components.component import (
-    CUSTOM_COMPONENTS,
-    Component,
-    ComponentStyle,
-    evaluate_style_namespaces,
 )
 from reflex.experimental.memo import EXPERIMENTAL_MEMOS
 from reflex.istate.manager import StateModificationContext
@@ -121,7 +122,6 @@ from reflex.utils.exec import (
 )
 from reflex.utils.misc import run_in_thread
 from reflex.utils.token_manager import RedisTokenManager, TokenManager
-from reflex.utils.types import ASGIApp, Message, Receive, Scope, Send
 
 if TYPE_CHECKING:
     from reflex_core.vars import Var
@@ -211,7 +211,7 @@ def default_overlay_component() -> Component:
     Returns:
         The default overlay_component, which is a connection_modal.
     """
-    from reflex.components.component import memo
+    from reflex_core.components.component import memo
 
     def default_overlay_components():
         return Fragment.create(
@@ -1058,7 +1058,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def _setup_sticky_badge(self):
         """Add the sticky badge to the app."""
-        from reflex.components.component import memo
+        from reflex_core.components.component import memo
 
         @memo
         def memoized_badge():
@@ -1258,7 +1258,7 @@ class App(MiddlewareMixin, LifespanMixin):
         all_imports = {}
 
         if (toaster := self.toaster) is not None:
-            from reflex.components.component import memo
+            from reflex_core.components.component import memo
 
             @memo
             def memoized_toast_provider():

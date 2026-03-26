@@ -6,10 +6,10 @@ from collections.abc import Generator
 from unittest import mock
 
 import pytest
+from reflex_core.components.component import CUSTOM_COMPONENTS
+from reflex_core.event import EventSpec
 
 from reflex.app import App
-from reflex.components.component import CUSTOM_COMPONENTS
-from reflex.event import EventSpec
 from reflex.experimental.memo import EXPERIMENTAL_MEMOS
 from reflex.model import ModelRegistry
 from reflex.testing import chdir

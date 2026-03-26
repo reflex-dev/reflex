@@ -2,7 +2,7 @@
 
 Components have been split across multiple packages.
 This module installs an import redirect hook so that
-``from reflex.components.<subpkg> import X`` continues to work
+``from reflex_core.components.<subpkg> import X`` continues to work
 by delegating to the appropriate package.
 """
 

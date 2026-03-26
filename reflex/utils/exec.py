@@ -20,9 +20,9 @@ from reflex_core.config import get_config
 from reflex_core.constants.base import LogLevel
 from reflex_core.environment import environment
 from reflex_core.utils import console
+from reflex_core.utils.decorator import once
 
 from reflex.utils import path_ops
-from reflex.utils.decorator import once
 from reflex.utils.misc import get_module_path
 from reflex.utils.prerequisites import get_web_dir
 

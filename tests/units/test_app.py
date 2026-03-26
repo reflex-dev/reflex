@@ -20,7 +20,10 @@ from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core.cond import Cond
 from reflex_components_radix.themes.typography.text import Text
+from reflex_core.components.component import Component
 from reflex_core.constants.state import FIELD_MARKER
+from reflex_core.event import Event
+from reflex_core.style import Style
 from reflex_core.vars.base import computed_var
 from starlette.applications import Starlette
 from starlette.datastructures import FormData, Headers, UploadFile
@@ -35,9 +38,7 @@ from reflex.app import (
     process,
     upload,
 )
-from reflex.components import Component
 from reflex.environment import environment
-from reflex.event import Event
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
@@ -51,7 +52,6 @@ from reflex.state import (
     StateUpdate,
     _substate_key,
 )
-from reflex.style import Style
 from reflex.utils import console, exceptions, format
 
 from .conftest import chdir

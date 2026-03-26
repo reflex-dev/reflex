@@ -6,11 +6,11 @@ from collections.abc import Sequence
 from typing import Literal
 
 from reflex_components_core.core.breakpoints import Responsive
+from reflex_core.components.component import Component, field
+from reflex_core.event import EventHandler, passthrough_event_spec
+from reflex_core.utils.types import typehint_issubclass
 from reflex_core.vars.base import Var
 
-from reflex.components.component import Component, field
-from reflex.event import EventHandler, passthrough_event_spec
-from reflex.utils.types import typehint_issubclass
 from reflex_components_radix.themes.base import LiteralAccentColor, RadixThemesComponent
 
 on_value_event_spec = (
