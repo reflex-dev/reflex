@@ -1,6 +1,7 @@
 import importlib.util
 import os
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 from pytest_mock import MockerFixture
@@ -8,6 +9,7 @@ from pytest_mock import MockerFixture
 from reflex import constants
 from reflex.compiler import compiler, utils
 from reflex.components.base import document
+from reflex.components.component import StatefulComponent
 from reflex.components.el.elements.metadata import Link
 from reflex.constants.compiler import PageNames
 from reflex.utils.imports import ImportVar, ParsedImportDict
@@ -448,3 +450,34 @@ def test_create_document_root_with_meta_viewport():
     assert str(root.children[0].children[2].name) == '"viewport"'  # pyright: ignore [reportAttributeAccessIssue]
     assert str(root.children[0].children[2].content) == '"foo"'  # pyright: ignore [reportAttributeAccessIssue]
     assert str(root.children[0].children[3].char_set) == '"utf-8"'  # pyright: ignore [reportAttributeAccessIssue]
+
+
+@pytest.mark.parametrize("prod_mode", [True, False])
+def test_shared_stateful_components_only_in_prod(prod_mode: bool):
+    """Shared stateful components must only be marked rendered_as_shared in prod mode.
+
+    In dev mode, stateful component compilation is skipped so the shared module
+    is empty. Marking components as rendered_as_shared in dev mode causes them to
+    import from a non-existent module, silently breaking rendering.
+
+    Args:
+        prod_mode: Whether to simulate prod mode.
+    """
+    from reflex.components.component import Component
+
+    component = StatefulComponent(
+        tag="TestComponent",
+        references=2,  # referenced by more than one page
+        children=[],
+        component=Component.create(),
+    )
+
+    rendered_components: dict[str, None] = {}
+    all_import_dicts: list[ParsedImportDict] = []
+
+    with patch("reflex.compiler.compiler.is_prod_mode", return_value=prod_mode):
+        compiler._get_shared_components_recursive(
+            component, rendered_components, all_import_dicts
+        )
+
+    assert component.rendered_as_shared is prod_mode
