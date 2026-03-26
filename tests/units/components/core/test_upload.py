@@ -1,8 +1,6 @@
 from typing import Any, cast
 
 import pytest
-
-import reflex as rx
 from reflex_components_core.core.upload import (
     StyledUpload,
     Upload,
@@ -12,6 +10,7 @@ from reflex_components_core.core.upload import (
     get_upload_url,
 )
 
+import reflex as rx
 from reflex import event
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.state import State
