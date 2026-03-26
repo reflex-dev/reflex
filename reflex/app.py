@@ -1936,11 +1936,6 @@ def upload(app: App):
         Returns:
             StreamingResponse yielding newline-delimited JSON of StateUpdate
             emitted by the upload handler.
-
-        Raises:
-            UploadValueError: if there are no args with supported annotation.
-            UploadTypeError: if a background task is used as the handler.
-            HTTPException: when the request does not include token / handler headers.
         """
         from reflex.utils.exceptions import UploadTypeError, UploadValueError
 
@@ -1965,6 +1960,11 @@ def upload(app: App):
 
             Returns:
                 The upload event backed by the original temp files.
+
+            Raises:
+                UploadValueError: If there are no uploaded files or supported annotations.
+                UploadTypeError: If a background task is used as the handler.
+                HTTPException: If the request is missing token or handler headers.
             """
             files = form_data.getlist("files")
             if not files:
