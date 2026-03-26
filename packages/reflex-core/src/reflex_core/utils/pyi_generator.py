@@ -110,7 +110,7 @@ DEFAULT_TYPING_IMPORTS = {
 DEFAULT_IMPORTS = {
     "typing": sorted(DEFAULT_TYPING_IMPORTS),
     "reflex_components_core.core.breakpoints": ["Breakpoints"],
-    "reflex.event": [
+    "reflex_core.event": [
         "EventChain",
         "EventHandler",
         "EventSpec",
@@ -118,7 +118,7 @@ DEFAULT_IMPORTS = {
         "KeyInputInfo",
         "PointerEventInfo",
     ],
-    "reflex.style": ["Style"],
+    "reflex_core.style": ["Style"],
     "reflex_core.vars.base": ["Var"],
 }
 
