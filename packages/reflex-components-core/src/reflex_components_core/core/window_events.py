@@ -6,11 +6,10 @@ from typing import Any, cast
 
 from reflex_core.components.component import StatefulComponent, field
 from reflex_core.constants.compiler import Hooks
-from reflex_core.event import key_event, no_args_event_spec
+from reflex_core.event import EventHandler, key_event, no_args_event_spec
 from reflex_core.vars.base import Var, VarData
 from reflex_core.vars.object import ObjectVar
 
-import reflex as rx
 from reflex_components_core.base.fragment import Fragment
 
 
@@ -56,31 +55,31 @@ def _on_storage_spec(e: ObjectVar) -> tuple[Var[str], Var[str], Var[str], Var[st
 class WindowEventListener(Fragment):
     """A component that listens for window events."""
 
-    on_resize: rx.EventHandler[_on_resize_spec] = field(
+    on_resize: EventHandler[_on_resize_spec] = field(
         doc="Triggered when the browser window is resized. Receives the new width and height in pixels."
     )
-    on_scroll: rx.EventHandler[_on_scroll_spec] = field(
+    on_scroll: EventHandler[_on_scroll_spec] = field(
         doc="Triggered when the user scrolls the page. Receives the current horizontal and vertical scroll positions."
     )
-    on_focus: rx.EventHandler[no_args_event_spec] = field(
+    on_focus: EventHandler[no_args_event_spec] = field(
         doc="Triggered when the browser tab or window gains focus (e.g. user switches back to the tab)."
     )
-    on_blur: rx.EventHandler[no_args_event_spec] = field(
+    on_blur: EventHandler[no_args_event_spec] = field(
         doc="Triggered when the browser tab or window loses focus (e.g. user switches to another tab)."
     )
-    on_visibility_change: rx.EventHandler[_on_visibility_change_spec] = field(
+    on_visibility_change: EventHandler[_on_visibility_change_spec] = field(
         doc="Triggered when the page becomes visible or hidden (e.g. tab switch or minimize). Receives a boolean indicating whether the document is hidden."
     )
-    on_before_unload: rx.EventHandler[no_args_event_spec] = field(
+    on_before_unload: EventHandler[no_args_event_spec] = field(
         doc="Triggered just before the user navigates away from or closes the page. Useful for cleanup or prompting unsaved-changes warnings."
     )
-    on_key_down: rx.EventHandler[key_event] = field(
+    on_key_down: EventHandler[key_event] = field(
         doc="Triggered when a key is pressed anywhere on the page. Receives the key name and active modifier keys (shift, ctrl, alt, meta)."
     )
-    on_popstate: rx.EventHandler[no_args_event_spec] = field(
+    on_popstate: EventHandler[no_args_event_spec] = field(
         doc="Triggered when the user navigates back or forward via the browser history buttons."
     )
-    on_storage: rx.EventHandler[_on_storage_spec] = field(
+    on_storage: EventHandler[_on_storage_spec] = field(
         doc="Triggered when localStorage or sessionStorage is modified in another tab. Receives the key, old value, new value, and the URL of the document that changed the storage."
     )
 

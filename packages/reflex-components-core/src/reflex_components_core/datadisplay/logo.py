@@ -1,11 +1,14 @@
 """A Reflex logo component."""
 
-import reflex as rx
+from reflex_core.vars import Var
 
-SVG_COLOR = rx.color_mode_cond("#110F1F", "white")
+from reflex_components_core import el
+from reflex_components_core.core import color_mode_cond
+
+SVG_COLOR = color_mode_cond("#110F1F", "white")
 
 
-def svg_logo(color: str | rx.Var[str] = SVG_COLOR, **props):
+def svg_logo(color: str | Var[str] = SVG_COLOR, **props):
     """A Reflex logo SVG.
 
     Args:
@@ -17,7 +20,7 @@ def svg_logo(color: str | rx.Var[str] = SVG_COLOR, **props):
     """
 
     def logo_path(d: str):
-        return rx.el.path(d=d)
+        return el.path(d=d)
 
     paths = [
         "M0 11.5999V0.399902H8.96V4.8799H6.72V2.6399H2.24V4.8799H6.72V7.1199H2.24V11.5999H0ZM6.72 11.5999V7.1199H8.96V11.5999H6.72Z",
@@ -28,9 +31,9 @@ def svg_logo(color: str | rx.Var[str] = SVG_COLOR, **props):
         "M47.04 4.8799V0.399902H49.28V4.8799H47.04ZM53.76 4.8799V0.399902H56V4.8799H53.76ZM49.28 7.1199V4.8799H53.76V7.1199H49.28ZM47.04 11.5999V7.1199H49.28V11.5999H47.04ZM53.76 11.5999V7.1199H56V11.5999H53.76Z",
     ]
 
-    return rx.el.svg(
+    return el.svg(
         *[logo_path(d) for d in paths],
-        rx.el.title("Reflex"),
+        el.title("Reflex"),
         aria_label="Reflex",
         role="img",
         width=props.pop("width", "56"),
@@ -50,18 +53,20 @@ def logo(**props):
     Returns:
         The logo component.
     """
-    return rx.center(
-        rx.link(
-            rx.hstack(
+    return el.div(
+        el.a(
+            el.div(
                 "Built with ",
                 svg_logo(),
-                text_align="center",
-                align="center",
+                display="flex",
+                align_items="center",
+                gap="0.5em",
                 padding="1em",
             ),
             href="https://reflex.dev",
-            size="3",
         ),
+        display="flex",
+        justify_content="center",
         width=props.pop("width", "100%"),
         **props,
     )

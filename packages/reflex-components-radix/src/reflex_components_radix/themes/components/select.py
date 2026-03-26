@@ -3,13 +3,13 @@
 from collections.abc import Sequence
 from typing import ClassVar, Literal
 
+from reflex_components_core.core import foreach
 from reflex_components_core.core.breakpoints import Responsive
 from reflex_core.components.component import Component, ComponentNamespace, field
 from reflex_core.constants.compiler import MemoizationMode
-from reflex_core.event import no_args_event_spec, passthrough_event_spec
+from reflex_core.event import EventHandler, no_args_event_spec, passthrough_event_spec
 from reflex_core.vars.base import Var
 
-import reflex as rx
 from reflex_components_radix.themes.base import (
     LiteralAccentColor,
     LiteralRadius,
@@ -57,11 +57,11 @@ class SelectRoot(RadixThemesComponent):
     # Props to rename
     _rename_props = {"onChange": "onValueChange"}
 
-    on_change: rx.EventHandler[passthrough_event_spec(str)] = field(
+    on_change: EventHandler[passthrough_event_spec(str)] = field(
         doc="Fired when the value of the select changes."
     )
 
-    on_open_change: rx.EventHandler[passthrough_event_spec(bool)] = field(
+    on_open_change: EventHandler[passthrough_event_spec(bool)] = field(
         doc="Fired when the select is opened or closed."
     )
 
@@ -121,15 +121,15 @@ class SelectContent(RadixThemesComponent):
         doc="The vertical distance in pixels from the anchor. Only available when position is set to popper."
     )
 
-    on_close_auto_focus: rx.EventHandler[no_args_event_spec] = field(
+    on_close_auto_focus: EventHandler[no_args_event_spec] = field(
         doc="Fired when the select content is closed."
     )
 
-    on_escape_key_down: rx.EventHandler[no_args_event_spec] = field(
+    on_escape_key_down: EventHandler[no_args_event_spec] = field(
         doc="Fired when the escape key is pressed."
     )
 
-    on_pointer_down_outside: rx.EventHandler[no_args_event_spec] = field(
+    on_pointer_down_outside: EventHandler[no_args_event_spec] = field(
         doc="Fired when a pointer down event happens outside the select content."
     )
 
@@ -237,9 +237,7 @@ class HighLevelSelect(SelectRoot):
         label = props.pop("label", None)
 
         if isinstance(items, Var):
-            child = [
-                rx.foreach(items, lambda item: SelectItem.create(item, value=item))
-            ]
+            child = [foreach(items, lambda item: SelectItem.create(item, value=item))]
         else:
             child = [SelectItem.create(item, value=item) for item in items]
 

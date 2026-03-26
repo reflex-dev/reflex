@@ -2,13 +2,13 @@
 
 from typing import Literal
 
+from reflex_components_core.base import fragment
 from reflex_components_core.core.breakpoints import Responsive
 from reflex_components_core.el import elements
 from reflex_components_lucide.icon import Icon
 from reflex_core.components.component import Component, ComponentNamespace, field
 from reflex_core.vars.base import Var
 
-import reflex as rx
 from reflex_components_radix.themes.base import LiteralAccentColor, RadixThemesComponent
 
 CalloutVariant = Literal["soft", "surface", "outline"]
@@ -70,7 +70,7 @@ class Callout(CalloutRoot):
             (
                 CalloutIcon.create(Icon.create(tag=props["icon"]))
                 if "icon" in props
-                else rx.fragment()
+                else fragment()
             ),
             CalloutText.create(text),
             **props,

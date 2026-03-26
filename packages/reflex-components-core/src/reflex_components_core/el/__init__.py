@@ -8,7 +8,7 @@ from . import elements
 
 _SUBMODULES: set[str] = {"elements"}
 _SUBMOD_ATTRS: dict[str, list[str]] = {
-    # rx.el.a is replaced by React Router's Link.
+    # el.a is replaced by React Router's Link.
     f"elements.{k}": [attr for attr in attrs if attr != "a"]
     for k, attrs in elements._MAPPING.items()
 }

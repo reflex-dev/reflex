@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Literal
 
+from reflex_components_core.core import cond, foreach
 from reflex_components_core.core.breakpoints import Responsive
 from reflex_core.components.component import Component, ComponentNamespace, field
 from reflex_core.event import EventHandler, passthrough_event_spec
@@ -12,7 +13,6 @@ from reflex_core.utils import types
 from reflex_core.vars.base import LiteralVar, Var
 from reflex_core.vars.sequence import StringVar
 
-import reflex as rx
 from reflex_components_radix.themes.base import (
     LiteralAccentColor,
     LiteralSpacing,
@@ -178,7 +178,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
             default_value = LiteralVar.create(default_value).to_string()
 
         def radio_group_item(value: Var) -> Component:
-            item_value = rx.cond(
+            item_value = cond(
                 value.js_type() == "string",
                 value,
                 value.to_string(),
@@ -198,7 +198,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
             )
 
         children = [
-            rx.foreach(
+            foreach(
                 items,
                 radio_group_item,
             )
