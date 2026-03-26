@@ -147,6 +147,21 @@ def update_react_router_config(prerender_routes: bool = False):
         react_router_config_file_path.write_text(new_react_router_config)
 
 
+def copy_ssr_scripts():
+    """Copy SSR-related scripts from the web template to the .web directory.
+
+    Copies ssr-serve.js (production server) and generate-shell.mjs
+    (post-build static shell generator) when runtime_ssr is enabled.
+    """
+    import shutil
+
+    web_dir = get_web_dir()
+    for filename in ("ssr-serve.js", "generate-shell.mjs"):
+        src = constants.Templates.Dirs.WEB_TEMPLATE / filename
+        if src.exists():
+            shutil.copy2(str(src), str(web_dir / filename))
+
+
 def _update_react_router_config(config: Config, prerender_routes: bool = False):
     basename = "/" + (config.frontend_path or "").strip("/")
     if not basename.endswith("/"):
@@ -157,7 +172,7 @@ def _update_react_router_config(config: Config, prerender_routes: bool = False):
         "future": {
             "unstable_optimizeDeps": True,
         },
-        "ssr": False,
+        "ssr": config.runtime_ssr,
     }
 
     if prerender_routes:
@@ -169,15 +184,21 @@ def _update_react_router_config(config: Config, prerender_routes: bool = False):
 
 def _compile_package_json():
     config = get_config()
+    prod_command = (
+        constants.PackageJson.Commands.PROD_SSR
+        if config.runtime_ssr
+        else constants.PackageJson.Commands.get_prod_command(config.frontend_path)
+    )
+    deps = dict(constants.PackageJson.DEPENDENCIES)
+    if config.runtime_ssr:
+        deps.update(constants.PackageJson.SSR_DEPENDENCIES)
     return templates.package_json_template(
         scripts={
             "dev": constants.PackageJson.Commands.DEV,
             "export": constants.PackageJson.Commands.EXPORT,
-            "prod": constants.PackageJson.Commands.get_prod_command(
-                config.frontend_path
-            ),
+            "prod": prod_command,
         },
-        dependencies=constants.PackageJson.DEPENDENCIES,
+        dependencies=deps,
         dev_dependencies=constants.PackageJson.DEV_DEPENDENCIES,
         overrides=constants.PackageJson.OVERRIDES,
     )

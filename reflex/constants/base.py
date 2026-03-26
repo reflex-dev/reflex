@@ -169,9 +169,8 @@ class ReactRouter(Javascript):
     # Regex to check for message displayed when frontend comes up
     DEV_FRONTEND_LISTENING_REGEX = r"Local:[\s]+"
 
-    # Regex to pattern the route path in the config file
-    # INFO  Accepting connections at http://localhost:3000
-    PROD_FRONTEND_LISTENING_REGEX = r"Accepting connections at[\s]+"
+    # Matches output from sirv ("Accepting connections at") or ssr-serve ("[ssr-serve]").
+    PROD_FRONTEND_LISTENING_REGEX = r"(?:Accepting connections at|\[ssr-serve\])[\s]+"
 
     FRONTEND_LISTENING_REGEX = (
         rf"(?:{DEV_FRONTEND_LISTENING_REGEX}|{PROD_FRONTEND_LISTENING_REGEX})(.*)"

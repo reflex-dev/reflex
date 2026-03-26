@@ -170,6 +170,7 @@ def app_root_template(
     window_libraries: list[tuple[str, str]],
     render: dict[str, Any],
     dynamic_imports: set[str],
+    runtime_ssr: bool = False,
 ):
     """Template for the App root.
 
@@ -180,6 +181,7 @@ def app_root_template(
         window_libraries: The list of window libraries.
         render: The dictionary of render functions.
         dynamic_imports: The set of dynamic imports.
+        runtime_ssr: Whether runtime SSR is enabled.
 
     Returns:
         Rendered App root component as string.
@@ -198,17 +200,67 @@ def app_root_template(
         f'    "{lib_path}": {lib_alias},' for lib_alias, lib_path in window_libraries
     ])
 
+    if runtime_ssr:
+        ssr_imports = (
+            'import { Outlet, useLoaderData } from "react-router";\n'
+            'import { getBackendURL } from "$/utils/state";\n'
+            'import env from "$/env.json";'
+        )
+        ssr_loader = """
+export async function loader({ request }) {
+  // Short-circuit during static shell generation (no backend available).
+  if (request.headers.get("x-reflex-shell-gen") === "1") {
+    return { state: null };
+  }
+  // Fetch state data from the Python backend.  This loader runs in two cases:
+  // (a) Full SSR render for bots — ssr-serve.js routes bot requests here.
+  // (b) .data requests for client-side navigation — React Router calls the
+  //     loader to fetch route data as JSON for the next page.
+  // Both cases need real state data from the backend.
+  const backendUrl = getBackendURL(env.SSR_DATA);
+  try {
+    const res = await fetch(backendUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(request.headers.get("cookie") ? { "Cookie": request.headers.get("cookie") } : {}),
+      },
+      body: JSON.stringify({
+        path: new URL(request.url).pathname,
+        headers: Object.fromEntries(request.headers),
+      }),
+    });
+    if (res.ok) {
+      return res.json();
+    }
+  } catch (e) {
+    console.error("SSR data fetch failed:", e);
+  }
+  return { state: null };
+}
+"""
+        ssr_layout_head = (
+            "  const loaderData = useLoaderData();\n"
+            "  const ssrState = loaderData?.state || null;\n"
+        )
+        ssr_state_provider_props = "{ssrState}"
+    else:
+        ssr_imports = 'import { Outlet } from "react-router";'
+        ssr_loader = ""
+        ssr_layout_head = ""
+        ssr_state_provider_props = "{}"
+
     return f"""
 {imports_str}
 {dynamic_imports_str}
 import {{ EventLoopProvider, StateProvider, defaultColorMode }} from "$/utils/context";
 import {{ ThemeProvider }} from '$/utils/react-theme';
 import {{ Layout as AppLayout }} from './_document';
-import {{ Outlet }} from 'react-router';
+{ssr_imports}
 {import_window_libraries}
 
 {custom_code_str}
-
+{ssr_loader}
 function AppWrap({{children}}) {{
 {_render_hooks(hooks)}
 return ({_RenderUtils.render(render)})
@@ -216,6 +268,7 @@ return ({_RenderUtils.render(render)})
 
 
 export function Layout({{children}}) {{
+{ssr_layout_head}
   useEffect(() => {{
     // Make contexts and state objects available globally for dynamic eval'd components
     let windowImports = {{
@@ -226,7 +279,7 @@ export function Layout({{children}}) {{
 
   return jsx(AppLayout, {{}},
     jsx(ThemeProvider, {{defaultTheme: defaultColorMode, attribute: "class"}},
-      jsx(StateProvider, {{}},
+      jsx(StateProvider, {ssr_state_provider_props},
         jsx(EventLoopProvider, {{}},
           jsx(AppWrap, {{}}, children)
         )
@@ -261,6 +314,7 @@ def context_template(
     initial_state: dict[str, Any] | None = None,
     state_name: str | None = None,
     client_storage: dict[str, dict[str, dict[str, Any]]] | None = None,
+    runtime_ssr: bool = False,
 ):
     """Template for the context file.
 
@@ -270,6 +324,7 @@ def context_template(
         client_storage: The client storage for the context.
         is_dev_mode: Whether the app is in development mode.
         default_color_mode: The default color mode for the context.
+        runtime_ssr: Whether runtime SSR is enabled.
 
     Returns:
         Rendered context file content as string.
@@ -327,10 +382,16 @@ export const initialEvents = () => []
 """
     )
 
-    state_reducer_str = "\n".join(
-        rf'const [{format_state_name(state_name)}, dispatch_{format_state_name(state_name)}] = useReducer(applyDelta, initialState["{state_name}"])'
-        for state_name in initial_state
-    )
+    if runtime_ssr:
+        state_reducer_str = "\n".join(
+            rf'const [{format_state_name(state_name)}, dispatch_{format_state_name(state_name)}] = useReducer(applyDelta, ssrState !== null && ssrState["{state_name}"] != null ? ssrState["{state_name}"] : initialState["{state_name}"])'
+            for state_name in initial_state
+        )
+    else:
+        state_reducer_str = "\n".join(
+            rf'const [{format_state_name(state_name)}, dispatch_{format_state_name(state_name)}] = useReducer(applyDelta, initialState["{state_name}"])'
+            for state_name in initial_state
+        )
 
     create_state_contexts_str = "\n".join(
         rf"createElement(StateContexts.{format_state_name(state_name)},{{value: {format_state_name(state_name)}}},"
@@ -353,8 +414,15 @@ export const ColorModeContext = createContext(null);
 export const UploadFilesContext = createContext(null);
 export const DispatchContext = createContext(null);
 export const StateContexts = {{{state_contexts_str}}};
-export const EventLoopContext = createContext(null);
-export const clientStorage = {"{}" if client_storage is None else json.dumps(client_storage)}
+export const EventLoopContext = createContext(null);{
+        '''
+export const SSRContext = createContext(false);'''
+        if runtime_ssr
+        else ""
+    }
+export const clientStorage = {
+        "{}" if client_storage is None else json.dumps(client_storage)
+    }
 
 {state_str}
 
@@ -389,11 +457,21 @@ export function ClientSide(component) {{
 }}
 
 export function EventLoopProvider({{ children }}) {{
-  const dispatch = useContext(DispatchContext)
+  const dispatch = useContext(DispatchContext){
+        '''
+  const ssrHydrated = useContext(SSRContext)'''
+        if runtime_ssr
+        else ""
+    }
   const [addEvents, connectErrors] = useEventLoop(
     dispatch,
     initialEvents,
-    clientStorage,
+    clientStorage,{
+        '''
+    ssrHydrated,'''
+        if runtime_ssr
+        else ""
+    }
   )
   return createElement(
     EventLoopContext.Provider,
@@ -402,7 +480,9 @@ export function EventLoopProvider({{ children }}) {{
   );
 }}
 
-export function StateProvider({{ children }}) {{
+export function StateProvider({{ children{
+        ", ssrState = null" if runtime_ssr else ""
+    } }}) {{
   {state_reducer_str}
   const dispatchers = useMemo(() => {{
     return {{
@@ -411,9 +491,11 @@ export function StateProvider({{ children }}) {{
   }}, [])
 
   return (
+    {"createElement(SSRContext.Provider, {value: !!ssrState}," if runtime_ssr else ""}
     {create_state_contexts_str}
     createElement(DispatchContext, {{value: dispatchers}}, children)
     {")" * len(initial_state)}
+    {")" if runtime_ssr else ""}
   )
 }}"""
 
@@ -454,6 +536,7 @@ def page_template(
     dynamic_imports_str = "\n".join(dynamic_imports)
 
     hooks_str = _render_hooks(hooks)
+
     return f"""{imports_str}
 
 {dynamic_imports_str}

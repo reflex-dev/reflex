@@ -1134,3 +1134,119 @@ class AppHarnessProd(AppHarness):
             self.frontend_server.shutdown()
         if self.frontend_thread is not None:
             self.frontend_thread.join()
+
+
+class AppHarnessSSR(AppHarnessProd):
+    """AppHarnessSSR runs a Reflex app with runtime SSR via ssr-serve.js.
+
+    Instead of serving static files with Python's http.server, this harness
+    runs the Node.js ``ssr-serve.js`` Express server that provides bot-aware
+    server-side rendering.  Regular (non-bot) users still receive the SPA shell
+    for fast hydration, while crawlers get fully rendered HTML.
+
+    Use this harness with ``runtime_ssr=True`` in ``rxconfig.py``.
+    """
+
+    def _initialize_app(self):
+        """Initialize the app and patch the config for runtime SSR.
+
+        The base ``_initialize_app`` scaffolds the project (``_init``), reloads
+        the config from disk, then creates the app instance (which registers
+        endpoints).  We need ``runtime_ssr=True`` in the config **before** the
+        app instance is created so that the ``/_ssr_data`` endpoint is
+        registered and the ``package.json`` includes SSR dependencies.
+
+        Strategy: call ``super()`` which does everything, then:
+        1. Patch ``rxconfig.py`` on disk so future reloads pick it up.
+        2. Set the live config to ``runtime_ssr=True``.
+        3. Manually register the ``/_ssr_data`` endpoint on the already-created
+           ASGI app (since it was skipped during initial creation).
+        """
+        super()._initialize_app()
+
+        # 1. Patch the on-disk rxconfig.py for future reinit / export.
+        rxconfig_path = self.app_path / reflex.constants.Config.FILE
+        content = rxconfig_path.read_text()
+        content = content.replace("rx.Config(", "rx.Config(\n    runtime_ssr=True,")
+        rxconfig_path.write_text(content)
+
+        # 2. Enable runtime_ssr on the live config singleton.
+        get_config().runtime_ssr = True
+
+        # 3. Register the /_ssr_data endpoint that was skipped during init.
+        if self.app_instance is not None and self.app_instance._api is not None:
+            from reflex.app import ssr_data
+
+            self.app_instance._api.add_route(
+                str(reflex.constants.Endpoint.SSR_DATA),
+                ssr_data(self.app_instance),
+                methods=["POST"],
+            )
+
+    def _start_frontend(self):
+        """Export the app and launch ssr-serve.js as the frontend process.
+
+        After export, an extra ``bun install`` is run to pick up SSR
+        dependencies that were written to ``package.json`` by ``_compile()``
+        *after* the initial package install (a sequencing nuance: in normal
+        usage the package.json is correct from the start, but here the test
+        harness flipped ``runtime_ssr`` after the first ``_init``).
+        """
+        with chdir(self.app_path):
+            config = reflex.config.get_config()
+            print("Polling for servers...")  # for pytest diagnosis  # noqa: T201
+            config.api_url = "http://{}:{}".format(
+                *self._poll_for_servers(timeout=30).getsockname(),
+            )
+            print("Building frontend (SSR)...")  # for pytest diagnosis  # noqa: T201
+
+            get_config().loglevel = reflex.constants.LogLevel.INFO
+
+            reflex.utils.prerequisites.assert_in_reflex_dir()
+
+            if reflex.utils.prerequisites.needs_reinit():
+                reflex.reflex._init(name=get_config().app_name)
+
+            export(
+                zipping=False,
+                frontend=True,
+                backend=False,
+                loglevel=reflex.constants.LogLevel.INFO,
+                env=reflex.constants.Env.PROD,
+            )
+
+        # export() regenerated package.json with SSR deps but the initial
+        # bun install ran before that.  Run install once more so that
+        # @react-router/express, express, compression are available.
+        web_dir = self.app_path / reflex.utils.prerequisites.get_web_dir()
+        print("Installing SSR dependencies...")  # for pytest diagnosis  # noqa: T201
+        install_proc = reflex.utils.processes.new_process(
+            [
+                *js_runtimes.get_js_package_executor(raise_on_none=True)[0],
+                "install",
+                "--legacy-peer-deps",
+            ],
+            cwd=web_dir,
+        )
+        install_proc.communicate()
+
+        print("Frontend starting (SSR)...")  # for pytest diagnosis  # noqa: T201
+
+        from reflex.utils.path_ops import get_node_path
+
+        node = str(get_node_path() or "node")
+        self.frontend_process = reflex.utils.processes.new_process(
+            [node, "ssr-serve.js"],
+            cwd=web_dir,
+            env={"PORT": "0", "NO_COLOR": "1"},
+            **FRONTEND_POPEN_ARGS,
+        )
+
+    def _wait_frontend(self):
+        """Wait for ssr-serve.js to emit its listening URL on stdout.
+
+        Reuses the base ``AppHarness._wait_frontend`` which parses
+        ``FRONTEND_LISTENING_REGEX`` — that regex already matches the
+        ``[ssr-serve] http://localhost:<port>`` output format.
+        """
+        AppHarness._wait_frontend(self)

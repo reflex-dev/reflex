@@ -73,11 +73,12 @@ def _normalize_library_name(lib: str) -> str:
     return lib.replace("$/", "").replace("@", "").replace("/", "_").replace("-", "_")
 
 
-def _compile_app(app_root: Component) -> str:
+def _compile_app(app_root: Component, runtime_ssr: bool = False) -> str:
     """Compile the app template component.
 
     Args:
         app_root: The app root to compile.
+        runtime_ssr: Whether runtime SSR is enabled.
 
     Returns:
         The compiled app.
@@ -100,6 +101,7 @@ def _compile_app(app_root: Component) -> str:
         window_libraries=window_libraries_deduped,
         render=app_root.render(),
         dynamic_imports=app_root._get_all_dynamic_imports(),
+        runtime_ssr=runtime_ssr,
     )
 
 
@@ -115,12 +117,17 @@ def _compile_theme(theme: str) -> str:
     return templates.theme_template(theme=theme)
 
 
-def _compile_contexts(state: type[BaseState] | None, theme: Component | None) -> str:
+def _compile_contexts(
+    state: type[BaseState] | None,
+    theme: Component | None,
+    runtime_ssr: bool = False,
+) -> str:
     """Compile the initial state and contexts.
 
     Args:
         state: The app state.
         theme: The top-level app theme.
+        runtime_ssr: Whether runtime SSR is enabled.
 
     Returns:
         The compiled context file.
@@ -136,11 +143,13 @@ def _compile_contexts(state: type[BaseState] | None, theme: Component | None) ->
             client_storage=utils.compile_client_storage(state),
             is_dev_mode=not is_prod_mode(),
             default_color_mode=str(appearance),
+            runtime_ssr=runtime_ssr,
         )
         if state
         else templates.context_template(
             is_dev_mode=not is_prod_mode(),
             default_color_mode=str(appearance),
+            runtime_ssr=runtime_ssr,
         )
     )
 
@@ -496,11 +505,12 @@ def compile_document_root(
     return output_path, code
 
 
-def compile_app(app_root: Component) -> tuple[str, str]:
+def compile_app(app_root: Component, runtime_ssr: bool = False) -> tuple[str, str]:
     """Compile the app root.
 
     Args:
         app_root: The app root component to compile.
+        runtime_ssr: Whether runtime SSR is enabled.
 
     Returns:
         The path and code of the compiled app wrapper.
@@ -511,7 +521,7 @@ def compile_app(app_root: Component) -> tuple[str, str]:
     )
 
     # Compile the document root.
-    code = _compile_app(app_root)
+    code = _compile_app(app_root, runtime_ssr=runtime_ssr)
     return output_path, code
 
 
@@ -537,12 +547,14 @@ def compile_theme(style: ComponentStyle) -> tuple[str, str]:
 def compile_contexts(
     state: type[BaseState] | None,
     theme: Component | None,
+    runtime_ssr: bool = False,
 ) -> tuple[str, str]:
     """Compile the initial state / context.
 
     Args:
         state: The app state.
         theme: The top-level app theme.
+        runtime_ssr: Whether runtime SSR is enabled.
 
     Returns:
         The path and code of the compiled context.
@@ -550,7 +562,7 @@ def compile_contexts(
     # Get the path for the output file.
     output_path = utils.get_context_path()
 
-    return output_path, _compile_contexts(state, theme)
+    return output_path, _compile_contexts(state, theme, runtime_ssr=runtime_ssr)
 
 
 def compile_page(path: str, component: BaseComponent) -> tuple[str, str]:
@@ -904,7 +916,11 @@ class ExecutorSafeFunctions:
         component = compile_unevaluated_page(
             route, cls.UNCOMPILED_PAGES[route], style, theme
         )
-        return route, component, compile_page(route, component)
+        return (
+            route,
+            component,
+            compile_page(route, component),
+        )
 
     @classmethod
     def compile_theme(cls, style: ComponentStyle | None) -> tuple[str, str]:

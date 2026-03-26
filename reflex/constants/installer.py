@@ -106,6 +106,7 @@ class PackageJson(SimpleNamespace):
 
         DEV = "react-router dev --host"
         EXPORT = "react-router build"
+        PROD_SSR = "node ssr-serve.js"
 
         @staticmethod
         def get_prod_command(frontend_path: str = "") -> str:
@@ -147,6 +148,21 @@ class PackageJson(SimpleNamespace):
             "isbot": "5.1.36",
             "socket.io-client": "4.8.3",
             "universal-cookie": "7.2.2",
+        }
+
+    @classproperty
+    @classmethod
+    def SSR_DEPENDENCIES(cls) -> dict[str, str]:
+        """Additional dependencies required when runtime_ssr is enabled.
+
+        Returns:
+            A dictionary of SSR-specific dependencies with their versions.
+        """
+        return {
+            "@react-router/serve": cls._react_router_version,
+            "@react-router/express": cls._react_router_version,
+            "express": "4.21.2",
+            "compression": "1.8.0",
         }
 
     DEV_DEPENDENCIES = {

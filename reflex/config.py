@@ -252,6 +252,9 @@ class BaseConfig:
 
     transport: Literal["websocket", "polling"] = "websocket"
 
+    # Enable runtime server-side rendering for search engine crawlers on dynamic routes.
+    runtime_ssr: bool = False
+
     # Whether to skip plugin checks.
     _skip_plugins_checks: bool = dataclasses.field(default=False, repr=False)
 

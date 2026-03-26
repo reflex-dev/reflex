@@ -842,6 +842,7 @@ export const useEventLoop = (
   dispatch,
   initial_events = () => [],
   client_storage = {},
+  ssrHydrated = false,
 ) => {
   const socket = useRef(null);
   const location = useLocation();
@@ -948,13 +949,27 @@ export const useEventLoop = (
   const sentHydrate = useRef(false); // Avoid double-hydrate due to React strict-mode
   useEffect(() => {
     if (!sentHydrate.current) {
-      queueEvents(
-        initial_events(),
-        socket,
-        true,
-        navigate,
-        () => params.current,
-      );
+      if (ssrHydrated) {
+        // SSR state was applied via StateProvider's initial reducer values.
+        // Just send hydrate to establish WebSocket session, skip on_load_internal
+        // since data is already loaded from the server-side render.
+        queueEvents(
+          [ReflexEvent(state_name + ".hydrate")],
+          socket,
+          true,
+          navigate,
+          () => params.current,
+        );
+      } else {
+        // No SSR state — fall back to normal WebSocket hydration.
+        queueEvents(
+          initial_events(),
+          socket,
+          true,
+          navigate,
+          () => params.current,
+        );
+      }
       sentHydrate.current = true;
     }
   }, []);

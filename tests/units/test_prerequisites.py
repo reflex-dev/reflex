@@ -54,6 +54,22 @@ runner = CliRunner()
             True,
             'export default {"basename": "/", "future": {"unstable_optimizeDeps": true}, "ssr": false, "prerender": true, "build": "build"};',
         ),
+        (
+            Config(
+                app_name="test",
+                runtime_ssr=True,
+            ),
+            False,
+            'export default {"basename": "/", "future": {"unstable_optimizeDeps": true}, "ssr": true};',
+        ),
+        (
+            Config(
+                app_name="test",
+                runtime_ssr=True,
+            ),
+            True,
+            'export default {"basename": "/", "future": {"unstable_optimizeDeps": true}, "ssr": true, "prerender": true, "build": "build"};',
+        ),
     ],
 )
 def test_update_react_router_config(config, export, expected_output):
