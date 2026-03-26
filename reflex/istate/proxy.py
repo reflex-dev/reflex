@@ -20,7 +20,6 @@ from typing_extensions import Self
 from reflex.base import Base
 from reflex.ievent.context import event_context
 from reflex.istate.manager.token import BaseStateToken
-from reflex.utils import prerequisites
 from reflex.utils.exceptions import ImmutableStateError
 from reflex.utils.serializers import can_serialize, serialize, serializer
 from reflex.vars.base import Var
@@ -74,7 +73,6 @@ class StateProxy(wrapt.ObjectProxy):
             parent_state_proxy: The parent state proxy, for linked mutability and context tracking.
         """
         super().__init__(state_instance)
-        self._self_app = prerequisites.get_and_validate_app().app
         self._self_substate_path = tuple(state_instance.get_full_name().split("."))
         self._self_substate_token = BaseStateToken(
             ident=event_context.get().token,
@@ -132,11 +130,13 @@ class StateProxy(wrapt.ObjectProxy):
             msg = "The state is already mutable. Do not nest `async with self` blocks."
             raise ImmutableStateError(msg)
 
+        ctx = event_context.get()
+
         await self._self_actx_lock.acquire()
         try:
             self._self_actx_lock_holder = current_task
-            self._self_actx = self._self_app.modify_state(
-                token=self._self_substate_token, background=True
+            self._self_actx = ctx.state_manager.modify_state_with_links(
+                token=self._self_substate_token,
             )
             mutable_state = await self._self_actx.__aenter__()
             self._self_mutable = True
@@ -163,6 +163,12 @@ class StateProxy(wrapt.ObjectProxy):
         try:
             if self._self_mutable and self._self_actx is not None:
                 await self._self_actx.__aexit__(*exc_info)
+                delta = await self.__wrapped__._get_resolved_delta()
+                self.__wrapped__._clean()
+                # When the frontend vars are modified emit the delta to the frontend.
+                if delta:
+                    ctx = event_context.get()
+                    await ctx.emit_delta(delta)
         finally:
             self._self_actx = None
             self._self_mutable = False

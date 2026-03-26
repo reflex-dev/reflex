@@ -169,4 +169,6 @@ def get_state_manager() -> StateManager:
     Returns:
         The state manager.
     """
-    return prerequisites.get_and_validate_app().app.state_manager
+    from reflex.ievent.context import event_context
+
+    return event_context.get().state_manager
