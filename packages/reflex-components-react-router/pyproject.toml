@@ -17,6 +17,13 @@ source = "uv-dynamic-versioning"
 pattern-prefix = "reflex-components-react-router-"
 fallback-version = "0.0.0dev0"
 
+[tool.hatch.build]
+targets.sdist.artifacts = ["*.pyi"]
+targets.wheel.artifacts = ["*.pyi"]
+
+[tool.hatch.build.hooks.reflex-pyi]
+dependencies = ["ruff"]
+
 [build-system]
-requires = ["hatchling", "uv-dynamic-versioning"]
+requires = ["hatchling", "uv-dynamic-versioning", "hatch-reflex-pyi"]
 build-backend = "hatchling.build"
