@@ -17,8 +17,7 @@ from reflex.utils import console
 
 if TYPE_CHECKING:
     from reflex_cli.constants.base import LogLevel as HostingLogLevel
-
-    from reflex.constants.base import LITERAL_ENV
+    from reflex_core.constants.base import LITERAL_ENV
 
 
 def set_loglevel(ctx: click.Context, self: click.Parameter, value: str | None):

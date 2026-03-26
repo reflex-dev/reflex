@@ -9,6 +9,8 @@ import pytest
 from pandas import DataFrame
 from pydantic import BaseModel as Base
 from pytest_mock import MockerFixture
+from reflex_core.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
+from reflex_core.constants.state import FIELD_MARKER
 from reflex_core.vars import VarData
 from reflex_core.vars.base import (
     ComputedVar,
@@ -33,8 +35,6 @@ from reflex_core.vars.sequence import (
 )
 
 import reflex as rx
-from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
-from reflex.constants.state import FIELD_MARKER
 from reflex.environment import PerformanceMode
 from reflex.state import BaseState
 from reflex.utils.exceptions import (

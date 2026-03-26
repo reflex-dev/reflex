@@ -5,9 +5,9 @@ import pytest
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core.cond import Cond, cond
 from reflex_components_radix.themes.typography.text import Text
+from reflex_core.constants.state import FIELD_MARKER
 from reflex_core.vars.base import LiteralVar, Var, computed_var
 
-from reflex.constants.state import FIELD_MARKER
 from reflex.state import BaseState
 from reflex.utils.format import format_state_name
 

@@ -45,7 +45,7 @@ Custom hooks are any hooks that need to be included in your component. This can 
 
 ```python
 from reflex.vars.base import Var, VarData
-from reflex.constants import Hooks
+from reflex_core.constants import Hooks
 from reflex.components.el.elements import Div
 
 class ComponentWithHooks(Div, MyBaseComponent):

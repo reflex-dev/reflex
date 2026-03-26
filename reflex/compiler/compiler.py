@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING, Any
 
 from reflex_components_core.base.fragment import Fragment
 from reflex_core import constants
+from reflex_core.constants.compiler import PageNames, ResetStylesheet
+from reflex_core.constants.state import FIELD_MARKER
 from reflex_core.vars.base import LiteralVar, Var
 
 from reflex.compiler import templates, utils
@@ -21,8 +23,6 @@ from reflex.components.component import (
     StatefulComponent,
 )
 from reflex.config import get_config
-from reflex.constants.compiler import PageNames, ResetStylesheet
-from reflex.constants.state import FIELD_MARKER
 from reflex.environment import environment
 from reflex.experimental.memo import (
     ExperimentalMemoComponentDefinition,

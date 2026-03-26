@@ -85,7 +85,7 @@ def add_tailwind_to_postcss_config(postcss_file_content: str) -> str:
     Returns:
         The modified postcss config file content.
     """
-    from reflex.constants import Dirs
+    from reflex_core.constants import Dirs
 
     postcss_file_lines = postcss_file_content.splitlines()
 

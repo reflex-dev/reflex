@@ -10,10 +10,10 @@ from reflex_components_core.core.markdown_component_map import MarkdownComponent
 from reflex_components_lucide.icon import Icon
 from reflex_components_radix.themes.components.button import Button
 from reflex_components_radix.themes.layout.box import Box
+from reflex_core.constants.colors import Color
 from reflex_core.vars.base import LiteralVar, Var, VarData
 
 from reflex.components.component import Component, ComponentNamespace, field
-from reflex.constants.colors import Color
 from reflex.event import set_clipboard
 from reflex.style import Style
 from reflex.utils import format

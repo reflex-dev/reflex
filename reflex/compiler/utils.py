@@ -20,11 +20,11 @@ from reflex_components_core.el.elements.metadata import Head, Link, Meta, Title
 from reflex_components_core.el.elements.other import Html
 from reflex_components_core.el.elements.sectioning import Body
 from reflex_core import constants
+from reflex_core.constants.state import CAMEL_CASE_MEMO_MARKER, FIELD_MARKER
 from reflex_core.vars.base import Field, Var, VarData
 from reflex_core.vars.function import DestructuredArg
 
 from reflex.components.component import Component, ComponentStyle, CustomComponent
-from reflex.constants.state import CAMEL_CASE_MEMO_MARKER, FIELD_MARKER
 from reflex.experimental.memo import (
     ExperimentalMemoComponentDefinition,
     ExperimentalMemoFunctionDefinition,

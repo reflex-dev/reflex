@@ -7,10 +7,10 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any, Literal
 
+from reflex_core.constants.compiler import MemoizationMode
 from reflex_core.vars.base import Var
 
 from reflex.components.component import Component, ComponentNamespace, field
-from reflex.constants.compiler import MemoizationMode
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
 from reflex_components_radix.primitives.base import RadixPrimitiveComponent
 from reflex_components_radix.themes.base import Theme

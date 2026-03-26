@@ -3,10 +3,10 @@ from collections.abc import Callable
 from typing import Any, cast
 
 import pytest
+from reflex_core.constants.compiler import Hooks, Imports
 from reflex_core.vars.base import Field, LiteralVar, Var, VarData, field
 
 import reflex as rx
-from reflex.constants.compiler import Hooks, Imports
 from reflex.event import (
     BACKGROUND_TASK_MARKER,
     Event,

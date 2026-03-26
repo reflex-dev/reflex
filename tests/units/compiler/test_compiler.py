@@ -7,11 +7,11 @@ from pytest_mock import MockerFixture
 from reflex_components_core.base import document
 from reflex_components_core.el.elements.metadata import Link
 from reflex_core import constants
+from reflex_core.constants.compiler import PageNames
 from reflex_core.vars.base import Var
 from reflex_core.vars.sequence import LiteralStringVar
 
 from reflex.compiler import compiler, utils
-from reflex.constants.compiler import PageNames
 from reflex.utils.imports import ImportVar, ParsedImportDict
 
 

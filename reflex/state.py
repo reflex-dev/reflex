@@ -33,6 +33,7 @@ from typing import (
 )
 
 from reflex_core import constants, event
+from reflex_core.constants.state import FIELD_MARKER
 from reflex_core.utils.types import _isinstance, is_union, value_inside_optional
 from reflex_core.vars import Field, VarData, field
 from reflex_core.vars.base import (
@@ -48,7 +49,6 @@ from rich.markup import escape
 from typing_extensions import Self
 
 import reflex.istate.dynamic
-from reflex.constants.state import FIELD_MARKER
 from reflex.environment import PerformanceMode, environment
 from reflex.event import (
     BACKGROUND_TASK_MARKER,

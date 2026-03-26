@@ -2,10 +2,10 @@
 
 from typing import Literal
 
+from reflex_core.constants.compiler import MemoizationMode
 from reflex_core.vars.base import Var
 
 from reflex.components.component import Component, field
-from reflex.constants.compiler import MemoizationMode
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
 from reflex.utils import format
 from reflex_components_radix.themes.base import RadixThemesComponent

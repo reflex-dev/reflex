@@ -13,8 +13,8 @@ from typing import Any
 
 import click
 from reflex_core import constants
+from reflex_core.constants import CustomComponents
 
-from reflex.constants import CustomComponents
 from reflex.utils import console, frontend_skeleton
 
 

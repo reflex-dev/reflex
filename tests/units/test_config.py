@@ -5,10 +5,10 @@ from typing import Any
 
 import pytest
 from pytest_mock import MockerFixture
+from reflex_core.constants import Endpoint, Env
 
 import reflex as rx
 import reflex.config
-from reflex.constants import Endpoint, Env
 from reflex.environment import (
     EnvVar,
     env_var,

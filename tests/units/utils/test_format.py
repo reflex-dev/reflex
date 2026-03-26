@@ -6,13 +6,13 @@ from typing import Any
 
 import plotly.graph_objects as go
 import pytest
+from reflex_core.constants.state import FIELD_MARKER
 from reflex_core.utils import format
 from reflex_core.vars.base import LiteralVar, Var
 from reflex_core.vars.function import FunctionStringVar
 from reflex_core.vars.object import ObjectVar
 
 from reflex.components.tags.tag import Tag
-from reflex.constants.state import FIELD_MARKER
 from reflex.event import (
     EventChain,
     EventHandler,

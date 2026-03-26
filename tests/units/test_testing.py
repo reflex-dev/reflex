@@ -5,13 +5,13 @@ from types import ModuleType, SimpleNamespace
 from unittest import mock
 
 import pytest
+from reflex_core.constants import IS_WINDOWS
 
 import reflex.config
 import reflex.reflex as reflex_cli
 import reflex.testing as reflex_testing
 import reflex.utils.prerequisites
 from reflex.components.component import CUSTOM_COMPONENTS
-from reflex.constants import IS_WINDOWS
 from reflex.experimental.memo import EXPERIMENTAL_MEMOS
 from reflex.testing import AppHarness
 

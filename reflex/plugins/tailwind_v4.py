@@ -1,4 +1,3 @@
 """Re-export from reflex_core.plugins.tailwind_v4."""
 
-from reflex_core.plugins.tailwind_v4 import *  # noqa: F401, F403
-from reflex_core.plugins.tailwind_v4 import TailwindV4Plugin
+from reflex_core.plugins.tailwind_v4 import *

@@ -20,6 +20,7 @@ from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core.cond import Cond
 from reflex_components_radix.themes.typography.text import Text
+from reflex_core.constants.state import FIELD_MARKER
 from reflex_core.vars.base import computed_var
 from starlette.applications import Starlette
 from starlette.datastructures import FormData, Headers, UploadFile
@@ -35,7 +36,6 @@ from reflex.app import (
     upload,
 )
 from reflex.components import Component
-from reflex.constants.state import FIELD_MARKER
 from reflex.environment import environment
 from reflex.event import Event
 from reflex.istate.manager.disk import StateManagerDisk

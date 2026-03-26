@@ -5,10 +5,10 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any, ClassVar
 
+from reflex_core.constants.colors import Color
 from reflex_core.vars.base import LiteralVar, Var
 
 from reflex.components.component import MemoizationLeaf, field
-from reflex.constants.colors import Color
 from reflex.event import EventHandler, no_args_event_spec
 
 from .recharts import (

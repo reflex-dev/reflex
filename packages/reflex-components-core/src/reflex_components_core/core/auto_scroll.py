@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import dataclasses
 
+from reflex_core.constants.compiler import MemoizationDisposition, MemoizationMode
 from reflex_core.vars.base import Var, get_unique_variable_name
 
-from reflex.constants.compiler import MemoizationDisposition, MemoizationMode
 from reflex.utils.imports import ImportDict
 from reflex_components_core.el.elements.typography import Div
 

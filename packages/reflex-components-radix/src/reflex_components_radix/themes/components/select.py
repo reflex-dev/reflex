@@ -4,11 +4,11 @@ from collections.abc import Sequence
 from typing import ClassVar, Literal
 
 from reflex_components_core.core.breakpoints import Responsive
+from reflex_core.constants.compiler import MemoizationMode
 from reflex_core.vars.base import Var
 
 import reflex as rx
 from reflex.components.component import Component, ComponentNamespace, field
-from reflex.constants.compiler import MemoizationMode
 from reflex.event import no_args_event_spec, passthrough_event_spec
 from reflex_components_radix.themes.base import (
     LiteralAccentColor,

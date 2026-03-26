@@ -7,6 +7,8 @@ from pathlib import Path
 from typing import Any, ClassVar
 
 from reflex_components_sonner.toast import toast
+from reflex_core.constants import Dirs
+from reflex_core.constants.compiler import Hooks, Imports
 from reflex_core.vars import VarData
 from reflex_core.vars.base import Var, get_unique_variable_name
 from reflex_core.vars.function import FunctionVar
@@ -21,8 +23,6 @@ from reflex.components.component import (
     StatefulComponent,
     field,
 )
-from reflex.constants import Dirs
-from reflex.constants.compiler import Hooks, Imports
 from reflex.environment import environment
 from reflex.event import (
     CallableEventSpec,

@@ -3,10 +3,10 @@
 from typing import Any, ClassVar
 
 from reflex_components_core.el import elements
+from reflex_core.constants.compiler import MemoizationMode
 from reflex_core.vars.base import Var
 
 from reflex.components.component import ComponentNamespace, field
-from reflex.constants.compiler import MemoizationMode
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
 
 from .base import RadixPrimitiveComponent, RadixPrimitiveTriggerComponent

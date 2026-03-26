@@ -5,6 +5,7 @@ import inspect
 import sys
 
 import pytest
+from reflex_core.constants import EventTriggers
 from reflex_docgen import (
     generate_class_documentation,
     generate_documentation,
@@ -17,7 +18,6 @@ from reflex.components.component import (
     TriggerDefinition,
     field,
 )
-from reflex.constants import EventTriggers
 from reflex.event import EventHandler, no_args_event_spec
 
 

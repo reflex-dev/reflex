@@ -8,12 +8,12 @@ from collections.abc import Callable, Iterable
 from hashlib import md5
 from typing import Any
 
+from reflex_core.constants import MemoizationMode
+from reflex_core.constants.state import FIELD_MARKER
 from reflex_core.vars.base import LiteralVar, Var
 
 from reflex.components.component import Component, field
 from reflex.components.tags import IterTag
-from reflex.constants import MemoizationMode
-from reflex.constants.state import FIELD_MARKER
 from reflex.state import ComponentState
 from reflex.utils import types
 from reflex.utils.exceptions import UntypedVarError

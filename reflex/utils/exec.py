@@ -16,10 +16,10 @@ from typing import Any, NamedTuple, TypedDict
 from urllib.parse import urljoin
 
 from reflex_core import constants
+from reflex_core.constants.base import LogLevel
 from reflex_core.utils import console
 
 from reflex.config import get_config
-from reflex.constants.base import LogLevel
 from reflex.environment import environment
 from reflex.utils import path_ops
 from reflex.utils.decorator import once

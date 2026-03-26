@@ -6,6 +6,8 @@ import pytest
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_radix.themes.layout.box import Box
+from reflex_core.constants import EventTriggers
+from reflex_core.constants.state import FIELD_MARKER
 from reflex_core.vars import VarData
 from reflex_core.vars.base import LiteralVar, Var
 from reflex_core.vars.object import ObjectVar
@@ -19,8 +21,6 @@ from reflex.components.component import (
     StatefulComponent,
     custom_component,
 )
-from reflex.constants import EventTriggers
-from reflex.constants.state import FIELD_MARKER
 from reflex.event import (
     EventChain,
     EventHandler,
