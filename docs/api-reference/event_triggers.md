@@ -4,7 +4,6 @@ from datetime import datetime
 import reflex as rx
 
 from pcweb.templates.docpage import docdemo, h1_comp, text_comp, docpage
-from pcweb.pages.docs import events
 
 SYNTHETIC_EVENTS = [
     {
@@ -378,7 +377,7 @@ def protected_page():
     return rx.text('Protected content')
 ```
 
-For more details on page load events, see the [page load events documentation]({events.page_load_events.path}).
+For more details on page load events, see the [page load events documentation](/docs/events/page_load_events).
 
 # Event Reference
 

@@ -1,14 +1,12 @@
 ```python exec
 import reflex as rx
-from pcweb.constants import REFLEX_ASSETS_CDN
-from pcweb.pages.docs import styling
 ```
 
 # Grid
 
 A simple responsive grid layout. We specify the number of columns to the `grid_template_columns` property as a list. The grid will automatically adjust the number of columns based on the screen size.
 
-For details, see the [responsive docs page]({styling.responsive.path}).
+For details, see the [responsive docs page](/docs/styling/responsive).
 
 ## Cards
 
@@ -33,7 +31,7 @@ rx.grid(
 		lambda i: rx.card(
 			rx.inset(
 				rx.image(
-					src=f"{REFLEX_ASSETS_CDN}other/reflex_banner.png",
+					src="https://web.reflex-assets.dev/other/reflex_banner.png",
 					width="100%",
 					height="auto",
 				),

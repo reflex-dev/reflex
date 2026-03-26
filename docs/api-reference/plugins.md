@@ -1,6 +1,5 @@
 ```python exec
 import reflex as rx
-from pcweb.pages.docs import advanced_onboarding
 ```
 
 # Plugins

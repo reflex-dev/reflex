@@ -1,6 +1,5 @@
 ```python exec
 import reflex as rx
-from pcweb.pages.docs import library
 
 ```
 
@@ -256,4 +255,4 @@ def tailwind_demo():
 
 Reflex core components are built on Radix Themes, which means they come with pre-defined styling. When you apply Tailwind classes to these components, you may encounter styling conflicts or unexpected behavior as the Tailwind styles compete with the built-in Radix styles.
 
-For the best experience when using Tailwind CSS in your Reflex application, we recommend using the lower-level `rx.el` components. These components don't have pre-applied styles, giving you complete control over styling with Tailwind classes without any conflicts. Check the list of HTML components [here]({library.other.html.path}).
+For the best experience when using Tailwind CSS in your Reflex application, we recommend using the lower-level `rx.el` components. These components don't have pre-applied styles, giving you complete control over styling with Tailwind classes without any conflicts. Check the list of HTML components [here](/docs/library/other/html).

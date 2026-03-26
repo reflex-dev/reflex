@@ -1,6 +1,5 @@
 ```python exec
 import reflex as rx
-from pcweb.pages.docs import events, ui, vars
 ```
 
 # Component State
@@ -9,8 +8,8 @@ _New in version 0.4.6_.
 
 Defining a subclass of `rx.ComponentState` creates a special type of state that is tied to an
 instance of a component, rather than existing globally in the app. A Component State combines
-[UI code]({ui.overview.path}) with state [Vars]({vars.base_vars.path}) and
-[Event Handlers]({events.events_overview.path}),
+[UI code](/docs/ui/overview) with state [Vars](/docs/vars/base_vars) and
+[Event Handlers](/docs/events/events_overview),
 and is useful for creating reusable components which operate independently of each other.
 
 ```md alert warning

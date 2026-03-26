@@ -18,7 +18,6 @@ TextFieldSlot: |
 
 ```python exec
 import reflex as rx
-from pcweb.pages.docs import library
 ```
 
 # Input
@@ -150,7 +149,7 @@ def form_input1():
     )
 ```
 
-To learn more about how to use forms in the [Form]({library.forms.form.path}) docs.
+To learn more about how to use forms in the [Form](/docs/library/forms/form) docs.
 
 ## Setting a value without using a State var
 

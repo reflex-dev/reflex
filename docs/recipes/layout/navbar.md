@@ -1,6 +1,5 @@
 ```python exec
 import reflex as rx
-from pcweb.constants import REFLEX_ASSETS_CDN
 ```
 
 # Navigation Bar
@@ -26,7 +25,7 @@ def navbar() -> rx.Component:
 		rx.desktop_only(
 			rx.hstack(
 				rx.hstack(
-					rx.image(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", width="2.25em", height="auto", border_radius="25%"),
+					rx.image(src="https://web.reflex-assets.dev/other/logo.jpg", width="2.25em", height="auto", border_radius="25%"),
 					rx.heading("Reflex", size="7", weight="bold"), align_items="center"),
 				rx.hstack(
 					navbar_link("Home", "/#"),
@@ -43,7 +42,7 @@ def navbar() -> rx.Component:
 		rx.mobile_and_tablet(
 			rx.hstack(
 				rx.hstack(
-					rx.image(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", width="2em",
+					rx.image(src="https://web.reflex-assets.dev/other/logo.jpg", width="2em",
 							 height="auto", border_radius="25%"),
 					rx.heading("Reflex", size="6", weight="bold"), align_items="center"),
 				rx.menu.root(
@@ -80,7 +79,7 @@ def navbar_dropdown() -> rx.Component:
 		rx.desktop_only(
 			rx.hstack(
 				rx.hstack(
-					rx.image(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", width="2.25em", height="auto", border_radius="25%"),
+					rx.image(src="https://web.reflex-assets.dev/other/logo.jpg", width="2.25em", height="auto", border_radius="25%"),
 					rx.heading("Reflex", size="7", weight="bold"), align_items="center"),
 				rx.hstack(
 					navbar_link("Home", "/#"),
@@ -107,7 +106,7 @@ def navbar_dropdown() -> rx.Component:
 		rx.mobile_and_tablet(
 			rx.hstack(
 				rx.hstack(
-					rx.image(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", width="2em", height="auto", border_radius="25%"),
+					rx.image(src="https://web.reflex-assets.dev/other/logo.jpg", width="2em", height="auto", border_radius="25%"),
 					rx.heading("Reflex", size="6", weight="bold"), align_items="center"),
 				rx.menu.root(
 					rx.menu.trigger(rx.icon("menu", size=30)),
@@ -148,7 +147,7 @@ def navbar_searchbar() -> rx.Component:
 		rx.desktop_only(
 			rx.hstack(
 				rx.hstack(
-					rx.image(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", width="2.25em", height="auto", border_radius="25%"),
+					rx.image(src="https://web.reflex-assets.dev/other/logo.jpg", width="2.25em", height="auto", border_radius="25%"),
 					rx.heading("Reflex", size="7", weight="bold"), align_items="center"),
 				rx.input(
 					rx.input.slot(rx.icon("search")),
@@ -163,7 +162,7 @@ def navbar_searchbar() -> rx.Component:
 		rx.mobile_and_tablet(
 			rx.hstack(
 				rx.hstack(
-					rx.image(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", width="2em", height="auto", border_radius="25%"),
+					rx.image(src="https://web.reflex-assets.dev/other/logo.jpg", width="2em", height="auto", border_radius="25%"),
 					rx.heading("Reflex", size="6", weight="bold"), align_items="center"),
 				rx.input(
 					rx.input.slot(rx.icon("search")),
@@ -198,7 +197,7 @@ def navbar_icons() -> rx.Component:
 		rx.desktop_only(
 			rx.hstack(
 				rx.hstack(
-					rx.image(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", width="2.25em", height="auto", border_radius="25%"),
+					rx.image(src="https://web.reflex-assets.dev/other/logo.jpg", width="2.25em", height="auto", border_radius="25%"),
 					rx.heading("Reflex", size="7", weight="bold"), align_items="center"),
 				rx.hstack(
 					navbar_icons_item("Home", "home", "/#"),
@@ -214,7 +213,7 @@ def navbar_icons() -> rx.Component:
 		rx.mobile_and_tablet(
 			rx.hstack(
 				rx.hstack(
-					rx.image(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", width="2em", height="auto", border_radius="25%"),
+					rx.image(src="https://web.reflex-assets.dev/other/logo.jpg", width="2em", height="auto", border_radius="25%"),
 					rx.heading("Reflex", size="6", weight="bold"), align_items="center"),
 				rx.menu.root(
 					rx.menu.trigger(rx.icon("menu", size=30)),
@@ -250,7 +249,7 @@ def navbar_buttons() -> rx.Component:
 		rx.desktop_only(
 			rx.hstack(
 				rx.hstack(
-					rx.image(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", width="2.25em", height="auto", border_radius="25%"),
+					rx.image(src="https://web.reflex-assets.dev/other/logo.jpg", width="2.25em", height="auto", border_radius="25%"),
 					rx.heading("Reflex", size="7", weight="bold"), align_items="center"),
 				rx.hstack(
 					navbar_link("Home", "/#"),
@@ -272,7 +271,7 @@ def navbar_buttons() -> rx.Component:
 		rx.mobile_and_tablet(
 			rx.hstack(
 				rx.hstack(
-					rx.image(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", width="2em", height="auto", border_radius="25%"),
+					rx.image(src="https://web.reflex-assets.dev/other/logo.jpg", width="2em", height="auto", border_radius="25%"),
 					rx.heading("Reflex", size="6", weight="bold"), align_items="center"),
 				rx.menu.root(
 					rx.menu.trigger(rx.icon("menu", size=30)),
@@ -311,7 +310,7 @@ def navbar_user() -> rx.Component:
 		rx.desktop_only(
 			rx.hstack(
 				rx.hstack(
-					rx.image(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", width="2.25em", height="auto", border_radius="25%"),
+					rx.image(src="https://web.reflex-assets.dev/other/logo.jpg", width="2.25em", height="auto", border_radius="25%"),
 					rx.heading("Reflex", size="7", weight="bold"), align_items="center"),
 				rx.hstack(
 					navbar_link("Home", "/#"),
@@ -338,7 +337,7 @@ def navbar_user() -> rx.Component:
 		rx.mobile_and_tablet(
 			rx.hstack(
 				rx.hstack(
-					rx.image(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", width="2em", height="auto", border_radius="25%"),
+					rx.image(src="https://web.reflex-assets.dev/other/logo.jpg", width="2em", height="auto", border_radius="25%"),
 					rx.heading("Reflex", size="6", weight="bold"), align_items="center"),
 				rx.menu.root(
 					rx.menu.trigger(rx.icon_button(

@@ -5,7 +5,6 @@ components:
 
 ```python exec
 import reflex as rx
-from pcweb.pages.docs import library
 ```
 
 # Data Table
@@ -17,7 +16,7 @@ In this example we will read data from a csv file, convert it to a pandas datafr
 
 We will also add a search, pagination, sorting to the data_table to make it more accessible.
 
-If you want to [add, edit or remove data]({library.tables_and_data_grids.table.path}) in your app or deal with anything but static data then the [`rx.table`]({library.tables_and_data_grids.table.path}) might be a better fit for your use case.
+If you want to [add, edit or remove data](/docs/library/tables-and-data-grids/table) in your app or deal with anything but static data then the [`rx.table`](/docs/library/tables-and-data-grids/table) might be a better fit for your use case.
 
 ```python demo box
 rx.data_table(

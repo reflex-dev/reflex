@@ -1,7 +1,5 @@
 ```python exec
 import reflex as rx
-from pcweb.constants import REFLEX_ASSETS_CDN
-from pcweb.pages.docs import library
 from pcweb.styles.styles import get_code_style_rdx, cell_style
 ```
 
@@ -75,7 +73,7 @@ rx.table.root(
 
 ```
 
-Additionally you can modify the theme of your app through using the `Theme Panel` component which can be found in the [Theme Panel docs]({library.other.theme.path}).
+Additionally you can modify the theme of your app through using the `Theme Panel` component which can be found in the [Theme Panel docs](/docs/library/other/theme).
 
 ## Colors
 
@@ -188,8 +186,8 @@ To render a different component depending on whether the app is in `light` mode 
 
 ```python demo
 rx.color_mode_cond(
-    light=rx.image(src=f"{REFLEX_ASSETS_CDN}logos/light/reflex.svg", alt="Reflex Logo light", height="4em"),
-    dark=rx.image(src=f"{REFLEX_ASSETS_CDN}logos/dark/reflex.svg", alt="Reflex Logo dark", height="4em"),
+    light=rx.image(src="https://web.reflex-assets.dev/logos/light/reflex.svg", alt="Reflex Logo light", height="4em"),
+    dark=rx.image(src="https://web.reflex-assets.dev/logos/dark/reflex.svg", alt="Reflex Logo dark", height="4em"),
 )
 ```
 

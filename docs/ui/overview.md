@@ -1,6 +1,4 @@
 ```python exec
-from pcweb.pages.docs import components
-from pcweb.pages.docs.library import library
 import reflex as rx
 ```
 
@@ -53,7 +51,7 @@ Some props are specific to a component. For example, the `header` and `content` 
 Styling props like `color` are shared across many components.
 
 ```md alert info
-# You can find all the props for a component by checking its documentation page in the [component library]({library.path}).
+# You can find all the props for a component by checking its documentation page in the [component library](/docs/library).
 ```
 
 ## Pages

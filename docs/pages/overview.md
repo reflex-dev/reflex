@@ -1,8 +1,6 @@
 ```python exec
 import reflex as rx
 from pcweb import constants, styles
-from pcweb.pages import docs
-from pcweb.pages.docs import api_reference, library
 ```
 
 # Pages
@@ -70,7 +68,7 @@ You can directly import the module or import another module that imports the dec
 
 ### Links
 
-[Links]({library.typography.link.path}) are accessible elements used primarily for navigation. Use the `href` prop to specify the location for the link to navigate to.
+[Links](/docs/library/typography/link) are accessible elements used primarily for navigation. Use the `href` prop to specify the location for the link to navigate to.
 
 ```python demo
 rx.link("Reflex Home Page.", href="https://reflex.dev/")
@@ -88,7 +86,7 @@ To open the link in a new tab, set the `is_external` prop to `True`.
 rx.link("Open in new tab", href="https://reflex.dev/", is_external=True)
 ```
 
-Check out the [link docs]({library.typography.link.path}) to learn more.
+Check out the [link docs](/docs/library/typography/link) to learn more.
 
 ```md video https://youtube.com/embed/ITOZkzjtjUA?start=4083&end=4423
 # Video: Link-based Navigation
@@ -156,7 +154,6 @@ This component will be available at `/nested/page`.
 ## Page Metadata
 
 ```python exec
-
 import reflex as rx
 
 meta_data = (
@@ -201,7 +198,7 @@ You can add page metadata such as:
 
 ## Getting the Current Page
 
-You can access the current page from the `router` attribute in any state. See the [router docs]({docs.utility_methods.router_attributes.path}) for all available attributes.
+You can access the current page from the `router` attribute in any state. See the [router docs](/docs/utility_methods/router_attributes) for all available attributes.
 
 ```python
 class State(rx.State):
@@ -212,7 +209,7 @@ class State(rx.State):
 ```
 
 The `router.page.path` attribute allows you to obtain the path of the current page from the router data,
-for [dynamic pages]({docs.pages.dynamic_routing.path}) this will contain the slug rather than the actual value used to load the page.
+for [dynamic pages](/docs/pages/dynamic_routing) this will contain the slug rather than the actual value used to load the page.
 
 To get the actual URL displayed in the browser, use `router.page.raw_path`. This
 will contain all query parameters and dynamic path segments.

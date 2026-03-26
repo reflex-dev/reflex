@@ -1,7 +1,6 @@
 ```python exec
 import reflex as rx
 
-from pcweb.pages.docs.library import library
 ```
 
 # Events Overview
@@ -11,7 +10,7 @@ Events are composed of two parts: Event Triggers and Event Handlers.
 - **Events Handlers** are how the State of a Reflex application is updated. They are triggered by user interactions with the UI, such as clicking a button or hovering over an element. Events can also be triggered by the page loading or by other events.
 
 - **Event triggers** are component props that create an event to be sent to an event handler.
-  Each component supports a set of events triggers. They are described in each [component's documentation]({library.path}) in the event trigger section.
+  Each component supports a set of events triggers. They are described in each [component's documentation](/docs/library) in the event trigger section.
 
 ## Example
 

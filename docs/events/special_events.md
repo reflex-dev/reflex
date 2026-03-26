@@ -1,12 +1,11 @@
 ```python exec
 import reflex as rx
 
-from pcweb.pages.docs import api_reference
 ```
 
 # Special Events
 
-Reflex also has built-in special events can be found in the [reference]({api_reference.special_events.path}).
+Reflex also has built-in special events can be found in the [reference](/docs/api-reference/special_events).
 
 For example, an event handler can trigger an alert on the browser.
 

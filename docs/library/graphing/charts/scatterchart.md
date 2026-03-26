@@ -9,7 +9,6 @@ components:
 ```python exec
 import reflex as rx
 from pcweb.templates.docpage import docgraphing
-from pcweb.pages.docs import library
 ```
 
 A scatter chart always has two value axes to show one set of numerical data along a horizontal (value) axis and another set of numerical values along a vertical (value) axis. The chart displays points at the intersection of an x and y numerical value, combining these values into single data points.
@@ -158,7 +157,7 @@ def scatter_double():
   )
 ```
 
-To learn how to use the `x_axis_id` and `y_axis_id` props, check out the Multiple Axis section of the area chart [documentation]({library.graphing.charts.areachart.path}).
+To learn how to use the `x_axis_id` and `y_axis_id` props, check out the Multiple Axis section of the area chart [documentation](/docs/library/graphing/charts/areachart).
 
 ## Dynamic Data
 

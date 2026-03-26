@@ -105,13 +105,10 @@ app.add_page(index)
 
 ## React Leaflet
 
-```python exec
-from pcweb.pages import docs
-```
 
 In this example we are wrapping the React Leaflet library from the NPM package [react-leaflet](https://www.npmjs.com/package/react-leaflet).
 
-On line `1` we import the `dynamic` function from Next.js and on line `21` we set `ssr: false`. Lines `4` and `6` use the `dynamic` function to import the `MapContainer` and `TileLayer` components from the `react-leaflet` library. This is used to dynamically import the `MapContainer` and `TileLayer` components from the `react-leaflet` library. This is done in Reflex by using the `NoSSRComponent` class when defining the component. There is more information of when this is needed on the `Dynamic Imports` section of this [page]({docs.wrapping_react.library_and_tags.path}).
+On line `1` we import the `dynamic` function from Next.js and on line `21` we set `ssr: false`. Lines `4` and `6` use the `dynamic` function to import the `MapContainer` and `TileLayer` components from the `react-leaflet` library. This is used to dynamically import the `MapContainer` and `TileLayer` components from the `react-leaflet` library. This is done in Reflex by using the `NoSSRComponent` class when defining the component. There is more information of when this is needed on the `Dynamic Imports` section of this [page](/docs/wrapping-react/library-and-tags).
 
 It mentions in the documentation that it is necessary to include the Leaflet CSS file, which is added on line `2` in the React code below. This can be done in Reflex by using the `add_imports` method in the `MapContainer` component. We can add a relative path from within the React library or a full URL to the CSS file.
 
@@ -216,7 +213,7 @@ app.add_page(index)
 
 In this example we are wrapping the React renderer for creating PDF files on the browser and server from the NPM package [@react-pdf/renderer](https://www.npmjs.com/package/@react-pdf/renderer).
 
-This example is similar to the previous examples, and again Dynamic Imports are required for this library. This is done in Reflex by using the `NoSSRComponent` class when defining the component. There is more information on why this is needed on the `Dynamic Imports` section of this [page]({docs.wrapping_react.library_and_tags.path}).
+This example is similar to the previous examples, and again Dynamic Imports are required for this library. This is done in Reflex by using the `NoSSRComponent` class when defining the component. There is more information on why this is needed on the `Dynamic Imports` section of this [page](/docs/wrapping-react/library-and-tags).
 
 The main difference with this example is that the `style` prop, used on lines `20`, `21` and `24` in React code, is a reserved name in Reflex so can not be wrapped. A different name must be used when wrapping this prop and then this name must be changed back to the original with the `rename_props` method. In this example we name the prop `theme` in our Reflex code and then change it back to `style` with the `rename_props` method in both the `Page` and `View` components.
 

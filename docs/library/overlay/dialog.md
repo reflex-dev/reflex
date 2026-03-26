@@ -43,7 +43,6 @@ DialogContent: |
 
 ```python exec
 import reflex as rx
-from pcweb.pages.docs import library
 ```
 
 # Dialog
@@ -193,7 +192,7 @@ def dialog_example():
     )
 ```
 
-Check out the [menu docs]({library.overlay.dropdown_menu.path}) for an example of opening a dialog from within a dropdown menu.
+Check out the [menu docs](/docs/library/overlay/dropdown_menu) for an example of opening a dialog from within a dropdown menu.
 
 ## Form Submission to a Database from a Dialog
 

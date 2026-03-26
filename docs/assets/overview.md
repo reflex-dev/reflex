@@ -1,6 +1,5 @@
 ```python exec
 import reflex as rx
-from pcweb.constants import REFLEX_ASSETS_CDN
 ```
 
 # Assets
@@ -32,7 +31,7 @@ assets
 Then you can display it using a `rx.image` component:
 
 ```python demo
-rx.image(src=f"{REFLEX_ASSETS_CDN}other/Reflex.svg", width="5em")
+rx.image(src="https://web.reflex-assets.dev/other/Reflex.svg", width="5em")
 ```
 
 ```md alert
@@ -58,7 +57,6 @@ Shared assets are placed next to your Python file and are linked to the app's ex
 ```python box
 # my_component.py
 import reflex as rx
-from pcweb.constants import REFLEX_ASSETS_CDN
 
 # my_script.js is located in the same directory as this Python file
 def my_component():
@@ -73,7 +71,6 @@ You can also specify a subfolder for shared assets:
 ```python box
 # my_component.py
 import reflex as rx
-from pcweb.constants import REFLEX_ASSETS_CDN
 
 # image.png is located in a subfolder next to this Python file
 def my_component_with_image():

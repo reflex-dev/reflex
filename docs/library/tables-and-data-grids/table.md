@@ -139,14 +139,13 @@ TableRowHeaderCell: |
 ```python exec
 import reflex as rx
 from pcweb.models import Customer
-from pcweb.pages.docs import vars, events, database, library, components
 ```
 
 # Table
 
 A semantic table for presenting tabular data.
 
-If you just want to [represent static data]({library.tables_and_data_grids.data_table.path}) then the [`rx.data_table`]({library.tables_and_data_grids.data_table.path}) might be a better fit for your use case as it comes with in-built pagination, search and sorting.
+If you just want to [represent static data](/docs/library/tables-and-data-grids/data_table) then the [`rx.data_table`](/docs/library/tables-and-data-grids/data_table) might be a better fit for your use case as it comes with in-built pagination, search and sorting.
 
 ## Basic Example
 
@@ -187,7 +186,7 @@ rx.table.root(
 
 Many times there is a need for the data we represent in our table to be dynamic. Dynamic data must be in `State`. Later we will show an example of how to access data from a database and how to load data from a source file.
 
-In this example there is a `people` data structure in `State` that is [iterated through using `rx.foreach`]({components.rendering_iterables.path}).
+In this example there is a `people` data structure in `State` that is [iterated through using `rx.foreach`](/docs/components/rendering_iterables).
 
 ```python demo exec
 class TableForEachState(rx.State):
@@ -439,9 +438,9 @@ The code below shows how to load data from a database and place it in an `rx.tab
 
 ## Loading data into table
 
-A `Customer` [model]({database.tables.path}) is defined that inherits from `rx.Model`.
+A `Customer` [model](/docs/database/tables) is defined that inherits from `rx.Model`.
 
-The `load_entries` event handler executes a [query]({database.queries.path}) that is used to request information from a database table. This `load_entries` event handler is called on the `on_mount` event trigger of the `rx.table.root`.
+The `load_entries` event handler executes a [query](/docs/database/queries) that is used to request information from a database table. This `load_entries` event handler is called on the `on_mount` event trigger of the `rx.table.root`.
 
 If you want to load the data when the page in the app loads you can set `on_load` in `app.add_page()` to equal this event handler, like `app.add_page(page_name, on_load=State.load_entries)`.
 

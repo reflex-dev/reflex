@@ -3,12 +3,11 @@ import reflex as rx
 import dataclasses
 from typing import TypedDict
 
-from pcweb.pages.docs import vars
 ```
 
 # Custom Vars
 
-As mentioned in the [vars page]({vars.base_vars.path}), Reflex vars must be JSON serializable.
+As mentioned in the [vars page](/docs/vars/base_vars), Reflex vars must be JSON serializable.
 
 This means we can support any Python primitive types, as well as lists, dicts, and tuples. However, you can also create more complex var types using dataclasses (recommended), TypedDict, or Pydantic models.
 

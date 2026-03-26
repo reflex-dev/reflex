@@ -1,13 +1,12 @@
 ```python exec
 import reflex as rx
-from pcweb.pages.docs import library
 ```
 
 ## Forms
 
 Forms are a common way to gather information from users. Below are some examples.
 
-For more details, see the [form docs page]({library.forms.form.path}).
+For more details, see the [form docs page](/docs/library/forms/form).
 
 ## Event creation
 

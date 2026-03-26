@@ -1,17 +1,9 @@
 ```python exec
 import reflex as rx
 from pcweb import constants, styles
-from pcweb.pages.docs import getting_started
-from pcweb.pages.docs import wrapping_react
-from pcweb.pages.docs.library import library
-from pcweb.pages.docs import pages
-from pcweb.pages.docs import vars
 from pcweb.styles.colors import c_color
-from pcweb.pages.docs import styling
 from pcweb.styles.fonts import base
-from pcweb.pages.docs import hosting
 from pcweb.flexdown import markdown_with_shiki
-from pcweb.pages.docs import advanced_onboarding
 ```
 
 <!-- TODO how do we consistently rename page title? -->
@@ -107,7 +99,7 @@ def tabs():
         ),
         rx.tabs.content(
             markdown_with_shiki(
-                f"""Each page is a Python function that returns a Reflex component. You can define multiple pages and navigate between them, see the [Routing]({pages.overview.path}) section for more information.
+                """Each page is a Python function that returns a Reflex component. You can define multiple pages and navigate between them, see the [Routing](/docs/pages/overview) section for more information.
 
 - Start with a single page and scale to 100s of pages.
                 """,
@@ -242,7 +234,7 @@ class State(rx.State):
     count: int = 0
 ```
 
-The state defines all the variables (called **[vars]({vars.base_vars.path})**) in an app that can change, as well as the functions (called **[event_handlers](#event-handlers)**) that change them.
+The state defines all the variables (called **[vars](/docs/vars/base_vars)**) in an app that can change, as well as the functions (called **[event_handlers](#event-handlers)**) that change them.
 
 Here our state has a single var, `count`, which holds the current value of the counter. We initialize it to `0`.
 
@@ -288,10 +280,10 @@ def index():
 
 This function defines the app's user interface.
 
-We use different components such as `rx.hstack`, `rx.button`, and `rx.heading` to build the frontend. Components can be nested to create complex layouts, and can be styled using the full power of CSS or [Tailwind CSS]({styling.tailwind.path}).
+We use different components such as `rx.hstack`, `rx.button`, and `rx.heading` to build the frontend. Components can be nested to create complex layouts, and can be styled using the full power of CSS or [Tailwind CSS](/docs/styling/tailwind).
 
-Reflex comes with [50+ built-in components]({library.path}) to help you get started.
-We are actively adding more components. Also, it's easy to [wrap your own React components]({wrapping_react.overview.path}).
+Reflex comes with [50+ built-in components](/docs/library) to help you get started.
+We are actively adding more components. Also, it's easy to [wrap your own React components](/docs/wrapping-react/overview).
 
 ```python
 rx.heading(State.count, font_size="2em"),
@@ -341,12 +333,12 @@ By continuing with our documentation, you will learn how to build awesome apps w
 
 For a glimpse of the possibilities, check out these resources:
 
-- For a more real-world example, check out either the [dashboard tutorial]({getting_started.dashboard_tutorial.path}) or the [chatapp tutorial]({getting_started.chatapp_tutorial.path}).
-- Check out our open-source [templates]({getting_started.open_source_templates.path})!
+- For a more real-world example, check out either the [dashboard tutorial](/docs/getting_started/dashboard_tutorial) or the [chatapp tutorial](/docs/getting_started/chatapp_tutorial).
+- Check out our open-source [templates](/docs/getting_started/open_source_templates)!
 - We have an AI Builder that can generate full Reflex apps or help with your existing app! Check it out at [Reflex Build]({constants.REFLEX_BUILD_URL})!
-- Deploy your app with a single command using [Reflex Cloud]({hosting.deploy_quick_start.path})!
+- Deploy your app with a single command using [Reflex Cloud](https://reflex.dev/docs/hosting/deploy-quick-start/)!
 
-If you want to learn more about how Reflex works, check out the [How Reflex Works]({advanced_onboarding.how_reflex_works.path}) section.
+If you want to learn more about how Reflex works, check out the [How Reflex Works](/docs/advanced_onboarding/how-reflex-works) section.
 
 ## Join our Community
 

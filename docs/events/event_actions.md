@@ -140,7 +140,7 @@ def throttle_example():
     return (
         scroll_box(),
         rx.text(
-            f"Last Scroll Event: ",
+            "Last Scroll Event: ",
             rx.moment(ThrottleState.last_scroll, format="HH:mm:ss.SSS"),
         ),
     )

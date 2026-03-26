@@ -1,6 +1,3 @@
-```python exec
-from pcweb.pages import docs
-```
 
 # Command Reference
 
@@ -85,7 +82,7 @@ The `custom_components` folder is where the actual implementation is. Do not wor
 
 `reflex_google_auth` is the top folder for importable code. The `reflex_google_auth/__init__.py` imports everything from the `reflex_google_auth/google_auth.py`. For the user of the package, the import looks like `from reflex_google_auth import ABC, XYZ`.
 
-`reflex_google_auth/google_auth.py` is prefilled with code example and instructions from the [wrapping react guide]({docs.wrapping_react.overview.path}).
+`reflex_google_auth/google_auth.py` is prefilled with code example and instructions from the [wrapping react guide](/docs/wrapping-react/overview).
 
 ### Demo App Folder
 

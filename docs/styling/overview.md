@@ -1,6 +1,5 @@
 ```python exec
 import reflex as rx
-from pcweb.pages.docs import styling, library
 ```
 
 # Styling
@@ -74,7 +73,7 @@ Using style dictionaries like this, you can easily create a consistent theme for
 ```md alert warning
 # Watch out for underscores in class names and IDs
 
-Reflex automatically converts `snake_case` identifiers into `camelCase` format when applying styles. To ensure consistency, it is recommended to use the dash character or camelCase identifiers in your own class names and IDs. To style third-party libraries relying on underscore class names, an external stylesheet should be used. See [custom stylesheets]({styling.custom_stylesheets.path}) for how to reference external CSS files.
+Reflex automatically converts `snake_case` identifiers into `camelCase` format when applying styles. To ensure consistency, it is recommended to use the dash character or camelCase identifiers in your own class names and IDs. To style third-party libraries relying on underscore class names, an external stylesheet should be used. See [custom stylesheets](/docs/styling/custom-stylesheets) for how to reference external CSS files.
 ```
 
 ## Inline Styles
@@ -158,7 +157,7 @@ The style dictionaries are applied in the order they are passed in. This means t
 
 ## Theming
 
-As of Reflex 'v0.4.0', you can now theme your Reflex web apps. To learn more checkout the [Theme docs]({styling.theming.path}).
+As of Reflex 'v0.4.0', you can now theme your Reflex web apps. To learn more checkout the [Theme docs](/docs/styling/theming).
 
 The `Theme` component is used to change the theme of the application. The `Theme` can be set directly in your rx.App.
 
@@ -170,7 +169,7 @@ app = rx.App(
 )
 ```
 
-Additionally you can modify the theme of your app through using the `Theme Panel` component which can be found in the [Theme Panel docs]({library.other.theme.path}).
+Additionally you can modify the theme of your app through using the `Theme Panel` component which can be found in the [Theme Panel docs](/docs/library/other/theme).
 
 ## Special Styles
 

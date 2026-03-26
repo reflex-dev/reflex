@@ -9,7 +9,6 @@ A datagrid editor based on [Glide Data Grid](https://grid.glideapps.com/)
 
 ```python exec
 import reflex as rx
-from pcweb.pages.docs import library
 from typing import Any
 
 columns: list[dict[str, str]] = [
@@ -37,7 +36,7 @@ data: list[list[Any]] = [
 
 ```
 
-This component is introduced as an alternative to the [datatable]({library.tables_and_data_grids.data_table.path}) to support editing the displayed data.
+This component is introduced as an alternative to the [datatable](/docs/library/tables-and-data-grids/data_table) to support editing the displayed data.
 
 ## Columns
 

@@ -5,7 +5,6 @@ components:
 
 ```python exec
 import reflex as rx
-from pcweb.pages.docs import styling
 ```
 
 # Clipboard

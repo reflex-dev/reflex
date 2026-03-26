@@ -13,7 +13,6 @@ components:
 ```python exec
 import random
 import reflex as rx
-from pcweb.constants import REFLEX_ASSETS_CDN
 import reflex.components.radix.primitives as rdxp
 from pcweb.templates.docpage import style_grid
 ```
@@ -248,7 +247,7 @@ def form_select():
 ```python demo
 rx.card(
     rx.flex(
-        rx.image(src=f"{REFLEX_ASSETS_CDN}other/reflex_banner.png", width="100%", height="auto"),
+        rx.image(src="https://web.reflex-assets.dev/other/reflex_banner.png", width="100%", height="auto"),
         rx.flex(
             rx.heading("Reflex Swag", size="4", margin_bottom="4px"),
             rx.heading("$99", size="6", margin_bottom="4px"),

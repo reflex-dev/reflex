@@ -1,11 +1,10 @@
 ```python exec
 import reflex as rx
-from pcweb.pages import docs
 ```
 
 # Tutorial: Data Dashboard
 
-During this tutorial you will build a small data dashboard, where you can input data and it will be rendered in table and a graph. This tutorial does not assume any existing Reflex knowledge, but we do recommend checking out the quick [Basics Guide]({docs.getting_started.basics.path}) first.
+During this tutorial you will build a small data dashboard, where you can input data and it will be rendered in table and a graph. This tutorial does not assume any existing Reflex knowledge, but we do recommend checking out the quick [Basics Guide](/docs/getting_started/basics) first.
 
 The techniques you’ll learn in the tutorial are fundamental to building any Reflex app, and fully understanding it will give you a deep understanding of Reflex.
 
@@ -340,7 +339,7 @@ Don't worry if you don't understand the code above, in this tutorial we are goin
 
 ## Setup for the tutorial
 
-Check out the [installation docs]({docs.getting_started.installation.path}) to get Reflex set up on your machine. Follow these to create a folder called `dashboard_tutorial`, which you will `cd` into and `pip install reflex`.
+Check out the [installation docs](/docs/getting_started/installation) to get Reflex set up on your machine. Follow these to create a folder called `dashboard_tutorial`, which you will `cd` into and `pip install reflex`.
 
 We will choose template `0` when we run `reflex init` to get the blank template. Finally run `reflex run` to start the app and confirm everything is set up correctly.
 
@@ -350,9 +349,9 @@ Now that you’re set up, let’s get an overview of Reflex!
 
 ### Inspecting the starter code
 
-Within our `dashboard_tutorial` folder we just `cd`'d into, there is a `rxconfig.py` file that contains the configuration for our Reflex app. (Check out the [config docs]({docs.advanced_onboarding.configuration.path}) for more information)
+Within our `dashboard_tutorial` folder we just `cd`'d into, there is a `rxconfig.py` file that contains the configuration for our Reflex app. (Check out the [config docs](/docs/advanced_onboarding/configuration) for more information)
 
-There is also an `assets` folder where static files such as images and stylesheets can be placed to be referenced within your app. ([asset docs]({docs.assets.overview.path}) for more information)
+There is also an `assets` folder where static files such as images and stylesheets can be placed to be referenced within your app. ([asset docs](/docs/assets/overview) for more information)
 
 Most importantly there is a folder also called `dashboard_tutorial` which contains all the code for your app. Inside of this folder there is a file named `dashboard_tutorial.py`. To begin this tutorial we will delete all the code in this file so that we can start from scratch and explain every step as we go.
 
@@ -509,7 +508,7 @@ Up until this point all the data we are showing in the app is static. This is no
 
 This is where `State` comes in. `State` is a Python class that stores variables that can change when the app is running, as well as the functions that can change those variables.
 
-To define a state class, subclass `rx.State` and define fields that store the state of your app. The state variables (vars) should have a type annotation, and can be initialized with a default value. Check out the [basics]({docs.getting_started.basics.path}) section for a simple example of how state works.
+To define a state class, subclass `rx.State` and define fields that store the state of your app. The state variables (vars) should have a type annotation, and can be initialized with a default value. Check out the [basics](/docs/getting_started/basics) section for a simple example of how state works.
 
 In the example below we define a `State` class called `State` that has a variable called `users` that is a list of lists of strings. Each list in the `users` list represents a user and contains their name, email and gender.
 
@@ -521,12 +520,12 @@ class State(rx.State):
     ]
 ```
 
-To iterate over a state var that is a list, we use the [`rx.foreach`]({docs.components.rendering_iterables.path}) function to render a list of components. The `rx.foreach` component takes an `iterable` (list, tuple or dict) and a `function` that renders each item in the `iterable`.
+To iterate over a state var that is a list, we use the [`rx.foreach`](/docs/components/rendering_iterables) function to render a list of components. The `rx.foreach` component takes an `iterable` (list, tuple or dict) and a `function` that renders each item in the `iterable`.
 
 ```md alert info
 # Why can we not just splat this in a `for` loop
 
-You might be wondering why a `foreach` is even needed to render this state variable and why we cannot just splat a `for` loop. Check out this [documentation](<{docs.getting_started.basics.path}#compile-time-vs.-runtime-(important)>) to learn why.
+You might be wondering why a `foreach` is even needed to render this state variable and why we cannot just splat a `for` loop. Check out this [documentation](</docs/getting_started/basics#compile-time-vs.-runtime-(important)>) to learn why.
 ```
 
 Here the render function is `show_user` which takes in a single user and returns a `table.row` component that displays the users name, email and gender.
@@ -709,7 +708,7 @@ Next let's add a form to the app so we can add new users to the table.
 
 ## Using a Form to Add Data
 
-We build a form using `rx.form`, which takes several components such as `rx.input` and `rx.select`, which represent the form fields that allow you to add information to submit with the form. Check out the [form]({docs.library.forms.form.path}) docs for more information on form components.
+We build a form using `rx.form`, which takes several components such as `rx.input` and `rx.select`, which represent the form fields that allow you to add information to submit with the form. Check out the [form](/docs/library/forms/form) docs for more information on form components.
 
 The `rx.input` component takes in several props. The `placeholder` prop is the text that is displayed in the input field when it is empty. The `name` prop is the name of the input field, which gets passed through in the dictionary when the form is submitted. The `required` prop is a boolean that determines if the input field is required.
 
@@ -732,7 +731,7 @@ rx.form(
 )
 ```
 
-This form is all very compact as you can see from the example, so we need to add some styling to make it look better. We can do this by adding a `vstack` component around the form fields. The `vstack` component stacks the form fields vertically. Check out the [layout]({docs.styling.layout.path}) docs for more information on how to layout your app.
+This form is all very compact as you can see from the example, so we need to add some styling to make it look better. We can do this by adding a `vstack` component around the form fields. The `vstack` component stacks the form fields vertically. Check out the [layout](/docs/styling/layout) docs for more information on how to layout your app.
 
 ```python demo
 rx.form(
@@ -755,7 +754,7 @@ rx.form(
 
 Now you have probably realised that we have all the form fields, but we have no way to submit the form. We can add a submit button to the form by adding a `rx.button` component to the `vstack` component. The `rx.button` component takes in the text that is displayed on the button and the `type` prop which is the type of button. The `type` prop is set to `submit` so that the form is submitted when the button is clicked.
 
-In addition to this we need a way to update the `users` state variable when the form is submitted. All state changes are handled through functions in the state class, called [event handlers]({docs.events.events_overview.path}).
+In addition to this we need a way to update the `users` state variable when the form is submitted. All state changes are handled through functions in the state class, called [event handlers](/docs/events/events_overview).
 
 Components have special props called event triggers, such as `on_submit`, that can be used to make components interactive. Event triggers connect components to event handlers, which update the state. Different event triggers expect the event handler that you hook them up to, to take in different arguments (and some do not take in any arguments).
 
@@ -1588,9 +1587,9 @@ The most important one is `theme` which allows you to customize the look and fee
 
 The `radius` prop sets the global radius value for the app that is inherited by all components that have a `radius` prop. It can be overwritten locally for a specific component by manually setting the `radius` prop.
 
-The `accent_color` prop sets the accent color of the app. Check out other options for the accent color [here]({docs.library.other.theme.path}).
+The `accent_color` prop sets the accent color of the app. Check out other options for the accent color [here](/docs/library/other/theme).
 
-To see other props that can be set at the app level check out this [documentation]({docs.styling.theming.path})
+To see other props that can be set at the app level check out this [documentation](/docs/styling/theming)
 
 ```python
 app = rx.App(

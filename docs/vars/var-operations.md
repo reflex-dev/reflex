@@ -118,8 +118,8 @@ def var_operation_example():
         rx.heading(f"The number: {OperState.number}", size="3"),
         rx.hstack(
             rx.text("Negated:", rx.badge(-OperState.number, variant="soft", color_scheme="green")),
-            rx.text(f"Absolute:", rx.badge(abs(OperState.number), variant="soft", color_scheme="blue")),
-            rx.text(f"Numbers seen:", rx.badge(OperState.numbers_seen.length(), variant="soft", color_scheme="red")),
+            rx.text("Absolute:", rx.badge(abs(OperState.number), variant="soft", color_scheme="blue")),
+            rx.text("Numbers seen:", rx.badge(OperState.numbers_seen.length(), variant="soft", color_scheme="red")),
         ),
         rx.button("Update", on_click=OperState.update),
     )

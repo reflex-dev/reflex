@@ -5,7 +5,6 @@ components:
 
 ```python exec
 import reflex as rx
-from pcweb.constants import REFLEX_ASSETS_CDN
 ```
 
 # Box
@@ -39,7 +38,7 @@ rx.flex(
     rx.box(background="linear-gradient(45deg, var(--tomato-9), var(--plum-9))", width="20%", height="100%"),
     rx.box(background="linear-gradient(red, yellow, blue, orange)", width="20%", height="100%"),
     rx.box(background="radial-gradient(at 0% 30%, red 10px, yellow 30%, #1e90ff 50%)", width="20%", height="100%"),
-    rx.box(background=f"center/cover url('{REFLEX_ASSETS_CDN}other/reflex_banner.png')", width="20%", height="100%"),
+    rx.box(background="center/cover url('https://web.reflex-assets.dev/other/reflex_banner.png')", width="20%", height="100%"),
     spacing="2",
     width="100%",
     height="10vh",

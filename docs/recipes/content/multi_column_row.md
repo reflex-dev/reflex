@@ -1,13 +1,12 @@
 ```python exec
 import reflex as rx
-from pcweb.pages.docs import styling
 ```
 
 # Multi-column and row layout
 
 A simple responsive multi-column and row layout. We specify the number of columns/rows to the `flex_direction` property as a list. The layout will automatically adjust the number of columns/rows based on the screen size.
 
-For details, see the [responsive docs page]({styling.responsive.path}).
+For details, see the [responsive docs page](/docs/styling/responsive).
 
 ## Column
 

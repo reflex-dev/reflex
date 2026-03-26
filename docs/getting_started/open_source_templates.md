@@ -3,7 +3,6 @@
 Check out what the community is building with Reflex. See 2000+ more public projects on [Github](https://github.com/reflex-dev/reflex/network/dependents). Want to get your app featured? Submit it [here](https://github.com/reflex-dev/templates). Copy the template command and use it during `reflex init`
 
 ```python exec
-
 import reflex as rx
 
 from pcweb.components.code_card import gallery_app_card

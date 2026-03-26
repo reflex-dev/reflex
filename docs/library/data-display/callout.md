@@ -18,7 +18,6 @@ CalloutRoot: |
 
 ```python exec
 import reflex as rx
-from pcweb.pages import docs
 ```
 
 # Callout

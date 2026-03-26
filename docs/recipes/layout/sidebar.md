@@ -1,6 +1,5 @@
 ```python exec
 import reflex as rx
-from pcweb.constants import REFLEX_ASSETS_CDN
 
 def sidebar_item(text: str, icon: str, href: str) -> rx.Component:
 	return rx.link(
@@ -81,7 +80,7 @@ def sidebar() -> rx.Component:
 		rx.desktop_only(
 			rx.vstack(
 				rx.hstack(
-					rx.image(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", width="2.25em",
+					rx.image(src="https://web.reflex-assets.dev/other/logo.jpg", width="2.25em",
 								height="auto", border_radius="25%"),
 					rx.heading("Reflex", size="7", weight="bold"),
 					align="center",
@@ -176,7 +175,7 @@ def sidebar_bottom_profile() -> rx.Component:
 		rx.desktop_only(
 			rx.vstack(
 				rx.hstack(
-					rx.image(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", width="2.25em",
+					rx.image(src="https://web.reflex-assets.dev/other/logo.jpg", width="2.25em",
 								height="auto", border_radius="25%"),
 					rx.heading("Reflex", size="7", weight="bold"),
 					align="center",

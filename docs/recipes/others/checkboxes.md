@@ -1,6 +1,5 @@
 ```python exec
 import reflex as rx
-from pcweb.constants import REFLEX_ASSETS_CDN
 ```
 
 # Smart Checkboxes Group
@@ -10,7 +9,7 @@ A smart checkboxes group where you can track all checked boxes, as well as place
 ## Recipe
 
 ```python eval
-rx.center(rx.image(src=f"{REFLEX_ASSETS_CDN}templates/smart_checkboxes.webp"))
+rx.center(rx.image(src="https://web.reflex-assets.dev/templates/smart_checkboxes.webp"))
 ```
 
 This recipe use a `dict[str, bool]` for the checkboxes state tracking.

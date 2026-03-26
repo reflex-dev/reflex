@@ -2,14 +2,13 @@
 components:
   - rx.avatar
 Avatar: |
-  lambda **props: rx.hstack(rx.avatar(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", **props), rx.avatar(fallback="RX", **props), spacing="3")
+  lambda **props: rx.hstack(rx.avatar(src="https://web.reflex-assets.dev/other/logo.jpg", **props), rx.avatar(fallback="RX", **props), spacing="3")
 ---
 
 # Avatar
 
 ```python exec
 import reflex as rx
-from pcweb.constants import REFLEX_ASSETS_CDN
 from pcweb.templates.docpage import style_grid
 ```
 
@@ -20,7 +19,7 @@ The Avatar component is used to represent a user, and display their profile pict
 To create an avatar component with an image, pass the image URL as the `src` prop.
 
 ```python demo
-rx.avatar(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg")
+rx.avatar(src="https://web.reflex-assets.dev/other/logo.jpg")
 ```
 
 To display a text such as initials, set the `fallback` prop without passing the `src` prop.
@@ -41,15 +40,15 @@ The `size` prop controls the size and spacing of the avatar. The acceptable size
 
 ```python demo
 rx.flex(
-    rx.avatar(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", fallback="RX", size="1"),
-    rx.avatar(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", fallback="RX", size="2"),
-    rx.avatar(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", fallback="RX", size="3"),
-    rx.avatar(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", fallback="RX"),
-    rx.avatar(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", fallback="RX", size="4"),
-    rx.avatar(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", fallback="RX", size="5"),
-    rx.avatar(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", fallback="RX", size="6"),
-    rx.avatar(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", fallback="RX", size="7"),
-    rx.avatar(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", fallback="RX", size="8"),
+    rx.avatar(src="https://web.reflex-assets.dev/other/logo.jpg", fallback="RX", size="1"),
+    rx.avatar(src="https://web.reflex-assets.dev/other/logo.jpg", fallback="RX", size="2"),
+    rx.avatar(src="https://web.reflex-assets.dev/other/logo.jpg", fallback="RX", size="3"),
+    rx.avatar(src="https://web.reflex-assets.dev/other/logo.jpg", fallback="RX"),
+    rx.avatar(src="https://web.reflex-assets.dev/other/logo.jpg", fallback="RX", size="4"),
+    rx.avatar(src="https://web.reflex-assets.dev/other/logo.jpg", fallback="RX", size="5"),
+    rx.avatar(src="https://web.reflex-assets.dev/other/logo.jpg", fallback="RX", size="6"),
+    rx.avatar(src="https://web.reflex-assets.dev/other/logo.jpg", fallback="RX", size="7"),
+    rx.avatar(src="https://web.reflex-assets.dev/other/logo.jpg", fallback="RX", size="8"),
     spacing="1",
 )
 ```
@@ -103,15 +102,15 @@ The `radius` prop sets specific radius value, ignoring the global theme. It can 
 
 ```python demo
 rx.grid(
-    rx.avatar(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", fallback="RX", radius="none"),
+    rx.avatar(src="https://web.reflex-assets.dev/other/logo.jpg", fallback="RX", radius="none"),
     rx.avatar(fallback="RX", radius="none"),
-    rx.avatar(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", fallback="RX", radius="small"),
+    rx.avatar(src="https://web.reflex-assets.dev/other/logo.jpg", fallback="RX", radius="small"),
     rx.avatar(fallback="RX", radius="small"),
-    rx.avatar(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", fallback="RX", radius="medium"),
+    rx.avatar(src="https://web.reflex-assets.dev/other/logo.jpg", fallback="RX", radius="medium"),
     rx.avatar(fallback="RX", radius="medium"),
-    rx.avatar(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", fallback="RX", radius="large"),
+    rx.avatar(src="https://web.reflex-assets.dev/other/logo.jpg", fallback="RX", radius="large"),
     rx.avatar(fallback="RX", radius="large"),
-    rx.avatar(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", fallback="RX", radius="full"),
+    rx.avatar(src="https://web.reflex-assets.dev/other/logo.jpg", fallback="RX", radius="full"),
     rx.avatar(fallback="RX", radius="full"),
     rows="2",
     spacing="2",
@@ -137,7 +136,7 @@ As part of a user profile page, the Avatar component is used to display the user
 
 ```python demo
 rx.flex(
-    rx.avatar(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", fallback="RU", size="9"),
+    rx.avatar(src="https://web.reflex-assets.dev/other/logo.jpg", fallback="RU", size="9"),
     rx.text("Reflex User", weight="bold", size="4"),
     rx.text("@reflexuser", color_scheme="gray"),
     rx.button("Edit Profile", color_scheme="indigo", variant="solid"),

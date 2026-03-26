@@ -2,9 +2,6 @@
 title: Library and Tags
 ---
 
-```python exec
-from pcweb.pages.docs import api_reference
-```
 
 # Find The Component
 
@@ -19,7 +16,7 @@ In both cases, the process of wrapping the component is the same except for the 
 
 To start wrapping your React component, the first step is to create a new component in your Reflex app. This is done by creating a new class that inherits from `rx.Component` or `rx.NoSSRComponent`.
 
-See the [API Reference]({api_reference.component.path}) for more details on the `rx.Component` class.
+See the [API Reference](https://reflex.dev/docs/api-reference/component/) for more details on the `rx.Component` class.
 
 This is when we will define the most important attributes of the component:
 

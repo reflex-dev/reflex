@@ -4,7 +4,6 @@ import time
 
 import reflex as rx
 
-from pcweb.pages.docs import vars
 ```
 
 # Base Vars
@@ -45,7 +44,7 @@ In this example `ticker` and `price` are base vars in the app, which can be modi
 ```md alert warning
 # Vars must be JSON serializable.
 
-Vars are used to communicate between the frontend and backend. They must be primitive Python types, Plotly figures, Pandas dataframes, or [a custom defined type]({vars.custom_vars.path}).
+Vars are used to communicate between the frontend and backend. They must be primitive Python types, Plotly figures, Pandas dataframes, or [a custom defined type](/docs/vars/custom_vars).
 ```
 
 ## Accessing state variables on different pages

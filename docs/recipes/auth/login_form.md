@@ -1,6 +1,5 @@
 ```python exec
 import reflex as rx
-from pcweb.constants import REFLEX_ASSETS_CDN
 ```
 
 # Login Form
@@ -14,7 +13,7 @@ def login_default() -> rx.Component:
 	return rx.card(
 		rx.vstack(
 			rx.center(
-				rx.image(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", width="2.5em", height="auto", border_radius="25%"),
+				rx.image(src="https://web.reflex-assets.dev/other/logo.jpg", width="2.5em", height="auto", border_radius="25%"),
 				rx.heading("Sign in to your account", size="6", as_="h2", text_align="center", width="100%"),
 				direction="column",
 				spacing="5",
@@ -62,7 +61,7 @@ def login_default_icons() -> rx.Component:
 	return rx.card(
 		rx.vstack(
 			rx.center(
-				rx.image(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", width="2.5em", height="auto", border_radius="25%"),
+				rx.image(src="https://web.reflex-assets.dev/other/logo.jpg", width="2.5em", height="auto", border_radius="25%"),
 				rx.heading("Sign in to your account", size="6", as_="h2", text_align="center", width="100%"),
 				direction="column",
 				spacing="5",
@@ -110,7 +109,7 @@ def login_single_thirdparty() -> rx.Component:
 	return rx.card(
 		rx.vstack(
 			rx.flex(
-				rx.image(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", width="2.5em", height="auto", border_radius="25%"),
+				rx.image(src="https://web.reflex-assets.dev/other/logo.jpg", width="2.5em", height="auto", border_radius="25%"),
 				rx.heading("Sign in to your account", size="6", as_="h2", text_align="left", width="100%"),
 				rx.hstack(
 					rx.text("New here?", size="3", text_align="left"),
@@ -173,7 +172,7 @@ def login_multiple_thirdparty() -> rx.Component:
 	return rx.card(
 		rx.vstack(
 			rx.flex(
-				rx.image(src=f"{REFLEX_ASSETS_CDN}other/logo.jpg", width="2.5em", height="auto", border_radius="25%"),
+				rx.image(src="https://web.reflex-assets.dev/other/logo.jpg", width="2.5em", height="auto", border_radius="25%"),
 				rx.heading("Sign in to your account", size="6", as_="h2", width="100%"),
 				rx.hstack(
 					rx.text("New here?", size="3", text_align="left"),

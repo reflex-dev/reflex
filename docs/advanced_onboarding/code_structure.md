@@ -1,6 +1,3 @@
-```python exec
-from pcweb.pages.docs import custom_components
-```
 
 # Project Structure (Advanced)
 
@@ -251,7 +248,7 @@ component.
 
 ### External Components
 
-Reflex 0.4.3 introduced support for the [`reflex component` CLI commands]({custom_components.overview.path}), which makes it easy
+Reflex 0.4.3 introduced support for the [`reflex component` CLI commands](/docs/custom-components/overview), which makes it easy
 to bundle up common functionality to publish on PyPI as a standalone Python package
 that can be installed and used in any Reflex app.
 
