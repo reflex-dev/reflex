@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from reflex.utils import console
+from reflex_core.utils import console
+
 from reflex_components_core import el as elements
 from reflex_components_core.core.helmet import helmet
 

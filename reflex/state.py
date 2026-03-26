@@ -35,6 +35,21 @@ from typing import (
 from reflex_core import constants
 from reflex_core.constants.state import FIELD_MARKER
 from reflex_core.environment import PerformanceMode, environment
+from reflex_core.utils.exceptions import (
+    ComputedVarShadowsBaseVarsError,
+    ComputedVarShadowsStateVarError,
+    DynamicComponentInvalidSignatureError,
+    DynamicRouteArgShadowsStateVarError,
+    EventHandlerShadowsBuiltInStateMethodError,
+    ReflexRuntimeError,
+    SetUndefinedStateVarError,
+    StateMismatchError,
+    StateSchemaMismatchError,
+    StateSerializationError,
+    StateTooLargeError,
+    UnretrievableVarValueError,
+)
+from reflex_core.utils.exceptions import ImmutableStateError as ImmutableStateError
 from reflex_core.utils.types import _isinstance, is_union, value_inside_optional
 from reflex_core.vars import Field, VarData, field
 from reflex_core.vars.base import (
@@ -67,21 +82,6 @@ from reflex.istate.proxy import MutableProxy, StateProxy, is_mutable_type
 from reflex.istate.storage import ClientStorageBase
 from reflex.model import Model
 from reflex.utils import console, format, prerequisites, types
-from reflex.utils.exceptions import (
-    ComputedVarShadowsBaseVarsError,
-    ComputedVarShadowsStateVarError,
-    DynamicComponentInvalidSignatureError,
-    DynamicRouteArgShadowsStateVarError,
-    EventHandlerShadowsBuiltInStateMethodError,
-    ReflexRuntimeError,
-    SetUndefinedStateVarError,
-    StateMismatchError,
-    StateSchemaMismatchError,
-    StateSerializationError,
-    StateTooLargeError,
-    UnretrievableVarValueError,
-)
-from reflex.utils.exceptions import ImmutableStateError as ImmutableStateError
 from reflex.utils.exec import is_testing_env
 
 if TYPE_CHECKING:
@@ -232,8 +232,7 @@ class EventHandlerSetVar(EventHandler):
             NotImplementedError: If the setter for the given Var is async
         """
         from reflex_core.config import get_config
-
-        from reflex.utils.exceptions import EventHandlerValueError
+        from reflex_core.utils.exceptions import EventHandlerValueError
 
         config = get_config()
         if config.state_auto_setters is None:
@@ -445,7 +444,7 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             ReflexRuntimeError: If the state is instantiated directly by end user.
         """
-        from reflex.utils.exceptions import ReflexRuntimeError
+        from reflex_core.utils.exceptions import ReflexRuntimeError
 
         if not _reflex_internal_init and not is_testing_env():
             msg = (
@@ -519,7 +518,7 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             StateValueError: If a substate class shadows another.
         """
-        from reflex.utils.exceptions import StateValueError
+        from reflex_core.utils.exceptions import StateValueError
 
         super().__init_subclass__(**kwargs)
 
@@ -1085,8 +1084,7 @@ class BaseState(EvenMoreBasicBaseState):
             VarTypeError: if the variable has an incorrect type
         """
         from reflex_core.config import get_config
-
-        from reflex.utils.exceptions import VarTypeError
+        from reflex_core.utils.exceptions import VarTypeError
 
         if not types.is_valid_var_type(prop._var_type):
             msg = (

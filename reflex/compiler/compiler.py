@@ -14,6 +14,9 @@ from reflex_core.config import get_config
 from reflex_core.constants.compiler import PageNames, ResetStylesheet
 from reflex_core.constants.state import FIELD_MARKER
 from reflex_core.environment import environment
+from reflex_core.utils.exceptions import ReflexError
+from reflex_core.utils.format import to_title_case
+from reflex_core.utils.imports import ImportVar, ParsedImportDict
 from reflex_core.vars.base import LiteralVar, Var
 
 from reflex.compiler import templates, utils
@@ -32,10 +35,7 @@ from reflex.experimental.memo import (
 from reflex.state import BaseState
 from reflex.style import SYSTEM_COLOR_MODE
 from reflex.utils import console, path_ops
-from reflex.utils.exceptions import ReflexError
 from reflex.utils.exec import is_prod_mode
-from reflex.utils.format import to_title_case
-from reflex.utils.imports import ImportVar, ParsedImportDict
 from reflex.utils.prerequisites import get_web_dir
 
 
@@ -840,7 +840,7 @@ def compile_unevaluated_page(
 
         component._add_style_recursive(style or {}, theme)
 
-        from reflex.utils.format import make_default_page_title
+        from reflex_core.utils.format import make_default_page_title
 
         component = Fragment.create(component)
 

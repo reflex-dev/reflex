@@ -8,12 +8,12 @@ from typing import TypedDict
 
 from reflex_core import constants
 from reflex_core.config import get_config
+from reflex_core.utils.exceptions import InvalidStateManagerModeError
 from typing_extensions import ReadOnly, Unpack
 
 from reflex.event import Event
 from reflex.state import BaseState
 from reflex.utils import console, prerequisites
-from reflex.utils.exceptions import InvalidStateManagerModeError
 
 
 class StateModificationContext(TypedDict, total=False):

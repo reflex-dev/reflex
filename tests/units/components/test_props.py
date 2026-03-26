@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+from reflex_core.utils.exceptions import InvalidPropValueError
 
 from reflex.components.props import NoExtrasAllowedProps, PropsBase
 from reflex.event import (
@@ -11,7 +12,6 @@ from reflex.event import (
     passthrough_event_spec,
 )
 from reflex.state import State
-from reflex.utils.exceptions import InvalidPropValueError
 
 
 class PropA(NoExtrasAllowedProps):

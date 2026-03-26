@@ -10,8 +10,8 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 from reflex_core.config import get_config
 from reflex_core.environment import environment
+from reflex_core.utils import console
 
-from reflex.utils import console
 from reflex.utils.compat import sqlmodel_field_has_primary_key
 from reflex.utils.serializers import serializer
 

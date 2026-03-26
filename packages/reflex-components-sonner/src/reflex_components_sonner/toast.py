@@ -7,6 +7,7 @@ from typing import Any, Literal
 
 from reflex_components_lucide.icon import Icon
 from reflex_core.constants.base import Dirs
+from reflex_core.utils.imports import ImportVar
 from reflex_core.vars import VarData
 from reflex_core.vars.base import LiteralVar, Var
 from reflex_core.vars.function import FunctionVar
@@ -18,7 +19,6 @@ from reflex.components.props import NoExtrasAllowedProps
 from reflex.event import EventSpec, run_script
 from reflex.style import Style, resolved_color_mode
 from reflex.utils import format
-from reflex.utils.imports import ImportVar
 from reflex.utils.serializers import serializer
 
 LiteralPosition = Literal[

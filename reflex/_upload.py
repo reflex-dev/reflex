@@ -504,8 +504,9 @@ async def _upload_buffered_file(
     Returns:
         A streaming response for the buffered upload.
     """
+    from reflex_core.utils.exceptions import UploadValueError
+
     from reflex.event import Event
-    from reflex.utils.exceptions import UploadValueError
 
     try:
         form_data = await request.form()

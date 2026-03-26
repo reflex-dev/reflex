@@ -6,13 +6,13 @@ from collections.abc import Callable
 from dataclasses import _MISSING_TYPE, MISSING
 from typing import Any, TypeVar, get_args, get_origin
 
+from reflex_core.utils.exceptions import InvalidPropValueError
 from reflex_core.vars.object import LiteralObjectVar
 from typing_extensions import dataclass_transform
 
 from reflex.components.field import BaseField, FieldBasedMeta
 from reflex.event import EventChain, args_specs_from_fields
 from reflex.utils import format
-from reflex.utils.exceptions import InvalidPropValueError
 from reflex.utils.serializers import serializer
 from reflex.utils.types import is_union
 

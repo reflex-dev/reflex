@@ -11,6 +11,7 @@ from typing import Any
 
 from reflex_components_core.core.markdown_component_map import MarkdownComponentMap
 from reflex_components_core.el.elements.typography import Div
+from reflex_core.utils.imports import ImportDict, ImportTypes, ImportVar
 from reflex_core.vars.base import LiteralVar, Var, VarData
 from reflex_core.vars.number import ternary_operation
 from reflex_core.vars.sequence import LiteralArrayVar
@@ -24,7 +25,6 @@ from reflex.components.component import (
 )
 from reflex.components.tags.tag import Tag
 from reflex.utils import console
-from reflex.utils.imports import ImportDict, ImportTypes, ImportVar
 
 # Special vars used in the component map.
 _CHILDREN = Var(_js_expr="children", _var_type=str)

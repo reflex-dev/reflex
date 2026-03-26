@@ -11,6 +11,11 @@ from pydantic import BaseModel as Base
 from pytest_mock import MockerFixture
 from reflex_core.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
 from reflex_core.constants.state import FIELD_MARKER
+from reflex_core.utils.exceptions import (
+    PrimitiveUnserializableToJSONError,
+    UntypedComputedVarError,
+)
+from reflex_core.utils.imports import ImportVar
 from reflex_core.vars import VarData
 from reflex_core.vars.base import (
     ComputedVar,
@@ -37,11 +42,6 @@ from reflex_core.vars.sequence import (
 import reflex as rx
 from reflex.environment import PerformanceMode
 from reflex.state import BaseState
-from reflex.utils.exceptions import (
-    PrimitiveUnserializableToJSONError,
-    UntypedComputedVarError,
-)
-from reflex.utils.imports import ImportVar
 from reflex.utils.types import get_default_value_for_type
 
 test_vars = [

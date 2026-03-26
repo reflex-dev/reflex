@@ -89,7 +89,7 @@ import sys
 from reflex.utils import lazy_loader
 
 if sys.version_info < (3, 11):
-    from reflex.utils import console
+    from reflex_core.utils import console
 
     console.warn(
         "Reflex support for Python 3.10 is deprecated and will be removed in a future release. Please upgrade to Python 3.11 or higher for continued support."
@@ -355,6 +355,7 @@ _SUBMODULES: set[str] = {
     "style",
     "admin",
     "base",
+    "constants",
     "model",
     "testing",
     "utils",

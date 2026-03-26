@@ -3,6 +3,9 @@
 import textwrap
 from typing import Any, cast
 
+from reflex_core.utils import format
+from reflex_core.utils.exceptions import MatchTypeError
+from reflex_core.utils.imports import ImportDict
 from reflex_core.vars import VarData
 from reflex_core.vars.base import LiteralVar, Var
 
@@ -10,9 +13,6 @@ from reflex.components.component import BaseComponent, Component, MemoizationLea
 from reflex.components.tags import Tag
 from reflex.components.tags.match_tag import MatchTag
 from reflex.style import Style
-from reflex.utils import format
-from reflex.utils.exceptions import MatchTypeError
-from reflex.utils.imports import ImportDict
 from reflex_components_core.base import Fragment
 
 

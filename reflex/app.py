@@ -55,6 +55,7 @@ from reflex_core.event import (
     get_hydrate_event,
     noop,
 )
+from reflex_core.utils.imports import ImportVar
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp as EngineIOApp
 from socketio import AsyncNamespace, AsyncServer
@@ -118,7 +119,6 @@ from reflex.utils.exec import (
     is_testing_env,
     should_prerender_routes,
 )
-from reflex.utils.imports import ImportVar
 from reflex.utils.misc import run_in_thread
 from reflex.utils.token_manager import RedisTokenManager, TokenManager
 from reflex.utils.types import ASGIApp, Message, Receive, Scope, Send
@@ -897,7 +897,7 @@ class App(MiddlewareMixin, LifespanMixin):
         Raises:
             RouteValueError: exception showing which conflict exist with the route to be added
         """
-        from reflex.utils.exceptions import RouteValueError
+        from reflex_core.utils.exceptions import RouteValueError
 
         if "[" not in new_route:
             return
@@ -1124,7 +1124,7 @@ class App(MiddlewareMixin, LifespanMixin):
             ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
             FileNotFoundError: When a plugin requires a file that does not exist.
         """
-        from reflex.utils.exceptions import ReflexRuntimeError
+        from reflex_core.utils.exceptions import ReflexRuntimeError
 
         self._apply_decorated_pages()
 

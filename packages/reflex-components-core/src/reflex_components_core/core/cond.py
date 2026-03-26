@@ -6,6 +6,7 @@ from typing import Any, overload
 
 from reflex_core.constants import Dirs
 from reflex_core.utils import types
+from reflex_core.utils.imports import ImportDict, ImportVar
 from reflex_core.vars import VarData
 from reflex_core.vars.base import LiteralVar, Var
 from reflex_core.vars.number import ternary_operation
@@ -13,7 +14,6 @@ from reflex_core.vars.number import ternary_operation
 from reflex.components.component import BaseComponent, Component, field
 from reflex.components.tags import CondTag, Tag
 from reflex.style import LIGHT_COLOR_MODE, resolved_color_mode
-from reflex.utils.imports import ImportDict, ImportVar
 from reflex_components_core.base.fragment import Fragment
 
 _IS_TRUE_IMPORT: ImportDict = {

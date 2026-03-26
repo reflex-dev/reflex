@@ -11,13 +11,13 @@ from reflex_components_lucide.icon import Icon
 from reflex_components_radix.themes.components.button import Button
 from reflex_components_radix.themes.layout.box import Box
 from reflex_core.constants.colors import Color
+from reflex_core.utils import format
+from reflex_core.utils.imports import ImportVar
 from reflex_core.vars.base import LiteralVar, Var, VarData
 
 from reflex.components.component import Component, ComponentNamespace, field
 from reflex.event import set_clipboard
 from reflex.style import Style
-from reflex.utils import format
-from reflex.utils.imports import ImportVar
 
 LiteralCodeLanguage = Literal[
     "abap",

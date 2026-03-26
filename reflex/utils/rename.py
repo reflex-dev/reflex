@@ -6,8 +6,8 @@ from pathlib import Path
 
 from reflex_core import constants
 from reflex_core.config import get_config
+from reflex_core.utils import console
 
-from reflex.utils import console
 from reflex.utils.misc import get_module_path
 
 

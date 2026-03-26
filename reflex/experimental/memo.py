@@ -13,6 +13,7 @@ from reflex_components_core.base.fragment import Fragment
 from reflex_core import constants
 from reflex_core.constants.compiler import SpecialAttributes
 from reflex_core.constants.state import CAMEL_CASE_MEMO_MARKER
+from reflex_core.utils.imports import ImportVar
 from reflex_core.vars import VarData
 from reflex_core.vars.base import LiteralVar, Var
 from reflex_core.vars.function import (
@@ -28,7 +29,6 @@ from reflex.components.component import Component
 from reflex.components.dynamic import bundled_libraries
 from reflex.utils import format
 from reflex.utils import types as type_utils
-from reflex.utils.imports import ImportVar
 
 
 @dataclasses.dataclass(frozen=True, slots=True, kw_only=True)

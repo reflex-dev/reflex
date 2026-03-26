@@ -5,11 +5,11 @@ from __future__ import annotations
 import dataclasses
 from datetime import date, datetime, time, timedelta
 
+from reflex_core.utils.imports import ImportDict
 from reflex_core.vars.base import LiteralVar, Var
 
 from reflex.components.component import NoSSRComponent, field
 from reflex.event import EventHandler, passthrough_event_spec
-from reflex.utils.imports import ImportDict
 
 
 @dataclasses.dataclass(frozen=True)

@@ -10,10 +10,9 @@ import inspect
 import time
 from collections.abc import Callable, Coroutine
 
+from reflex_core.utils import console
+from reflex_core.utils.exceptions import InvalidLifespanTaskTypeError
 from starlette.applications import Starlette
-
-from reflex.utils import console
-from reflex.utils.exceptions import InvalidLifespanTaskTypeError
 
 from .mixin import AppMixin
 

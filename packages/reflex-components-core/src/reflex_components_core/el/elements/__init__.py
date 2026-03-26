@@ -142,7 +142,7 @@ _MAPPING = {
 
 EXCLUDE = ["del_", "Del", "image", "style"]
 for v in _MAPPING.values():
-    from reflex.utils.format import to_camel_case
+    from reflex_core.utils.format import to_camel_case
 
     v.extend([
         to_camel_case(mod)[0].upper() + to_camel_case(mod)[1:]

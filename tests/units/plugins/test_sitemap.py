@@ -71,7 +71,7 @@ def test_generate_xml_multiple_links_all_fields():
 
 
 @patch("reflex_core.config.get_config")
-@patch("reflex.utils.console.warn")
+@patch("reflex_core.utils.console.warn")
 def test_generate_links_for_sitemap_static_routes(
     mock_warn: MagicMock, mock_get_config: MagicMock
 ):
@@ -131,7 +131,7 @@ def test_generate_links_for_sitemap_static_routes(
 
 
 @patch("reflex_core.config.get_config")
-@patch("reflex.utils.console.warn")
+@patch("reflex_core.utils.console.warn")
 def test_generate_links_for_sitemap_dynamic_routes(
     mock_warn: MagicMock, mock_get_config: MagicMock
 ):
@@ -200,7 +200,7 @@ def test_generate_links_for_sitemap_dynamic_routes(
 
 
 @patch("reflex_core.config.get_config")
-@patch("reflex.utils.console.warn")
+@patch("reflex_core.utils.console.warn")
 def test_generate_links_for_sitemap_404_route(
     mock_warn: MagicMock, mock_get_config: MagicMock
 ):

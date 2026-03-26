@@ -8,6 +8,7 @@ from reflex_core import constants
 from reflex_core.constants import Dirs, Hooks, Imports
 from reflex_core.constants.compiler import CompileVars
 from reflex_core.environment import environment
+from reflex_core.utils.imports import ImportVar
 from reflex_core.vars import VarData
 from reflex_core.vars.base import LiteralVar, Var
 from reflex_core.vars.function import FunctionStringVar
@@ -15,7 +16,6 @@ from reflex_core.vars.number import BooleanVar
 from reflex_core.vars.sequence import LiteralArrayVar
 
 from reflex.components.component import Component
-from reflex.utils.imports import ImportVar
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core.cond import cond
 from reflex_components_core.el.elements.inline import Span
