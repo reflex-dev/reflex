@@ -249,7 +249,7 @@ def test_match_case_tuple_elements(match_case):
             ),
             (
                 'Match cases should have the same return types. Case 3 with return value `"red"` of type '
-                "<class 'reflex_core.vars.sequence.LiteralStringVar'> is not <class 'reflex.components.component.BaseComponent'>"
+                "<class 'reflex_core.vars.sequence.LiteralStringVar'> is not <class 'reflex_core.components.component.BaseComponent'>"
             ),
         ),
         (

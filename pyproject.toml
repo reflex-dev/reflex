@@ -218,11 +218,11 @@ lint.flake8-bugbear.extend-immutable-calls = [
   "N",
 ]
 "benchmarks/*.py" = ["ANN001", "D100", "D103", "D104", "B018", "PERF", "T", "N"]
-"reflex/.templates/*.py" = ["D100", "D103", "D104"]
+"*/.templates/*.py" = ["D100", "D103", "D104"]
 "*.pyi" = ["D301", "D415", "D417", "D418", "E742", "N", "PGH"]
 "pyi_generator.py" = ["N802"]
 "reflex/constants/*.py" = ["N"]
-"reflex/.templates/apps/blank/code/*" = ["INP001"]
+"*/.templates/apps/blank/code/*" = ["INP001"]
 "*/blank.py" = ["I001"]
 
 [tool.pytest.ini_options]
