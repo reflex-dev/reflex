@@ -8,9 +8,10 @@ from collections.abc import Callable
 from functools import cache, update_wrapper
 from typing import Any, get_args, get_origin, get_type_hints
 
+from reflex_components_core.base.bare import Bare
+from reflex_components_core.base.fragment import Fragment
+
 from reflex import constants
-from reflex.components.base.bare import Bare
-from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component
 from reflex.components.dynamic import bundled_libraries
 from reflex.constants.compiler import SpecialAttributes
