@@ -61,6 +61,7 @@ from reflex_core.event import (
     get_hydrate_event,
     noop,
 )
+from reflex_core.utils import console
 from reflex_core.utils.imports import ImportVar
 from reflex_core.utils.types import ASGIApp, Message, Receive, Scope, Send
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
@@ -106,7 +107,6 @@ from reflex.state import (
 )
 from reflex.utils import (
     codespaces,
-    console,
     exceptions,
     format,
     frontend_skeleton,

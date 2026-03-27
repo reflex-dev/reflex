@@ -69,7 +69,7 @@ def harness_mocks(monkeypatch):
         )
     )
 
-    monkeypatch.setattr(reflex_testing, "get_config", lambda: fake_config)
+    monkeypatch.setattr(reflex_testing, "get_config", lambda reload=False: fake_config)
     monkeypatch.setattr(
         reflex_core.config, "get_config", lambda reload=False: fake_config
     )
