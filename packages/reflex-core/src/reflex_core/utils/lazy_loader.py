@@ -67,7 +67,7 @@ def attach(
     def __getattr__(name: str):  # noqa: N807
         if name in extra_mappings:
             path = extra_mappings[name]
-            if "." in path:
+            if "." not in path:
                 return importlib.import_module(path)
             submod_path, attr = path.rsplit(".", 1)
             submod = importlib.import_module(submod_path)
