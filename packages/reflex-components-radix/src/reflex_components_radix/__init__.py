@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from reflex_core.utils import lazy_loader
 
-from reflex import RADIX_MAPPING
+from reflex_components_radix.mappings import RADIX_MAPPING
 
 _SUBMODULES: set[str] = {"themes", "primitives"}
 

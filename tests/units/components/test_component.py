@@ -5,6 +5,7 @@ import pydantic
 import pytest
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
+from reflex_components_radix.mappings import RADIX_MAPPING
 from reflex_components_radix.themes.layout.box import Box
 from reflex_core.components.component import (
     CUSTOM_COMPONENTS,
@@ -1473,7 +1474,7 @@ def test_instantiate_all_components():
         "Thead",
     }
     component_nested_list = [
-        *rx.RADIX_MAPPING.values(),
+        *RADIX_MAPPING.values(),
         *rx.COMPONENTS_BASE_MAPPING.values(),
         *rx.COMPONENTS_CORE_MAPPING.values(),
     ]
