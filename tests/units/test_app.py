@@ -2186,7 +2186,7 @@ def test_call_app():
 
 
 def test_app_with_optional_endpoints():
-    from reflex_components_core.core.upload import Upload
+    from reflex_components_upload.upload import Upload
 
     app = App()
     Upload.is_used = True

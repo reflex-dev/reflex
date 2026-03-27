@@ -1,7 +1,7 @@
 from typing import Any, cast
 
 import pytest
-from reflex_components_core.core.upload import (
+from reflex_components_upload.upload import (
     StyledUpload,
     Upload,
     UploadNamespace,
