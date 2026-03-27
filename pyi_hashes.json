@@ -20,6 +20,7 @@
   "packages/reflex-components-core/src/reflex_components_core/core/helmet.pyi": "3bf7bee5665293f7583009f651ea3cb1",
   "packages/reflex-components-core/src/reflex_components_core/core/html.pyi": "7209d1607545e412ed38dbe2a129321c",
   "packages/reflex-components-core/src/reflex_components_core/core/sticky.pyi": "8241c75ca16a0960b7dea6d6e7aff52e",
+  "packages/reflex-components-core/src/reflex_components_core/core/upload.pyi": "73e38c074d7e6ca2fda8eaad820f177e",
   "packages/reflex-components-core/src/reflex_components_core/core/window_events.pyi": "4407cecb1825dc359bcc7b2bea011a8e",
   "packages/reflex-components-core/src/reflex_components_core/datadisplay/__init__.pyi": "aaab42816119ac0f308841dc5482b3f1",
   "packages/reflex-components-core/src/reflex_components_core/el/__init__.pyi": "e27fddec8de079db37d6699e136411d1",
@@ -117,7 +118,6 @@
   "packages/reflex-components-recharts/src/reflex_components_recharts/polar.pyi": "1ce679c002336c7bdbdd6c8ff6f2413c",
   "packages/reflex-components-recharts/src/reflex_components_recharts/recharts.pyi": "1b92135de4ea79cb7d94eaaec55b9ab7",
   "packages/reflex-components-sonner/src/reflex_components_sonner/toast.pyi": "f09c503c4ab880c13c13d6fa67d708b8",
-  "packages/reflex-components-upload/src/reflex_components_upload/upload.pyi": "bb0977d2e9ab51344b84d3da2b23a984",
   "reflex/__init__.pyi": "a13470178c515fb4ad0c1adf6d63efe2",
   "reflex/components/__init__.pyi": "55bb242d5e5428db329b88b4923c2ba5",
   "reflex/experimental/memo.pyi": "d16eccf33993c781e2f8bc2dd8bbd4d4"

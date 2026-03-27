@@ -128,7 +128,7 @@ def resolve_upload_handler_param(handler: EventHandler) -> tuple[str, Any]:
         UploadTypeError: If the handler is a background task.
         UploadValueError: If the handler does not accept ``list[rx.UploadFile]``.
     """
-    from reflex_components_upload._upload import UploadFile
+    from reflex_components_core.core._upload import UploadFile
 
     from reflex_core.utils.exceptions import UploadTypeError, UploadValueError
 
@@ -168,7 +168,7 @@ def resolve_upload_chunk_handler_param(handler: EventHandler) -> tuple[str, type
         UploadTypeError: If the handler is not a background task.
         UploadValueError: If the handler does not accept an UploadChunkIterator.
     """
-    from reflex_components_upload._upload import UploadChunkIterator
+    from reflex_components_core.core._upload import UploadChunkIterator
 
     from reflex_core.utils.exceptions import UploadTypeError, UploadValueError
 
@@ -984,7 +984,7 @@ class FileUpload:
         Raises:
             ValueError: If the on_upload_progress is not a valid event handler.
         """
-        from reflex_components_upload.upload import (
+        from reflex_components_core.core.upload import (
             DEFAULT_UPLOAD_ID,
             upload_files_context_var_data,
         )

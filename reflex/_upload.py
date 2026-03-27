@@ -1,3 +1,3 @@
-"""Re-export from reflex_components_upload._upload."""
+"""Re-export from reflex_components_core.core._upload."""
 
-from reflex_components_upload._upload import *
+from reflex_components_core.core._upload import *

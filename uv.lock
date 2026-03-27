@@ -27,7 +27,6 @@ members = [
     "reflex-components-react-player",
     "reflex-components-recharts",
     "reflex-components-sonner",
-    "reflex-components-upload",
     "reflex-core",
     "reflex-docgen",
 ]
@@ -2076,7 +2075,6 @@ dependencies = [
     { name = "reflex-components-react-player" },
     { name = "reflex-components-recharts" },
     { name = "reflex-components-sonner" },
-    { name = "reflex-components-upload" },
     { name = "reflex-core" },
     { name = "reflex-hosting-cli" },
     { name = "rich" },
@@ -2156,7 +2154,6 @@ requires-dist = [
     { name = "reflex-components-react-player", editable = "packages/reflex-components-react-player" },
     { name = "reflex-components-recharts", editable = "packages/reflex-components-recharts" },
     { name = "reflex-components-sonner", editable = "packages/reflex-components-sonner" },
-    { name = "reflex-components-upload", editable = "packages/reflex-components-upload" },
     { name = "reflex-core", editable = "packages/reflex-core" },
     { name = "reflex-hosting-cli", specifier = ">=0.1.61" },
     { name = "rich", specifier = ">=13,<15" },
@@ -2318,24 +2315,6 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [{ name = "reflex-components-lucide", editable = "packages/reflex-components-lucide" }]
-
-[[package]]
-name = "reflex-components-upload"
-source = { editable = "packages/reflex-components-upload" }
-dependencies = [
-    { name = "python-multipart" },
-    { name = "reflex-components-core" },
-    { name = "starlette" },
-    { name = "typing-extensions" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "python-multipart" },
-    { name = "reflex-components-core", editable = "packages/reflex-components-core" },
-    { name = "starlette" },
-    { name = "typing-extensions" },
-]
 
 [[package]]
 name = "reflex-core"

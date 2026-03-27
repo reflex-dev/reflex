@@ -49,7 +49,6 @@ dependencies = [
   "reflex-components-react-player",
   "reflex-components-recharts",
   "reflex-components-sonner",
-  "reflex-components-upload",
 ]
 
 classifiers = [
@@ -344,7 +343,6 @@ reflex-components-radix.workspace = true
 reflex-components-react-player.workspace = true
 reflex-components-recharts.workspace = true
 reflex-components-sonner.workspace = true
-reflex-components-upload.workspace = true
 reflex-docgen.workspace = true
 
 [tool.uv.workspace]

@@ -6,10 +6,6 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any, ClassVar
 
-from reflex_components_core.base.fragment import Fragment
-from reflex_components_core.core.cond import cond
-from reflex_components_core.el.elements.forms import Input
-from reflex_components_core.el.elements.typography import Div
 from reflex_components_sonner.toast import toast
 from reflex_core.components.component import (
     Component,
@@ -42,7 +38,11 @@ from reflex_core.vars.function import FunctionVar
 from reflex_core.vars.object import ObjectVar
 from reflex_core.vars.sequence import ArrayVar, LiteralStringVar
 
-from reflex_components_upload._upload import UploadChunkIterator, UploadFile
+from reflex_components_core.base.fragment import Fragment
+from reflex_components_core.core._upload import UploadChunkIterator, UploadFile
+from reflex_components_core.core.cond import cond
+from reflex_components_core.el.elements.forms import Input
+from reflex_components_core.el.elements.typography import Div
 
 DEFAULT_UPLOAD_ID: str = "default"
 
