@@ -655,7 +655,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def _add_optional_endpoints(self):
         """Add optional api endpoints (_upload)."""
-        from reflex_components_core.core.upload import Upload, get_upload_dir
+        from reflex_components_upload.upload import Upload, get_upload_dir
 
         if not self._api:
             return
