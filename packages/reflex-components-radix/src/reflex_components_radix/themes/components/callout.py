@@ -5,7 +5,6 @@ from typing import Literal
 from reflex_components_core.base import fragment
 from reflex_components_core.core.breakpoints import Responsive
 from reflex_components_core.el import elements
-from reflex_components_lucide.icon import Icon
 from reflex_core.components.component import Component, ComponentNamespace, field
 from reflex_core.vars.base import Var
 
@@ -66,6 +65,8 @@ class Callout(CalloutRoot):
         Returns:
             The callout component.
         """
+        from reflex_components_lucide.icon import Icon
+
         return CalloutRoot.create(
             (
                 CalloutIcon.create(Icon.create(tag=props["icon"]))

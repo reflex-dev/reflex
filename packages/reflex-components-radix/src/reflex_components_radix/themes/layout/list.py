@@ -9,7 +9,6 @@ from reflex_components_core.core.foreach import Foreach
 from reflex_components_core.core.markdown_component_map import MarkdownComponentMap
 from reflex_components_core.el.elements.base import BaseHTML
 from reflex_components_core.el.elements.typography import Li, Ol, Ul
-from reflex_components_lucide.icon import Icon
 from reflex_core.components.component import ComponentNamespace, field
 from reflex_core.vars.base import Var
 
@@ -171,6 +170,8 @@ class ListItem(Li, MarkdownComponentMap):
         Returns:
             The list item component.
         """
+        from reflex_components_lucide.icon import Icon
+
         for child in children:
             if isinstance(child, Text):
                 child.as_ = "span"  # pyright: ignore[reportAttributeAccessIssue]

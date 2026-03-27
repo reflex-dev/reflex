@@ -12,7 +12,6 @@ from reflex_components_core.core.colors import color
 from reflex_components_core.core.cond import color_mode_cond
 from reflex_components_core.core.markdown_component_map import MarkdownComponentMap
 from reflex_components_core.el.elements.forms import Button
-from reflex_components_lucide.icon import Icon
 from reflex_components_radix.themes.layout.box import Box
 from reflex_core.components.component import Component, ComponentNamespace, field
 from reflex_core.components.props import NoExtrasAllowedProps
@@ -751,6 +750,8 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
         Returns:
             The code block component.
         """
+        from reflex_components_lucide.icon import Icon
+
         use_transformers = props.pop("use_transformers", False)
         show_line_numbers = props.pop("show_line_numbers", False)
         language = props.pop("language", None)

@@ -7,7 +7,6 @@ from typing import ClassVar, Literal
 
 from reflex_components_core.core.cond import color_mode_cond
 from reflex_components_core.core.markdown_component_map import MarkdownComponentMap
-from reflex_components_lucide.icon import Icon
 from reflex_components_radix.themes.components.button import Button
 from reflex_components_radix.themes.layout.box import Box
 from reflex_core.components.component import Component, ComponentNamespace, field
@@ -443,6 +442,8 @@ class CodeBlock(Component, MarkdownComponentMap):
         Returns:
             The text component.
         """
+        from reflex_components_lucide.icon import Icon
+
         # This component handles style in a special prop.
         custom_style = props.pop("custom_style", {})
         can_copy = props.pop("can_copy", False)
