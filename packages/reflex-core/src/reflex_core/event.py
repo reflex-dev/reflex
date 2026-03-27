@@ -2410,7 +2410,7 @@ class EventCallback(Generic[Unpack[P]], EventActionsMixin):
     ) -> "EventCallback[Unpack[P]]": ...
 
     @overload
-    def __get__(self, instance: Any, owner: Any) -> Callable[[Unpack[P]]]: ...
+    def __get__(self, instance: Any, owner: Any) -> "Callable[[Unpack[P]]]": ...
 
     def __get__(self, instance: Any, owner: Any) -> Callable:
         """Get the function with the instance bound to it.
@@ -2568,9 +2568,9 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
-    ) -> Callable[
-        [Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]  # pyright: ignore [reportInvalidTypeVarUse]
-    ]: ...
+    ) -> (
+        "Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]]"
+    ): ...
 
     @overload
     def __new__(
