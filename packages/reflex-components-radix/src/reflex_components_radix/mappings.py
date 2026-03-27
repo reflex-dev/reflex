@@ -1,12 +1,12 @@
 """Radix component mappings for lazy loading."""
 
-RADIX_THEMES_MAPPING: dict = {
-    "components.radix.themes.base": ["color_mode", "theme", "theme_panel"],
-    "components.radix.themes.color_mode": ["color_mode"],
+RADIX_THEMES_MAPPING: dict[str, list[str]] = {
+    "reflex_components_radix.themes.base": ["color_mode", "theme", "theme_panel"],
+    "reflex_components_radix.themes.color_mode": ["color_mode"],
 }
-RADIX_THEMES_COMPONENTS_MAPPING: dict = {
+RADIX_THEMES_COMPONENTS_MAPPING: dict[str, list[str]] = {
     **{
-        f"components.radix.themes.components.{mod}": [mod]
+        f"reflex_components_radix.themes.components.{mod}": [mod]
         for mod in [
             "alert_dialog",
             "aspect_ratio",
@@ -40,86 +40,89 @@ RADIX_THEMES_COMPONENTS_MAPPING: dict = {
             "checkbox_group",
         ]
     },
-    "components.radix.themes.components.text_field": ["text_field", "input"],
-    "components.radix.themes.components.radio_group": ["radio", "radio_group"],
-    "components.radix.themes.components.dropdown_menu": ["menu", "dropdown_menu"],
-    "components.radix.themes.components.separator": ["divider", "separator"],
-    "components.radix.themes.components.progress": ["progress"],
+    "reflex_components_radix.themes.components.text_field": ["text_field", "input"],
+    "reflex_components_radix.themes.components.radio_group": ["radio", "radio_group"],
+    "reflex_components_radix.themes.components.dropdown_menu": [
+        "menu",
+        "dropdown_menu",
+    ],
+    "reflex_components_radix.themes.components.separator": ["divider", "separator"],
+    "reflex_components_radix.themes.components.progress": ["progress"],
 }
 
-RADIX_THEMES_LAYOUT_MAPPING: dict = {
-    "components.radix.themes.layout.box": [
+RADIX_THEMES_LAYOUT_MAPPING: dict[str, list[str]] = {
+    "reflex_components_radix.themes.layout.box": [
         "box",
     ],
-    "components.radix.themes.layout.center": [
+    "reflex_components_radix.themes.layout.center": [
         "center",
     ],
-    "components.radix.themes.layout.container": [
+    "reflex_components_radix.themes.layout.container": [
         "container",
     ],
-    "components.radix.themes.layout.flex": [
+    "reflex_components_radix.themes.layout.flex": [
         "flex",
     ],
-    "components.radix.themes.layout.grid": [
+    "reflex_components_radix.themes.layout.grid": [
         "grid",
     ],
-    "components.radix.themes.layout.section": [
+    "reflex_components_radix.themes.layout.section": [
         "section",
     ],
-    "components.radix.themes.layout.spacer": [
+    "reflex_components_radix.themes.layout.spacer": [
         "spacer",
     ],
-    "components.radix.themes.layout.stack": [
+    "reflex_components_radix.themes.layout.stack": [
         "stack",
         "hstack",
         "vstack",
     ],
-    "components.radix.themes.layout.list": [
-        ("list_ns", "list"),
+    "reflex_components_radix.themes.layout.list": [
+        "list_ns",
         "list_item",
         "ordered_list",
         "unordered_list",
     ],
 }
 
-RADIX_THEMES_TYPOGRAPHY_MAPPING: dict = {
-    "components.radix.themes.typography.blockquote": [
+RADIX_THEMES_TYPOGRAPHY_MAPPING: dict[str, list[str]] = {
+    "reflex_components_radix.themes.typography.blockquote": [
         "blockquote",
     ],
-    "components.radix.themes.typography.code": [
+    "reflex_components_radix.themes.typography.code": [
         "code",
     ],
-    "components.radix.themes.typography.heading": [
+    "reflex_components_radix.themes.typography.heading": [
         "heading",
     ],
-    "components.radix.themes.typography.link": [
+    "reflex_components_radix.themes.typography.link": [
         "link",
     ],
-    "components.radix.themes.typography.text": [
+    "reflex_components_radix.themes.typography.text": [
         "text",
     ],
 }
 
-RADIX_PRIMITIVES_MAPPING: dict = {
-    "components.radix.primitives.accordion": [
+RADIX_PRIMITIVES_MAPPING: dict[str, list[str]] = {
+    "reflex_components_radix.primitives.accordion": [
         "accordion",
     ],
-    "components.radix.primitives.drawer": [
+    "reflex_components_radix.primitives.drawer": [
         "drawer",
     ],
-    "components.radix.primitives.form": [
+    "reflex_components_radix.primitives.form": [
         "form",
     ],
-    "components.radix.primitives.progress": [
+    "reflex_components_radix.primitives.progress": [
         "progress",
     ],
 }
 
-RADIX_PRIMITIVES_SHORTCUT_MAPPING: dict = {
+RADIX_PRIMITIVES_SHORTCUT_MAPPING: dict[str, list[str]] = {
     k: v for k, v in RADIX_PRIMITIVES_MAPPING.items() if "progress" not in k
 }
 
-RADIX_MAPPING: dict = {
+RADIX_MAPPING: dict[str, list[str]] = {
     **RADIX_THEMES_MAPPING,
     **RADIX_THEMES_COMPONENTS_MAPPING,
     **RADIX_THEMES_TYPOGRAPHY_MAPPING,

@@ -97,37 +97,29 @@ if sys.version_info < (3, 11):
     del console
 del sys
 
-from reflex_components_radix.mappings import (  # noqa: E402
-    RADIX_MAPPING,
-    RADIX_PRIMITIVES_MAPPING,
-    RADIX_PRIMITIVES_SHORTCUT_MAPPING,
-    RADIX_THEMES_COMPONENTS_MAPPING,
-    RADIX_THEMES_LAYOUT_MAPPING,
-    RADIX_THEMES_MAPPING,
-    RADIX_THEMES_TYPOGRAPHY_MAPPING,
-)
+from reflex_components_radix.mappings import RADIX_MAPPING  # noqa: E402
 
-COMPONENTS_CORE_MAPPING: dict = {
-    "components.core.banner": [
+COMPONENTS_CORE_MAPPING: dict[str, list[str]] = {
+    "reflex_components_core.core.banner": [
         "connection_banner",
         "connection_modal",
     ],
-    "components.core.cond": ["cond", "color_mode_cond"],
-    "components.core.foreach": ["foreach"],
-    "components.core.debounce": ["debounce_input"],
-    "components.core.html": ["html"],
-    "components.core.match": ["match"],
-    "components.core.clipboard": ["clipboard"],
-    "components.core.colors": ["color"],
-    "components.core.breakpoints": ["breakpoints"],
-    "components.core.responsive": [
+    "reflex_components_core.core.cond": ["cond", "color_mode_cond"],
+    "reflex_components_core.core.foreach": ["foreach"],
+    "reflex_components_core.core.debounce": ["debounce_input"],
+    "reflex_components_core.core.html": ["html"],
+    "reflex_components_core.core.match": ["match"],
+    "reflex_components_core.core.clipboard": ["clipboard"],
+    "reflex_components_core.core.colors": ["color"],
+    "reflex_components_core.core.breakpoints": ["breakpoints"],
+    "reflex_components_core.core.responsive": [
         "desktop_only",
         "mobile_and_tablet",
         "mobile_only",
         "tablet_and_desktop",
         "tablet_only",
     ],
-    "components.core.upload": [
+    "reflex_components_core.core.upload": [
         "cancel_upload",
         "clear_selected_files",
         "get_upload_dir",
@@ -135,47 +127,60 @@ COMPONENTS_CORE_MAPPING: dict = {
         "selected_files",
         "upload",
     ],
-    "components.core.auto_scroll": ["auto_scroll"],
-    "components.core.window_events": ["window_event_listener"],
+    "reflex_components_core.core.auto_scroll": ["auto_scroll"],
+    "reflex_components_core.core.window_events": ["window_event_listener"],
 }
 
-COMPONENTS_BASE_MAPPING: dict = {
-    "components.base.fragment": ["fragment", "Fragment"],
-    "components.base.script": ["script", "Script"],
+COMPONENTS_BASE_MAPPING: dict[str, list[str]] = {
+    "reflex_components_core.base.fragment": ["fragment", "Fragment"],
+    "reflex_components_core.base.script": ["script", "Script"],
 }
 
-_MAPPING: dict = {
-    "experimental": ["_x"],
-    "admin": ["AdminDash"],
-    "app": ["App", "UploadFile"],
-    "assets": ["asset"],
-    "components.component": [
+ALL_COMPONENTS_MAPPING: dict[str, list[str]] = {
+    "reflex_core.components.component": [
         "Component",
         "NoSSRComponent",
         "memo",
         "ComponentNamespace",
     ],
-    "components.el.elements.media": ["image"],
-    "components.lucide": ["icon"],
+    "reflex_components_core.el.elements.media": ["image"],
+    "reflex_components_lucide": ["icon"],
     **COMPONENTS_BASE_MAPPING,
-    "components": ["el", "radix", "lucide", "recharts"],
-    "components.markdown": ["markdown"],
+    "reflex_components_core": ["el"],
+    "reflex_components_markdown.markdown": ["markdown"],
     **RADIX_MAPPING,
-    "components.plotly": ["plotly"],
-    "components.react_player": ["audio", "video"],
+    "reflex_components_plotly": ["plotly"],
+    "reflex_components_react_player": ["audio", "video"],
     **COMPONENTS_CORE_MAPPING,
-    "components.datadisplay.code": [
+    "reflex_components_code.code": [
         "code_block",
     ],
-    "components.datadisplay.dataeditor": [
+    "reflex_components_dataeditor.dataeditor": [
         "data_editor",
         "data_editor_theme",
     ],
-    "components.sonner.toast": ["toast"],
-    "components.props": ["PropsBase"],
-    "components.datadisplay.logo": ["logo"],
-    "components.gridjs": ["data_table"],
-    "components.moment": ["MomentDelta", "moment"],
+    "reflex_components_sonner.toast": ["toast"],
+    "reflex_core.components.props": ["PropsBase"],
+    "reflex_components_core.datadisplay.logo": ["logo"],
+    "reflex_components_gridjs": ["data_table"],
+    "reflex_components_moment": ["MomentDelta", "moment"],
+}
+
+COMPONENT_NAME_TO_PATH: dict[str, str] = {
+    comp: path + "." + comp
+    for path, comps in ALL_COMPONENTS_MAPPING.items()
+    for comp in comps
+} | {
+    "radix": "reflex_components_radix",
+    "lucide": "reflex_components_lucide",
+    "recharts": "reflex_components_recharts",
+}
+
+_MAPPING: dict[str, list[str]] = {
+    "experimental": ["_x"],
+    "admin": ["AdminDash"],
+    "app": ["App", "UploadFile"],
+    "assets": ["asset"],
     "config": ["Config", "DBConfig"],
     "constants": ["Env"],
     "constants.colors": ["Color"],
@@ -247,11 +252,13 @@ _SUBMODULES: set[str] = {
     "compiler",
     "plugins",
 }
-_SUBMOD_ATTRS: dict = _MAPPING
+_SUBMOD_ATTRS: dict[str, list[str]] = _MAPPING
+_EXTRA_MAPPINGS: dict[str, str] = COMPONENT_NAME_TO_PATH
 getattr, __dir__, __all__ = lazy_loader.attach(
     __name__,
     submodules=_SUBMODULES,
     submod_attrs=_SUBMOD_ATTRS,
+    **_EXTRA_MAPPINGS,
 )
 
 

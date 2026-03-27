@@ -27,7 +27,7 @@ def attach(
     package_name: str,
     submodules: set[str] | None = None,
     submod_attrs: dict[str, list[str]] | None = None,
-    **extra_mappings,
+    **extra_mappings: str,
 ):
     """Replaces a package's __getattr__, __dir__, and __all__ attributes using lazy.attach.
     The lazy loader __getattr__ doesn't support tuples as list values. We needed to add
@@ -66,7 +66,10 @@ def attach(
 
     def __getattr__(name: str):  # noqa: N807
         if name in extra_mappings:
-            submod_path, attr = extra_mappings[name].rsplit(".", 1)
+            path = extra_mappings[name]
+            if "." in path:
+                return importlib.import_module(path)
+            submod_path, attr = path.rsplit(".", 1)
             submod = importlib.import_module(submod_path)
             return getattr(submod, attr)
         if name in submodules:

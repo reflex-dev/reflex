@@ -1407,6 +1407,10 @@ def _get_init_lazy_imports(mod: tuple | ModuleType, new_tree: ast.AST):
 
     if extra_mappings:
         for alias, import_path in extra_mappings.items():
+            if "." not in import_path:
+                # Handle simple module imports (e.g. "import reflex_components_markdown as markdown").
+                extra_mappings_imports.append(f"import {import_path} as {alias}")
+                continue
             module_name, import_name = import_path.rsplit(".", 1)
             extra_mappings_imports.append(
                 f"from {module_name} import {import_name} as {alias}"
