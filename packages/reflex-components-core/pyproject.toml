@@ -6,7 +6,13 @@ readme = "README.md"
 authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 requires-python = ">=3.10"
-dependencies = ["reflex-components-lucide", "reflex-components-sonner"]
+dependencies = [
+    "reflex-components-lucide",
+    "reflex-components-sonner",
+    "python_multipart",
+    "starlette",
+    "typing_extensions",
+]
 
 [tool.hatch.version]
 source = "uv-dynamic-versioning"
@@ -25,6 +31,9 @@ dependencies = [
     "reflex-core",
     "reflex-components-lucide",
     "reflex-components-sonner",
+    "python_multipart",
+    "starlette",
+    "typing_extensions",
 ]
 
 

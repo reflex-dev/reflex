@@ -2220,14 +2220,20 @@ requires-dist = [
 name = "reflex-components-core"
 source = { editable = "packages/reflex-components-core" }
 dependencies = [
+    { name = "python-multipart" },
     { name = "reflex-components-lucide" },
     { name = "reflex-components-sonner" },
+    { name = "starlette" },
+    { name = "typing-extensions" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "python-multipart" },
     { name = "reflex-components-lucide", editable = "packages/reflex-components-lucide" },
     { name = "reflex-components-sonner", editable = "packages/reflex-components-sonner" },
+    { name = "starlette" },
+    { name = "typing-extensions" },
 ]
 
 [[package]]
