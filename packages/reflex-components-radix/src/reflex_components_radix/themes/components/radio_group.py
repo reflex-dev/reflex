@@ -5,8 +5,9 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Literal
 
-from reflex_components_core.core import cond, foreach
 from reflex_components_core.core.breakpoints import Responsive
+from reflex_components_core.core.cond import cond
+from reflex_components_core.core.foreach import foreach
 from reflex_core.components.component import Component, ComponentNamespace, field
 from reflex_core.event import EventHandler, passthrough_event_spec
 from reflex_core.utils import types
