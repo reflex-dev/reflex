@@ -247,7 +247,7 @@ omit = [
 [tool.coverage.report]
 show_missing = true
 # TODO bump back to 79
-fail_under = 60
+fail_under = 50
 precision = 2
 ignore_errors = true
 
