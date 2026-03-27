@@ -25,7 +25,6 @@ members = [
     "reflex-components-plotly",
     "reflex-components-radix",
     "reflex-components-react-player",
-    "reflex-components-react-router",
     "reflex-components-recharts",
     "reflex-components-sonner",
     "reflex-components-upload",
@@ -2075,7 +2074,6 @@ dependencies = [
     { name = "reflex-components-plotly" },
     { name = "reflex-components-radix" },
     { name = "reflex-components-react-player" },
-    { name = "reflex-components-react-router" },
     { name = "reflex-components-recharts" },
     { name = "reflex-components-sonner" },
     { name = "reflex-components-upload" },
@@ -2156,7 +2154,6 @@ requires-dist = [
     { name = "reflex-components-plotly", editable = "packages/reflex-components-plotly" },
     { name = "reflex-components-radix", editable = "packages/reflex-components-radix" },
     { name = "reflex-components-react-player", editable = "packages/reflex-components-react-player" },
-    { name = "reflex-components-react-router", editable = "packages/reflex-components-react-router" },
     { name = "reflex-components-recharts", editable = "packages/reflex-components-recharts" },
     { name = "reflex-components-sonner", editable = "packages/reflex-components-sonner" },
     { name = "reflex-components-upload", editable = "packages/reflex-components-upload" },
@@ -2290,29 +2287,17 @@ source = { editable = "packages/reflex-components-radix" }
 dependencies = [
     { name = "reflex-components-core" },
     { name = "reflex-components-lucide" },
-    { name = "reflex-components-react-router" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "reflex-components-core", editable = "packages/reflex-components-core" },
     { name = "reflex-components-lucide", editable = "packages/reflex-components-lucide" },
-    { name = "reflex-components-react-router", editable = "packages/reflex-components-react-router" },
 ]
 
 [[package]]
 name = "reflex-components-react-player"
 source = { editable = "packages/reflex-components-react-player" }
-dependencies = [
-    { name = "reflex-components-core" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "reflex-components-core", editable = "packages/reflex-components-core" }]
-
-[[package]]
-name = "reflex-components-react-router"
-source = { editable = "packages/reflex-components-react-router" }
 dependencies = [
     { name = "reflex-components-core" },
 ]

@@ -31,7 +31,7 @@ _SUBPACKAGE_TARGETS: dict[str, str] = {
     "plotly": "reflex_components_plotly",
     "radix": "reflex_components_radix",
     "react_player": "reflex_components_react_player",
-    "react_router": "reflex_components_react_router",
+    "react_router": "reflex_components_core.react_router",
     "recharts": "reflex_components_recharts",
     "sonner": "reflex_components_sonner",
 }

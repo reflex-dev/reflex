@@ -9,7 +9,6 @@ requires-python = ">=3.10"
 dependencies = [
     "reflex-components-core",
     "reflex-components-lucide",
-    "reflex-components-react-router",
 ]
 
 [tool.hatch.version]
@@ -30,7 +29,6 @@ dependencies = [
     "reflex-components-core",
     "reflex-components-lucide",
     "reflex-components-sonner",
-    "reflex-components-react-router",
 ]
 
 [build-system]

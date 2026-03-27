@@ -31,7 +31,6 @@ dependencies = [
     "reflex-components-lucide",
     "reflex-components-radix",
     "reflex-components-sonner",
-    "reflex-components-react-router",
 ]
 
 [build-system]

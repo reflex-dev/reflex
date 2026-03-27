@@ -47,7 +47,6 @@ dependencies = [
   "reflex-components-plotly",
   "reflex-components-radix",
   "reflex-components-react-player",
-  "reflex-components-react-router",
   "reflex-components-recharts",
   "reflex-components-sonner",
   "reflex-components-upload",
@@ -343,7 +342,6 @@ reflex-components-moment.workspace = true
 reflex-components-plotly.workspace = true
 reflex-components-radix.workspace = true
 reflex-components-react-player.workspace = true
-reflex-components-react-router.workspace = true
 reflex-components-recharts.workspace = true
 reflex-components-sonner.workspace = true
 reflex-components-upload.workspace = true

@@ -13,7 +13,7 @@ _SUBMOD_ATTRS: dict[str, list[str]] = {
     for k, attrs in elements._MAPPING.items()
 }
 _EXTRA_MAPPINGS: dict[str, str] = {
-    "a": "reflex_components_react_router.link",
+    "a": "reflex_components_core.react_router.link",
 }
 
 __getattr__, __dir__, __all__ = lazy_loader.attach(
