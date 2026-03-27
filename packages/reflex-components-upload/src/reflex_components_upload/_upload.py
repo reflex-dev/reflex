@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, BinaryIO, cast
 
 from python_multipart.multipart import MultipartParser, parse_options_header
 from reflex_core import constants
+from reflex_core.utils import exceptions
 from starlette.datastructures import Headers
 from starlette.datastructures import UploadFile as StarletteUploadFile
 from starlette.exceptions import HTTPException
@@ -19,8 +20,6 @@ from starlette.formparsers import MultiPartException, _user_safe_decode
 from starlette.requests import ClientDisconnect, Request
 from starlette.responses import JSONResponse, Response, StreamingResponse
 from typing_extensions import Self
-
-from reflex.utils import exceptions
 
 if TYPE_CHECKING:
     from reflex_core.event import EventHandler

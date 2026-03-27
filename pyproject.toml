@@ -50,6 +50,7 @@ dependencies = [
   "reflex-components-react-router",
   "reflex-components-recharts",
   "reflex-components-sonner",
+  "reflex-components-upload",
 ]
 
 classifiers = [
@@ -345,6 +346,7 @@ reflex-components-react-player.workspace = true
 reflex-components-react-router.workspace = true
 reflex-components-recharts.workspace = true
 reflex-components-sonner.workspace = true
+reflex-components-upload.workspace = true
 reflex-docgen.workspace = true
 
 [tool.uv.workspace]

@@ -29,6 +29,7 @@ DEFAULT_TARGETS = [
     "packages/reflex-components-react-router/src/reflex_components_react_router",
     "packages/reflex-components-recharts/src/reflex_components_recharts",
     "packages/reflex-components-sonner/src/reflex_components_sonner",
+    "packages/reflex-components-upload/src/reflex_components_upload",
 ]
 
 
