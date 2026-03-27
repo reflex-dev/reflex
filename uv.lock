@@ -2337,6 +2337,12 @@ requires-dist = [{ name = "reflex-components-lucide", editable = "packages/refle
 [[package]]
 name = "reflex-components-upload"
 source = { editable = "packages/reflex-components-upload" }
+dependencies = [
+    { name = "reflex-components-core" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "reflex-components-core", editable = "packages/reflex-components-core" }]
 
 [[package]]
 name = "reflex-core"

@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 requires-python = ">=3.10"
-dependencies = []
+dependencies = ["reflex_components_core"]
 
 [tool.hatch.version]
 source = "uv-dynamic-versioning"
@@ -20,7 +20,13 @@ targets.sdist.artifacts = ["*.pyi"]
 targets.wheel.artifacts = ["*.pyi"]
 
 [tool.hatch.build.hooks.reflex-pyi]
-dependencies = ["ruff", "reflex-core"]
+dependencies = [
+    "ruff",
+    "reflex-core",
+    "reflex_components_core",
+    "reflex-components-lucide",
+    "reflex-components-sonner",
+]
 
 [build-system]
 requires = ["hatchling", "uv-dynamic-versioning", "hatch-reflex-pyi"]
