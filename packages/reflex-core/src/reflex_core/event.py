@@ -984,7 +984,7 @@ class FileUpload:
         Raises:
             ValueError: If the on_upload_progress is not a valid event handler.
         """
-        from reflex_components_core.core.upload import (
+        from reflex_components_upload.upload import (
             DEFAULT_UPLOAD_ID,
             upload_files_context_var_data,
         )
