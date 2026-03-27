@@ -8,7 +8,6 @@ from reflex_core.vars.base import Var
 from reflex_core.vars.function import ArgsFunctionOperation
 from reflex_core.vars.object import ObjectVar
 
-from reflex.state import FrontendEventExceptionState
 from reflex_components_core.datadisplay.logo import svg_logo
 from reflex_components_core.el import a, button, div, h2, hr, p, pre, svg
 
@@ -59,6 +58,8 @@ class ErrorBoundary(Component):
         Returns:
             The ErrorBoundary component.
         """
+        from reflex.state import FrontendEventExceptionState
+
         if "on_error" not in props:
             props["on_error"] = FrontendEventExceptionState.handle_frontend_exception
         if "fallback_render" not in props:

@@ -6,7 +6,7 @@
   "packages/reflex-components-core/src/reflex_components_core/base/app_wrap.pyi": "8a0b6dcdf622b96be65311b7803c8ce9",
   "packages/reflex-components-core/src/reflex_components_core/base/body.pyi": "aa734326f57b0fee9caed75bd318762e",
   "packages/reflex-components-core/src/reflex_components_core/base/document.pyi": "8edb8967aa628329c4d1b7cfa3705f3a",
-  "packages/reflex-components-core/src/reflex_components_core/base/error_boundary.pyi": "8ea2e9080e809db757a5e0978798dbee",
+  "packages/reflex-components-core/src/reflex_components_core/base/error_boundary.pyi": "c02999fa5d121904a242a83d2221f069",
   "packages/reflex-components-core/src/reflex_components_core/base/fragment.pyi": "ba9a750fa1036dd4f454e7f3235aa4aa",
   "packages/reflex-components-core/src/reflex_components_core/base/link.pyi": "fbae966c13c0da651a1e35f7045799c1",
   "packages/reflex-components-core/src/reflex_components_core/base/meta.pyi": "9c1df9038ff6394cac77dbac6b3175c5",

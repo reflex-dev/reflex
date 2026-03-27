@@ -16,7 +16,6 @@ from reflex_core.utils import types
 from reflex_core.utils.exceptions import UntypedVarError
 from reflex_core.vars.base import LiteralVar, Var
 
-from reflex.state import ComponentState
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core.cond import cond
 
@@ -66,6 +65,8 @@ class Foreach(Component):
         # noqa: DAR402 UntypedVarError
         """
         from reflex_core.vars import ArrayVar, ObjectVar, StringVar
+
+        from reflex.state import ComponentState
 
         iterable = (
             LiteralVar.create(iterable).guess_type()
