@@ -78,7 +78,7 @@ RADIX_THEMES_LAYOUT_MAPPING: dict[str, list[str]] = {
         "vstack",
     ],
     "reflex_components_radix.themes.layout.list": [
-        "list_ns",
+        "list",
         "list_item",
         "ordered_list",
         "unordered_list",
