@@ -8,17 +8,16 @@ from typing import TYPE_CHECKING
 
 import click
 from reflex_cli.v2.deployments import hosting_cli
+from reflex_core import constants
+from reflex_core.config import get_config
+from reflex_core.environment import environment
+from reflex_core.utils import console
 
-from reflex import constants
-from reflex.config import get_config
 from reflex.custom_components.custom_components import custom_components_cli
-from reflex.environment import environment
-from reflex.utils import console
 
 if TYPE_CHECKING:
     from reflex_cli.constants.base import LogLevel as HostingLogLevel
-
-    from reflex.constants.base import LITERAL_ENV
+    from reflex_core.constants.base import LITERAL_ENV
 
 
 def set_loglevel(ctx: click.Context, self: click.Parameter, value: str | None):
@@ -633,9 +632,9 @@ def status():
         return
 
     # Run alembic check command and display output
-    import reflex.config
+    import reflex_core.config
 
-    config = reflex.config.get_config()
+    config = reflex_core.config.get_config()
     console.print(f"[bold]\\[{config.db_url}][/bold]")
 
     # Get migration history using Model method

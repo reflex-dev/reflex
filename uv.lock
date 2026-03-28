@@ -13,7 +13,21 @@ resolution-markers = [
 
 [manifest]
 members = [
+    "hatch-reflex-pyi",
     "reflex",
+    "reflex-components-code",
+    "reflex-components-core",
+    "reflex-components-dataeditor",
+    "reflex-components-gridjs",
+    "reflex-components-lucide",
+    "reflex-components-markdown",
+    "reflex-components-moment",
+    "reflex-components-plotly",
+    "reflex-components-radix",
+    "reflex-components-react-player",
+    "reflex-components-recharts",
+    "reflex-components-sonner",
+    "reflex-core",
     "reflex-docgen",
 ]
 
@@ -690,6 +704,16 @@ wheels = [
 ]
 
 [[package]]
+name = "hatch-reflex-pyi"
+source = { editable = "packages/hatch-reflex-pyi" }
+dependencies = [
+    { name = "hatchling" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "hatchling" }]
+
+[[package]]
 name = "hatchling"
 version = "1.29.0"
 source = { registry = "https://pypi.org/simple" }
@@ -901,6 +925,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/d6/54/cfe61301667036ec958cb99bd3efefba235e65cdeb9c84d24a8293ba1d90/mdurl-0.1.2.tar.gz", hash = "sha256:bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba", size = 8729, upload-time = "2022-08-14T12:40:10.846Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b3/38/89ba8ad64ae25be8de66a6d463314cf1eb366222074cfda9ee839c56a4b4/mdurl-0.1.2-py3-none-any.whl", hash = "sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8", size = 9979, upload-time = "2022-08-14T12:40:09.779Z" },
+]
+
+[[package]]
+name = "mistletoe"
+version = "1.5.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/31/ae/d33647e2a26a8899224f36afc5e7b7a670af30f1fd87231e9f07ca19d673/mistletoe-1.5.1.tar.gz", hash = "sha256:c5571ce6ca9cfdc7ce9151c3ae79acb418e067812000907616427197648030a3", size = 111769, upload-time = "2025-12-07T16:19:01.066Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/20/60/0980fefdc4d12c18c1bbab9d62852f27aded8839233c7b0a9827aaf395f5/mistletoe-1.5.1-py3-none-any.whl", hash = "sha256:d3e97664798261503f685f6a6281b092628367cf3128fc68a015a993b0c4feb3", size = 55331, upload-time = "2025-12-07T16:18:59.65Z" },
 ]
 
 [[package]]
@@ -2018,7 +2051,6 @@ wheels = [
 
 [[package]]
 name = "reflex"
-version = "0.9.0.dev1"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },
@@ -2026,12 +2058,24 @@ dependencies = [
     { name = "granian", extra = ["reload"] },
     { name = "httpx" },
     { name = "packaging" },
-    { name = "platformdirs" },
     { name = "psutil", marker = "sys_platform == 'win32'" },
     { name = "pydantic" },
     { name = "python-multipart" },
     { name = "python-socketio" },
     { name = "redis" },
+    { name = "reflex-components-code" },
+    { name = "reflex-components-core" },
+    { name = "reflex-components-dataeditor" },
+    { name = "reflex-components-gridjs" },
+    { name = "reflex-components-lucide" },
+    { name = "reflex-components-markdown" },
+    { name = "reflex-components-moment" },
+    { name = "reflex-components-plotly" },
+    { name = "reflex-components-radix" },
+    { name = "reflex-components-react-player" },
+    { name = "reflex-components-recharts" },
+    { name = "reflex-components-sonner" },
+    { name = "reflex-core" },
     { name = "reflex-hosting-cli" },
     { name = "rich" },
     { name = "sqlmodel" },
@@ -2092,13 +2136,25 @@ requires-dist = [
     { name = "granian", extras = ["reload"], specifier = ">=2.5.5" },
     { name = "httpx", specifier = ">=0.23.3,<1.0" },
     { name = "packaging", specifier = ">=24.2,<27" },
-    { name = "platformdirs", specifier = ">=4.3.7,<5.0" },
     { name = "psutil", marker = "sys_platform == 'win32'", specifier = ">=7.0.0,<8.0" },
-    { name = "pydantic", specifier = ">=1.10.21,<3.0" },
-    { name = "pydantic", marker = "extra == 'db'", specifier = ">=1.10.21,<3.0" },
+    { name = "pydantic", specifier = ">=2.12.0,<3.0" },
+    { name = "pydantic", marker = "extra == 'db'", specifier = ">=2.12.0,<3.0" },
     { name = "python-multipart", specifier = ">=0.0.20,<1.0" },
     { name = "python-socketio", specifier = ">=5.12.0,<6.0" },
     { name = "redis", specifier = ">=5.2.1,<8.0" },
+    { name = "reflex-components-code", editable = "packages/reflex-components-code" },
+    { name = "reflex-components-core", editable = "packages/reflex-components-core" },
+    { name = "reflex-components-dataeditor", editable = "packages/reflex-components-dataeditor" },
+    { name = "reflex-components-gridjs", editable = "packages/reflex-components-gridjs" },
+    { name = "reflex-components-lucide", editable = "packages/reflex-components-lucide" },
+    { name = "reflex-components-markdown", editable = "packages/reflex-components-markdown" },
+    { name = "reflex-components-moment", editable = "packages/reflex-components-moment" },
+    { name = "reflex-components-plotly", editable = "packages/reflex-components-plotly" },
+    { name = "reflex-components-radix", editable = "packages/reflex-components-radix" },
+    { name = "reflex-components-react-player", editable = "packages/reflex-components-react-player" },
+    { name = "reflex-components-recharts", editable = "packages/reflex-components-recharts" },
+    { name = "reflex-components-sonner", editable = "packages/reflex-components-sonner" },
+    { name = "reflex-core", editable = "packages/reflex-core" },
     { name = "reflex-hosting-cli", specifier = ">=0.1.61" },
     { name = "rich", specifier = ">=13,<15" },
     { name = "sqlmodel", specifier = ">=0.0.27,<0.1" },
@@ -2145,11 +2201,154 @@ dev = [
 ]
 
 [[package]]
+name = "reflex-components-code"
+source = { editable = "packages/reflex-components-code" }
+dependencies = [
+    { name = "reflex-components-core" },
+    { name = "reflex-components-lucide" },
+    { name = "reflex-components-radix" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "reflex-components-core", editable = "packages/reflex-components-core" },
+    { name = "reflex-components-lucide", editable = "packages/reflex-components-lucide" },
+    { name = "reflex-components-radix", editable = "packages/reflex-components-radix" },
+]
+
+[[package]]
+name = "reflex-components-core"
+source = { editable = "packages/reflex-components-core" }
+dependencies = [
+    { name = "python-multipart" },
+    { name = "reflex-components-lucide" },
+    { name = "reflex-components-sonner" },
+    { name = "starlette" },
+    { name = "typing-extensions" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "python-multipart" },
+    { name = "reflex-components-lucide", editable = "packages/reflex-components-lucide" },
+    { name = "reflex-components-sonner", editable = "packages/reflex-components-sonner" },
+    { name = "starlette" },
+    { name = "typing-extensions" },
+]
+
+[[package]]
+name = "reflex-components-dataeditor"
+source = { editable = "packages/reflex-components-dataeditor" }
+dependencies = [
+    { name = "reflex-components-core" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "reflex-components-core", editable = "packages/reflex-components-core" }]
+
+[[package]]
+name = "reflex-components-gridjs"
+source = { editable = "packages/reflex-components-gridjs" }
+
+[[package]]
+name = "reflex-components-lucide"
+source = { editable = "packages/reflex-components-lucide" }
+
+[[package]]
+name = "reflex-components-markdown"
+source = { editable = "packages/reflex-components-markdown" }
+dependencies = [
+    { name = "reflex-components-code" },
+    { name = "reflex-components-core" },
+    { name = "reflex-components-radix" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "reflex-components-code", editable = "packages/reflex-components-code" },
+    { name = "reflex-components-core", editable = "packages/reflex-components-core" },
+    { name = "reflex-components-radix", editable = "packages/reflex-components-radix" },
+]
+
+[[package]]
+name = "reflex-components-moment"
+source = { editable = "packages/reflex-components-moment" }
+
+[[package]]
+name = "reflex-components-plotly"
+source = { editable = "packages/reflex-components-plotly" }
+dependencies = [
+    { name = "reflex-components-core" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "reflex-components-core", editable = "packages/reflex-components-core" }]
+
+[[package]]
+name = "reflex-components-radix"
+source = { editable = "packages/reflex-components-radix" }
+dependencies = [
+    { name = "reflex-components-core" },
+    { name = "reflex-components-lucide" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "reflex-components-core", editable = "packages/reflex-components-core" },
+    { name = "reflex-components-lucide", editable = "packages/reflex-components-lucide" },
+]
+
+[[package]]
+name = "reflex-components-react-player"
+source = { editable = "packages/reflex-components-react-player" }
+dependencies = [
+    { name = "reflex-components-core" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "reflex-components-core", editable = "packages/reflex-components-core" }]
+
+[[package]]
+name = "reflex-components-recharts"
+source = { editable = "packages/reflex-components-recharts" }
+
+[[package]]
+name = "reflex-components-sonner"
+source = { editable = "packages/reflex-components-sonner" }
+dependencies = [
+    { name = "reflex-components-lucide" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "reflex-components-lucide", editable = "packages/reflex-components-lucide" }]
+
+[[package]]
+name = "reflex-core"
+source = { editable = "packages/reflex-core" }
+dependencies = [
+    { name = "packaging" },
+    { name = "platformdirs" },
+    { name = "pydantic" },
+    { name = "rich" },
+    { name = "typing-extensions" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "packaging", specifier = ">=24.2,<27" },
+    { name = "platformdirs", specifier = ">=4.3.7,<5.0" },
+    { name = "pydantic", specifier = ">=1.10.21,<3.0" },
+    { name = "rich", specifier = ">=13,<15" },
+    { name = "typing-extensions", specifier = ">=4.13.0" },
+]
+
+[[package]]
 name = "reflex-docgen"
-version = "0.0.1"
 source = { editable = "packages/reflex-docgen" }
 dependencies = [
     { name = "griffelib" },
+    { name = "mistletoe" },
+    { name = "pyyaml" },
     { name = "reflex" },
     { name = "typing-extensions" },
     { name = "typing-inspection" },
@@ -2158,6 +2357,8 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "griffelib", specifier = ">=2.0.1" },
+    { name = "mistletoe", specifier = ">=1.4.0" },
+    { name = "pyyaml", specifier = ">=6.0" },
     { name = "reflex", editable = "." },
     { name = "typing-extensions" },
     { name = "typing-inspection", specifier = ">=0.4.2" },

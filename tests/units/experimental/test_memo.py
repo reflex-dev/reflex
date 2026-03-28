@@ -6,22 +6,22 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
+from reflex_core.components.component import CUSTOM_COMPONENTS, Component
+from reflex_core.style import Style
+from reflex_core.utils.imports import ImportVar
+from reflex_core.vars import VarData
+from reflex_core.vars.base import Var
+from reflex_core.vars.function import FunctionVar
 
 import reflex as rx
 from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
-from reflex.components.component import CUSTOM_COMPONENTS, Component
 from reflex.experimental.memo import (
     EXPERIMENTAL_MEMOS,
     ExperimentalMemoComponent,
     ExperimentalMemoComponentDefinition,
     ExperimentalMemoFunctionDefinition,
 )
-from reflex.style import Style
-from reflex.utils.imports import ImportVar
-from reflex.vars import VarData
-from reflex.vars.base import Var
-from reflex.vars.function import FunctionVar
 
 
 @pytest.fixture(autouse=True)

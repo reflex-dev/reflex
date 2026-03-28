@@ -8,26 +8,27 @@ from collections.abc import Callable
 from functools import cache, update_wrapper
 from typing import Any, get_args, get_origin, get_type_hints
 
-from reflex import constants
-from reflex.components.base.bare import Bare
-from reflex.components.base.fragment import Fragment
-from reflex.components.component import Component
-from reflex.components.dynamic import bundled_libraries
-from reflex.constants.compiler import SpecialAttributes
-from reflex.constants.state import CAMEL_CASE_MEMO_MARKER
-from reflex.utils import format
-from reflex.utils import types as type_utils
-from reflex.utils.imports import ImportVar
-from reflex.vars import VarData
-from reflex.vars.base import LiteralVar, Var
-from reflex.vars.function import (
+from reflex_components_core.base.bare import Bare
+from reflex_components_core.base.fragment import Fragment
+from reflex_core import constants
+from reflex_core.components.component import Component
+from reflex_core.components.dynamic import bundled_libraries
+from reflex_core.constants.compiler import SpecialAttributes
+from reflex_core.constants.state import CAMEL_CASE_MEMO_MARKER
+from reflex_core.utils import format
+from reflex_core.utils.imports import ImportVar
+from reflex_core.vars import VarData
+from reflex_core.vars.base import LiteralVar, Var
+from reflex_core.vars.function import (
     ArgsFunctionOperation,
     DestructuredArg,
     FunctionStringVar,
     FunctionVar,
     ReflexCallable,
 )
-from reflex.vars.object import RestProp
+from reflex_core.vars.object import RestProp
+
+from reflex.utils import types as type_utils
 
 
 @dataclasses.dataclass(frozen=True, slots=True, kw_only=True)

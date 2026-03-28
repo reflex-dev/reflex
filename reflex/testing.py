@@ -26,6 +26,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 import uvicorn
+from reflex_core.components.component import CUSTOM_COMPONENTS, CustomComponent
+from reflex_core.config import get_config
+from reflex_core.environment import environment
+from reflex_core.utils.types import ASGIApp
 from typing_extensions import Self
 
 import reflex
@@ -34,9 +38,6 @@ import reflex.utils.build
 import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
-from reflex.components.component import CUSTOM_COMPONENTS, CustomComponent
-from reflex.config import get_config
-from reflex.environment import environment
 from reflex.experimental.memo import EXPERIMENTAL_MEMOS
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
@@ -50,7 +51,6 @@ from reflex.state import (
 from reflex.utils import console, js_runtimes
 from reflex.utils.export import export
 from reflex.utils.token_manager import TokenManager
-from reflex.utils.types import ASGIApp
 
 try:
     from selenium import webdriver
@@ -274,7 +274,7 @@ class AppHarness:
                 reflex.utils.prerequisites.initialize_frontend_dependencies()
         with chdir(self.app_path):
             # ensure config and app are reloaded when testing different app
-            config = reflex.config.get_config(reload=True)
+            config = get_config(reload=True)
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
             os.environ[reflex.constants.APP_HARNESS_FLAG] = "true"
@@ -405,7 +405,7 @@ class AppHarness:
     def _start_frontend(self):
         # Set up the frontend.
         with chdir(self.app_path):
-            config = reflex.config.get_config()
+            config = get_config()
             print("Polling for servers...")  # for pytest diagnosis #noqa: T201
             config.api_url = "http://{}:{}".format(
                 *self._poll_for_servers(timeout=30).getsockname(),
@@ -439,7 +439,7 @@ class AppHarness:
             m = re.search(reflex.constants.ReactRouter.FRONTEND_LISTENING_REGEX, line)
             if m is not None:
                 self.frontend_url = m.group(1)
-                config = reflex.config.get_config()
+                config = get_config()
                 config.deploy_url = self.frontend_url
                 break
         if self.frontend_url is None:
@@ -1075,7 +1075,7 @@ class AppHarnessProd(AppHarness):
     def _start_frontend(self):
         # Set up the frontend.
         with chdir(self.app_path):
-            config = reflex.config.get_config()
+            config = get_config()
             print("Polling for servers...")  # for pytest diagnosis #noqa: T201
             config.api_url = "http://{}:{}".format(
                 *self._poll_for_servers(timeout=30).getsockname(),

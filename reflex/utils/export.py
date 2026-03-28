@@ -2,10 +2,12 @@
 
 from pathlib import Path
 
-from reflex import constants
-from reflex.config import get_config
-from reflex.environment import environment
-from reflex.utils import build, console, exec, prerequisites, telemetry
+from reflex_core import constants
+from reflex_core.config import get_config
+from reflex_core.environment import environment
+from reflex_core.utils import console
+
+from reflex.utils import build, exec, prerequisites, telemetry
 
 
 def export(

@@ -3,10 +3,8 @@ from collections.abc import Callable
 from typing import Any, cast
 
 import pytest
-
-import reflex as rx
-from reflex.constants.compiler import Hooks, Imports
-from reflex.event import (
+from reflex_core.constants.compiler import Hooks, Imports
+from reflex_core.event import (
     BACKGROUND_TASK_MARKER,
     Event,
     EventChain,
@@ -18,9 +16,11 @@ from reflex.event import (
     event,
     fix_events,
 )
+from reflex_core.utils import format
+from reflex_core.vars.base import Field, LiteralVar, Var, VarData, field
+
+import reflex as rx
 from reflex.state import BaseState
-from reflex.utils import format
-from reflex.vars.base import Field, LiteralVar, Var, VarData, field
 
 
 def make_var(value) -> Var:
@@ -675,7 +675,7 @@ def test_event_decorator_backward_compatibility():
 
 def test_event_var_in_rx_cond():
     """Test that EventVar and EventChainVar cannot be used in rx.cond()."""
-    from reflex.components.core.cond import cond as rx_cond
+    from reflex_components_core.core.cond import cond as rx_cond
 
     class S(BaseState):
         @event

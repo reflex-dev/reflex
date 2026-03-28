@@ -4,12 +4,12 @@ from pathlib import Path
 
 import pytest
 from click.testing import CliRunner
+from reflex_core.config import Config
+from reflex_core.constants.installer import PackageJson
+from reflex_core.utils.decorator import cached_procedure
 
-from reflex.config import Config
-from reflex.constants.installer import PackageJson
 from reflex.reflex import cli
 from reflex.testing import chdir
-from reflex.utils.decorator import cached_procedure
 from reflex.utils.frontend_skeleton import (
     _compile_package_json,
     _compile_vite_config,

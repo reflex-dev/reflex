@@ -8,11 +8,12 @@ from contextlib import suppress
 from importlib.util import find_spec
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from reflex.config import get_config
-from reflex.environment import environment
-from reflex.utils import console
+from reflex_core.config import get_config
+from reflex_core.environment import environment
+from reflex_core.utils import console
+from reflex_core.utils.serializers import serializer
+
 from reflex.utils.compat import sqlmodel_field_has_primary_key
-from reflex.utils.serializers import serializer
 
 if TYPE_CHECKING:
     from typing import TypeVar

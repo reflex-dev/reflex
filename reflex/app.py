@@ -30,6 +30,40 @@ from timeit import default_timer as timer
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, ParamSpec
 
+from reflex_components_core.base.app_wrap import AppWrap
+from reflex_components_core.base.error_boundary import ErrorBoundary
+from reflex_components_core.base.fragment import Fragment
+from reflex_components_core.base.strict_mode import StrictMode
+from reflex_components_core.core.banner import (
+    backend_disabled,
+    connection_pulser,
+    connection_toaster,
+)
+from reflex_components_core.core.breakpoints import set_breakpoints
+from reflex_components_core.core.sticky import sticky
+from reflex_components_radix import themes
+from reflex_components_sonner.toast import toast
+from reflex_core import constants
+from reflex_core.components.component import (
+    CUSTOM_COMPONENTS,
+    Component,
+    ComponentStyle,
+    evaluate_style_namespaces,
+)
+from reflex_core.config import get_config
+from reflex_core.environment import ExecutorType, environment
+from reflex_core.event import (
+    _EVENT_FIELDS,
+    Event,
+    EventSpec,
+    EventType,
+    IndividualEventType,
+    get_hydrate_event,
+    noop,
+)
+from reflex_core.utils import console
+from reflex_core.utils.imports import ImportVar
+from reflex_core.utils.types import ASGIApp, Message, Receive, Scope, Send
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp as EngineIOApp
 from socketio import AsyncNamespace, AsyncServer
@@ -40,7 +74,6 @@ from starlette.responses import JSONResponse, Response
 from starlette.staticfiles import StaticFiles
 from typing_extensions import Unpack
 
-from reflex import constants
 from reflex._upload import UploadFile as UploadFile
 from reflex._upload import upload
 from reflex.admin import AdminDash
@@ -51,36 +84,6 @@ from reflex.compiler.compiler import (
     ExecutorSafeFunctions,
     compile_theme,
     readable_name_from_component,
-)
-from reflex.components.base.app_wrap import AppWrap
-from reflex.components.base.error_boundary import ErrorBoundary
-from reflex.components.base.fragment import Fragment
-from reflex.components.base.strict_mode import StrictMode
-from reflex.components.component import (
-    CUSTOM_COMPONENTS,
-    Component,
-    ComponentStyle,
-    evaluate_style_namespaces,
-)
-from reflex.components.core.banner import (
-    backend_disabled,
-    connection_pulser,
-    connection_toaster,
-)
-from reflex.components.core.breakpoints import set_breakpoints
-from reflex.components.core.sticky import sticky
-from reflex.components.radix import themes
-from reflex.components.sonner.toast import toast
-from reflex.config import get_config
-from reflex.environment import ExecutorType, environment
-from reflex.event import (
-    _EVENT_FIELDS,
-    Event,
-    EventSpec,
-    EventType,
-    IndividualEventType,
-    get_hydrate_event,
-    noop,
 )
 from reflex.experimental.memo import EXPERIMENTAL_MEMOS
 from reflex.istate.manager import StateModificationContext
@@ -104,7 +107,6 @@ from reflex.state import (
 )
 from reflex.utils import (
     codespaces,
-    console,
     exceptions,
     format,
     frontend_skeleton,
@@ -118,13 +120,11 @@ from reflex.utils.exec import (
     is_testing_env,
     should_prerender_routes,
 )
-from reflex.utils.imports import ImportVar
 from reflex.utils.misc import run_in_thread
 from reflex.utils.token_manager import RedisTokenManager, TokenManager
-from reflex.utils.types import ASGIApp, Message, Receive, Scope, Send
 
 if TYPE_CHECKING:
-    from reflex.vars import Var
+    from reflex_core.vars import Var
 
     # Define custom types.
     ComponentCallable = Callable[[], Component | tuple[Component, ...] | str | Var]
@@ -154,7 +154,7 @@ def default_backend_exception_handler(exception: Exception) -> EventSpec:
         EventSpec: The window alert event.
 
     """
-    from reflex.components.sonner.toast import toast
+    from reflex_components_sonner.toast import toast
 
     error = traceback.format_exc()
 
@@ -211,7 +211,7 @@ def default_overlay_component() -> Component:
     Returns:
         The default overlay_component, which is a connection_modal.
     """
-    from reflex.components.component import memo
+    from reflex_core.components.component import memo
 
     def default_overlay_components():
         return Fragment.create(
@@ -577,8 +577,9 @@ class App(MiddlewareMixin, LifespanMixin):
         Raises:
             ValueError: If the app has not been initialized.
         """
+        from reflex_core.vars.base import GLOBAL_CACHE
+
         from reflex.assets import remove_stale_external_asset_symlinks
-        from reflex.vars.base import GLOBAL_CACHE
 
         # Clean up stale symlinks in assets/external/ before compiling, so that
         # rx.asset(shared=True) symlink re-creation doesn't trigger further reloads.
@@ -654,7 +655,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def _add_optional_endpoints(self):
         """Add optional api endpoints (_upload)."""
-        from reflex.components.core.upload import Upload, get_upload_dir
+        from reflex_components_core.core.upload import Upload, get_upload_dir
 
         if not self._api:
             return
@@ -773,7 +774,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         if route == constants.Page404.SLUG:
             if component is None:
-                from reflex.components.el.elements import span
+                from reflex_components_core.el.elements import span
 
                 component = span("404: Page not found")
             component = self._generate_component(component)
@@ -896,7 +897,7 @@ class App(MiddlewareMixin, LifespanMixin):
         Raises:
             RouteValueError: exception showing which conflict exist with the route to be added
         """
-        from reflex.utils.exceptions import RouteValueError
+        from reflex_core.utils.exceptions import RouteValueError
 
         if "[" not in new_route:
             return
@@ -1057,7 +1058,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def _setup_sticky_badge(self):
         """Add the sticky badge to the app."""
-        from reflex.components.component import memo
+        from reflex_core.components.component import memo
 
         @memo
         def memoized_badge():
@@ -1123,7 +1124,7 @@ class App(MiddlewareMixin, LifespanMixin):
             ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
             FileNotFoundError: When a plugin requires a file that does not exist.
         """
-        from reflex.utils.exceptions import ReflexRuntimeError
+        from reflex_core.utils.exceptions import ReflexRuntimeError
 
         self._apply_decorated_pages()
 
@@ -1257,7 +1258,7 @@ class App(MiddlewareMixin, LifespanMixin):
         all_imports = {}
 
         if (toaster := self.toaster) is not None:
-            from reflex.components.component import memo
+            from reflex_core.components.component import memo
 
             @memo
             def memoized_toast_provider():

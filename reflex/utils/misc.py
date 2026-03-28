@@ -103,7 +103,7 @@ def preload_color_theme():
     Returns:
         Script: A script component to add to App.head_components
     """
-    from reflex.components.el.elements.scripts import Script
+    from reflex_components_core.el.elements.scripts import Script
 
     # Create direct inline script content (like next-themes dangerouslySetInnerHTML)
     script_content = """

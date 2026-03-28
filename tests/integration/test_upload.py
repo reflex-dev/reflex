@@ -10,10 +10,10 @@ from typing import Any, cast
 from urllib.parse import urlsplit
 
 import pytest
+from reflex_core.constants.event import Endpoint
 from selenium.webdriver.common.by import By
 
 import reflex as rx
-from reflex.constants.event import Endpoint
 from reflex.testing import AppHarness, WebDriver
 
 from .utils import poll_for_navigation

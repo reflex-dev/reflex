@@ -16,6 +16,16 @@ from unittest.mock import AsyncMock
 
 import pytest
 from pytest_mock import MockerFixture
+from reflex_components_core.base.bare import Bare
+from reflex_components_core.base.fragment import Fragment
+from reflex_components_core.core.cond import Cond
+from reflex_components_radix.themes.typography.text import Text
+from reflex_core.components.component import Component
+from reflex_core.constants.state import FIELD_MARKER
+from reflex_core.event import Event
+from reflex_core.style import Style
+from reflex_core.utils import console, exceptions, format
+from reflex_core.vars.base import computed_var
 from starlette.applications import Starlette
 from starlette.datastructures import FormData, Headers, UploadFile
 from starlette.responses import StreamingResponse
@@ -29,14 +39,7 @@ from reflex.app import (
     process,
     upload,
 )
-from reflex.components import Component
-from reflex.components.base.bare import Bare
-from reflex.components.base.fragment import Fragment
-from reflex.components.core.cond import Cond
-from reflex.components.radix.themes.typography.text import Text
-from reflex.constants.state import FIELD_MARKER
 from reflex.environment import environment
-from reflex.event import Event
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
@@ -50,9 +53,6 @@ from reflex.state import (
     StateUpdate,
     _substate_key,
 )
-from reflex.style import Style
-from reflex.utils import console, exceptions, format
-from reflex.vars.base import computed_var
 
 from .conftest import chdir
 from .states import GenState
@@ -2048,7 +2048,7 @@ def test_app_wrap_compile_theme(
         mocker: pytest mocker object.
     """
     conf = rx.Config(app_name="testing", react_strict_mode=react_strict_mode)
-    mocker.patch("reflex.config._get_config", return_value=conf)
+    mocker.patch("reflex_core.config._get_config", return_value=conf)
     app, web_dir = compilable_app
     mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
     app.theme = rx.theme(accent_color="plum")
@@ -2100,7 +2100,7 @@ def test_app_wrap_priority(
         mocker: pytest mocker object.
     """
     conf = rx.Config(app_name="testing", react_strict_mode=react_strict_mode)
-    mocker.patch("reflex.config._get_config", return_value=conf)
+    mocker.patch("reflex_core.config._get_config", return_value=conf)
 
     app, web_dir = compilable_app
 
@@ -2186,7 +2186,7 @@ def test_call_app():
 
 
 def test_app_with_optional_endpoints():
-    from reflex.components.core.upload import Upload
+    from reflex_components_core.core.upload import Upload
 
     app = App()
     Upload.is_used = True

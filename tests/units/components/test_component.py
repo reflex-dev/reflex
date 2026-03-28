@@ -1,24 +1,22 @@
 from contextlib import nullcontext
 from typing import Any, ClassVar
 
+import pydantic
 import pytest
-
-import reflex as rx
-from reflex.base import Base
-from reflex.compiler.utils import compile_custom_component
-from reflex.components.base.bare import Bare
-from reflex.components.base.fragment import Fragment
-from reflex.components.component import (
+from reflex_components_core.base.bare import Bare
+from reflex_components_core.base.fragment import Fragment
+from reflex_components_radix.mappings import RADIX_MAPPING
+from reflex_components_radix.themes.layout.box import Box
+from reflex_core.components.component import (
     CUSTOM_COMPONENTS,
     Component,
     CustomComponent,
     StatefulComponent,
     custom_component,
 )
-from reflex.components.radix.themes.layout.box import Box
-from reflex.constants import EventTriggers
-from reflex.constants.state import FIELD_MARKER
-from reflex.event import (
+from reflex_core.constants import EventTriggers
+from reflex_core.constants.state import FIELD_MARKER
+from reflex_core.event import (
     EventChain,
     EventHandler,
     JavascriptInputEvent,
@@ -27,18 +25,30 @@ from reflex.event import (
     parse_args_spec,
     passthrough_event_spec,
 )
-from reflex.state import BaseState
-from reflex.style import Style
-from reflex.utils import imports
-from reflex.utils.exceptions import (
+from reflex_core.style import Style
+from reflex_core.utils.exceptions import (
     ChildrenTypeError,
     EventFnArgMismatchError,
     EventHandlerArgTypeMismatchError,
 )
-from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
-from reflex.vars import VarData
-from reflex.vars.base import LiteralVar, Var
-from reflex.vars.object import ObjectVar
+from reflex_core.utils.imports import (
+    ImportDict,
+    ImportVar,
+    ParsedImportDict,
+    parse_imports,
+)
+from reflex_core.vars import VarData
+from reflex_core.vars.base import LiteralVar, Var
+from reflex_core.vars.object import ObjectVar
+
+import reflex as rx
+from reflex import (
+    _COMPONENTS_BASE_MAPPING,  # pyright: ignore[reportAttributeAccessIssue]
+    _COMPONENTS_CORE_MAPPING,  # pyright: ignore[reportAttributeAccessIssue]
+)
+from reflex.compiler.utils import compile_custom_component
+from reflex.state import BaseState
+from reflex.utils import imports
 
 
 class TestState(BaseState):
@@ -792,7 +802,7 @@ def test_component_create_unpack_tuple_child(test_component, element, expected):
     assert fragment_wrapper.render() == expected
 
 
-class _Obj(Base):
+class _Obj(pydantic.BaseModel):
     custom: int = 0
 
 
@@ -861,7 +871,7 @@ def test_custom_component_wrapper():
             color=color,
         )
 
-    from reflex.components.radix.themes.typography.text import Text
+    from reflex_components_radix.themes.typography.text import Text
 
     ccomponent = my_component(
         rx.text("child"), width=LiteralVar.create(1), color=LiteralVar.create("red")
@@ -1468,9 +1478,9 @@ def test_instantiate_all_components():
         "Thead",
     }
     component_nested_list = [
-        *rx.RADIX_MAPPING.values(),
-        *rx.COMPONENTS_BASE_MAPPING.values(),
-        *rx.COMPONENTS_CORE_MAPPING.values(),
+        *RADIX_MAPPING.values(),
+        *_COMPONENTS_BASE_MAPPING.values(),
+        *_COMPONENTS_CORE_MAPPING.values(),
     ]
     for component_name in [
         comp_name

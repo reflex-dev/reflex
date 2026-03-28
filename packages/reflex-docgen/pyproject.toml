@@ -1,6 +1,6 @@
 [project]
 name = "reflex-docgen"
-version = "0.0.1"
+dynamic = ["version"]
 description = "Generate documentation for Reflex components."
 readme = "README.md"
 authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
@@ -8,6 +8,8 @@ maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 requires-python = ">=3.10"
 dependencies = [
     "griffelib>=2.0.1",
+    "mistletoe>=1.4.0",
+    "pyyaml>=6.0",
     "reflex",
     "typing-extensions",
     "typing-inspection>=0.4.2",
@@ -16,6 +18,13 @@ dependencies = [
 [tool.uv.sources]
 reflex = { workspace = true }
 
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+pattern-prefix = "reflex-docgen-"
+fallback-version = "0.0.0dev0"
+
 [build-system]
-requires = ["uv_build>=0.10.11,<0.11.0"]
-build-backend = "uv_build"
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
