@@ -153,7 +153,7 @@ class Tabs(ComponentNamespace):
     """Set of content sections to be displayed one at a time."""
 
     root = __call__ = staticmethod(TabsRoot.create)
-    list = staticmethod(TabsList.create)
+    list_ns = list = staticmethod(TabsList.create)
     trigger = staticmethod(TabsTrigger.create)
     content = staticmethod(TabsContent.create)
 
