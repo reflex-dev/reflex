@@ -9,7 +9,8 @@ from reflex_components_radix.mappings import RADIX_MAPPING
 _SUBMODULES: set[str] = {"themes", "primitives"}
 
 _SUBMOD_ATTRS: dict[str, list[str]] = {
-    "".join(k.split("components.radix.")[-1]): v for k, v in RADIX_MAPPING.items()
+    "".join(k.split("reflex_components_radix.")[-1]): v
+    for k, v in RADIX_MAPPING.items()
 }
 __getattr__, __dir__, __all__ = lazy_loader.attach(
     __name__,

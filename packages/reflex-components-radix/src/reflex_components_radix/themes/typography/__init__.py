@@ -7,7 +7,7 @@ from reflex_core.utils import lazy_loader
 from reflex_components_radix.mappings import RADIX_THEMES_TYPOGRAPHY_MAPPING
 
 _SUBMOD_ATTRS: dict[str, list[str]] = {
-    "".join(k.split("components.radix.themes.typography.")[-1]): v
+    "".join(k.split("reflex_components_radix.themes.typography.")[-1]): v
     for k, v in RADIX_THEMES_TYPOGRAPHY_MAPPING.items()
 }
 
