@@ -42,6 +42,10 @@ from reflex_core.vars.base import LiteralVar, Var
 from reflex_core.vars.object import ObjectVar
 
 import reflex as rx
+from reflex import (
+    _COMPONENTS_BASE_MAPPING,  # pyright: ignore[reportAttributeAccessIssue]
+    _COMPONENTS_CORE_MAPPING,  # pyright: ignore[reportAttributeAccessIssue]
+)
 from reflex.compiler.utils import compile_custom_component
 from reflex.state import BaseState
 from reflex.utils import imports
@@ -1475,8 +1479,8 @@ def test_instantiate_all_components():
     }
     component_nested_list = [
         *RADIX_MAPPING.values(),
-        *rx.COMPONENTS_BASE_MAPPING.values(),
-        *rx.COMPONENTS_CORE_MAPPING.values(),
+        *_COMPONENTS_BASE_MAPPING.values(),
+        *_COMPONENTS_CORE_MAPPING.values(),
     ]
     for component_name in [
         comp_name

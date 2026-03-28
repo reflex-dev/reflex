@@ -99,7 +99,7 @@ del sys
 
 from reflex_components_radix.mappings import RADIX_MAPPING  # noqa: E402
 
-COMPONENTS_CORE_MAPPING: dict[str, list[str]] = {
+_COMPONENTS_CORE_MAPPING: dict[str, list[str]] = {
     "reflex_components_core.core.banner": [
         "connection_banner",
         "connection_modal",
@@ -131,12 +131,12 @@ COMPONENTS_CORE_MAPPING: dict[str, list[str]] = {
     "reflex_components_core.core.window_events": ["window_event_listener"],
 }
 
-COMPONENTS_BASE_MAPPING: dict[str, list[str]] = {
+_COMPONENTS_BASE_MAPPING: dict[str, list[str]] = {
     "reflex_components_core.base.fragment": ["fragment", "Fragment"],
     "reflex_components_core.base.script": ["script", "Script"],
 }
 
-ALL_COMPONENTS_MAPPING: dict[str, list[str]] = {
+_ALL_COMPONENTS_MAPPING: dict[str, list[str]] = {
     "reflex_core.components.component": [
         "Component",
         "NoSSRComponent",
@@ -145,13 +145,13 @@ ALL_COMPONENTS_MAPPING: dict[str, list[str]] = {
     ],
     "reflex_components_core.el.elements.media": ["image"],
     "reflex_components_lucide": ["icon"],
-    **COMPONENTS_BASE_MAPPING,
+    **_COMPONENTS_BASE_MAPPING,
     "reflex_components_core": ["el"],
     "reflex_components_markdown.markdown": ["markdown"],
     **RADIX_MAPPING,
     "reflex_components_plotly": ["plotly"],
     "reflex_components_react_player": ["audio", "video"],
-    **COMPONENTS_CORE_MAPPING,
+    **_COMPONENTS_CORE_MAPPING,
     "reflex_components_code.code": [
         "code_block",
     ],
@@ -166,9 +166,9 @@ ALL_COMPONENTS_MAPPING: dict[str, list[str]] = {
     "reflex_components_moment": ["MomentDelta", "moment"],
 }
 
-COMPONENT_NAME_TO_PATH: dict[str, str] = {
+_COMPONENT_NAME_TO_PATH: dict[str, str] = {
     comp: path + "." + comp
-    for path, comps in ALL_COMPONENTS_MAPPING.items()
+    for path, comps in _ALL_COMPONENTS_MAPPING.items()
     for comp in comps
 } | {
     "radix": "reflex_components_radix",
@@ -253,7 +253,7 @@ _SUBMODULES: set[str] = {
     "plugins",
 }
 _SUBMOD_ATTRS: dict[str, list[str]] = _MAPPING
-_EXTRA_MAPPINGS: dict[str, str] = COMPONENT_NAME_TO_PATH
+_EXTRA_MAPPINGS: dict[str, str] = _COMPONENT_NAME_TO_PATH
 getattr, __dir__, __all__ = lazy_loader.attach(
     __name__,
     submodules=_SUBMODULES,

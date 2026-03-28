@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, MutableSequence
 from typing import Any, Literal
 
 from reflex_components_core.core.foreach import Foreach
@@ -94,7 +94,7 @@ class BaseList(BaseHTML, MarkdownComponentMap):
             "direction": "column",
         }
 
-    def _exclude_props(self) -> list[str]:
+    def _exclude_props(self) -> MutableSequence[str]:
         return ["items", "list_style_type"]
 
 
@@ -189,19 +189,7 @@ class List(ComponentNamespace):
     __call__ = staticmethod(BaseList.create)
 
 
-list_ns = List()
+list = list_ns = List()
 list_item = list_ns.item
 ordered_list = list_ns.ordered
 unordered_list = list_ns.unordered
-
-
-def __getattr__(name: Any):
-    # special case for when accessing list to avoid shadowing
-    # python's built in list object.
-    if name == "list":
-        return list_ns
-    try:
-        return globals()[name]
-    except KeyError:
-        msg = f"module '{__name__} has no attribute '{name}'"
-        raise AttributeError(msg) from None
