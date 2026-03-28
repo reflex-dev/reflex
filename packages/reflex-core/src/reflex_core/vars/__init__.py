@@ -1,5 +1,6 @@
 """Immutable-Based Var System."""
 
+from . import base, color, datetime, function, number, object, sequence
 from .base import (
     BaseStateMeta,
     EvenMoreBasicBaseState,
@@ -51,9 +52,16 @@ __all__ = [
     "Var",
     "VarData",
     "VarOperationCall",
+    "base",
+    "color",
+    "datetime",
     "field",
+    "function",
     "get_unique_variable_name",
     "get_uuid_string_var",
+    "number",
+    "object",
+    "sequence",
     "var_operation",
     "var_operation_return",
 ]
