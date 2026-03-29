@@ -1,23 +1,26 @@
 import json
 from collections.abc import Callable
+from typing import Any, cast
 
 import pytest
-
-import reflex as rx
-from reflex.constants.compiler import Hooks, Imports
-from reflex.event import (
+from reflex_core.constants.compiler import Hooks, Imports
+from reflex_core.event import (
     BACKGROUND_TASK_MARKER,
     Event,
     EventChain,
+    EventChainVar,
     EventHandler,
     EventSpec,
+    LambdaEventCallback,
     call_event_handler,
     event,
     fix_events,
 )
+from reflex_core.utils import format
+from reflex_core.vars.base import Field, LiteralVar, Var, VarData, field
+
+import reflex as rx
 from reflex.state import BaseState
-from reflex.utils import format
-from reflex.vars.base import Field, LiteralVar, Var, VarData, field
 
 
 def make_var(value) -> Var:
@@ -30,6 +33,12 @@ def make_var(value) -> Var:
         The var.
     """
     return Var(_js_expr=value)
+
+
+def make_timeout_logger() -> EventChainVar:
+    return rx.vars.FunctionStringVar.create(
+        "(...args) => { setTimeout(() => console.log('Timeout reached!', args), 1000); }"
+    ).to(EventChain)
 
 
 def test_create_event():
@@ -473,6 +482,32 @@ def test_event_var_data():
     )
 
 
+def test_event_chain_statement_block_preserves_nested_var_data():
+    class S(BaseState):
+        x: Field[int] = field(0)
+
+        @event
+        def s(self, value: int):
+            pass
+
+    chain_var_data = Var.create(
+        EventChain(
+            events=[S.s(S.x), make_timeout_logger()],
+            args_spec=lambda: (),
+        )
+    )._get_all_var_data()
+
+    assert chain_var_data is not None
+
+    x_var_data = S.x._get_all_var_data()
+    assert x_var_data is not None
+
+    assert chain_var_data.state == x_var_data.state
+    assert chain_var_data.field_name == x_var_data.field_name
+    assert x_var_data.hooks[0] in chain_var_data.hooks
+    assert Hooks.EVENTS in chain_var_data.hooks
+
+
 def test_event_bound_method() -> None:
     class S(BaseState):
         @event
@@ -640,7 +675,7 @@ def test_event_decorator_backward_compatibility():
 
 def test_event_var_in_rx_cond():
     """Test that EventVar and EventChainVar cannot be used in rx.cond()."""
-    from reflex.components.core.cond import cond as rx_cond
+    from reflex_components_core.core.cond import cond as rx_cond
 
     class S(BaseState):
         @event
@@ -666,6 +701,270 @@ def test_event_var_in_rx_cond():
         rx_cond(chain_var, rx.text("True"), rx.text("False"))
     assert "Cannot convert" in str(err.value)
     assert "to bool" in str(err.value)
+
+
+def test_event_chain_create_allows_plain_function_var():
+    """Plain FunctionVars should be usable as frontend event handlers."""
+    frontend_handler = rx.vars.FunctionStringVar.create(
+        "(...args) => { setTimeout(() => console.log('Timeout reached!', args), 1000); }"
+    )
+
+    chain = EventChain.create(frontend_handler, args_spec=lambda: ())
+
+    assert isinstance(chain, EventChain)
+    assert len(chain.events) == 1
+    chain_event = chain.events[0]
+    assert isinstance(chain_event, Var)
+    assert frontend_handler.equals(chain_event)
+
+
+def test_event_chain_create_partials_function_var_with_non_empty_args_spec():
+    """FunctionVars should receive trigger args as partial arguments."""
+    frontend_handler = rx.vars.FunctionStringVar.create("(event) => console.log(event)")
+
+    chain = EventChain.create(frontend_handler, args_spec=lambda e: [e])
+
+    assert isinstance(chain, EventChain)
+    assert len(chain.events) == 1
+    chain_event = chain.events[0]
+    assert isinstance(chain_event, Var)
+    assert not frontend_handler.equals(chain_event)
+    assert "(_e, ...args)" in str(chain_event)
+
+
+def test_event_chain_create_lambda_returned_function_var_keeps_original_signature():
+    """FunctionVars returned from lambdas should not be partially applied."""
+    frontend_handler = rx.vars.FunctionStringVar.create("(event) => console.log(event)")
+
+    def return_function_var(e: Var[Any]) -> Any:
+        return frontend_handler
+
+    chain = EventChain.create(
+        cast(LambdaEventCallback[Any], return_function_var),
+        args_spec=lambda e: [e],
+    )
+
+    assert isinstance(chain, EventChain)
+    assert len(chain.events) == 1
+    chain_event = chain.events[0]
+    assert isinstance(chain_event, Var)
+    assert frontend_handler.equals(chain_event)
+    assert "(_e, ...args)" not in str(LiteralVar.create(chain))
+
+
+def test_event_chain_create_lambda_allows_mixed_event_sequences():
+    """Lambdas should be able to return mixed event sequences."""
+
+    class MixedState(BaseState):
+        @event
+        def do_a_thing(self):
+            pass
+
+    log_after_timeout = make_timeout_logger()
+
+    def return_mixed_events(e: Var[Any]) -> Any:
+        return (MixedState.do_a_thing, log_after_timeout)
+
+    chain = EventChain.create(
+        cast(LambdaEventCallback[Any], return_mixed_events),
+        args_spec=lambda e: [e],
+    )
+    rendered = str(LiteralVar.create(chain))
+
+    assert isinstance(chain, EventChain)
+    assert "addEvents(" in rendered
+    assert "Timeout reached!" in rendered
+    assert rendered.index("addEvents(") < rendered.index("Timeout reached!")
+
+
+def test_event_chain_create_lambda_preserves_explicit_event_chain():
+    """Explicit EventChains returned from lambdas should be preserved."""
+    inner = EventChain.create(
+        make_timeout_logger(),
+        args_spec=lambda: (),
+        event_actions={"preventDefault": True},
+    )
+
+    def return_explicit_chain(e: Var[Any]) -> Any:
+        return inner
+
+    chain = EventChain.create(
+        cast(LambdaEventCallback[Any], return_explicit_chain),
+        args_spec=lambda e: [e],
+    )
+
+    assert isinstance(chain, EventChain)
+    assert len(chain.events) == 1
+    chain_event = chain.events[0]
+    assert isinstance(chain_event, Var)
+    assert chain_event.equals(Var.create(inner))
+
+
+def test_event_chain_create_wraps_plain_function_var_kwargs():
+    """FunctionVars should compose with chain-level kwargs instead of bypassing wrapping."""
+    frontend_handler = rx.vars.FunctionStringVar.create(
+        "(...args) => { setTimeout(() => console.log('Timeout reached!', args), 1000); }"
+    )
+
+    chain = EventChain.create(
+        frontend_handler,
+        args_spec=lambda: (),
+        event_actions={"preventDefault": True},
+    )
+
+    assert isinstance(chain, EventChain)
+    assert len(chain.events) == 1
+    chain_event = chain.events[0]
+    assert isinstance(chain_event, Var)
+    assert frontend_handler.equals(chain_event)
+    assert chain.event_actions == {"preventDefault": True}
+
+
+def test_event_chain_create_wraps_event_chain_typed_function_var_kwargs():
+    """FunctionVars cast to EventChain should still compose with chain-level kwargs."""
+    frontend_handler = make_timeout_logger()
+
+    chain = EventChain.create(
+        frontend_handler,
+        args_spec=lambda: (),
+        event_actions={"preventDefault": True},
+    )
+
+    assert isinstance(chain, EventChain)
+    assert len(chain.events) == 1
+    chain_event = chain.events[0]
+    assert isinstance(chain_event, Var)
+    assert frontend_handler.equals(chain_event)
+    assert chain.event_actions == {"preventDefault": True}
+
+
+def test_event_chain_create_warns_for_event_chain_var_kwargs():
+    """Prebuilt EventChainVars should also warn when extra kwargs are ignored."""
+    prebuilt_chain = Var.create(EventChain(events=[], args_spec=lambda: ()))
+
+    with pytest.warns(UserWarning, match="ignored for EventChainVar values"):
+        result = EventChain.create(
+            prebuilt_chain,
+            args_spec=lambda: (),
+            event_actions={"preventDefault": True},
+        )
+
+    assert result is prebuilt_chain
+
+
+def test_event_chain_create_allows_function_var_in_list():
+    """FunctionVars should be allowed inside EventChain lists."""
+    frontend_handler = make_timeout_logger()
+
+    chain = EventChain.create([frontend_handler], args_spec=lambda: ())
+
+    assert isinstance(chain, EventChain)
+    assert len(chain.events) == 1
+    chain_event = chain.events[0]
+    assert isinstance(chain_event, Var)
+    assert frontend_handler.equals(chain_event)
+
+
+def test_button_accepts_mixed_event_handler_and_function_var():
+    """Components should accept mixed backend/frontend event chains."""
+
+    class MixedState(BaseState):
+        @event
+        def do_a_thing(self):
+            pass
+
+    log_after_timeout = make_timeout_logger()
+
+    button = rx.button(
+        "Do both",
+        on_click=[MixedState.do_a_thing, log_after_timeout],
+    )
+
+    assert isinstance(button.event_triggers["on_click"], EventChain)
+
+
+def test_event_chain_codegen_preserves_backend_event_actions_per_spec():
+    """Backend-only chains should keep per-spec event actions separate."""
+
+    class FastPathState(BaseState):
+        @event
+        def do_a_thing(self, value: str):
+            pass
+
+    chain = EventChain.create(
+        [
+            FastPathState.do_a_thing("first x 1000").debounce(1000),
+            FastPathState.do_a_thing("second x 200").debounce(200),
+        ],
+        args_spec=lambda: (),
+    )
+    rendered = str(LiteralVar.create(chain))
+
+    assert "applyEventActions(" not in rendered
+    assert rendered.count("addEvents(") == 2
+    assert rendered.count('["debounce"] : 1000') == 1
+    assert rendered.count('["debounce"] : 200') == 1
+    assert rendered.index("first x 1000") < rendered.index("second x 200")
+
+
+def test_event_chain_codegen_keeps_chain_event_actions_for_backend_only_events():
+    """Chain-level actions should still wrap backend-only event chains."""
+
+    class FastPathState(BaseState):
+        @event
+        def do_a_thing(self, value: str):
+            pass
+
+    chain = EventChain.create(
+        [
+            FastPathState.do_a_thing("first x 1000").debounce(1000),
+            FastPathState.do_a_thing("second x 200").debounce(200),
+        ],
+        args_spec=lambda: (),
+        event_actions={"preventDefault": True},
+    )
+    rendered = str(LiteralVar.create(chain))
+
+    assert "applyEventActions(" in rendered
+    assert rendered.count("addEvents(") == 2
+    assert rendered.count('["debounce"] : 1000') == 1
+    assert rendered.count('["debounce"] : 200') == 1
+    assert rendered.count('["preventDefault"] : true') == 1
+
+
+def test_event_chain_codegen_keeps_apply_event_actions_for_function_vars():
+    """Frontend handlers should keep the applyEventActions wrapper."""
+    log_after_timeout = make_timeout_logger()
+
+    chain = EventChain.create(
+        log_after_timeout,
+        args_spec=lambda: (),
+        event_actions={"preventDefault": True},
+    )
+    rendered = str(LiteralVar.create(chain))
+
+    assert "applyEventActions(" in rendered
+    assert "Timeout reached!" in rendered
+
+
+def test_event_chain_codegen_preserves_mixed_chain_order():
+    """Mixed chains should keep backend and frontend work in the original order."""
+
+    class MixedState(BaseState):
+        @event
+        def do_a_thing(self):
+            pass
+
+    log_after_timeout = make_timeout_logger()
+    chain = EventChain.create(
+        [MixedState.do_a_thing, log_after_timeout],
+        args_spec=lambda: (),
+        event_actions={"preventDefault": True},
+    )
+    rendered = str(LiteralVar.create(chain))
+
+    assert "applyEventActions(" in rendered
+    assert rendered.index("addEvents(") < rendered.index("Timeout reached!")
 
 
 def test_decentralized_event_with_args():

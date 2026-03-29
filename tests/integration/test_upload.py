@@ -6,12 +6,14 @@ import asyncio
 import time
 from collections.abc import Generator
 from pathlib import Path
+from typing import Any, cast
 from urllib.parse import urlsplit
 
 import pytest
+from reflex_core.constants.event import Endpoint
 from selenium.webdriver.common.by import By
 
-from reflex.constants.event import Endpoint
+import reflex as rx
 from reflex.testing import AppHarness, WebDriver
 
 from .utils import poll_for_navigation
@@ -27,9 +29,12 @@ def UploadFile():
         _file_data: dict[str, str] = {}
         event_order: rx.Field[list[str]] = rx.field([])
         progress_dicts: rx.Field[list[dict]] = rx.field([])
+        stream_progress_dicts: rx.Field[list[dict]] = rx.field([])
         disabled: rx.Field[bool] = rx.field(False)
         large_data: rx.Field[str] = rx.field("")
         quaternary_names: rx.Field[list[str]] = rx.field([])
+        stream_chunk_records: rx.Field[list[str]] = rx.field([])
+        stream_completed_files: rx.Field[list[str]] = rx.field([])
 
         @rx.event
         async def handle_upload(self, files: list[rx.UploadFile]):
@@ -58,6 +63,11 @@ def UploadFile():
             self.event_order.append("chain_event")
 
         @rx.event
+        def stream_upload_progress(self, progress):
+            assert progress
+            self.stream_progress_dicts.append(progress)
+
+        @rx.event
         async def handle_upload_tertiary(self, files: list[rx.UploadFile]):
             for file in files:
                 (rx.get_upload_dir() / (file.name or "INVALID")).write_bytes(
@@ -67,6 +77,35 @@ def UploadFile():
         @rx.event
         async def handle_upload_quaternary(self, files: list[rx.UploadFile]):
             self.quaternary_names = [file.name for file in files if file.name]
+
+        @rx.event(background=True)
+        async def handle_upload_stream(self, chunk_iter: rx.UploadChunkIterator):
+            upload_dir = rx.get_upload_dir() / "streaming"
+            file_handles: dict[str, Any] = {}
+
+            try:
+                async for chunk in chunk_iter:
+                    path = upload_dir / chunk.filename
+                    path.parent.mkdir(parents=True, exist_ok=True)
+
+                    fh = file_handles.get(chunk.filename)
+                    if fh is None:
+                        fh = path.open("r+b") if path.exists() else path.open("wb")
+                        file_handles[chunk.filename] = fh
+
+                    fh.seek(chunk.offset)
+                    fh.write(chunk.data)
+
+                    async with self:
+                        self.stream_chunk_records.append(
+                            f"{chunk.filename}:{chunk.offset}:{len(chunk.data)}"
+                        )
+            finally:
+                for fh in file_handles.values():
+                    fh.close()
+
+            async with self:
+                self.stream_completed_files = sorted(file_handles)
 
         @rx.event
         def do_download(self):
@@ -187,6 +226,44 @@ def UploadFile():
             rx.text(
                 UploadState.quaternary_names.to_string(),
                 id="quaternary_files",
+            ),
+            rx.heading("Streaming Upload"),
+            rx.upload.root(
+                rx.vstack(
+                    rx.button("Select File"),
+                    rx.text("Drag and drop files here or click to select files"),
+                ),
+                id="streaming",
+            ),
+            rx.button(
+                "Upload",
+                on_click=UploadState.handle_upload_stream(
+                    rx.upload_files_chunk(  # pyright: ignore [reportArgumentType]
+                        upload_id="streaming",
+                        on_upload_progress=UploadState.stream_upload_progress,
+                    )
+                ),
+                id="upload_button_streaming",
+            ),
+            rx.box(
+                rx.foreach(
+                    rx.selected_files("streaming"),
+                    lambda f: rx.text(f, as_="p"),
+                ),
+                id="selected_files_streaming",
+            ),
+            rx.button(
+                "Cancel",
+                on_click=rx.cancel_upload("streaming"),
+                id="cancel_button_streaming",
+            ),
+            rx.text(
+                UploadState.stream_chunk_records.to_string(),
+                id="stream_chunk_records",
+            ),
+            rx.text(
+                UploadState.stream_completed_files.to_string(),
+                id="stream_completed_files",
             ),
             rx.text(UploadState.event_order.to_string(), id="event-order"),
         )
@@ -485,6 +562,140 @@ async def test_cancel_upload(tmp_path, upload_file: AppHarness, driver: WebDrive
     assert Path(exp_name).name not in normalized_file_data
 
     target_file.unlink()
+
+
+@pytest.mark.asyncio
+async def test_upload_chunk_file(tmp_path, upload_file: AppHarness, driver: WebDriver):
+    """Submit a streaming upload and check that chunks are processed incrementally."""
+    assert upload_file.app_instance is not None
+    token = poll_for_token(driver, upload_file)
+    state_name = upload_file.get_state_name("_upload_state")
+    state_full_name = upload_file.get_full_state_name(["_upload_state"])
+    substate_token = f"{token}_{state_full_name}"
+
+    upload_box = driver.find_elements(By.XPATH, "//input[@type='file']")[4]
+    upload_button = driver.find_element(By.ID, "upload_button_streaming")
+    selected_files = driver.find_element(By.ID, "selected_files_streaming")
+    chunk_records_display = driver.find_element(By.ID, "stream_chunk_records")
+    completed_files_display = driver.find_element(By.ID, "stream_completed_files")
+
+    exp_files = {
+        "stream1.txt": "ABCD" * 262_144,
+        "stream2.txt": "WXYZ" * 262_144,
+    }
+    for exp_name, exp_contents in exp_files.items():
+        target_file = tmp_path / exp_name
+        target_file.write_text(exp_contents)
+        upload_box.send_keys(str(target_file))
+
+    await asyncio.sleep(0.2)
+
+    assert [Path(name).name for name in selected_files.text.split("\n")] == [
+        Path(name).name for name in exp_files
+    ]
+
+    upload_button.click()
+
+    AppHarness.expect(lambda: "stream1.txt" in chunk_records_display.text)
+
+    async def _stream_completed():
+        state = await upload_file.get_state(substate_token)
+        return (
+            len(
+                state.substates[state_name].stream_completed_files  # pyright: ignore[reportAttributeAccessIssue]
+            )
+            == 2
+        )
+
+    await AppHarness._poll_for_async(_stream_completed)
+
+    state = await upload_file.get_state(substate_token)
+    substate = cast(Any, state.substates[state_name])
+    chunk_records = substate.stream_chunk_records
+
+    assert len(chunk_records) > 2
+    assert {Path(record.split(":")[0]).name for record in chunk_records} == {
+        "stream1.txt",
+        "stream2.txt",
+    }
+    assert substate.stream_completed_files == ["stream1.txt", "stream2.txt"]
+
+    AppHarness.expect(
+        lambda: (
+            "stream1.txt" in completed_files_display.text
+            and "stream2.txt" in completed_files_display.text
+        )
+    )
+
+    for exp_name, exp_contents in exp_files.items():
+        assert (
+            rx.get_upload_dir() / "streaming" / exp_name
+        ).read_text() == exp_contents
+
+
+@pytest.mark.asyncio
+async def test_cancel_upload_chunk(
+    tmp_path,
+    upload_file: AppHarness,
+    driver: WebDriver,
+):
+    """Submit a large streaming upload and cancel it."""
+    assert upload_file.app_instance is not None
+    driver.execute_cdp_cmd("Network.enable", {})
+    driver.execute_cdp_cmd(
+        "Network.emulateNetworkConditions",
+        {
+            "offline": False,
+            "downloadThroughput": 1024 * 1024 / 8,  # 1 Mbps
+            "uploadThroughput": 1024 * 1024 / 8,  # 1 Mbps
+            "latency": 200,  # 200ms
+        },
+    )
+    token = poll_for_token(driver, upload_file)
+    state_name = upload_file.get_state_name("_upload_state")
+    state_full_name = upload_file.get_full_state_name(["_upload_state"])
+    substate_token = f"{token}_{state_full_name}"
+
+    upload_box = driver.find_elements(By.XPATH, "//input[@type='file']")[4]
+    upload_button = driver.find_element(By.ID, "upload_button_streaming")
+    cancel_button = driver.find_element(By.ID, "cancel_button_streaming")
+
+    exp_name = "cancel_stream.txt"
+    target_file = tmp_path / exp_name
+    with target_file.open("wb") as f:
+        f.seek(2 * 1024 * 1024)
+        f.write(b"0")
+
+    upload_box.send_keys(str(target_file))
+    upload_button.click()
+    await asyncio.sleep(1)
+    cancel_button.click()
+
+    await asyncio.sleep(12)
+
+    async def _stream_progress_dicts():
+        state = await upload_file.get_state(substate_token)
+        return (
+            state.substates[state_name].stream_progress_dicts  # pyright: ignore[reportAttributeAccessIssue]
+        )
+
+    assert await AppHarness._poll_for_async(_stream_progress_dicts)
+
+    for progress in await _stream_progress_dicts():
+        assert progress["progress"] != 1
+
+    state = await upload_file.get_state(substate_token)
+    substate = cast(Any, state.substates[state_name])
+    assert substate.stream_completed_files == []
+    assert substate.stream_chunk_records
+
+    partial_path = rx.get_upload_dir() / "streaming" / exp_name
+    assert partial_path.exists()
+    assert partial_path.stat().st_size < target_file.stat().st_size
+
+    target_file.unlink()
+    if partial_path.exists():
+        partial_path.unlink()
 
 
 def test_upload_download_file(

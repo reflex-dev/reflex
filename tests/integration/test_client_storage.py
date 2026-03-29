@@ -6,11 +6,11 @@ import asyncio
 from collections.abc import Generator
 
 import pytest
-from selenium.webdriver import Firefox
+from reflex_core.constants.state import FIELD_MARKER
 from selenium.webdriver.common.by import By
+from selenium.webdriver.firefox.webdriver import WebDriver as Firefox
 from selenium.webdriver.remote.webdriver import WebDriver
 
-from reflex.constants.state import FIELD_MARKER
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis

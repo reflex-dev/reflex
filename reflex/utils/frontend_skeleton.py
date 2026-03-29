@@ -5,10 +5,11 @@ import random
 import re
 from pathlib import Path
 
-from reflex import constants
+from reflex_core import constants
+from reflex_core.config import Config, get_config
+from reflex_core.environment import environment
+
 from reflex.compiler import templates
-from reflex.config import Config, get_config
-from reflex.environment import environment
 from reflex.utils import console, path_ops
 from reflex.utils.prerequisites import get_project_hash, get_web_dir
 from reflex.utils.registry import get_npm_registry
@@ -168,11 +169,14 @@ def _update_react_router_config(config: Config, prerender_routes: bool = False):
 
 
 def _compile_package_json():
+    config = get_config()
     return templates.package_json_template(
         scripts={
             "dev": constants.PackageJson.Commands.DEV,
             "export": constants.PackageJson.Commands.EXPORT,
-            "prod": constants.PackageJson.Commands.PROD,
+            "prod": constants.PackageJson.Commands.get_prod_command(
+                config.frontend_path
+            ),
         },
         dependencies=constants.PackageJson.DEPENDENCIES,
         dev_dependencies=constants.PackageJson.DEV_DEPENDENCIES,
@@ -197,6 +201,7 @@ def _compile_vite_config(config: Config):
         force_full_reload=environment.VITE_FORCE_FULL_RELOAD.get(),
         experimental_hmr=environment.VITE_EXPERIMENTAL_HMR.get(),
         sourcemap=environment.VITE_SOURCEMAP.get(),
+        allowed_hosts=config.vite_allowed_hosts,
     )
 
 

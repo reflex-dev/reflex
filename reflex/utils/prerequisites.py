@@ -18,12 +18,13 @@ from types import ModuleType
 from typing import NamedTuple
 
 from packaging import version
+from reflex_core import constants
+from reflex_core.config import Config, get_config
+from reflex_core.environment import environment
+from reflex_core.utils.decorator import once
 
-from reflex import constants, model
-from reflex.config import Config, get_config
-from reflex.environment import environment
+from reflex import model
 from reflex.utils import console, net, path_ops
-from reflex.utils.decorator import once
 from reflex.utils.misc import get_module_path
 
 if typing.TYPE_CHECKING:
@@ -431,8 +432,6 @@ async def get_redis_status() -> dict[str, bool | None]:
     Returns:
         The status of the Redis connection.
     """
-    from redis.exceptions import RedisError
-
     try:
         status = True
         redis_client = get_redis()
@@ -442,8 +441,12 @@ async def get_redis_status() -> dict[str, bool | None]:
                 await ping_command
         else:
             status = None
-    except RedisError:
+    except Exception as exc:
         status = False
+        console.error(
+            f"Redis health check failed: {exc} (subsequent errors will not be logged)",
+            dedupe=True,
+        )
 
     return {"redis": status}
 
@@ -645,7 +648,8 @@ def check_db_initialized() -> bool:
         and not environment.ALEMBIC_CONFIG.get().exists()
     ):
         console.error(
-            "Database is not initialized. Run [bold]reflex db init[/bold] first."
+            "Database is not initialized. Run [bold]reflex db init[/bold] first.",
+            dedupe=True,
         )
         return False
     return True

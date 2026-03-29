@@ -3,9 +3,14 @@
 import datetime
 from unittest.mock import MagicMock, patch
 
+from reflex_core.plugins.sitemap import (
+    SitemapLink,
+    generate_links_for_sitemap,
+    generate_xml,
+)
+
 import reflex as rx
 from reflex.app import UnevaluatedPage
-from reflex.plugins.sitemap import SitemapLink, generate_links_for_sitemap, generate_xml
 
 
 def test_generate_xml_empty_links():
@@ -65,8 +70,8 @@ def test_generate_xml_multiple_links_all_fields():
     assert xml_output == expected
 
 
-@patch("reflex.config.get_config")
-@patch("reflex.utils.console.warn")
+@patch("reflex_core.config.get_config")
+@patch("reflex_core.utils.console.warn")
 def test_generate_links_for_sitemap_static_routes(
     mock_warn: MagicMock, mock_get_config: MagicMock
 ):
@@ -125,8 +130,8 @@ def test_generate_links_for_sitemap_static_routes(
     mock_warn.assert_not_called()
 
 
-@patch("reflex.config.get_config")
-@patch("reflex.utils.console.warn")
+@patch("reflex_core.config.get_config")
+@patch("reflex_core.utils.console.warn")
 def test_generate_links_for_sitemap_dynamic_routes(
     mock_warn: MagicMock, mock_get_config: MagicMock
 ):
@@ -194,8 +199,8 @@ def test_generate_links_for_sitemap_dynamic_routes(
     )
 
 
-@patch("reflex.config.get_config")
-@patch("reflex.utils.console.warn")
+@patch("reflex_core.config.get_config")
+@patch("reflex_core.utils.console.warn")
 def test_generate_links_for_sitemap_404_route(
     mock_warn: MagicMock, mock_get_config: MagicMock
 ):
@@ -240,7 +245,7 @@ def test_generate_links_for_sitemap_404_route(
     )
 
 
-@patch("reflex.config.get_config")
+@patch("reflex_core.config.get_config")
 def test_generate_links_for_sitemap_opt_out(mock_get_config: MagicMock):
     """Test generate_links_for_sitemap with sitemap set to None.
 
@@ -279,7 +284,7 @@ def test_generate_links_for_sitemap_opt_out(mock_get_config: MagicMock):
     assert {"loc": "/listed"} in links
 
 
-@patch("reflex.config.get_config")
+@patch("reflex_core.config.get_config")
 def test_generate_links_for_sitemap_loc_override(mock_get_config: MagicMock):
     """Test generate_links_for_sitemap with loc override in sitemap config.
 
@@ -319,7 +324,7 @@ def test_generate_links_for_sitemap_loc_override(mock_get_config: MagicMock):
     assert {"loc": "http://localhost:3000/custom_pricing"} in links
 
 
-@patch("reflex.config.get_config")
+@patch("reflex_core.config.get_config")
 def test_generate_links_for_sitemap_priority_clamping(mock_get_config: MagicMock):
     """Test that priority is clamped between 0.0 and 1.0.
 
@@ -373,7 +378,7 @@ def test_generate_links_for_sitemap_priority_clamping(mock_get_config: MagicMock
         assert expected_link in links
 
 
-@patch("reflex.config.get_config")
+@patch("reflex_core.config.get_config")
 def test_generate_links_for_sitemap_no_deploy_url(mock_get_config: MagicMock):
     """Test generate_links_for_sitemap when deploy_url is not set.
 
@@ -424,7 +429,7 @@ def test_generate_links_for_sitemap_no_deploy_url(mock_get_config: MagicMock):
         assert expected_link in links
 
 
-@patch("reflex.config.get_config")
+@patch("reflex_core.config.get_config")
 def test_generate_links_for_sitemap_deploy_url_trailing_slash(
     mock_get_config: MagicMock,
 ):
@@ -455,7 +460,7 @@ def test_generate_links_for_sitemap_deploy_url_trailing_slash(
     assert {"loc": "https://example.com/testpage"} in links
 
 
-@patch("reflex.config.get_config")
+@patch("reflex_core.config.get_config")
 def test_generate_links_for_sitemap_loc_leading_slash(mock_get_config: MagicMock):
     """Test generate_links_for_sitemap with loc having a leading slash.
 
@@ -484,7 +489,7 @@ def test_generate_links_for_sitemap_loc_leading_slash(mock_get_config: MagicMock
     assert {"loc": "https://example.com/another"} in links
 
 
-@patch("reflex.config.get_config")
+@patch("reflex_core.config.get_config")
 def test_generate_links_for_sitemap_loc_full_url(mock_get_config: MagicMock):
     """Test generate_links_for_sitemap with loc being a full URL.
 

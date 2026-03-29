@@ -10,19 +10,21 @@ import inspect
 import time
 from collections.abc import Callable, Coroutine
 
+from reflex_core.utils import console
+from reflex_core.utils.exceptions import InvalidLifespanTaskTypeError
 from starlette.applications import Starlette
-
-from reflex.utils import console
-from reflex.utils.exceptions import InvalidLifespanTaskTypeError
 
 from .mixin import AppMixin
 
 
 @dataclasses.dataclass
 class LifespanMixin(AppMixin):
-    """A Mixin that allow tasks to run during the whole app lifespan."""
+    """A Mixin that allow tasks to run during the whole app lifespan.
 
-    # Lifespan tasks that are planned to run.
+    Attributes:
+        lifespan_tasks: Lifespan tasks that are planned to run.
+    """
+
     lifespan_tasks: set[asyncio.Task | Callable] = dataclasses.field(
         default_factory=set
     )

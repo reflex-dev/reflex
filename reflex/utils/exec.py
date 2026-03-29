@@ -15,12 +15,14 @@ from pathlib import Path
 from typing import Any, NamedTuple, TypedDict
 from urllib.parse import urljoin
 
-from reflex import constants
-from reflex.config import get_config
-from reflex.constants.base import LogLevel
-from reflex.environment import environment
-from reflex.utils import console, path_ops
-from reflex.utils.decorator import once
+from reflex_core import constants
+from reflex_core.config import get_config
+from reflex_core.constants.base import LogLevel
+from reflex_core.environment import environment
+from reflex_core.utils import console
+from reflex_core.utils.decorator import once
+
+from reflex.utils import path_ops
 from reflex.utils.misc import get_module_path
 from reflex.utils.prerequisites import get_web_dir
 
@@ -539,8 +541,7 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     from granian.constants import Interfaces
     from granian.log import LogLevels
     from granian.server import Server as Granian
-
-    from reflex.environment import _load_dotenv_from_env
+    from reflex_core.environment import _load_dotenv_from_env
 
     granian_app = Granian(
         target=get_app_instance_from_file(),
@@ -612,6 +613,8 @@ def run_uvicorn_backend_prod(host: str, port: int, loglevel: LogLevel):
 
     if constants.IS_WINDOWS:
         command = [
+            sys.executable,
+            "-m",
             "uvicorn",
             *("--host", host),
             *("--port", str(port)),
@@ -627,6 +630,8 @@ def run_uvicorn_backend_prod(host: str, port: int, loglevel: LogLevel):
 
         # Our default args, then env args (env args win on conflicts)
         command = [
+            sys.executable,
+            "-m",
             "gunicorn",
             "--preload",
             *("--worker-class", "uvicorn.workers.UvicornH11Worker"),
@@ -663,8 +668,9 @@ def run_granian_backend_prod(host: str, port: int, loglevel: LogLevel):
     from reflex.utils import processes
 
     command = [
+        sys.executable,
+        "-m",
         "granian",
-        *("--log-level", "critical"),
         *("--host", host),
         *("--port", str(port)),
         *("--interface", str(Interfaces.ASGI)),
@@ -677,6 +683,8 @@ def run_granian_backend_prod(host: str, port: int, loglevel: LogLevel):
 
     if "GRANIAN_WORKERS" not in os.environ:
         extra_env["GRANIAN_WORKERS"] = str(_get_backend_workers())
+    if "GRANIAN_LOG_LEVEL" not in os.environ:
+        extra_env["GRANIAN_LOG_LEVEL"] = "critical"
 
     processes.new_process(
         command,

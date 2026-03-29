@@ -7,12 +7,12 @@ import re
 from collections.abc import Callable
 from typing import Any
 
-from reflex import constants
-from reflex.event import EventChain, EventHandler, EventSpec, run_script
-from reflex.utils.imports import ImportVar
-from reflex.vars import VarData, get_unique_variable_name
-from reflex.vars.base import LiteralVar, Var
-from reflex.vars.function import ArgsFunctionOperationBuilder, FunctionVar
+from reflex_core import constants
+from reflex_core.event import EventChain, EventHandler, EventSpec, run_script
+from reflex_core.utils.imports import ImportVar
+from reflex_core.vars import VarData, get_unique_variable_name
+from reflex_core.vars.base import LiteralVar, Var
+from reflex_core.vars.function import ArgsFunctionOperationBuilder, FunctionVar
 
 NoValue = object()
 
@@ -104,11 +104,11 @@ class ClientStateVar(Var):
             default: The default value of the variable.
             global_ref: Whether the state should be accessible in any Component and on the backend.
 
-        Raises:
-            ValueError: If the var_name is not a string.
-
         Returns:
             ClientStateVar
+
+        Raises:
+            ValueError: If the var_name is not a string.
         """
         if var_name is None:
             var_name = get_unique_variable_name()

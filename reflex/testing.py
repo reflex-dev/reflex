@@ -26,6 +26,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 import uvicorn
+from reflex_core.components.component import CUSTOM_COMPONENTS, CustomComponent
+from reflex_core.config import get_config
+from reflex_core.environment import environment
+from reflex_core.utils.types import ASGIApp
 from typing_extensions import Self
 
 import reflex
@@ -34,9 +38,7 @@ import reflex.utils.build
 import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
-from reflex.components.component import CustomComponent
-from reflex.config import get_config
-from reflex.environment import environment
+from reflex.experimental.memo import EXPERIMENTAL_MEMOS
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
@@ -49,7 +51,6 @@ from reflex.state import (
 from reflex.utils import console, js_runtimes
 from reflex.utils.export import export
 from reflex.utils.token_manager import TokenManager
-from reflex.utils.types import ASGIApp
 
 try:
     from selenium import webdriver
@@ -142,11 +143,11 @@ class AppHarness:
                 If unspecified, then root must already contain a working reflex app and will be used directly.
             app_name: provide the name of the app, otherwise will be derived from app_source or root.
 
-        Raises:
-            ValueError: when app_source is a string and app_name is not provided.
-
         Returns:
             AppHarness instance
+
+        Raises:
+            ValueError: when app_source is a string and app_name is not provided.
         """
         if app_name is None:
             if app_source is None:
@@ -243,6 +244,10 @@ class AppHarness:
         # disable telemetry reporting for tests
 
         os.environ["REFLEX_TELEMETRY_ENABLED"] = "false"
+        # Reset global memo registries so previous AppHarness apps do not
+        # leak compiled component definitions into the next test app.
+        CUSTOM_COMPONENTS.clear()
+        EXPERIMENTAL_MEMOS.clear()
         CustomComponent.create().get_component.cache_clear()
         self.app_path.mkdir(parents=True, exist_ok=True)
         if self.app_source is not None:
@@ -269,15 +274,18 @@ class AppHarness:
                 reflex.utils.prerequisites.initialize_frontend_dependencies()
         with chdir(self.app_path):
             # ensure config and app are reloaded when testing different app
-            reflex.config.get_config(reload=True)
+            config = get_config(reload=True)
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
             os.environ[reflex.constants.APP_HARNESS_FLAG] = "true"
-            # Ensure we actually compile the app during first initialization.
+            # Ensure we compile generated apps, and reload pre-existing app modules
+            # that were already imported so they can re-register memo definitions.
+            should_reload_app = (
+                self.app_source is not None or config.module in sys.modules
+            )
             self.app_instance, self.app_module = (
                 reflex.utils.prerequisites.get_and_validate_app(
-                    # Do not reload the module for pre-existing apps (only apps generated from source)
-                    reload=self.app_source is not None
+                    reload=should_reload_app
                 )
             )
             self.app_asgi = self.app_instance()
@@ -397,7 +405,7 @@ class AppHarness:
     def _start_frontend(self):
         # Set up the frontend.
         with chdir(self.app_path):
-            config = reflex.config.get_config()
+            config = get_config()
             print("Polling for servers...")  # for pytest diagnosis #noqa: T201
             config.api_url = "http://{}:{}".format(
                 *self._poll_for_servers(timeout=30).getsockname(),
@@ -431,7 +439,7 @@ class AppHarness:
             m = re.search(reflex.constants.ReactRouter.FRONTEND_LISTENING_REGEX, line)
             if m is not None:
                 self.frontend_url = m.group(1)
-                config = reflex.config.get_config()
+                config = get_config()
                 config.deploy_url = self.frontend_url
                 break
         if self.frontend_url is None:
@@ -673,18 +681,24 @@ class AppHarness:
                 driver_options = getattr(webdriver, f"{requested_driver}Options")()  # pyright: ignore [reportPossiblyUnboundVariable]
         if driver_clz is webdriver.Chrome:  # pyright: ignore [reportPossiblyUnboundVariable]
             if driver_options is None:
-                driver_options = webdriver.ChromeOptions()  # pyright: ignore [reportPossiblyUnboundVariable]
+                from selenium.webdriver.chrome.options import Options
+
+                driver_options = Options()  # pyright: ignore [reportPossiblyUnboundVariable]
             driver_options.add_argument("--class=AppHarness")
             if want_headless:
                 driver_options.add_argument("--headless=new")
         elif driver_clz is webdriver.Firefox:  # pyright: ignore [reportPossiblyUnboundVariable]
             if driver_options is None:
-                driver_options = webdriver.FirefoxOptions()  # pyright: ignore [reportPossiblyUnboundVariable]
+                from selenium.webdriver.firefox.options import Options
+
+                driver_options = Options()  # pyright: ignore [reportPossiblyUnboundVariable]
             if want_headless:
                 driver_options.add_argument("-headless")
         elif driver_clz is webdriver.Edge:  # pyright: ignore [reportPossiblyUnboundVariable]
             if driver_options is None:
-                driver_options = webdriver.EdgeOptions()  # pyright: ignore [reportPossiblyUnboundVariable]
+                from selenium.webdriver.edge.options import Options
+
+                driver_options = Options()  # pyright: ignore [reportPossiblyUnboundVariable]
             if want_headless:
                 driver_options.add_argument("headless")
         if driver_options is None:
@@ -1061,7 +1075,7 @@ class AppHarnessProd(AppHarness):
     def _start_frontend(self):
         # Set up the frontend.
         with chdir(self.app_path):
-            config = reflex.config.get_config()
+            config = get_config()
             print("Polling for servers...")  # for pytest diagnosis #noqa: T201
             config.api_url = "http://{}:{}".format(
                 *self._poll_for_servers(timeout=30).getsockname(),

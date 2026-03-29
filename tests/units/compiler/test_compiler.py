@@ -4,15 +4,15 @@ from pathlib import Path
 
 import pytest
 from pytest_mock import MockerFixture
+from reflex_components_core.base import document
+from reflex_components_core.el.elements.metadata import Link
+from reflex_core import constants
+from reflex_core.constants.compiler import PageNames
+from reflex_core.utils.imports import ImportVar, ParsedImportDict
+from reflex_core.vars.base import Var
+from reflex_core.vars.sequence import LiteralStringVar
 
-from reflex import constants
 from reflex.compiler import compiler, utils
-from reflex.components.base import document
-from reflex.components.el.elements.metadata import Link
-from reflex.constants.compiler import PageNames
-from reflex.utils.imports import ImportVar, ParsedImportDict
-from reflex.vars.base import Var
-from reflex.vars.sequence import LiteralStringVar
 
 
 @pytest.mark.parametrize(
