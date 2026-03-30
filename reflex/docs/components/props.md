@@ -23,7 +23,7 @@ Check the docs for the component you are using to see what props are available a
 
 ## Common Props
 
-Components support many standard HTML properties as props. For example: the HTML [id]({"https://www.w3schools.com/html/html_id.asp"}) property is exposed directly as the prop `id`. The HTML [className]({"https://www.w3schools.com/jsref/prop_html_classname.asp"}) property is exposed as the prop `class_name` (note the Pythonic snake_casing!).
+Components support many standard HTML properties as props. For example: the HTML [id](https://developer.mozilla.org/en-US/docs/Web/API/Element/id) property is exposed directly as the prop `id`. The HTML [className](https://developer.mozilla.org/en-US/docs/Web/API/Element/className) property is exposed as the prop `class_name` (note the Pythonic snake_casing!).
 
 ```python demo
 rx.box(
@@ -40,7 +40,7 @@ In the example above, the `class_name` prop of the `rx.box` component is assigne
 
 ## Style Props
 
-In addition to component-specific props, most built-in components support a full range of style props. You can use any [CSS property](https://www.w3schools.com/cssref/index.php) to style a component.
+In addition to component-specific props, most built-in components support a full range of style props. You can use any [CSS property](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties) to style a component.
 
 ```python demo
 rx.button(

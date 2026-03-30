@@ -4,7 +4,7 @@ import reflex as rx
 
 # Tailwind
 
-Reflex supports [Tailwind CSS]({"https://tailwindcss.com/"}) through a plugin system that provides better control and supports multiple Tailwind versions.
+Reflex supports [Tailwind CSS](https://tailwindcss.com/) through a plugin system that provides better control and supports multiple Tailwind versions.
 
 ## Plugin-Based Configuration
 
@@ -103,7 +103,7 @@ config = rx.Config(
 
 All Tailwind configuration options are supported.
 
-You can use any of the [utility classes]({"https://tailwindcss.com/docs/utility-first"}) under the `class_name` prop:
+You can use any of the [utility classes](https://tailwindcss.com/docs/utility-first) under the `class_name` prop:
 
 ```python demo
 rx.box(
