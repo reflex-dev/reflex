@@ -24,9 +24,11 @@ In this tutorial, you are building an interactive data dashboard with Reflex.
 You can see what the finished app and code will look like here:
 
 ```python exec
+import dataclasses
 from collections import Counter
 
-class User(rx.Base):
+@dataclasses.dataclass
+class User:
     """The user model."""
 
     name: str
@@ -178,7 +180,8 @@ rx.vstack(
 import reflex as rx
 from collections import Counter
 
-class User(rx.Base):
+@dataclasses.dataclass
+class User:
     """The user model."""
 
     name: str
@@ -610,14 +613,15 @@ So far our data has been defined in a list of lists, where the data is accessed 
 
 A better way to structure our data in Reflex is to use a class to represent a user. This way we can access the data using attributes i.e. `user.name`, `user.email`.
 
-In Reflex when we create these classes to showcase our data, the class must inherit from `rx.Base`.
-
-`rx.Base` is also necessary if we want to have a state var that is an iterable with different types. For example if we wanted to have `age` as an `int` we would have to use `rx.base` as we could not do this with a state var defined as `list[list[str]]`.
+In Reflex when we create these classes to showcase our data, we can use dataclasses.
 
 The `show_user` render function is also updated to access the data by named attributes, instead of indexing.
 
 ```python exec
-class User(rx.Base):
+import dataclasses
+
+@dataclasses.dataclass
+class User:
     """The user model."""
 
     name: str
@@ -663,7 +667,8 @@ rx.table.root(
 ```
 
 ```python
-class User(rx.Base):
+@dataclasses.dataclass
+class User:
     """The user model."""
 
     name: str
@@ -1105,7 +1110,8 @@ rx.vstack(
 ```
 
 ```python
-class User(rx.Base):
+@dataclasses.dataclass
+class User:
     """The user model."""
 
     name: str
@@ -1643,7 +1649,8 @@ rx.vstack(
 import reflex as rx
 from collections import Counter
 
-class User(rx.Base):
+@dataclasses.dataclass
+class User:
     """The user model."""
 
     name: str
