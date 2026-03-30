@@ -19,7 +19,6 @@ from reflex.istate.data import RouterData
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import StateProxy
 from reflex.utils import console, types
-from reflex.utils.monitoring import is_pyleak_enabled, monitor_loopblocks
 
 if TYPE_CHECKING:
     from reflex.event import EventHandler, EventSpec
@@ -219,11 +218,7 @@ async def process_event(
     handler_name = handler.fn.__qualname__
 
     # Get the function to process the event.
-    if is_pyleak_enabled():
-        console.debug(f"Monitoring leaks for handler: {handler_name}")
-        fn = functools.partial(monitor_loopblocks(handler.fn), state)
-    else:
-        fn = functools.partial(handler.fn, state)
+    fn = functools.partial(handler.fn, state)
 
     try:
         type_hints = types.get_type_hints(handler.fn)
