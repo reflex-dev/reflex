@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 
 # ---------------------------------------------------------------------------
@@ -20,14 +19,6 @@ class TextSpan:
 
     text: str
 
-    def as_markdown(self) -> str:
-        """Render back to markdown.
-
-        Returns:
-            A markdown string.
-        """
-        return self.text
-
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class BoldSpan:
@@ -38,15 +29,6 @@ class BoldSpan:
     """
 
     children: tuple[Span, ...]
-
-    def as_markdown(self) -> str:
-        """Render back to markdown.
-
-        Returns:
-            A markdown string.
-        """
-        inner = "".join(c.as_markdown() for c in self.children)
-        return f"**{inner}**"
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -59,15 +41,6 @@ class ItalicSpan:
 
     children: tuple[Span, ...]
 
-    def as_markdown(self) -> str:
-        """Render back to markdown.
-
-        Returns:
-            A markdown string.
-        """
-        inner = "".join(c.as_markdown() for c in self.children)
-        return f"*{inner}*"
-
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class StrikethroughSpan:
@@ -79,15 +52,6 @@ class StrikethroughSpan:
 
     children: tuple[Span, ...]
 
-    def as_markdown(self) -> str:
-        """Render back to markdown.
-
-        Returns:
-            A markdown string.
-        """
-        inner = "".join(c.as_markdown() for c in self.children)
-        return f"~~{inner}~~"
-
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class CodeSpan:
@@ -98,14 +62,6 @@ class CodeSpan:
     """
 
     code: str
-
-    def as_markdown(self) -> str:
-        """Render back to markdown.
-
-        Returns:
-            A markdown string.
-        """
-        return f"`{self.code}`"
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -120,15 +76,6 @@ class LinkSpan:
     children: tuple[Span, ...]
     target: str
 
-    def as_markdown(self) -> str:
-        """Render back to markdown.
-
-        Returns:
-            A markdown string.
-        """
-        inner = "".join(c.as_markdown() for c in self.children)
-        return f"[{inner}]({self.target})"
-
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ImageSpan:
@@ -142,15 +89,6 @@ class ImageSpan:
     children: tuple[Span, ...]
     src: str
 
-    def as_markdown(self) -> str:
-        """Render back to markdown.
-
-        Returns:
-            A markdown string.
-        """
-        inner = "".join(c.as_markdown() for c in self.children)
-        return f"![{inner}]({self.src})"
-
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class LineBreakSpan:
@@ -161,14 +99,6 @@ class LineBreakSpan:
     """
 
     soft: bool
-
-    def as_markdown(self) -> str:
-        """Render back to markdown.
-
-        Returns:
-            A markdown string.
-        """
-        return "\n" if self.soft else "  \n"
 
 
 #: Union of all inline span types.
@@ -182,36 +112,6 @@ Span = (
     | ImageSpan
     | LineBreakSpan
 )
-
-
-def _spans_as_markdown(spans: tuple[Span, ...]) -> str:
-    """Render a sequence of spans back to markdown.
-
-    Args:
-        spans: The inline spans to render.
-
-    Returns:
-        A markdown string.
-    """
-    return "".join(s.as_markdown() for s in spans)
-
-
-_BACKTICK_FENCE_RE = re.compile(r"^(`{3,})", re.MULTILINE)
-
-
-def _fence_for(content: str) -> str:
-    """Return a backtick fence long enough to wrap *content* safely.
-
-    Args:
-        content: The code block content that may contain backtick fences.
-
-    Returns:
-        A backtick fence string (at least 3 backticks).
-    """
-    max_run = 3
-    for m in _BACKTICK_FENCE_RE.finditer(content):
-        max_run = max(max_run, len(m.group(1)) + 1)
-    return "`" * max_run
 
 
 # ---------------------------------------------------------------------------
@@ -248,25 +148,6 @@ class FrontMatter:
     title: str | None
     component_previews: tuple[ComponentPreview, ...]
 
-    def as_markdown(self) -> str:
-        """Render back to markdown.
-
-        Returns:
-            A markdown string.
-        """
-        import yaml
-
-        data: dict[str, object] = {}
-        if self.components:
-            data["components"] = list(self.components)
-        if self.only_low_level:
-            data["only_low_level"] = [True]
-        if self.title is not None:
-            data["title"] = self.title
-        for preview in self.component_previews:
-            data[preview.name] = preview.source
-        return f"---\n{yaml.dump(data, default_flow_style=False, sort_keys=False).rstrip()}\n---"
-
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class CodeBlock:
@@ -281,18 +162,6 @@ class CodeBlock:
     language: str | None
     flags: tuple[str, ...]
     content: str
-
-    def as_markdown(self) -> str:
-        """Render back to markdown.
-
-        Returns:
-            A markdown string.
-        """
-        info = self.language or ""
-        if self.flags:
-            info = f"{info} {' '.join(self.flags)}" if info else " ".join(self.flags)
-        fence = _fence_for(self.content)
-        return f"{fence}{info}\n{self.content}\n{fence}"
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -311,16 +180,6 @@ class DirectiveBlock:
     args: tuple[str, ...]
     content: str
 
-    def as_markdown(self) -> str:
-        """Render back to markdown.
-
-        Returns:
-            A markdown string.
-        """
-        info_parts = ["md", self.name, *self.args]
-        fence = _fence_for(self.content)
-        return f"{fence}{' '.join(info_parts)}\n{self.content}\n{fence}"
-
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class HeadingBlock:
@@ -334,14 +193,6 @@ class HeadingBlock:
     level: int
     children: tuple[Span, ...]
 
-    def as_markdown(self) -> str:
-        """Render back to markdown.
-
-        Returns:
-            A markdown string.
-        """
-        return f"{'#' * self.level} {_spans_as_markdown(self.children)}"
-
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class TextBlock:
@@ -352,14 +203,6 @@ class TextBlock:
     """
 
     children: tuple[Span, ...]
-
-    def as_markdown(self) -> str:
-        """Render back to markdown.
-
-        Returns:
-            A markdown string.
-        """
-        return _spans_as_markdown(self.children)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -387,22 +230,6 @@ class ListBlock:
     start: int | None
     items: tuple[ListItem, ...]
 
-    def as_markdown(self) -> str:
-        """Render back to markdown.
-
-        Returns:
-            A markdown string.
-        """
-        lines: list[str] = []
-        for i, item in enumerate(self.items):
-            prefix = f"{(self.start or 1) + i}. " if self.ordered else "- "
-            item_md = "\n\n".join(child.as_markdown() for child in item.children)
-            first, *rest = item_md.split("\n")
-            lines.append(f"{prefix}{first}")
-            indent = " " * len(prefix)
-            lines.extend(f"{indent}{line}" if line else "" for line in rest)
-        return "\n".join(lines)
-
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class QuoteBlock:
@@ -413,15 +240,6 @@ class QuoteBlock:
     """
 
     children: tuple[Block, ...]
-
-    def as_markdown(self) -> str:
-        """Render back to markdown.
-
-        Returns:
-            A markdown string.
-        """
-        inner = "\n\n".join(child.as_markdown() for child in self.children)
-        return "\n".join(f"> {line}" if line else ">" for line in inner.split("\n"))
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -447,15 +265,6 @@ class TableRow:
 
     cells: tuple[TableCell, ...]
 
-    def as_markdown(self) -> str:
-        """Render back to markdown.
-
-        Returns:
-            A markdown string.
-        """
-        cells = " | ".join(_spans_as_markdown(cell.children) for cell in self.cells)
-        return f"| {cells} |"
-
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class TableBlock:
@@ -469,39 +278,10 @@ class TableBlock:
     header: TableRow
     rows: tuple[TableRow, ...]
 
-    def as_markdown(self) -> str:
-        """Render back to markdown.
-
-        Returns:
-            A markdown string.
-        """
-        lines = [self.header.as_markdown()]
-        sep_parts: list[str] = []
-        for cell in self.header.cells:
-            if cell.align == "left":
-                sep_parts.append(":---")
-            elif cell.align == "right":
-                sep_parts.append("---:")
-            elif cell.align == "center":
-                sep_parts.append(":---:")
-            else:
-                sep_parts.append("---")
-        lines.append(f"| {' | '.join(sep_parts)} |")
-        lines.extend(row.as_markdown() for row in self.rows)
-        return "\n".join(lines)
-
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ThematicBreakBlock:
     """A thematic break (horizontal rule)."""
-
-    def as_markdown(self) -> str:
-        """Render back to markdown.
-
-        Returns:
-            A markdown string.
-        """
-        return "---"
 
 
 #: Union of all block types that can appear in a parsed document.
@@ -544,15 +324,3 @@ class Document:
     def directives(self) -> tuple[DirectiveBlock, ...]:
         """Return all directive blocks in the document."""
         return tuple(b for b in self.blocks if isinstance(b, DirectiveBlock))
-
-    def as_markdown(self) -> str:
-        """Render the full document back to markdown.
-
-        Returns:
-            A markdown string.
-        """
-        parts: list[str] = []
-        if self.frontmatter:
-            parts.append(self.frontmatter.as_markdown())
-        parts.extend(block.as_markdown() for block in self.blocks)
-        return "\n\n".join(parts) + "\n"

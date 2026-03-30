@@ -1,5 +1,6 @@
 """Markdown parsing and types for Reflex documentation."""
 
+from reflex_docgen.markdown import transformer as transformer
 from reflex_docgen.markdown._parser import parse_document as parse_document
 from reflex_docgen.markdown._types import Block as Block
 from reflex_docgen.markdown._types import BoldSpan as BoldSpan
@@ -52,4 +53,5 @@ __all__ = [
     "TextSpan",
     "ThematicBreakBlock",
     "parse_document",
+    "transformer",
 ]

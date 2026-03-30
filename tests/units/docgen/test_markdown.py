@@ -5,19 +5,33 @@ from pathlib import Path
 import pytest
 from reflex_docgen.markdown import (
     BoldSpan,
+    CodeBlock,
     CodeSpan,
     ComponentPreview,
+    DirectiveBlock,
     FrontMatter,
+    HeadingBlock,
     ImageSpan,
     ItalicSpan,
+    LineBreakSpan,
     LinkSpan,
+    ListBlock,
+    ListItem,
+    QuoteBlock,
     StrikethroughSpan,
+    TableBlock,
+    TableCell,
+    TableRow,
     TextBlock,
     TextSpan,
+    ThematicBreakBlock,
     parse_document,
 )
+from reflex_docgen.markdown.transformer import MarkdownTransformer
 
 _DOCS_DIR = Path(__file__).resolve().parents[3] / "docs"
+
+_md = MarkdownTransformer()
 
 
 def test_no_frontmatter():
@@ -104,7 +118,7 @@ def test_multiple_previews():
     assert "InputSlot" in names
 
 
-def test_as_markdown_frontmatter_with_previews():
+def test_transform_frontmatter_with_previews():
     """FrontMatter with component previews renders correctly."""
     fm = FrontMatter(
         components=("rx.button",),
@@ -117,14 +131,14 @@ def test_as_markdown_frontmatter_with_previews():
             ),
         ),
     )
-    md = fm.as_markdown()
+    md = _md.frontmatter(fm)
     assert md.startswith("---\n")
     assert md.endswith("\n---")
     assert "rx.button" in md
     assert "Button:" in md
 
 
-def test_as_markdown_frontmatter_with_only_low_level():
+def test_transform_frontmatter_with_only_low_level():
     """FrontMatter with only_low_level renders the field."""
     fm = FrontMatter(
         components=(),
@@ -132,7 +146,7 @@ def test_as_markdown_frontmatter_with_only_low_level():
         title=None,
         component_previews=(),
     )
-    assert "only_low_level" in fm.as_markdown()
+    assert "only_low_level" in _md.frontmatter(fm)
 
 
 def test_h1():
@@ -462,89 +476,81 @@ def test_parse_all_doc_files(md_file: Path):
     # Sanity check: a non-empty file should produce at least one block.
     if source.strip():
         assert len(doc.blocks) > 0
-    # Verify as_markdown doesn't crash on any doc file.
-    doc.as_markdown()
+    # Verify transform doesn't crash on any doc file.
+    _md.transform(doc)
 
 
 # ---------------------------------------------------------------------------
-# as_markdown round-trip tests
+# MarkdownTransformer round-trip tests
 # ---------------------------------------------------------------------------
 
 
-def test_as_markdown_text_span():
+def test_transform_text_span():
     """TextSpan renders back to plain text."""
-    assert TextSpan(text="hello").as_markdown() == "hello"
+    assert _md.text_span(TextSpan(text="hello")) == "hello"
 
 
-def test_as_markdown_code_span():
+def test_transform_code_span():
     """CodeSpan renders back with backticks."""
-    assert CodeSpan(code="rx.button").as_markdown() == "`rx.button`"
+    assert _md.code_span(CodeSpan(code="rx.button")) == "`rx.button`"
 
 
-def test_as_markdown_bold_span():
+def test_transform_bold_span():
     """BoldSpan renders back with double asterisks."""
     span = BoldSpan(children=(TextSpan(text="bold"),))
-    assert span.as_markdown() == "**bold**"
+    assert _md.bold(span) == "**bold**"
 
 
-def test_as_markdown_italic_span():
+def test_transform_italic_span():
     """ItalicSpan renders back with single asterisks."""
     span = ItalicSpan(children=(TextSpan(text="italic"),))
-    assert span.as_markdown() == "*italic*"
+    assert _md.italic(span) == "*italic*"
 
 
-def test_as_markdown_strikethrough_span():
+def test_transform_strikethrough_span():
     """StrikethroughSpan renders back with tildes."""
     span = StrikethroughSpan(children=(TextSpan(text="struck"),))
-    assert span.as_markdown() == "~~struck~~"
+    assert _md.strikethrough(span) == "~~struck~~"
 
 
-def test_as_markdown_link_span():
+def test_transform_link_span():
     """LinkSpan renders back as a markdown link."""
     span = LinkSpan(children=(TextSpan(text="click"),), target="http://x.com")
-    assert span.as_markdown() == "[click](http://x.com)"
+    assert _md.link(span) == "[click](http://x.com)"
 
 
-def test_as_markdown_image_span():
+def test_transform_image_span():
     """ImageSpan renders back as a markdown image."""
     span = ImageSpan(children=(TextSpan(text="alt"),), src="img.png")
-    assert span.as_markdown() == "![alt](img.png)"
+    assert _md.image(span) == "![alt](img.png)"
 
 
-def test_as_markdown_line_break_soft():
+def test_transform_line_break_soft():
     """Soft LineBreakSpan renders as a newline."""
-    from reflex_docgen.markdown import LineBreakSpan
-
-    assert LineBreakSpan(soft=True).as_markdown() == "\n"
+    assert _md.line_break(LineBreakSpan(soft=True)) == "\n"
 
 
-def test_as_markdown_line_break_hard():
+def test_transform_line_break_hard():
     """Hard LineBreakSpan renders as two spaces + newline."""
-    from reflex_docgen.markdown import LineBreakSpan
-
-    assert LineBreakSpan(soft=False).as_markdown() == "  \n"
+    assert _md.line_break(LineBreakSpan(soft=False)) == "  \n"
 
 
-def test_as_markdown_nested_spans():
+def test_transform_nested_spans():
     """Nested spans render correctly."""
     span = BoldSpan(children=(CodeSpan(code="x"), TextSpan(text=" = 1")))
-    assert span.as_markdown() == "**`x` = 1**"
+    assert _md.bold(span) == "**`x` = 1**"
 
 
-def test_as_markdown_heading():
+def test_transform_heading():
     """HeadingBlock renders with the correct number of hashes."""
-    from reflex_docgen.markdown import HeadingBlock
-
     h1 = HeadingBlock(level=1, children=(TextSpan(text="Title"),))
-    assert h1.as_markdown() == "# Title"
+    assert _md.heading(h1) == "# Title"
     h3 = HeadingBlock(level=3, children=(TextSpan(text="Sub"),))
-    assert h3.as_markdown() == "### Sub"
+    assert _md.heading(h3) == "### Sub"
 
 
-def test_as_markdown_heading_with_inline():
+def test_transform_heading_with_inline():
     """HeadingBlock with mixed spans renders correctly."""
-    from reflex_docgen.markdown import HeadingBlock
-
     h = HeadingBlock(
         level=2,
         children=(
@@ -553,45 +559,37 @@ def test_as_markdown_heading_with_inline():
             TextSpan(text=" API"),
         ),
     )
-    assert h.as_markdown() == "## The `rx.button` API"
+    assert _md.heading(h) == "## The `rx.button` API"
 
 
-def test_as_markdown_text_block():
+def test_transform_text_block():
     """TextBlock renders its children as a paragraph."""
     block = TextBlock(
         children=(TextSpan(text="Hello "), BoldSpan(children=(TextSpan(text="world"),)))
     )
-    assert block.as_markdown() == "Hello **world**"
+    assert _md.text_block(block) == "Hello **world**"
 
 
-def test_as_markdown_code_block():
+def test_transform_code_block():
     """CodeBlock renders as a fenced code block."""
-    from reflex_docgen.markdown import CodeBlock
-
     cb = CodeBlock(language="python", flags=("demo", "exec"), content="x = 1")
-    assert cb.as_markdown() == "```python demo exec\nx = 1\n```"
+    assert _md.code_block(cb) == "```python demo exec\nx = 1\n```"
 
 
-def test_as_markdown_code_block_no_language():
+def test_transform_code_block_no_language():
     """CodeBlock without language renders with empty info string."""
-    from reflex_docgen.markdown import CodeBlock
-
     cb = CodeBlock(language=None, flags=(), content="plain")
-    assert cb.as_markdown() == "```\nplain\n```"
+    assert _md.code_block(cb) == "```\nplain\n```"
 
 
-def test_as_markdown_directive():
+def test_transform_directive():
     """DirectiveBlock renders as a fenced md block."""
-    from reflex_docgen.markdown import DirectiveBlock
-
     d = DirectiveBlock(name="alert", args=("info",), content="Be careful.")
-    assert d.as_markdown() == "```md alert info\nBe careful.\n```"
+    assert _md.directive(d) == "```md alert info\nBe careful.\n```"
 
 
-def test_as_markdown_list_unordered():
+def test_transform_list_unordered():
     """Unordered ListBlock renders with dashes."""
-    from reflex_docgen.markdown import ListBlock, ListItem
-
     lb = ListBlock(
         ordered=False,
         start=None,
@@ -600,13 +598,11 @@ def test_as_markdown_list_unordered():
             ListItem(children=(TextBlock(children=(TextSpan(text="two"),)),)),
         ),
     )
-    assert lb.as_markdown() == "- one\n- two"
+    assert _md.list_block(lb) == "- one\n- two"
 
 
-def test_as_markdown_list_ordered():
+def test_transform_list_ordered():
     """Ordered ListBlock renders with numbers."""
-    from reflex_docgen.markdown import ListBlock, ListItem
-
     lb = ListBlock(
         ordered=True,
         start=1,
@@ -615,21 +611,17 @@ def test_as_markdown_list_ordered():
             ListItem(children=(TextBlock(children=(TextSpan(text="second"),)),)),
         ),
     )
-    assert lb.as_markdown() == "1. first\n2. second"
+    assert _md.list_block(lb) == "1. first\n2. second"
 
 
-def test_as_markdown_quote():
+def test_transform_quote():
     """QuoteBlock renders with > prefix."""
-    from reflex_docgen.markdown import QuoteBlock
-
     q = QuoteBlock(children=(TextBlock(children=(TextSpan(text="wise words"),)),))
-    assert q.as_markdown() == "> wise words"
+    assert _md.quote(q) == "> wise words"
 
 
-def test_as_markdown_table():
+def test_transform_table():
     """TableBlock renders as a markdown table."""
-    from reflex_docgen.markdown import TableBlock, TableCell, TableRow
-
     table = TableBlock(
         header=TableRow(
             cells=(
@@ -647,17 +639,15 @@ def test_as_markdown_table():
         ),
     )
     expected = "| Name | Value |\n| --- | ---: |\n| a | 1 |"
-    assert table.as_markdown() == expected
+    assert _md.table(table) == expected
 
 
-def test_as_markdown_thematic_break():
+def test_transform_thematic_break():
     """ThematicBreakBlock renders as ---."""
-    from reflex_docgen.markdown import ThematicBreakBlock
-
-    assert ThematicBreakBlock().as_markdown() == "---"
+    assert _md.thematic_break(ThematicBreakBlock()) == "---"
 
 
-def test_as_markdown_frontmatter():
+def test_transform_frontmatter():
     """FrontMatter renders with --- delimiters."""
     fm = FrontMatter(
         components=(),
@@ -665,14 +655,14 @@ def test_as_markdown_frontmatter():
         title="Test",
         component_previews=(),
     )
-    md = fm.as_markdown()
+    md = _md.frontmatter(fm)
     assert md.startswith("---\n")
     assert md.endswith("\n---")
     assert "title: Test" in md
 
 
-def test_as_markdown_document_roundtrip():
-    """Document.as_markdown produces valid markdown that re-parses consistently."""
+def test_transform_document_roundtrip():
+    """MarkdownTransformer produces valid markdown that re-parses consistently."""
     source = """\
 ---
 title: Test
@@ -697,10 +687,10 @@ Be careful.
 ---
 """
     doc = parse_document(source)
-    rendered = doc.as_markdown()
+    rendered = _md.transform(doc)
     doc2 = parse_document(rendered)
     # The re-parsed document should produce the same markdown.
-    assert doc2.as_markdown() == rendered
+    assert _md.transform(doc2) == rendered
 
 
 def test_nested_code_block_in_directive():
@@ -729,7 +719,7 @@ def test_nested_code_block_roundtrip():
     """Nested code blocks survive a parse-render-reparse cycle."""
     source = "````md alert warning\n# Note\n\n```python\nx = 1\n```\n````\n"
     doc = parse_document(source)
-    rendered = doc.as_markdown()
+    rendered = _md.transform(doc)
     doc2 = parse_document(rendered)
     assert len(doc2.directives) == 1
     assert doc2.directives[0].content == doc.directives[0].content
