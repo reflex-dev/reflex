@@ -173,12 +173,12 @@ class DirectiveBlock:
     Attributes:
         name: The directive name (e.g. "alert", "video", "definition", "section").
         args: Additional arguments after the name (e.g. ("info",) or ("https://...",)).
-        content: The raw content inside the block.
+        children: The parsed block-level content inside the directive.
     """
 
     name: str
     args: tuple[str, ...]
-    content: str
+    children: tuple[Block, ...]
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

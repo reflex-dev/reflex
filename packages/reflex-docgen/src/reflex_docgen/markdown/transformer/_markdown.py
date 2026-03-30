@@ -133,8 +133,9 @@ class MarkdownTransformer(DocumentTransformer[str]):
 
     def directive(self, block: DirectiveBlock) -> str:
         info_parts = ["md", block.name, *block.args]
-        fence = _fence_for(block.content)
-        return f"{fence}{' '.join(info_parts)}\n{block.content}\n{fence}"
+        content = "\n\n".join(self.transform_blocks(block.children))
+        fence = _fence_for(content)
+        return f"{fence}{' '.join(info_parts)}\n{content}\n{fence}"
 
     def heading(self, block: HeadingBlock) -> str:
         inner = "".join(self.transform_spans(block.children))

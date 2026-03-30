@@ -283,7 +283,9 @@ def test_directive_definition():
     d = doc.directives[0]
     assert d.name == "definition"
     assert d.args == ()
-    assert d.content == "Some definition content."
+    assert d.children == (
+        TextBlock(children=(TextSpan(text="Some definition content."),)),
+    )
 
 
 def test_directive_section():
@@ -584,7 +586,11 @@ def test_transform_code_block_no_language():
 
 def test_transform_directive():
     """DirectiveBlock renders as a fenced md block."""
-    d = DirectiveBlock(name="alert", args=("info",), content="Be careful.")
+    d = DirectiveBlock(
+        name="alert",
+        args=("info",),
+        children=(TextBlock(children=(TextSpan(text="Be careful."),)),),
+    )
     assert _md.directive(d) == "```md alert info\nBe careful.\n```"
 
 
@@ -700,8 +706,11 @@ def test_nested_code_block_in_directive():
     assert len(doc.directives) == 1
     d = doc.directives[0]
     assert d.name == "alert"
-    assert "```python" in d.content
-    assert "x = 1" in d.content
+    # The directive's children should contain a parsed CodeBlock with the nested fence.
+    code_blocks = [b for b in d.children if isinstance(b, CodeBlock)]
+    assert len(code_blocks) == 1
+    assert code_blocks[0].language == "python"
+    assert "x = 1" in code_blocks[0].content
 
 
 def test_nested_code_block_in_code_block():
@@ -722,4 +731,4 @@ def test_nested_code_block_roundtrip():
     rendered = _md.transform(doc)
     doc2 = parse_document(rendered)
     assert len(doc2.directives) == 1
-    assert doc2.directives[0].content == doc.directives[0].content
+    assert doc2.directives[0].children == doc.directives[0].children

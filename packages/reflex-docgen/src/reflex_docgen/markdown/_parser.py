@@ -253,7 +253,7 @@ def _convert_block(token: BlockToken) -> Block | None:
             return DirectiveBlock(
                 name=flags[0],
                 args=flags[1:],
-                content=content,
+                children=_parse_blocks(content),
             )
 
         return CodeBlock(language=language, flags=flags, content=content)
@@ -346,6 +346,31 @@ def _convert_table_row(
         for i, cell_token in enumerate(children)
     ]
     return TableRow(cells=tuple(cells))
+
+
+def _parse_blocks(source: str) -> tuple[Block, ...]:
+    """Parse a markdown string into a tuple of Blocks.
+
+    Args:
+        source: The raw markdown source string.
+
+    Returns:
+        A tuple of parsed Block objects.
+    """
+    from mistletoe.block_token import BlockToken
+    from mistletoe.block_token import Document as MistletoeDocument
+
+    doc = MistletoeDocument(source)
+    result: list[Block] = []
+    if doc.children:
+        for child in doc.children:
+            if not isinstance(child, BlockToken):
+                msg = f"Expected BlockToken, got {type(child).__name__}"
+                raise TypeError(msg)
+            block = _convert_block(child)
+            if block is not None:
+                result.append(block)
+    return tuple(result)
 
 
 def parse_document(source: str) -> Document:
