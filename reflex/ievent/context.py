@@ -31,7 +31,7 @@ def get_name(cls: type | Callable) -> str:
 class EnqueueProtocol(Protocol):
     """Protocol for the enqueue function in the event context."""
 
-    async def __call__(self, token: str, *events: Event) -> None:
+    async def __call__(self, token: str, *events: Event) -> Any:
         """Enqueue an event handler to be executed.
 
         Args:
@@ -44,7 +44,7 @@ class EnqueueProtocol(Protocol):
 class EmitEventProtocol(Protocol):
     """Protocol for the emit_event function in the event context."""
 
-    async def __call__(self, token: str, *events: Event) -> None:
+    async def __call__(self, token: str, *events: Event) -> Any:
         """Emit an event to be processed immediately.
 
         Args:
@@ -61,7 +61,7 @@ class EmitDeltaProtocol(Protocol):
         self,
         token: str,
         delta: Mapping[str, Mapping[str, Any]],
-    ) -> None:
+    ) -> Any:
         """Emit a delta to the frontend.
 
         Args:

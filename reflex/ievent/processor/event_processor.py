@@ -6,7 +6,7 @@ import dataclasses
 import inspect
 import time
 import traceback
-from collections.abc import Callable, Mapping
+from collections.abc import AsyncGenerator, Callable, Mapping
 from contextvars import Token, copy_context
 from typing import TYPE_CHECKING, Any, Self
 
@@ -103,6 +103,9 @@ class EventProcessor:
         default=None, init=False
     )
     _tasks: dict[str, asyncio.Task] = dataclasses.field(
+        default_factory=dict, init=False
+    )
+    _futures: dict[str, asyncio.Future[Any]] = dataclasses.field(
         default_factory=dict, init=False
     )
 
@@ -290,6 +293,11 @@ class EventProcessor:
                     )
                 )
             self._queue_task = None
+        # Cancel any remaining unresolved futures.
+        for future in self._futures.values():
+            if not future.done():
+                future.cancel()
+        self._futures.clear()
 
     async def join(self, timeout: float | None = None) -> None:
         """Wait for the event processor to finish processing all events in the queue.
@@ -329,13 +337,16 @@ class EventProcessor:
 
     async def enqueue(
         self, token: str, *events: Event, ev_ctx: EventContext | None = None
-    ) -> None:
+    ) -> asyncio.Future[Any]:
         """Enqueue an event to be processed.
 
         Args:
             token: The client token associated with the event.
             events: Remaining positional args are events to be enqueued.
             ev_ctx: The event context to use for these events.
+
+        Returns:
+            A Future that resolves to the result of the associated task.
         """
         if ev_ctx is None:
             try:
@@ -347,8 +358,88 @@ class EventProcessor:
                     msg = "Event processor is not running, call .start(...) first."
                     raise RuntimeError(msg) from le
         queue = self._ensure_queue_task()
+        future: asyncio.Future[Any] = asyncio.get_running_loop().create_future()
+        txid = ev_ctx.txid
+        self._futures[txid] = future
+        future.add_done_callback(lambda f: self._on_future_done(txid, f))
         for event in events:
             await queue.put(EventQueueEntry(event=event, ctx=ev_ctx))
+        return future
+
+    async def enqueue_stream_delta(
+        self,
+        token: str,
+        event: Event,
+    ) -> AsyncGenerator[Mapping[str, Any]]:
+        """Enqueue an event to be processed and yield deltas emitted by the event handler.
+
+        Events queued by this method will not emit deltas to their target token in the typical way, instead
+        they will be yielded from this generator until the event handler finishes processing.
+        Deltas emitted for other tokens will be handled normally.
+
+        Any frontend events or chained events are handled normally and deltas from chained events
+        will not be yielded by this method.
+
+        Args:
+            token: The client token associated with the event.
+            event: The event to be enqueued.
+
+        Yields:
+            Deltas emitted by the event handler for the specified token.
+        """
+        if self._root_context is None:
+            msg = "Event processor is not configured, call .configure(...) first."
+            raise RuntimeError(msg)
+
+        deltas = asyncio.Queue()
+
+        async def _emit_delta_impl(
+            delta_token: str, delta: Mapping[str, Mapping[str, Any]]
+        ) -> None:
+            if (
+                delta_token != token
+                and self._root_context is not None
+                and self._root_context.emit_delta_impl is not None
+            ):
+                # Emit deltas for other tokens normally.
+                await self._root_context.emit_delta_impl(token, delta)
+            await deltas.put(delta)
+
+        task_future = await self.enqueue(
+            token,
+            event,
+            ev_ctx=dataclasses.replace(
+                self._root_context,
+                token=token,
+                emit_delta_impl=_emit_delta_impl,
+            ),
+        )
+        while not task_future.done() or not deltas.empty():
+            with contextlib.suppress(asyncio.TimeoutError):
+                async for result in asyncio.as_completed(
+                    [deltas.get(), *([task_future] if not task_future.done() else [])],
+                    timeout=1,
+                ):
+                    if result is task_future:
+                        continue
+                    yield await result
+
+    def _on_future_done(self, txid: str, future: asyncio.Future) -> None:
+        """Callback invoked when an enqueued future completes.
+
+        If the future was cancelled externally, cancel the running task
+        if one exists.  If the task has not started yet, ``_process_queue``
+        will check the future and skip it when the entry is dequeued.
+
+        Args:
+            txid: The transaction id associated with the future.
+            future: The future that completed.
+        """
+        if not future.cancelled():
+            return
+        task = self._tasks.get(txid)
+        if task is not None:
+            task.cancel()
 
     async def _process_event_queue_entry(
         self, *, entry: EventQueueEntry, registered_handler: RegisteredEventHandler
@@ -384,6 +475,12 @@ class EventProcessor:
         with contextlib.suppress(asyncio.QueueShutDown):
             while True:
                 entry = await queue.get()
+                if (
+                    future := self._futures.get(entry.ctx.txid)
+                ) is not None and future.cancelled():
+                    self._futures.pop(entry.ctx.txid, None)
+                    queue.task_done()
+                    continue
                 try:
                     try:
                         registered_handler = RegistrationContext.get().event_handlers[
@@ -439,12 +536,16 @@ class EventProcessor:
 
         task_ctx = task.get_context().run(EventContext.get)
         self._tasks.pop(task_ctx.txid, None)
+        future = self._futures.pop(task_ctx.txid, None)
         if task.done():
             try:
-                task.result()
+                result = task.result()
             except asyncio.CancelledError:
-                pass
+                if future is not None and not future.done():
+                    future.cancel()
             except Exception as ex:
+                if future is not None and not future.done():
+                    future.set_exception(ex)
                 telemetry.send_error(ex, context="backend")
                 if (
                     not task.get_name().startswith("reflex_backend_exception_handler|")
@@ -463,6 +564,9 @@ class EventProcessor:
                         f"Error in {task.get_name()} [txid={task_ctx.txid}]:\n{traceback.format_exc()}"
                     )
                 )
+            else:
+                if future is not None and not future.done():
+                    future.set_result(result)
 
 
 __all__ = [
