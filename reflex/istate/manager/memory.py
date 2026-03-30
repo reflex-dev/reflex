@@ -92,7 +92,9 @@ class StateManagerMemory(StateManager):
             ) is not None and state_lock.locked():
                 continue
             if expires_at <= now:
-                self._purge_token(token)
+                self._purge_token(
+                    BaseStateToken(ident=token, cls=type(self.states[token]))
+                )
                 continue
             if next_expires_at is None or expires_at < next_expires_at:
                 next_expires_at = expires_at

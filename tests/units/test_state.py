@@ -3583,9 +3583,7 @@ config = rx.Config(
     with chdir(proj_root):
         reflex_core.config.get_config(reload=True)
         monkeypatch.setattr(prerequisites, "get_redis", mock_redis)
-        from reflex.state import State
-
-        state_manager = StateManager.create(state=State)
+        state_manager = StateManager.create()
         assert isinstance(state_manager, StateManagerMemory)
 
         del sys.modules[constants.Config.MODULE]
