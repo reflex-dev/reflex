@@ -21,11 +21,9 @@ We **highly recommend** creating a virtual environment for your project.
 
 # Install Reflex on your system
 
----md tabs
+`````md tabs
 
---tab macOS/Linux
-
-## Install on macOS/Linux
+## macOS/Linux
 
 We will go with [uv](https://docs.astral.sh/uv/) here.
 
@@ -72,10 +70,8 @@ uv add reflex
 uv run reflex init
 ```
 
---
---tab Windows
 
-## Install on Windows
+## Windows
 
 For Windows users, we recommend using [Windows Subsystem for Linux (WSL)](https://learn.microsoft.com/en-us/windows/wsl/about) for optimal performance.
 
@@ -130,10 +126,7 @@ uv run reflex init
 Bun requires runtime components of Visual C++ libraries to run on Windows. This issue is fixed by installing [Microsoft Visual C++ 2015 Redistributable](https://www.microsoft.com/en-us/download/details.aspx?id=53840).
 ```
 
---
-
----
-
+`````
 Running `uv run reflex init` will return the option to start with a blank Reflex app, premade templates built by the Reflex team, or to try our [AI builder](https://build.reflex.dev/).
 
 ```bash

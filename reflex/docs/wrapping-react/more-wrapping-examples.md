@@ -18,9 +18,9 @@ Moving to line `26` we see that the `AgCharts` has a prop `options`. In order to
 
 Lines `31` and `32` are rendering the component inside the root element. This can be ignored when we are wrapping a component as it is done in Reflex by creating an `index` function and adding it to the app.
 
----md tabs
+`````md tabs
 
---tab React Code
+## React Code
 
 ```javascript
 1 | import React, \{ useState } from 'react';
@@ -57,8 +57,8 @@ Lines `31` and `32` are rendering the component inside the root element. This ca
 32| root.render(<ChartExample />);
 ```
 
---
---tab Reflex Code
+
+## Reflex Code
 
 ```python
 import reflex as rx
@@ -99,10 +99,7 @@ app = rx.App()
 app.add_page(index)
 ```
 
---
-
----
-
+`````
 ## React Leaflet
 
 
@@ -120,9 +117,9 @@ The `TileLayer` component has a prop `url` which we wrap in the `TileLayer` comp
 
 Lines `24` and `25` defines and exports a React functional component named `Home` which returns the `MapComponent` component. This can be ignored in the Reflex code when wrapping the component as we return the `map_container` component in the `index` function.
 
----md tabs
+`````md tabs
 
---tab React Code
+## React Code
 
 ```javascript
 1 | import dynamic from "next/dynamic";
@@ -153,8 +150,8 @@ Lines `24` and `25` defines and exports a React functional component named `Home
 26| }
 ```
 
---
---tab Reflex Code
+
+## Reflex Code
 
 ```python
 import reflex as rx
@@ -205,10 +202,7 @@ app.add_page(index)
 
 ```
 
---
-
----
-
+`````
 ## React PDF Renderer
 
 In this example we are wrapping the React renderer for creating PDF files on the browser and server from the NPM package [@react-pdf/renderer](https://www.npmjs.com/package/@react-pdf/renderer).
@@ -285,9 +279,9 @@ _State class associated with this component instance_
 `State: Optional[Type[reflex.state.State]] = None`
 ```
 
----md tabs
+`````md tabs
 
---tab React Code
+## React Code
 
 ```javascript
 1 | import ReactDOM from 'react-dom';
@@ -329,8 +323,8 @@ _State class associated with this component instance_
 37| ReactDOM.render(<App />, document.getElementById('root'));
 ```
 
---
---tab Reflex Code
+
+## Reflex Code
 
 ```python
 import reflex as rx
@@ -437,6 +431,4 @@ app = rx.App()
 app.add_page(index)
 ```
 
---
-
----
+`````
