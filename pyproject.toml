@@ -124,7 +124,7 @@ source = "uv-dynamic-versioning"
 fallback-version = "0.0.0dev0"
 
 [tool.hatch.build]
-include = ["reflex", "scripts/hatch_build.py"]
+include = ["reflex", "scripts/hatch_build.py", "docs"]
 targets.sdist.artifacts = ["*.pyi"]
 targets.wheel.artifacts = ["*.pyi"]
 
