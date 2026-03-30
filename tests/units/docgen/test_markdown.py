@@ -29,7 +29,7 @@ from reflex_docgen.markdown import (
 )
 from reflex_docgen.markdown.transformer import MarkdownTransformer
 
-_DOCS_DIR = Path(__file__).resolve().parents[3] / "docs"
+_DOCS_DIR = Path(__file__).resolve().parents[3] / "reflex" / "docs"
 
 _md = MarkdownTransformer()
 
