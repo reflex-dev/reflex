@@ -4,3 +4,4 @@ paths:
   - packages
 paths-ignore:
   - "**/tests/**"
+  - "**/.templates/**"
