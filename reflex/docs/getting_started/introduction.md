@@ -2,8 +2,6 @@
 import reflex as rx
 ```
 
-<!-- TODO how do we consistently rename page title? -->
-
 # Introduction
 
 **Reflex** is an open-source framework for quickly building beautiful, interactive web applications in **pure Python**.
