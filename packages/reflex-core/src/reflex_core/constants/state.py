@@ -11,9 +11,6 @@ class StateManagerMode(str, Enum):
     REDIS = "redis"
 
 
-# Used for things like console_log, etc.
-FRONTEND_EVENT_STATE = "__reflex_internal_frontend_event_state"
-
 FIELD_MARKER = "_rx_state_"
 MEMO_MARKER = "_rx_memo_"
 CAMEL_CASE_MEMO_MARKER = "RxMemo"

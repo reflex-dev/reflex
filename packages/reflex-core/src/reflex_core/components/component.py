@@ -36,7 +36,7 @@ from reflex_core.constants import (
     PageNames,
 )
 from reflex_core.constants.compiler import SpecialAttributes
-from reflex_core.constants.state import CAMEL_CASE_MEMO_MARKER, FRONTEND_EVENT_STATE
+from reflex_core.constants.state import CAMEL_CASE_MEMO_MARKER
 from reflex_core.event import (
     EventCallback,
     EventChain,
@@ -1523,10 +1523,7 @@ class Component(BaseComponent, ABC):
                     if isinstance(event, EventCallback):
                         continue
                     if isinstance(event, EventSpec):
-                        if (
-                            event.handler.state_full_name
-                            and event.handler.state_full_name != FRONTEND_EVENT_STATE
-                        ):
+                        if event.handler.state is not None:
                             return True
                     else:
                         if event._var_state:
