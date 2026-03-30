@@ -242,7 +242,7 @@ class TailwindDynamicClassState(rx.State):
         self.active = not self.active
 
 
-def tailwind_demo():
+def tailwind_dynamic_class_demo():
     return rx.el.button(
         f"Click me: {TailwindDynamicClassState.active}",
         class_name=TailwindDynamicClassState.button_class,
