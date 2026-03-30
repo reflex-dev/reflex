@@ -232,7 +232,7 @@ When using Tailwind with Reflex, it's important to understand that class names m
 For example, this won't work correctly because the class names are defined in the state:
 
 ```python demo exec
-class TailwindDynamicClassState(rx.State):
+class TailwindState(rx.State):
     active = False
 
     @rx.var
@@ -246,9 +246,9 @@ class TailwindDynamicClassState(rx.State):
 
 def tailwind_demo():
     return rx.el.button(
-        f"Click me: {TailwindDynamicClassState.active}",
-        class_name=TailwindDynamicClassState.button_class,
-        on_click=TailwindDynamicClassState.toggle_active,
+        f"Click me: {TailwindState.active}",
+        class_name=TailwindState.button_class,
+        on_click=TailwindState.toggle_active,
     )
 ```
 
