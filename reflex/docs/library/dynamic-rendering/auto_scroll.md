@@ -11,11 +11,13 @@ The `rx.auto_scroll` component is a div that automatically scrolls to the bottom
 ```python demo exec
 import reflex as rx
 
+
 class AutoScrollState(rx.State):
     messages: list[str] = ["Initial message"]
 
     def add_message(self):
         self.messages.append(f"New message #{len(self.messages) + 1}")
+
 
 def auto_scroll_example():
     return rx.vstack(
@@ -26,8 +28,8 @@ def auto_scroll_example():
                     message,
                     padding="0.5em",
                     border_bottom="1px solid #eee",
-                    width="100%"
-                )
+                    width="100%",
+                ),
             ),
             height="200px",
             width="300px",

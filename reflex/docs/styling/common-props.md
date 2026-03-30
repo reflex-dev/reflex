@@ -2,7 +2,16 @@
 
 ```python exec
 import reflex as rx
-cell_style = {"font_family": "Instrument Sans", "font_style": "normal", "font_weight": "500", "font_size": "14px", "line_height": "1.5", "letter_spacing": "-0.0125em", "color": "var(--c-slate-11)"}
+
+cell_style = {
+    "font_family": "Instrument Sans",
+    "font_style": "normal",
+    "font_weight": "500",
+    "font_size": "14px",
+    "line_height": "1.5",
+    "letter_spacing": "-0.0125em",
+    "color": "var(--c-slate-11)",
+}
 c_color = lambda color, shade: f"var(--c-{color}-{shade})"
 
 props = {
@@ -13,12 +22,21 @@ props = {
     },
     "backdrop_filter": {
         "description": "Lets you apply graphical effects such as blurring or color shifting to the area behind an element",
-        "values": ["url(commonfilters.svg#filter)", "blur(2px)", "hue-rotate(120deg)", "drop-shadow(4px 4px 10px blue)"],
+        "values": [
+            "url(commonfilters.svg#filter)",
+            "blur(2px)",
+            "hue-rotate(120deg)",
+            "drop-shadow(4px 4px 10px blue)",
+        ],
         "link": "https://developer.mozilla.org/en-US/docs/Web/CSS/backdrop-filter",
     },
     "background": {
         "description": "Sets all background style properties at once, such as color, image, origin and size, or repeat method (equivalent to bg)",
-        "values": ["green", "radial-gradient(crimson, skyblue)", "no-repeat url('../lizard.png')"],
+        "values": [
+            "green",
+            "radial-gradient(crimson, skyblue)",
+            "no-repeat url('../lizard.png')",
+        ],
         "link": "https://developer.mozilla.org/en-US/docs/Web/CSS/background",
     },
     "background_color": {
@@ -33,17 +51,32 @@ props = {
     },
     "border": {
         "description": "Sets an element's border, which sets the values of border_width, border_style, and border_color.",
-        "values": ["solid", "dashed red", "thick double #32a1ce", "4mm ridge rgba(211, 220, 50, .6)"],
+        "values": [
+            "solid",
+            "dashed red",
+            "thick double #32a1ce",
+            "4mm ridge rgba(211, 220, 50, .6)",
+        ],
         "link": "https://developer.mozilla.org/en-US/docs/Web/CSS/border",
     },
     "border_top / border_bottom / border_right / border_left": {
         "description": "Sets an element's top / bottom / right / left border. It sets the values of border-(top / bottom / right / left)-width, border-(top / bottom / right / left)-style and border-(top / bottom / right / left)-color",
-        "values": ["solid", "dashed red", "thick double #32a1ce", "4mm ridge rgba(211, 220, 50, .6)"],
+        "values": [
+            "solid",
+            "dashed red",
+            "thick double #32a1ce",
+            "4mm ridge rgba(211, 220, 50, .6)",
+        ],
         "link": "https://developer.mozilla.org/en-US/docs/Web/CSS/border-bottom",
     },
     "border_color": {
         "description": "Sets the color of an element's border (each side can be set individually using border_top_color, border_right_color, border_bottom_color, and border_left_color)",
-        "values": ["red", "red #32a1ce", "red rgba(170, 50, 220, .6) green", "red yellow green transparent"],
+        "values": [
+            "red",
+            "red #32a1ce",
+            "red rgba(170, 50, 220, .6) green",
+            "red yellow green transparent",
+        ],
         "link": "https://developer.mozilla.org/en-US/docs/Web/CSS/border-color",
     },
     "border_radius": {
@@ -58,10 +91,14 @@ props = {
     },
     "box_shadow": {
         "description": "Adds shadow effects around an element's frame. You can set multiple effects separated by commas. A box shadow is described by X and Y offsets relative to the element, blur and spread radius, and color",
-        "values": ["10px 5px 5px red", "60px -16px teal", "12px 12px 2px 1px rgba(0, 0, 255, .2)", "3px 3px red, -1em 0 .4em olive;"],
+        "values": [
+            "10px 5px 5px red",
+            "60px -16px teal",
+            "12px 12px 2px 1px rgba(0, 0, 255, .2)",
+            "3px 3px red, -1em 0 .4em olive;",
+        ],
         "link": "https://developer.mozilla.org/en-US/docs/Web/CSS/box-shadow",
     },
-
     "color": {
         "description": "Sets the foreground color value of an element's text",
         "values": ["rebeccapurple", "rgb(255, 255, 128)", "#00a400"],
@@ -69,7 +106,16 @@ props = {
     },
     "display": {
         "description": "Sets whether an element is treated as a block or inline box and the layout used for its children, such as flow layout, grid or flex",
-        "values": ["block", "inline", "inline-block", "flex", "inline-flex", "grid", "inline-grid", "flow-root"],
+        "values": [
+            "block",
+            "inline",
+            "inline-block",
+            "flex",
+            "inline-flex",
+            "grid",
+            "inline-grid",
+            "flow-root",
+        ],
         "link": "https://developer.mozilla.org/en-US/docs/Web/CSS/display",
     },
     "flex_grow": {
@@ -84,7 +130,15 @@ props = {
     },
     "justify": {
         "description": "Defines how the browser distributes space between and around content items along the main-axis of a flex container, and the inline axis of a grid container (equivalent to justify_content)",
-        "values": ["start", "center", "flex-start", "space-between", "space-around", "space-evenly", "stretch"],
+        "values": [
+            "start",
+            "center",
+            "flex-start",
+            "space-between",
+            "space-around",
+            "space-evenly",
+            "stretch",
+        ],
         "link": "https://developer.mozilla.org/en-US/docs/Web/CSS/justify-content",
     },
     "margin": {
@@ -167,8 +221,6 @@ props = {
         "values": ["auto", "1", "5", "200"],
         "link": "https://developer.mozilla.org/en-US/docs/Web/CSS/z-index",
     },
-
-
 }
 
 
@@ -178,21 +230,50 @@ def show_props(key, props_dict):
         rx.table.cell(
             rx.link(
                 rx.hstack(
-                    rx.code(key, style={"color": rx.color("violet", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('violet', 5)}", "background": rx.color("violet", 3)}),
-                    rx.icon("square_arrow_out_up_right", color=c_color("slate", 9), size=15, flex_shrink="0"),
-                    align="center"
+                    rx.code(
+                        key,
+                        style={
+                            "color": rx.color("violet", 11),
+                            "border_radius": "0.25rem",
+                            "border": f"1px solid {rx.color('violet', 5)}",
+                            "background": rx.color("violet", 3),
+                        },
+                    ),
+                    rx.icon(
+                        "square_arrow_out_up_right",
+                        color=c_color("slate", 9),
+                        size=15,
+                        flex_shrink="0",
+                    ),
+                    align="center",
                 ),
                 href=prop_details["link"],
                 is_external=True,
             ),
-            justify="start",),
+            justify="start",
+        ),
         rx.table.cell(prop_details["description"], justify="start", style=cell_style),
-        rx.table.cell(rx.hstack(*[rx.code(value, style={"color": rx.color("violet", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('violet', 5)}", "background": rx.color("violet", 3)}) for value in prop_details["values"]], flex_wrap="wrap"), justify="start",),
+        rx.table.cell(
+            rx.hstack(
+                *[
+                    rx.code(
+                        value,
+                        style={
+                            "color": rx.color("violet", 11),
+                            "border_radius": "0.25rem",
+                            "border": f"1px solid {rx.color('violet', 5)}",
+                            "background": rx.color("violet", 3),
+                        },
+                    )
+                    for value in prop_details["values"]
+                ],
+                flex_wrap="wrap",
+            ),
+            justify="start",
+        ),
         justify="center",
         align="center",
-
     )
-
 ```
 
 Any [CSS](https://developer.mozilla.org/en-US/docs/Web/CSS) prop can be used in a component in Reflex. This is a short list of the most commonly used props. To see all CSS props that can be used check out this [documentation](https://developer.mozilla.org/en-US/docs/Web/CSS).
@@ -203,13 +284,10 @@ Hyphens in CSS property names may be replaced by underscores to use as valid pyt
 rx.table.root(
     rx.table.header(
         rx.table.row(
-            rx.table.column_header_cell(
-                "Prop", justify="center"
-            ),
+            rx.table.column_header_cell("Prop", justify="center"),
             rx.table.column_header_cell(
                 "Description",
                 justify="center",
-
             ),
             rx.table.column_header_cell(
                 "Potential Values",
@@ -217,9 +295,7 @@ rx.table.root(
             ),
         )
     ),
-    rx.table.body(
-        *[show_props(key, props) for key in props]
-    ),
+    rx.table.body(*[show_props(key, props) for key in props]),
     width="100%",
     padding_x="0",
     size="1",

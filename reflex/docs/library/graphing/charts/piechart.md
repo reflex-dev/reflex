@@ -16,51 +16,28 @@ For a pie chart we must define an `rx.recharts.pie()` component for each set of 
 We also use the `fill` prop to set the color of the pie slices.
 
 ```python demo graphing
-
 data01 = [
-  {
-    "name": "Group A",
-    "value": 400
-  },
-  {
-    "name": "Group B",
-    "value": 300,
-    "fill":"#AC0E08FF"
-  },
-  {
-    "name": "Group C",
-    "value": 300,
-    "fill":"rgb(80,40, 190)"
-  },
-  {
-    "name": "Group D",
-    "value": 200,
-    "fill":rx.color("yellow", 10)
-  },
-  {
-    "name": "Group E",
-    "value": 278,
-    "fill":"purple"
-  },
-  {
-    "name": "Group F",
-    "value": 189,
-    "fill":"orange"
-  }
+    {"name": "Group A", "value": 400},
+    {"name": "Group B", "value": 300, "fill": "#AC0E08FF"},
+    {"name": "Group C", "value": 300, "fill": "rgb(80,40, 190)"},
+    {"name": "Group D", "value": 200, "fill": rx.color("yellow", 10)},
+    {"name": "Group E", "value": 278, "fill": "purple"},
+    {"name": "Group F", "value": 189, "fill": "orange"},
 ]
 
+
 def pie_simple():
-  return rx.recharts.pie_chart(
-            rx.recharts.pie(
-                data=data01,
-                data_key="value",
-                name_key="name",
-                fill="#8884d8",
-                label=True,
-            ),
-            width="100%",
-            height=300,
-        )
+    return rx.recharts.pie_chart(
+        rx.recharts.pie(
+            data=data01,
+            data_key="value",
+            name_key="name",
+            fill="#8884d8",
+            label=True,
+        ),
+        width="100%",
+        height=300,
+    )
 ```
 
 We can also add two pies on one chart by using two `rx.recharts.pie` components.
@@ -68,82 +45,45 @@ We can also add two pies on one chart by using two `rx.recharts.pie` components.
 In this example `inner_radius` and `outer_radius` props are used. They define the doughnut shape of a pie chart: `inner_radius` creates the hollow center (use "0%" for a full pie), while `outer_radius` sets the overall size. The `padding_angle` prop, used on the green pie below, adds space between pie slices, enhancing visibility of individual segments.
 
 ```python demo graphing
-
 data01 = [
-  {
-    "name": "Group A",
-    "value": 400
-  },
-  {
-    "name": "Group B",
-    "value": 300
-  },
-  {
-    "name": "Group C",
-    "value": 300
-  },
-  {
-    "name": "Group D",
-    "value": 200
-  },
-  {
-    "name": "Group E",
-    "value": 278
-  },
-  {
-    "name": "Group F",
-    "value": 189
-  }
+    {"name": "Group A", "value": 400},
+    {"name": "Group B", "value": 300},
+    {"name": "Group C", "value": 300},
+    {"name": "Group D", "value": 200},
+    {"name": "Group E", "value": 278},
+    {"name": "Group F", "value": 189},
 ]
 data02 = [
-  {
-    "name": "Group A",
-    "value": 2400
-  },
-  {
-    "name": "Group B",
-    "value": 4567
-  },
-  {
-    "name": "Group C",
-    "value": 1398
-  },
-  {
-    "name": "Group D",
-    "value": 9800
-  },
-  {
-    "name": "Group E",
-    "value": 3908
-  },
-  {
-    "name": "Group F",
-    "value": 4800
-  }
+    {"name": "Group A", "value": 2400},
+    {"name": "Group B", "value": 4567},
+    {"name": "Group C", "value": 1398},
+    {"name": "Group D", "value": 9800},
+    {"name": "Group E", "value": 3908},
+    {"name": "Group F", "value": 4800},
 ]
 
 
 def pie_double():
-  return rx.recharts.pie_chart(
-            rx.recharts.pie(
-                data=data01,
-                data_key="value",
-                name_key="name",
-                fill="#82ca9d",
-                inner_radius="60%",
-                padding_angle=5,
-            ),
-            rx.recharts.pie(
-                data=data02,
-                data_key="value",
-                name_key="name",
-                fill="#8884d8",
-                outer_radius="50%",
-            ),
-            rx.recharts.graphing_tooltip(),
-            width="100%",
-            height=300,
-        )
+    return rx.recharts.pie_chart(
+        rx.recharts.pie(
+            data=data01,
+            data_key="value",
+            name_key="name",
+            fill="#82ca9d",
+            inner_radius="60%",
+            padding_angle=5,
+        ),
+        rx.recharts.pie(
+            data=data02,
+            data_key="value",
+            name_key="name",
+            fill="#8884d8",
+            outer_radius="50%",
+        ),
+        rx.recharts.graphing_tooltip(),
+        width="100%",
+        height=300,
+    )
 ```
 
 ## Dynamic Data

@@ -21,11 +21,12 @@ The dynamic route arguments are accessible as `rx.State.id` and `rx.State.catego
 Example:
 
 ```python
-@rx.page(route='/post/[pid]')
+@rx.page(route="/post/[pid]")
 def post():
-    '''A page that updates based on the route.'''
+    """A page that updates based on the route."""
     # Displays the dynamic part of the URL, the post ID
     return rx.heading(rx.State.pid)
+
 
 app = rx.App()
 ```
@@ -67,14 +68,13 @@ class State(rx.State):
     @rx.var
     def user_post(self) -> str:
         args = self.router.page.params
-        usernames = args.get('splat', [])
+        usernames = args.get("splat", [])
         return f"Posts by \{', '.join(usernames)}"
 
-@rx.page(route='/users/[id]/posts/[[...splat]]')
+
+@rx.page(route="/users/[id]/posts/[[...splat]]")
 def post():
-    return rx.center(
-        rx.text(State.user_post)
-    )
+    return rx.center(rx.text(State.user_post))
 
 
 app = rx.App()

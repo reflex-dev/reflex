@@ -3,7 +3,6 @@ import random
 import time
 
 import reflex as rx
-
 ```
 
 # Base Vars
@@ -24,18 +23,17 @@ Reflex relies on type annotations to determine the type of state vars during the
 
 ```python demo exec
 class TickerState(rx.State):
-    ticker: str ="AAPL"
+    ticker: str = "AAPL"
     price: str = "$150"
 
 
 def ticker_example():
     return rx.center(
-          rx.vstack(
-                rx.heading(TickerState.ticker, size="3"),
-                rx.text(f"Current Price: {TickerState.price}", font_size="md"),
-                rx.text("Change: 4%", color="green"),
-            ),
-
+        rx.vstack(
+            rx.heading(TickerState.ticker, size="3"),
+            rx.text(f"Current Price: {TickerState.price}", font_size="md"),
+            rx.text("Change: 4%", color="green"),
+        ),
     )
 ```
 
@@ -54,6 +52,7 @@ State is just a python class and so can be defined on one page and then imported
 ```python
 # state.py
 
+
 class TickerState(rx.State):
     ticker: str = "AAPL"
     price: str = "$150"
@@ -63,14 +62,14 @@ class TickerState(rx.State):
 # index.py
 from .state import TickerState
 
+
 def ticker_example():
     return rx.center(
-          rx.vstack(
-                rx.heading(TickerState.ticker, size="3"),
-                rx.text(f"Current Price: \{TickerState.price}", font_size="md"),
-                rx.text("Change: 4%", color="green"),
-            ),
-
+        rx.vstack(
+            rx.heading(TickerState.ticker, size="3"),
+            rx.text(f"Current Price: \{TickerState.price}", font_size="md"),
+            rx.text("Change: 4%", color="green"),
+        ),
     )
 ```
 
@@ -125,7 +124,9 @@ class BackendVarState(rx.State):
 
     @rx.var(cache=True)
     def total_pages(self) -> int:
-        return len(self._backend) // self.limit + (1 if len(self._backend) % self.limit else 0)
+        return len(self._backend) // self.limit + (
+            1 if len(self._backend) % self.limit else 0
+        )
 
     @rx.event
     def prev_page(self):
@@ -138,11 +139,15 @@ class BackendVarState(rx.State):
 
     @rx.event
     def generate_more(self):
-        self._backend = np.append(self._backend, [random.randint(0, 100) for _ in range(random.randint(0, 100))])
+        self._backend = np.append(
+            self._backend,
+            [random.randint(0, 100) for _ in range(random.randint(0, 100))],
+        )
 
     @rx.event
     def set_limit(self, value: str):
         self.limit = int(value)
+
 
 def backend_var_example():
     return rx.vstack(
@@ -151,7 +156,9 @@ def backend_var_example():
                 "Prev",
                 on_click=BackendVarState.prev_page,
             ),
-            rx.text(f"Page {BackendVarState.page_number} / {BackendVarState.total_pages}"),
+            rx.text(
+                f"Page {BackendVarState.page_number} / {BackendVarState.total_pages}"
+            ),
             rx.button(
                 "Next",
                 on_click=BackendVarState.next_page,

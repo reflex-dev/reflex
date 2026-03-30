@@ -26,6 +26,7 @@ class SliderState(rx.State):
     def set_end(self, value: list[int | float]):
         self.value = value[0]
 
+
 def slider_intro():
     return rx.vstack(
         rx.heading(SliderState.value),
@@ -47,6 +48,7 @@ class RangeSliderState(rx.State):
     def set_end(self, value: list[int | float]):
         self.value_start = value[0]
         self.value_end = value[1]
+
 
 def range_slider_intro():
     return rx.vstack(
@@ -79,6 +81,7 @@ class LiveSliderState(rx.State):
     def set_end(self, value: list[int | float]):
         self.value = value[0]
 
+
 def live_slider_intro():
     return rx.vstack(
         rx.heading(LiveSliderState.value),
@@ -108,25 +111,25 @@ class FormSliderState(rx.State):
 
 def slider_form_example():
     return rx.card(
-            rx.vstack(
-                rx.heading("Example Form"),
-                rx.form.root(
-                    rx.hstack(
-                        rx.slider(default_value=40, name="slider"),
-                        rx.button("Submit", type="submit"),
-                        width="100%",
-                    ),
-                    on_submit=FormSliderState.handle_submit,
-                    reset_on_submit=True,
-                ),
-                rx.divider(),
+        rx.vstack(
+            rx.heading("Example Form"),
+            rx.form.root(
                 rx.hstack(
-                    rx.heading("Results:"),
-                    rx.badge(FormSliderState.form_data.to_string()),
+                    rx.slider(default_value=40, name="slider"),
+                    rx.button("Submit", type="submit"),
+                    width="100%",
                 ),
-                align_items="left",
-                width="100%",
+                on_submit=FormSliderState.handle_submit,
+                reset_on_submit=True,
             ),
+            rx.divider(),
+            rx.hstack(
+                rx.heading("Results:"),
+                rx.badge(FormSliderState.form_data.to_string()),
+            ),
+            align_items="left",
+            width="100%",
+        ),
         width="50%",
     )
 ```

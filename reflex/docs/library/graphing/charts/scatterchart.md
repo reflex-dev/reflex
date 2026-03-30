@@ -18,48 +18,26 @@ For a scatter chart we must define an `rx.recharts.scatter()` component for each
 
 ```python demo graphing
 data01 = [
-  {
-    "x": 100,
-    "y": 200,
-    "z": 200
-  },
-  {
-    "x": 120,
-    "y": 100,
-    "z": 260
-  },
-  {
-    "x": 170,
-    "y": 300,
-    "z": 400
-  },
-  {
-    "x": 170,
-    "y": 250,
-    "z": 280
-  },
-  {
-    "x": 150,
-    "y": 400,
-    "z": 500
-  },
-  {
-    "x": 110,
-    "y": 280,
-    "z": 200
-  }
+    {"x": 100, "y": 200, "z": 200},
+    {"x": 120, "y": 100, "z": 260},
+    {"x": 170, "y": 300, "z": 400},
+    {"x": 170, "y": 250, "z": 280},
+    {"x": 150, "y": 400, "z": 500},
+    {"x": 110, "y": 280, "z": 200},
 ]
 
+
 def scatter_simple():
-  return rx.recharts.scatter_chart(
-    rx.recharts.scatter(
-        data=data01,
-        fill="#8884d8",),
-    rx.recharts.x_axis(data_key="x", type_="number"),
-    rx.recharts.y_axis(data_key="y"),
-    width = "100%",
-    height = 300,
-  )
+    return rx.recharts.scatter_chart(
+        rx.recharts.scatter(
+            data=data01,
+            fill="#8884d8",
+        ),
+        rx.recharts.x_axis(data_key="x", type_="number"),
+        rx.recharts.y_axis(data_key="y"),
+        width="100%",
+        height=300,
+    )
 ```
 
 ## Multiple Scatters
@@ -68,92 +46,37 @@ We can also add two scatters on one chart by using two `rx.recharts.scatter()` c
 
 ```python demo graphing
 data01 = [
-  {
-    "x": 100,
-    "y": 200,
-    "z": 200
-  },
-  {
-    "x": 120,
-    "y": 100,
-    "z": 260
-  },
-  {
-    "x": 170,
-    "y": 300,
-    "z": 400
-  },
-  {
-    "x": 170,
-    "y": 250,
-    "z": 280
-  },
-  {
-    "x": 150,
-    "y": 350,
-    "z": 500
-  },
-  {
-    "x": 110,
-    "y": 280,
-    "z": 200
-  }
+    {"x": 100, "y": 200, "z": 200},
+    {"x": 120, "y": 100, "z": 260},
+    {"x": 170, "y": 300, "z": 400},
+    {"x": 170, "y": 250, "z": 280},
+    {"x": 150, "y": 350, "z": 500},
+    {"x": 110, "y": 280, "z": 200},
 ]
 
 data02 = [
-  {
-    "x": 200,
-    "y": 260,
-    "z": 240
-  },
-  {
-    "x": 240,
-    "y": 290,
-    "z": 220
-  },
-  {
-    "x": 190,
-    "y": 290,
-    "z": 250
-  },
-  {
-    "x": 198,
-    "y": 250,
-    "z": 210
-  },
-  {
-    "x": 180,
-    "y": 280,
-    "z": 260
-  },
-  {
-    "x": 210,
-    "y": 220,
-    "z": 230
-  }
+    {"x": 200, "y": 260, "z": 240},
+    {"x": 240, "y": 290, "z": 220},
+    {"x": 190, "y": 290, "z": 250},
+    {"x": 198, "y": 250, "z": 210},
+    {"x": 180, "y": 280, "z": 260},
+    {"x": 210, "y": 220, "z": 230},
 ]
 
+
 def scatter_double():
-  return rx.recharts.scatter_chart(
-    rx.recharts.scatter(
-        data=data01,
-        fill="#8884d8",
-        name="A"
-      ),
-    rx.recharts.scatter(
-        data=data02,
-        fill="#82ca9d",
-        name="B"
-      ),
-    rx.recharts.cartesian_grid(stroke_dasharray="3 3"),
-    rx.recharts.x_axis(data_key="x", type_="number"),
-    rx.recharts.y_axis(data_key="y"),
-    rx.recharts.z_axis(data_key="z", range=[60, 400], name="score"),
-    rx.recharts.legend(),
-    rx.recharts.graphing_tooltip(),
-    width="100%",
-    height=300,
-  )
+    return rx.recharts.scatter_chart(
+        rx.recharts.scatter(data=data01, fill="#8884d8", name="A"),
+        rx.recharts.scatter(data=data02, fill="#82ca9d", name="B"),
+        rx.recharts.cartesian_grid(stroke_dasharray="3 3"),
+        rx.recharts.x_axis(data_key="x", type_="number"),
+        rx.recharts.y_axis(data_key="y"),
+        rx.recharts.z_axis(data_key="z", range=[60, 400], name="score"),
+        rx.recharts.legend(),
+        rx.recharts.graphing_tooltip(),
+        width="100%",
+        height=300,
+    )
 ```
 
 To learn how to use the `x_axis_id` and `y_axis_id` props, check out the Multiple Axis section of the area chart [documentation](/docs/library/graphing/charts/areachart).
@@ -210,47 +133,38 @@ def scatter_dynamic():
 
 ```python demo exec
 class ScatterChartState2(rx.State):
-
-    legend_types: list[str] = ["square", "circle", "cross", "diamond", "star", "triangle", "wye"]
+    legend_types: list[str] = [
+        "square",
+        "circle",
+        "cross",
+        "diamond",
+        "star",
+        "triangle",
+        "wye",
+    ]
 
     legend_type: str = "circle"
 
-    shapes: list[str] = ["square", "circle", "cross", "diamond", "star", "triangle", "wye"]
+    shapes: list[str] = [
+        "square",
+        "circle",
+        "cross",
+        "diamond",
+        "star",
+        "triangle",
+        "wye",
+    ]
 
     shape: str = "circle"
 
     data01 = [
-    {
-      "x": 100,
-      "y": 200,
-      "z": 200
-    },
-    {
-      "x": 120,
-      "y": 100,
-      "z": 260
-    },
-    {
-      "x": 170,
-      "y": 300,
-      "z": 400
-    },
-    {
-      "x": 170,
-      "y": 250,
-      "z": 280
-    },
-    {
-      "x": 150,
-      "y": 400,
-      "z": 500
-    },
-    {
-      "x": 110,
-      "y": 280,
-      "z": 200
-    }
-  ]
+        {"x": 100, "y": 200, "z": 200},
+        {"x": 120, "y": 100, "z": 260},
+        {"x": 170, "y": 300, "z": 400},
+        {"x": 170, "y": 250, "z": 280},
+        {"x": 150, "y": 400, "z": 500},
+        {"x": 110, "y": 280, "z": 200},
+    ]
 
     @rx.event
     def set_shape(self, shape: str):
@@ -260,35 +174,36 @@ class ScatterChartState2(rx.State):
     def set_legend_type(self, legend_type: str):
         self.legend_type = legend_type
 
+
 def scatter_shape():
-  return rx.vstack(
-      rx.recharts.scatter_chart(
-          rx.recharts.scatter(
-              data=data01,
-              fill="#8884d8",
-              legend_type=ScatterChartState2.legend_type,
-              shape=ScatterChartState2.shape,
-          ),
-          rx.recharts.x_axis(data_key="x", type_="number"),
-          rx.recharts.y_axis(data_key="y"),
-          rx.recharts.legend(),
-          width = "100%",
-          height = 300,
+    return rx.vstack(
+        rx.recharts.scatter_chart(
+            rx.recharts.scatter(
+                data=data01,
+                fill="#8884d8",
+                legend_type=ScatterChartState2.legend_type,
+                shape=ScatterChartState2.shape,
+            ),
+            rx.recharts.x_axis(data_key="x", type_="number"),
+            rx.recharts.y_axis(data_key="y"),
+            rx.recharts.legend(),
+            width="100%",
+            height=300,
         ),
-      rx.hstack(
-          rx.text("Legend Type: "),
-          rx.select(
-              ScatterChartState2.legend_types,
-              value=ScatterChartState2.legend_type,
-              on_change=ScatterChartState2.set_legend_type,
-          ),
-          rx.text("Shape: "),
-          rx.select(
-            ScatterChartState2.shapes,
-            value=ScatterChartState2.shape,
-            on_change=ScatterChartState2.set_shape,
-          ),
-      ),
-      width="100%",
-  )
+        rx.hstack(
+            rx.text("Legend Type: "),
+            rx.select(
+                ScatterChartState2.legend_types,
+                value=ScatterChartState2.legend_type,
+                on_change=ScatterChartState2.set_legend_type,
+            ),
+            rx.text("Shape: "),
+            rx.select(
+                ScatterChartState2.shapes,
+                value=ScatterChartState2.shape,
+                on_change=ScatterChartState2.set_shape,
+            ),
+        ),
+        width="100%",
+    )
 ```

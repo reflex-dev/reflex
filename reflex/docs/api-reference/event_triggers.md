@@ -293,6 +293,7 @@ SYNTHETIC_EVENTS = [
 for i in SYNTHETIC_EVENTS:
     exec(i["state"])
 
+
 def component_grid():
     events = []
     for event in SYNTHETIC_EVENTS:
@@ -354,9 +355,10 @@ class State(rx.State):
         # Fetch data when the page loads
         self.data = fetch_data()
 
+
 @rx.page(on_load=State.get_data)
 def index():
-    return rx.text('Data loaded on page load')
+    return rx.text("Data loaded on page load")
 ```
 
 This is particularly useful for authentication checks:
@@ -370,11 +372,12 @@ class State(rx.State):
         # Check if user is authenticated
         self.authenticated = check_auth()
         if not self.authenticated:
-            return rx.redirect('/login')
+            return rx.redirect("/login")
+
 
 @rx.page(on_load=State.check_auth)
 def protected_page():
-    return rx.text('Protected content')
+    return rx.text("Protected content")
 ```
 
 For more details on page load events, see the [page load events documentation](/docs/events/page_load_events).

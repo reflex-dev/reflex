@@ -1,15 +1,22 @@
 ```python exec
 import reflex as rx
+
+
 def definition(title, *children):
     return rx.vstack(
-        rx.heading(title, font_size="1em", font_weight="bold", color=rx.color("mauve", 12)),
+        rx.heading(
+            title, font_size="1em", font_weight="bold", color=rx.color("mauve", 12)
+        ),
         *children,
         color=rx.color("mauve", 10),
         padding="1em",
         border=f"1px solid {rx.color('mauve', 4)}",
         background_color=rx.color("mauve", 2),
         border_radius="8px",
-        _hover={"border": f"1px solid {rx.color('mauve', 5)}", "background_color": rx.color("mauve", 3)},
+        _hover={
+            "border": f"1px solid {rx.color('mauve', 5)}",
+            "background_color": rx.color("mauve", 3),
+        },
         align_items="start",
     )
 ```
@@ -49,9 +56,7 @@ rx.grid(
         "Base Var",
         rx.list.unordered(
             rx.list.item("Any variable in your app that can change over time."),
-            rx.list.item(
-                "Defined as a field in a ", rx.code("State"), " class"
-            ),
+            rx.list.item("Defined as a field in a ", rx.code("State"), " class"),
             rx.list.item("Can only be modified by event handlers."),
         ),
     ),
@@ -86,12 +91,8 @@ rx.grid(
     definition(
         "Event Handlers",
         rx.list.unordered(
-            rx.list.item(
-                "Functions that update the state in response to events."
-            ),
-            rx.list.item(
-                "Defined as methods in the ", rx.code("State"), " class."
-            ),
+            rx.list.item("Functions that update the state in response to events."),
+            rx.list.item("Defined as methods in the ", rx.code("State"), " class."),
             rx.list.item(
                 "Can be called by event triggers, or by other event handlers."
             ),
@@ -110,7 +111,6 @@ Click the text to change its color.
 
 ```python demo exec
 class ExampleState(rx.State):
-
     # A base var for the list of colors to cycle through.
     colors: list[str] = ["black", "red", "green", "blue", "purple"]
 
@@ -125,7 +125,7 @@ class ExampleState(rx.State):
         self.index = (self.index + 1) % len(self.colors)
 
     @rx.var
-    def color(self)-> str:
+    def color(self) -> str:
         """A computed var that returns the current color."""
         # Computed vars update automatically when the state changes.
         return self.colors[self.index]

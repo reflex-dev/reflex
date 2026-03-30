@@ -26,6 +26,7 @@ class SwitchState(rx.State):
     def set_end(self, value: bool):
         self.value = value
 
+
 def switch_intro():
     return rx.center(
         rx.switch(on_change=SwitchState.set_end),
@@ -41,7 +42,6 @@ The `disabled` prop when `True`, prevents the user from interacting with the swi
 
 ```python demo exec
 class ControlSwitchState(rx.State):
-
     checked = True
 
     @rx.event
@@ -82,25 +82,25 @@ class FormSwitchState(rx.State):
 
 def switch_form_example():
     return rx.card(
-            rx.vstack(
-                rx.heading("Example Form"),
-                rx.form.root(
-                    rx.hstack(
-                        rx.switch(name="switch"),
-                        rx.button("Submit", type="submit"),
-                        width="100%",
-                    ),
-                    on_submit=FormSwitchState.handle_submit,
-                    reset_on_submit=True,
-                ),
-                rx.divider(),
+        rx.vstack(
+            rx.heading("Example Form"),
+            rx.form.root(
                 rx.hstack(
-                    rx.heading("Results:"),
-                    rx.badge(FormSwitchState.form_data.to_string()),
+                    rx.switch(name="switch"),
+                    rx.button("Submit", type="submit"),
+                    width="100%",
                 ),
-                align_items="left",
-                width="100%",
+                on_submit=FormSwitchState.handle_submit,
+                reset_on_submit=True,
             ),
+            rx.divider(),
+            rx.hstack(
+                rx.heading("Results:"),
+                rx.badge(FormSwitchState.form_data.to_string()),
+            ),
+            align_items="left",
+            width="100%",
+        ),
         width="50%",
     )
 ```

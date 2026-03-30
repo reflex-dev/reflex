@@ -1,6 +1,5 @@
 ```python exec
 import reflex as rx
-
 ```
 
 # Tailwind
@@ -158,7 +157,7 @@ tailwind_config = {
         "extend": {
             "colors": {
                 "background": "var(--background)",
-                "foreground": "var(--foreground)"
+                "foreground": "var(--foreground)",
             },
         }
     },
@@ -208,6 +207,7 @@ class TailwindState(rx.State):
     def toggle_active(self):
         self.active = not self.active
 
+
 def tailwind_demo():
     return rx.el.div(
         rx.el.button(
@@ -242,6 +242,7 @@ class TailwindState(rx.State):
     @rx.event
     def toggle_active(self):
         self.active = not self.active
+
 
 def tailwind_demo():
     return rx.el.button(

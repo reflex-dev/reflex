@@ -67,11 +67,11 @@ def clipboard_image_example():
     return rx.vstack(
         rx.clipboard(
             rx.input(placeholder="Paste Image (stop propagation)"),
-            on_paste=ClipboardPasteImageState.on_paste.stop_propagation
+            on_paste=ClipboardPasteImageState.on_paste.stop_propagation,
         ),
         rx.clipboard(
             rx.input(placeholder="Paste Image (prevent default)"),
-            on_paste=ClipboardPasteImageState.on_paste.prevent_default
+            on_paste=ClipboardPasteImageState.on_paste.prevent_default,
         ),
         rx.image(src=ClipboardPasteImageState.last_image_uri),
     )

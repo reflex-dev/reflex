@@ -114,12 +114,15 @@ The solution involves checking if the client_token is still valid in the app.eve
 import asyncio
 import reflex as rx
 
+
 class State(rx.State):
     @rx.event(background=True)
     async def loop_function(self):
         while True:
             if self.router.session.client_token not in app.event_namespace.token_to_sid:
-                print("WebSocket connection closed or user navigated away. Stopping background task.")
+                print(
+                    "WebSocket connection closed or user navigated away. Stopping background task."
+                )
                 break
 
             print("Running background task...")
@@ -128,8 +131,9 @@ class State(rx.State):
 
 @rx.page(on_load=State.loop_function)
 def index():
-    return rx.text("Hello, this page will manage background tasks and stop them when the page is closed or navigated away.")
-
+    return rx.text(
+        "Hello, this page will manage background tasks and stop them when the page is closed or navigated away."
+    )
 ```
 
 ## Task Lifecycle

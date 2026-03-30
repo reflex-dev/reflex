@@ -45,6 +45,7 @@ class RadioGroupState(rx.State):
     def set_item(self, item: str):
         self.item = item
 
+
 def radio_group_state_example():
     return rx.vstack(
         rx.badge(RadioGroupState.item, color_scheme="green"),

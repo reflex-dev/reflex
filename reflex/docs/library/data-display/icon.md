@@ -72,6 +72,7 @@ class DynamicIconState(rx.State):
     def change_icon(self):
         icons = ["heart", "star", "bell", "calendar", "settings"]
         import random
+
         self.current_icon = random.choice(icons)
 ```
 
@@ -103,7 +104,7 @@ rx.flex(
     rx.icon("moon", stroke_width=1.5),
     rx.icon("moon", stroke_width=2),
     rx.icon("moon", stroke_width=2.5),
-    gap="2"
+    gap="2",
 )
 ```
 

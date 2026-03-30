@@ -179,7 +179,7 @@ The `context_menu.separator` is used to visually separate items in a context men
 ```python demo
 rx.context_menu.root(
     rx.context_menu.trigger(
-       rx.button("Right click me"),
+        rx.button("Right click me"),
     ),
     rx.context_menu.content(
         rx.context_menu.item("Edit", shortcut="⌘ E"),

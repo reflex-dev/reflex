@@ -1,6 +1,5 @@
 ```python exec
 import reflex as rx
-
 ```
 
 # Yielding Updates
@@ -12,7 +11,6 @@ To do so, we can use the Python keyword `yield`. For every yield inside the func
 This example below shows how to yield 100 updates to the UI.
 
 ```python demo exec
-
 class MultiUpdateState(rx.State):
     count: int = 0
 
@@ -25,17 +23,16 @@ class MultiUpdateState(rx.State):
 
 def multi_update():
     return rx.vstack(
-    rx.text(MultiUpdateState.count),
-    rx.button("Start", on_click=MultiUpdateState.timed_update)
-)
-
+        rx.text(MultiUpdateState.count),
+        rx.button("Start", on_click=MultiUpdateState.timed_update),
+    )
 ```
 
 Here is another example of yielding multiple updates with a loading icon.
 
 ```python demo exec
-
 import asyncio
+
 
 class ProgressExampleState(rx.State):
     count: int = 0
@@ -50,13 +47,13 @@ class ProgressExampleState(rx.State):
         self.count += 1
         self.show_progress = False
 
+
 def progress_example():
     return rx.button(
         ProgressExampleState.count,
         on_click=ProgressExampleState.increment,
         loading=ProgressExampleState.show_progress,
     )
-
 ```
 
 ```md video https://youtube.com/embed/ITOZkzjtjUA?start=6463&end=6835
@@ -74,8 +71,8 @@ When chaining another event handler with `yield`, access it via the state class,
 ```
 
 ```python demo exec
-
 import asyncio
+
 
 class YieldEventsState(rx.State):
     count: int = 0
@@ -103,5 +100,4 @@ def multiple_yield_example():
         on_click=YieldEventsState.increment,
         loading=YieldEventsState.show_progress,
     )
-
 ```

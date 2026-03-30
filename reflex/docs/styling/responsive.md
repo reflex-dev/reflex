@@ -1,6 +1,15 @@
 ```python exec
 import reflex as rx
-cell_style = {"font_family": "Instrument Sans", "font_style": "normal", "font_weight": "500", "font_size": "14px", "line_height": "1.5", "letter_spacing": "-0.0125em", "color": "var(--c-slate-11)"}
+
+cell_style = {
+    "font_family": "Instrument Sans",
+    "font_style": "normal",
+    "font_weight": "500",
+    "font_size": "14px",
+    "line_height": "1.5",
+    "letter_spacing": "-0.0125em",
+    "color": "var(--c-slate-11)",
+}
 ```
 
 # Responsive
@@ -52,14 +61,10 @@ For the Radix UI components' fields that supports responsive value, you can also
 rx.grid(
     rx.foreach(
         list(range(6)),
-        lambda _: rx.box(bg_color="#a7db76", height="100px", width="100px")
+        lambda _: rx.box(bg_color="#a7db76", height="100px", width="100px"),
     ),
-    columns=rx.breakpoints(
-        initial="2",
-        sm="4",
-        lg="6"
-    ),
-    spacing="4"
+    columns=rx.breakpoints(initial="2", sm="4", lg="6"),
+    spacing="4",
 )
 ```
 
@@ -77,27 +82,87 @@ rx.table.root(
     ),
     rx.table.body(
         rx.table.row(
-            rx.table.cell(rx.code("initial", style={"color": rx.color("violet", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('violet', 5)}", "background": rx.color("violet", 3)})),
+            rx.table.cell(
+                rx.code(
+                    "initial",
+                    style={
+                        "color": rx.color("violet", 11),
+                        "border_radius": "0.25rem",
+                        "border": f"1px solid {rx.color('violet', 5)}",
+                        "background": rx.color("violet", 3),
+                    },
+                )
+            ),
             rx.table.cell("0px", style=cell_style),
         ),
         rx.table.row(
-            rx.table.cell(rx.code("xs", style={"color": rx.color("violet", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('violet', 5)}", "background": rx.color("violet", 3)})),
+            rx.table.cell(
+                rx.code(
+                    "xs",
+                    style={
+                        "color": rx.color("violet", 11),
+                        "border_radius": "0.25rem",
+                        "border": f"1px solid {rx.color('violet', 5)}",
+                        "background": rx.color("violet", 3),
+                    },
+                )
+            ),
             rx.table.cell("30em", style=cell_style),
         ),
         rx.table.row(
-            rx.table.cell(rx.code("sm", style={"color": rx.color("violet", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('violet', 5)}", "background": rx.color("violet", 3)})),
+            rx.table.cell(
+                rx.code(
+                    "sm",
+                    style={
+                        "color": rx.color("violet", 11),
+                        "border_radius": "0.25rem",
+                        "border": f"1px solid {rx.color('violet', 5)}",
+                        "background": rx.color("violet", 3),
+                    },
+                )
+            ),
             rx.table.cell("48em", style=cell_style),
         ),
         rx.table.row(
-            rx.table.cell(rx.code("md", style={"color": rx.color("violet", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('violet', 5)}", "background": rx.color("violet", 3)})),
+            rx.table.cell(
+                rx.code(
+                    "md",
+                    style={
+                        "color": rx.color("violet", 11),
+                        "border_radius": "0.25rem",
+                        "border": f"1px solid {rx.color('violet', 5)}",
+                        "background": rx.color("violet", 3),
+                    },
+                )
+            ),
             rx.table.cell("62em", style=cell_style),
         ),
         rx.table.row(
-            rx.table.cell(rx.code("lg", style={"color": rx.color("violet", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('violet', 5)}", "background": rx.color("violet", 3)})),
+            rx.table.cell(
+                rx.code(
+                    "lg",
+                    style={
+                        "color": rx.color("violet", 11),
+                        "border_radius": "0.25rem",
+                        "border": f"1px solid {rx.color('violet', 5)}",
+                        "background": rx.color("violet", 3),
+                    },
+                )
+            ),
             rx.table.cell("80em", style=cell_style),
         ),
         rx.table.row(
-            rx.table.cell(rx.code("xl", style={"color": rx.color("violet", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('violet', 5)}", "background": rx.color("violet", 3)})),
+            rx.table.cell(
+                rx.code(
+                    "xl",
+                    style={
+                        "color": rx.color("violet", 11),
+                        "border_radius": "0.25rem",
+                        "border": f"1px solid {rx.color('violet', 5)}",
+                        "background": rx.color("violet", 3),
+                    },
+                )
+            ),
             rx.table.cell("96em", style=cell_style),
         ),
     ),

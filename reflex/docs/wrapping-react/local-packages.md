@@ -27,9 +27,11 @@ class Hello(rx.Component):
     def create(cls, *children, **props) -> rx.Component:
         props.setdefault("align", "center")
         return rx.hstack(
-            rx.image(src=rx.asset("wave.svg", shared=True), width="50px", height="50px"),
+            rx.image(
+                src=rx.asset("wave.svg", shared=True), width="50px", height="50px"
+            ),
             rx.heading("Hello ", *children),
-            **props
+            **props,
         )
 ```
 
@@ -62,6 +64,7 @@ import reflex as rx
 
 hello_path = rx.asset("./hello.jsx", shared=True)
 hello_css_path = rx.asset("./hello.css", shared=True)
+
 
 class Hello(rx.Component):
     # Use an absolute path starting with $/public
@@ -127,9 +130,8 @@ class GithubComponent(rx.Component):
     tag = "Counter"
 
     def add_imports(self):
-        return {
-            "": ["@masenf/hello-react/dist/style.css"]
-        }
+        return {"": ["@masenf/hello-react/dist/style.css"]}
+
 
 def github_component_example():
     return GithubComponent.create()

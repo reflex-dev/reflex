@@ -117,7 +117,7 @@ text_style = {
 ```
 
 ```python
-text_style={text_style}
+text_style = {text_style}
 ```
 
 ```python demo
@@ -142,8 +142,8 @@ style2 = {
 ```
 
 ```python
-style1={style1}
-style2={style2}
+style1 = {style1}
+style2 = {style2}
 ```
 
 ```python demo

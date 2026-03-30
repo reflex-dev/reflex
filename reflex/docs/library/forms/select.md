@@ -99,7 +99,6 @@ def select_intro():
 
 ```python demo exec
 class SelectState3(rx.State):
-
     values: list[str] = ["apple", "grape", "pear"]
 
     value: str = "apple"
@@ -121,7 +120,6 @@ def select_example3():
             on_change=SelectState3.set_value,
         ),
         rx.button("Change Value", on_click=SelectState3.change_value),
-
     )
 ```
 
@@ -132,7 +130,6 @@ rx.select(
     ["apple", "grape", "pear"],
     on_change=rx.window_alert("on_change event handler called"),
 )
-
 ```
 
 ### Submitting a form using select
@@ -157,7 +154,12 @@ def select_form_example():
             rx.heading("Example Form"),
             rx.form.root(
                 rx.flex(
-                    rx.select(["apple", "grape", "pear"], default_value="apple", name="select", required=True),
+                    rx.select(
+                        ["apple", "grape", "pear"],
+                        default_value="apple",
+                        name="select",
+                        required=True,
+                    ),
                     rx.button("Submit", flex="1", type="submit"),
                     width="100%",
                     spacing="3",

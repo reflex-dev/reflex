@@ -34,9 +34,10 @@ class CustomReactType2(rx.PropsBase):
     """Custom React type."""
 
     # Define the structure of the custom type to match the Javascript structure.
-    attr_foo: str # will be attrFoo in JS
-    attr_bar: bool # will be attrBar in JS
-    attr_baz: int # will be attrBaz in JS
+    attr_foo: str  # will be attrFoo in JS
+    attr_bar: bool  # will be attrBar in JS
+    attr_baz: int  # will be attrBaz in JS
+
 
 class SimplePropsComponent(MyBaseComponent):
     """MyComponent."""
@@ -74,6 +75,7 @@ Callback props are used to handle events or to pass data back to the parent comp
 from typing import Callable
 from reflex.vars.function import FunctionVar
 
+
 class CallbackPropsComponent(MyBaseComponent):
     """MyComponent."""
 
@@ -102,12 +104,14 @@ from reflex.vars.event_handler import EventHandler
 from reflex.vars.function import FunctionVar
 from reflex.vars.object import ObjectVar
 
+
 class InputEventType(TypedDict):
     """Input event type."""
 
     # Define the structure of the input event.
     foo: str
     bar: int
+
 
 class OutputEventType(TypedDict):
     """Output event type."""
@@ -124,6 +128,7 @@ def custom_spec1(event: ObjectVar[InputEventType]) -> tuple[str, int]:
         event.bar.to(int),
     )
 
+
 def custom_spec2(event: ObjectVar[dict]) -> tuple[Var[OutputEventType]]:
     """Custom event spec using ObjectVar with dict as input and custom type as output."""
     return Var.create(
@@ -132,6 +137,7 @@ def custom_spec2(event: ObjectVar[dict]) -> tuple[Var[OutputEventType]]:
             "qux": event["bar"],
         },
     ).to(OutputEventType)
+
 
 class EventHandlerComponent(MyBaseComponent):
     """MyComponent."""

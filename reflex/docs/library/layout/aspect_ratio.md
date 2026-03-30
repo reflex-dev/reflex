@@ -71,7 +71,11 @@ rx.flex(
     *[
         rx.box(
             rx.aspect_ratio(
-                rx.image(src="https://web.reflex-assets.dev/other/logo.jpg", width="100%", height="100%"),
+                rx.image(
+                    src="https://web.reflex-assets.dev/other/logo.jpg",
+                    width="100%",
+                    height="100%",
+                ),
                 ratio=ratio,
             ),
             width="20%",

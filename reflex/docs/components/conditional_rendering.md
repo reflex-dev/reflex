@@ -1,6 +1,5 @@
 ```python exec
 import reflex as rx
-
 ```
 
 # Conditional Rendering
@@ -49,7 +48,6 @@ You can also set props conditionally using `rx.cond`. In this example, we set th
 
 ```python demo exec
 class PropCondState(rx.State):
-
     value: int
 
     @rx.event

@@ -1,5 +1,6 @@
 ```python exec
 import reflex as rx
+
 app_name = "my_app_name"
 default_url = "http://localhost:3000"
 ```

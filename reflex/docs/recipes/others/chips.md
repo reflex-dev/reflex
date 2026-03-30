@@ -1,6 +1,5 @@
 ```python exec
 import reflex as rx
-
 ```
 
 # Chips
@@ -18,6 +17,7 @@ status_chip_props = {
     "size": "3",
 }
 
+
 def status_chip(status: str, icon: str, color: LiteralAccentColor) -> rx.Component:
     return rx.badge(
         rx.icon(icon, size=18),
@@ -26,6 +26,7 @@ def status_chip(status: str, icon: str, color: LiteralAccentColor) -> rx.Compone
         **status_chip_props,
     )
 
+
 def status_chips_group() -> rx.Component:
     return rx.hstack(
         status_chip("Info", "info", "blue"),
@@ -33,7 +34,7 @@ def status_chips_group() -> rx.Component:
         status_chip("Warning", "circle-alert", "yellow"),
         status_chip("Error", "circle-x", "red"),
         wrap="wrap",
-		spacing="2",
+        spacing="2",
     )
 ```
 
@@ -50,12 +51,14 @@ chip_props = {
 
 available_items = ["2:00", "3:00", "4:00", "5:00"]
 
+
 class SingleSelectionChipsState(rx.State):
     selected_item: str = ""
 
     @rx.event
     def set_selected_item(self, value: str):
         self.selected_item = value
+
 
 def unselected_item(item: str) -> rx.Component:
     return rx.badge(
@@ -64,6 +67,7 @@ def unselected_item(item: str) -> rx.Component:
         **chip_props,
         on_click=SingleSelectionChipsState.set_selected_item(item),
     )
+
 
 def selected_item(item: str) -> rx.Component:
     return rx.badge(
@@ -74,6 +78,7 @@ def selected_item(item: str) -> rx.Component:
         on_click=SingleSelectionChipsState.set_selected_item(""),
     )
 
+
 def item_chip(item: str) -> rx.Component:
     return rx.cond(
         SingleSelectionChipsState.selected_item == item,
@@ -81,23 +86,22 @@ def item_chip(item: str) -> rx.Component:
         unselected_item(item),
     )
 
+
 def item_selector() -> rx.Component:
     return rx.vstack(
         rx.hstack(
-			rx.icon("clock", size=20),
-			rx.heading(
-				"Select your reservation time:", size="4"
-			),
-			spacing="2",
-			align="center",
-			width="100%",
+            rx.icon("clock", size=20),
+            rx.heading("Select your reservation time:", size="4"),
+            spacing="2",
+            align="center",
+            width="100%",
         ),
         rx.hstack(
             rx.foreach(available_items, item_chip),
             wrap="wrap",
             spacing="2",
         ),
-		align_items="start",
+        align_items="start",
         spacing="4",
         width="100%",
     )
@@ -132,6 +136,7 @@ skills = [
     "Cybersecurity",
 ]
 
+
 class BasicChipsState(rx.State):
     selected_items: list[str] = skills[:3]
 
@@ -155,7 +160,10 @@ class BasicChipsState(rx.State):
     def random_selected(self):
         self.selected_items = random.sample(skills, k=random.randint(1, len(skills)))
 
-def action_button(icon: str, label: str, on_click: callable, color_scheme: LiteralAccentColor) -> rx.Component:
+
+def action_button(
+    icon: str, label: str, on_click: callable, color_scheme: LiteralAccentColor
+) -> rx.Component:
     return rx.button(
         rx.icon(icon, size=16),
         label,
@@ -166,6 +174,7 @@ def action_button(icon: str, label: str, on_click: callable, color_scheme: Liter
         cursor="pointer",
     )
 
+
 def selected_item_chip(item: str) -> rx.Component:
     return rx.badge(
         item,
@@ -174,6 +183,7 @@ def selected_item_chip(item: str) -> rx.Component:
         **chip_props,
         on_click=BasicChipsState.remove_selected(item),
     )
+
 
 def unselected_item_chip(item: str) -> rx.Component:
     return rx.cond(
@@ -188,6 +198,7 @@ def unselected_item_chip(item: str) -> rx.Component:
         ),
     )
 
+
 def items_selector() -> rx.Component:
     return rx.vstack(
         rx.flex(
@@ -199,7 +210,7 @@ def items_selector() -> rx.Component:
                 spacing="1",
                 align="center",
                 width="100%",
-				justify_content=["end", "start"],
+                justify_content=["end", "start"],
             ),
             rx.hstack(
                 action_button(
@@ -208,9 +219,7 @@ def items_selector() -> rx.Component:
                 action_button(
                     "trash", "Clear All", BasicChipsState.clear_selected, "tomato"
                 ),
-                action_button(
-                    "shuffle", "", BasicChipsState.random_selected, "gray"
-                ),
+                action_button("shuffle", "", BasicChipsState.random_selected, "gray"),
                 spacing="2",
                 justify="end",
                 width="100%",
@@ -218,8 +227,8 @@ def items_selector() -> rx.Component:
             justify="between",
             flex_direction=["column", "row"],
             align="center",
-			spacing="2",
-			margin_bottom="10px",
+            spacing="2",
+            margin_bottom="10px",
             width="100%",
         ),
         # Selected Items
@@ -229,19 +238,19 @@ def items_selector() -> rx.Component:
                 selected_item_chip,
             ),
             wrap="wrap",
-			spacing="2",
-			justify_content="start",
+            spacing="2",
+            justify_content="start",
         ),
         rx.divider(),
         # Unselected Items
         rx.flex(
             rx.foreach(skills, unselected_item_chip),
             wrap="wrap",
-			spacing="2",
-			justify_content="start",
+            spacing="2",
+            justify_content="start",
         ),
-		justify_content="start",
-		align_items="start",
+        justify_content="start",
+        align_items="start",
         width="100%",
     )
 ```

@@ -335,15 +335,14 @@ _State class associated with this component instance_
 ```python
 import reflex as rx
 
-class Document(rx.Component):
 
+class Document(rx.Component):
     library = "@react-pdf/renderer"
 
     tag = "Document"
 
 
 class Page(rx.Component):
-
     library = "@react-pdf/renderer"
 
     tag = "Page"
@@ -358,14 +357,12 @@ class Page(rx.Component):
 
 
 class Text(rx.Component):
-
     library = "@react-pdf/renderer"
 
     tag = "Text"
 
 
 class View(rx.Component):
-
     library = "@react-pdf/renderer"
 
     tag = "View"
@@ -379,7 +376,6 @@ class View(rx.Component):
 
 
 class StyleSheet(rx.Component):
-
     library = "@react-pdf/renderer"
 
     tag = "StyleSheet"
@@ -390,7 +386,6 @@ class StyleSheet(rx.Component):
 
 
 class PDFViewer(rx.NoSSRComponent):
-
     library = "@react-pdf/renderer"
 
     tag = "PDFViewer"
@@ -405,15 +400,15 @@ pdf_viewer = PDFViewer.create
 
 
 styles = style_sheet({
-  "page": {
-    "flexDirection": 'row',
-    "backgroundColor": '#E4E4E4',
-  },
-  "section": {
-    "margin": 10,
-    "padding": 10,
-    "flexGrow": 1,
-  },
+    "page": {
+        "flexDirection": "row",
+        "backgroundColor": "#E4E4E4",
+    },
+    "section": {
+        "margin": 10,
+        "padding": 10,
+        "flexGrow": 1,
+    },
 })
 
 
@@ -429,11 +424,14 @@ def index() -> rx.Component:
                     text("Hello, 2!"),
                     theme=styles.section,
                 ),
-                size="A4", theme=styles.page),
+                size="A4",
+                theme=styles.page,
+            ),
         ),
         width="100%",
         height="80vh",
     )
+
 
 app = rx.App()
 app.add_page(index)

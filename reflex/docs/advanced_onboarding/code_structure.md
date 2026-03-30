@@ -163,7 +163,12 @@ class PostsState(rx.State):
     async def tick(self, _):
         settings = await self.get_state(SettingsState)
         with rx.session() as session:
-            q = Post.select().offset(self.page * settings.posts_per_page).limit(settings.posts_per_page)
+            q = (
+                Post
+                .select()
+                .offset(self.page * settings.posts_per_page)
+                .limit(settings.posts_per_page)
+            )
             self.posts = q.all()
 
     @rx.event
@@ -187,7 +192,9 @@ def posts():
             rx.button("Next >", on_click=PostsState.go_to_next),
             justify="between",
         ),
-        rx.moment(interval=PostsState.refresh_tick, on_change=PostsState.tick, display="none"),
+        rx.moment(
+            interval=PostsState.refresh_tick, on_change=PostsState.tick, display="none"
+        ),
         width="100%",
     )
 ```
@@ -217,6 +224,7 @@ from functools import lru_cache
 
 import reflex as rx
 
+
 class State(rx.State):
     v: str = "foo"
 
@@ -228,11 +236,10 @@ def foo():
 
 def index():
     return rx.flex(
-        rx.button("Change", on_click=State.set_v(rx.cond(State.v != "bar", "bar", "foo"))),
-        *[
-            foo()
-            for _ in range(100)
-        ],
+        rx.button(
+            "Change", on_click=State.set_v(rx.cond(State.v != "bar", "bar", "foo"))
+        ),
+        *[foo() for _ in range(100)],
         direction="row",
         wrap="wrap",
     )

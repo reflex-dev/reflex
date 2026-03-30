@@ -13,7 +13,7 @@ Below are the special events available in Reflex, along with explanations of the
 Perform a console.log in the browser's console.
 
 ```python demo
-rx.button('Log', on_click=rx.console_log('Hello World!'))
+rx.button("Log", on_click=rx.console_log("Hello World!"))
 ```
 
 When triggered, this event logs a specified message to the browser's developer console.
@@ -24,11 +24,7 @@ It's useful for debugging and monitoring the behavior of your application.
 scroll to an element in the page
 
 ```python demo
-rx.button(
-    "Scroll to download button",
-    on_click=rx.scroll_to("download button")
-
-)
+rx.button("Scroll to download button", on_click=rx.scroll_to("download button"))
 ```
 
 When this is triggered, it scrolls to an element passed by id as parameter. Click on button to scroll to download button (rx.download section) at the bottom of the page
@@ -44,8 +40,13 @@ Redirect the user to a new path within the application.
 
 ```python demo
 rx.vstack(
-    rx.button("open in tab", on_click=rx.redirect("/docs/api-reference/special-events")),
-    rx.button("open in new tab", on_click=rx.redirect('https://github.com/reflex-dev/reflex/', is_external=True))
+    rx.button(
+        "open in tab", on_click=rx.redirect("/docs/api-reference/special-events")
+    ),
+    rx.button(
+        "open in new tab",
+        on_click=rx.redirect("https://github.com/reflex-dev/reflex/", is_external=True),
+    ),
 )
 ```
 
@@ -61,7 +62,8 @@ class RedirectExampleState(rx.State):
 
     @rx.event
     def change_page(self):
-        return rx.redirect('https://github.com/reflex-dev/reflex/', is_external=True)
+        return rx.redirect("https://github.com/reflex-dev/reflex/", is_external=True)
+
 
 def redirect_example():
     return rx.vstack(
@@ -74,7 +76,10 @@ def redirect_example():
 Set the specified text content to the clipboard.
 
 ```python demo
-rx.button('Copy "Hello World" to clipboard',on_click=rx.set_clipboard('Hello World'),)
+rx.button(
+    'Copy "Hello World" to clipboard',
+    on_click=rx.set_clipboard("Hello World"),
+)
 ```
 
 This event allows you to copy a given text or content to the user's clipboard.
@@ -87,10 +92,8 @@ Set the value of a specified reference element.
 
 ```python demo
 rx.hstack(
-    rx.input(id='input1'),
-    rx.button(
-        'Erase', on_click=rx.set_value('input1', '')
-    ),
+    rx.input(id="input1"),
+    rx.button("Erase", on_click=rx.set_value("input1", "")),
 )
 ```
 
@@ -101,7 +104,7 @@ With this event, you can modify the value of a particular HTML element, typicall
 Create a window alert in the browser.
 
 ```python demo
-rx.button('Alert', on_click=rx.window_alert('Hello World!'))
+rx.button("Alert", on_click=rx.window_alert("Hello World!"))
 ```
 
 ## rx.download
@@ -119,5 +122,11 @@ Parameters:
 ```
 
 ```python demo
-rx.button("Download", on_click=rx.download(url="/reflex_banner.webp", filename="different_name_logo.webp"), id="download button")
+rx.button(
+    "Download",
+    on_click=rx.download(
+        url="/reflex_banner.webp", filename="different_name_logo.webp"
+    ),
+    id="download button",
+)
 ```

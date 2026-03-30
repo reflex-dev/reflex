@@ -20,6 +20,7 @@ Below we show how to wrap the [Spline](https://github.com/splinetool/react-splin
 ```python demo exec
 import reflex as rx
 
+
 class Spline(rx.Component):
     """Spline component."""
 
@@ -38,8 +39,10 @@ class Spline(rx.Component):
     # Any props that the component takes.
     scene: rx.Var[str]
 
+
 # Convenience function to create the Spline component.
 spline = Spline.create
+
 
 # Use the Spline component in your app.
 def index():
@@ -57,11 +60,13 @@ Since this component has interaction we must specify any event triggers that the
 ```python exec
 from reflex.components.component import NoSSRComponent
 
+
 class ColorPicker(NoSSRComponent):
     library = "react-colorful"
     tag = "HexColorPicker"
     color: rx.Var[str]
     on_change: rx.EventHandler[lambda color: [color]]
+
 
 color_picker = ColorPicker.create
 
@@ -73,9 +78,7 @@ rx.box(
     ColorPickerState,
     rx.vstack(
         rx.heading(ColorPickerState.value, color="white"),
-        color_picker(
-            on_change=ColorPickerState.set_value
-        ),
+        color_picker(on_change=ColorPickerState.set_value),
     ),
     background_color=ColorPickerState.value,
     padding="5em",
@@ -87,24 +90,26 @@ rx.box(
 ```python
 from reflex.components.component import NoSSRComponent
 
+
 class ColorPicker(NoSSRComponent):
     library = "react-colorful"
     tag = "HexColorPicker"
     color: rx.Var[str]
     on_change: rx.EventHandler[lambda color: [color]]
 
+
 color_picker = ColorPicker.create
+
 
 class ColorPickerState(rx.State):
     color: str = "#db114b"
+
 
 def index():
     return rx.box(
         rx.vstack(
             rx.heading(ColorPickerState.color, color="white"),
-            color_picker(
-                on_change=ColorPickerState.set_color
-            ),
+            color_picker(on_change=ColorPickerState.set_color),
         ),
         background_color=ColorPickerState.color,
         padding="5em",

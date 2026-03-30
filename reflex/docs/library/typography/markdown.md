@@ -37,7 +37,7 @@ You can render code blocks with syntax highlighting using the \`\`\`\{language} 
 
 ````python demo
 rx.markdown(
-r"""
+    r"""
 ```python
 import reflex as rx
 from .pages import index
@@ -133,7 +133,9 @@ rx.markdown(
     rehype_plugins=[
         rx.markdown.plugin("rehype-slug@6.0.0", "rehypeSlug"),
         (
-            rx.markdown.plugin("rehype-autolink-headings@7.1.0", "rehypeAutolinkHeadings"),
+            rx.markdown.plugin(
+                "rehype-autolink-headings@7.1.0", "rehypeAutolinkHeadings"
+            ),
             {
                 "behavior": "wrap",
                 "properties": {
@@ -164,14 +166,19 @@ component_map = {
     "h3": lambda text: rx.heading(text, size="1", margin_y="1em"),
     "p": lambda text: rx.text(text, color="green", margin_y="1em"),
     "code": lambda text: rx.code(text, color="purple"),
-    "pre": lambda text, **props: rx.code_block(text, **props, theme=rx.code_block.themes.dark, margin_y="1em"),
-    "a": lambda text, **props: rx.link(text, **props, color="blue", _hover={"color": "red"}),
+    "pre": lambda text, **props: rx.code_block(
+        text, **props, theme=rx.code_block.themes.dark, margin_y="1em"
+    ),
+    "a": lambda text, **props: rx.link(
+        text, **props, color="blue", _hover={"color": "red"}
+    ),
 }
+
 
 def index():
     return rx.box(
         rx.markdown(
-r"""
+            r"""
 # Hello World!
 
 ## This is a Subheader
@@ -190,7 +197,7 @@ And then some more text here,
 followed by a link to
 [Reflex](https://reflex.dev/).
 """,
-    component_map=component_map,
-)
+            component_map=component_map,
+        )
     )
 ````

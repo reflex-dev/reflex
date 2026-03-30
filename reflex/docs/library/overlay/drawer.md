@@ -36,29 +36,25 @@ import reflex as rx
 
 ```python demo
 rx.drawer.root(
-        rx.drawer.trigger(
-            rx.button("Open Drawer")
-        ),
-        rx.drawer.overlay(
-            z_index="5"
-        ),
-        rx.drawer.portal(
-            rx.drawer.content(
-                rx.flex(
-                    rx.drawer.close(rx.box(rx.button("Close"))),
-                    align_items="start",
-                    direction="column",
-                ),
-                top="auto",
-                right="auto",
-                height="100%",
-                width="20em",
-                padding="2em",
-                background_color="#FFF"
-                #background_color=rx.color("green", 3)
-            )
-        ),
-        direction="left",
+    rx.drawer.trigger(rx.button("Open Drawer")),
+    rx.drawer.overlay(z_index="5"),
+    rx.drawer.portal(
+        rx.drawer.content(
+            rx.flex(
+                rx.drawer.close(rx.box(rx.button("Close"))),
+                align_items="start",
+                direction="column",
+            ),
+            top="auto",
+            right="auto",
+            height="100%",
+            width="20em",
+            padding="2em",
+            background_color="#FFF",
+            # background_color=rx.color("green", 3)
+        )
+    ),
+    direction="left",
 )
 ```
 
@@ -75,6 +71,7 @@ class DrawerState(rx.State):
     @rx.event
     def toggle_drawer(self):
         self.is_open = not self.is_open
+
 
 def drawer_content():
     return rx.drawer.content(
@@ -102,18 +99,19 @@ def lateral_menu():
         modal=False,
     )
 
+
 def drawer_sidebar():
     return rx.vstack(
         lateral_menu(),
         rx.section(
             rx.heading("Test1", size="8"),
-            id='test1',
+            id="test1",
             height="400px",
         ),
         rx.section(
             rx.heading("Test2", size="8"),
-            id='test2',
+            id="test2",
             height="400px",
-        )
+        ),
     )
 ```

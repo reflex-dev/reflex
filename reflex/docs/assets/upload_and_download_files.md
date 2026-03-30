@@ -25,35 +25,85 @@ rx.table.root(
     rx.table.body(
         rx.table.row(
             rx.table.cell(rx.text("Purpose", font_weight="bold")),
-            rx.table.cell(rx.text("Static files included with your app (images, stylesheets, scripts)")),
+            rx.table.cell(
+                rx.text(
+                    "Static files included with your app (images, stylesheets, scripts)"
+                )
+            ),
             rx.table.cell(rx.text("Dynamic files uploaded by users during runtime")),
         ),
         rx.table.row(
             rx.table.cell(rx.text("Location", font_weight="bold")),
-            rx.table.cell(rx.hstack(
-                rx.code("assets/", style={"color": rx.color("violet", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('violet', 5)}", "background": rx.color("violet", 3)}),
-                rx.text(" folder or next to Python files (shared assets)"),
-                spacing="2",
-            )),
-            rx.table.cell(rx.hstack(
-                rx.code("uploaded_files/", style={"color": rx.color("violet", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('violet', 5)}", "background": rx.color("violet", 3)}),
-                rx.text(" directory (configurable)"),
-                spacing="2",
-            )),
+            rx.table.cell(
+                rx.hstack(
+                    rx.code(
+                        "assets/",
+                        style={
+                            "color": rx.color("violet", 11),
+                            "border_radius": "0.25rem",
+                            "border": f"1px solid {rx.color('violet', 5)}",
+                            "background": rx.color("violet", 3),
+                        },
+                    ),
+                    rx.text(" folder or next to Python files (shared assets)"),
+                    spacing="2",
+                )
+            ),
+            rx.table.cell(
+                rx.hstack(
+                    rx.code(
+                        "uploaded_files/",
+                        style={
+                            "color": rx.color("violet", 11),
+                            "border_radius": "0.25rem",
+                            "border": f"1px solid {rx.color('violet', 5)}",
+                            "background": rx.color("violet", 3),
+                        },
+                    ),
+                    rx.text(" directory (configurable)"),
+                    spacing="2",
+                )
+            ),
         ),
         rx.table.row(
             rx.table.cell(rx.text("Access Method", font_weight="bold")),
-            rx.table.cell(rx.hstack(
-                rx.code("rx.asset()", style={"color": rx.color("violet", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('violet', 5)}", "background": rx.color("violet", 3)}),
-                rx.text(" or direct path reference"),
-                spacing="2",
-            )),
-            rx.table.cell(rx.code("rx.get_upload_url()", style={"color": rx.color("violet", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('violet', 5)}", "background": rx.color("violet", 3)})),
+            rx.table.cell(
+                rx.hstack(
+                    rx.code(
+                        "rx.asset()",
+                        style={
+                            "color": rx.color("violet", 11),
+                            "border_radius": "0.25rem",
+                            "border": f"1px solid {rx.color('violet', 5)}",
+                            "background": rx.color("violet", 3),
+                        },
+                    ),
+                    rx.text(" or direct path reference"),
+                    spacing="2",
+                )
+            ),
+            rx.table.cell(
+                rx.code(
+                    "rx.get_upload_url()",
+                    style={
+                        "color": rx.color("violet", 11),
+                        "border_radius": "0.25rem",
+                        "border": f"1px solid {rx.color('violet', 5)}",
+                        "background": rx.color("violet", 3),
+                    },
+                )
+            ),
         ),
         rx.table.row(
             rx.table.cell(rx.text("When to Use", font_weight="bold")),
-            rx.table.cell(rx.text("For files that are part of your application's codebase")),
-            rx.table.cell(rx.text("For files that users upload or generate through your application")),
+            rx.table.cell(
+                rx.text("For files that are part of your application's codebase")
+            ),
+            rx.table.cell(
+                rx.text(
+                    "For files that users upload or generate through your application"
+                )
+            ),
         ),
         rx.table.row(
             rx.table.cell(rx.text("Availability", font_weight="bold")),
@@ -97,10 +147,7 @@ rx.button(
 ```python demo
 rx.button(
     "Download and Rename",
-    on_click=rx.download(
-        url="/reflex_banner.webp",
-        filename="different_name_logo.png"
-    ),
+    on_click=rx.download(url="/reflex_banner.webp", filename="different_name_logo.png"),
 )
 ```
 
@@ -109,18 +156,19 @@ If the data to download is not already available at a known URL, pass the `data`
 ```python demo exec
 import random
 
+
 class DownloadState(rx.State):
     @rx.event
     def download_random_data(self):
         return rx.download(
             data=",".join([str(random.randint(0, 100)) for _ in range(10)]),
-            filename="random_numbers.csv"
+            filename="random_numbers.csv",
         )
+
 
 def download_random_data_button():
     return rx.button(
-        "Download random numbers",
-        on_click=DownloadState.download_random_data
+        "Download random numbers", on_click=DownloadState.download_random_data
     )
 ```
 

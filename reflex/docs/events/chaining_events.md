@@ -11,6 +11,7 @@ You can call other event handlers from event handlers to keep your code modular.
 ```python demo exec id=call-handler
 import asyncio
 
+
 class CallHandlerState(rx.State):
     count: int = 0
     progress: int = 0
@@ -69,7 +70,6 @@ class CollatzState(rx.State):
         """Run a single step of the collatz conjecture."""
 
         while self.count > 1:
-
             await asyncio.sleep(0.5)
 
             if self.count % 2 == 0:
@@ -86,7 +86,6 @@ def collatz_example():
         rx.badge(CollatzState.count, font_size="1.5em", color_scheme="green"),
         rx.input(on_blur=CollatzState.start_collatz),
     )
-
 ```
 
 In this example, we run the [Collatz Conjecture](https://en.wikipedia.org/wiki/Collatz_conjecture) on a number entered by the user.

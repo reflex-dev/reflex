@@ -16,6 +16,7 @@ import reflex as rx
 from plotly.graph_objects import Figure
 from plotly.io import to_json
 
+
 # Use the serializer decorator to convert the figure to a JSON string.
 # Specify the type of the argument as an annotation.
 @rx.serializer
@@ -30,8 +31,10 @@ We can then define a var of this type as a prop in our component.
 import reflex as rx
 from plotly.graph_objects import Figure
 
+
 class Plotly(rx.Component):
     """Display a plotly graph."""
+
     library = "react-plotly.js@2.6.0"
     lib_dependencies: List[str] = ["plotly.js@2.22.0"]
 

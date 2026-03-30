@@ -21,7 +21,11 @@ class CondState(rx.State):
 def cond_example():
     return rx.vstack(
         rx.button("Toggle", on_click=CondState.change),
-        rx.cond(CondState.show, rx.text("Text 1", color="blue"), rx.text("Text 2", color="red")),
+        rx.cond(
+            CondState.show,
+            rx.text("Text 1", color="blue"),
+            rx.text("Text 2", color="red"),
+        ),
     )
 ```
 
@@ -40,7 +44,10 @@ class CondOptionalState(rx.State):
 def cond_optional_example():
     return rx.vstack(
         rx.button("Toggle", on_click=CondOptionalState.toggle_optional),
-        rx.cond(CondOptionalState.show_optional, rx.text("This text appears when condition is True", color="green")),
+        rx.cond(
+            CondOptionalState.show_optional,
+            rx.text("This text appears when condition is True", color="green"),
+        ),
         rx.text("This text is always visible", color="gray"),
     )
 ```
@@ -56,8 +63,12 @@ You can use the logical operator `~` to negate a condition.
 ```python
 rx.vstack(
     rx.button("Toggle", on_click=CondState.change),
-    rx.cond(CondState.show, rx.text("Text 1", color="blue"), rx.text("Text 2", color="red")),
-    rx.cond(~CondState.show, rx.text("Text 1", color="blue"), rx.text("Text 2", color="red")),
+    rx.cond(
+        CondState.show, rx.text("Text 1", color="blue"), rx.text("Text 2", color="red")
+    ),
+    rx.cond(
+        ~CondState.show, rx.text("Text 1", color="blue"), rx.text("Text 2", color="red")
+    ),
 )
 ```
 
@@ -72,6 +83,7 @@ We could equally use the operator `|` to represent a `logical or` in one of our 
 ```python demo exec
 import random
 
+
 class CondComplexState(rx.State):
     age: int = 19
 
@@ -85,12 +97,11 @@ def cond_complex_example():
         rx.button("Toggle", on_click=CondComplexState.change),
         rx.text(f"Age: {CondComplexState.age}"),
         rx.cond(
-            (CondComplexState.age >= 18) & (CondComplexState.age <=65),
+            (CondComplexState.age >= 18) & (CondComplexState.age <= 65),
             rx.text("You can work!", color="green"),
             rx.text("You cannot work!", color="red"),
         ),
     )
-
 ```
 
 ## Nested Conditional
@@ -106,9 +117,9 @@ if number > 0:
     print("Positive number")
 
 elif number == 0:
-    print('Zero')
+    print("Zero")
 else:
-    print('Negative number')
+    print("Negative number")
 ```
 
 This reflex code that is logically identical:
@@ -118,7 +129,6 @@ import random
 
 
 class NestedState(rx.State):
-
     num: int = 0
 
     def change(self):
@@ -135,10 +145,9 @@ def cond_nested_example():
                 NestedState.num == 0,
                 rx.text(f"{NestedState.num} is Zero!", color="blue"),
                 rx.text(f"{NestedState.num} is Negative!", color="red"),
-            )
+            ),
         ),
     )
-
 ```
 
 Here is a more advanced example where we have three numbers and we are checking which of the three is the largest. If any two of them are equal then we return that `Some of the numbers are equal!`.
@@ -150,12 +159,12 @@ a = 8
 b = 10
 c = 2
 
-if((a>b and a>c) and (a != b and a != c)):
- print(a, " is the largest!")
-elif((b>a and b>c) and (b != a and b != c)):
- print(b, " is the largest!")
-elif((c>a and c>b) and (c != a and c != b)):
- print(c, " is the largest!")
+if (a > b and a > c) and (a != b and a != c):
+    print(a, " is the largest!")
+elif (b > a and b > c) and (b != a and b != c):
+    print(b, " is the largest!")
+elif (c > a and c > b) and (c != a and c != b):
+    print(c, " is the largest!")
 else:
- print("Some of the numbers are equal!")
+    print("Some of the numbers are equal!")
 ```

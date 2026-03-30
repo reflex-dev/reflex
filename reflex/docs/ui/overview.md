@@ -25,7 +25,7 @@ Components are made up of children and props.
 Let's take a look at the `rx.text` component.
 
 ```python demo
-rx.text('Hello World!', color='blue', font_size="1.5em")
+rx.text("Hello World!", color="blue", font_size="1.5em")
 ```
 
 Here `"Hello World!"` is the child text to display, while `color` and `font_size` are props that modify the appearance of the text.
@@ -62,11 +62,11 @@ Pages are defined as functions that return a component. By default, the function
 
 ```python
 def index():
-    return rx.text('Root Page')
+    return rx.text("Root Page")
 
 
 def about():
-    return rx.text('About Page')
+    return rx.text("About Page")
 
 
 app = rx.App()

@@ -35,9 +35,10 @@ import reflex as rx
 from reflex_pyplot import pyplot
 import numpy as np
 
+
 def create_contour_plot():
     X, Y = np.meshgrid(np.linspace(-3, 3, 256), np.linspace(-3, 3, 256))
-    Z = (1 - X/2 + X**5 + Y**3) * np.exp(-X**2 - Y**2)
+    Z = (1 - X / 2 + X**5 + Y**3) * np.exp(-(X**2) - Y**2)
     levels = np.linspace(Z.min(), Z.max(), 7)
 
     fig, ax = plt.subplots()
@@ -45,12 +46,13 @@ def create_contour_plot():
     plt.close(fig)
     return fig
 
+
 def pyplot_simple_example():
     return rx.card(
-            pyplot(create_contour_plot(), width="100%", height="400px"),
-            bg_color='#ffffff',
-            width="100%",
-        )
+        pyplot(create_contour_plot(), width="100%", height="400px"),
+        bg_color="#ffffff",
+        width="100%",
+    )
 ```
 
 ```md alert info
@@ -75,8 +77,10 @@ import numpy as np
 
 
 def create_plot(theme: str, plot_data: tuple, scale: list):
-    bg_color, text_color = ('#1e1e1e', 'white') if theme == 'dark' else ('white', 'black')
-    grid_color = '#555555' if theme == 'dark' else '#cccccc'
+    bg_color, text_color = (
+        ("#1e1e1e", "white") if theme == "dark" else ("white", "black")
+    )
+    grid_color = "#555555" if theme == "dark" else "#cccccc"
 
     fig, ax = plt.subplots(facecolor=bg_color)
     ax.set_facecolor(bg_color)
@@ -84,7 +88,9 @@ def create_plot(theme: str, plot_data: tuple, scale: list):
     for (x, y), color in zip(plot_data, ["#4e79a7", "#f28e2b"]):
         ax.scatter(x, y, c=color, s=scale, label=color, alpha=0.6, edgecolors="none")
 
-    ax.legend(loc="upper right", facecolor=bg_color, edgecolor='none', labelcolor=text_color)
+    ax.legend(
+        loc="upper right", facecolor=bg_color, edgecolor="none", labelcolor=text_color
+    )
     ax.grid(True, color=grid_color)
     ax.tick_params(colors=text_color)
     for spine in ax.spines.values():
@@ -95,6 +101,7 @@ def create_plot(theme: str, plot_data: tuple, scale: list):
     plt.close(fig)
 
     return fig
+
 
 class PyplotState(rx.State):
     num_points: int = 25
@@ -120,6 +127,7 @@ class PyplotState(rx.State):
     def fig_dark(self) -> Figure:
         fig = create_plot("dark", self.plot_data, self.scale)
         return fig
+
 
 def pyplot_example():
     return rx.vstack(

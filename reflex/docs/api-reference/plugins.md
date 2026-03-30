@@ -44,11 +44,16 @@ config = rx.Config(
 The sitemap plugin automatically includes all your app's routes. For dynamic routes or custom configuration, you can add sitemap metadata to individual pages:
 
 ```python
-@rx.page(route="/blog/[slug]", context={"sitemap": {"changefreq": "weekly", "priority": 0.8}})
+@rx.page(
+    route="/blog/[slug]", context={"sitemap": {"changefreq": "weekly", "priority": 0.8}}
+)
 def blog_post():
     return rx.text("Blog post content")
 
-@rx.page(route="/about", context={"sitemap": {"changefreq": "monthly", "priority": 0.5}})
+
+@rx.page(
+    route="/about", context={"sitemap": {"changefreq": "monthly", "priority": 0.5}}
+)
 def about():
     return rx.text("About page")
 ```
@@ -171,7 +176,7 @@ config = rx.Config(
     app_name="my_app",
     plugins=[
         rx.plugins.TailwindV4Plugin(),  # Runs first
-        rx.plugins.SitemapPlugin(),     # Runs second
+        rx.plugins.SitemapPlugin(),  # Runs second
     ],
 )
 ```
@@ -210,6 +215,7 @@ You can create custom plugins by inheriting from the base `Plugin` class:
 ```python
 from reflex.plugins.base import Plugin
 from pathlib import Path
+
 
 class CustomPlugin(Plugin):
     def get_frontend_dependencies(self, **context):

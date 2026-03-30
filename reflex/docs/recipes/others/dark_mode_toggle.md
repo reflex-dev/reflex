@@ -11,6 +11,7 @@ The Dark Mode Toggle component lets users switch between light and dark themes.
 import reflex as rx
 from reflex.style import set_color_mode, color_mode
 
+
 def dark_mode_toggle() -> rx.Component:
     return rx.segmented_control.root(
         rx.segmented_control.item(

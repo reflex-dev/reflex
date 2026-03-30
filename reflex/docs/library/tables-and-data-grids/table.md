@@ -138,6 +138,8 @@ TableRowHeaderCell: |
 
 ```python exec
 import reflex as rx
+
+
 class Customer(rx.Model, table=True):
     name: str
     email: str
@@ -172,7 +174,8 @@ rx.table.root(
             rx.table.row_header_cell("Zahra Ambessa"),
             rx.table.cell("zahra@example.com"),
             rx.table.cell("Admin"),
-        ),rx.table.row(
+        ),
+        rx.table.row(
             rx.table.row_header_cell("Jasper Eriks"),
             rx.table.cell("jasper@example.com"),
             rx.table.cell("Developer"),
@@ -200,6 +203,7 @@ class TableForEachState(rx.State):
         ["Jasper Eriks", "jasper@example.com", "Developer"],
     ]
 
+
 def show_person(person: list):
     """Show a person in a table row."""
     return rx.table.row(
@@ -207,6 +211,7 @@ def show_person(person: list):
         rx.table.cell(person[1]),
         rx.table.cell(person[2]),
     )
+
 
 def foreach_table_example():
     return rx.table.root(
@@ -226,6 +231,7 @@ It is also possible to define a `class` such as `Person` below and then iterate 
 
 ```python
 import dataclasses
+
 
 @dataclasses.dataclass
 class Person:
@@ -252,15 +258,34 @@ For database-backed models, we typically use SQL queries with `select`, `where`,
 class DatabaseTableState(rx.State):
     # Mock data to simulate database records
     users: list = [
-        {"name": "John Doe", "email": "john@example.com", "phone": "555-1234", "address": "123 Main St"},
-        {"name": "Jane Smith", "email": "jane@example.com", "phone": "555-5678", "address": "456 Oak Ave"},
-        {"name": "Bob Johnson", "email": "bob@example.com", "phone": "555-9012", "address": "789 Pine Rd"},
-        {"name": "Alice Brown", "email": "alice@example.com", "phone": "555-3456", "address": "321 Maple Dr"},
+        {
+            "name": "John Doe",
+            "email": "john@example.com",
+            "phone": "555-1234",
+            "address": "123 Main St",
+        },
+        {
+            "name": "Jane Smith",
+            "email": "jane@example.com",
+            "phone": "555-5678",
+            "address": "456 Oak Ave",
+        },
+        {
+            "name": "Bob Johnson",
+            "email": "bob@example.com",
+            "phone": "555-9012",
+            "address": "789 Pine Rd",
+        },
+        {
+            "name": "Alice Brown",
+            "email": "alice@example.com",
+            "phone": "555-3456",
+            "address": "321 Maple Dr",
+        },
     ]
     filtered_users: list[dict] = []
     sort_value = ""
     search_value = ""
-
 
     @rx.event
     def load_entries(self):
@@ -272,7 +297,8 @@ class DatabaseTableState(rx.State):
         if self.search_value != "":
             search_term = self.search_value.lower()
             result = [
-                user for user in result
+                user
+                for user in result
                 if any(search_term in str(value).lower() for value in user.values())
             ]
 
@@ -347,6 +373,7 @@ When a `select` item is selected, the `on_change` event trigger is hooked up to 
 ```python demo exec
 import dataclasses
 
+
 @dataclasses.dataclass
 class Person:
     full_name: str
@@ -355,11 +382,12 @@ class Person:
 
 
 class InMemoryTableState(rx.State):
-
     _people: list[Person] = [
         Person(full_name="Danilo Sousa", email="danilo@example.com", group="Developer"),
         Person(full_name="Zahra Ambessa", email="zahra@example.com", group="Admin"),
-        Person(full_name="Jasper Eriks", email="zjasper@example.com", group="B-Developer"),
+        Person(
+            full_name="Jasper Eriks", email="zjasper@example.com", group="B-Developer"
+        ),
     ]
 
     sort_value = ""
@@ -384,10 +412,11 @@ class InMemoryTableState(rx.State):
 
         if self.search_value != "":
             people = [
-                person for person in people
+                person
+                for person in people
                 if any(
                     self.search_value.lower() in getattr(person, attr).lower()
-                    for attr in ['full_name', 'email', 'group']
+                    for attr in ["full_name", "email", "group"]
                 )
             ]
         return people
@@ -400,6 +429,7 @@ def show_person(person: Person):
         rx.table.cell(person.email),
         rx.table.cell(person.group),
     )
+
 
 def in_memory_table_example():
     return rx.vstack(
@@ -451,6 +481,7 @@ If you want to load the data when the page in the app loads you can set `on_load
 ```python
 class Customer(rx.Model, table=True):
     """The customer model."""
+
     name: str
     email: str
     phone: str
@@ -459,7 +490,6 @@ class Customer(rx.Model, table=True):
 
 ```python exec
 class DatabaseTableState(rx.State):
-
     users: list[dict] = []
 
     @rx.event
@@ -470,28 +500,29 @@ class DatabaseTableState(rx.State):
                 "name": "John Doe",
                 "email": "john@example.com",
                 "phone": "555-1234",
-                "address": "123 Main St"
+                "address": "123 Main St",
             },
             {
                 "name": "Jane Smith",
                 "email": "jane@example.com",
                 "phone": "555-5678",
-                "address": "456 Oak Ave"
+                "address": "456 Oak Ave",
             },
             {
                 "name": "Bob Johnson",
                 "email": "bob@example.com",
                 "phone": "555-9012",
-                "address": "789 Pine Blvd"
+                "address": "789 Pine Blvd",
             },
             {
                 "name": "Alice Williams",
                 "email": "alice@example.com",
                 "phone": "555-3456",
-                "address": "321 Maple Dr"
-            }
+                "address": "321 Maple Dr",
+            },
         ]
         self.users = customers_json
+
 
 def show_customer(user: dict):
     return rx.table.row(
@@ -501,21 +532,22 @@ def show_customer(user: dict):
         rx.table.cell(user["address"]),
     )
 
+
 def loading_data_table_example():
     return rx.table.root(
-    rx.table.header(
-        rx.table.row(
-            rx.table.column_header_cell("Name"),
-            rx.table.column_header_cell("Email"),
-            rx.table.column_header_cell("Phone"),
-            rx.table.column_header_cell("Address"),
+        rx.table.header(
+            rx.table.row(
+                rx.table.column_header_cell("Name"),
+                rx.table.column_header_cell("Email"),
+                rx.table.column_header_cell("Phone"),
+                rx.table.column_header_cell("Address"),
+            ),
         ),
-    ),
-    rx.table.body(rx.foreach(DatabaseTableState.users, show_customer)),
-    on_mount=DatabaseTableState.load_entries,
-    width="100%",
-    margin_bottom="1em",
-)
+        rx.table.body(rx.foreach(DatabaseTableState.users, show_customer)),
+        on_mount=DatabaseTableState.load_entries,
+        width="100%",
+        margin_bottom="1em",
+    )
 ```
 
 ```python eval
@@ -525,8 +557,8 @@ loading_data_table_example()
 ```python
 from sqlmodel import select
 
-class DatabaseTableState(rx.State):
 
+class DatabaseTableState(rx.State):
     users: list[Customer] = []
 
     @rx.event
@@ -545,6 +577,7 @@ def show_customer(user: Customer):
         rx.table.cell(user.address),
     )
 
+
 def loading_data_table_example():
     return rx.table.root(
         rx.table.header(
@@ -559,7 +592,6 @@ def loading_data_table_example():
         on_mount=DatabaseTableState.load_entries,
         width="100%",
     )
-
 ```
 
 ## Filtering (Searching) and Sorting
@@ -586,15 +618,44 @@ class Customer(rx.Model, table=True):
 
 ```python exec
 class DatabaseTableState2(rx.State):
-
     # Mock data to simulate database records
     _users: list[dict] = [
-        {"name": "John Doe", "email": "john@example.com", "phone": "555-1234", "address": "123 Main St"},
-        {"name": "Jane Smith", "email": "jane@example.com", "phone": "555-5678", "address": "456 Oak Ave"},
-        {"name": "Bob Johnson", "email": "bob@example.com", "phone": "555-9012", "address": "789 Pine Rd"},
-        {"name": "Alice Brown", "email": "alice@example.com", "phone": "555-3456", "address": "321 Maple Dr"},
-        {"name": "Charlie Wilson", "email": "charlie@example.com", "phone": "555-7890", "address": "654 Elm St"},
-        {"name": "Emily Davis", "email": "emily@example.com", "phone": "555-2345", "address": "987 Cedar Ln"},
+        {
+            "name": "John Doe",
+            "email": "john@example.com",
+            "phone": "555-1234",
+            "address": "123 Main St",
+        },
+        {
+            "name": "Jane Smith",
+            "email": "jane@example.com",
+            "phone": "555-5678",
+            "address": "456 Oak Ave",
+        },
+        {
+            "name": "Bob Johnson",
+            "email": "bob@example.com",
+            "phone": "555-9012",
+            "address": "789 Pine Rd",
+        },
+        {
+            "name": "Alice Brown",
+            "email": "alice@example.com",
+            "phone": "555-3456",
+            "address": "321 Maple Dr",
+        },
+        {
+            "name": "Charlie Wilson",
+            "email": "charlie@example.com",
+            "phone": "555-7890",
+            "address": "654 Elm St",
+        },
+        {
+            "name": "Emily Davis",
+            "email": "emily@example.com",
+            "phone": "555-2345",
+            "address": "987 Cedar Ln",
+        },
     ]
 
     users: list[dict] = []
@@ -610,7 +671,8 @@ class DatabaseTableState2(rx.State):
         if self.search_value != "":
             search_term = self.search_value.lower()
             result = [
-                user for user in result
+                user
+                for user in result
                 if any(search_term in str(value).lower() for value in user.values())
             ]
 
@@ -639,33 +701,34 @@ def show_customer_2(user: dict):
         rx.table.cell(user["address"]),
     )
 
+
 def loading_data_table_example_2():
     return rx.vstack(
         rx.select(
             ["name", "email", "phone", "address"],
-        placeholder="Sort By: Name",
-        on_change= lambda value: DatabaseTableState2.sort_values(value),
-    ),
-    rx.input(
-        placeholder="Search here...",
-        on_change= lambda value: DatabaseTableState2.filter_values(value),
-    ),
-    rx.table.root(
-        rx.table.header(
-            rx.table.row(
-                rx.table.column_header_cell("Name"),
-                rx.table.column_header_cell("Email"),
-                rx.table.column_header_cell("Phone"),
-                rx.table.column_header_cell("Address"),
-            ),
+            placeholder="Sort By: Name",
+            on_change=lambda value: DatabaseTableState2.sort_values(value),
         ),
-        rx.table.body(rx.foreach(DatabaseTableState2.users, show_customer_2)),
-        on_mount=DatabaseTableState2.load_entries,
+        rx.input(
+            placeholder="Search here...",
+            on_change=lambda value: DatabaseTableState2.filter_values(value),
+        ),
+        rx.table.root(
+            rx.table.header(
+                rx.table.row(
+                    rx.table.column_header_cell("Name"),
+                    rx.table.column_header_cell("Email"),
+                    rx.table.column_header_cell("Phone"),
+                    rx.table.column_header_cell("Address"),
+                ),
+            ),
+            rx.table.body(rx.foreach(DatabaseTableState2.users, show_customer_2)),
+            on_mount=DatabaseTableState2.load_entries,
+            width="100%",
+        ),
         width="100%",
-    ),
-    width="100%",
-    margin_bottom="1em",
-)
+        margin_bottom="1em",
+    )
 ```
 
 ```python eval
@@ -677,7 +740,6 @@ from sqlmodel import select, asc, or_
 
 
 class DatabaseTableState2(rx.State):
-
     users: list[Customer] = []
 
     sort_value = ""
@@ -735,11 +797,11 @@ def loading_data_table_example2():
         rx.select(
             ["name", "email", "phone", "address"],
             placeholder="Sort By: Name",
-            on_change= lambda value: DatabaseTableState2.sort_values(value),
+            on_change=lambda value: DatabaseTableState2.sort_values(value),
         ),
         rx.input(
             placeholder="Search here...",
-            on_change= lambda value: DatabaseTableState2.filter_values(value),
+            on_change=lambda value: DatabaseTableState2.filter_values(value),
         ),
         rx.table.root(
             rx.table.header(
@@ -756,7 +818,6 @@ def loading_data_table_example2():
         ),
         width="100%",
     )
-
 ```
 
 ## Pagination
@@ -771,14 +832,43 @@ The purpose of this code is to retrieve a specific subset of rows from the `Cust
 
 ```python exec
 class DatabaseTableState3(rx.State):
-
     _mock_data: list[Customer] = [
-        Customer(name="John Doe", email="john@example.com", phone="555-1234", address="123 Main St"),
-        Customer(name="Jane Smith", email="jane@example.com", phone="555-5678", address="456 Oak Ave"),
-        Customer(name="Bob Johnson", email="bob@example.com", phone="555-9012", address="789 Pine Rd"),
-        Customer(name="Alice Brown", email="alice@example.com", phone="555-3456", address="321 Maple Dr"),
-        Customer(name="Charlie Wilson", email="charlie@example.com", phone="555-7890", address="654 Elm St"),
-        Customer(name="Emily Davis", email="emily@example.com", phone="555-2345", address="987 Cedar Ln"),
+        Customer(
+            name="John Doe",
+            email="john@example.com",
+            phone="555-1234",
+            address="123 Main St",
+        ),
+        Customer(
+            name="Jane Smith",
+            email="jane@example.com",
+            phone="555-5678",
+            address="456 Oak Ave",
+        ),
+        Customer(
+            name="Bob Johnson",
+            email="bob@example.com",
+            phone="555-9012",
+            address="789 Pine Rd",
+        ),
+        Customer(
+            name="Alice Brown",
+            email="alice@example.com",
+            phone="555-3456",
+            address="321 Maple Dr",
+        ),
+        Customer(
+            name="Charlie Wilson",
+            email="charlie@example.com",
+            phone="555-7890",
+            address="654 Elm St",
+        ),
+        Customer(
+            name="Emily Davis",
+            email="emily@example.com",
+            phone="555-2345",
+            address="987 Cedar Ln",
+        ),
     ]
     users: list[Customer] = []
 
@@ -788,11 +878,7 @@ class DatabaseTableState3(rx.State):
 
     @rx.var(cache=True)
     def page_number(self) -> int:
-        return (
-            (self.offset // self.limit)
-            + 1
-            + (1 if self.offset % self.limit else 0)
-        )
+        return (self.offset // self.limit) + 1 + (1 if self.offset % self.limit else 0)
 
     @rx.var(cache=True)
     def total_pages(self) -> int:
@@ -816,7 +902,7 @@ class DatabaseTableState3(rx.State):
 
     @rx.event
     def load_entries(self):
-        self.users = self._mock_data[self.offset:self.offset + self.limit]
+        self.users = self._mock_data[self.offset : self.offset + self.limit]
         self.total_items = len(self._mock_data)
 
 
@@ -871,7 +957,6 @@ from sqlmodel import select, func
 
 
 class DatabaseTableState3(rx.State):
-
     users: list[Customer] = []
 
     total_items: int
@@ -880,11 +965,7 @@ class DatabaseTableState3(rx.State):
 
     @rx.var(cache=True)
     def page_number(self) -> int:
-        return (
-            (self.offset // self.limit)
-            + 1
-            + (1 if self.offset % self.limit else 0)
-        )
+        return (self.offset // self.limit) + 1 + (1 if self.offset % self.limit else 0)
 
     @rx.var(cache=True)
     def total_pages(self) -> int:
@@ -960,7 +1041,6 @@ def loading_data_table_example3():
         ),
         width="100%",
     )
-
 ```
 
 ## More advanced examples
@@ -982,11 +1062,27 @@ import io
 import csv
 import json
 
+
 class TableDownloadState(rx.State):
     _mock_data: list[Customer] = [
-        Customer(name="John Doe", email="john@example.com", phone="555-1234", address="123 Main St"),
-        Customer(name="Jane Smith", email="jane@example.com", phone="555-5678", address="456 Oak Ave"),
-        Customer(name="Bob Johnson", email="bob@example.com", phone="555-9012", address="789 Pine Rd"),
+        Customer(
+            name="John Doe",
+            email="john@example.com",
+            phone="555-1234",
+            address="123 Main St",
+        ),
+        Customer(
+            name="Jane Smith",
+            email="jane@example.com",
+            phone="555-5678",
+            address="456 Oak Ave",
+        ),
+        Customer(
+            name="Bob Johnson",
+            email="bob@example.com",
+            phone="555-9012",
+            address="789 Pine Rd",
+        ),
     ]
     users: list[Customer] = []
 
@@ -1009,7 +1105,6 @@ class TableDownloadState(rx.State):
         output.close()
         return csv_data
 
-
     def _convert_to_json(self) -> str:
         return json.dumps([u.dict() for u in self._mock_data], indent=2)
 
@@ -1029,6 +1124,7 @@ class TableDownloadState(rx.State):
             filename="data.json",
         )
 
+
 def show_customer(user: Customer):
     return rx.table.row(
         rx.table.cell(user.name),
@@ -1036,6 +1132,7 @@ def show_customer(user: Customer):
         rx.table.cell(user.phone),
         rx.table.cell(user.address),
     )
+
 
 def download_data_table_example():
     return rx.vstack(
@@ -1067,7 +1164,6 @@ def download_data_table_example():
         spacing="5",
         margin_bottom="1em",
     )
-
 ```
 
 ```python eval
@@ -1079,8 +1175,8 @@ import io
 import csv
 from sqlmodel import select
 
-class TableDownloadState(rx.State):
 
+class TableDownloadState(rx.State):
     users: list[Customer] = []
 
     @rx.event
@@ -1088,7 +1184,6 @@ class TableDownloadState(rx.State):
         """Get all users from the database."""
         with rx.session() as session:
             self.users = session.exec(select(Customer)).all()
-
 
     def _convert_to_csv(self) -> str:
         """Convert the users data to CSV format."""
@@ -1130,6 +1225,7 @@ def show_customer(user: Customer):
         rx.table.cell(user.address),
     )
 
+
 def download_data_table_example():
     return rx.vstack(
         rx.table.root(
@@ -1162,7 +1258,6 @@ def download_data_table_example():
         width="100%",
         spacing="5",
     )
-
 ```
 
 # Real World Example UI

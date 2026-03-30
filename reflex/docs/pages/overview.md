@@ -13,14 +13,16 @@ By default, the function name will be used as the route, but you can also specif
 
 ```python
 def index():
-    return rx.text('Root Page')
+    return rx.text("Root Page")
+
 
 def about():
-    return rx.text('About Page')
+    return rx.text("About Page")
 
 
 def custom():
-    return rx.text('Custom Route')
+    return rx.text("Custom Route")
+
 
 app = rx.App()
 
@@ -48,9 +50,9 @@ In this example we create three pages:
 You can also use the `@rx.page` decorator to add a page.
 
 ```python
-@rx.page(route='/', title='My Beautiful App')
+@rx.page(route="/", title="My Beautiful App")
 def index():
-    return rx.text('A Beautiful App')
+    return rx.text("A Beautiful App")
 ```
 
 This is equivalent to calling `app.add_page` with the same arguments.
@@ -100,8 +102,13 @@ Redirect the user to a new path within the application using `rx.redirect()`.
 
 ```python demo
 rx.vstack(
-    rx.button("open in tab", on_click=rx.redirect("/docs/api-reference/special_events")),
-    rx.button("open in new tab", on_click=rx.redirect('https://github.com/reflex-dev/reflex/', is_external=True))
+    rx.button(
+        "open in tab", on_click=rx.redirect("/docs/api-reference/special_events")
+    ),
+    rx.button(
+        "open in new tab",
+        on_click=rx.redirect("https://github.com/reflex-dev/reflex/", is_external=True),
+    ),
 )
 ```
 
@@ -117,18 +124,26 @@ class Redirect2ExampleState(rx.State):
 
     @rx.var
     def url(self) -> str:
-        return 'https://github.com/reflex-dev/' if self.redirect_to_org else 'https://github.com/reflex-dev/reflex/'
+        return (
+            "https://github.com/reflex-dev/"
+            if self.redirect_to_org
+            else "https://github.com/reflex-dev/reflex/"
+        )
 
     @rx.event
     def change_page(self):
         return rx.redirect(self.url, is_external=True)
 
+
 def redirect_example():
     return rx.vstack(
         rx.text(f"{Redirect2ExampleState.url}"),
-        rx.button("Change redirect location", on_click=Redirect2ExampleState.change_redirect),
-        rx.button("Redirect to new page in State", on_click=Redirect2ExampleState.change_page),
-
+        rx.button(
+            "Change redirect location", on_click=Redirect2ExampleState.change_redirect
+        ),
+        rx.button(
+            "Redirect to new page in State", on_click=Redirect2ExampleState.change_page
+        ),
     )
 ```
 
@@ -142,10 +157,11 @@ Pages can also have nested routes.
 
 ```python
 def nested_page():
-    return rx.text('Nested Page')
+    return rx.text("Nested Page")
+
 
 app = rx.App()
-app.add_page(nested_page, route='/nested/page')
+app.add_page(nested_page, route="/nested/page")
 ```
 
 This component will be available at `/nested/page`.
@@ -155,8 +171,7 @@ This component will be available at `/nested/page`.
 ```python exec
 import reflex as rx
 
-meta_data = (
-"""
+meta_data = """
 @rx.page(
     title='My Beautiful App',
     description='A beautiful app built with Reflex',
@@ -179,9 +194,6 @@ meta = [
 
 app = rx.App()
 """
-
-)
-
 ```
 
 You can add page metadata such as:
@@ -226,11 +238,13 @@ class State(rx.State):
     def current_url(self) -> str:
         return self.router.page.full_raw_path
 
+
 def index():
     return rx.text(State.current_url)
 
+
 app = rx.App()
-app.add_page(index, route='/posts/[id]')
+app.add_page(index, route="/posts/[id]")
 ```
 
 In this example, running on `localhost` should display `http://localhost:3000/posts/123/`

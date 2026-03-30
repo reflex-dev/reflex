@@ -56,7 +56,6 @@ def gallery() -> rx.Component:
         id="gallery",
         class_name="mx-auto",
     )
-
 ```
 
 ```python eval

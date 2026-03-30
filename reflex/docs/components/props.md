@@ -29,7 +29,10 @@ Components support many standard HTML properties as props. For example: the HTML
 rx.box(
     "Hello World",
     id="box-id",
-    class_name=["class-name-1", "class-name-2",],
+    class_name=[
+        "class-name-1",
+        "class-name-2",
+    ],
 )
 ```
 
@@ -47,7 +50,7 @@ rx.button(
     background_image="linear-gradient(144deg,#AF40FF,#5B42F3 50%,#00DDEB)",
     box_sizing="border-box",
     color="white",
-    opacity= 1,
+    opacity=1,
 )
 ```
 

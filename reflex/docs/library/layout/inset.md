@@ -27,11 +27,17 @@ Nesting an Inset component inside a Card will render the content from edge to ed
 ```python demo
 rx.card(
     rx.inset(
-        rx.image(src="https://web.reflex-assets.dev/other/reflex_banner.png", width="100%", height="auto"),
+        rx.image(
+            src="https://web.reflex-assets.dev/other/reflex_banner.png",
+            width="100%",
+            height="auto",
+        ),
         side="top",
         pb="current",
     ),
-    rx.text("Reflex is a web framework that allows developers to build their app in pure Python."),
+    rx.text(
+        "Reflex is a web framework that allows developers to build their app in pure Python."
+    ),
     width="25vw",
 )
 ```
@@ -46,7 +52,11 @@ content would have had if it went to the edge of the parent component.
 rx.card(
     rx.text("The inset below uses a bottom side."),
     rx.inset(
-        rx.image(src="https://web.reflex-assets.dev/other/reflex_banner.png", width="100%", height="auto"),
+        rx.image(
+            src="https://web.reflex-assets.dev/other/reflex_banner.png",
+            width="100%",
+            height="auto",
+        ),
         side="bottom",
         pt="current",
     ),
@@ -57,9 +67,14 @@ rx.card(
 ```python demo
 rx.card(
     rx.flex(
-        rx.text("This inset uses a right side, which requires a flex with direction row."),
+        rx.text(
+            "This inset uses a right side, which requires a flex with direction row."
+        ),
         rx.inset(
-            rx.box(background="center/cover url('https://web.reflex-assets.dev/other/reflex_banner.png')", height="100%"),
+            rx.box(
+                background="center/cover url('https://web.reflex-assets.dev/other/reflex_banner.png')",
+                height="100%",
+            ),
             width="100%",
             side="right",
             pl="current",
@@ -75,12 +90,17 @@ rx.card(
 rx.card(
     rx.flex(
         rx.inset(
-            rx.box(background="center/cover url('https://web.reflex-assets.dev/other/reflex_banner.png')", height="100%"),
+            rx.box(
+                background="center/cover url('https://web.reflex-assets.dev/other/reflex_banner.png')",
+                height="100%",
+            ),
             width="100%",
             side="left",
             pr="current",
         ),
-        rx.text("This inset uses a left side, which also requires a flex with direction row."),
+        rx.text(
+            "This inset uses a left side, which also requires a flex with direction row."
+        ),
         direction="row",
         width="100%",
     ),

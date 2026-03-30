@@ -21,12 +21,15 @@ To create a decentralized event handler, use the `@rx.event` decorator on a func
 ```python demo exec
 import reflex as rx
 
+
 class MyState(rx.State):
     count: int = 0
+
 
 @rx.event
 def increment(state: MyState, amount: int):
     state.count += amount
+
 
 def decentralized_event_example():
     return rx.vstack(
@@ -60,16 +63,20 @@ class TraditionalState(rx.State):
     def increment(self, amount: int = 1):
         self.count += amount
 
+
 # Usage in components
 rx.button("Increment", on_click=TraditionalState.increment(5))
+
 
 # Decentralized event handler outside the state class
 class DecentralizedState(rx.State):
     count: int = 0
 
+
 @rx.event
 def increment(state: DecentralizedState, amount: int = 1):
     state.count += amount
+
 
 # Usage in components
 rx.button("Increment", on_click=increment(5))
@@ -127,6 +134,7 @@ def update_user(state: UserState, name: str, age: int):
     state.name = name
     state.age = age
 
+
 @rx.event
 def delete_user(state: UserState):
     state.name = ""
@@ -143,6 +151,7 @@ Decentralized event handlers work seamlessly with other Reflex event features:
 async def long_running_task(state: AppState):
     # Long-running task implementation
     pass
+
 
 # Event chaining
 @rx.event

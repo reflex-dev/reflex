@@ -205,7 +205,9 @@ class AlertDialogState(rx.State):
 
 def alert_dialog():
     return rx.flex(
-        rx.heading(f"Number of times alert dialog opened or closed: {AlertDialogState.num_opens}"),
+        rx.heading(
+            f"Number of times alert dialog opened or closed: {AlertDialogState.num_opens}"
+        ),
         rx.heading(f"Alert Dialog open: {AlertDialogState.opened}"),
         rx.alert_dialog.root(
             rx.alert_dialog.trigger(
@@ -256,26 +258,28 @@ class AlertDialogState2(rx.State):
 
 def alert_dialog2():
     return rx.box(
-            rx.alert_dialog.root(
-        rx.alert_dialog.content(
-            rx.alert_dialog.title("Revoke access"),
-            rx.alert_dialog.description(
-                "Are you sure? This application will no longer be accessible and any existing sessions will be expired.",
-            ),
-            rx.flex(
-                rx.alert_dialog.cancel(
-                    rx.button("Cancel", on_click=AlertDialogState2.dialog_open),
+        rx.alert_dialog.root(
+            rx.alert_dialog.content(
+                rx.alert_dialog.title("Revoke access"),
+                rx.alert_dialog.description(
+                    "Are you sure? This application will no longer be accessible and any existing sessions will be expired.",
                 ),
-                rx.alert_dialog.action(
-                    rx.button("Revoke access", on_click=AlertDialogState2.dialog_open),
+                rx.flex(
+                    rx.alert_dialog.cancel(
+                        rx.button("Cancel", on_click=AlertDialogState2.dialog_open),
+                    ),
+                    rx.alert_dialog.action(
+                        rx.button(
+                            "Revoke access", on_click=AlertDialogState2.dialog_open
+                        ),
+                    ),
+                    spacing="3",
                 ),
-                spacing="3",
             ),
+            open=AlertDialogState2.opened,
         ),
-        open=AlertDialogState2.opened,
-    ),
-    rx.button("Button to Open the Dialog", on_click=AlertDialogState2.dialog_open),
-)
+        rx.button("Button to Open the Dialog", on_click=AlertDialogState2.dialog_open),
+    )
 ```
 
 ## Form Submission to a Database from an Alert Dialog
@@ -295,11 +299,12 @@ This example adds new users to a database from an alert dialog using a form.
 ```python demo exec
 class User1(rx.Model, table=True):
     """The user model."""
+
     name: str
     email: str
 
-class State(rx.State):
 
+class State(rx.State):
     current_user: User1 = User1()
 
     @rx.event
@@ -314,7 +319,9 @@ class State(rx.State):
         #     session.add(User1(**self.current_user))
         #     session.commit()
 
-        return rx.toast.info(f"User {self.current_user['name']} has been added.", position="bottom-right")
+        return rx.toast.info(
+            f"User {self.current_user['name']} has been added.", position="bottom-right"
+        )
 
 
 def index() -> rx.Component:
@@ -334,12 +341,8 @@ def index() -> rx.Component:
             ),
             rx.form(
                 rx.flex(
-                    rx.input(
-                        placeholder="User Name", name="name"
-                    ),
-                    rx.input(
-                        placeholder="user@reflex.dev", name="email"
-                    ),
+                    rx.input(placeholder="User Name", name="name"),
+                    rx.input(placeholder="user@reflex.dev", name="email"),
                     rx.flex(
                         rx.alert_dialog.cancel(
                             rx.button(

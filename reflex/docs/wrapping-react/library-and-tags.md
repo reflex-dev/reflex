@@ -49,7 +49,7 @@ class MyBaseComponent(rx.Component):
     alias = "MyComponentAlias"
 
     # If the component is a default export from the module, set this to True.
-    is_default = True/False
+    is_default = True / False
 
     @classmethod
     def create(cls, *children, **props):
@@ -64,7 +64,6 @@ class MyBaseComponent(rx.Component):
         """
         # Your custom creation logic here
         return super().create(*children, **props)
-
 ```
 
 # Wrapping a Dynamic Component
@@ -88,12 +87,13 @@ You can wrap it in Reflex like this:
 ```python
 from reflex.components.component import NoSSRComponent
 
+
 class MyLibraryComponent(NoSSRComponent):
     """A component that wraps a lib needing dynamic import."""
 
     library = "my-library@x.y.z"
 
-    tag="MyLibraryComponent"
+    tag = "MyLibraryComponent"
 ```
 
 It may not always be clear when a library requires dynamic imports. A few things to keep in mind are if the component is very client side heavy i.e. the view and structure depends on things that are fetched at run time, or if it uses `window` or `document` objects directly it will need to be wrapped as a `NoSSRComponent`.
@@ -120,7 +120,6 @@ When wrapping a component, you may need to parse a state var by applying a JS fu
 First you need to define the parsing function by writing it in `add_custom_code`.
 
 ```python
-
 def add_custom_code(self) -> list[str]:
     """Add custom code to the component."""
     # Define the parsing function

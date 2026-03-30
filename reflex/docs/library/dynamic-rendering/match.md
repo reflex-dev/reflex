@@ -43,11 +43,19 @@ import reflex as rx
 
 class MatchState(rx.State):
     cat_breed: str = ""
-    animal_options: List[str] = ["persian", "siamese", "maine coon", "ragdoll", "pug", "corgi"]
+    animal_options: List[str] = [
+        "persian",
+        "siamese",
+        "maine coon",
+        "ragdoll",
+        "pug",
+        "corgi",
+    ]
 
     @rx.event
     def set_cat_breed(self, breed: str):
         self.cat_breed = breed
+
 
 def match_demo():
     return rx.flex(
@@ -57,21 +65,22 @@ def match_demo():
             ("siamese", rx.text("Siamese cat selected.")),
             ("maine coon", rx.text("Maine Coon cat selected.")),
             ("ragdoll", rx.text("Ragdoll cat selected.")),
-            rx.text("Unknown cat breed selected.")
+            rx.text("Unknown cat breed selected."),
         ),
         rx.select.root(
             rx.select.trigger(),
             rx.select.content(
                 rx.select.group(
-                    rx.foreach(MatchState.animal_options, lambda x: rx.select.item(x, value=x))
+                    rx.foreach(
+                        MatchState.animal_options, lambda x: rx.select.item(x, value=x)
+                    )
                 ),
             ),
             value=MatchState.cat_breed,
             on_change=MatchState.set_cat_breed,
-
         ),
-        direction= "column",
-        gap= "2"
+        direction="column",
+        gap="2",
     )
 ```
 
@@ -86,11 +95,11 @@ when working with the default case:
 
 ```python
 rx.match(
-           MatchState.cat_breed,
-           ("persian", rx.text("persian cat selected")),
-           rx.text("Unknown cat breed selected."),
-           ("siamese", rx.text("siamese cat selected")),
-       )
+    MatchState.cat_breed,
+    ("persian", rx.text("persian cat selected")),
+    rx.text("Unknown cat breed selected."),
+    ("siamese", rx.text("siamese cat selected")),
+)
 ```
 
 The above code snippet will result in an error due to the misplaced default case.
@@ -100,12 +109,12 @@ The above code snippet will result in an error due to the misplaced default case
 
 ```python
 rx.match(
-           MatchState.cat_breed,
-           ("persian", rx.text("persian cat selected")),
-           ("siamese", rx.text("siamese cat selected")),
-           rx.text("Unknown cat breed selected."),
-           rx.text("Another unknown cat breed selected.")
-       )
+    MatchState.cat_breed,
+    ("persian", rx.text("persian cat selected")),
+    ("siamese", rx.text("siamese cat selected")),
+    rx.text("Unknown cat breed selected."),
+    rx.text("Another unknown cat breed selected."),
+)
 ```
 
 - **Optional Default Case for Component Return Values**: If the match cases in a `rx.match` component
@@ -114,10 +123,10 @@ rx.match(
 
 ```python
 rx.match(
-           MatchState.cat_breed,
-           ("persian", rx.text("persian cat selected")),
-           ("siamese", rx.text("siamese cat selected")),
-       )
+    MatchState.cat_breed,
+    ("persian", rx.text("persian cat selected")),
+    ("siamese", rx.text("siamese cat selected")),
+)
 ```
 
 In this case, `rx.fragment` is the default case. However, not providing a default case for non-component
@@ -125,10 +134,10 @@ return values will result in an error:
 
 ```python
 rx.match(
-           MatchState.cat_breed,
-           ("persian", "persian cat selected"),
-           ("siamese", "siamese cat selected"),
-       )
+    MatchState.cat_breed,
+    ("persian", "persian cat selected"),
+    ("siamese", "siamese cat selected"),
+)
 ```
 
 The above code snippet will result in an error as a default case must be explicitly
@@ -149,11 +158,22 @@ import reflex as rx
 
 class MultiMatchState(rx.State):
     animal_breed: str = ""
-    animal_options: List[str] = ["persian", "siamese", "maine coon", "pug", "corgi", "mustang", "rahvan", "football", "golf"]
+    animal_options: List[str] = [
+        "persian",
+        "siamese",
+        "maine coon",
+        "pug",
+        "corgi",
+        "mustang",
+        "rahvan",
+        "football",
+        "golf",
+    ]
 
     @rx.event
     def set_animal_breed(self, breed: str):
         self.animal_breed = breed
+
 
 def multi_match_demo():
     return rx.flex(
@@ -162,21 +182,23 @@ def multi_match_demo():
             ("persian", "siamese", "maine coon", rx.text("Breeds of cats.")),
             ("pug", "corgi", rx.text("Breeds of dogs.")),
             ("mustang", "rahvan", rx.text("Breeds of horses.")),
-            rx.text("Unknown animal breed")
+            rx.text("Unknown animal breed"),
         ),
         rx.select.root(
             rx.select.trigger(),
             rx.select.content(
                 rx.select.group(
-                    rx.foreach(MultiMatchState.animal_options, lambda x: rx.select.item(x, value=x))
+                    rx.foreach(
+                        MultiMatchState.animal_options,
+                        lambda x: rx.select.item(x, value=x),
+                    )
                 ),
             ),
             value=MultiMatchState.animal_breed,
             on_change=MultiMatchState.set_animal_breed,
-
         ),
-        direction= "column",
-        gap= "2"
+        direction="column",
+        gap="2",
     )
 ```
 
@@ -187,10 +209,10 @@ The following code snippet will result in an error:
 
 ```python
 rx.match(
-            MatchState.cat_breed,
-            ("persian",),
-            ("maine coon", rx.text("Maine Coon cat selected")),
-        )
+    MatchState.cat_breed,
+    ("persian",),
+    ("maine coon", rx.text("Maine Coon cat selected")),
+)
 ```
 
 ## Usage as Props
@@ -218,20 +240,20 @@ def match_prop_demo_():
         rx.button("decrement", on_click=MatchPropState.decr, background_color="red"),
         rx.badge(
             MatchPropState.value,
-            color_scheme= rx.match(
-                    MatchPropState.value,
-                    (1, "red"),
-                    (2, "blue"),
-                    (6, "purple"),
-                    (10, "orange"),
-                    "green"
-                ),
-                size="2",
+            color_scheme=rx.match(
+                MatchPropState.value,
+                (1, "red"),
+                (2, "blue"),
+                (6, "purple"),
+                (10, "orange"),
+                "green",
+            ),
+            size="2",
         ),
         rx.button("increment", on_click=MatchPropState.incr),
         align_items="center",
-        direction= "row",
-        gap= "3"
+        direction="row",
+        gap="3",
     )
 ```
 
@@ -258,23 +280,25 @@ class MatchMultiPropState(rx.State):
 
 def match_multi_prop_demo_():
     return rx.flex(
-        rx.button("decrement", on_click=MatchMultiPropState.decr, background_color="red"),
+        rx.button(
+            "decrement", on_click=MatchMultiPropState.decr, background_color="red"
+        ),
         rx.badge(
             MatchMultiPropState.value,
-            color_scheme= rx.match(
-                    MatchMultiPropState.value,
-                    (1, 3, 9, "red"),
-                    (2, 4, 5, "blue"),
-                    (6, 8, 12, "purple"),
-                    (10, 15, 20, 25, "orange"),
-                    "green"
-                ),
-                size="2",
+            color_scheme=rx.match(
+                MatchMultiPropState.value,
+                (1, 3, 9, "red"),
+                (2, 4, 5, "blue"),
+                (6, 8, 12, "purple"),
+                (10, 15, 20, 25, "orange"),
+                "green",
+            ),
+            size="2",
         ),
         rx.button("increment", on_click=MatchMultiPropState.incr),
         align_items="center",
-        direction= "row",
-        gap= "3"
+        direction="row",
+        gap="3",
     )
 ```
 
@@ -287,9 +311,5 @@ Consider the following example, which is more suitable for `rx.cond`:\*
 ```
 
 ```python
-rx.cond(
-    MatchPropState.value == 10,
-    "true value",
-    "false value"
-)
+rx.cond(MatchPropState.value == 10, "true value", "false value")
 ```

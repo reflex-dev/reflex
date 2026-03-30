@@ -84,35 +84,28 @@ rx.popover.root(
 ## Examples in Context
 
 ```python demo
-
 rx.popover.root(
     rx.popover.trigger(
         rx.button("Comment", variant="soft"),
     ),
     rx.popover.content(
         rx.flex(
-            rx.avatar(
-                "2",
-                fallback="RX",
-                radius="full"
-            ),
+            rx.avatar("2", fallback="RX", radius="full"),
             rx.box(
                 rx.text_area(placeholder="Write a comment…", style={"height": 80}),
                 rx.flex(
                     rx.checkbox("Send to group"),
-                    rx.popover.close(
-                        rx.button("Comment", size="1")
-                    ),
+                    rx.popover.close(rx.button("Comment", size="1")),
                     spacing="3",
                     margin_top="12px",
                     justify="between",
                 ),
                 flex_grow="1",
             ),
-            spacing="3"
+            spacing="3",
         ),
         style={"width": 360},
-    )
+    ),
 )
 ```
 
@@ -131,9 +124,7 @@ rx.popover.root(
             rx.text_area(placeholder="Write a comment…", style={"height": 80}),
             rx.flex(
                 rx.checkbox("Send to group"),
-                rx.popover.close(
-                    rx.button("Comment", size="1")
-                ),
+                rx.popover.close(rx.button("Comment", size="1")),
                 spacing="3",
                 margin_top="12px",
                 justify="between",
@@ -141,7 +132,7 @@ rx.popover.root(
             padding_top="12px",
         ),
         style={"width": 360},
-    )
+    ),
 )
 ```
 
@@ -153,14 +144,13 @@ Code like below will not work as expected and it is necessary to place the dynam
 class Index2State(rx.State):
     language: str = "EN"
 
+
 def index() -> rx.Component:
     return rx.popover.root(
         rx.popover.trigger(
             rx.button(Index2State.language),
         ),
-        rx.popover.content(
-            rx.text('Success')
-        )
+        rx.popover.content(rx.text("Success")),
     )
 ```
 
@@ -170,16 +160,13 @@ This code will work:
 class Index2State(rx.State):
     language: str = "EN"
 
+
 def index() -> rx.Component:
     return rx.popover.root(
         rx.popover.trigger(
-            rx.button(
-                rx.text(Index2State.language)
-            ),
+            rx.button(rx.text(Index2State.language)),
         ),
-        rx.popover.content(
-            rx.text('Success')
-        )
+        rx.popover.content(rx.text("Success")),
     )
 ```
 
@@ -200,7 +187,9 @@ class PopoverState(rx.State):
 
 def popover_example():
     return rx.flex(
-        rx.heading(f"Number of times popover opened or closed: {PopoverState.num_opens}"),
+        rx.heading(
+            f"Number of times popover opened or closed: {PopoverState.num_opens}"
+        ),
         rx.heading(f"Popover open: {PopoverState.opened}"),
         rx.popover.root(
             rx.popover.trigger(

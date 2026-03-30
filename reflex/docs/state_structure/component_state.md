@@ -43,7 +43,9 @@ class ReusableCounter(rx.ComponentState):
             **props,
         )
 
+
 reusable_counter = ReusableCounter.create
+
 
 def multiple_counters():
     return rx.vstack(
@@ -153,7 +155,9 @@ def editable_text_example():
     return rx.vstack(
         editable_text(),
         editable_text(initial_value="Edit me!", color="blue"),
-        editable_text(initial_value="Reflex is fun", font_family="monospace", width="100%"),
+        editable_text(
+            initial_value="Reflex is fun", font_family="monospace", width="100%"
+        ),
     )
 ```
 
@@ -177,9 +181,12 @@ class EditableTextDemoState(rx.State):
     def set_value(self, value: str):
         self.value = value
 
+
 def editable_text_with_global_state():
     return rx.vstack(
-        editable_text(value=EditableTextDemoState.value, on_change=EditableTextDemoState.set_value),
+        editable_text(
+            value=EditableTextDemoState.value, on_change=EditableTextDemoState.set_value
+        ),
         rx.text(EditableTextDemoState.value.upper()),
     )
 ```
@@ -225,8 +232,12 @@ def extended_counter():
         rx.hstack(
             rx.icon_button(rx.icon("step_back"), on_click=counter1.State.set_count(0)),
             rx.icon_button(rx.icon("plus"), on_click=counter1.State.increment),
-            rx.button("Double", on_click=counter1.State.set_count(counter1.State.count * 2)),
-            rx.button("Triple", on_click=counter1.State.set_count(counter1.State.count * 3)),
+            rx.button(
+                "Double", on_click=counter1.State.set_count(counter1.State.count * 2)
+            ),
+            rx.button(
+                "Triple", on_click=counter1.State.set_count(counter1.State.count * 3)
+            ),
         ),
     )
 ```

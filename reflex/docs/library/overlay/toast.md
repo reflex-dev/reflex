@@ -25,8 +25,9 @@ You can also use `rx.toast` in a state to show a toast when a specific action is
 
 ```python demo exec
 import asyncio
-class ToastState(rx.State):
 
+
+class ToastState(rx.State):
     @rx.event
     async def fetch_data(self):
         # Simulate fetching data for a 2-second delay
@@ -46,7 +47,9 @@ If you want to interact with a toast, a few props are available to customize the
 By passing a `ToastAction` to the `action` or `cancel` prop, you can trigger an action when the toast is clicked or when it is closed.
 
 ```python demo
-rx.button("Show Toast", on_click=rx.toast("Hello, World!", duration=5000, close_button=True))
+rx.button(
+    "Show Toast", on_click=rx.toast("Hello, World!", duration=5000, close_button=True)
+)
 ```
 
 ### Presets
@@ -72,8 +75,13 @@ rx.button(
     on_click=rx.toast(
         "Custom Toast!",
         position="top-right",
-        style={"background-color": "green", "color": "white", "border": "1px solid green", "border-radius": "0.53m"}
-    )
+        style={
+            "background-color": "green",
+            "color": "white",
+            "border": "1px solid green",
+            "border-radius": "0.53m",
+        },
+    ),
 )
 ```
 

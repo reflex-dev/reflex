@@ -33,6 +33,7 @@ For a dynamic progress, you can assign a state variable to the `value` prop inst
 ```python demo exec
 import asyncio
 
+
 class ProgressState(rx.State):
     value: int = 0
 
@@ -50,6 +51,6 @@ def live_progress():
     return rx.hstack(
         rx.progress(value=ProgressState.value),
         rx.button("Start", on_click=ProgressState.start_progress),
-        width="50%"
+        width="50%",
     )
 ```

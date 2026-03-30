@@ -61,7 +61,9 @@ def sound_effect_demo():
         rx.script("""
             var button_sfx = new Audio("/vintage-button-sound-effect.mp3")
             function playFromStart (sfx) {sfx.load(); sfx.play()}"""),
-        rx.button("Play Immediately", on_click=rx.call_script("playFromStart(button_sfx)")),
+        rx.button(
+            "Play Immediately", on_click=rx.call_script("playFromStart(button_sfx)")
+        ),
         rx.button("Play Later", on_click=SoundEffectState.delayed_play),
     )
 ```
@@ -113,10 +115,7 @@ class WindowState(rx.State):
     @rx.event
     def get_client_values(self):
         return [
-            rx.call_script(
-                "window.location",
-                callback=WindowState.update_location
-            ),
+            rx.call_script("window.location", callback=WindowState.update_location),
             rx.call_script(
                 "[window.scrollX, window.scrollY]",
                 callback=WindowState.update_scroll_position,
@@ -160,14 +159,18 @@ import dataclasses
 
 from reflex.utils import imports
 
+
 @dataclasses.dataclass
 class KeyEvent:
     """Interface of Javascript KeyboardEvent"""
+
     key: str = ""
+
 
 def key_event_spec(ev: rx.Var[KeyEvent]) -> tuple[rx.Var[str]]:
     # Takes the event object and returns the key pressed to send to the state
     return (ev.key,)
+
 
 class GlobalHotkeyState(rx.State):
     key: str = ""
@@ -204,6 +207,7 @@ class GlobalHotkeyWatcher(rx.Fragment):
             % str(rx.Var.create(self.event_triggers["on_key_down"]))
         ]
 
+
 def global_key_demo():
     return rx.vstack(
         GlobalHotkeyWatcher.create(
@@ -211,8 +215,8 @@ def global_key_demo():
             on_key_down=lambda key: rx.cond(
                 rx.Var.create(["a", "s", "d", "w"]).contains(key),
                 GlobalHotkeyState.update_key(key),
-                rx.console_log(key)
-            )
+                rx.console_log(key),
+            ),
         ),
         rx.text("Press a, s, d or w to trigger an event"),
         rx.heading(f"Last watched key pressed: {GlobalHotkeyState.key}"),

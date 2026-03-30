@@ -9,7 +9,6 @@ The event handler signature needs to match the event trigger definition argument
 Here is a simple example:
 
 ```python demo exec
-
 class EventArgStateSlider(rx.State):
     value: int = 50
 
@@ -27,7 +26,6 @@ def slider_max_min_step():
         ),
         width="100%",
     )
-
 ```
 
 The event trigger here is `on_value_commit` and it is called when the value changes at the end of an interaction. This event trigger passes one argument, which is the value of the slider. The event handler which is triggered by the event trigger must therefore take one argument, which is `value` here.
@@ -35,7 +33,6 @@ The event trigger here is `on_value_commit` and it is called when the value chan
 Here is a form example:
 
 ```python demo exec
-
 class EventArgState(rx.State):
     form_data: dict = {}
 
@@ -83,13 +80,25 @@ class ArgState(rx.State):
     def change_color(self, color: str, index: int):
         self.colors[index] = color
 
+
 def event_arguments_example():
     return rx.hstack(
-        rx.input(default_value=ArgState.colors[0], on_blur=lambda c: ArgState.change_color(c, 0), bg=ArgState.colors[0]),
-        rx.input(default_value=ArgState.colors[1], on_blur=lambda c: ArgState.change_color(c, 1), bg=ArgState.colors[1]),
-        rx.input(default_value=ArgState.colors[2], on_blur=lambda c: ArgState.change_color(c, 2), bg=ArgState.colors[2]),
+        rx.input(
+            default_value=ArgState.colors[0],
+            on_blur=lambda c: ArgState.change_color(c, 0),
+            bg=ArgState.colors[0],
+        ),
+        rx.input(
+            default_value=ArgState.colors[1],
+            on_blur=lambda c: ArgState.change_color(c, 1),
+            bg=ArgState.colors[1],
+        ),
+        rx.input(
+            default_value=ArgState.colors[2],
+            on_blur=lambda c: ArgState.change_color(c, 2),
+            bg=ArgState.colors[2],
+        ),
     )
-
 ```
 
 In this case, in we want to pass two arguments to the event handler `change_color`, the color and the index of the color to change.

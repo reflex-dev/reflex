@@ -12,7 +12,12 @@ Check out the custom components gallery [here](/docs/custom-components/overview)
 
 ```python eval
 rx.center(
-  rx.image(src="https://web.reflex-assets.dev/custom_components/pypi_reflex_custom_components.webp", width="400px", border_radius="15px", border="1px solid"),
+    rx.image(
+        src="https://web.reflex-assets.dev/custom_components/pypi_reflex_custom_components.webp",
+        width="400px",
+        border_radius="15px",
+        border="1px solid",
+    ),
 )
 ```
 

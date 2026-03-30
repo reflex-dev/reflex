@@ -28,10 +28,12 @@ from fastapi.security import OAuth2PasswordBearer
 # Create a FastAPI app
 fastapi_app = FastAPI(title="My API")
 
+
 # Add routes to the FastAPI app
 @fastapi_app.get("/api/items")
 async def get_items():
     return dict(items=["Item1", "Item2", "Item3"])
+
 
 # Create a Reflex app with the FastAPI app as the API transformer
 app = rx.App(api_transformer=fastapi_app)
@@ -58,10 +60,12 @@ from fastapi.security import OAuth2PasswordBearer
 fastapi_app = FastAPI(title="Secure API")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
+
 # Add a protected route
 @fastapi_app.get("/api/protected")
 async def protected_route(token: str = Depends(oauth2_scheme)):
     return dict(message="This is a protected endpoint")
+
 
 # Create a token endpoint
 @fastapi_app.post("/token")
@@ -70,6 +74,7 @@ async def login(username: str, password: str):
     if username == "user" and password == "password":
         return dict(access_token="example_token", token_type="bearer")
     return dict(error="Invalid credentials")
+
 
 # Create a Reflex app with the FastAPI app as the API transformer
 app = rx.App(api_transformer=fastapi_app)
@@ -83,6 +88,7 @@ You can also provide a callable that transforms the ASGI app:
 import reflex as rx
 from starlette.middleware.cors import CORSMiddleware
 
+
 # Create a transformer function that returns a transformed ASGI app
 def add_cors_middleware(app):
     # Wrap the app with CORS middleware and return the wrapped app
@@ -92,6 +98,7 @@ def add_cors_middleware(app):
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
 
 # Create a Reflex app with the transformer
 app = rx.App(api_transformer=add_cors_middleware)
@@ -110,10 +117,12 @@ from starlette.middleware.cors import CORSMiddleware
 # Create a FastAPI app
 fastapi_app = FastAPI(title="My API")
 
+
 # Add routes to the FastAPI app
 @fastapi_app.get("/api/items")
 async def get_items():
     return dict(items=["Item1", "Item2", "Item3"])
+
 
 # Create a transformer function
 def add_logging_middleware(app):
@@ -123,7 +132,9 @@ def add_logging_middleware(app):
         path = scope["path"]
         print("Request:", path)
         await app(scope, receive, send)
+
     return middleware
+
 
 # Create a Reflex app with multiple transformers
 app = rx.App(api_transformer=[fastapi_app, add_logging_middleware])

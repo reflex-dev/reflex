@@ -26,7 +26,8 @@ Let's create a line graph of life expectancy in Canada.
 import plotly.express as px
 
 df = px.data.gapminder().query("country=='Canada'")
-fig = px.line(df, x="year", y="lifeExp", title='Life expectancy in Canada')
+fig = px.line(df, x="year", y="lifeExp", title="Life expectancy in Canada")
+
 
 def line_chart():
     return rx.center(
@@ -43,15 +44,18 @@ import plotly.graph_objects as go
 import pandas as pd
 
 # Read data from a csv
-z_data = pd.read_csv('data/mt_bruno_elevation.csv')
+z_data = pd.read_csv("data/mt_bruno_elevation.csv")
 
 fig = go.Figure(data=[go.Surface(z=z_data.values)])
-fig.update_traces(contours_z=dict(show=True, usecolormap=True,
-                                  highlightcolor="limegreen", project_z=True))
-fig.update_layout(
-    scene_camera_eye=dict(x=1.87, y=0.88, z=-0.64),
-    margin=dict(l=65, r=50, b=65, t=90)
+fig.update_traces(
+    contours_z=dict(
+        show=True, usecolormap=True, highlightcolor="limegreen", project_z=True
+    )
 )
+fig.update_layout(
+    scene_camera_eye=dict(x=1.87, y=0.88, z=-0.64), margin=dict(l=65, r=50, b=65, t=90)
+)
+
 
 def mountain_surface():
     return rx.center(
@@ -69,6 +73,7 @@ If the figure is set as a state var, it can be updated during run time.
 import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
+
 
 class PlotlyState(rx.State):
     df: pd.DataFrame
@@ -95,11 +100,10 @@ class PlotlyState(rx.State):
         )
 
 
-
 def line_chart_with_state():
     return rx.vstack(
         rx.select(
-            ['China', 'France', 'United Kingdom', 'United States', 'Canada'],
+            ["China", "France", "United Kingdom", "United States", "Canada"],
             default_value="Canada",
             on_change=PlotlyState.set_selected_country,
         ),
@@ -134,6 +138,7 @@ fig_1.update_layout(
     title_font_family="Open Sans",
     title_font_size=25,
 )
+
 
 def add_styles():
     return rx.center(

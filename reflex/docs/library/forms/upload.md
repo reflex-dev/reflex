@@ -21,6 +21,8 @@ You can let users upload files and keep track of them in your app’s state. The
 
 ```python
 import reflex as rx
+
+
 class State(rx.State):
     uploaded_files: list[str] = []
 
@@ -32,6 +34,7 @@ class State(rx.State):
             with path.open("wb") as f:
                 f.write(data)
             self.uploaded_files.append(file.name)
+
 
 def upload_component():
     return rx.vstack(
@@ -81,12 +84,14 @@ Here is the standard pattern for handling file uploads:
 ```python
 import reflex as rx
 
+
 def create_unique_filename(file_name: str):
     import random
     import string
 
     filename = "".join(random.choices(string.ascii_letters + string.digits, k=10))
     return filename + "_" + file_name
+
 
 class State(rx.State):
     uploaded_files: list[str] = []
@@ -117,6 +122,7 @@ class State(rx.State):
             # Store filename for frontend display
             self.uploaded_files.append(unique_filename)
 
+
 def upload_component():
     return rx.vstack(
         rx.upload(
@@ -132,10 +138,9 @@ def upload_component():
         # Display uploaded files using rx.get_upload_url()
         rx.foreach(
             State.uploaded_files,
-            lambda filename: rx.image(src=rx.get_upload_url(filename))
+            lambda filename: rx.image(src=rx.get_upload_url(filename)),
         ),
     )
-
 ```
 
 ### Multiple File Upload
@@ -180,7 +185,9 @@ def index():
     return rx.vstack(
         rx.upload(
             rx.vstack(
-                rx.button("Select File", color=color, bg="white", border=f"1px solid {color}"),
+                rx.button(
+                    "Select File", color=color, bg="white", border=f"1px solid {color}"
+                ),
                 rx.text("Drag and drop files here or click to select files"),
             ),
             id="upload1",
@@ -206,7 +213,12 @@ def index():
 Below is an example of how to allow only a single file upload and render (in this case a video).
 
 ```python demo box
-rx.el.video(src="https://web.reflex-assets.dev/other/upload_single_video.webm", auto_play=True, controls=True, loop=True)
+rx.el.video(
+    src="https://web.reflex-assets.dev/other/upload_single_video.webm",
+    auto_play=True,
+    controls=True,
+    loop=True,
+)
 ```
 
 ```python
@@ -217,9 +229,7 @@ class State(rx.State):
     video: str
 
     @rx.event
-    async def handle_upload(
-        self, files: list[rx.UploadFile]
-    ):
+    async def handle_upload(self, files: list[rx.UploadFile]):
         """Handle the upload of file(s).
 
         Args:
@@ -251,9 +261,7 @@ def index():
                     bg="white",
                     border=f"1px solid \{color}",
                 ),
-                rx.text(
-                    "Drag and drop files here or click to select files"
-                ),
+                rx.text("Drag and drop files here or click to select files"),
             ),
             id="upload1",
             max_files=1,
@@ -263,9 +271,7 @@ def index():
         rx.text(rx.selected_files("upload1")),
         rx.button(
             "Upload",
-            on_click=State.handle_upload(
-                rx.upload_files(upload_id="upload1")
-            ),
+            on_click=State.handle_upload(rx.upload_files(upload_id="upload1")),
         ),
         rx.button(
             "Clear",
@@ -320,12 +326,14 @@ def index():
     return rx.vstack(
         rx.upload(
             rx.vstack(
-                rx.button("Select File", color=color, bg="white", border=f"1px solid {color}"),
+                rx.button(
+                    "Select File", color=color, bg="white", border=f"1px solid {color}"
+                ),
                 rx.text("Drag and drop files here or click to select files"),
             ),
             id="upload2",
             multiple=True,
-            accept = {
+            accept={
                 "application/pdf": [".pdf"],
                 "image/png": [".png"],
                 "image/jpeg": [".jpg", ".jpeg"],
@@ -364,7 +372,12 @@ rx.upload.root(
     rx.box(
         rx.icon(
             tag="cloud_upload",
-            style={"width": "3rem", "height": "3rem", "color": "#2563eb", "marginBottom": "0.75rem"},
+            style={
+                "width": "3rem",
+                "height": "3rem",
+                "color": "#2563eb",
+                "marginBottom": "0.75rem",
+            },
         ),
         rx.hstack(
             rx.text(

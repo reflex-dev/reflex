@@ -6,6 +6,7 @@ We'll use the following basic app that displays Github profile images as an exam
 import requests
 import reflex as rx
 
+
 class GithubState(rx.State):
     url: str = "https://github.com/reflex-dev"
     profile_image: str = "https://avatars.githubusercontent.com/u/104714959"
@@ -15,11 +16,14 @@ class GithubState(rx.State):
         if username == "":
             return
         try:
-            github_data = requests.get(f"https://api.github.com/users/{username}").json()
+            github_data = requests.get(
+                f"https://api.github.com/users/{username}"
+            ).json()
         except:
             return
         self.url = github_data["url"]
         self.profile_image = github_data["avatar_url"]
+
 
 def index():
     return rx.hstack(
@@ -208,7 +212,7 @@ Reflex uses a **state manager** which maintains a mapping between client tokens 
 Once we have the user's state, the next step is to run the event handler with the arguments.
 
 ```python
- def set_profile(self, username: str):
+def set_profile(self, username: str):
     if username == "":
         return
     github_data = requests.get(f"https://api.github.com/users/\{username}").json()

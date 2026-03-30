@@ -78,9 +78,7 @@ rx.dialog.root(
 
 ```python demo
 rx.dialog.root(
-    rx.dialog.trigger(
-        rx.button("Edit Profile", size="4")
-    ),
+    rx.dialog.trigger(rx.button("Edit Profile", size="4")),
     rx.dialog.content(
         rx.dialog.title("Edit Profile"),
         rx.dialog.description(
@@ -117,7 +115,6 @@ rx.dialog.root(
     rx.dialog.content(
         rx.dialog.title("Users"),
         rx.dialog.description("The following users have access to this project."),
-
         rx.inset(
             rx.table.root(
                 rx.table.header(
@@ -211,11 +208,12 @@ This example adds new users to a database from a dialog using a form.
 ```python demo exec
 class User(rx.Model, table=True):
     """The user model."""
+
     name: str
     email: str
 
-class State(rx.State):
 
+class State(rx.State):
     current_user: User = User()
 
     @rx.event
@@ -230,7 +228,9 @@ class State(rx.State):
         #     session.add(User(**self.current_user))
         #     session.commit()
 
-        return rx.toast.info(f"User {self.current_user['name']} has been added.", position="bottom-right")
+        return rx.toast.info(
+            f"User {self.current_user['name']} has been added.", position="bottom-right"
+        )
 
 
 def index() -> rx.Component:
@@ -250,12 +250,8 @@ def index() -> rx.Component:
             ),
             rx.form(
                 rx.flex(
-                    rx.input(
-                        placeholder="User Name", name="name"
-                    ),
-                    rx.input(
-                        placeholder="user@reflex.dev", name="email"
-                    ),
+                    rx.input(placeholder="User Name", name="name"),
+                    rx.input(placeholder="user@reflex.dev", name="email"),
                     rx.flex(
                         rx.dialog.close(
                             rx.button(

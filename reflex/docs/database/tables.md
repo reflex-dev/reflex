@@ -43,6 +43,7 @@ import datetime
 import sqlmodel
 import sqlalchemy
 
+
 class Post(rx.Model, table=True):
     ...
     update_ts: datetime.datetime = sqlmodel.Field(
