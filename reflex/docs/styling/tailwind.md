@@ -62,7 +62,6 @@ config = rx.Config(
     },
 )
 ```
-```````
 
 **New approach (plugin-based):**
 
@@ -79,8 +78,7 @@ config = rx.Config(
     ],
 )
 ```
-
-````
+```````
 
 ### Choosing Between Tailwind Versions
 
@@ -101,7 +99,7 @@ config = rx.Config(
     app_name="myapp",
     plugins=[rx.plugins.TailwindV3Plugin()],
 )
-````
+```
 
 All Tailwind configuration options are supported.
 
