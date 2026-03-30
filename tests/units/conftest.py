@@ -314,12 +314,12 @@ def emitted_events() -> list[tuple[str, tuple[Event, ...]]]:
     return []
 
 
-@pytest.fixture
-def mock_root_event_context(
+@pytest_asyncio.fixture
+async def mock_root_event_context(
     mock_base_state_event_processor_obj: BaseStateEventProcessor,
     emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
     emitted_events: list[tuple[str, tuple[Event, ...]]],
-) -> EventContext:
+) -> AsyncGenerator[EventContext]:
     """Create a mock event context.
 
     Args:
@@ -327,7 +327,7 @@ def mock_root_event_context(
         emitted_deltas: The list to store emitted deltas.
         emitted_events: The list to store emitted events.
 
-    Returns:
+    Yields:
         A mock event context.
     """
 
@@ -351,13 +351,15 @@ def mock_root_event_context(
         """
         emitted_events.append((token, events))
 
-    return EventContext(
+    state_manager = StateManagerMemory()
+    yield EventContext(
         token="",
-        state_manager=StateManagerMemory(),
+        state_manager=state_manager,
         enqueue_impl=mock_base_state_event_processor_obj.enqueue,
         emit_delta_impl=emit_delta_impl,
         emit_event_impl=emit_event_impl,
     )
+    await state_manager.close()
 
 
 @pytest.fixture

@@ -11,9 +11,8 @@ from collections.abc import Generator
 from contextlib import nullcontext as does_not_raise
 from importlib.util import find_spec
 from pathlib import Path
-from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from pytest_mock import MockerFixture
@@ -961,14 +960,14 @@ async def test_dict_mutation_detection__plain_list(
         ),
     ],
 )
-@pytest.mark.skip("Waiting for upload PR")
 async def test_upload_file(
     tmp_path: Path,
     state,
     delta,
     token: str,
     mocker: MockerFixture,
-    app_module_mock: unittest.mock.Mock,
+    attached_mock_base_state_event_processor: BaseStateEventProcessor,
+    mock_root_event_context: EventContext,
 ):
     """Test that file upload works correctly.
 
@@ -978,17 +977,18 @@ async def test_upload_file(
         delta: Expected delta after processing all files.
         token: a Token.
         mocker: pytest mocker object.
-        app_module_mock: The mock for the app module, used to patch the app instance.
+        attached_mock_base_state_event_processor: BaseStateEventProcessor Fixture attached to the app instance to capture emitted events.
+        mock_root_event_context: The mocked root event context, for accessing state_manager.
     """
     mocker.patch(
         "reflex.state.State.class_subclasses",
         {state if state is FileUploadState else FileStateBase1},
     )
-    # The App state must be the "root" of the state tree
-    app = app_module_mock.app = App()
-    app.event_namespace.emit = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
-    async with app.modify_state(BaseStateToken(ident=token, cls=state)) as root_state:
-        root_state.get_substate(state.get_full_name().split("."))._tmp_path = tmp_path
+    app = Mock(event_processor=attached_mock_base_state_event_processor)
+    async with mock_root_event_context.state_manager.modify_state(
+        BaseStateToken(ident=token, cls=state)
+    ) as root_state:
+        (await root_state.get_state(state))._tmp_path = tmp_path
     data = b"This is binary data"
 
     request_mock = unittest.mock.Mock()
@@ -1018,24 +1018,20 @@ async def test_upload_file(
     updates = []
     async for state_update in streaming_response.body_iterator:
         updates.append(json.loads(str(state_update)))
-    # 2 intermediate yields + 1 final
-    assert len(updates) == 3
-    assert all(not u["final"] for u in updates[:-1])
-    assert updates[-1]["final"]
+    # 2 intermediate yields
+    assert len(updates) == 2
 
     # The last intermediate update should contain the full cumulative delta.
     assert updates[1]["delta"] == delta
 
-    await app.state_manager.close()
-
 
 @pytest.mark.asyncio
-@pytest.mark.skip("Waiting for upload PR")
 async def test_upload_file_keeps_form_open_until_stream_completes(
     tmp_path: Path,
     token: str,
     mocker: MockerFixture,
-    app_module_mock: unittest.mock.Mock,
+    attached_mock_base_state_event_processor: BaseStateEventProcessor,
+    mock_root_event_context: EventContext,
 ):
     """Test that upload files are not eagerly copied into memory.
 
@@ -1047,22 +1043,20 @@ async def test_upload_file_keeps_form_open_until_stream_completes(
         tmp_path: Temporary path.
         token: A token.
         mocker: pytest mocker object.
-        app_module_mock: The mock for the app module, used to patch the app instance.
+        attached_mock_base_state_event_processor: BaseStateEventProcessor Fixture attached to the app instance to capture emitted events.
+        mock_root_event_context: The mocked root event context, for accessing state_manager.
     """
     mocker.patch(
         "reflex.state.State.class_subclasses",
         {FileUploadState},
     )
-    app = app_module_mock.app = App()
-    app.event_namespace.emit = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
+    app = Mock(event_processor=attached_mock_base_state_event_processor)
 
     # Set _tmp_path via modify_state instead of setting class attribute directly.
-    async with app.modify_state(
+    async with mock_root_event_context.state_manager.modify_state(
         BaseStateToken(ident=token, cls=FileUploadState)
     ) as root_state:
-        root_state.get_substate(
-            FileUploadState.get_full_name().split(".")
-        )._tmp_path = tmp_path
+        (await root_state.get_state(FileUploadState))._tmp_path = tmp_path
 
     request_mock = unittest.mock.Mock()
     request_mock.headers = {
@@ -1121,26 +1115,25 @@ async def test_upload_file_keeps_form_open_until_stream_completes(
     assert (tmp_path / "image1.jpg").read_bytes() == data1
     assert (tmp_path / "image2.jpg").read_bytes() == data2
 
-    await app.state_manager.close()
-
 
 @pytest.mark.asyncio
-@pytest.mark.skip("Waiting for upload PR")
 async def test_upload_empty_buffered_request_dispatches_alias_handler(
     token: str,
     mocker: MockerFixture,
+    attached_mock_base_state_event_processor: BaseStateEventProcessor,
+    mock_root_event_context: EventContext,
 ):
     """Test that empty uploads still dispatch buffered alias handlers."""
     mocker.patch(
         "reflex.state.State.class_subclasses",
         {FileUploadState},
     )
-    app = App()
-    app.event_namespace.emit = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
+    app = Mock(event_processor=attached_mock_base_state_event_processor)
 
-    async with app.modify_state(_substate_key(token, FileUploadState)) as root_state:
-        substate = root_state.get_substate(FileUploadState.get_full_name().split("."))
-        substate.img_list = []
+    async with mock_root_event_context.state_manager.modify_state(
+        BaseStateToken(ident=token, cls=FileUploadState)
+    ) as root_state:
+        (await root_state.get_state(FileUploadState)).img_list = []
 
     request_mock = unittest.mock.Mock()
     request_mock.headers = {
@@ -1161,35 +1154,33 @@ async def test_upload_empty_buffered_request_dispatches_alias_handler(
     async for state_update in streaming_response.body_iterator:
         updates.append(json.loads(str(state_update)))
 
-    assert updates[-1]["final"]
-
+    assert len(updates) == 1
+    assert updates[0]["delta"] == {
+        FileUploadState.get_full_name(): {"img_list" + FIELD_MARKER: ["count:0"]}
+    }
     if environment.REFLEX_OPLOCK_ENABLED.get():
-        await app.state_manager.close()
+        await mock_root_event_context.state_manager.close()
 
-    state = await app.state_manager.get_state(_substate_key(token, FileUploadState))
-    substate = (
-        state
-        if isinstance(state, FileUploadState)
-        else state.get_substate(FileUploadState.get_full_name().split("."))
+    state = await mock_root_event_context.state_manager.get_state(
+        BaseStateToken(ident=token, cls=FileUploadState)
     )
+    substate = await state.get_state(FileUploadState)
     assert isinstance(substate, FileUploadState)
     assert substate.img_list == ["count:0"]
 
-    await app.state_manager.close()
-
 
 @pytest.mark.asyncio
-@pytest.mark.skip("Waiting for upload PR")
-async def test_upload_file_closes_form_on_event_creation_cancellation(
+async def test_upload_file_closes_form_on_form_error(
     token: str,
     mocker: MockerFixture,
+    attached_mock_base_state_event_processor: BaseStateEventProcessor,
 ):
     """Test that cancellation before form parsing leaves form data untouched."""
     mocker.patch(
         "reflex.state.State.class_subclasses",
         {FileUploadState},
     )
-    app = App()
+    app = Mock(event_processor=attached_mock_base_state_event_processor)
 
     request_mock = unittest.mock.Mock()
     request_mock.headers = {
@@ -1203,15 +1194,11 @@ async def test_upload_file_closes_form_on_event_creation_cancellation(
     form_close = AsyncMock(side_effect=original_close)
     form_data.close = form_close
 
-    async def form():  # noqa: RUF029
-        return form_data
-
-    async def cancelled_get_state(*_args, **_kwargs):
+    async def cancelled_form():
         await asyncio.sleep(0)
         raise asyncio.CancelledError
 
-    request_mock.form = form
-    mocker.patch.object(app.state_manager, "get_state", side_effect=cancelled_get_state)
+    request_mock.form = cancelled_form
 
     upload_fn = upload(app)
     with pytest.raises(asyncio.CancelledError):
@@ -1220,31 +1207,70 @@ async def test_upload_file_closes_form_on_event_creation_cancellation(
     assert form_close.await_count == 0
     assert not file1.file.closed
 
-    await app.state_manager.close()
+
+@pytest.mark.asyncio
+async def test_upload_file_closes_form_on_event_creation_cancellation(
+    token: str,
+    mocker: MockerFixture,
+    attached_mock_base_state_event_processor: BaseStateEventProcessor,
+):
+    """Test that cancellation during event creation closes form data."""
+    mocker.patch(
+        "reflex.state.State.class_subclasses",
+        {FileUploadState},
+    )
+    app = Mock(event_processor=attached_mock_base_state_event_processor)
+
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": f"{FileUploadState.get_full_name()}.multi_handle_upload",
+    }
+
+    bio = io.BytesIO(b"data")
+    file1 = UploadFile(filename="image1.jpg", file=bio)
+    form_data = FormData([("files", file1)])
+    original_close = form_data.close
+    form_close = AsyncMock(side_effect=original_close)
+    form_data.close = form_close
+
+    async def form():  # noqa: RUF029
+        return form_data
+
+    request_mock.form = form
+
+    # Patch getlist on the form_data to raise CancelledError during event
+    # creation (after form is parsed, before streaming begins).
+    form_data.getlist = Mock(side_effect=asyncio.CancelledError)
+
+    upload_fn = upload(app)
+    with pytest.raises(asyncio.CancelledError):
+        await upload_fn(request_mock)
+
+    # Form was parsed, so it should be closed on failure.
+    assert form_close.await_count == 1
+    assert bio.closed
 
 
 @pytest.mark.asyncio
-@pytest.mark.skip("Waiting for upload PR")
 async def test_upload_file_closes_form_if_response_cancelled_before_stream_starts(
     tmp_path: Path,
     token: str,
     mocker: MockerFixture,
-    app_module_mock: unittest.mock.Mock,
+    attached_mock_base_state_event_processor: BaseStateEventProcessor,
+    mock_root_event_context: EventContext,
 ):
     """Test that response cancellation before iteration still closes form data."""
     mocker.patch(
         "reflex.state.State.class_subclasses",
         {FileUploadState},
     )
-    app = app_module_mock.app = App()
-    app.event_namespace.emit = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
+    app = Mock(event_processor=attached_mock_base_state_event_processor)
 
-    async with app.modify_state(
+    async with mock_root_event_context.state_manager.modify_state(
         BaseStateToken(ident=token, cls=FileUploadState)
     ) as root_state:
-        root_state.get_substate(
-            FileUploadState.get_full_name().split(".")
-        )._tmp_path = tmp_path
+        (await root_state.get_state(FileUploadState))._tmp_path = tmp_path
 
     request_mock = unittest.mock.Mock()
     request_mock.headers = {
@@ -1289,15 +1315,12 @@ async def test_upload_file_closes_form_if_response_cancelled_before_stream_start
     assert form_close.await_count == 1
     assert bio.closed
 
-    await app.state_manager.close()
-
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "state",
     [FileUploadState, ChildFileUploadState, GrandChildFileUploadState],
 )
-@pytest.mark.skip("Waiting for upload PR")
 async def test_upload_file_without_annotation(
     state: FileUploadState | ChildFileUploadState | GrandChildFileUploadState,
     tmp_path: Path,
@@ -1341,7 +1364,6 @@ async def test_upload_file_without_annotation(
     "state",
     [FileUploadState, ChildFileUploadState, GrandChildFileUploadState],
 )
-@pytest.mark.skip("Waiting for upload PR")
 async def test_upload_file_background(
     state: FileUploadState | ChildFileUploadState | GrandChildFileUploadState,
     tmp_path: Path,
@@ -1440,41 +1462,25 @@ def _make_chunk_upload_request(
     return request_mock
 
 
-async def _drain_background_tasks(app: App):
-    """Wait for all background tasks associated with an app.
-
-    Returns:
-        The gathered background task results.
-    """
-    tasks = tuple(app._background_tasks)
-    results = await asyncio.gather(*tasks, return_exceptions=True) if tasks else []
-    if environment.REFLEX_OPLOCK_ENABLED.get():
-        # Redis oplocks can keep completed background-task writes in the local
-        # lease cache until the manager is closed.
-        await app.state_manager.close()
-    return results
-
-
 @pytest.mark.asyncio
 async def test_upload_dispatches_chunk_handlers_on_upload_endpoint(
     tmp_path,
     token: str,
     mocker: MockerFixture,
+    attached_mock_base_state_event_processor: BaseStateEventProcessor,
+    mock_root_event_context: EventContext,
 ):
     """Test that the standard upload endpoint dispatches chunk handlers."""
     mocker.patch(
         "reflex.state.State.class_subclasses",
         {ChunkUploadState},
     )
-    app = App()
-    mocker.patch(
-        "reflex.utils.prerequisites.get_and_validate_app",
-        return_value=SimpleNamespace(app=app),
-    )
-    app.event_namespace.emit_update = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
+    app = Mock(event_processor=attached_mock_base_state_event_processor)
 
-    async with app.modify_state(_substate_key(token, ChunkUploadState)) as root_state:
-        substate = root_state.get_substate(ChunkUploadState.get_full_name().split("."))
+    async with mock_root_event_context.state_manager.modify_state(
+        BaseStateToken(ident=token, cls=ChunkUploadState)
+    ) as root_state:
+        substate = await root_state.get_state(ChunkUploadState)
         substate._tmp_path = tmp_path
         substate.chunk_records = []
         substate.completed_files = []
@@ -1503,17 +1509,16 @@ async def test_upload_dispatches_chunk_handlers_on_upload_endpoint(
     updates = []
     async for state_update in response.body_iterator:
         updates.append(json.loads(str(state_update)))
-    assert updates == [{"delta": {}, "events": [], "final": True}]
+    assert updates == [{}]
 
-    task_results = await _drain_background_tasks(app)
-    assert all(result is None for result in task_results)
+    await attached_mock_base_state_event_processor.join()
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await mock_root_event_context.state_manager.close()
 
-    state = await app.state_manager.get_state(_substate_key(token, ChunkUploadState))
-    substate = (
-        state
-        if isinstance(state, ChunkUploadState)
-        else state.get_substate(ChunkUploadState.get_full_name().split("."))
+    state = await mock_root_event_context.state_manager.get_state(
+        BaseStateToken(ident=token, cls=ChunkUploadState)
     )
+    substate = await state.get_state(ChunkUploadState)
     assert isinstance(substate, ChunkUploadState)
     parsed_chunk_records = [
         (filename, int(offset), int(size), content_type)
@@ -1550,31 +1555,26 @@ async def test_upload_dispatches_chunk_handlers_on_upload_endpoint(
     assert substate.completed_files == ["alpha.txt", "beta.txt"]
     assert (tmp_path / "alpha.txt").read_bytes() == b"abcde"
     assert (tmp_path / "beta.txt").read_bytes() == b"12345"
-    assert app.event_namespace.emit_update.await_count >= 1  # pyright: ignore [reportOptionalMemberAccess]
-    assert not app._background_tasks
-
-    await app.state_manager.close()
 
 
 @pytest.mark.asyncio
 async def test_upload_empty_chunk_request_dispatches_alias_handler(
     token: str,
     mocker: MockerFixture,
+    attached_mock_base_state_event_processor: BaseStateEventProcessor,
+    mock_root_event_context: EventContext,
 ):
     """Test that empty uploads still dispatch chunk alias handlers."""
     mocker.patch(
         "reflex.state.State.class_subclasses",
         {ChunkUploadState},
     )
-    app = App()
-    mocker.patch(
-        "reflex.utils.prerequisites.get_and_validate_app",
-        return_value=SimpleNamespace(app=app),
-    )
-    app.event_namespace.emit_update = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
+    app = Mock(event_processor=attached_mock_base_state_event_processor)
 
-    async with app.modify_state(_substate_key(token, ChunkUploadState)) as root_state:
-        substate = root_state.get_substate(ChunkUploadState.get_full_name().split("."))
+    async with mock_root_event_context.state_manager.modify_state(
+        BaseStateToken(ident=token, cls=ChunkUploadState)
+    ) as root_state:
+        substate = await root_state.get_state(ChunkUploadState)
         substate.chunk_records = []
         substate.completed_files = []
 
@@ -1595,44 +1595,41 @@ async def test_upload_empty_chunk_request_dispatches_alias_handler(
     updates = []
     async for state_update in response.body_iterator:
         updates.append(json.loads(str(state_update)))
-    assert updates == [{"delta": {}, "events": [], "final": True}]
+    assert updates == [{}]
 
-    task_results = await _drain_background_tasks(app)
-    assert all(result is None for result in task_results)
+    await attached_mock_base_state_event_processor.join()
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await mock_root_event_context.state_manager.close()
 
-    state = await app.state_manager.get_state(_substate_key(token, ChunkUploadState))
-    substate = (
-        state
-        if isinstance(state, ChunkUploadState)
-        else state.get_substate(ChunkUploadState.get_full_name().split("."))
+    state = await mock_root_event_context.state_manager.get_state(
+        BaseStateToken(ident=token, cls=ChunkUploadState)
     )
+    substate = await state.get_state(ChunkUploadState)
     assert isinstance(substate, ChunkUploadState)
     assert substate.chunk_records == []
     assert substate.completed_files == ["chunks:0"]
-    assert not app._background_tasks
-
-    await app.state_manager.close()
 
 
 @pytest.mark.asyncio
 async def test_upload_chunk_invalid_offset_returns_400(
     token: str,
     mocker: MockerFixture,
+    attached_mock_base_state_event_processor: BaseStateEventProcessor,
+    mock_root_event_context: EventContext,
 ):
     """Test that malformed chunk metadata fails the standard upload request."""
     mocker.patch(
         "reflex.state.State.class_subclasses",
         {ChunkUploadState},
     )
-    app = App()
-    mocker.patch(
-        "reflex.utils.prerequisites.get_and_validate_app",
-        return_value=SimpleNamespace(app=app),
-    )
-    app.event_namespace.emit_update = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
+    app = Mock(event_processor=attached_mock_base_state_event_processor)
+    # The background task is expected to fail with a parse error for malformed input.
+    attached_mock_base_state_event_processor.backend_exception_handler = None
 
-    async with app.modify_state(_substate_key(token, ChunkUploadState)) as root_state:
-        substate = root_state.get_substate(ChunkUploadState.get_full_name().split("."))
+    async with mock_root_event_context.state_manager.modify_state(
+        BaseStateToken(ident=token, cls=ChunkUploadState)
+    ) as root_state:
+        substate = await root_state.get_state(ChunkUploadState)
         substate.chunk_records = []
         substate.completed_files = []
 
@@ -1651,20 +1648,17 @@ async def test_upload_chunk_invalid_offset_returns_400(
         "detail": "Missing boundary in multipart."
     }
 
-    await _drain_background_tasks(app)
+    await attached_mock_base_state_event_processor.join()
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await mock_root_event_context.state_manager.close()
 
-    state = await app.state_manager.get_state(_substate_key(token, ChunkUploadState))
-    substate = (
-        state
-        if isinstance(state, ChunkUploadState)
-        else state.get_substate(ChunkUploadState.get_full_name().split("."))
+    state = await mock_root_event_context.state_manager.get_state(
+        BaseStateToken(ident=token, cls=ChunkUploadState)
     )
+    substate = await state.get_state(ChunkUploadState)
     assert isinstance(substate, ChunkUploadState)
     assert substate.chunk_records == []
     assert substate.completed_files == []
-    assert not app._background_tasks
-
-    await app.state_manager.close()
 
 
 class DynamicState(State):

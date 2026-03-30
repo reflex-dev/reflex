@@ -546,6 +546,9 @@ class EventProcessor:
             except Exception as ex:
                 if future is not None and not future.done():
                     future.set_exception(ex)
+                    with contextlib.suppress(BaseException):
+                        # Trigger the future to avoid warnings if the caller didn't wait.
+                        future.result()
                 telemetry.send_error(ex, context="backend")
                 if (
                     not task.get_name().startswith("reflex_backend_exception_handler|")
