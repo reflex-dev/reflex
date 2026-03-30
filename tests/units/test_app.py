@@ -12,7 +12,7 @@ from contextlib import nullcontext as does_not_raise
 from importlib.util import find_spec
 from pathlib import Path
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock
 
 import pytest

@@ -22,7 +22,7 @@ from plotly.graph_objects import Figure
 from pydantic import BaseModel as Base
 from pytest_mock import MockerFixture
 from reflex_core import constants
-from reflex_core.constants import CompileVars, RouteVar, SocketEvent
+from reflex_core.constants import CompileVars, RouteVar
 from reflex_core.constants.state import FIELD_MARKER
 from reflex_core.event import Event, EventHandler
 from reflex_core.utils import format, types

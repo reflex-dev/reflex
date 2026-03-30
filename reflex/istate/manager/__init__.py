@@ -131,8 +131,6 @@ class StateManager(ABC):
         Yields:
             The state for the token with linked states patched in.
         """
-        from reflex.state import BaseState
-
         async with self.modify_state(token, **context) as root_state:
             if (
                 isinstance(root_state, BaseState)

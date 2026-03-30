@@ -15,19 +15,14 @@ import sys
 import time
 import traceback
 import urllib.parse
-from collections.abc import (
-    AsyncIterator,
-    Callable,
-    Coroutine,
-    Mapping,
-    Sequence,
-)
+from collections.abc import AsyncIterator, Callable, Coroutine, Mapping, Sequence
 from datetime import datetime
 from itertools import chain
 from pathlib import Path
 from timeit import default_timer as timer
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, ParamSpec
+from typing import TYPE_CHECKING, Any, ParamSpec, overload
+from warnings import deprecated
 
 from reflex_components_core.base.app_wrap import AppWrap
 from reflex_components_core.base.error_boundary import ErrorBoundary
@@ -57,23 +52,11 @@ from reflex_core.event import (
     EventSpec,
     EventType,
     IndividualEventType,
-    get_hydrate_event,
     noop,
 )
 from reflex_core.utils import console
 from reflex_core.utils.imports import ImportVar
 from reflex_core.utils.types import ASGIApp, Message, Receive, Scope, Send
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    BinaryIO,
-    ParamSpec,
-    get_args,
-    get_type_hints,
-    overload,
-)
-from warnings import deprecated
-
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp as EngineIOApp
 from socketio import AsyncNamespace, AsyncServer
@@ -96,9 +79,8 @@ from reflex.compiler.compiler import (
     readable_name_from_component,
 )
 from reflex.experimental.memo import EXPERIMENTAL_MEMOS
-from reflex.istate.manager import StateModificationContext
-from reflex.istate.proxy import StateProxy
 from reflex.ievent.processor import BaseStateEventProcessor, EventProcessor
+from reflex.istate.manager import StateModificationContext
 from reflex.istate.manager.token import BaseStateToken
 from reflex.page import DECORATED_PAGES
 from reflex.route import (
