@@ -21,6 +21,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+          fetch-depth: 0
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: 3.14
@@ -28,4 +31,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           clean: false
+          fetch-tags: true
+          fetch-depth: 0
       - run: uv run pre-commit run --all-files --show-diff-on-failure

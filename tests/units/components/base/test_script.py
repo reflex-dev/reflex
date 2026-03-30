@@ -1,8 +1,7 @@
 """Test that element script renders correctly."""
 
 import pytest
-
-from reflex.components.base.script import Script
+from reflex_components_core.base.script import Script
 
 
 def test_script_inline():

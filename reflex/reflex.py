@@ -8,17 +8,16 @@ from typing import TYPE_CHECKING
 
 import click
 from reflex_cli.v2.deployments import hosting_cli
+from reflex_core import constants
+from reflex_core.config import get_config
+from reflex_core.environment import environment
+from reflex_core.utils import console
 
-from reflex import constants
-from reflex.config import get_config
 from reflex.custom_components.custom_components import custom_components_cli
-from reflex.environment import environment
-from reflex.utils import console
 
 if TYPE_CHECKING:
     from reflex_cli.constants.base import LogLevel as HostingLogLevel
-
-    from reflex.constants.base import LITERAL_ENV
+    from reflex_core.constants.base import LITERAL_ENV
 
 
 def set_loglevel(ctx: click.Context, self: click.Parameter, value: str | None):
@@ -211,29 +210,32 @@ def _run(
 
     prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
 
-    # Get the app module.
-    app_task = prerequisites.compile_or_validate_app
-    args = (frontend,)
-    kwargs = {
-        "check_if_schema_up_to_date": True,
-        "prerender_routes": exec.should_prerender_routes(),
-    }
+    if frontend:
+        # Get the app module.
+        app_task = prerequisites.compile_or_validate_app
+        args = (frontend,)
+        kwargs = {
+            "check_if_schema_up_to_date": True,
+            "prerender_routes": exec.should_prerender_routes(),
+        }
 
-    # Granian fails if the app is already imported.
-    if should_use_granian():
-        import concurrent.futures
+        # Granian fails if the app is already imported.
+        if should_use_granian():
+            import concurrent.futures
 
-        compile_future = concurrent.futures.ProcessPoolExecutor(max_workers=1).submit(
-            app_task,
-            *args,
-            **kwargs,
-        )
-        return_result = compile_future.result()
-    else:
-        return_result = app_task(*args, **kwargs)
+            compile_future = concurrent.futures.ProcessPoolExecutor(
+                max_workers=1
+            ).submit(
+                app_task,
+                *args,
+                **kwargs,
+            )
+            return_result = compile_future.result()
+        else:
+            return_result = app_task(*args, **kwargs)
 
-    if not return_result:
-        raise SystemExit(1)
+        if not return_result:
+            raise SystemExit(1)
 
     if env != constants.Env.PROD and env != constants.Env.DEV:
         msg = f"Invalid env: {env}. Must be DEV or PROD."
@@ -630,9 +632,9 @@ def status():
         return
 
     # Run alembic check command and display output
-    import reflex.config
+    import reflex_core.config
 
-    config = reflex.config.get_config()
+    config = reflex_core.config.get_config()
     console.print(f"[bold]\\[{config.db_url}][/bold]")
 
     # Get migration history using Model method

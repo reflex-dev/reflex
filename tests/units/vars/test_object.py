@@ -1,14 +1,15 @@
 import dataclasses
 from collections.abc import Sequence
 
+import pydantic
 import pytest
+from reflex_core.utils.types import GenericType
+from reflex_core.vars.base import Var
+from reflex_core.vars.object import LiteralObjectVar, ObjectVar
+from reflex_core.vars.sequence import ArrayVar
 from typing_extensions import assert_type
 
 import reflex as rx
-from reflex.utils.types import GenericType
-from reflex.vars.base import Var
-from reflex.vars.object import LiteralObjectVar, ObjectVar
-from reflex.vars.sequence import ArrayVar
 
 pytest.importorskip("sqlalchemy")
 pytest.importorskip("pydantic")
@@ -35,8 +36,8 @@ def serialize_bare(obj: Bare) -> dict:
     return {"quantity": obj.quantity}
 
 
-class Base(rx.Base):
-    """A reflex base class with a single attribute."""
+class Base(pydantic.BaseModel):
+    """A pydantic BaseModel class with a single attribute."""
 
     quantity: int = 0
 

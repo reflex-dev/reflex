@@ -6,9 +6,9 @@ from types import MappingProxyType
 from typing import TYPE_CHECKING
 from urllib.parse import _NetlocResultMixinStr, parse_qsl, urlsplit
 
-from reflex import constants
-from reflex.utils import console, format
-from reflex.utils.serializers import serializer
+from reflex_core import constants
+from reflex_core.utils import console, format
+from reflex_core.utils.serializers import serializer
 
 
 @dataclasses.dataclass(frozen=True, init=False)

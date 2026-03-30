@@ -1,6 +1,5 @@
 import pytest
-
-from reflex.utils.imports import (
+from reflex_core.utils.imports import (
     ImportDict,
     ImportVar,
     ParsedImportDict,

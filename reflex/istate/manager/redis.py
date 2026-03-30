@@ -13,10 +13,16 @@ from typing import Any, TypedDict, cast
 
 from redis import ResponseError
 from redis.asyncio import Redis
+from reflex_core.config import get_config
+from reflex_core.environment import environment
+from reflex_core.utils import console
+from reflex_core.utils.exceptions import (
+    InvalidLockWarningThresholdError,
+    LockExpiredError,
+    StateSchemaMismatchError,
+)
 from typing_extensions import Unpack, override
 
-from reflex.config import get_config
-from reflex.environment import environment
 from reflex.istate.manager import (
     StateManager,
     StateModificationContext,
@@ -24,12 +30,6 @@ from reflex.istate.manager import (
 )
 from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
 from reflex.state import BaseState
-from reflex.utils import console
-from reflex.utils.exceptions import (
-    InvalidLockWarningThresholdError,
-    LockExpiredError,
-    StateSchemaMismatchError,
-)
 from reflex.utils.tasks import ensure_task
 
 
@@ -60,6 +60,10 @@ def _default_oplock_hold_time_ms() -> int:
     return environment.REFLEX_OPLOCK_HOLD_TIME_MS.get() or (
         _default_lock_expiration() // 2
     )
+
+
+# The lock waiter task should subscribe to lock channel updates within this period.
+LOCK_SUBSCRIBE_TASK_TIMEOUT = 2  # seconds
 
 
 SMR = f"[SMR:{os.getpid()}]"
@@ -150,6 +154,10 @@ class StateManagerRedis(StateManager):
     # Lock waiters for redis per-token lock.
     _lock_waiters: dict[bytes, list[asyncio.Event]] = dataclasses.field(
         default_factory=dict,
+        init=False,
+    )
+    _lock_updates_subscribed: asyncio.Event = dataclasses.field(
+        default_factory=asyncio.Event,
         init=False,
     )
     _lock_task: asyncio.Task | None = dataclasses.field(default=None, init=False)
@@ -364,12 +372,14 @@ class StateManagerRedis(StateManager):
         # Check that we're holding the lock.
         if (
             lock_id is not None
-            and await self.redis.get(self._lock_key(token)) != lock_id
+            and (existing_lock_id := await self.redis.get(self._lock_key(token)))
+            != lock_id
         ):
             msg = (
                 f"Lock expired for token {token} while processing. Consider increasing "
                 f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
-                "or use `@rx.event(background=True)` decorator for long-running tasks."
+                "or use `@rx.event(background=True)` decorator for long-running tasks. "
+                f"Current lock id: {existing_lock_id!r}, expected lock id: {lock_id!r}."
                 + (
                     f" Happened in event: {event.name}"
                     if (event := context.get("event")) is not None
@@ -445,9 +455,10 @@ class StateManagerRedis(StateManager):
         Yields:
             The state for the token or None if we couldn't get the lock.
         """
+        event_name = event.name if (event := context.get("event")) is not None else None
         if not self._oplock_enabled:
             # OpLock is disabled, get a fresh lock, write, and release.
-            async with self._lock(token) as lock_id:
+            async with self._lock(token, event_name=event_name) as lock_id:
                 state = await self.get_state(token)
                 yield state
                 await self.set_state(token, state, lock_id=lock_id, **context)
@@ -464,7 +475,9 @@ class StateManagerRedis(StateManager):
         client_token = token.ident
         lock_held_ctx = contextlib.AsyncExitStack()
         try:
-            lock_id = await lock_held_ctx.enter_async_context(self._lock(token))
+            lock_id = await lock_held_ctx.enter_async_context(
+                self._lock(token, event_name=event_name)
+            )
         except OplockFound:
             # While waiting for the lock, another process has acquired it, but we can piggy back.
             pass
@@ -805,8 +818,12 @@ class StateManagerRedis(StateManager):
         }
         async with self.redis.pubsub() as pubsub:
             await pubsub.psubscribe(**handlers)  # pyright: ignore[reportArgumentType]
-            async for _ in pubsub.listen():
-                pass
+            self._lock_updates_subscribed.set()
+            try:
+                async for _ in pubsub.listen():
+                    pass
+            finally:
+                self._lock_updates_subscribed.clear()
 
     def _ensure_lock_task(self) -> None:
         """Ensure the lock updates subscriber task is running."""
@@ -815,6 +832,30 @@ class StateManagerRedis(StateManager):
             task_attribute="_lock_task",
             coro_function=self._subscribe_lock_updates,
             suppress_exceptions=[Exception],
+        )
+
+    async def _ensure_lock_task_subscribed(self, timeout: float | None = None) -> None:
+        """Ensure the lock updates subscriber task is running and subscribed to avoid missing notifications.
+
+        Args:
+            timeout: How long to wait for the subscriber to be subscribed before
+                raising an error. If None, defaults to
+                min(LOCK_SUBSCRIBE_TASK_TIMEOUT, lock_expiration).
+
+        Raises:
+            TimeoutError: If the lock updates subscriber task fails to subscribe in time.
+        """
+        if timeout is None:
+            timeout = min(
+                LOCK_SUBSCRIBE_TASK_TIMEOUT,
+                max(self.lock_expiration / 1000, 0),
+            )
+        # Make sure lock waiter task is running.
+        self._ensure_lock_task()
+        # Make sure the lock waiter is subscribed to avoid missing notifications.
+        await asyncio.wait_for(
+            self._lock_updates_subscribed.wait(),
+            timeout=timeout,
         )
 
     async def _enable_keyspace_notifications(self):
@@ -973,7 +1014,8 @@ class StateManagerRedis(StateManager):
                 )
             return
         # Make sure lock waiter task is running.
-        self._ensure_lock_task()
+        with contextlib.suppress(TimeoutError, asyncio.TimeoutError):
+            await self._ensure_lock_task_subscribed()
         async with (
             self._lock_waiter(lock_key) as lock_released_event,
             self._request_lock_release(lock_key, lock_id),
@@ -1008,11 +1050,14 @@ class StateManagerRedis(StateManager):
                 )
 
     @contextlib.asynccontextmanager
-    async def _lock(self, token: StateToken[Any]):
+    async def _lock(
+        self, token: StateToken[Any], event_name: str | None = None
+    ) -> AsyncIterator[bytes]:
         """Obtain a redis lock for a token.
 
         Args:
             token: The token to obtain a lock for.
+            event_name: The name of the event associated with the lock.
 
         Yields:
             The ID of the lock (to be passed to set_state).
@@ -1021,7 +1066,9 @@ class StateManagerRedis(StateManager):
             LockExpiredError: If the lock has expired while processing the event.
         """
         lock_key = self._lock_key(token)
-        lock_id = uuid.uuid4().hex.encode()
+        lock_id = (
+            f"{event_name}:{uuid.uuid4().hex}" if event_name else uuid.uuid4().hex
+        ).encode()
 
         await self._wait_lock(lock_key, lock_id)
         state_is_locked = True

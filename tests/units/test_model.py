@@ -3,11 +3,11 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
+from reflex_core.constants.state import FIELD_MARKER
+from reflex_core.event import Event
 
 import reflex.constants
 import reflex.model
-from reflex.constants.state import FIELD_MARKER
-from reflex.event import Event
 from reflex.model import Model, ModelRegistry
 from reflex.state import BaseState, State
 from tests.units.test_state import (

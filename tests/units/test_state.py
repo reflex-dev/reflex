@@ -17,18 +17,29 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 import pytest_asyncio
+import reflex_core.config
 from plotly.graph_objects import Figure
+from pydantic import BaseModel as Base
 from pytest_mock import MockerFixture
+from reflex_core import constants
+from reflex_core.constants import CompileVars, RouteVar, SocketEvent
+from reflex_core.constants.state import FIELD_MARKER
+from reflex_core.event import Event, EventHandler
+from reflex_core.utils import format, types
+from reflex_core.utils.exceptions import (
+    InvalidLockWarningThresholdError,
+    LockExpiredError,
+    ReflexRuntimeError,
+    SetUndefinedStateVarError,
+    StateSerializationError,
+    UnretrievableVarValueError,
+)
+from reflex_core.utils.format import json_dumps
+from reflex_core.vars.base import Field, Var, computed_var, field
 
 import reflex as rx
-import reflex.config
-from reflex import constants
 from reflex.app import App
-from reflex.base import Base
-from reflex.constants import CompileVars, RouteVar
-from reflex.constants.state import FIELD_MARKER
 from reflex.environment import environment
-from reflex.event import Event, EventHandler
 from reflex.ievent.context import EventContext
 from reflex.ievent.processor import BaseStateEventProcessor
 from reflex.istate.data import HeaderData, _FrozenDictStrStr
@@ -48,17 +59,7 @@ from reflex.state import (
     State,
 )
 from reflex.testing import chdir
-from reflex.utils import format, prerequisites, types
-from reflex.utils.exceptions import (
-    InvalidLockWarningThresholdError,
-    LockExpiredError,
-    ReflexRuntimeError,
-    SetUndefinedStateVarError,
-    StateSerializationError,
-    UnretrievableVarValueError,
-)
-from reflex.utils.format import json_dumps
-from reflex.vars.base import Field, Var, computed_var, field
+from reflex.utils import prerequisites
 from tests.units.mock_redis import mock_redis
 
 from .states import GenState
@@ -66,8 +67,7 @@ from .states import GenState
 pytest.importorskip("pydantic")
 
 
-from pydantic import BaseModel as BaseModelV2
-from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic import BaseModel
 
 from tests.units.states.mutation import MutableTestState
 
@@ -1971,7 +1971,7 @@ async def test_state_manager_lock_warning_threshold_contend(
         substate_token_redis: A token + substate name for looking up in state manager.
         mocker: Pytest mocker object.
     """
-    console_warn = mocker.patch("reflex.utils.console.warn")
+    console_warn = mocker.patch("reflex_core.utils.console.warn")
 
     state_manager_redis.lock_expiration = LOCK_EXPIRATION
     state_manager_redis.lock_warning_threshold = LOCK_WARNING_THRESHOLD
@@ -3520,7 +3520,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex.config.get_config(reload=True)
+        reflex_core.config.get_config(reload=True)
 
         state_manager = StateManagerRedis(redis=mock_redis())
         assert state_manager.lock_expiration == expected_values[0]  # pyright: ignore [reportAttributeAccessIssue]
@@ -3556,10 +3556,38 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex.config.get_config(reload=True)
+        reflex_core.config.get_config(reload=True)
 
         with pytest.raises(InvalidLockWarningThresholdError):
             StateManagerRedis(redis=mock_redis())
+        del sys.modules[constants.Config.MODULE]
+
+
+def test_state_manager_create_respects_explicit_memory_mode_with_redis_url(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+):
+    proj_root = tmp_path / "project1"
+    proj_root.mkdir()
+
+    config_string = """
+import reflex as rx
+config = rx.Config(
+    app_name="project1",
+)
+    """
+
+    (proj_root / "rxconfig.py").write_text(dedent(config_string))
+    monkeypatch.setenv("REFLEX_STATE_MANAGER_MODE", "memory")
+    monkeypatch.setenv("REFLEX_REDIS_URL", "redis://localhost:6379")
+
+    with chdir(proj_root):
+        reflex_core.config.get_config(reload=True)
+        monkeypatch.setattr(prerequisites, "get_redis", mock_redis)
+        from reflex.state import State
+
+        state_manager = StateManager.create(state=State)
+        assert isinstance(state_manager, StateManagerMemory)
+
         del sys.modules[constants.Config.MODULE]
 
 
@@ -3579,7 +3607,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex.config.get_config(reload=True)
+        reflex_core.config.get_config(reload=True)
         from reflex.state import State
 
         class TestState(State):
@@ -3802,7 +3830,7 @@ async def test_deserialize_gc_state_disk(token):
 class Obj(Base):
     """A object containing a callable for testing fallback pickle."""
 
-    _f: Callable
+    f: Callable
 
 
 def test_fallback_pickle():
@@ -3814,7 +3842,7 @@ def test_fallback_pickle():
         _g: Any = None
 
     state = DillState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
-    state._o = Obj(_f=lambda: 42)
+    state._o = Obj(f=lambda: 42)
     state._f = lambda: 420
 
     pk = state._serialize()
@@ -3824,7 +3852,7 @@ def test_fallback_pickle():
     assert unpickled_state._f is not None
     assert unpickled_state._f() == 420
     assert unpickled_state._o is not None
-    assert unpickled_state._o._f() == 42
+    assert unpickled_state._o.f() == 42
 
     # Threading locks are unpicklable normally, and raise TypeError instead of PicklingError.
     state2 = DillState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
@@ -3849,29 +3877,7 @@ def test_typed_state() -> None:
     _ = TypedState(field="str")
 
 
-class ModelV1(BaseModelV1):
-    """A pydantic BaseModel v1."""
-
-    foo: str = "bar"
-
-    def set_foo(self, val: str):
-        """Set the attribute foo.
-
-        Args:
-            val: The value to set.
-        """
-        self.foo = val
-
-    def double_foo(self) -> str:
-        """Concatenate foo with foo.
-
-        Returns:
-            foo + foo
-        """
-        return self.foo + self.foo
-
-
-class ModelV2(BaseModelV2):
+class ModelV2(BaseModel):
     """A pydantic BaseModel v2."""
 
     foo: str = "bar"
@@ -3896,7 +3902,6 @@ class ModelV2(BaseModelV2):
 class PydanticState(rx.State):
     """A state with pydantic BaseModel vars."""
 
-    v1: ModelV1 = ModelV1()
     v2: ModelV2 = ModelV2()
     dc: ModelDC = ModelDC()
 
@@ -3904,17 +3909,6 @@ class PydanticState(rx.State):
 def test_mutable_models():
     """Test that dataclass and pydantic BaseModel v1 and v2 use dep tracking."""
     state = PydanticState()
-    assert isinstance(state.v1, MutableProxy)
-    state.v1.foo = "baz"
-    assert state.dirty_vars == {"v1"}
-    state.dirty_vars.clear()
-    state.v1.set_foo("quuc")
-    assert state.dirty_vars == {"v1"}
-    state.dirty_vars.clear()
-    assert state.v1.double_foo() == "quucquuc"
-    assert state.dirty_vars == set()
-    state.v1.copy(update={"foo": "larp"})
-    assert state.dirty_vars == set()
 
     assert isinstance(state.v2, MutableProxy)
     state.v2.foo = "baz"
@@ -4085,10 +4079,6 @@ class UpcastState(rx.State):
             assert isinstance(o, Object)
         self.passed = True
 
-    def rx_basemodelv1(self, m: ModelV1):  # noqa: D102
-        assert isinstance(m, ModelV1)
-        self.passed = True
-
     def rx_basemodelv2(self, m: ModelV2):  # noqa: D102
         assert isinstance(m, ModelV2)
         self.passed = True
@@ -4137,7 +4127,6 @@ class UpcastState(rx.State):
         (UpcastState.rx_base, {"o": {"foo": "bar"}}),
         (UpcastState.rx_base_or_none, {"o": {"foo": "bar"}}),
         (UpcastState.rx_base_or_none, {"o": None}),
-        (UpcastState.rx_basemodelv1, {"m": {"foo": "bar"}}),
         (UpcastState.rx_basemodelv2, {"m": {"foo": "bar"}}),
         (UpcastState.rx_dataclass, {"dc": {"foo": "bar"}}),
         (UpcastState.py_set, {"s": ["foo", "foo"]}),

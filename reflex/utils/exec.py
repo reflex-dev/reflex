@@ -15,12 +15,14 @@ from pathlib import Path
 from typing import Any, NamedTuple, TypedDict
 from urllib.parse import urljoin
 
-from reflex import constants
-from reflex.config import get_config
-from reflex.constants.base import LogLevel
-from reflex.environment import environment
-from reflex.utils import console, path_ops
-from reflex.utils.decorator import once
+from reflex_core import constants
+from reflex_core.config import get_config
+from reflex_core.constants.base import LogLevel
+from reflex_core.environment import environment
+from reflex_core.utils import console
+from reflex_core.utils.decorator import once
+
+from reflex.utils import path_ops
 from reflex.utils.misc import get_module_path
 from reflex.utils.prerequisites import get_web_dir
 
@@ -539,8 +541,7 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     from granian.constants import Interfaces
     from granian.log import LogLevels
     from granian.server import Server as Granian
-
-    from reflex.environment import _load_dotenv_from_env
+    from reflex_core.environment import _load_dotenv_from_env
 
     granian_app = Granian(
         target=get_app_instance_from_file(),

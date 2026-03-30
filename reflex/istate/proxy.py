@@ -15,14 +15,14 @@ from types import MethodType
 from typing import TYPE_CHECKING, Any, SupportsIndex, TypeVar
 
 import wrapt
+from reflex_core.event import Event
+from reflex_core.utils.exceptions import ImmutableStateError
+from reflex_core.utils.serializers import can_serialize, serialize, serializer
+from reflex_core.vars.base import Var
 from typing_extensions import Self
 
-from reflex.base import Base
 from reflex.ievent.context import event_context
 from reflex.istate.manager.token import BaseStateToken
-from reflex.utils.exceptions import ImmutableStateError
-from reflex.utils.serializers import can_serialize, serialize, serializer
-from reflex.vars.base import Var
 
 if TYPE_CHECKING:
     from reflex.state import BaseState, StateUpdate
@@ -60,6 +60,7 @@ class StateProxy(wrapt.ObjectProxy):
     def __init__(
         self,
         state_instance: BaseState,
+        event: Event | None = None,
         parent_state_proxy: StateProxy | None = None,
     ):
         """Create a proxy for a state instance.
@@ -70,9 +71,11 @@ class StateProxy(wrapt.ObjectProxy):
 
         Args:
             state_instance: The state instance to proxy.
+            event: The event associated with the state modification context.
             parent_state_proxy: The parent state proxy, for linked mutability and context tracking.
         """
         super().__init__(state_instance)
+        self._self_event = event
         self._self_substate_path = tuple(state_instance.get_full_name().split("."))
         self._self_substate_token = BaseStateToken(
             ident=event_context.get().token,
@@ -136,7 +139,7 @@ class StateProxy(wrapt.ObjectProxy):
         try:
             self._self_actx_lock_holder = current_task
             self._self_actx = ctx.state_manager.modify_state_with_links(
-                token=self._self_substate_token,
+                token=self._self_substate_token, event=self._self_event
             )
             mutable_state = await self._self_actx.__aenter__()
             self._self_mutable = True
@@ -304,7 +307,9 @@ class StateProxy(wrapt.ObjectProxy):
             )
             raise ImmutableStateError(msg)
         return type(self)(
-            await self.__wrapped__.get_state(state_cls), parent_state_proxy=self
+            await self.__wrapped__.get_state(state_cls),
+            event=self._self_event,
+            parent_state_proxy=self,
         )  # pyright: ignore [reportReturnType]
 
     async def _as_state_update(self, *args, **kwargs) -> StateUpdate:
@@ -355,20 +360,10 @@ class ReadOnlyStateProxy(StateProxy):
         raise NotImplementedError(msg)
 
 
-if find_spec("pydantic"):
-    import pydantic
-
-    NEVER_WRAP_BASE_ATTRS = set(Base.__dict__) - {"set"} | set(
-        pydantic.BaseModel.__dict__
-    )
-else:
-    NEVER_WRAP_BASE_ATTRS = {}
-
 MUTABLE_TYPES = (
     list,
     dict,
     set,
-    Base,
 )
 
 if find_spec("sqlalchemy"):
@@ -377,10 +372,9 @@ if find_spec("sqlalchemy"):
     MUTABLE_TYPES += (DeclarativeBase,)
 
 if find_spec("pydantic"):
-    from pydantic import BaseModel as BaseModelV2
-    from pydantic.v1 import BaseModel as BaseModelV1
+    from pydantic import BaseModel
 
-    MUTABLE_TYPES += (BaseModelV1, BaseModelV2)
+    MUTABLE_TYPES += (BaseModel,)
 
 
 class MutableProxy(wrapt.ObjectProxy):
@@ -581,11 +575,7 @@ class MutableProxy(wrapt.ObjectProxy):
                 )
 
             if (
-                (
-                    not isinstance(self.__wrapped__, Base)
-                    or __name not in NEVER_WRAP_BASE_ATTRS
-                )
-                and (func := getattr(value, "__func__", None)) is not None
+                (func := getattr(value, "__func__", None)) is not None
                 and not inspect.isclass(getattr(value, "__self__", None))
                 # skip SQLAlchemy instrumented methods
                 and not getattr(value, "_sa_instrumented", False)

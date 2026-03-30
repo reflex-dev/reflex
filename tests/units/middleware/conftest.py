@@ -1,6 +1,6 @@
 import pytest
+from reflex_core.event import Event
 
-from reflex.event import Event
 from reflex.state import State
 
 

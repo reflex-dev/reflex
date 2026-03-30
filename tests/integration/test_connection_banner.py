@@ -4,10 +4,10 @@ import pickle
 from collections.abc import Generator
 
 import pytest
+from reflex_core import constants
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 
-from reflex import constants
 from reflex.environment import environment
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.testing import AppHarness, WebDriver

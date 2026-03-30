@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import Any
 
-    from reflex.event import EventType
+    from reflex_core.event import EventType
 
 DECORATED_PAGES: dict[str, list] = defaultdict(list)
 
@@ -45,7 +45,7 @@ def page(
     Returns:
         The decorated function.
     """
-    from reflex.config import get_config
+    from reflex_core.config import get_config
 
     def decorator(render_fn: Callable):
         kwargs = {}

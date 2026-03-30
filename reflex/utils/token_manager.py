@@ -193,7 +193,7 @@ class RedisTokenManager(LocalTokenManager):
         self.redis = redis
 
         # Get token expiration from config (default 1 hour)
-        from reflex.config import get_config
+        from reflex_core.config import get_config
 
         config = get_config()
         self.token_expiration = config.redis_token_expiration

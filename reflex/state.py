@@ -26,14 +26,10 @@ from typing import (
     get_type_hints,
 )
 
-from rich.markup import escape
-from typing_extensions import Self
-
-import reflex.istate.dynamic
-from reflex import constants, event
-from reflex.constants.state import FIELD_MARKER
-from reflex.environment import PerformanceMode, environment
-from reflex.event import (
+from reflex_core import constants
+from reflex_core.constants.state import FIELD_MARKER
+from reflex_core.environment import PerformanceMode, environment
+from reflex_core.event import (
     BACKGROUND_TASK_MARKER,
     EVENT_ACTIONS_MARKER,
     Event,
@@ -41,13 +37,7 @@ from reflex.event import (
     EventSpec,
     call_script,
 )
-from reflex.istate import HANDLED_PICKLE_ERRORS, debug_failed_pickles
-from reflex.istate.data import RouterData
-from reflex.istate.proxy import ImmutableMutableProxy as ImmutableMutableProxy
-from reflex.istate.proxy import MutableProxy, is_mutable_type
-from reflex.istate.storage import ClientStorageBase
-from reflex.utils import console, format, prerequisites, types
-from reflex.utils.exceptions import (
+from reflex_core.utils.exceptions import (
     ComputedVarShadowsBaseVarsError,
     ComputedVarShadowsStateVarError,
     DynamicComponentInvalidSignatureError,
@@ -61,12 +51,11 @@ from reflex.utils.exceptions import (
     StateTooLargeError,
     UnretrievableVarValueError,
 )
-from reflex.utils.exceptions import ImmutableStateError as ImmutableStateError
-from reflex.utils.exec import is_testing_env
-from reflex.utils.serializers import serializer
-from reflex.utils.types import _isinstance
-from reflex.vars import Field, VarData, field
-from reflex.vars.base import (
+from reflex_core.utils.exceptions import ImmutableStateError as ImmutableStateError
+from reflex_core.utils.serializers import serializer
+from reflex_core.utils.types import _isinstance
+from reflex_core.vars import Field, VarData, field
+from reflex_core.vars.base import (
     ComputedVar,
     DynamicRouteVar,
     EvenMoreBasicBaseState,
@@ -75,9 +64,21 @@ from reflex.vars.base import (
     dispatch,
     is_computed_var,
 )
+from rich.markup import escape
+from typing_extensions import Self
+
+import reflex.istate.dynamic
+from reflex import event
+from reflex.istate import HANDLED_PICKLE_ERRORS, debug_failed_pickles
+from reflex.istate.data import RouterData
+from reflex.istate.proxy import ImmutableMutableProxy as ImmutableMutableProxy
+from reflex.istate.proxy import MutableProxy, is_mutable_type
+from reflex.istate.storage import ClientStorageBase
+from reflex.utils import console, format, prerequisites, types
+from reflex.utils.exec import is_testing_env
 
 if TYPE_CHECKING:
-    from reflex.components.component import Component
+    from reflex_core.components.component import Component
 
 
 Delta = dict[str, dict[str, Any]]
@@ -221,8 +222,8 @@ class EventHandlerSetVar(EventHandler):
             EventHandlerValueError: If the given Var name is not a str
             NotImplementedError: If the setter for the given Var is async
         """
-        from reflex.config import get_config
-        from reflex.utils.exceptions import EventHandlerValueError
+        from reflex_core.config import get_config
+        from reflex_core.utils.exceptions import EventHandlerValueError
 
         config = get_config()
         if config.state_auto_setters is None and self.state is not None:
@@ -425,7 +426,7 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             ReflexRuntimeError: If the state is instantiated directly by end user.
         """
-        from reflex.utils.exceptions import ReflexRuntimeError
+        from reflex_core.utils.exceptions import ReflexRuntimeError
 
         if not _reflex_internal_init and not is_testing_env():
             msg = (
@@ -499,8 +500,9 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             StateValueError: If a substate class shadows another.
         """
+        from reflex_core.utils.exceptions import StateValueError
+
         from reflex._internal.registry import RegistrationContext
-        from reflex.utils.exceptions import StateValueError
 
         super().__init_subclass__(**kwargs)
 
@@ -706,7 +708,7 @@ class BaseState(EvenMoreBasicBaseState):
         console.warn(
             "The _evaluate method is experimental and may be removed in future versions."
         )
-        from reflex.components.component import Component
+        from reflex_core.components.component import Component
 
         of_type = of_type or Component
 
@@ -926,11 +928,11 @@ class BaseState(EvenMoreBasicBaseState):
     def get_parent_state(cls) -> type[BaseState] | None:
         """Get the parent state.
 
-        Raises:
-            ValueError: If more than one parent state is found.
-
         Returns:
             The parent state.
+
+        Raises:
+            ValueError: If more than one parent state is found.
         """
         parent_states = [
             base
@@ -1066,8 +1068,8 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             VarTypeError: if the variable has an incorrect type
         """
-        from reflex.config import get_config
-        from reflex.utils.exceptions import VarTypeError
+        from reflex_core.config import get_config
+        from reflex_core.utils.exceptions import VarTypeError
 
         if not types.is_valid_var_type(prop._var_type):
             msg = (
@@ -1168,7 +1170,7 @@ class BaseState(EvenMoreBasicBaseState):
             name: The name of the var.
             prop: The var to create a setter for.
         """
-        from reflex.config import get_config
+        from reflex_core.config import get_config
 
         config = get_config()
         create_event_handler_kwargs = {}
@@ -1276,6 +1278,15 @@ class BaseState(EvenMoreBasicBaseState):
         Args:
             args: a dict of args
         """
+        # Skip dynamic args that have already been registered by a previous route.
+        args = {
+            k: v
+            for k, v in args.items()
+            if not (
+                (computed_var := cls.computed_vars.get(k)) is not None
+                and isinstance(computed_var, DynamicRouteVar)
+            )
+        }
         if not args:
             return
 
@@ -1864,7 +1875,7 @@ class BaseState(EvenMoreBasicBaseState):
         """
         if isinstance(key, MutableProxy):
             # Legacy behavior from v0.7.14: handle non-string keys with deprecation warning
-            from reflex.utils import console
+            from reflex_core.utils import console
 
             console.deprecate(
                 feature_name="Non-string keys in get_value",
@@ -2263,7 +2274,7 @@ def dynamic(func: Callable[[T], Component]):
     state_class: type[T] = values[0]
 
     def wrapper() -> Component:
-        from reflex.components.base.fragment import fragment
+        from reflex_components_core.base.fragment import fragment
 
         return fragment(state_class._evaluate(lambda state: func(state)))
 
