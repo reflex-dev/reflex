@@ -414,15 +414,24 @@ class EventProcessor:
                 emit_delta_impl=_emit_delta_impl,
             ),
         )
-        while not task_future.done() or not deltas.empty():
-            with contextlib.suppress(asyncio.TimeoutError):
-                async for result in asyncio.as_completed(
-                    [deltas.get(), *([task_future] if not task_future.done() else [])],
-                    timeout=1,
-                ):
-                    if result is task_future:
-                        continue
-                    yield await result
+        waiting_for = {task_future, asyncio.create_task(deltas.get())}
+        try:
+            while not task_future.done() or not deltas.empty():
+                with contextlib.suppress(asyncio.TimeoutError):
+                    async for result in asyncio.as_completed(
+                        waiting_for,
+                        timeout=1,
+                    ):
+                        waiting_for.remove(result)
+                        if result is not task_future:
+                            yield await result
+                            waiting_for.add(asyncio.create_task(deltas.get()))
+                        break
+        finally:
+            for future in waiting_for:
+                future.cancel()
+        # Raise any exceptions for the caller.
+        await task_future
 
     def _on_future_done(self, txid: str, future: asyncio.Future) -> None:
         """Callback invoked when an enqueued future completes.
