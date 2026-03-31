@@ -28,6 +28,7 @@ from reflex_core.utils.imports import ImportVar, ParsedImportDict
 from reflex_core.vars.base import LiteralVar, Var
 
 from reflex.compiler import templates, utils
+from reflex.compiler.plugins import collect_component_tree_artifacts
 from reflex.experimental.memo import (
     ExperimentalMemoComponentDefinition,
     ExperimentalMemoDefinition,
@@ -57,7 +58,15 @@ def _compile_document_root(root: Component) -> str:
     Returns:
         The compiled document root.
     """
-    document_root_imports = root._get_all_imports()
+    collected = collect_component_tree_artifacts(
+        root,
+        collect_hooks=False,
+        collect_custom_code=False,
+        collect_dynamic_imports=False,
+        collect_refs=False,
+        collect_app_wrap_components=False,
+    )
+    document_root_imports = collected["imports"]
     _apply_common_imports(document_root_imports)
     return templates.document_root_template(
         imports=utils.compile_imports(document_root_imports),
@@ -96,16 +105,21 @@ def _compile_app(app_root: Component) -> str:
 
     window_libraries_deduped = list(dict.fromkeys(window_libraries))
 
-    app_root_imports = app_root._get_all_imports()
+    collected = collect_component_tree_artifacts(
+        app_root,
+        collect_refs=False,
+        collect_app_wrap_components=False,
+    )
+    app_root_imports = collected["imports"]
     _apply_common_imports(app_root_imports)
 
     return templates.app_root_template(
         imports=utils.compile_imports(app_root_imports),
-        custom_codes=app_root._get_all_custom_code(),
-        hooks=app_root._get_all_hooks(),
+        custom_codes=collected["custom_code"],
+        hooks=collected["hooks"],
         window_libraries=window_libraries_deduped,
         render=app_root.render(),
-        dynamic_imports=app_root._get_all_dynamic_imports(),
+        dynamic_imports=collected["dynamic_imports"],
     )
 
 
@@ -160,16 +174,21 @@ def _compile_page(component: BaseComponent) -> str:
     Returns:
         The compiled component.
     """
-    imports = component._get_all_imports()
+    collected = collect_component_tree_artifacts(
+        component,
+        collect_refs=False,
+        collect_app_wrap_components=False,
+    )
+    imports = collected["imports"]
     _apply_common_imports(imports)
     imports = utils.compile_imports(imports)
 
     # Compile the code to render the component.
     return templates.page_template(
         imports=imports,
-        dynamic_imports=sorted(component._get_all_dynamic_imports()),
-        custom_codes=component._get_all_custom_code(),
-        hooks=component._get_all_hooks(),
+        dynamic_imports=sorted(collected["dynamic_imports"]),
+        custom_codes=collected["custom_code"],
+        hooks=collected["hooks"],
         render=component.render(),
     )
 
@@ -439,15 +458,23 @@ def _get_shared_components_recursive(
         # Reset this flag to render the actual component.
         component.rendered_as_shared = False
 
+        collected = collect_component_tree_artifacts(
+            component,
+            collect_hooks=False,
+            collect_refs=False,
+            collect_app_wrap_components=False,
+            stateful_custom_code_export=True,
+        )
+
         # Include dynamic imports in the shared component.
-        if dynamic_imports := component._get_all_dynamic_imports():
+        if dynamic_imports := collected["dynamic_imports"]:
             rendered_components.update(dict.fromkeys(dynamic_imports))
 
         # Include custom code in the shared component.
-        rendered_components.update(component._get_all_custom_code(export=True))
+        rendered_components.update(collected["custom_code"])
 
         # Include all imports in the shared component.
-        all_import_dicts.append(component._get_all_imports())
+        all_import_dicts.append(collected["imports"])
 
         # Indicate that this component now imports from the shared file.
         component.rendered_as_shared = True

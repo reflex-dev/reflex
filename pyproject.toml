@@ -230,7 +230,7 @@ asyncio_mode = "auto"
 
 [tool.codespell]
 skip = "docs/*,*.html,examples/*, *.pyi, poetry.lock, uv.lock"
-ignore-words-list = "te, TreeE, selectin"
+ignore-words-list = "te, TreeE, selectin, asend"
 
 
 [tool.coverage.run]

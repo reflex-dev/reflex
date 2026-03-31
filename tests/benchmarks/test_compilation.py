@@ -2,6 +2,10 @@ from pytest_codspeed import BenchmarkFixture
 from reflex_core.components.component import Component
 
 from reflex.compiler.compiler import _compile_page, _compile_stateful_components
+from tests.benchmarks.hotspots import (
+    read_component_tree_multi_pass,
+    read_component_tree_single_pass,
+)
 
 
 def import_templates():
@@ -23,3 +27,17 @@ def test_compile_stateful(evaluated_page: Component, benchmark: BenchmarkFixture
 
 def test_get_all_imports(evaluated_page: Component, benchmark: BenchmarkFixture):
     benchmark(lambda: evaluated_page._get_all_imports())
+
+
+def test_recursive_component_tree_reads_multi_pass(
+    evaluated_page: Component,
+    benchmark: BenchmarkFixture,
+):
+    benchmark(lambda: read_component_tree_multi_pass(evaluated_page))
+
+
+def test_recursive_component_tree_reads_single_pass(
+    evaluated_page: Component,
+    benchmark: BenchmarkFixture,
+):
+    benchmark(lambda: read_component_tree_single_pass(evaluated_page))
