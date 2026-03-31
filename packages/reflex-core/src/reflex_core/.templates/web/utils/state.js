@@ -391,7 +391,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
     };
     const query = {
       ...Object.fromEntries(new URLSearchParams(window.location.search)),
-      ...params(),
+      ...params.current,
     };
     if (query && Object.keys(query).length > 0) {
       event.router_data.query = query;
@@ -616,17 +616,11 @@ export const connect = async (
     window.addEventListener("unload", disconnectTrigger);
     if (socket.current.rehydrate) {
       socket.current.rehydrate = false;
-      queueEvents(
-        initialEvents(),
-        socket,
-        true,
-        navigate,
-        () => params.current,
-      );
+      queueEvents(initialEvents(), socket, true, navigate, params);
     }
     // Drain any initial events from the queue.
     while (event_queue.length > 0) {
-      await processEvent(socket.current, navigate, () => params.current);
+      await processEvent(socket.current, navigate, params);
     }
   });
 
@@ -920,7 +914,7 @@ export const useEventLoop = (
         setConnectErrors,
         client_storage,
         navigate,
-        () => params.current,
+        params,
       );
     }
   }, [
@@ -948,7 +942,7 @@ export const useEventLoop = (
     }
 
     return applyEventActions(
-      () => queueEvents(_events, socket, false, navigate, () => params.current),
+      () => queueEvents(_events, socket, false, navigate, params),
       event_actions,
       args,
       _events.map((e) => e.name).join("+++"),
@@ -959,13 +953,7 @@ export const useEventLoop = (
   const sentHydrate = useRef(false); // Avoid double-hydrate due to React strict-mode
   useEffect(() => {
     if (!sentHydrate.current) {
-      queueEvents(
-        initial_events(),
-        socket,
-        true,
-        navigate,
-        () => params.current,
-      );
+      queueEvents(initial_events(), socket, true, navigate, params);
       sentHydrate.current = true;
     }
   }, []);
@@ -1031,7 +1019,7 @@ export const useEventLoop = (
       // Process all outstanding events.
       while (event_queue.length > 0) {
         await ensureSocketConnected();
-        await processEvent(socket.current, navigate, () => params.current);
+        await processEvent(socket.current, navigate, params);
       }
     })();
   });
