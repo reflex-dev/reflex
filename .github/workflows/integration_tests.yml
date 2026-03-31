@@ -133,9 +133,10 @@ jobs:
       - name: Compile pyproject.toml into requirements.txt
         working-directory: ./reflex-web
         run: |
-          uv pip list --format=json | jq -r '.[].name' > installed.txt
-          uv pip compile pyproject.toml --no-annotate --no-header --no-deps --excludes installed.txt --output-file requirements.txt
-          rm installed.txt
+          uv pip compile pyproject.toml --no-annotate --no-header --no-deps --output-file requirements.txt
+          uv pip list --format=json | jq -r '"^" + .[].name + "[ =]"' > installed_patterns.txt
+          grep -ivf installed_patterns.txt requirements.txt > requirements.txt.tmp && mv requirements.txt.tmp requirements.txt
+          rm installed_patterns.txt
       - name: Install Requirements for reflex-web
         working-directory: ./reflex-web
         run: uv pip install -r requirements.txt
@@ -207,9 +208,10 @@ jobs:
       - name: Compile pyproject.toml into requirements.txt
         working-directory: ./reflex-web
         run: |
-          uv pip list --format=json | jq -r '.[].name' > installed.txt
-          uv pip compile pyproject.toml --no-annotate --no-header --no-deps --excludes installed.txt --output-file requirements.txt
-          rm installed.txt
+          uv pip compile pyproject.toml --no-annotate --no-header --no-deps --output-file requirements.txt
+          uv pip list --format=json | jq -r '"^" + .[].name + "[ =]"' > installed_patterns.txt
+          grep -ivf installed_patterns.txt requirements.txt > requirements.txt.tmp && mv requirements.txt.tmp requirements.txt
+          rm installed_patterns.txt
       - name: Install Requirements for reflex-web
         working-directory: ./reflex-web
         run: uv pip install -r requirements.txt
