@@ -86,7 +86,7 @@ from reflex.compiler.compiler import (
     readable_name_from_component,
 )
 from reflex.experimental.memo import EXPERIMENTAL_MEMOS
-from reflex.istate.manager import StateModificationContext
+from reflex.istate.manager import StateManager, StateModificationContext
 from reflex.istate.proxy import StateProxy
 from reflex.page import DECORATED_PAGES
 from reflex.route import (
@@ -98,7 +98,6 @@ from reflex.state import (
     BaseState,
     RouterData,
     State,
-    StateManager,
     StateUpdate,
     _split_substate_key,
     _substate_key,

@@ -1,12 +1,10 @@
 """State manager for managing client states."""
 
-from __future__ import annotations
-
 import contextlib
 import dataclasses
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
-from typing import TYPE_CHECKING, TypedDict
+from typing import TypedDict
 
 from reflex_core import constants
 from reflex_core.config import get_config
@@ -14,10 +12,8 @@ from reflex_core.event import Event
 from reflex_core.utils.exceptions import InvalidStateManagerModeError
 from typing_extensions import ReadOnly, Unpack
 
+from reflex.state import BaseState
 from reflex.utils import console, prerequisites
-
-if TYPE_CHECKING:
-    from reflex.state import BaseState
 
 
 class StateModificationContext(TypedDict, total=False):

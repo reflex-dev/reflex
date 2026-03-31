@@ -141,7 +141,7 @@ def _run(
     """Run the app in the given directory."""
     import atexit
 
-    from reflex.state import reset_disk_state_manager
+    from reflex.istate.manager import reset_disk_state_manager
     from reflex.utils import build, exec, prerequisites, processes, telemetry
     from reflex.utils.exec import should_use_granian
 
