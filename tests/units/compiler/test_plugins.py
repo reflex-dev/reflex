@@ -11,6 +11,7 @@ from reflex_core.utils import format as format_utils
 from reflex_core.utils.imports import ImportVar, collapse_imports, merge_imports
 
 from reflex.compiler.plugins import (
+    BaseContext,
     CompileComponentYield,
     CompileContext,
     CompilerHooks,
@@ -338,6 +339,16 @@ def test_page_context_default_factories_are_isolated() -> None:
     assert page_ctx_b.dynamic_imports == set()
     assert page_ctx_b.refs == {}
     assert page_ctx_b.app_wrap_components == {}
+
+
+def test_base_context_subclasses_initialize_distinct_context_vars() -> None:
+    class DynamicContext(BaseContext):
+        pass
+
+    class AnotherDynamicContext(BaseContext):
+        pass
+
+    assert DynamicContext.__context_var__ is not AnotherDynamicContext.__context_var__
 
 
 def test_single_pass_collector_matches_legacy_recursive_collectors() -> None:

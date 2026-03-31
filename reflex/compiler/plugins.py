@@ -207,7 +207,7 @@ class CompilerHooks:
         return replacement, children
 
 
-@dataclasses.dataclass(slots=True, kw_only=True)
+@dataclasses.dataclass(kw_only=True)
 class BaseContext:
     """Async context manager that exposes itself through a class-local context var."""
 
