@@ -238,31 +238,46 @@ const extractPoints = (points) => {
 const _rxLocaleCache = {};
 
 function _rxLoadLocale(locale) {
-    const key = locale.toLowerCase();
-    if (_rxLocaleCache[key]) return Promise.resolve(_rxLocaleCache[key]);
-    const url = `/node_modules/plotly.js-locales/${key}.js`;
-    return fetch(url)
+    const key = (locale || "").toLowerCase();
+
+    if (!/^[a-z]{2,3}(-[a-z]{2,4})?$/.test(key)) {
+        console.warn("[rx.plotly] Invalid locale:", locale);
+        return Promise.resolve(null);
+    }
+
+    if (_rxLocaleCache[key]) {
+        return _rxLocaleCache[key];
+    }
+
+    const url = `https://cdn.jsdelivr.net/npm/plotly.js-locales@3.3.1/${key}.js`;
+
+    _rxLocaleCache[key] = fetch(url)
         .then(r => {
             if (!r.ok) throw new Error("HTTP " + r.status);
             return r.text();
         })
         .then(code => {
             const mod = { exports: {} };
+
             new Function("module", "exports", code)(mod, mod.exports);
-            _rxLocaleCache[key] = mod.exports;
+
             return mod.exports;
         })
         .catch(e => {
             console.warn(
-                "[rx.plotly] Locale \\"" + locale + "\\" could not be loaded: " + e.message +
-                ". Check https://www.npmjs.com/package/plotly.js-locales for supported codes."
+                `[rx.plotly] Locale "${locale}" could not be loaded: ${e.message}`
             );
             return null;
         });
+
+    return _rxLocaleCache[key];
 }
 
-function _RxPlotLocale({ locale, config, ...rest }) {
+function _RxPlotLocale({ locale, config, _plotComponent, ...rest }) {
+    const PlotComponent = _plotComponent || Plot;
+
     const isEnglish = !locale || locale === "en";
+
     const [localeData, setLocaleData] = useState(null);
     const [localeReady, setLocaleReady] = useState(isEnglish);
 
@@ -272,25 +287,32 @@ function _RxPlotLocale({ locale, config, ...rest }) {
             setLocaleReady(true);
             return;
         }
+
         setLocaleReady(false);
+
         _rxLoadLocale(locale).then(data => {
             setLocaleData(data);
             setLocaleReady(true);
         });
-    }, [locale]);
+    }, [locale, isEnglish]);
 
     if (!localeReady) return null;
 
     const key = locale ? locale.toLowerCase() : "en";
-    const mergedConfig = (!isEnglish && localeData)
-        ? {
-            ...(config || {}),
-            locale: key,
-            locales: { [key]: localeData },
-          }
-        : (config || {});
 
-    return React.createElement(Plot, { ...rest, config: mergedConfig });
+    const mergedConfig =
+        (!isEnglish && localeData)
+            ? {
+                ...(config || {}),
+                locale: key,
+                locales: { [key]: localeData },
+            }
+            : (config || {});
+
+    return React.createElement(PlotComponent, {
+        ...rest,
+        config: mergedConfig,
+    });
 }
 """,
         ]
@@ -337,7 +359,14 @@ function _RxPlotLocale({ locale, config, ...rest }) {
         # Render through _RxPlotLocale wrapper which handles locale loading.
         # `tag = "Plot"` above tells Reflex to auto-import Plot from react-plotly.js;
         # we override the rendered element name here so the JSX uses _RxPlotLocale.
-        tag = tag.set(name="_RxPlotLocale")
+        original_tag_name = tag.name
+        tag = tag.set(
+                name="_RxPlotLocale",
+                props={
+                    **tag.props,
+                    "_plotComponent": Var(_js_expr=original_tag_name),
+                },
+            )
         figure = self.data.to(dict) if self.data is not None else Var.create({})
         merge_dicts = []  # Data will be merged and spread from these dict Vars
         if self.layout is not None:
@@ -375,7 +404,7 @@ CREATE_PLOTLY_COMPONENT: ImportDict = {
     "react-plotly.js": [
         ImportVar(
             tag="createPlotlyComponent",
-            is_default=True,
+            is_default=False,
             package_path="/factory",
         ),
     ]
