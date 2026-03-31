@@ -508,7 +508,7 @@ class ChunkUploadState(rx.State):
 
                 fh = file_handles.get(chunk.filename)
                 if fh is None:
-                    fh = path.open("r+b") if path.exists() else path.open("wb")
+                    fh = path.open("wb")
                     file_handles[chunk.filename] = fh
 
                 fh.seek(chunk.offset)
