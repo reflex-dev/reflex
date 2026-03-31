@@ -80,6 +80,41 @@ class PropComponent(Component):
         return "dynamic(() => import('prop-lib'))"
 
 
+class OrderedRootComponent(Component):
+    tag = "OrderedRootComponent"
+    library = "ordered-root-lib"
+
+    slot: Component | None = field(default=None)
+
+    def _get_custom_code(self) -> str | None:
+        return "const rootCustomCode = 1;"
+
+    def add_custom_code(self) -> list[str]:
+        return ["const rootAddedCustomCode = 2;"]
+
+
+class OrderedPropComponent(Component):
+    tag = "OrderedPropComponent"
+    library = "ordered-prop-lib"
+
+    def _get_custom_code(self) -> str | None:
+        return "const propCustomCode = 3;"
+
+    def add_custom_code(self) -> list[str]:
+        return ["const propAddedCustomCode = 4;"]
+
+
+class OrderedChildComponent(Component):
+    tag = "OrderedChildComponent"
+    library = "ordered-child-lib"
+
+    def _get_custom_code(self) -> str | None:
+        return "const childCustomCode = 5;"
+
+    def add_custom_code(self) -> list[str]:
+        return ["const childAddedCustomCode = 6;"]
+
+
 class EvalPagePlugin(TestCompilerPlugin):
     async def eval_page(
         self,
@@ -119,7 +154,7 @@ class CollectPageDataPlugin(TestCompilerPlugin):
                 page_ctx.hooks[hooks] = None
             page_ctx.hooks.update(compiled_component._get_added_hooks())
             if module_code := compiled_component._get_custom_code():
-                page_ctx.module_code.add(module_code)
+                page_ctx.module_code[module_code] = None
             if dynamic_import := compiled_component._get_dynamic_imports():
                 page_ctx.dynamic_imports.add(dynamic_import)
             if ref := compiled_component.get_ref():
@@ -327,14 +362,14 @@ def test_page_context_default_factories_are_isolated() -> None:
     )
 
     page_ctx_a.imports.append({"lib-a": [ImportVar(tag="ThingA")]})
-    page_ctx_a.module_code.add("const a = 1;")
+    page_ctx_a.module_code["const a = 1;"] = None
     page_ctx_a.hooks["hookA"] = None
     page_ctx_a.dynamic_imports.add("dynamic-a")
     page_ctx_a.refs["refA"] = None
     page_ctx_a.app_wrap_components[1, "WrapA"] = Fragment.create()
 
     assert page_ctx_b.imports == []
-    assert page_ctx_b.module_code == set()
+    assert page_ctx_b.module_code == {}
     assert page_ctx_b.hooks == {}
     assert page_ctx_b.dynamic_imports == set()
     assert page_ctx_b.refs == {}
@@ -372,6 +407,26 @@ def test_single_pass_collector_matches_legacy_recursive_collectors() -> None:
     )
 
 
+def test_single_pass_collector_preserves_legacy_custom_code_order() -> None:
+    root = OrderedRootComponent.create(
+        OrderedChildComponent.create(),
+        slot=OrderedPropComponent.create(),
+    )
+
+    collected = collect_component_tree_artifacts(root)
+    legacy_custom_code = root._get_all_custom_code()
+
+    assert list(collected["custom_code"]) == list(legacy_custom_code)
+    assert list(collected["custom_code"]) == [
+        "const rootCustomCode = 1;",
+        "const propCustomCode = 3;",
+        "const propAddedCustomCode = 4;",
+        "const rootAddedCustomCode = 2;",
+        "const childCustomCode = 5;",
+        "const childAddedCustomCode = 6;",
+    ]
+
+
 @pytest.mark.asyncio
 async def test_compile_context_compiles_pages_and_accumulates_page_data() -> None:
     page = FakePage(
@@ -399,7 +454,7 @@ async def test_compile_context_compiles_pages_and_accumulates_page_data() -> Non
     assert page_ctx.route == "/demo"
     assert page_ctx.imports
     assert set(page_ctx.imports[0]) >= {"root-lib", "child-lib", "prop-lib", "react"}
-    assert page_ctx.module_code == {"const childCustomCode = 1;"}
+    assert page_ctx.module_code == {"const childCustomCode = 1;": None}
     assert page_ctx.dynamic_imports == {"dynamic(() => import('prop-lib'))"}
     assert any("useChildHook" in hook for hook in page_ctx.hooks)
     assert any("useRef" in hook for hook in page_ctx.hooks)

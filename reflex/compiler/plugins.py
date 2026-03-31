@@ -283,7 +283,7 @@ class PageContext(BaseContext):
     route: str
     root_component: BaseComponent
     imports: list[ParsedImportDict] = dataclasses.field(default_factory=list)
-    module_code: set[str] = dataclasses.field(default_factory=set)
+    module_code: dict[str, None] = dataclasses.field(default_factory=dict)
     hooks: dict[str, VarData | None] = dataclasses.field(default_factory=dict)
     dynamic_imports: set[str] = dataclasses.field(default_factory=set)
     refs: dict[str, None] = dataclasses.field(default_factory=dict)
@@ -304,8 +304,8 @@ class PageContext(BaseContext):
         return collapse_imports(imports) if collapse else imports
 
     def custom_code_dict(self) -> dict[str, None]:
-        """Return deterministic custom-code snippets keyed like legacy collectors."""
-        return dict.fromkeys(sorted(self.module_code))
+        """Return custom-code snippets keyed like legacy collectors."""
+        return dict(self.module_code)
 
 
 @dataclasses.dataclass(slots=True, kw_only=True)
@@ -534,10 +534,25 @@ def _collect_component_subtree(
 
     if collect_custom_code:
         if custom_code := component._get_custom_code():
-            page_ctx.module_code.add(custom_code)
+            page_ctx.module_code[custom_code] = None
+
+        for prop_component in component._get_components_in_props():
+            _collect_component_subtree(
+                prop_component,
+                page_ctx,
+                collect_imports=False,
+                collect_hooks=False,
+                collect_custom_code=True,
+                collect_dynamic_imports=False,
+                collect_refs=False,
+                collect_app_wrap_components=False,
+                stateful_custom_code_export=stateful_custom_code_export,
+                app_wrap_ignore_ids=app_wrap_ignore_ids,
+            )
+
         for clz in component._iter_parent_classes_with_method("add_custom_code"):
             for item in clz.add_custom_code(component):
-                page_ctx.module_code.add(item)
+                page_ctx.module_code[item] = None
 
     if collect_dynamic_imports and (dynamic_import := component._get_dynamic_imports()):
         page_ctx.dynamic_imports.add(dynamic_import)
@@ -581,14 +596,14 @@ def _collect_component_subtree(
             app_wrap_ignore_ids=app_wrap_ignore_ids,
         )
 
-    if collect_custom_code or collect_dynamic_imports or collect_refs:
+    if collect_dynamic_imports or collect_refs:
         for prop_component in component._get_components_in_props():
             _collect_component_subtree(
                 prop_component,
                 page_ctx,
                 collect_imports=False,
                 collect_hooks=False,
-                collect_custom_code=collect_custom_code,
+                collect_custom_code=False,
                 collect_dynamic_imports=collect_dynamic_imports,
                 collect_refs=collect_refs,
                 collect_app_wrap_components=False,
@@ -632,9 +647,10 @@ def _collect_stateful_component_subtree(
         app_wrap_ignore_ids=app_wrap_ignore_ids,
     )
     if collect_custom_code:
-        page_ctx.module_code.add(
-            component._render_stateful_code(export=stateful_custom_code_export)
+        rendered_stateful_code = component._render_stateful_code(
+            export=stateful_custom_code_export
         )
+        page_ctx.module_code[rendered_stateful_code] = None
 
 
 def _collect_non_component_subtree(
