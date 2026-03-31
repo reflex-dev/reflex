@@ -2385,6 +2385,9 @@ async def test_background_task_no_block(
         "private",
     ]
 
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await state_manager.close()
+
     background_task_state = await state_manager.get_state(
         BaseStateToken(ident=token, cls=BackgroundTaskState)
     )
@@ -2415,6 +2418,9 @@ async def test_background_task_reset(
                 payload={},
             ),
         )
+
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await state_manager.close()
 
     background_task_state = await state_manager.get_state(
         BaseStateToken(ident=token, cls=BackgroundTaskState)
@@ -3425,6 +3431,9 @@ async def test_setvar(
     async with mock_base_state_event_processor as processor:
         await processor.enqueue(token, *events)
 
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await state_manager.close()
+
     state = await state_manager.get_state(BaseStateToken(ident=token, cls=TestState))
     assert isinstance(state, TestState)
     assert state.num1 == 42
@@ -3434,6 +3443,9 @@ async def test_setvar(
     events = Event.from_event_type([GrandchildState.setvar("array", [43])])
     async with mock_base_state_event_processor as processor:
         await processor.enqueue(token, *events)
+
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await state_manager.close()
 
     state = await state_manager.get_state(BaseStateToken(ident=token, cls=TestState))
     assert isinstance(state, TestState)
