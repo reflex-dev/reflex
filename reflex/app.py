@@ -80,7 +80,7 @@ from reflex.compiler.compiler import (
 )
 from reflex.experimental.memo import EXPERIMENTAL_MEMOS
 from reflex.ievent.processor import BaseStateEventProcessor, EventProcessor
-from reflex.istate.manager import StateModificationContext
+from reflex.istate.manager import StateManager, StateModificationContext
 from reflex.istate.manager.token import BaseStateToken
 from reflex.page import DECORATED_PAGES
 from reflex.route import (
@@ -92,7 +92,6 @@ from reflex.state import (
     BaseState,
     RouterData,
     State,
-    StateManager,
     StateUpdate,
     all_base_state_classes,
     code_uses_state_contexts,

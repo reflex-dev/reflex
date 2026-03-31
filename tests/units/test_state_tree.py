@@ -7,9 +7,10 @@ import pytest_asyncio
 from reflex_core.constants.state import FIELD_MARKER
 
 import reflex as rx
+from reflex.istate.manager import StateManager
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
-from reflex.state import BaseState, StateManager
+from reflex.state import BaseState
 
 
 class Root(BaseState):

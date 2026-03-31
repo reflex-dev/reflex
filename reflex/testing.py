@@ -39,17 +39,12 @@ import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
 from reflex.experimental.memo import EXPERIMENTAL_MEMOS
+from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
-from reflex.state import (
-    BaseState,
-    State,
-    StateManager,
-    _split_substate_key,
-    reload_state_module,
-)
+from reflex.state import BaseState, State, _split_substate_key, reload_state_module
 from reflex.utils import console, js_runtimes
 from reflex.utils.export import export
 from reflex.utils.token_manager import TokenManager
