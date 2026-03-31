@@ -2211,12 +2211,19 @@ class State(BaseState):
         return state_instance
 
     @event
-    async def hydrate(self) -> None:
-        """Send the full state to the frontend to synchronize it with the backend."""
+    async def hydrate(self, reset_client_storage: bool = True) -> None:
+        """Send the full state to the frontend to synchronize it with the backend.
+
+        Args:
+            reset_client_storage: Whether to reset client storage vars to their
+            default values. Agents and HTTP/REST clients should set this to False to
+            preserve auth cookies and other client-side storage.
+        """
         from reflex.ievent.context import EventContext
 
         # Clear client storage, to respect clearing cookies
-        self._reset_client_storage()
+        if reset_client_storage:
+            self._reset_client_storage()
 
         # Mark state as not hydrated (until on_loads are complete)
         self.is_hydrated = False
@@ -2231,10 +2238,10 @@ class State(BaseState):
 
     @event
     def set_is_hydrated(self, value: bool) -> None:
-        """Set the hydrated state.
+        """Set the is_hydrated var.
 
         Args:
-            value: The hydrated state.
+            value: True if the state is hydrated, False otherwise.
         """
         self.is_hydrated = value
 

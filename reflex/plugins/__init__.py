@@ -3,6 +3,7 @@
 from reflex_core.plugins import *
 from reflex_core.plugins import (
     CommonContext,
+    EventHandlerAPIPlugin,
     Plugin,
     PreCompileContext,
     SitemapPlugin,
@@ -13,6 +14,7 @@ from reflex_core.plugins import (
 
 __all__ = [
     "CommonContext",
+    "EventHandlerAPIPlugin",
     "Plugin",
     "PreCompileContext",
     "SitemapPlugin",

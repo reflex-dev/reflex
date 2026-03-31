@@ -2,12 +2,14 @@
 
 from ._screenshot import ScreenshotPlugin as _ScreenshotPlugin
 from .base import CommonContext, Plugin, PreCompileContext
+from .event_handler_api import EventHandlerAPIPlugin
 from .sitemap import SitemapPlugin
 from .tailwind_v3 import TailwindV3Plugin
 from .tailwind_v4 import TailwindV4Plugin
 
 __all__ = [
     "CommonContext",
+    "EventHandlerAPIPlugin",
     "Plugin",
     "PreCompileContext",
     "SitemapPlugin",

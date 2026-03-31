@@ -55,7 +55,6 @@ from reflex_core.event import (
     noop,
 )
 from reflex_core.utils import console
-from reflex_core.utils.format import json_dumps
 from reflex_core.utils.imports import ImportVar
 from reflex_core.utils.types import ASGIApp, Message, Receive, Scope, Send
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
@@ -64,13 +63,10 @@ from socketio import AsyncNamespace, AsyncServer
 from starlette.applications import Starlette
 from starlette.middleware import cors
 from starlette.requests import Request
-from starlette.responses import JSONResponse, Response, StreamingResponse
-from starlette.routing import Route
-from starlette.schemas import OpenAPIResponse, SchemaGenerator
+from starlette.responses import JSONResponse, Response
 from starlette.staticfiles import StaticFiles
 from typing_extensions import Unpack
 
-from reflex._internal.registry import RegisteredEventHandler, RegistrationContext
 from reflex._upload import UploadFile as UploadFile
 from reflex._upload import upload
 from reflex.admin import AdminDash
@@ -712,96 +708,6 @@ class App(MiddlewareMixin, LifespanMixin):
             )
         if environment.REFLEX_ADD_ALL_ROUTES_ENDPOINT.get():
             self.add_all_routes_endpoint()
-        # Lets add all of the event handlers as endpoints!
-        schemas = SchemaGenerator({
-            "openapi": "3.0.0",
-            "info": {"title": "Example API", "version": "1.0"},
-        })
-        routes = [
-            self._add_event_handler_route(reh)
-            for reh in RegistrationContext.get().event_handlers.values()
-        ]
-
-        def openapi_response(request: Request) -> Response:
-            schema = schemas.get_schema(routes=routes)
-            return OpenAPIResponse(schema)
-
-        self._api.add_route(
-            "/openapi.json",
-            openapi_response,
-            methods=["GET"],
-            include_in_schema=False,
-        )
-
-    def _add_event_handler_route(
-        self, registered_event_handler: RegisteredEventHandler
-    ) -> Route | None:
-        """Add an API route for a registered event handler.
-
-        Args:
-            registered_event_handler: The registered event handler to add the route for.
-
-        Returns:
-            The added route, or None if the route was not added.
-        """
-        if not self._api:
-            return None
-
-        async def event_handler_endpoint(request: Request) -> Response:
-            """responses:
-              200:
-               description: A user.
-
-            Examples:
-                 {"username": "tom"}
-            """  # noqa: DOC201
-            token = request.headers.get("Authorization", "").removeprefix("Bearer ")
-            if not token:
-                return JSONResponse(
-                    {
-                        "error": "Unauthorized: Provide a generated UUID as your Authorization: Bearer <token>."
-                    },
-                    status_code=401,
-                )
-            if request.headers.get("Content-Length", "0") != "0":
-                rbody = await request.json()
-            else:
-                rbody = None
-
-            async def _stream_response():
-                try:
-                    async with contextlib.aclosing(
-                        self.event_processor.enqueue_stream_delta(
-                            token,
-                            *Event.from_event_type(
-                                registered_event_handler.handler(**(rbody or {}))
-                            ),
-                        )
-                    ) as delta_stream:
-                        async for delta in delta_stream:
-                            yield json_dumps(delta) + "\n"
-                except Exception as e:
-                    yield json.dumps({
-                        "error": f"Error processing event: {e!s}. Check server logs for more details."
-                    })
-                    raise
-                    return
-
-            return StreamingResponse(
-                _stream_response(), media_type="application/x-ndjson"
-            )
-
-        if registered_event_handler.handler.state:
-            state_name = registered_event_handler.handler.state.get_full_name()
-            handler_name = registered_event_handler.handler.fn.__name__
-            path = f"/_reflex/event/{state_name}/{handler_name}"
-            self._api.add_route(
-                path=path,
-                route=event_handler_endpoint,
-                methods=["POST"],
-            )
-            return self._api.routes[-1]
-        return None
 
     @staticmethod
     def _add_cors(api: Starlette):

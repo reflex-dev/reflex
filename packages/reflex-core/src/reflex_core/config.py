@@ -26,6 +26,7 @@ from reflex_core.environment import (
 from reflex_core.environment import env_var as env_var
 from reflex_core.environment import environment as environment
 from reflex_core.plugins import Plugin
+from reflex_core.plugins.event_handler_api import EventHandlerAPIPlugin
 from reflex_core.plugins.sitemap import SitemapPlugin
 from reflex_core.utils import console
 from reflex_core.utils.exceptions import ConfigError
@@ -259,6 +260,7 @@ class BaseConfig:
 
 
 _PLUGINS_ENABLED_BY_DEFAULT = [
+    EventHandlerAPIPlugin,
     SitemapPlugin,
 ]
 

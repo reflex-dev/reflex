@@ -967,6 +967,9 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
 
         setter.__qualname__ = setter_name
 
+        # A less generic description for API schema generation.
+        setter.__doc__ = f"Set field {name!r}.\n\nArgs:\n    value: The new value for {name} ({self._var_type})."
+
         return setter
 
     def _var_set_state(self, state: type[BaseState] | str) -> Self:
