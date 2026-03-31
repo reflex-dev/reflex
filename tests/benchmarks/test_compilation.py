@@ -1,11 +1,35 @@
+from typing import Any
+
 from pytest_codspeed import BenchmarkFixture
 from reflex_core.components.component import Component
 
 from reflex.compiler.compiler import _compile_page, _compile_stateful_components
-from tests.benchmarks.hotspots import (
-    read_component_tree_multi_pass,
-    read_component_tree_single_pass,
-)
+from reflex.compiler.plugins import collect_component_tree_artifacts
+
+
+def read_component_tree_multi_pass(component: Component) -> dict[str, Any]:
+    """Read a component tree using the existing recursive collectors.
+
+    Returns:
+        The collected page artifacts.
+    """
+    return {
+        "imports": component._get_all_imports(),
+        "hooks": component._get_all_hooks(),
+        "custom_code": component._get_all_custom_code(),
+        "dynamic_imports": component._get_all_dynamic_imports(),
+        "refs": component._get_all_refs(),
+        "app_wrap_components": component._get_all_app_wrap_components(),
+    }
+
+
+def read_component_tree_single_pass(component: Component) -> dict[str, Any]:
+    """Read a component tree once using the new single-pass collector.
+
+    Returns:
+        The collected page artifacts.
+    """
+    return collect_component_tree_artifacts(component)
 
 
 def import_templates():
