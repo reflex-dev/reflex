@@ -6,7 +6,7 @@ import dataclasses
 from collections.abc import AsyncGenerator, Sequence
 from contextvars import ContextVar, Token
 from types import TracebackType
-from typing import Any, ClassVar, Protocol, TypeAlias
+from typing import Any, ClassVar, Literal, Protocol, TypeAlias, cast, overload
 
 from reflex_core.components.component import BaseComponent, Component, StatefulComponent
 from reflex_core.utils.imports import ParsedImportDict, collapse_imports, merge_imports
@@ -62,6 +62,53 @@ class CompilerHooks:
 
     plugins: tuple[CompilerPlugin, ...] = ()
 
+    @overload
+    async def _dispatch(
+        self,
+        hook_name: str,
+        *args: Any,
+        stop_on_result: Literal[False] = False,
+        **kwargs: Any,
+    ) -> list[Any]: ...
+
+    @overload
+    async def _dispatch(
+        self,
+        hook_name: str,
+        *args: Any,
+        stop_on_result: Literal[True],
+        **kwargs: Any,
+    ) -> Any | None: ...
+
+    async def _dispatch(
+        self,
+        hook_name: str,
+        *args: Any,
+        stop_on_result: bool = False,
+        **kwargs: Any,
+    ) -> list[Any] | Any | None:
+        """Dispatch a coroutine hook across all plugins in registration order.
+
+        Args:
+            hook_name: The plugin hook attribute to invoke.
+            *args: Positional arguments forwarded to the hook.
+            stop_on_result: Whether to return immediately on the first non-None
+                result instead of collecting all results.
+            **kwargs: Keyword arguments forwarded to the hook.
+
+        Returns:
+            When ``stop_on_result`` is false, a list of hook return values in
+            registration order. Otherwise, the first non-None result, or
+            ``None`` if every plugin returned ``None``.
+        """
+        results: list[Any] = []
+        for plugin in self.plugins:
+            result = await getattr(plugin, hook_name)(*args, **kwargs)
+            if stop_on_result and result is not None:
+                return result
+            results.append(result)
+        return None if stop_on_result else results
+
     async def eval_page(
         self,
         page_fn: Any,
@@ -69,11 +116,13 @@ class CompilerHooks:
         **kwargs: Any,
     ) -> PageContext | None:
         """Return the first page context produced by the plugin chain."""
-        for plugin in self.plugins:
-            result = await plugin.eval_page(page_fn, **kwargs)
-            if result is not None:
-                return result
-        return None
+        result = await self._dispatch(
+            "eval_page",
+            page_fn,
+            stop_on_result=True,
+            **kwargs,
+        )
+        return cast(PageContext | None, result)
 
     async def compile_page(
         self,
@@ -82,8 +131,7 @@ class CompilerHooks:
         **kwargs: Any,
     ) -> None:
         """Run all ``compile_page`` hooks in plugin order."""
-        for plugin in self.plugins:
-            await plugin.compile_page(page_ctx, **kwargs)
+        await self._dispatch("compile_page", page_ctx, **kwargs)
 
     async def compile_component(
         self,

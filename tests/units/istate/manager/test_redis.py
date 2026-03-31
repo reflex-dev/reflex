@@ -306,9 +306,16 @@ async def test_oplock_contention_queue(
     state_manager_2._oplock_enabled = True
 
     modify_started = asyncio.Event()
-    modify_2_started = asyncio.Event()
+    contenders_started = asyncio.Event()
     modify_1_continue = asyncio.Event()
     modify_2_continue = asyncio.Event()
+    contender_started_count = 0
+
+    def mark_contender_started() -> None:
+        nonlocal contender_started_count
+        contender_started_count += 1
+        if contender_started_count == 2:
+            contenders_started.set()
 
     async def modify_1():
         async with state_manager_redis.modify_state(
@@ -321,7 +328,7 @@ async def test_oplock_contention_queue(
 
     async def modify_2():
         await modify_started.wait()
-        modify_2_started.set()
+        mark_contender_started()
         async with state_manager_2.modify_state(
             _substate_key(token, root_state),
         ) as new_state:
@@ -331,7 +338,7 @@ async def test_oplock_contention_queue(
 
     async def modify_3():
         await modify_started.wait()
-        modify_2_started.set()
+        mark_contender_started()
         async with state_manager_2.modify_state(
             _substate_key(token, root_state),
         ) as new_state:
@@ -343,7 +350,7 @@ async def test_oplock_contention_queue(
     task_2 = asyncio.create_task(modify_2())
     task_3 = asyncio.create_task(modify_3())
 
-    await modify_2_started.wait()
+    await contenders_started.wait()
 
     # Let modify 1 complete
     modify_1_continue.set()
@@ -407,9 +414,16 @@ async def test_oplock_contention_no_lease(
     state_manager_3._oplock_enabled = True
 
     modify_started = asyncio.Event()
-    modify_2_started = asyncio.Event()
+    contenders_started = asyncio.Event()
     modify_1_continue = asyncio.Event()
     modify_2_continue = asyncio.Event()
+    contender_started_count = 0
+
+    def mark_contender_started() -> None:
+        nonlocal contender_started_count
+        contender_started_count += 1
+        if contender_started_count == 2:
+            contenders_started.set()
 
     async def modify_1():
         async with state_manager_redis.modify_state(
@@ -422,7 +436,7 @@ async def test_oplock_contention_no_lease(
 
     async def modify_2():
         await modify_started.wait()
-        modify_2_started.set()
+        mark_contender_started()
         async with state_manager_2.modify_state(
             _substate_key(token, root_state),
         ) as new_state:
@@ -432,7 +446,7 @@ async def test_oplock_contention_no_lease(
 
     async def modify_3():
         await modify_started.wait()
-        modify_2_started.set()
+        mark_contender_started()
         async with state_manager_3.modify_state(
             _substate_key(token, root_state),
         ) as new_state:
@@ -444,7 +458,7 @@ async def test_oplock_contention_no_lease(
     task_2 = asyncio.create_task(modify_2())
     task_3 = asyncio.create_task(modify_3())
 
-    await modify_2_started.wait()
+    await contenders_started.wait()
 
     # Let modify 1 complete
     modify_1_continue.set()
