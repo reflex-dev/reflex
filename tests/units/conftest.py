@@ -470,6 +470,20 @@ def forked_registration_context() -> Generator[RegistrationContext, None, None]:
 
 
 @pytest.fixture
+def clean_registration_context() -> Generator[RegistrationContext, None, None]:
+    """Create and attach a clean registration context.
+
+    Sets the new context as the current registration context for the duration
+    of the test, then resets it afterwards.
+
+    Yields:
+        The clean RegistrationContext.
+    """
+    with RegistrationContext() as ctx:
+        yield ctx
+
+
+@pytest.fixture
 def preserve_memo_registries():
     """Save and restore global memo registries around a test.
 

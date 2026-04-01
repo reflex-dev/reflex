@@ -34,6 +34,7 @@ from starlette_admin.auth import AuthProvider
 
 import reflex as rx
 from reflex import AdminDash, constants
+from reflex._internal.registry import RegistrationContext
 from reflex.app import App, ComponentCallable, default_overlay_component, upload
 from reflex.environment import environment
 from reflex.ievent.context import EventContext
@@ -56,7 +57,6 @@ from .states import GenState
 from .states.upload import (
     ChildFileUploadState,
     ChunkUploadState,
-    FileStateBase1,
     FileUploadState,
     GrandChildFileUploadState,
 )
@@ -508,6 +508,7 @@ async def test_dynamic_var_event(
     mock_base_state_event_processor: BaseStateEventProcessor,
     emitted_deltas: list[tuple[str, dict[str, dict[str, Any]]]],
     token: str,
+    clean_registration_context: RegistrationContext,
 ):
     """Test that the default handler of a dynamic generated var
     works as expected.
@@ -517,7 +518,9 @@ async def test_dynamic_var_event(
         mock_base_state_event_processor: BaseStateEventProcessor Fixture.
         emitted_deltas: List to store emitted deltas.
         token: a Token.
+        clean_registration_context: The registration context fixture, which is cleared before each test.
     """
+    clean_registration_context.register_base_state(test_state)
     state = test_state()  # pyright: ignore [reportCallIssue]
     state.add_var("int_val", int, 0)
     async with mock_base_state_event_processor as processor:
@@ -968,6 +971,7 @@ async def test_upload_file(
     mocker: MockerFixture,
     attached_mock_base_state_event_processor: BaseStateEventProcessor,
     mock_root_event_context: EventContext,
+    clean_registration_context: RegistrationContext,
 ):
     """Test that file upload works correctly.
 
@@ -979,12 +983,12 @@ async def test_upload_file(
         mocker: pytest mocker object.
         attached_mock_base_state_event_processor: BaseStateEventProcessor Fixture attached to the app instance to capture emitted events.
         mock_root_event_context: The mocked root event context, for accessing state_manager.
+        clean_registration_context: Fixture to ensure clean registration context for each test, preventing cross-test contamination of state subclasses.
     """
-    mocker.patch(
-        "reflex.state.State.class_subclasses",
-        {state if state is FileUploadState else FileStateBase1},
+    clean_registration_context.register_base_state(state)
+    app = Mock(
+        event_processor=attached_mock_base_state_event_processor,
     )
-    app = Mock(event_processor=attached_mock_base_state_event_processor)
     async with mock_root_event_context.state_manager.modify_state(
         BaseStateToken(ident=token, cls=state)
     ) as root_state:
@@ -1046,10 +1050,6 @@ async def test_upload_file_keeps_form_open_until_stream_completes(
         attached_mock_base_state_event_processor: BaseStateEventProcessor Fixture attached to the app instance to capture emitted events.
         mock_root_event_context: The mocked root event context, for accessing state_manager.
     """
-    mocker.patch(
-        "reflex.state.State.class_subclasses",
-        {FileUploadState},
-    )
     app = Mock(event_processor=attached_mock_base_state_event_processor)
 
     # Set _tmp_path via modify_state instead of setting class attribute directly.
@@ -1124,10 +1124,6 @@ async def test_upload_empty_buffered_request_dispatches_alias_handler(
     mock_root_event_context: EventContext,
 ):
     """Test that empty uploads still dispatch buffered alias handlers."""
-    mocker.patch(
-        "reflex.state.State.class_subclasses",
-        {FileUploadState},
-    )
     app = Mock(event_processor=attached_mock_base_state_event_processor)
 
     async with mock_root_event_context.state_manager.modify_state(
@@ -1176,10 +1172,6 @@ async def test_upload_file_closes_form_on_form_error(
     attached_mock_base_state_event_processor: BaseStateEventProcessor,
 ):
     """Test that cancellation before form parsing leaves form data untouched."""
-    mocker.patch(
-        "reflex.state.State.class_subclasses",
-        {FileUploadState},
-    )
     app = Mock(event_processor=attached_mock_base_state_event_processor)
 
     request_mock = unittest.mock.Mock()
@@ -1215,10 +1207,6 @@ async def test_upload_file_closes_form_on_event_creation_cancellation(
     attached_mock_base_state_event_processor: BaseStateEventProcessor,
 ):
     """Test that cancellation during event creation closes form data."""
-    mocker.patch(
-        "reflex.state.State.class_subclasses",
-        {FileUploadState},
-    )
     app = Mock(event_processor=attached_mock_base_state_event_processor)
 
     request_mock = unittest.mock.Mock()
@@ -1261,10 +1249,6 @@ async def test_upload_file_closes_form_if_response_cancelled_before_stream_start
     mock_root_event_context: EventContext,
 ):
     """Test that response cancellation before iteration still closes form data."""
-    mocker.patch(
-        "reflex.state.State.class_subclasses",
-        {FileUploadState},
-    )
     app = Mock(event_processor=attached_mock_base_state_event_processor)
 
     async with mock_root_event_context.state_manager.modify_state(
@@ -1471,10 +1455,6 @@ async def test_upload_dispatches_chunk_handlers_on_upload_endpoint(
     mock_root_event_context: EventContext,
 ):
     """Test that the standard upload endpoint dispatches chunk handlers."""
-    mocker.patch(
-        "reflex.state.State.class_subclasses",
-        {ChunkUploadState},
-    )
     app = Mock(event_processor=attached_mock_base_state_event_processor)
 
     async with mock_root_event_context.state_manager.modify_state(
@@ -1565,10 +1545,6 @@ async def test_upload_empty_chunk_request_dispatches_alias_handler(
     mock_root_event_context: EventContext,
 ):
     """Test that empty uploads still dispatch chunk alias handlers."""
-    mocker.patch(
-        "reflex.state.State.class_subclasses",
-        {ChunkUploadState},
-    )
     app = Mock(event_processor=attached_mock_base_state_event_processor)
 
     async with mock_root_event_context.state_manager.modify_state(
@@ -1618,10 +1594,6 @@ async def test_upload_chunk_invalid_offset_returns_400(
     mock_root_event_context: EventContext,
 ):
     """Test that malformed chunk metadata fails the standard upload request."""
-    mocker.patch(
-        "reflex.state.State.class_subclasses",
-        {ChunkUploadState},
-    )
     app = Mock(event_processor=attached_mock_base_state_event_processor)
     # The background task is expected to fail with a parse error for malformed input.
     attached_mock_base_state_event_processor.backend_exception_handler = None

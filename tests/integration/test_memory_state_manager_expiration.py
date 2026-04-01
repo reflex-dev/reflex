@@ -57,7 +57,9 @@ def memory_expiration_app(
         app_name=f"memory_expiration_{app_harness_env.__name__.lower()}",
         app_source=MemoryExpirationApp,
     ) as harness:
-        assert isinstance(harness.state_manager, StateManagerMemory)
+        assert isinstance(
+            getattr(harness.app_instance, "state_manager", None), StateManagerMemory
+        )
         yield harness
 
 

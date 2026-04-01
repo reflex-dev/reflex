@@ -1747,7 +1747,8 @@ async def test_state_manager_modify_state(
     if isinstance(state_manager, StateManagerRedis):
         assert (await state_manager.redis.get(f"{token}_lock")) is None
     elif isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
-        assert not state_manager._states_locks[token].locked()
+        lock = state_manager._states_locks.get(token)
+        assert lock is None or not lock.locked()
 
         # separate instances should NOT share locks
         sm2 = type(state_manager)()
@@ -1797,8 +1798,8 @@ async def test_state_manager_contend(
     if isinstance(state_manager, StateManagerRedis):
         assert (await state_manager.redis.get(f"{token}_lock")) is None
     elif isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
-        assert token in state_manager._states_locks
-        assert not state_manager._states_locks[token].locked()
+        lock = state_manager._states_locks.get(token)
+        assert lock is None or not lock.locked()
 
 
 @pytest_asyncio.fixture(loop_scope="function", scope="function")
@@ -1848,6 +1849,7 @@ async def test_state_manager_lock_expire(
     """
     state_manager_redis.lock_expiration = LOCK_EXPIRATION
     state_manager_redis.lock_warning_threshold = LOCK_WARNING_THRESHOLD
+    state_manager_redis.oplock_hold_time_ms = LOCK_EXPIRATION // 2
 
     loop_exception = None
 
@@ -1898,6 +1900,7 @@ async def test_state_manager_lock_expire_contend(
 
     state_manager_redis.lock_expiration = LOCK_EXPIRATION
     state_manager_redis.lock_warning_threshold = LOCK_WARNING_THRESHOLD
+    state_manager_redis.oplock_hold_time_ms = LOCK_EXPIRATION // 2
 
     loop_exception = None
 
@@ -2994,9 +2997,6 @@ async def test_preprocess(
         emitted_deltas: List to capture emitted deltas.
     """
     OnLoadInternalState._app_ref = None
-    mocker.patch(
-        "reflex.state.State.class_subclasses", {test_state, OnLoadInternalState}
-    )
     app = app_module_mock.app = App(_state=State)
     app._state_manager = mock_root_event_context.state_manager
 
@@ -3077,9 +3077,6 @@ async def test_preprocess_multiple_load_events(
         emitted_deltas: List to capture emitted deltas.
     """
     OnLoadInternalState._app_ref = None
-    mocker.patch(
-        "reflex.state.State.class_subclasses", {OnLoadState, OnLoadInternalState}
-    )
     app = app_module_mock.app = App(_state=State)
     app._state_manager = mock_root_event_context.state_manager
 

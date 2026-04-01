@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from collections.abc import Generator, Iterator
+from collections.abc import Generator, Iterator, Sequence
 from contextlib import contextmanager
 
+from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 
 from reflex.testing import AppHarness
@@ -31,6 +32,80 @@ def poll_for_navigation(
     yield
 
     AppHarness.expect(lambda: prev_url != driver.current_url, timeout=timeout)
+
+
+def n_expected_events(exp_event_order: Sequence[str | set[str]]) -> int:
+    """Calculate the number of expected events, accounting for sets in the expected order.
+
+    Args:
+        exp_event_order: the expected events recorded in the State, where some entries may be sets of events that can occur in any order.
+
+    Returns:
+        The total number of expected events.
+    """
+    return sum(
+        len(events) if isinstance(events, set) else 1 for events in exp_event_order
+    )
+
+
+def assert_event_order(
+    actual_event_order: list[str], exp_event_order: Sequence[str | set[str]]
+) -> None:
+    """Verify that the actual event order matches the expected event order, accounting for sets in the expected order.
+
+    Args:
+        actual_event_order: the actual events recorded in the State.
+        exp_event_order: the expected events recorded in the State, where some entries may be sets of events that can occur in any order.
+
+    Raises:
+        AssertionError: if the actual event order does not match the expected event order.
+    """
+    actual_idx = 0
+    for expected in exp_event_order:
+        if isinstance(expected, str):
+            assert actual_event_order[actual_idx] == expected, (
+                f"Expected event '{expected}' at position {actual_idx}, but got '{actual_event_order[actual_idx]}'."
+            )
+            actual_idx += 1
+        else:  # expected is a set of events that can occur in any order
+            expected_events = set(expected)
+            actual_events = set(
+                actual_event_order[actual_idx : actual_idx + len(expected_events)]
+            )
+            assert actual_events == expected_events, (
+                f"Expected events {expected_events} at positions {actual_idx} to {actual_idx + len(expected_events) - 1}, but got {actual_events}."
+            )
+            actual_idx += len(expected_events)
+    assert actual_idx == len(actual_event_order), (
+        f"Expected {actual_idx} events, but got {len(actual_event_order)}: {actual_event_order[actual_idx:]} remain."
+    )
+
+
+def poll_assert_event_order(
+    driver: WebDriver,
+    exp_event_order: Sequence[str | set[str]],
+    xpath: str = '//*[@id="event_order"]/p',
+) -> None:
+    """Poll until the actual event order matches the expected event order, accounting for sets in the expected order.
+
+    Args:
+        driver: WebDriver instance.
+        exp_event_order: the expected events recorded in the State, where some entries may be sets of events that can occur in any order.
+        xpath: The XPath to the event order elements.
+
+    Raises:
+        AssertionError: if the actual event order does not match the expected event order after polling.
+    """
+    n_exp_events = n_expected_events(exp_event_order)
+
+    def _has_number_of_expected_events():
+        event_elements = driver.find_elements(By.XPATH, xpath)
+        return len(event_elements) == n_exp_events
+
+    AppHarness._poll_for(_has_number_of_expected_events)
+
+    event_elements = driver.find_elements(By.XPATH, xpath)
+    assert_event_order([elem.text for elem in event_elements], exp_event_order)
 
 
 class LocalStorage:

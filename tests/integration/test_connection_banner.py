@@ -1,9 +1,11 @@
 """Test case for displaying the connection banner when the websocket drops."""
 
 import pickle
-from collections.abc import Generator
+from collections.abc import AsyncGenerator, Generator
 
 import pytest
+import pytest_asyncio
+from redis.asyncio import Redis
 from reflex_core import constants
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
@@ -147,12 +149,37 @@ def _assert_token(connection_banner, driver) -> str:
     return ss.get("token")
 
 
+@pytest_asyncio.fixture
+async def redis(
+    connection_banner: AppHarness,
+) -> AsyncGenerator[Redis | None]:
+    """Get the Redis instance from the StateManagerRedis used in the connection_banner test.
+
+    Args:
+        connection_banner: AppHarness instance.
+
+    Yields:
+        A Redis instance or None if the StateManager is not Redis.
+    """
+    from reflex.utils.prerequisites import get_redis
+
+    redis = None
+    if (app := connection_banner.app_instance) is not None and isinstance(
+        app.state_manager, StateManagerRedis
+    ):
+        redis = get_redis()
+    yield redis
+    if redis is not None:
+        await redis.close()
+
+
 @pytest.mark.asyncio
-async def test_connection_banner(connection_banner: AppHarness):
+async def test_connection_banner(connection_banner: AppHarness, redis: Redis | None):
     """Test that the connection banner is displayed when the websocket drops.
 
     Args:
         connection_banner: AppHarness instance.
+        redis: Redis instance used by the app, or None if not using Redis.
     """
     assert connection_banner.app_instance is not None
     assert connection_banner.backend is not None
@@ -165,11 +192,9 @@ async def test_connection_banner(connection_banner: AppHarness):
     app_token_manager = connection_banner.token_manager()
     assert token in app_token_manager.token_to_sid
     sid_before = app_token_manager.token_to_sid[token]
-    if isinstance(connection_banner.state_manager, StateManagerRedis):
+    if redis is not None:
         assert isinstance(app_token_manager, RedisTokenManager)
-        assert await connection_banner.state_manager.redis.get(
-            app_token_manager._get_redis_key(token)
-        ) == pickle.dumps(
+        assert await redis.get(app_token_manager._get_redis_key(token)) == pickle.dumps(
             SocketRecord(instance_id=app_token_manager.instance_id, sid=sid_before)
         )
 
@@ -197,14 +222,9 @@ async def test_connection_banner(connection_banner: AppHarness):
 
     # The token association should have been removed when the server exited.
     assert token not in app_token_manager.token_to_sid
-    if isinstance(connection_banner.state_manager, StateManagerRedis):
+    if redis is not None:
         assert isinstance(app_token_manager, RedisTokenManager)
-        assert (
-            await connection_banner.state_manager.redis.get(
-                app_token_manager._get_redis_key(token)
-            )
-            is None
-        )
+        assert await redis.get(app_token_manager._get_redis_key(token)) is None
 
     # Increment the counter with backend down
     increment_button.click()
@@ -212,9 +232,6 @@ async def test_connection_banner(connection_banner: AppHarness):
 
     # Bring the backend back up
     connection_banner._start_backend(port=backend_port)
-
-    # Create a new StateManager to avoid async loop affinity issues w/ redis
-    await connection_banner._reset_backend_state_manager()
 
     # Banner should be gone now
     AppHarness.expect(lambda: not has_error_modal(driver))
@@ -224,11 +241,9 @@ async def test_connection_banner(connection_banner: AppHarness):
     # Make sure the new connection has a different websocket sid.
     sid_after = app_token_manager.token_to_sid[token]
     assert sid_before != sid_after
-    if isinstance(connection_banner.state_manager, StateManagerRedis):
+    if redis is not None:
         assert isinstance(app_token_manager, RedisTokenManager)
-        assert await connection_banner.state_manager.redis.get(
-            app_token_manager._get_redis_key(token)
-        ) == pickle.dumps(
+        assert await redis.get(app_token_manager._get_redis_key(token)) == pickle.dumps(
             SocketRecord(instance_id=app_token_manager.instance_id, sid=sid_after)
         )
 
