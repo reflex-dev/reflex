@@ -19,8 +19,8 @@ from reflex_core._internal.event.context import EventContext
 from reflex_core._internal.event.processor.event_processor import (
     EventProcessor,
     EventQueueEntry,
-    RegisteredEventHandler,
 )
+from reflex_core._internal.registry import RegisteredEventHandler
 from reflex_core.utils.format import format_event_handler
 
 if TYPE_CHECKING:
@@ -188,6 +188,15 @@ async def chain_updates(
 
     ctx = EventContext.get()
 
+    if root_state is not None:
+        # Emit deltas first, so any frontend events are processed with the latest state.
+        try:
+            delta = await root_state._get_resolved_delta()
+            if delta:
+                await ctx.emit_delta(delta)
+        finally:
+            root_state._clean()
+
     # Convert valid EventHandler and EventSpec into Event
     if fixed_events := Event.from_event_type(
         _check_valid_yield(events, handler_name=handler_name),
@@ -197,15 +206,6 @@ async def chain_updates(
             await ctx.emit_event(*frontend_events)
         # Backend events.
         await ctx.enqueue(*(e for e in fixed_events if not e.name.startswith("_")))
-
-    if root_state is not None:
-        # Get the delta after processing the event.
-        try:
-            delta = await root_state._get_resolved_delta()
-            if delta:
-                await ctx.emit_delta(delta)
-        finally:
-            root_state._clean()
 
 
 async def process_event(
