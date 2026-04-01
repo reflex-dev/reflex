@@ -132,7 +132,6 @@ class Event:
                 msg = f"Unexpected event type, {type(e)}."
                 raise ValueError(msg)
             name = format.format_event_handler(e.handler)
-            # TODO: allow real python types to be passed through the backend queue.
             payload = {k._js_expr: v._decode() for k, v in e.args}
 
             # Create an event and append it to the list.
