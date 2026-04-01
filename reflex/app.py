@@ -41,6 +41,7 @@ from reflex_core._internal.event.processor import (
     BaseStateEventProcessor,
     EventProcessor,
 )
+from reflex_core._internal.registry import RegistrationContext
 from reflex_core.components.component import (
     CUSTOM_COMPONENTS,
     Component,
@@ -401,6 +402,11 @@ class App(MiddlewareMixin, LifespanMixin):
     # The processor queue for handling events.
     _event_processor: EventProcessor | None = None
 
+    # Store the RegistrationContext to apply inside the ASGI callable task.
+    _registration_context: RegistrationContext = dataclasses.field(
+        default_factory=RegistrationContext.ensure_context
+    )
+
     frontend_exception_handler: Callable[[Exception], None] = (
         default_frontend_exception_handler
     )
@@ -575,8 +581,32 @@ class App(MiddlewareMixin, LifespanMixin):
         # Ensure the event processor starts and stops with the server.
         self.register_lifespan_task(self._setup_event_processor)
 
+    def _registration_context_middleware(self, app: ASGIApp) -> ASGIApp:
+        """Ensure the RegistrationContext is attached to the ASGI app.
+
+        Args:
+            app: The ASGI app to attach the middleware to.
+
+        Returns:
+            The ASGI app with the middleware attached.
+        """
+
+        async def registration_context_middleware(
+            scope: Scope, receive: Receive, send: Send
+        ):
+            if self._registration_context is not None:
+                RegistrationContext.set(self._registration_context)
+            await app(scope, receive, send)
+
+        return registration_context_middleware
+
     @contextlib.asynccontextmanager
     async def _setup_event_processor(self) -> AsyncIterator[None]:
+        # Make sure the RegistrationContext is attached.
+        if self._api is not None:
+            self._api.add_middleware(
+                self._registration_context_middleware,
+            )
         # Create the event processor.
         self._event_processor = BaseStateEventProcessor(
             middleware=self, backend_exception_handler=self.backend_exception_handler
