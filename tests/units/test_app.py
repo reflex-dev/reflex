@@ -1755,6 +1755,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         emitted_deltas: List to store emitted deltas.
         emitted_events: List to store emitted events.
     """
+    OnLoadInternalState._app_ref = None
     arg_name = "dynamic"
     route = f"test/[{arg_name}]"
     app = app_module_mock.app = App()
