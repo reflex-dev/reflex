@@ -425,7 +425,7 @@ rx.upload.root(
 
 ## Handling the Upload
 
-For uploads, your event handler should be an async function that accepts a single argument, `files: list[UploadFile]`, which will contain [FastAPI UploadFile](https://fastapi.tiangolo.com/tutorial/request-files) instances. You can read the files and save them anywhere as shown in the example.
+For uploads, your event handler should be an async function that accepts a single argument, `files: list[UploadFile]`, which will contain [Starlette UploadFile](https://www.starlette.io/requests/#request-files) instances. You can read the files and save them anywhere as shown in the example.
 
 In your UI, you can bind the event handler to a trigger, such as a button
 `on_click` event or upload `on_drop` event, and pass in the files using
@@ -462,9 +462,7 @@ The files are automatically served at:
 
 ### Chunked Uploads for Large Files
 
-Use `rx.upload_files_chunk(...)` when files may be large or when you want the
-backend to write data incrementally instead of waiting for the full upload
-before the handler starts.
+Use `rx.upload_files_chunk(...)` when files may be large or when you want the backend to write data incrementally. Standard uploads spool files to disk before the handler starts, but calling `await file.read()` in the handler loads the entire file into memory at once, which can cause high memory consumption for large files.
 
 Chunked upload handlers:
 
