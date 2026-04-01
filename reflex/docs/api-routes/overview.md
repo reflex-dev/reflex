@@ -160,4 +160,6 @@ The expected return is `"pong"`.
 
 ### Upload
 
-`localhost:8000/_upload`: This route is used for the upload of file when using `rx.upload()`.
+`localhost:8000/_upload`: This route is used for file uploads when using
+`rx.upload()`, including `rx.upload_files(...)` and
+`rx.upload_files_chunk(...)`.
