@@ -234,7 +234,23 @@ ignore-words-list = "te, TreeE, selectin"
 
 
 [tool.coverage.run]
-source = ["reflex"]
+source = [
+  "reflex",
+  "reflex_components_code",
+  "reflex_components_core",
+  "reflex_components_dataeditor",
+  "reflex_components_gridjs",
+  "reflex_components_lucide",
+  "reflex_components_markdown",
+  "reflex_components_moment",
+  "reflex_components_plotly",
+  "reflex_components_radix",
+  "reflex_components_react_player",
+  "reflex_components_recharts",
+  "reflex_components_sonner",
+  "reflex_core",
+  "reflex_docgen",
+]
 branch = true
 omit = [
   "*/pyi_generator.py",
@@ -247,7 +263,7 @@ omit = [
 [tool.coverage.report]
 show_missing = true
 # TODO bump back to 79
-fail_under = 50
+fail_under = 72
 precision = 2
 ignore_errors = true
 
