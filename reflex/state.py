@@ -326,7 +326,6 @@ CLASS_VAR_NAMES = frozenset({
     "backend_vars",
     "inherited_backend_vars",
     "event_handlers",
-    "class_subclasses",
     "_var_dependencies",
     "_always_dirty_computed_vars",
     "_always_dirty_substates",
@@ -357,9 +356,6 @@ class BaseState(EvenMoreBasicBaseState):
 
     # The event handlers.
     event_handlers: ClassVar[builtins.dict[str, EventHandler]] = {}
-
-    # A set of subclassses of this class.
-    class_subclasses: ClassVar[set[type[BaseState]]] = set()
 
     # Mapping of var name to set of (state_full_name, var_name) that depend on it.
     _var_dependencies: ClassVar[builtins.dict[str, set[tuple[str, str]]]] = {}
@@ -522,9 +518,6 @@ class BaseState(EvenMoreBasicBaseState):
         # Computed vars should not shadow builtin state props.
         cls._check_overridden_basevars()
 
-        # Reset subclass tracking for this class.
-        cls.class_subclasses = set()
-
         # Reset dirty substate tracking for this class.
         cls._always_dirty_substates = set()
         cls._potentially_dirty_states = set()
@@ -536,15 +529,13 @@ class BaseState(EvenMoreBasicBaseState):
             cls.inherited_backend_vars = parent_state.backend_vars
 
             # Check if another substate class with the same name has already been defined.
-            if cls.get_name() in {c.get_name() for c in parent_state.class_subclasses}:
+            if cls.get_name() in {c.get_name() for c in parent_state.get_substates()}:
                 # This should not happen, since we have added module prefix to state names in #3214
                 msg = (
                     f"The substate class '{cls.get_name()}' has been defined multiple times. "
                     "Shadowing substate classes is not allowed."
                 )
                 raise StateValueError(msg)
-            # Track this new subclass in the parent state's subclasses set.
-            parent_state.class_subclasses.add(cls)
 
         # Get computed vars.
         computed_vars = cls._get_computed_vars()
@@ -628,12 +619,13 @@ class BaseState(EvenMoreBasicBaseState):
             cls.event_handlers[name] = handler
             setattr(cls, name, handler)
 
+        RegistrationContext.register_base_state(cls)
+
         # Initialize per-class var dependency tracking.
         cls._var_dependencies = {}
         cls._init_var_dependency_dicts()
 
         all_base_state_classes[cls.get_full_name()] = None
-        RegistrationContext.register_base_state(cls)
 
     @classmethod
     def _add_event_handler(
@@ -969,7 +961,9 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             The substates of the state.
         """
-        return cls.class_subclasses
+        from reflex._internal.registry import RegistrationContext
+
+        return RegistrationContext.get().get_substates(cls)
 
     @classmethod
     @functools.lru_cache
@@ -1123,7 +1117,7 @@ class BaseState(EvenMoreBasicBaseState):
         cls.vars.update({name: var})
 
         # let substates know about the new variable
-        for substate_class in cls.class_subclasses:
+        for substate_class in cls.get_substates():
             substate_class.vars.setdefault(name, var)
 
         # Reinitialize dependency tracking dicts.
@@ -1152,10 +1146,17 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             The event handler.
         """
+        from reflex._internal.registry import RegistrationContext
+
         # Check if function has stored event_actions from decorator
         event_actions = getattr(fn, EVENT_ACTIONS_MARKER, {})
 
-        return event_handler_cls(fn=fn, state=cls, event_actions=event_actions)
+        handler = event_handler_cls(fn=fn, state=cls, event_actions=event_actions)
+        if cls.get_full_name() in all_base_state_classes:
+            # Register handlers created after the class was registered.
+            reg_ctx = RegistrationContext.get()
+            reg_ctx.register_event_handler(handler, states=(cls,))
+        return handler
 
     @classmethod
     def _create_setvar(cls):
@@ -1259,7 +1260,7 @@ class BaseState(EvenMoreBasicBaseState):
         Args:
             vars_to_add: names to Var instances to add to substates
         """
-        for substate_class in cls.class_subclasses:
+        for substate_class in cls.get_substates():
             for name, var in vars_to_add.items():
                 if types.is_backend_base_variable(name, cls):
                     substate_class.backend_vars.setdefault(name, var)
@@ -2569,6 +2570,8 @@ def reload_state_module(
         state: Recursive argument for the state class to reload.
 
     """
+    from reflex._internal.registry import RegistrationContext
+
     # Reset the _app_ref of OnLoadInternalState to avoid stale references.
     if state is OnLoadInternalState:
         state._app_ref = None
@@ -2580,11 +2583,13 @@ def reload_state_module(
                 and module is not None
             ):
                 state._potentially_dirty_states.remove(pd_state)
-    for subclass in tuple(state.class_subclasses):
+    reg_ctx = RegistrationContext.get()
+    substates = reg_ctx.get_substates(state)
+    for subclass in tuple(substates):
         reload_state_module(module=module, state=subclass)
         if subclass.__module__ == module and module is not None:
             all_base_state_classes.pop(subclass.get_full_name(), None)
-            state.class_subclasses.remove(subclass)
+            substates.remove(subclass)
             state._always_dirty_substates.discard(subclass.get_name())
             state._var_dependencies = {}
             state._init_var_dependency_dicts()

@@ -2386,9 +2386,6 @@ class StatefulComponent(BaseComponent):
     was created with.
     """
 
-    # A lookup table to caching memoized component instances.
-    tag_to_stateful_component: ClassVar[dict[str, StatefulComponent]] = {}
-
     # Reference to the original component that was memoized into this component.
     component: Component = field(
         default_factory=Component, is_javascript_property=False
@@ -2421,6 +2418,8 @@ class StatefulComponent(BaseComponent):
             The stateful component or None if the component should not be memoized.
         """
         from reflex_components_core.core.foreach import Foreach
+
+        from reflex._internal.registry import RegistrationContext
 
         if component._memoization_mode.disposition == MemoizationDisposition.NEVER:
             # Never memoize this component.
@@ -2466,11 +2465,12 @@ class StatefulComponent(BaseComponent):
                 return None
 
             # Look up the tag in the cache
-            stateful_component = cls.tag_to_stateful_component.get(tag_name)
+            ctx = RegistrationContext.get()
+            stateful_component = ctx.tag_to_stateful_component.get(tag_name)
             if stateful_component is None:
                 memo_trigger_hooks = cls._fix_event_triggers(component)
                 # Set the stateful component in the cache for the given tag.
-                stateful_component = cls.tag_to_stateful_component.setdefault(
+                stateful_component = ctx.tag_to_stateful_component.setdefault(
                     tag_name,
                     cls(
                         children=component.children,

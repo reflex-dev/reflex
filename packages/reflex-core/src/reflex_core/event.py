@@ -342,14 +342,6 @@ class EventHandler(EventActionsMixin):
 
     state: type[BaseState] | None = dataclasses.field(default=None, repr=False)
 
-    def __post_init__(self):
-        """Register the event handler."""
-        from reflex._internal.registry import RegistrationContext
-
-        RegistrationContext.register_event_handler(
-            self, states=(self.state,) if self.state else ()
-        )
-
     @property
     def state_full_name(self) -> str:
         """Get the full name of the state class this event handler is attached to.

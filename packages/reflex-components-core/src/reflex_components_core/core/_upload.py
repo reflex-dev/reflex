@@ -21,7 +21,6 @@ from starlette.requests import ClientDisconnect, Request
 from starlette.responses import JSONResponse, Response, StreamingResponse
 from typing_extensions import Self
 
-from reflex._internal.registry import RegistrationContext
 from reflex.state import StateUpdate
 
 if TYPE_CHECKING:
@@ -626,6 +625,8 @@ def upload(app: App):
             resolve_upload_chunk_handler_param,
             resolve_upload_handler_param,
         )
+
+        from reflex._internal.registry import RegistrationContext
 
         token, handler_name = _require_upload_headers(request)
         registered_event_handler = RegistrationContext.get().event_handlers[

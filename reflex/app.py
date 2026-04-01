@@ -1124,7 +1124,7 @@ class App(MiddlewareMixin, LifespanMixin):
                         msg = f"ComputedVar {var._name} on state {state.__name__} has an invalid dependency {state_name}.{dep}"
                         raise exceptions.VarDependencyError(msg)
 
-        for substate in state.class_subclasses:
+        for substate in state.get_substates():
             self._validate_var_dependencies(substate)
 
     def _compile(
