@@ -6,9 +6,8 @@ import uuid
 from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any, Protocol
 
+from reflex_core._internal.context.base import BaseContext
 from reflex_core.utils.format import to_snake_case
-
-from reflex._internal.context.base import BaseContext
 
 if TYPE_CHECKING:
     from reflex_core.event import Event

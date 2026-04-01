@@ -10,10 +10,10 @@ from unittest import mock
 
 import pytest
 import pytest_asyncio
+from reflex_core._internal.registry import RegistrationContext
 from reflex_core.components.component import CUSTOM_COMPONENTS
 from reflex_core.event import Event, EventSpec
 
-from reflex._internal.registry import RegistrationContext
 from reflex.app import App
 from reflex.experimental.memo import EXPERIMENTAL_MEMOS
 from reflex.ievent.context import EventContext

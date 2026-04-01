@@ -20,6 +20,7 @@ from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core.cond import Cond
 from reflex_components_radix.themes.typography.text import Text
+from reflex_core._internal.registry import RegistrationContext
 from reflex_core.components.component import Component
 from reflex_core.constants.state import FIELD_MARKER
 from reflex_core.event import Event
@@ -34,7 +35,6 @@ from starlette_admin.auth import AuthProvider
 
 import reflex as rx
 from reflex import AdminDash, constants
-from reflex._internal.registry import RegistrationContext
 from reflex.app import App, ComponentCallable, default_overlay_component, upload
 from reflex.environment import environment
 from reflex.ievent.context import EventContext

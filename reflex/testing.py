@@ -28,6 +28,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeVar
 
 import uvicorn
+from reflex_core._internal.registry import RegistrationContext
 from reflex_core.components.component import CUSTOM_COMPONENTS, CustomComponent
 from reflex_core.config import get_config
 from reflex_core.environment import environment
@@ -40,7 +41,6 @@ import reflex.utils.build
 import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
-from reflex._internal.registry import RegistrationContext
 from reflex.experimental.memo import EXPERIMENTAL_MEMOS
 from reflex.state import reload_state_module
 from reflex.utils import console, js_runtimes

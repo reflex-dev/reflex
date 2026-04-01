@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import pytest
+from reflex_core._internal.registry import RegistrationContext
 
-from reflex._internal.registry import RegistrationContext
 from reflex.app import App
 from reflex.middleware.hydrate_middleware import HydrateMiddleware
 from reflex.state import State, StateUpdate

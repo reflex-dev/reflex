@@ -496,9 +496,8 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             StateValueError: If a substate class shadows another.
         """
+        from reflex_core._internal.registry import RegistrationContext
         from reflex_core.utils.exceptions import StateValueError
-
-        from reflex._internal.registry import RegistrationContext
 
         super().__init_subclass__(**kwargs)
 
@@ -961,7 +960,7 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             The substates of the state.
         """
-        from reflex._internal.registry import RegistrationContext
+        from reflex_core._internal.registry import RegistrationContext
 
         return RegistrationContext.get().get_substates(cls)
 
@@ -1146,7 +1145,7 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             The event handler.
         """
-        from reflex._internal.registry import RegistrationContext
+        from reflex_core._internal.registry import RegistrationContext
 
         # Check if function has stored event_actions from decorator
         event_actions = getattr(fn, EVENT_ACTIONS_MARKER, {})
@@ -2570,7 +2569,7 @@ def reload_state_module(
         state: Recursive argument for the state class to reload.
 
     """
-    from reflex._internal.registry import RegistrationContext
+    from reflex_core._internal.registry import RegistrationContext
 
     # Reset the _app_ref of OnLoadInternalState to avoid stale references.
     if state is OnLoadInternalState:

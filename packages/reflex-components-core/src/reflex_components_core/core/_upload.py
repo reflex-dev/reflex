@@ -621,12 +621,11 @@ def upload(app: App):
             UploadTypeError: If a non-streaming upload is wired to a background task.
             HTTPException: when the request does not include token / handler headers.
         """
+        from reflex_core._internal.registry import RegistrationContext
         from reflex_core.event import (
             resolve_upload_chunk_handler_param,
             resolve_upload_handler_param,
         )
-
-        from reflex._internal.registry import RegistrationContext
 
         token, handler_name = _require_upload_headers(request)
         registered_event_handler = RegistrationContext.get().event_handlers[

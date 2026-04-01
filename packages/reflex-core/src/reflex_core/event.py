@@ -81,7 +81,7 @@ class Event:
     @property
     def state_cls(self) -> type[BaseState]:
         """The state class for the event."""
-        from reflex._internal.registry import RegistrationContext
+        from reflex_core._internal.registry import RegistrationContext
 
         substate_name = self.name.rpartition(".")[0]
         return RegistrationContext.get().base_states[substate_name]

@@ -3,15 +3,13 @@
 import dataclasses
 from typing import TYPE_CHECKING, Self
 
+from reflex_core._internal.context.base import BaseContext
 from reflex_core.utils.exceptions import StateValueError
 
-from reflex._internal.context.base import BaseContext
-
 if TYPE_CHECKING:
-    from reflex_core.components.component import StatefulComponent
-
-    from reflex.event import EventHandler
     from reflex.state import BaseState
+    from reflex_core.components.component import StatefulComponent
+    from reflex_core.event import EventHandler
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
