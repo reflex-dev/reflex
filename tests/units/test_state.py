@@ -3414,6 +3414,7 @@ async def test_setvar(
     ])
     async with mock_base_state_event_processor as processor:
         await processor.enqueue(token, *events)
+        await processor.join(1)
 
     if environment.REFLEX_OPLOCK_ENABLED.get():
         await state_manager.close()

@@ -283,13 +283,14 @@ class EventProcessor:
         with drain_timeout as remaining_time, contextlib.suppress(asyncio.TimeoutError):
             await self._stop_tasks(timeout=remaining_time)
         # Cancel queue processing now that all tasks have been cancelled.
+        queue = self._queue
         if self._queue is not None:
             if sys.version_info >= (3, 13):
                 self._queue.shutdown()
             self._queue = None
         with drain_timeout as remaining_time, contextlib.suppress(asyncio.TimeoutError):
             if remaining_time > 0:
-                await self.join(timeout=remaining_time)
+                await self.join(timeout=remaining_time, queue=queue)
         with drain_timeout as remaining_time, contextlib.suppress(asyncio.TimeoutError):
             # Stop all tasks again now that the queue is shut down, no additional events can be queued.
             await self._stop_tasks(timeout=remaining_time)
@@ -313,16 +314,23 @@ class EventProcessor:
                 future.cancel()
         self._futures.clear()
 
-    async def join(self, timeout: float | None = None) -> None:
+    async def join(
+        self, timeout: float | None = None, queue: asyncio.Queue | None = None
+    ) -> None:
         """Wait for the event processor to finish processing all events in the queue.
 
         Args:
             timeout: An optional amount of time in seconds to wait for the queue to
                 drain before returning. If None, this method will wait indefinitely
                 until the queue is fully drained.
+            queue: An optional queue to wait for instead of the processor's main
+                queue. This can be used to wait for a specific queue to drain, such
+                as when using a separate queue for testing.
         """
-        if self._queue is not None:
-            await asyncio.wait_for(self._queue.join(), timeout=timeout)
+        if queue is None:
+            queue = self._queue
+        if queue is not None:
+            await asyncio.wait_for(queue.join(), timeout=timeout)
 
     def _ensure_queue_task(self) -> asyncio.Queue[EventQueueEntry]:
         """Ensure the queue processing task is running.
