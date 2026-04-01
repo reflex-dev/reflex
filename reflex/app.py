@@ -85,7 +85,6 @@ from reflex.compiler.compiler import (
     compile_theme,
     readable_name_from_component,
 )
-from reflex.compiler.plugins import collect_component_tree_artifacts
 from reflex.experimental.memo import EXPERIMENTAL_MEMOS
 from reflex.istate.manager import StateManager, StateModificationContext
 from reflex.istate.proxy import StateProxy
@@ -1294,19 +1293,11 @@ class App(MiddlewareMixin, LifespanMixin):
             # This has to happen before compiling stateful components as that
             # prevents recursive functions from reaching all components.
             for component in self._pages.values():
-                collected = collect_component_tree_artifacts(
-                    component,
-                    collect_hooks=False,
-                    collect_custom_code=False,
-                    collect_dynamic_imports=False,
-                    collect_refs=False,
-                )
-
-                # Add the page imports discovered during a single tree walk.
-                all_imports.update(collected["imports"])
+                # Add component._get_all_imports() to all_imports.
+                all_imports.update(component._get_all_imports())
 
                 # Add the app wrappers from this component.
-                app_wrappers.update(collected["app_wrap_components"])
+                app_wrappers.update(component._get_all_app_wrap_components())
 
                 progress.advance(task)
 
@@ -1430,16 +1421,7 @@ class App(MiddlewareMixin, LifespanMixin):
         app_root = self._app_root(app_wrappers=app_wrappers)
 
         # Get imports from AppWrap components.
-        all_imports.update(
-            collect_component_tree_artifacts(
-                app_root,
-                collect_hooks=False,
-                collect_custom_code=False,
-                collect_dynamic_imports=False,
-                collect_refs=False,
-                collect_app_wrap_components=False,
-            )["imports"]
-        )
+        all_imports.update(app_root._get_all_imports())
 
         progress.advance(task)
 

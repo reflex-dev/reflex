@@ -28,7 +28,6 @@ from reflex_core.utils.imports import ImportVar, ParsedImportDict
 from reflex_core.vars.base import Field, Var, VarData
 from reflex_core.vars.function import DestructuredArg
 
-from reflex.compiler.plugins import collect_component_tree_artifacts
 from reflex.experimental.memo import (
     ExperimentalMemoComponentDefinition,
     ExperimentalMemoFunctionDefinition,
@@ -335,16 +334,11 @@ def compile_custom_component(
     """
     # Render the component.
     render = component.get_component()
-    collected = collect_component_tree_artifacts(
-        render,
-        collect_refs=False,
-        collect_app_wrap_components=False,
-    )
 
     # Get the imports.
     imports: ParsedImportDict = {
         lib: fields
-        for lib, fields in collected["imports"].items()
+        for lib, fields in render._get_all_imports().items()
         if lib != component.library
     }
 
@@ -362,9 +356,9 @@ def compile_custom_component(
                 fields=tuple(f"{prop}:{prop}{CAMEL_CASE_MEMO_MARKER}" for prop in props)
             ).to_javascript(),
             "render": render.render(),
-            "hooks": collected["hooks"],
-            "custom_code": collected["custom_code"],
-            "dynamic_imports": collected["dynamic_imports"],
+            "hooks": render._get_all_hooks(),
+            "custom_code": render._get_all_custom_code(),
+            "dynamic_imports": render._get_all_dynamic_imports(),
         },
         imports,
     )
@@ -402,15 +396,10 @@ def compile_experimental_component_memo(
         A tuple of the compiled component definition and its imports.
     """
     render = _apply_component_style_for_compile(copy.deepcopy(definition.component))
-    collected = collect_component_tree_artifacts(
-        render,
-        collect_refs=False,
-        collect_app_wrap_components=False,
-    )
 
     imports: ParsedImportDict = {
         lib: fields
-        for lib, fields in collected["imports"].items()
+        for lib, fields in render._get_all_imports().items()
         if lib != f"$/{constants.Dirs.COMPONENTS_PATH}"
     }
 
@@ -436,9 +425,9 @@ def compile_experimental_component_memo(
                 rest=rest_param.placeholder_name if rest_param is not None else None,
             ).to_javascript(),
             "render": render.render(),
-            "hooks": collected["hooks"],
-            "custom_code": collected["custom_code"],
-            "dynamic_imports": collected["dynamic_imports"],
+            "hooks": render._get_all_hooks(),
+            "custom_code": render._get_all_custom_code(),
+            "dynamic_imports": render._get_all_dynamic_imports(),
         },
         imports,
     )

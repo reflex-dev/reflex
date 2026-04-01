@@ -17,7 +17,6 @@ from reflex.compiler.plugins import (
     CompilerHooks,
     ComponentAndChildren,
     PageContext,
-    collect_component_tree_artifacts,
 )
 
 
@@ -78,41 +77,6 @@ class PropComponent(Component):
 
     def _get_dynamic_imports(self) -> str | None:
         return "dynamic(() => import('prop-lib'))"
-
-
-class OrderedRootComponent(Component):
-    tag = "OrderedRootComponent"
-    library = "ordered-root-lib"
-
-    slot: Component | None = field(default=None)
-
-    def _get_custom_code(self) -> str | None:
-        return "const rootCustomCode = 1;"
-
-    def add_custom_code(self) -> list[str]:
-        return ["const rootAddedCustomCode = 2;"]
-
-
-class OrderedPropComponent(Component):
-    tag = "OrderedPropComponent"
-    library = "ordered-prop-lib"
-
-    def _get_custom_code(self) -> str | None:
-        return "const propCustomCode = 3;"
-
-    def add_custom_code(self) -> list[str]:
-        return ["const propAddedCustomCode = 4;"]
-
-
-class OrderedChildComponent(Component):
-    tag = "OrderedChildComponent"
-    library = "ordered-child-lib"
-
-    def _get_custom_code(self) -> str | None:
-        return "const childCustomCode = 5;"
-
-    def add_custom_code(self) -> list[str]:
-        return ["const childAddedCustomCode = 6;"]
 
 
 class EvalPagePlugin(TestCompilerPlugin):
@@ -376,6 +340,29 @@ def test_page_context_default_factories_are_isolated() -> None:
     assert page_ctx_b.app_wrap_components == {}
 
 
+def test_page_context_helpers_preserve_accumulated_values() -> None:
+    page_ctx = PageContext(
+        name="page",
+        route="/page",
+        root_component=Fragment.create(),
+    )
+    page_ctx.imports.extend([
+        {"lib-a": [ImportVar(tag="ThingA")]},
+        {"lib-a": [ImportVar(tag="ThingB")], "lib-b": [ImportVar(tag="ThingC")]},
+    ])
+    page_ctx.module_code["const first = 1;"] = None
+    page_ctx.module_code["const second = 2;"] = None
+
+    assert page_ctx.merged_imports() == merge_imports(*page_ctx.imports)
+    assert page_ctx.merged_imports(collapse=True) == collapse_imports(
+        merge_imports(*page_ctx.imports)
+    )
+    assert list(page_ctx.custom_code_dict()) == [
+        "const first = 1;",
+        "const second = 2;",
+    ]
+
+
 def test_base_context_subclasses_initialize_distinct_context_vars() -> None:
     class DynamicContext(BaseContext):
         pass
@@ -384,47 +371,6 @@ def test_base_context_subclasses_initialize_distinct_context_vars() -> None:
         pass
 
     assert DynamicContext.__context_var__ is not AnotherDynamicContext.__context_var__
-
-
-def test_single_pass_collector_matches_legacy_recursive_collectors() -> None:
-    root = RootComponent.create(
-        ChildComponent.create(id="child-id"),
-        slot=PropComponent.create(),
-    )
-
-    collected = collect_component_tree_artifacts(root)
-
-    assert collapse_imports(collected["imports"]) == collapse_imports(
-        root._get_all_imports()
-    )
-    assert collected["hooks"] == root._get_all_hooks()
-    assert collected["custom_code"] == root._get_all_custom_code()
-    assert collected["dynamic_imports"] == root._get_all_dynamic_imports()
-    assert collected["refs"] == root._get_all_refs()
-    assert (
-        collected["app_wrap_components"].keys()
-        == root._get_all_app_wrap_components().keys()
-    )
-
-
-def test_single_pass_collector_preserves_legacy_custom_code_order() -> None:
-    root = OrderedRootComponent.create(
-        OrderedChildComponent.create(),
-        slot=OrderedPropComponent.create(),
-    )
-
-    collected = collect_component_tree_artifacts(root)
-    legacy_custom_code = root._get_all_custom_code()
-
-    assert list(collected["custom_code"]) == list(legacy_custom_code)
-    assert list(collected["custom_code"]) == [
-        "const rootCustomCode = 1;",
-        "const propCustomCode = 3;",
-        "const propAddedCustomCode = 4;",
-        "const rootAddedCustomCode = 2;",
-        "const childCustomCode = 5;",
-        "const childAddedCustomCode = 6;",
-    ]
 
 
 @pytest.mark.asyncio
