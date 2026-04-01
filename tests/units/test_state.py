@@ -2242,10 +2242,6 @@ class BackgroundTaskState(BaseState):
     dict_list: dict[str, list[int]] = {"foo": [1, 2, 3]}
     dc: ModelDC = ModelDC()
 
-    def __init__(self, **kwargs):  # noqa: D107
-        super().__init__(**kwargs)
-        self.router_data = {"simulate": "hydrate"}
-
     @rx.var(cache=False)
     def computed_order(self) -> list[str]:
         """Get the order as a computed var.
@@ -2909,7 +2905,7 @@ def test_set_base_field_via_setter():
     assert "c2" in bfss.dirty_vars
 
 
-def exp_is_hydrated(state: BaseState, is_hydrated: bool = True) -> dict[str, Any]:
+def exp_is_hydrated(state: type[BaseState], is_hydrated: bool = True) -> dict[str, Any]:
     """Expected IS_HYDRATED delta that would be emitted by HydrateMiddleware.
 
     Args:
@@ -3006,11 +3002,6 @@ async def test_preprocess(
     app.add_page(index, on_load=test_state.test_handler)
     app._compile_page("index")
 
-    async with mock_root_event_context.state_manager.modify_state(
-        BaseStateToken(ident=token, cls=State)
-    ) as state:
-        state.router_data = {"simulate": "hydrate"}
-
     on_load_internal_name = format.format_event_handler(
         OnLoadInternalState.on_load_internal  # pyright: ignore[reportArgumentType]
     )
@@ -3035,7 +3026,7 @@ async def test_preprocess(
     assert len(emitted_deltas) >= 2
     first_delta = emitted_deltas[0][1]
     assert first_delta[State.get_full_name()].pop("router" + FIELD_MARKER) is not None
-    assert first_delta == exp_is_hydrated(state, False)
+    assert first_delta == exp_is_hydrated(State, False)
 
     # Find the delta containing the test handler's state change
     handler_deltas = [
@@ -3085,10 +3076,6 @@ async def test_preprocess_multiple_load_events(
 
     app.add_page(index, on_load=[OnLoadState.test_handler, OnLoadState.test_handler])
     app._compile_page("index")
-    async with mock_root_event_context.state_manager.modify_state(
-        BaseStateToken(ident=token, cls=State)
-    ) as state:
-        state.router_data = {"simulate": "hydrate"}
 
     on_load_internal_name = format.format_event_handler(
         OnLoadInternalState.on_load_internal  # pyright: ignore[reportArgumentType]
@@ -3112,7 +3099,7 @@ async def test_preprocess_multiple_load_events(
     assert len(emitted_deltas) >= 2
     first_delta = emitted_deltas[0][1]
     assert first_delta[State.get_full_name()].pop("router" + FIELD_MARKER) is not None
-    assert first_delta == exp_is_hydrated(state, False)
+    assert first_delta == exp_is_hydrated(State, False)
 
     # Find deltas containing the test handler's state change (num incremented twice)
     handler_deltas = [

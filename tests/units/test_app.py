@@ -1771,9 +1771,6 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     assert constants.ROUTER in app._state()._var_dependencies
 
     substate_token = BaseStateToken(ident=token, cls=DynamicState)
-    async with app.state_manager.modify_state(substate_token) as state:
-        state.router_data = {"simulate": "hydrated"}
-        assert state.dynamic == ""  # pyright: ignore[reportAttributeAccessIssue]
     exp_vals = ["foo", "foobar", "baz"]
 
     def _event(name, val, **kwargs):
@@ -1915,10 +1912,6 @@ async def test_process_events(
         payload={"c": 5},
         router_data={},
     )
-    async with mock_root_event_context.state_manager.modify_state(
-        BaseStateToken(ident=token, cls=GenState),
-    ) as state:
-        state.router_data = {"simulate": "hydrated"}
 
     async with mock_base_state_event_processor as processor:
         await processor.enqueue(
