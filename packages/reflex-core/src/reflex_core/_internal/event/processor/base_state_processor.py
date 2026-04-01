@@ -122,9 +122,9 @@ def _transform_event_arg(value: Any, hinted_args: Any) -> Any:
                 return hinted_args.parse_obj(value)
             if issubclass(hinted_args, BaseModelV2):
                 return hinted_args.model_validate(value)
-    if isinstance(value, list) and (hinted_args is set or hinted_args is set):
+    if isinstance(value, list) and (hinted_args is set or hinted_args is frozenset):
         return set(value)
-    if isinstance(value, list) and (hinted_args is tuple or hinted_args is tuple):
+    if isinstance(value, list) and hinted_args is tuple:
         return tuple(value)
     if isinstance(hinted_args, type) and issubclass(hinted_args, Enum):
         try:
