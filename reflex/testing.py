@@ -42,6 +42,7 @@ import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
 from reflex.experimental.memo import EXPERIMENTAL_MEMOS
+from reflex.istate.shared import SharedState as SharedState  # To register it.
 from reflex.state import reload_state_module
 from reflex.utils import console, js_runtimes
 from reflex.utils.export import export
