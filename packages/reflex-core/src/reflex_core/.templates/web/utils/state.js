@@ -201,14 +201,12 @@ function urlFrom(string) {
  * @param socket The socket object to send the event on.
  * @param navigate The navigate function from useNavigate
  * @param params The params object from useParams
- *
- * @returns True if the event was sent, false if it was handled locally.
  */
 export const applyEvent = async (event, socket, navigate, params) => {
   // Handle special events
   if (event.name == "_redirect") {
     if ((event.payload.path ?? undefined) === undefined) {
-      return false;
+      return;
     }
     if (event.payload.external) {
       window.open(
@@ -216,7 +214,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
         "_blank",
         "noopener" + (event.payload.popup ? ",popup" : ""),
       );
-      return false;
+      return;
     }
     const url = urlFrom(event.payload.path);
     let pathname = event.payload.path;
@@ -224,7 +222,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
       if (url.host !== window.location.host) {
         // External URL
         window.location.assign(event.payload.path);
-        return false;
+        return;
       } else {
         pathname = url.pathname + url.search + url.hash;
       }
@@ -234,37 +232,37 @@ export const applyEvent = async (event, socket, navigate, params) => {
     } else {
       navigate(pathname);
     }
-    return false;
+    return;
   }
 
   if (event.name == "_remove_cookie") {
     cookies.remove(event.payload.key, { ...event.payload.options });
     queueEventIfSocketExists(initialEvents(), socket, navigate, params);
-    return false;
+    return;
   }
 
   if (event.name == "_clear_local_storage") {
     localStorage.clear();
     queueEventIfSocketExists(initialEvents(), socket, navigate, params);
-    return false;
+    return;
   }
 
   if (event.name == "_remove_local_storage") {
     localStorage.removeItem(event.payload.key);
     queueEventIfSocketExists(initialEvents(), socket, navigate, params);
-    return false;
+    return;
   }
 
   if (event.name == "_clear_session_storage") {
     sessionStorage.clear();
     queueEventIfSocketExists(initialEvents(), socket, navigate, params);
-    return false;
+    return;
   }
 
   if (event.name == "_remove_session_storage") {
     sessionStorage.removeItem(event.payload.key);
     queueEventIfSocketExists(initialEvents(), socket, navigate, params);
-    return false;
+    return;
   }
 
   if (event.name == "_download") {
@@ -283,7 +281,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
     a.download = event.payload.filename;
     a.click();
     a.remove();
-    return false;
+    return;
   }
 
   if (event.name == "_set_focus") {
@@ -297,7 +295,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
     } else {
       current.focus();
     }
-    return false;
+    return;
   }
 
   if (event.name == "_blur_focus") {
@@ -311,7 +309,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
     } else {
       current.blur();
     }
-    return false;
+    return;
   }
 
   if (event.name == "_set_value") {
@@ -320,7 +318,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
     if (ref.current) {
       ref.current.value = event.payload.value;
     }
-    return false;
+    return;
   }
 
   if (
@@ -346,7 +344,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
         window.onerror(e.message, null, null, null, e);
       }
     }
-    return false;
+    return;
   }
 
   if (event.name == "_call_script" || event.name == "_call_function") {
@@ -373,7 +371,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
         window.onerror(e.message, null, null, null, e);
       }
     }
-    return false;
+    return;
   }
 
   // Update token and router data (if missing).
@@ -401,10 +399,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
   // Send the event to the server.
   if (socket) {
     socket.emit("event", event);
-    return true;
   }
-
-  return false;
 };
 
 /**
@@ -413,11 +408,8 @@ export const applyEvent = async (event, socket, navigate, params) => {
  * @param socket The socket object to send the response event(s) on.
  * @param navigate The navigate function from React Router
  * @param params The params object from React Router
- *
- * @returns Whether the event was sent.
  */
 export const applyRestEvent = async (event, socket, navigate, params) => {
-  let eventSent = false;
   if (event.handler === "uploadFiles") {
     // Start upload, but do not wait for it, which would block other events.
     uploadFiles(
@@ -431,9 +423,7 @@ export const applyRestEvent = async (event, socket, navigate, params) => {
       getBackendURL,
       getToken,
     );
-    return false;
   }
-  return eventSent;
 };
 
 /**
@@ -494,16 +484,14 @@ export const processEvent = async (socket, navigate, params) => {
   // Apply the next event in the queue.
   const event = event_queue.shift();
 
-  let eventSent = false;
   // Process events with handlers via REST and all others via websockets.
   if (event.handler) {
-    eventSent = await applyRestEvent(event, socket, navigate, params);
+    await applyRestEvent(event, socket, navigate, params);
   } else {
-    eventSent = await applyEvent(event, socket, navigate, params);
+    await applyEvent(event, socket, navigate, params);
   }
-  if (!eventSent) {
-    // recursively call processEvent to drain the queue, since there is
-    // no state update to trigger the useEffect event loop.
+  // Process any remaining events.
+  if (event_queue.length > 0) {
     await processEvent(socket, navigate, params);
   }
 };
