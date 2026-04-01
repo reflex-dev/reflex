@@ -672,10 +672,6 @@ export const connect = async (
       queueEvents(update.events, socket, false, navigate, params);
     }
   });
-  socket.current.on("reload", async (event) => {
-    on_hydrated_queue.push(event);
-    queueEvents(initialEvents(), socket, true, navigate, params);
-  });
   socket.current.on("new_token", async (new_token) => {
     token = new_token;
     window.sessionStorage.setItem(TOKEN_KEY, new_token);

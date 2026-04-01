@@ -19,10 +19,18 @@ from reflex_core._internal.event.processor.event_processor import (
     EventQueueEntry,
     RegisteredEventHandler,
 )
+from reflex_core.utils.format import format_event_handler
 
 if TYPE_CHECKING:
     from reflex.event import EventHandler, EventSpec
     from reflex.state import BaseState
+
+
+@functools.lru_cache(maxsize=1)
+def _hydrate_event_name():
+    from reflex.state import State
+
+    return format_event_handler(State.event_handlers["hydrate"])
 
 
 def _check_valid_yield(events: Any, handler_name: str = "unknown") -> Any:
@@ -271,6 +279,33 @@ class BaseStateEventProcessor(EventProcessor):
     frontend.
     """
 
+    async def _rehydrate(self, root_state: BaseState):
+        """Rehydrate the state by calling the hydrate event handler.
+
+        Args:
+            root_state: The root state to rehydrate.
+        """
+        from reflex.state import OnLoadInternalState, State
+
+        if (
+            type(root_state) is not State
+            or OnLoadInternalState.get_name() not in root_state.substates
+        ):
+            return
+
+        await process_event(
+            handler=State.event_handlers["hydrate"],
+            payload={},
+            state=root_state,
+            root_state=root_state,
+        )
+        await process_event(
+            handler=OnLoadInternalState.event_handlers["on_load_internal"],
+            payload={},
+            state=await root_state.get_state(OnLoadInternalState),
+            root_state=root_state,
+        )
+
     async def _process_event_queue_entry(
         self, *, entry: EventQueueEntry, registered_handler: RegisteredEventHandler
     ) -> None:
@@ -295,7 +330,10 @@ class BaseStateEventProcessor(EventProcessor):
             ),
             event=entry.event,
         ) as state:
-            # TODO: handle "reload" trigger of brand new state instances
+            # Compatibility hack rehydrate the state before processing this event.
+            needs_to_rehydrate = bool(
+                not state.router_data and event.name != _hydrate_event_name()
+            )
 
             # re-assign only when the value is set and different
             if router_data and state.router_data != router_data:
@@ -321,6 +359,9 @@ class BaseStateEventProcessor(EventProcessor):
             # Get the event's substate.
             substate = await state.get_state(event.state_cls)
             root_state = state._get_root_state()
+
+            if needs_to_rehydrate:
+                await self._rehydrate(root_state)
 
             # Process non-background events while holding the lock.
             if not registered_handler.handler.is_background:

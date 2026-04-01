@@ -281,12 +281,18 @@ def mock_event_processor_obj() -> EventProcessor:
 
 
 @pytest.fixture
-def mock_base_state_event_processor_obj() -> BaseStateEventProcessor:
+def mock_base_state_event_processor_obj(
+    monkeypatch: pytest.MonkeyPatch,
+) -> BaseStateEventProcessor:
     """Create a BaseState event processor.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
 
     Returns:
         A fresh BaseState event processor.
     """
+    monkeypatch.setattr(BaseStateEventProcessor, "_rehydrate", mock.AsyncMock())
 
     def handle_backend_exception(ex: Exception) -> None:
         formatted_exc = "\n".join(traceback.format_exception(ex))
