@@ -402,7 +402,8 @@ class EventProcessor:
                 and self._root_context.emit_delta_impl is not None
             ):
                 # Emit deltas for other tokens normally.
-                await self._root_context.emit_delta_impl(token, delta)
+                await self._root_context.emit_delta_impl(delta_token, delta)
+                return
             await deltas.put(delta)
 
         task_future = await self.enqueue(
