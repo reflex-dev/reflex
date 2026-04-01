@@ -10,9 +10,8 @@ from reflex_core._internal.context.base import BaseContext
 from reflex_core.utils.format import to_snake_case
 
 if TYPE_CHECKING:
-    from reflex_core.event import Event
-
     from reflex.istate.manager import StateManager
+    from reflex_core.event import Event
 
 
 @functools.lru_cache

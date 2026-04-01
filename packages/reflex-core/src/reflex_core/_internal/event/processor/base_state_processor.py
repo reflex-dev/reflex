@@ -9,16 +9,16 @@ from enum import Enum
 from importlib.util import find_spec
 from typing import TYPE_CHECKING, Any
 
-from reflex.ievent.context import EventContext
-from reflex.ievent.processor import EventProcessor
-from reflex.ievent.processor.event_processor import (
-    EventQueueEntry,
-    RegisteredEventHandler,
-)
 from reflex.istate.data import RouterData
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import StateProxy
 from reflex.utils import console, types
+from reflex_core._internal.event.context import EventContext
+from reflex_core._internal.event.processor.event_processor import (
+    EventProcessor,
+    EventQueueEntry,
+    RegisteredEventHandler,
+)
 
 if TYPE_CHECKING:
     from reflex.event import EventHandler, EventSpec

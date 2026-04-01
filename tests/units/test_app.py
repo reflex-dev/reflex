@@ -20,6 +20,8 @@ from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core.cond import Cond
 from reflex_components_radix.themes.typography.text import Text
+from reflex_core._internal.event.context import EventContext
+from reflex_core._internal.event.processor import BaseStateEventProcessor
 from reflex_core._internal.registry import RegistrationContext
 from reflex_core.components.component import Component
 from reflex_core.constants.state import FIELD_MARKER
@@ -37,8 +39,6 @@ import reflex as rx
 from reflex import AdminDash, constants
 from reflex.app import App, ComponentCallable, default_overlay_component, upload
 from reflex.environment import environment
-from reflex.ievent.context import EventContext
-from reflex.ievent.processor import BaseStateEventProcessor
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis

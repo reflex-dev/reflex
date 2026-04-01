@@ -2214,7 +2214,7 @@ class State(BaseState):
     @event
     async def hydrate(self) -> None:
         """Send the full state to the frontend to synchronize it with the backend."""
-        from reflex.ievent.context import EventContext
+        from reflex_core._internal.event.context import EventContext
 
         # Clear client storage, to respect clearing cookies
         self._reset_client_storage()

@@ -11,12 +11,12 @@ from contextvars import Token, copy_context
 from typing import TYPE_CHECKING, Any, Self
 
 import rich.markup
-from reflex_core._internal.registry import RegisteredEventHandler, RegistrationContext
 
 from reflex.app_mixins.middleware import MiddlewareMixin
-from reflex.ievent.context import EventContext
 from reflex.istate.manager import StateManager
 from reflex.utils import console
+from reflex_core._internal.event.context import EventContext
+from reflex_core._internal.registry import RegisteredEventHandler, RegistrationContext
 
 if TYPE_CHECKING:
     from reflex.app import EventNamespace

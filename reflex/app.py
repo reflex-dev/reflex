@@ -38,6 +38,10 @@ from reflex_components_core.core.sticky import sticky
 from reflex_components_radix import themes
 from reflex_components_sonner.toast import toast
 from reflex_core import constants
+from reflex_core._internal.event.processor import (
+    BaseStateEventProcessor,
+    EventProcessor,
+)
 from reflex_core.components.component import (
     CUSTOM_COMPONENTS,
     Component,
@@ -79,7 +83,6 @@ from reflex.compiler.compiler import (
     readable_name_from_component,
 )
 from reflex.experimental.memo import EXPERIMENTAL_MEMOS
-from reflex.ievent.processor import BaseStateEventProcessor, EventProcessor
 from reflex.istate.manager import StateManager, StateModificationContext
 from reflex.istate.manager.token import BaseStateToken
 from reflex.page import DECORATED_PAGES

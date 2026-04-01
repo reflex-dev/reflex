@@ -15,13 +15,13 @@ from types import MethodType
 from typing import TYPE_CHECKING, Any, SupportsIndex, TypeVar
 
 import wrapt
+from reflex_core._internal.event.context import EventContext
 from reflex_core.event import Event
 from reflex_core.utils.exceptions import ImmutableStateError
 from reflex_core.utils.serializers import can_serialize, serialize, serializer
 from reflex_core.vars.base import Var
 from typing_extensions import Self
 
-from reflex.ievent.context import EventContext
 from reflex.istate.manager.token import BaseStateToken
 
 if TYPE_CHECKING:

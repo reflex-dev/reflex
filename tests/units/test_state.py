@@ -22,6 +22,8 @@ from plotly.graph_objects import Figure
 from pydantic import BaseModel as Base
 from pytest_mock import MockerFixture
 from reflex_core import constants
+from reflex_core._internal.event.context import EventContext
+from reflex_core._internal.event.processor import BaseStateEventProcessor
 from reflex_core.constants import CompileVars, RouteVar
 from reflex_core.constants.state import FIELD_MARKER
 from reflex_core.event import Event, EventHandler
@@ -40,8 +42,6 @@ from reflex_core.vars.base import Field, Var, computed_var, field
 import reflex as rx
 from reflex.app import App
 from reflex.environment import environment
-from reflex.ievent.context import EventContext
-from reflex.ievent.processor import BaseStateEventProcessor
 from reflex.istate.data import HeaderData, _FrozenDictStrStr
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
