@@ -9,6 +9,7 @@ from reflex_core._internal.event.context import EventContext
 from reflex_core._internal.event.processor.event_processor import (
     DrainTimeoutManager,
     EventProcessor,
+    QueueShutDown,
 )
 from reflex_core._internal.registry import RegistrationContext
 
@@ -176,7 +177,7 @@ async def test_enqueue_after_stop_raises(processor: EventProcessor):
     processor.configure()
     async with processor:
         pass
-    with pytest.raises(RuntimeError, match="not running"):
+    with pytest.raises(QueueShutDown, match="not running"):
         await processor.enqueue("tok", *Event.from_event_type(noop_event()))
 
 
@@ -187,7 +188,7 @@ async def test_enqueue_before_start_raises(processor: EventProcessor):
         processor: The event processor fixture.
     """
     processor.configure()
-    with pytest.raises(RuntimeError, match="not running"):
+    with pytest.raises(QueueShutDown, match="not running"):
         await processor.enqueue("tok", *Event.from_event_type(noop_event()))
 
 

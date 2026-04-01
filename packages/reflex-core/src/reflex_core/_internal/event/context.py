@@ -1,5 +1,7 @@
 """The context and associated metadata for handling an event."""
 
+from __future__ import annotations
+
 import dataclasses
 import functools
 import uuid
@@ -97,7 +99,7 @@ class EventContext(BaseContext):
         default_factory=dict, init=False, repr=False
     )
 
-    def fork(self, token: str | None = None) -> "EventContext":
+    def fork(self, token: str | None = None) -> EventContext:
         """Return a new EventContext with the specified fields replaced.
 
         Args:

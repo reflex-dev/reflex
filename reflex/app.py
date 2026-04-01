@@ -22,7 +22,6 @@ from pathlib import Path
 from timeit import default_timer as timer
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, ParamSpec, overload
-from warnings import deprecated
 
 from reflex_components_core.base.app_wrap import AppWrap
 from reflex_components_core.base.error_boundary import ErrorBoundary
@@ -116,6 +115,11 @@ from reflex.utils.exec import (
 )
 from reflex.utils.misc import run_in_thread
 from reflex.utils.token_manager import RedisTokenManager, TokenManager
+
+if sys.version_info < (3, 13):
+    from typing_extensions import deprecated
+else:
+    from warnings import deprecated
 
 if TYPE_CHECKING:
     from reflex_core.vars import Var

@@ -1,5 +1,7 @@
 """Representation of a StateManager token."""
 
+from __future__ import annotations
+
 import dataclasses
 import pickle
 from typing import TYPE_CHECKING, BinaryIO, Generic, Self, TypeVar
@@ -105,7 +107,7 @@ class BaseStateToken(StateToken["BaseState"]):
     This token type implies subtree hierarchy population and other semantic checks.
     """
 
-    def with_cls(self, cls: type["BaseState"]) -> Self:
+    def with_cls(self, cls: type[BaseState]) -> Self:
         """Return a new token with the cls field updated to the provided class.
 
         Args:
@@ -174,7 +176,7 @@ class BaseStateToken(StateToken["BaseState"]):
 
     @classmethod
     def from_legacy_token(
-        cls, legacy_token: str, root_state: "type[BaseState] | None"
+        cls, legacy_token: str, root_state: type[BaseState] | None
     ) -> Self:
         """Create a BaseStateToken from a legacy token string.
 

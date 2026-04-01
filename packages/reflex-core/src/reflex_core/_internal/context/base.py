@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses
 from contextvars import ContextVar, Token
 from typing import ClassVar, Self
@@ -13,7 +15,7 @@ class BaseContext:
     @classmethod
     def __init_subclass__(cls, **kwargs):
         """Initialize the context variable for the subclass."""
-        super().__init_subclass__(**kwargs)
+        super(BaseContext, cls).__init_subclass__(**kwargs)
         cls._context_var = ContextVar(cls.__name__)
         cls._attached_context_token = {}
 

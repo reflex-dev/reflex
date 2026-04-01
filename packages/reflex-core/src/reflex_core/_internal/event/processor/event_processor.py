@@ -1,9 +1,12 @@
 """Base EventProcessor class for handling backend event queue."""
 
+from __future__ import annotations
+
 import asyncio
 import contextlib
 import dataclasses
 import inspect
+import sys
 import time
 import traceback
 from collections.abc import AsyncGenerator, Callable, Mapping
@@ -16,11 +19,22 @@ from reflex.app_mixins.middleware import MiddlewareMixin
 from reflex.istate.manager import StateManager
 from reflex.utils import console
 from reflex_core._internal.event.context import EventContext
+from reflex_core._internal.event.processor.compat import as_completed
 from reflex_core._internal.registry import RegisteredEventHandler, RegistrationContext
 
 if TYPE_CHECKING:
     from reflex.app import EventNamespace
     from reflex.event import Event, EventSpec
+
+if hasattr(asyncio, "QueueShutDown"):
+
+    class QueueShutDown(asyncio.QueueShutDown):  # pyright: ignore[reportRedeclaration]
+        """Exception raised when trying to put an item into a shut down queue."""
+
+else:
+
+    class QueueShutDown(Exception):  # noqa: N818
+        """Exception raised when trying to put an item into a shut down queue."""
 
 
 @dataclasses.dataclass(kw_only=True, slots=True)
@@ -36,7 +50,7 @@ class DrainTimeoutManager:
     drain_deadline: float | None = None
 
     @classmethod
-    def with_timeout(cls, timeout: float | None) -> "DrainTimeoutManager":
+    def with_timeout(cls, timeout: float | None) -> DrainTimeoutManager:
         """Create a DrainTimeoutManager with a specified timeout.
 
         Args:
@@ -226,9 +240,7 @@ class EventProcessor:
         # Graceful drain time, wait for tasks to finish and handle any exceptions.
         if timeout is not None and self._tasks:
             with contextlib.suppress(asyncio.TimeoutError):
-                async for task in asyncio.as_completed(
-                    self._tasks.values(), timeout=timeout
-                ):
+                async for task in as_completed(self._tasks.values(), timeout=timeout):
                     # Exceptions are handled in _finish_task and ignored here.
                     with contextlib.suppress(Exception):
                         await task
@@ -271,14 +283,15 @@ class EventProcessor:
             await self._stop_tasks(timeout=remaining_time)
         # Cancel queue processing now that all tasks have been cancelled.
         if self._queue is not None:
-            self._queue.shutdown()
+            if sys.version_info >= (3, 13):
+                self._queue.shutdown()
+            self._queue = None
         with drain_timeout as remaining_time, contextlib.suppress(asyncio.TimeoutError):
             if remaining_time > 0:
                 await self.join(timeout=remaining_time)
         with drain_timeout as remaining_time, contextlib.suppress(asyncio.TimeoutError):
             # Stop all tasks again now that the queue is shut down, no additional events can be queued.
             await self._stop_tasks(timeout=remaining_time)
-        self._queue = None
         if self._queue_task is not None:
             self._queue_task.cancel()
             try:
@@ -324,7 +337,7 @@ class EventProcessor:
             raise RuntimeError(msg)
         if self._queue is None:
             msg = "Event processor is not running, call .start(...) first."
-            raise RuntimeError(msg)
+            raise QueueShutDown(msg)
         if self._queue_task is None:
             task_context = copy_context()
             task_context.run(EventContext.set, self._root_context)
@@ -415,15 +428,24 @@ class EventProcessor:
                 emit_delta_impl=_emit_delta_impl,
             ),
         )
-        while not task_future.done() or not deltas.empty():
-            with contextlib.suppress(asyncio.TimeoutError):
-                async for result in asyncio.as_completed(
-                    [deltas.get(), *([task_future] if not task_future.done() else [])],
-                    timeout=1,
-                ):
-                    if result is task_future:
-                        continue
-                    yield await result
+        waiting_for = {task_future, asyncio.create_task(deltas.get())}
+        try:
+            while not task_future.done() or not deltas.empty():
+                with contextlib.suppress(asyncio.TimeoutError):
+                    async for result in as_completed(
+                        waiting_for,
+                        timeout=1,
+                    ):
+                        waiting_for.remove(result)
+                        if result is not task_future:
+                            yield await result
+                            waiting_for.add(asyncio.create_task(deltas.get()))
+                        break
+        finally:
+            for future in waiting_for:
+                future.cancel()
+        # Raise any exceptions for the caller.
+        await task_future
 
     def _on_future_done(self, txid: str, future: asyncio.Future) -> None:
         """Callback invoked when an enqueued future completes.
@@ -473,7 +495,7 @@ class EventProcessor:
         if (queue := self._queue) is None:
             msg = "Event processor is not running, call .start(...) first."
             raise RuntimeError(msg)
-        with contextlib.suppress(asyncio.QueueShutDown):
+        with contextlib.suppress(QueueShutDown):
             while True:
                 entry = await queue.get()
                 if (
@@ -501,6 +523,8 @@ class EventProcessor:
                             f"reflex_event|{entry.event.name}|{entry.ctx.token}|{time.time()}"
                         ),
                     )
+                    if sys.version_info < (3, 12):
+                        task._event_ctx = entry.ctx  # pyright: ignore[reportAttributeAccessIssue]
                     self._tasks[entry.ctx.txid] = task
                     task.add_done_callback(self._finish_task)
                 except Exception:
@@ -514,13 +538,18 @@ class EventProcessor:
         if self._queue_task is asyncio.current_task():
             self._queue_task = None
 
-    async def _handle_backend_exception(self, ex: Exception):
+    async def _handle_backend_exception(
+        self, ex: Exception, ev_ctx: EventContext | None = None
+    ) -> None:
         """Handle an exception raised during event processing by calling the backend exception handler if it exists.
 
         Args:
             ex: The exception that was raised.
+            ev_ctx: The event context for the exception, if available. This will be set in the context variable when calling the exception handler.
         """
         if self.backend_exception_handler is not None:
+            if ev_ctx is not None:
+                EventContext.set(ev_ctx)
             self.backend_exception_handler(ex)
 
     def _finish_task(self, task: asyncio.Task):
@@ -535,7 +564,11 @@ class EventProcessor:
         """
         from reflex.utils import telemetry
 
-        task_ctx = task.get_context().run(EventContext.get)
+        if sys.version_info < (3, 12):
+            # py3.11 compat
+            task_ctx = task._event_ctx  # type: ignore[attr-defined]
+        else:
+            task_ctx = task.get_context().run(EventContext.get)
         self._tasks.pop(task_ctx.txid, None)
         future = self._futures.pop(task_ctx.txid, None)
         if task.done():
@@ -556,9 +589,8 @@ class EventProcessor:
                     and self.backend_exception_handler is not None
                 ):
                     # Create a new task in the same context to invoke the exception handler.
-                    t = self._tasks[task_ctx.txid] = task.get_context().run(
-                        asyncio.create_task,
-                        self._handle_backend_exception(ex),
+                    t = self._tasks[task_ctx.txid] = asyncio.create_task(
+                        self._handle_backend_exception(ex, ev_ctx=task_ctx),
                         name=f"reflex_backend_exception_handler|task=[{task.get_name()}]|{time.time()}",
                     )
                     t.add_done_callback(self._finish_task)

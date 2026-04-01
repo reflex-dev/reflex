@@ -79,7 +79,7 @@ class Event:
     payload: dict[str, Any] = dataclasses.field(default_factory=dict)
 
     @property
-    def state_cls(self) -> type[BaseState]:
+    def state_cls(self) -> "type[BaseState]":
         """The state class for the event."""
         from reflex_core._internal.registry import RegistrationContext
 
@@ -339,7 +339,7 @@ class EventHandler(EventActionsMixin):
 
     fn: Any = dataclasses.field(default=None)
 
-    state: type[BaseState] | None = dataclasses.field(default=None, repr=False)
+    state: "type[BaseState] | None" = dataclasses.field(default=None, repr=False)
 
     @property
     def state_full_name(self) -> str:

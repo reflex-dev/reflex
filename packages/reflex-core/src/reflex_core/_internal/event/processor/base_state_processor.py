@@ -1,5 +1,7 @@
 """Functions for processing BaseState-derived event handlers."""
 
+from __future__ import annotations
+
 import dataclasses
 import functools
 import inspect
@@ -380,19 +382,24 @@ class BaseStateEventProcessor(EventProcessor):
             root_state=root_state,
         )
 
-    async def _handle_backend_exception(self, ex: Exception):
+    async def _handle_backend_exception(
+        self, ex: Exception, ev_ctx: EventContext | None = None
+    ) -> None:
         """Handle an exception raised during event processing by calling the backend exception handler if it exists.
 
         Args:
             ex: The exception that was raised.
+            ev_ctx: The event context for the exception.
         """
-        if self.backend_exception_handler is not None and (
-            events := self.backend_exception_handler(ex)
-        ):
-            await chain_updates(
-                events=events,
-                handler_name=self.backend_exception_handler.__qualname__,
-            )
+        if self.backend_exception_handler is not None:
+            if ev_ctx is not None:
+                # Ensure the event context is set for the exception handler.
+                EventContext.set(ev_ctx)
+            if events := self.backend_exception_handler(ex):
+                await chain_updates(
+                    events=events,
+                    handler_name=self.backend_exception_handler.__qualname__,
+                )
 
 
 __all__ = ["BaseStateEventProcessor", "chain_updates", "process_event"]
