@@ -23,6 +23,7 @@ from reflex_components_radix.themes.typography.text import Text
 from reflex_core.components.component import Component
 from reflex_core.constants.state import FIELD_MARKER
 from reflex_core.event import Event
+from reflex_core.plugins import Plugin
 from reflex_core.style import Style
 from reflex_core.utils import console, exceptions, format
 from reflex_core.vars.base import computed_var
@@ -2031,6 +2032,65 @@ module.exports = {
     app._get_frontend_packages = unittest.mock.Mock()
     with chdir(app_path):
         yield app, web_dir
+
+
+def test_compile_executes_plugin_save_and_modify_tasks_sequentially(
+    compilable_app: tuple[App, Path],
+    mocker,
+):
+    """Test plugin pre-compile tasks run sequentially and modify outputs."""
+    events: list[str] = []
+
+    class OrderedPlugin(Plugin):
+        def pre_compile(self, **context):
+            def save_first():
+                events.append("first")
+                return "plugin/ordered.txt", "alpha"
+
+            def save_second():
+                events.append("second")
+                return "plugin/second.txt", "beta"
+
+            context["add_save_task"](save_first)
+            context["add_save_task"](save_second)
+            context["add_modify_task"](
+                "plugin/ordered.txt",
+                lambda content: content + "-omega",
+            )
+
+    conf = rx.Config(app_name="testing", plugins=[OrderedPlugin()])
+    mocker.patch("reflex_core.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    app.add_page(rx.box("Index"), route="index")
+
+    app._compile()
+
+    assert events == ["first", "second"]
+    assert (web_dir / "plugin" / "ordered.txt").read_text() == "alpha-omega"
+    assert (web_dir / "plugin" / "second.txt").read_text() == "beta"
+
+
+def test_compile_keeps_first_duplicate_save_task_output(
+    compilable_app: tuple[App, Path],
+    mocker,
+):
+    """Test duplicate save-task outputs keep the first generated file."""
+
+    class DuplicateOutputPlugin(Plugin):
+        def pre_compile(self, **context):
+            context["add_save_task"](lambda: ("plugin/duplicate.txt", "first"))
+            context["add_save_task"](lambda: ("plugin/duplicate.txt", "second"))
+
+    conf = rx.Config(app_name="testing", plugins=[DuplicateOutputPlugin()])
+    mocker.patch("reflex_core.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    app.add_page(rx.box("Index"), route="index")
+
+    app._compile()
+
+    assert (web_dir / "plugin" / "duplicate.txt").read_text() == "first"
 
 
 @pytest.mark.parametrize(

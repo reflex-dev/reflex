@@ -722,10 +722,21 @@ async def test_compile_context_compiles_pages_and_accumulates_page_data() -> Non
     assert page_ctx.name == "<lambda>"
     assert page_ctx.route == "/demo"
     assert page_ctx.imports
-    assert set(page_ctx.imports[0]) >= {"root-lib", "child-lib", "prop-lib", "react"}
+    assert set(page_ctx.frontend_imports) >= {
+        "root-lib",
+        "child-lib",
+        "prop-lib",
+        "react",
+    }
+    assert page_ctx.output_path is not None
+    assert page_ctx.output_code is not None
+    assert "RootComponent" in page_ctx.output_code
     assert page_ctx.module_code == {
-        "const childCustomCode = 1;": None,
         "const propCustomCode = 1;": None,
+        "const propAddedCode = 1;": None,
+        "const rootAddedCode = 1;": None,
+        "const childCustomCode = 1;": None,
+        "const childAddedCode = 1;": None,
     }
     assert page_ctx.dynamic_imports == {"dynamic(() => import('prop-lib'))"}
     assert any("useChildHook" in hook for hook in page_ctx.hooks)

@@ -2,24 +2,44 @@
 
 from __future__ import annotations
 
+import asyncio
 import dataclasses
 import inspect
 from collections.abc import AsyncGenerator, Awaitable, Callable, Sequence
 from contextvars import ContextVar, Token
 from types import TracebackType
-from typing import Any, ClassVar, Literal, Protocol, TypeAlias, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Literal,
+    Protocol,
+    TypeAlias,
+    cast,
+    overload,
+)
 
 from reflex_core.components.component import BaseComponent, Component, StatefulComponent
 from reflex_core.utils.imports import ParsedImportDict, collapse_imports, merge_imports
 from reflex_core.vars import VarData
 from typing_extensions import Self
 
+if TYPE_CHECKING:
+    from reflex.app import App
+
 
 class PageDefinition(Protocol):
     """Protocol for page-like objects compiled by :class:`CompileContext`."""
 
-    route: str
-    component: Any
+    @property
+    def route(self) -> str:
+        """Return the declared route for the page."""
+        ...
+
+    @property
+    def component(self) -> Any:
+        """Return the declared component or page callable."""
+        ...
 
 
 ComponentAndChildren: TypeAlias = tuple[BaseComponent, tuple[BaseComponent, ...]]
@@ -412,6 +432,9 @@ class PageContext(BaseContext):
     app_wrap_components: dict[tuple[int, str], Component] = dataclasses.field(
         default_factory=dict
     )
+    frontend_imports: ParsedImportDict = dataclasses.field(default_factory=dict)
+    output_path: str | None = None
+    output_code: str | None = None
 
     def merged_imports(self, *, collapse: bool = False) -> ParsedImportDict:
         """Return the imports accumulated for this page.
@@ -434,14 +457,32 @@ class PageContext(BaseContext):
 class CompileContext(BaseContext):
     """Mutable compilation state for an entire compile run."""
 
+    app: App | None = None
     pages: Sequence[PageDefinition]
     hooks: CompilerHooks = dataclasses.field(default_factory=CompilerHooks)
     compiled_pages: dict[str, PageContext] = dataclasses.field(default_factory=dict)
+    all_imports: ParsedImportDict = dataclasses.field(default_factory=dict)
+    app_wrap_components: dict[tuple[int, str], Component] = dataclasses.field(
+        default_factory=dict
+    )
+    stateful_routes: dict[str, None] = dataclasses.field(default_factory=dict)
+    stateful_components_path: str | None = None
+    stateful_components_code: str = ""
 
-    async def compile(self, **kwargs: Any) -> dict[str, PageContext]:
+    async def compile(
+        self,
+        *,
+        evaluate_progress: Callable[[], None] | None = None,
+        render_progress: Callable[[], None] | None = None,
+        apply_overlay: bool = False,
+        **kwargs: Any,
+    ) -> dict[str, PageContext]:
         """Compile all configured pages through the plugin pipeline.
 
         Args:
+            evaluate_progress: Optional callback invoked after each page is evaluated.
+            render_progress: Optional callback invoked after each page is rendered.
+            apply_overlay: Whether to apply the app's overlay component to pages.
             **kwargs: Additional keyword arguments forwarded to plugin hooks.
 
         Returns:
@@ -451,11 +492,29 @@ class CompileContext(BaseContext):
             RuntimeError: If no plugin can evaluate a page, or if two compiled
                 pages resolve to the same route.
         """
+        from reflex.compiler import compiler
+        from reflex.state import all_base_state_classes
+        from reflex.utils.exec import is_prod_mode
+
         self.ensure_context_attached()
         self.compiled_pages.clear()
+        self.all_imports.clear()
+        self.app_wrap_components.clear()
+        self.stateful_routes.clear()
+        self.stateful_components_path = None
+        self.stateful_components_code = ""
+
+        overlay_component: Component | None = None
+        if (
+            apply_overlay
+            and self.app is not None
+            and self.app.overlay_component is not None
+        ):
+            overlay_component = self.app._generate_component(self.app.overlay_component)
 
         for page in self.pages:
             page_fn = page.component
+            n_states_before = len(all_base_state_classes)
             page_ctx = await self.hooks.eval_page(
                 page_fn,
                 page=page,
@@ -473,6 +532,21 @@ class CompileContext(BaseContext):
                 msg = f"Duplicate compiled page route {page_ctx.route!r}."
                 raise RuntimeError(msg)
 
+            if len(all_base_state_classes) > n_states_before:
+                self.stateful_routes[page.route] = None
+
+            if overlay_component is not None and self.app is not None:
+                if not isinstance(page_ctx.root_component, Component):
+                    msg = (
+                        f"Compiled page {page_ctx.route!r} root must be a Component "
+                        "to apply the overlay."
+                    )
+                    raise TypeError(msg)
+                page_ctx.root_component = self.app._add_overlay_to_component(
+                    page_ctx.root_component,
+                    overlay_component,
+                )
+
             async with page_ctx:
                 page_ctx.root_component = await self.hooks.compile_component(
                     page_ctx.root_component,
@@ -488,7 +562,52 @@ class CompileContext(BaseContext):
                     **kwargs,
                 )
 
+            page_ctx.frontend_imports = page_ctx.merged_imports(collapse=True)
+            self.all_imports = merge_imports(
+                self.all_imports, page_ctx.frontend_imports
+            )
+            self.app_wrap_components.update(page_ctx.app_wrap_components)
             self.compiled_pages[page_ctx.route] = page_ctx
+            if evaluate_progress is not None:
+                evaluate_progress()
+
+        page_components: list[BaseComponent] = []
+        for page_ctx in self.compiled_pages.values():
+            page_component = StatefulComponent.compile_from(page_ctx.root_component)
+            if page_component is None:
+                page_component = page_ctx.root_component
+            page_ctx.root_component = page_component
+            page_components.append(page_component)
+
+        self.stateful_components_path = compiler.utils.get_stateful_components_path()
+        self.stateful_components_code = (
+            compiler._compile_stateful_components(page_components)
+            if is_prod_mode()
+            else ""
+        )
+
+        for page_ctx in self.compiled_pages.values():
+            imports = collapse_imports(page_ctx.root_component._get_all_imports())
+            page_ctx.imports = [imports] if imports else []
+            page_ctx.dynamic_imports = (
+                page_ctx.root_component._get_all_dynamic_imports()
+            )
+            page_ctx.module_code = page_ctx.root_component._get_all_custom_code()
+            page_ctx.hooks = page_ctx.root_component._get_all_hooks()
+            page_ctx.refs = page_ctx.root_component._get_all_refs()
+
+        async def _render_page(ctx: PageContext) -> None:
+            ctx.output_path, ctx.output_code = await asyncio.to_thread(
+                compiler.compile_page,
+                ctx.route,
+                ctx.root_component,
+            )
+            if render_progress is not None:
+                render_progress()
+
+        await asyncio.gather(
+            *(_render_page(ctx) for ctx in self.compiled_pages.values())
+        )
 
         return self.compiled_pages
 
