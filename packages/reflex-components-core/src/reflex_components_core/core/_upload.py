@@ -21,8 +21,6 @@ from starlette.requests import ClientDisconnect, Request
 from starlette.responses import JSONResponse, Response, StreamingResponse
 from typing_extensions import Self
 
-from reflex.state import StateUpdate
-
 if TYPE_CHECKING:
     from reflex_core.utils.types import Receive, Scope, Send
 
@@ -461,6 +459,8 @@ async def _upload_buffered_file(
     """
     from reflex_core.event import Event
     from reflex_core.utils.exceptions import UploadValueError
+
+    from reflex.state import StateUpdate
 
     try:
         form_data = await request.form()
