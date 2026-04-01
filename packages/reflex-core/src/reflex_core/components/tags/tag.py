@@ -6,7 +6,6 @@ import dataclasses
 from collections.abc import Iterator, Mapping, Sequence
 from typing import Any
 
-from reflex_core.event import EventChain
 from reflex_core.utils import format
 from reflex_core.vars.base import LiteralVar, Var
 
@@ -89,6 +88,8 @@ class Tag:
         Returns:
             The tag with the props added.
         """
+        from reflex_core.event import EventChain
+
         return dataclasses.replace(
             self,
             props={
