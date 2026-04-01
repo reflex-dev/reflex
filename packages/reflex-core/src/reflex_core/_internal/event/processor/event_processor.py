@@ -11,9 +11,10 @@ import time
 import traceback
 from collections.abc import AsyncGenerator, Callable, Mapping
 from contextvars import Token, copy_context
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any
 
 import rich.markup
+from typing_extensions import Self
 
 from reflex.app_mixins.middleware import MiddlewareMixin
 from reflex.istate.manager import StateManager

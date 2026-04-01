@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING
+
+from typing_extensions import Self
 
 from reflex_core._internal.context.base import BaseContext
 from reflex_core.utils.exceptions import StateValueError
