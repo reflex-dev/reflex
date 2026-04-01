@@ -48,8 +48,14 @@ def test_state_token_deserialize_from_fp():
 
 def test_state_token_deserialize_neither_raises():
     """Deserialize with neither data nor fp raises ValueError."""
-    with pytest.raises(ValueError, match="Only one"):
+    with pytest.raises(ValueError, match="At least one"):
         StateToken.deserialize()
+
+
+def test_state_token_deserialize_both_raises():
+    """Deserialize with both data and fp raises ValueError."""
+    with pytest.raises(ValueError, match="Only one"):
+        StateToken.deserialize(data=b"data", fp=io.BytesIO())
 
 
 def test_state_token_get_and_reset_touched_state():
