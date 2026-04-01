@@ -69,22 +69,15 @@ class StateToken(Generic[TOKEN_TYPE]):
         Args:
             data: The serialized state data.
             fp: The file pointer to the serialized state data.
-
-        Returns:
-            The raw deserialized state ("should match the token type").
-
-        Raises:
-            ValueError: If both data and fp are provided, or neither are provided.
-        """
-        if data is not None and fp is None:
+        if data is not None and fp is not None:
+            msg = "Only one of `data` or `fp` may be provided, not both."
+            raise ValueError(msg)
+        if data is not None:
             return pickle.loads(data)
         if fp is not None:
             return pickle.load(fp)
-        msg = "Only one of `data` or `fp` must be provided"
+        msg = "At least one of `data` or `fp` must be provided."
         raise ValueError(msg)
-
-    @classmethod
-    def get_and_reset_touched_state(cls, state: TOKEN_TYPE) -> bool:
         """Get the touched state and reset the touched flag.
 
         This is used to determine if a state has been modified since it was last serialized.
