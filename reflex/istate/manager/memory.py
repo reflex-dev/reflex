@@ -209,3 +209,7 @@ class StateManagerMemory(StateManager):
                 with contextlib.suppress(asyncio.CancelledError):
                     await self._expiration_task
                 self._expiration_task = None
+            # Dump unlocked locks.
+            for token, lock in tuple(self._states_locks.items()):
+                if not lock.locked():
+                    self._states_locks.pop(token)
