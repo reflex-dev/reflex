@@ -1,14 +1,15 @@
-"""Compiler plugin foundations for single-pass page compilation."""
+"""Core compiler plugin infrastructure: protocols, contexts, and dispatch."""
 
 from __future__ import annotations
 
 import dataclasses
-from collections.abc import AsyncGenerator, Sequence
+import inspect
+from collections.abc import AsyncGenerator, Awaitable, Callable, Sequence
 from contextvars import ContextVar, Token
 from types import TracebackType
 from typing import Any, ClassVar, Literal, Protocol, TypeAlias, cast, overload
 
-from reflex_core.components.component import BaseComponent, Component
+from reflex_core.components.component import BaseComponent, Component, StatefulComponent
 from reflex_core.utils.imports import ParsedImportDict, collapse_imports, merge_imports
 from reflex_core.vars import VarData
 from typing_extensions import Self
@@ -32,10 +33,21 @@ class CompilerPlugin(Protocol):
         self,
         page_fn: Any,
         /,
+        *,
+        page: PageDefinition,
         **kwargs: Any,
     ) -> PageContext | None:
-        """Evaluate a page-like object into a page context."""
-        ...
+        """Evaluate a page-like object into a page context.
+
+        Args:
+            page_fn: The page callable or component-like object to evaluate.
+            page: The declared page metadata associated with ``page_fn``.
+            **kwargs: Additional compilation context for advanced plugins.
+
+        Returns:
+            ``None`` to indicate that the plugin does not handle the page.
+        """
+        return None
 
     async def compile_page(
         self,
@@ -44,16 +56,22 @@ class CompilerPlugin(Protocol):
         **kwargs: Any,
     ) -> None:
         """Finalize a page context after its component tree has been traversed."""
-        ...
+        return
 
-    def compile_component(
+    async def compile_component(
         self,
         comp: BaseComponent,
         /,
         **kwargs: Any,
     ) -> AsyncGenerator[CompileComponentYield, ComponentAndChildren]:
-        """Inspect or transform a component during recursive compilation."""
-        ...
+        """Inspect or transform a component during recursive compilation.
+
+        Yields:
+            Optional replacements before and after child traversal.
+        """
+        if False:  # pragma: no cover
+            yield None
+        return
 
 
 @dataclasses.dataclass(frozen=True, slots=True, kw_only=True)
@@ -61,6 +79,27 @@ class CompilerHooks:
     """Dispatch compiler hooks across an ordered plugin chain."""
 
     plugins: tuple[CompilerPlugin, ...] = ()
+
+    @staticmethod
+    def _get_hook_impl(
+        plugin: CompilerPlugin,
+        hook_name: str,
+    ) -> Callable[..., Any] | None:
+        """Return the concrete hook implementation for a plugin, if any.
+
+        Plugins that inherit the default hook bodies from
+        :class:`CompilerPlugin` are treated as not implementing the hook and
+        are skipped by dispatch.
+        """
+        plugin_impl = inspect.getattr_static(type(plugin), hook_name, None)
+        if plugin_impl is None:
+            return None
+
+        base_impl = inspect.getattr_static(CompilerPlugin, hook_name, None)
+        if plugin_impl is base_impl:
+            return None
+
+        return cast(Callable[..., Any], getattr(plugin, hook_name, None))
 
     @overload
     async def _dispatch(
@@ -101,18 +140,29 @@ class CompilerHooks:
             registration order. Otherwise, the first non-None result, or
             ``None`` if every plugin returned ``None``.
         """
+        if stop_on_result:
+            for plugin in self.plugins:
+                hook_impl = self._get_hook_impl(plugin, hook_name)
+                if hook_impl is None:
+                    continue
+                result = await cast(Awaitable[Any], hook_impl(*args, **kwargs))
+                if result is not None:
+                    return result
+            return None
         results: list[Any] = []
         for plugin in self.plugins:
-            result = await getattr(plugin, hook_name)(*args, **kwargs)
-            if stop_on_result and result is not None:
-                return result
-            results.append(result)
-        return None if stop_on_result else results
+            hook_impl = self._get_hook_impl(plugin, hook_name)
+            if hook_impl is None:
+                continue
+            results.append(await cast(Awaitable[Any], hook_impl(*args, **kwargs)))
+        return results
 
     async def eval_page(
         self,
         page_fn: Any,
         /,
+        *,
+        page: PageDefinition,
         **kwargs: Any,
     ) -> PageContext | None:
         """Return the first page context produced by the plugin chain."""
@@ -120,6 +170,7 @@ class CompilerHooks:
             "eval_page",
             page_fn,
             stop_on_result=True,
+            page=page,
             **kwargs,
         )
         return cast(PageContext | None, result)
@@ -162,7 +213,13 @@ class CompilerHooks:
 
         try:
             for plugin in self.plugins:
-                generator = plugin.compile_component(compiled_component, **kwargs)
+                hook_impl = self._get_hook_impl(plugin, "compile_component")
+                if hook_impl is None:
+                    continue
+                generator = cast(
+                    AsyncGenerator[CompileComponentYield, ComponentAndChildren],
+                    hook_impl(compiled_component, **kwargs),
+                )
                 active_generators.append(generator)
                 try:
                     replacement = await anext(generator)
@@ -174,19 +231,36 @@ class CompilerHooks:
                     replacement,
                 )
 
-            structural_children = (
-                structural_children
-                if structural_children is not None
-                else tuple(compiled_component.children)
-            )
-            compiled_children = await self._compile_children(
-                structural_children,
-                **kwargs,
-            )
+            if isinstance(compiled_component, StatefulComponent):
+                if not compiled_component.rendered_as_shared:
+                    compiled_component.component = cast(
+                        Component,
+                        await self.compile_component(
+                            compiled_component.component,
+                            **{
+                                **kwargs,
+                                "stateful_component": compiled_component,
+                            },
+                        ),
+                    )
+                compiled_children = tuple(compiled_component.children)
+            else:
+                if structural_children is None:
+                    structural_children = tuple(compiled_component.children)
+                compiled_children = await self._compile_children(
+                    structural_children,
+                    **kwargs,
+                )
 
-            if isinstance(compiled_component, Component):
-                for prop_component in compiled_component._get_components_in_props():
-                    await self.compile_component(prop_component, **kwargs)
+                if isinstance(compiled_component, Component):
+                    for prop_component in compiled_component._get_components_in_props():
+                        await self.compile_component(
+                            prop_component,
+                            **{
+                                **kwargs,
+                                "in_prop_tree": True,
+                            },
+                        )
 
             for generator in reversed(active_generators):
                 try:
