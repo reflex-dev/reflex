@@ -1,0 +1,63 @@
+name: Deploy to production
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "reflex/docs/**"
+  workflow_dispatch:
+    # This allows manual triggering of the workflow
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  NODE_OPTIONS: "--max-old-space-size=8192"
+  FLY_API_TOKEN: ${{ secrets.PRD_FLY_API_TOKEN }}
+
+jobs:
+  deploy:
+    name: Deploy to Reflex Cloud
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Clone Reflex Website Repo
+        uses: actions/checkout@v6
+        with:
+          repository: reflex-dev/reflex-web
+          ref: main
+          path: reflex-web
+          submodules: recursive
+
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.12"
+          activate-environment: true
+
+      - name: Install the project
+        working-directory: ./reflex-web
+        run: uv sync --locked --no-dev
+
+      - name: Install local reflex with updated docs
+        run: uv pip install .
+
+      - name: Update Reflex CLI
+        run: uv pip install reflex-hosting-cli -U
+
+      - name: Deploy to Reflex
+        working-directory: ./reflex-web
+        run: |
+          reflex deploy --token ${{ secrets.PRD_TOKEN }} --no-interactive --config cloud-prod.yml
