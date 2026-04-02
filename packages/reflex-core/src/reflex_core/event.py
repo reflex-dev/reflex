@@ -2816,3 +2816,9 @@ class EventNamespace:
 event = EventNamespace
 event.event = event  # pyright: ignore[reportAttributeAccessIssue]
 sys.modules[__name__] = event  # pyright: ignore[reportArgumentType]
+
+# A reference to BaseState is needed for doc generation when resolving type
+# hints, so add it to the namespace late to avoid circular import issues.
+from reflex.state import BaseState  # noqa: E402
+
+event.BaseState = BaseState  # pyright: ignore[reportAttributeAccessIssue]
