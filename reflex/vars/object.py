@@ -1,3 +1,4 @@
+# pyright: reportWildcardImportFromLibrary=false
 """Re-export from reflex_core."""
 
-from reflex_core.vars.object import *
+from reflex_core.vars.object import *  # pragma: no cover
