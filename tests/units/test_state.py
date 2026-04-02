@@ -2937,18 +2937,21 @@ class OnLoadState2(State):
     num: int = 0
     name: str
 
+    @rx.event
     def test_handler(self):
         """Test handler that calls another handler.
 
-        Returns:
-            Chain of EventHandlers
+        Yields:
+            EventHandler to change name.
         """
         self.num += 1
-        return type(self).change_name
+        yield type(self).change_name
+        yield type(self).change_name("other")
 
-    def change_name(self):
+    @rx.event
+    def change_name(self, name: str = "default"):
         """Test handler to change name."""
-        self.name = "random"
+        self.name = name
 
 
 class OnLoadState3(State):
@@ -2976,8 +2979,9 @@ class OnLoadState3(State):
             OnLoadState2,
             [
                 {OnLoadState2.get_full_name(): {"num" + FIELD_MARKER: 1}},
+                {OnLoadState2.get_full_name(): {"name" + FIELD_MARKER: "default"}},
                 exp_is_hydrated(State, True),
-                {OnLoadState2.get_full_name(): {"name" + FIELD_MARKER: "random"}},
+                {OnLoadState2.get_full_name(): {"name" + FIELD_MARKER: "other"}},
             ],
         ),
         (
@@ -3026,19 +3030,18 @@ async def test_preprocess(
     )
 
     async with mock_base_state_event_processor as processor:
-        await (
-            await processor.enqueue(
-                token,
-                Event(
-                    name=on_load_internal_name,
-                    router_data={
-                        RouteVar.PATH: "/",
-                        RouteVar.ORIGIN: "/",
-                        RouteVar.QUERY: {},
-                    },
-                ),
-            )
+        on_load_future = await processor.enqueue(
+            token,
+            Event(
+                name=on_load_internal_name,
+                router_data={
+                    RouteVar.PATH: "/",
+                    RouteVar.ORIGIN: "/",
+                    RouteVar.QUERY: {},
+                },
+            ),
         )
+        await on_load_future.wait_all()
 
     # The processor chains all events: on_load_internal sets is_hydrated=False,
     # then the on_load handler runs, then set_is_hydrated(True) runs.

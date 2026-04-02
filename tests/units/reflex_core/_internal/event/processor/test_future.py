@@ -1,16 +1,38 @@
 """Tests for EventFuture."""
 
 import asyncio
+import contextlib
+from collections.abc import AsyncGenerator
 
 import pytest
 from reflex_core._internal.event.processor.future import EventFuture
 
 
+@contextlib.asynccontextmanager
+async def assert_no_loop_yield() -> AsyncGenerator[None, None]:
+    """Assert the body never yields control to the event loop.
+
+    Schedules a sentinel task before the body runs and asserts it has not
+    executed by the time the body returns.  Because asyncio is cooperative,
+    the sentinel can only run if the body awaited something that suspended it.
+    """
+    sentinel_ran = False
+
+    async def _sentinel() -> None:  # noqa: RUF029
+        nonlocal sentinel_ran
+        sentinel_ran = True
+
+    task = asyncio.create_task(_sentinel())
+    yield
+    assert not sentinel_ran, "Event loop was unexpectedly yielded to"
+    await task
+
+
 @pytest.mark.asyncio
 async def test_create_uses_running_loop():  # noqa: RUF029
-    """EventFuture.create() defaults to the running event loop."""
+    """EventFuture() defaults to the running event loop."""
     running_loop = asyncio.get_running_loop()
-    f = EventFuture.create()
+    f = EventFuture(txid="f")
     assert isinstance(f, EventFuture)
     assert f.get_loop() is running_loop
     assert f.children == []
@@ -19,10 +41,10 @@ async def test_create_uses_running_loop():  # noqa: RUF029
 
 @pytest.mark.asyncio
 async def test_create_with_explicit_loop():  # noqa: RUF029
-    """EventFuture.create(loop=...) uses the given (non-default) loop."""
+    """EventFuture(loop=...) uses the given (non-default) loop."""
     other_loop = asyncio.new_event_loop()
     try:
-        f = EventFuture.create(loop=other_loop)
+        f = EventFuture(txid="f", loop=other_loop)
         assert isinstance(f, EventFuture)
         assert f.get_loop() is other_loop
         assert f.get_loop() is not asyncio.get_running_loop()
@@ -33,8 +55,8 @@ async def test_create_with_explicit_loop():  # noqa: RUF029
 @pytest.mark.asyncio
 async def test_add_child_multiple():  # noqa: RUF029
     """add_child can be called multiple times."""
-    parent = EventFuture.create()
-    children = [EventFuture.create() for _ in range(3)]
+    parent = EventFuture(txid="parent")
+    children = [EventFuture(txid=f"c{i}") for i in range(3)]
     for c in children:
         parent.add_child(c)
     assert parent.children == children
@@ -43,9 +65,9 @@ async def test_add_child_multiple():  # noqa: RUF029
 @pytest.mark.asyncio
 async def test_add_child_to_done_future_raises():  # noqa: RUF029
     """add_child raises RuntimeError if the parent future is already done."""
-    parent = EventFuture.create()
+    parent = EventFuture(txid="parent")
     parent.set_result(None)
-    child = EventFuture.create()
+    child = EventFuture(txid="child")
     with pytest.raises(RuntimeError, match="already done"):
         parent.add_child(child)
 
@@ -53,9 +75,9 @@ async def test_add_child_to_done_future_raises():  # noqa: RUF029
 @pytest.mark.asyncio
 async def test_add_child_to_cancelled_future_raises():  # noqa: RUF029
     """add_child raises RuntimeError if the parent future is cancelled."""
-    parent = EventFuture.create()
+    parent = EventFuture(txid="parent")
     parent.cancel()
-    child = EventFuture.create()
+    child = EventFuture(txid="child")
     with pytest.raises(RuntimeError, match="already done"):
         parent.add_child(child)
 
@@ -63,7 +85,7 @@ async def test_add_child_to_cancelled_future_raises():  # noqa: RUF029
 @pytest.mark.asyncio
 async def test_all_done_no_children():  # noqa: RUF029
     """all_done is True when the future is resolved and has no children."""
-    f = EventFuture.create()
+    f = EventFuture(txid="f")
     assert not f.all_done()
     f.set_result(42)
     assert f.all_done()
@@ -72,8 +94,8 @@ async def test_all_done_no_children():  # noqa: RUF029
 @pytest.mark.asyncio
 async def test_all_done_with_pending_child():  # noqa: RUF029
     """all_done is False when a child is still pending."""
-    parent = EventFuture.create()
-    child = EventFuture.create()
+    parent = EventFuture(txid="parent")
+    child = EventFuture(txid="child")
     parent.add_child(child)
     parent.set_result(None)
     assert not parent.all_done()
@@ -84,9 +106,9 @@ async def test_all_done_with_pending_child():  # noqa: RUF029
 @pytest.mark.asyncio
 async def test_all_done_nested():  # noqa: RUF029
     """all_done checks the full descendant tree."""
-    root = EventFuture.create()
-    child = EventFuture.create()
-    grandchild = EventFuture.create()
+    root = EventFuture(txid="root")
+    child = EventFuture(txid="child")
+    grandchild = EventFuture(txid="grandchild")
     root.add_child(child)
     child.add_child(grandchild)
 
@@ -102,8 +124,8 @@ async def test_all_done_nested():  # noqa: RUF029
 @pytest.mark.asyncio
 async def test_all_done_with_cancelled_child():  # noqa: RUF029
     """all_done is True when all children are cancelled (done)."""
-    parent = EventFuture.create()
-    child = EventFuture.create()
+    parent = EventFuture(txid="parent")
+    child = EventFuture(txid="child")
     parent.add_child(child)
     parent.set_result(None)
     child.cancel()
@@ -113,8 +135,8 @@ async def test_all_done_with_cancelled_child():  # noqa: RUF029
 @pytest.mark.asyncio
 async def test_all_done_with_exception_child():  # noqa: RUF029
     """all_done is True when a child has an exception (still done)."""
-    parent = EventFuture.create()
-    child = EventFuture.create()
+    parent = EventFuture(txid="parent")
+    child = EventFuture(txid="child")
     parent.add_child(child)
     parent.set_result(None)
     child.set_exception(ValueError("boom"))
@@ -124,7 +146,7 @@ async def test_all_done_with_exception_child():  # noqa: RUF029
 @pytest.mark.asyncio
 async def test_wait_all_returns_result():
     """wait_all returns the result of the root future."""
-    f = EventFuture.create()
+    f = EventFuture(txid="f")
     f.set_result(42)
     result = await f.wait_all()
     assert result == 42
@@ -133,8 +155,8 @@ async def test_wait_all_returns_result():
 @pytest.mark.asyncio
 async def test_wait_all_waits_for_children():
     """wait_all waits for all children to complete."""
-    parent = EventFuture.create()
-    child = EventFuture.create()
+    parent = EventFuture(txid="parent")
+    child = EventFuture(txid="child")
     parent.add_child(child)
 
     async def resolve_later():
@@ -152,9 +174,9 @@ async def test_wait_all_waits_for_children():
 @pytest.mark.asyncio
 async def test_wait_all_waits_for_nested_children():
     """wait_all waits for grandchildren too."""
-    root = EventFuture.create()
-    child = EventFuture.create()
-    grandchild = EventFuture.create()
+    root = EventFuture(txid="root")
+    child = EventFuture(txid="child")
+    grandchild = EventFuture(txid="grandchild")
     root.add_child(child)
     child.add_child(grandchild)
 
@@ -175,8 +197,8 @@ async def test_wait_all_waits_for_nested_children():
 @pytest.mark.asyncio
 async def test_wait_all_suppresses_child_exceptions():
     """wait_all suppresses exceptions from children."""
-    parent = EventFuture.create()
-    child = EventFuture.create()
+    parent = EventFuture(txid="parent")
+    child = EventFuture(txid="child")
     parent.add_child(child)
 
     parent.set_result("ok")
@@ -190,8 +212,8 @@ async def test_wait_all_suppresses_child_exceptions():
 @pytest.mark.asyncio
 async def test_wait_all_suppresses_child_cancellation():
     """wait_all suppresses CancelledError from children."""
-    parent = EventFuture.create()
-    child = EventFuture.create()
+    parent = EventFuture(txid="parent")
+    child = EventFuture(txid="child")
     parent.add_child(child)
 
     parent.set_result("ok")
@@ -204,14 +226,14 @@ async def test_wait_all_suppresses_child_cancellation():
 @pytest.mark.asyncio
 async def test_wait_all_children_added_during_iteration():
     """wait_all picks up children added while iterating (index-based walk)."""
-    parent = EventFuture.create()
-    child1 = EventFuture.create()
+    parent = EventFuture(txid="parent")
+    child1 = EventFuture(txid="child1")
     parent.add_child(child1)
     parent.set_result("done")
 
     # child2 will be added to child1 after child1 resolves,
     # simulating a chained event that enqueues more events.
-    child2 = EventFuture.create()
+    child2 = EventFuture(txid="child2")
 
     async def resolve_and_chain():
         await asyncio.sleep(0.01)
@@ -229,7 +251,7 @@ async def test_wait_all_children_added_during_iteration():
 @pytest.mark.asyncio
 async def test_cancel_no_children():  # noqa: RUF029
     """Cancel cancels the future itself."""
-    f = EventFuture.create()
+    f = EventFuture(txid="f")
     assert f.cancel()
     assert f.cancelled()
 
@@ -237,9 +259,9 @@ async def test_cancel_no_children():  # noqa: RUF029
 @pytest.mark.asyncio
 async def test_cancel_cascades_to_children():  # noqa: RUF029
     """Cancel propagates to all children."""
-    parent = EventFuture.create()
-    child1 = EventFuture.create()
-    child2 = EventFuture.create()
+    parent = EventFuture(txid="parent")
+    child1 = EventFuture(txid="child1")
+    child2 = EventFuture(txid="child2")
     parent.add_child(child1)
     parent.add_child(child2)
 
@@ -252,9 +274,9 @@ async def test_cancel_cascades_to_children():  # noqa: RUF029
 @pytest.mark.asyncio
 async def test_cancel_cascades_to_grandchildren():  # noqa: RUF029
     """Cancel propagates through the full descendant tree."""
-    root = EventFuture.create()
-    child = EventFuture.create()
-    grandchild = EventFuture.create()
+    root = EventFuture(txid="root")
+    child = EventFuture(txid="child")
+    grandchild = EventFuture(txid="grandchild")
     root.add_child(child)
     child.add_child(grandchild)
 
@@ -265,8 +287,8 @@ async def test_cancel_cascades_to_grandchildren():  # noqa: RUF029
 @pytest.mark.asyncio
 async def test_cancel_with_message():  # noqa: RUF029
     """Cancel passes the message to children."""
-    parent = EventFuture.create()
-    child = EventFuture.create()
+    parent = EventFuture(txid="parent")
+    child = EventFuture(txid="child")
     parent.add_child(child)
 
     parent.cancel("shutting down")
@@ -279,10 +301,102 @@ async def test_cancel_with_message():  # noqa: RUF029
 
 
 @pytest.mark.asyncio
+async def test_wait_for_predecessor_first_child_is_noop():
+    """wait_for_predecessor is a no-op for the first child in the parent."""
+    parent = EventFuture(txid="parent")
+    child = EventFuture(txid="c0", parent=parent)
+    parent.add_child(child)
+
+    async with assert_no_loop_yield():
+        await child.wait_for_predecessor()
+
+
+@pytest.mark.asyncio
+async def test_wait_for_predecessor_no_parent_is_noop():
+    """wait_for_predecessor is a no-op when the future has no parent."""
+    f = EventFuture(txid="root")
+
+    async with assert_no_loop_yield():
+        await f.wait_for_predecessor()
+
+
+@pytest.mark.asyncio
+async def test_wait_for_predecessor_not_sequential_is_noop():
+    """wait_for_predecessor is a no-op for non-sequential (background) futures."""
+    parent = EventFuture(txid="parent")
+    sib = EventFuture(txid="sib", parent=parent)
+    bg = EventFuture(txid="bg", parent=parent, sequential=False)
+    parent.add_child(sib)
+    parent.add_child(bg)
+
+    # bg is not sequential so it should not wait for sib.
+    async with assert_no_loop_yield():
+        await bg.wait_for_predecessor()
+    assert not sib.done()  # sib was never resolved; bg did not wait for it
+
+
+@pytest.mark.asyncio
+async def test_wait_for_predecessor_waits_for_previous_sibling():
+    """wait_for_predecessor waits until the preceding sibling is done."""
+    parent = EventFuture(txid="parent")
+    first = EventFuture(txid="first", parent=parent)
+    second = EventFuture(txid="second", parent=parent)
+    parent.add_child(first)
+    parent.add_child(second)
+
+    resolved = []
+
+    async def _run_second():
+        await second.wait_for_predecessor()
+        resolved.append("second")
+
+    task = asyncio.create_task(_run_second())
+    await asyncio.sleep(0)  # let the task start and block
+    assert resolved == []  # second is still waiting
+
+    first.set_result(None)
+    await task
+    assert resolved == ["second"]
+
+
+@pytest.mark.asyncio
+async def test_wait_for_predecessor_continues_after_sibling_exception():
+    """wait_for_predecessor continues even if the preceding sibling raised."""
+    parent = EventFuture(txid="parent")
+    first = EventFuture(txid="first", parent=parent)
+    second = EventFuture(txid="second", parent=parent)
+    parent.add_child(first)
+    parent.add_child(second)
+
+    first.set_exception(RuntimeError("boom"))
+
+    # Should not raise; exception is suppressed.
+    # first was already done, so wait_for_predecessor returned without suspending.
+    async with assert_no_loop_yield():
+        await second.wait_for_predecessor()
+
+
+@pytest.mark.asyncio
+async def test_wait_for_predecessor_continues_after_sibling_cancel():
+    """wait_for_predecessor continues even if the preceding sibling was cancelled."""
+    parent = EventFuture(txid="parent")
+    first = EventFuture(txid="first", parent=parent)
+    second = EventFuture(txid="second", parent=parent)
+    parent.add_child(first)
+    parent.add_child(second)
+
+    first.cancel()
+
+    # first was already done (cancelled), so wait_for_predecessor returned without suspending.
+    async with assert_no_loop_yield():
+        await second.wait_for_predecessor()
+
+
+@pytest.mark.asyncio
 async def test_cancel_already_done_child():  # noqa: RUF029
     """Cancel on a parent does not fail if a child is already resolved."""
-    parent = EventFuture.create()
-    child = EventFuture.create()
+    parent = EventFuture(txid="parent")
+    child = EventFuture(txid="child")
     parent.add_child(child)
     child.set_result("already done")
 
@@ -296,6 +410,6 @@ async def test_cancel_already_done_child():  # noqa: RUF029
 @pytest.mark.asyncio
 async def test_cancel_already_done_parent_returns_false():  # noqa: RUF029
     """Cancel returns False if the parent is already resolved."""
-    f = EventFuture.create()
+    f = EventFuture(txid="f")
     f.set_result(None)
     assert not f.cancel()

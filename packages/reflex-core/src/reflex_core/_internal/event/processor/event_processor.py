@@ -341,15 +341,29 @@ class EventProcessor:
                     msg = "Event processor is not running, call .start(...) first."
                     raise RuntimeError(msg) from le
         queue = self._ensure_queue_task()
-        tracked = EventFuture.create()
+        # Determine whether sequential ordering is required for this event.
+        is_background = False
+        try:
+            registered = RegistrationContext.get().event_handlers.get(event.name)
+            if registered is not None and registered.handler.is_background:
+                is_background = True
+        except LookupError:
+            pass
         txid = ev_ctx.txid
+        parent_future = (
+            self._futures.get(ev_ctx.parent_txid)
+            if ev_ctx.parent_txid is not None
+            else None
+        )
+        tracked = EventFuture(
+            sequential=not is_background, parent=parent_future, txid=txid
+        )
         self._futures[txid] = tracked
-        tracked.add_done_callback(lambda f: self._on_future_done(txid, f))
+        tracked.add_done_callback(self._try_clean_future)
+        tracked.add_done_callback(self._on_future_done)
         # If this context has a parent, register as a child of the parent's future.
-        if ev_ctx.parent_txid is not None:
-            parent_tracked = self._futures.get(ev_ctx.parent_txid)
-            if parent_tracked is not None:
-                parent_tracked.add_child(tracked)
+        if parent_future is not None:
+            parent_future.add_child(tracked)
         await queue.put(EventQueueEntry(event=event, ctx=ev_ctx))
         return tracked
 
@@ -434,7 +448,29 @@ class EventProcessor:
         # Raise any exceptions for the caller, waiting for all chained events.
         await task_future.wait_all()
 
-    def _on_future_done(self, txid: str, future: asyncio.Future) -> None:
+    def _try_clean_future(self, future: EventFuture) -> None:  # type: ignore[override]
+        """Pop a future from _futures when it and all immediate children are done.
+
+        After popping, cascade the check upward: if the parent future is also
+        done and all its immediate children are done, pop the parent as well.
+
+        This keeps parent futures alive in ``_futures`` while any child still
+        needs to look up its siblings for sequential ordering.
+
+        Args:
+            future: The EventFuture to check.
+        """
+        if not future.done():
+            return
+        # Not checking future.all_done() to avoid waiting for grandchildren here.
+        if not all(c.done() for c in future.children):
+            return
+        parent = future.parent
+        self._futures.pop(future.txid, None)
+        if parent is not None and parent.txid:
+            self._try_clean_future(parent)
+
+    def _on_future_done(self, future: EventFuture) -> None:  # type: ignore[override]
         """Callback invoked when an enqueued future completes.
 
         If the future was cancelled externally, cancel the running task
@@ -443,33 +479,53 @@ class EventProcessor:
         entry is dequeued.
 
         Args:
-            txid: The transaction id associated with the future.
-            future: The future that completed.
+            future: The EventFuture that completed.
         """
         if not future.cancelled():
             return
         # Cascade cancellation to all child futures.
-        tracked = self._futures.get(txid)
-        if tracked is not None:
-            for child in tracked.children:
-                child.cancel()
-        task = self._tasks.get(txid)
+        for child in future.children:
+            child.cancel()
+        task = self._tasks.get(future.txid)
         if task is not None:
             task.cancel()
+
+    async def _execute_event(
+        self, *, entry: EventQueueEntry, registered_handler: RegisteredEventHandler
+    ) -> None:
+        """Execute the handler for a single event queue entry.
+
+        This method contains the actual event-processing logic.  The base
+        implementation simply invokes the registered handler function with the
+        event payload.  Subclasses (e.g. ``BaseStateEventProcessor``) override
+        this method to add state management, delta emission, and middleware.
+
+        ``_process_event_queue_entry`` is responsible for setting up the
+        ``EventContext`` and ensuring sequential ordering *before* calling this
+        method.
+
+        Args:
+            entry: The event queue entry to process.
+            registered_handler: The registered handler for the event.
+        """
+        event = entry.event
+        result = registered_handler.handler.fn(**event.payload)
+        if inspect.isawaitable(result):
+            await result
 
     async def _process_event_queue_entry(
         self, *, entry: EventQueueEntry, registered_handler: RegisteredEventHandler
     ) -> None:
         """Process a single event queue entry.
 
-        This function runs in a new task for each event.
+        This function runs in a new task for each event.  It sets up the
+        ``EventContext``, enforces sequential ordering for non-background
+        events, and then delegates to ``_execute_event`` for the actual
+        handler invocation.
 
-        The default implementation just calls the registered handler function
-        with the event payload as keyword arguments.
-
-        Subclasses, such as BaseStateEventProcessor, can override this function
-        to provide additional functionality such as state management, event
-        chaining, and delta calculation.
+        Subclasses should override ``_execute_event`` rather than this method
+        so that the shared context setup and sequential-ordering logic is
+        always applied.
 
         Args:
             entry: The event queue entry to process.
@@ -478,10 +534,14 @@ class EventProcessor:
         # Set up the event context for this task.
         ctx = entry.ctx
         EventContext.set(ctx)
-        event = entry.event
-        result = registered_handler.handler.fn(**event.payload)
-        if inspect.isawaitable(result):
-            await result
+        # For sequential (non-background) events, wait for the previous sibling
+        # to finish before proceeding so that chained events run in order.
+        if current_future := self._futures.get(ctx.txid):
+            await current_future.wait_for_predecessor()
+        print(
+            f"Processing event {entry.event} [txid={ctx.txid}] with handler {registered_handler.handler.fn.__name__}"
+        )
+        await self._execute_event(entry=entry, registered_handler=registered_handler)
 
     async def _process_queue(self):
         """Process events from the queue in a task."""
@@ -494,7 +554,7 @@ class EventProcessor:
                 if (
                     future := self._futures.get(entry.ctx.txid)
                 ) is not None and future.cancelled():
-                    self._futures.pop(entry.ctx.txid, None)
+                    self._try_clean_future(future)
                     queue.task_done()
                     continue
                 try:
@@ -520,6 +580,9 @@ class EventProcessor:
                         task._event_ctx = entry.ctx  # pyright: ignore[reportAttributeAccessIssue]
                     self._tasks[entry.ctx.txid] = task
                     task.add_done_callback(self._finish_task)
+                    print(
+                        f"Enqueued task {task.get_name()} for event {entry.event.name} [txid={entry.ctx.txid}]"
+                    )
                 except Exception:
                     # Log the error and continue processing the next events.
                     console.error(
@@ -563,7 +626,7 @@ class EventProcessor:
         else:
             task_ctx = task.get_context().run(EventContext.get)
         self._tasks.pop(task_ctx.txid, None)
-        future = self._futures.pop(task_ctx.txid, None)
+        future = self._futures.get(task_ctx.txid)
         if task.done():
             try:
                 result = task.result()

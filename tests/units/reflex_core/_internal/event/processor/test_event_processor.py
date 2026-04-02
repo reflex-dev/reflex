@@ -1,6 +1,7 @@
 """Tests for EventProcessor lifecycle, task management, and error handling."""
 
 import asyncio
+import contextlib
 from typing import Any
 
 import pytest
@@ -9,6 +10,7 @@ from reflex_core._internal.event.processor.event_processor import (
     EventProcessor,
     QueueShutDown,
 )
+from reflex_core._internal.event.processor.future import EventFuture
 from reflex_core._internal.registry import RegistrationContext
 
 from reflex.event import Event, EventHandler
@@ -66,6 +68,52 @@ async def _multi_delta_handler():
         await asyncio.sleep(0.01)
 
 
+async def _slow_logging_handler(value: str = "default"):
+    """A slow logging handler that pauses before recording.
+
+    Args:
+        value: The value to log.
+    """
+    await asyncio.sleep(0.05)
+    _CALL_LOG.append({"value": value})
+
+
+async def _multi_chaining_handler():
+    """A handler that enqueues three slow logging events in sequence."""
+    ctx = EventContext.get()
+    for label in ("first", "second", "third"):
+        await ctx.enqueue(
+            Event.from_event_type(slow_logging_event(label))[0],
+        )
+
+
+async def _background_then_normal_handler():
+    """A handler that enqueues a background event followed by a normal slow event."""
+    ctx = EventContext.get()
+    await ctx.enqueue(Event.from_event_type(background_slow_logging_event("bg"))[0])
+    await ctx.enqueue(Event.from_event_type(slow_logging_event("normal"))[0])
+
+
+async def _error_then_logging_handler():
+    """A handler that enqueues an error event followed by a logging event."""
+    ctx = EventContext.get()
+    await ctx.enqueue(Event.from_event_type(error_event())[0])
+    await ctx.enqueue(Event.from_event_type(logging_event("after_chain_error"))[0])
+
+
+async def _background_slow_logging_handler(value: str = "default"):
+    """A background version of the slow logging handler.
+
+    Args:
+        value: The value to log.
+    """
+    await asyncio.sleep(0.05)
+    _CALL_LOG.append({"value": value})
+
+
+_background_slow_logging_handler._reflex_background_task = True  # type: ignore[attr-defined]
+
+
 noop_event = EventHandler(fn=_noop_handler)
 slow_event = EventHandler(fn=_slow_handler)
 error_event = EventHandler(fn=_error_handler)
@@ -73,6 +121,11 @@ logging_event = EventHandler(fn=_logging_handler)
 chaining_event = EventHandler(fn=_chaining_handler)
 delta_event = EventHandler(fn=_delta_handler)
 multi_delta_event = EventHandler(fn=_multi_delta_handler)
+slow_logging_event = EventHandler(fn=_slow_logging_handler)
+multi_chaining_event = EventHandler(fn=_multi_chaining_handler)
+background_slow_logging_event = EventHandler(fn=_background_slow_logging_handler)
+background_then_normal_event = EventHandler(fn=_background_then_normal_handler)
+error_then_logging_event = EventHandler(fn=_error_then_logging_handler)
 
 
 @pytest.fixture(autouse=True)
@@ -91,6 +144,11 @@ def _register_handlers(forked_registration_context: RegistrationContext):
         chaining_event,
         delta_event,
         multi_delta_event,
+        slow_logging_event,
+        multi_chaining_event,
+        background_slow_logging_event,
+        background_then_normal_event,
+        error_then_logging_event,
     ):
         RegistrationContext.register_event_handler(handler)
 
@@ -462,3 +520,107 @@ async def test_stream_delta_not_configured_raises():
     with pytest.raises(RuntimeError, match="not configured"):
         async for _ in ep.enqueue_stream_delta("tok", Event(name="x", payload={})):
             pass
+
+
+async def test_sequential_chained_events_run_in_order(token: str):
+    """Chained events enqueued by a handler run in the order they were enqueued.
+
+    Args:
+        token: The client token.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2)
+    ep.configure()
+    async with ep:
+        future = await ep.enqueue(
+            token, Event.from_event_type(multi_chaining_event())[0]
+        )
+        await future.wait_all()
+    assert [entry["value"] for entry in _CALL_LOG] == ["first", "second", "third"]
+
+
+async def test_sequential_chained_futures_are_sequential(token: str):
+    """EventFutures created for normal (non-background) events have sequential=True.
+
+    Args:
+        token: The client token.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2)
+    ep.configure()
+    async with ep:
+        future = await ep.enqueue(token, Event.from_event_type(logging_event())[0])
+    assert isinstance(future, EventFuture)
+    assert future.sequential is True
+
+
+async def test_background_event_future_is_not_sequential(token: str):
+    """EventFutures created for background events have sequential=False.
+
+    Args:
+        token: The client token.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2)
+    ep.configure()
+    async with ep:
+        future = await ep.enqueue(
+            token, Event.from_event_type(background_slow_logging_event())[0]
+        )
+    assert isinstance(future, EventFuture)
+    assert future.sequential is False
+
+
+async def test_futures_cleaned_up_after_chained_events(token: str):
+    """All futures are removed from _futures after chained events complete.
+
+    Args:
+        token: The client token.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2)
+    ep.configure()
+    async with ep:
+        future = await ep.enqueue(
+            token, Event.from_event_type(multi_chaining_event())[0]
+        )
+        await future.wait_all()
+    assert ep._futures == {}
+
+
+async def test_background_event_does_not_block_sequential_sibling(token: str):
+    """A background event enqueued before a sequential sibling does not delay it.
+
+    The background event (sequential=False) should execute concurrently while
+    the normal sibling is free to start without waiting for the background
+    event to finish first.
+
+    Args:
+        token: The client token.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2)
+    ep.configure()
+    async with ep:
+        future = await ep.enqueue(
+            token, Event.from_event_type(background_then_normal_event())[0]
+        )
+        await future.wait_all()
+    # Both events should have been processed regardless of order.
+    values = {entry["value"] for entry in _CALL_LOG}
+    assert values == {"bg", "normal"}
+
+
+async def test_sequential_chain_continues_after_error(token: str):
+    """A sequential chained event still runs when the preceding sibling raised an exception.
+
+    The error in the first chained event must not block the second chained
+    event from executing.
+
+    Args:
+        token: The client token.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2)
+    ep.configure()
+    async with ep:
+        future = await ep.enqueue(
+            token, Event.from_event_type(error_then_logging_event())[0]
+        )
+        with contextlib.suppress(Exception):
+            await future.wait_all()
+    assert _CALL_LOG == [{"value": "after_chain_error"}]

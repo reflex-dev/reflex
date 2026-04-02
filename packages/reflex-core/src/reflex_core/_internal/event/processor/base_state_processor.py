@@ -308,20 +308,19 @@ class BaseStateEventProcessor(EventProcessor):
             root_state=root_state,
         )
 
-    async def _process_event_queue_entry(
+    async def _execute_event(
         self, *, entry: EventQueueEntry, registered_handler: RegisteredEventHandler
     ) -> None:
-        """Process a single event queue entry.
+        """Execute the handler for a single event queue entry with full state management.
 
-        This function runs in a new task for each event.
+        The ``EventContext`` has already been set by ``_process_event_queue_entry``
+        before this method is called.
 
         Args:
             entry: The event queue entry to process.
             registered_handler: The registered handler for the event.
         """
-        # Set up the event context for this task.
         ctx = entry.ctx
-        EventContext.set(ctx)
         event = entry.event
         router_data = event.router_data or {}
         # Get the state for the session exclusively.

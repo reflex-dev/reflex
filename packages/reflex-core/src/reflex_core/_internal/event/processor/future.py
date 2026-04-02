@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import dataclasses
 from typing import Any
 
 
+@dataclasses.dataclass(kw_only=True, slots=True, eq=False)
 class EventFuture(asyncio.Future):
     """A future that tracks child futures for hierarchical event processing.
 
@@ -14,25 +16,28 @@ class EventFuture(asyncio.Future):
     futures are tracked so callers can wait for the entire chain to complete.
     """
 
-    children: list[EventFuture]
+    # The transaction id associated with this future.
+    txid: str
 
-    def __init__(self, *, loop: asyncio.AbstractEventLoop | None = None) -> None:
-        super().__init__(loop=loop)
-        self.children = []
+    # If sequential is True, sibling events will be processed sequentially.
+    # Background events should set sequential=False to run immediately and
+    # without affecting non-background event ordering.
+    sequential: bool = True
 
-    @classmethod
-    def create(cls, loop: asyncio.AbstractEventLoop | None = None) -> EventFuture:
-        """Create a new EventFuture on the given or running event loop.
+    # Child futures spawned by this future, if any.
+    children: list[EventFuture] = dataclasses.field(default_factory=list)
 
-        Args:
-            loop: The event loop to use. Defaults to the running loop.
+    # The parent future that spawned this one, or None if this future was
+    # enqueued directly from the queue rather than chained from another event.
+    parent: EventFuture | None = dataclasses.field(default=None, repr=False)
 
-        Returns:
-            A new EventFuture instance.
-        """
-        if loop is None:
-            loop = asyncio.get_running_loop()
-        return cls(loop=loop)
+    # The event loop that this future is running on.
+    loop: asyncio.AbstractEventLoop = dataclasses.field(
+        default_factory=asyncio.get_running_loop, repr=False
+    )
+
+    def __post_init__(self) -> None:
+        super().__init__(loop=self.loop)
 
     def add_child(self, child: EventFuture) -> None:
         """Add a child future to this tracked future.
@@ -92,6 +97,27 @@ class EventFuture(asyncio.Future):
         for child in self.children:
             child.cancel(msg)
         return result
+
+    async def wait_for_predecessor(self) -> None:
+        """Wait for the immediately preceding sequential sibling to complete.
+
+        If this future is not sequential, has no parent, is the first child,
+        or cannot be found in the parent's children list, this is a no-op.
+        """
+        if not self.sequential or self.parent is None:
+            return
+        children = self.parent.children
+        try:
+            idx = children.index(self)
+        except ValueError:
+            return
+        if idx == 0:
+            return  # First child: no predecessor to wait for.
+        with contextlib.suppress(Exception, asyncio.CancelledError):
+            print(
+                f"EventFuture {self.txid} waiting for predecessor {children[idx - 1].txid}"
+            )
+            await children[idx - 1]
 
 
 __all__ = [
