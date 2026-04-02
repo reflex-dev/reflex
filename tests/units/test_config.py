@@ -246,7 +246,7 @@ def test_replace_defaults(
         exp_config_values: The expected config values.
     """
     mock_os_env = os.environ.copy()
-    monkeypatch.setattr(reflex_core.config.os, "environ", mock_os_env)
+    monkeypatch.setattr(reflex_core.config.os, "environ", mock_os_env)  # pyright: ignore[reportPrivateImportUsage]
     mock_os_env.update({k: str(v) for k, v in env_vars.items()})
     c = rx.Config(app_name="a", **config_kwargs)
     c._set_persistent(**set_persistent_vars)
