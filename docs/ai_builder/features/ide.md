@@ -2,17 +2,20 @@
 
 Reflex Build includes a **powerful, in-browser IDE** built on **Monaco Editor**, designed to make coding fast, efficient, and enjoyable—all without leaving your browser.
 
-<div class="p-1 my-4 rounded-lg bg-slate-5">
-  <iframe
-    width="100%"
-    height="400"
-    src="https://www.youtube.com/embed/UAj9vUweQ5g"
-    title="Reflex Build - IDE"
-    frameborder="0"
-    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-    allowfullscreen>
-  </iframe>
-</div>
+```python exec
+import reflex as rx
+```
+
+```python eval
+rx.el.div(
+    rx.video(
+        url="https://www.youtube.com/embed/UAj9vUweQ5g",
+        width="100%",
+        height="400px",
+    ),
+    class_name="p-1 my-4 rounded-lg bg-slate-5",
+)
+```
 
 
 ## Features
