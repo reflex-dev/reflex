@@ -130,7 +130,7 @@ def _docs_app_section_features_small_screen(feature: dict):
     return rx.el.div(
         rx.image(
             src=feature["img"],
-            class_name="p-2 rounded-md h-auto",
+            class_name="rounded-md h-auto",
             border=f"0.81px solid {rx.color('slate', 5)}",
         ),
         rx.el.div(
@@ -142,7 +142,7 @@ def _docs_app_section_features_small_screen(feature: dict):
             ),
             class_name="flex flex-col px-1 py-2",
         ),
-        class_name="w-full flex flex-col rounded-md cursor-pointer",
+        class_name="w-full flex flex-col rounded-md",
     )
 
 
@@ -179,7 +179,7 @@ def _docs_app_sections():
         rx.el.div(
             rx.image(
                 src=features_data[0]["img"],
-                class_name="p-2 rounded-md h-auto",
+                class_name="rounded-md h-auto",
                 border=f"0.81px solid {rx.color('slate', 5)}",
             ),
             class_name="w-full max-w-4xl",

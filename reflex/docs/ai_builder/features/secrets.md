@@ -11,10 +11,10 @@ def render_image():
     return rx.el.div(
         rx.image(
             src="https://web.reflex-assets.dev/ai_builder/features/secrets_light.avif",
-            class_name="p-2 rounded-md h-auto",
+            class_name="rounded-md h-auto",
             border=f"0.81px solid {rx.color('slate', 5)}",
         ),
-        class_name="w-full flex flex-col rounded-md cursor-pointer",
+        class_name="w-full flex flex-col rounded-md",
     )
 ```
 
@@ -49,10 +49,10 @@ import reflex as rx
 rx.el.div(
     rx.image(
         src="https://web.reflex-assets.dev/ai_builder/features/secret_bulk_light.avif",
-        class_name="p-2 rounded-md h-auto",
+        class_name="rounded-md h-auto",
         border=f"0.81px solid {rx.color('slate', 5)}",
     ),
-    class_name="w-full flex flex-col rounded-md cursor-pointer",
+    class_name="w-full flex flex-col rounded-md",
 )
 ```
 

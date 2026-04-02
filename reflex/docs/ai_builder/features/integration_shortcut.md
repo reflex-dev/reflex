@@ -17,10 +17,10 @@ rx.el.div(
             "https://web.reflex-assets.dev/ai_builder/features/shortcut_light.webp",
             "https://web.reflex-assets.dev/ai_builder/features/shortcut_dark.webp",
         ),
-        class_name="p-2 rounded-md h-auto",
+        class_name="rounded-md h-auto",
         border=f"0.81px solid {rx.color('slate', 5)}",
     ),
-    class_name="w-full flex flex-col rounded-md cursor-pointer",
+    class_name="w-full flex flex-col rounded-md",
 )
 ```
 

@@ -16,7 +16,7 @@ The Github integration is important to make sure that you don't lose your progre
 rx.el.div(
     rx.image(
         src="https://web.reflex-assets.dev/ai_builder/connecting_to_github.avif",
-        class_name="p-2 rounded-md h-auto",
+        class_name="rounded-md h-auto",
         border=f"0.81px solid {rx.color('slate', 5)}",
     ),
 )
@@ -36,7 +36,7 @@ The commit history is a great way to see the changes that you have made to your 
 rx.el.div(
     rx.image(
         src="https://web.reflex-assets.dev/ai_builder/github_commit_history.avif",
-        class_name="p-2 rounded-md h-auto",
+        class_name="rounded-md h-auto",
         border=f"0.81px solid {rx.color('slate', 5)}",
     ),
 )
