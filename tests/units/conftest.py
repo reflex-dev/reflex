@@ -364,7 +364,7 @@ async def mock_root_event_context(
     yield EventContext(
         token="",
         state_manager=state_manager,
-        enqueue_impl=mock_base_state_event_processor_obj.enqueue,
+        enqueue_impl=mock_base_state_event_processor_obj.enqueue_many,
         emit_delta_impl=emit_delta_impl,
         emit_event_impl=emit_event_impl,
     )

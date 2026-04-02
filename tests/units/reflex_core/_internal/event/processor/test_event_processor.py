@@ -48,7 +48,7 @@ async def _chaining_handler():
     """A handler that enqueues a logging event via the current EventContext."""
     ctx = EventContext.get()
     await ctx.enqueue(
-        *Event.from_event_type(logging_event("chained")),
+        Event.from_event_type(logging_event("chained"))[0],
     )
 
 
@@ -176,7 +176,7 @@ async def test_enqueue_after_stop_raises(processor: EventProcessor):
     async with processor:
         pass
     with pytest.raises(QueueShutDown, match="not running"):
-        await processor.enqueue("tok", *Event.from_event_type(noop_event()))
+        await processor.enqueue("tok", Event.from_event_type(noop_event())[0])
 
 
 async def test_enqueue_before_start_raises(processor: EventProcessor):
@@ -187,7 +187,7 @@ async def test_enqueue_before_start_raises(processor: EventProcessor):
     """
     processor.configure()
     with pytest.raises(QueueShutDown, match="not running"):
-        await processor.enqueue("tok", *Event.from_event_type(noop_event()))
+        await processor.enqueue("tok", Event.from_event_type(noop_event())[0])
 
 
 async def test_events_are_processed(
@@ -203,7 +203,7 @@ async def test_events_are_processed(
         token: The client token.
     """
     async with mock_event_processor as ep:
-        await ep.enqueue(token, *Event.from_event_type(logging_event("hello")))
+        await ep.enqueue(token, Event.from_event_type(logging_event("hello"))[0])
     assert _CALL_LOG == [{"value": "hello"}]
 
 
@@ -218,7 +218,7 @@ async def test_enqueue_returns_future(
         token: The client token.
     """
     async with mock_event_processor as ep:
-        future = await ep.enqueue(token, *Event.from_event_type(noop_event()))
+        future = await ep.enqueue(token, Event.from_event_type(noop_event())[0])
         assert isinstance(future, asyncio.Future)
     assert future.done()
 
@@ -234,7 +234,7 @@ async def test_tasks_cleared_after_stop(
         token: The client token.
     """
     async with mock_event_processor as ep:
-        await ep.enqueue(token, *Event.from_event_type(noop_event()))
+        await ep.enqueue(token, Event.from_event_type(noop_event())[0])
     assert ep._tasks == {}
 
 
@@ -249,7 +249,7 @@ async def test_futures_cleared_after_stop(
         token: The client token.
     """
     async with mock_event_processor as ep:
-        await ep.enqueue(token, *Event.from_event_type(noop_event()))
+        await ep.enqueue(token, Event.from_event_type(noop_event())[0])
     assert ep._futures == {}
 
 
@@ -262,7 +262,7 @@ async def test_slow_tasks_cancelled_on_stop(processor: EventProcessor):
     processor.graceful_shutdown_timeout = 0
     processor.configure()
     async with processor as ep:
-        future = await ep.enqueue("tok", *Event.from_event_type(slow_event(10.0)))
+        future = await ep.enqueue("tok", Event.from_event_type(slow_event(10.0))[0])
     assert future.cancelled()
     assert ep._tasks == {}
 
@@ -276,8 +276,8 @@ async def test_multiple_futures_cancelled_on_stop(processor: EventProcessor):
     processor.graceful_shutdown_timeout = 0
     processor.configure()
     async with processor as ep:
-        f1 = await ep.enqueue("t1", *Event.from_event_type(slow_event(10.0)))
-        f2 = await ep.enqueue("t2", *Event.from_event_type(slow_event(10.0)))
+        f1 = await ep.enqueue("t1", Event.from_event_type(slow_event(10.0))[0])
+        f2 = await ep.enqueue("t2", Event.from_event_type(slow_event(10.0))[0])
     for f in (f1, f2):
         assert f.done()
     assert ep._futures == {}
@@ -294,7 +294,7 @@ async def test_cancel_future_before_task_starts(
         token: The client token.
     """
     async with mock_event_processor as ep:
-        future = await ep.enqueue(token, *Event.from_event_type(slow_event(10.0)))
+        future = await ep.enqueue(token, Event.from_event_type(slow_event(10.0))[0])
         future.cancel()
         await asyncio.sleep(0.05)
     assert ep._tasks == {}
@@ -311,7 +311,7 @@ async def test_cancel_future_cancels_running_task(
         token: The client token.
     """
     async with mock_event_processor as ep:
-        future = await ep.enqueue(token, *Event.from_event_type(slow_event(10.0)))
+        future = await ep.enqueue(token, Event.from_event_type(slow_event(10.0))[0])
         await asyncio.sleep(0.05)
         future.cancel()
         await asyncio.sleep(0.05)
@@ -330,7 +330,7 @@ async def test_exception_propagated_to_future(
     """
     processor.configure()
     async with processor as ep:
-        future = await ep.enqueue(token, *Event.from_event_type(error_event()))
+        future = await ep.enqueue(token, Event.from_event_type(error_event())[0])
     assert future.done()
     with pytest.raises(RuntimeError, match="boom"):
         future.result()
@@ -350,7 +350,7 @@ async def test_backend_exception_handler_called(token: str):
     ep = EventProcessor(backend_exception_handler=_catch, graceful_shutdown_timeout=2)
     ep.configure()
     async with ep:
-        await ep.enqueue(token, *Event.from_event_type(error_event()))
+        await ep.enqueue(token, Event.from_event_type(error_event())[0])
     assert len(caught) == 1
     assert isinstance(caught[0], RuntimeError)
 
@@ -367,8 +367,8 @@ async def test_error_does_not_stop_queue(
     """
     processor.configure()
     async with processor as ep:
-        await ep.enqueue(token, *Event.from_event_type(error_event()))
-        await ep.enqueue(token, *Event.from_event_type(logging_event("after_error")))
+        await ep.enqueue(token, Event.from_event_type(error_event())[0])
+        await ep.enqueue(token, Event.from_event_type(logging_event("after_error"))[0])
     assert _CALL_LOG == [{"value": "after_error"}]
 
 
@@ -381,7 +381,7 @@ async def test_chained_event_processed(token: str):
     ep = EventProcessor(graceful_shutdown_timeout=2)
     ep.configure()
     async with ep:
-        await ep.enqueue(token, *Event.from_event_type(chaining_event()))
+        await ep.enqueue(token, Event.from_event_type(chaining_event())[0])
     assert _CALL_LOG == [{"value": "chained"}]
 
 
@@ -406,7 +406,7 @@ async def test_join_completes_after_processing(
         token: The client token.
     """
     async with mock_event_processor as ep:
-        await ep.enqueue(token, *Event.from_event_type(noop_event()))
+        await ep.enqueue(token, Event.from_event_type(noop_event())[0])
         await ep.join(timeout=5)
 
 

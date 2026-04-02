@@ -9,7 +9,7 @@ import inspect
 import sys
 import time
 import traceback
-from collections.abc import AsyncGenerator, Callable, Mapping
+from collections.abc import AsyncGenerator, Callable, Mapping, Sequence
 from contextvars import Token, copy_context
 from typing import TYPE_CHECKING, Any
 
@@ -156,7 +156,7 @@ class EventProcessor:
             token="",
             parent_txid=None,
             state_manager=state_manager,
-            enqueue_impl=self.enqueue,
+            enqueue_impl=self.enqueue_many,
             emit_delta_impl=emit_delta_impl,
             emit_event_impl=emit_event_impl,
         )
@@ -319,14 +319,14 @@ class EventProcessor:
         return self._queue
 
     async def enqueue(
-        self, token: str, *events: Event, ev_ctx: EventContext | None = None
+        self, token: str, event: Event, ev_ctx: EventContext | None = None
     ) -> EventFuture:
         """Enqueue an event to be processed.
 
         Args:
             token: The client token associated with the event.
-            events: Remaining positional args are events to be enqueued.
-            ev_ctx: The event context to use for these events.
+            event: The event to be enqueued.
+            ev_ctx: The event context to use for this event.
 
         Returns:
             An EventFuture that resolves to the result of the associated task.
@@ -350,9 +350,20 @@ class EventProcessor:
             parent_tracked = self._futures.get(ev_ctx.parent_txid)
             if parent_tracked is not None:
                 parent_tracked.add_child(tracked)
-        for event in events:
-            await queue.put(EventQueueEntry(event=event, ctx=ev_ctx))
+        await queue.put(EventQueueEntry(event=event, ctx=ev_ctx))
         return tracked
+
+    async def enqueue_many(self, token: str, *events: Event) -> Sequence[EventFuture]:
+        """Enqueue multiple events to be processed.
+
+        Args:
+            token: The client token associated with the events.
+            events: Remaining positional args are events to be enqueued.
+
+        Returns:
+            A list of EventFutures corresponding to each enqueued event.
+        """
+        return [await self.enqueue(token, event) for event in events]
 
     async def enqueue_stream_delta(
         self,
@@ -575,6 +586,8 @@ class EventProcessor:
                         self._handle_backend_exception(ex, ev_ctx=task_ctx),
                         name=f"reflex_backend_exception_handler|task=[{task.get_name()}]|{time.time()}",
                     )
+                    if sys.version_info < (3, 12):
+                        t._event_ctx = task_ctx  # pyright: ignore[reportAttributeAccessIssue]
                     t.add_done_callback(self._finish_task)
                     return
                 console.error(

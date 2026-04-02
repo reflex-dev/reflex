@@ -241,7 +241,7 @@ async def test_upcast_event_handler_arg(
     """
     async with mock_base_state_event_processor as processor:
         await processor.enqueue(
-            "test_token", *Event.from_event_type(handler(**payload))
+            "test_token", Event.from_event_type(handler(**payload))[0]
         )
     assert emitted_deltas == [
         (

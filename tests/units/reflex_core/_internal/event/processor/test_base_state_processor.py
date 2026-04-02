@@ -92,7 +92,7 @@ async def real_base_state_processor(
     root_ctx = EventContext(
         token="",
         state_manager=state_manager,
-        enqueue_impl=_real_base_state_processor_obj.enqueue,
+        enqueue_impl=_real_base_state_processor_obj.enqueue_many,
         emit_delta_impl=emit_delta_impl,
         emit_event_impl=emit_event_impl,
     )
@@ -136,7 +136,7 @@ async def test_rehydrate_sets_is_hydrated_on_fresh_token(
     async with real_base_state_processor as processor:
         await processor.enqueue(
             token,
-            *Event.from_event_type(MyState.noop()),
+            Event.from_event_type(MyState.noop())[0],
         )
         await processor.join(1)
 

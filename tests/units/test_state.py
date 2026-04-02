@@ -2944,7 +2944,7 @@ class OnLoadState2(State):
             Chain of EventHandlers
         """
         self.num += 1
-        return self.change_name
+        return type(self).change_name
 
     def change_name(self):
         """Test handler to change name."""
@@ -2965,9 +2965,28 @@ class OnLoadState3(State):
 @pytest.mark.parametrize(
     ("test_state", "expected"),
     [
-        (OnLoadState, {"on_load_state": {"num": 1}}),
-        (OnLoadState2, {"on_load_state2": {"num": 1}}),
-        (OnLoadState3, {"on_load_state3": {"num": 1}}),
+        (
+            OnLoadState,
+            [
+                {OnLoadState.get_full_name(): {"num" + FIELD_MARKER: 1}},
+                exp_is_hydrated(State, True),
+            ],
+        ),
+        (
+            OnLoadState2,
+            [
+                {OnLoadState2.get_full_name(): {"num" + FIELD_MARKER: 1}},
+                exp_is_hydrated(State, True),
+                {OnLoadState2.get_full_name(): {"name" + FIELD_MARKER: "random"}},
+            ],
+        ),
+        (
+            OnLoadState3,
+            [
+                {OnLoadState3.get_full_name(): {"num" + FIELD_MARKER: 1}},
+                exp_is_hydrated(State, True),
+            ],
+        ),
     ],
 )
 async def test_preprocess(
@@ -3007,45 +3026,35 @@ async def test_preprocess(
     )
 
     async with mock_base_state_event_processor as processor:
-        await processor.enqueue(
-            token,
-            Event(
-                name=on_load_internal_name,
-                router_data={
-                    RouteVar.PATH: "/",
-                    RouteVar.ORIGIN: "/",
-                    RouteVar.QUERY: {},
-                },
-            ),
+        await (
+            await processor.enqueue(
+                token,
+                Event(
+                    name=on_load_internal_name,
+                    router_data={
+                        RouteVar.PATH: "/",
+                        RouteVar.ORIGIN: "/",
+                        RouteVar.QUERY: {},
+                    },
+                ),
+            )
         )
-        await processor.join()
 
     # The processor chains all events: on_load_internal sets is_hydrated=False,
     # then the on_load handler runs, then set_is_hydrated(True) runs.
     # First delta: router + is_hydrated=False
-    assert len(emitted_deltas) >= 2
-    first_delta = emitted_deltas[0][1]
+    assert len(emitted_deltas) == 1 + len(expected)
+    first_token, first_delta = emitted_deltas[0]
+    assert first_token == token
     assert first_delta[State.get_full_name()].pop("router" + FIELD_MARKER) is not None
     assert first_delta == exp_is_hydrated(State, False)
 
-    # Find the delta containing the test handler's state change
-    handler_deltas = [
-        d
-        for _, d in emitted_deltas
-        if test_state.get_full_name() in d
-        and "num" + FIELD_MARKER in d[test_state.get_full_name()]
-    ]
-    assert len(handler_deltas) >= 1
-    assert handler_deltas[0][test_state.get_full_name()]["num" + FIELD_MARKER] == 1
-
-    # Find the delta that sets is_hydrated back to True
-    hydrated_deltas = [
-        d
-        for _, d in emitted_deltas
-        if State.get_full_name() in d
-        and d[State.get_full_name()].get(CompileVars.IS_HYDRATED + FIELD_MARKER) is True
-    ]
-    assert len(hydrated_deltas) == 1
+    # Find the deltas containing the test handler's state change
+    for (delta_token, actual_delta), expected_delta in zip(
+        emitted_deltas[1:], expected, strict=True
+    ):
+        assert delta_token == token
+        assert actual_delta == expected_delta
 
 
 @pytest.mark.asyncio
@@ -3413,7 +3422,8 @@ async def test_setvar(
         TestState.setvar("num2", "4.2"),
     ])
     async with mock_base_state_event_processor as processor:
-        await processor.enqueue(token, *events)
+        for fut in asyncio.as_completed(await processor.enqueue_many(token, *events)):
+            await fut
         await processor.join(1)
 
     if environment.REFLEX_OPLOCK_ENABLED.get():
@@ -3427,7 +3437,7 @@ async def test_setvar(
     # Set Var in parent state
     events = Event.from_event_type([GrandchildState.setvar("array", [43])])
     async with mock_base_state_event_processor as processor:
-        await processor.enqueue(token, *events)
+        await (await processor.enqueue(token, events[0]))
 
     if environment.REFLEX_OPLOCK_ENABLED.get():
         await state_manager.close()
