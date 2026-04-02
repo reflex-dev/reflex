@@ -5,6 +5,7 @@ title: Enterprise Components
 ```python exec
 import reflex as rx
 
+
 def enterprise_component_grid():
     sections = [
         {
@@ -19,24 +20,24 @@ def enterprise_component_grid():
                 ("Pivot Mode", "/docs/enterprise/ag-grid/pivot-mode/"),
                 ("Theme", "/docs/enterprise/ag-grid/theme/"),
                 ("Value Transformers", "/docs/enterprise/ag-grid/value-transformers/"),
-            ]
+            ],
         },
         {
-            "title": "AG Chart", 
+            "title": "AG Chart",
             "description": "Interactive charts and data visualization",
             "link": "/docs/enterprise/ag-chart/",
             "components": [
                 ("Overview", "/docs/enterprise/ag-chart/"),
-            ]
+            ],
         },
         {
             "title": "Interactive Components",
-            "description": "Drag-and-drop and mapping functionality", 
+            "description": "Drag-and-drop and mapping functionality",
             "link": "/docs/enterprise/drag-and-drop/",
             "components": [
                 ("Drag and Drop", "/docs/enterprise/drag-and-drop/"),
                 ("Mapping", "/docs/enterprise/map/"),
-            ]
+            ],
         },
         {
             "title": "Mantine",
@@ -53,15 +54,18 @@ def enterprise_component_grid():
                 ("Number Formatter", "/docs/enterprise/mantine/number-formatter/"),
                 ("Pill", "/docs/enterprise/mantine/pill/"),
                 ("Ring Progress", "/docs/enterprise/mantine/ring-progress/"),
-                ("Semi Circle Progress", "/docs/enterprise/mantine/semi-circle-progress/"),
+                (
+                    "Semi Circle Progress",
+                    "/docs/enterprise/mantine/semi-circle-progress/",
+                ),
                 ("Spoiler", "/docs/enterprise/mantine/spoiler/"),
                 ("Tags Input", "/docs/enterprise/mantine/tags-input/"),
                 ("Timeline", "/docs/enterprise/mantine/timeline/"),
                 ("Tree", "/docs/enterprise/mantine/tree/"),
-            ]
-        }
+            ],
+        },
     ]
-    
+
     cards = []
     for section in sections:
         cards.append(
@@ -94,21 +98,28 @@ def enterprise_component_grid():
                 class_name="flex flex-col border border-slate-5 rounded-xl bg-slate-2 shadow-large overflow-hidden",
             )
         )
-    
+
     return rx.box(
         *cards,
         class_name="grid grid-cols-1 lg:grid-cols-2 gap-6",
     )
 
+
 component_grid = enterprise_component_grid()
 ```
 
 ```python eval
-rx.el.h1("Enterprise Components")
+rx.el.h1(
+    "Enterprise Components",
+    class_name="lg:text-5xl text-3xl font-[525] scroll-mt-[113px] mt-4 text-secondary-12",
+)
 ```
 
 ```python eval
-rx.el.span("Advanced UI components and features to enhance your Reflex applications. Available for free with the 'Built with Reflex' badge, or without the badge with an enterprise license.")
+rx.el.span(
+    "Advanced UI components and features to enhance your Reflex applications. Available for free with the 'Built with Reflex' badge, or without the badge with an enterprise license.",
+    class_name="font-[475] text-secondary-11 max-w-[80%] mb-10",
+)
 ```
 
 ```python eval
