@@ -101,7 +101,7 @@ def enterprise_component_grid():
 
     return rx.box(
         *cards,
-        class_name="grid grid-cols-1 lg:grid-cols-2 gap-6",
+        class_name="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8",
     )
 
 
@@ -111,14 +111,14 @@ component_grid = enterprise_component_grid()
 ```python eval
 rx.el.h1(
     "Enterprise Components",
-    class_name="lg:text-5xl text-3xl font-[525] scroll-mt-[113px] mt-4 text-secondary-12",
+    class_name="lg:text-5xl text-3xl font-[525] scroll-mt-[113px] my-4 text-secondary-12",
 )
 ```
 
 ```python eval
 rx.el.span(
     "Advanced UI components and features to enhance your Reflex applications. Available for free with the 'Built with Reflex' badge, or without the badge with an enterprise license.",
-    class_name="font-[475] text-secondary-11 max-w-[80%] mb-10",
+    class_name="font-[475] text-secondary-11 max-w-[80%] text-sm",
 )
 ```
 
