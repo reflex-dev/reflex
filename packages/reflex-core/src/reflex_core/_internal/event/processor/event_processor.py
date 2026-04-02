@@ -21,6 +21,8 @@ from reflex.istate.manager import StateManager
 from reflex.utils import console
 from reflex_core._internal.event.context import EventContext
 from reflex_core._internal.event.processor.compat import as_completed
+from reflex_core._internal.event.processor.future import EventFuture
+from reflex_core._internal.event.processor.timeout import DrainTimeoutManager
 from reflex_core._internal.registry import RegisteredEventHandler, RegistrationContext
 
 if TYPE_CHECKING:
@@ -36,47 +38,6 @@ else:
 
     class QueueShutDown(Exception):  # noqa: N818
         """Exception raised when trying to put an item into a shut down queue."""
-
-
-@dataclasses.dataclass(kw_only=True, slots=True)
-class DrainTimeoutManager:
-    """Manages an optional combined timeout over multiple calls.
-
-    Each time the context is entered, yield the remaining time until the
-    overall timeout is reached, or 0 if the timeout has already been reached.
-    This allows multiple operations to share a single overall timeout, even if
-    they are not executed sequentially.
-    """
-
-    drain_deadline: float | None = None
-
-    @classmethod
-    def with_timeout(cls, timeout: float | None) -> DrainTimeoutManager:
-        """Create a DrainTimeoutManager with a specified timeout.
-
-        Args:
-            timeout: The overall amount of time in seconds to wait.
-
-        Returns:
-            A DrainTimeoutManager instance with the drain deadline set.
-        """
-        if timeout is None:
-            return cls(drain_deadline=None)
-        return cls(drain_deadline=time.time() + timeout)
-
-    def __enter__(self) -> float:
-        """Enter the context and yield the remaining time.
-
-        Returns:
-            The remaining time in seconds until the overall timeout is reached, or 0 if the timeout
-            has already been reached.
-        """
-        if self.drain_deadline is not None:
-            return max(0, self.drain_deadline - time.time())
-        return 0
-
-    def __exit__(self, *exc_info) -> None:
-        """Exit the context. No cleanup necessary."""
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
@@ -120,7 +81,7 @@ class EventProcessor:
     _tasks: dict[str, asyncio.Task] = dataclasses.field(
         default_factory=dict, init=False
     )
-    _futures: dict[str, asyncio.Future[Any]] = dataclasses.field(
+    _futures: dict[str, EventFuture] = dataclasses.field(
         default_factory=dict, init=False
     )
 
@@ -359,7 +320,7 @@ class EventProcessor:
 
     async def enqueue(
         self, token: str, *events: Event, ev_ctx: EventContext | None = None
-    ) -> asyncio.Future[Any]:
+    ) -> EventFuture:
         """Enqueue an event to be processed.
 
         Args:
@@ -368,7 +329,7 @@ class EventProcessor:
             ev_ctx: The event context to use for these events.
 
         Returns:
-            A Future that resolves to the result of the associated task.
+            An EventFuture that resolves to the result of the associated task.
         """
         if ev_ctx is None:
             try:
@@ -380,13 +341,18 @@ class EventProcessor:
                     msg = "Event processor is not running, call .start(...) first."
                     raise RuntimeError(msg) from le
         queue = self._ensure_queue_task()
-        future: asyncio.Future[Any] = asyncio.get_running_loop().create_future()
+        tracked = EventFuture.create()
         txid = ev_ctx.txid
-        self._futures[txid] = future
-        future.add_done_callback(lambda f: self._on_future_done(txid, f))
+        self._futures[txid] = tracked
+        tracked.add_done_callback(lambda f: self._on_future_done(txid, f))
+        # If this context has a parent, register as a child of the parent's future.
+        if ev_ctx.parent_txid is not None:
+            parent_tracked = self._futures.get(ev_ctx.parent_txid)
+            if parent_tracked is not None:
+                parent_tracked.add_child(tracked)
         for event in events:
             await queue.put(EventQueueEntry(event=event, ctx=ev_ctx))
-        return future
+        return tracked
 
     async def enqueue_stream_delta(
         self,
@@ -437,31 +403,33 @@ class EventProcessor:
                 emit_delta_impl=_emit_delta_impl,
             ),
         )
-        waiting_for = {task_future, asyncio.create_task(deltas.get())}
+        all_task_futures = asyncio.create_task(task_future.wait_all())
+        waiting_for = {all_task_futures, asyncio.create_task(deltas.get())}
         try:
-            while not task_future.done() or not deltas.empty():
+            while not all_task_futures.done() or not deltas.empty():
                 with contextlib.suppress(asyncio.TimeoutError):
                     async for result in as_completed(
                         waiting_for,
                         timeout=1,
                     ):
                         waiting_for.remove(result)
-                        if result is not task_future:
+                        if result is not all_task_futures:
                             yield await result
                             waiting_for.add(asyncio.create_task(deltas.get()))
                         break
         finally:
             for future in waiting_for:
                 future.cancel()
-        # Raise any exceptions for the caller.
-        await task_future
+        # Raise any exceptions for the caller, waiting for all chained events.
+        await task_future.wait_all()
 
     def _on_future_done(self, txid: str, future: asyncio.Future) -> None:
         """Callback invoked when an enqueued future completes.
 
         If the future was cancelled externally, cancel the running task
-        if one exists.  If the task has not started yet, ``_process_queue``
-        will check the future and skip it when the entry is dequeued.
+        and all child futures.  If the task has not started yet,
+        ``_process_queue`` will check the future and skip it when the
+        entry is dequeued.
 
         Args:
             txid: The transaction id associated with the future.
@@ -469,6 +437,11 @@ class EventProcessor:
         """
         if not future.cancelled():
             return
+        # Cascade cancellation to all child futures.
+        tracked = self._futures.get(txid)
+        if tracked is not None:
+            for child in tracked.children:
+                child.cancel()
         task = self._tasks.get(txid)
         if task is not None:
             task.cancel()
@@ -615,6 +588,7 @@ class EventProcessor:
 
 
 __all__ = [
+    "EventFuture",
     "EventProcessor",
     "EventQueueEntry",
 ]
