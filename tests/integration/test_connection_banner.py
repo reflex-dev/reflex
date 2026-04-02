@@ -1,7 +1,9 @@
 """Test case for displaying the connection banner when the websocket drops."""
 
+import asyncio
+import contextlib
 import pickle
-from collections.abc import AsyncGenerator, Generator
+from collections.abc import AsyncGenerator, Generator, Iterator
 
 import pytest
 import pytest_asyncio
@@ -95,6 +97,40 @@ def connection_banner(
         yield harness
 
 
+@contextlib.contextmanager
+def browser_offline(driver: WebDriver) -> Iterator[None]:
+    """Context manager that takes the browser offline via CDP and restores it on exit.
+
+    Args:
+        driver: Selenium WebDriver instance (must support execute_cdp_cmd).
+
+    Yields:
+        None
+    """
+    driver.execute_cdp_cmd("Network.enable", {})
+    driver.execute_cdp_cmd(
+        "Network.emulateNetworkConditions",
+        {
+            "offline": True,
+            "downloadThroughput": -1,
+            "uploadThroughput": -1,
+            "latency": 0,
+        },
+    )
+    try:
+        yield
+    finally:
+        driver.execute_cdp_cmd(
+            "Network.emulateNetworkConditions",
+            {
+                "offline": False,
+                "downloadThroughput": -1,
+                "uploadThroughput": -1,
+                "latency": 0,
+            },
+        )
+
+
 CONNECTION_ERROR_XPATH = "//*[ contains(text(), 'Cannot connect to server') ]"
 
 
@@ -170,7 +206,8 @@ async def redis(
         redis = get_redis()
     yield redis
     if redis is not None:
-        await redis.close()
+        with contextlib.suppress(Exception, asyncio.CancelledError):
+            await redis.aclose()
 
 
 @pytest.mark.asyncio
@@ -206,34 +243,28 @@ async def test_connection_banner(connection_banner: AppHarness, redis: Redis | N
     increment_button.click()
     assert connection_banner.poll_for_value(counter_element, exp_not_equal="0") == "1"
 
-    # Start an long event before killing the backend, to mark event_processing=true
+    # Start a long event before blocking the network, to mark event_processing=true
     delay_button.click()
 
-    # Get the backend port
-    backend_port = connection_banner._poll_for_servers().getsockname()[1]
+    with browser_offline(driver):
+        # Error modal should now be displayed
+        AppHarness.expect(lambda: has_error_modal(driver))
 
-    # Kill the backend
-    connection_banner.backend.should_exit = True
-    if connection_banner.backend_thread is not None:
-        connection_banner.backend_thread.join()
+        # The token association should be removed once the websocket closes on the server.
+        assert connection_banner._poll_for(
+            lambda: token not in app_token_manager.token_to_sid
+        )
+        if redis is not None:
+            assert isinstance(app_token_manager, RedisTokenManager)
+            assert await redis.get(app_token_manager._get_redis_key(token)) is None
 
-    # Error modal should now be displayed
-    AppHarness.expect(lambda: has_error_modal(driver))
+        # Increment the counter while disconnected
+        increment_button.click()
+        assert (
+            connection_banner.poll_for_value(counter_element, exp_not_equal="0") == "1"
+        )
 
-    # The token association should have been removed when the server exited.
-    assert token not in app_token_manager.token_to_sid
-    if redis is not None:
-        assert isinstance(app_token_manager, RedisTokenManager)
-        assert await redis.get(app_token_manager._get_redis_key(token)) is None
-
-    # Increment the counter with backend down
-    increment_button.click()
-    assert connection_banner.poll_for_value(counter_element, exp_not_equal="0") == "1"
-
-    # Bring the backend back up
-    connection_banner._start_backend(port=backend_port)
-
-    # Banner should be gone now
+    # Banner should be gone now (network restored on context manager exit)
     AppHarness.expect(lambda: not has_error_modal(driver))
 
     # After reconnecting, the token association should be re-established.
