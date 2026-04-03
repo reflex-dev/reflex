@@ -253,7 +253,14 @@ def _is_component_annotation(annotation: Any) -> bool:
         Whether the annotation resolves to Component.
     """
     origin = get_origin(annotation) or annotation
-    return isinstance(origin, type) and issubclass(origin, Component)
+    return isinstance(origin, type) and (
+        issubclass(origin, Component)
+        or bool(
+            issubclass(origin, Var)
+            and (args := get_args(annotation))
+            and issubclass(args[0], Component)
+        )
+    )
 
 
 def _children_annotation_is_valid(annotation: Any) -> bool:
