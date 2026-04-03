@@ -573,7 +573,7 @@ class LiteralArrayVar(
         )
 
 
-STRING_TYPE = TypingExtensionsTypeVar("STRING_TYPE", default=str)
+STRING_TYPE = TypingExtensionsTypeVar("STRING_TYPE", default=str, covariant=True)
 
 
 class StringVar(Var[STRING_TYPE], python_types=str):
@@ -1153,7 +1153,7 @@ _decode_var_pattern = re.compile(_decode_var_pattern_re, flags=re.DOTALL)
     frozen=True,
     slots=True,
 )
-class LiteralStringVar(LiteralVar[str], StringVar[str]):
+class LiteralStringVar(LiteralVar[STRING_TYPE], StringVar[STRING_TYPE]):
     """Base class for immutable literal string vars."""
 
     _var_value: str = dataclasses.field(default="")

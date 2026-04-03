@@ -1,5 +1,5 @@
 import json
-from typing import Any
+from typing import Any, Literal
 
 import pytest
 from reflex_components_core.base.fragment import Fragment
@@ -184,7 +184,7 @@ def test_cond_assert_types() -> None:
     _ = assert_type(cond(True, "hello", var_int), Var[str | int])
 
     # Var[T], U -> Var[T | U]
-    _ = assert_type(cond(True, var_str, 3), Var[str | int])
+    _ = assert_type(cond(True, var_str, 3), Var[int | Literal["a"]])
 
     # Var[T], Var[U] -> Var[T | U]
-    _ = assert_type(cond(True, var_int, var_str), Var[int | str])
+    _ = assert_type(cond(True, var_int, var_str), Var[int | Literal["a"]])

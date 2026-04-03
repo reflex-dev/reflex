@@ -37,7 +37,7 @@ from typing import (
 )
 
 from rich.markup import escape
-from typing_extensions import dataclass_transform, override
+from typing_extensions import LiteralString, dataclass_transform, override
 
 from reflex_core import constants
 from reflex_core.constants.compiler import Hooks
@@ -85,6 +85,7 @@ if TYPE_CHECKING:
 VAR_TYPE = TypeVar("VAR_TYPE", covariant=True)
 OTHER_VAR_TYPE = TypeVar("OTHER_VAR_TYPE")
 STRING_T = TypeVar("STRING_T", bound=str)
+LITERAL_STRING_T = TypeVar("LITERAL_STRING_T", bound=LiteralString)
 SEQUENCE_TYPE = TypeVar("SEQUENCE_TYPE", bound=Sequence)
 
 warnings.filterwarnings("ignore", message="fields may not start with an underscore")
@@ -651,9 +652,9 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
     @classmethod
     def create(  # pyright: ignore [reportOverlappingOverload]
         cls,
-        value: str,
+        value: LITERAL_STRING_T,
         _var_data: VarData | None = None,
-    ) -> LiteralStringVar: ...
+    ) -> LiteralStringVar[LITERAL_STRING_T]: ...
 
     @overload
     @classmethod
@@ -661,7 +662,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         cls,
         value: STRING_T,
         _var_data: VarData | None = None,
-    ) -> StringVar[STRING_T]: ...
+    ) -> LiteralStringVar[STRING_T]: ...
 
     @overload
     @classmethod

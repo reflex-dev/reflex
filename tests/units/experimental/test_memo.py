@@ -117,7 +117,7 @@ def test_component_returning_memo_accepts_component_var_result():
         show: rx.Var[bool],
         first: rx.Var[rx.Component],
         second: rx.Var[rx.Component],
-    ) -> rx.Component:
+    ) -> rx.Var[rx.Component]:
         return rx.cond(show, first, second)
 
     definition = EXPERIMENTAL_MEMOS["ConditionalSlot"]
