@@ -117,11 +117,8 @@ jobs:
         with:
           fetch-tags: true
           fetch-depth: 0
-      - uses: ./.github/actions/setup_build_env
-        with:
-          python-version: ${{ matrix.python-version }}
-          run-uv-sync: true
 
+      # Install sfw BEFORE any dependency installation so all packages are scanned.
       - name: Install Socket.dev Firewall (free)
         uses: SocketDev/action@v1.3.1
         with:
@@ -134,6 +131,41 @@ jobs:
           printf '#!/usr/bin/env bash\nexec sfw bun "$@"\n' > "$RUNNER_TEMP/sfw-wrappers/bun"
           chmod +x "$RUNNER_TEMP/sfw-wrappers/npm" "$RUNNER_TEMP/sfw-wrappers/bun"
 
+      # Inline setup_build_env steps so all installs go through sfw.
+      - name: Install UV
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+          prune-cache: false
+          activate-environment: true
+          cache-dependency-glob: "uv.lock"
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Build git+https deps as wheels outside sfw (avoids sfw MITM cert issues
+      # with git), then install everything else through sfw for scanning.
+      - name: Pre-build git dependencies as local wheels
+        run: |
+          # Extract git+https lines from uv.lock sources and build them without sfw
+          grep -oP 'git\+https://[^"]+' uv.lock | sort -u > "$RUNNER_TEMP/git-deps.txt" || true
+          if [ -s "$RUNNER_TEMP/git-deps.txt" ]; then
+            echo "Building git dependencies as wheels:"
+            cat "$RUNNER_TEMP/git-deps.txt"
+            mkdir -p "$RUNNER_TEMP/git-wheels"
+            while IFS= read -r dep; do
+              uv pip wheel "$dep" --no-deps --wheel-dir "$RUNNER_TEMP/git-wheels"
+            done < "$RUNNER_TEMP/git-deps.txt"
+            # Install the pre-built wheels (no registry fetch needed)
+            sfw uv pip install --no-deps "$RUNNER_TEMP/git-wheels"/*.whl
+          else
+            echo "No git dependencies found."
+          fi
+      - name: Install Dependencies (scanned by Socket.dev)
+        run: sfw uv sync
+
       - name: Clone Reflex Website Repo
         uses: actions/checkout@v4
         with:
@@ -142,16 +174,33 @@ jobs:
           path: reflex-web
           submodules: recursive
 
-      - name: Compile pyproject.toml into requirements.txt
+      - name: Compile and install reflex-web requirements
         working-directory: ./reflex-web
         run: |
           uv pip compile pyproject.toml --no-annotate --no-header --no-deps --output-file requirements.txt
           uv pip list --format=json | jq -r '"^" + .[].name + "[ =]"' > installed_patterns.txt
           grep -ivf installed_patterns.txt requirements.txt > requirements.txt.tmp && mv requirements.txt.tmp requirements.txt
           rm installed_patterns.txt
-      - name: Install Requirements for reflex-web (scanned by Socket.dev)
-        working-directory: ./reflex-web
-        run: sfw uv pip install -r requirements.txt
+
+          # Separate git+https deps from registry deps
+          grep '^git+https://' requirements.txt > git-requirements.txt || true
+          grep -v '^git+https://' requirements.txt > registry-requirements.txt || true
+
+          # Build git deps as local wheels outside sfw
+          if [ -s git-requirements.txt ]; then
+            echo "Building git dependencies as wheels:"
+            cat git-requirements.txt
+            mkdir -p "$RUNNER_TEMP/reflex-web-git-wheels"
+            while IFS= read -r dep; do
+              uv pip wheel "$dep" --no-deps --wheel-dir "$RUNNER_TEMP/reflex-web-git-wheels"
+            done < git-requirements.txt
+            sfw uv pip install --no-deps "$RUNNER_TEMP/reflex-web-git-wheels"/*.whl
+          fi
+
+          # Install registry deps through sfw for scanning
+          if [ -s registry-requirements.txt ]; then
+            sfw uv pip install -r registry-requirements.txt
+          fi
       - name: Init Website for reflex-web
         working-directory: ./reflex-web
         run: uv run --active --no-sync reflex init
@@ -162,6 +211,14 @@ jobs:
           # Verify sfw wrappers are first on PATH
           which npm && npm -v
           uv run --active --no-sync bash scripts/integration.sh ./reflex-web prod
+
+      - name: Upload Socket.dev Firewall report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sfw-report-reflex-web-py${{ matrix.python-version }}
+          path: ${{ env.SFW_JSON_REPORT_PATH }}
+          if-no-files-found: warn
 
   rx-shout-from-template:
     strategy:
