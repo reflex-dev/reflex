@@ -88,7 +88,7 @@ class EventFuture(asyncio.Future):
         Returns:
             True if the future was successfully cancelled.
         """
-        result = super().cancel(msg)
+        result = super(EventFuture, self).cancel(msg)
         for child in self.children:
             child.cancel(msg)
         return result
