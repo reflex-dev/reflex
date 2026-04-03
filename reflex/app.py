@@ -652,8 +652,6 @@ class App(MiddlewareMixin, LifespanMixin):
             raise ValueError(msg)
 
         asgi_app = self._api
-        # Make sure the RegistrationContext is attached.
-        asgi_app.add_middleware(self._registration_context_middleware)
 
         if environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.get():
             asgi_app.mount(
@@ -687,8 +685,8 @@ class App(MiddlewareMixin, LifespanMixin):
         top_asgi_app = Starlette(lifespan=self._run_lifespan_tasks)
         top_asgi_app.mount("", asgi_app)
         App._add_cors(top_asgi_app)
-
-        return top_asgi_app
+        # Make sure the RegistrationContext is attached.
+        return self._registration_context_middleware(top_asgi_app)
 
     def _add_default_endpoints(self):
         """Add default api endpoints (ping)."""
