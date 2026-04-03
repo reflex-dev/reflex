@@ -17,6 +17,7 @@ from reflex_core.constants.compiler import SpecialAttributes
 from reflex_core.constants.state import CAMEL_CASE_MEMO_MARKER
 from reflex_core.utils import format
 from reflex_core.utils.imports import ImportVar
+from reflex_core.utils.types import safe_issubclass
 from reflex_core.vars import VarData
 from reflex_core.vars.base import LiteralVar, Var
 from reflex_core.vars.function import (
@@ -254,11 +255,11 @@ def _is_component_annotation(annotation: Any) -> bool:
     """
     origin = get_origin(annotation) or annotation
     return isinstance(origin, type) and (
-        issubclass(origin, Component)
+        safe_issubclass(origin, Component)
         or bool(
-            issubclass(origin, Var)
+            safe_issubclass(origin, Var)
             and (args := get_args(annotation))
-            and issubclass(args[0], Component)
+            and safe_issubclass(args[0], Component)
         )
     )
 
