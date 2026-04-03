@@ -1170,13 +1170,20 @@ def test_stateful_component(test_state: type[TestState]):
     Args:
         test_state: A test state.
     """
+    stateful_component_cache: dict[str, StatefulComponent] = {}
     text_component = rx.text(test_state.num)
-    stateful_component = StatefulComponent.compile_from(text_component)
+    stateful_component = StatefulComponent.compile_from(
+        text_component,
+        stateful_component_cache=stateful_component_cache,
+    )
     assert isinstance(stateful_component, StatefulComponent)
     assert stateful_component.tag is not None
     assert stateful_component.tag.startswith("Text_")
     assert stateful_component.references == 1
-    sc2 = StatefulComponent.compile_from(rx.text(test_state.num))
+    sc2 = StatefulComponent.compile_from(
+        rx.text(test_state.num),
+        stateful_component_cache=stateful_component_cache,
+    )
     assert isinstance(sc2, StatefulComponent)
     assert stateful_component.references == 2
     assert sc2.references == 2

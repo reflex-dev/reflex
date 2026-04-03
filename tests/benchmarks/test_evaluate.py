@@ -2,8 +2,11 @@ from collections.abc import Callable
 
 from pytest_codspeed import BenchmarkFixture
 from reflex_core.components.component import Component
+from reflex_core.plugins import CompilerHooks
 
-from .hotspots import evaluate_page_single_pass
+from reflex.compiler.plugins import DefaultPagePlugin
+
+from .fixtures import BenchmarkPage
 
 
 def test_evaluate_page(
@@ -16,4 +19,6 @@ def test_evaluate_page_single_pass(
     unevaluated_page: Callable[[], Component],
     benchmark: BenchmarkFixture,
 ):
-    benchmark(lambda: evaluate_page_single_pass(unevaluated_page))
+    hooks = CompilerHooks(plugins=(DefaultPagePlugin(),))
+    page = BenchmarkPage(route="/benchmark", component=unevaluated_page)
+    benchmark(lambda: hooks.eval_page(page.component, page=page))

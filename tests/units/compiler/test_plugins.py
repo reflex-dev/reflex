@@ -6,6 +6,7 @@ from typing import Any
 
 import pytest
 from reflex_components_core.base.fragment import Fragment
+from reflex_core import constants
 from reflex_core.components.component import (
     BaseComponent,
     Component,
@@ -13,6 +14,7 @@ from reflex_core.components.component import (
     StatefulComponent,
     field,
 )
+from reflex_core.environment import environment
 from reflex_core.plugins import (
     BaseContext,
     CompileContext,
@@ -25,7 +27,8 @@ from reflex_core.plugins import (
 )
 from reflex_core.utils import format as format_utils
 from reflex_core.utils.imports import ImportVar, collapse_imports, merge_imports
-from reflex_core.vars.base import Var
+from reflex_core.vars import VarData
+from reflex_core.vars.base import LiteralVar, Var
 
 from reflex.app import UnevaluatedPage
 from reflex.compiler import compiler
@@ -111,8 +114,25 @@ class PropComponent(Component):
         return {(15, "PropWrap"): Fragment.create()}
 
 
+class SharedLibraryComponent(Component):
+    tag = "SharedLibraryComponent"
+    library = "react-moment"
+
+    @staticmethod
+    def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
+        return {(25, "SharedLibraryWrap"): Fragment.create()}
+
+
 class StubCompilerPlugin(Plugin):
     pass
+
+
+SHARED_STATEFUL_VAR = LiteralVar.create("shared")._replace(
+    merge_var_data=VarData(
+        hooks={"useSharedStatefulValue": None},
+        state="SharedState",
+    )
+)
 
 
 def create_component_tree() -> RootComponent:
@@ -121,6 +141,10 @@ def create_component_tree() -> RootComponent:
         slot=PropComponent.create(id="prop-id", style={"opacity": "0.5"}),
         style={"margin": "0"},
     )
+
+
+def create_shared_stateful_component() -> SharedLibraryComponent:
+    return SharedLibraryComponent.create(SHARED_STATEFUL_VAR)
 
 
 def page_style() -> ComponentStyle:
@@ -757,7 +781,10 @@ def test_compile_context_compiles_pages_and_matches_legacy_output() -> None:
     assert page_ctx.name == "create_component_tree"
     assert page_ctx.route == "/demo"
     assert page_ctx.frontend_imports == page_ctx.merged_imports(collapse=True)
-    assert compile_ctx.all_imports == page_ctx.frontend_imports
+    compile_ctx_imports = collapse_imports(compile_ctx.all_imports)
+    for lib, fields in page_ctx.frontend_imports.items():
+        assert lib in compile_ctx_imports
+        assert set(compile_ctx_imports[lib]) >= set(fields)
     assert page_ctx.output_path is not None
     assert page_ctx.output_code is not None
     assert page_ctx.imports == [page_ctx.root_component._get_all_imports(collapse=True)]
@@ -853,3 +880,60 @@ def test_compile_context_requires_attached_context() -> None:
         RuntimeError, match="must be entered with 'with' or 'async with'"
     ):
         compile_ctx.compile()
+
+
+def test_compile_context_preserves_shared_stateful_component_imports_and_wraps() -> (
+    None
+):
+    previous_mode = environment.REFLEX_ENV_MODE.get()
+    environment.REFLEX_ENV_MODE.set(constants.Env.PROD)
+    try:
+        pages = [
+            FakePage(route="/a", component=create_shared_stateful_component),
+            FakePage(route="/b", component=create_shared_stateful_component),
+        ]
+        compile_ctx = CompileContext(
+            pages=pages,
+            hooks=CompilerHooks(plugins=default_page_plugins()),
+        )
+
+        with compile_ctx:
+            compile_ctx.compile()
+
+        assert "react-moment" in compile_ctx.all_imports
+        assert (25, "SharedLibraryWrap") in compile_ctx.app_wrap_components
+        assert "react-moment" in compile_ctx.stateful_components_code
+        assert "$/utils/stateful_components" in (
+            compile_ctx.compiled_pages["/a"].output_code or ""
+        )
+    finally:
+        environment.REFLEX_ENV_MODE.set(previous_mode)
+
+
+def test_compile_context_resets_stateful_component_cache_between_runs() -> None:
+    previous_mode = environment.REFLEX_ENV_MODE.get()
+    try:
+        environment.REFLEX_ENV_MODE.set(constants.Env.PROD)
+        prod_ctx = CompileContext(
+            pages=[
+                FakePage(route="/a", component=create_shared_stateful_component),
+                FakePage(route="/b", component=create_shared_stateful_component),
+            ],
+            hooks=CompilerHooks(plugins=default_page_plugins()),
+        )
+        with prod_ctx:
+            prod_ctx.compile()
+
+        environment.REFLEX_ENV_MODE.set(constants.Env.DEV)
+        dev_ctx = CompileContext(
+            pages=[FakePage(route="/c", component=create_shared_stateful_component)],
+            hooks=CompilerHooks(plugins=default_page_plugins()),
+        )
+        with dev_ctx:
+            dev_ctx.compile()
+
+        page_ctx = dev_ctx.compiled_pages["/c"]
+        assert "react-moment" in page_ctx.frontend_imports
+        assert "$/utils/stateful_components" not in (page_ctx.output_code or "")
+    finally:
+        environment.REFLEX_ENV_MODE.set(previous_mode)

@@ -888,9 +888,7 @@ class Component(BaseComponent, ABC):
 
                     # Get the passed type and the var type.
                     passed_type = kwargs[key]._var_type
-                    expected_type = types.get_args(
-                        types.get_field_type(type(self), key)
-                    )[0]
+                    expected_type = get_args(types.get_field_type(type(self), key))[0]
                 except TypeError:
                     # If it is not a valid var, check the base types.
                     passed_type = type(value)
@@ -2390,9 +2388,6 @@ class StatefulComponent(BaseComponent):
     was created with.
     """
 
-    # A lookup table to caching memoized component instances.
-    tag_to_stateful_component: ClassVar[dict[str, StatefulComponent]] = {}
-
     # Reference to the original component that was memoized into this component.
     component: Component = field(
         default_factory=Component, is_javascript_property=False
@@ -2415,11 +2410,17 @@ class StatefulComponent(BaseComponent):
     )
 
     @classmethod
-    def create(cls, component: Component) -> StatefulComponent | None:
+    def create(
+        cls,
+        component: Component,
+        *,
+        stateful_component_cache: dict[str, StatefulComponent] | None = None,
+    ) -> StatefulComponent | None:
         """Create a stateful component from a component.
 
         Args:
             component: The component to memoize.
+            stateful_component_cache: Compile-scoped cache of memoized components.
 
         Returns:
             The stateful component or None if the component should not be memoized.
@@ -2469,20 +2470,20 @@ class StatefulComponent(BaseComponent):
             if tag_name is None:
                 return None
 
-            # Look up the tag in the cache
-            stateful_component = cls.tag_to_stateful_component.get(tag_name)
+            cache = (
+                stateful_component_cache if stateful_component_cache is not None else {}
+            )
+            # Look up the tag in the compile-scoped cache.
+            stateful_component = cache.get(tag_name)
             if stateful_component is None:
                 memo_trigger_hooks = cls._fix_event_triggers(component)
-                # Set the stateful component in the cache for the given tag.
-                stateful_component = cls.tag_to_stateful_component.setdefault(
-                    tag_name,
-                    cls(
-                        children=component.children,
-                        component=component,
-                        tag=tag_name,
-                        memo_trigger_hooks=memo_trigger_hooks,
-                    ),
+                stateful_component = cls(
+                    children=component.children,
+                    component=component,
+                    tag=tag_name,
+                    memo_trigger_hooks=memo_trigger_hooks,
                 )
+                cache[tag_name] = stateful_component
             # Bump the reference count -- multiple pages referencing the same component
             # will result in writing it to a common file.
             stateful_component.references += 1
@@ -2791,23 +2792,39 @@ class StatefulComponent(BaseComponent):
         return _compile_component(self)
 
     @classmethod
-    def compile_from(cls, component: BaseComponent) -> BaseComponent:
+    def compile_from(
+        cls,
+        component: BaseComponent,
+        *,
+        stateful_component_cache: dict[str, StatefulComponent] | None = None,
+    ) -> BaseComponent:
         """Walk through the component tree and memoize all stateful components.
 
         Args:
             component: The component to memoize.
+            stateful_component_cache: Compile-scoped cache of memoized components.
 
         Returns:
             The memoized component tree.
         """
+        stateful_component_cache = (
+            stateful_component_cache if stateful_component_cache is not None else {}
+        )
         if isinstance(component, Component):
             if component._memoization_mode.recursive:
                 # Recursively memoize stateful children (default).
                 component.children = [
-                    cls.compile_from(child) for child in component.children
+                    cls.compile_from(
+                        child,
+                        stateful_component_cache=stateful_component_cache,
+                    )
+                    for child in component.children
                 ]
             # Memoize this component if it depends on state.
-            stateful_component = cls.create(component)
+            stateful_component = cls.create(
+                component,
+                stateful_component_cache=stateful_component_cache,
+            )
             if stateful_component is not None:
                 return stateful_component
         return component

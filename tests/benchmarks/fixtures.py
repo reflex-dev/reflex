@@ -1,8 +1,10 @@
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import cast
 
 import pytest
 from pydantic import BaseModel
+from reflex_core.components.component import Component
 
 import reflex as rx
 
@@ -219,6 +221,14 @@ class NestedElement(BaseModel):
 
     identifier: str
     value: list[int]
+
+
+@dataclass(frozen=True, slots=True)
+class BenchmarkPage:
+    """Minimal page definition for compiler benchmark helpers."""
+
+    route: str
+    component: Callable[[], Component]
 
 
 class BenchmarkState(rx.State):

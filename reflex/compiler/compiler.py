@@ -681,10 +681,17 @@ def compile_stateful_components(
     """
     output_path = utils.get_stateful_components_path()
 
+    stateful_component_cache: dict[str, StatefulComponent] = {}
     page_components = []
     for page in pages:
         # Compile the stateful components
-        page_component = StatefulComponent.compile_from(page) or page
+        page_component = (
+            StatefulComponent.compile_from(
+                page,
+                stateful_component_cache=stateful_component_cache,
+            )
+            or page
+        )
         progress_function()
         page_components.append(page_component)
 

@@ -1009,6 +1009,7 @@ class CompileContext(BaseContext):
         self.stateful_routes.clear()
         self.stateful_components_path = compiler.utils.get_stateful_components_path()
         self.stateful_components_code = ""
+        stateful_component_cache: dict[str, StatefulComponent] = {}
 
         overlay_component: Component | None = None
         if (
@@ -1053,8 +1054,28 @@ class CompileContext(BaseContext):
                     overlay_component,
                 )
 
+            if isinstance(page_ctx.root_component, StatefulComponent):
+                self.all_imports = merge_imports(
+                    self.all_imports,
+                    page_ctx.root_component._get_all_imports(),
+                )
+                self.app_wrap_components.update(
+                    page_ctx.root_component.component._get_all_app_wrap_components()
+                )
+            elif isinstance(page_ctx.root_component, Component):
+                self.all_imports = merge_imports(
+                    self.all_imports,
+                    page_ctx.root_component._get_all_imports(),
+                )
+                self.app_wrap_components.update(
+                    page_ctx.root_component._get_all_app_wrap_components()
+                )
+
             page_ctx.root_component = (
-                StatefulComponent.compile_from(page_ctx.root_component)
+                StatefulComponent.compile_from(
+                    page_ctx.root_component,
+                    stateful_component_cache=stateful_component_cache,
+                )
                 or page_ctx.root_component
             )
             self.compiled_pages[page_ctx.route] = page_ctx
