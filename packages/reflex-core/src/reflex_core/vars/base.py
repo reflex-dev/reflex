@@ -662,7 +662,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         cls,
         value: STRING_T,
         _var_data: VarData | None = None,
-    ) -> LiteralStringVar[STRING_T]: ...
+    ) -> StringVar[STRING_T]: ...
 
     @overload
     @classmethod
