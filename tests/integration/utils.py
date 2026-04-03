@@ -108,6 +108,86 @@ def poll_assert_event_order(
     assert_event_order([elem.text for elem in event_elements], exp_event_order)
 
 
+# Type alias for an ordering rule: ((event_a, occurrence_a), (event_b, occurrence_b)).
+OrderingRule = tuple[tuple[str, int], tuple[str, int]]
+
+
+def assert_relative_event_order(
+    actual: list[str],
+    expected_counts: dict[str, int],
+    ordering_rules: list[OrderingRule],
+) -> None:
+    """Assert that events satisfy relative ordering constraints.
+
+    Instead of requiring an exact event sequence, this checks that:
+    1. Each event appears the expected number of times.
+    2. Specific occurrences of events appear before other specific occurrences.
+
+    Args:
+        actual: the actual events recorded.
+        expected_counts: mapping of event name to expected occurrence count.
+        ordering_rules: list of ((event_a, occ_a), (event_b, occ_b)) meaning
+            the occ_a-th occurrence (0-indexed) of event_a must appear before
+            the occ_b-th occurrence (0-indexed) of event_b in the actual list.
+
+    Raises:
+        AssertionError: if any constraint is violated.
+    """
+    from collections import Counter
+
+    actual_counts = Counter(actual)
+    for event, count in expected_counts.items():
+        assert actual_counts[event] == count, (
+            f"Expected {count} occurrences of '{event}', got {actual_counts[event]}. Actual: {actual}"
+        )
+    assert sum(expected_counts.values()) == len(actual), (
+        f"Expected {sum(expected_counts.values())} total events, got {len(actual)}. Actual: {actual}"
+    )
+
+    # Build occurrence index: (event, occ) -> position in actual list
+    occurrence_indices: dict[tuple[str, int], int] = {}
+    event_counters: dict[str, int] = {}
+    for i, event in enumerate(actual):
+        occ = event_counters.get(event, 0)
+        occurrence_indices[event, occ] = i
+        event_counters[event] = occ + 1
+
+    for (event_a, occ_a), (event_b, occ_b) in ordering_rules:
+        idx_a = occurrence_indices[event_a, occ_a]
+        idx_b = occurrence_indices[event_b, occ_b]
+        assert idx_a < idx_b, (
+            f"Expected '{event_a}'[{occ_a}] (pos {idx_a}) before "
+            f"'{event_b}'[{occ_b}] (pos {idx_b}). Actual: {actual}"
+        )
+
+
+def poll_assert_relative_event_order(
+    driver: WebDriver,
+    expected_counts: dict[str, int],
+    ordering_rules: list[OrderingRule],
+    xpath: str = '//*[@id="event_order"]/p',
+) -> None:
+    """Poll until the expected number of events appear, then assert relative ordering.
+
+    Args:
+        driver: WebDriver instance.
+        expected_counts: mapping of event name to expected occurrence count.
+        ordering_rules: ordering constraints (see assert_relative_event_order).
+        xpath: The XPath to the event order elements.
+    """
+    n_exp = sum(expected_counts.values())
+
+    def _has_number_of_expected_events():
+        return len(driver.find_elements(By.XPATH, xpath)) == n_exp
+
+    AppHarness._poll_for(_has_number_of_expected_events)
+
+    event_elements = driver.find_elements(By.XPATH, xpath)
+    assert_relative_event_order(
+        [elem.text for elem in event_elements], expected_counts, ordering_rules
+    )
+
+
 class LocalStorage:
     """Class to access local storage.
 

@@ -9,7 +9,10 @@ import pytest
 from selenium.webdriver.common.by import By
 
 from reflex.testing import AppHarness, WebDriver
-from tests.integration.utils import poll_assert_event_order
+from tests.integration.utils import (
+    poll_assert_event_order,
+    poll_assert_relative_event_order,
+)
 
 MANY_EVENTS = 50
 
@@ -520,27 +523,45 @@ def test_event_chain_on_load(
 
 
 @pytest.mark.parametrize(
-    ("uri", "exp_event_order"),
+    ("uri", "expected_counts", "ordering_rules"),
     [
         (
             "/on-mount-return-chain",
+            {
+                "on_load_return_chain": 1,
+                "event_arg:1": 1,
+                "event_arg:2": 1,
+                "event_arg:3": 1,
+                "event_arg:unmount": 1,
+            },
             [
-                "on_load_return_chain",
-                "event_arg:1",
-                "event_arg:2",
-                "event_arg:3",
-                "event_arg:unmount",
+                # on_load before chain and unmount
+                (("on_load_return_chain", 0), ("event_arg:1", 0)),
+                (("on_load_return_chain", 0), ("event_arg:unmount", 0)),
+                # Chain in order
+                (("event_arg:1", 0), ("event_arg:2", 0)),
+                (("event_arg:2", 0), ("event_arg:3", 0)),
             ],
         ),
         (
             "/on-mount-yield-chain",
+            {
+                "on_load_yield_chain": 1,
+                "event_arg:4": 1,
+                "event_arg:5": 1,
+                "event_arg:6": 1,
+                "event_arg:mount": 1,
+                "event_no_args": 1,
+            },
             [
-                "on_load_yield_chain",
-                "event_arg:mount",
-                "event_arg:4",
-                "event_arg:5",
-                "event_arg:6",
-                "event_no_args",
+                # on_load before chain and mount
+                (("on_load_yield_chain", 0), ("event_arg:4", 0)),
+                (("on_load_yield_chain", 0), ("event_arg:mount", 0)),
+                # Chain in order
+                (("event_arg:4", 0), ("event_arg:5", 0)),
+                (("event_arg:5", 0), ("event_arg:6", 0)),
+                # mount before event_no_args
+                (("event_arg:mount", 0), ("event_no_args", 0)),
             ],
         ),
     ],
@@ -549,7 +570,8 @@ def test_event_chain_on_mount(
     event_chain: AppHarness,
     driver: WebDriver,
     uri: str,
-    exp_event_order: list[str | set[str]],
+    expected_counts: dict[str, int],
+    ordering_rules: list,
 ):
     """Load the URI, assert that the events are handled in the correct order.
 
@@ -562,7 +584,8 @@ def test_event_chain_on_mount(
         event_chain: AppHarness for the event_chain app
         driver: selenium WebDriver open to the app
         uri: the page to load
-        exp_event_order: the expected events recorded in the State
+        expected_counts: mapping of event name to expected occurrence count
+        ordering_rules: relative ordering constraints between event occurrences
     """
     assert event_chain.frontend_url is not None
     driver.get(event_chain.frontend_url.removesuffix("/") + uri)
@@ -573,42 +596,67 @@ def test_event_chain_on_mount(
     assert_token(event_chain, driver)
     unmount_button.click()
 
-    poll_assert_event_order(driver, exp_event_order)
+    poll_assert_relative_event_order(driver, expected_counts, ordering_rules)
 
 
 @pytest.mark.parametrize(
-    ("uri", "exp_event_order"),
+    ("uri", "expected_counts", "ordering_rules"),
     [
         (
             "/on-mount-return-chain",
+            {
+                "on_load_return_chain": 2,
+                "event_arg:1": 2,
+                "event_arg:2": 2,
+                "event_arg:3": 2,
+                "event_arg:unmount": 2,
+            },
             [
-                "on_load_return_chain",
-                "event_arg:unmount",
-                "on_load_return_chain",
-                "event_arg:1",
-                "event_arg:2",
-                "event_arg:3",
-                "event_arg:1",
-                "event_arg:2",
-                "event_arg:3",
-                "event_arg:unmount",
+                # First on_load before first chain and first unmount
+                (("on_load_return_chain", 0), ("event_arg:1", 0)),
+                (("on_load_return_chain", 0), ("event_arg:unmount", 0)),
+                # First chain in order
+                (("event_arg:1", 0), ("event_arg:2", 0)),
+                (("event_arg:2", 0), ("event_arg:3", 0)),
+                # First unmount before second on_load
+                (("event_arg:unmount", 0), ("on_load_return_chain", 1)),
+                # Second on_load before second chain and second unmount
+                (("on_load_return_chain", 1), ("event_arg:1", 1)),
+                (("on_load_return_chain", 1), ("event_arg:unmount", 1)),
+                # Second chain in order
+                (("event_arg:1", 1), ("event_arg:2", 1)),
+                (("event_arg:2", 1), ("event_arg:3", 1)),
             ],
         ),
         (
             "/on-mount-yield-chain",
+            {
+                "on_load_yield_chain": 2,
+                "event_arg:4": 2,
+                "event_arg:5": 2,
+                "event_arg:6": 2,
+                "event_arg:mount": 2,
+                "event_no_args": 2,
+            },
             [
-                "on_load_yield_chain",
-                "event_arg:mount",
-                "event_no_args",
-                "on_load_yield_chain",
-                "event_arg:mount",
-                "event_arg:4",
-                "event_arg:5",
-                "event_arg:6",
-                "event_arg:4",
-                "event_arg:5",
-                "event_arg:6",
-                "event_no_args",
+                # First on_load before first chain and first mount
+                (("on_load_yield_chain", 0), ("event_arg:4", 0)),
+                (("on_load_yield_chain", 0), ("event_arg:mount", 0)),
+                # First chain in order
+                (("event_arg:4", 0), ("event_arg:5", 0)),
+                (("event_arg:5", 0), ("event_arg:6", 0)),
+                # First mount before first event_no_args
+                (("event_arg:mount", 0), ("event_no_args", 0)),
+                # First event_no_args before second on_load
+                (("event_no_args", 0), ("on_load_yield_chain", 1)),
+                # Second on_load before second chain and second mount
+                (("on_load_yield_chain", 1), ("event_arg:4", 1)),
+                (("on_load_yield_chain", 1), ("event_arg:mount", 1)),
+                # Second chain in order
+                (("event_arg:4", 1), ("event_arg:5", 1)),
+                (("event_arg:5", 1), ("event_arg:6", 1)),
+                # Second mount before second event_no_args
+                (("event_arg:mount", 1), ("event_no_args", 1)),
             ],
         ),
     ],
@@ -617,7 +665,8 @@ def test_event_chain_on_mount_strict(
     event_chain_strict: AppHarness,
     driver_strict: WebDriver,
     uri: str,
-    exp_event_order: list[str | set[str]],
+    expected_counts: dict[str, int],
+    ordering_rules: list,
 ):
     """Run the test_event_chain_on_mount test with strict mode enabled.
 
@@ -625,13 +674,15 @@ def test_event_chain_on_mount_strict(
         event_chain_strict: AppHarness for the event_chain app with strict mode enabled
         driver_strict: selenium WebDriver open to the app with strict mode enabled
         uri: the page to load
-        exp_event_order: the expected events recorded in the State
+        expected_counts: mapping of event name to expected occurrence count
+        ordering_rules: relative ordering constraints between event occurrences
     """
     test_event_chain_on_mount(
         event_chain=event_chain_strict,
         driver=driver_strict,
         uri=uri,
-        exp_event_order=exp_event_order,
+        expected_counts=expected_counts,
+        ordering_rules=ordering_rules,
     )
 
 
