@@ -37,7 +37,7 @@ class EventFuture(asyncio.Future):
     )
 
     def __post_init__(self) -> None:
-        super().__init__(loop=self.loop)
+        super(EventFuture, self).__init__(loop=self.loop)
 
     def add_child(self, child: EventFuture) -> None:
         """Add a child future to this tracked future.
