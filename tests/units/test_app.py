@@ -2085,6 +2085,28 @@ def test_app_wrap_compile_theme(
     assert expected.split(",") == function_app_definition.split(",")
 
 
+def test_compile_writes_app_wrap_memo_components(
+    compilable_app: tuple[App, Path],
+    mocker,
+) -> None:
+    """App-wrap memo components are emitted to the shared components module."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_core.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+
+    app.add_page(rx.box("Index"), route="/")
+    app._compile()
+
+    components_js = (
+        web_dir
+        / constants.Dirs.UTILS
+        / f"{constants.PageNames.COMPONENTS}{constants.Ext.JSX}"
+    ).read_text()
+
+    assert "export const DefaultOverlayComponents" in components_js
+    assert "export const MemoizedToastProvider" in components_js
+
+
 @pytest.mark.parametrize(
     "react_strict_mode",
     [True, False],

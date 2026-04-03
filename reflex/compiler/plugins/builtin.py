@@ -53,9 +53,13 @@ class DefaultPagePlugin(Plugin):
             component = compiler.into_component(page_fn)
             component = Fragment.create(component)
 
+            title = getattr(page, "title", None)
             meta_args = {
-                "title": getattr(page, "title", None)
-                or make_default_page_title(get_config().app_name, page.route),
+                "title": (
+                    title
+                    if title is not None
+                    else make_default_page_title(get_config().app_name, page.route)
+                ),
                 "image": getattr(page, "image", ""),
                 "meta": getattr(page, "meta", ()),
             }

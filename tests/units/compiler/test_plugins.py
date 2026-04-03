@@ -25,6 +25,7 @@ from reflex_core.plugins import (
 )
 from reflex_core.utils import format as format_utils
 from reflex_core.utils.imports import ImportVar, collapse_imports, merge_imports
+from reflex_core.vars.base import Var
 
 from reflex.app import UnevaluatedPage
 from reflex.compiler import compiler
@@ -40,8 +41,8 @@ from reflex.compiler.plugins import (
 class FakePage:
     route: str
     component: Callable[[], Component]
-    title: str | None = None
-    description: str | None = None
+    title: Var | str | None = None
+    description: Var | str | None = None
     image: str = ""
     meta: tuple[dict[str, Any], ...] = ()
 
@@ -788,6 +789,38 @@ def test_compile_context_compiles_pages_and_matches_legacy_output() -> None:
     )
     expected_output = compiler.compile_page(page.route, legacy_component)[1]
     assert page_ctx.output_code == expected_output
+
+
+def test_default_page_plugin_handles_var_backed_title_like_legacy_compiler() -> None:
+    page = UnevaluatedPage(
+        component=lambda: Fragment.create(),
+        route="/var-title",
+        title=Var(_js_expr="pageTitle", _var_type=str),
+        description=None,
+        image="",
+        on_load=None,
+        meta=(),
+        context={},
+    )
+    hooks = CompilerHooks(plugins=(DefaultPagePlugin(),))
+    compile_ctx = create_compile_context(hooks)
+
+    with compile_ctx:
+        page_ctx = hooks.eval_page(
+            page.component,
+            page=page,
+            compile_context=compile_ctx,
+        )
+
+    assert page_ctx is not None
+
+    legacy_component = compiler.compile_unevaluated_page(
+        page.route,
+        page,
+        None,
+        None,
+    )
+    assert page_ctx.root_component.render() == legacy_component.render()
 
 
 def test_compile_context_rejects_duplicate_routes() -> None:

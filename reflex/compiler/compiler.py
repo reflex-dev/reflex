@@ -1085,18 +1085,6 @@ def compile_app(
     ]
     all_imports = compile_ctx.all_imports
 
-    (
-        memo_components_output,
-        memo_components_result,
-        memo_components_imports,
-    ) = compile_memo_components(
-        dict.fromkeys(CUSTOM_COMPONENTS.values()),
-        tuple(EXPERIMENTAL_MEMOS.values()),
-    )
-    compile_results.append((memo_components_output, memo_components_result))
-    all_imports = utils.merge_imports(all_imports, memo_components_imports)
-    progress.advance(task)
-
     if (
         code_uses_state_contexts(compile_ctx.stateful_components_code)
         and app._state is None
@@ -1116,6 +1104,18 @@ def compile_app(
     app_wrappers = _resolve_app_wrap_components(app, compile_ctx.app_wrap_components)
     app_root = app._app_root(app_wrappers)
     all_imports = utils.merge_imports(all_imports, app_root._get_all_imports())
+
+    (
+        memo_components_output,
+        memo_components_result,
+        memo_components_imports,
+    ) = compile_memo_components(
+        dict.fromkeys(CUSTOM_COMPONENTS.values()),
+        tuple(EXPERIMENTAL_MEMOS.values()),
+    )
+    compile_results.append((memo_components_output, memo_components_result))
+    all_imports = utils.merge_imports(all_imports, memo_components_imports)
+    progress.advance(task)
 
     compile_results.append(
         compile_document_root(
