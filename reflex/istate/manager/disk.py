@@ -168,12 +168,8 @@ class StateManagerDisk(StateManager):
         Returns:
             The state for the token.
         """
-        if isinstance(token, BaseStateToken):
-            root_state = self.states.get(token.ident)
-            self._token_last_touched[token.ident] = time.time()
-        else:
-            root_state = self.states.get(str(token))
-            self._token_last_touched[str(token)] = time.time()
+        root_state = self.states.get(token.cache_key)
+        self._token_last_touched[token.cache_key] = time.time()
         if root_state is not None:
             # Retrieved state from memory.
             return root_state
@@ -194,13 +190,13 @@ class StateManagerDisk(StateManager):
                 # Ensure all substates exist, even if they were not serialized previously.
                 root_state.substates = fresh_root_state.substates
             await self.populate_substates(token, root_state, root_state)
-            self.states[token.ident] = root_state
+            self.states[token.cache_key] = root_state
             return cast(TOKEN_TYPE, root_state)
         # For non-BaseState tokens, if the deserialized state is None, we create a new instance using the token's cls.
         state = await self.load_state(token)
         if state is None:
             state = token.cls()
-        self.states[str(token)] = state
+        self.states[token.cache_key] = state
         return cast(TOKEN_TYPE, state)
 
     async def set_state_for_substate(
@@ -275,10 +271,10 @@ class StateManagerDisk(StateManager):
                         token, self._write_queue.pop(token).state
                     )
                 # Check for expired states to purge.
-                for token_ident, last_touched in list(self._token_last_touched.items()):
+                for cache_key, last_touched in list(self._token_last_touched.items()):
                     if now - last_touched > self.token_expiration:
-                        self._token_last_touched.pop(token_ident)
-                        self.states.pop(token_ident, None)
+                        self._token_last_touched.pop(cache_key)
+                        self.states.pop(cache_key, None)
                 await run_in_thread(self._purge_expired_states)
                 await self._process_write_queue_delay()
             except asyncio.CancelledError:  # noqa: PERF203
@@ -363,12 +359,13 @@ class StateManagerDisk(StateManager):
             The state for the token.
         """
         # Disk state manager ignores the substate suffix and always returns the top-level state.
-        if token.ident not in self._states_locks:
+        lock_key = token.lock_key
+        if lock_key not in self._states_locks:
             async with self._state_manager_lock:
-                if token.ident not in self._states_locks:
-                    self._states_locks[token.ident] = asyncio.Lock()
+                if lock_key not in self._states_locks:
+                    self._states_locks[lock_key] = asyncio.Lock()
 
-        async with self._states_locks[token.ident]:
+        async with self._states_locks[lock_key]:
             state = await self.get_state(token)
             yield state
             await self.set_state(token, state, **context)
