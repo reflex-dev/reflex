@@ -1,6 +1,5 @@
 """Re-export from reflex_core.plugins."""
 
-from reflex_core.plugins import *
 from reflex_core.plugins import (
     BaseContext,
     CommonContext,
@@ -16,6 +15,9 @@ from reflex_core.plugins import (
     TailwindV3Plugin,
     TailwindV4Plugin,
     _ScreenshotPlugin,
+    sitemap,
+    tailwind_v3,
+    tailwind_v4,
 )
 
 __all__ = [
@@ -33,4 +35,7 @@ __all__ = [
     "TailwindV3Plugin",
     "TailwindV4Plugin",
     "_ScreenshotPlugin",
+    "sitemap",
+    "tailwind_v3",
+    "tailwind_v4",
 ]
