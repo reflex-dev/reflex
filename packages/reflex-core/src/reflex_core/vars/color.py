@@ -24,7 +24,7 @@ class ColorVar(StringVar[Color], python_types=Color):
     frozen=True,
     slots=True,
 )
-class LiteralColorVar(CachedVarOperation, LiteralVar, ColorVar):
+class LiteralColorVar(CachedVarOperation, LiteralVar[Color], ColorVar):
     """Base class for immutable literal color vars."""
 
     _var_value: Color = dataclasses.field(default_factory=lambda: Color(color="black"))

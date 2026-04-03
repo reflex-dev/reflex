@@ -171,7 +171,7 @@ def date_compare_operation(
     frozen=True,
     slots=True,
 )
-class LiteralDatetimeVar(LiteralVar, DateTimeVar):
+class LiteralDatetimeVar(LiteralVar[DATETIME_T], DateTimeVar[DATETIME_T]):
     """Base class for immutable datetime and date vars."""
 
     _var_value: date = dataclasses.field(default=datetime.now())

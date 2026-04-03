@@ -944,7 +944,7 @@ def boolean_not_operation(value: BooleanVar):
     frozen=True,
     slots=True,
 )
-class LiteralNumberVar(LiteralVar, NumberVar[NUMBER_T]):
+class LiteralNumberVar(LiteralVar[NUMBER_T], NumberVar[NUMBER_T]):
     """Base class for immutable literal number vars."""
 
     _var_value: float | int | decimal.Decimal = dataclasses.field(default=0)
@@ -1020,7 +1020,7 @@ class LiteralNumberVar(LiteralVar, NumberVar[NUMBER_T]):
     frozen=True,
     slots=True,
 )
-class LiteralBooleanVar(LiteralVar, BooleanVar):
+class LiteralBooleanVar(LiteralVar[bool], BooleanVar):
     """Base class for immutable literal boolean vars."""
 
     _var_value: bool = dataclasses.field(default=False)

@@ -469,7 +469,9 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
     frozen=True,
     slots=True,
 )
-class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
+class LiteralArrayVar(
+    CachedVarOperation, LiteralVar[ARRAY_VAR_TYPE], ArrayVar[ARRAY_VAR_TYPE]
+):
     """Base class for immutable literal array vars."""
 
     _var_value: Sequence[Var | Any] = dataclasses.field(default=())
@@ -571,7 +573,7 @@ class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
         )
 
 
-STRING_TYPE = TypingExtensionsTypeVar("STRING_TYPE", default=str)
+STRING_TYPE = TypingExtensionsTypeVar("STRING_TYPE", default=str, covariant=True)
 
 
 class StringVar(Var[STRING_TYPE], python_types=str):
@@ -1151,7 +1153,7 @@ _decode_var_pattern = re.compile(_decode_var_pattern_re, flags=re.DOTALL)
     frozen=True,
     slots=True,
 )
-class LiteralStringVar(LiteralVar, StringVar[str]):
+class LiteralStringVar(LiteralVar[STRING_TYPE], StringVar[STRING_TYPE]):
     """Base class for immutable literal string vars."""
 
     _var_value: str = dataclasses.field(default="")
@@ -1770,7 +1772,7 @@ class RangeVar(ArrayVar[Sequence[int]], python_types=range):
     frozen=True,
     slots=True,
 )
-class LiteralRangeVar(CachedVarOperation, LiteralVar, RangeVar):
+class LiteralRangeVar(CachedVarOperation, LiteralVar[Sequence[int]], RangeVar):
     """Base class for immutable literal range vars."""
 
     _var_value: range = dataclasses.field(default_factory=lambda: range(0))
