@@ -683,10 +683,13 @@ class App(MiddlewareMixin, LifespanMixin):
                     asgi_app = api_transformer(asgi_app)
 
         top_asgi_app = Starlette(lifespan=self._run_lifespan_tasks)
-        top_asgi_app.mount("", asgi_app)
-        App._add_cors(top_asgi_app)
         # Make sure the RegistrationContext is attached.
-        return self._registration_context_middleware(top_asgi_app)
+        top_asgi_app.mount(
+            "",
+            self._registration_context_middleware(asgi_app),
+        )
+        App._add_cors(top_asgi_app)
+        return top_asgi_app
 
     def _add_default_endpoints(self):
         """Add default api endpoints (ping)."""
