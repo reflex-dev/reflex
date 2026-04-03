@@ -37,6 +37,24 @@ class StateToken(Generic[TOKEN_TYPE]):
         """
         return dataclasses.replace(self, cls=cls)
 
+    @property
+    def cache_key(self) -> str:
+        """The key used for caching state instances in the StateManager.
+
+        Returns:
+            A string key combining ident and class path.
+        """
+        return str(self)
+
+    @property
+    def lock_key(self) -> str:
+        """The key used for locking and session-level bookkeeping.
+
+        Returns:
+            The token ident.
+        """
+        return self.ident
+
     def __str__(self) -> str:
         """The key used in the underlying StateManager store.
 
@@ -108,6 +126,18 @@ class BaseStateToken(StateToken["BaseState"]):
 
     This token type implies subtree hierarchy population and other semantic checks.
     """
+
+    @property
+    def cache_key(self) -> str:
+        """The key used for caching state instances in the StateManager.
+
+        BaseState tokens use just the ident because the entire state hierarchy
+        lives under a single root state instance per session.
+
+        Returns:
+            The token ident.
+        """
+        return self.ident
 
     def with_cls(self, cls: type[BaseState]) -> Self:
         """Return a new token with the cls field updated to the provided class.

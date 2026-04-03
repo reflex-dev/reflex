@@ -36,8 +36,8 @@ class StateManagerMemory(StateManager):
         init=False,
     )
 
-    # The latest expiration deadline for each token.
-    _token_expires_at: dict[str, float] = dataclasses.field(
+    # The latest expiration deadline and token for each cache key.
+    _token_expires_at: dict[str, tuple[float, StateToken]] = dataclasses.field(
         default_factory=dict,
         init=False,
     )
@@ -53,7 +53,7 @@ class StateManagerMemory(StateManager):
         Returns:
             The state for the token.
         """
-        key = token.ident if isinstance(token, BaseStateToken) else str(token)
+        key = token.cache_key
         if key not in self.states:
             if isinstance(token, BaseStateToken):
                 self.states[key] = token.cls.get_root_state()(
@@ -65,15 +65,21 @@ class StateManagerMemory(StateManager):
 
     def _track_token(self, token: StateToken):
         """Refresh the expiration deadline for an active token."""
-        self._token_expires_at[token.ident] = time.time() + self.token_expiration
+        self._token_expires_at[token.cache_key] = (
+            time.time() + self.token_expiration,
+            token,
+        )
         self._ensure_expiration_task()
 
     def _purge_token(self, token: StateToken):
-        """Remove a token from in-memory state bookkeeping."""
-        key = token.ident if isinstance(token, BaseStateToken) else str(token)
-        self._token_expires_at.pop(token.ident, None)
-        self.states.pop(key, None)
-        self._states_locks.pop(token.ident, None)
+        """Remove a token from in-memory state bookkeeping.
+
+        Args:
+            token: The token to purge.
+        """
+        self._token_expires_at.pop(token.cache_key, None)
+        self._states_locks.pop(token.lock_key, None)
+        self.states.pop(token.cache_key, None)
 
     def _purge_expired_tokens(self) -> float | None:
         """Purge expired in-memory state entries and return the next deadline.
@@ -86,15 +92,13 @@ class StateManagerMemory(StateManager):
         token_expires_at = self._token_expires_at
         state_locks = self._states_locks
 
-        for token, expires_at in list(token_expires_at.items()):
+        for _cache_key, (expires_at, token) in list(token_expires_at.items()):
             if (
-                state_lock := state_locks.get(token)
+                state_lock := state_locks.get(token.lock_key)
             ) is not None and state_lock.locked():
                 continue
             if expires_at <= now:
-                self._purge_token(
-                    BaseStateToken(ident=token, cls=type(self.states[token]))
-                )
+                self._purge_token(token)
                 continue
             if next_expires_at is None or expires_at < next_expires_at:
                 next_expires_at = expires_at
@@ -110,12 +114,12 @@ class StateManagerMemory(StateManager):
         Returns:
             The lock protecting the token's state.
         """
-        state_lock = self._states_locks.get(token.ident)
+        state_lock = self._states_locks.get(token.lock_key)
         if state_lock is None:
             async with self._state_manager_lock:
-                state_lock = self._states_locks.get(token.ident)
+                state_lock = self._states_locks.get(token.lock_key)
                 if state_lock is None:
-                    state_lock = self._states_locks[token.ident] = asyncio.Lock()
+                    state_lock = self._states_locks[token.lock_key] = asyncio.Lock()
         return state_lock
 
     async def _expire_states(self):
@@ -166,8 +170,7 @@ class StateManagerMemory(StateManager):
             state: The state to set.
             context: The state modification context.
         """
-        key = token.ident if isinstance(token, BaseStateToken) else str(token)
-        self.states[key] = state
+        self.states[token.cache_key] = state
         self._track_token(token)
 
     @override
