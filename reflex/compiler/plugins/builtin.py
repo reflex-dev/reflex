@@ -214,14 +214,15 @@ class DefaultCollectorPlugin(Plugin):
 
             if stateful_component is None:
                 self._collect_component_hooks(page_context.hooks, comp)
-                if (
-                    type(comp)._get_app_wrap_components
-                    is not Component._get_app_wrap_components
-                ):
-                    self._collect_app_wrap_components(
-                        page_context.app_wrap_components,
-                        comp,
-                    )
+
+            if (
+                type(comp)._get_app_wrap_components
+                is not Component._get_app_wrap_components
+            ):
+                self._collect_app_wrap_components(
+                    page_context.app_wrap_components,
+                    comp,
+                )
 
         if (dynamic_import := comp._get_dynamic_imports()) is not None:
             page_context.dynamic_imports.add(dynamic_import)
@@ -322,11 +323,12 @@ class DefaultCollectorPlugin(Plugin):
 
                 if stateful_component is None:
                     collect_component_hooks(hooks, comp)
-                    if (
-                        type(comp)._get_app_wrap_components
-                        is not base_get_app_wrap_components
-                    ):
-                        collect_app_wrap_components(app_wrap_components, comp)
+
+                if (
+                    type(comp)._get_app_wrap_components
+                    is not base_get_app_wrap_components
+                ):
+                    collect_app_wrap_components(app_wrap_components, comp)
 
             dynamic_import = comp._get_dynamic_imports()
             if dynamic_import is not None:

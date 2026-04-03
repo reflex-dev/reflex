@@ -2107,6 +2107,32 @@ def test_compile_writes_app_wrap_memo_components(
     assert "export const MemoizedToastProvider" in components_js
 
 
+def test_compile_writes_upload_files_provider_app_wrap(
+    compilable_app: tuple[App, Path],
+    mocker,
+) -> None:
+    """Upload pages emit the UploadFilesProvider app wrap into the app root."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_core.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+
+    app.add_page(
+        lambda: rx.upload.root(
+            rx.vstack(
+                rx.button("Select File"),
+                rx.text("Drag and drop files here or click to select files"),
+            ),
+        ),
+        route="/",
+    )
+    app._compile()
+
+    root_js = web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    root_contents = root_js.read_text()
+
+    assert "UploadFilesProvider" in root_contents
+
+
 @pytest.mark.parametrize(
     "react_strict_mode",
     [True, False],
