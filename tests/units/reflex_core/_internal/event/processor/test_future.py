@@ -1,31 +1,9 @@
 """Tests for EventFuture."""
 
 import asyncio
-import contextlib
-from collections.abc import AsyncGenerator
 
 import pytest
 from reflex_core._internal.event.processor.future import EventFuture
-
-
-@contextlib.asynccontextmanager
-async def assert_no_loop_yield() -> AsyncGenerator[None, None]:
-    """Assert the body never yields control to the event loop.
-
-    Schedules a sentinel task before the body runs and asserts it has not
-    executed by the time the body returns.  Because asyncio is cooperative,
-    the sentinel can only run if the body awaited something that suspended it.
-    """
-    sentinel_ran = False
-
-    async def _sentinel() -> None:  # noqa: RUF029
-        nonlocal sentinel_ran
-        sentinel_ran = True
-
-    task = asyncio.create_task(_sentinel())
-    yield
-    assert not sentinel_ran, "Event loop was unexpectedly yielded to"
-    await task
 
 
 @pytest.mark.asyncio
@@ -298,98 +276,6 @@ async def test_cancel_with_message():  # noqa: RUF029
         parent.result()
     with pytest.raises(asyncio.CancelledError, match="shutting down"):
         child.result()
-
-
-@pytest.mark.asyncio
-async def test_wait_for_predecessor_first_child_is_noop():
-    """wait_for_predecessor is a no-op for the first child in the parent."""
-    parent = EventFuture(txid="parent")
-    child = EventFuture(txid="c0", parent=parent)
-    parent.add_child(child)
-
-    async with assert_no_loop_yield():
-        await child.wait_for_predecessor()
-
-
-@pytest.mark.asyncio
-async def test_wait_for_predecessor_no_parent_is_noop():
-    """wait_for_predecessor is a no-op when the future has no parent."""
-    f = EventFuture(txid="root")
-
-    async with assert_no_loop_yield():
-        await f.wait_for_predecessor()
-
-
-@pytest.mark.asyncio
-async def test_wait_for_predecessor_not_sequential_is_noop():
-    """wait_for_predecessor is a no-op for non-sequential (background) futures."""
-    parent = EventFuture(txid="parent")
-    sib = EventFuture(txid="sib", parent=parent)
-    bg = EventFuture(txid="bg", parent=parent, sequential=False)
-    parent.add_child(sib)
-    parent.add_child(bg)
-
-    # bg is not sequential so it should not wait for sib.
-    async with assert_no_loop_yield():
-        await bg.wait_for_predecessor()
-    assert not sib.done()  # sib was never resolved; bg did not wait for it
-
-
-@pytest.mark.asyncio
-async def test_wait_for_predecessor_waits_for_previous_sibling():
-    """wait_for_predecessor waits until the preceding sibling is done."""
-    parent = EventFuture(txid="parent")
-    first = EventFuture(txid="first", parent=parent)
-    second = EventFuture(txid="second", parent=parent)
-    parent.add_child(first)
-    parent.add_child(second)
-
-    resolved = []
-
-    async def _run_second():
-        await second.wait_for_predecessor()
-        resolved.append("second")
-
-    task = asyncio.create_task(_run_second())
-    await asyncio.sleep(0)  # let the task start and block
-    assert resolved == []  # second is still waiting
-
-    first.set_result(None)
-    await task
-    assert resolved == ["second"]
-
-
-@pytest.mark.asyncio
-async def test_wait_for_predecessor_continues_after_sibling_exception():
-    """wait_for_predecessor continues even if the preceding sibling raised."""
-    parent = EventFuture(txid="parent")
-    first = EventFuture(txid="first", parent=parent)
-    second = EventFuture(txid="second", parent=parent)
-    parent.add_child(first)
-    parent.add_child(second)
-
-    first.set_exception(RuntimeError("boom"))
-
-    # Should not raise; exception is suppressed.
-    # first was already done, so wait_for_predecessor returned without suspending.
-    async with assert_no_loop_yield():
-        await second.wait_for_predecessor()
-
-
-@pytest.mark.asyncio
-async def test_wait_for_predecessor_continues_after_sibling_cancel():
-    """wait_for_predecessor continues even if the preceding sibling was cancelled."""
-    parent = EventFuture(txid="parent")
-    first = EventFuture(txid="first", parent=parent)
-    second = EventFuture(txid="second", parent=parent)
-    parent.add_child(first)
-    parent.add_child(second)
-
-    first.cancel()
-
-    # first was already done (cancelled), so wait_for_predecessor returned without suspending.
-    async with assert_no_loop_yield():
-        await second.wait_for_predecessor()
 
 
 @pytest.mark.asyncio

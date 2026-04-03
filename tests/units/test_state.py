@@ -2979,8 +2979,8 @@ class OnLoadState3(State):
             OnLoadState2,
             [
                 {OnLoadState2.get_full_name(): {"num" + FIELD_MARKER: 1}},
-                {OnLoadState2.get_full_name(): {"name" + FIELD_MARKER: "default"}},
                 exp_is_hydrated(State, True),
+                {OnLoadState2.get_full_name(): {"name" + FIELD_MARKER: "default"}},
                 {OnLoadState2.get_full_name(): {"name" + FIELD_MARKER: "other"}},
             ],
         ),

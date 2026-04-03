@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import collections
 import contextlib
 import dataclasses
 import inspect
@@ -84,6 +85,10 @@ class EventProcessor:
     _futures: dict[str, EventFuture] = dataclasses.field(
         default_factory=dict, init=False
     )
+    _token_queues: dict[
+        str,
+        collections.deque[tuple[EventQueueEntry, RegisteredEventHandler]],
+    ] = dataclasses.field(default_factory=dict, init=False)
 
     def configure(
         self,
@@ -269,6 +274,8 @@ class EventProcessor:
                     )
                 )
             self._queue_task = None
+        # Discard any pending per-token queue entries.
+        self._token_queues.clear()
         # Cancel any remaining unresolved futures.
         for future in self._futures.values():
             if not future.done():
@@ -341,23 +348,13 @@ class EventProcessor:
                     msg = "Event processor is not running, call .start(...) first."
                     raise RuntimeError(msg) from le
         queue = self._ensure_queue_task()
-        # Determine whether sequential ordering is required for this event.
-        is_background = False
-        try:
-            registered = RegistrationContext.get().event_handlers.get(event.name)
-            if registered is not None and registered.handler.is_background:
-                is_background = True
-        except LookupError:
-            pass
         txid = ev_ctx.txid
         parent_future = (
             self._futures.get(ev_ctx.parent_txid)
             if ev_ctx.parent_txid is not None
             else None
         )
-        tracked = EventFuture(
-            sequential=not is_background, parent=parent_future, txid=txid
-        )
+        tracked = EventFuture(parent=parent_future, txid=txid)
         self._futures[txid] = tracked
         tracked.add_done_callback(self._try_clean_future)
         tracked.add_done_callback(self._on_future_done)
@@ -455,7 +452,7 @@ class EventProcessor:
         done and all its immediate children are done, pop the parent as well.
 
         This keeps parent futures alive in ``_futures`` while any child still
-        needs to look up its siblings for sequential ordering.
+        needs them for ``wait_all`` and cleanup.
 
         Args:
             future: The EventFuture to check.
@@ -532,16 +529,81 @@ class EventProcessor:
             registered_handler: The registered handler for the event.
         """
         # Set up the event context for this task.
-        ctx = entry.ctx
-        EventContext.set(ctx)
-        # For sequential (non-background) events, wait for the previous sibling
-        # to finish before proceeding so that chained events run in order.
-        if current_future := self._futures.get(ctx.txid):
-            await current_future.wait_for_predecessor()
-        print(
-            f"Processing event {entry.event} [txid={ctx.txid}] with handler {registered_handler.handler.fn.__name__}"
-        )
+        EventContext.set(entry.ctx)
         await self._execute_event(entry=entry, registered_handler=registered_handler)
+
+    def _create_event_task(
+        self,
+        *,
+        entry: EventQueueEntry,
+        registered_handler: RegisteredEventHandler,
+    ) -> asyncio.Task:
+        """Create and register an asyncio task for processing a single event.
+
+        Args:
+            entry: The event queue entry to process.
+            registered_handler: The registered handler for the event.
+
+        Returns:
+            The created asyncio.Task.
+        """
+        task = asyncio.create_task(
+            self._process_event_queue_entry(
+                entry=entry, registered_handler=registered_handler
+            ),
+            name=f"reflex_event|{entry.event.name}|{entry.ctx.token}|{time.time()}",
+        )
+        if sys.version_info < (3, 12):
+            task._event_ctx = entry.ctx  # pyright: ignore[reportAttributeAccessIssue]
+        self._tasks[entry.ctx.txid] = task
+        task.add_done_callback(self._finish_task)
+        return task
+
+    def _enqueue_for_token(
+        self,
+        *,
+        entry: EventQueueEntry,
+        registered_handler: RegisteredEventHandler,
+    ) -> None:
+        """Append an event to the per-token queue and dispatch if idle.
+
+        If no queue exists for the token yet, one is created. If this is
+        the first (and therefore only) entry, a task is dispatched
+        immediately.
+
+        Args:
+            entry: The event queue entry to enqueue.
+            registered_handler: The registered handler for the event.
+        """
+        token = entry.ctx.token
+        token_queue = self._token_queues.get(token)
+        if token_queue is None:
+            token_queue = self._token_queues[token] = collections.deque()
+        token_queue.append((entry, registered_handler))
+        if len(token_queue) == 1:
+            self._dispatch_next_for_token(token)
+
+    def _dispatch_next_for_token(self, token: str) -> None:
+        """Create a task for the front entry in the per-token queue.
+
+        Args:
+            token: The client token whose queue to dispatch from.
+        """
+        token_queue = self._token_queues.get(token)
+        if not token_queue:
+            return
+        entry, registered_handler = token_queue[0]
+        # Skip cancelled futures.
+        future = self._futures.get(entry.ctx.txid)
+        if future is not None and future.cancelled():
+            self._try_clean_future(future)
+            token_queue.popleft()
+            if token_queue:
+                self._dispatch_next_for_token(token)
+            else:
+                del self._token_queues[token]
+            return
+        self._create_event_task(entry=entry, registered_handler=registered_handler)
 
     async def _process_queue(self):
         """Process events from the queue in a task."""
@@ -567,22 +629,16 @@ class EventProcessor:
                             f"No registered handler found for event: {entry.event.name}"
                         )
                         raise KeyError(msg) from ke
-                    # Create a new task to handle this event.
-                    task = asyncio.create_task(
-                        self._process_event_queue_entry(
+                    if registered_handler.handler.is_background:
+                        # Background events run immediately, bypassing per-token ordering.
+                        self._create_event_task(
                             entry=entry, registered_handler=registered_handler
-                        ),
-                        name=(
-                            f"reflex_event|{entry.event.name}|{entry.ctx.token}|{time.time()}"
-                        ),
-                    )
-                    if sys.version_info < (3, 12):
-                        task._event_ctx = entry.ctx  # pyright: ignore[reportAttributeAccessIssue]
-                    self._tasks[entry.ctx.txid] = task
-                    task.add_done_callback(self._finish_task)
-                    print(
-                        f"Enqueued task {task.get_name()} for event {entry.event.name} [txid={entry.ctx.txid}]"
-                    )
+                        )
+                    else:
+                        # Sequential events go through the per-token queue.
+                        self._enqueue_for_token(
+                            entry=entry, registered_handler=registered_handler
+                        )
                 except Exception:
                     # Log the error and continue processing the next events.
                     console.error(
@@ -626,6 +682,14 @@ class EventProcessor:
         else:
             task_ctx = task.get_context().run(EventContext.get)
         self._tasks.pop(task_ctx.txid, None)
+        # Chain the next sequential event for this token if applicable.
+        token_queue = self._token_queues.get(task_ctx.token)
+        if token_queue and token_queue[0][0].ctx.txid == task_ctx.txid:
+            token_queue.popleft()
+            if token_queue:
+                self._dispatch_next_for_token(task_ctx.token)
+            else:
+                del self._token_queues[task_ctx.token]
         future = self._futures.get(task_ctx.txid)
         if task.done():
             try:

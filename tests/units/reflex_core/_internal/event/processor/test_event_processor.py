@@ -10,7 +10,6 @@ from reflex_core._internal.event.processor.event_processor import (
     EventProcessor,
     QueueShutDown,
 )
-from reflex_core._internal.event.processor.future import EventFuture
 from reflex_core._internal.registry import RegistrationContext
 
 from reflex.event import Event, EventHandler
@@ -536,36 +535,6 @@ async def test_sequential_chained_events_run_in_order(token: str):
         )
         await future.wait_all()
     assert [entry["value"] for entry in _CALL_LOG] == ["first", "second", "third"]
-
-
-async def test_sequential_chained_futures_are_sequential(token: str):
-    """EventFutures created for normal (non-background) events have sequential=True.
-
-    Args:
-        token: The client token.
-    """
-    ep = EventProcessor(graceful_shutdown_timeout=2)
-    ep.configure()
-    async with ep:
-        future = await ep.enqueue(token, Event.from_event_type(logging_event())[0])
-    assert isinstance(future, EventFuture)
-    assert future.sequential is True
-
-
-async def test_background_event_future_is_not_sequential(token: str):
-    """EventFutures created for background events have sequential=False.
-
-    Args:
-        token: The client token.
-    """
-    ep = EventProcessor(graceful_shutdown_timeout=2)
-    ep.configure()
-    async with ep:
-        future = await ep.enqueue(
-            token, Event.from_event_type(background_slow_logging_event())[0]
-        )
-    assert isinstance(future, EventFuture)
-    assert future.sequential is False
 
 
 async def test_futures_cleaned_up_after_chained_events(token: str):

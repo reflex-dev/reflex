@@ -19,11 +19,6 @@ class EventFuture(asyncio.Future):
     # The transaction id associated with this future.
     txid: str
 
-    # If sequential is True, sibling events will be processed sequentially.
-    # Background events should set sequential=False to run immediately and
-    # without affecting non-background event ordering.
-    sequential: bool = True
-
     # Child futures spawned by this future, if any.
     children: list[EventFuture] = dataclasses.field(default_factory=list)
 
@@ -97,27 +92,6 @@ class EventFuture(asyncio.Future):
         for child in self.children:
             child.cancel(msg)
         return result
-
-    async def wait_for_predecessor(self) -> None:
-        """Wait for the immediately preceding sequential sibling to complete.
-
-        If this future is not sequential, has no parent, is the first child,
-        or cannot be found in the parent's children list, this is a no-op.
-        """
-        if not self.sequential or self.parent is None:
-            return
-        children = self.parent.children
-        try:
-            idx = children.index(self)
-        except ValueError:
-            return
-        if idx == 0:
-            return  # First child: no predecessor to wait for.
-        with contextlib.suppress(Exception, asyncio.CancelledError):
-            print(
-                f"EventFuture {self.txid} waiting for predecessor {children[idx - 1].txid}"
-            )
-            await children[idx - 1]
 
 
 __all__ = [
