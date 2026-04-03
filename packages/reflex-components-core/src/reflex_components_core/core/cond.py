@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, overload
+from typing import Any, TypeVar, overload
 
 from reflex_core.components.component import BaseComponent, Component, field
 from reflex_core.components.tags import CondTag, Tag
@@ -100,15 +100,27 @@ def cond(condition: Any, c1: Component, /) -> Component: ...
 
 
 @overload
-def cond(condition: Any, c1: Var[Component], c2: Var[Component], /) -> Component: ...  # pyright: ignore [reportOverlappingOverload]
-
-
-@overload
 def cond(condition: Any, c1: Any, c2: Component, /) -> Component: ...  # pyright: ignore [reportOverlappingOverload]
 
 
+T = TypeVar("T", covariant=True)
+U = TypeVar("U", covariant=True)
+
+
 @overload
-def cond(condition: Any, c1: Any, c2: Any, /) -> Var: ...
+def cond(condition: Any, c1: Var[T], c2: Var[U], /) -> Var[T | U]: ...  # pyright: ignore [reportOverlappingOverload]
+
+
+@overload
+def cond(condition: Any, c1: T, c2: Var[U], /) -> Var[T | U]: ...  # pyright: ignore [reportOverlappingOverload]
+
+
+@overload
+def cond(condition: Any, c1: Var[T], c2: U, /) -> Var[T | U]: ...  # pyright: ignore [reportOverlappingOverload]
+
+
+@overload
+def cond(condition: Any, c1: T, c2: U, /) -> Var[T | U]: ...
 
 
 def cond(condition: Any, c1: Any, c2: Any = types.Unset(), /) -> Component | Var:

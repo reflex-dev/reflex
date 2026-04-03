@@ -5,9 +5,11 @@ import pytest
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core.cond import Cond, cond
 from reflex_components_radix.themes.typography.text import Text
+from reflex_core.components.component import Component
 from reflex_core.constants.state import FIELD_MARKER
 from reflex_core.utils.format import format_state_name
 from reflex_core.vars.base import LiteralVar, Var, computed_var
+from typing_extensions import assert_type
 
 from reflex.state import BaseState
 
@@ -145,3 +147,44 @@ def test_cond_computed_var():
     )
 
     assert comp._var_type == int | str
+
+
+def test_cond_assert_types() -> None:
+    """Test that pyright infers the correct return types for cond overloads."""
+    text_comp = Text.create("hello")
+    text_comp2 = Text.create("world")
+    var_int: Var[int] = LiteralVar.create(1)
+    var_str: Var[str] = LiteralVar.create("a")
+
+    # Component, Component -> Component
+    _ = assert_type(cond(True, text_comp, text_comp2), Component)
+
+    # Component, non-component -> Component
+    _ = assert_type(cond(True, text_comp, "fallback"), Component)
+
+    # Component only (no else) -> Component
+    _ = assert_type(cond(True, text_comp), Component)
+
+    # non-component, Component -> Component
+    _ = assert_type(cond(True, "hello", text_comp), Component)
+
+    # T, T -> Var[T]
+    _ = assert_type(cond(True, "hello", "world"), Var[str])
+
+    # T, U -> Var[T | U]
+    _ = assert_type(cond(True, "hello", 3), Var[str | int])
+
+    # T, Var[T] -> Var[T]
+    _ = assert_type(cond(True, "hello", var_str), Var[str])
+
+    # Var[T], T -> Var[T]
+    _ = assert_type(cond(True, var_str, "world"), Var[str])
+
+    # T, Var[U] -> Var[T | U]
+    _ = assert_type(cond(True, "hello", var_int), Var[str | int])
+
+    # Var[T], U -> Var[T | U]
+    _ = assert_type(cond(True, var_str, 3), Var[str | int])
+
+    # Var[T], Var[U] -> Var[T | U]
+    _ = assert_type(cond(True, var_int, var_str), Var[int | str])

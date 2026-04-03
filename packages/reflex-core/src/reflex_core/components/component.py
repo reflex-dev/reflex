@@ -2945,7 +2945,7 @@ def render_dict_to_var(tag: dict | Component | str) -> Var:
     frozen=True,
     slots=True,
 )
-class LiteralComponentVar(CachedVarOperation, LiteralVar, ComponentVar):
+class LiteralComponentVar(CachedVarOperation, LiteralVar[Component], ComponentVar):
     """A Var that represents a Component."""
 
     _var_value: BaseComponent = dataclasses.field(default_factory=empty_component)

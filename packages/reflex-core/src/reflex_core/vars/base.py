@@ -1391,7 +1391,7 @@ class ToOperation:
         )
 
 
-class LiteralVar(Var):
+class LiteralVar(Var[VAR_TYPE]):
     """Base class for immutable literal vars."""
 
     def __init_subclass__(cls, **kwargs):
@@ -2932,7 +2932,7 @@ class NoneVar(Var[None], python_types=type(None)):
     frozen=True,
     slots=True,
 )
-class LiteralNoneVar(LiteralVar, NoneVar):
+class LiteralNoneVar(LiteralVar[None], NoneVar):
     """A var representing None."""
 
     _var_value: None = None

@@ -370,7 +370,9 @@ class RestProp(ObjectVar[dict[str, Any]]):
     frozen=True,
     slots=True,
 )
-class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
+class LiteralObjectVar(
+    CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar[OBJECT_TYPE]
+):
     """Base class for immutable literal object vars."""
 
     _var_value: Mapping[Var | Any, Var | Any] = dataclasses.field(default_factory=dict)
