@@ -2,7 +2,14 @@
 
 from reflex_core.plugins import *
 from reflex_core.plugins import (
+    BaseContext,
     CommonContext,
+    CompileContext,
+    CompilerHooks,
+    CompilerPlugin,
+    ComponentAndChildren,
+    PageContext,
+    PageDefinition,
     Plugin,
     PreCompileContext,
     SitemapPlugin,
@@ -12,7 +19,14 @@ from reflex_core.plugins import (
 )
 
 __all__ = [
+    "BaseContext",
     "CommonContext",
+    "CompileContext",
+    "CompilerHooks",
+    "CompilerPlugin",
+    "ComponentAndChildren",
+    "PageContext",
+    "PageDefinition",
     "Plugin",
     "PreCompileContext",
     "SitemapPlugin",

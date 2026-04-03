@@ -1556,6 +1556,7 @@ class Component(BaseComponent, ABC):
             yield clz.__name__
 
     @classmethod
+    @functools.cache
     def _iter_parent_classes_with_method(cls, method: str) -> Sequence[type[Component]]:
         """Iterate through parent classes that define a given method.
 
@@ -1582,7 +1583,7 @@ class Component(BaseComponent, ABC):
                 continue
             seen_methods.add(method_func)
             clzs.append(clz)
-        return clzs
+        return tuple(clzs)
 
     def _get_custom_code(self) -> str | None:
         """Get custom code for the component.

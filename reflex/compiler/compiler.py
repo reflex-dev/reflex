@@ -2,41 +2,58 @@
 
 from __future__ import annotations
 
+import json
 import sys
 from collections.abc import Callable, Iterable, Sequence
 from inspect import getmodule
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from reflex_components_core.base.app_wrap import AppWrap
 from reflex_components_core.base.fragment import Fragment
 from reflex_core import constants
 from reflex_core.components.component import (
+    CUSTOM_COMPONENTS,
     BaseComponent,
     Component,
     ComponentStyle,
     CustomComponent,
     StatefulComponent,
+    evaluate_style_namespaces,
 )
 from reflex_core.config import get_config
 from reflex_core.constants.compiler import PageNames, ResetStylesheet
 from reflex_core.constants.state import FIELD_MARKER
 from reflex_core.environment import environment
+from reflex_core.plugins import CompileContext, CompilerHooks, PageContext
 from reflex_core.style import SYSTEM_COLOR_MODE
 from reflex_core.utils.exceptions import ReflexError
 from reflex_core.utils.format import to_title_case
 from reflex_core.utils.imports import ImportVar, ParsedImportDict
 from reflex_core.vars.base import LiteralVar, Var
+from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 
 from reflex.compiler import templates, utils
+from reflex.compiler.plugins import default_page_plugins
 from reflex.experimental.memo import (
+    EXPERIMENTAL_MEMOS,
     ExperimentalMemoComponentDefinition,
     ExperimentalMemoDefinition,
     ExperimentalMemoFunctionDefinition,
 )
-from reflex.state import BaseState
-from reflex.utils import console, path_ops
-from reflex.utils.exec import is_prod_mode
+from reflex.state import BaseState, code_uses_state_contexts
+from reflex.utils import console, frontend_skeleton, path_ops, prerequisites
+from reflex.utils.exec import get_compile_context, is_prod_mode
 from reflex.utils.prerequisites import get_web_dir
+
+
+def _set_progress_total(
+    progress: Progress | console.PoorProgress,
+    task: Any,
+    total: int,
+) -> None:
+    """Update a task total for either rich or fallback progress bars."""
+    progress.update(task, total=total)
 
 
 def _apply_common_imports(
@@ -521,7 +538,7 @@ def compile_document_root(
     return output_path, code
 
 
-def compile_app(app_root: Component) -> tuple[str, str]:
+def compile_app_root(app_root: Component) -> tuple[str, str]:
     """Compile the app root.
 
     Args:
@@ -596,6 +613,34 @@ def compile_page(path: str, component: BaseComponent) -> tuple[str, str]:
     return output_path, code
 
 
+def compile_page_from_context(page_ctx: PageContext) -> tuple[str, str]:
+    """Compile a single page from a collected page context.
+
+    Args:
+        page_ctx: The collected page context to render.
+
+    Returns:
+        The path and code of the compiled page.
+    """
+    output_path = utils.get_page_path(page_ctx.route)
+    imports = {
+        lib: list(fields)
+        for lib, fields in (
+            page_ctx.frontend_imports or page_ctx.merged_imports(collapse=True)
+        ).items()
+    }
+    _apply_common_imports(imports)
+
+    code = templates.page_template(
+        imports=utils.compile_imports(imports),
+        dynamic_imports=sorted(page_ctx.dynamic_imports),
+        custom_codes=page_ctx.custom_code_dict(),
+        hooks=page_ctx.hooks,
+        render=page_ctx.root_component.render(),
+    )
+    return output_path, code
+
+
 def compile_memo_components(
     components: Iterable[CustomComponent],
     experimental_memos: Iterable[ExperimentalMemoDefinition] = (),
@@ -661,7 +706,7 @@ def purge_web_pages_dir():
 
 
 if TYPE_CHECKING:
-    from reflex.app import ComponentCallable, UnevaluatedPage
+    from reflex.app import App, ComponentCallable, UnevaluatedPage
 
 
 def _into_component_once(
@@ -871,82 +916,340 @@ def compile_unevaluated_page(
         return component
 
 
-class ExecutorSafeFunctions:
-    """Helper class to allow parallelisation of parts of the compilation process.
+def _compile_page_from_app(
+    app: App,
+    route: str,
+    *,
+    save_page: bool = True,
+) -> None:
+    """Evaluate a page from an app and optionally save it.
 
-    This class (and its class attributes) are available at global scope.
-
-    In a multiprocessing context (like when using a ProcessPoolExecutor), the content of this
-    global class is logically replicated to any FORKED process.
-
-    How it works:
-    * Before the child process is forked, ensure that we stash any input data required by any future
-      function call in the child process.
-    * After the child process is forked, the child process will have a copy of the global class, which
-      includes the previously stashed input data.
-    * Any task submitted to the child process simply needs a way to communicate which input data the
-      requested function call requires.
-
-    Why do we need this? Passing input data directly to child process often not possible because the input data is not picklable.
-    The mechanic described here removes the need to pickle the input data at all.
-
-    Limitations:
-    * This can never support returning unpicklable OUTPUT data.
-    * Any object mutations done by the child process will not propagate back to the parent process (fork goes one way!).
-
+    Args:
+        app: The app being compiled.
+        route: The route to evaluate.
+        save_page: Whether to store the evaluated page on the app.
     """
+    app._compile_page(route, save_page=save_page)
 
-    COMPONENTS: dict[str, BaseComponent] = {}
-    UNCOMPILED_PAGES: dict[str, UnevaluatedPage] = {}
 
-    @classmethod
-    def compile_page(cls, route: str) -> tuple[str, str]:
-        """Compile a page.
+def _resolve_app_wrap_components(
+    app: App,
+    page_app_wrap_components: dict[tuple[int, str], Component],
+) -> dict[tuple[int, str], Component]:
+    """Build the full app-wrap registry for compilation.
 
-        Args:
-            route: The route of the page to compile.
+    Args:
+        app: The app being compiled.
+        page_app_wrap_components: App-wrap components collected from pages.
 
-        Returns:
-            The path and code of the compiled page.
-        """
-        return compile_page(route, cls.COMPONENTS[route])
+    Returns:
+        The merged app-wrap component registry.
+    """
+    config = get_config()
 
-    @classmethod
-    def compile_unevaluated_page(
-        cls,
-        route: str,
-        style: ComponentStyle,
-        theme: Component | None,
-    ) -> tuple[str, Component, tuple[str, str]]:
-        """Compile an unevaluated page.
+    app_wrappers: dict[tuple[int, str], Component] = {
+        (0, "AppWrap"): AppWrap.create(),
+    }
+    app_wrappers.update(page_app_wrap_components)
 
-        Args:
-            route: The route of the page to compile.
-            style: The style of the page.
-            theme: The theme of the page.
+    if app.theme is not None:
+        app_wrappers[20, "Theme"] = app.theme
 
-        Returns:
-            The route, compiled component, and compiled page.
-        """
-        component = compile_unevaluated_page(
-            route, cls.UNCOMPILED_PAGES[route], style, theme
+    if config.react_strict_mode:
+        from reflex_components_core.base.strict_mode import StrictMode
+
+        app_wrappers[200, "StrictMode"] = StrictMode.create()
+
+    if (toaster := app.toaster) is not None:
+        from reflex_core.components.component import memo
+
+        @memo
+        def memoized_toast_provider():
+            return toaster
+
+        app_wrappers[44, "ToasterProvider"] = Fragment.create(memoized_toast_provider())
+
+    for wrap_mapping in (app.app_wraps, app.extra_app_wraps):
+        for key, app_wrap in wrap_mapping.items():
+            component = app_wrap(app._state is not None)
+            if component is not None:
+                app_wrappers[key] = component
+
+    return app_wrappers
+
+
+def compile_app(
+    app: App,
+    *,
+    prerender_routes: bool = False,
+    dry_run: bool = False,
+    use_rich: bool = True,
+) -> None:
+    """Compile an app using the compiler plugin pipeline."""
+    from reflex_core.utils.exceptions import ReflexRuntimeError
+
+    app._apply_decorated_pages()
+    app._pages = {}
+
+    should_compile = app._should_compile()
+    backend_dir = prerequisites.get_backend_dir()
+    if not dry_run and not should_compile and backend_dir.exists():
+        stateful_pages_marker = backend_dir / constants.Dirs.STATEFUL_PAGES
+        if stateful_pages_marker.exists():
+            with stateful_pages_marker.open("r") as file:
+                stateful_pages = json.load(file)
+            for route in stateful_pages:
+                console.debug(f"BE Evaluating stateful page: {route}")
+                _compile_page_from_app(app, route, save_page=False)
+        app._add_optional_endpoints()
+        return
+
+    if constants.Page404.SLUG not in app._unevaluated_pages:
+        app.add_page(route=constants.Page404.SLUG)
+
+    app.style = evaluate_style_namespaces(app.style)
+    config = get_config()
+
+    if not should_compile and not dry_run:
+        with console.timing("Evaluate Pages (Backend)"):
+            for route in app._unevaluated_pages:
+                console.debug(f"Evaluating page: {route}")
+                _compile_page_from_app(app, route, save_page=False)
+
+        app._write_stateful_pages_marker()
+        app._add_optional_endpoints()
+        return
+
+    progress = (
+        Progress(
+            *Progress.get_default_columns()[:-1],
+            MofNCompleteColumn(),
+            TimeElapsedColumn(),
         )
-        return route, component, compile_page(route, component)
+        if use_rich
+        else console.PoorProgress()
+    )
+    fixed_steps = 7
+    base_total = (len(app._unevaluated_pages) * 2) + fixed_steps + len(config.plugins)
+    progress.start()
+    task = progress.add_task("Compiling:", total=base_total)
 
-    @classmethod
-    def compile_theme(cls, style: ComponentStyle | None) -> tuple[str, str]:
-        """Compile the theme.
+    compile_ctx = CompileContext(
+        app=app,
+        pages=list(app._unevaluated_pages.values()),
+        hooks=CompilerHooks(
+            plugins=default_page_plugins(style=app.style, theme=app.theme)
+        ),
+    )
 
-        Args:
-            style: The style to compile.
+    with console.timing("Compile pages"), compile_ctx:
+        compile_ctx.compile(
+            apply_overlay=True,
+            evaluate_progress=lambda: progress.advance(task),
+            render_progress=lambda: progress.advance(task),
+        )
 
-        Returns:
-            The path and code of the compiled theme.
+    for route, page_ctx in compile_ctx.compiled_pages.items():
+        app._check_routes_conflict(route)
+        if not isinstance(page_ctx.root_component, Component):
+            msg = (
+                f"Compiled page {route!r} root must be a Component before it can "
+                "be registered on the app."
+            )
+            raise TypeError(msg)
+        app._pages[route] = page_ctx.root_component
 
-        Raises:
-            ValueError: If the style is not set.
-        """
-        if style is None:
-            msg = "STYLE should be set"
-            raise ValueError(msg)
-        return compile_theme(style)
+    app._stateful_pages.update(compile_ctx.stateful_routes)
+    app._write_stateful_pages_marker()
+    app._add_optional_endpoints()
+    app._validate_var_dependencies()
+
+    if config.show_built_with_reflex is None:
+        if (
+            get_compile_context() == constants.CompileContext.DEPLOY
+            and prerequisites.get_user_tier() in ["pro", "team", "enterprise"]
+        ):
+            config.show_built_with_reflex = False
+        else:
+            config.show_built_with_reflex = True
+
+    if is_prod_mode() and config.show_built_with_reflex:
+        app._setup_sticky_badge()
+
+    progress.advance(task)
+
+    compile_results = [
+        (page_ctx.output_path, page_ctx.output_code)
+        for page_ctx in compile_ctx.compiled_pages.values()
+        if page_ctx.output_path is not None and page_ctx.output_code is not None
+    ]
+    all_imports = compile_ctx.all_imports
+
+    (
+        memo_components_output,
+        memo_components_result,
+        memo_components_imports,
+    ) = compile_memo_components(
+        dict.fromkeys(CUSTOM_COMPONENTS.values()),
+        tuple(EXPERIMENTAL_MEMOS.values()),
+    )
+    compile_results.append((memo_components_output, memo_components_result))
+    all_imports = utils.merge_imports(all_imports, memo_components_imports)
+    progress.advance(task)
+
+    if (
+        code_uses_state_contexts(compile_ctx.stateful_components_code)
+        and app._state is None
+    ):
+        msg = (
+            "To access rx.State in frontend components, at least one "
+            "subclass of rx.State must be defined in the app."
+        )
+        raise ReflexRuntimeError(msg)
+    if compile_ctx.stateful_components_path is not None:
+        compile_results.append((
+            compile_ctx.stateful_components_path,
+            compile_ctx.stateful_components_code,
+        ))
+    progress.advance(task)
+
+    app_wrappers = _resolve_app_wrap_components(app, compile_ctx.app_wrap_components)
+    app_root = app._app_root(app_wrappers)
+    all_imports = utils.merge_imports(all_imports, app_root._get_all_imports())
+
+    compile_results.append(
+        compile_document_root(
+            app.head_components,
+            html_lang=app.html_lang,
+            html_custom_attrs=(
+                {"suppressHydrationWarning": True, **app.html_custom_attrs}
+                if app.html_custom_attrs
+                else {"suppressHydrationWarning": True}
+            ),
+        )
+    )
+    progress.advance(task)
+
+    assets_src = Path.cwd() / constants.Dirs.APP_ASSETS
+    if assets_src.is_dir() and not dry_run:
+        with console.timing("Copy assets"):
+            path_ops.update_directory_tree(
+                src=assets_src,
+                dest=Path.cwd() / prerequisites.get_web_dir() / constants.Dirs.PUBLIC,
+            )
+
+    save_tasks: list[
+        tuple[
+            Callable[..., list[tuple[str, str]] | tuple[str, str] | None],
+            tuple[Any, ...],
+            dict[str, Any],
+        ]
+    ] = []
+    modify_files_tasks: list[tuple[str, str, Callable[[str], str]]] = []
+
+    def add_save_task(
+        task_fn: Callable[..., list[tuple[str, str]] | tuple[str, str] | None],
+        /,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
+        save_tasks.append((task_fn, args, kwargs))
+
+    for plugin in config.plugins:
+        plugin.pre_compile(
+            add_save_task=add_save_task,
+            add_modify_task=lambda *args, plugin=plugin: modify_files_tasks.append((
+                plugin.__class__.__module__ + plugin.__class__.__name__,
+                *args,
+            )),
+            unevaluated_pages=list(app._unevaluated_pages.values()),
+        )
+
+    if save_tasks:
+        _set_progress_total(progress, task, base_total + len(save_tasks))
+
+    progress.advance(task, advance=len(config.plugins))
+
+    compile_results.append(compile_root_stylesheet(app.stylesheets, app.reset_style))
+    progress.advance(task)
+
+    compile_results.append(compile_theme(app.style))
+    progress.advance(task)
+
+    for task_fn, args, kwargs in save_tasks:
+        result = task_fn(*args, **kwargs)
+        if result is None:
+            progress.advance(task)
+            continue
+        if isinstance(result, list):
+            compile_results.extend(result)
+        else:
+            compile_results.append(result)
+        progress.advance(task)
+
+    compile_results.append(compile_contexts(app._state, app.theme))
+    if app.theme is not None:
+        app.theme.appearance = None  # pyright: ignore[reportAttributeAccessIssue]
+    progress.advance(task)
+
+    compile_results.append(compile_app_root(app_root))
+    progress.advance(task)
+
+    progress.stop()
+
+    if dry_run:
+        return
+
+    with console.timing("Install Frontend Packages"):
+        app._get_frontend_packages(all_imports)
+
+    frontend_skeleton.update_react_router_config(
+        prerender_routes=prerender_routes,
+    )
+
+    if is_prod_mode():
+        purge_web_pages_dir()
+    else:
+        keep_files = [Path(output_path) for output_path, _ in compile_results]
+        for page_file in Path(
+            prerequisites.get_web_dir() / constants.Dirs.PAGES / constants.Dirs.ROUTES
+        ).rglob("*"):
+            if page_file.is_file() and page_file not in keep_files:
+                page_file.unlink()
+
+    output_mapping: dict[Path, str] = {}
+    for output_path, code in compile_results:
+        path = utils.resolve_path_of_web_dir(output_path)
+        if path in output_mapping:
+            console.warn(
+                f"Path {path} has two different outputs. The first one will be used."
+            )
+        else:
+            output_mapping[path] = code
+
+    for plugin in config.plugins:
+        for static_file_path, content in plugin.get_static_assets():
+            path = utils.resolve_path_of_web_dir(static_file_path)
+            if path in output_mapping:
+                console.warn(
+                    f"Plugin {plugin.__class__.__name__} is trying to write to {path} but it already exists. The plugin file will be ignored."
+                )
+            else:
+                output_mapping[path] = (
+                    content.decode("utf-8") if isinstance(content, bytes) else content
+                )
+
+    for plugin_name, file_path, modify_fn in modify_files_tasks:
+        path = utils.resolve_path_of_web_dir(file_path)
+        file_content = output_mapping.get(path)
+        if file_content is None:
+            if path.exists():
+                file_content = path.read_text()
+            else:
+                msg = f"Plugin {plugin_name} is trying to modify {path} but it does not exist."
+                raise FileNotFoundError(msg)
+        output_mapping[path] = modify_fn(file_content)
+
+    with console.timing("Write to Disk"):
+        for output_path, code in output_mapping.items():
+            utils.write_file(output_path, code)
