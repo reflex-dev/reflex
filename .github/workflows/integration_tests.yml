@@ -122,6 +122,18 @@ jobs:
           python-version: ${{ matrix.python-version }}
           run-uv-sync: true
 
+      - name: Install Socket.dev Firewall (free)
+        uses: SocketDev/action@v1.3.1
+        with:
+          mode: firewall-free
+
+      - name: Create sfw wrapper scripts for npm and bun
+        run: |
+          mkdir -p "$RUNNER_TEMP/sfw-wrappers"
+          printf '#!/usr/bin/env bash\nexec sfw npm "$@"\n' > "$RUNNER_TEMP/sfw-wrappers/npm"
+          printf '#!/usr/bin/env bash\nexec sfw bun "$@"\n' > "$RUNNER_TEMP/sfw-wrappers/bun"
+          chmod +x "$RUNNER_TEMP/sfw-wrappers/npm" "$RUNNER_TEMP/sfw-wrappers/bun"
+
       - name: Clone Reflex Website Repo
         uses: actions/checkout@v4
         with:
@@ -137,16 +149,18 @@ jobs:
           uv pip list --format=json | jq -r '"^" + .[].name + "[ =]"' > installed_patterns.txt
           grep -ivf installed_patterns.txt requirements.txt > requirements.txt.tmp && mv requirements.txt.tmp requirements.txt
           rm installed_patterns.txt
-      - name: Install Requirements for reflex-web
+      - name: Install Requirements for reflex-web (scanned by Socket.dev)
         working-directory: ./reflex-web
-        run: uv pip install -r requirements.txt
+        run: sfw uv pip install -r requirements.txt
       - name: Init Website for reflex-web
         working-directory: ./reflex-web
         run: uv run --active --no-sync reflex init
       - name: Run Website and Check for errors
+        env:
+          PATH: ${{ runner.temp }}/sfw-wrappers:${{ env.PATH }}
         run: |
-          # Check that npm is home
-          npm -v
+          # Verify sfw wrappers are first on PATH
+          which npm && npm -v
           uv run --active --no-sync bash scripts/integration.sh ./reflex-web prod
 
   rx-shout-from-template:
