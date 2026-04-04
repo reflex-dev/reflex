@@ -40,8 +40,6 @@ const cookies = new Cookies();
 // Dictionary holding component references.
 export const refs = {};
 
-// Flag ensures that only one event is processing on the backend concurrently.
-let event_processing = false;
 // Array holding pending events to be processed.
 const event_queue = [];
 
@@ -203,14 +201,12 @@ function urlFrom(string) {
  * @param socket The socket object to send the event on.
  * @param navigate The navigate function from useNavigate
  * @param params The params object from useParams
- *
- * @returns True if the event was sent, false if it was handled locally.
  */
 export const applyEvent = async (event, socket, navigate, params) => {
   // Handle special events
   if (event.name == "_redirect") {
     if ((event.payload.path ?? undefined) === undefined) {
-      return false;
+      return;
     }
     if (event.payload.external) {
       window.open(
@@ -218,7 +214,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
         "_blank",
         "noopener" + (event.payload.popup ? ",popup" : ""),
       );
-      return false;
+      return;
     }
     const url = urlFrom(event.payload.path);
     let pathname = event.payload.path;
@@ -226,7 +222,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
       if (url.host !== window.location.host) {
         // External URL
         window.location.assign(event.payload.path);
-        return false;
+        return;
       } else {
         pathname = url.pathname + url.search + url.hash;
       }
@@ -236,37 +232,37 @@ export const applyEvent = async (event, socket, navigate, params) => {
     } else {
       navigate(pathname);
     }
-    return false;
+    return;
   }
 
   if (event.name == "_remove_cookie") {
     cookies.remove(event.payload.key, { ...event.payload.options });
     queueEventIfSocketExists(initialEvents(), socket, navigate, params);
-    return false;
+    return;
   }
 
   if (event.name == "_clear_local_storage") {
     localStorage.clear();
     queueEventIfSocketExists(initialEvents(), socket, navigate, params);
-    return false;
+    return;
   }
 
   if (event.name == "_remove_local_storage") {
     localStorage.removeItem(event.payload.key);
     queueEventIfSocketExists(initialEvents(), socket, navigate, params);
-    return false;
+    return;
   }
 
   if (event.name == "_clear_session_storage") {
     sessionStorage.clear();
     queueEventIfSocketExists(initialEvents(), socket, navigate, params);
-    return false;
+    return;
   }
 
   if (event.name == "_remove_session_storage") {
     sessionStorage.removeItem(event.payload.key);
     queueEventIfSocketExists(initialEvents(), socket, navigate, params);
-    return false;
+    return;
   }
 
   if (event.name == "_download") {
@@ -285,7 +281,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
     a.download = event.payload.filename;
     a.click();
     a.remove();
-    return false;
+    return;
   }
 
   if (event.name == "_set_focus") {
@@ -299,7 +295,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
     } else {
       current.focus();
     }
-    return false;
+    return;
   }
 
   if (event.name == "_blur_focus") {
@@ -313,7 +309,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
     } else {
       current.blur();
     }
-    return false;
+    return;
   }
 
   if (event.name == "_set_value") {
@@ -322,7 +318,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
     if (ref.current) {
       ref.current.value = event.payload.value;
     }
-    return false;
+    return;
   }
 
   if (
@@ -348,7 +344,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
         window.onerror(e.message, null, null, null, e);
       }
     }
-    return false;
+    return;
   }
 
   if (event.name == "_call_script" || event.name == "_call_function") {
@@ -375,11 +371,10 @@ export const applyEvent = async (event, socket, navigate, params) => {
         window.onerror(e.message, null, null, null, e);
       }
     }
-    return false;
+    return;
   }
 
   // Update token and router data (if missing).
-  event.token = getToken();
   if (
     event.router_data === undefined ||
     Object.keys(event.router_data).length === 0
@@ -387,24 +382,24 @@ export const applyEvent = async (event, socket, navigate, params) => {
     // Since we don't have router directly, we need to get info from our hooks
     event.router_data = {
       pathname: window.location.pathname,
-      query: {
-        ...Object.fromEntries(new URLSearchParams(window.location.search)),
-        ...params(),
-      },
       asPath:
         window.location.pathname +
         window.location.search +
         window.location.hash,
     };
+    const query = {
+      ...Object.fromEntries(new URLSearchParams(window.location.search)),
+      ...params.current,
+    };
+    if (query && Object.keys(query).length > 0) {
+      event.router_data.query = query;
+    }
   }
 
   // Send the event to the server.
   if (socket) {
     socket.emit("event", event);
-    return true;
   }
-
-  return false;
 };
 
 /**
@@ -413,11 +408,8 @@ export const applyEvent = async (event, socket, navigate, params) => {
  * @param socket The socket object to send the response event(s) on.
  * @param navigate The navigate function from React Router
  * @param params The params object from React Router
- *
- * @returns Whether the event was sent.
  */
 export const applyRestEvent = async (event, socket, navigate, params) => {
-  let eventSent = false;
   if (event.handler === "uploadFiles") {
     // Start upload, but do not wait for it, which would block other events.
     uploadFiles(
@@ -431,9 +423,7 @@ export const applyRestEvent = async (event, socket, navigate, params) => {
       getBackendURL,
       getToken,
     );
-    return false;
   }
-  return eventSent;
 };
 
 /**
@@ -487,28 +477,21 @@ export const processEvent = async (socket, navigate, params) => {
   }
 
   // Only proceed if we're not already processing an event.
-  if (event_queue.length === 0 || event_processing) {
+  if (event_queue.length === 0) {
     return;
   }
-
-  // Set processing to true to block other events from being processed.
-  event_processing = true;
 
   // Apply the next event in the queue.
   const event = event_queue.shift();
 
-  let eventSent = false;
   // Process events with handlers via REST and all others via websockets.
   if (event.handler) {
-    eventSent = await applyRestEvent(event, socket, navigate, params);
+    await applyRestEvent(event, socket, navigate, params);
   } else {
-    eventSent = await applyEvent(event, socket, navigate, params);
+    await applyEvent(event, socket, navigate, params);
   }
-  // If no event was sent, set processing to false.
-  if (!eventSent) {
-    event_processing = false;
-    // recursively call processEvent to drain the queue, since there is
-    // no state update to trigger the useEffect event loop.
+  // Process any remaining events.
+  if (event_queue.length > 0) {
     await processEvent(socket, navigate, params);
   }
 };
@@ -621,17 +604,11 @@ export const connect = async (
     window.addEventListener("unload", disconnectTrigger);
     if (socket.current.rehydrate) {
       socket.current.rehydrate = false;
-      queueEvents(
-        initialEvents(),
-        socket,
-        true,
-        navigate,
-        () => params.current,
-      );
+      queueEvents(initialEvents(), socket, true, navigate, params);
     }
     // Drain any initial events from the queue.
-    while (event_queue.length > 0 && !event_processing) {
-      await processEvent(socket.current, navigate, () => params.current);
+    while (event_queue.length > 0) {
+      await processEvent(socket.current, navigate, params);
     }
   });
 
@@ -650,12 +627,10 @@ export const connect = async (
     }, 200 * n_connect_errors); // Incremental backoff
   });
 
-  // When the socket disconnects reset the event_processing flag
   socket.current.on("disconnect", (reason, details) => {
     socket.current.wait_connect = false;
     const try_reconnect =
       reason !== "io server disconnect" && reason !== "io client disconnect";
-    event_processing = false;
     window.removeEventListener("unload", disconnectTrigger);
     window.removeEventListener("beforeunload", disconnectTrigger);
     window.removeEventListener("pagehide", pagehideHandler);
@@ -667,29 +642,23 @@ export const connect = async (
 
   // On each received message, queue the updates and events.
   socket.current.on("event", async (update) => {
-    for (const substate in update.delta) {
-      dispatch[substate](update.delta[substate]);
-      // handle events waiting for `is_hydrated`
-      if (
-        substate === state_name &&
-        update.delta[substate]?.is_hydrated_rx_state_
-      ) {
-        queueEvents(on_hydrated_queue, socket, false, navigate, params);
-        on_hydrated_queue.length = 0;
+    if (update.delta && Object.keys(update.delta).length > 0) {
+      for (const substate in update.delta) {
+        dispatch[substate](update.delta[substate]);
+        // handle events waiting for `is_hydrated`
+        if (
+          substate === state_name &&
+          update.delta[substate]?.is_hydrated_rx_state_
+        ) {
+          queueEvents(on_hydrated_queue, socket, false, navigate, params);
+          on_hydrated_queue.length = 0;
+        }
       }
+      applyClientStorageDelta(client_storage, update.delta);
     }
-    applyClientStorageDelta(client_storage, update.delta);
-    if (update.final !== null) {
-      event_processing = !update.final;
-    }
-    if (update.events) {
+    if (update.events && update.events.length > 0) {
       queueEvents(update.events, socket, false, navigate, params);
     }
-  });
-  socket.current.on("reload", async (event) => {
-    event_processing = false;
-    on_hydrated_queue.push(event);
-    queueEvents(initialEvents(), socket, true, navigate, params);
   });
   socket.current.on("new_token", async (new_token) => {
     token = new_token;
@@ -713,7 +682,17 @@ export const ReflexEvent = (
   event_actions = {},
   handler = null,
 ) => {
-  return { name, payload, handler, event_actions };
+  const e = { name };
+  if (payload && Object.keys(payload).length > 0) {
+    e.payload = payload;
+  }
+  if (event_actions && Object.keys(event_actions).length > 0) {
+    e.event_actions = event_actions;
+  }
+  if (handler !== null) {
+    e.handler = handler;
+  }
+  return e;
 };
 
 /**
@@ -919,7 +898,7 @@ export const useEventLoop = (
         setConnectErrors,
         client_storage,
         navigate,
-        () => params.current,
+        params,
       );
     }
   }, [
@@ -947,7 +926,7 @@ export const useEventLoop = (
     }
 
     return applyEventActions(
-      () => queueEvents(_events, socket, false, navigate, () => params.current),
+      () => queueEvents(_events, socket, false, navigate, params),
       event_actions,
       args,
       _events.map((e) => e.name).join("+++"),
@@ -958,13 +937,7 @@ export const useEventLoop = (
   const sentHydrate = useRef(false); // Avoid double-hydrate due to React strict-mode
   useEffect(() => {
     if (!sentHydrate.current) {
-      queueEvents(
-        initial_events(),
-        socket,
-        true,
-        navigate,
-        () => params.current,
-      );
+      queueEvents(initial_events(), socket, true, navigate, params);
       sentHydrate.current = true;
     }
   }, []);
@@ -1028,9 +1001,9 @@ export const useEventLoop = (
     }
     (async () => {
       // Process all outstanding events.
-      while (event_queue.length > 0 && !event_processing) {
+      while (event_queue.length > 0) {
         await ensureSocketConnected();
-        await processEvent(socket.current, navigate, () => params.current);
+        await processEvent(socket.current, navigate, params);
       }
     })();
   });

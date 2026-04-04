@@ -5,6 +5,7 @@ import contextlib
 import dataclasses
 import time
 from collections.abc import AsyncIterator
+from typing import Any, cast
 
 from typing_extensions import Unpack, override
 
@@ -13,7 +14,7 @@ from reflex.istate.manager import (
     StateModificationContext,
     _default_token_expiration,
 )
-from reflex.state import BaseState, _split_substate_key
+from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
 
 
 @dataclasses.dataclass
@@ -24,7 +25,7 @@ class StateManagerMemory(StateManager):
     token_expiration: int = dataclasses.field(default_factory=_default_token_expiration)
 
     # The mapping of client ids to states.
-    states: dict[str, BaseState] = dataclasses.field(default_factory=dict)
+    states: dict[str, Any] = dataclasses.field(default_factory=dict)
 
     # The mutex ensures the dict of mutexes is updated exclusively
     _state_manager_lock: asyncio.Lock = dataclasses.field(default=asyncio.Lock())
@@ -35,15 +36,15 @@ class StateManagerMemory(StateManager):
         init=False,
     )
 
-    # The latest expiration deadline for each token.
-    _token_expires_at: dict[str, float] = dataclasses.field(
+    # The latest expiration deadline and token for each cache key.
+    _token_expires_at: dict[str, tuple[float, StateToken]] = dataclasses.field(
         default_factory=dict,
         init=False,
     )
 
     _expiration_task: asyncio.Task | None = dataclasses.field(default=None, init=False)
 
-    def _get_or_create_state(self, token: str) -> BaseState:
+    def _get_or_create_state(self, token: StateToken[TOKEN_TYPE]) -> TOKEN_TYPE:
         """Get an existing state or create a fresh one for a token.
 
         Args:
@@ -52,21 +53,33 @@ class StateManagerMemory(StateManager):
         Returns:
             The state for the token.
         """
-        state = self.states.get(token)
-        if state is None:
-            state = self.states[token] = self.state(_reflex_internal_init=True)
-        return state
+        key = token.cache_key
+        if key not in self.states:
+            if isinstance(token, BaseStateToken):
+                self.states[key] = token.cls.get_root_state()(
+                    _reflex_internal_init=True
+                )
+            else:
+                self.states[key] = token.cls()
+        return cast(TOKEN_TYPE, self.states[key])
 
-    def _track_token(self, token: str):
+    def _track_token(self, token: StateToken):
         """Refresh the expiration deadline for an active token."""
-        self._token_expires_at[token] = time.time() + self.token_expiration
+        self._token_expires_at[token.cache_key] = (
+            time.time() + self.token_expiration,
+            token,
+        )
         self._ensure_expiration_task()
 
-    def _purge_token(self, token: str):
-        """Remove a token from in-memory state bookkeeping."""
-        self._token_expires_at.pop(token, None)
-        self.states.pop(token, None)
-        self._states_locks.pop(token, None)
+    def _purge_token(self, token: StateToken):
+        """Remove a token from in-memory state bookkeeping.
+
+        Args:
+            token: The token to purge.
+        """
+        self._token_expires_at.pop(token.cache_key, None)
+        self._states_locks.pop(token.lock_key, None)
+        self.states.pop(token.cache_key, None)
 
     def _purge_expired_tokens(self) -> float | None:
         """Purge expired in-memory state entries and return the next deadline.
@@ -79,9 +92,9 @@ class StateManagerMemory(StateManager):
         token_expires_at = self._token_expires_at
         state_locks = self._states_locks
 
-        for token, expires_at in list(token_expires_at.items()):
+        for _cache_key, (expires_at, token) in list(token_expires_at.items()):
             if (
-                state_lock := state_locks.get(token)
+                state_lock := state_locks.get(token.lock_key)
             ) is not None and state_lock.locked():
                 continue
             if expires_at <= now:
@@ -92,7 +105,7 @@ class StateManagerMemory(StateManager):
 
         return next_expires_at
 
-    async def _get_state_lock(self, token: str) -> asyncio.Lock:
+    async def _get_state_lock(self, token: StateToken) -> asyncio.Lock:
         """Get or create the lock for a token.
 
         Args:
@@ -101,12 +114,12 @@ class StateManagerMemory(StateManager):
         Returns:
             The lock protecting the token's state.
         """
-        state_lock = self._states_locks.get(token)
+        state_lock = self._states_locks.get(token.lock_key)
         if state_lock is None:
             async with self._state_manager_lock:
-                state_lock = self._states_locks.get(token)
+                state_lock = self._states_locks.get(token.lock_key)
                 if state_lock is None:
-                    state_lock = self._states_locks[token] = asyncio.Lock()
+                    state_lock = self._states_locks[token.lock_key] = asyncio.Lock()
         return state_lock
 
     async def _expire_states(self):
@@ -130,7 +143,7 @@ class StateManagerMemory(StateManager):
             )
 
     @override
-    async def get_state(self, token: str) -> BaseState:
+    async def get_state(self, token: StateToken[TOKEN_TYPE]) -> TOKEN_TYPE:
         """Get the state for a token.
 
         Args:
@@ -139,8 +152,6 @@ class StateManagerMemory(StateManager):
         Returns:
             The state for the token.
         """
-        # Memory state manager ignores the substate suffix and always returns the top-level state.
-        token = _split_substate_key(token)[0]
         state = self._get_or_create_state(token)
         self._track_token(token)
         return state
@@ -148,8 +159,8 @@ class StateManagerMemory(StateManager):
     @override
     async def set_state(
         self,
-        token: str,
-        state: BaseState,
+        token: StateToken[TOKEN_TYPE],
+        state: TOKEN_TYPE,
         **context: Unpack[StateModificationContext],
     ):
         """Set the state for a token.
@@ -159,15 +170,14 @@ class StateManagerMemory(StateManager):
             state: The state to set.
             context: The state modification context.
         """
-        token = _split_substate_key(token)[0]
-        self.states[token] = state
+        self.states[token.cache_key] = state
         self._track_token(token)
 
     @override
     @contextlib.asynccontextmanager
     async def modify_state(
-        self, token: str, **context: Unpack[StateModificationContext]
-    ) -> AsyncIterator[BaseState]:
+        self, token: StateToken[TOKEN_TYPE], **context: Unpack[StateModificationContext]
+    ) -> AsyncIterator[TOKEN_TYPE]:
         """Modify the state for a token while holding exclusive lock.
 
         Args:
@@ -177,8 +187,6 @@ class StateManagerMemory(StateManager):
         Yields:
             The state for the token.
         """
-        # Memory state manager ignores the substate suffix and always returns the top-level state.
-        token = _split_substate_key(token)[0]
         state_lock = await self._get_state_lock(token)
 
         try:
@@ -204,3 +212,7 @@ class StateManagerMemory(StateManager):
                 with contextlib.suppress(asyncio.CancelledError):
                     await self._expiration_task
                 self._expiration_task = None
+            # Dump unlocked locks.
+            for token, lock in tuple(self._states_locks.items()):
+                if not lock.locked():
+                    self._states_locks.pop(token)

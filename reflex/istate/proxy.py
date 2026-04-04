@@ -15,13 +15,14 @@ from types import MethodType
 from typing import TYPE_CHECKING, Any, SupportsIndex, TypeVar
 
 import wrapt
+from reflex_base._internal.event.context import EventContext
 from reflex_base.event import Event
 from reflex_base.utils.exceptions import ImmutableStateError
 from reflex_base.utils.serializers import can_serialize, serialize, serializer
 from reflex_base.vars.base import Var
 from typing_extensions import Self
 
-from reflex.utils import prerequisites
+from reflex.istate.manager.token import BaseStateToken
 
 if TYPE_CHECKING:
     from reflex.state import BaseState, StateUpdate
@@ -73,15 +74,12 @@ class StateProxy(wrapt.ObjectProxy):
             event: The event associated with the state modification context.
             parent_state_proxy: The parent state proxy, for linked mutability and context tracking.
         """
-        from reflex.state import _substate_key
-
         super().__init__(state_instance)
         self._self_event = event
-        self._self_app = prerequisites.get_and_validate_app().app
         self._self_substate_path = tuple(state_instance.get_full_name().split("."))
-        self._self_substate_token = _substate_key(
-            state_instance.router.session.client_token,
-            self._self_substate_path,
+        self._self_substate_token = BaseStateToken(
+            ident=EventContext.get().token,
+            cls=state_instance.__class__,
         )
         self._self_actx = None
         self._self_mutable = False
@@ -135,11 +133,13 @@ class StateProxy(wrapt.ObjectProxy):
             msg = "The state is already mutable. Do not nest `async with self` blocks."
             raise ImmutableStateError(msg)
 
+        ctx = EventContext.get()
+
         await self._self_actx_lock.acquire()
         try:
             self._self_actx_lock_holder = current_task
-            self._self_actx = self._self_app.modify_state(
-                token=self._self_substate_token, background=True, event=self._self_event
+            self._self_actx = ctx.state_manager.modify_state_with_links(
+                token=self._self_substate_token, event=self._self_event
             )
             mutable_state = await self._self_actx.__aenter__()
             self._self_mutable = True
@@ -165,12 +165,22 @@ class StateProxy(wrapt.ObjectProxy):
             return
         try:
             if self._self_mutable and self._self_actx is not None:
-                await self._self_actx.__aexit__(*exc_info)
+                root_state = self.__wrapped__._get_root_state()
+                delta = await root_state._get_resolved_delta()
+                root_state._clean()
+                # When the frontend vars are modified emit the delta to the frontend.
+                if delta:
+                    ctx = EventContext.get()
+                    await ctx.emit_delta(delta)
         finally:
-            self._self_actx = None
-            self._self_mutable = False
-            self._self_actx_lock_holder = None
-            self._self_actx_lock.release()
+            try:
+                if self._self_mutable and self._self_actx is not None:
+                    await self._self_actx.__aexit__(*exc_info)
+            finally:
+                self._self_actx = None
+                self._self_mutable = False
+                self._self_actx_lock_holder = None
+                self._self_actx_lock.release()
 
     def __enter__(self):
         """Enter the regular context manager protocol.

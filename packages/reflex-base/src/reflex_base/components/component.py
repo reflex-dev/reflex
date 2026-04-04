@@ -36,7 +36,7 @@ from reflex_base.constants import (
     PageNames,
 )
 from reflex_base.constants.compiler import SpecialAttributes
-from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER, FRONTEND_EVENT_STATE
+from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER
 from reflex_base.event import (
     EventCallback,
     EventChain,
@@ -888,7 +888,7 @@ class Component(BaseComponent, ABC):
 
                     # Get the passed type and the var type.
                     passed_type = kwargs[key]._var_type
-                    expected_type = types.get_args(
+                    expected_type = typing.get_args(
                         types.get_field_type(type(self), key)
                     )[0]
                 except TypeError:
@@ -1523,10 +1523,7 @@ class Component(BaseComponent, ABC):
                     if isinstance(event, EventCallback):
                         continue
                     if isinstance(event, EventSpec):
-                        if (
-                            event.handler.state_full_name
-                            and event.handler.state_full_name != FRONTEND_EVENT_STATE
-                        ):
+                        if event.handler.state is not None:
                             return True
                     else:
                         if event._var_state:
@@ -2389,9 +2386,6 @@ class StatefulComponent(BaseComponent):
     was created with.
     """
 
-    # A lookup table to caching memoized component instances.
-    tag_to_stateful_component: ClassVar[dict[str, StatefulComponent]] = {}
-
     # Reference to the original component that was memoized into this component.
     component: Component = field(
         default_factory=Component, is_javascript_property=False
@@ -2424,6 +2418,8 @@ class StatefulComponent(BaseComponent):
             The stateful component or None if the component should not be memoized.
         """
         from reflex_components_core.core.foreach import Foreach
+
+        from reflex_base._internal.registry import RegistrationContext
 
         if component._memoization_mode.disposition == MemoizationDisposition.NEVER:
             # Never memoize this component.
@@ -2469,11 +2465,12 @@ class StatefulComponent(BaseComponent):
                 return None
 
             # Look up the tag in the cache
-            stateful_component = cls.tag_to_stateful_component.get(tag_name)
+            ctx = RegistrationContext.get()
+            stateful_component = ctx.tag_to_stateful_component.get(tag_name)
             if stateful_component is None:
                 memo_trigger_hooks = cls._fix_event_triggers(component)
                 # Set the stateful component in the cache for the given tag.
-                stateful_component = cls.tag_to_stateful_component.setdefault(
+                stateful_component = ctx.tag_to_stateful_component.setdefault(
                     tag_name,
                     cls(
                         children=component.children,

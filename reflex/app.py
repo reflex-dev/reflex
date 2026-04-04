@@ -15,22 +15,20 @@ import sys
 import time
 import traceback
 import urllib.parse
-from collections.abc import (
-    AsyncGenerator,
-    AsyncIterator,
-    Callable,
-    Coroutine,
-    Mapping,
-    Sequence,
-)
+from collections.abc import AsyncIterator, Callable, Coroutine, Mapping, Sequence
 from datetime import datetime
 from itertools import chain
 from pathlib import Path
 from timeit import default_timer as timer
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, ParamSpec
+from typing import TYPE_CHECKING, Any, ParamSpec, overload
 
 from reflex_base import constants
+from reflex_base._internal.event.processor import (
+    BaseStateEventProcessor,
+    EventProcessor,
+)
+from reflex_base._internal.registry import RegistrationContext
 from reflex_base.components.component import (
     CUSTOM_COMPONENTS,
     Component,
@@ -45,7 +43,6 @@ from reflex_base.event import (
     EventSpec,
     EventType,
     IndividualEventType,
-    get_hydrate_event,
     noop,
 )
 from reflex_base.utils import console
@@ -87,7 +84,7 @@ from reflex.compiler.compiler import (
 )
 from reflex.experimental.memo import EXPERIMENTAL_MEMOS
 from reflex.istate.manager import StateManager, StateModificationContext
-from reflex.istate.proxy import StateProxy
+from reflex.istate.manager.token import BaseStateToken
 from reflex.page import DECORATED_PAGES
 from reflex.route import (
     get_route_args,
@@ -99,8 +96,6 @@ from reflex.state import (
     RouterData,
     State,
     StateUpdate,
-    _split_substate_key,
-    _substate_key,
     all_base_state_classes,
     code_uses_state_contexts,
 )
@@ -121,6 +116,11 @@ from reflex.utils.exec import (
 )
 from reflex.utils.misc import run_in_thread
 from reflex.utils.token_manager import RedisTokenManager, TokenManager
+
+if sys.version_info < (3, 13):
+    from typing_extensions import deprecated
+else:
+    from warnings import deprecated
 
 if TYPE_CHECKING:
     from reflex_base.vars import Var
@@ -155,24 +155,26 @@ def default_backend_exception_handler(exception: Exception) -> EventSpec:
     """
     from reflex_components_sonner.toast import toast
 
-    error = traceback.format_exc()
+    error = traceback.format_exception(
+        type(exception), exception, exception.__traceback__
+    )
 
-    console.error(f"[Reflex Backend Exception]\n {error}\n")
+    console.error(f"[Reflex Backend Exception]\n {''.join(error)}\n")
 
     error_message = (
         ["Contact the website administrator."]
         if is_prod_mode()
-        else [f"{type(exception).__name__}: {exception}.", "See logs for details."]
+        else [f"{type(exception).__name__}: {exception}", "See logs for details."]
     )
 
     return toast(
         "An error occurred.",
         level="error",
         fallback_to_alert=True,
-        description="<br/>".join(error_message),
+        description="\n".join(error_message),
         position="top-center",
         id="backend_error",
-        style={"width": "500px"},
+        style={"width": "500px", "white-space": "pre-wrap"},
     )
 
 
@@ -397,8 +399,13 @@ class App(MiddlewareMixin, LifespanMixin):
     # The async server name space.
     _event_namespace: EventNamespace | None = None
 
-    # Background tasks that are currently running.
-    _background_tasks: set[asyncio.Task] = dataclasses.field(default_factory=set)
+    # The processor queue for handling events.
+    _event_processor: EventProcessor | None = None
+
+    # Store the RegistrationContext to apply inside the ASGI callable task.
+    _registration_context: RegistrationContext = dataclasses.field(
+        default_factory=RegistrationContext.ensure_context
+    )
 
     frontend_exception_handler: Callable[[Exception], None] = (
         default_frontend_exception_handler
@@ -425,6 +432,18 @@ class App(MiddlewareMixin, LifespanMixin):
             The event namespace.
         """
         return self._event_namespace
+
+    @property
+    def event_processor(self) -> EventProcessor:
+        """Get the event processor.
+
+        Raises:
+            RuntimeError: If the event processor is not initialized.
+        """
+        if self._event_processor is None:
+            msg = "Event processor is not initialized."
+            raise RuntimeError(msg)
+        return self._event_processor
 
     def __post_init__(self):
         """Initialize the app.
@@ -486,7 +505,7 @@ class App(MiddlewareMixin, LifespanMixin):
         config = get_config()
 
         # Set up the state manager.
-        self._state_manager = StateManager.create(state=self._state)
+        self._state_manager = StateManager.create()
 
         # Set up the Socket.IO AsyncServer.
         if not self.sio:
@@ -559,6 +578,40 @@ class App(MiddlewareMixin, LifespanMixin):
         # Check the exception handlers
         self._validate_exception_handlers()
 
+        # Ensure the event processor starts and stops with the server.
+        self.register_lifespan_task(self._setup_event_processor)
+
+    def _registration_context_middleware(self, app: ASGIApp) -> ASGIApp:
+        """Ensure the RegistrationContext is attached to the ASGI app.
+
+        Args:
+            app: The ASGI app to attach the middleware to.
+
+        Returns:
+            The ASGI app with the middleware attached.
+        """
+
+        async def registration_context_middleware(
+            scope: Scope, receive: Receive, send: Send
+        ):
+            if self._registration_context is not None:
+                RegistrationContext.set(self._registration_context)
+            await app(scope, receive, send)
+
+        return registration_context_middleware
+
+    @contextlib.asynccontextmanager
+    async def _setup_event_processor(self) -> AsyncIterator[None]:
+        # Create the event processor.
+        self._event_processor = BaseStateEventProcessor(
+            middleware=self, backend_exception_handler=self.backend_exception_handler
+        )
+        async with self._event_processor.configure(
+            state_manager=self.state_manager,
+            event_namespace=self.event_namespace,
+        ):
+            yield
+
     def __repr__(self) -> str:
         """Get the string representation of the app.
 
@@ -630,9 +683,12 @@ class App(MiddlewareMixin, LifespanMixin):
                     asgi_app = api_transformer(asgi_app)
 
         top_asgi_app = Starlette(lifespan=self._run_lifespan_tasks)
-        top_asgi_app.mount("", asgi_app)
+        # Make sure the RegistrationContext is attached.
+        top_asgi_app.mount(
+            "",
+            self._registration_context_middleware(asgi_app),
+        )
         App._add_cors(top_asgi_app)
-
         return top_asgi_app
 
     def _add_default_endpoints(self):
@@ -1103,7 +1159,7 @@ class App(MiddlewareMixin, LifespanMixin):
                         msg = f"ComputedVar {var._name} on state {state.__name__} has an invalid dependency {state_name}.{dep}"
                         raise exceptions.VarDependencyError(msg)
 
-        for substate in state.class_subclasses:
+        for substate in state.get_substates():
             self._validate_var_dependencies(substate)
 
     def _compile(
@@ -1530,10 +1586,27 @@ class App(MiddlewareMixin, LifespanMixin):
             str(constants.Endpoint.ALL_ROUTES), all_routes, methods=["GET"]
         )
 
+    @overload
+    @deprecated("pass token as rx.BaseStateToken instead of str")
+    def modify_state(
+        self,
+        token: str,
+        background: bool = False,
+        previous_dirty_vars: dict[str, set[str]] | None = None,
+    ) -> contextlib.AbstractAsyncContextManager[BaseState]: ...
+
+    @overload
+    def modify_state(
+        self,
+        token: BaseStateToken,
+        background: bool = False,
+        previous_dirty_vars: dict[str, set[str]] | None = None,
+    ) -> contextlib.AbstractAsyncContextManager[BaseState]: ...
+
     @contextlib.asynccontextmanager
     async def modify_state(
         self,
-        token: str,
+        token: BaseStateToken | str,
         background: bool = False,
         previous_dirty_vars: dict[str, set[str]] | None = None,
         **context: Unpack[StateModificationContext],
@@ -1555,6 +1628,9 @@ class App(MiddlewareMixin, LifespanMixin):
             msg = "App has not been initialized yet."
             raise RuntimeError(msg)
 
+        if isinstance(token, str):
+            token = BaseStateToken.from_legacy_token(token, root_state=self._state)
+
         # Get exclusive access to the state.
         async with self.state_manager.modify_state_with_links(
             token, previous_dirty_vars=previous_dirty_vars, **context
@@ -1566,63 +1642,9 @@ class App(MiddlewareMixin, LifespanMixin):
             if delta:
                 # When the frontend vars are modified emit the delta to the frontend.
                 await self.event_namespace.emit_update(
-                    update=StateUpdate(
-                        delta=delta,
-                        final=True if not background else None,
-                    ),
-                    token=token,
+                    update=StateUpdate(delta=delta),
+                    token=token.ident,
                 )
-
-    def _process_background(
-        self, state: BaseState, event: Event
-    ) -> asyncio.Task | None:
-        """Process an event in the background and emit updates as they arrive.
-
-        Args:
-            state: The state to process the event for.
-            event: The event to process.
-
-        Returns:
-            Task if the event was backgroundable, otherwise None
-        """
-        substate, handler = state._get_event_handler(event)
-
-        if not handler.is_background:
-            return None
-
-        substate = StateProxy(substate, event)
-
-        async def _coro():
-            """Coroutine to process the event and emit updates inside an asyncio.Task.
-
-            Raises:
-                RuntimeError: If the app has not been initialized yet.
-            """
-            if self.event_namespace is None:
-                msg = "App has not been initialized yet."
-                raise RuntimeError(msg)
-
-            # Process the event.
-            async for update in state._process_event(
-                handler=handler, state=substate, payload=event.payload
-            ):
-                # Postprocess the event.
-                update = await self._postprocess(state, event, update)
-
-                # Send the update to the client.
-                await self.event_namespace.emit_update(
-                    update=update,
-                    token=event.token,
-                )
-
-        task = asyncio.create_task(
-            _coro(),
-            name=f"reflex_background_task|{event.name}|{time.time()}|{event.token}",
-        )
-        self._background_tasks.add(task)
-        # Clean up task from background_tasks set when complete.
-        task.add_done_callback(self._background_tasks.discard)
-        return task
 
     def _validate_exception_handlers(self):
         """Validate the custom event exception handlers for front- and backend.
@@ -1715,95 +1737,6 @@ class App(MiddlewareMixin, LifespanMixin):
                         f"Expected `EventSpec | list[EventSpec] | None` but got `{return_type}`"
                     )
                     raise ValueError(msg)
-
-
-async def process(
-    app: App, event: Event, sid: str, headers: dict, client_ip: str
-) -> AsyncGenerator[StateUpdate]:
-    """Process an event.
-
-    Args:
-        app: The app to process the event for.
-        event: The event to process.
-        sid: The Socket.IO session id.
-        headers: The client headers.
-        client_ip: The client_ip.
-
-    Yields:
-        The state updates after processing the event.
-
-    Raises:
-        Exception: If a reflex specific error occurs during processing the event.
-    """
-    from reflex.utils import telemetry
-
-    try:
-        # Add request data to the state.
-        router_data = event.router_data
-        router_data.update({
-            constants.RouteVar.QUERY: format.format_query_params(event.router_data),
-            constants.RouteVar.CLIENT_TOKEN: event.token,
-            constants.RouteVar.SESSION_ID: sid,
-            constants.RouteVar.HEADERS: headers,
-            constants.RouteVar.CLIENT_IP: client_ip,
-        })
-        # Get the state for the session exclusively.
-        async with app.state_manager.modify_state_with_links(
-            event.substate_token, event=event
-        ) as state:
-            # When this is a brand new instance of the state, signal the
-            # frontend to reload before processing it.
-            if (
-                not state.router_data
-                and event.name != get_hydrate_event(state)
-                and app.event_namespace is not None
-            ):
-                await asyncio.create_task(
-                    app.event_namespace.emit(
-                        "reload",
-                        data=event,
-                        to=sid,
-                    ),
-                    name=f"reflex_emit_reload|{event.name}|{time.time()}|{event.token}",
-                )
-                return
-            router_data[constants.RouteVar.PATH] = "/" + (
-                app.router(path) or "404"
-                if (path := router_data.get(constants.RouteVar.PATH))
-                else "404"
-            ).removeprefix("/")
-            # re-assign only when the value is different
-            if state.router_data != router_data:
-                # assignment will recurse into substates and force recalculation of
-                # dependent ComputedVar (dynamic route variables)
-                state.router_data = router_data
-                state.router = RouterData.from_router_data(router_data)
-
-            # Preprocess the event.
-            update = await app._preprocess(state, event)
-
-            # If there was an update, yield it.
-            if update is not None:
-                yield update
-
-            # Only process the event if there is no update.
-            else:
-                if app._process_background(state, event) is not None:
-                    # `final=True` allows the frontend send more events immediately.
-                    yield StateUpdate(final=True)
-                else:
-                    # Process the event synchronously.
-                    async for update in state._process(event):
-                        # Postprocess the event.
-                        update = await app._postprocess(state, event, update)
-
-                        # Yield the update.
-                        yield update
-    except Exception as ex:
-        telemetry.send_error(ex, context="backend")
-
-        app.backend_exception_handler(ex)
-        raise
 
 
 def ping(_request: Request) -> Response:
@@ -1955,17 +1888,14 @@ class EventNamespace(AsyncNamespace):
             update: The state update to send.
             token: The client token (tab) associated with the event.
         """
-        client_token, _ = _split_substate_key(token)
-        socket_record = self._token_manager.token_to_socket.get(client_token)
+        socket_record = self._token_manager.token_to_socket.get(token)
         if (
             socket_record is None
             or socket_record.instance_id != self._token_manager.instance_id
         ):
             if isinstance(self._token_manager, RedisTokenManager):
                 # The socket belongs to another instance of the app, send it to the lost and found.
-                if not await self._token_manager.emit_lost_and_found(
-                    client_token, update
-                ):
+                if not await self._token_manager.emit_lost_and_found(token, update):
                     console.warn(
                         f"Failed to send delta to lost and found for client {token!r}"
                     )
@@ -1993,6 +1923,13 @@ class EventNamespace(AsyncNamespace):
             RuntimeError: If the Socket.IO is badly initialized.
             EventDeserializationError: If the event data is not a dictionary.
         """
+        # Determine the token for this SID
+        if (token := self.sid_to_token.get(sid)) is None:
+            console.warn(
+                f"Received event from session {sid} with no associated token. This may indicate a bug. Event data: {data}"
+            )
+            return
+
         fields = data
 
         if isinstance(fields, str):
@@ -2016,14 +1953,6 @@ class EventNamespace(AsyncNamespace):
         except (TypeError, ValueError) as ex:
             msg = f"Failed to deserialize event data: {fields}."
             raise exceptions.EventDeserializationError(msg) from ex
-
-        # Correct the token if it doesn't match what we expect for this SID
-        expected_token = self.sid_to_token.get(sid)
-        if expected_token and event.token != expected_token:
-            # Create new event with corrected token since Event is frozen
-            from dataclasses import replace
-
-            event = replace(event, token=expected_token)
 
         # Get the event environment.
         if self.app.sio is None:
@@ -2057,14 +1986,20 @@ class EventNamespace(AsyncNamespace):
             .partition(",")[0]
             .strip()
         )
-
-        async with contextlib.aclosing(
-            process(self.app, event, sid, headers, client_ip)
-        ) as updates_gen:
-            # Process the events.
-            async for update in updates_gen:
-                # Emit the update from processing the event.
-                await self.emit_update(update=update, token=event.token)
+        router_data = event.router_data
+        router_data.update({
+            constants.RouteVar.QUERY: format.format_query_params(event.router_data),
+            constants.RouteVar.CLIENT_TOKEN: token,
+            constants.RouteVar.SESSION_ID: sid,
+            constants.RouteVar.HEADERS: headers,
+            constants.RouteVar.CLIENT_IP: client_ip,
+        })
+        router_data[constants.RouteVar.PATH] = "/" + (
+            self.app.router(path) or "404"
+            if (path := router_data.get(constants.RouteVar.PATH))
+            else "404"
+        ).removeprefix("/")
+        await self.app.event_processor.enqueue(token, event)
 
     async def on_ping(self, sid: str):
         """Event for testing the API endpoint.
@@ -2090,8 +2025,9 @@ class EventNamespace(AsyncNamespace):
             await self.emit("new_token", new_token, to=sid)
 
         # Update client state to apply new sid/token for running background tasks.
-        async with self.app.state_manager.modify_state(
-            _substate_key(new_token or token, self.app.state_manager.state)
-        ) as state:
-            state.router_data[constants.RouteVar.SESSION_ID] = sid
-            state.router = RouterData.from_router_data(state.router_data)
+        if self.app._state is not None:
+            async with self.app.state_manager.modify_state(
+                BaseStateToken(ident=new_token or token, cls=self.app._state)
+            ) as state:
+                state.router_data[constants.RouteVar.SESSION_ID] = sid
+                state.router = RouterData.from_router_data(state.router_data)
