@@ -297,6 +297,7 @@ class DefaultCollectorPlugin(Plugin):
         collect_component_custom_code = self._collect_component_custom_code
         collect_app_wrap_components = self._collect_app_wrap_components
         base_get_app_wrap_components = Component._get_app_wrap_components
+        seen_app_wrap_methods: set[object] = set()
 
         def enter_component(
             comp: BaseComponent,
@@ -324,10 +325,12 @@ class DefaultCollectorPlugin(Plugin):
                 if stateful_component is None:
                     collect_component_hooks(hooks, comp)
 
+                app_wrap_method = type(comp)._get_app_wrap_components
                 if (
-                    type(comp)._get_app_wrap_components
-                    is not base_get_app_wrap_components
+                    app_wrap_method is not base_get_app_wrap_components
+                    and app_wrap_method not in seen_app_wrap_methods
                 ):
+                    seen_app_wrap_methods.add(app_wrap_method)
                     collect_app_wrap_components(app_wrap_components, comp)
 
             dynamic_import = comp._get_dynamic_imports()

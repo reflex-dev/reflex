@@ -1323,6 +1323,10 @@ class Component(BaseComponent, ABC):
         Returns:
             The dictionary for template of component.
         """
+        try:
+            return self._cached_render_result
+        except AttributeError:
+            pass
         tag = self._render()
         rendered_dict = dict(
             tag.set(
@@ -1330,6 +1334,7 @@ class Component(BaseComponent, ABC):
             )
         )
         self._replace_prop_names(rendered_dict)
+        self._cached_render_result = rendered_dict
         return rendered_dict
 
     def _replace_prop_names(self, rendered_dict: dict) -> None:
@@ -2477,6 +2482,13 @@ class StatefulComponent(BaseComponent):
             stateful_component = cache.get(tag_name)
             if stateful_component is None:
                 memo_trigger_hooks = cls._fix_event_triggers(component)
+                if memo_trigger_hooks:
+                    # event_triggers were mutated via shared dict;
+                    # invalidate stale render cache on the top-level component
+                    # so _render_stateful_code re-renders with memoized triggers.
+                    # Children are unaffected and keep their cached results.
+                    with contextlib.suppress(AttributeError):
+                        del component._cached_render_result
                 stateful_component = cls(
                     children=component.children,
                     component=component,

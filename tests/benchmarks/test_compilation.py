@@ -6,7 +6,7 @@ from reflex.compiler import compiler
 from reflex.compiler.compiler import _compile_page, _compile_stateful_components
 from reflex.compiler.plugins import DefaultCollectorPlugin, default_page_plugins
 
-from .fixtures import BenchmarkPage
+from .fixtures import BenchmarkPage, ImportOnlyCollectorPlugin
 
 
 def import_templates():
@@ -32,6 +32,31 @@ def _compile_single_pass_page_ctx(component: Component) -> PageContext:
         hooks.compile_page(page_ctx, compile_context=compile_ctx)
 
     return page_ctx
+
+
+def _get_imports_single_pass(component: Component) -> dict:
+    """Collect only imports via a single-pass walk — comparable to _get_all_imports.
+
+    Returns:
+        The collapsed import dict for the page.
+    """
+    page_ctx = PageContext(
+        name="benchmark",
+        route="/benchmark",
+        root_component=component,
+    )
+    hooks = CompilerHooks(plugins=(ImportOnlyCollectorPlugin(),))
+    compile_ctx = CompileContext(pages=[], hooks=hooks)
+
+    with compile_ctx, page_ctx:
+        hooks.compile_component(
+            component,
+            page_context=page_ctx,
+            compile_context=compile_ctx,
+        )
+        hooks.compile_page(page_ctx, compile_context=compile_ctx)
+
+    return page_ctx.frontend_imports
 
 
 def _compile_page_single_pass(component: Component) -> str:
@@ -95,6 +120,19 @@ def test_get_all_imports_single_pass(
     evaluated_page: Component,
     benchmark: BenchmarkFixture,
 ):
+    benchmark(lambda: _get_imports_single_pass(evaluated_page))
+
+
+def test_compile_single_pass_all_artifacts(
+    evaluated_page: Component,
+    benchmark: BenchmarkFixture,
+):
+    """Full single-pass collecting all artifacts (imports, hooks, code, app_wrap).
+
+    This is the fair comparison for the total work the old multi-pass approach
+    did across _get_all_imports + _get_all_hooks + _get_all_custom_code +
+    _get_all_app_wrap_components.
+    """
     benchmark(
         lambda: _compile_single_pass_page_ctx(evaluated_page).merged_imports(
             collapse=True
