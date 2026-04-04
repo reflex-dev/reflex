@@ -6,7 +6,6 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any, ClassVar
 
-from reflex_components_sonner.toast import toast
 from reflex_base.components.component import (
     Component,
     ComponentNamespace,
@@ -37,6 +36,7 @@ from reflex_base.vars.base import Var, get_unique_variable_name
 from reflex_base.vars.function import FunctionVar
 from reflex_base.vars.object import ObjectVar
 from reflex_base.vars.sequence import ArrayVar, LiteralStringVar
+from reflex_components_sonner.toast import toast
 
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core._upload import UploadChunkIterator, UploadFile

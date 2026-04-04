@@ -8,8 +8,6 @@ from collections.abc import Callable
 from functools import cache, update_wrapper
 from typing import Any, get_args, get_origin, get_type_hints
 
-from reflex_components_core.base.bare import Bare
-from reflex_components_core.base.fragment import Fragment
 from reflex_base import constants
 from reflex_base.components.component import Component
 from reflex_base.components.dynamic import bundled_libraries
@@ -28,6 +26,8 @@ from reflex_base.vars.function import (
     ReflexCallable,
 )
 from reflex_base.vars.object import RestProp
+from reflex_components_core.base.bare import Bare
+from reflex_components_core.base.fragment import Fragment
 
 from reflex.utils import types as type_utils
 

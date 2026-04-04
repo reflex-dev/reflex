@@ -1,6 +1,6 @@
 import pytest
-from reflex_components_core.base.bare import Bare
 from reflex_base.vars.base import Var
+from reflex_components_core.base.bare import Bare
 
 STATE_VAR = Var(_js_expr="default_state.name")
 

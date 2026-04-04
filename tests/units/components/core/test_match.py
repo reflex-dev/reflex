@@ -1,11 +1,11 @@
 import re
 
 import pytest
-from reflex_components_core.core.match import Match
 from reflex_base.components.component import Component
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.utils.exceptions import MatchTypeError
 from reflex_base.vars.base import Var
+from reflex_components_core.core.match import Match
 
 import reflex as rx
 from reflex.state import BaseState

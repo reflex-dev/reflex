@@ -3,10 +3,6 @@ from typing import Any, ClassVar
 
 import pydantic
 import pytest
-from reflex_components_core.base.bare import Bare
-from reflex_components_core.base.fragment import Fragment
-from reflex_components_radix.mappings import RADIX_MAPPING
-from reflex_components_radix.themes.layout.box import Box
 from reflex_base.components.component import (
     CUSTOM_COMPONENTS,
     Component,
@@ -40,6 +36,10 @@ from reflex_base.utils.imports import (
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.object import ObjectVar
+from reflex_components_core.base.bare import Bare
+from reflex_components_core.base.fragment import Fragment
+from reflex_components_radix.mappings import RADIX_MAPPING
+from reflex_components_radix.themes.layout.box import Box
 
 import reflex as rx
 from reflex import (

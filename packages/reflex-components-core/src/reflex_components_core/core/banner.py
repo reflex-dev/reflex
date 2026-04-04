@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from reflex_components_lucide.icon import Icon
-from reflex_components_sonner.toast import ToastProps, toast_ref
 from reflex_base import constants
 from reflex_base.components.component import Component
 from reflex_base.constants import Dirs, Hooks, Imports
@@ -15,6 +13,8 @@ from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.function import FunctionStringVar
 from reflex_base.vars.number import BooleanVar
 from reflex_base.vars.sequence import LiteralArrayVar
+from reflex_components_lucide.icon import Icon
+from reflex_components_sonner.toast import ToastProps, toast_ref
 
 from reflex_components_core import el
 from reflex_components_core.base.fragment import Fragment

@@ -8,7 +8,6 @@ from inspect import getmodule
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from reflex_components_core.base.fragment import Fragment
 from reflex_base import constants
 from reflex_base.components.component import (
     BaseComponent,
@@ -26,6 +25,7 @@ from reflex_base.utils.exceptions import ReflexError
 from reflex_base.utils.format import to_title_case
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
 from reflex_base.vars.base import LiteralVar, Var
+from reflex_components_core.base.fragment import Fragment
 
 from reflex.compiler import templates, utils
 from reflex.experimental.memo import (

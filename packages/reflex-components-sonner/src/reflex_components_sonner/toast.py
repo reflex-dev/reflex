@@ -5,7 +5,6 @@ from __future__ import annotations
 import dataclasses
 from typing import Any, Literal
 
-from reflex_components_lucide.icon import Icon
 from reflex_base.components.component import Component, ComponentNamespace, field
 from reflex_base.components.props import NoExtrasAllowedProps
 from reflex_base.constants.base import Dirs
@@ -19,6 +18,7 @@ from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.function import FunctionVar
 from reflex_base.vars.number import ternary_operation
 from reflex_base.vars.object import ObjectVar
+from reflex_components_lucide.icon import Icon
 
 LiteralPosition = Literal[
     "top-left",

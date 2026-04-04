@@ -9,8 +9,6 @@ from hashlib import md5
 from types import SimpleNamespace
 from typing import Any
 
-from reflex_components_core.core.markdown_component_map import MarkdownComponentMap
-from reflex_components_core.el.elements.typography import Div
 from reflex_base.components.component import (
     BaseComponent,
     Component,
@@ -24,6 +22,8 @@ from reflex_base.utils.imports import ImportDict, ImportTypes, ImportVar
 from reflex_base.vars.base import LiteralVar, Var, VarData
 from reflex_base.vars.number import ternary_operation
 from reflex_base.vars.sequence import LiteralArrayVar
+from reflex_components_core.core.markdown_component_map import MarkdownComponentMap
+from reflex_components_core.el.elements.typography import Div
 
 # Special vars used in the component map.
 _CHILDREN = Var(_js_expr="children", _var_type=str)
