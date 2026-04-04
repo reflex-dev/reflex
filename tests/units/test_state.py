@@ -17,16 +17,16 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 import pytest_asyncio
-import reflex_core.config
+import reflex_base.config
 from plotly.graph_objects import Figure
 from pydantic import BaseModel as Base
 from pytest_mock import MockerFixture
-from reflex_core import constants
-from reflex_core.constants import CompileVars, RouteVar, SocketEvent
-from reflex_core.constants.state import FIELD_MARKER
-from reflex_core.event import Event, EventHandler
-from reflex_core.utils import format, types
-from reflex_core.utils.exceptions import (
+from reflex_base import constants
+from reflex_base.constants import CompileVars, RouteVar, SocketEvent
+from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.event import Event, EventHandler
+from reflex_base.utils import format, types
+from reflex_base.utils.exceptions import (
     InvalidLockWarningThresholdError,
     LockExpiredError,
     ReflexRuntimeError,
@@ -34,8 +34,8 @@ from reflex_core.utils.exceptions import (
     StateSerializationError,
     UnretrievableVarValueError,
 )
-from reflex_core.utils.format import json_dumps
-from reflex_core.vars.base import Field, Var, computed_var, field
+from reflex_base.utils.format import json_dumps
+from reflex_base.vars.base import Field, Var, computed_var, field
 
 import reflex as rx
 from reflex.app import App
@@ -1979,7 +1979,7 @@ async def test_state_manager_lock_warning_threshold_contend(
         substate_token_redis: A token + substate name for looking up in state manager.
         mocker: Pytest mocker object.
     """
-    console_warn = mocker.patch("reflex_core.utils.console.warn")
+    console_warn = mocker.patch("reflex_base.utils.console.warn")
 
     state_manager_redis.lock_expiration = LOCK_EXPIRATION
     state_manager_redis.lock_warning_threshold = LOCK_WARNING_THRESHOLD
@@ -3551,7 +3551,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex_core.config.get_config(reload=True)
+        reflex_base.config.get_config(reload=True)
         from reflex.state import State
 
         state_manager = StateManagerRedis(state=State, redis=mock_redis())
@@ -3588,7 +3588,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex_core.config.get_config(reload=True)
+        reflex_base.config.get_config(reload=True)
         from reflex.state import State
 
         with pytest.raises(InvalidLockWarningThresholdError):
@@ -3614,7 +3614,7 @@ config = rx.Config(
     monkeypatch.setenv("REFLEX_REDIS_URL", "redis://localhost:6379")
 
     with chdir(proj_root):
-        reflex_core.config.get_config(reload=True)
+        reflex_base.config.get_config(reload=True)
         monkeypatch.setattr(prerequisites, "get_redis", mock_redis)
         from reflex.state import State
 
@@ -3640,7 +3640,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex_core.config.get_config(reload=True)
+        reflex_base.config.get_config(reload=True)
         from reflex.state import State
 
         class TestState(State):

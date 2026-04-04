@@ -1,7 +1,7 @@
 import urllib.parse
 
 import pytest
-from reflex_core.config import DBConfig
+from reflex_base.config import DBConfig
 
 
 @pytest.mark.parametrize(

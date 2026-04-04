@@ -2,7 +2,7 @@
 
 from typing import Any, Literal
 
-from reflex_core.components.component import Component, MemoizationLeaf, NoSSRComponent
+from reflex_base.components.component import Component, MemoizationLeaf, NoSSRComponent
 
 
 class Recharts(Component):

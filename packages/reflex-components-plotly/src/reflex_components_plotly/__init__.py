@@ -1,6 +1,6 @@
 """Plotly components."""
 
-from reflex_core.components.component import ComponentNamespace
+from reflex_base.components.component import ComponentNamespace
 
 from .plotly import (
     Plotly,

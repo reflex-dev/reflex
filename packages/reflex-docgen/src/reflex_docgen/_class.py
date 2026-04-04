@@ -5,7 +5,7 @@ import inspect
 from dataclasses import dataclass
 from typing import Any, get_args, get_type_hints
 
-from reflex_core.vars.base import BaseStateMeta
+from reflex_base.vars.base import BaseStateMeta
 from typing_inspection.introspection import AnnotationSource, inspect_annotation
 
 

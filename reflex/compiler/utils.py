@@ -13,20 +13,20 @@ from pathlib import Path
 from typing import Any, TypedDict
 from urllib.parse import urlparse
 
+from reflex_base import constants
+from reflex_base.components.component import Component, ComponentStyle, CustomComponent
+from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER, FIELD_MARKER
+from reflex_base.style import Style
+from reflex_base.utils import format, imports
+from reflex_base.utils.imports import ImportVar, ParsedImportDict
+from reflex_base.vars.base import Field, Var, VarData
+from reflex_base.vars.function import DestructuredArg
 from reflex_components_core.base import Description, Image, Scripts
 from reflex_components_core.base.document import Links, ScrollRestoration
 from reflex_components_core.base.document import Meta as ReactMeta
 from reflex_components_core.el.elements.metadata import Head, Link, Meta, Title
 from reflex_components_core.el.elements.other import Html
 from reflex_components_core.el.elements.sectioning import Body
-from reflex_core import constants
-from reflex_core.components.component import Component, ComponentStyle, CustomComponent
-from reflex_core.constants.state import CAMEL_CASE_MEMO_MARKER, FIELD_MARKER
-from reflex_core.style import Style
-from reflex_core.utils import format, imports
-from reflex_core.utils.imports import ImportVar, ParsedImportDict
-from reflex_core.vars.base import Field, Var, VarData
-from reflex_core.vars.function import DestructuredArg
 
 from reflex.experimental.memo import (
     ExperimentalMemoComponentDefinition,

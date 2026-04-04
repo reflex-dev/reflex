@@ -18,10 +18,10 @@ from types import ModuleType
 from typing import NamedTuple
 
 from packaging import version
-from reflex_core import constants
-from reflex_core.config import Config, get_config
-from reflex_core.environment import environment
-from reflex_core.utils.decorator import once
+from reflex_base import constants
+from reflex_base.config import Config, get_config
+from reflex_base.environment import environment
+from reflex_base.utils.decorator import once
 
 from reflex import model
 from reflex.utils import console, net, path_ops

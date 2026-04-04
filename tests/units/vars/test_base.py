@@ -1,7 +1,7 @@
 from collections.abc import Mapping, Sequence
 
 import pytest
-from reflex_core.vars.base import computed_var, figure_out_type
+from reflex_base.vars.base import computed_var, figure_out_type
 
 from reflex.state import State
 

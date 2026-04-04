@@ -1,7 +1,7 @@
 import numpy as np
 import plotly.graph_objects as go
 import pytest
-from reflex_core.utils.serializers import serialize, serialize_figure
+from reflex_base.utils.serializers import serialize, serialize_figure
 
 import reflex as rx
 

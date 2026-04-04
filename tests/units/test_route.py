@@ -1,6 +1,6 @@
 import pytest
 from pytest_mock import MockerFixture
-from reflex_core import constants
+from reflex_base import constants
 
 from reflex.app import App
 from reflex.route import get_route_args, verify_route_validity
