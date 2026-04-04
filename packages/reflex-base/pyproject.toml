@@ -1,5 +1,5 @@
 [project]
-name = "reflex-core"
+name = "reflex-base"
 dynamic = ["version"]
 description = "Core types for the Reflex framework."
 readme = "README.md"
@@ -18,7 +18,7 @@ dependencies = [
 source = "uv-dynamic-versioning"
 
 [tool.uv-dynamic-versioning]
-pattern-prefix = "reflex-core-"
+pattern-prefix = "reflex-base-"
 fallback-version = "0.0.0dev0"
 
 [tool.hatch.build]

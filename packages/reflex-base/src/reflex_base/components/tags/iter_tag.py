@@ -7,13 +7,13 @@ import inspect
 from collections.abc import Callable, Iterable
 from typing import TYPE_CHECKING
 
-from reflex_core.components.tags.tag import Tag
-from reflex_core.utils.types import GenericType
-from reflex_core.vars import LiteralArrayVar, Var, get_unique_variable_name
-from reflex_core.vars.sequence import _determine_value_of_array_index
+from reflex_base.components.tags.tag import Tag
+from reflex_base.utils.types import GenericType
+from reflex_base.vars import LiteralArrayVar, Var, get_unique_variable_name
+from reflex_base.vars.sequence import _determine_value_of_array_index
 
 if TYPE_CHECKING:
-    from reflex_core.components.component import Component
+    from reflex_base.components.component import Component
 
 
 @dataclasses.dataclass(frozen=True)

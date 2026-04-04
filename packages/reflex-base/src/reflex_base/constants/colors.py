@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal, get_args
 
 if TYPE_CHECKING:
-    from reflex_core.vars import Var
+    from reflex_base.vars import Var
 
 ColorType = Literal[
     "gray",

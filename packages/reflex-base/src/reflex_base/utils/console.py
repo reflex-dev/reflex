@@ -16,9 +16,9 @@ from rich.console import Console
 from rich.progress import MofNCompleteColumn, Progress, TaskID, TimeElapsedColumn
 from rich.prompt import Prompt
 
-from reflex_core.constants import LogLevel
-from reflex_core.constants.base import Reflex
-from reflex_core.utils.decorator import once
+from reflex_base.constants import LogLevel
+from reflex_base.constants.base import Reflex
+from reflex_base.utils.decorator import once
 
 # Console for pretty printing.
 _console = Console(highlight=False)
@@ -119,7 +119,7 @@ def log_file_console():
     Returns:
         A Console object that logs to a file.
     """
-    from reflex_core.environment import environment
+    from reflex_base.environment import environment
 
     if not (env_log_file := environment.REFLEX_LOG_FILE.get()):
         subseconds = int((time.time() % 1) * 1000)
@@ -141,7 +141,7 @@ def should_use_log_file_console() -> bool:
     Returns:
         True if the log file console should be used, False otherwise.
     """
-    from reflex_core.environment import environment
+    from reflex_base.environment import environment
 
     return environment.REFLEX_ENABLE_FULL_LOGGING.get()
 
@@ -270,7 +270,7 @@ def _exclude_paths_from_frame_info() -> list[Path]:
     import socketio
     import typing_extensions
 
-    import reflex_core
+    import reflex_base
 
     try:
         import reflex as rx
@@ -284,7 +284,7 @@ def _exclude_paths_from_frame_info() -> list[Path]:
         typing_extensions,
         socketio,
         granian,
-        reflex_core,
+        reflex_base,
     ]
 
     modules_paths = [file for m in exclude_modules if m and (file := m.__file__)] + [

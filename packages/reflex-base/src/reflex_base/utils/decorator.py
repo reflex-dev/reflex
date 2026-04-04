@@ -120,7 +120,7 @@ def cached_procedure(
                 _write_cached_procedure_file(new_payload, cache_file, new_value)
                 return new_value
 
-            from reflex_core.utils import console
+            from reflex_base.utils import console
 
             console.debug(
                 f"Using cached value for {func.__name__} with payload: {new_payload}"

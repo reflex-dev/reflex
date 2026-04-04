@@ -12,7 +12,7 @@ import sys
 from types import CellType, CodeType, FunctionType, ModuleType
 from typing import TYPE_CHECKING, Any, ClassVar, cast
 
-from reflex_core.utils.exceptions import VarValueError
+from reflex_base.utils.exceptions import VarValueError
 
 if TYPE_CHECKING:
     from reflex.state import BaseState

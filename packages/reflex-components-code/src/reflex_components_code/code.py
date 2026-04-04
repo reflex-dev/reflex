@@ -9,13 +9,13 @@ from reflex_components_core.core.cond import color_mode_cond
 from reflex_components_core.core.markdown_component_map import MarkdownComponentMap
 from reflex_components_radix.themes.components.button import Button
 from reflex_components_radix.themes.layout.box import Box
-from reflex_core.components.component import Component, ComponentNamespace, field
-from reflex_core.constants.colors import Color
-from reflex_core.event import set_clipboard
-from reflex_core.style import Style
-from reflex_core.utils import format
-from reflex_core.utils.imports import ImportVar
-from reflex_core.vars.base import LiteralVar, Var, VarData
+from reflex_base.components.component import Component, ComponentNamespace, field
+from reflex_base.constants.colors import Color
+from reflex_base.event import set_clipboard
+from reflex_base.style import Style
+from reflex_base.utils import format
+from reflex_base.utils.imports import ImportVar
+from reflex_base.vars.base import LiteralVar, Var, VarData
 
 LiteralCodeLanguage = Literal[
     "abap",

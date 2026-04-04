@@ -8,13 +8,13 @@ from typing import Any, TypeVar, get_args, get_origin
 
 from typing_extensions import dataclass_transform
 
-from reflex_core.components.field import BaseField, FieldBasedMeta
-from reflex_core.event import EventChain, args_specs_from_fields
-from reflex_core.utils import format
-from reflex_core.utils.exceptions import InvalidPropValueError
-from reflex_core.utils.serializers import serializer
-from reflex_core.utils.types import is_union
-from reflex_core.vars.object import LiteralObjectVar
+from reflex_base.components.field import BaseField, FieldBasedMeta
+from reflex_base.event import EventChain, args_specs_from_fields
+from reflex_base.utils import format
+from reflex_base.utils.exceptions import InvalidPropValueError
+from reflex_base.utils.serializers import serializer
+from reflex_base.utils.types import is_union
+from reflex_base.vars.object import LiteralObjectVar
 
 PROPS_FIELD_TYPE = TypeVar("PROPS_FIELD_TYPE")
 
@@ -28,7 +28,7 @@ def _get_props_subclass(field_type: Any) -> type | None:
     Returns:
         The Props subclass if found, None otherwise.
     """
-    from reflex_core.utils.types import typehint_issubclass
+    from reflex_base.utils.types import typehint_issubclass
 
     # For direct class types, we can return them directly if they're Props subclasses
     if isinstance(field_type, type):

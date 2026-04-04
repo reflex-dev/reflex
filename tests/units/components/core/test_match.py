@@ -2,10 +2,10 @@ import re
 
 import pytest
 from reflex_components_core.core.match import Match
-from reflex_core.components.component import Component
-from reflex_core.constants.state import FIELD_MARKER
-from reflex_core.utils.exceptions import MatchTypeError
-from reflex_core.vars.base import Var
+from reflex_base.components.component import Component
+from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.utils.exceptions import MatchTypeError
+from reflex_base.vars.base import Var
 
 import reflex as rx
 from reflex.state import BaseState
@@ -249,7 +249,7 @@ def test_match_case_tuple_elements(match_case):
             ),
             (
                 'Match cases should have the same return types. Case 3 with return value `"red"` of type '
-                "<class 'reflex_core.vars.sequence.LiteralStringVar'> is not <class 'reflex_core.components.component.BaseComponent'>"
+                "<class 'reflex_base.vars.sequence.LiteralStringVar'> is not <class 'reflex_base.components.component.BaseComponent'>"
             ),
         ),
         (
@@ -264,7 +264,7 @@ def test_match_case_tuple_elements(match_case):
             ),
             (
                 'Match cases should have the same return types. Case 3 with return value `jsx(RadixThemesText,{as:"p"},"first value")` '
-                "of type <class 'reflex_components_radix.themes.typography.text.Text'> is not <class 'reflex_core.vars.base.Var'>"
+                "of type <class 'reflex_components_radix.themes.typography.text.Text'> is not <class 'reflex_base.vars.base.Var'>"
             ),
         ),
     ],

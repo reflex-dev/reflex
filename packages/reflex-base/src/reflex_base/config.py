@@ -12,23 +12,23 @@ from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal
 
-from reflex_core import constants
-from reflex_core.constants.base import LogLevel
-from reflex_core.environment import EnvironmentVariables as EnvironmentVariables
-from reflex_core.environment import EnvVar as EnvVar
-from reflex_core.environment import (
+from reflex_base import constants
+from reflex_base.constants.base import LogLevel
+from reflex_base.environment import EnvironmentVariables as EnvironmentVariables
+from reflex_base.environment import EnvVar as EnvVar
+from reflex_base.environment import (
     ExistingPath,
     SequenceOptions,
     _load_dotenv_from_files,
     _paths_from_env_files,
     interpret_env_var_value,
 )
-from reflex_core.environment import env_var as env_var
-from reflex_core.environment import environment as environment
-from reflex_core.plugins import Plugin
-from reflex_core.plugins.sitemap import SitemapPlugin
-from reflex_core.utils import console
-from reflex_core.utils.exceptions import ConfigError
+from reflex_base.environment import env_var as env_var
+from reflex_base.environment import environment as environment
+from reflex_base.plugins import Plugin
+from reflex_base.plugins.sitemap import SitemapPlugin
+from reflex_base.utils import console
+from reflex_base.utils.exceptions import ConfigError
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -384,7 +384,7 @@ class Config(BaseConfig):
                     removal_version="0.9.0",
                 )
                 try:
-                    from reflex_core.environment import interpret_plugin_class_env
+                    from reflex_base.environment import interpret_plugin_class_env
 
                     normalized.append(
                         interpret_plugin_class_env(entry, "disable_plugins")
@@ -457,7 +457,7 @@ class Config(BaseConfig):
         """
         import json
 
-        from reflex_core.utils.serializers import serialize
+        from reflex_base.utils.serializers import serialize
 
         return json.dumps(self, default=serialize)
 

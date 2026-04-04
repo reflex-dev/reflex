@@ -3,8 +3,8 @@
 import inspect
 from pathlib import Path
 
-from reflex_core import constants
-from reflex_core.environment import EnvironmentVariables
+from reflex_base import constants
+from reflex_base.environment import EnvironmentVariables
 
 
 def remove_stale_external_asset_symlinks():

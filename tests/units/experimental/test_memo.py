@@ -6,12 +6,12 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
-from reflex_core.components.component import CUSTOM_COMPONENTS, Component
-from reflex_core.style import Style
-from reflex_core.utils.imports import ImportVar
-from reflex_core.vars import VarData
-from reflex_core.vars.base import Var
-from reflex_core.vars.function import FunctionVar
+from reflex_base.components.component import CUSTOM_COMPONENTS, Component
+from reflex_base.style import Style
+from reflex_base.utils.imports import ImportVar
+from reflex_base.vars import VarData
+from reflex_base.vars.base import Var
+from reflex_base.vars.function import FunctionVar
 
 import reflex as rx
 from reflex.compiler import compiler

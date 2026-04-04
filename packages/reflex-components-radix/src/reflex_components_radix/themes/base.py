@@ -5,10 +5,10 @@ from __future__ import annotations
 from typing import Any, ClassVar, Literal
 
 from reflex_components_core.core.breakpoints import Responsive
-from reflex_core.components.component import Component, field
-from reflex_core.components.tags import Tag
-from reflex_core.utils.imports import ImportDict, ImportVar
-from reflex_core.vars.base import Var
+from reflex_base.components.component import Component, field
+from reflex_base.components.tags import Tag
+from reflex_base.utils.imports import ImportDict, ImportVar
+from reflex_base.vars.base import Var
 
 LiteralAlign = Literal["start", "center", "end", "baseline", "stretch"]
 LiteralJustify = Literal["start", "center", "end", "between"]

@@ -8,11 +8,11 @@ from typing import Literal
 from reflex_components_core.core.breakpoints import Responsive
 from reflex_components_core.core.cond import cond
 from reflex_components_core.core.foreach import foreach
-from reflex_core.components.component import Component, ComponentNamespace, field
-from reflex_core.event import EventHandler, passthrough_event_spec
-from reflex_core.utils import types
-from reflex_core.vars.base import LiteralVar, Var
-from reflex_core.vars.sequence import StringVar
+from reflex_base.components.component import Component, ComponentNamespace, field
+from reflex_base.event import EventHandler, passthrough_event_spec
+from reflex_base.utils import types
+from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.sequence import StringVar
 
 from reflex_components_radix.themes.base import (
     LiteralAccentColor,

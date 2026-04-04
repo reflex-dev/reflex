@@ -11,14 +11,14 @@ from typing import TYPE_CHECKING, Any, NoReturn, TypeVar, overload
 
 from typing_extensions import TypeVar as TypeVarExt
 
-from reflex_core.constants.base import Dirs
-from reflex_core.utils.exceptions import (
+from reflex_base.constants.base import Dirs
+from reflex_base.utils.exceptions import (
     PrimitiveUnserializableToJSONError,
     VarTypeError,
     VarValueError,
 )
-from reflex_core.utils.imports import ImportDict, ImportVar
-from reflex_core.utils.types import safe_issubclass
+from reflex_base.utils.imports import ImportDict, ImportVar
+from reflex_base.utils.types import safe_issubclass
 
 from .base import (
     CustomVarOperationReturn,

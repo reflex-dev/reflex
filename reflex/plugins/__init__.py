@@ -1,6 +1,6 @@
-"""Re-export from reflex_core.plugins."""
+"""Re-export from reflex_base.plugins."""
 
-from reflex_core.plugins import (
+from reflex_base.plugins import (
     CommonContext,
     Plugin,
     PreCompileContext,

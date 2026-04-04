@@ -23,8 +23,8 @@ from pathlib import Path
 from types import MappingProxyType, ModuleType, SimpleNamespace, UnionType
 from typing import Any, get_args, get_origin
 
-from reflex_core.components.component import Component
-from reflex_core.vars.base import Var
+from reflex_base.components.component import Component
+from reflex_base.vars.base import Var
 
 
 def _is_union(cls: Any) -> bool:
@@ -110,7 +110,7 @@ DEFAULT_TYPING_IMPORTS = {
 DEFAULT_IMPORTS = {
     "typing": sorted(DEFAULT_TYPING_IMPORTS),
     "reflex_components_core.core.breakpoints": ["Breakpoints"],
-    "reflex_core.event": [
+    "reflex_base.event": [
         "EventChain",
         "EventHandler",
         "EventSpec",
@@ -118,8 +118,8 @@ DEFAULT_IMPORTS = {
         "KeyInputInfo",
         "PointerEventInfo",
     ],
-    "reflex_core.style": ["Style"],
-    "reflex_core.vars.base": ["Var"],
+    "reflex_base.style": ["Style"],
+    "reflex_base.vars.base": ["Var"],
 }
 
 
@@ -682,7 +682,7 @@ def _get_parent_imports(func: Callable) -> Mapping[str, tuple[str, ...]]:
     Returns:
         An immutable mapping of module names to imported symbol names.
     """
-    imports_: dict[str, set[str]] = {"reflex_core.vars": {"Var"}}
+    imports_: dict[str, set[str]] = {"reflex_base.vars": {"Var"}}
     module_dir = set(dir(importlib.import_module(func.__module__)))
     for type_hint in inspect.get_annotations(func).values():
         try:

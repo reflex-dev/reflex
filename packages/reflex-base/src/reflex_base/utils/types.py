@@ -37,8 +37,8 @@ from typing import get_type_hints as get_type_hints_og
 from typing_extensions import Self as Self
 from typing_extensions import override as override
 
-from reflex_core import constants
-from reflex_core.utils import console
+from reflex_base import constants
+from reflex_base.utils import console
 
 # Potential GenericAlias types for isinstance checks.
 GenericAliasTypes = (_GenericAlias, GenericAlias, _SpecialGenericAlias)
@@ -55,7 +55,7 @@ StateVarTypes = (*PrimitiveTypes, type(None))
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
-    from reflex_core.vars.base import Var
+    from reflex_base.vars.base import Var
 
 VAR1 = TypeVar("VAR1", bound="Var")
 VAR2 = TypeVar("VAR2", bound="Var")
@@ -624,7 +624,7 @@ def _isinstance(
     if cls is Any:
         return True
 
-    from reflex_core.vars import LiteralVar, Var
+    from reflex_base.vars import LiteralVar, Var
 
     if cls is Var:
         return isinstance(obj, Var)
@@ -763,7 +763,7 @@ def _isinstance(
             )
 
     if args:
-        from reflex_core.vars import Field
+        from reflex_base.vars import Field
 
         if origin is Field:
             return _isinstance(
@@ -796,7 +796,7 @@ def is_valid_var_type(type_: type) -> bool:
     Returns:
         Whether the type is a valid prop type.
     """
-    from reflex_core.utils import serializers
+    from reflex_base.utils import serializers
 
     if is_union(type_):
         return all(is_valid_var_type(arg) for arg in get_args(type_))
@@ -845,7 +845,7 @@ def is_backend_base_variable(name: str, cls: type[BaseState]) -> bool:
     if name in cls.inherited_backend_vars:
         return False
 
-    from reflex_core.vars.base import is_computed_var
+    from reflex_base.vars.base import is_computed_var
 
     if name in cls.__dict__:
         value = cls.__dict__[name]
@@ -891,7 +891,7 @@ def check_prop_in_allowed_types(prop: Any, allowed_types: Iterable) -> bool:
     Returns:
         If the prop type match one of the allowed_types.
     """
-    from reflex_core.vars import Var
+    from reflex_base.vars import Var
 
     type_ = prop._var_type if isinstance(prop, Var) else type(prop)
     return type_ in allowed_types
@@ -921,7 +921,7 @@ def validate_literal(key: str, value: Any, expected_type: type, comp_name: str):
     Raises:
         ValueError: When the value is not a valid literal.
     """
-    from reflex_core.vars import Var
+    from reflex_base.vars import Var
 
     if (
         is_literal(expected_type)

@@ -4,8 +4,8 @@ from typing import ClassVar, Literal
 
 from reflex_components_core.core.breakpoints import Responsive
 from reflex_components_core.el import elements
-from reflex_core.components.component import ComponentNamespace, field
-from reflex_core.vars.base import Var
+from reflex_base.components.component import ComponentNamespace, field
+from reflex_base.vars.base import Var
 
 from reflex_components_radix.themes.base import CommonPaddingProps, RadixThemesComponent
 

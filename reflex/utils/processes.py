@@ -16,9 +16,9 @@ from pathlib import Path
 from typing import Any, Literal, overload
 
 import rich.markup
-from reflex_core import constants
-from reflex_core.config import get_config
-from reflex_core.environment import environment
+from reflex_base import constants
+from reflex_base.config import get_config
+from reflex_base.environment import environment
 from rich.progress import Progress
 
 from reflex.utils import console, path_ops, prerequisites

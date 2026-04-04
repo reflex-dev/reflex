@@ -2,8 +2,8 @@
 
 import dataclasses
 
-from reflex_core.constants.colors import Color
-from reflex_core.vars.base import (
+from reflex_base.constants.colors import Color
+from reflex_base.vars.base import (
     CachedVarOperation,
     LiteralVar,
     Var,
@@ -11,8 +11,8 @@ from reflex_core.vars.base import (
     cached_property_no_lock,
     get_python_literal,
 )
-from reflex_core.vars.number import ternary_operation
-from reflex_core.vars.sequence import ConcatVarOperation, LiteralStringVar, StringVar
+from reflex_base.vars.number import ternary_operation
+from reflex_base.vars.sequence import ConcatVarOperation, LiteralStringVar, StringVar
 
 
 class ColorVar(StringVar[Color], python_types=Color):

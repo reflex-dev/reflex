@@ -6,9 +6,9 @@ import dataclasses
 from collections.abc import Iterator, Mapping, Sequence
 from typing import Any
 
-from reflex_core.event import EventChain
-from reflex_core.utils import format
-from reflex_core.vars.base import LiteralVar, Var
+from reflex_base.event import EventChain
+from reflex_base.utils import format
+from reflex_base.vars.base import LiteralVar, Var
 
 
 def render_prop(value: Any) -> Any:
@@ -20,7 +20,7 @@ def render_prop(value: Any) -> Any:
     Returns:
         The rendered value.
     """
-    from reflex_core.components.component import BaseComponent
+    from reflex_base.components.component import BaseComponent
 
     if isinstance(value, BaseComponent):
         return value.render()

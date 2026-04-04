@@ -5,8 +5,8 @@ import enum
 from enum import Enum
 from types import SimpleNamespace
 
-from reflex_core.constants import Dirs
-from reflex_core.utils.imports import ImportVar
+from reflex_base.constants import Dirs
+from reflex_base.utils.imports import ImportVar
 
 # The prefix used to create setters for state vars.
 SETTER_PREFIX = "set_"

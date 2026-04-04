@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from reflex_core.vars import Var
+    from reflex_base.vars import Var
 
 
 class ReflexError(Exception):
@@ -263,7 +263,7 @@ class SystemPackageMissingError(ReflexError):
         Args:
             package: The missing package.
         """
-        from reflex_core.constants.base import IS_MACOS
+        from reflex_base.constants.base import IS_MACOS
 
         extra = (
             f" You can do so by running 'brew install {package}'." if IS_MACOS else ""

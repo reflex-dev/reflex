@@ -7,16 +7,16 @@ from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_radix.mappings import RADIX_MAPPING
 from reflex_components_radix.themes.layout.box import Box
-from reflex_core.components.component import (
+from reflex_base.components.component import (
     CUSTOM_COMPONENTS,
     Component,
     CustomComponent,
     StatefulComponent,
     custom_component,
 )
-from reflex_core.constants import EventTriggers
-from reflex_core.constants.state import FIELD_MARKER
-from reflex_core.event import (
+from reflex_base.constants import EventTriggers
+from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.event import (
     EventChain,
     EventHandler,
     JavascriptInputEvent,
@@ -25,21 +25,21 @@ from reflex_core.event import (
     parse_args_spec,
     passthrough_event_spec,
 )
-from reflex_core.style import Style
-from reflex_core.utils.exceptions import (
+from reflex_base.style import Style
+from reflex_base.utils.exceptions import (
     ChildrenTypeError,
     EventFnArgMismatchError,
     EventHandlerArgTypeMismatchError,
 )
-from reflex_core.utils.imports import (
+from reflex_base.utils.imports import (
     ImportDict,
     ImportVar,
     ParsedImportDict,
     parse_imports,
 )
-from reflex_core.vars import VarData
-from reflex_core.vars.base import LiteralVar, Var
-from reflex_core.vars.object import ObjectVar
+from reflex_base.vars import VarData
+from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.object import ObjectVar
 
 import reflex as rx
 from reflex import (

@@ -5,11 +5,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, TypedDict, TypeVar
 
 from reflex_components_core.core.cond import color_mode_cond
-from reflex_core.components.component import Component, NoSSRComponent, field
-from reflex_core.event import EventHandler, no_args_event_spec
-from reflex_core.utils import console
-from reflex_core.utils.imports import ImportDict, ImportVar
-from reflex_core.vars.base import LiteralVar, Var
+from reflex_base.components.component import Component, NoSSRComponent, field
+from reflex_base.event import EventHandler, no_args_event_spec
+from reflex_base.utils import console
+from reflex_base.utils.imports import ImportDict, ImportVar
+from reflex_base.vars.base import LiteralVar, Var
 
 try:
     from plotly.graph_objs import Figure

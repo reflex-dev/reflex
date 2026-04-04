@@ -4,7 +4,7 @@ from reflex_components_lucide.icon import (
     LUCIDE_ICON_MAPPING_OVERRIDE,
     Icon,
 )
-from reflex_core.utils import format
+from reflex_base.utils import format
 
 
 @pytest.mark.parametrize("tag", LUCIDE_ICON_LIST)

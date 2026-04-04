@@ -9,8 +9,8 @@ from reflex_components_core.core.foreach import Foreach
 from reflex_components_core.core.markdown_component_map import MarkdownComponentMap
 from reflex_components_core.el.elements.base import BaseHTML
 from reflex_components_core.el.elements.typography import Li, Ol, Ul
-from reflex_core.components.component import ComponentNamespace, field
-from reflex_core.vars.base import Var
+from reflex_base.components.component import ComponentNamespace, field
+from reflex_base.vars.base import Var
 
 from reflex_components_radix.themes.typography.text import Text
 

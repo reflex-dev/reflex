@@ -39,21 +39,21 @@ from typing import (
 from rich.markup import escape
 from typing_extensions import LiteralString, dataclass_transform, override
 
-from reflex_core import constants
-from reflex_core.constants.compiler import Hooks
-from reflex_core.constants.state import FIELD_MARKER
-from reflex_core.utils import console, exceptions, imports, serializers, types
-from reflex_core.utils.compat import annotations_from_namespace
-from reflex_core.utils.decorator import once
-from reflex_core.utils.exceptions import (
+from reflex_base import constants
+from reflex_base.constants.compiler import Hooks
+from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.utils import console, exceptions, imports, serializers, types
+from reflex_base.utils.compat import annotations_from_namespace
+from reflex_base.utils.decorator import once
+from reflex_base.utils.exceptions import (
     ComputedVarSignatureError,
     UntypedComputedVarError,
     VarAttributeError,
     VarDependencyError,
     VarTypeError,
 )
-from reflex_core.utils.format import format_state_name
-from reflex_core.utils.imports import (
+from reflex_base.utils.format import format_state_name
+from reflex_base.utils.imports import (
     ImmutableImportDict,
     ImmutableParsedImportDict,
     ImportDict,
@@ -61,7 +61,7 @@ from reflex_core.utils.imports import (
     ParsedImportTuple,
     parse_imports,
 )
-from reflex_core.utils.types import (
+from reflex_base.utils.types import (
     GenericType,
     Self,
     _isinstance,
@@ -73,8 +73,8 @@ from reflex_core.utils.types import (
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
-    from reflex_core.components.component import BaseComponent
-    from reflex_core.constants.colors import Color
+    from reflex_base.components.component import BaseComponent
+    from reflex_base.constants.colors import Color
 
     from .color import LiteralColorVar
     from .number import BooleanVar, LiteralBooleanVar, LiteralNumberVar, NumberVar
@@ -296,7 +296,7 @@ class VarData:
         Returns:
             The var with the set state.
         """
-        from reflex_core.utils import format
+        from reflex_base.utils import format
 
         state_name = state if isinstance(state, str) else state.get_full_name()
         return VarData(
@@ -1483,8 +1483,8 @@ class LiteralVar(Var[VAR_TYPE]):
         ):
             return resulting_var
 
-        from reflex_core.event import EventHandler
-        from reflex_core.utils.format import get_event_handler_parts
+        from reflex_base.event import EventHandler
+        from reflex_base.utils.format import get_event_handler_parts
 
         if isinstance(value, EventHandler):
             return Var(_js_expr=".".join(filter(None, get_event_handler_parts(value))))
@@ -1565,8 +1565,8 @@ class LiteralVar(Var[VAR_TYPE]):
         ):
             return resulting_var._get_all_var_data()
 
-        from reflex_core.event import EventHandler
-        from reflex_core.utils.format import get_event_handler_parts
+        from reflex_base.event import EventHandler
+        from reflex_base.utils.format import get_event_handler_parts
 
         if isinstance(value, EventHandler):
             return Var(
@@ -3064,8 +3064,8 @@ def get_uuid_string_var() -> Var:
     Returns:
         A Var that generates a UUID at runtime.
     """
-    from reflex_core.utils.imports import ImportVar
-    from reflex_core.vars import Var
+    from reflex_base.utils.imports import ImportVar
+    from reflex_base.vars import Var
 
     unique_uuid_var = get_unique_variable_name()
     unique_uuid_var_data = VarData(

@@ -4,9 +4,9 @@ import dataclasses
 from pathlib import Path
 from types import SimpleNamespace
 
-from reflex_core.constants.base import Dirs
-from reflex_core.constants.compiler import Ext, PageNames
-from reflex_core.plugins.shared_tailwind import (
+from reflex_base.constants.base import Dirs
+from reflex_base.constants.compiler import Ext, PageNames
+from reflex_base.plugins.shared_tailwind import (
     TailwindConfig,
     TailwindPlugin,
     tailwind_config_js_template,
@@ -85,7 +85,7 @@ def add_tailwind_to_postcss_config(postcss_file_content: str) -> str:
     Returns:
         The modified postcss config file content.
     """
-    from reflex_core.constants import Dirs
+    from reflex_base.constants import Dirs
 
     postcss_file_lines = postcss_file_content.splitlines()
 

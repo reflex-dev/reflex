@@ -5,7 +5,7 @@ import functools
 from collections.abc import Generator
 
 import pytest
-from reflex_core.utils import format
+from reflex_base.utils import format
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 

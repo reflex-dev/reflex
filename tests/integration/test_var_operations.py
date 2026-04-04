@@ -13,8 +13,8 @@ def VarOperations():
     from typing import TypedDict
 
     import pydantic
-    from reflex_core.vars.base import LiteralVar
-    from reflex_core.vars.sequence import ArrayVar
+    from reflex_base.vars.base import LiteralVar
+    from reflex_base.vars.sequence import ArrayVar
 
     import reflex as rx
 

@@ -6,8 +6,8 @@ import dataclasses
 from collections.abc import Callable, Sequence
 from typing import Any, Concatenate, Generic, ParamSpec, Protocol, TypeVar, overload
 
-from reflex_core.utils import format
-from reflex_core.utils.types import GenericType
+from reflex_base.utils import format
+from reflex_base.utils.types import GenericType
 
 from .base import CachedVarOperation, LiteralVar, Var, VarData, cached_property_no_lock
 

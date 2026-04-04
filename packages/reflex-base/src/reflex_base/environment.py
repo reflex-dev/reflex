@@ -24,11 +24,11 @@ from typing import (
     get_type_hints,
 )
 
-from reflex_core import constants
-from reflex_core.constants.base import LogLevel
-from reflex_core.plugins import Plugin
-from reflex_core.utils.exceptions import EnvironmentVarValueError
-from reflex_core.utils.types import GenericType, is_union, value_inside_optional
+from reflex_base import constants
+from reflex_base.constants.base import LogLevel
+from reflex_base.plugins import Plugin
+from reflex_base.utils.exceptions import EnvironmentVarValueError
+from reflex_base.utils.types import GenericType, is_union, value_inside_optional
 
 
 def get_default_value_for_field(field: dataclasses.Field) -> Any:
@@ -543,7 +543,7 @@ class ExecutorType(enum.Enum):
         Returns:
             The executor.
         """
-        from reflex_core.utils import console
+        from reflex_base.utils import console
 
         executor_type = environment.REFLEX_COMPILE_EXECUTOR.get()
 
@@ -839,7 +839,7 @@ def _load_dotenv_from_files(files: list[Path]):
     Args:
         files: A list of Path objects representing the environment variable files.
     """
-    from reflex_core.utils import console
+    from reflex_base.utils import console
 
     if not files:
         return

@@ -49,7 +49,7 @@ def remove_version_from_plugin(plugin: TailwindPluginConfig) -> TailwindPluginCo
     Returns:
         The plugin without the version.
     """
-    from reflex_core.utils.format import format_library_name
+    from reflex_base.utils.format import format_library_name
 
     if isinstance(plugin, str):
         return format_library_name(plugin)
@@ -201,12 +201,12 @@ class TailwindPlugin(PluginBase):
         Returns:
             The Tailwind CSS configuration.
         """
-        from reflex_core.config import get_config
+        from reflex_base.config import get_config
 
         rxconfig_config = getattr(get_config(), "tailwind", None)
 
         if rxconfig_config is not None and rxconfig_config != self.config:
-            from reflex_core.utils import console
+            from reflex_base.utils import console
 
             console.warn(
                 "It seems you have provided a tailwind configuration in your call to `rx.Config`."
@@ -222,7 +222,7 @@ class TailwindPlugin(PluginBase):
         Returns:
             The Tailwind CSS configuration without version-specific adjustments.
         """
-        from reflex_core.utils.format import format_library_name
+        from reflex_base.utils.format import format_library_name
 
         config = deepcopy(self.get_config())
         if presets := config.get("presets"):

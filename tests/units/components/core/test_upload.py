@@ -9,8 +9,8 @@ from reflex_components_core.core.upload import (
     cancel_upload,
     get_upload_url,
 )
-from reflex_core.event import EventChain, EventHandler, EventSpec
-from reflex_core.vars.base import LiteralVar, Var
+from reflex_base.event import EventChain, EventHandler, EventSpec
+from reflex_base.vars.base import LiteralVar, Var
 
 import reflex as rx
 from reflex import event

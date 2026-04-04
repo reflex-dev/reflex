@@ -2,8 +2,8 @@
 
 import dataclasses
 
-from reflex_core.components.tags import Tag
-from reflex_core.utils import format
+from reflex_base.components.tags import Tag
+from reflex_base.utils import format
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)

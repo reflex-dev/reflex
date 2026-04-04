@@ -7,9 +7,9 @@ import os
 from reflex_components_core.base.script import Script
 from reflex_components_core.core.banner import has_connection_errors
 from reflex_components_core.core.cond import cond
-from reflex_core.components.component import Component
-from reflex_core.constants import Endpoint
-from reflex_core.utils.decorator import once
+from reflex_base.components.component import Component
+from reflex_base.constants import Endpoint
+from reflex_base.utils.decorator import once
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
 

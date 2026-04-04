@@ -25,27 +25,27 @@ from typing import (
 
 from typing_extensions import Self, TypeAliasType, TypedDict, TypeVarTuple, Unpack
 
-from reflex_core import constants
-from reflex_core.components.field import BaseField
-from reflex_core.constants.compiler import CompileVars, Hooks, Imports
-from reflex_core.constants.state import FRONTEND_EVENT_STATE
-from reflex_core.utils import format
-from reflex_core.utils.decorator import once
-from reflex_core.utils.exceptions import (
+from reflex_base import constants
+from reflex_base.components.field import BaseField
+from reflex_base.constants.compiler import CompileVars, Hooks, Imports
+from reflex_base.constants.state import FRONTEND_EVENT_STATE
+from reflex_base.utils import format
+from reflex_base.utils.decorator import once
+from reflex_base.utils.exceptions import (
     EventFnArgMismatchError,
     EventHandlerArgTypeMismatchError,
     MissingAnnotationError,
 )
-from reflex_core.utils.types import (
+from reflex_base.utils.types import (
     ArgsSpec,
     GenericType,
     Unset,
     safe_issubclass,
     typehint_issubclass,
 )
-from reflex_core.vars import VarData
-from reflex_core.vars.base import LiteralVar, Var
-from reflex_core.vars.function import (
+from reflex_base.vars import VarData
+from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.function import (
     ArgsFunctionOperation,
     ArgsFunctionOperationBuilder,
     BuilderFunctionVar,
@@ -54,7 +54,7 @@ from reflex_core.vars.function import (
     FunctionVar,
     VarOperationCall,
 )
-from reflex_core.vars.object import ObjectVar
+from reflex_base.vars.object import ObjectVar
 
 
 @dataclasses.dataclass(
@@ -128,7 +128,7 @@ def resolve_upload_handler_param(handler: "EventHandler") -> tuple[str, Any]:
     """
     from reflex_components_core.core._upload import UploadFile
 
-    from reflex_core.utils.exceptions import UploadTypeError, UploadValueError
+    from reflex_base.utils.exceptions import UploadTypeError, UploadValueError
 
     handler_name = _handler_name(handler)
     if handler.is_background:
@@ -168,7 +168,7 @@ def resolve_upload_chunk_handler_param(handler: "EventHandler") -> tuple[str, ty
     """
     from reflex_components_core.core._upload import UploadChunkIterator
 
-    from reflex_core.utils.exceptions import UploadTypeError, UploadValueError
+    from reflex_base.utils.exceptions import UploadTypeError, UploadValueError
 
     handler_name = _handler_name(handler)
     if not handler.is_background:
@@ -351,7 +351,7 @@ class EventHandler(EventActionsMixin):
         Raises:
             EventHandlerTypeError: If the arguments are invalid.
         """
-        from reflex_core.utils.exceptions import EventHandlerTypeError
+        from reflex_base.utils.exceptions import EventHandlerTypeError
 
         # Get the function args.
         fn_args = list(self._parameters)[1:]
@@ -474,7 +474,7 @@ class EventSpec(EventActionsMixin):
         Raises:
             EventHandlerTypeError: If the arguments are invalid.
         """
-        from reflex_core.utils.exceptions import EventHandlerTypeError
+        from reflex_base.utils.exceptions import EventHandlerTypeError
 
         # Get the remaining unfilled function args.
         fn_args = list(self.handler._parameters)[1 + len(self.args) :]
@@ -538,7 +538,7 @@ class CallableEventSpec(EventSpec):
         Raises:
             EventHandlerTypeError: If the CallableEventSpec has no associated function.
         """
-        from reflex_core.utils.exceptions import EventHandlerTypeError
+        from reflex_base.utils.exceptions import EventHandlerTypeError
 
         if self.fn is None:
             msg = "CallableEventSpec has no associated function."
@@ -1070,7 +1070,7 @@ class FileUpload:
         Returns:
             The event spec for the handler.
         """
-        from reflex_core.utils.exceptions import UploadValueError
+        from reflex_base.utils.exceptions import UploadValueError
 
         try:
             upload_param_name, _annotation = resolve_upload_handler_param(handler)
@@ -1635,7 +1635,7 @@ def _check_event_args_subclass_of_callback(
     # noqa: DAR401 delayed_exceptions[]
     # noqa: DAR402 EventHandlerArgTypeMismatchError
     """
-    from reflex_core.utils import console
+    from reflex_base.utils import console
 
     type_match_found: dict[str, bool] = {}
     delayed_exceptions: list[EventHandlerArgTypeMismatchError] = []
@@ -1962,8 +1962,8 @@ def call_event_fn(
         EventHandlerValueError: If the lambda returns an unusable value.
     """
     # Import here to avoid circular imports.
-    from reflex_core.event import EventHandler, EventSpec
-    from reflex_core.utils.exceptions import EventHandlerValueError
+    from reflex_base.event import EventHandler, EventSpec
+    from reflex_base.utils.exceptions import EventHandlerValueError
 
     parsed_args, _ = parse_args_spec(arg_spec)
 

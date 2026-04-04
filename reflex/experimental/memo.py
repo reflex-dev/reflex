@@ -10,24 +10,24 @@ from typing import Any, get_args, get_origin, get_type_hints
 
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
-from reflex_core import constants
-from reflex_core.components.component import Component
-from reflex_core.components.dynamic import bundled_libraries
-from reflex_core.constants.compiler import SpecialAttributes
-from reflex_core.constants.state import CAMEL_CASE_MEMO_MARKER
-from reflex_core.utils import format
-from reflex_core.utils.imports import ImportVar
-from reflex_core.utils.types import safe_issubclass
-from reflex_core.vars import VarData
-from reflex_core.vars.base import LiteralVar, Var
-from reflex_core.vars.function import (
+from reflex_base import constants
+from reflex_base.components.component import Component
+from reflex_base.components.dynamic import bundled_libraries
+from reflex_base.constants.compiler import SpecialAttributes
+from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER
+from reflex_base.utils import format
+from reflex_base.utils.imports import ImportVar
+from reflex_base.utils.types import safe_issubclass
+from reflex_base.vars import VarData
+from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.function import (
     ArgsFunctionOperation,
     DestructuredArg,
     FunctionStringVar,
     FunctionVar,
     ReflexCallable,
 )
-from reflex_core.vars.object import RestProp
+from reflex_base.vars.object import RestProp
 
 from reflex.utils import types as type_utils
 

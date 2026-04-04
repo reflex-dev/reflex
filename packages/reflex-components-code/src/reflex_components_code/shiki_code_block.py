@@ -13,15 +13,15 @@ from reflex_components_core.core.cond import color_mode_cond
 from reflex_components_core.core.markdown_component_map import MarkdownComponentMap
 from reflex_components_core.el.elements.forms import Button
 from reflex_components_radix.themes.layout.box import Box
-from reflex_core.components.component import Component, ComponentNamespace, field
-from reflex_core.components.props import NoExtrasAllowedProps
-from reflex_core.event import run_script, set_clipboard
-from reflex_core.style import Style
-from reflex_core.utils.exceptions import VarTypeError
-from reflex_core.utils.imports import ImportVar
-from reflex_core.vars.base import LiteralVar, Var
-from reflex_core.vars.function import FunctionStringVar
-from reflex_core.vars.sequence import StringVar, string_replace_operation
+from reflex_base.components.component import Component, ComponentNamespace, field
+from reflex_base.components.props import NoExtrasAllowedProps
+from reflex_base.event import run_script, set_clipboard
+from reflex_base.style import Style
+from reflex_base.utils.exceptions import VarTypeError
+from reflex_base.utils.imports import ImportVar
+from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.function import FunctionStringVar
+from reflex_base.vars.sequence import StringVar, string_replace_operation
 
 
 def copy_script() -> Any:

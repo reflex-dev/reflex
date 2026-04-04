@@ -5,17 +5,17 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any, Literal
 
-from reflex_core import constants
-from reflex_core.breakpoints import Breakpoints, breakpoints_values
-from reflex_core.event import EventChain, EventHandler, EventSpec, run_script
-from reflex_core.utils import format
-from reflex_core.utils.exceptions import ReflexError
-from reflex_core.utils.imports import ImportVar
-from reflex_core.utils.types import typehint_issubclass
-from reflex_core.vars import VarData
-from reflex_core.vars.base import LiteralVar, Var
-from reflex_core.vars.function import FunctionVar
-from reflex_core.vars.object import ObjectVar
+from reflex_base import constants
+from reflex_base.breakpoints import Breakpoints, breakpoints_values
+from reflex_base.event import EventChain, EventHandler, EventSpec, run_script
+from reflex_base.utils import format
+from reflex_base.utils.exceptions import ReflexError
+from reflex_base.utils.imports import ImportVar
+from reflex_base.utils.types import typehint_issubclass
+from reflex_base.vars import VarData
+from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.function import FunctionVar
+from reflex_base.vars.object import ObjectVar
 
 SYSTEM_COLOR_MODE: str = "system"
 LIGHT_COLOR_MODE: str = "light"
@@ -120,7 +120,7 @@ def convert_item(
     Raises:
         ReflexError: If an EventHandler is used as a style value
     """
-    from reflex_core.components.component import BaseComponent
+    from reflex_base.components.component import BaseComponent
 
     if isinstance(style_item, (EventHandler, BaseComponent)):
         msg = (

@@ -6,8 +6,8 @@ from collections.abc import Callable
 from dataclasses import _MISSING_TYPE, MISSING
 from typing import Annotated, Any, Generic, TypeVar, get_origin
 
-from reflex_core.utils import types
-from reflex_core.utils.compat import annotations_from_namespace
+from reflex_base.utils import types
+from reflex_base.utils.compat import annotations_from_namespace
 
 FIELD_TYPE = TypeVar("FIELD_TYPE")
 

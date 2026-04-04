@@ -13,11 +13,11 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar, get_args, overload
 
 from typing_extensions import TypeVar as TypingExtensionsTypeVar
 
-from reflex_core import constants
-from reflex_core.constants.base import REFLEX_VAR_OPENING_TAG
-from reflex_core.utils import types
-from reflex_core.utils.exceptions import VarTypeError
-from reflex_core.utils.types import GenericType, get_origin
+from reflex_base import constants
+from reflex_base.constants.base import REFLEX_VAR_OPENING_TAG
+from reflex_base.utils import types
+from reflex_base.utils.exceptions import VarTypeError
+from reflex_base.utils.types import GenericType, get_origin
 
 from .base import (
     CachedVarOperation,

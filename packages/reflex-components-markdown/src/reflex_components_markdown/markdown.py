@@ -11,19 +11,19 @@ from typing import Any
 
 from reflex_components_core.core.markdown_component_map import MarkdownComponentMap
 from reflex_components_core.el.elements.typography import Div
-from reflex_core.components.component import (
+from reflex_base.components.component import (
     BaseComponent,
     Component,
     ComponentNamespace,
     CustomComponent,
     field,
 )
-from reflex_core.components.tags.tag import Tag
-from reflex_core.utils import console
-from reflex_core.utils.imports import ImportDict, ImportTypes, ImportVar
-from reflex_core.vars.base import LiteralVar, Var, VarData
-from reflex_core.vars.number import ternary_operation
-from reflex_core.vars.sequence import LiteralArrayVar
+from reflex_base.components.tags.tag import Tag
+from reflex_base.utils import console
+from reflex_base.utils.imports import ImportDict, ImportTypes, ImportVar
+from reflex_base.vars.base import LiteralVar, Var, VarData
+from reflex_base.vars.number import ternary_operation
+from reflex_base.vars.sequence import LiteralArrayVar
 
 # Special vars used in the component map.
 _CHILDREN = Var(_js_expr="children", _var_type=str)
@@ -449,7 +449,7 @@ let {_LANGUAGE!s} = match ? match[1] : '';
 
     def _get_custom_code(self) -> str | None:
         hooks = {}
-        from reflex_core.compiler.templates import _render_hooks
+        from reflex_base.compiler.templates import _render_hooks
 
         for component_factory in self.component_map.values():
             comp = component_factory(_MOCK_ARG)

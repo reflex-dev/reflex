@@ -19,9 +19,9 @@ from typing import (
 
 from rich.markup import escape
 
-from reflex_core.utils import types
-from reflex_core.utils.exceptions import VarAttributeError
-from reflex_core.utils.types import (
+from reflex_base.utils import types
+from reflex_base.utils.exceptions import VarAttributeError
+from reflex_base.utils.types import (
     GenericType,
     get_attribute_access_type,
     get_origin,
@@ -492,7 +492,7 @@ class LiteralObjectVar(
             TypeError: If the value is not a mapping type or a dataclass.
         """
         if not isinstance(_var_value, collections.abc.Mapping):
-            from reflex_core.utils.serializers import serialize
+            from reflex_base.utils.serializers import serialize
 
             serialized = serialize(_var_value, get_type=False)
             if not isinstance(serialized, collections.abc.Mapping):

@@ -8,10 +8,10 @@ from reflex_components_core.core.foreach import (
 )
 from reflex_components_radix.themes.layout.box import box
 from reflex_components_radix.themes.typography.text import text
-from reflex_core.components.component import Component
-from reflex_core.constants.state import FIELD_MARKER
-from reflex_core.vars.number import NumberVar
-from reflex_core.vars.sequence import ArrayVar
+from reflex_base.components.component import Component
+from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.vars.number import NumberVar
+from reflex_base.vars.sequence import ArrayVar
 
 import reflex as rx
 from reflex import el

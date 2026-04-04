@@ -2,16 +2,16 @@
 
 from typing import TYPE_CHECKING, Union
 
-from reflex_core import constants
-from reflex_core.utils import imports
-from reflex_core.utils.exceptions import DynamicComponentMissingLibraryError
-from reflex_core.utils.format import format_library_name
-from reflex_core.utils.serializers import serializer
-from reflex_core.vars import Var, get_unique_variable_name
-from reflex_core.vars.base import VarData, transform
+from reflex_base import constants
+from reflex_base.utils import imports
+from reflex_base.utils.exceptions import DynamicComponentMissingLibraryError
+from reflex_base.utils.format import format_library_name
+from reflex_base.utils.serializers import serializer
+from reflex_base.vars import Var, get_unique_variable_name
+from reflex_base.vars.base import VarData, transform
 
 if TYPE_CHECKING:
-    from reflex_core.components.component import Component
+    from reflex_base.components.component import Component
 
 
 def get_cdn_url(lib: str) -> str:
@@ -57,7 +57,7 @@ def bundle_library(component: Union["Component", str]):
 def load_dynamic_serializer():
     """Load the serializer for dynamic components."""
     # Causes a circular import, so we import here.
-    from reflex_core.components.component import Component
+    from reflex_base.components.component import Component
 
     @serializer
     def make_component(component: Component) -> str:

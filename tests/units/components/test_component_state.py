@@ -2,7 +2,7 @@
 
 import pytest
 from reflex_components_core.base.bare import Bare
-from reflex_core.utils.exceptions import ReflexRuntimeError
+from reflex_base.utils.exceptions import ReflexRuntimeError
 
 import reflex as rx
 

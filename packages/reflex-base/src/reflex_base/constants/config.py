@@ -3,7 +3,7 @@
 from pathlib import Path
 from types import SimpleNamespace
 
-from reflex_core.constants.base import Dirs, Reflex
+from reflex_base.constants.base import Dirs, Reflex
 
 from .compiler import Ext
 

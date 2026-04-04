@@ -6,14 +6,14 @@ import json
 from collections.abc import Iterable, Mapping
 from typing import TYPE_CHECKING, Any, Literal
 
-from reflex_core import constants
-from reflex_core.constants import Hooks
-from reflex_core.utils.format import format_state_name, json_dumps
-from reflex_core.vars.base import VarData
+from reflex_base import constants
+from reflex_base.constants import Hooks
+from reflex_base.utils.format import format_state_name, json_dumps
+from reflex_base.vars.base import VarData
 
 if TYPE_CHECKING:
     from reflex.compiler.utils import _ImportDict
-    from reflex_core.components.component import Component, StatefulComponent
+    from reflex_base.components.component import Component, StatefulComponent
 
 
 def _sort_hooks(

@@ -8,12 +8,12 @@ from typing import Any, ClassVar, Literal
 from reflex_components_core.core.colors import color
 from reflex_components_core.core.cond import cond
 from reflex_components_lucide.icon import Icon
-from reflex_core.components.component import Component, ComponentNamespace, field
-from reflex_core.constants.compiler import MemoizationMode
-from reflex_core.event import EventHandler
-from reflex_core.style import Style
-from reflex_core.vars import get_uuid_string_var
-from reflex_core.vars.base import LiteralVar, Var
+from reflex_base.components.component import Component, ComponentNamespace, field
+from reflex_base.constants.compiler import MemoizationMode
+from reflex_base.event import EventHandler
+from reflex_base.style import Style
+from reflex_base.vars import get_uuid_string_var
+from reflex_base.vars.base import LiteralVar, Var
 
 from reflex_components_radix.primitives.base import RadixPrimitiveComponent
 from reflex_components_radix.themes.base import LiteralAccentColor, LiteralRadius

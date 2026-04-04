@@ -5,8 +5,8 @@ from __future__ import annotations
 from typing import Any
 
 from reflex_components_core.core.colors import color
-from reflex_core.components.component import Component, ComponentNamespace, field
-from reflex_core.vars.base import Var
+from reflex_base.components.component import Component, ComponentNamespace, field
+from reflex_base.vars.base import Var
 
 from reflex_components_radix.primitives.accordion import DEFAULT_ANIMATION_DURATION
 from reflex_components_radix.primitives.base import RadixPrimitiveComponentWithClassName

@@ -4,7 +4,7 @@ import dataclasses
 from collections.abc import Iterator, Mapping
 from typing import Any
 
-from reflex_core.components.tags.tag import Tag
+from reflex_base.components.tags.tag import Tag
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)

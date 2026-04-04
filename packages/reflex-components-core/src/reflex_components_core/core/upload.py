@@ -7,17 +7,17 @@ from pathlib import Path
 from typing import Any, ClassVar
 
 from reflex_components_sonner.toast import toast
-from reflex_core.components.component import (
+from reflex_base.components.component import (
     Component,
     ComponentNamespace,
     MemoizationLeaf,
     StatefulComponent,
     field,
 )
-from reflex_core.constants import Dirs
-from reflex_core.constants.compiler import Hooks, Imports
-from reflex_core.environment import environment
-from reflex_core.event import (
+from reflex_base.constants import Dirs
+from reflex_base.constants.compiler import Hooks, Imports
+from reflex_base.environment import environment
+from reflex_base.event import (
     CallableEventSpec,
     EventChain,
     EventHandler,
@@ -29,14 +29,14 @@ from reflex_core.event import (
     run_script,
     upload_files,
 )
-from reflex_core.style import Style
-from reflex_core.utils import format
-from reflex_core.utils.imports import ImportVar
-from reflex_core.vars import VarData
-from reflex_core.vars.base import Var, get_unique_variable_name
-from reflex_core.vars.function import FunctionVar
-from reflex_core.vars.object import ObjectVar
-from reflex_core.vars.sequence import ArrayVar, LiteralStringVar
+from reflex_base.style import Style
+from reflex_base.utils import format
+from reflex_base.utils.imports import ImportVar
+from reflex_base.vars import VarData
+from reflex_base.vars.base import Var, get_unique_variable_name
+from reflex_base.vars.function import FunctionVar
+from reflex_base.vars.object import ObjectVar
+from reflex_base.vars.sequence import ArrayVar, LiteralStringVar
 
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core._upload import UploadChunkIterator, UploadFile

@@ -8,13 +8,13 @@ import os
 import re
 from typing import TYPE_CHECKING, Any
 
-from reflex_core import constants
-from reflex_core.constants.state import FRONTEND_EVENT_STATE
-from reflex_core.utils import exceptions
+from reflex_base import constants
+from reflex_base.constants.state import FRONTEND_EVENT_STATE
+from reflex_base.utils import exceptions
 
 if TYPE_CHECKING:
-    from reflex_core.components.component import ComponentStyle
-    from reflex_core.event import (
+    from reflex_base.components.component import ComponentStyle
+    from reflex_base.event import (
         ArgsSpec,
         EventChain,
         EventHandler,
@@ -384,9 +384,9 @@ def format_prop(
         ValueError: If the prop is not a string.
     """
     # import here to avoid circular import.
-    from reflex_core.event import EventChain
-    from reflex_core.utils import serializers
-    from reflex_core.vars import Var
+    from reflex_base.event import EventChain
+    from reflex_base.utils import serializers
+    from reflex_base.vars import Var
 
     try:
         # Handle var props.
@@ -434,7 +434,7 @@ def format_props(*single_props, **key_value_props) -> list[str]:
         The formatted props list.
     """
     # Format all the props.
-    from reflex_core.vars import LiteralStringVar, LiteralVar, Var
+    from reflex_base.vars import LiteralStringVar, LiteralVar, Var
 
     return [
         (str(LiteralStringVar.create(name)) if "-" in name else name)
@@ -524,7 +524,7 @@ def format_event(event_spec: EventSpec) -> str:
 
 
 if TYPE_CHECKING:
-    from reflex_core.vars import Var
+    from reflex_base.vars import Var
 
 
 def format_queue_events(
@@ -549,14 +549,14 @@ def format_queue_events(
     Raises:
         ValueError: If a lambda function is given which returns a Var.
     """
-    from reflex_core.event import (
+    from reflex_base.event import (
         EventChain,
         EventHandler,
         EventSpec,
         call_event_fn,
         call_event_handler,
     )
-    from reflex_core.vars import FunctionVar, Var
+    from reflex_base.vars import FunctionVar, Var
 
     if not events:
         return Var("(() => null)").to(FunctionVar, EventChain)
@@ -684,7 +684,7 @@ def json_dumps(obj: Any, **kwargs) -> str:
     Returns:
         A string
     """
-    from reflex_core.utils import serializers
+    from reflex_base.utils import serializers
 
     kwargs.setdefault("ensure_ascii", False)
     kwargs.setdefault("default", serializers.serialize)
@@ -742,7 +742,7 @@ def format_data_editor_column(col: str | dict):
     Raises:
         ValueError: invalid type provided for column.
     """
-    from reflex_core.vars import Var
+    from reflex_base.vars import Var
 
     if isinstance(col, str):
         return {"title": col, "id": col.lower(), "type": "str"}
@@ -772,7 +772,7 @@ def format_data_editor_cell(cell: Any):
     Returns:
         The formatted cell.
     """
-    from reflex_core.vars.base import Var
+    from reflex_base.vars.base import Var
 
     return {
         "kind": Var(_js_expr="GridCellKind.Text"),

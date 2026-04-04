@@ -9,7 +9,7 @@ from xml.etree.ElementTree import Element, SubElement, indent, tostring
 
 from typing_extensions import NotRequired
 
-from reflex_core import constants
+from reflex_base import constants
 
 from .base import Plugin as PluginBase
 
@@ -130,8 +130,8 @@ def generate_links_for_sitemap(
     Returns:
         A list of SitemapLink dictionaries.
     """
-    from reflex_core.config import get_config
-    from reflex_core.utils import console
+    from reflex_base.config import get_config
+    from reflex_base.utils import console
 
     deploy_url = get_config().deploy_url
 

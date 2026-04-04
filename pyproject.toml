@@ -36,7 +36,7 @@ dependencies = [
   "starlette >=0.47.0",
   "typing_extensions >=4.13.0",
   "wrapt >=1.17.0,<3.0",
-  "reflex-core",
+  "reflex-base",
   "reflex-components-code",
   "reflex-components-core",
   "reflex-components-dataeditor",
@@ -198,8 +198,8 @@ lint.ignore = [
 ]
 lint.pydocstyle.convention = "google"
 lint.flake8-bugbear.extend-immutable-calls = [
-  "reflex_core.utils.types.Unset",
-  "reflex_core.vars.base.Var.create",
+  "reflex_base.utils.types.Unset",
+  "reflex_base.vars.base.Var.create",
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -219,7 +219,7 @@ lint.flake8-bugbear.extend-immutable-calls = [
 "*/.templates/*.py" = ["D100", "D103", "D104"]
 "*.pyi" = ["D301", "D415", "D417", "D418", "E742", "N", "PGH"]
 "pyi_generator.py" = ["N802"]
-"packages/reflex-core/src/reflex_core/constants/*.py" = ["N"]
+"packages/reflex-base/src/reflex_base/constants/*.py" = ["N"]
 "*/.templates/apps/blank/code/*" = ["INP001"]
 "*/blank.py" = ["I001"]
 
@@ -330,7 +330,7 @@ required-version = ">=0.7.0"
 
 [tool.uv.sources]
 hatch-reflex-pyi.workspace = true
-reflex-core.workspace = true
+reflex-base.workspace = true
 reflex-components-code.workspace = true
 reflex-components-core.workspace = true
 reflex-components-dataeditor.workspace = true

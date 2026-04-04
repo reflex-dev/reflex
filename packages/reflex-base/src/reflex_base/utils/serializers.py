@@ -17,8 +17,8 @@ from pathlib import Path
 from typing import Any, Literal, TypeVar, get_type_hints, overload
 from uuid import UUID
 
-from reflex_core.constants.colors import Color
-from reflex_core.utils import console, types
+from reflex_base.constants.colors import Color
+from reflex_base.utils import console, types
 
 # Mapping from type to a serializer.
 # The serializer should convert the type to a JSON object.
