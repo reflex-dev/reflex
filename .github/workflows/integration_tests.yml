@@ -117,10 +117,51 @@ jobs:
         with:
           fetch-tags: true
           fetch-depth: 0
-      - uses: ./.github/actions/setup_build_env
+
+      # Install sfw BEFORE any dependency installation so all packages are scanned.
+      - name: Install Socket.dev Firewall (free)
+        uses: SocketDev/action@2d3f25590c6ed6ba11a9a14c064d962a3a04698f # v1.3.1
+        with:
+          mode: firewall-free
+
+      - name: Create sfw wrapper scripts for npm and bun
+        run: |
+          mkdir -p "$RUNNER_TEMP/sfw-wrappers"
+          printf '#!/usr/bin/env bash\nexec sfw npm "$@"\n' > "$RUNNER_TEMP/sfw-wrappers/npm"
+          printf '#!/usr/bin/env bash\nexec sfw bun "$@"\n' > "$RUNNER_TEMP/sfw-wrappers/bun"
+          chmod +x "$RUNNER_TEMP/sfw-wrappers/npm" "$RUNNER_TEMP/sfw-wrappers/bun"
+          echo "$RUNNER_TEMP/sfw-wrappers" >> "$GITHUB_PATH"
+
+      # Inline setup_build_env steps so all installs go through sfw.
+      - name: Install UV
+        uses: astral-sh/setup-uv@v6
         with:
           python-version: ${{ matrix.python-version }}
-          run-uv-sync: true
+          enable-cache: true
+          prune-cache: false
+          activate-environment: true
+          cache-dependency-glob: "uv.lock"
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Build git+https deps as wheels outside sfw (avoids sfw MITM cert issues
+      # with git), then install everything else through sfw for scanning.
+      - name: Pre-install git dependencies (outside sfw)
+        run: |
+          # Install git+https deps directly without sfw to avoid MITM cert issues.
+          # Their transitive registry deps will still be scanned by sfw uv sync.
+          grep -oP 'git\+https://[^"]+' uv.lock | sort -u > "$RUNNER_TEMP/git-deps.txt" || true
+          if [ -s "$RUNNER_TEMP/git-deps.txt" ]; then
+            echo "Installing git dependencies:"
+            cat "$RUNNER_TEMP/git-deps.txt"
+            uv pip install --no-deps -r "$RUNNER_TEMP/git-deps.txt"
+          else
+            echo "No git dependencies found."
+          fi
+      - name: Install Dependencies (scanned by Socket.dev)
+        run: sfw uv sync
 
       - name: Clone Reflex Website Repo
         uses: actions/checkout@v4
@@ -130,24 +171,42 @@ jobs:
           path: reflex-web
           submodules: recursive
 
-      - name: Compile pyproject.toml into requirements.txt
+      - name: Pre-install reflex-web git dependencies (outside sfw)
         working-directory: ./reflex-web
         run: |
-          uv pip compile pyproject.toml --no-annotate --no-header --no-deps --output-file requirements.txt
+          # Install git+https deps from pyproject.toml before pip compile resolves them.
+          grep -oP 'git\+https://[^"'"'"']+' pyproject.toml | sort -u > git-requirements.txt || true
+          if [ -s git-requirements.txt ]; then
+            echo "Installing git dependencies:"
+            cat git-requirements.txt
+            uv pip install --no-deps -r git-requirements.txt
+          fi
+      - name: Compile and install reflex-web requirements (scanned by Socket.dev)
+        working-directory: ./reflex-web
+        run: |
+          sfw uv pip compile pyproject.toml --no-annotate --no-header --no-deps --output-file requirements.txt
           uv pip list --format=json | jq -r '"^" + .[].name + "[ =]"' > installed_patterns.txt
           grep -ivf installed_patterns.txt requirements.txt > requirements.txt.tmp && mv requirements.txt.tmp requirements.txt
           rm installed_patterns.txt
-      - name: Install Requirements for reflex-web
-        working-directory: ./reflex-web
-        run: uv pip install -r requirements.txt
+          if [ -s requirements.txt ]; then
+            sfw uv pip install -r requirements.txt
+          fi
       - name: Init Website for reflex-web
         working-directory: ./reflex-web
         run: uv run --active --no-sync reflex init
       - name: Run Website and Check for errors
         run: |
-          # Check that npm is home
-          npm -v
+          # Verify sfw wrappers are on PATH
+          which npm && npm -v
           uv run --active --no-sync bash scripts/integration.sh ./reflex-web prod
+
+      - name: Upload Socket.dev Firewall report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sfw-report-reflex-web-py${{ matrix.python-version }}
+          path: ${{ env.SFW_JSON_REPORT_PATH }}
+          if-no-files-found: warn
 
   rx-shout-from-template:
     strategy:
