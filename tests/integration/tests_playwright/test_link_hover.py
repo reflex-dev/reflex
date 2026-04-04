@@ -26,7 +26,10 @@ def LinkApp():
 
 
 @pytest.fixture
-def link_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
+def link_app(tmp_path_factory, monkeypatch) -> Generator[AppHarness, None, None]:
+    # Set via env var rather than Config directly because AppHarness._initialize_app
+    # calls get_config(reload=True), which resets any prior Config mutations.
+    monkeypatch.setenv("REFLEX_SHOW_BUILT_WITH_REFLEX", "false")
     with AppHarness.create(
         root=tmp_path_factory.mktemp("link_app"),
         app_source=LinkApp,

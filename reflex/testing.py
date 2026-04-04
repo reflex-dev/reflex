@@ -1054,8 +1054,13 @@ class AppHarnessProd(AppHarness):
             / reflex.utils.prerequisites.get_web_dir()
             / reflex.constants.Dirs.STATIC
         )
+        # When frontend_path is set, the build output (including 404.html) is
+        # nested under that prefix directory, mirroring what sirv does in real
+        # prod deployments (see PackageJson.Commands.get_prod_command).
+        frontend_path = reflex.config.get_config().frontend_path.strip("/")
+        error_dir = web_root / frontend_path if frontend_path else web_root
         error_page_map = {
-            404: web_root / "404.html",
+            404: error_dir / "404.html",
         }
         with Subdir404TCPServer(
             ("", 0),
