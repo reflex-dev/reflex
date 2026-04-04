@@ -13,10 +13,10 @@ from typing import Any, TypedDict, cast
 
 from redis import ResponseError
 from redis.asyncio import Redis
-from reflex_core.config import get_config
-from reflex_core.environment import environment
-from reflex_core.utils import console
-from reflex_core.utils.exceptions import (
+from reflex_base.config import get_config
+from reflex_base.environment import environment
+from reflex_base.utils import console
+from reflex_base.utils.exceptions import (
     InvalidLockWarningThresholdError,
     LockExpiredError,
     StateSchemaMismatchError,

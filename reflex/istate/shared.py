@@ -5,10 +5,10 @@ import contextlib
 from collections.abc import AsyncIterator
 from typing import TypeVar
 
-from reflex_core.constants import ROUTER_DATA
-from reflex_core.event import Event, get_hydrate_event
-from reflex_core.utils import console
-from reflex_core.utils.exceptions import ReflexRuntimeError
+from reflex_base.constants import ROUTER_DATA
+from reflex_base.event import Event, get_hydrate_event
+from reflex_base.utils import console
+from reflex_base.utils.exceptions import ReflexRuntimeError
 from typing_extensions import Self
 
 from reflex.istate.manager.token import BaseStateToken

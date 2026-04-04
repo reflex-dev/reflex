@@ -6,7 +6,7 @@ from collections.abc import Callable, Coroutine
 from contextvars import Context
 from typing import Any
 
-from reflex_core.utils import console
+from reflex_base.utils import console
 
 
 async def _run_forever(

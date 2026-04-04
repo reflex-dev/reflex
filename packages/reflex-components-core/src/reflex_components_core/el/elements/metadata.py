@@ -1,7 +1,7 @@
 """Metadata classes."""
 
-from reflex_core.components.component import field
-from reflex_core.vars.base import Var
+from reflex_base.components.component import field
+from reflex_base.vars.base import Var
 
 from reflex_components_core.el.element import Element
 from reflex_components_core.el.elements.inline import ReferrerPolicy

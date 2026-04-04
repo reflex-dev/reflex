@@ -1,8 +1,8 @@
 import pytest
+from reflex_base.constants.colors import Color
+from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.vars.base import LiteralVar
 from reflex_components_code.code import CodeBlock
-from reflex_core.constants.colors import Color
-from reflex_core.constants.state import FIELD_MARKER
-from reflex_core.vars.base import LiteralVar
 
 import reflex as rx
 

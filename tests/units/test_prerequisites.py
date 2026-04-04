@@ -4,9 +4,9 @@ from pathlib import Path
 
 import pytest
 from click.testing import CliRunner
-from reflex_core.config import Config
-from reflex_core.constants.installer import PackageJson
-from reflex_core.utils.decorator import cached_procedure
+from reflex_base.config import Config
+from reflex_base.constants.installer import PackageJson
+from reflex_base.utils.decorator import cached_procedure
 
 from reflex.reflex import cli
 from reflex.testing import chdir

@@ -11,8 +11,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, BinaryIO, cast
 
 from python_multipart.multipart import MultipartParser, parse_options_header
-from reflex_core.utils import exceptions
-from reflex_core.utils.format import json_dumps
+from reflex_base.utils import exceptions
+from reflex_base.utils.format import json_dumps
 from starlette.datastructures import Headers
 from starlette.datastructures import UploadFile as StarletteUploadFile
 from starlette.exceptions import HTTPException
@@ -22,7 +22,7 @@ from starlette.responses import JSONResponse, Response, StreamingResponse
 from typing_extensions import Self
 
 if TYPE_CHECKING:
-    from reflex_core.utils.types import Receive, Scope, Send
+    from reflex_base.utils.types import Receive, Scope, Send
 
     from reflex.app import App
 
@@ -457,8 +457,8 @@ async def _upload_buffered_file(
     Returns:
         A streaming response for the buffered upload.
     """
-    from reflex_core.event import Event
-    from reflex_core.utils.exceptions import UploadValueError
+    from reflex_base.event import Event
+    from reflex_base.utils.exceptions import UploadValueError
 
     from reflex.state import StateUpdate
 
@@ -559,7 +559,7 @@ async def _upload_chunk_file(
     Returns:
         The streaming upload response.
     """
-    from reflex_core.event import Event
+    from reflex_base.event import Event
 
     chunk_iter = UploadChunkIterator(maxsize=8)
     event = Event(
@@ -621,8 +621,8 @@ def upload(app: App):
             UploadTypeError: If a non-streaming upload is wired to a background task.
             HTTPException: when the request does not include token / handler headers.
         """
-        from reflex_core._internal.registry import RegistrationContext
-        from reflex_core.event import (
+        from reflex_base._internal.registry import RegistrationContext
+        from reflex_base.event import (
             resolve_upload_chunk_handler_param,
             resolve_upload_handler_param,
         )

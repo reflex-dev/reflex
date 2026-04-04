@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from typing import Any, cast
 
-from reflex_core.components.component import StatefulComponent, field
-from reflex_core.constants.compiler import Hooks
-from reflex_core.event import EventHandler, key_event, no_args_event_spec
-from reflex_core.vars.base import Var, VarData
-from reflex_core.vars.object import ObjectVar
+from reflex_base.components.component import StatefulComponent, field
+from reflex_base.constants.compiler import Hooks
+from reflex_base.event import EventHandler, key_event, no_args_event_spec
+from reflex_base.vars.base import Var, VarData
+from reflex_base.vars.object import ObjectVar
 
 from reflex_components_core.base.fragment import Fragment
 

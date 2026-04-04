@@ -6,7 +6,7 @@ from asyncio import CancelledError
 from contextlib import asynccontextmanager
 
 import pytest
-from reflex_core._internal.event.context import EventContext
+from reflex_base._internal.event.context import EventContext
 
 import reflex as rx
 from reflex.istate.proxy import MutableProxy, StateProxy

@@ -8,7 +8,7 @@ from collections.abc import AsyncGenerator, Generator, Iterator
 import pytest
 import pytest_asyncio
 from redis.asyncio import Redis
-from reflex_core import constants
+from reflex_base import constants
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 

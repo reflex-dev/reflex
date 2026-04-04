@@ -11,7 +11,7 @@ from typing import Any
 from urllib.parse import urlsplit
 
 import pytest
-from reflex_core.constants.event import Endpoint
+from reflex_base.constants.event import Endpoint
 from selenium.webdriver.common.by import By
 
 import reflex as rx

@@ -19,18 +19,18 @@ from __future__ import annotations
 
 from typing import Any, Literal, get_args
 
-from reflex_components_core.core.cond import Cond, color_mode_cond, cond
-from reflex_components_lucide.icon import Icon
-from reflex_core.components.component import BaseComponent, field
-from reflex_core.style import (
+from reflex_base.components.component import BaseComponent, field
+from reflex_base.style import (
     LIGHT_COLOR_MODE,
     color_mode,
     resolved_color_mode,
     set_color_mode,
     toggle_color_mode,
 )
-from reflex_core.vars.base import Var
-from reflex_core.vars.sequence import LiteralArrayVar
+from reflex_base.vars.base import Var
+from reflex_base.vars.sequence import LiteralArrayVar
+from reflex_components_core.core.cond import Cond, color_mode_cond, cond
+from reflex_components_lucide.icon import Icon
 
 from reflex_components_radix.themes.components.dropdown_menu import dropdown_menu
 from reflex_components_radix.themes.components.switch import Switch

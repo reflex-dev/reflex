@@ -10,7 +10,7 @@ from hashlib import md5
 from pathlib import Path
 from typing import Any, Generic, cast
 
-from reflex_core.environment import environment
+from reflex_base.environment import environment
 from typing_extensions import Unpack, override
 
 from reflex.istate.manager import (

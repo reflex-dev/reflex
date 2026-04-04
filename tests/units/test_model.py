@@ -3,8 +3,8 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
-from reflex_core.constants.state import FIELD_MARKER
-from reflex_core.event import Event
+from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.event import Event
 
 import reflex.constants
 import reflex.model

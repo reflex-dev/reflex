@@ -10,14 +10,14 @@ from unittest import mock
 
 import pytest
 import pytest_asyncio
-from reflex_core._internal.event.context import EventContext
-from reflex_core._internal.event.processor import (
+from reflex_base._internal.event.context import EventContext
+from reflex_base._internal.event.processor import (
     BaseStateEventProcessor,
     EventProcessor,
 )
-from reflex_core._internal.registry import RegistrationContext
-from reflex_core.components.component import CUSTOM_COMPONENTS
-from reflex_core.event import Event, EventSpec
+from reflex_base._internal.registry import RegistrationContext
+from reflex_base.components.component import CUSTOM_COMPONENTS
+from reflex_base.event import Event, EventSpec
 
 from reflex.app import App
 from reflex.experimental.memo import EXPERIMENTAL_MEMOS

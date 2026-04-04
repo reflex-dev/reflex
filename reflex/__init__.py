@@ -86,10 +86,10 @@ from __future__ import annotations
 
 import sys
 
-from reflex_core.utils import lazy_loader
+from reflex_base.utils import lazy_loader
 
 if sys.version_info < (3, 11):
-    from reflex_core.utils import console
+    from reflex_base.utils import console
 
     console.warn(
         "Reflex support for Python 3.10 is deprecated and will be removed in a future release. Please upgrade to Python 3.11 or higher for continued support."
@@ -137,7 +137,7 @@ _COMPONENTS_BASE_MAPPING: dict[str, list[str]] = {
 }
 
 _ALL_COMPONENTS_MAPPING: dict[str, list[str]] = {
-    "reflex_core.components.component": [
+    "reflex_base.components.component": [
         "Component",
         "NoSSRComponent",
         "memo",
@@ -160,7 +160,7 @@ _ALL_COMPONENTS_MAPPING: dict[str, list[str]] = {
         "data_editor_theme",
     ],
     "reflex_components_sonner.toast": ["toast"],
-    "reflex_core.components.props": ["PropsBase"],
+    "reflex_base.components.props": ["PropsBase"],
     "reflex_components_core.datadisplay.logo": ["logo"],
     "reflex_components_gridjs": ["data_table"],
     "reflex_components_moment": ["MomentDelta", "moment"],

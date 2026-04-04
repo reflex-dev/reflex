@@ -1,6 +1,6 @@
 """A Reflex logo component."""
 
-from reflex_core.vars import Var
+from reflex_base.vars import Var
 
 from reflex_components_core import el
 from reflex_components_core.core import color_mode_cond

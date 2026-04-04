@@ -2,7 +2,7 @@ import numpy as np
 import PIL
 import pytest
 from PIL.Image import Image as Img
-from reflex_core.utils.serializers import serialize, serialize_image
+from reflex_base.utils.serializers import serialize, serialize_image
 
 import reflex as rx
 

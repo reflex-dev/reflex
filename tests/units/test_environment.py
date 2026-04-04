@@ -8,8 +8,8 @@ from typing import Annotated
 from unittest.mock import patch
 
 import pytest
-from reflex_core import constants
-from reflex_core.environment import (
+from reflex_base import constants
+from reflex_base.environment import (
     EnvironmentVariables,
     EnvVar,
     ExecutorType,
@@ -32,8 +32,8 @@ from reflex_core.environment import (
     interpret_plugin_class_env,
     interpret_plugin_env,
 )
-from reflex_core.plugins import Plugin
-from reflex_core.utils.exceptions import EnvironmentVarValueError
+from reflex_base.plugins import Plugin
+from reflex_base.utils.exceptions import EnvironmentVarValueError
 
 
 class TestPlugin(Plugin):
@@ -509,7 +509,7 @@ class TestUtilityFunctions:
         result = _paths_from_environment()
         assert result == []
 
-    @patch("reflex_core.environment.load_dotenv")
+    @patch("reflex_base.environment.load_dotenv")
     def test_load_dotenv_from_files_with_dotenv(self, mock_load_dotenv):
         """Test _load_dotenv_from_files when dotenv is available.
 
@@ -528,8 +528,8 @@ class TestUtilityFunctions:
             mock_load_dotenv.assert_any_call(file1, override=True)
             mock_load_dotenv.assert_any_call(file2, override=True)
 
-    @patch("reflex_core.environment.load_dotenv", None)
-    @patch("reflex_core.utils.console")
+    @patch("reflex_base.environment.load_dotenv", None)
+    @patch("reflex_base.utils.console")
     def test_load_dotenv_from_files_without_dotenv(self, mock_console):
         """Test _load_dotenv_from_files when dotenv is not available.
 
@@ -548,7 +548,7 @@ class TestUtilityFunctions:
         # Should not raise any errors
         _load_dotenv_from_files([])
 
-    @patch("reflex_core.environment.load_dotenv")
+    @patch("reflex_base.environment.load_dotenv")
     def test_load_dotenv_from_files_nonexistent_file(self, mock_load_dotenv):
         """Test _load_dotenv_from_files with non-existent file.
 

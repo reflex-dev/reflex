@@ -9,8 +9,8 @@ import shutil
 import stat
 from pathlib import Path
 
-from reflex_core.config import get_config
-from reflex_core.environment import environment
+from reflex_base.config import get_config
+from reflex_base.environment import environment
 
 # Shorthand for join.
 join = os.linesep.join

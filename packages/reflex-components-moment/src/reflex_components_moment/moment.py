@@ -5,10 +5,10 @@ from __future__ import annotations
 import dataclasses
 from datetime import date, datetime, time, timedelta
 
-from reflex_core.components.component import NoSSRComponent, field
-from reflex_core.event import EventHandler, passthrough_event_spec
-from reflex_core.utils.imports import ImportDict
-from reflex_core.vars.base import LiteralVar, Var
+from reflex_base.components.component import NoSSRComponent, field
+from reflex_base.event import EventHandler, passthrough_event_spec
+from reflex_base.utils.imports import ImportDict
+from reflex_base.vars.base import LiteralVar, Var
 
 
 @dataclasses.dataclass(frozen=True)

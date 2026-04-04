@@ -8,10 +8,10 @@ from typing import Any, ClassVar, List, Literal, NoReturn  # noqa: UP035
 import pytest
 from packaging import version
 from pytest_mock import MockerFixture
-from reflex_core import constants
-from reflex_core.event import EventHandler
-from reflex_core.utils.exceptions import ReflexError, SystemPackageMissingError
-from reflex_core.vars.base import Var
+from reflex_base import constants
+from reflex_base.event import EventHandler
+from reflex_base.utils.exceptions import ReflexError, SystemPackageMissingError
+from reflex_base.vars.base import Var
 
 from reflex.environment import environment
 from reflex.state import BaseState
@@ -514,7 +514,7 @@ def test_output_system_info(mocker: MockerFixture):
     This test makes no assertions about the output, other than it executes
     without crashing.
     """
-    mocker.patch("reflex_core.utils.console._LOG_LEVEL", constants.LogLevel.DEBUG)
+    mocker.patch("reflex_base.utils.console._LOG_LEVEL", constants.LogLevel.DEBUG)
     utils_exec.output_system_info()
 
 

@@ -9,16 +9,16 @@ import pytest
 from pandas import DataFrame
 from pydantic import BaseModel as Base
 from pytest_mock import MockerFixture
-from reflex_core.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
-from reflex_core.constants.state import FIELD_MARKER
-from reflex_core.utils.exceptions import (
+from reflex_base.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
+from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.utils.exceptions import (
     PrimitiveUnserializableToJSONError,
     UntypedComputedVarError,
 )
-from reflex_core.utils.imports import ImportVar
-from reflex_core.utils.types import get_default_value_for_type
-from reflex_core.vars import VarData
-from reflex_core.vars.base import (
+from reflex_base.utils.imports import ImportVar
+from reflex_base.utils.types import get_default_value_for_type
+from reflex_base.vars import VarData
+from reflex_base.vars.base import (
     ComputedVar,
     LiteralVar,
     Var,
@@ -26,14 +26,14 @@ from reflex_core.vars.base import (
     var_operation,
     var_operation_return,
 )
-from reflex_core.vars.function import (
+from reflex_base.vars.function import (
     ArgsFunctionOperation,
     DestructuredArg,
     FunctionStringVar,
 )
-from reflex_core.vars.number import LiteralBooleanVar, LiteralNumberVar, NumberVar
-from reflex_core.vars.object import LiteralObjectVar, ObjectVar
-from reflex_core.vars.sequence import (
+from reflex_base.vars.number import LiteralBooleanVar, LiteralNumberVar, NumberVar
+from reflex_base.vars.object import LiteralObjectVar, ObjectVar
+from reflex_base.vars.sequence import (
     ArrayVar,
     ConcatVarOperation,
     LiteralArrayVar,

@@ -4,7 +4,7 @@ from collections.abc import AsyncGenerator
 
 import pytest
 import pytest_asyncio
-from reflex_core.constants.state import FIELD_MARKER
+from reflex_base.constants.state import FIELD_MARKER
 
 import reflex as rx
 from reflex.istate.manager import StateManager

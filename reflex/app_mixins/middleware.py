@@ -5,7 +5,7 @@ from __future__ import annotations
 import dataclasses
 import inspect
 
-from reflex_core.event import Event
+from reflex_base.event import Event
 
 from reflex.middleware import Middleware
 from reflex.state import BaseState, StateUpdate

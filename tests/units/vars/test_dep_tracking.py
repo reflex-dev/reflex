@@ -5,8 +5,8 @@ from __future__ import annotations
 import sys
 
 import pytest
-from reflex_core.utils.exceptions import VarValueError
-from reflex_core.vars.dep_tracking import (
+from reflex_base.utils.exceptions import VarValueError
+from reflex_base.vars.dep_tracking import (
     DependencyTracker,
     UntrackedLocalVarError,
     get_cell_value,
