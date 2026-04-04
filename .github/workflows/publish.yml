@@ -49,7 +49,7 @@ jobs:
           fi
 
       - name: Build
-        run: uv build --directory "${{ steps.parse.outputs.build_dir }}"
+        run: uv build --directory "${{ steps.parse.outputs.build_dir }}" --out-dir dist
 
       - name: Verify .pyi files in wheel
         if: steps.parse.outputs.package == 'reflex'
@@ -62,4 +62,4 @@ jobs:
           fi
 
       - name: Publish
-        run: uv publish --directory "${{ steps.parse.outputs.build_dir }}"
+        run: uv publish dist/*
