@@ -148,19 +148,15 @@ jobs:
 
       # Build git+https deps as wheels outside sfw (avoids sfw MITM cert issues
       # with git), then install everything else through sfw for scanning.
-      - name: Pre-build git dependencies as local wheels
+      - name: Pre-install git dependencies (outside sfw)
         run: |
-          # Extract git+https lines from uv.lock sources and build them without sfw
+          # Install git+https deps directly without sfw to avoid MITM cert issues.
+          # Their transitive registry deps will still be scanned by sfw uv sync.
           grep -oP 'git\+https://[^"]+' uv.lock | sort -u > "$RUNNER_TEMP/git-deps.txt" || true
           if [ -s "$RUNNER_TEMP/git-deps.txt" ]; then
-            echo "Building git dependencies as wheels:"
+            echo "Installing git dependencies:"
             cat "$RUNNER_TEMP/git-deps.txt"
-            mkdir -p "$RUNNER_TEMP/git-wheels"
-            while IFS= read -r dep; do
-              uv pip wheel "$dep" --no-deps --wheel-dir "$RUNNER_TEMP/git-wheels"
-            done < "$RUNNER_TEMP/git-deps.txt"
-            # Install the pre-built wheels (no registry fetch needed)
-            sfw uv pip install --no-deps "$RUNNER_TEMP/git-wheels"/*.whl
+            uv pip install --no-deps -r "$RUNNER_TEMP/git-deps.txt"
           else
             echo "No git dependencies found."
           fi
@@ -175,19 +171,15 @@ jobs:
           path: reflex-web
           submodules: recursive
 
-      - name: Pre-build reflex-web git dependencies as local wheels
+      - name: Pre-install reflex-web git dependencies (outside sfw)
         working-directory: ./reflex-web
         run: |
-          # Extract git+https deps from pyproject.toml before pip compile resolves them
+          # Install git+https deps from pyproject.toml before pip compile resolves them.
           grep -oP 'git\+https://[^"'"'"']+' pyproject.toml | sort -u > git-requirements.txt || true
           if [ -s git-requirements.txt ]; then
-            echo "Building git dependencies as wheels:"
+            echo "Installing git dependencies:"
             cat git-requirements.txt
-            mkdir -p "$RUNNER_TEMP/reflex-web-git-wheels"
-            while IFS= read -r dep; do
-              uv pip wheel "$dep" --no-deps --wheel-dir "$RUNNER_TEMP/reflex-web-git-wheels"
-            done < git-requirements.txt
-            uv pip install --no-deps "$RUNNER_TEMP/reflex-web-git-wheels"/*.whl
+            uv pip install --no-deps -r git-requirements.txt
           fi
       - name: Compile and install reflex-web requirements (scanned by Socket.dev)
         working-directory: ./reflex-web
