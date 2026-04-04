@@ -1,10 +1,10 @@
 """Lucide Icon component."""
 
-from reflex_core.components.component import Component, field
-from reflex_core.utils import console, format
-from reflex_core.utils.imports import ImportVar
-from reflex_core.vars.base import LiteralVar, Var
-from reflex_core.vars.sequence import LiteralStringVar, StringVar
+from reflex_base.components.component import Component, field
+from reflex_base.utils import console, format
+from reflex_base.utils.imports import ImportVar
+from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.sequence import LiteralStringVar, StringVar
 
 LUCIDE_LIBRARY = "lucide-react@0.577.0"
 

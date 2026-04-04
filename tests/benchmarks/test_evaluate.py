@@ -1,8 +1,8 @@
 from collections.abc import Callable
 
 from pytest_codspeed import BenchmarkFixture
-from reflex_core.components.component import Component
-from reflex_core.plugins import CompilerHooks
+from reflex_base.components.component import Component
+from reflex_base.plugins import CompilerHooks
 
 from reflex.compiler.plugins import DefaultPagePlugin
 

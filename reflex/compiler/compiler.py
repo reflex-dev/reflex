@@ -9,10 +9,8 @@ from inspect import getmodule
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from reflex_components_core.base.app_wrap import AppWrap
-from reflex_components_core.base.fragment import Fragment
-from reflex_core import constants
-from reflex_core.components.component import (
+from reflex_base import constants
+from reflex_base.components.component import (
     CUSTOM_COMPONENTS,
     BaseComponent,
     Component,
@@ -21,16 +19,18 @@ from reflex_core.components.component import (
     StatefulComponent,
     evaluate_style_namespaces,
 )
-from reflex_core.config import get_config
-from reflex_core.constants.compiler import PageNames, ResetStylesheet
-from reflex_core.constants.state import FIELD_MARKER
-from reflex_core.environment import environment
-from reflex_core.plugins import CompileContext, CompilerHooks, PageContext
-from reflex_core.style import SYSTEM_COLOR_MODE
-from reflex_core.utils.exceptions import ReflexError
-from reflex_core.utils.format import to_title_case
-from reflex_core.utils.imports import ImportVar, ParsedImportDict
-from reflex_core.vars.base import LiteralVar, Var
+from reflex_base.config import get_config
+from reflex_base.constants.compiler import PageNames, ResetStylesheet
+from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.environment import environment
+from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
+from reflex_base.style import SYSTEM_COLOR_MODE
+from reflex_base.utils.exceptions import ReflexError
+from reflex_base.utils.format import to_title_case
+from reflex_base.utils.imports import ImportVar, ParsedImportDict
+from reflex_base.vars.base import LiteralVar, Var
+from reflex_components_core.base.app_wrap import AppWrap
+from reflex_components_core.base.fragment import Fragment
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 
 from reflex.compiler import templates, utils
@@ -105,7 +105,7 @@ def _compile_app(app_root: Component) -> str:
     Returns:
         The compiled app.
     """
-    from reflex_core.components.dynamic import bundled_libraries
+    from reflex_base.components.dynamic import bundled_libraries
 
     window_libraries = [
         (_normalize_library_name(name), name) for name in bundled_libraries
@@ -892,7 +892,7 @@ def compile_unevaluated_page(
 
         component._add_style_recursive(style or {}, theme)
 
-        from reflex_core.utils.format import make_default_page_title
+        from reflex_base.utils.format import make_default_page_title
 
         component = Fragment.create(component)
 
@@ -968,7 +968,7 @@ def _resolve_app_wrap_components(
         app_wrappers[200, "StrictMode"] = StrictMode.create()
 
     if (toaster := app.toaster) is not None:
-        from reflex_core.components.component import memo
+        from reflex_base.components.component import memo
 
         @memo
         def memoized_toast_provider():
@@ -993,7 +993,7 @@ def compile_app(
     use_rich: bool = True,
 ) -> None:
     """Compile an app using the compiler plugin pipeline."""
-    from reflex_core.utils.exceptions import ReflexRuntimeError
+    from reflex_base.utils.exceptions import ReflexRuntimeError
 
     app._apply_decorated_pages()
     app._pages = {}

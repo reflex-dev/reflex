@@ -32,10 +32,10 @@ from typing import (
     get_type_hints,
 )
 
-from reflex_core import constants
-from reflex_core.constants.state import FIELD_MARKER
-from reflex_core.environment import PerformanceMode, environment
-from reflex_core.event import (
+from reflex_base import constants
+from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.environment import PerformanceMode, environment
+from reflex_base.event import (
     BACKGROUND_TASK_MARKER,
     EVENT_ACTIONS_MARKER,
     Event,
@@ -44,7 +44,7 @@ from reflex_core.event import (
     call_script,
     fix_events,
 )
-from reflex_core.utils.exceptions import (
+from reflex_base.utils.exceptions import (
     ComputedVarShadowsBaseVarsError,
     ComputedVarShadowsStateVarError,
     DynamicComponentInvalidSignatureError,
@@ -58,10 +58,10 @@ from reflex_core.utils.exceptions import (
     StateTooLargeError,
     UnretrievableVarValueError,
 )
-from reflex_core.utils.exceptions import ImmutableStateError as ImmutableStateError
-from reflex_core.utils.types import _isinstance, is_union, value_inside_optional
-from reflex_core.vars import Field, VarData, field
-from reflex_core.vars.base import (
+from reflex_base.utils.exceptions import ImmutableStateError as ImmutableStateError
+from reflex_base.utils.types import _isinstance, is_union, value_inside_optional
+from reflex_base.vars import Field, VarData, field
+from reflex_base.vars.base import (
     ComputedVar,
     DynamicRouteVar,
     EvenMoreBasicBaseState,
@@ -85,7 +85,7 @@ from reflex.utils import console, format, prerequisites, types
 from reflex.utils.exec import is_testing_env
 
 if TYPE_CHECKING:
-    from reflex_core.components.component import Component
+    from reflex_base.components.component import Component
 
 
 Delta = dict[str, Any]
@@ -231,8 +231,8 @@ class EventHandlerSetVar(EventHandler):
             EventHandlerValueError: If the given Var name is not a str
             NotImplementedError: If the setter for the given Var is async
         """
-        from reflex_core.config import get_config
-        from reflex_core.utils.exceptions import EventHandlerValueError
+        from reflex_base.config import get_config
+        from reflex_base.utils.exceptions import EventHandlerValueError
 
         config = get_config()
         if config.state_auto_setters is None:
@@ -444,7 +444,7 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             ReflexRuntimeError: If the state is instantiated directly by end user.
         """
-        from reflex_core.utils.exceptions import ReflexRuntimeError
+        from reflex_base.utils.exceptions import ReflexRuntimeError
 
         if not _reflex_internal_init and not is_testing_env():
             msg = (
@@ -518,7 +518,7 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             StateValueError: If a substate class shadows another.
         """
-        from reflex_core.utils.exceptions import StateValueError
+        from reflex_base.utils.exceptions import StateValueError
 
         super().__init_subclass__(**kwargs)
 
@@ -723,7 +723,7 @@ class BaseState(EvenMoreBasicBaseState):
         console.warn(
             "The _evaluate method is experimental and may be removed in future versions."
         )
-        from reflex_core.components.component import Component
+        from reflex_base.components.component import Component
 
         of_type = of_type or Component
 
@@ -1083,8 +1083,8 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             VarTypeError: if the variable has an incorrect type
         """
-        from reflex_core.config import get_config
-        from reflex_core.utils.exceptions import VarTypeError
+        from reflex_base.config import get_config
+        from reflex_base.utils.exceptions import VarTypeError
 
         if not types.is_valid_var_type(prop._var_type):
             msg = (
@@ -1187,7 +1187,7 @@ class BaseState(EvenMoreBasicBaseState):
             name: The name of the var.
             prop: The var to create a setter for.
         """
-        from reflex_core.config import get_config
+        from reflex_base.config import get_config
 
         config = get_config()
         create_event_handler_kwargs = {}
@@ -2175,7 +2175,7 @@ class BaseState(EvenMoreBasicBaseState):
         """
         if isinstance(key, MutableProxy):
             # Legacy behavior from v0.7.14: handle non-string keys with deprecation warning
-            from reflex_core.utils import console
+            from reflex_base.utils import console
 
             console.deprecate(
                 feature_name="Non-string keys in get_value",

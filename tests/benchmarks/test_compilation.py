@@ -1,6 +1,6 @@
 from pytest_codspeed import BenchmarkFixture
-from reflex_core.components.component import Component, StatefulComponent
-from reflex_core.plugins import CompileContext, CompilerHooks, PageContext
+from reflex_base.components.component import Component, StatefulComponent
+from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 
 from reflex.compiler import compiler
 from reflex.compiler.compiler import _compile_page, _compile_stateful_components

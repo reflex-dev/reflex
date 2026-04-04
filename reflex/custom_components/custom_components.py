@@ -12,8 +12,8 @@ from pathlib import Path
 from typing import Any
 
 import click
-from reflex_core import constants
-from reflex_core.constants import CustomComponents
+from reflex_base import constants
+from reflex_base.constants import CustomComponents
 
 from reflex.utils import console, frontend_skeleton
 
@@ -102,7 +102,7 @@ import reflex as rx
 # This is because they they may not be compatible with Server-Side Rendering (SSR).
 # To handle this in Reflex, all you need to do is subclass `NoSSRComponent` instead.
 # For example:
-# from reflex_core.components.component import NoSSRComponent
+# from reflex_base.components.component import NoSSRComponent
 # class {component_class_name}(NoSSRComponent):
 #     pass
 
@@ -328,7 +328,7 @@ def _populate_demo_app(name_variants: NameVariants):
     Args:
         name_variants: the tuple including various names such as package name, class name needed for the project.
     """
-    from reflex_core import constants
+    from reflex_base import constants
 
     from reflex.reflex import _init
 
@@ -613,7 +613,7 @@ def _run_commands_in_subprocess(cmds: list[str]) -> bool:
 
 def _make_pyi_files():
     """Create pyi files for the custom component."""
-    from reflex_core.utils.pyi_generator import PyiGenerator
+    from reflex_base.utils.pyi_generator import PyiGenerator
 
     for top_level_dir in Path.cwd().iterdir():
         if not top_level_dir.is_dir() or top_level_dir.name.startswith("."):

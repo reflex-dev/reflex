@@ -1,6 +1,6 @@
 """Built-in compiler plugins for single-pass page compilation."""
 
-from reflex_core.plugins import (
+from reflex_base.plugins import (
     BaseContext,
     CompileContext,
     CompilerHooks,

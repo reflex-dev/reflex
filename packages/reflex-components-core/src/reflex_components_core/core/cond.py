@@ -2,17 +2,17 @@
 
 from __future__ import annotations
 
-from typing import Any, overload
+from typing import Any, TypeVar, overload
 
-from reflex_core.components.component import BaseComponent, Component, field
-from reflex_core.components.tags import CondTag, Tag
-from reflex_core.constants import Dirs
-from reflex_core.style import LIGHT_COLOR_MODE, resolved_color_mode
-from reflex_core.utils import types
-from reflex_core.utils.imports import ImportDict, ImportVar
-from reflex_core.vars import VarData
-from reflex_core.vars.base import LiteralVar, Var
-from reflex_core.vars.number import ternary_operation
+from reflex_base.components.component import BaseComponent, Component, field
+from reflex_base.components.tags import CondTag, Tag
+from reflex_base.constants import Dirs
+from reflex_base.style import LIGHT_COLOR_MODE, resolved_color_mode
+from reflex_base.utils import types
+from reflex_base.utils.imports import ImportDict, ImportVar
+from reflex_base.vars import VarData
+from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.number import ternary_operation
 
 from reflex_components_core.base.fragment import Fragment
 
@@ -100,15 +100,27 @@ def cond(condition: Any, c1: Component, /) -> Component: ...
 
 
 @overload
-def cond(condition: Any, c1: Var[Component], c2: Var[Component], /) -> Component: ...  # pyright: ignore [reportOverlappingOverload]
-
-
-@overload
 def cond(condition: Any, c1: Any, c2: Component, /) -> Component: ...  # pyright: ignore [reportOverlappingOverload]
 
 
+T = TypeVar("T", covariant=True)
+U = TypeVar("U", covariant=True)
+
+
 @overload
-def cond(condition: Any, c1: Any, c2: Any, /) -> Var: ...
+def cond(condition: Any, c1: Var[T], c2: Var[U], /) -> Var[T | U]: ...  # pyright: ignore [reportOverlappingOverload]
+
+
+@overload
+def cond(condition: Any, c1: T, c2: Var[U], /) -> Var[T | U]: ...  # pyright: ignore [reportOverlappingOverload]
+
+
+@overload
+def cond(condition: Any, c1: Var[T], c2: U, /) -> Var[T | U]: ...  # pyright: ignore [reportOverlappingOverload]
+
+
+@overload
+def cond(condition: Any, c1: T, c2: U, /) -> Var[T | U]: ...
 
 
 def cond(condition: Any, c1: Any, c2: Any = types.Unset(), /) -> Component | Var:

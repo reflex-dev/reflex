@@ -5,9 +5,9 @@ from types import ModuleType, SimpleNamespace
 from unittest import mock
 
 import pytest
-import reflex_core.config
-from reflex_core.components.component import CUSTOM_COMPONENTS
-from reflex_core.constants import IS_WINDOWS
+import reflex_base.config
+from reflex_base.components.component import CUSTOM_COMPONENTS
+from reflex_base.constants import IS_WINDOWS
 
 import reflex.reflex as reflex_cli
 import reflex.testing as reflex_testing
@@ -71,7 +71,7 @@ def harness_mocks(monkeypatch):
 
     monkeypatch.setattr(reflex_testing, "get_config", lambda reload=False: fake_config)
     monkeypatch.setattr(
-        reflex_core.config, "get_config", lambda reload=False: fake_config
+        reflex_base.config, "get_config", lambda reload=False: fake_config
     )
     monkeypatch.setattr(
         reflex.utils.prerequisites,

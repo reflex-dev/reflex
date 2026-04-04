@@ -5,11 +5,11 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any, ClassVar, TypedDict
 
-from reflex_core.components.component import field
-from reflex_core.constants import EventTriggers
-from reflex_core.constants.colors import Color
-from reflex_core.event import EventHandler, no_args_event_spec
-from reflex_core.vars.base import LiteralVar, Var
+from reflex_base.components.component import field
+from reflex_base.constants import EventTriggers
+from reflex_base.constants.colors import Color
+from reflex_base.event import EventHandler, no_args_event_spec
+from reflex_base.vars.base import LiteralVar, Var
 
 from .recharts import (
     ACTIVE_DOT_TYPE,

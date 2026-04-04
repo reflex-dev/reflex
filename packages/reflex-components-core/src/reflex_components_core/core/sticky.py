@@ -1,7 +1,7 @@
 """Components for displaying the Reflex sticky logo."""
 
-from reflex_core.components.component import ComponentNamespace
-from reflex_core.style import Style
+from reflex_base.components.component import ComponentNamespace
+from reflex_base.style import Style
 
 from reflex_components_core.core.colors import color
 from reflex_components_core.core.cond import color_mode_cond

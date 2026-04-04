@@ -6,24 +6,24 @@ import dataclasses
 from collections.abc import Callable
 from typing import Any
 
-from reflex_components_core.base.fragment import Fragment
-from reflex_core.components.component import (
+from reflex_base.components.component import (
     BaseComponent,
     Component,
     ComponentStyle,
     StatefulComponent,
 )
-from reflex_core.config import get_config
-from reflex_core.plugins import (
+from reflex_base.config import get_config
+from reflex_base.plugins import (
     CompileContext,
     CompilerPlugin,
     PageContext,
     PageDefinition,
     Plugin,
 )
-from reflex_core.utils.format import make_default_page_title
-from reflex_core.utils.imports import collapse_imports, merge_imports
-from reflex_core.vars import VarData
+from reflex_base.utils.format import make_default_page_title
+from reflex_base.utils.imports import collapse_imports, merge_imports
+from reflex_base.vars import VarData
+from reflex_components_core.base.fragment import Fragment
 
 from reflex.compiler import utils
 

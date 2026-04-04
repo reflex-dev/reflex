@@ -4,8 +4,8 @@ from typing import Any, cast
 
 import pytest
 from pydantic import BaseModel
-from reflex_core.components.component import BaseComponent, Component, StatefulComponent
-from reflex_core.plugins import CompileContext, PageContext
+from reflex_base.components.component import BaseComponent, Component, StatefulComponent
+from reflex_base.plugins import CompileContext, PageContext
 
 import reflex as rx
 from reflex.compiler.plugins import DefaultCollectorPlugin

@@ -4,7 +4,7 @@ import pickle
 from collections.abc import Generator
 
 import pytest
-from reflex_core import constants
+from reflex_base import constants
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 

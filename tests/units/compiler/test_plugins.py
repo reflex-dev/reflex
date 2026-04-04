@@ -5,17 +5,16 @@ from collections.abc import Callable
 from typing import Any
 
 import pytest
-from reflex_components_core.base.fragment import Fragment
-from reflex_core import constants
-from reflex_core.components.component import (
+from reflex_base import constants
+from reflex_base.components.component import (
     BaseComponent,
     Component,
     ComponentStyle,
     StatefulComponent,
     field,
 )
-from reflex_core.environment import environment
-from reflex_core.plugins import (
+from reflex_base.environment import environment
+from reflex_base.plugins import (
     BaseContext,
     CompileContext,
     CompilerHooks,
@@ -25,10 +24,11 @@ from reflex_core.plugins import (
     PageDefinition,
     Plugin,
 )
-from reflex_core.utils import format as format_utils
-from reflex_core.utils.imports import ImportVar, collapse_imports, merge_imports
-from reflex_core.vars import VarData
-from reflex_core.vars.base import LiteralVar, Var
+from reflex_base.utils import format as format_utils
+from reflex_base.utils.imports import ImportVar, collapse_imports, merge_imports
+from reflex_base.vars import VarData
+from reflex_base.vars.base import LiteralVar, Var
+from reflex_components_core.base.fragment import Fragment
 
 from reflex.app import UnevaluatedPage
 from reflex.compiler import compiler

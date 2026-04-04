@@ -2,7 +2,7 @@
 
 Components have been split across multiple packages.
 This module installs an import redirect hook so that
-``from reflex_core.components.<subpkg> import X`` continues to work
+``from reflex_base.components.<subpkg> import X`` continues to work
 by delegating to the appropriate package.
 """
 
@@ -14,7 +14,7 @@ import importlib.machinery
 import sys
 from types import ModuleType
 
-from reflex_core.utils import lazy_loader
+from reflex_base.utils import lazy_loader
 
 # Mapping from subpackage name to the target top-level package.
 _SUBPACKAGE_TARGETS: dict[str, str] = {
