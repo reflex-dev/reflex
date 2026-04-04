@@ -2091,7 +2091,7 @@ def test_compile_writes_app_wrap_memo_components(
 ) -> None:
     """App-wrap memo components are emitted to the shared components module."""
     conf = rx.Config(app_name="testing")
-    mocker.patch("reflex_core.config._get_config", return_value=conf)
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
     app, web_dir = compilable_app
 
     app.add_page(rx.box("Index"), route="/")
@@ -2113,7 +2113,7 @@ def test_compile_writes_upload_files_provider_app_wrap(
 ) -> None:
     """Upload pages emit the UploadFilesProvider app wrap into the app root."""
     conf = rx.Config(app_name="testing")
-    mocker.patch("reflex_core.config._get_config", return_value=conf)
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
     app, web_dir = compilable_app
 
     app.add_page(
