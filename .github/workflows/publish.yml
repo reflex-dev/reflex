@@ -62,4 +62,4 @@ jobs:
           fi
 
       - name: Publish
-        run: uv publish --directory "${{ steps.parse.outputs.build_dir }}"
+        run: uv publish dist/*
