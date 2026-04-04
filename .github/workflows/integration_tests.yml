@@ -175,19 +175,11 @@ jobs:
           path: reflex-web
           submodules: recursive
 
-      - name: Compile and install reflex-web requirements
+      - name: Pre-build reflex-web git dependencies as local wheels
         working-directory: ./reflex-web
         run: |
-          uv pip compile pyproject.toml --no-annotate --no-header --no-deps --output-file requirements.txt
-          uv pip list --format=json | jq -r '"^" + .[].name + "[ =]"' > installed_patterns.txt
-          grep -ivf installed_patterns.txt requirements.txt > requirements.txt.tmp && mv requirements.txt.tmp requirements.txt
-          rm installed_patterns.txt
-
-          # Separate git+https deps from registry deps
-          grep '^git+https://' requirements.txt > git-requirements.txt || true
-          grep -v '^git+https://' requirements.txt > registry-requirements.txt || true
-
-          # Build git deps as local wheels outside sfw
+          # Extract git+https deps from pyproject.toml before pip compile resolves them
+          grep -oP 'git\+https://[^"'"'"']+' pyproject.toml | sort -u > git-requirements.txt || true
           if [ -s git-requirements.txt ]; then
             echo "Building git dependencies as wheels:"
             cat git-requirements.txt
@@ -195,12 +187,17 @@ jobs:
             while IFS= read -r dep; do
               uv pip wheel "$dep" --no-deps --wheel-dir "$RUNNER_TEMP/reflex-web-git-wheels"
             done < git-requirements.txt
-            sfw uv pip install --no-deps "$RUNNER_TEMP/reflex-web-git-wheels"/*.whl
+            uv pip install --no-deps "$RUNNER_TEMP/reflex-web-git-wheels"/*.whl
           fi
-
-          # Install registry deps through sfw for scanning
-          if [ -s registry-requirements.txt ]; then
-            sfw uv pip install -r registry-requirements.txt
+      - name: Compile and install reflex-web requirements (scanned by Socket.dev)
+        working-directory: ./reflex-web
+        run: |
+          sfw uv pip compile pyproject.toml --no-annotate --no-header --no-deps --output-file requirements.txt
+          uv pip list --format=json | jq -r '"^" + .[].name + "[ =]"' > installed_patterns.txt
+          grep -ivf installed_patterns.txt requirements.txt > requirements.txt.tmp && mv requirements.txt.tmp requirements.txt
+          rm installed_patterns.txt
+          if [ -s requirements.txt ]; then
+            sfw uv pip install -r requirements.txt
           fi
       - name: Init Website for reflex-web
         working-directory: ./reflex-web
