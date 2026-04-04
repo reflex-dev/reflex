@@ -127,10 +127,29 @@ jobs:
       - name: Create sfw wrapper scripts for npm and bun
         run: |
           mkdir -p "$RUNNER_TEMP/sfw-wrappers"
-          printf '#!/usr/bin/env bash\nexec sfw npm "$@"\n' > "$RUNNER_TEMP/sfw-wrappers/npm"
-          printf '#!/usr/bin/env bash\nexec sfw bun "$@"\n' > "$RUNNER_TEMP/sfw-wrappers/bun"
+          cat > "$RUNNER_TEMP/sfw-wrappers/npm" <<'SHIM'
+#!/usr/bin/env bash
+SHIM_DIR="$(cd "$(dirname "$0")" && pwd)"
+export PATH="${PATH//$SHIM_DIR:/}"
+export PATH="${PATH//:$SHIM_DIR/}"
+case "${1-}" in
+  install|ci|update|audit|pack|publish|fund|outdated) exec sfw npm "$@" ;;
+  *) exec npm "$@" ;;
+esac
+SHIM
+          cat > "$RUNNER_TEMP/sfw-wrappers/bun" <<'SHIM'
+#!/usr/bin/env bash
+SHIM_DIR="$(cd "$(dirname "$0")" && pwd)"
+export PATH="${PATH//$SHIM_DIR:/}"
+export PATH="${PATH//:$SHIM_DIR/}"
+case "${1-}" in
+  install|add|update|pm) exec sfw bun "$@" ;;
+  *) exec bun "$@" ;;
+esac
+SHIM
           chmod +x "$RUNNER_TEMP/sfw-wrappers/npm" "$RUNNER_TEMP/sfw-wrappers/bun"
           echo "$RUNNER_TEMP/sfw-wrappers" >> "$GITHUB_PATH"
+          echo "REFLEX_USE_SYSTEM_BUN=1" >> "$GITHUB_ENV"
 
       # Inline setup_build_env steps so all installs go through sfw.
       - name: Install UV
