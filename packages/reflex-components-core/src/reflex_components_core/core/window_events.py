@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, cast
 
-from reflex_base.components.component import StatefulComponent, field
+from reflex_base.components.component import field
 from reflex_base.constants.compiler import Hooks
 from reflex_base.event import EventHandler, key_event, no_args_event_spec
 from reflex_base.vars.base import Var, VarData
@@ -95,8 +95,10 @@ class WindowEventListener(Fragment):
         Returns:
             The created component.
         """
+        from reflex_base.components.memoize_helpers import fix_event_triggers_for_memo
+
         real_component = cast("WindowEventListener", super().create(**props))
-        hooks = StatefulComponent._fix_event_triggers(real_component)
+        hooks = fix_event_triggers_for_memo(real_component)
         real_component.hooks = hooks
         return real_component
 

@@ -479,6 +479,18 @@ class PoorProgress:
             self.progress += advance
             _console.print(f"Progress: {self.progress}/{self.total}")
 
+    def update(self, task: TaskID, total: int | None = None):
+        """Update properties of a task.
+
+        Args:
+            task: The task ID.
+            total: New total for the task.
+        """
+        if total is not None and task in self.tasks:
+            previous_total = self.tasks[task]["total"]
+            self.tasks[task]["total"] = total
+            self.total += total - previous_total
+
     def start(self):
         """Start the progress bar."""
 
