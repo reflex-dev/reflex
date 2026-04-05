@@ -1458,11 +1458,16 @@ class Component(BaseComponent, ABC):
         Yields:
             Each var referenced by the component (props, styles, event handlers).
         """
+        # Default-args fast path is cached per instance. Invalidated by
+        # StatefulComponent.create when _fix_event_triggers mutates event_triggers.
+        if not include_children and ignore_ids is None:
+            cached = self.__dict__.get("_vars_cache")
+            if cached is not None:
+                yield from cached
+                return
+
         ignore_ids = ignore_ids or set()
-        vars: list[Var] | None = getattr(self, "__vars", None)
-        if vars is not None:
-            yield from vars
-        vars = self.__vars = []
+        vars: list[Var] = []
         # Get Vars associated with event trigger arguments.
         for _, event_vars in self._get_vars_from_event_triggers(self.event_triggers):
             vars.extend(event_vars)
@@ -1501,7 +1506,6 @@ class Component(BaseComponent, ABC):
                 if var._get_all_var_data() is not None:
                     vars.append(var)
 
-        # Get Vars associated with children.
         if include_children:
             for child in self.children:
                 if not isinstance(child, Component) or id(child) in ignore_ids:
@@ -1511,7 +1515,11 @@ class Component(BaseComponent, ABC):
                     include_children=include_children, ignore_ids=ignore_ids
                 )
                 vars.extend(child_vars)
+            yield from vars
+            return
 
+        # Freeze and cache the default-args result.
+        self._vars_cache = tuple(vars)
         yield from vars
 
     def _event_trigger_values_use_state(self) -> bool:
@@ -1709,6 +1717,10 @@ class Component(BaseComponent, ABC):
         Returns:
             The imports needed by the component.
         """
+        cached = self.__dict__.get("_imports_cache")
+        if cached is not None:
+            return cached
+
         imports_ = (
             {self.library: [self.import_var]}
             if self.library is not None and self.tag is not None
@@ -1736,7 +1748,7 @@ class Component(BaseComponent, ABC):
                     imports.parse_imports(item) for item in list_of_import_dict
                 ])
 
-        return imports.merge_parsed_imports(
+        result = imports.merge_parsed_imports(
             self._get_dependencies_imports(),
             self._get_hooks_imports(),
             imports_,
@@ -1744,6 +1756,8 @@ class Component(BaseComponent, ABC):
             *var_imports,
             *added_import_dicts,
         )
+        self._imports_cache = result
+        return result
 
     def _get_all_imports(self, collapse: bool = False) -> ParsedImportDict:
         """Get all the libraries and fields that are used by the component and its children.
@@ -1840,7 +1854,11 @@ class Component(BaseComponent, ABC):
         Returns:
             The internally managed hooks.
         """
-        return {
+        cached = self.__dict__.get("_hooks_internal_cache")
+        if cached is not None:
+            return cached
+
+        result = {
             **{
                 str(hook): VarData(position=Hooks.HookPosition.INTERNAL)
                 for hook in [self._get_ref_hook(), self._get_mount_lifecycle_hook()]
@@ -1849,6 +1867,8 @@ class Component(BaseComponent, ABC):
             **self._get_vars_hooks(),
             **self._get_events_hooks(),
         }
+        self._hooks_internal_cache = result
+        return result
 
     def _get_added_hooks(self) -> dict[str, VarData | None]:
         """Get the hooks added via `add_hooks` method.
@@ -2483,12 +2503,18 @@ class StatefulComponent(BaseComponent):
             if stateful_component is None:
                 memo_trigger_hooks = cls._fix_event_triggers(component)
                 if memo_trigger_hooks:
-                    # event_triggers were mutated via shared dict;
-                    # invalidate stale render cache on the top-level component
-                    # so _render_stateful_code re-renders with memoized triggers.
+                    # event_triggers were mutated via shared dict; invalidate
+                    # every derived cache on the top-level component so
+                    # _render_stateful_code sees the memoized triggers.
                     # Children are unaffected and keep their cached results.
-                    with contextlib.suppress(AttributeError):
-                        del component._cached_render_result
+                    for attr in (
+                        "_cached_render_result",
+                        "_vars_cache",
+                        "_imports_cache",
+                        "_hooks_internal_cache",
+                    ):
+                        with contextlib.suppress(AttributeError):
+                            delattr(component, attr)
                 stateful_component = cls(
                     children=component.children,
                     component=component,
