@@ -11,6 +11,8 @@ function do_export () {
     cd ~/"$template"
     rm -rf ~/.local/share/reflex ~/"$template"/.web
     reflex init --template "$template"
+    test -f pyproject.toml
+    test ! -f requirements.txt
     reflex export --loglevel debug
     (
         cd "$SCRIPTPATH/../../.."

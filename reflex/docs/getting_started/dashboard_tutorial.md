@@ -326,9 +326,9 @@ Don't worry if you don't understand the code above, in this tutorial we are goin
 
 ## Setup for the tutorial
 
-Check out the [installation docs](/docs/getting_started/installation) to get Reflex set up on your machine. Follow these to create a folder called `dashboard_tutorial`, which you will `cd` into and `pip install reflex`.
+Check out the [installation docs](/docs/getting_started/installation) to get Reflex set up on your machine. Follow these to create a folder called `dashboard_tutorial`, which you will `cd` into, then run `uv init` and `uv add reflex`.
 
-We will choose template `0` when we run `reflex init` to get the blank template. Finally run `reflex run` to start the app and confirm everything is set up correctly.
+We will choose template `0` when we run `uv run reflex init` to get the blank template. Finally run `uv run reflex run` to start the app and confirm everything is set up correctly.
 
 ## Overview
 

@@ -3,7 +3,14 @@
 import json
 import random
 import re
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, Literal
+
+try:
+    import tomllib
+except ModuleNotFoundError:
+    tomllib = None
 
 from reflex_base import constants
 from reflex_base.config import Config, get_config
@@ -13,6 +20,14 @@ from reflex.compiler import templates
 from reflex.utils import console, path_ops
 from reflex.utils.prerequisites import get_project_hash, get_web_dir
 from reflex.utils.registry import get_npm_registry
+
+
+@dataclass(frozen=True)
+class PythonManifestInitResult:
+    """The result of initializing a project's Python dependency manifest."""
+
+    kind: Literal["pyproject", "requirements"]
+    needs_manual_reflex_dependency: bool = False
 
 
 def initialize_gitignore(
@@ -42,44 +57,211 @@ def initialize_gitignore(
     gitignore_file.write_text("\n".join(files_to_ignore) + "\n")
 
 
-def initialize_requirements_txt() -> bool:
-    """Initialize the requirements.txt file.
-    If absent and no pyproject.toml file exists, generate one for the user.
-    If the requirements.txt does not have reflex as dependency,
-    generate a requirement pinning current version and append to
-    the requirements.txt file.
+def _read_dependency_file(file_path: Path) -> tuple[str | None, str | None]:
+    """Read a dependency file with a forgiving encoding strategy.
+
+    Args:
+        file_path: The file to read.
 
     Returns:
-        True if the user has to update the requirements.txt file.
-
-    Raises:
-        SystemExit: If the requirements.txt file cannot be read or written to.
+        A tuple of file content and the encoding used to read it.
     """
-    requirements_file_path = Path(constants.RequirementsTxt.FILE)
-    if (
-        not requirements_file_path.exists()
-        and Path(constants.PyprojectToml.FILE).exists()
-    ):
-        return True
+    try:
+        return file_path.read_text(), None
+    except UnicodeDecodeError:
+        pass
+    except Exception as e:
+        console.error(f"Failed to read {file_path} due to {e}.")
+        raise SystemExit(1) from None
 
+    try:
+        return file_path.read_text(encoding="utf-8"), "utf-8"
+    except UnicodeDecodeError:
+        return None, None
+    except Exception as e:
+        console.error(f"Failed to read {file_path} due to {e}.")
+        raise SystemExit(1) from None
+
+
+def _has_reflex_requirement_line(requirements_text: str) -> bool:
+    """Check whether requirements.txt already contains reflex.
+
+    Returns:
+        Whether reflex is already present in the requirements text.
+    """
+    return any(
+        _is_reflex_dependency_spec(line) for line in requirements_text.splitlines()
+    )
+
+
+def _is_reflex_dependency_spec(requirement: str) -> bool:
+    """Check whether a dependency specification refers to the reflex package.
+
+    Args:
+        requirement: The dependency specification to check.
+
+    Returns:
+        Whether the specification refers to the reflex package.
+    """
+    requirement = requirement.strip()
+    if not requirement.lower().startswith("reflex"):
+        return False
+
+    suffix = requirement[len("reflex") :]
+    if suffix.startswith("["):
+        extras_end = suffix.find("]")
+        if extras_end == -1:
+            return False
+        suffix = suffix[extras_end + 1 :]
+
+    return not suffix or suffix.lstrip().startswith((
+        "==",
+        "!=",
+        ">=",
+        "<=",
+        "~=",
+        ">",
+        "<",
+        ";",
+        "@",
+    ))
+
+
+def _pyproject_has_reflex_dependency_in_project_table(
+    pyproject_data: dict[str, Any],
+) -> bool:
+    """Check parsed pyproject data for a Reflex dependency in supported tables.
+
+    Returns:
+        Whether Reflex is declared in a supported pyproject dependency table.
+    """
+    project = pyproject_data.get("project", {})
+    if isinstance(project, dict):
+        dependencies = project.get("dependencies", [])
+        if isinstance(dependencies, list) and any(
+            isinstance(dependency, str) and _is_reflex_dependency_spec(dependency)
+            for dependency in dependencies
+        ):
+            return True
+
+    poetry_dependencies = (
+        pyproject_data.get("tool", {}).get("poetry", {}).get("dependencies", {})
+    )
+    return isinstance(poetry_dependencies, dict) and any(
+        isinstance(dependency_name, str) and dependency_name.lower() == "reflex"
+        for dependency_name in poetry_dependencies
+    )
+
+
+def _extract_toml_string_values(toml_line: str) -> list[str]:
+    """Extract quoted string values from a TOML line.
+
+    Returns:
+        The quoted string values found in the line.
+    """
+    return re.findall(r"""["']([^"']+)["']""", toml_line)
+
+
+def _has_reflex_dependency_in_pyproject_fallback(pyproject_text: str) -> bool:
+    """Check pyproject.toml text for Reflex dependency declarations without TOML parsing.
+
+    Returns:
+        Whether Reflex is declared in a supported dependency section.
+    """
+    current_section: tuple[str, ...] = ()
+    reading_project_dependencies = False
+
+    for raw_line in pyproject_text.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+
+        section_match = re.match(r"^\[([^\]]+)\](?:\s+#.*)?$", line)
+        if section_match:
+            current_section = tuple(
+                part.strip() for part in section_match.group(1).split(".")
+            )
+            reading_project_dependencies = False
+            continue
+
+        if reading_project_dependencies:
+            if any(
+                _is_reflex_dependency_spec(value)
+                for value in _extract_toml_string_values(line)
+            ):
+                return True
+            if "]" in line:
+                reading_project_dependencies = False
+            continue
+
+        if current_section == ("project",):
+            dependencies_match = re.match(r"^dependencies\s*=\s*\[(.*)$", line)
+            if dependencies_match:
+                dependency_values = dependencies_match.group(1)
+                if any(
+                    _is_reflex_dependency_spec(value)
+                    for value in _extract_toml_string_values(dependency_values)
+                ):
+                    return True
+                if "]" not in dependency_values:
+                    reading_project_dependencies = True
+                continue
+
+        if current_section == ("tool", "poetry", "dependencies"):
+            poetry_match = re.match(
+                r"""^(?:"([^"]+)"|'([^']+)'|([A-Za-z0-9_.-]+))\s*=""", line
+            )
+            dependency_name = (
+                next(
+                    (group for group in poetry_match.groups() if group),
+                    None,
+                )
+                if poetry_match
+                else None
+            )
+            if dependency_name and dependency_name.lower() == "reflex":
+                return True
+
+    return False
+
+
+def _has_reflex_dependency_in_pyproject(pyproject_text: str) -> bool:
+    """Check whether pyproject.toml already declares reflex as a dependency.
+
+    Returns:
+        Whether reflex is already declared as a dependency.
+    """
+    if tomllib is not None:
+        try:
+            return _pyproject_has_reflex_dependency_in_project_table(
+                tomllib.loads(pyproject_text)
+            )
+        except tomllib.TOMLDecodeError:
+            pass
+
+    return _has_reflex_dependency_in_pyproject_fallback(pyproject_text)
+
+
+def _initialize_requirements_txt(
+    requirements_file_path: Path,
+) -> PythonManifestInitResult:
+    """Initialize or update a legacy requirements.txt file.
+
+    Returns:
+        The manifest initialization result for a requirements.txt-based project.
+    """
     requirements_file_path.touch(exist_ok=True)
 
-    for encoding in [None, "utf-8"]:
-        try:
-            content = requirements_file_path.read_text(encoding)
-            break
-        except UnicodeDecodeError:
-            continue
-        except Exception as e:
-            console.error(f"Failed to read {requirements_file_path} due to {e}.")
-            raise SystemExit(1) from None
-    else:
-        return True
+    content, encoding = _read_dependency_file(requirements_file_path)
+    if content is None:
+        return PythonManifestInitResult(
+            kind="requirements",
+            needs_manual_reflex_dependency=True,
+        )
 
-    for line in content.splitlines():
-        if re.match(r"^reflex[^a-zA-Z0-9]", line):
-            console.debug(f"{requirements_file_path} already has reflex as dependency.")
-            return False
+    if _has_reflex_requirement_line(content):
+        console.debug(f"{requirements_file_path} already has reflex as dependency.")
+        return PythonManifestInitResult(kind="requirements")
 
     console.debug(
         f"Appending {constants.RequirementsTxt.DEFAULTS_STUB} to {requirements_file_path}"
@@ -89,7 +271,61 @@ def initialize_requirements_txt() -> bool:
             "\n" + constants.RequirementsTxt.DEFAULTS_STUB + constants.Reflex.VERSION
         )
 
-    return False
+    return PythonManifestInitResult(kind="requirements")
+
+
+def _initialize_pyproject_toml(pyproject_file_path: Path, app_name: str):
+    """Create a minimal pyproject.toml for a new Reflex app.
+
+    Raises:
+        SystemExit: If the pyproject.toml file cannot be written.
+    """
+    console.debug(f"Creating {pyproject_file_path}")
+    try:
+        pyproject_file_path.write_text(
+            templates.pyproject_toml_template(
+                app_name=app_name,
+                reflex_version=constants.Reflex.VERSION,
+            )
+        )
+    except Exception as e:
+        console.error(f"Failed to write {pyproject_file_path} due to {e}.")
+        raise SystemExit(1) from None
+
+
+def initialize_python_manifest(
+    app_name: str,
+    *,
+    pyproject_file_path: Path = Path(constants.PyprojectToml.FILE),
+    requirements_file_path: Path = Path(constants.RequirementsTxt.FILE),
+) -> PythonManifestInitResult:
+    """Initialize the Python dependency manifest for a Reflex app.
+
+    The default for new apps is pyproject.toml. Existing projects that already use
+    requirements.txt continue to be supported without creating a second manifest.
+
+    Args:
+        app_name: The initialized app name.
+        pyproject_file_path: The pyproject.toml path.
+        requirements_file_path: The requirements.txt path.
+
+    Returns:
+        The manifest initialization result.
+    """
+    if pyproject_file_path.exists():
+        content, _ = _read_dependency_file(pyproject_file_path)
+        return PythonManifestInitResult(
+            kind="pyproject",
+            needs_manual_reflex_dependency=(
+                content is None or not _has_reflex_dependency_in_pyproject(content)
+            ),
+        )
+
+    if requirements_file_path.exists():
+        return _initialize_requirements_txt(requirements_file_path)
+
+    _initialize_pyproject_toml(pyproject_file_path, app_name)
+    return PythonManifestInitResult(kind="pyproject")
 
 
 def initialize_web_directory():

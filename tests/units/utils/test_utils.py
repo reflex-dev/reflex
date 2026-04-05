@@ -421,6 +421,137 @@ def test_initialize_non_existent_gitignore(
     assert set(file_content) - expected == set()
 
 
+def test_initialize_python_manifest_creates_pyproject(tmp_path):
+    """Test that a fresh app gets a pyproject.toml by default."""
+    pyproject_file = tmp_path / "pyproject.toml"
+    requirements_file = tmp_path / "requirements.txt"
+
+    result = frontend_skeleton.initialize_python_manifest(
+        "hello_app",
+        pyproject_file_path=pyproject_file,
+        requirements_file_path=requirements_file,
+    )
+
+    assert result == frontend_skeleton.PythonManifestInitResult(kind="pyproject")
+    assert pyproject_file.exists()
+    assert not requirements_file.exists()
+    pyproject_text = pyproject_file.read_text()
+    assert 'name = "hello_app"' in pyproject_text
+    assert f'dependencies = ["reflex=={constants.Reflex.VERSION}"]' in pyproject_text
+
+
+def test_initialize_python_manifest_preserves_existing_pyproject(tmp_path):
+    """Test that an existing pyproject.toml remains the source of truth."""
+    pyproject_file = tmp_path / "pyproject.toml"
+    pyproject_text = """
+[project]
+name = "existing-app"
+dependencies = ["reflex==0.0.1"]
+"""
+    pyproject_file.write_text(pyproject_text.strip() + "\n")
+    requirements_file = tmp_path / "requirements.txt"
+
+    result = frontend_skeleton.initialize_python_manifest(
+        "ignored_app_name",
+        pyproject_file_path=pyproject_file,
+        requirements_file_path=requirements_file,
+    )
+
+    assert result == frontend_skeleton.PythonManifestInitResult(kind="pyproject")
+    assert pyproject_file.read_text() == pyproject_text.strip() + "\n"
+    assert not requirements_file.exists()
+
+
+def test_initialize_python_manifest_requires_manual_update_for_pyproject_without_reflex(
+    tmp_path,
+):
+    """Test that unrelated pyproject strings do not count as Reflex dependencies."""
+    pyproject_file = tmp_path / "pyproject.toml"
+    pyproject_text = """
+[project]
+name = "reflex-tools"
+description = "reflex helper app"
+dependencies = ["sqlmodel==0.0.37"]
+"""
+    pyproject_file.write_text(pyproject_text.strip() + "\n")
+    requirements_file = tmp_path / "requirements.txt"
+
+    result = frontend_skeleton.initialize_python_manifest(
+        "ignored_app_name",
+        pyproject_file_path=pyproject_file,
+        requirements_file_path=requirements_file,
+    )
+
+    assert result == frontend_skeleton.PythonManifestInitResult(
+        kind="pyproject",
+        needs_manual_reflex_dependency=True,
+    )
+    assert pyproject_file.read_text() == pyproject_text.strip() + "\n"
+    assert not requirements_file.exists()
+
+
+def test_initialize_python_manifest_preserves_poetry_pyproject_with_reflex(tmp_path):
+    """Test that Poetry-style pyproject dependencies are detected correctly."""
+    pyproject_file = tmp_path / "pyproject.toml"
+    pyproject_text = """
+[tool.poetry]
+name = "existing-app"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+reflex = "^0.8.0"
+"""
+    pyproject_file.write_text(pyproject_text.strip() + "\n")
+    requirements_file = tmp_path / "requirements.txt"
+
+    result = frontend_skeleton.initialize_python_manifest(
+        "ignored_app_name",
+        pyproject_file_path=pyproject_file,
+        requirements_file_path=requirements_file,
+    )
+
+    assert result == frontend_skeleton.PythonManifestInitResult(kind="pyproject")
+    assert pyproject_file.read_text() == pyproject_text.strip() + "\n"
+    assert not requirements_file.exists()
+
+
+def test_initialize_python_manifest_appends_reflex_to_existing_requirements(tmp_path):
+    """Test that legacy requirements.txt projects keep working without pyproject.toml."""
+    pyproject_file = tmp_path / "pyproject.toml"
+    requirements_file = tmp_path / "requirements.txt"
+    requirements_file.write_text("sqlmodel==0.0.37\n")
+
+    result = frontend_skeleton.initialize_python_manifest(
+        "legacy_app",
+        pyproject_file_path=pyproject_file,
+        requirements_file_path=requirements_file,
+    )
+
+    assert result == frontend_skeleton.PythonManifestInitResult(kind="requirements")
+    assert not pyproject_file.exists()
+    assert requirements_file.read_text().endswith(
+        f"\nreflex=={constants.Reflex.VERSION}"
+    )
+
+
+def test_initialize_python_manifest_preserves_existing_requirements(tmp_path):
+    """Test that existing requirements.txt projects do not get a second manifest."""
+    pyproject_file = tmp_path / "pyproject.toml"
+    requirements_file = tmp_path / "requirements.txt"
+    requirements_text = f"reflex=={constants.Reflex.VERSION}\nredis==7.3.0\n"
+    requirements_file.write_text(requirements_text)
+
+    result = frontend_skeleton.initialize_python_manifest(
+        "legacy_app",
+        pyproject_file_path=pyproject_file,
+        requirements_file_path=requirements_file,
+    )
+
+    assert result == frontend_skeleton.PythonManifestInitResult(kind="requirements")
+    assert requirements_file.read_text() == requirements_text
+    assert not pyproject_file.exists()
+
+
 def test_validate_app_name(tmp_path, mocker: MockerFixture):
     """Test that an error is raised if the app name is reflex or if the name is not according to python package naming conventions.
 
