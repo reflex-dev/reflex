@@ -5,15 +5,12 @@ from collections.abc import Callable
 from typing import Any
 
 import pytest
-from reflex_base import constants
 from reflex_base.components.component import (
     BaseComponent,
     Component,
     ComponentStyle,
-    StatefulComponent,
     field,
 )
-from reflex_base.environment import environment
 from reflex_base.plugins import (
     BaseContext,
     CompileContext,
@@ -288,9 +285,8 @@ def test_component_hook_resolution_caches_only_real_overrides() -> None:
             page_context: PageContext,
             compile_context: CompileContext,
             in_prop_tree: bool = False,
-            stateful_component: StatefulComponent | None = None,
         ) -> None:
-            del comp, page_context, compile_context, in_prop_tree, stateful_component
+            del comp, page_context, compile_context, in_prop_tree
 
     class LeavePlugin(StubCompilerPlugin):
         def leave_component(
@@ -302,7 +298,6 @@ def test_component_hook_resolution_caches_only_real_overrides() -> None:
             page_context: PageContext,
             compile_context: CompileContext,
             in_prop_tree: bool = False,
-            stateful_component: StatefulComponent | None = None,
         ) -> None:
             del (
                 comp,
@@ -310,7 +305,6 @@ def test_component_hook_resolution_caches_only_real_overrides() -> None:
                 page_context,
                 compile_context,
                 in_prop_tree,
-                stateful_component,
             )
 
     hooks = CompilerHooks(plugins=(Plugin(), EnterPlugin(), LeavePlugin()))
@@ -333,9 +327,8 @@ def test_enter_component_skips_inherited_base_plugin_hook(
         page_context: PageContext,
         compile_context: CompileContext,
         in_prop_tree: bool = False,
-        stateful_component: StatefulComponent | None = None,
     ) -> None:
-        del self, comp, page_context, compile_context, in_prop_tree, stateful_component
+        del self, comp, page_context, compile_context, in_prop_tree
         msg = "Inherited Plugin.enter_component hook should be skipped."
         raise AssertionError(msg)
 
@@ -350,9 +343,8 @@ def test_enter_component_skips_inherited_base_plugin_hook(
             page_context: PageContext,
             compile_context: CompileContext,
             in_prop_tree: bool = False,
-            stateful_component: StatefulComponent | None = None,
         ) -> None:
-            del page_context, compile_context, in_prop_tree, stateful_component
+            del page_context, compile_context, in_prop_tree
             visited.append(type(comp).__name__)
 
     hooks = CompilerHooks(plugins=(Plugin(), RealPlugin()))
@@ -383,9 +375,8 @@ def test_enter_component_skips_inherited_protocol_hook(
         page_context: PageContext,
         compile_context: CompileContext,
         in_prop_tree: bool = False,
-        stateful_component: StatefulComponent | None = None,
     ) -> None:
-        del self, comp, page_context, compile_context, in_prop_tree, stateful_component
+        del self, comp, page_context, compile_context, in_prop_tree
         msg = "Inherited CompilerPlugin.enter_component hook should be skipped."
         raise AssertionError(msg)
 
@@ -403,9 +394,8 @@ def test_enter_component_skips_inherited_protocol_hook(
             page_context: PageContext,
             compile_context: CompileContext,
             in_prop_tree: bool = False,
-            stateful_component: StatefulComponent | None = None,
         ) -> None:
-            del page_context, compile_context, in_prop_tree, stateful_component
+            del page_context, compile_context, in_prop_tree
             visited.append(type(comp).__name__)
 
     hooks = CompilerHooks(plugins=(ProtocolOnlyPlugin(), RealPlugin()))
@@ -435,9 +425,8 @@ def test_compile_component_orders_enter_and_leave_by_plugin() -> None:
             page_context: PageContext,
             compile_context: CompileContext,
             in_prop_tree: bool = False,
-            stateful_component: StatefulComponent | None = None,
         ) -> None:
-            del comp, page_context, compile_context, in_prop_tree, stateful_component
+            del comp, page_context, compile_context, in_prop_tree
             events.append("first:enter")
 
         def leave_component(
@@ -449,7 +438,6 @@ def test_compile_component_orders_enter_and_leave_by_plugin() -> None:
             page_context: PageContext,
             compile_context: CompileContext,
             in_prop_tree: bool = False,
-            stateful_component: StatefulComponent | None = None,
         ) -> None:
             del (
                 comp,
@@ -457,7 +445,6 @@ def test_compile_component_orders_enter_and_leave_by_plugin() -> None:
                 page_context,
                 compile_context,
                 in_prop_tree,
-                stateful_component,
             )
             events.append("first:leave")
 
@@ -470,9 +457,8 @@ def test_compile_component_orders_enter_and_leave_by_plugin() -> None:
             page_context: PageContext,
             compile_context: CompileContext,
             in_prop_tree: bool = False,
-            stateful_component: StatefulComponent | None = None,
         ) -> None:
-            del comp, page_context, compile_context, in_prop_tree, stateful_component
+            del comp, page_context, compile_context, in_prop_tree
             events.append("second:enter")
 
         def leave_component(
@@ -484,7 +470,6 @@ def test_compile_component_orders_enter_and_leave_by_plugin() -> None:
             page_context: PageContext,
             compile_context: CompileContext,
             in_prop_tree: bool = False,
-            stateful_component: StatefulComponent | None = None,
         ) -> None:
             del (
                 comp,
@@ -492,7 +477,6 @@ def test_compile_component_orders_enter_and_leave_by_plugin() -> None:
                 page_context,
                 compile_context,
                 in_prop_tree,
-                stateful_component,
             )
             events.append("second:leave")
 
@@ -532,9 +516,8 @@ def test_compile_component_traverses_children_before_prop_components() -> None:
             page_context: PageContext,
             compile_context: CompileContext,
             in_prop_tree: bool = False,
-            stateful_component: StatefulComponent | None = None,
         ) -> None:
-            del page_context, compile_context, in_prop_tree, stateful_component
+            del page_context, compile_context, in_prop_tree
             if isinstance(comp, Component):
                 visited.append(comp.tag or type(comp).__name__)
 
@@ -565,9 +548,8 @@ def test_enter_and_leave_replacements_match_generator_style_behavior() -> None:
             page_context: PageContext,
             compile_context: CompileContext,
             in_prop_tree: bool = False,
-            stateful_component: StatefulComponent | None = None,
         ) -> BaseComponent | ComponentAndChildren | None:
-            del page_context, compile_context, stateful_component
+            del page_context, compile_context
             if isinstance(comp, RootComponent) and not in_prop_tree:
                 replacement_child = ChildComponent.create(id="replacement")
                 return comp, (replacement_child,)
@@ -582,9 +564,8 @@ def test_enter_and_leave_replacements_match_generator_style_behavior() -> None:
             page_context: PageContext,
             compile_context: CompileContext,
             in_prop_tree: bool = False,
-            stateful_component: StatefulComponent | None = None,
         ) -> BaseComponent | ComponentAndChildren | None:
-            del page_context, compile_context, in_prop_tree, stateful_component
+            del page_context, compile_context, in_prop_tree
             if isinstance(comp, RootComponent):
                 return Fragment.create(comp), children
             return None
@@ -755,12 +736,15 @@ def test_default_collector_matches_legacy_collectors() -> None:
 
 
 def test_default_page_plugins_are_minimal_and_ordered() -> None:
+    from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
+
     plugins = default_page_plugins(style=page_style())
 
-    assert len(plugins) == 3
+    assert len(plugins) == 4
     assert isinstance(plugins[0], DefaultPagePlugin)
     assert isinstance(plugins[1], ApplyStylePlugin)
-    assert isinstance(plugins[2], DefaultCollectorPlugin)
+    assert isinstance(plugins[2], MemoizeStatefulPlugin)
+    assert isinstance(plugins[3], DefaultCollectorPlugin)
 
 
 def test_compile_context_compiles_pages_and_matches_legacy_output() -> None:
@@ -882,58 +866,56 @@ def test_compile_context_requires_attached_context() -> None:
         compile_ctx.compile()
 
 
-def test_compile_context_preserves_shared_stateful_component_imports_and_wraps() -> (
-    None
-):
-    previous_mode = environment.REFLEX_ENV_MODE.get()
-    environment.REFLEX_ENV_MODE.set(constants.Env.PROD)
-    try:
-        pages = [
-            FakePage(route="/a", component=create_shared_stateful_component),
-            FakePage(route="/b", component=create_shared_stateful_component),
-        ]
-        compile_ctx = CompileContext(
-            pages=pages,
-            hooks=CompilerHooks(plugins=default_page_plugins()),
-        )
+def test_compile_context_memoize_wrappers_registers_shared_subtree_tag() -> None:
+    """Shared memoizable subtree across pages registers a single wrapper tag."""
+    pages = [
+        FakePage(route="/a", component=create_shared_stateful_component),
+        FakePage(route="/b", component=create_shared_stateful_component),
+    ]
+    compile_ctx = CompileContext(
+        pages=pages,
+        hooks=CompilerHooks(plugins=default_page_plugins()),
+    )
 
-        with compile_ctx:
-            compile_ctx.compile()
+    with compile_ctx:
+        compile_ctx.compile()
 
-        assert "react-moment" in compile_ctx.all_imports
-        assert (25, "SharedLibraryWrap") in compile_ctx.app_wrap_components
-        assert "react-moment" in compile_ctx.stateful_components_code
-        assert "$/utils/stateful_components" in (
-            compile_ctx.compiled_pages["/a"].output_code or ""
-        )
-    finally:
-        environment.REFLEX_ENV_MODE.set(previous_mode)
+    # The wrapped library import still reaches the compile-context level.
+    assert "react-moment" in compile_ctx.all_imports
+    assert (25, "SharedLibraryWrap") in compile_ctx.app_wrap_components
+    # Both pages share the same subtree hash, so exactly one wrapper tag is registered.
+    assert len(compile_ctx.memoize_wrappers) == 1
+    wrapper_tag = next(iter(compile_ctx.memoize_wrappers))
+    # Each page emits the wrapper declaration inline as page custom code.
+    page_a_code = compile_ctx.compiled_pages["/a"].output_code or ""
+    assert f"const {wrapper_tag} = memo(({{ children }}) => children)" in page_a_code
+    # The wrapper is referenced at the call-site (jsx-call form).
+    assert f"jsx({wrapper_tag}," in page_a_code
+    # The removed shared-stateful-components path should not appear anywhere.
+    assert "$/utils/stateful_components" not in page_a_code
 
 
-def test_compile_context_resets_stateful_component_cache_between_runs() -> None:
-    previous_mode = environment.REFLEX_ENV_MODE.get()
-    try:
-        environment.REFLEX_ENV_MODE.set(constants.Env.PROD)
-        prod_ctx = CompileContext(
-            pages=[
-                FakePage(route="/a", component=create_shared_stateful_component),
-                FakePage(route="/b", component=create_shared_stateful_component),
-            ],
-            hooks=CompilerHooks(plugins=default_page_plugins()),
-        )
-        with prod_ctx:
-            prod_ctx.compile()
+def test_compile_context_resets_memoize_wrappers_between_runs() -> None:
+    """``CompileContext.memoize_wrappers`` is cleared on each compile run."""
+    ctx = CompileContext(
+        pages=[FakePage(route="/a", component=create_shared_stateful_component)],
+        hooks=CompilerHooks(plugins=default_page_plugins()),
+    )
+    with ctx:
+        ctx.compile()
+    first_tags = set(ctx.memoize_wrappers)
+    assert first_tags  # memoize wrapper was registered
 
-        environment.REFLEX_ENV_MODE.set(constants.Env.DEV)
-        dev_ctx = CompileContext(
-            pages=[FakePage(route="/c", component=create_shared_stateful_component)],
-            hooks=CompilerHooks(plugins=default_page_plugins()),
-        )
-        with dev_ctx:
-            dev_ctx.compile()
+    # Re-compile with a different page set → wrappers reset, not accumulated.
+    ctx2 = CompileContext(
+        pages=[FakePage(route="/c", component=create_shared_stateful_component)],
+        hooks=CompilerHooks(plugins=default_page_plugins()),
+    )
+    with ctx2:
+        ctx2.compile()
 
-        page_ctx = dev_ctx.compiled_pages["/c"]
-        assert "react-moment" in page_ctx.frontend_imports
-        assert "$/utils/stateful_components" not in (page_ctx.output_code or "")
-    finally:
-        environment.REFLEX_ENV_MODE.set(previous_mode)
+    # Same shared component → same tag, not a union across runs.
+    assert set(ctx2.memoize_wrappers) == first_tags
+    page_ctx = ctx2.compiled_pages["/c"]
+    assert "react-moment" in page_ctx.frontend_imports
+    assert "$/utils/stateful_components" not in (page_ctx.output_code or "")

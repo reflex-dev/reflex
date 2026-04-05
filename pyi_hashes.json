@@ -1,4 +1,6 @@
 {
+  "packages/reflex-components-core/src/reflex_components_core/core/upload.pyi": "8619aba44cf2568a5c45de9975251722",
+  "packages/reflex-components-core/src/reflex_components_core/core/window_events.pyi": "dbefc8e2ec126b4ed878d69d0d233999",
   "reflex/__init__.pyi": "9321a11f6891d792fcd921cc1bdc64f4",
   "reflex/components/__init__.pyi": "f39a2af77f438fa243c58c965f19d42e",
   "reflex/experimental/memo.pyi": "c10cbc554fe2ffdb3a008b59bc503936"

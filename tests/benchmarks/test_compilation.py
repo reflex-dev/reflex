@@ -1,10 +1,11 @@
 from pytest_codspeed import BenchmarkFixture
-from reflex_base.components.component import Component, StatefulComponent
+from reflex_base.components.component import Component
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 
 from reflex.compiler import compiler
-from reflex.compiler.compiler import _compile_page, _compile_stateful_components
+from reflex.compiler.compiler import _compile_page
 from reflex.compiler.plugins import DefaultCollectorPlugin, default_page_plugins
+from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
 
 from .fixtures import BenchmarkPage, ImportOnlyCollectorPlugin
 
@@ -18,9 +19,11 @@ def _compile_single_pass_page_ctx(component: Component) -> PageContext:
     page_ctx = PageContext(
         name="benchmark",
         route="/benchmark",
-        root_component=StatefulComponent.compile_from(component) or component,
+        root_component=component,
     )
-    hooks = CompilerHooks(plugins=(DefaultCollectorPlugin(),))
+    hooks = CompilerHooks(
+        plugins=(MemoizeStatefulPlugin(), DefaultCollectorPlugin()),
+    )
     compile_ctx = CompileContext(pages=[], hooks=hooks)
 
     with compile_ctx, page_ctx:
@@ -104,12 +107,6 @@ def test_compile_page_full_context(
     import_templates()
 
     benchmark(lambda: _compile_page_full_context(unevaluated_page))
-
-
-def test_compile_stateful(evaluated_page: Component, benchmark: BenchmarkFixture):
-    import_templates()
-
-    benchmark(lambda: _compile_stateful_components([evaluated_page]))
 
 
 def test_get_all_imports(evaluated_page: Component, benchmark: BenchmarkFixture):
