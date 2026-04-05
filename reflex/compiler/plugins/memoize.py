@@ -323,7 +323,9 @@ class MemoizeStatefulPlugin(Plugin):
         """
         del children, compile_context, in_prop_tree
         if getattr(comp, "_memoize_pushed_suppression", False):
-            page_context._memoize_suppress_depth -= 1  # type: ignore[attr-defined]
+            page_context._memoize_suppress_depth = (  # type: ignore[attr-defined]
+                getattr(page_context, "_memoize_suppress_depth", 1) - 1
+            )
             with contextlib.suppress(AttributeError):
                 del comp._memoize_pushed_suppression  # pyright: ignore[reportAttributeAccessIssue]
         return None
