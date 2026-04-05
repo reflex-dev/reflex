@@ -4,12 +4,8 @@ import dataclasses
 from collections.abc import Callable
 from typing import Any
 
-from reflex_base.components.component import (
-    Component,
-    MemoizationDisposition,
-    MemoizationMode,
-    field,
-)
+from reflex_base.components.component import Component, field
+from reflex_base.constants.compiler import MemoizationDisposition, MemoizationMode
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var

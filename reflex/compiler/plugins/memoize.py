@@ -151,6 +151,19 @@ class MemoWrapperComponent(Component):
     as page-level custom code and imports ``{memo}`` from react.
     """
 
+    def _validate_component_children(self, children: list[Component]) -> None:
+        """Skip parent/child validation — wrapper is transparent.
+
+        The wrapped child's ``_valid_parents`` constraint is already satisfied
+        by the original (pre-wrap) parent in the user-authored tree; the
+        wrapper is inserted during compilation and should not interpose on
+        that relationship.
+
+        Args:
+            children: The children of the component (ignored).
+        """
+        del children
+
     def _get_imports(self) -> ParsedImportDict:
         """Import ``memo`` from react for the wrapper declaration.
 
