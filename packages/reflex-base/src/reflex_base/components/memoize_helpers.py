@@ -140,7 +140,7 @@ def fix_event_triggers_for_memo(component: Component) -> list[str]:
     memo_trigger_hooks: list[str] = []
 
     if memo_event_triggers:
-        component = copy.copy(component)
+        component.event_triggers = dict(component.event_triggers)  # isolate so original dict is not mutated
         for event_trigger, (memo_trigger, memo_trigger_hook) in memo_event_triggers:
             memo_trigger_hooks.append(memo_trigger_hook)
             component.event_triggers[event_trigger] = memo_trigger
