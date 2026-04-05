@@ -18,10 +18,10 @@ This page gives an introduction to the most common concepts that you will use to
 - Create pages and navigate between them
 ```
 
-[Install](/docs/getting_started/installation) `reflex` using pip.
+[Install](/docs/getting_started/installation) `reflex` with uv before continuing.
 
 ```bash
-pip install reflex
+uv add reflex
 ```
 
 Import the `reflex` library to get started.
