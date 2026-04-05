@@ -2085,6 +2085,54 @@ def test_app_wrap_compile_theme(
     assert expected.split(",") == function_app_definition.split(",")
 
 
+def test_compile_writes_app_wrap_memo_components(
+    compilable_app: tuple[App, Path],
+    mocker,
+) -> None:
+    """App-wrap memo components are emitted to the shared components module."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+
+    app.add_page(rx.box("Index"), route="/")
+    app._compile()
+
+    components_js = (
+        web_dir
+        / constants.Dirs.UTILS
+        / f"{constants.PageNames.COMPONENTS}{constants.Ext.JSX}"
+    ).read_text()
+
+    assert "export const DefaultOverlayComponents" in components_js
+    assert "export const MemoizedToastProvider" in components_js
+
+
+def test_compile_writes_upload_files_provider_app_wrap(
+    compilable_app: tuple[App, Path],
+    mocker,
+) -> None:
+    """Upload pages emit the UploadFilesProvider app wrap into the app root."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+
+    app.add_page(
+        lambda: rx.upload.root(
+            rx.vstack(
+                rx.button("Select File"),
+                rx.text("Drag and drop files here or click to select files"),
+            ),
+        ),
+        route="/",
+    )
+    app._compile()
+
+    root_js = web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    root_contents = root_js.read_text()
+
+    assert "UploadFilesProvider" in root_contents
+
+
 @pytest.mark.parametrize(
     "react_strict_mode",
     [True, False],
