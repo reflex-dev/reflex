@@ -159,7 +159,13 @@ def _extract_toml_string_values(toml_line: str) -> list[str]:
     Returns:
         The quoted string values found in the line.
     """
-    return re.findall(r"""["']([^"']+)["']""", toml_line)
+    return [
+        value
+        for _, value in re.findall(
+            r"""(["'])((?:\\.|(?!\1).)*)\1""",
+            toml_line,
+        )
+    ]
 
 
 def _has_reflex_dependency_in_pyproject_fallback(pyproject_text: str) -> bool:

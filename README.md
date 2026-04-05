@@ -59,9 +59,14 @@ cd my_app_name
 ### 2. Install uv
 
 Reflex recommends [uv](https://docs.astral.sh/uv/) for managing your project environment and dependencies.
+See the [uv installation docs](https://docs.astral.sh/uv/getting-started/installation/) for your platform.
 
 ```bash
+# macOS/Linux
 curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows (PowerShell)
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
 ### 3. Initialize the Python project

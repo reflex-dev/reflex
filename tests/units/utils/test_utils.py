@@ -515,6 +515,20 @@ reflex = "^0.8.0"
     assert not requirements_file.exists()
 
 
+def test_has_reflex_dependency_in_pyproject_fallback_ignores_mismatched_quotes(
+    mocker: MockerFixture,
+):
+    """Test that malformed TOML strings do not produce false positives."""
+    mocker.patch.object(frontend_skeleton, "tomllib", None)
+
+    pyproject_text = """
+[project]
+dependencies = ["bad']
+"""
+
+    assert not frontend_skeleton._has_reflex_dependency_in_pyproject(pyproject_text)
+
+
 def test_initialize_python_manifest_appends_reflex_to_existing_requirements(tmp_path):
     """Test that legacy requirements.txt projects keep working without pyproject.toml."""
     pyproject_file = tmp_path / "pyproject.toml"
