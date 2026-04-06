@@ -732,18 +732,10 @@ class CompileContext(BaseContext):
                 )
 
             if isinstance(page_ctx.root_component, StatefulComponent):
-                self.all_imports = merge_imports(
-                    self.all_imports,
-                    page_ctx.root_component._get_all_imports(),
-                )
                 self.app_wrap_components.update(
                     page_ctx.root_component.component._get_all_app_wrap_components()
                 )
             elif isinstance(page_ctx.root_component, Component):
-                self.all_imports = merge_imports(
-                    self.all_imports,
-                    page_ctx.root_component._get_all_imports(),
-                )
                 self.app_wrap_components.update(
                     page_ctx.root_component._get_all_app_wrap_components()
                 )
@@ -763,11 +755,14 @@ class CompileContext(BaseContext):
         page_components = [
             page_ctx.root_component for page_ctx in self.compiled_pages.values()
         ]
-        self.stateful_components_code = (
-            compiler._compile_stateful_components(page_components)
-            if is_prod_mode()
-            else ""
-        )
+        stateful_imports: ParsedImportDict = {}
+        if is_prod_mode():
+            self.stateful_components_code, stateful_imports = (
+                compiler._compile_stateful_components(page_components)
+            )
+            self.all_imports = merge_imports(self.all_imports, stateful_imports)
+        else:
+            self.stateful_components_code = ""
 
         for page, page_ctx in zip(
             self.pages,

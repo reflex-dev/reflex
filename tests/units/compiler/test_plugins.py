@@ -114,6 +114,11 @@ class PropComponent(Component):
         return {(15, "PropWrap"): Fragment.create()}
 
 
+class NoRecursiveImportsComponent(Component):
+    tag = "NoRecursiveImportsComponent"
+    library = "no-recursive-imports-lib"
+
+
 class SharedLibraryComponent(Component):
     tag = "SharedLibraryComponent"
     library = "react-moment"
@@ -145,6 +150,10 @@ def create_component_tree() -> RootComponent:
 
 def create_shared_stateful_component() -> SharedLibraryComponent:
     return SharedLibraryComponent.create(SHARED_STATEFUL_VAR)
+
+
+def create_no_recursive_imports_component() -> NoRecursiveImportsComponent:
+    return NoRecursiveImportsComponent.create()
 
 
 def page_style() -> ComponentStyle:
@@ -816,6 +825,25 @@ def test_compile_context_compiles_pages_and_matches_legacy_output() -> None:
     )
     expected_output = compiler.compile_page(page.route, legacy_component)[1]
     assert page_ctx.output_code == expected_output
+
+
+def test_compile_context_does_not_recurse_root_imports() -> None:
+    page = FakePage(
+        route="/no-recursive-imports",
+        component=create_no_recursive_imports_component,
+    )
+    compile_ctx = CompileContext(
+        pages=[page],
+        hooks=CompilerHooks(plugins=default_page_plugins()),
+    )
+
+    with compile_ctx:
+        compiled_pages = compile_ctx.compile()
+
+    page_ctx = compiled_pages["/no-recursive-imports"]
+    assert "no-recursive-imports-lib" in page_ctx.frontend_imports
+    assert "no-recursive-imports-lib" in compile_ctx.all_imports
+    assert page_ctx.output_code is not None
 
 
 def test_default_page_plugin_handles_var_backed_title_like_legacy_compiler() -> None:

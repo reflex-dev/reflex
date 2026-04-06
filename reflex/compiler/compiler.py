@@ -472,7 +472,7 @@ def _get_shared_components_recursive(
 
 def _compile_stateful_components(
     page_components: list[BaseComponent],
-) -> str:
+) -> tuple[str, ParsedImportDict]:
     """Walk the page components and extract shared stateful components.
 
     Any StatefulComponent that is shared by more than one page will be rendered
@@ -484,7 +484,7 @@ def _compile_stateful_components(
         page_components: The Components or StatefulComponents to compile.
 
     Returns:
-        The rendered stateful components code.
+        The rendered stateful components code and imports.
     """
     all_import_dicts = []
     rendered_components = {}
@@ -502,9 +502,12 @@ def _compile_stateful_components(
     if rendered_components:
         _apply_common_imports(all_imports)
 
-    return templates.stateful_components_template(
-        imports=utils.compile_imports(all_imports),
-        memoized_code="\n".join(rendered_components),
+    return (
+        templates.stateful_components_template(
+            imports=utils.compile_imports(all_imports),
+            memoized_code="\n".join(rendered_components),
+        ),
+        all_imports,
     )
 
 
@@ -695,7 +698,7 @@ def compile_stateful_components(
         progress_function()
         page_components.append(page_component)
 
-    code = _compile_stateful_components(page_components) if is_prod_mode() else ""
+    code = _compile_stateful_components(page_components)[0] if is_prod_mode() else ""
     return output_path, code, page_components
 
 
