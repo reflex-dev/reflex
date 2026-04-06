@@ -141,32 +141,6 @@ config = rx.Config(
 )"""
 
 
-def pyproject_toml_template(
-    app_name: str,
-    reflex_version: str,
-    *,
-    project_version: str = constants.PyprojectToml.DEFAULT_VERSION,
-    requires_python: str = constants.PyprojectToml.REQUIRES_PYTHON,
-):
-    """Template for a Reflex app pyproject.toml.
-
-    Args:
-        app_name: The name of the application.
-        reflex_version: The Reflex version to pin.
-        project_version: The version for the initialized app.
-        requires_python: The supported Python range for the initialized app.
-
-    Returns:
-        Rendered pyproject.toml content as string.
-    """
-    return f"""[project]
-name = "{app_name}"
-version = "{project_version}"
-requires-python = "{requires_python}"
-dependencies = ["reflex=={reflex_version}"]
-"""
-
-
 def document_root_template(*, imports: list[_ImportDict], document: dict[str, Any]):
     """Template for the document root.
 

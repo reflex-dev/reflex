@@ -54,10 +54,6 @@ class PyprojectToml(SimpleNamespace):
 
     # The pyproject.toml file.
     FILE = "pyproject.toml"
-    # The default version used for newly initialized apps.
-    DEFAULT_VERSION = "0.1.0"
-    # The default supported Python range for newly initialized apps.
-    REQUIRES_PYTHON = ">=3.10"
 
 
 class RequirementsTxt(SimpleNamespace):

@@ -66,7 +66,7 @@ Reflex generates a default app within the `{app_name}/{app_name}.py` file. You c
 
 ## Python Project Files
 
-`pyproject.toml` defines your Python project metadata and dependencies. Reflex pins its own version here when you initialize a new app.
+`pyproject.toml` defines your Python project metadata and dependencies. `uv add reflex` records the Reflex dependency there before you initialize the app.
 
 `uv.lock` stores the fully resolved dependency set for reproducible installs. Commit it to version control so everyone working on the app gets the same Python package versions.
 

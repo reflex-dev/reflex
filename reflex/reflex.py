@@ -89,27 +89,18 @@ def _init(
     # Initialize the .gitignore.
     frontend_skeleton.initialize_gitignore()
 
-    # Initialize the Python dependency manifest.
-    manifest = frontend_skeleton.initialize_python_manifest(app_name=app_name)
-
     template_msg = f" using the {template} template" if template else ""
-    reflex_dependency_pin = (
-        f"{constants.Reflex.MODULE_NAME}=={constants.Reflex.VERSION}"
-    )
-    if manifest.kind == "pyproject":
-        next_steps = " Run `uv sync` to install dependencies and `uv run reflex run` to start the app."
-        manual_update = (
-            f" Make sure to add `{reflex_dependency_pin}` to your pyproject.toml dependencies before running `uv sync`."
-            if manifest.needs_manual_reflex_dependency
-            else ""
-        )
+    if Path(constants.PyprojectToml.FILE).exists():
+        needs_user_manual_update = False
+        next_steps = " Run `uv run reflex run` to start the app."
     else:
-        next_steps = " Install dependencies from `requirements.txt` with `uv pip install -r requirements.txt` (or your preferred installer) before running the app."
-        manual_update = (
-            f" Make sure to add `{reflex_dependency_pin}` to your requirements.txt file."
-            if manifest.needs_manual_reflex_dependency
-            else ""
-        )
+        needs_user_manual_update = frontend_skeleton.initialize_requirements_txt()
+        next_steps = " Install dependencies from `requirements.txt` with `uv pip install -r requirements.txt` (or your preferred installer) before running `uv run reflex run`."
+    manual_update = (
+        f" Make sure to add `{constants.RequirementsTxt.DEFAULTS_STUB + constants.Reflex.VERSION}` to your requirements.txt file."
+        if needs_user_manual_update
+        else ""
+    )
 
     # Finish initializing the app.
     console.success(f"Initialized {app_name}{template_msg}.{manual_update}{next_steps}")
