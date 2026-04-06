@@ -3,7 +3,7 @@
 import dataclasses
 
 import pytest
-from reflex_base._internal.context.base import BaseContext
+from reflex_base.context.base import BaseContext
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)

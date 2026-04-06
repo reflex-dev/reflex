@@ -2419,7 +2419,7 @@ class StatefulComponent(BaseComponent):
         """
         from reflex_components_core.core.foreach import Foreach
 
-        from reflex_base._internal.registry import RegistrationContext
+        from reflex_base.registry import RegistrationContext
 
         if component._memoization_mode.disposition == MemoizationDisposition.NEVER:
             # Never memoize this component.

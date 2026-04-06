@@ -2,7 +2,7 @@
 
 import time
 
-from reflex_base._internal.event.processor.timeout import DrainTimeoutManager
+from reflex_base.event.processor.timeout import DrainTimeoutManager
 
 
 def test_drain_timeout_no_timeout():

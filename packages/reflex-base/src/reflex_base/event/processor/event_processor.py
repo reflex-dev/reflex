@@ -20,11 +20,11 @@ from typing_extensions import Self
 from reflex.app_mixins.middleware import MiddlewareMixin
 from reflex.istate.manager import StateManager
 from reflex.utils import console
-from reflex_base._internal.event.context import EventContext
-from reflex_base._internal.event.processor.compat import as_completed
-from reflex_base._internal.event.processor.future import EventFuture
-from reflex_base._internal.event.processor.timeout import DrainTimeoutManager
-from reflex_base._internal.registry import RegisteredEventHandler, RegistrationContext
+from reflex_base.event.context import EventContext
+from reflex_base.event.processor.compat import as_completed
+from reflex_base.event.processor.future import EventFuture
+from reflex_base.event.processor.timeout import DrainTimeoutManager
+from reflex_base.registry import RegisteredEventHandler, RegistrationContext
 
 if TYPE_CHECKING:
     from reflex.app import EventNamespace

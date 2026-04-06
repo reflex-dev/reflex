@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 from typing_extensions import Self
 
-from reflex_base._internal.context.base import BaseContext
+from reflex_base.context.base import BaseContext
 from reflex_base.utils.exceptions import StateValueError
 
 if TYPE_CHECKING:

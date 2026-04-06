@@ -2,7 +2,7 @@
 
 from unittest import mock
 
-from reflex_base._internal.event.context import EventContext
+from reflex_base.event.context import EventContext
 
 
 def test_fork_creates_child(mock_root_event_context: EventContext):

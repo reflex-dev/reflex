@@ -5,12 +5,9 @@ import contextlib
 from typing import Any
 
 import pytest
-from reflex_base._internal.event.context import EventContext
-from reflex_base._internal.event.processor.event_processor import (
-    EventProcessor,
-    QueueShutDown,
-)
-from reflex_base._internal.registry import RegistrationContext
+from reflex_base.event.context import EventContext
+from reflex_base.event.processor.event_processor import EventProcessor, QueueShutDown
+from reflex_base.registry import RegistrationContext
 
 from reflex.event import Event, EventHandler
 

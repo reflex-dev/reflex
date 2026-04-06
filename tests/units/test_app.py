@@ -16,12 +16,12 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 from pytest_mock import MockerFixture
-from reflex_base._internal.event.context import EventContext
-from reflex_base._internal.event.processor import BaseStateEventProcessor
-from reflex_base._internal.registry import RegistrationContext
 from reflex_base.components.component import Component
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event
+from reflex_base.event.context import EventContext
+from reflex_base.event.processor import BaseStateEventProcessor
+from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
 from reflex_base.utils import console, exceptions, format
 from reflex_base.vars.base import computed_var

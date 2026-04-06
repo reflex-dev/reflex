@@ -176,6 +176,6 @@ def get_state_manager() -> StateManager:
     Returns:
         The state manager.
     """
-    from reflex_base._internal.event.context import EventContext
+    from reflex_base.event.context import EventContext
 
     return EventContext.get().state_manager

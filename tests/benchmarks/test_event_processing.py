@@ -14,9 +14,9 @@ from unittest import mock
 import pytest
 import pytest_asyncio
 from pytest_codspeed import BenchmarkFixture
-from reflex_base._internal.event.context import EventContext
-from reflex_base._internal.event.processor import BaseStateEventProcessor
 from reflex_base.event import Event
+from reflex_base.event.context import EventContext
+from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.utils.format import format_event_handler
 
 from reflex.istate.manager.memory import StateManagerMemory

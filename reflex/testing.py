@@ -28,10 +28,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeVar
 
 import uvicorn
-from reflex_base._internal.registry import RegistrationContext
 from reflex_base.components.component import CUSTOM_COMPONENTS, CustomComponent
 from reflex_base.config import get_config
 from reflex_base.environment import environment
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils.types import ASGIApp
 from typing_extensions import Self
 

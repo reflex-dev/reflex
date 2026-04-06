@@ -15,8 +15,8 @@ from types import MethodType
 from typing import TYPE_CHECKING, Any, SupportsIndex, TypeVar
 
 import wrapt
-from reflex_base._internal.event.context import EventContext
 from reflex_base.event import Event
+from reflex_base.event.context import EventContext
 from reflex_base.utils.exceptions import ImmutableStateError
 from reflex_base.utils.serializers import can_serialize, serialize, serializer
 from reflex_base.vars.base import Var

@@ -3,7 +3,7 @@
 import asyncio
 
 import pytest
-from reflex_base._internal.event.processor.future import EventFuture
+from reflex_base.event.processor.future import EventFuture
 
 
 @pytest.mark.asyncio

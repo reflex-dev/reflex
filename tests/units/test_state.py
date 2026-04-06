@@ -22,11 +22,11 @@ from plotly.graph_objects import Figure
 from pydantic import BaseModel as Base
 from pytest_mock import MockerFixture
 from reflex_base import constants
-from reflex_base._internal.event.context import EventContext
-from reflex_base._internal.event.processor import BaseStateEventProcessor
 from reflex_base.constants import CompileVars, RouteVar
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event, EventHandler
+from reflex_base.event.context import EventContext
+from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.utils import format, types
 from reflex_base.utils.exceptions import (
     InvalidLockWarningThresholdError,

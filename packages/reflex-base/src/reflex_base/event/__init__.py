@@ -81,7 +81,7 @@ class Event:
     @property
     def state_cls(self) -> "type[BaseState]":
         """The state class for the event."""
-        from reflex_base._internal.registry import RegistrationContext
+        from reflex_base.registry import RegistrationContext
 
         substate_name = self.name.rpartition(".")[0]
         return RegistrationContext.get().base_states[substate_name]
@@ -2830,4 +2830,8 @@ class EventNamespace:
 
 event = EventNamespace
 event.event = event  # pyright: ignore[reportAttributeAccessIssue]
+_this = sys.modules[__name__]
+event.__path__ = _this.__path__  # pyright: ignore[reportAttributeAccessIssue]
+event.__spec__ = _this.__spec__  # pyright: ignore[reportAttributeAccessIssue]
+event.__package__ = _this.__package__  # pyright: ignore[reportAttributeAccessIssue]
 sys.modules[__name__] = event  # pyright: ignore[reportArgumentType]

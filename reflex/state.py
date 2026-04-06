@@ -496,7 +496,7 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             StateValueError: If a substate class shadows another.
         """
-        from reflex_base._internal.registry import RegistrationContext
+        from reflex_base.registry import RegistrationContext
         from reflex_base.utils.exceptions import StateValueError
 
         super().__init_subclass__(**kwargs)
@@ -960,7 +960,7 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             The substates of the state.
         """
-        from reflex_base._internal.registry import RegistrationContext
+        from reflex_base.registry import RegistrationContext
 
         return RegistrationContext.get().get_substates(cls)
 
@@ -1145,7 +1145,7 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             The event handler.
         """
-        from reflex_base._internal.registry import RegistrationContext
+        from reflex_base.registry import RegistrationContext
 
         # Check if function has stored event_actions from decorator
         event_actions = getattr(fn, EVENT_ACTIONS_MARKER, {})
@@ -2214,7 +2214,7 @@ class State(BaseState):
     @event
     async def hydrate(self) -> None:
         """Send the full state to the frontend to synchronize it with the backend."""
-        from reflex_base._internal.event.context import EventContext
+        from reflex_base.event.context import EventContext
 
         # Clear client storage, to respect clearing cookies
         self._reset_client_storage()
@@ -2569,7 +2569,7 @@ def reload_state_module(
         state: Recursive argument for the state class to reload.
 
     """
-    from reflex_base._internal.registry import RegistrationContext
+    from reflex_base.registry import RegistrationContext
 
     # Reset the _app_ref of OnLoadInternalState to avoid stale references.
     if state is OnLoadInternalState:

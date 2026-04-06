@@ -32,6 +32,7 @@ class EventFuture(asyncio.Future):
     )
 
     def __post_init__(self) -> None:
+        """Call Future.__init__ for the EventFuture."""
         super(EventFuture, self).__init__(loop=self.loop)
 
     def add_child(self, child: EventFuture) -> None:

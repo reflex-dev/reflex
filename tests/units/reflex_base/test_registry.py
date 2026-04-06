@@ -1,7 +1,7 @@
 """Tests for RegistrationContext."""
 
 import pytest
-from reflex_base._internal.registry import RegisteredEventHandler, RegistrationContext
+from reflex_base.registry import RegisteredEventHandler, RegistrationContext
 from reflex_base.utils.exceptions import StateValueError
 
 

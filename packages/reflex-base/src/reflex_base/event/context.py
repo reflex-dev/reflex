@@ -8,7 +8,7 @@ import uuid
 from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any, Protocol
 
-from reflex_base._internal.context.base import BaseContext
+from reflex_base.context.base import BaseContext
 from reflex_base.utils.format import to_snake_case
 
 if TYPE_CHECKING:

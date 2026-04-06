@@ -15,12 +15,9 @@ from reflex.istate.data import RouterData
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import StateProxy
 from reflex.utils import console, types
-from reflex_base._internal.event.context import EventContext
-from reflex_base._internal.event.processor.event_processor import (
-    EventProcessor,
-    EventQueueEntry,
-)
-from reflex_base._internal.registry import RegisteredEventHandler
+from reflex_base.event.context import EventContext
+from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
+from reflex_base.registry import RegisteredEventHandler
 from reflex_base.utils.format import format_event_handler
 
 if TYPE_CHECKING:

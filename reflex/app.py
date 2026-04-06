@@ -24,11 +24,6 @@ from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, ParamSpec, overload
 
 from reflex_base import constants
-from reflex_base._internal.event.processor import (
-    BaseStateEventProcessor,
-    EventProcessor,
-)
-from reflex_base._internal.registry import RegistrationContext
 from reflex_base.components.component import (
     CUSTOM_COMPONENTS,
     Component,
@@ -45,6 +40,8 @@ from reflex_base.event import (
     IndividualEventType,
     noop,
 )
+from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import console
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send

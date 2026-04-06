@@ -1,3 +1,5 @@
+"""Shared contextvars wrapper for contextual globals."""
+
 from __future__ import annotations
 
 import dataclasses
