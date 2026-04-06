@@ -12,7 +12,7 @@ from unittest import mock
 import pytest
 import pytest_asyncio
 from pytest_codspeed import BenchmarkFixture
-from reflex_core.utils.format import format_event_handler
+from reflex_base.utils.format import format_event_handler
 
 from reflex.app import App, process
 from reflex.event import Event
