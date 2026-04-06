@@ -1,4 +1,4 @@
 # pyright: reportWildcardImportFromLibrary=false
-"""Re-export from reflex_core.constants.config."""
+"""Re-export from reflex_base.constants.config."""
 
-from reflex_core.constants.config import *  # pragma: no cover
+from reflex_base.constants.config import *  # pragma: no cover

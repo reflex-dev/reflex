@@ -3,7 +3,7 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
-from reflex_core.utils.serializers import serializer
+from reflex_base.utils.serializers import serializer
 
 import reflex.constants
 import reflex.model

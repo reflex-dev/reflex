@@ -6,8 +6,8 @@ from collections.abc import Generator
 from unittest import mock
 
 import pytest
-from reflex_core.components.component import CUSTOM_COMPONENTS
-from reflex_core.event import EventSpec
+from reflex_base.components.component import CUSTOM_COMPONENTS
+from reflex_base.event import EventSpec
 
 from reflex.app import App
 from reflex.experimental.memo import EXPERIMENTAL_MEMOS

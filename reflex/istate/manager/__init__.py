@@ -6,10 +6,10 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 from typing import TypedDict
 
-from reflex_core import constants
-from reflex_core.config import get_config
-from reflex_core.event import Event
-from reflex_core.utils.exceptions import InvalidStateManagerModeError
+from reflex_base import constants
+from reflex_base.config import get_config
+from reflex_base.event import Event
+from reflex_base.utils.exceptions import InvalidStateManagerModeError
 from typing_extensions import ReadOnly, Unpack
 
 from reflex.state import BaseState

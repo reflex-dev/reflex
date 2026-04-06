@@ -16,16 +16,16 @@ from unittest.mock import AsyncMock
 
 import pytest
 from pytest_mock import MockerFixture
+from reflex_base.components.component import Component
+from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.event import Event
+from reflex_base.style import Style
+from reflex_base.utils import console, exceptions, format
+from reflex_base.vars.base import computed_var
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core.cond import Cond
 from reflex_components_radix.themes.typography.text import Text
-from reflex_core.components.component import Component
-from reflex_core.constants.state import FIELD_MARKER
-from reflex_core.event import Event
-from reflex_core.style import Style
-from reflex_core.utils import console, exceptions, format
-from reflex_core.vars.base import computed_var
 from starlette.applications import Starlette
 from starlette.datastructures import FormData, Headers, UploadFile
 from starlette.responses import StreamingResponse
@@ -2048,7 +2048,7 @@ def test_app_wrap_compile_theme(
         mocker: pytest mocker object.
     """
     conf = rx.Config(app_name="testing", react_strict_mode=react_strict_mode)
-    mocker.patch("reflex_core.config._get_config", return_value=conf)
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
     app, web_dir = compilable_app
     mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
     app.theme = rx.theme(accent_color="plum")
@@ -2100,7 +2100,7 @@ def test_app_wrap_priority(
         mocker: pytest mocker object.
     """
     conf = rx.Config(app_name="testing", react_strict_mode=react_strict_mode)
-    mocker.patch("reflex_core.config._get_config", return_value=conf)
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
 
     app, web_dir = compilable_app
 

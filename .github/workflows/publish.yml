@@ -54,7 +54,7 @@ jobs:
       - name: Verify .pyi files in wheel
         if: steps.parse.outputs.package == 'reflex'
         run: |
-          if unzip -l dist/*.whl | grep '\.pyi$'; then
+          if unzip -l ${{ steps.parse.outputs.build_dir }}/dist/*.whl | grep '\.pyi$'; then
             echo "✓ .pyi files found in distribution"
           else
             echo "Error: No .pyi files found in wheel"
@@ -62,4 +62,4 @@ jobs:
           fi
 
       - name: Publish
-        run: uv publish --directory "${{ steps.parse.outputs.build_dir }}"
+        run: uv publish dist/*

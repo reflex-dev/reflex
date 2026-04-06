@@ -30,6 +30,27 @@ from timeit import default_timer as timer
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, ParamSpec
 
+from reflex_base import constants
+from reflex_base.components.component import (
+    CUSTOM_COMPONENTS,
+    Component,
+    ComponentStyle,
+    evaluate_style_namespaces,
+)
+from reflex_base.config import get_config
+from reflex_base.environment import ExecutorType, environment
+from reflex_base.event import (
+    _EVENT_FIELDS,
+    Event,
+    EventSpec,
+    EventType,
+    IndividualEventType,
+    get_hydrate_event,
+    noop,
+)
+from reflex_base.utils import console
+from reflex_base.utils.imports import ImportVar
+from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
 from reflex_components_core.base.app_wrap import AppWrap
 from reflex_components_core.base.error_boundary import ErrorBoundary
 from reflex_components_core.base.fragment import Fragment
@@ -43,27 +64,6 @@ from reflex_components_core.core.breakpoints import set_breakpoints
 from reflex_components_core.core.sticky import sticky
 from reflex_components_radix import themes
 from reflex_components_sonner.toast import toast
-from reflex_core import constants
-from reflex_core.components.component import (
-    CUSTOM_COMPONENTS,
-    Component,
-    ComponentStyle,
-    evaluate_style_namespaces,
-)
-from reflex_core.config import get_config
-from reflex_core.environment import ExecutorType, environment
-from reflex_core.event import (
-    _EVENT_FIELDS,
-    Event,
-    EventSpec,
-    EventType,
-    IndividualEventType,
-    get_hydrate_event,
-    noop,
-)
-from reflex_core.utils import console
-from reflex_core.utils.imports import ImportVar
-from reflex_core.utils.types import ASGIApp, Message, Receive, Scope, Send
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp as EngineIOApp
 from socketio import AsyncNamespace, AsyncServer
@@ -123,7 +123,7 @@ from reflex.utils.misc import run_in_thread
 from reflex.utils.token_manager import RedisTokenManager, TokenManager
 
 if TYPE_CHECKING:
-    from reflex_core.vars import Var
+    from reflex_base.vars import Var
 
     # Define custom types.
     ComponentCallable = Callable[[], Component | tuple[Component, ...] | str | Var]
@@ -210,7 +210,7 @@ def default_overlay_component() -> Component:
     Returns:
         The default overlay_component, which is a connection_modal.
     """
-    from reflex_core.components.component import memo
+    from reflex_base.components.component import memo
 
     def default_overlay_components():
         return Fragment.create(
@@ -576,7 +576,7 @@ class App(MiddlewareMixin, LifespanMixin):
         Raises:
             ValueError: If the app has not been initialized.
         """
-        from reflex_core.vars.base import GLOBAL_CACHE
+        from reflex_base.vars.base import GLOBAL_CACHE
 
         from reflex.assets import remove_stale_external_asset_symlinks
 
@@ -896,7 +896,7 @@ class App(MiddlewareMixin, LifespanMixin):
         Raises:
             RouteValueError: exception showing which conflict exist with the route to be added
         """
-        from reflex_core.utils.exceptions import RouteValueError
+        from reflex_base.utils.exceptions import RouteValueError
 
         if "[" not in new_route:
             return
@@ -1057,7 +1057,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def _setup_sticky_badge(self):
         """Add the sticky badge to the app."""
-        from reflex_core.components.component import memo
+        from reflex_base.components.component import memo
 
         @memo
         def memoized_badge():
@@ -1123,7 +1123,7 @@ class App(MiddlewareMixin, LifespanMixin):
             ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
             FileNotFoundError: When a plugin requires a file that does not exist.
         """
-        from reflex_core.utils.exceptions import ReflexRuntimeError
+        from reflex_base.utils.exceptions import ReflexRuntimeError
 
         self._apply_decorated_pages()
 
@@ -1257,7 +1257,7 @@ class App(MiddlewareMixin, LifespanMixin):
         all_imports = {}
 
         if (toaster := self.toaster) is not None:
-            from reflex_core.components.component import memo
+            from reflex_base.components.component import memo
 
             @memo
             def memoized_toast_provider():

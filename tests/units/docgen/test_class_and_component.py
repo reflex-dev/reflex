@@ -5,14 +5,14 @@ import inspect
 import sys
 
 import pytest
-from reflex_core.components.component import (
+from reflex_base.components.component import (
     DEFAULT_TRIGGERS_AND_DESC,
     Component,
     TriggerDefinition,
     field,
 )
-from reflex_core.constants import EventTriggers
-from reflex_core.event import EventHandler, no_args_event_spec
+from reflex_base.constants import EventTriggers
+from reflex_base.event import EventHandler, no_args_event_spec
 from reflex_docgen import (
     generate_class_documentation,
     generate_documentation,

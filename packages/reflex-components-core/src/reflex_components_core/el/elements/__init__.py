@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from reflex_core.utils import lazy_loader
+from reflex_base.utils import lazy_loader
 
 _MAPPING = {
     "forms": [
@@ -142,7 +142,7 @@ _MAPPING = {
 
 EXCLUDE = ["del_", "Del", "image", "style"]
 for v in _MAPPING.values():
-    from reflex_core.utils.format import to_camel_case
+    from reflex_base.utils.format import to_camel_case
 
     v.extend([
         to_camel_case(mod)[0].upper() + to_camel_case(mod)[1:]

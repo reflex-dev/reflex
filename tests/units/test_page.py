@@ -1,4 +1,4 @@
-from reflex_core.config import get_config
+from reflex_base.config import get_config
 
 from reflex import text
 from reflex.page import DECORATED_PAGES, page

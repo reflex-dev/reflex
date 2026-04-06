@@ -1,8 +1,8 @@
 from typing import Any, Literal, TypedDict
 
 import pytest
-from reflex_core.utils import types
-from reflex_core.vars.base import Var
+from reflex_base.utils import types
+from reflex_base.vars.base import Var
 
 
 @pytest.mark.parametrize(
