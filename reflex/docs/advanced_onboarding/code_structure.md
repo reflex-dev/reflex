@@ -357,7 +357,7 @@ example-big-app/
 │  ├─ state.py
 │  ├─ template.py
 ├─ uploaded_files/
-├─ requirements.txt
+├─ pyproject.toml
 ├─ rxconfig.py
 ```
 
