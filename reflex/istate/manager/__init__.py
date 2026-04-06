@@ -27,11 +27,27 @@ EmptyContext = StateModificationContext()
 
 @dataclasses.dataclass
 class StateManager(ABC):
-    """A class to manage many client states.
+    """A class to manage many client states."""
 
-    Attributes:
-        state: The state class to use.
-    """
+    @property
+    def state(self):
+        """Get the state class.
+
+        Deprecated: the state manager no longer holds a reference to the state class.
+
+        Returns:
+            The State class.
+        """
+        console.deprecate(
+            feature_name="StateManager.state",
+            reason="The state manager no longer holds a reference to the state class. "
+            "Use reflex.state.State directly instead.",
+            deprecation_version="0.9.0",
+            removal_version="1.0",
+        )
+        from reflex.state import State
+
+        return State
 
     @classmethod
     def create(cls):
