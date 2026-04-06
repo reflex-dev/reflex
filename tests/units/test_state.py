@@ -1802,6 +1802,75 @@ async def test_state_manager_contend(
         assert lock is None or not lock.locked()
 
 
+@pytest.mark.asyncio
+async def test_state_manager_legacy_token(state_manager: StateManager, token: str):
+    """Test that passing a legacy string token to the state manager works with a deprecation warning.
+
+    Args:
+        state_manager: A state manager instance.
+        token: A token.
+    """
+    from unittest.mock import patch
+
+    import reflex_base.utils.console as _base_console
+
+    from reflex.istate.manager import token as _token_mod
+
+    console = _token_mod.console
+
+    from reflex.state import State
+
+    legacy_token = f"{token}_{OnLoadState.get_full_name()}"
+
+    def _clear_dedupe():
+        _base_console._EMITTED_DEPRECATION_WARNINGS -= {
+            k
+            for k in _base_console._EMITTED_DEPRECATION_WARNINGS
+            if "Passing a string to modify_state" in k
+        }
+
+    _clear_dedupe()
+
+    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
+        # modify_state should accept a legacy string token and emit a deprecation warning.
+        async with state_manager.modify_state(legacy_token) as state:  # pyright: ignore [reportArgumentType]
+            assert isinstance(state, State)
+            # The substate targeted by the token should be prepopulated.
+            assert OnLoadState.get_name() in state.substates
+        mock_deprecate.assert_called()
+        assert (
+            mock_deprecate.call_args.kwargs["feature_name"]
+            == "Passing a string to modify_state"
+        )
+        mock_deprecate.reset_mock()
+
+    _clear_dedupe()
+
+    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
+        # get_state should also accept a legacy string token.
+        retrieved = await state_manager.get_state(legacy_token)  # pyright: ignore [reportArgumentType]
+        assert isinstance(retrieved, State)
+        assert OnLoadState.get_name() in retrieved.substates
+        mock_deprecate.assert_called()
+        mock_deprecate.reset_mock()
+
+    _clear_dedupe()
+
+    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
+        # set_state should also accept a legacy string token.
+        await state_manager.set_state(legacy_token, retrieved)  # pyright: ignore [reportArgumentType]
+        mock_deprecate.assert_called()
+        mock_deprecate.reset_mock()
+
+    _clear_dedupe()
+
+    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
+        final = await state_manager.get_state(legacy_token)  # pyright: ignore [reportArgumentType]
+        assert isinstance(final, State)
+        assert OnLoadState.get_name() in final.substates
+        mock_deprecate.assert_called()
+
+
 @pytest_asyncio.fixture(loop_scope="function", scope="function")
 async def state_manager_redis() -> AsyncGenerator[StateManager, None]:
     """Instance of state manager for redis only.
