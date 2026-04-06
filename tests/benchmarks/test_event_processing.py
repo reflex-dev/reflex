@@ -88,11 +88,10 @@ async def event_processing_harness():
             emitted_deltas.clear()
 
             async with processor as p:
-                for _ in range(num_events):
-                    await p.enqueue(token, event)
-                # Wait for the processor to drain all events.
-                await p.join(timeout=10)
-
+                async for _ in asyncio.as_completed([
+                    await p.enqueue(token, event) for _ in range(num_events)
+                ]):
+                    pass
             assert len(emitted_deltas) == num_expected_deltas
 
         yield run_events
