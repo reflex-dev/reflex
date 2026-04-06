@@ -1,6 +1,6 @@
+import json
 import shutil
 import tempfile
-import json
 from pathlib import Path
 
 import pytest
@@ -8,7 +8,11 @@ from click.testing import CliRunner
 from reflex_base import constants
 from reflex_base.config import Config
 from reflex_base.constants.installer import PackageJson
-from reflex_base.utils.decorator import cached_procedure
+from reflex_base.utils.decorator import (
+    cached_procedure,
+    read_cached_procedure_file,
+    write_cached_procedure_file,
+)
 
 from reflex.reflex import cli
 from reflex.testing import chdir
@@ -239,6 +243,7 @@ def test_install_frontend_packages_does_not_persist_partial_bun_lock(
     web_bun_lock_path = web_dir / constants.Bun.LOCKFILE_PATH
     root_bun_lock_path.write_text("root-lock")
     call_count = 0
+    error_message = "package installation failed"
 
     def run_package_manager(args, **kwargs):
         nonlocal call_count
@@ -247,24 +252,21 @@ def test_install_frontend_packages_does_not_persist_partial_bun_lock(
             assert web_bun_lock_path.read_text() == "root-lock"
             web_bun_lock_path.write_text("partial-lock")
             return
-        raise RuntimeError("package installation failed")
+        raise RuntimeError(error_message)
 
     _patch_web_dir(monkeypatch, web_dir)
     _patch_frontend_package_manager(monkeypatch, ["bun"], run_package_manager)
 
-    with chdir(tmp_path):
-        with pytest.raises(RuntimeError, match="package installation failed"):
-            js_runtimes.install_frontend_packages(
-                {"custom-package"},
-                Config(app_name="test"),
-            )
+    with chdir(tmp_path), pytest.raises(RuntimeError, match=error_message):
+        js_runtimes.install_frontend_packages(
+            {"custom-package"},
+            Config(app_name="test"),
+        )
 
     assert root_bun_lock_path.read_text() == "root-lock"
 
 
-def test_install_frontend_packages_cache_respects_root_bun_lock(
-    tmp_path, monkeypatch
-):
+def test_install_frontend_packages_cache_respects_root_bun_lock(tmp_path, monkeypatch):
     web_dir = tmp_path / constants.Dirs.WEB
     web_dir.mkdir()
     root_bun_lock_path = tmp_path / constants.Bun.LOCKFILE_PATH
@@ -321,25 +323,20 @@ def test_install_frontend_packages_npm_does_not_create_bogus_bun_lock(
     assert not web_bun_lock_path.exists()
 
 
-def test_install_frontend_packages_removes_stale_custom_package(
-    tmp_path, monkeypatch
-):
+def test_install_frontend_packages_removes_stale_custom_package(tmp_path, monkeypatch):
     web_dir = tmp_path / constants.Dirs.WEB
     web_dir.mkdir()
     root_bun_lock_path = tmp_path / constants.Bun.LOCKFILE_PATH
     web_bun_lock_path = web_dir / constants.Bun.LOCKFILE_PATH
     package_json_path = web_dir / constants.PackageJson.PATH
-    package_json_path.write_text(
-        json.dumps(
-            {
-                "dependencies": {
-                    **constants.PackageJson.DEPENDENCIES,
-                    "dayjs": "^1.11.20",
-                },
-                "devDependencies": constants.PackageJson.DEV_DEPENDENCIES,
-            }
-        )
-    )
+    package_json = {
+        "dependencies": {
+            **constants.PackageJson.DEPENDENCIES,
+            "dayjs": "^1.11.20",
+        },
+        "devDependencies": constants.PackageJson.DEV_DEPENDENCIES,
+    }
+    package_json_path.write_text(json.dumps(package_json))
     root_bun_lock_path.write_text("lock-before")
     commands: list[list[str]] = []
 
@@ -443,6 +440,17 @@ def test_cached_procedure():
     assert call_count == 1
     _function_with_no_args_fn()
     assert call_count == 2
+
+
+def test_cached_procedure_file_helpers(tmp_path):
+    cache_file = tmp_path / "cache.bin"
+    cached_value = {"key": "value"}
+
+    write_cached_procedure_file("payload", cache_file, cached_value)
+    payload, value = read_cached_procedure_file(cache_file)
+
+    assert payload == "payload"
+    assert value == cached_value
 
 
 def test_get_cpu_info():

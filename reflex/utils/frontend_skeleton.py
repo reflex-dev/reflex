@@ -93,12 +93,22 @@ def initialize_requirements_txt() -> bool:
 
 
 def get_root_bun_lock_path() -> Path:
-    """Get the canonical bun lock path in the app root."""
+    """Get the canonical bun lock path in the app root.
+
+    This assumes the current working directory is the Reflex app root.
+
+    Returns:
+        The canonical bun lock path in the app root.
+    """
     return Path.cwd() / constants.Bun.LOCKFILE_PATH
 
 
 def get_web_bun_lock_path() -> Path:
-    """Get the mirrored bun lock path in the .web directory."""
+    """Get the mirrored bun lock path in the .web directory.
+
+    Returns:
+        The mirrored bun lock path in the .web directory.
+    """
     return get_web_dir() / constants.Bun.LOCKFILE_PATH
 
 

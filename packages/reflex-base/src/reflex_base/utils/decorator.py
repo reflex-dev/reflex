@@ -73,14 +73,29 @@ def debug(f: Callable[P, T]) -> Callable[P, T]:
     return wrapper
 
 
-def _write_cached_procedure_file(payload: str, cache_file: Path, value: object):
+def write_cached_procedure_file(payload: str, cache_file: Path, value: object):
+    """Write a cached procedure payload and value to disk.
+
+    Args:
+        payload: The cache payload to persist.
+        cache_file: The cache file path.
+        value: The cached value to persist.
+    """
     import pickle
 
     cache_file.parent.mkdir(parents=True, exist_ok=True)
     cache_file.write_bytes(pickle.dumps((payload, value)))
 
 
-def _read_cached_procedure_file(cache_file: Path) -> tuple[str | None, object]:
+def read_cached_procedure_file(cache_file: Path) -> tuple[str | None, object]:
+    """Read a cached procedure payload and value from disk.
+
+    Args:
+        cache_file: The cache file path.
+
+    Returns:
+        The cached payload and value, or `(None, None)` if the cache file is absent.
+    """
     import pickle
 
     if cache_file.exists():
@@ -88,6 +103,20 @@ def _read_cached_procedure_file(cache_file: Path) -> tuple[str | None, object]:
             return pickle.loads(f.read())
 
     return None, None
+
+
+def _write_cached_procedure_file(payload: str, cache_file: Path, value: object):
+    """Backward-compatible alias for write_cached_procedure_file."""
+    write_cached_procedure_file(payload, cache_file, value)
+
+
+def _read_cached_procedure_file(cache_file: Path) -> tuple[str | None, object]:
+    """Backward-compatible alias for read_cached_procedure_file.
+
+    Returns:
+        The cached payload and value, or `(None, None)` if the cache file is absent.
+    """
+    return read_cached_procedure_file(cache_file)
 
 
 P = ParamSpec("P")
@@ -112,12 +141,12 @@ def cached_procedure(
         def _inner(*args: P.args, **kwargs: P.kwargs) -> Picklable:
             cache_file = cache_file_path()
 
-            payload, value = _read_cached_procedure_file(cache_file)
+            payload, value = read_cached_procedure_file(cache_file)
             new_payload = payload_fn(*args, **kwargs)
 
             if payload != new_payload:
                 new_value = func(*args, **kwargs)
-                _write_cached_procedure_file(new_payload, cache_file, new_value)
+                write_cached_procedure_file(new_payload, cache_file, new_value)
                 return new_value
 
             from reflex_base.utils import console

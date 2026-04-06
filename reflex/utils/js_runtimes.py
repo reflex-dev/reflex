@@ -13,14 +13,13 @@ from reflex_base import constants
 from reflex_base.config import Config, get_config
 from reflex_base.environment import environment
 from reflex_base.utils.decorator import (
-    _read_cached_procedure_file,
-    _write_cached_procedure_file,
     once,
+    read_cached_procedure_file,
+    write_cached_procedure_file,
 )
 from reflex_base.utils.exceptions import SystemPackageMissingError
 
-from reflex.utils import console, net, path_ops, processes
-from reflex.utils import frontend_skeleton
+from reflex.utils import console, frontend_skeleton, net, path_ops, processes
 from reflex.utils.prerequisites import get_web_dir, windows_check_onedrive_in_path
 
 
@@ -361,12 +360,20 @@ def remove_existing_bun_installation():
 
 
 def _frontend_packages_cache_path() -> Path:
-    """Get the cache file path for frontend package installs."""
+    """Get the cache file path for frontend package installs.
+
+    Returns:
+        The cache file path for frontend package installs.
+    """
     return get_web_dir() / "reflex.install_frontend_packages.cached"
 
 
 def _get_bun_lock_cache_key() -> str:
-    """Get a stable cache key for the canonical bun lockfile state."""
+    """Get a stable cache key for the canonical bun lockfile state.
+
+    Returns:
+        A stable cache key for the canonical bun lockfile state.
+    """
     root_bun_lock_path = frontend_skeleton.get_root_bun_lock_path()
     if not root_bun_lock_path.exists():
         return "missing"
@@ -381,7 +388,11 @@ def _get_frontend_packages_cache_payload(
     config: Config,
     package_managers: Sequence[str],
 ) -> str:
-    """Get the cache payload for frontend package installs."""
+    """Get the cache payload for frontend package installs.
+
+    Returns:
+        The cache payload for frontend package installs.
+    """
     return (
         f"{sorted(packages)!r},"
         f"{sorted(development_deps)!r},"
@@ -393,7 +404,11 @@ def _get_frontend_packages_cache_payload(
 
 
 def _get_package_name_from_spec(spec: str) -> str:
-    """Extract the package name from a dependency spec."""
+    """Extract the package name from a dependency spec.
+
+    Returns:
+        The package name extracted from the dependency spec.
+    """
     if "@" not in spec:
         return spec
     if spec.startswith("@"):
@@ -403,7 +418,12 @@ def _get_package_name_from_spec(spec: str) -> str:
 
 
 def _get_current_extra_package_specs() -> tuple[tuple[str, ...], tuple[str, ...]]:
-    """Get currently installed non-base deps and dev deps from .web/package.json."""
+    """Get currently installed non-base deps and dev deps from .web/package.json.
+
+    Returns:
+        The currently installed non-base dependencies and development
+        dependencies from `.web/package.json`.
+    """
     package_json_path = get_web_dir() / constants.PackageJson.PATH
     if not package_json_path.exists():
         return ((), ())
@@ -437,7 +457,9 @@ def install_frontend_packages(packages: set[str], config: Config):
         development_deps.update(plugin.get_frontend_development_dependencies())
         packages.update(plugin.get_frontend_dependencies())
 
-    desired_package_names = {_get_package_name_from_spec(package) for package in packages}
+    desired_package_names = {
+        _get_package_name_from_spec(package) for package in packages
+    }
     desired_development_dep_names = {
         _get_package_name_from_spec(package) for package in development_deps
     }
@@ -452,8 +474,10 @@ def install_frontend_packages(packages: set[str], config: Config):
         config=config,
         package_managers=install_package_managers,
     )
+    # Keep `.web/bun.lock` aligned with the canonical root lock, and clean up stale
+    # mirrored state for npm-only runs where no root bun.lock exists.
     frontend_skeleton.sync_root_bun_lock_to_web()
-    cached_payload, _ = _read_cached_procedure_file(_frontend_packages_cache_path())
+    cached_payload, _ = read_cached_procedure_file(_frontend_packages_cache_path())
     if cached_payload == cache_payload:
         console.debug(
             f"Using cached value for install_frontend_packages with payload: {cache_payload}"
@@ -516,7 +540,7 @@ def install_frontend_packages(packages: set[str], config: Config):
         )
 
     frontend_skeleton.sync_web_bun_lock_to_root()
-    _write_cached_procedure_file(
+    write_cached_procedure_file(
         _get_frontend_packages_cache_payload(
             packages=packages,
             development_deps=development_deps,
