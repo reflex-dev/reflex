@@ -81,7 +81,6 @@ class ApplyStylePlugin(Plugin):
     """Apply app-level styles in the descending phase of the walk."""
 
     style: ComponentStyle | None = None
-    theme: Component | None = None
 
     @staticmethod
     def _apply_style(comp: Component, style: ComponentStyle) -> None:
@@ -519,13 +518,12 @@ class DefaultCollectorPlugin(Plugin):
 def default_page_plugins(
     *,
     style: ComponentStyle | None = None,
-    theme: Component | None = None,
     stateful_custom_code_export: bool = False,
 ) -> tuple[Plugin, ...]:
     """Return the default compiler plugin ordering for page compilation."""
     plugins: list[Plugin] = [DefaultPagePlugin()]
     if style is not None:
-        plugins.append(ApplyStylePlugin(style=style, theme=theme))
+        plugins.append(ApplyStylePlugin(style=style))
     plugins.append(
         DefaultCollectorPlugin(stateful_custom_code_export=stateful_custom_code_export)
     )

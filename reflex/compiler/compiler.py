@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import sys
 from collections.abc import Callable, Iterable, Sequence
 from inspect import getmodule
 from pathlib import Path
@@ -870,76 +869,59 @@ def into_component(component: Component | ComponentCallable) -> Component:
 
 
 def compile_unevaluated_page(
-    route: str,
     page: UnevaluatedPage,
+    *,
     style: ComponentStyle | None = None,
-    theme: Component | None = None,
 ) -> Component:
-    """Compiles an uncompiled page into a component and adds meta information.
+    """Compile an unevaluated page through the compiler plugin pipeline.
+
+    This evaluates the page and applies the page compiler hooks before
+    returning the compiled root component.
 
     Args:
-        route: The route of the page.
-        page: The uncompiled page object.
-        style: The style of the page.
-        theme: The theme of the page.
+        page: The unevaluated page definition.
+        style: The app-level style map to apply.
 
     Returns:
-        The compiled component and whether state should be enabled.
-
-    Raises:
-        Exception: If an error occurs while evaluating the page.
+        The compiled root component.
     """
-    try:
-        # Generate the component if it is a callable.
-        component = into_component(page.component)
+    hooks = CompilerHooks(plugins=default_page_plugins(style=style))
+    compile_ctx = CompileContext(pages=[page], hooks=hooks)
 
-        component._add_style_recursive(style or {}, theme)
-
-        from reflex_base.utils.format import make_default_page_title
-
-        component = Fragment.create(component)
-
-        meta_args = {
-            "title": (
-                page.title
-                if page.title is not None
-                else make_default_page_title(get_config().app_name, route)
-            ),
-            "image": page.image,
-            "meta": page.meta,
-        }
-
-        if page.description is not None:
-            meta_args["description"] = page.description
-
-        # Add meta information to the component.
-        utils.add_meta(
-            component,
-            **meta_args,
+    with compile_ctx:
+        page_ctx = hooks.eval_page(
+            page.component,
+            page=page,
+            compile_context=compile_ctx,
         )
+        if page_ctx is None:
+            page_name = getattr(page.component, "__name__", repr(page.component))
+            msg = (
+                f"No compiler plugin was able to evaluate page {page.route!r} "
+                f"({page_name})."
+            )
+            raise RuntimeError(msg)
 
-    except Exception as e:
-        if sys.version_info >= (3, 11):
-            e.add_note(f"Happened while evaluating page {route!r}")
-        raise
-    else:
-        return component
+        with page_ctx:
+            page_ctx.root_component = hooks.compile_component(
+                page_ctx.root_component,
+                page_context=page_ctx,
+                compile_context=compile_ctx,
+            )
+            hooks.compile_page(
+                page_ctx,
+                page=page,
+                compile_context=compile_ctx,
+            )
 
+    if not isinstance(page_ctx.root_component, Component):
+        msg = (
+            f"Compiled page {page.route!r} root must be a Component before it can "
+            "be returned."
+        )
+        raise TypeError(msg)
 
-def _compile_page_from_app(
-    app: App,
-    route: str,
-    *,
-    save_page: bool = True,
-) -> None:
-    """Evaluate a page from an app and optionally save it.
-
-    Args:
-        app: The app being compiled.
-        route: The route to evaluate.
-        save_page: Whether to store the evaluated page on the app.
-    """
-    app._compile_page(route, save_page=save_page)
+    return page_ctx.root_component
 
 
 def _resolve_app_wrap_components(
@@ -1010,7 +992,7 @@ def compile_app(
                 stateful_pages = json.load(file)
             for route in stateful_pages:
                 console.debug(f"BE Evaluating stateful page: {route}")
-                _compile_page_from_app(app, route, save_page=False)
+                app._compile_page(route, save_page=False)
         app._add_optional_endpoints()
         return
 
@@ -1024,7 +1006,7 @@ def compile_app(
         with console.timing("Evaluate Pages (Backend)"):
             for route in app._unevaluated_pages:
                 console.debug(f"Evaluating page: {route}")
-                _compile_page_from_app(app, route, save_page=False)
+                app._compile_page(route, save_page=False)
 
         app._write_stateful_pages_marker()
         app._add_optional_endpoints()
@@ -1047,9 +1029,7 @@ def compile_app(
     compile_ctx = CompileContext(
         app=app,
         pages=list(app._unevaluated_pages.values()),
-        hooks=CompilerHooks(
-            plugins=default_page_plugins(style=app.style, theme=app.theme)
-        ),
+        hooks=CompilerHooks(plugins=default_page_plugins(style=app.style)),
     )
 
     with console.timing("Compile pages"), compile_ctx:

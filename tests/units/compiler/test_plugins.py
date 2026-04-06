@@ -760,7 +760,7 @@ def test_default_page_plugins_are_minimal_and_ordered() -> None:
     assert isinstance(plugins[2], DefaultCollectorPlugin)
 
 
-def test_compile_context_compiles_pages_and_matches_legacy_output() -> None:
+def test_compile_context_compiles_pages_and_matches_direct_page_compile() -> None:
     page = UnevaluatedPage(route="/demo", component=create_component_tree)
     compile_ctx = CompileContext(
         pages=[page],
@@ -796,22 +796,11 @@ def test_compile_context_compiles_pages_and_matches_legacy_output() -> None:
         == page_ctx.root_component._get_all_app_wrap_components().keys()
     )
 
-    legacy_component = compiler.compile_unevaluated_page(
-        page.route,
-        UnevaluatedPage(
-            component=page.component,
-            route=page.route,
-            title=page.title,
-            description=page.description,
-            image=page.image,
-            on_load=None,
-            meta=page.meta,
-            context={},
-        ),
-        page_style(),
-        None,
+    expected_component = compiler.compile_unevaluated_page(
+        page,
+        style=page_style(),
     )
-    expected_output = compiler.compile_page(page.route, legacy_component)[1]
+    expected_output = compiler.compile_page(page.route, expected_component)[1]
     assert page_ctx.output_code == expected_output
 
 
@@ -834,7 +823,9 @@ def test_compile_context_does_not_recurse_root_imports() -> None:
     assert page_ctx.output_code is not None
 
 
-def test_default_page_plugin_handles_var_backed_title_like_legacy_compiler() -> None:
+def test_default_page_plugin_handles_var_backed_title_like_direct_page_compile() -> (
+    None
+):
     page = UnevaluatedPage(
         component=lambda: Fragment.create(),
         route="/var-title",
@@ -857,13 +848,8 @@ def test_default_page_plugin_handles_var_backed_title_like_legacy_compiler() -> 
 
     assert page_ctx is not None
 
-    legacy_component = compiler.compile_unevaluated_page(
-        page.route,
-        page,
-        None,
-        None,
-    )
-    assert page_ctx.root_component.render() == legacy_component.render()
+    expected_component = compiler.compile_unevaluated_page(page)
+    assert page_ctx.root_component.render() == expected_component.render()
 
 
 def test_compile_context_rejects_duplicate_routes() -> None:

@@ -813,7 +813,8 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         n_states_before = len(all_base_state_classes)
         component = compiler.compile_unevaluated_page(
-            route, self._unevaluated_pages[route], self.style, self.theme
+            self._unevaluated_pages[route],
+            style=self.style,
         )
 
         # Indicate that evaluating this page creates one or more state classes.
