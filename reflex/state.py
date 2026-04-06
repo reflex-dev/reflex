@@ -2530,6 +2530,19 @@ class StateUpdate:
     # Events to be added to the event queue.
     events: list[Event] = dataclasses.field(default_factory=list)
 
+    # Deprecated: previously indicated whether the event processing is complete.
+    final: bool | None = dataclasses.field(default=None, repr=False)
+
+    def __post_init__(self):
+        """Warn if the deprecated `final` attribute is supplied."""
+        if self.final is not None:
+            console.deprecate(
+                feature_name="StateUpdate.final",
+                reason="The final attribute is no longer used.",
+                deprecation_version="0.9.0",
+                removal_version="1.0",
+            )
+
 
 @serializer(to=dict)
 def serialize_state_update(update: StateUpdate) -> dict:
