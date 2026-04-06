@@ -264,7 +264,7 @@ class EventProcessor:
             self._queue_task.cancel()
             try:
                 await self._queue_task
-            except (asyncio.CancelledError, asyncio.QueueShutDown, RuntimeError):
+            except (asyncio.CancelledError, QueueShutDown, RuntimeError):
                 pass
             except Exception as ex:
                 telemetry.send_error(ex, context="backend")
