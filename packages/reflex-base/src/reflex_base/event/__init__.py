@@ -2102,6 +2102,7 @@ def get_handler_args(
 
 def fix_events(
     events: list[EventSpec | EventHandler] | None,
+    token: str | None = None,
     router_data: dict[str, Any] | None = None,
 ) -> list[Event]:
     """Fix a list of events returned by an event handler.
@@ -2110,6 +2111,7 @@ def fix_events(
 
     Args:
         events: The events to fix.
+        token: Deprecated, ignored. Kept for backward compatibility.
         router_data: The optional router data to set in the event.
 
     Returns:
