@@ -15,6 +15,9 @@ from typing_extensions import ReadOnly, Unpack, deprecated
 from reflex.istate.manager.token import TOKEN_TYPE, StateToken
 from reflex.utils import console, prerequisites
 
+if TYPE_CHECKING:
+    from reflex.state import BaseState
+
 
 class StateModificationContext(TypedDict, total=False):
     """The context for modifying state."""
@@ -105,61 +108,59 @@ class StateManager(ABC):
             return BaseStateToken.from_legacy_token(token, root_state=State)  # type: ignore[return-value]
         return token
 
-    if TYPE_CHECKING:
+    @overload
+    @deprecated("pass token as rx.BaseStateToken instead of str")
+    async def get_state(self, token: str) -> "BaseState": ...
 
-        @overload
-        @deprecated("pass token as rx.BaseStateToken instead of str")
-        async def get_state(self, token: str) -> TOKEN_TYPE: ...
+    @overload
+    async def get_state(self, token: StateToken[TOKEN_TYPE]) -> TOKEN_TYPE: ...
 
-        @overload
-        async def get_state(self, token: StateToken[TOKEN_TYPE]) -> TOKEN_TYPE: ...
+    @overload
+    @deprecated("pass token as rx.BaseStateToken instead of str")
+    async def set_state(
+        self,
+        token: str,
+        state: "BaseState",
+        **context: Unpack[StateModificationContext],
+    ) -> None: ...
 
-        @overload
-        @deprecated("pass token as rx.BaseStateToken instead of str")
-        async def set_state(
-            self,
-            token: str,
-            state: TOKEN_TYPE,
-            **context: Unpack[StateModificationContext],
-        ) -> None: ...
+    @overload
+    async def set_state(
+        self,
+        token: StateToken[TOKEN_TYPE],
+        state: TOKEN_TYPE,
+        **context: Unpack[StateModificationContext],
+    ) -> None: ...
 
-        @overload
-        async def set_state(
-            self,
-            token: StateToken[TOKEN_TYPE],
-            state: TOKEN_TYPE,
-            **context: Unpack[StateModificationContext],
-        ) -> None: ...
+    @overload
+    @deprecated("pass token as rx.BaseStateToken instead of str")
+    def modify_state(
+        self, token: str, **context: Unpack[StateModificationContext]
+    ) -> contextlib.AbstractAsyncContextManager["BaseState"]: ...
 
-        @overload
-        @deprecated("pass token as rx.BaseStateToken instead of str")
-        def modify_state(
-            self, token: str, **context: Unpack[StateModificationContext]
-        ) -> contextlib.AbstractAsyncContextManager[TOKEN_TYPE]: ...
+    @overload
+    def modify_state(
+        self,
+        token: StateToken[TOKEN_TYPE],
+        **context: Unpack[StateModificationContext],
+    ) -> contextlib.AbstractAsyncContextManager[TOKEN_TYPE]: ...
 
-        @overload
-        def modify_state(
-            self,
-            token: StateToken[TOKEN_TYPE],
-            **context: Unpack[StateModificationContext],
-        ) -> contextlib.AbstractAsyncContextManager[TOKEN_TYPE]: ...
+    @overload
+    @deprecated("pass token as rx.BaseStateToken instead of str")
+    def modify_state_with_links(
+        self,
+        token: str,
+        previous_dirty_vars: dict[str, set[str]] | None = None,
+        **context: Unpack[StateModificationContext],
+    ) -> contextlib.AbstractAsyncContextManager["BaseState"]: ...
 
-        @overload
-        @deprecated("pass token as rx.BaseStateToken instead of str")
-        def modify_state_with_links(
-            self,
-            token: str,
-            previous_dirty_vars: dict[str, set[str]] | None = None,
-            **context: Unpack[StateModificationContext],
-        ) -> contextlib.AbstractAsyncContextManager[TOKEN_TYPE]: ...
-
-        @overload
-        def modify_state_with_links(
-            self,
-            token: StateToken[TOKEN_TYPE],
-            previous_dirty_vars: dict[str, set[str]] | None = None,
-            **context: Unpack[StateModificationContext],
-        ) -> contextlib.AbstractAsyncContextManager[TOKEN_TYPE]: ...
+    @overload
+    def modify_state_with_links(
+        self,
+        token: StateToken[TOKEN_TYPE],
+        previous_dirty_vars: dict[str, set[str]] | None = None,
+        **context: Unpack[StateModificationContext],
+    ) -> contextlib.AbstractAsyncContextManager[TOKEN_TYPE]: ...
 
     @abstractmethod
     async def get_state(self, token: StateToken[TOKEN_TYPE] | str) -> TOKEN_TYPE:
