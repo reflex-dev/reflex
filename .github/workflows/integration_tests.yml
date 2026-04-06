@@ -146,6 +146,7 @@ jobs:
 
       # Build git+https deps as wheels outside sfw (avoids sfw MITM cert issues
       # with git), then install everything else through sfw for scanning.
+      # TODO: revisit when https://github.com/SocketDev/sfw-free/issues/30 is resolved.
       - name: Pre-install git dependencies (outside sfw)
         run: |
           # Install git+https deps directly without sfw to avoid MITM cert issues.
@@ -169,6 +170,7 @@ jobs:
           path: reflex-web
           submodules: recursive
 
+      # TODO: revisit when https://github.com/SocketDev/sfw-free/issues/30 is resolved.
       - name: Pre-install reflex-web git dependencies (outside sfw)
         working-directory: ./reflex-web
         run: |
