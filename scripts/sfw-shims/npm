@@ -4,10 +4,17 @@ SHIM_DIR="$(cd "$(dirname "$0")" && pwd)"
 export PATH="${PATH//$SHIM_DIR:/}"
 export PATH="${PATH//:$SHIM_DIR/}"
 
+# Use sfw directly if available, otherwise fall back to npx sfw
+if command -v sfw >/dev/null 2>&1; then
+  SFW=sfw
+else
+  SFW="npx sfw"
+fi
+
 # Only route registry-touching commands through sfw
 case "${1-}" in
   install|ci|update|audit|pack|publish|fund|outdated)
-    exec npx sfw npm "$@" ;;
+    exec $SFW npm "$@" ;;
   *)
     exec npm "$@" ;;
 esac
