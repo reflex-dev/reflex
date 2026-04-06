@@ -88,6 +88,23 @@ class StateManager(ABC):
         msg = f"Expected one of: DISK, MEMORY, REDIS, got {config.state_manager_mode}"
         raise InvalidStateManagerModeError(msg)
 
+    @staticmethod
+    def _coerce_token(token: StateToken[TOKEN_TYPE] | str) -> StateToken[TOKEN_TYPE]:
+        """Convert a legacy string token to a StateToken if needed.
+
+        Args:
+            token: The token, either a StateToken or legacy string.
+
+        Returns:
+            The coerced StateToken.
+        """
+        if isinstance(token, str):
+            from reflex.istate.manager.token import BaseStateToken
+            from reflex.state import State
+
+            return BaseStateToken.from_legacy_token(token, root_state=State)  # type: ignore[return-value]
+        return token
+
     @abstractmethod
     async def get_state(self, token: StateToken[TOKEN_TYPE]) -> TOKEN_TYPE:
         """Get the state for a token.
@@ -149,6 +166,7 @@ class StateManager(ABC):
         """
         from reflex.state import BaseState
 
+        token = self._coerce_token(token)
         async with self.modify_state(token, **context) as root_state:
             if (
                 isinstance(root_state, BaseState)

@@ -281,6 +281,7 @@ class StateManagerRedis(StateManager):
         Raises:
             RuntimeError: when the parent state for a requested state was not fetched.
         """
+        token = self._coerce_token(token)
         if not isinstance(token, BaseStateToken):
             # Non-BaseState token: simple single-key fetch.
             redis_data = await self.redis.get(str(token))
@@ -369,6 +370,7 @@ class StateManagerRedis(StateManager):
             LockExpiredError: If lock_id is provided and the lock for the token is not held by that ID.
             RuntimeError: If the state instance doesn't match the state name in the token.
         """
+        token = self._coerce_token(token)
         # Check that we're holding the lock.
         if (
             lock_id is not None
@@ -543,6 +545,7 @@ class StateManagerRedis(StateManager):
         Yields:
             The state for the token.
         """
+        token = self._coerce_token(token)
         while True:
             async with self._try_modify_state(token, **context) as state_instance:
                 if state_instance is not None:

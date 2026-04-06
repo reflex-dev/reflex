@@ -168,6 +168,7 @@ class StateManagerDisk(StateManager):
         Returns:
             The state for the token.
         """
+        token = self._coerce_token(token)
         root_state = self.states.get(token.cache_key)
         self._token_last_touched[token.cache_key] = time.time()
         if root_state is not None:
@@ -330,6 +331,7 @@ class StateManagerDisk(StateManager):
             state: The state to set.
             context: The state modification context.
         """
+        token = self._coerce_token(token)
         if self._write_debounce_seconds > 0:
             # Deferred write to reduce disk IO overhead.
             if token not in self._write_queue:
@@ -358,6 +360,7 @@ class StateManagerDisk(StateManager):
         Yields:
             The state for the token.
         """
+        token = self._coerce_token(token)
         # Disk state manager ignores the substate suffix and always returns the top-level state.
         lock_key = token.lock_key
         if lock_key not in self._states_locks:

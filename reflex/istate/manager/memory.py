@@ -152,6 +152,7 @@ class StateManagerMemory(StateManager):
         Returns:
             The state for the token.
         """
+        token = self._coerce_token(token)
         state = self._get_or_create_state(token)
         self._track_token(token)
         return state
@@ -170,6 +171,7 @@ class StateManagerMemory(StateManager):
             state: The state to set.
             context: The state modification context.
         """
+        token = self._coerce_token(token)
         self.states[token.cache_key] = state
         self._track_token(token)
 
@@ -187,6 +189,7 @@ class StateManagerMemory(StateManager):
         Yields:
             The state for the token.
         """
+        token = self._coerce_token(token)
         state_lock = await self._get_state_lock(token)
 
         try:
