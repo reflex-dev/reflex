@@ -670,10 +670,10 @@ async def test_cancel_upload_chunk(
 
     upload_box.send_keys(str(target_file))
     upload_button.click()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
     cancel_button.click()
 
-    await asyncio.sleep(12)
+    await asyncio.sleep(11)
 
     # But there should never be a final progress record for a cancelled upload.
     for p in driver.find_elements(By.XPATH, "//*[@id='stream_progress_dicts']/p"):
