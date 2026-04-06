@@ -4,13 +4,13 @@ import contextlib
 import dataclasses
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
-from typing import TypedDict
+from typing import TYPE_CHECKING, TypedDict, overload
 
 from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.event import Event
 from reflex_base.utils.exceptions import InvalidStateManagerModeError
-from typing_extensions import ReadOnly, Unpack
+from typing_extensions import ReadOnly, Unpack, deprecated
 
 from reflex.istate.manager.token import TOKEN_TYPE, StateToken
 from reflex.utils import console, prerequisites
@@ -105,8 +105,64 @@ class StateManager(ABC):
             return BaseStateToken.from_legacy_token(token, root_state=State)  # type: ignore[return-value]
         return token
 
+    if TYPE_CHECKING:
+
+        @overload
+        @deprecated("pass token as rx.BaseStateToken instead of str")
+        async def get_state(self, token: str) -> TOKEN_TYPE: ...
+
+        @overload
+        async def get_state(self, token: StateToken[TOKEN_TYPE]) -> TOKEN_TYPE: ...
+
+        @overload
+        @deprecated("pass token as rx.BaseStateToken instead of str")
+        async def set_state(
+            self,
+            token: str,
+            state: TOKEN_TYPE,
+            **context: Unpack[StateModificationContext],
+        ) -> None: ...
+
+        @overload
+        async def set_state(
+            self,
+            token: StateToken[TOKEN_TYPE],
+            state: TOKEN_TYPE,
+            **context: Unpack[StateModificationContext],
+        ) -> None: ...
+
+        @overload
+        @deprecated("pass token as rx.BaseStateToken instead of str")
+        def modify_state(
+            self, token: str, **context: Unpack[StateModificationContext]
+        ) -> contextlib.AbstractAsyncContextManager[TOKEN_TYPE]: ...
+
+        @overload
+        def modify_state(
+            self,
+            token: StateToken[TOKEN_TYPE],
+            **context: Unpack[StateModificationContext],
+        ) -> contextlib.AbstractAsyncContextManager[TOKEN_TYPE]: ...
+
+        @overload
+        @deprecated("pass token as rx.BaseStateToken instead of str")
+        def modify_state_with_links(
+            self,
+            token: str,
+            previous_dirty_vars: dict[str, set[str]] | None = None,
+            **context: Unpack[StateModificationContext],
+        ) -> contextlib.AbstractAsyncContextManager[TOKEN_TYPE]: ...
+
+        @overload
+        def modify_state_with_links(
+            self,
+            token: StateToken[TOKEN_TYPE],
+            previous_dirty_vars: dict[str, set[str]] | None = None,
+            **context: Unpack[StateModificationContext],
+        ) -> contextlib.AbstractAsyncContextManager[TOKEN_TYPE]: ...
+
     @abstractmethod
-    async def get_state(self, token: StateToken[TOKEN_TYPE]) -> TOKEN_TYPE:
+    async def get_state(self, token: StateToken[TOKEN_TYPE] | str) -> TOKEN_TYPE:
         """Get the state for a token.
 
         Args:
@@ -119,7 +175,7 @@ class StateManager(ABC):
     @abstractmethod
     async def set_state(
         self,
-        token: StateToken[TOKEN_TYPE],
+        token: StateToken[TOKEN_TYPE] | str,
         state: TOKEN_TYPE,
         **context: Unpack[StateModificationContext],
     ):
@@ -134,7 +190,9 @@ class StateManager(ABC):
     @abstractmethod
     @contextlib.asynccontextmanager
     async def modify_state(
-        self, token: StateToken[TOKEN_TYPE], **context: Unpack[StateModificationContext]
+        self,
+        token: StateToken[TOKEN_TYPE] | str,
+        **context: Unpack[StateModificationContext],
     ) -> AsyncIterator[TOKEN_TYPE]:
         """Modify the state for a token while holding exclusive lock.
 
@@ -150,7 +208,7 @@ class StateManager(ABC):
     @contextlib.asynccontextmanager
     async def modify_state_with_links(
         self,
-        token: StateToken[TOKEN_TYPE],
+        token: StateToken[TOKEN_TYPE] | str,
         previous_dirty_vars: dict[str, set[str]] | None = None,
         **context: Unpack[StateModificationContext],
     ) -> AsyncIterator[TOKEN_TYPE]:
