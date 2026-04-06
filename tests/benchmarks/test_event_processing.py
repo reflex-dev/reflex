@@ -1,8 +1,8 @@
 """Benchmark for the event processing pipeline.
 
 Measures the time from calling the ``process`` function (the core of
-``on_event``) to collecting all emitted ``StateUpdate`` deltas, with a
-mocked ``emit`` replaced by an ``asyncio.Event`` that signals completion.
+``on_event``) to collecting all emitted ``StateUpdate`` deltas via
+``contextlib.aclosing`` over the async generator.
 """
 
 import asyncio
@@ -46,15 +46,14 @@ async def event_processing_harness(app_module_mock: mock.Mock):
 
     Creates an App wired to a real StateManagerMemory. The ``process``
     function is called directly (bypassing Socket.IO) and StateUpdates
-    are collected. An ``asyncio.Event`` signals when the expected number
-    of updates has been received.
+    are collected and counted to verify correctness.
 
     Args:
         app_module_mock: The mocked app module.
 
     Yields:
-        An async callable that processes the given events and waits for
-        all expected deltas.
+        An async callable that processes the given events and asserts
+        the expected number of deltas were produced.
     """
     app = app_module_mock.app = App()
     state_manager = StateManagerMemory(state=State)
@@ -100,6 +99,10 @@ async def event_processing_harness(app_module_mock: mock.Mock):
             ) as updates:
                 async for _update in updates:
                     delta_count += 1
+
+        assert delta_count == expected_deltas, (
+            f"Expected {expected_deltas} StateUpdate(s), got {delta_count}"
+        )
 
     yield run_events
 
