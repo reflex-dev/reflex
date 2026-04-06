@@ -119,7 +119,6 @@ class CompilerPlugin(Protocol):
         Returns:
             An optional replacement component and/or structural children.
         """
-        del comp, page_context, compile_context, in_prop_tree, stateful_component
         return None
 
     def leave_component(
@@ -146,14 +145,6 @@ class CompilerPlugin(Protocol):
         Returns:
             An optional replacement component and/or structural children.
         """
-        del (
-            comp,
-            children,
-            page_context,
-            compile_context,
-            in_prop_tree,
-            stateful_component,
-        )
         return None
 
 
@@ -170,16 +161,6 @@ class CompilerHooks:
         init=False,
         repr=False,
     )
-    _enter_component_hooks: tuple[Callable[..., Any], ...] = dataclasses.field(
-        init=False,
-        repr=False,
-    )
-    _leave_component_hooks: tuple[tuple[Callable[..., Any], bool], ...] = (
-        dataclasses.field(
-            init=False,
-            repr=False,
-        )
-    )
     _enter_component_hook_binders: tuple[EnterHookBinder, ...] = dataclasses.field(
         init=False,
         repr=False,
@@ -190,22 +171,6 @@ class CompilerHooks:
             repr=False,
         )
     )
-    _regular_leave_component_hook_binders: tuple[LeaveHookBinder, ...] = (
-        dataclasses.field(
-            init=False,
-            repr=False,
-        )
-    )
-    _stateful_leave_component_hook_binders: tuple[LeaveHookBinder, ...] = (
-        dataclasses.field(
-            init=False,
-            repr=False,
-        )
-    )
-    _component_hooks_can_replace: bool = dataclasses.field(
-        init=False,
-        repr=False,
-    )
 
     def __post_init__(self) -> None:
         """Resolve the active compiler hook callables once."""
@@ -215,26 +180,15 @@ class CompilerHooks:
             "_compile_page_hooks",
             self._resolve_hooks("compile_page"),
         )
-        enter_hooks: list[Callable[..., Any]] = []
         enter_hook_binders: list[EnterHookBinder] = []
-        leave_hooks: list[tuple[Callable[..., Any], bool]] = []
         leave_hook_binders: list[tuple[LeaveHookBinder, bool]] = []
-        component_hooks_can_replace = False
 
         for plugin in self.plugins:
             if (
                 hook_impl := self._get_hook_impl(plugin, "enter_component")
             ) is not None:
-                enter_hooks.append(hook_impl)
                 enter_hook_binders.append(
                     self._get_enter_hook_binder(plugin, hook_impl)
-                )
-                component_hooks_can_replace = component_hooks_can_replace or bool(
-                    getattr(
-                        type(plugin),
-                        "_compiler_can_replace_enter_component",
-                        True,
-                    )
                 )
 
             if (
@@ -247,31 +201,12 @@ class CompilerHooks:
                         False,
                     )
                 )
-                leave_hooks.append((hook_impl, stateful_only))
                 leave_hook_binders.append((
                     self._get_leave_hook_binder(plugin, hook_impl),
                     stateful_only,
                 ))
-                component_hooks_can_replace = component_hooks_can_replace or bool(
-                    getattr(
-                        type(plugin),
-                        "_compiler_can_replace_leave_component",
-                        True,
-                    )
-                )
 
-        reversed_leave_hooks = tuple(reversed(tuple(leave_hooks)))
         reversed_leave_hook_binders = tuple(reversed(tuple(leave_hook_binders)))
-        object.__setattr__(
-            self,
-            "_leave_component_hooks",
-            reversed_leave_hooks,
-        )
-        object.__setattr__(
-            self,
-            "_enter_component_hooks",
-            tuple(enter_hooks),
-        )
         object.__setattr__(
             self,
             "_enter_component_hook_binders",
@@ -281,29 +216,6 @@ class CompilerHooks:
             self,
             "_leave_component_hook_binders",
             reversed_leave_hook_binders,
-        )
-        object.__setattr__(
-            self,
-            "_regular_leave_component_hook_binders",
-            tuple(
-                binder
-                for binder, stateful_only in reversed_leave_hook_binders
-                if not stateful_only
-            ),
-        )
-        object.__setattr__(
-            self,
-            "_stateful_leave_component_hook_binders",
-            tuple(
-                binder
-                for binder, stateful_only in reversed_leave_hook_binders
-                if stateful_only
-            ),
-        )
-        object.__setattr__(
-            self,
-            "_component_hooks_can_replace",
-            component_hooks_can_replace,
         )
 
     @staticmethod
@@ -461,238 +373,20 @@ class CompilerHooks:
             hook_binder(page_context, compile_context)
             for hook_binder in self._enter_component_hook_binders
         )
+        leave_hooks = tuple(
+            (hook_binder(page_context, compile_context), stateful_only)
+            for hook_binder, stateful_only in self._leave_component_hook_binders
+        )
 
-        if not self._component_hooks_can_replace:
-            regular_leave_hooks = tuple(
-                hook_binder(page_context, compile_context)
-                for hook_binder in self._regular_leave_component_hook_binders
-            )
-            stateful_leave_hooks = tuple(
-                hook_binder(page_context, compile_context)
-                for hook_binder in self._stateful_leave_component_hook_binders
-            )
-
-            if (
-                len(enter_hooks) == 1
-                and not regular_leave_hooks
-                and len(stateful_leave_hooks) <= 1
-            ):
-                return self._compile_component_single_enter_fast_path(
-                    comp,
-                    enter_hook=enter_hooks[0],
-                    stateful_leave_hook=(
-                        stateful_leave_hooks[0] if stateful_leave_hooks else None
-                    ),
-                    in_prop_tree=in_prop_tree,
-                    stateful_component=stateful_component,
-                )
-
-            return self._compile_component_without_replacements(
-                comp,
-                enter_hooks=enter_hooks,
-                regular_leave_hooks=regular_leave_hooks,
-                stateful_leave_hooks=stateful_leave_hooks,
-                in_prop_tree=in_prop_tree,
-                stateful_component=stateful_component,
-            )
-
-        return self._compile_component_with_replacements(
+        return self._compile_component_tree(
             comp,
             enter_hooks=enter_hooks,
-            leave_hooks=tuple(
-                (hook_binder(page_context, compile_context), stateful_only)
-                for hook_binder, stateful_only in self._leave_component_hook_binders
-            ),
+            leave_hooks=leave_hooks,
             in_prop_tree=in_prop_tree,
             stateful_component=stateful_component,
         )
 
-    def _compile_component_without_replacements(
-        self,
-        comp: BaseComponent,
-        /,
-        *,
-        enter_hooks: tuple[CompiledEnterHook, ...],
-        regular_leave_hooks: tuple[CompiledLeaveHook, ...],
-        stateful_leave_hooks: tuple[CompiledLeaveHook, ...],
-        in_prop_tree: bool = False,
-        stateful_component: StatefulComponent | None = None,
-    ) -> BaseComponent:
-        """Walk a component tree when hook plans only observe state.
-
-        Returns:
-            The compiled component root for this subtree.
-        """
-
-        def visit(
-            current_comp: BaseComponent,
-            current_in_prop_tree: bool,
-            current_stateful_component: StatefulComponent | None,
-        ) -> BaseComponent:
-            for hook_impl in enter_hooks:
-                hook_impl(
-                    current_comp,
-                    current_in_prop_tree,
-                    current_stateful_component,
-                )
-
-            if isinstance(current_comp, StatefulComponent):
-                if not current_comp.rendered_as_shared:
-                    compiled_component = cast(
-                        Component,
-                        visit(
-                            current_comp.component,
-                            current_in_prop_tree,
-                            current_comp,
-                        ),
-                    )
-                    if compiled_component is not current_comp.component:
-                        current_comp.component = compiled_component
-
-                if stateful_leave_hooks:
-                    compiled_children = tuple(current_comp.children)
-                    for hook_impl in stateful_leave_hooks:
-                        hook_impl(
-                            current_comp,
-                            compiled_children,
-                            current_in_prop_tree,
-                            current_stateful_component,
-                        )
-                if regular_leave_hooks:
-                    compiled_children = tuple(current_comp.children)
-                    for hook_impl in regular_leave_hooks:
-                        hook_impl(
-                            current_comp,
-                            compiled_children,
-                            current_in_prop_tree,
-                            current_stateful_component,
-                        )
-                return current_comp
-
-            updated_children: list[BaseComponent] | None = None
-            children = current_comp.children
-            for index, child in enumerate(children):
-                compiled_child = visit(
-                    child,
-                    current_in_prop_tree,
-                    current_stateful_component,
-                )
-                if updated_children is None:
-                    if compiled_child is child:
-                        continue
-                    updated_children = list(children[:index])
-                updated_children.append(compiled_child)
-            if updated_children is not None:
-                current_comp.children = updated_children
-
-            if isinstance(current_comp, Component):
-                for prop_component in current_comp._get_components_in_props():
-                    visit(
-                        prop_component,
-                        True,
-                        current_stateful_component,
-                    )
-
-            if regular_leave_hooks:
-                compiled_children = tuple(current_comp.children)
-                for hook_impl in regular_leave_hooks:
-                    hook_impl(
-                        current_comp,
-                        compiled_children,
-                        current_in_prop_tree,
-                        current_stateful_component,
-                    )
-
-            return current_comp
-
-        return visit(
-            comp,
-            in_prop_tree,
-            stateful_component,
-        )
-
-    def _compile_component_single_enter_fast_path(
-        self,
-        comp: BaseComponent,
-        /,
-        *,
-        enter_hook: CompiledEnterHook,
-        stateful_leave_hook: CompiledLeaveHook | None,
-        in_prop_tree: bool = False,
-        stateful_component: StatefulComponent | None = None,
-    ) -> BaseComponent:
-        """Walk a component tree for the common one-enter-hook fast path.
-
-        Returns:
-            The compiled component root for this subtree.
-        """
-
-        def visit(
-            current_comp: BaseComponent,
-            current_in_prop_tree: bool,
-            current_stateful_component: StatefulComponent | None,
-        ) -> BaseComponent:
-            enter_hook(
-                current_comp,
-                current_in_prop_tree,
-                current_stateful_component,
-            )
-
-            if isinstance(current_comp, StatefulComponent):
-                if not current_comp.rendered_as_shared:
-                    compiled_component = cast(
-                        Component,
-                        visit(
-                            current_comp.component,
-                            current_in_prop_tree,
-                            current_comp,
-                        ),
-                    )
-                    if compiled_component is not current_comp.component:
-                        current_comp.component = compiled_component
-
-                if stateful_leave_hook is not None:
-                    stateful_leave_hook(
-                        current_comp,
-                        tuple(current_comp.children),
-                        current_in_prop_tree,
-                        current_stateful_component,
-                    )
-                return current_comp
-
-            updated_children: list[BaseComponent] | None = None
-            children = current_comp.children
-            for index, child in enumerate(children):
-                compiled_child = visit(
-                    child,
-                    current_in_prop_tree,
-                    current_stateful_component,
-                )
-                if updated_children is None:
-                    if compiled_child is child:
-                        continue
-                    updated_children = list(children[:index])
-                updated_children.append(compiled_child)
-            if updated_children is not None:
-                current_comp.children = updated_children
-
-            if isinstance(current_comp, Component):
-                for prop_component in current_comp._get_components_in_props():
-                    visit(
-                        prop_component,
-                        True,
-                        current_stateful_component,
-                    )
-
-            return current_comp
-
-        return visit(
-            comp,
-            in_prop_tree,
-            stateful_component,
-        )
-
-    def _compile_component_with_replacements(
+    def _compile_component_tree(
         self,
         comp: BaseComponent,
         /,
@@ -702,12 +396,11 @@ class CompilerHooks:
         in_prop_tree: bool = False,
         stateful_component: StatefulComponent | None = None,
     ) -> BaseComponent:
-        """Walk a component tree while honoring hook replacements.
+        """Walk a component tree dispatching enter/leave hooks.
 
         Returns:
             The compiled component root for this subtree.
         """
-        apply_replacement = self._apply_replacement
 
         def visit_children(
             children: Sequence[BaseComponent],
@@ -742,15 +435,19 @@ class CompilerHooks:
             structural_children: tuple[BaseComponent, ...] | None = None
 
             for hook_impl in enter_hooks:
-                compiled_component, structural_children = apply_replacement(
+                replacement = hook_impl(
                     compiled_component,
-                    structural_children,
-                    hook_impl(
-                        compiled_component,
-                        current_in_prop_tree,
-                        current_stateful_component,
-                    ),
+                    current_in_prop_tree,
+                    current_stateful_component,
                 )
+                if replacement is not None:
+                    if isinstance(replacement, tuple):
+                        compiled_component = cast(BaseComponent, replacement[0])
+                        structural_children = cast(
+                            tuple[BaseComponent, ...], replacement[1]
+                        )
+                    else:
+                        compiled_component = replacement
 
             if isinstance(compiled_component, StatefulComponent):
                 if not compiled_component.rendered_as_shared:
@@ -783,23 +480,25 @@ class CompilerHooks:
             for hook_impl, stateful_only in leave_hooks:
                 if stateful_only and not is_stateful_component:
                     continue
-                compiled_component, replacement_children = apply_replacement(
+                replacement = hook_impl(
                     compiled_component,
                     compiled_children,
-                    hook_impl(
-                        compiled_component,
-                        compiled_children,
-                        current_in_prop_tree,
-                        current_stateful_component,
-                    ),
+                    current_in_prop_tree,
+                    current_stateful_component,
                 )
-                if replacement_children is not compiled_children:
-                    assert replacement_children is not None
-                    compiled_children = visit_children(
-                        replacement_children,
-                        current_in_prop_tree,
-                        current_stateful_component,
-                    )
+                if replacement is not None:
+                    if isinstance(replacement, tuple):
+                        compiled_component = cast(BaseComponent, replacement[0])
+                        new_children = cast(tuple[BaseComponent, ...], replacement[1])
+                    else:
+                        compiled_component = replacement
+                        new_children = compiled_children
+                    if new_children is not compiled_children:
+                        compiled_children = visit_children(
+                            new_children,
+                            current_in_prop_tree,
+                            current_stateful_component,
+                        )
 
             compiled_component.children = list(compiled_children)
             return compiled_component
@@ -809,28 +508,6 @@ class CompilerHooks:
             in_prop_tree,
             stateful_component,
         )
-
-    @staticmethod
-    def _apply_replacement(
-        comp: BaseComponent,
-        children: tuple[BaseComponent, ...] | None,
-        replacement: ComponentReplacement,
-    ) -> tuple[BaseComponent, tuple[BaseComponent, ...] | None]:
-        """Apply a plugin replacement to the current component state.
-
-        Args:
-            comp: The current component.
-            children: The current structural children.
-            replacement: The plugin-supplied replacement.
-
-        Returns:
-            The updated component and structural children pair.
-        """
-        if replacement is None:
-            return comp, children
-        if isinstance(replacement, tuple):
-            return replacement
-        return replacement, children
 
 
 @dataclasses.dataclass(kw_only=True)

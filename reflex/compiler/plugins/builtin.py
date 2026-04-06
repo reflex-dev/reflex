@@ -83,7 +83,6 @@ class DefaultPagePlugin(Plugin):
 class ApplyStylePlugin(Plugin):
     """Apply app-level styles in the descending phase of the walk."""
 
-    _compiler_can_replace_enter_component = False
     style: ComponentStyle | None = None
     theme: Component | None = None
 
@@ -173,8 +172,6 @@ class ApplyStylePlugin(Plugin):
 class DefaultCollectorPlugin(Plugin):
     """Collect page artifacts in one fused enter/leave hook pair."""
 
-    _compiler_can_replace_enter_component = False
-    _compiler_can_replace_leave_component = False
     _compiler_stateful_only_leave_component = True
     stateful_custom_code_export: bool = False
 

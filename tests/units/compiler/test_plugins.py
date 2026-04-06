@@ -315,8 +315,8 @@ def test_component_hook_resolution_caches_only_real_overrides() -> None:
 
     hooks = CompilerHooks(plugins=(Plugin(), EnterPlugin(), LeavePlugin()))
 
-    assert len(hooks._enter_component_hooks) == 1
-    assert len(hooks._leave_component_hooks) == 1
+    assert len(hooks._enter_component_hook_binders) == 1
+    assert len(hooks._leave_component_hook_binders) == 1
 
 
 def test_enter_component_skips_inherited_base_plugin_hook(
