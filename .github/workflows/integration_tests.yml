@@ -129,6 +129,8 @@ jobs:
           SHIM_DIR="$(cd scripts/sfw-shims && pwd)"
           echo "$SHIM_DIR" >> "$GITHUB_PATH"
           echo "REFLEX_USE_SYSTEM_BUN=1" >> "$GITHUB_ENV"
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
 
       # Inline setup_build_env steps so all installs go through sfw.
       - name: Install UV
