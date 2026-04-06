@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Remove this shim's directory from PATH so we find the real bun
+SHIM_DIR="$(cd "$(dirname "$0")" && pwd)"
+export PATH="${PATH//$SHIM_DIR:/}"
+export PATH="${PATH//:$SHIM_DIR/}"
+
+# Only route registry-touching commands through sfw
+case "${1-}" in
+  install|add|update|pm)
+    exec npx sfw bun "$@" ;;
+  *)
+    exec bun "$@" ;;
+esac
