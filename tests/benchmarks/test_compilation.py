@@ -2,11 +2,12 @@ from pytest_codspeed import BenchmarkFixture
 from reflex_base.components.component import Component, StatefulComponent
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 
+from reflex.app import UnevaluatedPage
 from reflex.compiler import compiler
 from reflex.compiler.compiler import _compile_page, _compile_stateful_components
 from reflex.compiler.plugins import DefaultCollectorPlugin, default_page_plugins
 
-from .fixtures import BenchmarkPage, ImportOnlyCollectorPlugin
+from .fixtures import ImportOnlyCollectorPlugin
 
 
 def import_templates():
@@ -66,7 +67,7 @@ def _compile_page_single_pass(component: Component) -> str:
 
 
 def _compile_page_full_context(unevaluated_page) -> str:
-    page = BenchmarkPage(route="/benchmark", component=unevaluated_page)
+    page = UnevaluatedPage(route="/benchmark", component=unevaluated_page)
     compile_ctx = CompileContext(
         pages=[page],
         hooks=CompilerHooks(plugins=default_page_plugins()),

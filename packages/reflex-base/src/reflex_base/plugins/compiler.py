@@ -7,7 +7,7 @@ import inspect
 from collections.abc import Callable, Sequence
 from contextvars import ContextVar, Token
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, ClassVar, Protocol, TypeAlias, cast
+from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias, cast
 
 from typing_extensions import Self
 
@@ -18,7 +18,7 @@ from reflex_base.vars import VarData
 from .base import Plugin
 
 if TYPE_CHECKING:
-    from reflex.app import App, ComponentCallable
+    from reflex.app import App, ComponentCallable, UnevaluatedPage
 
     PageComponent: TypeAlias = Component | ComponentCallable
 else:
@@ -29,20 +29,6 @@ else:
             Component | tuple[Component, ...] | str,
         ]
     )
-
-
-class PageDefinition(Protocol):
-    """Protocol for page-like objects compiled by :class:`CompileContext`."""
-
-    @property
-    def route(self) -> str:
-        """Return the route for this page definition."""
-        ...
-
-    @property
-    def component(self) -> PageComponent:
-        """Return the component or callable for this page definition."""
-        ...
 
 
 ComponentAndChildren: TypeAlias = tuple[BaseComponent, tuple[BaseComponent, ...]]
@@ -65,94 +51,11 @@ LeaveHookBinder: TypeAlias = Callable[
 ]
 
 
-class CompilerPlugin(Protocol):
-    """Protocol for compiler plugins that participate in page compilation."""
-
-    def eval_page(
-        self,
-        page_fn: PageComponent,
-        /,
-        *,
-        page: PageDefinition,
-        **kwargs: Any,
-    ) -> PageContext | None:
-        """Evaluate a page-like object into a page context.
-
-        Args:
-            page_fn: The page-like object to evaluate.
-            page: The page definition being compiled.
-            kwargs: Additional compiler-specific context.
-
-        Returns:
-            A page context when the plugin can evaluate the page, otherwise ``None``.
-        """
-        return None
-
-    def compile_page(
-        self,
-        page_ctx: PageContext,
-        /,
-        **kwargs: Any,
-    ) -> None:
-        """Finalize a page context after its component tree has been traversed."""
-        return
-
-    def enter_component(
-        self,
-        comp: BaseComponent,
-        /,
-        *,
-        page_context: PageContext,
-        compile_context: CompileContext,
-        in_prop_tree: bool = False,
-        stateful_component: StatefulComponent | None = None,
-    ) -> ComponentReplacement:
-        """Inspect or transform a component before visiting its descendants.
-
-        Args:
-            comp: The component being compiled.
-            page_context: The active page compilation state.
-            compile_context: The active compile-run state.
-            in_prop_tree: Whether the component belongs to a prop subtree.
-            stateful_component: The active surrounding stateful component.
-
-        Returns:
-            An optional replacement component and/or structural children.
-        """
-        return None
-
-    def leave_component(
-        self,
-        comp: BaseComponent,
-        children: tuple[BaseComponent, ...],
-        /,
-        *,
-        page_context: PageContext,
-        compile_context: CompileContext,
-        in_prop_tree: bool = False,
-        stateful_component: StatefulComponent | None = None,
-    ) -> ComponentReplacement:
-        """Inspect or transform a component after visiting its descendants.
-
-        Args:
-            comp: The component being compiled.
-            children: The compiled structural children for the component.
-            page_context: The active page compilation state.
-            compile_context: The active compile-run state.
-            in_prop_tree: Whether the component belongs to a prop subtree.
-            stateful_component: The active surrounding stateful component.
-
-        Returns:
-            An optional replacement component and/or structural children.
-        """
-        return None
-
-
 @dataclasses.dataclass(frozen=True, slots=True, kw_only=True)
 class CompilerHooks:
     """Dispatch compiler hooks across an ordered plugin chain."""
 
-    plugins: tuple[CompilerPlugin, ...] = ()
+    plugins: tuple[Plugin, ...] = ()
     _eval_page_hooks: tuple[Callable[..., Any], ...] = dataclasses.field(
         init=False,
         repr=False,
@@ -220,7 +123,7 @@ class CompilerHooks:
 
     @staticmethod
     def _get_hook_impl(
-        plugin: CompilerPlugin,
+        plugin: Plugin,
         hook_name: str,
     ) -> Callable[..., Any] | None:
         """Return the concrete hook implementation for a plugin, if any.
@@ -237,12 +140,10 @@ class CompilerHooks:
         if plugin_impl is None:
             return None
 
-        for base_cls in (CompilerPlugin, Plugin):
-            base_impl = inspect.getattr_static(base_cls, hook_name, None)
-            if plugin_impl is base_impl:
-                return None
+        if plugin_impl is inspect.getattr_static(Plugin, hook_name, None):
+            return None
 
-        return cast(Callable[..., Any], getattr(plugin, hook_name, None))
+        return getattr(plugin, hook_name, None)
 
     def _resolve_hooks(self, hook_name: str) -> tuple[Callable[..., Any], ...]:
         """Resolve concrete hook implementations for the plugin chain.
@@ -261,7 +162,7 @@ class CompilerHooks:
 
     @staticmethod
     def _get_enter_hook_binder(
-        plugin: CompilerPlugin,
+        plugin: Plugin,
         hook_impl: Callable[..., Any],
     ) -> EnterHookBinder:
         """Return a binder that produces a compiled enter-component hook."""
@@ -295,7 +196,7 @@ class CompilerHooks:
 
     @staticmethod
     def _get_leave_hook_binder(
-        plugin: CompilerPlugin,
+        plugin: Plugin,
         hook_impl: Callable[..., Any],
     ) -> LeaveHookBinder:
         """Return a binder that produces a compiled leave-component hook."""
@@ -334,7 +235,7 @@ class CompilerHooks:
         page_fn: PageComponent,
         /,
         *,
-        page: PageDefinition,
+        page: UnevaluatedPage,
         **kwargs: Any,
     ) -> PageContext | None:
         """Return the first page context produced by the plugin chain."""
@@ -645,7 +546,7 @@ class CompileContext(BaseContext):
     """Mutable compilation state for an entire compile run."""
 
     app: App | None = None
-    pages: Sequence[PageDefinition]
+    pages: Sequence[UnevaluatedPage]
     hooks: CompilerHooks = dataclasses.field(default_factory=CompilerHooks)
     compiled_pages: dict[str, PageContext] = dataclasses.field(default_factory=dict)
     all_imports: ParsedImportDict = dataclasses.field(default_factory=dict)
@@ -801,8 +702,7 @@ __all__ = [
     "BaseContext",
     "CompileContext",
     "CompilerHooks",
-    "CompilerPlugin",
     "ComponentAndChildren",
     "PageContext",
-    "PageDefinition",
+    "Plugin",
 ]

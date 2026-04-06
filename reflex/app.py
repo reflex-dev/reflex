@@ -225,12 +225,12 @@ class UnevaluatedPage:
 
     component: Component | ComponentCallable
     route: str
-    title: Var | str | None
-    description: Var | str | None
-    image: str
-    on_load: EventType[()] | None
-    meta: Sequence[Mapping[str, Any] | Component]
-    context: Mapping[str, Any]
+    title: Var | str | None = None
+    description: Var | str | None = None
+    image: str = ""
+    on_load: EventType[()] | None = None
+    meta: Sequence[Mapping[str, Any] | Component] = ()
+    context: Mapping[str, Any] = dataclasses.field(default_factory=dict)
 
     def merged_with(self, other: UnevaluatedPage) -> UnevaluatedPage:
         """Merge the other page into this one.

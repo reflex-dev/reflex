@@ -1,7 +1,6 @@
 # ruff: noqa: D101, D102
 
 import dataclasses
-from collections.abc import Callable
 from typing import Any
 
 import pytest
@@ -18,10 +17,8 @@ from reflex_base.plugins import (
     BaseContext,
     CompileContext,
     CompilerHooks,
-    CompilerPlugin,
     ComponentAndChildren,
     PageContext,
-    PageDefinition,
     Plugin,
 )
 from reflex_base.utils import format as format_utils
@@ -41,18 +38,9 @@ from reflex.compiler.plugins import (
 
 
 @dataclasses.dataclass(slots=True)
-class FakePage:
-    route: str
-    component: Callable[[], Component]
-    title: Var | str | None = None
-    description: Var | str | None = None
-    image: str = ""
-    meta: tuple[dict[str, Any], ...] = ()
-
-
 class WrapperComponent(Component):
-    tag = "WrapperComponent"
-    library = "wrapper-lib"
+    tag: str | None = "WrapperComponent"
+    library: str | None = "wrapper-lib"
 
     @staticmethod
     def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
@@ -199,7 +187,7 @@ def collect_page_context(
 
 def test_eval_page_uses_first_non_none_result() -> None:
     calls: list[str] = []
-    page = FakePage(route="/demo", component=lambda: Fragment.create())
+    page = UnevaluatedPage(route="/demo", component=lambda: Fragment.create())
 
     class NoMatchPlugin(StubCompilerPlugin):
         def eval_page(
@@ -207,7 +195,7 @@ def test_eval_page_uses_first_non_none_result() -> None:
             page_fn: Any,
             /,
             *,
-            page: PageDefinition,
+            page: UnevaluatedPage,
             **kwargs: Any,
         ) -> None:
             del page_fn, page, kwargs
@@ -219,7 +207,7 @@ def test_eval_page_uses_first_non_none_result() -> None:
             page_fn: Any,
             /,
             *,
-            page: PageDefinition,
+            page: UnevaluatedPage,
             **kwargs: Any,
         ) -> PageContext:
             del kwargs
@@ -236,7 +224,7 @@ def test_eval_page_uses_first_non_none_result() -> None:
             page_fn: Any,
             /,
             *,
-            page: PageDefinition,
+            page: UnevaluatedPage,
             **kwargs: Any,
         ) -> PageContext:
             del page_fn, page, kwargs
@@ -395,12 +383,12 @@ def test_enter_component_skips_inherited_protocol_hook(
         stateful_component: StatefulComponent | None = None,
     ) -> None:
         del self, comp, page_context, compile_context, in_prop_tree, stateful_component
-        msg = "Inherited CompilerPlugin.enter_component hook should be skipped."
+        msg = "Inherited Plugin.enter_component hook should be skipped."
         raise AssertionError(msg)
 
-    monkeypatch.setattr(CompilerPlugin, "enter_component", fail_enter_component)
+    monkeypatch.setattr(Plugin, "enter_component", fail_enter_component)
 
-    class ProtocolOnlyPlugin(CompilerPlugin):
+    class ProtocolOnlyPlugin(Plugin):
         pass
 
     class RealPlugin(StubCompilerPlugin):
@@ -773,7 +761,7 @@ def test_default_page_plugins_are_minimal_and_ordered() -> None:
 
 
 def test_compile_context_compiles_pages_and_matches_legacy_output() -> None:
-    page = FakePage(route="/demo", component=create_component_tree)
+    page = UnevaluatedPage(route="/demo", component=create_component_tree)
     compile_ctx = CompileContext(
         pages=[page],
         hooks=CompilerHooks(plugins=default_page_plugins(style=page_style())),
@@ -828,7 +816,7 @@ def test_compile_context_compiles_pages_and_matches_legacy_output() -> None:
 
 
 def test_compile_context_does_not_recurse_root_imports() -> None:
-    page = FakePage(
+    page = UnevaluatedPage(
         route="/no-recursive-imports",
         component=create_no_recursive_imports_component,
     )
@@ -880,8 +868,8 @@ def test_default_page_plugin_handles_var_backed_title_like_legacy_compiler() -> 
 
 def test_compile_context_rejects_duplicate_routes() -> None:
     pages = [
-        FakePage(route="/duplicate", component=lambda: Fragment.create()),
-        FakePage(route="/duplicate", component=lambda: Fragment.create()),
+        UnevaluatedPage(route="/duplicate", component=lambda: Fragment.create()),
+        UnevaluatedPage(route="/duplicate", component=lambda: Fragment.create()),
     ]
     compile_ctx = CompileContext(
         pages=pages,
@@ -917,8 +905,8 @@ def test_compile_context_preserves_shared_stateful_component_imports_and_wraps()
     environment.REFLEX_ENV_MODE.set(constants.Env.PROD)
     try:
         pages = [
-            FakePage(route="/a", component=create_shared_stateful_component),
-            FakePage(route="/b", component=create_shared_stateful_component),
+            UnevaluatedPage(route="/a", component=create_shared_stateful_component),
+            UnevaluatedPage(route="/b", component=create_shared_stateful_component),
         ]
         compile_ctx = CompileContext(
             pages=pages,
@@ -944,8 +932,8 @@ def test_compile_context_resets_stateful_component_cache_between_runs() -> None:
         environment.REFLEX_ENV_MODE.set(constants.Env.PROD)
         prod_ctx = CompileContext(
             pages=[
-                FakePage(route="/a", component=create_shared_stateful_component),
-                FakePage(route="/b", component=create_shared_stateful_component),
+                UnevaluatedPage(route="/a", component=create_shared_stateful_component),
+                UnevaluatedPage(route="/b", component=create_shared_stateful_component),
             ],
             hooks=CompilerHooks(plugins=default_page_plugins()),
         )
@@ -954,7 +942,9 @@ def test_compile_context_resets_stateful_component_cache_between_runs() -> None:
 
         environment.REFLEX_ENV_MODE.set(constants.Env.DEV)
         dev_ctx = CompileContext(
-            pages=[FakePage(route="/c", component=create_shared_stateful_component)],
+            pages=[
+                UnevaluatedPage(route="/c", component=create_shared_stateful_component)
+            ],
             hooks=CompilerHooks(plugins=default_page_plugins()),
         )
         with dev_ctx:

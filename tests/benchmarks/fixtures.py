@@ -226,14 +226,6 @@ class NestedElement(BaseModel):
 
 
 @dataclass(frozen=True, slots=True)
-class BenchmarkPage:
-    """Minimal page definition for compiler benchmark helpers."""
-
-    route: str
-    component: Callable[[], Component]
-
-
-@dataclass(frozen=True, slots=True)
 class ImportOnlyCollectorPlugin(DefaultCollectorPlugin):
     """Collect only imports — same scope as Component._get_all_imports.
 

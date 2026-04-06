@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from reflex_base.components.component import (
     BaseComponent,
@@ -13,13 +13,10 @@ from reflex_base.components.component import (
     StatefulComponent,
 )
 from reflex_base.config import get_config
-from reflex_base.plugins import (
-    CompileContext,
-    CompilerPlugin,
-    PageContext,
-    PageDefinition,
-    Plugin,
-)
+from reflex_base.plugins import CompileContext, PageContext, Plugin
+
+if TYPE_CHECKING:
+    from reflex.app import UnevaluatedPage
 from reflex_base.utils.format import make_default_page_title
 from reflex_base.utils.imports import collapse_imports, merge_imports
 from reflex_base.vars import VarData
@@ -37,7 +34,7 @@ class DefaultPagePlugin(Plugin):
         page_fn: Any,
         /,
         *,
-        page: PageDefinition,
+        page: UnevaluatedPage,
         **kwargs: Any,
     ) -> PageContext:
         """Evaluate the page function and attach legacy page metadata.
@@ -524,9 +521,9 @@ def default_page_plugins(
     style: ComponentStyle | None = None,
     theme: Component | None = None,
     stateful_custom_code_export: bool = False,
-) -> tuple[CompilerPlugin, ...]:
+) -> tuple[Plugin, ...]:
     """Return the default compiler plugin ordering for page compilation."""
-    plugins: list[CompilerPlugin] = [DefaultPagePlugin()]
+    plugins: list[Plugin] = [DefaultPagePlugin()]
     if style is not None:
         plugins.append(ApplyStylePlugin(style=style, theme=theme))
     plugins.append(
