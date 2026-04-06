@@ -1,6 +1,8 @@
 """This module provides utilities for managing JavaScript runtimes like Node.js and Bun."""
 
 import functools
+import hashlib
+import json
 import os
 import tempfile
 from collections.abc import Sequence
@@ -10,10 +12,15 @@ from packaging import version
 from reflex_base import constants
 from reflex_base.config import Config, get_config
 from reflex_base.environment import environment
-from reflex_base.utils.decorator import cached_procedure, once
+from reflex_base.utils.decorator import (
+    _read_cached_procedure_file,
+    _write_cached_procedure_file,
+    once,
+)
 from reflex_base.utils.exceptions import SystemPackageMissingError
 
 from reflex.utils import console, net, path_ops, processes
+from reflex.utils import frontend_skeleton
 from reflex.utils.prerequisites import get_web_dir, windows_check_onedrive_in_path
 
 
@@ -353,10 +360,67 @@ def remove_existing_bun_installation():
         path_ops.rm(constants.Bun.ROOT_PATH)
 
 
-@cached_procedure(
-    cache_file_path=lambda: get_web_dir() / "reflex.install_frontend_packages.cached",
-    payload_fn=lambda packages, config: f"{sorted(packages)!r},{config.json()}",
-)
+def _frontend_packages_cache_path() -> Path:
+    """Get the cache file path for frontend package installs."""
+    return get_web_dir() / "reflex.install_frontend_packages.cached"
+
+
+def _get_bun_lock_cache_key() -> str:
+    """Get a stable cache key for the canonical bun lockfile state."""
+    root_bun_lock_path = frontend_skeleton.get_root_bun_lock_path()
+    if not root_bun_lock_path.exists():
+        return "missing"
+
+    return hashlib.sha256(root_bun_lock_path.read_bytes()).hexdigest()
+
+
+def _get_frontend_packages_cache_payload(
+    *,
+    packages: set[str],
+    development_deps: set[str],
+    config: Config,
+    package_managers: Sequence[str],
+) -> str:
+    """Get the cache payload for frontend package installs."""
+    return (
+        f"{sorted(packages)!r},"
+        f"{sorted(development_deps)!r},"
+        f"{config.json()},"
+        f"{list(package_managers)!r},"
+        f"{_get_current_extra_package_specs()!r},"
+        f"{_get_bun_lock_cache_key()}"
+    )
+
+
+def _get_package_name_from_spec(spec: str) -> str:
+    """Extract the package name from a dependency spec."""
+    if "@" not in spec:
+        return spec
+    if spec.startswith("@"):
+        name, separator, _ = spec.rpartition("@")
+        return name if separator and "/" in name else spec
+    return spec.rpartition("@")[0]
+
+
+def _get_current_extra_package_specs() -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """Get currently installed non-base deps and dev deps from .web/package.json."""
+    package_json_path = get_web_dir() / constants.PackageJson.PATH
+    if not package_json_path.exists():
+        return ((), ())
+
+    package_json = json.loads(package_json_path.read_text())
+    dependencies = package_json.get("dependencies", {})
+    dev_dependencies = package_json.get("devDependencies", {})
+
+    extra_dependencies = sorted(
+        set(dependencies) - set(constants.PackageJson.DEPENDENCIES)
+    )
+    extra_dev_dependencies = sorted(
+        set(dev_dependencies) - set(constants.PackageJson.DEV_DEPENDENCIES)
+    )
+    return (tuple(extra_dependencies), tuple(extra_dev_dependencies))
+
+
 def install_frontend_packages(packages: set[str], config: Config):
     """Installs the base and custom frontend packages.
 
@@ -367,9 +431,34 @@ def install_frontend_packages(packages: set[str], config: Config):
     Example:
         >>> install_frontend_packages(["react", "react-dom"], get_config())
     """
+    packages = set(packages)
+    development_deps: set[str] = set()
+    for plugin in config.plugins:
+        development_deps.update(plugin.get_frontend_development_dependencies())
+        packages.update(plugin.get_frontend_dependencies())
+
+    desired_package_names = {_get_package_name_from_spec(package) for package in packages}
+    desired_development_dep_names = {
+        _get_package_name_from_spec(package) for package in development_deps
+    }
+
     install_package_managers = get_nodejs_compatible_package_managers(
         raise_on_none=True
     )
+
+    cache_payload = _get_frontend_packages_cache_payload(
+        packages=packages,
+        development_deps=development_deps,
+        config=config,
+        package_managers=install_package_managers,
+    )
+    frontend_skeleton.sync_root_bun_lock_to_web()
+    cached_payload, _ = _read_cached_procedure_file(_frontend_packages_cache_path())
+    if cached_payload == cache_payload:
+        console.debug(
+            f"Using cached value for install_frontend_packages with payload: {cache_payload}"
+        )
+        return
 
     env = (
         {
@@ -391,15 +480,21 @@ def install_frontend_packages(packages: set[str], config: Config):
         env=env,
     )
 
+    extra_dependencies, extra_dev_dependencies = _get_current_extra_package_specs()
+    packages_to_remove = sorted(
+        (set(extra_dependencies) - desired_package_names)
+        | (set(extra_dev_dependencies) - desired_development_dep_names)
+    )
+    if packages_to_remove:
+        run_package_manager(
+            [primary_package_manager, "remove", *packages_to_remove],
+            show_status_message="Removing stale frontend packages",
+        )
+
     run_package_manager(
         [primary_package_manager, "install", "--legacy-peer-deps"],
         show_status_message="Installing base frontend packages",
     )
-
-    development_deps: set[str] = set()
-    for plugin in config.plugins:
-        development_deps.update(plugin.get_frontend_development_dependencies())
-        packages.update(plugin.get_frontend_dependencies())
 
     if development_deps:
         run_package_manager(
@@ -419,3 +514,15 @@ def install_frontend_packages(packages: set[str], config: Config):
             [primary_package_manager, "add", "--legacy-peer-deps", *packages],
             show_status_message="Installing frontend packages from config and components",
         )
+
+    frontend_skeleton.sync_web_bun_lock_to_root()
+    _write_cached_procedure_file(
+        _get_frontend_packages_cache_payload(
+            packages=packages,
+            development_deps=development_deps,
+            config=config,
+            package_managers=install_package_managers,
+        ),
+        _frontend_packages_cache_path(),
+        None,
+    )
