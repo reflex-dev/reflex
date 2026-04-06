@@ -622,6 +622,49 @@ def test_generate_links_trailing_slash_never(mock_get_config: MagicMock):
 
 
 @patch("reflex_base.config.get_config")
+def test_generate_links_trailing_slash_never_no_deploy_url_index(
+    mock_get_config: MagicMock,
+):
+    """Test that trailing_slash='never' with no deploy_url preserves '/' for index.
+
+    Args:
+        mock_get_config: Mock for the get_config function.
+    """
+    mock_get_config.return_value.deploy_url = None
+
+    def mock_component():
+        return rx.text("Test")
+
+    pages = [
+        UnevaluatedPage(
+            component=mock_component,
+            route="index",
+            title=None,
+            description=None,
+            image="favicon.ico",
+            on_load=None,
+            meta=[],
+            context={},
+        ),
+        UnevaluatedPage(
+            component=mock_component,
+            route="about",
+            title=None,
+            description=None,
+            image="favicon.ico",
+            on_load=None,
+            meta=[],
+            context={},
+        ),
+    ]
+    links = generate_links_for_sitemap(pages, trailing_slash="never")
+    assert len(links) == 2
+    # "/" should not become "" — it should be preserved as "/"
+    assert {"loc": "/"} in links
+    assert {"loc": "/about"} in links
+
+
+@patch("reflex_base.config.get_config")
 def test_generate_links_trailing_slash_preserve(mock_get_config: MagicMock):
     """Test that trailing_slash='preserve' does not modify URLs.
 

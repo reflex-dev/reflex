@@ -74,7 +74,8 @@ def configuration_with_loc(
     if trailing_slash == "always" and not loc.endswith("/"):
         loc += "/"
     elif trailing_slash == "never":
-        loc = loc.rstrip("/")
+        stripped = loc.rstrip("/")
+        loc = stripped or loc
     link: SitemapLink = {"loc": loc}
     if (lastmod := config.get("lastmod")) is not None:
         link["lastmod"] = lastmod
@@ -220,7 +221,7 @@ def sitemap_task(
     )
 
 
-@dataclass(kw_only=True, frozen=True, slots=True)
+@dataclass(kw_only=True, frozen=True)
 class SitemapPlugin(PluginBase):
     """Sitemap plugin for Reflex."""
 
