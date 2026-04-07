@@ -222,19 +222,7 @@ class EventHandlerSetVar(EventHandler):
             EventHandlerValueError: If the given Var name is not a str
             NotImplementedError: If the setter for the given Var is async
         """
-        from reflex_base.config import get_config
         from reflex_base.utils.exceptions import EventHandlerValueError
-
-        config = get_config()
-        if config.state_auto_setters is None and self.state is not None:
-            console.deprecate(
-                feature_name="state_auto_setters defaulting to True",
-                reason="The default value will be changed to False in a future release. Set state_auto_setters explicitly or define setters explicitly. "
-                f"Used {self.state.__name__}.setvar without defining it.",
-                deprecation_version="0.8.9",
-                removal_version="0.9.0",
-                dedupe=True,
-            )
 
         if args:
             if not isinstance(args[0], str):
@@ -1073,7 +1061,7 @@ class BaseState(EvenMoreBasicBaseState):
             )
             raise VarTypeError(msg)
         cls._set_var(name, prop)
-        if cls.is_user_defined() and get_config().state_auto_setters is not False:
+        if cls.is_user_defined() and get_config().state_auto_setters is True:
             cls._create_setter(name, prop)
         cls._set_default_value(name, prop)
 
@@ -1170,28 +1158,7 @@ class BaseState(EvenMoreBasicBaseState):
             name: The name of the var.
             prop: The var to create a setter for.
         """
-        from reflex_base.config import get_config
-
-        config = get_config()
         create_event_handler_kwargs = {}
-
-        if config.state_auto_setters is None:
-
-            class EventHandlerDeprecatedSetter(EventHandler):
-                def __call__(self, *args, **kwargs):
-                    console.deprecate(
-                        feature_name="state_auto_setters defaulting to True",
-                        reason="The default value will be changed to False in a future release. Set state_auto_setters explicitly or define setters explicitly. "
-                        f"Used {setter_name} in {cls.__name__} without defining it.",
-                        deprecation_version="0.8.9",
-                        removal_version="0.9.0",
-                        dedupe=True,
-                    )
-                    return super().__call__(*args, **kwargs)
-
-            create_event_handler_kwargs["event_handler_cls"] = (
-                EventHandlerDeprecatedSetter
-            )
 
         setter_name = Var._get_setter_name_for_name(name)
         if setter_name not in cls.__dict__:
@@ -1874,19 +1841,6 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             TypeError: If the key is not a string or MutableProxy.
         """
-        if isinstance(key, MutableProxy):
-            # Legacy behavior from v0.7.14: handle non-string keys with deprecation warning
-            from reflex_base.utils import console
-
-            console.deprecate(
-                feature_name="Non-string keys in get_value",
-                reason="Passing non-string keys to get_value is deprecated and will no longer be supported",
-                deprecation_version="0.8.0",
-                removal_version="0.9.0",
-            )
-
-            return key.__wrapped__
-
         if isinstance(key, str):
             if isinstance(val := getattr(self, key), MutableProxy):
                 return val.__wrapped__

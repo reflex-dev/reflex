@@ -27,7 +27,6 @@ from reflex_base.utils import console, exceptions, format
 from reflex_base.vars.base import computed_var
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
-from reflex_components_core.core.cond import Cond
 from reflex_components_radix.themes.typography.text import Text
 from sqlalchemy.engine.base import Engine
 from starlette.applications import Starlette
@@ -37,7 +36,7 @@ from starlette_admin.auth import AuthProvider
 
 import reflex as rx
 from reflex import AdminDash, constants
-from reflex.app import App, ComponentCallable, default_overlay_component, upload
+from reflex.app import App, ComponentCallable, upload
 from reflex.environment import environment
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
@@ -523,6 +522,11 @@ async def test_dynamic_var_event(
     clean_registration_context.register_base_state(test_state)
     state = test_state()  # pyright: ignore [reportCallIssue]
     state.add_var("int_val", int, 0)
+
+    def set_int_val(self, value: int):
+        self.int_val = value
+
+    state._add_event_handler("set_int_val", set_int_val)
     async with mock_base_state_event_processor as processor:
         await processor.enqueue(
             token,
@@ -1931,63 +1935,6 @@ async def test_process_events(
     assert len(emitted_deltas) == 5
 
     await mock_root_event_context.state_manager.close()
-
-
-@pytest.mark.parametrize(
-    ("state", "overlay_component", "exp_page_child"),
-    [
-        (None, default_overlay_component, Fragment),
-        (None, None, None),
-        (None, Text.create("foo"), Text),
-        (State, default_overlay_component, Fragment),
-        (State, None, None),
-        (State, Text.create("foo"), Text),
-        (State, lambda: Text.create("foo"), Text),
-    ],
-)
-def test_overlay_component(
-    state: type[State] | None,
-    overlay_component: Component | ComponentCallable | None,
-    exp_page_child: type[Component] | None,
-):
-    """Test that the overlay component is set correctly.
-
-    Args:
-        state: The state class to pass to App.
-        overlay_component: The overlay_component to pass to App.
-        exp_page_child: The type of the expected child in the page fragment.
-    """
-    app = App(_state=state, overlay_component=overlay_component)
-    app._setup_overlay_component()
-    if exp_page_child is None:
-        assert app.overlay_component is None
-    elif isinstance(exp_page_child, Fragment):
-        assert app.overlay_component is not None
-        generated_component = app._generate_component(app.overlay_component)
-        assert isinstance(generated_component, Fragment)
-        assert isinstance(
-            generated_component.children[0],
-            Cond,  # ConnectionModal is a Cond under the hood
-        )
-    else:
-        assert app.overlay_component is not None
-        assert isinstance(
-            app._generate_component(app.overlay_component),
-            exp_page_child,
-        )
-
-    app.add_page(rx.box("Index"), route="/test")
-    # overlay components are wrapped during compile only
-    app._compile_page("test")
-    app._setup_overlay_component()
-    page = app._pages["test"]
-
-    if exp_page_child is not None:
-        assert len(page.children) == 4
-        children_types = (type(child) for child in page.children)
-        assert exp_page_child in children_types  # pyright: ignore [reportOperatorIssue]
-    else:
-        assert len(page.children) == 3
 
 
 @pytest.fixture

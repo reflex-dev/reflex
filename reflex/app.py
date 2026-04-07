@@ -332,10 +332,6 @@ class App(MiddlewareMixin, LifespanMixin):
 
     reset_style: bool = dataclasses.field(default=True)
 
-    overlay_component: Component | ComponentCallable | None = dataclasses.field(
-        default=None
-    )
-
     app_wraps: dict[tuple[int, str], Callable[[bool], Component | None]] = (
         dataclasses.field(
             default_factory=lambda: {
@@ -1092,22 +1088,6 @@ class App(MiddlewareMixin, LifespanMixin):
 
         return Fragment.create(overlay_component, *children)
 
-    def _setup_overlay_component(self):
-        """If a State is not used and no overlay_component is specified, do not render the connection modal."""
-        if self.overlay_component is None:
-            return
-        console.deprecate(
-            feature_name="overlay_component",
-            reason="Use `extra_app_wraps` to add the overlay component instead.",
-            deprecation_version="0.8.2",
-            removal_version="0.9.0",
-        )
-        overlay_component = self._generate_component(self.overlay_component)
-        for k, component in self._pages.items():
-            self._pages[k] = self._add_overlay_to_component(
-                component, overlay_component
-            )
-
     def _setup_sticky_badge(self):
         """Add the sticky badge to the app."""
         from reflex_base.components.component import memo
@@ -1285,7 +1265,6 @@ class App(MiddlewareMixin, LifespanMixin):
         self._add_optional_endpoints()
 
         self._validate_var_dependencies()
-        self._setup_overlay_component()
 
         if config.show_built_with_reflex is None:
             if (

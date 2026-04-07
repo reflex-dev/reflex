@@ -239,7 +239,7 @@ class RouterData:
             feature_name="RouterData.page",
             reason="Use RouterData.url instead",
             deprecation_version="0.8.1",
-            removal_version="0.9.0",
+            removal_version="1.0",
         )
         return self._page
 
