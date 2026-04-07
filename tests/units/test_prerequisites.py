@@ -11,7 +11,6 @@ from reflex_base.utils.decorator import cached_procedure
 from reflex.reflex import cli
 from reflex.testing import chdir
 from reflex.utils.frontend_skeleton import (
-    _compile_package_json,
     _compile_vite_config,
     _update_react_router_config,
 )
