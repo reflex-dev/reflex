@@ -166,7 +166,7 @@ jobs:
 
       # TODO: revisit when https://github.com/SocketDev/sfw-free/issues/30 is resolved.
       - name: Pre-install reflex-docs git dependencies (outside sfw)
-        working-directory: ./reflex/docs/app
+        working-directory: ./docs/app
         run: |
           # Replace reflex-dev/reflex git deps with plain package names (PR version is pre-installed)
           sed -i -E 's|"([a-zA-Z0-9_-]+)\s*@\s*git\+https://github\.com/reflex-dev/reflex@[^"]*"|"\1"|g' pyproject.toml
@@ -179,7 +179,7 @@ jobs:
             uv pip install --no-deps -r git-requirements.txt
           fi
       - name: Compile and install reflex-docs requirements (scanned by Socket.dev)
-        working-directory: ./reflex/docs/app
+        working-directory: ./docs/app
         run: |
           sfw uv pip compile pyproject.toml --no-annotate --no-header --no-deps --output-file requirements.txt
           uv pip list --format=json | jq -r '"^" + .[].name + "[ =]"' > installed_patterns.txt
@@ -196,13 +196,13 @@ jobs:
           echo "Installed reflex version: $installed_version"
           [[ "$installed_version" == *"+$expected_sha" ]]
       - name: Init Website for reflex-docs
-        working-directory: ./reflex/docs/app
+        working-directory: ./docs/app
         run: uv run --active --no-sync reflex init
       - name: Run Website and Check for errors
         run: |
           # Verify sfw wrappers are on PATH
           which npm && npm -v
-          uv run --active --no-sync bash scripts/integration.sh ./reflex/docs/app prod
+          uv run --active --no-sync bash scripts/integration.sh ./docs/app prod
 
       - name: Upload Socket.dev Firewall report
         if: always()
@@ -262,20 +262,20 @@ jobs:
           run-uv-sync: true
 
       - name: Install reflex-docs dependencies
-        working-directory: ./reflex/docs/app
+        working-directory: ./docs/app
         run: |
           uv pip compile pyproject.toml --no-annotate --no-header --no-deps --output-file requirements.txt
           uv pip list --format=json | jq -r '"^" + .[].name + "[ =]"' > installed_patterns.txt
           grep -ivf installed_patterns.txt requirements.txt > requirements.txt.tmp && mv requirements.txt.tmp requirements.txt
           rm installed_patterns.txt
       - name: Install Requirements for reflex-docs
-        working-directory: ./reflex/docs/app
+        working-directory: ./docs/app
         run: uv pip install -r requirements.txt
       - name: Init Website for reflex-docs
-        working-directory: ./reflex/docs/app
+        working-directory: ./docs/app
         run: uv run --active --no-sync reflex init
       - name: Run Website and Check for errors
         run: |
           # Check that npm is home
           npm -v
-          uv run --active --no-sync bash scripts/integration.sh ./reflex/docs/app prod
+          uv run --active --no-sync bash scripts/integration.sh ./docs/app prod

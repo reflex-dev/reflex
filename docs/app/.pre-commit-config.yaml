@@ -1,0 +1,10 @@
+fail_fast: true
+
+repos:
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.14.0
+    hooks:
+      - id: ruff-format
+        args: ["--config", "docs/app/ruff.toml"]
+      - id: ruff-check
+        args: ["--config", "docs/app/ruff.toml", "--fix", "--exit-non-zero-on-fix", "--no-unsafe-fixes"]
