@@ -34,6 +34,7 @@ repos:
   - args:
     - reflex
     - tests
+    exclude: ^docs/
     id: pyright
     language: system
   repo: https://github.com/RobertCraigie/pyright-python
