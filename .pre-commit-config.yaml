@@ -4,6 +4,7 @@ repos:
   - args:
     - reflex
     - tests
+    exclude: ^docs/
     id: ruff-format
   - args:
     - --fix
