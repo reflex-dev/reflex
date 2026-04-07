@@ -1841,19 +1841,6 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             TypeError: If the key is not a string or MutableProxy.
         """
-        if isinstance(key, MutableProxy):
-            # Legacy behavior from v0.7.14: handle non-string keys with deprecation warning
-            from reflex_base.utils import console
-
-            console.deprecate(
-                feature_name="Non-string keys in get_value",
-                reason="Passing non-string keys to get_value is deprecated and will no longer be supported",
-                deprecation_version="0.8.0",
-                removal_version="0.9.0",
-            )
-
-            return key.__wrapped__
-
         if isinstance(key, str):
             if isinstance(val := getattr(self, key), MutableProxy):
                 return val.__wrapped__
