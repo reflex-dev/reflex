@@ -19,7 +19,6 @@ import pytest
 import pytest_asyncio
 import reflex_base.config
 from plotly.graph_objects import Figure
-from pydantic import BaseModel as Base
 from pytest_mock import MockerFixture
 from reflex_base import constants
 from reflex_base.constants import CompileVars, RouteVar
@@ -68,6 +67,7 @@ pytest.importorskip("pydantic")
 
 
 from pydantic import BaseModel
+from pydantic import BaseModel as Base
 
 from tests.units.states.mutation import MutableTestState
 

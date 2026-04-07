@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from pydantic import BaseModel as Base
 from reflex_base.utils.format import json_dumps
 from reflex_base.vars.base import LiteralVar
 from reflex_components_core.core.colors import Color
@@ -14,6 +13,8 @@ from reflex_components_core.core.colors import Color
 from reflex.utils import serializers
 
 pytest.importorskip("pydantic")
+
+from pydantic import BaseModel as Base
 
 
 @pytest.mark.parametrize(

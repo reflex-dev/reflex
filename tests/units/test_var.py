@@ -7,7 +7,6 @@ from typing import cast
 
 import pytest
 from pandas import DataFrame
-from pydantic import BaseModel as Base
 from pytest_mock import MockerFixture
 from reflex_base.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
 from reflex_base.constants.state import FIELD_MARKER
@@ -43,6 +42,11 @@ from reflex_base.vars.sequence import (
 import reflex as rx
 from reflex.environment import PerformanceMode
 from reflex.state import BaseState
+
+pytest.importorskip("pydantic")
+
+
+from pydantic import BaseModel as Base
 
 test_vars = [
     Var(_js_expr="prop1", _var_type=int),

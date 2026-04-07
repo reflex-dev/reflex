@@ -28,7 +28,6 @@ from reflex_base.vars.base import computed_var
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_radix.themes.typography.text import Text
-from sqlalchemy.engine.base import Engine
 from starlette.applications import Starlette
 from starlette.datastructures import FormData, Headers, UploadFile
 from starlette.responses import StreamingResponse
@@ -59,6 +58,9 @@ from .states.upload import (
     FileUploadState,
     GrandChildFileUploadState,
 )
+
+if TYPE_CHECKING:
+    from sqlalchemy.engine.base import Engine
 
 
 class EmptyState(BaseState):
