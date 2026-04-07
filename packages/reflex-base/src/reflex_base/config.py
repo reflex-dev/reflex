@@ -238,7 +238,7 @@ class BaseConfig:
 
     env_file: str | None = None
 
-    state_auto_setters: bool | None = None
+    state_auto_setters: bool = False
 
     show_built_with_reflex: bool | None = None
 
