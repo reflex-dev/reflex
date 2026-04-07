@@ -55,6 +55,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
           run-uv-sync: true
 
+      - name: Run unit tests without db dependencies
+        run: |
+          export PYTHONUNBUFFERED=1
+          uv pip uninstall pydantic alembic sqlalchemy sqlmodel
+          uv run --no-sync pytest tests/units --cov --no-cov-on-fail --cov-report=
+          uv sync
       - name: Run unit tests
         run: |
           export PYTHONUNBUFFERED=1
@@ -93,6 +99,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
           run-uv-sync: true
 
+      - name: Run unit tests without db dependencies
+        run: |
+          export PYTHONUNBUFFERED=1
+          uv pip uninstall pydantic alembic sqlalchemy sqlmodel
+          uv run --no-sync pytest tests/units --cov --no-cov-on-fail --cov-report=
+          uv sync
       - name: Run unit tests
         run: |
           export PYTHONUNBUFFERED=1
