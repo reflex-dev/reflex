@@ -50,7 +50,7 @@ def model_custom_primary() -> Model:
 
 
 def test_default_primary_key(model_default_primary: Model):
-    """Test that if a primary key is not defined a default is added.
+    """Test that if no primary key is defined, an "id" field is added.
 
     Args:
         model_default_primary: Fixture.
@@ -59,12 +59,12 @@ def test_default_primary_key(model_default_primary: Model):
 
 
 def test_custom_primary_key(model_custom_primary: Model):
-    """Test that if a primary key is defined no default key is added.
+    """Test that if a primary key is defined it is not overridden.
 
     Args:
         model_custom_primary: Fixture.
     """
-    assert "id" not in type(model_custom_primary).model_fields
+    assert "id" in type(model_custom_primary).model_fields
 
 
 @pytest.mark.filterwarnings(
