@@ -176,11 +176,11 @@ jobs:
       - name: Pre-install reflex-web git dependencies (outside sfw)
         working-directory: ./reflex-web
         run: |
+          # Replace reflex-dev/reflex git deps with plain package names (PR version is pre-installed)
+          sed -i -E 's|"([a-zA-Z0-9_-]+)\s*@\s*git\+https://github\.com/reflex-dev/reflex@[^"]*"|"\1"|g' pyproject.toml
           # Install git+https deps from pyproject.toml before pip compile resolves them.
-          # Exclude reflex repo URLs — the PR checkout is already installed in the active venv.
-          grep -oP 'git\+https://[^"'"'"']+' pyproject.toml \
-            | grep -vE 'github\.com/reflex-dev/reflex(\.git)?([@#]|$)' \
-            | sort -u > git-requirements.txt || true
+          # Exclude reflex itself — the PR version is already installed.
+          grep -oP 'git\+https://[^"'"'"']+' pyproject.toml | sort -u > git-requirements.txt || true
           if [ -s git-requirements.txt ]; then
             echo "Installing git dependencies:"
             cat git-requirements.txt
