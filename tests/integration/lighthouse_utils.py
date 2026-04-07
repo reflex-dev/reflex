@@ -10,6 +10,7 @@ import shlex
 import shutil
 import subprocess
 import time
+import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -903,6 +904,19 @@ def _run_prod_lighthouse_benchmark(
             f"reflex run --env prod did not start within timeout for {label}\n"
             f"Captured output:\n{output}"
         )
+
+    # Warmup request: ensure the server is fully ready before benchmarking.
+    warmup_deadline = time.monotonic() + 30
+    while time.monotonic() < warmup_deadline:
+        try:
+            urllib.request.urlopen(frontend_url, timeout=5)
+            break
+        except Exception:
+            time.sleep(0.5)
+    else:
+        proc.terminate()
+        proc.wait(timeout=10)
+        pytest.fail(f"Warmup request to {frontend_url} never succeeded for {label}")
 
     try:
         report = run_lighthouse(frontend_url, report_path)
