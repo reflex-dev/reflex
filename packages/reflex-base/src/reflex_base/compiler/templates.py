@@ -526,6 +526,7 @@ def vite_config_template(
 import {{ reactRouter }} from "@react-router/dev/vite";
 import {{ defineConfig }} from "vite";
 import safariCacheBustPlugin from "./vite-plugin-safari-cachebust";
+import compressPlugin from "./vite-plugin-compress";
 
 // Ensure that bun always uses the react-dom/server.node functions.
 function alwaysUseReactDomServerNode() {{
@@ -566,6 +567,7 @@ export default defineConfig((config) => ({{
     alwaysUseReactDomServerNode(),
     reactRouter(),
     safariCacheBustPlugin(),
+    compressPlugin(),
   ].concat({"[fullReload()]" if force_full_reload else "[]"}),
   build: {{
     assetsDir: "{base}assets".slice(1),
@@ -582,6 +584,14 @@ export default defineConfig((config) => ({{
             {{
               test: /env.json/,
               name: "reflex-env",
+            }},
+            {{
+              test: /node_modules\/socket\.io|node_modules\/engine\.io/,
+              name: "socket-io",
+            }},
+            {{
+              test: /node_modules\/@radix-ui/,
+              name: "radix-ui",
             }},
           ],
         }},

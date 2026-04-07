@@ -64,6 +64,8 @@ Initializing your project creates a directory with the same name as your app. Th
 
 Reflex generates a default app within the `{app_name}/{app_name}.py` file. You can modify this file to customize your app.
 
+The starter page also includes explicit page metadata. As you customize the app, update the page `title` and `description` in `app.add_page(...)` or `@rx.page(...)` so your production pages describe your project clearly.
+
 ## Python Project Files
 
 `pyproject.toml` defines your Python project metadata and dependencies. `uv add reflex` records the Reflex dependency there before you initialize the app.
