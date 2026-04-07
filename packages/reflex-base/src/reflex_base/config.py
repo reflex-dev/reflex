@@ -381,7 +381,7 @@ class Config(BaseConfig):
                     feature_name="Passing strings to disable_plugins",
                     reason="pass Plugin classes directly instead, e.g. disable_plugins=[SitemapPlugin]",
                     deprecation_version="0.8.28",
-                    removal_version="0.9.0",
+                    removal_version="1.0",
                 )
                 try:
                     from reflex_base.environment import interpret_plugin_class_env
