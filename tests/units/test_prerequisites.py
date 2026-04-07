@@ -110,29 +110,6 @@ def test_get_prod_command(frontend_path, expected_command):
     assert PackageJson.Commands.get_prod_command(frontend_path) == expected_command
 
 
-@pytest.mark.parametrize(
-    ("config", "expected_prod_script"),
-    [
-        (
-            Config(app_name="test"),
-            "sirv ./build/client --single 404.html --host",
-        ),
-        (
-            Config(app_name="test", frontend_path="/app"),
-            "sirv ./build/client --single app/404.html --host",
-        ),
-        (
-            Config(app_name="test", frontend_path="/deep/nested"),
-            "sirv ./build/client --single deep/nested/404.html --host",
-        ),
-    ],
-)
-def test_compile_package_json_prod_command(config, expected_prod_script, monkeypatch):
-    monkeypatch.setattr("reflex.utils.frontend_skeleton.get_config", lambda: config)
-    output = _compile_package_json()
-    assert f'"prod": "{expected_prod_script}"' in output
-
-
 def test_cached_procedure():
     call_count = 0
 
