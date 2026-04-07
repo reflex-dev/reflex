@@ -177,8 +177,10 @@ jobs:
         working-directory: ./reflex-web
         run: |
           # Install git+https deps from pyproject.toml before pip compile resolves them.
-          # Exclude reflex itself — the PR version is already installed.
-          grep -oP 'git\+https://[^"'"'"']+' pyproject.toml | grep -v 'reflex-dev/reflex\.git' | sort -u > git-requirements.txt || true
+          # Exclude reflex repo URLs — the PR checkout is already installed in the active venv.
+          grep -oP 'git\+https://[^"'"'"']+' pyproject.toml \
+            | grep -vE 'github\.com/reflex-dev/reflex(\.git)?([@#]|$)' \
+            | sort -u > git-requirements.txt || true
           if [ -s git-requirements.txt ]; then
             echo "Installing git dependencies:"
             cat git-requirements.txt
@@ -194,6 +196,13 @@ jobs:
           if [ -s requirements.txt ]; then
             sfw uv pip install -r requirements.txt
           fi
+      - name: Verify installed reflex version matches this checkout
+        run: |
+          expected_sha="$(git rev-parse --short=8 HEAD)"
+          installed_version="$(uv run --active --no-sync python -c 'import importlib.metadata as metadata; print(metadata.version("reflex"))')"
+          echo "Expected checkout SHA: $expected_sha"
+          echo "Installed reflex version: $installed_version"
+          [[ "$installed_version" == *"+$expected_sha" ]]
       - name: Init Website for reflex-web
         working-directory: ./reflex-web
         run: uv run --active --no-sync reflex init
