@@ -266,26 +266,61 @@ def notify_app_running():
     console.rule("[bold green]App Running")
 
 
-def run_frontend_prod(root: Path, port: str, backend_present: bool = True):
-    """Run the frontend.
+def get_frontend_mount():
+    """Get a Starlette Mount for the compiled frontend static files.
+
+    Returns:
+        A Mount serving the compiled frontend static files.
+    """
+    from starlette.routing import Mount
+    from starlette.staticfiles import StaticFiles
+
+    from reflex.utils import prerequisites
+
+    config = get_config()
+
+    return Mount(
+        "/" + config.frontend_path.strip("/"),
+        app=StaticFiles(
+            directory=prerequisites.get_web_dir()
+            / constants.Dirs.STATIC
+            / config.frontend_path.strip("/"),
+            html=True,
+        ),
+        name="frontend",
+    )
+
+
+def _frontend_prod_app():
+    """Create a Starlette app that serves the compiled frontend static files.
+
+    Returns:
+        A Starlette ASGI app serving static files.
+    """
+    from starlette.applications import Starlette
+
+    return Starlette(routes=[get_frontend_mount()])
+
+
+def run_frontend_prod(host: str, port: int):
+    """Run the frontend in production mode by serving compiled static files.
+
+    Uses the same granian/uvicorn infrastructure as the backend.
 
     Args:
-        root: The root path of the project (to keep same API as run_frontend).
-        port: The port to run the frontend on.
-        backend_present: Whether the backend is present.
+        host: The host to serve on.
+        port: The port to serve on.
     """
-    from reflex.utils import js_runtimes
+    loglevel = get_config().loglevel.subprocess_level()
 
-    # Set the port.
-    os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
-    # validate dependencies before run
-    js_runtimes.validate_frontend_dependencies(init=False)
-    # Run the frontend in production mode.
-    notify_app_running()
-    run_process_and_launch_url(
-        [*js_runtimes.get_js_package_executor(raise_on_none=True)[0], "run", "prod"],
-        backend_present,
-    )
+    if should_use_granian():
+        run_granian_backend_prod(
+            host, port, loglevel, app_target=f"{__name__}:_frontend_prod_app"
+        )
+    else:
+        run_uvicorn_backend_prod(
+            host, port, loglevel, app_target=f"{__name__}:_frontend_prod_app"
+        )
 
 
 @once
@@ -591,20 +626,23 @@ def _get_backend_workers():
     return processes.get_num_workers()
 
 
-def run_uvicorn_backend_prod(host: str, port: int, loglevel: LogLevel):
+def run_uvicorn_backend_prod(
+    host: str, port: int, loglevel: LogLevel, app_target: str | None = None
+):
     """Run the backend in production mode using Uvicorn.
 
     Args:
         host: The app host
         port: The app port
         loglevel: The log level.
+        app_target: The ASGI app target to run. Defaults to the reflex app instance.
     """
     import os
     import shlex
 
     from reflex.utils import processes
 
-    app_module = get_app_instance()
+    app_module = app_target or get_app_instance()
 
     if constants.IS_WINDOWS:
         command = [
@@ -650,13 +688,16 @@ def run_uvicorn_backend_prod(host: str, port: int, loglevel: LogLevel):
     )
 
 
-def run_granian_backend_prod(host: str, port: int, loglevel: LogLevel):
+def run_granian_backend_prod(
+    host: str, port: int, loglevel: LogLevel, app_target: str | None = None
+):
     """Run the backend in production mode using Granian.
 
     Args:
         host: The app host
         port: The app port
         loglevel: The log level.
+        app_target: The ASGI app target to run. Defaults to the reflex app instance.
     """
     from granian.constants import Interfaces
     from granian.log import LogLevels
@@ -665,7 +706,7 @@ def run_granian_backend_prod(host: str, port: int, loglevel: LogLevel):
     console.debug("Using Granian for backend")
 
     granian_app = Granian(
-        target=get_app_instance_from_file(),
+        target=app_target or get_app_instance_from_file(),
         factory=True,
         address=host,
         port=port,

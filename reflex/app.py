@@ -647,16 +647,9 @@ class App(MiddlewareMixin, LifespanMixin):
         asgi_app = self._api
 
         if environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.get():
-            asgi_app.mount(
-                "/" + config.frontend_path.strip("/"),
-                StaticFiles(
-                    directory=prerequisites.get_web_dir()
-                    / constants.Dirs.STATIC
-                    / config.frontend_path.strip("/"),
-                    html=True,
-                ),
-                name="frontend",
-            )
+            from reflex.utils.exec import get_frontend_mount
+
+            asgi_app.routes.append(get_frontend_mount())
 
         if self.api_transformer is not None:
             api_transformers: Sequence[Starlette | Callable[[ASGIApp], ASGIApp]] = (

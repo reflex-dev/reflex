@@ -245,7 +245,7 @@ def _run_prod(running_mode: constants.RunningMode, port: int, host: str):
             host, port, config.loglevel.subprocess_level(), running_mode.has_frontend()
         )
     else:
-        exec.run_frontend_prod()
+        exec.run_frontend_prod(host, port)
 
 
 def _run(
