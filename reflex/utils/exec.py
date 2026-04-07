@@ -711,7 +711,7 @@ def run_granian_backend_prod(
         address=host,
         port=port,
         interface=Interfaces.ASGI,
-        log_level=LogLevels(os.getenv("GRANIAN_LOG_LEVEL", "critical")),
+        log_level=LogLevels(os.getenv("GRANIAN_LOG_LEVEL", loglevel.value)),
         workers=int(os.getenv("GRANIAN_WORKERS", str(_get_backend_workers()))),
     )
 

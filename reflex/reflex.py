@@ -145,10 +145,9 @@ def _compile_app(*, avoid_dirty_check: bool = True):
     if exec.should_use_granian() and avoid_dirty_check:
         import concurrent.futures
 
-        compile_future = concurrent.futures.ProcessPoolExecutor(max_workers=1).submit(
-            app_task, *args, **kwargs
-        )
-        return_result = compile_future.result()
+        with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
+            compile_future = executor.submit(app_task, *args, **kwargs)
+            return_result = compile_future.result()
     else:
         return_result = app_task(*args, **kwargs)
 
@@ -267,7 +266,7 @@ def _run(
         console.error("Cannot specify --backend-port when not running backend.")
         raise SystemExit(1)
     if (
-        constants.Env.PROD
+        env == constants.Env.PROD
         and frontend_port
         and backend_port
         and frontend_port != backend_port
