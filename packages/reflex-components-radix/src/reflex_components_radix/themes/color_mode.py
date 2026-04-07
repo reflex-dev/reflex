@@ -147,6 +147,8 @@ class ColorModeIconButton(IconButton):
         props.setdefault("background", "transparent")
         props.setdefault("color", "inherit")
         props.setdefault("z_index", "20")
+        props.setdefault("aria_label", "Toggle color mode")
+        props.setdefault("title", "Toggle color mode")
         props.setdefault(":hover", {"cursor": "pointer"})
 
         if allow_system:

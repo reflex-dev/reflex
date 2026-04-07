@@ -67,6 +67,7 @@ jobs:
         env:
           REFLEX_RUN_LIGHTHOUSE: "1"
         run: |
+          mkdir -p .pytest-tmp/lighthouse
           uv run pytest tests/integration/test_lighthouse.py -q -s --tb=no --basetemp=.pytest-tmp/lighthouse
 
       - name: Upload Lighthouse artifacts
