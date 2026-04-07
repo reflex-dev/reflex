@@ -5,6 +5,8 @@ repos:
     rev: v0.14.0
     hooks:
       - id: ruff-format
-        args: ["--config", "docs/app/ruff.toml"]
+        args: ["--config", "docs/app/pyproject.toml"]
+        files: ^docs/app/
       - id: ruff-check
-        args: ["--config", "docs/app/ruff.toml", "--fix", "--exit-non-zero-on-fix", "--no-unsafe-fixes"]
+        args: ["--config", "docs/app/pyproject.toml", "--fix", "--exit-non-zero-on-fix", "--no-unsafe-fixes"]
+        files: ^docs/app/
