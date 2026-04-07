@@ -1088,10 +1088,6 @@ class StubGenerator(ast.NodeTransformer):
         Returns:
             The modified import node(s).
         """
-        if not self.inserted_imports:
-            self.inserted_imports = True
-            default_imports = _generate_imports(self.typing_imports)
-            return [*default_imports, node]
         # Drop any imports in the EXCLUDED_IMPORTS mapping since they are supplied by DEFAULT_IMPORTS.
         if isinstance(node, ast.ImportFrom) and node.module in EXCLUDED_IMPORTS:
             node.names = [
@@ -1099,8 +1095,12 @@ class StubGenerator(ast.NodeTransformer):
                 for alias in node.names
                 if alias.name not in EXCLUDED_IMPORTS[node.module]
             ]
-            if not node.names:
-                return []
+        if not self.inserted_imports:
+            self.inserted_imports = True
+            default_imports = _generate_imports(self.typing_imports)
+            return [*default_imports, *([node] if node.names else ())]
+        if not node.names:
+            return []
         return node
 
     def visit_ImportFrom(
@@ -1368,7 +1368,7 @@ def _rewrite_component_import(module: str, is_reflex_package: bool) -> str:
         # "components": ["el", "radix", ...] — these are re-exported submodules.
         # Can't map to a single package, but the pyi generator handles each attr individually.
         return "reflex_components_core"
-    if module.startswith("components."):
+    if is_reflex_package and module.startswith("components."):
         rest = module[len("components.") :]
         # Try progressively deeper matches (e.g. "datadisplay.code" before "datadisplay").
         parts = rest.split(".")
