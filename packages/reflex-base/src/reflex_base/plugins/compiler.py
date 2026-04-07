@@ -562,7 +562,6 @@ class CompileContext(BaseContext):
         *,
         evaluate_progress: Callable[[], None] | None = None,
         render_progress: Callable[[], None] | None = None,
-        apply_overlay: bool = False,
         **kwargs: Any,
     ) -> dict[str, PageContext]:
         """Compile all configured pages through the plugin pipeline.
@@ -570,7 +569,6 @@ class CompileContext(BaseContext):
         Args:
             evaluate_progress: Callback invoked after each page evaluation.
             render_progress: Callback invoked after each page render.
-            apply_overlay: Whether to apply the app overlay during evaluation.
             kwargs: Additional compiler-specific context.
 
         Returns:
@@ -588,14 +586,6 @@ class CompileContext(BaseContext):
         self.stateful_components_path = compiler.utils.get_stateful_components_path()
         self.stateful_components_code = ""
         stateful_component_cache: dict[str, StatefulComponent] = {}
-
-        overlay_component: Component | None = None
-        if (
-            apply_overlay
-            and self.app is not None
-            and self.app.overlay_component is not None
-        ):
-            overlay_component = self.app._generate_component(self.app.overlay_component)
 
         for page in self.pages:
             page_fn = page.component
@@ -619,18 +609,6 @@ class CompileContext(BaseContext):
 
             if len(all_base_state_classes) > n_states_before:
                 self.stateful_routes[page.route] = None
-
-            if overlay_component is not None and self.app is not None:
-                if not isinstance(page_ctx.root_component, Component):
-                    msg = (
-                        f"Compiled page {page_ctx.route!r} root must be a Component "
-                        "to apply the overlay."
-                    )
-                    raise TypeError(msg)
-                page_ctx.root_component = self.app._add_overlay_to_component(
-                    page_ctx.root_component,
-                    overlay_component,
-                )
 
             if isinstance(page_ctx.root_component, StatefulComponent):
                 self.app_wrap_components.update(

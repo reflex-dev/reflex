@@ -1034,7 +1034,6 @@ def compile_app(
 
     with console.timing("Compile pages"), compile_ctx:
         compile_ctx.compile(
-            apply_overlay=True,
             evaluate_progress=lambda: progress.advance(task),
             render_progress=lambda: progress.advance(task),
         )

@@ -183,10 +183,10 @@ def extra_overlay_function() -> Component | None:
 
 
 def default_overlay_component() -> Component:
-    """Default overlay_component attribute for App.
+    """Default overlay component included in the app wraps.
 
     Returns:
-        The default overlay_component, which is a connection_modal.
+        The default overlay component, which is a connection banner/toaster set.
     """
     from reflex_base.components.component import memo
 
@@ -283,7 +283,6 @@ class App(MiddlewareMixin, LifespanMixin):
         style: The [global style](https://reflex.dev/docs/styling/overview/#global-styles}) for the app.
         stylesheets: A list of URLs to [stylesheets](https://reflex.dev/docs/styling/custom-stylesheets/) to include in the app.
         reset_style: Whether to include CSS reset for margin and padding. Defaults to True.
-        overlay_component: A component that is present on every page. Defaults to the Connection Error banner.
         app_wraps: App wraps to be applied to the whole app. Expected to be a dictionary of (order, name) to a function that takes whether the state is enabled and optionally returns a component.
         extra_app_wraps: Extra app wraps to be applied to the whole app.
         head_components: Components to add to the head of every page.
@@ -1057,16 +1056,6 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # By default, compile the app.
         return True
-
-    def _add_overlay_to_component(
-        self, component: Component, overlay_component: Component
-    ) -> Component:
-        children = component.children
-
-        if children[0] == overlay_component:
-            return component
-
-        return Fragment.create(overlay_component, *children)
 
     def _setup_sticky_badge(self):
         """Add the sticky badge to the app."""
