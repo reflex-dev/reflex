@@ -1,8 +1,12 @@
 """Test states for mutable vars."""
 
-import pydantic
+import pytest
 
 from reflex.state import BaseState
+
+pytest.importorskip("pydantic")
+
+import pydantic
 
 
 class OtherBase(pydantic.BaseModel):
