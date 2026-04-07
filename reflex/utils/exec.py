@@ -567,7 +567,6 @@ def run_backend_prod(
     host: str,
     port: int,
     loglevel: constants.LogLevel = constants.LogLevel.ERROR,
-    frontend_present: bool = False,
     mount_frontend_compiled_app: bool = False,
 ):
     """Run the backend.
@@ -576,12 +575,8 @@ def run_backend_prod(
         host: The app host
         port: The app port
         loglevel: The log level.
-        frontend_present: Whether the frontend is present.
         mount_frontend_compiled_app: Whether to mount the compiled frontend app with the backend.
     """
-    if not frontend_present:
-        notify_backend()
-
     environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.set(mount_frontend_compiled_app)
 
     if should_use_granian():
@@ -664,34 +659,22 @@ def run_granian_backend_prod(host: str, port: int, loglevel: LogLevel):
         loglevel: The log level.
     """
     from granian.constants import Interfaces
+    from granian.log import LogLevels
+    from granian.server import Server as Granian
 
-    from reflex.utils import processes
+    console.debug("Using Granian for backend")
 
-    command = [
-        sys.executable,
-        "-m",
-        "granian",
-        *("--host", host),
-        *("--port", str(port)),
-        *("--interface", str(Interfaces.ASGI)),
-        *("--factory", get_app_instance_from_file()),
-    ]
-
-    extra_env = {
-        environment.REFLEX_SKIP_COMPILE.name: "true",  # skip compile for prod backend
-    }
-
-    if "GRANIAN_WORKERS" not in os.environ:
-        extra_env["GRANIAN_WORKERS"] = str(_get_backend_workers())
-    if "GRANIAN_LOG_LEVEL" not in os.environ:
-        extra_env["GRANIAN_LOG_LEVEL"] = "critical"
-
-    processes.new_process(
-        command,
-        run=True,
-        show_logs=True,
-        env=extra_env,
+    granian_app = Granian(
+        target=get_app_instance_from_file(),
+        factory=True,
+        address=host,
+        port=port,
+        interface=Interfaces.ASGI,
+        log_level=LogLevels(os.getenv("GRANIAN_LOG_LEVEL", "critical")),
+        workers=int(os.getenv("GRANIAN_WORKERS", str(_get_backend_workers()))),
     )
+
+    granian_app.serve()
 
 
 def output_system_info():
