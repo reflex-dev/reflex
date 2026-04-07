@@ -14,6 +14,7 @@ from .builtin import (
     DefaultPagePlugin,
     default_page_plugins,
 )
+from .memoize import MemoizeStatefulPlugin
 
 __all__ = [
     "ApplyStylePlugin",
@@ -23,6 +24,7 @@ __all__ = [
     "ComponentAndChildren",
     "DefaultCollectorPlugin",
     "DefaultPagePlugin",
+    "MemoizeStatefulPlugin",
     "PageContext",
     "default_page_plugins",
 ]

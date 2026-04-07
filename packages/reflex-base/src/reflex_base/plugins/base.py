@@ -8,7 +8,7 @@ from typing_extensions import Unpack
 
 if TYPE_CHECKING:
     from reflex.app import App, UnevaluatedPage
-    from reflex_base.components.component import BaseComponent, StatefulComponent
+    from reflex_base.components.component import BaseComponent
     from reflex_base.plugins.compiler import ComponentAndChildren, PageContext
 
 
@@ -155,7 +155,6 @@ class Plugin:
         page_context: "PageContext",
         compile_context: Any,
         in_prop_tree: bool = False,
-        stateful_component: "StatefulComponent | None" = None,
     ) -> "BaseComponent | ComponentAndChildren | None":
         """Inspect or transform a component before visiting its descendants.
 
@@ -164,12 +163,10 @@ class Plugin:
             page_context: The active page compilation state.
             compile_context: The active compile-run state.
             in_prop_tree: Whether the component is being visited through a prop subtree.
-            stateful_component: The surrounding stateful component, when applicable.
 
         Returns:
             An optional replacement component and/or structural children.
         """
-        del comp, page_context, compile_context, in_prop_tree, stateful_component
         return None
 
     def leave_component(
@@ -181,7 +178,6 @@ class Plugin:
         page_context: "PageContext",
         compile_context: Any,
         in_prop_tree: bool = False,
-        stateful_component: "StatefulComponent | None" = None,
     ) -> "BaseComponent | ComponentAndChildren | None":
         """Inspect or transform a component after visiting its descendants.
 
@@ -191,19 +187,10 @@ class Plugin:
             page_context: The active page compilation state.
             compile_context: The active compile-run state.
             in_prop_tree: Whether the component is being visited through a prop subtree.
-            stateful_component: The surrounding stateful component, when applicable.
 
         Returns:
             An optional replacement component and/or structural children.
         """
-        del (
-            comp,
-            children,
-            page_context,
-            compile_context,
-            in_prop_tree,
-            stateful_component,
-        )
         return None
 
     def __repr__(self):

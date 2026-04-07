@@ -4,7 +4,7 @@ from typing import Any, cast
 
 import pytest
 from pydantic import BaseModel
-from reflex_base.components.component import BaseComponent, Component, StatefulComponent
+from reflex_base.components.component import BaseComponent, Component
 from reflex_base.plugins import CompileContext, PageContext
 
 import reflex as rx
@@ -252,7 +252,7 @@ class ImportOnlyCollectorPlugin(DefaultCollectorPlugin):
         self,
         page_context: PageContext,
         compile_context: CompileContext,
-    ) -> Callable[[BaseComponent, bool, StatefulComponent | None], None]:
+    ) -> Callable[[BaseComponent, bool], None]:
         del compile_context
 
         frontend_imports = page_context.frontend_imports
@@ -261,15 +261,7 @@ class ImportOnlyCollectorPlugin(DefaultCollectorPlugin):
         def enter_component(
             comp: BaseComponent,
             in_prop_tree: bool,
-            stateful_component: StatefulComponent | None,
         ) -> None:
-            del stateful_component
-
-            if isinstance(comp, StatefulComponent):
-                if comp.rendered_as_shared:
-                    extend_imports(frontend_imports, comp._get_all_imports())
-                return
-
             if not isinstance(comp, Component) or in_prop_tree:
                 return
 

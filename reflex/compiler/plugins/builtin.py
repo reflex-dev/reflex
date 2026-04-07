@@ -4,19 +4,11 @@ from __future__ import annotations
 
 import dataclasses
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-from reflex_base.components.component import (
-    BaseComponent,
-    Component,
-    ComponentStyle,
-    StatefulComponent,
-)
+from reflex_base.components.component import BaseComponent, Component, ComponentStyle
 from reflex_base.config import get_config
-from reflex_base.plugins import CompileContext, PageContext, Plugin
-
-if TYPE_CHECKING:
-    from reflex.app import UnevaluatedPage
+from reflex_base.plugins import CompileContext, PageContext, PageDefinition, Plugin
 from reflex_base.utils.format import make_default_page_title
 from reflex_base.utils.imports import collapse_imports, merge_imports
 from reflex_base.vars import VarData
@@ -34,7 +26,7 @@ class DefaultPagePlugin(Plugin):
         page_fn: Any,
         /,
         *,
-        page: UnevaluatedPage,
+        page: PageDefinition,
         **kwargs: Any,
     ) -> PageContext:
         """Evaluate the page function and attach legacy page metadata.
@@ -80,7 +72,9 @@ class DefaultPagePlugin(Plugin):
 class ApplyStylePlugin(Plugin):
     """Apply app-level styles in the descending phase of the walk."""
 
+    _compiler_can_replace_enter_component = False
     style: ComponentStyle | None = None
+    theme: Component | None = None
 
     @staticmethod
     def _apply_style(comp: Component, style: ComponentStyle) -> None:
@@ -115,10 +109,9 @@ class ApplyStylePlugin(Plugin):
         page_context: PageContext,
         compile_context: Any,
         in_prop_tree: bool = False,
-        stateful_component: StatefulComponent | None = None,
     ) -> None:
         """Apply the non-recursive portion of ``_add_style_recursive``."""
-        del page_context, compile_context, stateful_component
+        del page_context, compile_context
 
         if self.style is not None and isinstance(comp, Component) and not in_prop_tree:
             self._apply_style(comp, self.style)
@@ -127,7 +120,7 @@ class ApplyStylePlugin(Plugin):
         self,
         page_context: PageContext,
         compile_context: CompileContext,
-    ) -> Callable[[BaseComponent, bool, StatefulComponent | None], None]:
+    ) -> Callable[[BaseComponent, bool], None]:
         """Bind a positional fast-path enter hook for style application.
 
         Returns:
@@ -141,9 +134,8 @@ class ApplyStylePlugin(Plugin):
             def enter_component(
                 comp: BaseComponent,
                 in_prop_tree: bool,
-                stateful_component: StatefulComponent | None,
             ) -> None:
-                del comp, in_prop_tree, stateful_component
+                del comp, in_prop_tree
 
             return enter_component
 
@@ -152,10 +144,7 @@ class ApplyStylePlugin(Plugin):
         def enter_component(
             comp: BaseComponent,
             in_prop_tree: bool,
-            stateful_component: StatefulComponent | None,
         ) -> None:
-            del stateful_component
-
             if not isinstance(comp, Component) or in_prop_tree:
                 return
 
@@ -168,8 +157,8 @@ class ApplyStylePlugin(Plugin):
 class DefaultCollectorPlugin(Plugin):
     """Collect page artifacts in one fused enter/leave hook pair."""
 
-    _compiler_stateful_only_leave_component = True
-    stateful_custom_code_export: bool = False
+    _compiler_can_replace_enter_component = False
+    _compiler_can_replace_leave_component = False
 
     def enter_component(
         self,
@@ -179,18 +168,9 @@ class DefaultCollectorPlugin(Plugin):
         page_context: PageContext,
         compile_context: Any,
         in_prop_tree: bool = False,
-        stateful_component: StatefulComponent | None = None,
     ) -> None:
         """Collect imports and page artifacts for the active component node."""
         del compile_context
-
-        if isinstance(comp, StatefulComponent):
-            if comp.rendered_as_shared:
-                self._extend_imports(
-                    page_context.frontend_imports,
-                    comp._get_all_imports(),
-                )
-            return
 
         if not isinstance(comp, Component):
             return
@@ -199,14 +179,9 @@ class DefaultCollectorPlugin(Plugin):
             imports = comp._get_imports()
             if imports:
                 self._extend_imports(page_context.frontend_imports, imports)
-            self._collect_component_custom_code(
-                page_context.module_code,
-                comp,
-                stateful_custom_code_export=self.stateful_custom_code_export,
-            )
+            self._collect_component_custom_code(page_context.module_code, comp)
 
-            if stateful_component is None:
-                self._collect_component_hooks(page_context.hooks, comp)
+            self._collect_component_hooks(page_context.hooks, comp)
 
             if (
                 type(comp)._get_app_wrap_components
@@ -222,25 +197,6 @@ class DefaultCollectorPlugin(Plugin):
 
         if (ref := comp.get_ref()) is not None:
             page_context.refs[ref] = None
-
-    def leave_component(
-        self,
-        comp: BaseComponent,
-        children: tuple[BaseComponent, ...],
-        /,
-        *,
-        page_context: PageContext,
-        compile_context: Any,
-        in_prop_tree: bool = False,
-        stateful_component: StatefulComponent | None = None,
-    ) -> None:
-        """Collect post-traversal artifacts for stateful components."""
-        del children, compile_context, in_prop_tree, stateful_component
-
-        if isinstance(comp, StatefulComponent) and not comp.rendered_as_shared:
-            page_context.module_code[
-                comp._render_stateful_code(export=self.stateful_custom_code_export)
-            ] = None
 
     def compile_page(
         self,
@@ -270,7 +226,7 @@ class DefaultCollectorPlugin(Plugin):
         self,
         page_context: PageContext,
         compile_context: CompileContext,
-    ) -> Callable[[BaseComponent, bool, StatefulComponent | None], None]:
+    ) -> Callable[[BaseComponent, bool], None]:
         """Bind a positional fast-path enter hook for artifact collection.
 
         Returns:
@@ -284,7 +240,6 @@ class DefaultCollectorPlugin(Plugin):
         dynamic_imports = page_context.dynamic_imports
         refs = page_context.refs
         app_wrap_components = page_context.app_wrap_components
-        stateful_custom_code_export = self.stateful_custom_code_export
         extend_imports = self._extend_imports
         collect_component_hooks = self._collect_component_hooks
         collect_component_custom_code = self._collect_component_custom_code
@@ -295,13 +250,7 @@ class DefaultCollectorPlugin(Plugin):
         def enter_component(
             comp: BaseComponent,
             in_prop_tree: bool,
-            stateful_component: StatefulComponent | None,
         ) -> None:
-            if isinstance(comp, StatefulComponent):
-                if comp.rendered_as_shared:
-                    extend_imports(frontend_imports, comp._get_all_imports())
-                return
-
             if not isinstance(comp, Component):
                 return
 
@@ -309,14 +258,9 @@ class DefaultCollectorPlugin(Plugin):
                 imports_for_component = comp._get_imports()
                 if imports_for_component:
                     extend_imports(frontend_imports, imports_for_component)
-                collect_component_custom_code(
-                    module_code,
-                    comp,
-                    stateful_custom_code_export=stateful_custom_code_export,
-                )
+                collect_component_custom_code(module_code, comp)
 
-                if stateful_component is None:
-                    collect_component_hooks(hooks, comp)
+                collect_component_hooks(hooks, comp)
 
                 app_wrap_method = type(comp)._get_app_wrap_components
                 if (
@@ -335,39 +279,6 @@ class DefaultCollectorPlugin(Plugin):
                 refs[ref] = None
 
         return enter_component
-
-    def _compiler_bind_leave_component(
-        self,
-        page_context: PageContext,
-        compile_context: CompileContext,
-    ) -> Callable[
-        [BaseComponent, tuple[BaseComponent, ...], bool, StatefulComponent | None],
-        None,
-    ]:
-        """Bind a positional fast-path leave hook for stateful code emission.
-
-        Returns:
-            A compiled leave hook that only takes hot-loop positional state.
-        """
-        del compile_context
-
-        module_code = page_context.module_code
-        stateful_custom_code_export = self.stateful_custom_code_export
-
-        def leave_component(
-            comp: BaseComponent,
-            children: tuple[BaseComponent, ...],
-            in_prop_tree: bool,
-            stateful_component: StatefulComponent | None,
-        ) -> None:
-            del children, in_prop_tree, stateful_component
-
-            if isinstance(comp, StatefulComponent) and not comp.rendered_as_shared:
-                module_code[
-                    comp._render_stateful_code(export=stateful_custom_code_export)
-                ] = None
-
-        return leave_component
 
     @staticmethod
     def _collect_component_hooks(
@@ -393,8 +304,6 @@ class DefaultCollectorPlugin(Plugin):
     def _collect_component_custom_code(
         module_code: dict[str, None],
         component: Component,
-        *,
-        stateful_custom_code_export: bool,
     ) -> None:
         """Collect custom code for one structural-tree component in legacy order."""
         if (custom_code := component._get_custom_code()) is not None:
@@ -404,7 +313,6 @@ class DefaultCollectorPlugin(Plugin):
             DefaultCollectorPlugin._collect_prop_custom_code_into(
                 prop_component,
                 module_code,
-                stateful_custom_code_export=stateful_custom_code_export,
             )
 
         for clz in component._iter_parent_classes_with_method("add_custom_code"):
@@ -415,24 +323,8 @@ class DefaultCollectorPlugin(Plugin):
     def _collect_prop_custom_code_into(
         component: BaseComponent,
         module_code: dict[str, None],
-        *,
-        stateful_custom_code_export: bool,
     ) -> None:
         """Recursively collect prop-tree custom code directly into ``module_code``."""
-        if isinstance(component, StatefulComponent):
-            if component.rendered_as_shared:
-                return
-
-            DefaultCollectorPlugin._collect_prop_custom_code_into(
-                component.component,
-                module_code,
-                stateful_custom_code_export=stateful_custom_code_export,
-            )
-            module_code[
-                component._render_stateful_code(export=stateful_custom_code_export)
-            ] = None
-            return
-
         if not isinstance(component, Component):
             module_code.update(component._get_all_custom_code())
             return
@@ -444,7 +336,6 @@ class DefaultCollectorPlugin(Plugin):
             DefaultCollectorPlugin._collect_prop_custom_code_into(
                 prop_component,
                 module_code,
-                stateful_custom_code_export=stateful_custom_code_export,
             )
 
         for clz in component._iter_parent_classes_with_method("add_custom_code"):
@@ -455,7 +346,6 @@ class DefaultCollectorPlugin(Plugin):
             DefaultCollectorPlugin._collect_prop_custom_code_into(
                 child,
                 module_code,
-                stateful_custom_code_export=stateful_custom_code_export,
             )
 
     def _collect_app_wrap_components(
@@ -518,15 +408,15 @@ class DefaultCollectorPlugin(Plugin):
 def default_page_plugins(
     *,
     style: ComponentStyle | None = None,
-    stateful_custom_code_export: bool = False,
+    theme: Component | None = None,
 ) -> tuple[Plugin, ...]:
     """Return the default compiler plugin ordering for page compilation."""
+    from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
+
     plugins: list[Plugin] = [DefaultPagePlugin()]
     if style is not None:
-        plugins.append(ApplyStylePlugin(style=style))
-    plugins.append(
-        DefaultCollectorPlugin(stateful_custom_code_export=stateful_custom_code_export)
-    )
+        plugins.append(ApplyStylePlugin(style=style, theme=theme))
+    plugins.extend((MemoizeStatefulPlugin(), DefaultCollectorPlugin()))
     return tuple(plugins)
 
 

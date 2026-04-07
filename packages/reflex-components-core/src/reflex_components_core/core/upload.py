@@ -10,9 +10,9 @@ from reflex_base.components.component import (
     Component,
     ComponentNamespace,
     MemoizationLeaf,
-    StatefulComponent,
     field,
 )
+from reflex_base.components.memoize_helpers import get_memoized_event_triggers
 from reflex_base.constants import Dirs
 from reflex_base.constants.compiler import Hooks, Imports
 from reflex_base.environment import environment
@@ -357,7 +357,7 @@ class Upload(MemoizationLeaf):
                 ),
             )
 
-        event_triggers = StatefulComponent._get_memoized_event_triggers(
+        event_triggers = get_memoized_event_triggers(
             GhostUpload.create(
                 on_drop=upload_props["on_drop"],
                 on_drop_rejected=upload_props["on_drop_rejected"],

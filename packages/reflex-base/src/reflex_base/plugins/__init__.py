@@ -9,6 +9,7 @@ from .compiler import (
     CompilerHooks,
     ComponentAndChildren,
     PageContext,
+    PageDefinition,
 )
 from .sitemap import SitemapPlugin
 from .tailwind_v3 import TailwindV3Plugin
@@ -21,6 +22,7 @@ __all__ = [
     "CompilerHooks",
     "ComponentAndChildren",
     "PageContext",
+    "PageDefinition",
     "Plugin",
     "PreCompileContext",
     "SitemapPlugin",

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from collections.abc import Callable, Iterable, Sequence
 from inspect import getmodule
 from pathlib import Path
@@ -15,7 +16,6 @@ from reflex_base.components.component import (
     Component,
     ComponentStyle,
     CustomComponent,
-    StatefulComponent,
     evaluate_style_namespaces,
 )
 from reflex_base.config import get_config
@@ -26,7 +26,7 @@ from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 from reflex_base.style import SYSTEM_COLOR_MODE
 from reflex_base.utils.exceptions import ReflexError
 from reflex_base.utils.format import to_title_case
-from reflex_base.utils.imports import ImportVar, ParsedImportDict
+from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_components_core.base.app_wrap import AppWrap
 from reflex_components_core.base.fragment import Fragment
@@ -347,7 +347,7 @@ def _compile_root_stylesheet(stylesheets: list[str], reset_style: bool = True) -
     return templates.styles_template(stylesheets=sheets)
 
 
-def _compile_component(component: Component | StatefulComponent) -> str:
+def _compile_component(component: Component) -> str:
     """Compile a single component.
 
     Args:
@@ -425,88 +425,6 @@ def _compile_memo_components(
             custom_codes=custom_codes,
         ),
         imports,
-    )
-
-
-def _get_shared_components_recursive(
-    component: BaseComponent,
-    rendered_components: dict[str, None],
-    all_import_dicts: list[ParsedImportDict],
-):
-    """Get the shared components for a component and its children.
-
-    A shared component is a StatefulComponent that appears in 2 or more
-    pages and is a candidate for writing to a common file and importing
-    into each page where it is used.
-
-    Args:
-        component: The component to collect shared StatefulComponents for.
-        rendered_components: A dict to store the rendered shared components in.
-        all_import_dicts: A list to store the imports of all shared components in.
-    """
-    for child in component.children:
-        # Depth-first traversal.
-        _get_shared_components_recursive(child, rendered_components, all_import_dicts)
-
-    # When the component is referenced by more than one page, render it
-    # to be included in the STATEFUL_COMPONENTS module.
-    # Skip this step in dev mode, thereby avoiding potential hot reload errors for larger apps
-    if isinstance(component, StatefulComponent) and component.references > 1:
-        # Reset this flag to render the actual component.
-        component.rendered_as_shared = False
-
-        # Include dynamic imports in the shared component.
-        if dynamic_imports := component._get_all_dynamic_imports():
-            rendered_components.update(dict.fromkeys(dynamic_imports))
-
-        # Include custom code in the shared component.
-        rendered_components.update(component._get_all_custom_code(export=True))
-
-        # Include all imports in the shared component.
-        all_import_dicts.append(component._get_all_imports())
-
-        # Indicate that this component now imports from the shared file.
-        component.rendered_as_shared = True
-
-
-def _compile_stateful_components(
-    page_components: list[BaseComponent],
-) -> tuple[str, ParsedImportDict]:
-    """Walk the page components and extract shared stateful components.
-
-    Any StatefulComponent that is shared by more than one page will be rendered
-    to a separate module and marked rendered_as_shared so subsequent
-    renderings will import the component from the shared module instead of
-    directly including the code for it.
-
-    Args:
-        page_components: The Components or StatefulComponents to compile.
-
-    Returns:
-        The rendered stateful components code and imports.
-    """
-    all_import_dicts = []
-    rendered_components = {}
-
-    for page_component in page_components:
-        _get_shared_components_recursive(
-            page_component, rendered_components, all_import_dicts
-        )
-
-    # Don't import from the file that we're about to create.
-    all_imports = utils.merge_imports(*all_import_dicts)
-    all_imports.pop(
-        f"$/{constants.Dirs.UTILS}/{constants.PageNames.STATEFUL_COMPONENTS}", None
-    )
-    if rendered_components:
-        _apply_common_imports(all_imports)
-
-    return (
-        templates.stateful_components_template(
-            imports=utils.compile_imports(all_imports),
-            memoized_code="\n".join(rendered_components),
-        ),
-        all_imports,
     )
 
 
@@ -662,43 +580,6 @@ def compile_memo_components(
     # Compile the components.
     code, imports = _compile_memo_components(components, experimental_memos)
     return output_path, code, imports
-
-
-def compile_stateful_components(
-    pages: Iterable[Component],
-    progress_function: Callable[[], None],
-) -> tuple[str, str, list[BaseComponent]]:
-    """Separately compile components that depend on State vars.
-
-    StatefulComponents are compiled as their own component functions with their own
-    useContext declarations, which allows page components to be stateless and avoid
-    re-rendering along with parts of the page that actually depend on state.
-
-    Args:
-        pages: The pages to extract stateful components from.
-        progress_function: A function to call to indicate progress, called once per page.
-
-    Returns:
-        The path and code of the compiled stateful components.
-    """
-    output_path = utils.get_stateful_components_path()
-
-    stateful_component_cache: dict[str, StatefulComponent] = {}
-    page_components = []
-    for page in pages:
-        # Compile the stateful components
-        page_component = (
-            StatefulComponent.compile_from(
-                page,
-                stateful_component_cache=stateful_component_cache,
-            )
-            or page
-        )
-        progress_function()
-        page_components.append(page_component)
-
-    code = _compile_stateful_components(page_components)[0] if is_prod_mode() else ""
-    return output_path, code, page_components
 
 
 def purge_web_pages_dir():
@@ -869,59 +750,60 @@ def into_component(component: Component | ComponentCallable) -> Component:
 
 
 def compile_unevaluated_page(
+    route: str,
     page: UnevaluatedPage,
-    *,
     style: ComponentStyle | None = None,
+    theme: Component | None = None,
 ) -> Component:
-    """Compile an unevaluated page through the compiler plugin pipeline.
-
-    This evaluates the page and applies the page compiler hooks before
-    returning the compiled root component.
+    """Compiles an uncompiled page into a component and adds meta information.
 
     Args:
-        page: The unevaluated page definition.
-        style: The app-level style map to apply.
+        route: The route of the page.
+        page: The uncompiled page object.
+        style: The style of the page.
+        theme: The theme of the page.
 
     Returns:
-        The compiled root component.
+        The compiled component and whether state should be enabled.
+
+    Raises:
+        Exception: If an error occurs while evaluating the page.
     """
-    hooks = CompilerHooks(plugins=default_page_plugins(style=style))
-    compile_ctx = CompileContext(pages=[page], hooks=hooks)
+    try:
+        # Generate the component if it is a callable.
+        component = into_component(page.component)
 
-    with compile_ctx:
-        page_ctx = hooks.eval_page(
-            page.component,
-            page=page,
-            compile_context=compile_ctx,
+        component._add_style_recursive(style or {}, theme)
+
+        from reflex_base.utils.format import make_default_page_title
+
+        component = Fragment.create(component)
+
+        meta_args = {
+            "title": (
+                page.title
+                if page.title is not None
+                else make_default_page_title(get_config().app_name, route)
+            ),
+            "image": page.image,
+            "meta": page.meta,
+        }
+
+        if page.description is not None:
+            meta_args["description"] = page.description
+
+        # Add meta information to the component.
+        utils.add_meta(
+            component,
+            **meta_args,
         )
-        if page_ctx is None:
-            page_name = getattr(page.component, "__name__", repr(page.component))
-            msg = (
-                f"No compiler plugin was able to evaluate page {page.route!r} "
-                f"({page_name})."
-            )
-            raise RuntimeError(msg)
 
-        with page_ctx:
-            page_ctx.root_component = hooks.compile_component(
-                page_ctx.root_component,
-                page_context=page_ctx,
-                compile_context=compile_ctx,
-            )
-            hooks.compile_page(
-                page_ctx,
-                page=page,
-                compile_context=compile_ctx,
-            )
-
-    if not isinstance(page_ctx.root_component, Component):
-        msg = (
-            f"Compiled page {page.route!r} root must be a Component before it can "
-            "be returned."
-        )
-        raise TypeError(msg)
-
-    return page_ctx.root_component
+    except Exception as e:
+        if sys.version_info >= (3, 11):
+            e.add_note(f"Happened while evaluating page {route!r}")
+        raise
+    else:
+        return component
 
 
 def _resolve_app_wrap_components(
@@ -1029,7 +911,9 @@ def compile_app(
     compile_ctx = CompileContext(
         app=app,
         pages=list(app._unevaluated_pages.values()),
-        hooks=CompilerHooks(plugins=default_page_plugins(style=app.style)),
+        hooks=CompilerHooks(
+            plugins=default_page_plugins(style=app.style, theme=app.theme)
+        ),
     )
 
     with console.timing("Compile pages"), compile_ctx:
@@ -1074,20 +958,15 @@ def compile_app(
     ]
     all_imports = compile_ctx.all_imports
 
-    if (
-        code_uses_state_contexts(compile_ctx.stateful_components_code)
-        and app._state is None
+    if app._state is None and any(
+        code_uses_state_contexts(page_ctx.output_code or "")
+        for page_ctx in compile_ctx.compiled_pages.values()
     ):
         msg = (
             "To access rx.State in frontend components, at least one "
             "subclass of rx.State must be defined in the app."
         )
         raise ReflexRuntimeError(msg)
-    if compile_ctx.stateful_components_path is not None:
-        compile_results.append((
-            compile_ctx.stateful_components_path,
-            compile_ctx.stateful_components_code,
-        ))
     progress.advance(task)
 
     app_wrappers = _resolve_app_wrap_components(app, compile_ctx.app_wrap_components)
@@ -1100,7 +979,10 @@ def compile_app(
         memo_components_imports,
     ) = compile_memo_components(
         dict.fromkeys(CUSTOM_COMPONENTS.values()),
-        tuple(EXPERIMENTAL_MEMOS.values()),
+        (
+            *tuple(EXPERIMENTAL_MEMOS.values()),
+            *tuple(compile_ctx.auto_memo_components.values()),
+        ),
     )
     compile_results.append((memo_components_output, memo_components_result))
     all_imports = utils.merge_imports(all_imports, memo_components_imports)
