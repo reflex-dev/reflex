@@ -36,7 +36,7 @@ from reflex_base.constants import (
     PageNames,
 )
 from reflex_base.constants.compiler import SpecialAttributes
-from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER, FRONTEND_EVENT_STATE
+from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER
 from reflex_base.event import (
     EventCallback,
     EventChain,
@@ -888,7 +888,9 @@ class Component(BaseComponent, ABC):
 
                     # Get the passed type and the var type.
                     passed_type = kwargs[key]._var_type
-                    expected_type = get_args(types.get_field_type(type(self), key))[0]
+                    expected_type = typing.get_args(
+                        types.get_field_type(type(self), key)
+                    )[0]
                 except TypeError:
                     # If it is not a valid var, check the base types.
                     passed_type = type(value)
@@ -1534,10 +1536,7 @@ class Component(BaseComponent, ABC):
                     if isinstance(event, EventCallback):
                         continue
                     if isinstance(event, EventSpec):
-                        if (
-                            event.handler.state_full_name
-                            and event.handler.state_full_name != FRONTEND_EVENT_STATE
-                        ):
+                        if event.handler.state is not None:
                             return True
                     else:
                         if event._var_state:

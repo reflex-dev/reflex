@@ -89,19 +89,21 @@ def _init(
     # Initialize the .gitignore.
     frontend_skeleton.initialize_gitignore()
 
-    # Initialize the requirements.txt.
-    needs_user_manual_update = frontend_skeleton.initialize_requirements_txt()
-
     template_msg = f" using the {template} template" if template else ""
-    # Finish initializing the app.
-    console.success(
-        f"Initialized {app_name}{template_msg}."
-        + (
-            f" Make sure to add {constants.RequirementsTxt.DEFAULTS_STUB + constants.Reflex.VERSION} to your requirements.txt or pyproject.toml file."
-            if needs_user_manual_update
-            else ""
-        )
+    if Path(constants.PyprojectToml.FILE).exists():
+        needs_user_manual_update = False
+        next_steps = " Run `uv run reflex run` to start the app."
+    else:
+        needs_user_manual_update = frontend_skeleton.initialize_requirements_txt()
+        next_steps = " Install dependencies from `requirements.txt` with `uv pip install -r requirements.txt` (or your preferred installer) before running `uv run reflex run`."
+    manual_update = (
+        f" Make sure to add `{constants.RequirementsTxt.DEFAULTS_STUB + constants.Reflex.VERSION}` to your requirements.txt file."
+        if needs_user_manual_update
+        else ""
     )
+
+    # Finish initializing the app.
+    console.success(f"Initialized {app_name}{template_msg}.{manual_update}{next_steps}")
 
 
 @cli.command()

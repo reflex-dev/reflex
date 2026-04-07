@@ -12,22 +12,35 @@ Let's create a new app called `{app_name}`
 ```bash
 mkdir {app_name}
 cd {app_name}
-reflex init
+uv init
+uv add reflex
+uv run reflex init
 ```
 
 This will create a directory structure like this:
 
 ```bash
 {app_name}
+├── .venv
 ├── .web
 ├── assets
 ├── {app_name}
 │   ├── __init__.py
 │   └── {app_name}.py
-└── rxconfig.py
+├── .gitignore
+├── .python-version
+├── pyproject.toml
+├── rxconfig.py
+└── uv.lock
 ```
 
+`uv init` may also create helper files such as `README.md`, `main.py`, and Git metadata. The tree above focuses on the main files you will interact with while building a Reflex app.
+
 Let's go over each of these directories and files.
+
+## .venv
+
+`uv add reflex` creates a local virtual environment in `.venv` by default. This keeps your app dependencies isolated from the rest of your system Python.
 
 ## .web
 
@@ -45,13 +58,17 @@ For example, if you save an image to `assets/image.png` you can display it from 
 rx.image(src="https://web.reflex-assets.dev/other/image.png")
 ```
 
-j
-
 ## Main Project
 
 Initializing your project creates a directory with the same name as your app. This is where you will write your app's logic.
 
 Reflex generates a default app within the `{app_name}/{app_name}.py` file. You can modify this file to customize your app.
+
+## Python Project Files
+
+`pyproject.toml` defines your Python project metadata and dependencies. `uv add reflex` records the Reflex dependency there before you initialize the app.
+
+`uv.lock` stores the fully resolved dependency set for reproducible installs. Commit it to version control so everyone working on the app gets the same Python package versions.
 
 ## Configuration
 

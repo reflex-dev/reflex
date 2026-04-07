@@ -1,7 +1,6 @@
 import dataclasses
 from collections.abc import Sequence
 
-import pydantic
 import pytest
 from reflex_base.utils.types import GenericType
 from reflex_base.vars.base import Var
@@ -14,6 +13,7 @@ import reflex as rx
 pytest.importorskip("sqlalchemy")
 pytest.importorskip("pydantic")
 
+import pydantic
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
 

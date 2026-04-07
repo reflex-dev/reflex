@@ -1,7 +1,7 @@
 from contextlib import nullcontext
+from dataclasses import dataclass
 from typing import Any, ClassVar
 
-import pydantic
 import pytest
 from reflex_base.components.component import (
     CUSTOM_COMPONENTS,
@@ -802,7 +802,8 @@ def test_component_create_unpack_tuple_child(test_component, element, expected):
     assert fragment_wrapper.render() == expected
 
 
-class _Obj(pydantic.BaseModel):
+@dataclass
+class _Obj:
     custom: int = 0
 
 

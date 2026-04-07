@@ -69,7 +69,7 @@ rx.box(height="1em")
 
 We wanted Reflex apps to look and feel like a traditional web app to the end user, while still being easy to build and maintain for the developer. To do this, we built on top of mature and popular web technologies.
 
-When you `reflex run` your app, Reflex compiles the frontend down to a single-page [Next.js](https://nextjs.org) app and serves it on a port (by default `3000`) that you can access in your browser.
+When you run `uv run reflex run`, Reflex compiles the frontend down to a single-page [Next.js](https://nextjs.org) app and serves it on a port (by default `3000`) that you can access in your browser.
 
 The frontend's job is to reflect the app's state, and send events to the backend when the user interacts with the UI. No actual logic is run on the frontend.
 
@@ -128,7 +128,7 @@ Beyond this, Reflex components can be styled using the full power of CSS. We lev
 
 Now let's look at how we added interactivity to our apps.
 
-In Reflex only the frontend compiles to Javascript and runs on the user's browser, while all the state and logic stays in Python and is run on the server. When you `reflex run`, we start a FastAPI server (by default on port `8000`) that the frontend connects to through a websocket.
+In Reflex only the frontend compiles to Javascript and runs on the user's browser, while all the state and logic stays in Python and is run on the server. When you run `uv run reflex run`, we start a FastAPI server (by default on port `8000`) that the frontend connects to through a websocket.
 
 All the state and logic are defined within a `State` class.
 

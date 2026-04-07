@@ -43,8 +43,7 @@ def make_timeout_logger() -> EventChainVar:
 
 def test_create_event():
     """Test creating an event."""
-    event = Event(token="token", name="state.do_thing", payload={"arg": "value"})
-    assert event.token == "token"
+    event = Event(name="state.do_thing", payload={"arg": "value"})
     assert event.name == "state.do_thing"
     assert event.payload == {"arg": "value"}
 
@@ -57,7 +56,7 @@ def test_call_event_handler():
 
     test_fn.__qualname__ = "test_fn"
 
-    def fn_with_args(_, arg1, arg2):
+    def fn_with_args(arg1, arg2):
         pass
 
     fn_with_args.__qualname__ = "fn_with_args"
@@ -112,7 +111,7 @@ def test_call_event_handler():
 def test_call_event_handler_partial():
     """Calling an EventHandler with incomplete args returns an EventSpec that can be extended."""
 
-    def fn_with_args(_, arg1, arg2):
+    def fn_with_args(arg1, arg2):
         pass
 
     fn_with_args.__qualname__ = "fn_with_args"
@@ -120,7 +119,7 @@ def test_call_event_handler_partial():
     def spec(a2: Var[str]) -> list[Var[str]]:
         return [a2]
 
-    handler = EventHandler(fn=fn_with_args, state_full_name="BigState")
+    handler = EventHandler(fn=fn_with_args)
     event_spec = handler(make_var("first"))
     event_spec2 = call_event_handler(event_spec, spec)
 
@@ -129,8 +128,7 @@ def test_call_event_handler_partial():
     assert event_spec.args[0][0].equals(Var(_js_expr="arg1"))
     assert event_spec.args[0][1].equals(Var(_js_expr="first"))
     assert (
-        format.format_event(event_spec)
-        == 'ReflexEvent("BigState.fn_with_args", {arg1:first})'
+        format.format_event(event_spec) == 'ReflexEvent("fn_with_args", {arg1:first})'
     )
 
     assert event_spec2 is not event_spec
@@ -142,7 +140,7 @@ def test_call_event_handler_partial():
     assert event_spec2.args[1][1].equals(Var(_js_expr="_a2", _var_type=str))
     assert (
         format.format_event(event_spec2)
-        == 'ReflexEvent("BigState.fn_with_args", {arg1:first,arg2:_a2})'
+        == 'ReflexEvent("fn_with_args", {arg1:first,arg2:_a2})'
     )
 
 
@@ -162,16 +160,15 @@ def test_fix_events(arg1, arg2):
         arg2: The second arg passed to the handler.
     """
 
-    def fn_with_args(_, arg1, arg2):
+    def fn_with_args(arg1, arg2):
         pass
 
     fn_with_args.__qualname__ = "fn_with_args"
 
     handler = EventHandler(fn=fn_with_args)
     event_spec = handler(arg1, arg2)
-    event = fix_events([event_spec], token="foo")[0]
+    event = fix_events([event_spec])[0]
     assert event.name == fn_with_args.__qualname__
-    assert event.token == "foo"
     assert event.payload == {"arg1": arg1, "arg2": arg2}
 
 

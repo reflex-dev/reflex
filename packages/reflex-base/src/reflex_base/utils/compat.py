@@ -2,10 +2,7 @@
 
 import sys
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any
-
-if TYPE_CHECKING:
-    from pydantic.fields import FieldInfo
+from typing import Any
 
 
 async def windows_hot_reload_lifespan_hack():
@@ -51,19 +48,3 @@ def annotations_from_namespace(namespace: Mapping[str, Any]) -> dict[str, Any]:
         if annotate := get_annotate_from_class_namespace(namespace):
             return call_annotate_function(annotate, format=Format.FORWARDREF)
     return namespace.get("__annotations__", {})
-
-
-def sqlmodel_field_has_primary_key(field_info: "FieldInfo") -> bool:
-    """Determines if a field is a primary.
-
-    Args:
-        field_info: a rx.model field
-
-    Returns:
-        If field_info is a primary key (Bool)
-    """
-    if getattr(field_info, "primary_key", None) is True:
-        return True
-    if getattr(field_info, "sa_column", None) is None:
-        return False
-    return bool(getattr(field_info.sa_column, "primary_key", None))  # pyright: ignore[reportAttributeAccessIssue]
