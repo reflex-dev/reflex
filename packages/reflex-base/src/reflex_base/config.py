@@ -352,6 +352,19 @@ class Config(BaseConfig):
         if not self._skip_plugins_checks:
             self._add_builtin_plugins()
 
+        # Warn if state_auto_setters is explicitly set.
+        if "state_auto_setters" in kwargs:
+            if kwargs["state_auto_setters"]:
+                reason = "auto setters will be removed; use explicit event handlers instead"
+            else:
+                reason = "state_auto_setters=False is already the default and the option will be removed"
+            console.deprecate(
+                feature_name="state_auto_setters",
+                reason=reason,
+                deprecation_version="0.9.0",
+                removal_version="1.0",
+            )
+
         #   Update default URLs if ports were set
         kwargs.update(env_kwargs)
         self._non_default_attributes = set(kwargs.keys())
