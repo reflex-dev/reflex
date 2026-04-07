@@ -11,8 +11,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, BinaryIO, cast
 
 from python_multipart.multipart import MultipartParser, parse_options_header
-from reflex_base import constants
 from reflex_base.utils import exceptions
+from reflex_base.utils.format import json_dumps
 from starlette.datastructures import Headers
 from starlette.datastructures import UploadFile as StarletteUploadFile
 from starlette.exceptions import HTTPException
@@ -22,11 +22,9 @@ from starlette.responses import JSONResponse, Response, StreamingResponse
 from typing_extensions import Self
 
 if TYPE_CHECKING:
-    from reflex_base.event import EventHandler
     from reflex_base.utils.types import Receive, Scope, Send
 
     from reflex.app import App
-    from reflex.state import BaseState
 
 
 @dataclasses.dataclass(frozen=True)
@@ -102,7 +100,7 @@ class UploadChunkIterator(AsyncIterator[UploadChunk]):
         self._condition = asyncio.Condition()
         self._closed = False
         self._error: Exception | None = None
-        self._consumer_task: asyncio.Task[Any] | None = None
+        self._consumer_task: asyncio.Future[Any] | None = None
 
     def __aiter__(self) -> Self:
         """Return the iterator itself.
@@ -135,7 +133,7 @@ class UploadChunkIterator(AsyncIterator[UploadChunk]):
                 raise self._error
             raise StopAsyncIteration
 
-    def set_consumer_task(self, task: asyncio.Task[Any]) -> None:
+    def set_consumer_task(self, task: asyncio.Future[Any]) -> None:
         """Track the task consuming this iterator.
 
         Args:
@@ -206,7 +204,7 @@ class UploadChunkIterator(AsyncIterator[UploadChunk]):
             raise RuntimeError(msg) from task_exc
         raise RuntimeError(msg)
 
-    def _wake_waiters(self, task: asyncio.Task[Any]) -> None:
+    def _wake_waiters(self, task: asyncio.Future[Any]) -> None:
         """Wake any producers or consumers blocked on the iterator condition.
 
         Args:
@@ -446,51 +444,6 @@ def _require_upload_headers(request: Request) -> tuple[str, str]:
     return token, handler
 
 
-async def _get_upload_runtime_handler(
-    app: App,
-    token: str,
-    handler_name: str,
-) -> tuple[BaseState, EventHandler]:
-    """Resolve the runtime state and event handler for an upload request.
-
-    Args:
-        app: The Reflex app.
-        token: The client token.
-        handler_name: The fully qualified event handler name.
-
-    Returns:
-        The root state instance and resolved event handler.
-    """
-    from reflex.state import _substate_key
-
-    substate_token = _substate_key(token, handler_name.rpartition(".")[0])
-    state = await app.state_manager.get_state(substate_token)
-    _current_state, event_handler = state._get_event_handler(handler_name)
-    return state, event_handler
-
-
-def _seed_upload_router_data(state: BaseState, token: str) -> None:
-    """Ensure upload-launched handlers have the client token in router state.
-
-    Background upload handlers use ``StateProxy`` which derives its mutable-state
-    token from ``self.router.session.client_token``. Upload requests do not flow
-    through the normal websocket event pipeline, so we seed the token here.
-
-    Args:
-        state: The root state instance.
-        token: The client token from the upload request.
-    """
-    from reflex.state import RouterData
-
-    router_data = dict(state.router_data)
-    if router_data.get(constants.RouteVar.CLIENT_TOKEN) == token:
-        return
-
-    router_data[constants.RouteVar.CLIENT_TOKEN] = token
-    state.router_data = router_data
-    state.router = RouterData.from_router_data(router_data)
-
-
 async def _upload_buffered_file(
     request: Request,
     app: App,
@@ -506,6 +459,8 @@ async def _upload_buffered_file(
     """
     from reflex_base.event import Event
     from reflex_base.utils.exceptions import UploadValueError
+
+    from reflex.state import StateUpdate
 
     try:
         form_data = await request.form()
@@ -545,7 +500,6 @@ async def _upload_buffered_file(
             )
 
         return Event(
-            token=token,
             name=handler_name,
             payload={handler_upload_param[0]: file_uploads},
         )
@@ -567,12 +521,9 @@ async def _upload_buffered_file(
         Yields:
             Each state update as newline-delimited JSON.
         """
-        async with app.state_manager.modify_state_with_links(
-            event.substate_token, event=event
-        ) as state:
-            async for update in state._process(event):
-                update = await app._postprocess(state, event, update)
-                yield update.json() + "\n"
+        # Enqueue the task on the main event loop, but emit deltas to the local queue.
+        async for delta in app.event_processor.enqueue_stream_delta(token, event):
+            yield json_dumps(StateUpdate(delta=delta)) + "\n"
 
     return _UploadStreamingResponse(
         _ndjson_updates(),
@@ -583,10 +534,9 @@ async def _upload_buffered_file(
 
 def _background_upload_accepted_response() -> StreamingResponse:
     """Return a minimal ndjson response for background upload dispatch."""
-    from reflex.state import StateUpdate
 
     def _accepted_updates():
-        yield StateUpdate(final=True).json() + "\n"
+        yield "{}\n"
 
     return StreamingResponse(
         _accepted_updates(),
@@ -613,23 +563,12 @@ async def _upload_chunk_file(
 
     chunk_iter = UploadChunkIterator(maxsize=8)
     event = Event(
-        token=token,
         name=handler_name,
         payload={handler_upload_param[0]: chunk_iter},
     )
+    task_future = await app.event_processor.enqueue(token, event)
 
-    async with app.state_manager.modify_state_with_links(
-        event.substate_token,
-        event=event,
-    ) as state:
-        _seed_upload_router_data(state, token)
-        task = app._process_background(state, event)
-
-    if task is None:
-        msg = f"@rx.event(background=True) is required for upload_files_chunk handler `{handler_name}`."
-        return JSONResponse({"detail": msg}, status_code=400)
-
-    chunk_iter.set_consumer_task(task)
+    chunk_iter.set_consumer_task(task_future)
 
     parser = _UploadChunkMultipartParser(
         headers=request.headers,
@@ -640,9 +579,9 @@ async def _upload_chunk_file(
     try:
         await parser.parse()
     except ClientDisconnect:
-        task.cancel()
+        task_future.cancel()
         with contextlib.suppress(asyncio.CancelledError):
-            await task
+            await task_future
         return Response()
     except (MultiPartException, RuntimeError, ValueError) as err:
         await chunk_iter.fail(err)
@@ -686,11 +625,13 @@ def upload(app: App):
             resolve_upload_chunk_handler_param,
             resolve_upload_handler_param,
         )
+        from reflex_base.registry import RegistrationContext
 
         token, handler_name = _require_upload_headers(request)
-        _state, event_handler = await _get_upload_runtime_handler(
-            app, token, handler_name
-        )
+        registered_event_handler = RegistrationContext.get().event_handlers[
+            handler_name
+        ]
+        event_handler = registered_event_handler.handler
 
         if event_handler.is_background:
             try:

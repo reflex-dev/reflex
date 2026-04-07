@@ -219,6 +219,7 @@ _MAPPING: dict[str, list[str]] = {
         "LocalStorage",
         "SessionStorage",
     ],
+    "istate.manager.token": ["StateToken", "BaseStateToken"],
     "middleware": ["middleware", "Middleware"],
     "model": ["asession", "session", "Model", "ModelRegistry"],
     "page": ["page"],

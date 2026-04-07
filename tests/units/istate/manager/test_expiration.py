@@ -8,7 +8,8 @@ import pytest
 import pytest_asyncio
 
 from reflex.istate.manager.memory import StateManagerMemory
-from reflex.state import BaseState, _substate_key
+from reflex.istate.manager.token import BaseStateToken
+from reflex.state import BaseState
 
 
 class ExpiringState(BaseState):
@@ -45,7 +46,7 @@ async def state_manager_memory() -> AsyncGenerator[StateManagerMemory]:
     Yields:
         The memory state manager under test.
     """
-    state_manager = StateManagerMemory(state=ExpiringState, token_expiration=1)
+    state_manager = StateManagerMemory(token_expiration=1)
     yield state_manager
     await state_manager.close()
 
@@ -56,7 +57,7 @@ async def test_memory_state_manager_evicts_expired_state(
     token: str,
 ):
     """Expired states should be removed from the in-memory cache and locks."""
-    state_token = _substate_key(token, ExpiringState)
+    state_token = BaseStateToken(ident=token, cls=ExpiringState)
 
     async with state_manager_memory.modify_state(state_token) as state:
         state.value = 42
@@ -80,7 +81,7 @@ async def test_memory_state_manager_get_state_refreshes_expiration(
     token: str,
 ):
     """Accessing a state should extend its expiration window."""
-    state_token = _substate_key(token, ExpiringState)
+    state_token = BaseStateToken(ident=token, cls=ExpiringState)
     state = await state_manager_memory.get_state(state_token)
     assert isinstance(state, ExpiringState)
     state.value = 7
@@ -105,7 +106,7 @@ async def test_memory_state_manager_set_state_refreshes_expiration(
     token: str,
 ):
     """Persisting a state should extend its expiration window."""
-    state_token = _substate_key(token, ExpiringState)
+    state_token = BaseStateToken(ident=token, cls=ExpiringState)
     state = await state_manager_memory.get_state(state_token)
     assert isinstance(state, ExpiringState)
     state.value = 17
@@ -130,7 +131,7 @@ async def test_memory_state_manager_multiple_accesses_extend_expiration(
     token: str,
 ):
     """Repeated accesses should keep the state alive until it goes idle."""
-    state_token = _substate_key(token, ExpiringState)
+    state_token = BaseStateToken(ident=token, cls=ExpiringState)
     state = await state_manager_memory.get_state(state_token)
     assert isinstance(state, ExpiringState)
     expires_at = state_manager_memory._token_expires_at[token]
@@ -154,7 +155,7 @@ async def test_memory_state_manager_returns_fresh_state_after_eviction(
     token: str,
 ):
     """A token should get a fresh state after the previous one expires."""
-    state_token = _substate_key(token, ExpiringState)
+    state_token = BaseStateToken(ident=token, cls=ExpiringState)
     state = await state_manager_memory.get_state(state_token)
     assert isinstance(state, ExpiringState)
     state.value = 99
@@ -173,7 +174,7 @@ async def test_memory_state_manager_close_cancels_expiration_task(
     token: str,
 ):
     """Closing the manager should cancel the expiration task cleanly."""
-    await state_manager_memory.get_state(_substate_key(token, ExpiringState))
+    await state_manager_memory.get_state(BaseStateToken(ident=token, cls=ExpiringState))
 
     expiration_task = state_manager_memory._expiration_task
     assert expiration_task is not None
@@ -193,7 +194,7 @@ async def test_memory_state_manager_refreshes_expiration_after_locked_access(
     token: str,
 ):
     """Releasing a long-held state should start a fresh expiration window."""
-    state_token = _substate_key(token, ExpiringState)
+    state_token = BaseStateToken(ident=token, cls=ExpiringState)
 
     async with state_manager_memory.modify_state(state_token) as state:
         state.value = 5

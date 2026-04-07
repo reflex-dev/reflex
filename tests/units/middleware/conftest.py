@@ -6,7 +6,6 @@ from reflex.state import State
 
 def create_event(name):
     return Event(
-        token="<token>",
         name=name,
         router_data={
             "pathname": "/",

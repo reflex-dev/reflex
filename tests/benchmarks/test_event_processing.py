@@ -1,112 +1,102 @@
 """Benchmark for the event processing pipeline.
 
-Measures the time from calling the ``process`` function (the core of
-``on_event``) to collecting all emitted ``StateUpdate`` deltas via
-``contextlib.aclosing`` over the async generator.
+Measures the time from enqueuing events via ``BaseStateEventProcessor``
+to collecting all emitted ``StateUpdate`` deltas, with mock emit
+callbacks that record the deltas.
 """
 
 import asyncio
-import contextlib
+import traceback
+from collections.abc import Mapping
+from typing import Any
 from unittest import mock
 
 import pytest
 import pytest_asyncio
 from pytest_codspeed import BenchmarkFixture
+from reflex_base.event import Event
+from reflex_base.event.context import EventContext
+from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.utils.format import format_event_handler
 
-from reflex.app import App, process
-from reflex.event import Event
 from reflex.istate.manager.memory import StateManagerMemory
-from reflex.state import State
 
 from .fixtures import BenchmarkState
 
 
-@pytest.fixture
-def app_module_mock(monkeypatch) -> mock.Mock:
-    """Mock the app module so state machinery can resolve the app.
-
-    Args:
-        monkeypatch: pytest monkeypatch fixture.
-
-    Returns:
-        The mock for the main app module.
-    """
-    from reflex.utils import prerequisites
-
-    app_module_mock = mock.Mock()
-    get_app_mock = mock.Mock(return_value=app_module_mock)
-    monkeypatch.setattr(prerequisites, "get_app", get_app_mock)
-    return app_module_mock
-
-
 @pytest_asyncio.fixture
-async def event_processing_harness(app_module_mock: mock.Mock):
+async def event_processing_harness():
     """Set up the full event processing pipeline for benchmarking.
 
-    Creates an App wired to a real StateManagerMemory. The ``process``
-    function is called directly (bypassing Socket.IO) and StateUpdates
-    are collected and counted to verify correctness.
-
-    Args:
-        app_module_mock: The mocked app module.
+    Creates a ``BaseStateEventProcessor`` wired to a real
+    ``StateManagerMemory`` with mock emit callbacks.  Events are
+    enqueued directly and deltas are collected via the emit callback.
 
     Yields:
-        An async callable that processes the given events and asserts
-        the expected number of deltas were produced.
+        An async callable that enqueues the given number of events
+        and waits for all expected deltas.
     """
-    app = app_module_mock.app = App()
-    state_manager = StateManagerMemory(state=State)
-    app._state_manager = state_manager
-    # Disable event namespace so process() doesn't try to emit "reload"
-    # via Socket.IO for brand-new states.
-    app._event_namespace = None
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]] = []
 
-    token = "benchmark-token"
-    sid = "benchmark-sid"
-    headers: dict = {}
-    client_ip = "127.0.0.1"
+    async def emit_delta_impl(  # noqa: RUF029
+        token: str, delta: Mapping[str, Mapping[str, Any]]
+    ) -> None:
+        emitted_deltas.append((token, delta))
 
-    handler_name = format_event_handler(BenchmarkState.event_handlers["increment"])
+    async def emit_event_impl(token: str, *events: Event) -> None:
+        pass
 
-    event = Event(
-        token=token,
-        name=handler_name,
-        router_data={
-            "query": {},
-            "path": "/",
-        },
-        payload={},
+    def handle_backend_exception(ex: Exception) -> None:
+        formatted_exc = "\n".join(traceback.format_exception(ex))
+        pytest.fail(f"Event processor raised an unexpected exception:\n{formatted_exc}")
+
+    processor = BaseStateEventProcessor(
+        backend_exception_handler=handle_backend_exception,
+        graceful_shutdown_timeout=5,
     )
+    # Mock _rehydrate so the processor doesn't try to push full state
+    # to a non-existent frontend on the first event.
+    with mock.patch.object(processor, "_rehydrate", new=mock.AsyncMock()):
+        state_manager = StateManagerMemory()
+        root_context = EventContext(
+            token="",
+            state_manager=state_manager,
+            enqueue_impl=processor.enqueue_many,
+            emit_delta_impl=emit_delta_impl,
+            emit_event_impl=emit_event_impl,
+        )
+        processor._root_context = root_context
 
-    delta_count = 0
-    expected_deltas = 0
-
-    async def run_events(num_events: int, num_expected_deltas: int) -> None:
-        """Process events through the pipeline and wait for deltas.
-
-        Args:
-            num_events: Number of increment events to process.
-            num_expected_deltas: How many StateUpdates to wait for.
-        """
-        nonlocal delta_count, expected_deltas
-        delta_count = 0
-        expected_deltas = num_expected_deltas
-
-        for _ in range(num_events):
-            async with contextlib.aclosing(
-                process(app, event, sid, headers, client_ip)
-            ) as updates:
-                async for _update in updates:
-                    delta_count += 1
-
-        assert delta_count == expected_deltas, (
-            f"Expected {expected_deltas} StateUpdate(s), got {delta_count}"
+        token = "benchmark-token"
+        handler_name = format_event_handler(BenchmarkState.event_handlers["increment"])
+        event = Event(
+            name=handler_name,
+            router_data={
+                "query": {},
+                "path": "/",
+            },
+            payload={},
         )
 
-    yield run_events
+        async def run_events(num_events: int, num_expected_deltas: int) -> None:
+            """Enqueue events and wait for all deltas to be emitted.
 
-    await state_manager.close()
+            Args:
+                num_events: Number of increment events to enqueue.
+                num_expected_deltas: How many deltas to wait for.
+            """
+            emitted_deltas.clear()
+
+            async with processor as p:
+                async for _ in asyncio.as_completed([
+                    await p.enqueue(token, event) for _ in range(num_events)
+                ]):
+                    pass
+            assert len(emitted_deltas) == num_expected_deltas
+
+        yield run_events
+
+        await state_manager.close()
 
 
 def test_process_event(
@@ -116,8 +106,7 @@ def test_process_event(
     """Benchmark processing 3 increment events through the full pipeline.
 
     The first event creates fresh state (cold path), the next two reuse
-    the existing state (warm path). All machinery is set up outside the
-    benchmark; only the event processing is timed.
+    the existing state (warm path).  Only event processing is timed.
 
     Args:
         event_processing_harness: The run_events async callable.
@@ -126,10 +115,8 @@ def test_process_event(
     run_events = event_processing_harness
     loop = asyncio.get_event_loop()
 
-    # Each call to process() for a non-background event yields StateUpdates.
-    # The _process_event generator yields one update per yield/return plus a
-    # final update. For a simple handler like increment() with no yield,
-    # we get 1 StateUpdate per event = 3 total.
+    # Each event handler (increment) does a single state mutation with
+    # no yields, so we expect 1 delta per event = 3 total.
     @benchmark
     def _():
         loop.run_until_complete(run_events(num_events=3, num_expected_deltas=3))
