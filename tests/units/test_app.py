@@ -522,6 +522,11 @@ async def test_dynamic_var_event(
     clean_registration_context.register_base_state(test_state)
     state = test_state()  # pyright: ignore [reportCallIssue]
     state.add_var("int_val", int, 0)
+
+    def set_int_val(self, value: int):
+        self.int_val = value
+
+    state._add_event_handler("set_int_val", set_int_val)
     async with mock_base_state_event_processor as processor:
         await processor.enqueue(
             token,

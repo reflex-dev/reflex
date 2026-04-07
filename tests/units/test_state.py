@@ -142,6 +142,33 @@ class TestState(TestMixin, BaseState):  # pyright: ignore[reportUnsafeMultipleIn
     _backend: int = 0
     asynctest: int = 0
 
+    @rx.event
+    def set_num1(self, value: int):
+        """Set num1.
+
+        Args:
+            value: The new value for num1.
+        """
+        self.num1 = value
+
+    @rx.event
+    def set_num2(self, value: float):
+        """Set num2.
+
+        Args:
+            value: The new value for num2.
+        """
+        self.num2 = value
+
+    @rx.event
+    def set_array(self, value: list[float]):
+        """Set array.
+
+        Args:
+            value: The new value for array.
+        """
+        self.array = value
+
     @computed_var
     def sum(self) -> float:
         """Dynamically sum the numbers.
@@ -205,6 +232,15 @@ class GrandchildState(ChildState):
     """A grandchild state fixture."""
 
     value2: str
+
+    @rx.event
+    def set_value2(self, value: str):
+        """Set value2.
+
+        Args:
+            value: The new value for value2.
+        """
+        self.value2 = value
 
     def do_nothing(self):
         """Do something."""
@@ -367,14 +403,8 @@ def test_event_handlers(test_state):
     """
     expected_keys = (
         "do_something",
-        "set_array",
-        "set_complex",
-        "set_fig",
-        "set_key",
-        "set_mapping",
         "set_num1",
         "set_num2",
-        "set_obj",
     )
 
     cls = type(test_state)
@@ -434,17 +464,6 @@ def test_dict(test_state: TestState):
     assert set(test_state.dict(include_computed=False)[test_state.get_name()]) == {
         var + FIELD_MARKER for var in test_state.base_vars
     }
-
-
-def test_default_setters(test_state):
-    """Test that we can set default values.
-
-    Args:
-        test_state: A state.
-    """
-    for prop_name in test_state.base_vars:
-        # Each base var should have a default setter.
-        assert hasattr(test_state, f"set_{prop_name}")
 
 
 def test_class_indexing_with_vars():
@@ -1017,12 +1036,6 @@ def test_add_var():
     assert ds1.dynamic_dict.equals(DynamicState.dynamic_dict)  # pyright: ignore [reportAttributeAccessIssue]
     assert ds2.dynamic_dict.equals(DynamicState.dynamic_dict)  # pyright: ignore [reportAttributeAccessIssue]
     assert DynamicState().dynamic_dict == {"k1": 5, "k2": 10}  # pyright: ignore[reportAttributeAccessIssue]
-
-
-def test_add_var_default_handlers(test_state):
-    test_state.add_var("rand_int", int, 10)
-    assert "set_rand_int" in test_state.event_handlers
-    assert isinstance(test_state.event_handlers["set_rand_int"], EventHandler)
 
 
 class InterdependentState(BaseState):
@@ -3490,8 +3503,8 @@ async def test_setvar(
     """
     # Set Var in same state (with Var type casting)
     events = Event.from_event_type([
-        TestState.setvar("num1", 42),
-        TestState.setvar("num2", "4.2"),
+        TestState.set_num1(42),
+        TestState.set_num2(4.2),
     ])
     async with mock_base_state_event_processor as processor:
         for fut in asyncio.as_completed(await processor.enqueue_many(token, *events)):
@@ -4073,21 +4086,6 @@ def test_dict_and_get_delta():
         # Valid string keys
         (lambda state: "foo", "FOO", False),
         (lambda state: "bar", "BAR", False),
-        # MutableProxy keys (deprecated but supported)
-        (
-            lambda state: MutableProxy(
-                wrapped="test_wrapped_value", state=state, field_name="test_field"
-            ),
-            "test_wrapped_value",
-            False,
-        ),
-        (
-            lambda state: MutableProxy(
-                wrapped=42, state=state, field_name="test_field"
-            ),
-            42,
-            False,
-        ),
         # Invalid key types
         (lambda state: 123, None, True),
         (lambda state: [], None, True),
