@@ -5,16 +5,18 @@ from __future__ import annotations
 import json
 import operator
 import os
+import re
 import shlex
 import shutil
 import subprocess
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-from reflex.testing import AppHarnessProd, chdir
+from reflex.testing import chdir
 from reflex.utils.templates import initialize_default_app
 
 LIGHTHOUSE_RUN_ENV_VAR = "REFLEX_RUN_LIGHTHOUSE"
@@ -840,7 +842,10 @@ def _run_prod_lighthouse_benchmark(
     report_path: Path,
     label: str,
 ) -> LighthouseBenchmarkResult:
-    """Run Lighthouse against a Reflex app in prod mode.
+    """Run Lighthouse against a Reflex app via ``reflex run --env prod``.
+
+    Uses the real production code path so the benchmark automatically
+    reflects any future changes to how Reflex serves apps in prod.
 
     Args:
         app_root: The app root to initialize or reuse.
@@ -853,9 +858,61 @@ def _run_prod_lighthouse_benchmark(
     """
     report_path.parent.mkdir(parents=True, exist_ok=True)
 
-    with AppHarnessProd.create(root=app_root, app_name=app_name) as harness:
-        assert harness.frontend_url is not None
-        report = run_lighthouse(harness.frontend_url, report_path)
+    proc = subprocess.Popen(
+        [
+            "uv",
+            "run",
+            "reflex",
+            "run",
+            "--env",
+            "prod",
+            "--frontend-only",
+            "--loglevel",
+            "info",
+        ],
+        cwd=str(app_root),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+
+    # Wait for the frontend URL to appear in stdout.
+    frontend_url = None
+    captured_output: list[str] = []
+    deadline = time.monotonic() + 120
+    assert proc.stdout is not None
+    while time.monotonic() < deadline:
+        line = proc.stdout.readline()
+        if not line:
+            break
+        captured_output.append(line)
+        m = re.search(r"App running at:\s*(http\S+)", line)
+        if m:
+            frontend_url = m.group(1).rstrip("/")
+            break
+
+    if frontend_url is None:
+        proc.terminate()
+        try:
+            proc.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait()
+        output = "".join(captured_output)
+        pytest.fail(
+            f"reflex run --env prod did not start within timeout for {label}\n"
+            f"Captured output:\n{output}"
+        )
+
+    try:
+        report = run_lighthouse(frontend_url, report_path)
+    finally:
+        proc.terminate()
+        try:
+            proc.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait()
 
     failures = []
     for category_name, threshold in LIGHTHOUSE_CATEGORY_THRESHOLDS.items():
