@@ -355,7 +355,9 @@ class Config(BaseConfig):
         # Warn if state_auto_setters is explicitly set.
         if "state_auto_setters" in kwargs:
             if kwargs["state_auto_setters"]:
-                reason = "auto setters will be removed; use explicit event handlers instead"
+                reason = (
+                    "auto setters will be removed; use explicit event handlers instead"
+                )
             else:
                 reason = "state_auto_setters=False is already the default and the option will be removed"
             console.deprecate(
