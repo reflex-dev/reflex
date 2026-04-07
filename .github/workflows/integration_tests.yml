@@ -178,7 +178,7 @@ jobs:
         run: |
           # Install git+https deps from pyproject.toml before pip compile resolves them.
           # Exclude reflex itself — the PR version is already installed.
-          grep -oP 'git\+https://[^"'"'"']+' pyproject.toml | grep -v 'reflex-dev/reflex\.git' | sort -u > git-requirements.txt || true
+          grep -oP 'git\+https://[^"'"'"']+' pyproject.toml | grep -v 'reflex-dev/reflex@' | sort -u > git-requirements.txt || true
           if [ -s git-requirements.txt ]; then
             echo "Installing git dependencies:"
             cat git-requirements.txt
