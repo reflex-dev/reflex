@@ -415,6 +415,29 @@ def test_compile_experimental_component_memo_does_not_mutate_definition(
     assert definition.component.style == Style()
 
 
+def test_component_returning_memo_is_transparent_for_child_validation():
+    """Experimental memo wrappers should not break `_valid_parents` checks."""
+
+    class ValidParent(Component):
+        tag = "ValidParent"
+        library = "valid-parent"
+
+    class RestrictedChild(Component):
+        tag = "RestrictedChild"
+        library = "restricted-child"
+        _valid_parents = ["ValidParent"]
+
+    @rx._x.memo
+    def transparent(children: rx.Var[rx.Component]) -> rx.Component:
+        return children  # type: ignore[return-value]
+
+    wrapped_child = transparent(RestrictedChild.create())
+    parent = ValidParent.create(wrapped_child)
+
+    assert isinstance(wrapped_child, ExperimentalMemoComponent)
+    assert parent.children == [wrapped_child]
+
+
 def test_compile_memo_components_includes_experimental_custom_code():
     """Experimental component memos should include custom code in compiled output."""
 

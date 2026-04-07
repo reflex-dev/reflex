@@ -76,6 +76,19 @@ class ExperimentalMemoComponent(Component):
 
     library = f"$/{constants.Dirs.COMPONENTS_PATH}"
 
+    def _validate_component_children(self, children: list[Component]) -> None:
+        """Skip direct parent/child validation for memo wrapper instances.
+
+        Experimental memos wrap an underlying compiled component definition.
+        The runtime wrapper should not interpose on `_valid_parents` checks for
+        the authored subtree because the wrapper itself is not the semantic
+        parent in the user-authored component tree.
+
+        Args:
+            children: The children of the component (ignored).
+        """
+        del children
+
     def _post_init(self, **kwargs):
         """Initialize the experimental memo component.
 
