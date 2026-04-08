@@ -122,7 +122,7 @@ def comp_alias(comp: str | tuple[str, str]) -> str:
         comp: The component name or a tuple of (component name, alias).
 
     Returns:
-        The component alias, or None if there is no alias.
+        The component alias, or the compoenent name if there is no alias.
     """
     return comp[1] if isinstance(comp, tuple) else comp
 
