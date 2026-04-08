@@ -379,6 +379,20 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
     # Demo / exec helpers
     # ------------------------------------------------------------------
 
+    def _exec_and_get_last_callable(self, content: str):
+        """Run _exec_code and return the last callable defined by the block."""
+        keys_before = set(self.env.keys())
+        _exec_code(content, self.env, self.virtual_filepath)
+        new_keys = [k for k in self.env if k not in keys_before]
+        if not new_keys:
+            msg = "Exec block defined nothing new"
+            raise RuntimeError(msg)
+        last = self.env[new_keys[-1]]
+        if not callable(last):
+            msg = f"Last defined name {new_keys[-1]!r} is not callable"
+            raise TypeError(msg)
+        return last()
+
     def _render_demo(self, content: str, flags: set[str]) -> rx.Component:
         """Render a ``python demo`` block — code + live component."""
         comp_id = None
@@ -388,11 +402,9 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
 
         try:
             if "exec" in flags:
-                _exec_code(content, self.env, self.virtual_filepath)
-                comp = self.env[list(self.env.keys())[-1]]()
+                comp = self._exec_and_get_last_callable(content)
             elif "graphing" in flags:
-                _exec_code(content, self.env, self.virtual_filepath)
-                comp = self.env[list(self.env.keys())[-1]]()
+                comp = self._exec_and_get_last_callable(content)
                 parts = content.rpartition("def")
                 data, code = parts[0], parts[1] + parts[2]
                 return docgraphing(code, comp=comp, data=data)
@@ -426,11 +438,9 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
 
         try:
             if "exec" in flags:
-                _exec_code(content, self.env, self.virtual_filepath)
-                comp = self.env[list(self.env.keys())[-1]]()
+                comp = self._exec_and_get_last_callable(content)
             elif "graphing" in flags:
-                _exec_code(content, self.env, self.virtual_filepath)
-                comp = self.env[list(self.env.keys())[-1]]()
+                comp = self._exec_and_get_last_callable(content)
                 parts = content.rpartition("def")
                 data, code = parts[0], parts[1] + parts[2]
                 return docgraphing(code, comp=comp, data=data)
