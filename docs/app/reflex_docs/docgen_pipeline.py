@@ -54,7 +54,7 @@ from reflex_ui_shared.components.blocks.typography import (
 from reflex_ui_shared.constants import REFLEX_ASSETS_CDN
 
 # ---------------------------------------------------------------------------
-# Exec environment — mirrors flexdown's module-based exec mechanism
+# Exec environment — mirrors reflex_docgen's module-based exec mechanism
 # ---------------------------------------------------------------------------
 
 # One in-memory module per file — all exec blocks within a doc accumulate
@@ -90,7 +90,6 @@ def _exec_code(content: str, env: dict, filename: str) -> None:
     """
     key = (filename, content)
     if key in _executed_blocks:
-        # Already executed in a prior pass — reuse cached namespace.
         env.update(_file_modules[filename].__dict__)
         return
 
@@ -175,7 +174,7 @@ def _spans_to_plaintext(spans: tuple[Span, ...]) -> str:
 class ReflexDocTransformer(DocumentTransformer[rx.Component]):
     """Transforms a reflex_docgen Document into Reflex components.
 
-    Mirrors the rendering that the flexdown pipeline produces, so docs from
+    Mirrors the rendering that the reflex_docgen pipeline produces, so docs from
     the parent docs directory look identical to the locally-authored ones.
     """
 
@@ -513,27 +512,34 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             ),
         ]
 
-        if children:
-            # Has body content — render as collapsible accordion.
-            if title_spans:
-                trigger.append(title_comp())
-                body = rx.accordion.content(
-                    self._render_children(children),
-                    padding="0px",
-                    margin_top="16px",
-                )
-            else:
-                trigger.append(
-                    rx.box(
-                        self._render_children(children),
-                        class_name="font-[475] !text-secondary-11",
-                    ),
-                )
-                body = rx.fragment()
+        if children and title_spans:
+            # Has heading + body — render as collapsible accordion.
+            trigger.append(title_comp())
+            body = rx.accordion.content(
+                self._render_children(children),
+                padding="0px",
+                margin_top="16px",
+            )
             return collapsible_box(trigger, body, color)
 
-        # Title only, no body — simple box.
-        trigger.append(title_comp())
+        # Title only, or text-only (no heading) — simple non-collapsible box.
+        if title_spans:
+            trigger.append(title_comp())
+        elif children:
+            # Render inline spans directly — avoid text_block's mb-4 margin.
+            spans: list[rx.Component | str] = []
+            for child in children:
+                if isinstance(child, TextBlock):
+                    spans.extend(_render_spans(child.children))
+                else:
+                    spans.append(self.transform_block(child))
+            trigger.append(
+                rx.box(
+                    *spans,
+                    class_name="font-[475]",
+                    color=f"{rx.color(color, 11)}",
+                ),
+            )
         return rx.vstack(
             rx.hstack(
                 *trigger,
@@ -704,6 +710,13 @@ def render_docgen_document(
 
 
 def get_docgen_toc(filepath: str | Path) -> list[tuple[int, str]]:
-    """Extract TOC headings as (level, text) tuples — same format as flexdown's get_toc."""
+    """Extract TOC headings as (level, text) tuples — same format as reflex_docgen's get_toc."""
     doc = _parse_doc(filepath)
     return [(h.level, _spans_to_plaintext(h.children)) for h in doc.headings]
+
+
+def render_markdown(text: str) -> rx.Component:
+    """Render a plain markdown text string into Reflex components."""
+    doc = parse_document(text)
+    transformer = ReflexDocTransformer()
+    return transformer.transform(doc)

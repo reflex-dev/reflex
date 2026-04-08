@@ -489,7 +489,7 @@ class Customer(rx.Model, table=True):
 ```
 
 ```python exec
-class DatabaseTableState(rx.State):
+class LoadingDataTableState(rx.State):
     users: list[dict] = []
 
     @rx.event
@@ -543,8 +543,8 @@ def loading_data_table_example():
                 rx.table.column_header_cell("Address"),
             ),
         ),
-        rx.table.body(rx.foreach(DatabaseTableState.users, show_customer)),
-        on_mount=DatabaseTableState.load_entries,
+        rx.table.body(rx.foreach(LoadingDataTableState.users, show_customer)),
+        on_mount=LoadingDataTableState.load_entries,
         width="100%",
         margin_bottom="1em",
     )

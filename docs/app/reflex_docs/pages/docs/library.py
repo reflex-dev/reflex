@@ -1,7 +1,7 @@
-from reflex_ui_shared.components.icons import get_icon
-
 import reflex as rx
 from reflex.utils.format import to_snake_case, to_title_case
+from reflex_ui_shared.components.icons import get_icon
+
 from reflex_docs.templates.docpage import docpage, h1_comp, text_comp_2
 
 

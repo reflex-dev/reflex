@@ -1,9 +1,9 @@
+import reflex as rx
 import reflex_ui as ui
 from reflex_ui_shared.components.marketing_button import button
 from reflex_ui_shared.constants import REFLEX_ASSETS_CDN
 from reflex_ui_shared.views.hosting_banner import HostingBannerState
 
-import reflex as rx
 from reflex_docs.pages.docs import getting_started
 
 

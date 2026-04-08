@@ -3,11 +3,13 @@
 import hashlib
 import os
 import textwrap
+from pathlib import Path
 from types import UnionType
 from typing import Literal, Union, _GenericAlias, get_args, get_origin
 
-from flexdown.document import Document
+import reflex as rx
 from reflex.components.base.fragment import Fragment
+from reflex.components.component import Component
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import RadixThemesComponent
 from reflex_docgen import (
@@ -15,12 +17,12 @@ from reflex_docgen import (
     PropDocumentation,
     generate_documentation,
 )
-from reflex_ui_shared.components.blocks.flexdown import markdown, xd
-from reflex_ui_shared.constants import REFLEX_ASSETS_CDN
-from reflex_ui_shared.utils.docpage import get_toc
 
-import reflex as rx
-from reflex.components.component import Component
+from reflex_docs.docgen_pipeline import (
+    get_docgen_toc,
+    render_docgen_document,
+    render_markdown,
+)
 from reflex_docs.templates.docpage import docdemobox, docpage, h1_comp, h2_comp
 
 
@@ -442,7 +444,7 @@ def prop_docs(
 def generate_props(
     props: tuple[PropDocumentation, ...],
     component: type[Component],
-    comp: Document | rx.Component,
+    previews: dict[str, str],
 ) -> rx.Component:
     prop_list = list(props)
     if len(prop_list) == 0:
@@ -484,9 +486,10 @@ def generate_props(
         class_name="bg-slate-2",
     )
 
+    comp: rx.Component
     try:
-        if f"{component.__name__}" in comp.metadata:
-            comp = eval(comp.metadata[component.__name__])(**prop_dict)
+        if component.__name__ in previews:
+            comp = eval(previews[component.__name__])(**prop_dict)
 
         elif not is_interactive:
             comp = rx.fragment()
@@ -643,12 +646,12 @@ def generate_valid_children(comp: type[Component]) -> rx.Component:
 
 
 def component_docs(
-    component_tuple: tuple[type[Component], str], comp: Document
+    component_tuple: tuple[type[Component], str], previews: dict[str, str]
 ) -> rx.Component:
     """Generates documentation for a given component."""
     component = component_tuple[0]
     doc = generate_documentation(component)
-    props = generate_props(doc.props, component, comp)
+    props = generate_props(doc.props, component, previews)
     triggers = generate_event_triggers(doc.event_handlers)
     children = generate_valid_children(component)
 
@@ -663,7 +666,9 @@ def component_docs(
 
     return rx.box(
         h2_comp(text=comp_display_name),
-        rx.box(markdown(textwrap.dedent(doc.description or "")), class_name="pb-2"),
+        rx.box(
+            render_markdown(textwrap.dedent(doc.description or "")), class_name="pb-2"
+        ),
         props,
         children,
         triggers,
@@ -671,9 +676,17 @@ def component_docs(
     )
 
 
-def multi_docs(path: str, comp: Document, component_list: list, title: str):
+def multi_docs(
+    path: str,
+    virtual_path: str,
+    actual_path: str,
+    previews: dict[str, str],
+    component_list: list,
+    title: str,
+):
     components = [
-        component_docs(component_tuple, comp) for component_tuple in component_list[1:]
+        component_docs(component_tuple, previews)
+        for component_tuple in component_list[1:]
     ]
     fname = path.strip("/") + ".md"
     ll_doc_exists = os.path.exists(fname.replace(".md", "-ll.md"))
@@ -728,10 +741,18 @@ def multi_docs(path: str, comp: Document, component_list: list, title: str):
 
     @docpage(set_path=path, t=title)
     def out():
-        toc = get_toc(comp, fname, component_list)
-        return toc, rx.box(
+        toc = get_docgen_toc(actual_path)
+        doc_content = Path(actual_path).read_text(encoding="utf-8")
+        # Append API Reference headings for the component list
+        if component_list:
+            toc.append((1, "API Reference"))
+        for component_tuple in component_list[1:]:
+            toc.append((2, component_tuple[1]))
+        return (toc, doc_content), rx.box(
             links("hl", ll_doc_exists, path),
-            xd.render(comp, filename=fname),
+            render_docgen_document(
+                virtual_filepath=virtual_path, actual_filepath=actual_path
+            ),
             h1_comp(text="API Reference"),
             rx.box(*components, class_name="flex flex-col"),
             class_name="flex flex-col w-full",
@@ -739,14 +760,19 @@ def multi_docs(path: str, comp: Document, component_list: list, title: str):
 
     @docpage(set_path=path + "low", t=title + " (Low Level)")
     def ll():
-        nonlocal fname
-        fname = fname.replace(".md", "-ll.md")
-        d2 = Document.from_file(fname)
-        d2.metadata["REFLEX_ASSETS_CDN"] = REFLEX_ASSETS_CDN
-        toc = get_toc(d2, fname, component_list)
-        return toc, rx.box(
+        ll_actual = fname.replace(".md", "-ll.md")
+        ll_virtual = virtual_path.replace(".md", "-ll.md")
+        toc = get_docgen_toc(ll_actual)
+        doc_content = Path(ll_actual).read_text(encoding="utf-8")
+        if component_list:
+            toc.append((1, "API Reference"))
+        for component_tuple in component_list[1:]:
+            toc.append((2, component_tuple[1]))
+        return (toc, doc_content), rx.box(
             links("ll", ll_doc_exists, path),
-            xd.render(d2, fname),
+            render_docgen_document(
+                virtual_filepath=ll_virtual, actual_filepath=ll_actual
+            ),
             h1_comp(text="API Reference"),
             rx.box(*components, class_name="flex flex-col"),
             class_name="flex flex-col w-full",

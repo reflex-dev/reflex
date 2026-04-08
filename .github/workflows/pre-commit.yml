@@ -34,5 +34,3 @@ jobs:
           fetch-tags: true
           fetch-depth: 0
       - run: uv run pre-commit run --all-files --show-diff-on-failure
-      - name: Run docs app pre-commit
-        run: uv run pre-commit run --all-files --show-diff-on-failure --config docs/app/.pre-commit-config.yaml

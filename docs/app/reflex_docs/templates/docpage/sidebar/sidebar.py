@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+import reflex as rx
 import reflex_ui as ui
 from reflex_ui_shared.styles.colors import c_color
 
-import reflex as rx
 from reflex_docs.templates.docpage.state import NavbarState
 
 from .sidebar_items.ai import (
