@@ -22,7 +22,7 @@ from inspect import getfullargspec
 from itertools import chain
 from pathlib import Path
 from types import MappingProxyType, ModuleType, SimpleNamespace, UnionType
-from typing import Any, get_args, get_origin
+from typing import Any, ClassVar, get_args, get_origin
 
 from reflex_base.components.component import DEFAULT_TRIGGERS_AND_DESC, Component
 from reflex_base.vars.base import Var
@@ -579,7 +579,7 @@ def _extract_class_props_as_ast_nodes(
                 or name in EXCLUDED_PROPS
                 or name in all_props
                 or name in event_triggers
-                or (isinstance(value, str) and "ClassVar" in value)
+                or get_origin(value) is ClassVar
             ):
                 continue
             all_props.add(name)
