@@ -119,17 +119,12 @@ def comp_alias(comp: str | tuple[str, str]) -> str:
     This is the name external users will import.
 
     Args:
-def comp_alias(comp: str | tuple[str, str]) -> str:
-    """Get the component alias from the mapping value.
-
-    This is the name external users will import.
-
-    Args:
         comp: The component name or a tuple of (component name, alias).
 
     Returns:
-        The component alias, or the component name itself if there is no alias.
+        The component alias, or None if there is no alias.
     """
+    return comp[1] if isinstance(comp, tuple) else comp
 
 
 def comp_path(path: str, comp: str | tuple[str, str]) -> str:
