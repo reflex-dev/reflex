@@ -21,7 +21,11 @@ class MarkdownDocument:
 
     @classmethod
     def from_source(cls, source: str) -> MarkdownDocument:
-        """Parse a markdown source string with optional YAML frontmatter."""
+        """Parse a markdown source string with optional YAML frontmatter.
+
+        Returns:
+            The parsed document.
+        """
         match = re.match(_FRONT_MATTER_RE, source)
         if not match:
             return cls(content=source)
@@ -30,11 +34,19 @@ class MarkdownDocument:
 
     @classmethod
     def from_file(cls, path: str | Path) -> MarkdownDocument:
-        """Load a markdown document from a file."""
+        """Load a markdown document from a file.
+
+        Returns:
+            The parsed document.
+        """
         text = Path(path).read_text(encoding="utf-8")
         return cls.from_source(text)
 
 
 def get_md_files(directory: str | Path) -> list[Path]:
-    """Recursively find all .md files in a directory."""
+    """Recursively find all .md files in a directory.
+
+    Returns:
+        Sorted list of .md file paths.
+    """
     return sorted(Path(directory).rglob("*.md"))
