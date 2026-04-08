@@ -3019,7 +3019,3 @@ class LiteralComponentVar(CachedVarOperation, LiteralVar[Component], ComponentVa
             ),
             _var_value=value,
         )
-
-
-# Late import of reflex.state to resolve ForwardRef type hints without circular import.
-import reflex.state  # noqa: E402

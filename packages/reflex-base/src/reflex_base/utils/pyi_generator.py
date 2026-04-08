@@ -572,6 +572,8 @@ def _extract_class_props_as_ast_nodes(
             **type_hint_globals,
             **_get_class_annotation_globals(target_class),
         }
+        # State attr isn't really a prop and cannot be resolved, so pop it off.
+        target_class.__annotations__.pop("State", None)
         type_hints = typing.get_type_hints(target_class, globalns=annotation_globals)
         for name, value in reversed(type_hints.items()):
             if (
