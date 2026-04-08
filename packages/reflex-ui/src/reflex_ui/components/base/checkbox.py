@@ -1,6 +1,6 @@
 """Checkbox component from base-ui components."""
 
-from reflex.components.el import Label
+from reflex_components_core.el.elements.forms import Label
 
 from reflex.components.component import ComponentNamespace
 from reflex.event import EventHandler, passthrough_event_spec

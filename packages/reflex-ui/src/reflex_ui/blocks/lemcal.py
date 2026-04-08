@@ -1,7 +1,10 @@
 """Lemcal calendar embed components."""
 
 import reflex as rx
-import reflex_ui as ui
+from reflex_ui.components.base.button import button
+from reflex_ui.components.base.dialog import dialog
+from reflex_ui.components.icons.hugeicon import hi
+from reflex_ui.utils.twmerge import cn
 
 LEMCAL_DEMO_URL = "https://app.lemcal.com/@alek/reflex-demo-call"
 
@@ -39,16 +42,16 @@ def lemcal_script(**props) -> rx.Component:
 
 def lemcal_dialog(trigger: rx.Component, **props) -> rx.Component:
     """Return a Lemcal dialog container element."""
-    class_name = ui.cn("w-auto", props.pop("class_name", ""))
-    return ui.dialog.root(
-        ui.dialog.trigger(render_=trigger),
-        ui.dialog.portal(
-            ui.dialog.backdrop(),
-            ui.dialog.popup(
+    class_name = cn("w-auto", props.pop("class_name", ""))
+    return dialog.root(
+        dialog.trigger(render_=trigger),
+        dialog.portal(
+            dialog.backdrop(),
+            dialog.popup(
                 rx.el.div(
-                    ui.dialog.close(
-                        render_=ui.button(
-                            ui.hi("Cancel01Icon"),
+                    dialog.close(
+                        render_=button(
+                            hi("Cancel01Icon"),
                             variant="secondary",
                             size="icon-lg",
                             class_name="text-secondary-12 absolute top-4 right-4 z-10",

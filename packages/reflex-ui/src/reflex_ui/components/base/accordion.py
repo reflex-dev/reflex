@@ -2,8 +2,8 @@
 
 from typing import Any, Literal
 
-from reflex.components.core.foreach import foreach
-from reflex.components.el import Div
+from reflex_components_core.core.foreach import foreach
+from reflex_components_core.el.elements.typography import Div
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.event import EventHandler, passthrough_event_spec

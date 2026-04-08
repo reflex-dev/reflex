@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from reflex.components.el import Div
+from reflex_components_core.el.elements.typography import Div
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.event import EventHandler, passthrough_event_spec

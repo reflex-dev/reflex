@@ -2,8 +2,10 @@
 
 from typing import Literal
 
-from reflex.components.el import Button, Div, Span
-from reflex.components.el import Input as ReflexInput
+from reflex_components_core.el.elements.forms import Button
+from reflex_components_core.el.elements.forms import Input as ReflexInput
+from reflex_components_core.el.elements.inline import Span
+from reflex_components_core.el.elements.typography import Div
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.event import EventHandler, passthrough_event_spec, set_focus, set_value
@@ -57,7 +59,7 @@ class InputRoot(InputBaseComponent, ReflexInput):
     render_: Var[Component]
 
     @classmethod
-    def create(cls, *children, **props) -> BaseUIComponent:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def create(cls, *children, **props) -> "InputRoot":  # pyright: ignore[reportIncompatibleMethodOverride]
         """Create a high level input component with simplified API.
 
         Returns:
@@ -65,7 +67,7 @@ class InputRoot(InputBaseComponent, ReflexInput):
         """
         props["data-slot"] = "input"
         cls.set_class_name(ClassNames.INPUT, props)
-        return super().create(*children, **props)
+        return super().create(*children, **props)  # pyright: ignore[reportReturnType]
 
 
 class HighLevelInput(InputBaseComponent):

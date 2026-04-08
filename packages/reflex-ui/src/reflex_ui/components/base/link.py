@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from reflex.components.react_router.dom import ReactRouterLink, To
+from reflex_components_core.react_router.dom import ReactRouterLink, To
 
 from reflex.vars.base import Var
 from reflex_ui.components.icons.hugeicon import hi

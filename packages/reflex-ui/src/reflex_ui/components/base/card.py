@@ -1,6 +1,6 @@
 """Custom card component."""
 
-from reflex.components.el import Div
+from reflex_components_core.el.elements.typography import Div
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.vars.base import Var

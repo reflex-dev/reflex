@@ -1,6 +1,6 @@
 """Set of custom icons."""
 
-from reflex.components.el import svg
+from reflex_components_core.el.elements.media import svg
 
 from reflex.components.component import Component, memo
 from reflex.vars.base import Var

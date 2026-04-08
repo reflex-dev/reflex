@@ -6,10 +6,16 @@ This module provides a comprehensive intro form that validates company emails.
 from typing import Any
 
 import reflex as rx
-import reflex_ui as ui
 from reflex.event import EventType
 from reflex.experimental.client_state import ClientStateVar
 from reflex.vars.base import get_unique_variable_name
+from reflex_ui.components.base.button import button
+from reflex_ui.components.base.dialog import dialog
+from reflex_ui.components.base.input import input
+from reflex_ui.components.base.textarea import textarea
+from reflex_ui.components.icons.hugeicon import hi
+from reflex_ui.components.icons.others import select_arrow
+from reflex_ui.utils.twmerge import cn
 
 intro_form_error_message = ClientStateVar.create("intro_form_error_message", "")
 intro_form_open_cs = ClientStateVar.create("intro_form_open", False)
@@ -122,7 +128,7 @@ def input_field(
             label + (" *" if required else ""),
             class_name="block text-sm font-medium text-secondary-12",
         ),
-        ui.input(
+        input(
             placeholder=placeholder,
             name=name,
             type=type,
@@ -164,7 +170,7 @@ def validation_input_field(
             label + (" *" if required else ""),
             class_name="block text-sm font-medium text-secondary-12",
         ),
-        ui.input(
+        input(
             placeholder=placeholder,
             id=id,
             name=name,
@@ -195,7 +201,7 @@ def text_area_field(
     """
     return rx.el.div(
         rx.el.label(label, class_name="block text-sm font-medium text-secondary-12"),
-        ui.textarea(
+        textarea(
             placeholder=placeholder,
             name=name,
             required=required,
@@ -235,13 +241,13 @@ def select_field(
                 default_value="",
                 name=name,
                 required=required,
-                class_name=ui.cn(
+                class_name=cn(
                     "w-full appearance-none pr-9",
-                    ui.button.class_names.for_button("outline", "md"),
+                    button.class_names.for_button("outline", "md"),
                     "outline-primary-6 focus:border-primary-6",
                 ),
             ),
-            ui.select_arrow(
+            select_arrow(
                 class_name="size-4 text-secondary-9 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
             ),
             class_name="relative",
@@ -341,13 +347,13 @@ def intro_form(
                 class_name="text-destructive-10 text-sm font-medium px-2 py-1 rounded-md bg-destructive-3 border border-destructive-4",
             ),
         ),
-        ui.button(
+        button(
             "Submit",
             type="submit",
             class_name="w-full",
             loading=is_submitting_intro_form_cs.value,
         ),
-        class_name=ui.cn(
+        class_name=cn(
             "@container flex flex-col lg:gap-6 gap-2 p-6",
             props.pop("class_name", ""),
         ),
@@ -378,21 +384,21 @@ def intro_form_dialog(
     """
     if trigger is None:
         trigger = rx.fragment()
-    class_name = ui.cn("w-auto", props.pop("class_name", ""))
-    return ui.dialog.root(
-        ui.dialog.trigger(render_=trigger),
-        ui.dialog.portal(
-            ui.dialog.backdrop(),
-            ui.dialog.popup(
+    class_name = cn("w-auto", props.pop("class_name", ""))
+    return dialog.root(
+        dialog.trigger(render_=trigger),
+        dialog.portal(
+            dialog.backdrop(),
+            dialog.popup(
                 rx.el.div(
                     rx.el.div(
                         rx.el.h1(
                             "Get Started With Your Free Trial",
                             class_name="text-xl font-bold text-secondary-12",
                         ),
-                        ui.dialog.close(
-                            render_=ui.button(
-                                ui.hi("Cancel01Icon"),
+                        dialog.close(
+                            render_=button(
+                                hi("Cancel01Icon"),
                                 variant="ghost",
                                 size="icon-sm",
                                 on_click=intro_form_open_cs.set_value(False),

@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from reflex.components.core.cond import cond
+from reflex_components_core.core.cond import cond
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.utils.imports import ImportVar

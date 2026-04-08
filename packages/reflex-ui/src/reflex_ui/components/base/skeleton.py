@@ -1,6 +1,6 @@
 """Custom skeleton component."""
 
-from reflex.components.el import Div
+from reflex_components_core.el.elements.typography import Div
 
 from reflex.components.component import Component, memo
 from reflex.vars.base import Var

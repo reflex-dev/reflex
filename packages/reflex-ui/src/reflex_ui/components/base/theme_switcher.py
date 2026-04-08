@@ -1,7 +1,8 @@
 """Theme switcher component."""
 
-from reflex.components.core.cond import cond
-from reflex.components.el import Button, Div
+from reflex_components_core.core.cond import cond
+from reflex_components_core.el.elements.forms import Button
+from reflex_components_core.el.elements.typography import Div
 
 from reflex.components.component import Component, memo
 from reflex.style import LiteralColorMode, color_mode, set_color_mode

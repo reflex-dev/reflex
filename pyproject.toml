@@ -153,6 +153,12 @@ extraPaths = [
   "packages/reflex-ui-shared/src",
   "packages/integrations-docs/src",
 ]
+exclude = [
+  "docs",
+  "packages/reflex-ui-shared",
+  "packages/integrations-docs",
+  "**/.templates",
+]
 reportIncompatibleMethodOverride = false
 
 [tool.ruff]
