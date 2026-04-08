@@ -1749,7 +1749,7 @@ class BaseState(EvenMoreBasicBaseState):
         )
 
         subdelta: dict[str, Any] = {
-            prop + FIELD_MARKER: self.get_value(prop)
+            prop + FIELD_MARKER: object.__getattribute__(self, prop)
             for prop in delta_vars
             if not types.is_backend_base_variable(prop, type(self))
         }
