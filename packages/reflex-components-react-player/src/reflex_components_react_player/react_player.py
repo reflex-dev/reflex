@@ -236,8 +236,8 @@ class ReactPlayer(Component):
         """Create a component.
 
         Args:
-            children: The children of the component.
-            props: The props of the component.
+            *children: The children of the component.
+            **props: The props of the component.
 
         Returns:
             The created component.
