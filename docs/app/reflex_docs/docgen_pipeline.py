@@ -4,6 +4,7 @@ import sys
 import types
 from pathlib import Path
 
+import reflex as rx
 from reflex_base.constants.colors import ColorType
 from reflex_docgen.markdown import (
     Block,
@@ -52,8 +53,6 @@ from reflex_ui_shared.components.blocks.typography import (
 )
 from reflex_ui_shared.constants import REFLEX_ASSETS_CDN
 
-import reflex as rx
-
 # ---------------------------------------------------------------------------
 # Exec environment — mirrors flexdown's module-based exec mechanism
 # ---------------------------------------------------------------------------
@@ -61,6 +60,7 @@ import reflex as rx
 # One in-memory module per file — all exec blocks within a doc accumulate
 # into the same namespace, so later definitions shadow earlier ones cleanly.
 _file_modules: dict[str, types.ModuleType] = {}
+_executed_blocks: set[tuple[str, str]] = set()
 
 # Register the parent package so pickle can resolve child modules.
 _PARENT_PKG = "_docgen_exec"
@@ -83,8 +83,17 @@ def _exec_code(content: str, env: dict, filename: str) -> None:
     """Execute a ``python exec`` code block via an in-memory module.
 
     All exec blocks within the same file share one module so that State
-    subclass redefinitions shadow correctly.
+    subclass redefinitions shadow correctly.  When the same block is
+    encountered a second time (e.g. the frontend is evaluated twice —
+    once for compilation and once on the backend), skip re-execution and
+    just populate *env* from the cached module namespace.
     """
+    key = (filename, content)
+    if key in _executed_blocks:
+        # Already executed in a prior pass — reuse cached namespace.
+        env.update(_file_modules[filename].__dict__)
+        return
+
     if filename not in _file_modules:
         mod_name = _make_module_name(filename)
         module = types.ModuleType(mod_name)
@@ -99,6 +108,7 @@ def _exec_code(content: str, env: dict, filename: str) -> None:
     exec(compile(content, filename or "<docgen-exec>", "exec"), module.__dict__)
 
     env.update(module.__dict__)
+    _executed_blocks.add(key)
 
 
 # ---------------------------------------------------------------------------
