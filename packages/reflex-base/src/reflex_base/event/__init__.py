@@ -23,7 +23,14 @@ from typing import (
     overload,
 )
 
-from typing_extensions import Self, TypeAliasType, TypedDict, TypeVarTuple, Unpack
+from typing_extensions import (
+    Self,
+    TypeAliasType,
+    TypedDict,
+    TypeVarTuple,
+    Unpack,
+    is_typeddict,
+)
 
 from reflex_base import constants
 from reflex_base.components.field import BaseField
@@ -57,6 +64,10 @@ from reflex_base.vars.object import ObjectVar
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
+
+    BASE_STATE = TypeVar("BASE_STATE", bound=BaseState)
+else:
+    BASE_STATE = TypeVar("BASE_STATE")
 
 
 @dataclasses.dataclass(
@@ -1683,6 +1694,28 @@ def _values_returned_from_event(event_spec_annotations: list[Any]) -> list[Any]:
     ]
 
 
+def _is_mapping_style_event_arg_compatible_with_typed_dict(
+    provided_event_arg_type: Any,
+    callback_param_type: Any,
+) -> bool:
+    """Check whether a mapping-style event payload can satisfy a TypedDict callback.
+
+    This keeps the compatibility relaxation narrow to dict-like event payloads, such
+    as form submission data, without weakening unrelated event type checks.
+
+    Args:
+        provided_event_arg_type: The type produced by the event trigger.
+        callback_param_type: The callback parameter annotation.
+
+    Returns:
+        Whether the provided event payload should be treated as compatible.
+    """
+    return is_typeddict(callback_param_type) and safe_issubclass(
+        get_origin(provided_event_arg_type) or provided_event_arg_type,
+        Mapping,
+    )
+
+
 def _check_event_args_subclass_of_callback(
     callback_params_names: list[str],
     provided_event_types: list[Any],
@@ -1724,15 +1757,18 @@ def _check_event_args_subclass_of_callback(
                 continue
 
             type_match_found.setdefault(arg, False)
+            callback_param_type = callback_param_name_to_type[arg]
 
             try:
                 compare_result = typehint_issubclass(
-                    args_types_without_vars[i], callback_param_name_to_type[arg]
+                    args_types_without_vars[i], callback_param_type
+                ) or _is_mapping_style_event_arg_compatible_with_typed_dict(
+                    args_types_without_vars[i], callback_param_type
                 )
             except TypeError as te:
                 callback_name_context = f" of {callback_name}" if callback_name else ""
                 key_context = f" for {key}" if key else ""
-                msg = f"Could not compare types {args_types_without_vars[i]} and {callback_param_name_to_type[arg]} for argument {arg}{callback_name_context}{key_context}."
+                msg = f"Could not compare types {args_types_without_vars[i]} and {callback_param_type} for argument {arg}{callback_name_context}{key_context}."
                 raise TypeError(msg) from te
 
             if compare_result:
@@ -1744,7 +1780,7 @@ def _check_event_args_subclass_of_callback(
             )
             delayed_exceptions.append(
                 EventHandlerArgTypeMismatchError(
-                    f"Event handler {key} expects {args_types_without_vars[i]} for argument {arg} but got {callback_param_name_to_type[arg]}{as_annotated_in} instead."
+                    f"Event handler {key} expects {args_types_without_vars[i]} for argument {arg} but got {callback_param_type}{as_annotated_in} instead."
                 )
             )
 
@@ -2556,10 +2592,6 @@ EventType = TypeAliasType(
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
-
-    BASE_STATE = TypeVar("BASE_STATE", bound=BaseState)
-else:
-    BASE_STATE = TypeVar("BASE_STATE")
 
 
 class EventNamespace:
