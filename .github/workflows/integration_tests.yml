@@ -146,7 +146,7 @@ jobs:
         with:
           node-version: 22
 
-      - name: Pre-install reflex-docs git dependencies (outside sfw)
+      - name: Install reflex-docs dependencies
         working-directory: ./docs/app
         run: sfw uv sync
 
