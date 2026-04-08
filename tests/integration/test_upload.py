@@ -743,6 +743,63 @@ def test_upload_download_file(
     assert driver.find_element(by=By.TAG_NAME, value="body").text == exp_contents
 
 
+def test_uploaded_file_security_headers(
+    tmp_path,
+    upload_file: AppHarness,
+    driver: WebDriver,
+):
+    """Upload an HTML file and verify security headers prevent inline rendering.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+        upload_file: harness for UploadFile app.
+        driver: WebDriver instance.
+    """
+    import httpx
+    from reflex_base.config import get_config
+
+    assert upload_file.app_instance is not None
+    poll_for_token(driver, upload_file)
+    clear_btn = driver.find_element(By.ID, "clear_uploads")
+    clear_btn.click()
+
+    upload_box = driver.find_elements(By.XPATH, "//input[@type='file']")[2]
+    upload_button = driver.find_element(By.ID, "upload_button_tertiary")
+
+    exp_name = "malicious.html"
+    exp_contents = "<html><body><script>alert('xss')</script></body></html>"
+    target_file = tmp_path / exp_name
+    target_file.write_text(exp_contents)
+
+    upload_box.send_keys(str(target_file))
+    upload_button.click()
+
+    upload_done = driver.find_element(By.ID, "upload_done")
+    assert upload_file.poll_for_value(upload_done, exp_not_equal="false") == "true"
+
+    # Fetch the uploaded file directly via httpx and check security headers.
+    upload_url = f"{get_config().api_url}/{Endpoint.UPLOAD.value}/{exp_name}"
+    resp = httpx.get(upload_url)
+    assert resp.status_code == 200
+    assert resp.text == exp_contents
+    assert resp.headers["content-disposition"] == "attachment"
+    assert resp.headers["x-content-type-options"] == "nosniff"
+
+    # Navigate to the uploaded HTML file in the browser and verify the script
+    # does not execute (Content-Disposition: attachment prevents rendering).
+    driver.get(upload_url)
+    # If the browser rendered the HTML, an alert('xss') dialog would appear.
+    # Verify no alert is present — the file should be downloaded, not rendered.
+    from selenium.common.exceptions import NoAlertPresentException
+
+    try:
+        alert = driver.switch_to.alert
+        alert.dismiss()
+        pytest.fail("Browser rendered the HTML and triggered an alert dialog")
+    except NoAlertPresentException:
+        pass  # Expected: no alert because the file was downloaded, not rendered
+
+
 def test_on_drop(
     tmp_path,
     upload_file: AppHarness,

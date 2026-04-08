@@ -6,7 +6,13 @@ import asyncio
 import contextlib
 import dataclasses
 from collections import deque
-from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable
+from collections.abc import (
+    AsyncGenerator,
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    MutableMapping,
+)
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, BinaryIO, cast
 
@@ -22,7 +28,7 @@ from starlette.responses import JSONResponse, Response, StreamingResponse
 from typing_extensions import Self
 
 if TYPE_CHECKING:
-    from reflex_base.utils.types import Receive, Scope, Send
+    from reflex_base.utils.types import ASGIApp, Receive, Scope, Send
 
     from reflex.app import App
 
@@ -595,6 +601,45 @@ async def _upload_chunk_file(
     if acknowledge_on_upload_endpoint:
         return _background_upload_accepted_response()
     return Response(status_code=202)
+
+
+class UploadedFilesHeadersMiddleware:
+    """ASGI middleware that adds security headers to uploaded file responses."""
+
+    def __init__(self, app: ASGIApp) -> None:
+        """Wrap an ASGI application with upload security headers.
+
+        Args:
+            app: The ASGI application to wrap.
+        """
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """Add Content-Disposition and X-Content-Type-Options headers.
+
+        Args:
+            scope: The ASGI scope.
+            receive: The ASGI receive callable.
+            send: The ASGI send callable.
+        """
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        is_pdf = scope.get("path", "").lower().endswith(".pdf")
+
+        async def send_with_headers(message: MutableMapping[str, Any]) -> None:
+            if message["type"] == "http.response.start":
+                headers = list(message.get("headers", []))
+                headers.append((b"x-content-type-options", b"nosniff"))
+                if is_pdf:
+                    headers.append((b"content-type", b"application/pdf"))
+                else:
+                    headers.append((b"content-disposition", b"attachment"))
+                message = {**message, "headers": headers}
+            await send(message)
+
+        await self.app(scope, receive, send_with_headers)
 
 
 def upload(app: App):

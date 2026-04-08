@@ -68,8 +68,8 @@ from starlette.responses import JSONResponse, Response
 from starlette.staticfiles import StaticFiles
 from typing_extensions import Unpack
 
+from reflex._upload import UploadedFilesHeadersMiddleware, upload
 from reflex._upload import UploadFile as UploadFile
-from reflex._upload import upload
 from reflex.admin import AdminDash
 from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
 from reflex.compiler import compiler
@@ -721,7 +721,7 @@ class App(MiddlewareMixin, LifespanMixin):
             # To access uploaded files.
             self._api.mount(
                 str(constants.Endpoint.UPLOAD),
-                StaticFiles(directory=get_upload_dir()),
+                UploadedFilesHeadersMiddleware(StaticFiles(directory=get_upload_dir())),
                 name="uploaded_files",
             )
 
