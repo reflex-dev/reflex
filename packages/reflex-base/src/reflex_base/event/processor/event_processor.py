@@ -442,6 +442,8 @@ class EventProcessor:
         finally:
             for future in waiting_for:
                 future.cancel()
+            if not task_future.done():
+                task_future.cancel()
         # Raise any exceptions for the caller, waiting for all chained events.
         await task_future.wait_all()
 
