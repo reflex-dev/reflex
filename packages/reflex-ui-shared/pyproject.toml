@@ -32,8 +32,6 @@ dependencies = [
     "reflex-components-sonner",
     "httpx",
     "email-validator",
-    "flexdown",
-    "mistletoe",
     "ruff-format",
 ]
 

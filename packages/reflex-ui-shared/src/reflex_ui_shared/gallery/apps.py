@@ -3,15 +3,15 @@
 import copy
 import re
 
-import flexdown
 import reflex_ui as ui
 from reflex_ui.blocks.demo_form import demo_form_dialog
 
 import reflex as rx
-from reflex_ui_shared.components.blocks.flexdown import xd
+from reflex_ui_shared.components.blocks.flexdown import markdown
 from reflex_ui_shared.components.code_card import gallery_app_card
 from reflex_ui_shared.components.icons import get_icon
 from reflex_ui_shared.constants import REFLEX_ASSETS_CDN, SCREENSHOT_BUCKET
+from reflex_ui_shared.gallery.common import MarkdownDocument
 from reflex_ui_shared.gallery.gallery import integrations_stack
 from reflex_ui_shared.templates.gallery_app_page import gallery_app_page
 
@@ -54,11 +54,13 @@ def load_all_gallery_apps():
     Returns:
         The component.
     """
-    gallery_apps = {}
+    from reflex_ui_shared.utils.md import MarkdownDocument, get_md_files
+
+    gallery_apps: dict[tuple[str, str], MarkdownDocument] = {}
     for folder, _ in GALLERY_APP_SOURCES:
-        paths = flexdown.utils.get_flexdown_files(folder)
+        paths = get_md_files(folder)
         for path in sorted(paths, reverse=True):
-            document = flexdown.Document.from_file(path)  # This has metadata
+            document = MarkdownDocument.from_file(path)
             document.metadata["title"] = document.metadata.get("title", "Untitled")
             clean_path = str(path).replace(".md", "/")
             gallery_apps[clean_path, folder] = document
@@ -136,7 +138,7 @@ def more_posts(current_post: dict) -> rx.Component:
     )
 
 
-def page(document: flexdown.Document, is_reflex_template: bool) -> rx.Component:
+def page(document: MarkdownDocument, is_reflex_template: bool) -> rx.Component:
     """Render a detailed app page based on source type.
 
     Returns:
@@ -264,7 +266,7 @@ def page(document: flexdown.Document, is_reflex_template: bool) -> rx.Component:
                 class_name="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-slate-3 border-b border-slate-3",
             ),
             rx.box(
-                xd.render(document, "blog.md"),
+                markdown(document.content),
                 class_name="flex flex-col gap-4 w-full p-8",
             ),
             more_posts(meta) if not is_reflex_template else rx.fragment(),
