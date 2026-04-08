@@ -1,8 +1,8 @@
 """Utils API reference page."""
 
-import reflex as rx
-
 from reflex_docs.templates.docpage import docpage
+
+import reflex as rx
 
 
 @docpage("/docs/api-reference/utils/")

@@ -4,7 +4,6 @@ import sys
 import types
 from pathlib import Path
 
-import reflex as rx
 from reflex_base.constants.colors import ColorType
 from reflex_docgen.markdown import (
     Block,
@@ -52,6 +51,8 @@ from reflex_ui_shared.components.blocks.typography import (
     text_comp,
 )
 from reflex_ui_shared.constants import REFLEX_ASSETS_CDN
+
+import reflex as rx
 
 # ---------------------------------------------------------------------------
 # Exec environment — mirrors flexdown's module-based exec mechanism

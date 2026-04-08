@@ -1,8 +1,8 @@
-import reflex as rx
 import reflex_ui as ui
+from reflex_docs.components.hint import hint
 from reflex_ui_shared.components.icons import get_icon
 
-from reflex_docs.components.hint import hint
+import reflex as rx
 
 
 def code_block() -> rx.Component:

@@ -1,8 +1,8 @@
+from reflex_docgen import generate_class_documentation
+
 import reflex as rx
 from reflex.istate.manager import StateManager
 from reflex.utils.imports import ImportVar
-from reflex_docgen import generate_class_documentation
-
 from reflex_docs.templates.docpage import docpage
 
 from .source import generate_docs

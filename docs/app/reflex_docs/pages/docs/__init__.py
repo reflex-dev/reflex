@@ -5,7 +5,6 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import flexdown
-import reflex as rx
 from flexdown.document import Document
 
 # External Components
@@ -15,6 +14,7 @@ from reflex_ui_shared.constants import REFLEX_ASSETS_CDN
 from reflex_ui_shared.route import Route
 from reflex_ui_shared.utils.docpage import get_toc
 
+import reflex as rx
 from reflex_docs.docgen_pipeline import get_docgen_toc, render_docgen_document
 from reflex_docs.pages.docs.component import multi_docs
 from reflex_docs.pages.library_previews import components_previews_pages

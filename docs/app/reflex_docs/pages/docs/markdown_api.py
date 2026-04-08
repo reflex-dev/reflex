@@ -3,7 +3,6 @@
 from pathlib import Path
 
 from reflex.constants import Dirs
-
 from reflex_docs.pages.docs import doc_markdown_sources
 
 PUBLIC_DIR = Path.cwd() / Dirs.WEB / Dirs.PUBLIC

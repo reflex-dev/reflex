@@ -1,9 +1,9 @@
-import reflex as rx
 from reflex_ui_shared.constants import REFLEX_ASSETS_CDN
 from reflex_ui_shared.meta.meta import create_meta_tags
 from reflex_ui_shared.views.cta_card import cta_card
 from reflex_ui_shared.views.footer import footer_index
 
+import reflex as rx
 from reflex_docs.pages.docs_landing.views import (
     ai_builder_section,
     divider,

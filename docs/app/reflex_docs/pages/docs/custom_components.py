@@ -2,12 +2,12 @@ import json
 import os
 
 import httpx
-import reflex as rx
 from reflex_ui_shared.components.icons import get_icon
 from reflex_ui_shared.styles.colors import c_color
 from reflex_ui_shared.styles.fonts import base
 from reflex_ui_shared.styles.shadows import shadows
 
+import reflex as rx
 from reflex_docs.templates.docpage import docpage, h1_comp, text_comp_2
 
 SORTING_CRITERIA = {
