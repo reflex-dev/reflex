@@ -606,8 +606,10 @@ async def _upload_buffered_file(
 
         Yields:
             Each state update as newline-delimited JSON.
-        """
-        # Let the disconnect watcher run before we enqueue the upload handler.
+        # Give the disconnect watcher one event-loop tick to detect an
+        # already-dropped connection.  This is a best-effort optimisation;
+        # the _remember_task_future / _cancel_upload_task pair handles any
+        # races where the watcher hasn't yet set disconnect_seen.
         await asyncio.sleep(0)
         if disconnect_seen:
             return
