@@ -8,16 +8,14 @@ import time
 from collections.abc import Generator
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlsplit
 
 import pytest
 from reflex_base.constants.event import Endpoint
+from selenium.common.exceptions import NoAlertPresentException
 from selenium.webdriver.common.by import By
 
 import reflex as rx
 from reflex.testing import AppHarness, WebDriver
-
-from .utils import poll_for_navigation
 
 
 def UploadFile():
@@ -723,24 +721,32 @@ def test_upload_download_file(
     upload_box.send_keys(str(target_file))
     upload_button.click()
 
+    # Wait for the upload to complete.
+    upload_done = driver.find_element(By.ID, "upload_done")
+    assert upload_file.poll_for_value(upload_done, exp_not_equal="false") == "true"
+
+    # Configure the download directory using CDP.
+    download_dir = tmp_path / "downloads"
+    download_dir.mkdir()
+    driver.execute_cdp_cmd(
+        "Page.setDownloadBehavior",
+        {"behavior": "allow", "downloadPath": str(download_dir)},
+    )
+
+    downloaded_file = download_dir / exp_name
+
     # Download via event embedded in frontend code.
     download_frontend = driver.find_element(By.ID, "download-frontend")
-    with poll_for_navigation(driver):
-        download_frontend.click()
-    assert urlsplit(driver.current_url).path == f"/{Endpoint.UPLOAD.value}/test.txt"
-    assert driver.find_element(by=By.TAG_NAME, value="body").text == exp_contents
-
-    # Go back and wait for the app to reload.
-    with poll_for_navigation(driver):
-        driver.back()
-    poll_for_token(driver, upload_file)
+    download_frontend.click()
+    AppHarness.expect(lambda: downloaded_file.exists())
+    assert downloaded_file.read_text() == exp_contents
+    downloaded_file.unlink()
 
     # Download via backend event handler.
     download_backend = driver.find_element(By.ID, "download-backend")
-    with poll_for_navigation(driver):
-        download_backend.click()
-    assert urlsplit(driver.current_url).path == f"/{Endpoint.UPLOAD.value}/test.txt"
-    assert driver.find_element(by=By.TAG_NAME, value="body").text == exp_contents
+    download_backend.click()
+    AppHarness.expect(lambda: downloaded_file.exists())
+    assert downloaded_file.read_text() == exp_contents
 
 
 def test_uploaded_file_security_headers(
@@ -785,19 +791,28 @@ def test_uploaded_file_security_headers(
     assert resp.headers["content-disposition"] == "attachment"
     assert resp.headers["x-content-type-options"] == "nosniff"
 
+    # Configure the download directory using CDP.
+    download_dir = tmp_path / "downloads"
+    download_dir.mkdir()
+    driver.execute_cdp_cmd(
+        "Page.setDownloadBehavior",
+        {"behavior": "allow", "downloadPath": str(download_dir)},
+    )
+
+    downloaded_file = download_dir / exp_name
+
     # Navigate to the uploaded HTML file in the browser and verify the script
     # does not execute (Content-Disposition: attachment prevents rendering).
     driver.get(upload_url)
     # If the browser rendered the HTML, an alert('xss') dialog would appear.
     # Verify no alert is present — the file should be downloaded, not rendered.
-    from selenium.common.exceptions import NoAlertPresentException
-
-    try:
+    with pytest.raises(NoAlertPresentException):
         alert = driver.switch_to.alert
         alert.dismiss()
-        pytest.fail("Browser rendered the HTML and triggered an alert dialog")
-    except NoAlertPresentException:
-        pass  # Expected: no alert because the file was downloaded, not rendered
+
+    # Also verify the file was downloaded with the correct contents.
+    AppHarness.expect(lambda: downloaded_file.exists())
+    assert downloaded_file.read_text() == exp_contents
 
 
 def test_on_drop(
