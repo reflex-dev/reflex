@@ -435,9 +435,11 @@ class _UploadStreamingResponse(StreamingResponse):
                 return
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        spec_version = tuple(
-            map(int, scope.get("asgi", {}).get("spec_version", "2.0").split("."))
-        )
+        raw_spec = scope.get("asgi", {}).get("spec_version", "2.0")
+        try:
+            spec_version = tuple(map(int, raw_spec.split(".")))
+        except ValueError:
+            spec_version = (2, 0)
         disconnect_task: asyncio.Task[None] | None = None
         use_watcher = spec_version >= (2, 4) and self._on_disconnect is not None
 
