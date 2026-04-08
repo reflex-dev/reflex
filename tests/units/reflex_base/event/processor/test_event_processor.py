@@ -518,6 +518,30 @@ async def test_stream_delta_not_configured_raises():
             pass
 
 
+async def test_stream_delta_calls_on_task_future(token: str):
+    """enqueue_stream_delta exposes the tracked EventFuture immediately.
+
+    Args:
+        token: The client token.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2)
+    ep.configure()
+    captured = []
+    async with ep:
+        event = Event.from_event_type(noop_event())[0]
+        collected = [
+            d
+            async for d in ep.enqueue_stream_delta(
+                token,
+                event,
+                on_task_future=captured.append,
+            )
+        ]
+    assert collected == []
+    assert len(captured) == 1
+    assert captured[0].done()
+
+
 async def test_sequential_chained_events_run_in_order(token: str):
     """Chained events enqueued by a handler run in the order they were enqueued.
 

@@ -1307,6 +1307,79 @@ async def test_upload_file_closes_form_if_response_cancelled_before_stream_start
 
 
 @pytest.mark.asyncio
+async def test_upload_file_cancels_buffered_handler_on_disconnect_before_future_capture(
+    token: str,
+):
+    """Buffered uploads cancel the handler even if disconnect wins the race.
+
+    This exercises the ASGI 2.4 path where the response must watch
+    ``receive()`` directly because Starlette does not listen for disconnects
+    while streaming the response body.
+
+    Args:
+        token: A token.
+    """
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": f"{FileUploadState.get_full_name()}.multi_handle_upload",
+    }
+
+    bio = io.BytesIO(b"contents of image one")
+    file1 = UploadFile(filename="image1.jpg", file=bio)
+    form_data = FormData([("files", file1)])
+    original_close = form_data.close
+    form_close = AsyncMock(side_effect=original_close)
+    form_data.close = form_close
+
+    async def form():  # noqa: RUF029
+        return form_data
+
+    request_mock.form = form
+
+    cancelled = asyncio.Event()
+    task_future = Mock()
+    task_future.done = Mock(side_effect=cancelled.is_set)
+    task_future.cancel = Mock(side_effect=cancelled.set)
+
+    async def enqueue_stream_delta(_token, _event, on_task_future=None):
+        assert on_task_future is not None
+        on_task_future(task_future)
+        await cancelled.wait()
+        if False:  # pragma: no cover
+            yield {}
+
+    app = Mock(
+        event_processor=Mock(enqueue_stream_delta=enqueue_stream_delta),
+    )
+
+    upload_fn = upload(app)
+    streaming_response = await upload_fn(request_mock)
+
+    assert isinstance(streaming_response, StreamingResponse)
+
+    async def receive():
+        await asyncio.sleep(0)
+        return {"type": "http.disconnect"}
+
+    async def send(_message):  # noqa: RUF029
+        return None
+
+    await asyncio.wait_for(
+        streaming_response(
+            {"type": "http", "asgi": {"spec_version": "2.4"}},
+            receive,
+            send,
+        ),
+        timeout=1,
+    )
+
+    assert task_future.cancel.call_count == 1
+    assert form_close.await_count == 1
+    assert bio.closed
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "state",
     [FileUploadState, ChildFileUploadState, GrandChildFileUploadState],
