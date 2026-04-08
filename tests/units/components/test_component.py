@@ -1,6 +1,6 @@
 from contextlib import nullcontext
 from dataclasses import dataclass
-from typing import Any, ClassVar
+from typing import Any, ClassVar, TypedDict
 
 import pytest
 from reflex_base.components.component import (
@@ -837,6 +837,34 @@ def test_component_event_trigger_arbitrary_args():
             }
 
     C1.create(on_foo=C1State.mock_handler)
+
+
+def test_non_submit_mapping_events_do_not_accept_typed_dict_handlers():
+    """TypedDict relaxation should stay scoped to form submission handlers."""
+
+    class Payload(TypedDict):
+        email: str
+
+    class C1State(BaseState):
+        def mock_handler(self, payload: Payload):
+            """Mock handler."""
+
+    def on_foo_spec(payload: Var[dict[str, int]]) -> tuple[Var[dict[str, int]]]:
+        return (payload,)
+
+    class C1(Component):
+        library = "/local"
+        tag = "C1"
+
+        @classmethod
+        def get_event_triggers(cls) -> dict[str, Any]:
+            return {
+                **super().get_event_triggers(),
+                "on_foo": on_foo_spec,
+            }
+
+    with pytest.raises(EventHandlerArgTypeMismatchError):
+        C1.create(on_foo=C1State.mock_handler)
 
 
 def test_create_custom_component(my_component):
