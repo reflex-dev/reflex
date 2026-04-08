@@ -196,7 +196,6 @@ def test_media_app(media_app: AppHarness):
     assert from_url_img_src.startswith("data:image/jpeg;base64")
     assert check_image_loaded(driver, from_url_img, expected_height=300)
 
-    breakpoint()
     uploaded_img_src = uploaded_img.get_attribute("src")
     assert uploaded_img_src is not None
     assert "generated.png" in uploaded_img_src
