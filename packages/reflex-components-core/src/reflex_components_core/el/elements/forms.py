@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterator, Mapping
 from functools import partial
 from hashlib import md5
-from typing import Any, ClassVar, Literal, TypeVar, get_type_hints
+from typing import Any, ClassVar, Literal, TypeVar, get_origin, get_type_hints
 
 from reflex_base.components.component import BaseComponent, Component, field
 from reflex_base.components.tags.tag import Tag
@@ -216,7 +216,7 @@ def _resolve_on_submit_typed_dict_contract(
     )
     try:
         type_hints = get_type_hints(func)
-    except NameError:
+    except Exception:
         return None
 
     annotation = type_hints.get(form_data_param_name)
@@ -227,8 +227,49 @@ def _resolve_on_submit_typed_dict_contract(
     if not is_typeddict(annotation):
         return None
 
-    required_fields = getattr(annotation, "__required_keys__", frozenset())
+    required_fields = _get_required_typed_dict_fields(annotation)
     return _get_handler_name(event_spec.handler), annotation, required_fields
+
+
+def _get_required_typed_dict_fields(typed_dict_type: type[Any]) -> frozenset[str]:
+    """Resolve required TypedDict keys in a cross-version-safe way.
+
+    Args:
+        typed_dict_type: The TypedDict class to inspect.
+
+    Returns:
+        The required field names for the TypedDict.
+    """
+    try:
+        field_type_hints = get_type_hints(typed_dict_type, include_extras=True)
+    except Exception:
+        field_type_hints = getattr(typed_dict_type, "__annotations__", {})
+
+    total = getattr(typed_dict_type, "__total__", True)
+    required_fields = {
+        field_name
+        for field_name, annotation in field_type_hints.items()
+        if _is_required_typed_dict_field(annotation, total=total)
+    }
+    return frozenset(required_fields)
+
+
+def _is_required_typed_dict_field(annotation: Any, *, total: bool) -> bool:
+    """Check whether a TypedDict field annotation is required.
+
+    Args:
+        annotation: The field annotation to inspect.
+        total: Whether the TypedDict defaults to required fields.
+
+    Returns:
+        Whether the field is required.
+    """
+    marker_name = getattr(get_origin(annotation), "__name__", None)
+    if marker_name == "NotRequired":
+        return False
+    if marker_name == "Required":
+        return True
+    return total
 
 
 def _format_field_list(fields: tuple[str, ...]) -> str:

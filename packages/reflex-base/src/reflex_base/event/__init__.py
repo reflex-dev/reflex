@@ -1694,26 +1694,35 @@ def _values_returned_from_event(event_spec_annotations: list[Any]) -> list[Any]:
     ]
 
 
-def _is_mapping_style_event_arg_compatible_with_typed_dict(
+def _is_on_submit_mapping_event_arg_compatible_with_typed_dict(
     provided_event_arg_type: Any,
     callback_param_type: Any,
+    key: str,
 ) -> bool:
-    """Check whether a mapping-style event payload can satisfy a TypedDict callback.
+    """Check whether an on_submit mapping payload can satisfy a TypedDict callback.
 
-    This keeps the compatibility relaxation narrow to dict-like event payloads, such
-    as form submission data, without weakening unrelated event type checks.
+    This keeps the compatibility relaxation scoped to form submission payloads
+    rather than applying to unrelated mapping-based event triggers.
 
     Args:
         provided_event_arg_type: The type produced by the event trigger.
         callback_param_type: The callback parameter annotation.
+        key: The event trigger key being validated.
 
     Returns:
         Whether the provided event payload should be treated as compatible.
     """
-    return is_typeddict(callback_param_type) and safe_issubclass(
-        get_origin(provided_event_arg_type) or provided_event_arg_type,
-        Mapping,
-    )
+    if key != constants.EventTriggers.ON_SUBMIT or not is_typeddict(
+        callback_param_type
+    ):
+        return False
+
+    mapping_type = get_origin(provided_event_arg_type) or provided_event_arg_type
+    if not safe_issubclass(mapping_type, Mapping):
+        return False
+
+    key_type = get_args(provided_event_arg_type)[:1]
+    return not key_type or typehint_issubclass(key_type[0], str)
 
 
 def _check_event_args_subclass_of_callback(
@@ -1762,8 +1771,8 @@ def _check_event_args_subclass_of_callback(
             try:
                 compare_result = typehint_issubclass(
                     args_types_without_vars[i], callback_param_type
-                ) or _is_mapping_style_event_arg_compatible_with_typed_dict(
-                    args_types_without_vars[i], callback_param_type
+                ) or _is_on_submit_mapping_event_arg_compatible_with_typed_dict(
+                    args_types_without_vars[i], callback_param_type, key
                 )
             except TypeError as te:
                 callback_name_context = f" of {callback_name}" if callback_name else ""
