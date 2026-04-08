@@ -6,9 +6,7 @@ requires-python = ">=3.10"
 dependencies = [
     "email-validator",
     "fastapi",
-    "flexdown",
     "googletrans-py",
-    "mistletoe",
     "openai",
     "orjson",
     "pandas",

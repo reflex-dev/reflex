@@ -23,7 +23,7 @@ reflex_docs/        # Main application code
   components/       # Reusable UI components
   views/            # Shared view components (navbar, footer, cta)
   templates/        # Page templates (docpage, mainpage)
-docs/               # Markdown documentation (flexdown)
+docs/               # Markdown documentation (reflex_docgen)
 tests/              # Pytest + Playwright tests
 ```
 
@@ -52,5 +52,5 @@ tests/              # Pytest + Playwright tests
 
 ## Key conventions
 
-- Docs: flexdown in `docs/`
+- Docs: reflex_docgen in `docs/`
 - Before committing: `uv run reflex compile` and `uv run pre-commit run --all-files`

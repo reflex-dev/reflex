@@ -1,7 +1,4 @@
-"""Docpage utilities: TOC generation and sidebar highlight."""
-
-import flexdown
-import mistletoe
+"""Docpage utilities: sidebar highlight."""
 
 
 def right_sidebar_item_highlight():
@@ -121,66 +118,3 @@ def right_sidebar_item_highlight():
 // Run the function when the page loads
 setupTableOfContentsHighlight();
     """
-
-
-def get_headings(comp: mistletoe.block_token.BlockToken):
-    """Get the strings from markdown component.
-
-    Returns:
-        The component.
-    """
-    if isinstance(comp, mistletoe.block_token.Heading):
-        heading_text = "".join(
-            token.content for token in comp.children if hasattr(token, "content")
-        )
-        return [(comp.level, heading_text)]
-
-    if not hasattr(comp, "children") or comp.children is None:
-        return []
-
-    headings = []
-    for child in comp.children:
-        headings.extend(get_headings(child))
-    return headings
-
-
-def get_toc(source: flexdown.Document, href: str, component_list: list | None = None):
-    """Get toc.
-
-    Returns:
-        The component.
-    """
-    from reflex_ui_shared.components.blocks.flexdown import xd
-    from reflex_ui_shared.constants import REFLEX_ASSETS_CDN
-
-    component_list = component_list or []
-    component_list = component_list[1:]
-
-    env = source.metadata
-    env["__xd"] = xd
-    env["REFLEX_ASSETS_CDN"] = REFLEX_ASSETS_CDN
-
-    doc_content = source.content
-    blocks = xd.get_blocks(doc_content, href)
-
-    content_pieces = []
-    for block in blocks:
-        if (
-            not isinstance(block, flexdown.blocks.MarkdownBlock)
-            or len(block.lines) == 0
-            or not block.lines[0].startswith("#")
-        ):
-            continue
-        content = block.get_content(env)
-        content_pieces.append(content)
-
-    content = "\n".join(content_pieces)
-    doc = mistletoe.Document(content)
-
-    headings = get_headings(doc)
-
-    if len(component_list):
-        headings.append((1, "API Reference"))
-    for component_tuple in component_list:
-        headings.append((2, component_tuple[1]))
-    return headings, doc_content

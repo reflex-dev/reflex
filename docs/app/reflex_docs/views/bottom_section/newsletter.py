@@ -1,7 +1,7 @@
-from reflex_docs.components.button import button
+import reflex as rx
 from reflex_ui_shared.backend.signup import IndexState
 
-import reflex as rx
+from reflex_docs.components.button import button
 
 
 def newsletter_input() -> rx.Component:

@@ -4,11 +4,13 @@ repos:
   - args:
     - reflex
     - tests
+    - docs/app
+    - packages
     id: ruff-format
   - args:
     - --fix
     - --exit-non-zero-on-fix
-    exclude: ^(integration/benchmarks/|docs/app/)
+    exclude: ^integration/benchmarks/
     id: ruff-check
   repo: https://github.com/astral-sh/ruff-pre-commit
   rev: v0.15.6
