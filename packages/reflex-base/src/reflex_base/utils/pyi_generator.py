@@ -270,8 +270,21 @@ def _get_type_hint(
             _get_type_hint(arg, type_hint_globals, _is_optional(arg)) for arg in value
         ]
         return f"[{', '.join(res)}]"
+    elif (visible_name := _get_visible_type_name(value, type_hint_globals)) is not None:
+        res = visible_name
     else:
-        res = value.__name__
+        # Best effort to find a submodule path in the globals.
+        for ix, part in enumerate(value.__module__.split(".")):
+            if part in type_hint_globals:
+                res = ".".join([
+                    part,
+                    *value.__module__.split(".")[ix + 1 :],
+                    value.__name__,
+                ])
+                break
+        else:
+            # Fallback to the type name.
+            res = value.__name__
     if is_optional and not res.startswith("Optional") and not res.endswith("| None"):
         res = f"{res} | None"
     return res
@@ -536,7 +549,9 @@ def _extract_class_props_as_ast_nodes(
             **type_hint_globals,
             **_get_class_annotation_globals(target_class),
         }
-        for name, value in target_class.__annotations__.items():
+        for name, value in typing.get_type_hints(
+            target_class, globalns=annotation_globals
+        ).items():
             if (
                 name in func_kwonlyargs
                 or name in EXCLUDED_PROPS
