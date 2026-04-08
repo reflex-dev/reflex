@@ -29,6 +29,9 @@ members = [
     "reflex-components-recharts",
     "reflex-components-sonner",
     "reflex-docgen",
+    "reflex-integrations-docs",
+    "reflex-ui",
+    "reflex-ui-shared",
 ]
 
 [[package]]
@@ -2380,6 +2383,38 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/83/2f/6d9acd7afd3971da8f0cdef4824551b836ec66c598088fc1af3c16d6f7a4/reflex_hosting_cli-0.1.62.tar.gz", hash = "sha256:7a3ab872218a7ebdfa2ea186b83440322e658fa90cf7ea270aec1bafe1eb0d98", size = 35506, upload-time = "2026-03-10T01:12:14.131Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f7/67/415e1f7fe09e77027e9e0063f39053d74f1299e671e837c9a7745453676d/reflex_hosting_cli-0.1.62-py3-none-any.whl", hash = "sha256:73d517fa827b1d52dcb81ba9024671acfd4889015a436ed223d2eda3c07eab89", size = 45049, upload-time = "2026-03-10T01:12:15.033Z" },
+]
+
+[[package]]
+name = "reflex-integrations-docs"
+source = { editable = "packages/integrations-docs" }
+
+[[package]]
+name = "reflex-ui"
+source = { editable = "packages/reflex-ui" }
+dependencies = [
+    { name = "reflex-base" },
+    { name = "reflex-components-core" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "reflex-base", editable = "packages/reflex-base" },
+    { name = "reflex-components-core", editable = "packages/reflex-components-core" },
+]
+
+[[package]]
+name = "reflex-ui-shared"
+source = { editable = "packages/reflex-ui-shared" }
+dependencies = [
+    { name = "reflex-base" },
+    { name = "reflex-components-core" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "reflex-base", editable = "packages/reflex-base" },
+    { name = "reflex-components-core", editable = "packages/reflex-components-core" },
 ]
 
 [[package]]
