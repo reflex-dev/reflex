@@ -441,18 +441,30 @@ class _UploadStreamingResponse(StreamingResponse):
         disconnect_task: asyncio.Task[None] | None = None
         use_watcher = spec_version >= (2, 4) and self._on_disconnect is not None
 
+        if use_watcher:
+            body_iterator = self.body_iterator
+
+            async def body_with_probe() -> AsyncGenerator[
+                str | bytes | memoryview[int], None
+            ]:
+                """Yield a tiny probe chunk before the real response body."""
+                yield b"\n"
+                async for chunk in body_iterator:
+                    yield chunk
+
+            self.body_iterator = body_with_probe()
+
         async def wrapped_receive() -> Message:
             message = await receive()
-            if message.get("type") == "http.disconnect":
+            if message["type"] == "http.disconnect":
                 self._handle_disconnect()
             return message
 
         try:
             if use_watcher:
-                # ASGI >= 2.4: use a dedicated task to watch for disconnect
-                # concurrently. Pass raw `receive` to Starlette — the watcher
-                # owns disconnect detection; using wrapped_receive here would
-                # race on the same receive callable.
+                # ASGI >= 2.4: Starlette does not call receive() while
+                # streaming. Use a dedicated task so disconnect fires the
+                # callback; pass raw receive to avoid racing wrapped_receive.
                 disconnect_task = asyncio.create_task(self._watch_disconnect(receive))
             try:
                 await super().__call__(
@@ -593,6 +605,10 @@ async def _upload_buffered_file(
         Yields:
             Each state update as newline-delimited JSON.
         """
+        # Let the disconnect watcher run before we enqueue the upload handler.
+        await asyncio.sleep(0)
+        if disconnect_seen:
+            return
         # Enqueue the task on the main event loop, but emit deltas to the local queue.
         async for delta in app.event_processor.enqueue_stream_delta(
             token,
