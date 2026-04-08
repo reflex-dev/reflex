@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 
 import openai  # pyright: ignore[reportMissingImports]
+
 import reflex as rx
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")

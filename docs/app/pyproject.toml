@@ -2,7 +2,7 @@
 name = "reflex-docs-app"
 version = "0.0.1"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 dependencies = [
     "email-validator",
     "fastapi",
@@ -15,14 +15,14 @@ dependencies = [
     "plotly-express",
     "psycopg[binary]",
     "python-frontmatter",
-    "reflex @ git+https://github.com/reflex-dev/reflex@main",
-    "reflex-docgen @ git+https://github.com/reflex-dev/reflex@main#subdirectory=packages/reflex-docgen",
+    "reflex",
+    "reflex-docgen",
     "reflex-enterprise",
     "reflex-hosting-cli",
     "reflex-pyplot",
-    "reflex-integrations-docs @ git+https://github.com/reflex-dev/integrations-docs@main",
-    "reflex-ui @ git+https://github.com/reflex-dev/reflex-ui@main",
-    "reflex-ui-shared @ git+https://github.com/reflex-dev/reflex-ui@main#subdirectory=shared",
+    "reflex-integrations-docs",
+    "reflex-ui",
+    "reflex-ui-shared",
     "alembic",
     "requests",
     "ruff-format",

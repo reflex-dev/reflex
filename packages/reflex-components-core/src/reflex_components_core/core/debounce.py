@@ -65,8 +65,8 @@ class DebounceInput(Component):
         the child, and then neuter the child's render method so it produces no output.
 
         Args:
-            children: The child component to wrap.
-            props: The component props.
+            *children: The child component to wrap.
+            **props: The component props.
 
         Returns:
             The DebounceInput component.

@@ -699,7 +699,9 @@ class Component(BaseComponent, ABC):
     _rename_props: ClassVar[dict[str, str]] = {}
 
     custom_attrs: dict[str, Var | Any] = field(
-        doc="custom attribute", default_factory=dict, is_javascript_property=False
+        doc="Attributes passed directly to the component.",
+        default_factory=dict,
+        is_javascript_property=False,
     )
 
     _memoization_mode: MemoizationMode = field(
