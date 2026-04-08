@@ -9,6 +9,7 @@ Here is a quick guide on how to run Reflex repo locally so you can start contrib
 **Prerequisites:**
 
 - uv version >= 0.6.0 and add it to your path (see [UV Docs](https://docs.astral.sh/uv/getting-started/installation/) for more info).
+- `act` installed and a working Docker daemon if you want to run the local CI script (see [act installation docs](https://nektosact.com/installation/)).
 
 **1. Fork this repository:**
 Fork this repository by clicking on the `Fork` button on the top right.
@@ -64,8 +65,30 @@ Once you solve a current issue or improvement to Reflex, you can make a PR, and 
 
 Before submitting, a pull request, ensure the following steps are taken and test passing.
 
-In your `reflex` directory run make sure all the unit tests are still passing using the following command.
-This will fail if code coverage is below 70%.
+In your `reflex` directory, you can run the local CI startup script with:
+
+```bash
+bash scripts/run_all_tests.sh
+```
+
+The script runs selected GitHub Actions jobs locally through `act`:
+
+- `unit-tests` on `ubuntu-latest` with Python `3.13`
+- `integration-app-harness` on `ubuntu-22.04` with Python `3.13`, `memory`, and both split groups
+- `benchmarks`
+- `check_latest_node` for both split groups
+
+Any extra arguments are forwarded to `act`. `-l` / `--list` lists the selected jobs without running them:
+
+```bash
+bash scripts/run_all_tests.sh -l
+```
+
+If Docker is unavailable and you still want to run against your host environment, set `REFLEX_ACT_ALLOW_SELF_HOSTED=1`. In that mode the script scrubs `CODESPACE_NAME`, `GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN`, `GITHUB_CODESPACE_TOKEN`, and `PYTHONSAFEPATH` to reduce host-specific drift. Set `REFLEX_ACT_SELF_HOSTED_PRESERVE_HOST_ENV=1` if you need the raw host environment instead.
+
+Browser-backed workflows still have lower parity in self-hosted mode. If you are running as `root`, prefer a non-root environment; `APP_HARNESS_DRIVER_ARGS=--no-sandbox` is only a local fallback and may still not match GitHub Actions behavior.
+
+If you only need the fast local check, make sure all the unit tests are still passing using the following command. This will fail if code coverage is below 70%.
 
 ```bash
 uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
