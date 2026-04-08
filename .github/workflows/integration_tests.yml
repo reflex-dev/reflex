@@ -103,7 +103,7 @@ jobs:
           npm -v
           uv run bash scripts/integration.sh ./reflex-examples/nba-proxy dev
 
-  reflex-web:
+  reflex-docs:
     strategy:
       fail-fast: false
       matrix:
@@ -164,17 +164,9 @@ jobs:
       - name: Install Dependencies (scanned by Socket.dev)
         run: sfw uv sync
 
-      - name: Clone Reflex Website Repo
-        uses: actions/checkout@v4
-        with:
-          repository: reflex-dev/reflex-web
-          ref: main
-          path: reflex-web
-          submodules: recursive
-
       # TODO: revisit when https://github.com/SocketDev/sfw-free/issues/30 is resolved.
-      - name: Pre-install reflex-web git dependencies (outside sfw)
-        working-directory: ./reflex-web
+      - name: Pre-install reflex-docs git dependencies (outside sfw)
+        working-directory: ./docs/app
         run: |
           # Replace reflex-dev/reflex git deps with plain package names (PR version is pre-installed)
           sed -i -E 's|"([a-zA-Z0-9_-]+)\s*@\s*git\+https://github\.com/reflex-dev/reflex@[^"]*"|"\1"|g' pyproject.toml
@@ -186,8 +178,8 @@ jobs:
             cat git-requirements.txt
             uv pip install --no-deps -r git-requirements.txt
           fi
-      - name: Compile and install reflex-web requirements (scanned by Socket.dev)
-        working-directory: ./reflex-web
+      - name: Compile and install reflex-docs requirements (scanned by Socket.dev)
+        working-directory: ./docs/app
         run: |
           sfw uv pip compile pyproject.toml --no-annotate --no-header --no-deps --output-file requirements.txt
           uv pip list --format=json | jq -r '"^" + .[].name + "[ =]"' > installed_patterns.txt
@@ -203,20 +195,20 @@ jobs:
           echo "Expected checkout SHA: $expected_sha"
           echo "Installed reflex version: $installed_version"
           [[ "$installed_version" == *"+$expected_sha" ]]
-      - name: Init Website for reflex-web
-        working-directory: ./reflex-web
+      - name: Init Website for reflex-docs
+        working-directory: ./docs/app
         run: uv run --active --no-sync reflex init
       - name: Run Website and Check for errors
         run: |
           # Verify sfw wrappers are on PATH
           which npm && npm -v
-          uv run --active --no-sync bash scripts/integration.sh ./reflex-web prod
+          uv run --active --no-sync bash scripts/integration.sh ./docs/app prod
 
       - name: Upload Socket.dev Firewall report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: sfw-report-reflex-web-py${{ matrix.python-version }}
+          name: sfw-report-reflex-docs-py${{ matrix.python-version }}
           path: ${{ env.SFW_JSON_REPORT_PATH }}
           if-no-files-found: warn
 
@@ -251,7 +243,7 @@ jobs:
           npm -v
           uv run bash scripts/integration.sh ./rx-shout-from-template prod
 
-  reflex-web-macos:
+  reflex-docs-macos:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     strategy:
       fail-fast: false
@@ -269,28 +261,21 @@ jobs:
           python-version: ${{ matrix.python-version }}
           run-uv-sync: true
 
-      - name: Clone Reflex Website Repo
-        uses: actions/checkout@v4
-        with:
-          repository: reflex-dev/reflex-web
-          ref: main
-          path: reflex-web
-          submodules: recursive
-      - name: Compile pyproject.toml into requirements.txt
-        working-directory: ./reflex-web
+      - name: Install reflex-docs dependencies
+        working-directory: ./docs/app
         run: |
           uv pip compile pyproject.toml --no-annotate --no-header --no-deps --output-file requirements.txt
           uv pip list --format=json | jq -r '"^" + .[].name + "[ =]"' > installed_patterns.txt
           grep -ivf installed_patterns.txt requirements.txt > requirements.txt.tmp && mv requirements.txt.tmp requirements.txt
           rm installed_patterns.txt
-      - name: Install Requirements for reflex-web
-        working-directory: ./reflex-web
+      - name: Install Requirements for reflex-docs
+        working-directory: ./docs/app
         run: uv pip install -r requirements.txt
-      - name: Init Website for reflex-web
-        working-directory: ./reflex-web
+      - name: Init Website for reflex-docs
+        working-directory: ./docs/app
         run: uv run --active --no-sync reflex init
       - name: Run Website and Check for errors
         run: |
           # Check that npm is home
           npm -v
-          uv run --active --no-sync bash scripts/integration.sh ./reflex-web prod
+          uv run --active --no-sync bash scripts/integration.sh ./docs/app prod
