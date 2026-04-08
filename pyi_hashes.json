@@ -40,7 +40,7 @@
   "packages/reflex-components-dataeditor/src/reflex_components_dataeditor/dataeditor.pyi": "e10210239ce7dc18980e70eec19b9353",
   "packages/reflex-components-gridjs/src/reflex_components_gridjs/datatable.pyi": "2a93782c63e82a6939411273fe2486d9",
   "packages/reflex-components-lucide/src/reflex_components_lucide/icon.pyi": "f654cc9cb305712b485fcd676935c0c1",
-  "packages/reflex-components-markdown/src/reflex_components_markdown/markdown.pyi": "9c11bca2c4c5b722f55aba969f383e74",
+  "packages/reflex-components-markdown/src/reflex_components_markdown/markdown.pyi": "2d6efa2d5f2586a7036d606a24fb425d",
   "packages/reflex-components-moment/src/reflex_components_moment/moment.pyi": "ad4b084d94e50311f761d69b3173e357",
   "packages/reflex-components-plotly/src/reflex_components_plotly/plotly.pyi": "241b80584f3e029145e6e003d1c476f2",
   "packages/reflex-components-radix/src/reflex_components_radix/__init__.pyi": "b2f485bfde4978047b7b944cf15d92cb",
@@ -118,7 +118,7 @@
   "packages/reflex-components-recharts/src/reflex_components_recharts/polar.pyi": "db5298160144f23ae7abcaac68e845c7",
   "packages/reflex-components-recharts/src/reflex_components_recharts/recharts.pyi": "75150b01510bdacf2c97fca347c86c59",
   "packages/reflex-components-sonner/src/reflex_components_sonner/toast.pyi": "dc43e142b089b1158588e999505444f6",
-  "reflex/__init__.pyi": "9321a11f6891d792fcd921cc1bdc64f4",
+  "reflex/__init__.pyi": "5de3d4af8ea86e9755f622510b868196",
   "reflex/components/__init__.pyi": "f39a2af77f438fa243c58c965f19d42e",
   "reflex/experimental/memo.pyi": "c10cbc554fe2ffdb3a008b59bc503936"
 }

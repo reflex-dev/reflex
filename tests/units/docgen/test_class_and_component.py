@@ -3,6 +3,7 @@
 import dataclasses
 import inspect
 import sys
+from importlib.util import find_spec
 
 import pytest
 from reflex_base.components.component import (
@@ -259,6 +260,10 @@ def test_rx_state_fields():
         assert not name.startswith("_")
 
 
+@pytest.mark.skipif(
+    not find_spec("pydantic"),
+    reason="pydantic not installed",
+)
 def test_class_with_class_vars():
     """Class variables are extracted from __class_vars__."""
     from pydantic import BaseModel

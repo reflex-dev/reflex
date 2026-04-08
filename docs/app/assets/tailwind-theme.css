@@ -1,0 +1,2051 @@
+@import "tailwindcss-animated";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+    /* Primary */
+    --primary-1: var(--violet-1);
+    --primary-2: var(--violet-2);
+    --primary-3: var(--violet-3);
+    --primary-4: var(--violet-4);
+    --primary-5: var(--violet-5);
+    --primary-6: var(--violet-6);
+    --primary-7: var(--violet-7);
+    --primary-8: var(--violet-8);
+    --primary-9: var(--violet-9);
+    --primary-10: var(--violet-10);
+    --primary-11: var(--violet-11);
+    --primary-12: var(--violet-12);
+    --primary-a1: var(--violet-a1);
+    --primary-a2: var(--violet-a2);
+    --primary-a3: var(--violet-a3);
+    --primary-a4: var(--violet-a4);
+    --primary-a5: var(--violet-a5);
+    --primary-a6: var(--violet-a6);
+    --primary-a7: var(--violet-a7);
+    --primary-a8: var(--violet-a8);
+    --primary-a9: var(--violet-a9);
+    --primary-a10: var(--violet-a10);
+    --primary-a11: var(--violet-a11);
+    --primary-a12: var(--violet-a12);
+    /* Contrast */
+    --primary-contrast: var(--violet-contrast);
+    /* Secondary */
+    --secondary-1: var(--slate-1);
+    --secondary-2: var(--slate-2);
+    --secondary-3: var(--slate-3);
+    --secondary-4: var(--slate-4);
+    --secondary-5: var(--slate-5);
+    --secondary-6: var(--slate-6);
+    --secondary-7: var(--slate-7);
+    --secondary-8: var(--slate-8);
+    --secondary-9: var(--slate-9);
+    --secondary-10: var(--slate-10);
+    --secondary-11: var(--slate-11);
+    --secondary-12: var(--slate-12);
+    --secondary-a1: var(--slate-a1);
+    --secondary-a2: var(--slate-a2);
+    --secondary-a3: var(--slate-a3);
+    --secondary-a4: var(--slate-a4);
+    --secondary-a5: var(--slate-a5);
+    --secondary-a6: var(--slate-a6);
+    --secondary-a7: var(--slate-a7);
+    --secondary-a8: var(--slate-a8);
+    --secondary-a9: var(--slate-a9);
+    --secondary-a10: var(--slate-a10);
+    --secondary-a11: var(--slate-a11);
+    --secondary-a12: var(--slate-a12);
+    /* Info */
+    --info-1: var(--blue-1);
+    --info-2: var(--blue-2);
+    --info-3: var(--blue-3);
+    --info-4: var(--blue-4);
+    --info-5: var(--blue-5);
+    --info-6: var(--blue-6);
+    --info-7: var(--blue-7);
+    --info-8: var(--blue-8);
+    --info-9: var(--blue-9);
+    --info-10: var(--blue-10);
+    --info-11: var(--blue-11);
+    --info-12: var(--blue-12);
+    --info-a1: var(--blue-a1);
+    --info-a2: var(--blue-a2);
+    --info-a3: var(--blue-a3);
+    --info-a4: var(--blue-a4);
+    --info-a5: var(--blue-a5);
+    --info-a6: var(--blue-a6);
+    --info-a7: var(--blue-a7);
+    --info-a8: var(--blue-a8);
+    --info-a9: var(--blue-a9);
+    --info-a10: var(--blue-a10);
+    --info-a11: var(--blue-a11);
+    --info-a12: var(--blue-a12);
+    /* Success */
+    --success-1: var(--jade-1);
+    --success-2: var(--jade-2);
+    --success-3: var(--jade-3);
+    --success-4: var(--jade-4);
+    --success-5: var(--jade-5);
+    --success-6: var(--jade-6);
+    --success-7: var(--jade-7);
+    --success-8: var(--jade-8);
+    --success-9: var(--jade-9);
+    --success-10: var(--jade-10);
+    --success-11: var(--jade-11);
+    --success-12: var(--jade-12);
+    --success-a1: var(--jade-a1);
+    --success-a2: var(--jade-a2);
+    --success-a3: var(--jade-a3);
+    --success-a4: var(--jade-a4);
+    --success-a5: var(--jade-a5);
+    --success-a6: var(--jade-a6);
+    --success-a7: var(--jade-a7);
+    --success-a8: var(--jade-a8);
+    --success-a9: var(--jade-a9);
+    --success-a10: var(--jade-a10);
+    --success-a11: var(--jade-a11);
+    --success-a12: var(--jade-a12);
+    /* Destructive */
+    --destructive-1: var(--red-1);
+    --destructive-2: var(--red-2);
+    --destructive-3: var(--red-3);
+    --destructive-4: var(--red-4);
+    --destructive-5: var(--red-5);
+    --destructive-6: var(--red-6);
+    --destructive-7: var(--red-7);
+    --destructive-8: var(--red-8);
+    --destructive-9: var(--red-9);
+    --destructive-10: var(--red-10);
+    --destructive-11: var(--red-11);
+    --destructive-12: var(--red-12);
+    --destructive-a1: var(--red-a1);
+    --destructive-a2: var(--red-a2);
+    --destructive-a3: var(--red-a3);
+    --destructive-a4: var(--red-a4);
+    --destructive-a5: var(--red-a5);
+    --destructive-a6: var(--red-a6);
+    --destructive-a7: var(--red-a7);
+    --destructive-a8: var(--red-a8);
+    --destructive-a9: var(--red-a9);
+    --destructive-a10: var(--red-a10);
+    --destructive-a11: var(--red-a11);
+    --destructive-a12: var(--red-a12);
+    /* Warning */
+    --warning-1: var(--amber-1);
+    --warning-2: var(--amber-2);
+    --warning-3: var(--amber-3);
+    --warning-4: var(--amber-4);
+    --warning-5: var(--amber-5);
+    --warning-6: var(--amber-6);
+    --warning-7: var(--amber-7);
+    --warning-8: var(--amber-8);
+    --warning-9: var(--amber-9);
+    --warning-10: var(--amber-10);
+    --warning-11: var(--amber-11);
+    --warning-12: var(--amber-12);
+    --warning-a1: var(--amber-a1);
+    --warning-a2: var(--amber-a2);
+    --warning-a3: var(--amber-a3);
+    --warning-a4: var(--amber-a4);
+    --warning-a5: var(--amber-a5);
+    --warning-a6: var(--amber-a6);
+    --warning-a7: var(--amber-a7);
+    --warning-a8: var(--amber-a8);
+    --warning-a9: var(--amber-a9);
+    --warning-a10: var(--amber-a10);
+    --warning-a11: var(--amber-a11);
+    --warning-a12: var(--amber-a12);
+    /* Radius */
+    --radius: 0.5rem;
+    /* Font */
+    --font-sans: "Instrument Sans", sans-serif;
+    --font-mono: "JetBrains Mono", monospace;
+    --font-instrument-sans: 'Instrument Sans', sans-serif;
+    --font-source-code-pro: 'Source Code Pro', monospace;
+    --font-jetbrains: "JetBrains Mono", monospace;
+    /* Shadow (light) */
+    --shadow-small-adaptive: 0px 2px 5px 0px rgba(28, 32, 36, 0.03);
+    --shadow-medium-adaptive: 0px 4px 8px 0px rgba(28, 32, 36, 0.04);
+    --shadow-large-adaptive:
+        0px 24px 12px 0px rgba(28, 32, 36, 0.02),
+        0px 8px 8px 0px rgba(28, 32, 36, 0.02),
+        0px 2px 6px 0px rgba(28, 32, 36, 0.02);
+    --shadow-large-negative-adaptive:
+        0px -24px 12px 0px rgba(28, 32, 36, 0.02),
+        0px -8px 8px 0px rgba(28, 32, 36, 0.02),
+        0px -2px 6px 0px rgba(28, 32, 36, 0.02);
+    --shadow-large-negative-primary-adaptive:
+        0px -32px 48px 0px color-mix(in srgb, var(--primary-9) 8%, transparent),
+        0px -16px 32px 0px color-mix(in srgb, var(--primary-9) 10%, transparent),
+        0px -8px 24px 0px color-mix(in srgb, var(--primary-9) 12%, transparent),
+        0px -2px 16px 0px color-mix(in srgb, var(--primary-9) 14%, transparent);
+    --shadow-x-large-adaptive:
+        0 0 0 1px rgba(0, 0, 0, 0.04),
+        0 4px 8px 0 rgba(0, 0, 0, 0.02),
+        0 1px 1px 0 rgba(0, 0, 0, 0.01),
+        0 4px 8px 0 rgba(0, 0, 0, 0.03),
+        0 0 0 1px #fff inset;
+    --shadow-inner-adaptive: 0 6px 16px 0 rgba(0, 0, 0, 0.04) inset;
+    --shadow-button-outline-adaptive:
+        0 -1px 0 0 rgba(0, 0, 0, 0.08) inset,
+        0 0 0 1px rgba(0, 0, 0, 0.08) inset,
+        0 1px 2px 0 rgba(0, 0, 0, 0.02),
+        0 1px 4px 0 rgba(0, 0, 0, 0.02);
+    --shadow-card-xs-no-left-adaptive:
+        0 -1px 0 0 rgba(0, 0, 0, 0.16) inset,
+        0 1px 0 0 rgba(0, 0, 0, 0.08) inset,
+        -1px 0 0 0 rgba(0, 0, 0, 0.08) inset,
+        0 1px 2px 0 rgba(0, 0, 0, 0.02),
+        0 1px 4px 0 rgba(0, 0, 0, 0.02);
+    --shadow-card-small-adaptive:
+        0 0 0 1px rgba(0, 0, 0, 0.04),
+        0 4px 8px 0 rgba(0, 0, 0, 0.04),
+        0 1px 1px 0 rgba(0, 0, 0, 0.01),
+        0 2px 4px 0 rgba(0, 0, 0, 0.03);
+    color-scheme: light dark;
+}
+
+.dark {
+    /* Shadow (dark) */
+    --shadow-small-adaptive: none;
+    --shadow-medium-adaptive: none;
+    --shadow-large-adaptive: none;
+    --shadow-large-negative-adaptive: none;
+    --shadow-large-negative-primary-adaptive:
+        0px -32px 48px 0px color-mix(in srgb, var(--primary-9) 4%, transparent),
+        0px -16px 32px 0px color-mix(in srgb, var(--primary-9) 8%, transparent),
+        0px -8px 24px 0px color-mix(in srgb, var(--primary-9) 12%, transparent),
+        0px -2px 16px 0px color-mix(in srgb, var(--primary-9) 16%, transparent);
+    --shadow-x-large-adaptive: none;
+    --shadow-inner-adaptive: none;
+    --shadow-button-outline-adaptive: none;
+    --shadow-card-xs-no-left-adaptive: none;
+    --shadow-card-small-adaptive: none;
+}
+
+@theme {
+    /* Custom Palette */
+    --color-white-1: var(--c-white-1);
+    --color-slate-1: var(--c-slate-1);
+    --color-slate-2: var(--c-slate-2);
+    --color-slate-3: var(--c-slate-3);
+    --color-slate-4: var(--c-slate-4);
+    --color-slate-5: var(--c-slate-5);
+    --color-slate-6: var(--c-slate-6);
+    --color-slate-7: var(--c-slate-7);
+    --color-slate-8: var(--c-slate-8);
+    --color-slate-9: var(--c-slate-9);
+    --color-slate-10: var(--c-slate-10);
+    --color-slate-11: var(--c-slate-11);
+    --color-slate-12: var(--c-slate-12);
+    --color-violet-2: var(--c-violet-2);
+    --color-violet-3: var(--c-violet-3);
+    --color-violet-4: var(--c-violet-4);
+    --color-violet-5: var(--c-violet-5);
+    --color-violet-6: var(--c-violet-6);
+    --color-violet-7: var(--c-violet-7);
+    --color-violet-8: var(--c-violet-8);
+    --color-violet-9: var(--c-violet-9);
+    --color-violet-10: var(--c-violet-10);
+    --color-violet-11: var(--c-violet-11);
+    --color-violet-12: var(--c-violet-12);
+    --color-transparent: transparent;
+    /* Contrast */
+    --color-primary-contrast: var(--primary-contrast);
+    /* Primary */
+    --color-primary-1: var(--primary-1);
+    --color-primary-2: var(--primary-2);
+    --color-primary-3: var(--primary-3);
+    --color-primary-4: var(--primary-4);
+    --color-primary-5: var(--primary-5);
+    --color-primary-6: var(--primary-6);
+    --color-primary-7: var(--primary-7);
+    --color-primary-8: var(--primary-8);
+    --color-primary-9: var(--primary-9);
+    --color-primary-10: var(--primary-10);
+    --color-primary-11: var(--primary-11);
+    --color-primary-12: var(--primary-12);
+    --color-primary-a1: var(--primary-a1);
+    --color-primary-a2: var(--primary-a2);
+    --color-primary-a3: var(--primary-a3);
+    --color-primary-a4: var(--primary-a4);
+    --color-primary-a5: var(--primary-a5);
+    --color-primary-a6: var(--primary-a6);
+    --color-primary-a7: var(--primary-a7);
+    --color-primary-a8: var(--primary-a8);
+    --color-primary-a9: var(--primary-a9);
+    --color-primary-a10: var(--primary-a10);
+    --color-primary-a11: var(--primary-a11);
+    --color-primary-a12: var(--primary-a12);
+    /* Secondary */
+    --color-secondary-1: var(--secondary-1);
+    --color-secondary-2: var(--secondary-2);
+    --color-secondary-3: var(--secondary-3);
+    --color-secondary-4: var(--secondary-4);
+    --color-secondary-5: var(--secondary-5);
+    --color-secondary-6: var(--secondary-6);
+    --color-secondary-7: var(--secondary-7);
+    --color-secondary-8: var(--secondary-8);
+    --color-secondary-9: var(--secondary-9);
+    --color-secondary-10: var(--secondary-10);
+    --color-secondary-11: var(--secondary-11);
+    --color-secondary-12: var(--secondary-12);
+    --color-secondary-a1: var(--secondary-a1);
+    --color-secondary-a2: var(--secondary-a2);
+    --color-secondary-a3: var(--secondary-a3);
+    --color-secondary-a4: var(--secondary-a4);
+    --color-secondary-a5: var(--secondary-a5);
+    --color-secondary-a6: var(--secondary-a6);
+    --color-secondary-a7: var(--secondary-a7);
+    --color-secondary-a8: var(--secondary-a8);
+    --color-secondary-a9: var(--secondary-a9);
+    --color-secondary-a10: var(--secondary-a10);
+    --color-secondary-a11: var(--secondary-a11);
+    --color-secondary-a12: var(--secondary-a12);
+    /* Info */
+    --color-info-1: var(--info-1);
+    --color-info-2: var(--info-2);
+    --color-info-3: var(--info-3);
+    --color-info-4: var(--info-4);
+    --color-info-5: var(--info-5);
+    --color-info-6: var(--info-6);
+    --color-info-7: var(--info-7);
+    --color-info-8: var(--info-8);
+    --color-info-9: var(--info-9);
+    --color-info-10: var(--info-10);
+    --color-info-11: var(--info-11);
+    --color-info-12: var(--info-12);
+    --color-info-a1: var(--info-a1);
+    --color-info-a2: var(--info-a2);
+    --color-info-a3: var(--info-a3);
+    --color-info-a4: var(--info-a4);
+    --color-info-a5: var(--info-a5);
+    --color-info-a6: var(--info-a6);
+    --color-info-a7: var(--info-a7);
+    --color-info-a8: var(--info-a8);
+    --color-info-a9: var(--info-a9);
+    --color-info-a10: var(--info-a10);
+    --color-info-a11: var(--info-a11);
+    --color-info-a12: var(--info-a12);
+    /* Success */
+    --color-success-1: var(--success-1);
+    --color-success-2: var(--success-2);
+    --color-success-3: var(--success-3);
+    --color-success-4: var(--success-4);
+    --color-success-5: var(--success-5);
+    --color-success-6: var(--success-6);
+    --color-success-7: var(--success-7);
+    --color-success-8: var(--success-8);
+    --color-success-9: var(--success-9);
+    --color-success-10: var(--success-10);
+    --color-success-11: var(--success-11);
+    --color-success-12: var(--success-12);
+    --color-success-a1: var(--success-a1);
+    --color-success-a2: var(--success-a2);
+    --color-success-a3: var(--success-a3);
+    --color-success-a4: var(--success-a4);
+    --color-success-a5: var(--success-a5);
+    --color-success-a6: var(--success-a6);
+    --color-success-a7: var(--success-a7);
+    --color-success-a8: var(--success-a8);
+    --color-success-a9: var(--success-a9);
+    --color-success-a10: var(--success-a10);
+    --color-success-a11: var(--success-a11);
+    --color-success-a12: var(--success-a12);
+    /* Warning */
+    --color-warning-1: var(--warning-1);
+    --color-warning-2: var(--warning-2);
+    --color-warning-3: var(--warning-3);
+    --color-warning-4: var(--warning-4);
+    --color-warning-5: var(--warning-5);
+    --color-warning-6: var(--warning-6);
+    --color-warning-7: var(--warning-7);
+    --color-warning-8: var(--warning-8);
+    --color-warning-9: var(--warning-9);
+    --color-warning-10: var(--warning-10);
+    --color-warning-11: var(--warning-11);
+    --color-warning-12: var(--warning-12);
+    --color-warning-a1: var(--warning-a1);
+    --color-warning-a2: var(--warning-a2);
+    --color-warning-a3: var(--warning-a3);
+    --color-warning-a4: var(--warning-a4);
+    --color-warning-a5: var(--warning-a5);
+    --color-warning-a6: var(--warning-a6);
+    --color-warning-a7: var(--warning-a7);
+    --color-warning-a8: var(--warning-a8);
+    --color-warning-a9: var(--warning-a9);
+    --color-warning-a10: var(--warning-a10);
+    --color-warning-a11: var(--warning-a11);
+    --color-warning-a12: var(--warning-a12);
+    /* Destructive */
+    --color-destructive-1: var(--destructive-1);
+    --color-destructive-2: var(--destructive-2);
+    --color-destructive-3: var(--destructive-3);
+    --color-destructive-4: var(--destructive-4);
+    --color-destructive-5: var(--destructive-5);
+    --color-destructive-6: var(--destructive-6);
+    --color-destructive-7: var(--destructive-7);
+    --color-destructive-8: var(--destructive-8);
+    --color-destructive-9: var(--destructive-9);
+    --color-destructive-10: var(--destructive-10);
+    --color-destructive-11: var(--destructive-11);
+    --color-destructive-12: var(--destructive-12);
+    --color-destructive-a1: var(--destructive-a1);
+    --color-destructive-a2: var(--destructive-a2);
+    --color-destructive-a3: var(--destructive-a3);
+    --color-destructive-a4: var(--destructive-a4);
+    --color-destructive-a5: var(--destructive-a5);
+    --color-destructive-a6: var(--destructive-a6);
+    --color-destructive-a7: var(--destructive-a7);
+    --color-destructive-a8: var(--destructive-a8);
+    --color-destructive-a9: var(--destructive-a9);
+    --color-destructive-a10: var(--destructive-a10);
+    --color-destructive-a11: var(--destructive-a11);
+    --color-destructive-a12: var(--destructive-a12);
+    /* Radix Colors */
+    --color-gray-1: var(--gray-1);
+    --color-gray-2: var(--gray-2);
+    --color-gray-3: var(--gray-3);
+    --color-gray-4: var(--gray-4);
+    --color-gray-5: var(--gray-5);
+    --color-gray-6: var(--gray-6);
+    --color-gray-7: var(--gray-7);
+    --color-gray-8: var(--gray-8);
+    --color-gray-9: var(--gray-9);
+    --color-gray-10: var(--gray-10);
+    --color-gray-11: var(--gray-11);
+    --color-gray-12: var(--gray-12);
+    --color-gray-a1: var(--gray-a1);
+    --color-gray-a2: var(--gray-a2);
+    --color-gray-a3: var(--gray-a3);
+    --color-gray-a4: var(--gray-a4);
+    --color-gray-a5: var(--gray-a5);
+    --color-gray-a6: var(--gray-a6);
+    --color-gray-a7: var(--gray-a7);
+    --color-gray-a8: var(--gray-a8);
+    --color-gray-a9: var(--gray-a9);
+    --color-gray-a10: var(--gray-a10);
+    --color-gray-a11: var(--gray-a11);
+    --color-gray-a12: var(--gray-a12);
+
+    --color-mauve-1: var(--mauve-1);
+    --color-mauve-2: var(--mauve-2);
+    --color-mauve-3: var(--mauve-3);
+    --color-mauve-4: var(--mauve-4);
+    --color-mauve-5: var(--mauve-5);
+    --color-mauve-6: var(--mauve-6);
+    --color-mauve-7: var(--mauve-7);
+    --color-mauve-8: var(--mauve-8);
+    --color-mauve-9: var(--mauve-9);
+    --color-mauve-10: var(--mauve-10);
+    --color-mauve-11: var(--mauve-11);
+    --color-mauve-12: var(--mauve-12);
+    --color-mauve-a1: var(--mauve-a1);
+    --color-mauve-a2: var(--mauve-a2);
+    --color-mauve-a3: var(--mauve-a3);
+    --color-mauve-a4: var(--mauve-a4);
+    --color-mauve-a5: var(--mauve-a5);
+    --color-mauve-a6: var(--mauve-a6);
+    --color-mauve-a7: var(--mauve-a7);
+    --color-mauve-a8: var(--mauve-a8);
+    --color-mauve-a9: var(--mauve-a9);
+    --color-mauve-a10: var(--mauve-a10);
+    --color-mauve-a11: var(--mauve-a11);
+    --color-mauve-a12: var(--mauve-a12);
+
+    --color-sage-1: var(--sage-1);
+    --color-sage-2: var(--sage-2);
+    --color-sage-3: var(--sage-3);
+    --color-sage-4: var(--sage-4);
+    --color-sage-5: var(--sage-5);
+    --color-sage-6: var(--sage-6);
+    --color-sage-7: var(--sage-7);
+    --color-sage-8: var(--sage-8);
+    --color-sage-9: var(--sage-9);
+    --color-sage-10: var(--sage-10);
+    --color-sage-11: var(--sage-11);
+    --color-sage-12: var(--sage-12);
+    --color-sage-a1: var(--sage-a1);
+    --color-sage-a2: var(--sage-a2);
+    --color-sage-a3: var(--sage-a3);
+    --color-sage-a4: var(--sage-a4);
+    --color-sage-a5: var(--sage-a5);
+    --color-sage-a6: var(--sage-a6);
+    --color-sage-a7: var(--sage-a7);
+    --color-sage-a8: var(--sage-a8);
+    --color-sage-a9: var(--sage-a9);
+    --color-sage-a10: var(--sage-a10);
+    --color-sage-a11: var(--sage-a11);
+    --color-sage-a12: var(--sage-a12);
+
+    --color-olive-1: var(--olive-1);
+    --color-olive-2: var(--olive-2);
+    --color-olive-3: var(--olive-3);
+    --color-olive-4: var(--olive-4);
+    --color-olive-5: var(--olive-5);
+    --color-olive-6: var(--olive-6);
+    --color-olive-7: var(--olive-7);
+    --color-olive-8: var(--olive-8);
+    --color-olive-9: var(--olive-9);
+    --color-olive-10: var(--olive-10);
+    --color-olive-11: var(--olive-11);
+    --color-olive-12: var(--olive-12);
+    --color-olive-a1: var(--olive-a1);
+    --color-olive-a2: var(--olive-a2);
+    --color-olive-a3: var(--olive-a3);
+    --color-olive-a4: var(--olive-a4);
+    --color-olive-a5: var(--olive-a5);
+    --color-olive-a6: var(--olive-a6);
+    --color-olive-a7: var(--olive-a7);
+    --color-olive-a8: var(--olive-a8);
+    --color-olive-a9: var(--olive-a9);
+    --color-olive-a10: var(--olive-a10);
+    --color-olive-a11: var(--olive-a11);
+    --color-olive-a12: var(--olive-a12);
+
+    --color-sand-1: var(--sand-1);
+    --color-sand-2: var(--sand-2);
+    --color-sand-3: var(--sand-3);
+    --color-sand-4: var(--sand-4);
+    --color-sand-5: var(--sand-5);
+    --color-sand-6: var(--sand-6);
+    --color-sand-7: var(--sand-7);
+    --color-sand-8: var(--sand-8);
+    --color-sand-9: var(--sand-9);
+    --color-sand-10: var(--sand-10);
+    --color-sand-11: var(--sand-11);
+    --color-sand-12: var(--sand-12);
+    --color-sand-a1: var(--sand-a1);
+    --color-sand-a2: var(--sand-a2);
+    --color-sand-a3: var(--sand-a3);
+    --color-sand-a4: var(--sand-a4);
+    --color-sand-a5: var(--sand-a5);
+    --color-sand-a6: var(--sand-a6);
+    --color-sand-a7: var(--sand-a7);
+    --color-sand-a8: var(--sand-a8);
+    --color-sand-a9: var(--sand-a9);
+    --color-sand-a10: var(--sand-a10);
+    --color-sand-a11: var(--sand-a11);
+    --color-sand-a12: var(--sand-a12);
+
+    --color-tomato-1: var(--tomato-1);
+    --color-tomato-2: var(--tomato-2);
+    --color-tomato-3: var(--tomato-3);
+    --color-tomato-4: var(--tomato-4);
+    --color-tomato-5: var(--tomato-5);
+    --color-tomato-6: var(--tomato-6);
+    --color-tomato-7: var(--tomato-7);
+    --color-tomato-8: var(--tomato-8);
+    --color-tomato-9: var(--tomato-9);
+    --color-tomato-10: var(--tomato-10);
+    --color-tomato-11: var(--tomato-11);
+    --color-tomato-12: var(--tomato-12);
+    --color-tomato-a1: var(--tomato-a1);
+    --color-tomato-a2: var(--tomato-a2);
+    --color-tomato-a3: var(--tomato-a3);
+    --color-tomato-a4: var(--tomato-a4);
+    --color-tomato-a5: var(--tomato-a5);
+    --color-tomato-a6: var(--tomato-a6);
+    --color-tomato-a7: var(--tomato-a7);
+    --color-tomato-a8: var(--tomato-a8);
+    --color-tomato-a9: var(--tomato-a9);
+    --color-tomato-a10: var(--tomato-a10);
+    --color-tomato-a11: var(--tomato-a11);
+    --color-tomato-a12: var(--tomato-a12);
+
+    --color-red-1: var(--red-1);
+    --color-red-2: var(--red-2);
+    --color-red-3: var(--red-3);
+    --color-red-4: var(--red-4);
+    --color-red-5: var(--red-5);
+    --color-red-6: var(--red-6);
+    --color-red-7: var(--red-7);
+    --color-red-8: var(--red-8);
+    --color-red-9: var(--red-9);
+    --color-red-10: var(--red-10);
+    --color-red-11: var(--red-11);
+    --color-red-12: var(--red-12);
+    --color-red-a1: var(--red-a1);
+    --color-red-a2: var(--red-a2);
+    --color-red-a3: var(--red-a3);
+    --color-red-a4: var(--red-a4);
+    --color-red-a5: var(--red-a5);
+    --color-red-a6: var(--red-a6);
+    --color-red-a7: var(--red-a7);
+    --color-red-a8: var(--red-a8);
+    --color-red-a9: var(--red-a9);
+    --color-red-a10: var(--red-a10);
+    --color-red-a11: var(--red-a11);
+    --color-red-a12: var(--red-a12);
+
+    --color-ruby-1: var(--ruby-1);
+    --color-ruby-2: var(--ruby-2);
+    --color-ruby-3: var(--ruby-3);
+    --color-ruby-4: var(--ruby-4);
+    --color-ruby-5: var(--ruby-5);
+    --color-ruby-6: var(--ruby-6);
+    --color-ruby-7: var(--ruby-7);
+    --color-ruby-8: var(--ruby-8);
+    --color-ruby-9: var(--ruby-9);
+    --color-ruby-10: var(--ruby-10);
+    --color-ruby-11: var(--ruby-11);
+    --color-ruby-12: var(--ruby-12);
+    --color-ruby-a1: var(--ruby-a1);
+    --color-ruby-a2: var(--ruby-a2);
+    --color-ruby-a3: var(--ruby-a3);
+    --color-ruby-a4: var(--ruby-a4);
+    --color-ruby-a5: var(--ruby-a5);
+    --color-ruby-a6: var(--ruby-a6);
+    --color-ruby-a7: var(--ruby-a7);
+    --color-ruby-a8: var(--ruby-a8);
+    --color-ruby-a9: var(--ruby-a9);
+    --color-ruby-a10: var(--ruby-a10);
+    --color-ruby-a11: var(--ruby-a11);
+    --color-ruby-a12: var(--ruby-a12);
+
+    --color-crimson-1: var(--crimson-1);
+    --color-crimson-2: var(--crimson-2);
+    --color-crimson-3: var(--crimson-3);
+    --color-crimson-4: var(--crimson-4);
+    --color-crimson-5: var(--crimson-5);
+    --color-crimson-6: var(--crimson-6);
+    --color-crimson-7: var(--crimson-7);
+    --color-crimson-8: var(--crimson-8);
+    --color-crimson-9: var(--crimson-9);
+    --color-crimson-10: var(--crimson-10);
+    --color-crimson-11: var(--crimson-11);
+    --color-crimson-12: var(--crimson-12);
+    --color-crimson-a1: var(--crimson-a1);
+    --color-crimson-a2: var(--crimson-a2);
+    --color-crimson-a3: var(--crimson-a3);
+    --color-crimson-a4: var(--crimson-a4);
+    --color-crimson-a5: var(--crimson-a5);
+    --color-crimson-a6: var(--crimson-a6);
+    --color-crimson-a7: var(--crimson-a7);
+    --color-crimson-a8: var(--crimson-a8);
+    --color-crimson-a9: var(--crimson-a9);
+    --color-crimson-a10: var(--crimson-a10);
+    --color-crimson-a11: var(--crimson-a11);
+    --color-crimson-a12: var(--crimson-a12);
+
+    --color-pink-1: var(--pink-1);
+    --color-pink-2: var(--pink-2);
+    --color-pink-3: var(--pink-3);
+    --color-pink-4: var(--pink-4);
+    --color-pink-5: var(--pink-5);
+    --color-pink-6: var(--pink-6);
+    --color-pink-7: var(--pink-7);
+    --color-pink-8: var(--pink-8);
+    --color-pink-9: var(--pink-9);
+    --color-pink-10: var(--pink-10);
+    --color-pink-11: var(--pink-11);
+    --color-pink-12: var(--pink-12);
+    --color-pink-a1: var(--pink-a1);
+    --color-pink-a2: var(--pink-a2);
+    --color-pink-a3: var(--pink-a3);
+    --color-pink-a4: var(--pink-a4);
+    --color-pink-a5: var(--pink-a5);
+    --color-pink-a6: var(--pink-a6);
+    --color-pink-a7: var(--pink-a7);
+    --color-pink-a8: var(--pink-a8);
+    --color-pink-a9: var(--pink-a9);
+    --color-pink-a10: var(--pink-a10);
+    --color-pink-a11: var(--pink-a11);
+    --color-pink-a12: var(--pink-a12);
+
+    --color-plum-1: var(--plum-1);
+    --color-plum-2: var(--plum-2);
+    --color-plum-3: var(--plum-3);
+    --color-plum-4: var(--plum-4);
+    --color-plum-5: var(--plum-5);
+    --color-plum-6: var(--plum-6);
+    --color-plum-7: var(--plum-7);
+    --color-plum-8: var(--plum-8);
+    --color-plum-9: var(--plum-9);
+    --color-plum-10: var(--plum-10);
+    --color-plum-11: var(--plum-11);
+    --color-plum-12: var(--plum-12);
+    --color-plum-a1: var(--plum-a1);
+    --color-plum-a2: var(--plum-a2);
+    --color-plum-a3: var(--plum-a3);
+    --color-plum-a4: var(--plum-a4);
+    --color-plum-a5: var(--plum-a5);
+    --color-plum-a6: var(--plum-a6);
+    --color-plum-a7: var(--plum-a7);
+    --color-plum-a8: var(--plum-a8);
+    --color-plum-a9: var(--plum-a9);
+    --color-plum-a10: var(--plum-a10);
+    --color-plum-a11: var(--plum-a11);
+    --color-plum-a12: var(--plum-a12);
+
+    --color-purple-1: var(--purple-1);
+    --color-purple-2: var(--purple-2);
+    --color-purple-3: var(--purple-3);
+    --color-purple-4: var(--purple-4);
+    --color-purple-5: var(--purple-5);
+    --color-purple-6: var(--purple-6);
+    --color-purple-7: var(--purple-7);
+    --color-purple-8: var(--purple-8);
+    --color-purple-9: var(--purple-9);
+    --color-purple-10: var(--purple-10);
+    --color-purple-11: var(--purple-11);
+    --color-purple-12: var(--purple-12);
+    --color-purple-a1: var(--purple-a1);
+    --color-purple-a2: var(--purple-a2);
+    --color-purple-a3: var(--purple-a3);
+    --color-purple-a4: var(--purple-a4);
+    --color-purple-a5: var(--purple-a5);
+    --color-purple-a6: var(--purple-a6);
+    --color-purple-a7: var(--purple-a7);
+    --color-purple-a8: var(--purple-a8);
+    --color-purple-a9: var(--purple-a9);
+    --color-purple-a10: var(--purple-a10);
+    --color-purple-a11: var(--purple-a11);
+    --color-purple-a12: var(--purple-a12);
+
+    --color-iris-1: var(--iris-1);
+    --color-iris-2: var(--iris-2);
+    --color-iris-3: var(--iris-3);
+    --color-iris-4: var(--iris-4);
+    --color-iris-5: var(--iris-5);
+    --color-iris-6: var(--iris-6);
+    --color-iris-7: var(--iris-7);
+    --color-iris-8: var(--iris-8);
+    --color-iris-9: var(--iris-9);
+    --color-iris-10: var(--iris-10);
+    --color-iris-11: var(--iris-11);
+    --color-iris-12: var(--iris-12);
+    --color-iris-a1: var(--iris-a1);
+    --color-iris-a2: var(--iris-a2);
+    --color-iris-a3: var(--iris-a3);
+    --color-iris-a4: var(--iris-a4);
+    --color-iris-a5: var(--iris-a5);
+    --color-iris-a6: var(--iris-a6);
+    --color-iris-a7: var(--iris-a7);
+    --color-iris-a8: var(--iris-a8);
+    --color-iris-a9: var(--iris-a9);
+    --color-iris-a10: var(--iris-a10);
+    --color-iris-a11: var(--iris-a11);
+    --color-iris-a12: var(--iris-a12);
+
+    --color-indigo-1: var(--indigo-1);
+    --color-indigo-2: var(--indigo-2);
+    --color-indigo-3: var(--indigo-3);
+    --color-indigo-4: var(--indigo-4);
+    --color-indigo-5: var(--indigo-5);
+    --color-indigo-6: var(--indigo-6);
+    --color-indigo-7: var(--indigo-7);
+    --color-indigo-8: var(--indigo-8);
+    --color-indigo-9: var(--indigo-9);
+    --color-indigo-10: var(--indigo-10);
+    --color-indigo-11: var(--indigo-11);
+    --color-indigo-12: var(--indigo-12);
+    --color-indigo-a1: var(--indigo-a1);
+    --color-indigo-a2: var(--indigo-a2);
+    --color-indigo-a3: var(--indigo-a3);
+    --color-indigo-a4: var(--indigo-a4);
+    --color-indigo-a5: var(--indigo-a5);
+    --color-indigo-a6: var(--indigo-a6);
+    --color-indigo-a7: var(--indigo-a7);
+    --color-indigo-a8: var(--indigo-a8);
+    --color-indigo-a9: var(--indigo-a9);
+    --color-indigo-a10: var(--indigo-a10);
+    --color-indigo-a11: var(--indigo-a11);
+    --color-indigo-a12: var(--indigo-a12);
+
+    --color-blue-1: var(--blue-1);
+    --color-blue-2: var(--blue-2);
+    --color-blue-3: var(--blue-3);
+    --color-blue-4: var(--blue-4);
+    --color-blue-5: var(--blue-5);
+    --color-blue-6: var(--blue-6);
+    --color-blue-7: var(--blue-7);
+    --color-blue-8: var(--blue-8);
+    --color-blue-9: var(--blue-9);
+    --color-blue-10: var(--blue-10);
+    --color-blue-11: var(--blue-11);
+    --color-blue-12: var(--blue-12);
+    --color-blue-a1: var(--blue-a1);
+    --color-blue-a2: var(--blue-a2);
+    --color-blue-a3: var(--blue-a3);
+    --color-blue-a4: var(--blue-a4);
+    --color-blue-a5: var(--blue-a5);
+    --color-blue-a6: var(--blue-a6);
+    --color-blue-a7: var(--blue-a7);
+    --color-blue-a8: var(--blue-a8);
+    --color-blue-a9: var(--blue-a9);
+    --color-blue-a10: var(--blue-a10);
+    --color-blue-a11: var(--blue-a11);
+    --color-blue-a12: var(--blue-a12);
+
+    --color-cyan-1: var(--cyan-1);
+    --color-cyan-2: var(--cyan-2);
+    --color-cyan-3: var(--cyan-3);
+    --color-cyan-4: var(--cyan-4);
+    --color-cyan-5: var(--cyan-5);
+    --color-cyan-6: var(--cyan-6);
+    --color-cyan-7: var(--cyan-7);
+    --color-cyan-8: var(--cyan-8);
+    --color-cyan-9: var(--cyan-9);
+    --color-cyan-10: var(--cyan-10);
+    --color-cyan-11: var(--cyan-11);
+    --color-cyan-12: var(--cyan-12);
+    --color-cyan-a1: var(--cyan-a1);
+    --color-cyan-a2: var(--cyan-a2);
+    --color-cyan-a3: var(--cyan-a3);
+    --color-cyan-a4: var(--cyan-a4);
+    --color-cyan-a5: var(--cyan-a5);
+    --color-cyan-a6: var(--cyan-a6);
+    --color-cyan-a7: var(--cyan-a7);
+    --color-cyan-a8: var(--cyan-a8);
+    --color-cyan-a9: var(--cyan-a9);
+    --color-cyan-a10: var(--cyan-a10);
+    --color-cyan-a11: var(--cyan-a11);
+    --color-cyan-a12: var(--cyan-a12);
+
+    --color-teal-1: var(--teal-1);
+    --color-teal-2: var(--teal-2);
+    --color-teal-3: var(--teal-3);
+    --color-teal-4: var(--teal-4);
+    --color-teal-5: var(--teal-5);
+    --color-teal-6: var(--teal-6);
+    --color-teal-7: var(--teal-7);
+    --color-teal-8: var(--teal-8);
+    --color-teal-9: var(--teal-9);
+    --color-teal-10: var(--teal-10);
+    --color-teal-11: var(--teal-11);
+    --color-teal-12: var(--teal-12);
+    --color-teal-a1: var(--teal-a1);
+    --color-teal-a2: var(--teal-a2);
+    --color-teal-a3: var(--teal-a3);
+    --color-teal-a4: var(--teal-a4);
+    --color-teal-a5: var(--teal-a5);
+    --color-teal-a6: var(--teal-a6);
+    --color-teal-a7: var(--teal-a7);
+    --color-teal-a8: var(--teal-a8);
+    --color-teal-a9: var(--teal-a9);
+    --color-teal-a10: var(--teal-a10);
+    --color-teal-a11: var(--teal-a11);
+    --color-teal-a12: var(--teal-a12);
+
+    --color-jade-1: var(--jade-1);
+    --color-jade-2: var(--jade-2);
+    --color-jade-3: var(--jade-3);
+    --color-jade-4: var(--jade-4);
+    --color-jade-5: var(--jade-5);
+    --color-jade-6: var(--jade-6);
+    --color-jade-7: var(--jade-7);
+    --color-jade-8: var(--jade-8);
+    --color-jade-9: var(--jade-9);
+    --color-jade-10: var(--jade-10);
+    --color-jade-11: var(--jade-11);
+    --color-jade-12: var(--jade-12);
+    --color-jade-a1: var(--jade-a1);
+    --color-jade-a2: var(--jade-a2);
+    --color-jade-a3: var(--jade-a3);
+    --color-jade-a4: var(--jade-a4);
+    --color-jade-a5: var(--jade-a5);
+    --color-jade-a6: var(--jade-a6);
+    --color-jade-a7: var(--jade-a7);
+    --color-jade-a8: var(--jade-a8);
+    --color-jade-a9: var(--jade-a9);
+    --color-jade-a10: var(--jade-a10);
+    --color-jade-a11: var(--jade-a11);
+    --color-jade-a12: var(--jade-a12);
+
+    --color-green-1: var(--green-1);
+    --color-green-2: var(--green-2);
+    --color-green-3: var(--green-3);
+    --color-green-4: var(--green-4);
+    --color-green-5: var(--green-5);
+    --color-green-6: var(--green-6);
+    --color-green-7: var(--green-7);
+    --color-green-8: var(--green-8);
+    --color-green-9: var(--green-9);
+    --color-green-10: var(--green-10);
+    --color-green-11: var(--green-11);
+    --color-green-12: var(--green-12);
+    --color-green-a1: var(--green-a1);
+    --color-green-a2: var(--green-a2);
+    --color-green-a3: var(--green-a3);
+    --color-green-a4: var(--green-a4);
+    --color-green-a5: var(--green-a5);
+    --color-green-a6: var(--green-a6);
+    --color-green-a7: var(--green-a7);
+    --color-green-a8: var(--green-a8);
+    --color-green-a9: var(--green-a9);
+    --color-green-a10: var(--green-a10);
+    --color-green-a11: var(--green-a11);
+    --color-green-a12: var(--green-a12);
+
+    --color-grass-1: var(--grass-1);
+    --color-grass-2: var(--grass-2);
+    --color-grass-3: var(--grass-3);
+    --color-grass-4: var(--grass-4);
+    --color-grass-5: var(--grass-5);
+    --color-grass-6: var(--grass-6);
+    --color-grass-7: var(--grass-7);
+    --color-grass-8: var(--grass-8);
+    --color-grass-9: var(--grass-9);
+    --color-grass-10: var(--grass-10);
+    --color-grass-11: var(--grass-11);
+    --color-grass-12: var(--grass-12);
+    --color-grass-a1: var(--grass-a1);
+    --color-grass-a2: var(--grass-a2);
+    --color-grass-a3: var(--grass-a3);
+    --color-grass-a4: var(--grass-a4);
+    --color-grass-a5: var(--grass-a5);
+    --color-grass-a6: var(--grass-a6);
+    --color-grass-a7: var(--grass-a7);
+    --color-grass-a8: var(--grass-a8);
+    --color-grass-a9: var(--grass-a9);
+    --color-grass-a10: var(--grass-a10);
+    --color-grass-a11: var(--grass-a11);
+    --color-grass-a12: var(--grass-a12);
+
+    --color-brown-1: var(--brown-1);
+    --color-brown-2: var(--brown-2);
+    --color-brown-3: var(--brown-3);
+    --color-brown-4: var(--brown-4);
+    --color-brown-5: var(--brown-5);
+    --color-brown-6: var(--brown-6);
+    --color-brown-7: var(--brown-7);
+    --color-brown-8: var(--brown-8);
+    --color-brown-9: var(--brown-9);
+    --color-brown-10: var(--brown-10);
+    --color-brown-11: var(--brown-11);
+    --color-brown-12: var(--brown-12);
+    --color-brown-a1: var(--brown-a1);
+    --color-brown-a2: var(--brown-a2);
+    --color-brown-a3: var(--brown-a3);
+    --color-brown-a4: var(--brown-a4);
+    --color-brown-a5: var(--brown-a5);
+    --color-brown-a6: var(--brown-a6);
+    --color-brown-a7: var(--brown-a7);
+    --color-brown-a8: var(--brown-a8);
+    --color-brown-a9: var(--brown-a9);
+    --color-brown-a10: var(--brown-a10);
+    --color-brown-a11: var(--brown-a11);
+    --color-brown-a12: var(--brown-a12);
+
+    --color-orange-1: var(--orange-1);
+    --color-orange-2: var(--orange-2);
+    --color-orange-3: var(--orange-3);
+    --color-orange-4: var(--orange-4);
+    --color-orange-5: var(--orange-5);
+    --color-orange-6: var(--orange-6);
+    --color-orange-7: var(--orange-7);
+    --color-orange-8: var(--orange-8);
+    --color-orange-9: var(--orange-9);
+    --color-orange-10: var(--orange-10);
+    --color-orange-11: var(--orange-11);
+    --color-orange-12: var(--orange-12);
+    --color-orange-a1: var(--orange-a1);
+    --color-orange-a2: var(--orange-a2);
+    --color-orange-a3: var(--orange-a3);
+    --color-orange-a4: var(--orange-a4);
+    --color-orange-a5: var(--orange-a5);
+    --color-orange-a6: var(--orange-a6);
+    --color-orange-a7: var(--orange-a7);
+    --color-orange-a8: var(--orange-a8);
+    --color-orange-a9: var(--orange-a9);
+    --color-orange-a10: var(--orange-a10);
+    --color-orange-a11: var(--orange-a11);
+    --color-orange-a12: var(--orange-a12);
+
+    --color-sky-1: var(--sky-1);
+    --color-sky-2: var(--sky-2);
+    --color-sky-3: var(--sky-3);
+    --color-sky-4: var(--sky-4);
+    --color-sky-5: var(--sky-5);
+    --color-sky-6: var(--sky-6);
+    --color-sky-7: var(--sky-7);
+    --color-sky-8: var(--sky-8);
+    --color-sky-9: var(--sky-9);
+    --color-sky-10: var(--sky-10);
+    --color-sky-11: var(--sky-11);
+    --color-sky-12: var(--sky-12);
+    --color-sky-a1: var(--sky-a1);
+    --color-sky-a2: var(--sky-a2);
+    --color-sky-a3: var(--sky-a3);
+    --color-sky-a4: var(--sky-a4);
+    --color-sky-a5: var(--sky-a5);
+    --color-sky-a6: var(--sky-a6);
+    --color-sky-a7: var(--sky-a7);
+    --color-sky-a8: var(--sky-a8);
+    --color-sky-a9: var(--sky-a9);
+    --color-sky-a10: var(--sky-a10);
+    --color-sky-a11: var(--sky-a11);
+    --color-sky-a12: var(--sky-a12);
+
+    --color-mint-1: var(--mint-1);
+    --color-mint-2: var(--mint-2);
+    --color-mint-3: var(--mint-3);
+    --color-mint-4: var(--mint-4);
+    --color-mint-5: var(--mint-5);
+    --color-mint-6: var(--mint-6);
+    --color-mint-7: var(--mint-7);
+    --color-mint-8: var(--mint-8);
+    --color-mint-9: var(--mint-9);
+    --color-mint-10: var(--mint-10);
+    --color-mint-11: var(--mint-11);
+    --color-mint-12: var(--mint-12);
+    --color-mint-a1: var(--mint-a1);
+    --color-mint-a2: var(--mint-a2);
+    --color-mint-a3: var(--mint-a3);
+    --color-mint-a4: var(--mint-a4);
+    --color-mint-a5: var(--mint-a5);
+    --color-mint-a6: var(--mint-a6);
+    --color-mint-a7: var(--mint-a7);
+    --color-mint-a8: var(--mint-a8);
+    --color-mint-a9: var(--mint-a9);
+    --color-mint-a10: var(--mint-a10);
+    --color-mint-a11: var(--mint-a11);
+    --color-mint-a12: var(--mint-a12);
+
+    --color-lime-1: var(--lime-1);
+    --color-lime-2: var(--lime-2);
+    --color-lime-3: var(--lime-3);
+    --color-lime-4: var(--lime-4);
+    --color-lime-5: var(--lime-5);
+    --color-lime-6: var(--lime-6);
+    --color-lime-7: var(--lime-7);
+    --color-lime-8: var(--lime-8);
+    --color-lime-9: var(--lime-9);
+    --color-lime-10: var(--lime-10);
+    --color-lime-11: var(--lime-11);
+    --color-lime-12: var(--lime-12);
+    --color-lime-a1: var(--lime-a1);
+    --color-lime-a2: var(--lime-a2);
+    --color-lime-a3: var(--lime-a3);
+    --color-lime-a4: var(--lime-a4);
+    --color-lime-a5: var(--lime-a5);
+    --color-lime-a6: var(--lime-a6);
+    --color-lime-a7: var(--lime-a7);
+    --color-lime-a8: var(--lime-a8);
+    --color-lime-a9: var(--lime-a9);
+    --color-lime-a10: var(--lime-a10);
+    --color-lime-a11: var(--lime-a11);
+    --color-lime-a12: var(--lime-a12);
+
+    --color-yellow-1: var(--yellow-1);
+    --color-yellow-2: var(--yellow-2);
+    --color-yellow-3: var(--yellow-3);
+    --color-yellow-4: var(--yellow-4);
+    --color-yellow-5: var(--yellow-5);
+    --color-yellow-6: var(--yellow-6);
+    --color-yellow-7: var(--yellow-7);
+    --color-yellow-8: var(--yellow-8);
+    --color-yellow-9: var(--yellow-9);
+    --color-yellow-10: var(--yellow-10);
+    --color-yellow-11: var(--yellow-11);
+    --color-yellow-12: var(--yellow-12);
+    --color-yellow-a1: var(--yellow-a1);
+    --color-yellow-a2: var(--yellow-a2);
+    --color-yellow-a3: var(--yellow-a3);
+    --color-yellow-a4: var(--yellow-a4);
+    --color-yellow-a5: var(--yellow-a5);
+    --color-yellow-a6: var(--yellow-a6);
+    --color-yellow-a7: var(--yellow-a7);
+    --color-yellow-a8: var(--yellow-a8);
+    --color-yellow-a9: var(--yellow-a9);
+    --color-yellow-a10: var(--yellow-a10);
+    --color-yellow-a11: var(--yellow-a11);
+    --color-yellow-a12: var(--yellow-a12);
+
+    --color-amber-1: var(--amber-1);
+    --color-amber-2: var(--amber-2);
+    --color-amber-3: var(--amber-3);
+    --color-amber-4: var(--amber-4);
+    --color-amber-5: var(--amber-5);
+    --color-amber-6: var(--amber-6);
+    --color-amber-7: var(--amber-7);
+    --color-amber-8: var(--amber-8);
+    --color-amber-9: var(--amber-9);
+    --color-amber-10: var(--amber-10);
+    --color-amber-11: var(--amber-11);
+    --color-amber-12: var(--amber-12);
+    --color-amber-a1: var(--amber-a1);
+    --color-amber-a2: var(--amber-a2);
+    --color-amber-a3: var(--amber-a3);
+    --color-amber-a4: var(--amber-a4);
+    --color-amber-a5: var(--amber-a5);
+    --color-amber-a6: var(--amber-a6);
+    --color-amber-a7: var(--amber-a7);
+    --color-amber-a8: var(--amber-a8);
+    --color-amber-a9: var(--amber-a9);
+    --color-amber-a10: var(--amber-a10);
+    --color-amber-a11: var(--amber-a11);
+    --color-amber-a12: var(--amber-a12);
+
+    --color-gold-1: var(--gold-1);
+    --color-gold-2: var(--gold-2);
+    --color-gold-3: var(--gold-3);
+    --color-gold-4: var(--gold-4);
+    --color-gold-5: var(--gold-5);
+    --color-gold-6: var(--gold-6);
+    --color-gold-7: var(--gold-7);
+    --color-gold-8: var(--gold-8);
+    --color-gold-9: var(--gold-9);
+    --color-gold-10: var(--gold-10);
+    --color-gold-11: var(--gold-11);
+    --color-gold-12: var(--gold-12);
+    --color-gold-a1: var(--gold-a1);
+    --color-gold-a2: var(--gold-a2);
+    --color-gold-a3: var(--gold-a3);
+    --color-gold-a4: var(--gold-a4);
+    --color-gold-a5: var(--gold-a5);
+    --color-gold-a6: var(--gold-a6);
+    --color-gold-a7: var(--gold-a7);
+    --color-gold-a8: var(--gold-a8);
+    --color-gold-a9: var(--gold-a9);
+    --color-gold-a10: var(--gold-a10);
+    --color-gold-a11: var(--gold-a11);
+    --color-gold-a12: var(--gold-a12);
+
+    --color-bronze-1: var(--bronze-1);
+    --color-bronze-2: var(--bronze-2);
+    --color-bronze-3: var(--bronze-3);
+    --color-bronze-4: var(--bronze-4);
+    --color-bronze-5: var(--bronze-5);
+    --color-bronze-6: var(--bronze-6);
+    --color-bronze-7: var(--bronze-7);
+    --color-bronze-8: var(--bronze-8);
+    --color-bronze-9: var(--bronze-9);
+    --color-bronze-10: var(--bronze-10);
+    --color-bronze-11: var(--bronze-11);
+    --color-bronze-12: var(--bronze-12);
+    --color-bronze-a1: var(--bronze-a1);
+    --color-bronze-a2: var(--bronze-a2);
+    --color-bronze-a3: var(--bronze-a3);
+    --color-bronze-a4: var(--bronze-a4);
+    --color-bronze-a5: var(--bronze-a5);
+    --color-bronze-a6: var(--bronze-a6);
+    --color-bronze-a7: var(--bronze-a7);
+    --color-bronze-a8: var(--bronze-a8);
+    --color-bronze-a9: var(--bronze-a9);
+    --color-bronze-a10: var(--bronze-a10);
+    --color-bronze-a11: var(--bronze-a11);
+    --color-bronze-a12: var(--bronze-a12);
+    /* Marketing Colors */
+    --color-m-slate-1: var(--m-slate-1);
+    --color-m-slate-2: var(--m-slate-2);
+    --color-m-slate-3: var(--m-slate-3);
+    --color-m-slate-4: var(--m-slate-4);
+    --color-m-slate-5: var(--m-slate-5);
+    --color-m-slate-6: var(--m-slate-6);
+    --color-m-slate-7: var(--m-slate-7);
+    --color-m-slate-8: var(--m-slate-8);
+    --color-m-slate-9: var(--m-slate-9);
+    --color-m-slate-10: var(--m-slate-10);
+    --color-m-slate-11: var(--m-slate-11);
+    --color-m-slate-12: var(--m-slate-12);
+    --color-m-slate-13: var(--m-slate-13);
+    --color-m-slate-14: var(--m-slate-14);
+    --color-m-slate-15: var(--m-slate-15);
+    --color-m-violet-1: var(--m-violet-1);
+    --color-m-violet-2: var(--m-violet-2);
+    --color-m-violet-3: var(--m-violet-3);
+    --color-m-violet-4: var(--m-violet-4);
+    --color-m-violet-5: var(--m-violet-5);
+    --color-m-violet-6: var(--m-violet-6);
+    --color-m-violet-7: var(--m-violet-7);
+    --color-m-violet-8: var(--m-violet-8);
+    --color-m-violet-9: var(--m-violet-9);
+    --color-m-violet-10: var(--m-violet-10);
+    --color-m-violet-11: var(--m-violet-11);
+    --color-m-violet-12: var(--m-violet-12);
+
+    /* Font */
+    --font-sans: var(--font-instrument-sans);
+    --font-mono: var(--font-jetbrains);
+    /* Shadow */
+    --shadow-none: none;
+    --shadow-small: var(--shadow-small-adaptive);
+    --shadow-medium: var(--shadow-medium-adaptive);
+    --shadow-large: var(--shadow-large-adaptive);
+    --shadow-large-negative: var(--shadow-large-negative-adaptive);
+    --shadow-large-negative-primary: var(--shadow-large-negative-primary-adaptive);
+    --shadow-x-large: var(--shadow-x-large-adaptive);
+    --shadow-inner: var(--shadow-inner-adaptive);
+    --shadow-card: 0 0 0 1px rgba(0, 0, 0, 0.04),
+        0 4px 8px 0 rgba(0, 0, 0, 0.07),
+        0 1px 1px 0 rgba(0, 0, 0, 0.01),
+        0 0 0 1px #FFF inset;
+    --shadow-button-bordered:
+        0 0 0 1px var(--primary-9) inset,
+        0 2px 0 0 rgba(255, 255, 255, 0.22) inset;
+    --shadow-button-outline: var(--shadow-button-outline-adaptive);
+    --shadow-card-xs-no-left: var(--shadow-card-xs-no-left-adaptive);
+    --shadow-card-small: var(--shadow-card-small-adaptive);
+    --shadow-card-dark: 0 0 0 1px var(--m-slate-9, #2A3037);
+    --text-xs: 0.8125rem;
+    --text-xs--line-height: 1.25rem;
+    --text-sm: 0.875rem;
+    --text-sm--line-height: 1.5rem;
+    --text-base: 1rem;
+    --text-base--line-height: 1.625rem;
+    --text-base--letter-spacing: -0.0025rem;
+    --text-lg: 1.125rem;
+    --text-lg--line-height: 1.625rem;
+    --text-xl: 1.25rem;
+    --text-xl--line-height: 1.75rem;
+    --text-2xl: 1.5rem;
+    --text-2xl--line-height: 2.25rem;
+    --text-2xl--letter-spacing: -0.0225rem;
+    --text-3xl: 2rem;
+    --text-3xl--line-height: 2.5rem;
+    --text-4xl: 2.5rem;
+    --text-4xl--line-height: 3rem;
+    --text-4xl--letter-spacing: -0.075rem;
+    --text-5xl: 3rem;
+    --text-5xl--line-height: 3.5rem;
+    --text-5xl--letter-spacing: -0.0975rem;
+    --text-6xl: 3.5rem;
+    --text-6xl--line-height: 4rem;
+    --text-6xl--letter-spacing: -0.1925rem;
+    --breakpoint-3xl: 110rem;
+
+    /* Animation */
+    --animate-accordion-down: accordion-down 0.2s ease-out;
+    --animate-accordion-up: accordion-up 0.2s ease-out;
+    --animate-spin: spin 1s linear infinite;
+    --animate-blur-in: blur-in 0.15s ease forwards;
+    --animate-border: border 3s linear infinite;
+    --animate-slide-in-right: slide-in-right both;
+    --animate-slide-in-left: slide-in-left both;
+    --animate-slide-in-up: slide-in-up both;
+    --animate-slide-in-down: slide-in-down both;
+    --animate-scale-rotate-in: scale-rotate-in both;
+    --animate-scale-in-top-right: scale-in-top-right both;
+    --animate-slide-down: slide-down 2.4s linear infinite;
+    --animate-slide-down-full: slide-down-full 2.4s linear infinite;
+    --animate-blink: blink 1.25s step-end infinite;
+    --animate-ellipse-1: ellipse-1 2400ms ease-out infinite;
+    --animate-ellipse-2: ellipse-2 2400ms ease-out infinite;
+    --animate-ellipse-3: ellipse-3 2400ms ease-out infinite;
+    --animate-ellipse-4: ellipse-4 2400ms ease-out infinite;
+    --animate-ellipse-reversed: ellipse-reversed 2400ms ease-out infinite;
+    /* Radius */
+    --radius-ui-xxs: calc(var(--radius) - 0.25rem);
+    --radius-ui-xs: calc(var(--radius) - 0.125rem);
+    --radius-ui-sm: var(--radius);
+    --radius-ui-md: calc(var(--radius) + 0.125rem);
+    --radius-ui-lg: calc(var(--radius) + 0.25rem);
+    --radius-ui-xl: calc(var(--radius) + 0.375rem);
+    --radius-ui-2xl: calc(var(--radius) + 0.5rem);
+    /* Width */
+    --layout-max-width: 81rem;
+    --docs-layout-max-width: 69rem;
+
+    @keyframes accordion-down {
+        from {
+            height: 0;
+        }
+
+        to {
+            height: var(--radix-accordion-content-height);
+        }
+    }
+
+    @keyframes accordion-up {
+        from {
+            height: var(--radix-accordion-content-height);
+        }
+
+        to {
+            height: 0;
+        }
+    }
+
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    @keyframes blur-in {
+        0% {
+            filter: blur(4px);
+        }
+
+        100% {
+            filter: blur(0);
+        }
+    }
+
+    @keyframes border {
+        to {
+            --border-angle: 360deg;
+        }
+    }
+
+    @keyframes fade-in-scale {
+        0% {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+
+        100% {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    @keyframes slide-in-right {
+        from {
+            transform: translateX(100%);
+        }
+
+        to {
+            transform: translateX(0);
+        }
+    }
+
+    @keyframes slide-in-left {
+        from {
+            transform: translateX(-100%);
+        }
+
+        to {
+            transform: translateX(0);
+        }
+    }
+
+    @keyframes slide-in-up {
+        from {
+            transform: translateY(100%);
+        }
+
+        to {
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes slide-in-down {
+        from {
+            transform: translateY(-100%);
+        }
+
+        to {
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes scale-rotate-in {
+        0% {
+            transform: scale(0) rotate(-100deg);
+        }
+
+        100% {
+            transform: scale(1) rotate(0deg);
+        }
+    }
+
+    @keyframes scale-in-top-right {
+        from {
+            transform: scale(0);
+            transform-origin: top right;
+        }
+
+        to {
+            transform: scale(1);
+            transform-origin: top right;
+        }
+    }
+
+    @keyframes slide-down-full {
+        0% {
+            transform: translateY(-100%);
+        }
+
+        100% {
+            transform: translateY(calc(100vh + 5rem));
+        }
+
+    }
+
+    @keyframes blink {
+        50% {
+            opacity: 0;
+        }
+    }
+
+    @keyframes slide-center-to-left {
+
+        0%,
+        100% {
+            transform: translateX(0) translateY(-50%);
+        }
+
+        50% {
+            transform: translateX(-200%) translateY(-50%);
+        }
+    }
+
+    @keyframes slide-center-to-right {
+
+        0%,
+        100% {
+            transform: translateX(0) translateY(-50%);
+        }
+
+        50% {
+            transform: translateX(200%) translateY(-50%);
+        }
+    }
+
+    @keyframes fade-scale-out {
+        0% {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        7.5%,
+        50% {
+            opacity: 0;
+            transform: scale(0.55);
+        }
+
+        56.5%,
+        100% {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    @keyframes fade-scale-in {
+        0% {
+            opacity: 0;
+            transform: scale(0.55);
+        }
+
+        7.5%,
+        50% {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        56.5%,
+        100% {
+            opacity: 0;
+            transform: scale(0.55);
+        }
+    }
+
+    @keyframes ellipse-slide-left {
+        0% {
+            left: -13.75rem;
+        }
+
+        7.5% {
+            left: 17rem;
+        }
+
+        20% {
+            left: 17rem;
+        }
+
+        22% {
+            left: 14rem;
+        }
+
+        24% {
+            left: 10rem;
+        }
+
+        27.5% {
+            left: 4rem;
+        }
+
+        30% {
+            left: -2rem;
+        }
+
+        34.5% {
+            left: -13.75rem;
+        }
+
+        50% {
+            left: -13.75rem;
+        }
+
+        57.5% {
+            left: 17rem;
+        }
+
+        70% {
+            left: 17rem;
+        }
+
+        72% {
+            left: 14rem;
+        }
+
+        74% {
+            left: 10rem;
+        }
+
+        77.5% {
+            left: 4rem;
+        }
+
+        80% {
+            left: -2rem;
+        }
+
+        84.5% {
+            left: -13.75rem;
+        }
+
+        100% {
+            left: -13.75rem;
+        }
+    }
+
+    @keyframes ellipse-slide-right {
+        0% {
+            right: -13.75rem;
+        }
+
+        7.5% {
+            right: 17rem;
+        }
+
+        20% {
+            right: 17rem;
+        }
+
+        22% {
+            right: 14rem;
+        }
+
+        24% {
+            right: 10rem;
+        }
+
+        27.5% {
+            right: 4rem;
+        }
+
+        30% {
+            right: -2rem;
+        }
+
+        34.5% {
+            right: -13.75rem;
+        }
+
+        50% {
+            right: -13.75rem;
+        }
+
+        57.5% {
+            right: 17rem;
+        }
+
+        70% {
+            right: 17rem;
+        }
+
+        72% {
+            right: 14rem;
+        }
+
+        74% {
+            right: 10rem;
+        }
+
+        77.5% {
+            right: 4rem;
+        }
+
+        80% {
+            right: -2rem;
+        }
+
+        84.5% {
+            right: -13.75rem;
+        }
+
+        100% {
+            right: -13.75rem;
+        }
+    }
+
+    @keyframes prompt-box-line {
+        0% {
+            filter: blur(8px);
+            opacity: 0;
+            transform: scale(0.25);
+        }
+
+        100% {
+            filter: blur(0);
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    @keyframes ellipse-1 {
+        0% {
+            top: calc(-100% - 16.81rem);
+        }
+
+        100% {
+            top: calc(100% + 2rem);
+        }
+    }
+
+    @keyframes ellipse-2 {
+        0% {
+            top: calc(-100% - 10.12rem);
+        }
+
+        100% {
+            top: calc(100% + 3.06rem);
+        }
+    }
+
+    @keyframes ellipse-3 {
+        0% {
+            top: calc(-100% - 10rem);
+        }
+
+        100% {
+            top: calc(100% + 11.69rem);
+        }
+    }
+
+    @keyframes ellipse-4 {
+        0% {
+            top: calc(-100% - 2rem);
+        }
+
+        100% {
+            top: calc(100% + 19.31rem);
+        }
+    }
+
+
+}
+
+@layer base {
+
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--c-slate-3, currentColor);
+    }
+
+    body {
+        @apply isolate font-sans antialiased;
+        font-feature-settings: "rlig" 1, "calt" 1;
+    }
+
+    :where([data-sonner-toast]) {
+        @apply font-sans text-sm;
+    }
+
+    .section-content {
+        @apply flex flex-col justify-center items-center gap-10 mx-auto mt-4 mb-20 px-4 lg:px-6 pt-24 lg:pt-52 w-full max-w-6xl;
+    }
+
+    .section-header {
+        @apply flex flex-col justify-center items-start lg:items-center gap-6 w-full lg:text-center text-start;
+    }
+
+    .gradient-heading {
+        @apply inline-block bg-clip-text bg-gradient-to-r from-slate-12 to-slate-11 w-full text-transparent text-center text-balance;
+    }
+
+    .table-header {
+        @apply justify-start pl-4 w-auto font-bold text-slate-12 text-sm;
+    }
+}
+
+@layer utilities {
+    .font-instrument-sans {
+        font-family: var(--font-instrument-sans);
+    }
+
+    .font-code {
+        font-family: var(--font-jetbrains);
+        font-size: 0.95rem;
+        font-style: normal;
+        font-weight: 500;
+        line-height: 1.5rem;
+        letter-spacing: -0.00406rem;
+    }
+
+    .code-style {
+        font-family: var(--font-jetbrains);
+        font-size: 0.835rem;
+        font-style: normal;
+        font-weight: 400;
+        line-height: normal;
+        letter-spacing: -0.00406rem;
+        color: var(--c-slate-11);
+        background-color: var(--c-slate-3);
+        border-radius: 0.25rem;
+        border-width: 1px;
+        border-color: var(--c-slate-4);
+        /* padding: 0rem 0.125rem 0rem 0.125rem; */
+    }
+
+    .code-error-style {
+        font-family: var(--font-jetbrains);
+        font-size: 0.835rem;
+        font-style: normal;
+        font-weight: 500;
+        line-height: normal;
+        letter-spacing: -0.00406rem;
+        color: var(--red-11);
+        background-color: var(--red-3);
+        border-radius: 0.25rem;
+        border-width: 1px;
+        border-color: var(--red-5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .markdown-code>p {
+        margin: 0 !important;
+    }
+
+    .markdown-code>p>code {
+        font-family: var(--font-jetbrains);
+        font-size: 0.835rem;
+        font-style: normal;
+        font-weight: 400;
+        line-height: 1.75rem;
+        letter-spacing: -0.00406rem;
+        color: var(--c-violet-9);
+        background-color: var(--c-violet-3);
+        border-radius: 0.25rem;
+        border-width: 1px;
+        border-color: var(--c-violet-4);
+        padding: 0rem 0.125rem 0rem 0.125rem;
+    }
+
+    .markdown-code code {
+        font-family: var(--font-jetbrains);
+        font-size: 0.835rem;
+        font-style: normal;
+        font-weight: 400;
+        line-height: 1.75rem;
+        letter-spacing: -0.00406rem;
+        color: var(--c-violet-9);
+        background-color: var(--c-violet-3);
+        border-radius: 0.25rem;
+        border-width: 1px;
+        border-color: var(--c-violet-4);
+        padding: 0rem 0.125rem 0rem 0.125rem;
+    }
+
+    .code-block {
+        width: 100% !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 1.75rem !important;
+        /* max-height: 350px !important; */
+        border-radius: 0.75rem !important;
+        border: 1px solid var(--c-slate-4);
+        background: var(--c-slate-2);
+        color: var(--c-slate-12) !important;
+        resize: none !important;
+        outline: none !important;
+        scrollbar-width: thin !important;
+        font-family: var(--font-jetbrains) !important;
+    }
+
+    .code-block>* {
+        background: transparent !important;
+        font-family: var(--font-jetbrains) !important;
+        font-size: 0.875rem !important;
+        font-style: normal !important;
+        font-weight: 400 !important;
+        line-height: 1.5rem !important;
+        /* 184.615% */
+        letter-spacing: -0.00406rem !important;
+    }
+
+    .code-block pre {
+        font-family: var(--font-jetbrains) !important;
+        padding: 0 !important;
+        font-size: 0.875rem !important;
+        font-weight: 400 !important;
+        line-height: 1.5rem !important;
+        color: var(--c-slate-12) !important;
+        background-color: transparent !important;
+    }
+
+    .code-block code {
+        font-family: var(--font-jetbrains) !important;
+        padding: 0 !important;
+        font-size: 0.875rem !important;
+        font-weight: 400 !important;
+        line-height: 1.5rem !important;
+        color: var(--c-slate-12) !important;
+        background-color: transparent !important;
+    }
+
+    @media (max-width: 768px) {
+        .code-block {
+            padding: 1rem !important;
+        }
+    }
+
+
+    .tab-style {
+        color: var(--c-slate-9);
+        cursor: pointer;
+        padding: 0.25em 0.5em;
+        font-size: 0.9rem;
+        font-weight: 500;
+        line-height: 1.25rem;
+        letter-spacing: -0.01094rem;
+    }
+
+    .tab-style:hover {
+        color: var(--c-slate-11);
+    }
+
+    .hover-card-shadow:hover {
+        background: var(0 3px 6px 0 rgba(0, 0, 0, 0.03),
+                0 1px 0 0 #FFF inset,
+                0 1px 0 0 rgba(0, 0, 0, 0.04),
+                0 0 0 1px rgba(0, 0, 0, 0.08), linear-gradient(180deg, var(--secondary-1, #FCFCFD) 0%, var(--white-1, #FFF) 100%));
+        box-shadow: 0 3px 6px 0 rgba(0, 0, 0, 0.03), 0 1px 0 0 #FFF inset, 0 1px 0 0 rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.08);
+    }
+
+    :where(.dark, .dark *) .hover-card-shadow:hover {
+        background: var(--m-slate-10, #21252B);
+        box-shadow: 0 0 0 1px var(--m-slate-9, #2A3037);
+    }
+
+    .navbar-shadow {
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.03), 0 -1px 1px 0 rgba(0, 0, 0, 0.04), 0 16px 32px 0 rgba(0, 0, 0, 0.08), 0 1px 1px 0 rgba(0, 0, 0, 0.08), 0 4px 8px 0 rgba(0, 0, 0, 0.03);
+    }
+
+    :where(.dark, .dark *) .navbar-shadow {
+        box-shadow: 0 0 0 1px var(--m-slate-9, #2A3037);
+    }
+
+    .tab-style[data-state='active'] {
+        color: var(--c-violet-9);
+    }
+
+    .tab-style:not([data-state='active']) {
+        color: var(--c-slate-12);
+    }
+
+    .demo-code-block {
+        width: 100% !important;
+        height: auto !important;
+        margin: 0 !important;
+        background: transparent !important;
+        color: var(--c-slate-9) !important;
+        resize: none !important;
+        outline: none !important;
+        scrollbar-width: thin !important;
+        font-family: "JetBrains Mono" !important;
+    }
+
+    .demo-code-block>* {
+        background: transparent !important;
+        font-family: "JetBrains Mono" !important;
+        font-size: 0.8125rem !important;
+        font-style: normal !important;
+        font-weight: 400 !important;
+        line-height: 150% !important;
+        letter-spacing: -0.01219rem !important;
+    }
+
+    .demo-code-block pre {
+        background: transparent !important;
+        font-family: var(--font-jetbrains) !important;
+        font-size: 0.8125rem !important;
+        font-style: normal !important;
+        font-weight: 400 !important;
+        line-height: 150% !important;
+        letter-spacing: -0.01219rem !important;
+        padding: 2.5rem !important;
+    }
+
+    .demo-code-block code {
+        font-family: var(--font-jetbrains) !important;
+        padding: 0 !important;
+        font-size: 0.8125rem !important;
+        font-weight: 400 !important;
+        line-height: 150% !important;
+        letter-spacing: -0.01219rem !important;
+        color: var(--c-slate-12) !important;
+        background-color: transparent !important;
+    }
+
+    .font-small {
+        font-family: var(--font-instrument-sans);
+        font-size: 0.9rem;
+        font-style: normal;
+        font-weight: 500;
+        line-height: 1.25rem;
+        /* 142.857% */
+        letter-spacing: -0.01094rem;
+    }
+
+    .font-md {
+        font-family: var(--font-instrument-sans);
+        font-size: 1.125rem;
+        font-style: normal;
+        font-weight: 500;
+        line-height: 1.625rem;
+        letter-spacing: -0.01688rem;
+    }
+
+    .font-smbold {
+        font-family: var(--font-instrument-sans);
+        font-size: 1rem;
+        font-style: normal;
+        font-weight: 600;
+        line-height: 1.5rem;
+        /* 150% */
+        letter-spacing: -0.015rem;
+
+    }
+
+    .font-md-smbold {
+        font-family: var(--font-instrument-sans);
+        font-size: 1.125rem;
+        font-style: normal;
+        font-weight: 600;
+        line-height: 1.625rem;
+        letter-spacing: -0.01688rem;
+    }
+
+    .font-small-smbold {
+        /* Small Semibold */
+        font-family: var(--font-instrument-sans);
+        font-size: 0.875rem;
+        font-style: normal;
+        font-weight: 600;
+        line-height: 1.25rem;
+        /* 142.857% */
+        letter-spacing: -0.01094rem;
+    }
+
+    .font-base {
+        font-family: var(--font-instrument-sans);
+        font-size: 1rem;
+        font-style: normal;
+        font-weight: 500;
+        line-height: 1.5rem;
+        /* 150% */
+        letter-spacing: -0.015rem;
+    }
+
+    .font-large {
+        font-family: "Instrument Sans";
+        font-size: 1.5rem;
+        font-style: normal;
+        font-weight: 600;
+        line-height: 2rem;
+        /* 133.333% */
+        letter-spacing: -0.03rem;
+    }
+
+    .font-x-large {
+        font-family: var(--font-instrument-sans);
+        font-size: 2rem;
+        font-style: normal;
+        font-weight: 600;
+        line-height: 2.5rem;
+        /* 125% */
+        letter-spacing: -0.06rem;
+    }
+
+    .font-xx-large {
+        font-family: var(--font-instrument-sans);
+        font-size: 3rem;
+        font-style: normal;
+        font-weight: 600;
+        line-height: 3.5rem;
+        /* 116.667% */
+        letter-spacing: -0.15rem;
+    }
+
+    .font-xxx-large {
+        font-family: var(--font-instrument-sans);
+        font-size: 3.5rem;
+        font-style: normal;
+        font-weight: 600;
+        line-height: 4rem;
+        /* 114.286% */
+        letter-spacing: -0.175rem;
+    }
+
+    .v-link {
+        color: var(--c-violet-9);
+    }
+
+    .hidden-scrollbar::-webkit-scrollbar {
+        background-color: transparent;
+    }
+
+    .hidden-scrollbar::-webkit-scrollbar-thumb {
+        background-color: transparent;
+    }
+
+    /* Hide scrollbar for Chrome, Safari and Opera */
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Hide scrollbar for IE, Edge and Firefox */
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        /* IE and Edge */
+        scrollbar-width: none;
+        /* Firefox */
+    }
+
+    @supports ((-webkit-touch-callout: none) or (font: -apple-system-body) or (-moz-appearance: none)) {
+
+        .safari-nav-positioner,
+        .safari-nav-positioner[data-slot='navigation-menu-positioner'] {
+            transition: none !important;
+            transition-property: none !important;
+            transition-duration: 0ms !important;
+        }
+    }
+}
+
+@property --border-angle {
+    inherits: false;
+    initial-value: 0deg;
+    syntax: '<angle>';
+}
+
+@layer base {
+
+    button,
+    [role='button'] {
+        cursor: pointer;
+    }
+
+    button:disabled,
+    [role='button']:disabled {
+        cursor: default;
+    }
+
+    body {
+        @apply isolate bg-slate-1 font-sans antialiased;
+    }
+}

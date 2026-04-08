@@ -1,4 +1,5 @@
-import pydantic
+from dataclasses import dataclass
+
 import pytest
 from reflex_base.components.component import Component
 from reflex_base.constants.state import FIELD_MARKER
@@ -18,7 +19,8 @@ from reflex import el
 from reflex.state import BaseState, ComponentState
 
 
-class ForEachTag(pydantic.BaseModel):
+@dataclass
+class ForEachTag:
     """A tag for testing the ForEach component."""
 
     name: str = ""

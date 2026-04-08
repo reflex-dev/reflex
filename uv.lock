@@ -2053,13 +2053,11 @@ wheels = [
 name = "reflex"
 source = { editable = "." }
 dependencies = [
-    { name = "alembic" },
     { name = "click" },
     { name = "granian", extra = ["reload"] },
     { name = "httpx" },
     { name = "packaging" },
     { name = "psutil", marker = "sys_platform == 'win32'" },
-    { name = "pydantic" },
     { name = "python-multipart" },
     { name = "python-socketio" },
     { name = "redis" },
@@ -2078,7 +2076,6 @@ dependencies = [
     { name = "reflex-components-sonner" },
     { name = "reflex-hosting-cli" },
     { name = "rich" },
-    { name = "sqlmodel" },
     { name = "starlette" },
     { name = "typing-extensions" },
     { name = "wrapt" },
@@ -2093,6 +2090,7 @@ db = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "alembic" },
     { name = "asynctest" },
     { name = "darglint" },
     { name = "dill" },
@@ -2109,6 +2107,7 @@ dev = [
     { name = "pre-commit" },
     { name = "psutil" },
     { name = "psycopg", extra = ["binary"] },
+    { name = "pydantic" },
     { name = "pyright" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -2123,6 +2122,8 @@ dev = [
     { name = "reflex-docgen" },
     { name = "ruff" },
     { name = "selenium" },
+    { name = "sqlalchemy" },
+    { name = "sqlmodel" },
     { name = "starlette-admin" },
     { name = "toml" },
     { name = "uvicorn" },
@@ -2130,14 +2131,12 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "alembic", specifier = ">=1.15.2,<2.0" },
     { name = "alembic", marker = "extra == 'db'", specifier = ">=1.15.2,<2.0" },
     { name = "click", specifier = ">=8.2" },
     { name = "granian", extras = ["reload"], specifier = ">=2.5.5" },
     { name = "httpx", specifier = ">=0.23.3,<1.0" },
     { name = "packaging", specifier = ">=24.2,<27" },
     { name = "psutil", marker = "sys_platform == 'win32'", specifier = ">=7.0.0,<8.0" },
-    { name = "pydantic", specifier = ">=2.12.0,<3.0" },
     { name = "pydantic", marker = "extra == 'db'", specifier = ">=2.12.0,<3.0" },
     { name = "python-multipart", specifier = ">=0.0.20,<1.0" },
     { name = "python-socketio", specifier = ">=5.12.0,<6.0" },
@@ -2157,7 +2156,6 @@ requires-dist = [
     { name = "reflex-components-sonner", editable = "packages/reflex-components-sonner" },
     { name = "reflex-hosting-cli", specifier = ">=0.1.61" },
     { name = "rich", specifier = ">=13,<15" },
-    { name = "sqlmodel", specifier = ">=0.0.27,<0.1" },
     { name = "sqlmodel", marker = "extra == 'db'", specifier = ">=0.0.24,<0.1" },
     { name = "starlette", specifier = ">=0.47.0" },
     { name = "typing-extensions", specifier = ">=4.13.0" },
@@ -2167,6 +2165,7 @@ provides-extras = ["db"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "alembic" },
     { name = "asynctest" },
     { name = "darglint" },
     { name = "dill" },
@@ -2181,6 +2180,7 @@ dev = [
     { name = "pre-commit" },
     { name = "psutil" },
     { name = "psycopg", extras = ["binary"] },
+    { name = "pydantic" },
     { name = "pyright" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -2195,6 +2195,8 @@ dev = [
     { name = "reflex-docgen", editable = "packages/reflex-docgen" },
     { name = "ruff" },
     { name = "selenium" },
+    { name = "sqlalchemy" },
+    { name = "sqlmodel" },
     { name = "starlette-admin" },
     { name = "toml" },
     { name = "uvicorn" },
@@ -2382,7 +2384,7 @@ wheels = [
 
 [[package]]
 name = "requests"
-version = "2.32.5"
+version = "2.33.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "certifi" },
@@ -2390,9 +2392,9 @@ dependencies = [
     { name = "idna" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c9/74/b3ff8e6c8446842c3f5c837e9c3dfcfe2018ea6ecef224c710c85ef728f4/requests-2.32.5.tar.gz", hash = "sha256:dbba0bac56e100853db0ea71b82b4dfd5fe2bf6d3754a8893c3af500cec7d7cf", size = 134517, upload-time = "2025-08-18T20:46:02.573Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/34/64/8860370b167a9721e8956ae116825caff829224fbca0ca6e7bf8ddef8430/requests-2.33.0.tar.gz", hash = "sha256:c7ebc5e8b0f21837386ad0e1c8fe8b829fa5f544d8df3b2253bff14ef29d7652", size = 134232, upload-time = "2026-03-25T15:10:41.586Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1e/db/4254e3eabe8020b458f1a747140d32277ec7a271daf1d235b70dc0b4e6e3/requests-2.32.5-py3-none-any.whl", hash = "sha256:2462f94637a34fd532264295e186976db0f5d453d1cdd31473c85a6a161affb6", size = 64738, upload-time = "2025-08-18T20:46:00.542Z" },
+    { url = "https://files.pythonhosted.org/packages/56/5d/c814546c2333ceea4ba42262d8c4d55763003e767fa169adc693bd524478/requests-2.33.0-py3-none-any.whl", hash = "sha256:3324635456fa185245e24865e810cecec7b4caf933d7eb133dcde67d48cee69b", size = 65017, upload-time = "2026-03-25T15:10:40.382Z" },
 ]
 
 [[package]]
