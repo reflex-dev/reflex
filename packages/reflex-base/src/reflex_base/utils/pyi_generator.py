@@ -13,6 +13,7 @@ import re
 import subprocess
 import sys
 import typing
+from collections import deque
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from concurrent.futures import ProcessPoolExecutor
 from functools import cache
@@ -23,7 +24,7 @@ from pathlib import Path
 from types import MappingProxyType, ModuleType, SimpleNamespace, UnionType
 from typing import Any, get_args, get_origin
 
-from reflex_base.components.component import Component
+from reflex_base.components.component import DEFAULT_TRIGGERS_AND_DESC, Component
 from reflex_base.vars.base import Var
 
 
@@ -343,7 +344,7 @@ def _get_class_prop_comments(clz: type[Component]) -> Mapping[str, tuple[str, ..
         prop = match.group(0).strip(":")
         if comments:
             props_comments[prop] = tuple(
-                comment.strip().strip("#") for comment in comments
+                comment.strip().lstrip("#").strip() for comment in comments
             )
         comments.clear()
 
@@ -463,6 +464,24 @@ def _generate_imports(
     ]
 
 
+def _maybe_default_event_handler_docstring(
+    prop_name: str, fallback: str = "no description"
+) -> tuple[str, ...]:
+    """Add a docstring for default event handler prop.
+
+    Args:
+        prop_name: The name of the prop.
+        fallback: The fallback docstring to use if the prop is not a default event handler and has no description.
+
+    Returns:
+        The event handler description or the fallback if the prop is not a default event handler.
+    """
+    try:
+        return (DEFAULT_TRIGGERS_AND_DESC[prop_name].description,)
+    except KeyError:
+        return (fallback,)
+
+
 def _generate_docstrings(clzs: list[type[Component]], props: list[str]) -> str:
     """Generate the docstrings for the create method.
 
@@ -478,13 +497,17 @@ def _generate_docstrings(clzs: list[type[Component]], props: list[str]) -> str:
         for prop, comment_lines in _get_class_prop_comments(clz).items():
             if prop in props:
                 props_comments[prop] = list(comment_lines)
+        for prop, field in clz._fields.items():
+            if prop in props and field.doc:
+                props_comments[prop] = [field.doc]
     clz = clzs[0]
     new_docstring = []
     for line in (clz.create.__doc__ or "").splitlines():
         if "**" in line:
             indent = line.split("**")[0]
             new_docstring.extend([
-                f"{indent}{n}:{' '.join(c)}" for n, c in props_comments.items()
+                f"{indent}{prop_name}: {' '.join(props_comments.get(prop_name, _maybe_default_event_handler_docstring(prop_name)))}"
+                for prop_name in props
             ])
         new_docstring.append(line)
     return "\n".join(new_docstring)
@@ -524,7 +547,7 @@ def _extract_class_props_as_ast_nodes(
     clzs: list[type],
     type_hint_globals: dict[str, Any],
     extract_real_default: bool = False,
-) -> list[tuple[ast.arg, ast.Constant | None]]:
+) -> Sequence[tuple[ast.arg, ast.Constant | None]]:
     """Get the props defined on the class and all parents.
 
     Args:
@@ -535,13 +558,13 @@ def _extract_class_props_as_ast_nodes(
             pydantic field definition.
 
     Returns:
-        The list of props as ast arg nodes
+        The sequence of props as ast arg nodes
     """
     spec = _get_full_argspec(func)
     func_kwonlyargs = set(spec.kwonlyargs)
     all_props: set[str] = set()
-    kwargs = []
-    for target_class in clzs:
+    kwargs = deque()
+    for target_class in reversed(clzs):
         event_triggers = _get_class_event_triggers(target_class)
         # Import from the target class to ensure type hints are resolvable.
         type_hint_globals.update(_get_module_star_imports(target_class.__module__))
@@ -549,9 +572,8 @@ def _extract_class_props_as_ast_nodes(
             **type_hint_globals,
             **_get_class_annotation_globals(target_class),
         }
-        for name, value in typing.get_type_hints(
-            target_class, globalns=annotation_globals
-        ).items():
+        type_hints = typing.get_type_hints(target_class, globalns=annotation_globals)
+        for name, value in reversed(type_hints.items()):
             if (
                 name in func_kwonlyargs
                 or name in EXCLUDED_PROPS
@@ -572,7 +594,7 @@ def _extract_class_props_as_ast_nodes(
                     if isinstance(default, Var):
                         default = default._decode()
 
-            kwargs.append((
+            kwargs.appendleft((
                 ast.arg(
                     arg=name,
                     annotation=ast.Name(
@@ -1611,8 +1633,8 @@ class PyiGenerator:
 
         # Fix generated pyi files with ruff.
         if file_paths:
-            subprocess.run(["ruff", "check", "--fix", *file_paths])
             subprocess.run(["ruff", "format", *file_paths])
+            subprocess.run(["ruff", "check", "--fix", *file_paths])
 
         if use_json:
             if file_paths and changed_files is None:
