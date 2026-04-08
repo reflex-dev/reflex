@@ -7,7 +7,9 @@ from pathlib import Path
 from types import UnionType
 from typing import Literal, Union, _GenericAlias, get_args, get_origin
 
+import reflex as rx
 from reflex.components.base.fragment import Fragment
+from reflex.components.component import Component
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import RadixThemesComponent
 from reflex_docgen import (
@@ -16,8 +18,6 @@ from reflex_docgen import (
     generate_documentation,
 )
 
-import reflex as rx
-from reflex.components.component import Component
 from reflex_docs.docgen_pipeline import (
     get_docgen_toc,
     render_docgen_document,

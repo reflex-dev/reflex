@@ -1,10 +1,10 @@
+import reflex as rx
 from reflex_docgen import (
     FieldDocumentation,
     MethodDocumentation,
     generate_class_documentation,
 )
 
-import reflex as rx
 from reflex_docs.docgen_pipeline import render_markdown
 from reflex_docs.templates.docpage import h1_comp, h2_comp
 
