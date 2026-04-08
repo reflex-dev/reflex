@@ -2,7 +2,7 @@
 name = "reflex-docs-app"
 version = "0.0.1"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 dependencies = [
     "email-validator",
     "fastapi",
