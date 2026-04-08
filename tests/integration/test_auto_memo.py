@@ -15,7 +15,7 @@ def AutoMemoAcrossPagesApp():
     import reflex as rx
 
     def shared_counter() -> rx.Component:
-        return rx.text(rx.State.router.path, id="shared-value")
+        return rx.text(rx.State.router.page.raw_path, id="shared-value")
 
     def index() -> rx.Component:
         return rx.vstack(
