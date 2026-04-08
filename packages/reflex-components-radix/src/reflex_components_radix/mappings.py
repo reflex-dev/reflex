@@ -1,10 +1,12 @@
 """Radix component mappings for lazy loading."""
 
-RADIX_THEMES_MAPPING: dict[str, list[str]] = {
+from reflex_base.utils.lazy_loader import SubmodAttrsType
+
+RADIX_THEMES_MAPPING: SubmodAttrsType = {
     "reflex_components_radix.themes.base": ["color_mode", "theme", "theme_panel"],
     "reflex_components_radix.themes.color_mode": ["color_mode"],
 }
-RADIX_THEMES_COMPONENTS_MAPPING: dict[str, list[str]] = {
+RADIX_THEMES_COMPONENTS_MAPPING: SubmodAttrsType = {
     **{
         f"reflex_components_radix.themes.components.{mod}": [mod]
         for mod in [
@@ -50,7 +52,7 @@ RADIX_THEMES_COMPONENTS_MAPPING: dict[str, list[str]] = {
     "reflex_components_radix.themes.components.progress": ["progress"],
 }
 
-RADIX_THEMES_LAYOUT_MAPPING: dict[str, list[str]] = {
+RADIX_THEMES_LAYOUT_MAPPING: SubmodAttrsType = {
     "reflex_components_radix.themes.layout.box": [
         "box",
     ],
@@ -78,14 +80,14 @@ RADIX_THEMES_LAYOUT_MAPPING: dict[str, list[str]] = {
         "vstack",
     ],
     "reflex_components_radix.themes.layout.list": [
-        "list",
+        ("list_ns", "list"),
         "list_item",
         "ordered_list",
         "unordered_list",
     ],
 }
 
-RADIX_THEMES_TYPOGRAPHY_MAPPING: dict[str, list[str]] = {
+RADIX_THEMES_TYPOGRAPHY_MAPPING: SubmodAttrsType = {
     "reflex_components_radix.themes.typography.blockquote": [
         "blockquote",
     ],
@@ -103,7 +105,7 @@ RADIX_THEMES_TYPOGRAPHY_MAPPING: dict[str, list[str]] = {
     ],
 }
 
-RADIX_PRIMITIVES_MAPPING: dict[str, list[str]] = {
+RADIX_PRIMITIVES_MAPPING: SubmodAttrsType = {
     "reflex_components_radix.primitives.accordion": [
         "accordion",
     ],
@@ -118,11 +120,11 @@ RADIX_PRIMITIVES_MAPPING: dict[str, list[str]] = {
     ],
 }
 
-RADIX_PRIMITIVES_SHORTCUT_MAPPING: dict[str, list[str]] = {
+RADIX_PRIMITIVES_SHORTCUT_MAPPING: SubmodAttrsType = {
     k: v for k, v in RADIX_PRIMITIVES_MAPPING.items() if "progress" not in k
 }
 
-RADIX_MAPPING: dict[str, list[str]] = {
+RADIX_MAPPING: SubmodAttrsType = {
     **RADIX_THEMES_MAPPING,
     **RADIX_THEMES_COMPONENTS_MAPPING,
     **RADIX_THEMES_TYPOGRAPHY_MAPPING,
