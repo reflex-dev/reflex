@@ -3,9 +3,9 @@ from reflex_docgen import (
     MethodDocumentation,
     generate_class_documentation,
 )
-from reflex_ui_shared.components.blocks.flexdown import markdown
 
 import reflex as rx
+from reflex_docs.docgen_pipeline import render_markdown
 from reflex_docs.templates.docpage import h1_comp, h2_comp
 
 table_header_class_name = (
@@ -44,7 +44,7 @@ def format_fields(
                                 format_field(field),
                             ),
                             rx.table.cell(
-                                markdown(field.description or ""),
+                                render_markdown(field.description or ""),
                                 class_name="font-small text-slate-11",
                             ),
                         )
@@ -102,7 +102,7 @@ def generate_docs(
         h1_comp(text=title.title()),
         rx.code(doc.name, class_name="code-style text-[18px]"),
         rx.divider(),
-        markdown(doc.description or ""),
+        render_markdown(doc.description or ""),
         (
             rx.box(
                 h2_comp(text="Class Fields"),

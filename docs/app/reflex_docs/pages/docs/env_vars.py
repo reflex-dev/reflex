@@ -5,10 +5,9 @@ from __future__ import annotations
 import inspect
 from typing import Any, List, Optional, Tuple
 
-from reflex_ui_shared.components.blocks.flexdown import markdown
-
 import reflex as rx
 from reflex.config import EnvironmentVariables
+from reflex_docs.docgen_pipeline import render_markdown
 from reflex_docs.templates.docpage import docpage, h1_comp, h2_comp
 
 
@@ -119,7 +118,7 @@ class EnvVarDocs:
                                 class_name="w-[15%]",
                             ),
                             rx.table.cell(
-                                markdown(cls.get_env_var_docstring(name) or ""),
+                                render_markdown(cls.get_env_var_docstring(name) or ""),
                                 class_name="font-small text-slate-11 w-[50%]",
                             ),
                         )
@@ -145,7 +144,7 @@ def env_vars_page():
             "reflex.config.EnvironmentVariables", class_name="code-style text-[18px]"
         ),
         rx.divider(),
-        markdown(
+        render_markdown(
             """
             Reflex provides a number of environment variables that can be used to configure the behavior of your application.
             These environment variables can be set in your shell environment or in a `.env` file.

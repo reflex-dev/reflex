@@ -951,21 +951,6 @@ wheels = [
 ]
 
 [[package]]
-name = "flexdown"
-version = "0.3.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "mistletoe" },
-    { name = "pyyaml" },
-    { name = "reflex" },
-    { name = "ruff-format" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/d4/72/1468206a948500ab05443ff3b289fc86effc75bfc083e4a9eeb55fd91973/flexdown-0.3.0.tar.gz", hash = "sha256:7bb818e9772926b42f9cbd70a3319e848a8f9eb8e4b56d1a65a1d8cb3f360d88", size = 101531, upload-time = "2026-03-27T17:25:02.27Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/ad/c3/0752c56ccbdb270f13fe9f89fd3cb68b2e4d8a3b39b09f15a476b2130158/flexdown-0.3.0-py3-none-any.whl", hash = "sha256:174e0ab611f6c7fdc61e84cc35b3c29971f23d86931ac9a14917ab797977dc71", size = 25304, upload-time = "2026-03-27T17:25:01.4Z" },
-]
-
-[[package]]
 name = "fonttools"
 version = "4.62.1"
 source = { registry = "https://pypi.org/simple" }
@@ -3741,9 +3726,7 @@ dependencies = [
     { name = "alembic" },
     { name = "email-validator" },
     { name = "fastapi" },
-    { name = "flexdown" },
     { name = "googletrans-py" },
-    { name = "mistletoe" },
     { name = "openai" },
     { name = "orjson" },
     { name = "pandas", version = "2.3.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -3781,9 +3764,7 @@ requires-dist = [
     { name = "alembic" },
     { name = "email-validator" },
     { name = "fastapi" },
-    { name = "flexdown" },
     { name = "googletrans-py" },
-    { name = "mistletoe" },
     { name = "openai" },
     { name = "orjson" },
     { name = "pandas" },
