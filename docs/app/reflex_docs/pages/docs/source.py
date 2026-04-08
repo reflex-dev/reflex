@@ -1,3 +1,4 @@
+import reflex as rx
 from reflex_docgen import (
     FieldDocumentation,
     MethodDocumentation,
@@ -5,7 +6,6 @@ from reflex_docgen import (
 )
 from reflex_ui_shared.components.blocks.flexdown import markdown
 
-import reflex as rx
 from reflex_docs.templates.docpage import h1_comp, h2_comp
 
 table_header_class_name = (

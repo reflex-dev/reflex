@@ -6,8 +6,10 @@ import textwrap
 from types import UnionType
 from typing import Literal, Union, _GenericAlias, get_args, get_origin
 
+import reflex as rx
 from flexdown.document import Document
 from reflex.components.base.fragment import Fragment
+from reflex.components.component import Component
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import RadixThemesComponent
 from reflex_docgen import (
@@ -19,8 +21,6 @@ from reflex_ui_shared.components.blocks.flexdown import markdown, xd
 from reflex_ui_shared.constants import REFLEX_ASSETS_CDN
 from reflex_ui_shared.utils.docpage import get_toc
 
-import reflex as rx
-from reflex.components.component import Component
 from reflex_docs.templates.docpage import docdemobox, docpage, h1_comp, h2_comp
 
 

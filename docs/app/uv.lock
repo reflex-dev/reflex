@@ -2529,8 +2529,7 @@ wheels = [
 
 [[package]]
 name = "reflex"
-version = "0.9.0a1.post10.dev0+db613921"
-source = { git = "https://github.com/reflex-dev/reflex?rev=main#db6139219978014d2811219d9ce64a8c8ab41115" }
+source = { editable = "../../" }
 dependencies = [
     { name = "click" },
     { name = "granian", extra = ["reload"] },
@@ -2560,10 +2559,82 @@ dependencies = [
     { name = "wrapt" },
 ]
 
+[package.metadata]
+requires-dist = [
+    { name = "alembic", marker = "extra == 'db'", specifier = ">=1.15.2,<2.0" },
+    { name = "click", specifier = ">=8.2" },
+    { name = "granian", extras = ["reload"], specifier = ">=2.5.5" },
+    { name = "httpx", specifier = ">=0.23.3,<1.0" },
+    { name = "packaging", specifier = ">=24.2,<27" },
+    { name = "psutil", marker = "sys_platform == 'win32'", specifier = ">=7.0.0,<8.0" },
+    { name = "pydantic", marker = "extra == 'db'", specifier = ">=2.12.0,<3.0" },
+    { name = "python-multipart", specifier = ">=0.0.20,<1.0" },
+    { name = "python-socketio", specifier = ">=5.12.0,<6.0" },
+    { name = "redis", specifier = ">=5.2.1,<8.0" },
+    { name = "reflex-base", editable = "../../packages/reflex-base" },
+    { name = "reflex-components-code", editable = "../../packages/reflex-components-code" },
+    { name = "reflex-components-core", editable = "../../packages/reflex-components-core" },
+    { name = "reflex-components-dataeditor", editable = "../../packages/reflex-components-dataeditor" },
+    { name = "reflex-components-gridjs", editable = "../../packages/reflex-components-gridjs" },
+    { name = "reflex-components-lucide", editable = "../../packages/reflex-components-lucide" },
+    { name = "reflex-components-markdown", editable = "../../packages/reflex-components-markdown" },
+    { name = "reflex-components-moment", editable = "../../packages/reflex-components-moment" },
+    { name = "reflex-components-plotly", editable = "../../packages/reflex-components-plotly" },
+    { name = "reflex-components-radix", editable = "../../packages/reflex-components-radix" },
+    { name = "reflex-components-react-player", editable = "../../packages/reflex-components-react-player" },
+    { name = "reflex-components-recharts", editable = "../../packages/reflex-components-recharts" },
+    { name = "reflex-components-sonner", editable = "../../packages/reflex-components-sonner" },
+    { name = "reflex-hosting-cli", specifier = ">=0.1.61" },
+    { name = "rich", specifier = ">=13,<15" },
+    { name = "sqlmodel", marker = "extra == 'db'", specifier = ">=0.0.24,<0.1" },
+    { name = "starlette", specifier = ">=0.47.0" },
+    { name = "typing-extensions", specifier = ">=4.13.0" },
+    { name = "wrapt", specifier = ">=1.17.0,<3.0" },
+]
+provides-extras = ["db"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "alembic" },
+    { name = "asynctest" },
+    { name = "darglint" },
+    { name = "dill" },
+    { name = "fastapi" },
+    { name = "hatchling" },
+    { name = "libsass" },
+    { name = "numpy" },
+    { name = "pandas" },
+    { name = "pillow" },
+    { name = "playwright" },
+    { name = "plotly" },
+    { name = "pre-commit" },
+    { name = "psutil" },
+    { name = "psycopg", extras = ["binary"] },
+    { name = "pydantic" },
+    { name = "pyright" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-benchmark" },
+    { name = "pytest-codspeed" },
+    { name = "pytest-cov" },
+    { name = "pytest-mock" },
+    { name = "pytest-playwright" },
+    { name = "pytest-rerunfailures" },
+    { name = "pytest-split" },
+    { name = "python-dotenv" },
+    { name = "reflex-docgen", editable = "../../packages/reflex-docgen" },
+    { name = "ruff" },
+    { name = "selenium" },
+    { name = "sqlalchemy" },
+    { name = "sqlmodel" },
+    { name = "starlette-admin" },
+    { name = "toml" },
+    { name = "uvicorn" },
+]
+
 [[package]]
 name = "reflex-base"
-version = "0.9.0a4.post10.dev0+db613921"
-source = { git = "https://github.com/reflex-dev/reflex?subdirectory=packages%2Freflex-base&rev=main#db6139219978014d2811219d9ce64a8c8ab41115" }
+source = { editable = "../../packages/reflex-base" }
 dependencies = [
     { name = "packaging" },
     { name = "platformdirs" },
@@ -2572,20 +2643,34 @@ dependencies = [
     { name = "typing-extensions" },
 ]
 
+[package.metadata]
+requires-dist = [
+    { name = "packaging", specifier = ">=24.2,<27" },
+    { name = "platformdirs", specifier = ">=4.3.7,<5.0" },
+    { name = "pydantic", specifier = ">=1.10.21,<3.0" },
+    { name = "rich", specifier = ">=13,<15" },
+    { name = "typing-extensions", specifier = ">=4.13.0" },
+]
+
 [[package]]
 name = "reflex-components-code"
-version = "0.9.0a1.post10.dev0+db613921"
-source = { git = "https://github.com/reflex-dev/reflex?subdirectory=packages%2Freflex-components-code&rev=main#db6139219978014d2811219d9ce64a8c8ab41115" }
+source = { editable = "../../packages/reflex-components-code" }
 dependencies = [
     { name = "reflex-components-core" },
     { name = "reflex-components-lucide" },
     { name = "reflex-components-radix" },
 ]
 
+[package.metadata]
+requires-dist = [
+    { name = "reflex-components-core", editable = "../../packages/reflex-components-core" },
+    { name = "reflex-components-lucide", editable = "../../packages/reflex-components-lucide" },
+    { name = "reflex-components-radix", editable = "../../packages/reflex-components-radix" },
+]
+
 [[package]]
 name = "reflex-components-core"
-version = "0.9.0a1.post10.dev0+db613921"
-source = { git = "https://github.com/reflex-dev/reflex?subdirectory=packages%2Freflex-components-core&rev=main#db6139219978014d2811219d9ce64a8c8ab41115" }
+source = { editable = "../../packages/reflex-components-core" }
 dependencies = [
     { name = "python-multipart" },
     { name = "reflex-components-lucide" },
@@ -2594,81 +2679,104 @@ dependencies = [
     { name = "typing-extensions" },
 ]
 
+[package.metadata]
+requires-dist = [
+    { name = "python-multipart" },
+    { name = "reflex-components-lucide", editable = "../../packages/reflex-components-lucide" },
+    { name = "reflex-components-sonner", editable = "../../packages/reflex-components-sonner" },
+    { name = "starlette" },
+    { name = "typing-extensions" },
+]
+
 [[package]]
 name = "reflex-components-dataeditor"
-version = "0.9.0a1.post10.dev0+db613921"
-source = { git = "https://github.com/reflex-dev/reflex?subdirectory=packages%2Freflex-components-dataeditor&rev=main#db6139219978014d2811219d9ce64a8c8ab41115" }
+source = { editable = "../../packages/reflex-components-dataeditor" }
 dependencies = [
     { name = "reflex-components-core" },
 ]
 
+[package.metadata]
+requires-dist = [{ name = "reflex-components-core", editable = "../../packages/reflex-components-core" }]
+
 [[package]]
 name = "reflex-components-gridjs"
-version = "0.9.0a1.post10.dev0+db613921"
-source = { git = "https://github.com/reflex-dev/reflex?subdirectory=packages%2Freflex-components-gridjs&rev=main#db6139219978014d2811219d9ce64a8c8ab41115" }
+source = { editable = "../../packages/reflex-components-gridjs" }
 
 [[package]]
 name = "reflex-components-lucide"
-version = "0.9.0a1.post10.dev0+db613921"
-source = { git = "https://github.com/reflex-dev/reflex?subdirectory=packages%2Freflex-components-lucide&rev=main#db6139219978014d2811219d9ce64a8c8ab41115" }
+source = { editable = "../../packages/reflex-components-lucide" }
 
 [[package]]
 name = "reflex-components-markdown"
-version = "0.9.0a1.post10.dev0+db613921"
-source = { git = "https://github.com/reflex-dev/reflex?subdirectory=packages%2Freflex-components-markdown&rev=main#db6139219978014d2811219d9ce64a8c8ab41115" }
+source = { editable = "../../packages/reflex-components-markdown" }
 dependencies = [
     { name = "reflex-components-code" },
     { name = "reflex-components-core" },
     { name = "reflex-components-radix" },
 ]
 
+[package.metadata]
+requires-dist = [
+    { name = "reflex-components-code", editable = "../../packages/reflex-components-code" },
+    { name = "reflex-components-core", editable = "../../packages/reflex-components-core" },
+    { name = "reflex-components-radix", editable = "../../packages/reflex-components-radix" },
+]
+
 [[package]]
 name = "reflex-components-moment"
-version = "0.9.0a1.post10.dev0+db613921"
-source = { git = "https://github.com/reflex-dev/reflex?subdirectory=packages%2Freflex-components-moment&rev=main#db6139219978014d2811219d9ce64a8c8ab41115" }
+source = { editable = "../../packages/reflex-components-moment" }
 
 [[package]]
 name = "reflex-components-plotly"
-version = "0.9.0a1.post10.dev0+db613921"
-source = { git = "https://github.com/reflex-dev/reflex?subdirectory=packages%2Freflex-components-plotly&rev=main#db6139219978014d2811219d9ce64a8c8ab41115" }
+source = { editable = "../../packages/reflex-components-plotly" }
 dependencies = [
     { name = "reflex-components-core" },
 ]
 
+[package.metadata]
+requires-dist = [{ name = "reflex-components-core", editable = "../../packages/reflex-components-core" }]
+
 [[package]]
 name = "reflex-components-radix"
-version = "0.9.0a1.post10.dev0+db613921"
-source = { git = "https://github.com/reflex-dev/reflex?subdirectory=packages%2Freflex-components-radix&rev=main#db6139219978014d2811219d9ce64a8c8ab41115" }
+source = { editable = "../../packages/reflex-components-radix" }
 dependencies = [
     { name = "reflex-components-core" },
     { name = "reflex-components-lucide" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "reflex-components-core", editable = "../../packages/reflex-components-core" },
+    { name = "reflex-components-lucide", editable = "../../packages/reflex-components-lucide" },
 ]
 
 [[package]]
 name = "reflex-components-react-player"
-version = "0.9.0a1.post10.dev0+db613921"
-source = { git = "https://github.com/reflex-dev/reflex?subdirectory=packages%2Freflex-components-react-player&rev=main#db6139219978014d2811219d9ce64a8c8ab41115" }
+source = { editable = "../../packages/reflex-components-react-player" }
 dependencies = [
     { name = "reflex-components-core" },
 ]
 
+[package.metadata]
+requires-dist = [{ name = "reflex-components-core", editable = "../../packages/reflex-components-core" }]
+
 [[package]]
 name = "reflex-components-recharts"
-version = "0.9.0a1.post10.dev0+db613921"
-source = { git = "https://github.com/reflex-dev/reflex?subdirectory=packages%2Freflex-components-recharts&rev=main#db6139219978014d2811219d9ce64a8c8ab41115" }
+source = { editable = "../../packages/reflex-components-recharts" }
 
 [[package]]
 name = "reflex-components-sonner"
-version = "0.9.0a1.post10.dev0+db613921"
-source = { git = "https://github.com/reflex-dev/reflex?subdirectory=packages%2Freflex-components-sonner&rev=main#db6139219978014d2811219d9ce64a8c8ab41115" }
+source = { editable = "../../packages/reflex-components-sonner" }
 dependencies = [
     { name = "reflex-components-lucide" },
 ]
 
+[package.metadata]
+requires-dist = [{ name = "reflex-components-lucide", editable = "../../packages/reflex-components-lucide" }]
+
 [[package]]
 name = "reflex-docgen"
-version = "0.9.0a1.post10.dev0+db613921"
-source = { git = "https://github.com/reflex-dev/reflex?subdirectory=packages%2Freflex-docgen&rev=main#db6139219978014d2811219d9ce64a8c8ab41115" }
+source = { editable = "../../packages/reflex-docgen" }
 dependencies = [
     { name = "griffelib" },
     { name = "mistletoe" },
@@ -2676,6 +2784,16 @@ dependencies = [
     { name = "reflex" },
     { name = "typing-extensions" },
     { name = "typing-inspection" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "griffelib", specifier = ">=2.0.1" },
+    { name = "mistletoe", specifier = ">=1.4.0" },
+    { name = "pyyaml", specifier = ">=6.0" },
+    { name = "reflex", editable = "../../" },
+    { name = "typing-extensions" },
+    { name = "typing-inspection", specifier = ">=0.4.2" },
 ]
 
 [[package]]
@@ -2734,14 +2852,14 @@ requires-dist = [
     { name = "plotly-express" },
     { name = "psycopg", extras = ["binary"] },
     { name = "python-frontmatter" },
-    { name = "reflex", git = "https://github.com/reflex-dev/reflex?rev=main" },
-    { name = "reflex-docgen", git = "https://github.com/reflex-dev/reflex?subdirectory=packages%2Freflex-docgen&rev=main" },
+    { name = "reflex", editable = "../../" },
+    { name = "reflex-docgen", editable = "../../packages/reflex-docgen" },
     { name = "reflex-enterprise" },
     { name = "reflex-hosting-cli" },
-    { name = "reflex-integrations-docs", git = "https://github.com/reflex-dev/integrations-docs?rev=main" },
+    { name = "reflex-integrations-docs", editable = "../../packages/integrations-docs" },
     { name = "reflex-pyplot" },
-    { name = "reflex-ui", git = "https://github.com/reflex-dev/reflex-ui?rev=main" },
-    { name = "reflex-ui-shared", git = "https://github.com/reflex-dev/reflex-ui?subdirectory=shared&rev=main" },
+    { name = "reflex-ui", editable = "../../packages/reflex-ui" },
+    { name = "reflex-ui-shared", editable = "../../packages/reflex-ui-shared" },
     { name = "requests" },
     { name = "ruff-format" },
     { name = "sqlalchemy" },
@@ -2793,8 +2911,7 @@ wheels = [
 
 [[package]]
 name = "reflex-integrations-docs"
-version = "0.0.1"
-source = { git = "https://github.com/reflex-dev/integrations-docs?rev=main#5fa42c0e98aeb136efeffa04e88a3e44888c1761" }
+source = { editable = "../../packages/integrations-docs" }
 
 [[package]]
 name = "reflex-pyplot"
@@ -2810,23 +2927,30 @@ wheels = [
 
 [[package]]
 name = "reflex-ui"
-version = "0.0.1"
-source = { git = "https://github.com/reflex-dev/reflex-ui?rev=main#9736a6418801d8e4e9fddfb6f7eb7cb0f24a7b5d" }
+source = { editable = "../../packages/reflex-ui" }
 dependencies = [
-    { name = "reflex" },
+    { name = "reflex-base" },
+    { name = "reflex-components-core" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "reflex-base", editable = "../../packages/reflex-base" },
+    { name = "reflex-components-core", editable = "../../packages/reflex-components-core" },
 ]
 
 [[package]]
 name = "reflex-ui-shared"
-version = "0.0.1"
-source = { git = "https://github.com/reflex-dev/reflex-ui?subdirectory=shared&rev=main#9736a6418801d8e4e9fddfb6f7eb7cb0f24a7b5d" }
+source = { editable = "../../packages/reflex-ui-shared" }
 dependencies = [
-    { name = "email-validator" },
-    { name = "flexdown" },
-    { name = "httpx" },
-    { name = "mistletoe" },
-    { name = "reflex" },
-    { name = "ruff-format" },
+    { name = "reflex-base" },
+    { name = "reflex-components-core" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "reflex-base", editable = "../../packages/reflex-base" },
+    { name = "reflex-components-core", editable = "../../packages/reflex-components-core" },
 ]
 
 [[package]]
