@@ -167,7 +167,7 @@ _ALL_COMPONENTS_MAPPING: dict[str, list[str]] = {
 }
 
 _COMPONENT_NAME_TO_PATH: dict[str, str] = {
-    comp: path + "." + comp
+    lazy_loader.comp_alias(comp): lazy_loader.comp_path(path, comp)
     for path, comps in _ALL_COMPONENTS_MAPPING.items()
     for comp in comps
 } | {
