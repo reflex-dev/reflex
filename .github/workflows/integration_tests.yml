@@ -146,55 +146,10 @@ jobs:
         with:
           node-version: 22
 
-      # Build git+https deps as wheels outside sfw (avoids sfw MITM cert issues
-      # with git), then install everything else through sfw for scanning.
-      # TODO: revisit when https://github.com/SocketDev/sfw-free/issues/30 is resolved.
-      - name: Pre-install git dependencies (outside sfw)
-        run: |
-          # Install git+https deps directly without sfw to avoid MITM cert issues.
-          # Their transitive registry deps will still be scanned by sfw uv sync.
-          grep -oP 'git\+https://[^"]+' uv.lock | sort -u > "$RUNNER_TEMP/git-deps.txt" || true
-          if [ -s "$RUNNER_TEMP/git-deps.txt" ]; then
-            echo "Installing git dependencies:"
-            cat "$RUNNER_TEMP/git-deps.txt"
-            uv pip install --no-deps -r "$RUNNER_TEMP/git-deps.txt"
-          else
-            echo "No git dependencies found."
-          fi
-      - name: Install Dependencies (scanned by Socket.dev)
-        run: sfw uv sync
-
-      # TODO: revisit when https://github.com/SocketDev/sfw-free/issues/30 is resolved.
       - name: Pre-install reflex-docs git dependencies (outside sfw)
         working-directory: ./docs/app
-        run: |
-          # Replace reflex-dev/reflex git deps with plain package names (PR version is pre-installed)
-          sed -i -E 's|"([a-zA-Z0-9_-]+)\s*@\s*git\+https://github\.com/reflex-dev/reflex@[^"]*"|"\1"|g' pyproject.toml
-          # Install git+https deps from pyproject.toml before pip compile resolves them.
-          # Exclude reflex itself — the PR version is already installed.
-          grep -oP 'git\+https://[^"'"'"']+' pyproject.toml | sort -u > git-requirements.txt || true
-          if [ -s git-requirements.txt ]; then
-            echo "Installing git dependencies:"
-            cat git-requirements.txt
-            uv pip install --no-deps -r git-requirements.txt
-          fi
-      - name: Compile and install reflex-docs requirements (scanned by Socket.dev)
-        working-directory: ./docs/app
-        run: |
-          sfw uv pip compile pyproject.toml --no-annotate --no-header --no-deps --output-file requirements.txt
-          uv pip list --format=json | jq -r '"^" + .[].name + "[ =]"' > installed_patterns.txt
-          grep -ivf installed_patterns.txt requirements.txt > requirements.txt.tmp && mv requirements.txt.tmp requirements.txt
-          rm installed_patterns.txt
-          if [ -s requirements.txt ]; then
-            sfw uv pip install -r requirements.txt
-          fi
-      - name: Verify installed reflex version matches this checkout
-        run: |
-          expected_sha="$(git rev-parse --short=8 HEAD)"
-          installed_version="$(uv run --active --no-sync python -c 'import importlib.metadata as metadata; print(metadata.version("reflex"))')"
-          echo "Expected checkout SHA: $expected_sha"
-          echo "Installed reflex version: $installed_version"
-          [[ "$installed_version" == *"+$expected_sha" ]]
+        run: sfw uv sync
+
       - name: Init Website for reflex-docs
         working-directory: ./docs/app
         run: uv run --active --no-sync reflex init
@@ -259,18 +214,9 @@ jobs:
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: ${{ matrix.python-version }}
-          run-uv-sync: true
-
-      - name: Install reflex-docs dependencies
-        working-directory: ./docs/app
-        run: |
-          uv pip compile pyproject.toml --no-annotate --no-header --no-deps --output-file requirements.txt
-          uv pip list --format=json | jq -r '"^" + .[].name + "[ =]"' > installed_patterns.txt
-          grep -ivf installed_patterns.txt requirements.txt > requirements.txt.tmp && mv requirements.txt.tmp requirements.txt
-          rm installed_patterns.txt
       - name: Install Requirements for reflex-docs
         working-directory: ./docs/app
-        run: uv pip install -r requirements.txt
+        run: uv sync
       - name: Init Website for reflex-docs
         working-directory: ./docs/app
         run: uv run --active --no-sync reflex init
