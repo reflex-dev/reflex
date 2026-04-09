@@ -1097,8 +1097,8 @@ async def test_upload_file_keeps_form_open_until_stream_completes(
     assert not bio1.closed
     assert not bio2.closed
 
-    # Drive the response through the full ASGI lifecycle so that
-    # _UploadStreamingResponse.__call__ invokes the on_finish callback.
+    # Drive the response through the full ASGI lifecycle so the streaming
+    # response invokes the on_finish callback.
     scope = {"type": "http"}
     done = asyncio.Event()
 
@@ -1308,14 +1308,8 @@ async def test_upload_file_closes_form_if_response_cancelled_before_stream_start
 
 
 @pytest.mark.asyncio
-async def test_upload_file_cancels_buffered_handler_on_disconnect_before_future_capture(
-    token: str,
-):
-    """Buffered uploads cancel the handler even if disconnect wins the race.
-
-    This exercises the ASGI 2.4 path where the response must watch
-    ``receive()`` directly because Starlette does not listen for disconnects
-    while streaming the response body.
+async def test_upload_file_cancels_buffered_handler_on_disconnect(token: str):
+    """Buffered uploads cancel the streaming handler on client disconnect.
 
     Args:
         token: A token.
@@ -1338,17 +1332,16 @@ async def test_upload_file_cancels_buffered_handler_on_disconnect_before_future_
 
     request_mock.form = form
 
-    cancelled = asyncio.Event()
-    task_future = Mock()
-    task_future.done = Mock(side_effect=cancelled.is_set)
-    task_future.cancel = Mock(side_effect=cancelled.set)
+    stream_started = asyncio.Event()
+    stream_closed = asyncio.Event()
 
-    async def enqueue_stream_delta(_token, _event, on_task_future=None):
-        assert on_task_future is not None
-        on_task_future(task_future)
-        await cancelled.wait()
-        if False:  # pragma: no cover
-            yield {}
+    async def enqueue_stream_delta(_token, _event):
+        try:
+            stream_started.set()
+            yield {"state": {"ok": True}}
+            await asyncio.Event().wait()
+        finally:
+            stream_closed.set()
 
     app = Mock(
         event_processor=Mock(enqueue_stream_delta=enqueue_stream_delta),
@@ -1360,7 +1353,7 @@ async def test_upload_file_cancels_buffered_handler_on_disconnect_before_future_
     assert isinstance(streaming_response, StreamingResponse)
 
     async def receive():
-        await asyncio.sleep(0)
+        await stream_started.wait()
         return {"type": "http.disconnect"}
 
     async def send(_message):  # noqa: RUF029
@@ -1375,19 +1368,16 @@ async def test_upload_file_cancels_buffered_handler_on_disconnect_before_future_
         timeout=1,
     )
 
-    assert task_future.cancel.call_count == 1
+    await asyncio.wait_for(stream_closed.wait(), timeout=1)
     assert form_close.await_count == 1
     assert bio.closed
 
 
 @pytest.mark.asyncio
-async def test_upload_file_skips_buffered_handler_when_disconnect_detected_on_probe(
+async def test_upload_file_raises_client_disconnect_when_stream_send_fails(
     token: str,
 ):
-    """Buffered uploads skip handler dispatch when the probe send disconnects.
-
-    This models ASGI 2.4+ behavior where the upload request can finish parsing,
-    but the client disconnect is only surfaced on the first response-body send.
+    """Buffered uploads close the handler stream when send raises OSError.
 
     Args:
         token: A token.
@@ -1410,10 +1400,15 @@ async def test_upload_file_skips_buffered_handler_when_disconnect_detected_on_pr
 
     request_mock.form = form
 
-    msg = "upload handler should not be enqueued"
-    probe_chunk = b"\n"
-    asgi_24_scope = {"type": "http", "asgi": {"spec_version": "2.4"}}
-    enqueue_stream_delta = Mock(side_effect=AssertionError(msg))
+    stream_closed = asyncio.Event()
+
+    async def enqueue_stream_delta(_token, _event):
+        try:
+            yield {"state": {"ok": True}}
+            await asyncio.Event().wait()
+        finally:
+            stream_closed.set()
+
     app = Mock(
         event_processor=Mock(enqueue_stream_delta=enqueue_stream_delta),
     )
@@ -1423,27 +1418,25 @@ async def test_upload_file_skips_buffered_handler_when_disconnect_detected_on_pr
 
     assert isinstance(streaming_response, StreamingResponse)
 
-    async def receive():
-        await asyncio.sleep(0)
-        return {"type": "http.disconnect"}
+    async def receive() -> dict[str, Any]:
+        await asyncio.Event().wait()
+        msg = "receive should not return"
+        raise AssertionError(msg)
 
     async def send(message):
         await asyncio.sleep(0)
-        if (
-            message.get("type") == "http.response.body"
-            and message.get("body") == probe_chunk
-        ):
+        if message.get("type") == "http.response.body":
             err = "client disconnected"
             raise OSError(err)
 
     with pytest.raises(ClientDisconnect):
         await streaming_response(
-            asgi_24_scope,
+            {"type": "http", "asgi": {"spec_version": "2.4"}},
             receive,
             send,
         )
 
-    assert enqueue_stream_delta.call_count == 0
+    await asyncio.wait_for(stream_closed.wait(), timeout=1)
     assert form_close.await_count == 1
     assert bio.closed
 
