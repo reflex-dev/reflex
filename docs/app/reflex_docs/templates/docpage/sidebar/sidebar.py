@@ -133,7 +133,7 @@ def sidebar_leaf(
                         rx.flex(
                             rx.text(
                                 item.names,
-                                class_name="text-sm text-m-slate-7 hover:text-m-slate-11 dark:hover:text-m-slate-5 transition-color w-full font-[525]",
+                                class_name="text-sm text-secondary-11 hover:text-secondary-12 transition-color w-full font-[525]",
                             ),
                             class_name="border-l-[1.5px] border-m-slate-4 dark:border-m-slate-9 hover:border-m-slate-8 dark:hover:border-m-slate-5 pl-4 h-8 flex items-center",
                         ),
@@ -325,7 +325,7 @@ def sidebar_category(name: str, url: str, icon: str, index: int):
                         ),
                     ),
                     class_name=ui.cn(
-                        "flex flex-row justify-start items-center gap-2.5 w-full text-sm text-m-slate-7 hover:text-primary-10 dark:hover:text-primary-9 h-8",
+                        "flex flex-row justify-start items-center gap-2.5 w-full text-sm text-secondary-11 hover:text-secondary-12 h-8",
                         rx.cond(
                             SidebarState.sidebar_index == index,
                             "text-primary-10 dark:text-primary-9",
