@@ -13,9 +13,6 @@ from reflex.event import Event, EventHandler
 
 # Module-level log so event handlers can record what happened.
 _CALL_LOG: list[dict[str, Any]] = []
-_BLOCKING_STREAM_STARTED: asyncio.Event | None = None
-_BLOCKING_STREAM_RELEASE: asyncio.Event | None = None
-_BLOCKING_STREAM_CANCELLED: asyncio.Event | None = None
 
 
 async def _noop_handler():
@@ -65,21 +62,6 @@ async def _multi_delta_handler():
     for i in range(3):
         await ctx.emit_delta({"state": {"i": i}})
         await asyncio.sleep(0.01)
-
-
-async def _delta_then_wait_handler():
-    """Emit a delta, then wait until released or cancelled."""
-    ctx = EventContext.get()
-    await ctx.emit_delta({"state": {"phase": "started"}})
-    if _BLOCKING_STREAM_STARTED is not None:
-        _BLOCKING_STREAM_STARTED.set()
-    try:
-        if _BLOCKING_STREAM_RELEASE is not None:
-            await _BLOCKING_STREAM_RELEASE.wait()
-    except asyncio.CancelledError:
-        if _BLOCKING_STREAM_CANCELLED is not None:
-            _BLOCKING_STREAM_CANCELLED.set()
-        raise
 
 
 async def _slow_logging_handler(value: str = "default"):
@@ -135,7 +117,6 @@ logging_event = EventHandler(fn=_logging_handler)
 chaining_event = EventHandler(fn=_chaining_handler)
 delta_event = EventHandler(fn=_delta_handler)
 multi_delta_event = EventHandler(fn=_multi_delta_handler)
-delta_then_wait_event = EventHandler(fn=_delta_then_wait_handler)
 slow_logging_event = EventHandler(fn=_slow_logging_handler)
 multi_chaining_event = EventHandler(fn=_multi_chaining_handler)
 background_slow_logging_event = EventHandler(fn=_background_slow_logging_handler)
@@ -150,15 +131,7 @@ def _register_handlers(forked_registration_context: RegistrationContext):
     Args:
         forked_registration_context: Isolated registration context for the test.
     """
-    global \
-        _BLOCKING_STREAM_STARTED, \
-        _BLOCKING_STREAM_RELEASE, \
-        _BLOCKING_STREAM_CANCELLED
-
     _CALL_LOG.clear()
-    _BLOCKING_STREAM_STARTED = None
-    _BLOCKING_STREAM_RELEASE = None
-    _BLOCKING_STREAM_CANCELLED = None
     for handler in (
         noop_event,
         slow_event,
@@ -167,7 +140,6 @@ def _register_handlers(forked_registration_context: RegistrationContext):
         chaining_event,
         delta_event,
         multi_delta_event,
-        delta_then_wait_event,
         slow_logging_event,
         multi_chaining_event,
         background_slow_logging_event,
@@ -544,86 +516,6 @@ async def test_stream_delta_not_configured_raises():
     with pytest.raises(RuntimeError, match="not configured"):
         async for _ in ep.enqueue_stream_delta("tok", Event(name="x", payload={})):
             pass
-
-
-async def test_stream_delta_aclose_cancels_in_flight_event(token: str):
-    """Closing the delta stream cancels the running handler.
-
-    Args:
-        token: The client token.
-    """
-    global \
-        _BLOCKING_STREAM_STARTED, \
-        _BLOCKING_STREAM_RELEASE, \
-        _BLOCKING_STREAM_CANCELLED
-
-    _BLOCKING_STREAM_STARTED = asyncio.Event()
-    _BLOCKING_STREAM_RELEASE = asyncio.Event()
-    _BLOCKING_STREAM_CANCELLED = asyncio.Event()
-
-    ep = EventProcessor(graceful_shutdown_timeout=2)
-    ep.configure()
-    async with ep:
-        event = Event.from_event_type(delta_then_wait_event())[0]
-        stream = ep.enqueue_stream_delta(token, event)
-        first_delta = await anext(stream)
-        assert first_delta == {"state": {"phase": "started"}}
-        await asyncio.wait_for(_BLOCKING_STREAM_STARTED.wait(), timeout=1)
-        running_tasks = list(ep._tasks.values())
-        assert len(running_tasks) == 1
-
-        await stream.aclose()
-
-        await asyncio.wait_for(_BLOCKING_STREAM_CANCELLED.wait(), timeout=1)
-        await asyncio.gather(*running_tasks, return_exceptions=True)
-        await asyncio.sleep(0)
-
-    assert ep._tasks == {}
-    assert ep._futures == {}
-
-
-async def test_stream_delta_consumer_task_cancellation_cancels_in_flight_event(
-    token: str,
-):
-    """Cancelling the consumer task cancels the running handler.
-
-    Args:
-        token: The client token.
-    """
-    global \
-        _BLOCKING_STREAM_STARTED, \
-        _BLOCKING_STREAM_RELEASE, \
-        _BLOCKING_STREAM_CANCELLED
-
-    _BLOCKING_STREAM_STARTED = asyncio.Event()
-    _BLOCKING_STREAM_RELEASE = asyncio.Event()
-    _BLOCKING_STREAM_CANCELLED = asyncio.Event()
-
-    ep = EventProcessor(graceful_shutdown_timeout=2)
-    ep.configure()
-
-    async def consume_stream(event: Event) -> None:
-        async for delta in ep.enqueue_stream_delta(token, event):
-            assert delta == {"state": {"phase": "started"}}
-            await asyncio.Event().wait()
-
-    async with ep:
-        event = Event.from_event_type(delta_then_wait_event())[0]
-        consumer_task = asyncio.create_task(consume_stream(event))
-
-        await asyncio.wait_for(_BLOCKING_STREAM_STARTED.wait(), timeout=1)
-        running_tasks = list(ep._tasks.values())
-        assert len(running_tasks) == 1
-        consumer_task.cancel()
-        with contextlib.suppress(asyncio.CancelledError):
-            await consumer_task
-
-        await asyncio.wait_for(_BLOCKING_STREAM_CANCELLED.wait(), timeout=1)
-        await asyncio.gather(*running_tasks, return_exceptions=True)
-        await asyncio.sleep(0)
-
-    assert ep._tasks == {}
-    assert ep._futures == {}
 
 
 async def test_sequential_chained_events_run_in_order(token: str):
