@@ -3,6 +3,7 @@
 from reflex_ui.blocks.telemetry import (
     get_default_telemetry_script,
     get_google_analytics_trackers,
+    get_posthog_trackers,
     get_unify_trackers,
     gtag_report_conversion,
 )
@@ -23,4 +24,7 @@ def get_pixel_website_trackers() -> list[rx.Component]:
         ),
         get_unify_trackers(),
         get_default_telemetry_script(),
+        get_posthog_trackers(
+            project_id="phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb"
+        ),
     ]
