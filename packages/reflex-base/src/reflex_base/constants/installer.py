@@ -143,7 +143,6 @@ class PackageJson(SimpleNamespace):
             "react-router": cls._react_router_version,
             "react-router-dom": cls._react_router_version,
             "@react-router/node": cls._react_router_version,
-            "sirv-cli": "3.0.1",
             "react": cls._react_version,
             "react-helmet": "6.1.0",
             "react-dom": cls._react_version,

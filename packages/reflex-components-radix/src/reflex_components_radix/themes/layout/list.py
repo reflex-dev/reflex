@@ -189,7 +189,7 @@ class List(ComponentNamespace):
     __call__ = staticmethod(BaseList.create)
 
 
-list = list_ns = List()
+list_ns = List()
 list_item = list_ns.item
 ordered_list = list_ns.ordered
 unordered_list = list_ns.unordered

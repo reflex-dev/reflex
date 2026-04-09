@@ -202,6 +202,22 @@ class Env(str, Enum):
     PROD = "prod"
 
 
+class RunningMode(str, Enum):
+    """The running modes."""
+
+    FRONTEND_ONLY = "frontend-only"
+    BACKEND_ONLY = "backend-only"
+    FULLSTACK = "fullstack"
+
+    def has_frontend(self) -> bool:
+        """Return whether the running mode includes the frontend."""
+        return self in (RunningMode.FRONTEND_ONLY, RunningMode.FULLSTACK)
+
+    def has_backend(self) -> bool:
+        """Return whether the running mode includes the backend."""
+        return self in (RunningMode.BACKEND_ONLY, RunningMode.FULLSTACK)
+
+
 # Log levels
 class LogLevel(str, Enum):
     """The log levels."""

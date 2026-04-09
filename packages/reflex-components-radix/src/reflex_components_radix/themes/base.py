@@ -148,8 +148,8 @@ class RadixThemesTriggerComponent(RadixThemesComponent):
         """Create a new RadixThemesTriggerComponent instance.
 
         Args:
-            children: The children of the component.
-            props: The properties of the component.
+            *children: The children of the component.
+            **props: The properties of the component.
 
         Returns:
             The new RadixThemesTriggerComponent instance.

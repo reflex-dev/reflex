@@ -1,8 +1,6 @@
 """This module provides utilities for managing JavaScript runtimes like Node.js and Bun."""
 
 import functools
-import hashlib
-import json
 import os
 import tempfile
 from collections.abc import Sequence
@@ -12,11 +10,7 @@ from packaging import version
 from reflex_base import constants
 from reflex_base.config import Config, get_config
 from reflex_base.environment import environment
-from reflex_base.utils.decorator import (
-    once,
-    read_cached_procedure_file,
-    write_cached_procedure_file,
-)
+from reflex_base.utils.decorator import cached_procedure, once
 from reflex_base.utils.exceptions import SystemPackageMissingError
 
 from reflex.utils import console, frontend_skeleton, net, path_ops, processes
@@ -368,122 +362,50 @@ def _frontend_packages_cache_path() -> Path:
     return get_web_dir() / "reflex.install_frontend_packages.cached"
 
 
-def _get_bun_lock_cache_key() -> str:
-    """Get a stable cache key for the canonical bun lockfile state.
-
-    Returns:
-        A stable cache key for the canonical bun lockfile state.
-    """
+def _sync_root_bun_lock_for_frontend_install():
+    """Sync the canonical bun.lock into .web and invalidate the install cache when needed."""
     root_bun_lock_path = frontend_skeleton.get_root_bun_lock_path()
+    web_bun_lock_path = frontend_skeleton.get_web_bun_lock_path()
+    cache_file = _frontend_packages_cache_path()
+
     if not root_bun_lock_path.exists():
-        return "missing"
+        if web_bun_lock_path.exists():
+            frontend_skeleton.sync_root_bun_lock_to_web()
+            if cache_file.exists():
+                path_ops.rm(cache_file)
+        return
 
-    return hashlib.sha256(root_bun_lock_path.read_bytes()).hexdigest()
+    if not web_bun_lock_path.exists():
+        frontend_skeleton.sync_root_bun_lock_to_web()
+        return
+
+    if web_bun_lock_path.read_bytes() != root_bun_lock_path.read_bytes():
+        frontend_skeleton.sync_root_bun_lock_to_web()
+        if cache_file.exists():
+            path_ops.rm(cache_file)
 
 
-def _get_frontend_packages_cache_payload(
-    *,
+@cached_procedure(
+    cache_file_path=_frontend_packages_cache_path,
+    payload_fn=lambda packages, config, install_package_managers: (
+        f"{sorted(packages)!r},{config.json()},{list(install_package_managers)!r}"
+    ),
+)
+def _install_frontend_packages(
     packages: set[str],
-    development_deps: set[str],
     config: Config,
-    package_managers: Sequence[str],
-) -> str:
-    """Get the cache payload for frontend package installs.
-
-    Returns:
-        The cache payload for frontend package installs.
-    """
-    return (
-        f"{sorted(packages)!r},"
-        f"{sorted(development_deps)!r},"
-        f"{config.json()},"
-        f"{list(package_managers)!r},"
-        f"{_get_current_extra_package_specs()!r},"
-        f"{_get_bun_lock_cache_key()}"
-    )
-
-
-def _get_package_name_from_spec(spec: str) -> str:
-    """Extract the package name from a dependency spec.
-
-    Returns:
-        The package name extracted from the dependency spec.
-    """
-    if "@" not in spec:
-        return spec
-    if spec.startswith("@"):
-        name, separator, _ = spec.rpartition("@")
-        return name if separator and "/" in name else spec
-    return spec.rpartition("@")[0]
-
-
-def _get_current_extra_package_specs() -> tuple[tuple[str, ...], tuple[str, ...]]:
-    """Get currently installed non-base deps and dev deps from .web/package.json.
-
-    Returns:
-        The currently installed non-base dependencies and development
-        dependencies from `.web/package.json`.
-    """
-    package_json_path = get_web_dir() / constants.PackageJson.PATH
-    if not package_json_path.exists():
-        return ((), ())
-
-    package_json = json.loads(package_json_path.read_text())
-    dependencies = package_json.get("dependencies", {})
-    dev_dependencies = package_json.get("devDependencies", {})
-
-    extra_dependencies = sorted(
-        set(dependencies) - set(constants.PackageJson.DEPENDENCIES)
-    )
-    extra_dev_dependencies = sorted(
-        set(dev_dependencies) - set(constants.PackageJson.DEV_DEPENDENCIES)
-    )
-    return (tuple(extra_dependencies), tuple(extra_dev_dependencies))
-
-
-def install_frontend_packages(packages: set[str], config: Config):
+    install_package_managers: Sequence[str],
+):
     """Installs the base and custom frontend packages.
 
     Args:
         packages: A list of package names to be installed.
         config: The config object.
+        install_package_managers: The package managers available for install.
 
     Example:
         >>> install_frontend_packages(["react", "react-dom"], get_config())
     """
-    packages = set(packages)
-    development_deps: set[str] = set()
-    for plugin in config.plugins:
-        development_deps.update(plugin.get_frontend_development_dependencies())
-        packages.update(plugin.get_frontend_dependencies())
-
-    desired_package_names = {
-        _get_package_name_from_spec(package) for package in packages
-    }
-    desired_development_dep_names = {
-        _get_package_name_from_spec(package) for package in development_deps
-    }
-
-    install_package_managers = get_nodejs_compatible_package_managers(
-        raise_on_none=True
-    )
-
-    cache_payload = _get_frontend_packages_cache_payload(
-        packages=packages,
-        development_deps=development_deps,
-        config=config,
-        package_managers=install_package_managers,
-    )
-    # Keep `.web/bun.lock` aligned with the canonical root lock, and clean up stale
-    # mirrored state for npm-only runs where no root bun.lock exists.
-    frontend_skeleton.sync_root_bun_lock_to_web()
-    cached_payload, _ = read_cached_procedure_file(_frontend_packages_cache_path())
-    if cached_payload == cache_payload:
-        console.debug(
-            f"Using cached value for install_frontend_packages with payload: {cache_payload}"
-        )
-        return
-
     env = (
         {
             "NODE_TLS_REJECT_UNAUTHORIZED": "0",
@@ -504,21 +426,15 @@ def install_frontend_packages(packages: set[str], config: Config):
         env=env,
     )
 
-    extra_dependencies, extra_dev_dependencies = _get_current_extra_package_specs()
-    packages_to_remove = sorted(
-        (set(extra_dependencies) - desired_package_names)
-        | (set(extra_dev_dependencies) - desired_development_dep_names)
-    )
-    if packages_to_remove:
-        run_package_manager(
-            [primary_package_manager, "remove", *packages_to_remove],
-            show_status_message="Removing stale frontend packages",
-        )
-
     run_package_manager(
         [primary_package_manager, "install", "--legacy-peer-deps"],
         show_status_message="Installing base frontend packages",
     )
+
+    development_deps: set[str] = set()
+    for plugin in config.plugins:
+        development_deps.update(plugin.get_frontend_development_dependencies())
+        packages.update(plugin.get_frontend_dependencies())
 
     if development_deps:
         run_package_manager(
@@ -539,14 +455,12 @@ def install_frontend_packages(packages: set[str], config: Config):
             show_status_message="Installing frontend packages from config and components",
         )
 
-    frontend_skeleton.sync_web_bun_lock_to_root()
-    write_cached_procedure_file(
-        _get_frontend_packages_cache_payload(
-            packages=packages,
-            development_deps=development_deps,
-            config=config,
-            package_managers=install_package_managers,
-        ),
-        _frontend_packages_cache_path(),
-        None,
+
+def install_frontend_packages(packages: set[str], config: Config):
+    """Install frontend packages while respecting the canonical root bun.lock."""
+    install_package_managers = tuple(
+        get_nodejs_compatible_package_managers(raise_on_none=True)
     )
+    _sync_root_bun_lock_for_frontend_install()
+    _install_frontend_packages(set(packages), config, install_package_managers)
+    frontend_skeleton.sync_web_bun_lock_to_root()

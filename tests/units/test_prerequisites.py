@@ -1,4 +1,3 @@
-import json
 import shutil
 import tempfile
 from pathlib import Path
@@ -8,17 +7,12 @@ from click.testing import CliRunner
 from reflex_base import constants
 from reflex_base.config import Config
 from reflex_base.constants.installer import PackageJson
-from reflex_base.utils.decorator import (
-    cached_procedure,
-    read_cached_procedure_file,
-    write_cached_procedure_file,
-)
+from reflex_base.utils.decorator import cached_procedure
 
 from reflex.reflex import cli
 from reflex.testing import chdir
 from reflex.utils import frontend_skeleton, js_runtimes
 from reflex.utils.frontend_skeleton import (
-    _compile_package_json,
     _compile_vite_config,
     _update_react_router_config,
 )
@@ -137,29 +131,6 @@ def test_initialise_vite_config(config, expected_output):
 )
 def test_get_prod_command(frontend_path, expected_command):
     assert PackageJson.Commands.get_prod_command(frontend_path) == expected_command
-
-
-@pytest.mark.parametrize(
-    ("config", "expected_prod_script"),
-    [
-        (
-            Config(app_name="test"),
-            "sirv ./build/client --single 404.html --host",
-        ),
-        (
-            Config(app_name="test", frontend_path="/app"),
-            "sirv ./build/client --single app/404.html --host",
-        ),
-        (
-            Config(app_name="test", frontend_path="/deep/nested"),
-            "sirv ./build/client --single deep/nested/404.html --host",
-        ),
-    ],
-)
-def test_compile_package_json_prod_command(config, expected_prod_script, monkeypatch):
-    monkeypatch.setattr("reflex.utils.frontend_skeleton.get_config", lambda: config)
-    output = _compile_package_json()
-    assert f'"prod": "{expected_prod_script}"' in output
 
 
 def test_initialize_web_directory_restores_root_bun_lock(tmp_path, monkeypatch):
@@ -323,44 +294,6 @@ def test_install_frontend_packages_npm_does_not_create_bogus_bun_lock(
     assert not web_bun_lock_path.exists()
 
 
-def test_install_frontend_packages_removes_stale_custom_package(tmp_path, monkeypatch):
-    web_dir = tmp_path / constants.Dirs.WEB
-    web_dir.mkdir()
-    root_bun_lock_path = tmp_path / constants.Bun.LOCKFILE_PATH
-    web_bun_lock_path = web_dir / constants.Bun.LOCKFILE_PATH
-    package_json_path = web_dir / constants.PackageJson.PATH
-    package_json = {
-        "dependencies": {
-            **constants.PackageJson.DEPENDENCIES,
-            "dayjs": "^1.11.20",
-        },
-        "devDependencies": constants.PackageJson.DEV_DEPENDENCIES,
-    }
-    package_json_path.write_text(json.dumps(package_json))
-    root_bun_lock_path.write_text("lock-before")
-    commands: list[list[str]] = []
-
-    def run_package_manager(args, **kwargs):
-        commands.append(args)
-        if args[1] == "remove":
-            package_json = json.loads(package_json_path.read_text())
-            package_json["dependencies"].pop("dayjs", None)
-            package_json_path.write_text(json.dumps(package_json))
-            web_bun_lock_path.write_text("lock-after-remove")
-        elif args[1] == "install":
-            web_bun_lock_path.write_text("lock-after-install")
-
-    _patch_web_dir(monkeypatch, web_dir)
-    _patch_frontend_package_manager(monkeypatch, ["bun"], run_package_manager)
-
-    with chdir(tmp_path):
-        js_runtimes.install_frontend_packages(set(), Config(app_name="test"))
-
-    assert commands[0] == ["bun", "remove", "dayjs"]
-    assert "dayjs" not in json.loads(package_json_path.read_text())["dependencies"]
-    assert root_bun_lock_path.read_text() == "lock-after-install"
-
-
 def test_install_frontend_packages_cache_hit_refreshes_web_bun_lock(
     tmp_path, monkeypatch
 ):
@@ -440,17 +373,6 @@ def test_cached_procedure():
     assert call_count == 1
     _function_with_no_args_fn()
     assert call_count == 2
-
-
-def test_cached_procedure_file_helpers(tmp_path):
-    cache_file = tmp_path / "cache.bin"
-    cached_value = {"key": "value"}
-
-    write_cached_procedure_file("payload", cache_file, cached_value)
-    payload, value = read_cached_procedure_file(cache_file)
-
-    assert payload == "payload"
-    assert value == cached_value
 
 
 def test_get_cpu_info():

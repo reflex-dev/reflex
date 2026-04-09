@@ -1,8 +1,7 @@
-import reflex_ui as ui
-from reflex_ui_shared.constants import INTEGRATIONS_IMAGES_URL
-
 import reflex as rx
+import reflex_ui as ui
 from reflex.experimental import ClientStateVar
+from reflex_ui_shared.constants import INTEGRATIONS_IMAGES_URL
 
 from .integration_list import get_integration_path
 from .integration_request import request_integration_dialog

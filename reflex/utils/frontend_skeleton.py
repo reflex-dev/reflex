@@ -277,14 +277,10 @@ def _update_react_router_config(config: Config, prerender_routes: bool = False):
 
 
 def _compile_package_json():
-    config = get_config()
     return templates.package_json_template(
         scripts={
             "dev": constants.PackageJson.Commands.DEV,
             "export": constants.PackageJson.Commands.EXPORT,
-            "prod": constants.PackageJson.Commands.get_prod_command(
-                config.frontend_path
-            ),
         },
         dependencies=constants.PackageJson.DEPENDENCIES,
         dev_dependencies=constants.PackageJson.DEV_DEPENDENCIES,

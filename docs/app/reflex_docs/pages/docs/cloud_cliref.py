@@ -6,10 +6,10 @@ from importlib.util import find_spec
 from typing import Any, TypedDict
 
 import click
-from reflex_ui_shared.components.blocks.flexdown import markdown
-
 import reflex as rx
 from reflex.reflex import cli
+
+from reflex_docs.docgen_pipeline import render_markdown
 from reflex_docs.templates.docpage import docpage
 
 
@@ -344,7 +344,7 @@ for category, commands in categories.items():
 
 def generate_docs(source: str):
     return rx.box(
-        markdown(text=source),
+        render_markdown(text=source),
     )
 
 

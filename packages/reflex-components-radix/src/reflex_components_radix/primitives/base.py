@@ -43,8 +43,8 @@ class RadixPrimitiveTriggerComponent(RadixPrimitiveComponent):
         """Create a new RadixPrimitiveTriggerComponent instance.
 
         Args:
-            children: The children of the component.
-            props: The properties of the component.
+            *children: The children of the component.
+            **props: The properties of the component.
 
         Returns:
             The new RadixPrimitiveTriggerComponent instance.
