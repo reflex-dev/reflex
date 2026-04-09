@@ -17,7 +17,7 @@ These constraints MUST be followed when modifying this codebase:
 
 ## Stack
 
-FastAPI
+Reflex (Python full-stack web framework). FastAPI is used internally for the backend server layer; the public-facing API is the component/state system (`rx.Component`, `rx.State`).
 
 ## Core Modules (by structural importance)
 
@@ -29,18 +29,16 @@ FastAPI
 
 ## Conventions
 
-- **FastAPI:** FastAPI project. Use Pydantic models for request/response schemas, not raw dicts.
-- **Testing:** Uses pytest. Test files should be named `test_*.py` or `*_test.py`.
+- **Reflex conventions:** The primary abstraction is `rx.State` (for state + event handlers) and `rx.Component` (for UI). Avoid adding raw FastAPI routes; use Reflex's built-in state/event system instead.
+- **Testing:** Uses pytest. Test files should be named `test_*.py` or `*_test.py`. Tests live in a separate test/ directory. Test utilities in: tests/benchmarks/fixtures.py.
 - **Project structure:** This is a monorepo. Changes may affect multiple packages. Check workspace dependencies before modifying shared code.
-- **Testing:** Tests live in a separate test/ directory, mirroring src/ structure. New tests go there, not next to source files.
 - **Python conventions:** Uses __init__.py as barrel exports. Import from the package, not from internal modules.
-- **Dominant patterns:** Use @dataclass for data structures. This is the project's standard validation approach.
-- **Dominant patterns:** Tests use pytest. Test utilities in: tests/benchmarks/fixtures.py.
+- **Data structures:** Use @dataclass for data structures. This is the project's standard approach.
 
 ## Additional Context
 
 - Database access uses SQLAlchemy. Look for schemas in models/.
-- UI components live in: docs/app/assets/components. Add new components here.
+- UI components (library) live in `reflex/components/`. The docs site's UI assets live in `docs/app/assets/components` — do not add library components there.
 - Abandoned: "Expose docs through reflex docgen (#6257)" (28 files deleted including __init__.py, __init__.py, chat_tutorial_style.py)
 - Abandoned: "ENG-9032: move framework docs into framework repo (#6206)" (20 files deleted including README.md, README.md, dalle.gif)
 - Most active areas in the last 30 days: packages/ (844 changes), reflex/ (744 changes), docs/ (668 changes), tests/ (227 changes), .github/ (26 changes). Expect ongoing changes here.
