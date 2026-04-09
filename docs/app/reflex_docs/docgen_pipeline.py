@@ -79,6 +79,26 @@ def _make_module_name(filename: str) -> str:
     return f"{_PARENT_PKG}.{slug}"
 
 
+def _last_defined_name(content: str) -> str | None:
+    """Return the name of the last top-level definition in *content*.
+
+    Considers functions, async functions, and classes.
+
+    Args:
+        content: A string of Python source code.
+
+    Returns:
+        The name of the last top-level definition, or None if there are none.
+    """
+    import ast
+
+    last: str | None = None
+    for node in ast.parse(content).body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            last = node.name
+    return last
+
+
 def _exec_code(content: str, env: dict, filename: str) -> None:
     """Execute a ``python exec`` code block via an in-memory module.
 
@@ -381,15 +401,14 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
 
     def _exec_and_get_last_callable(self, content: str):
         """Run _exec_code and return the last callable defined by the block."""
-        keys_before = set(self.env.keys())
         _exec_code(content, self.env, self.virtual_filepath)
-        new_keys = [k for k in self.env if k not in keys_before]
-        if not new_keys:
-            msg = "Exec block defined nothing new"
+        last_name = _last_defined_name(content)
+        if last_name is None:
+            msg = "Exec block defines no function or class"
             raise RuntimeError(msg)
-        last = self.env[new_keys[-1]]
+        last = self.env[last_name]
         if not callable(last):
-            msg = f"Last defined name {new_keys[-1]!r} is not callable"
+            msg = f"Last defined name {last_name!r} is not callable"
             raise TypeError(msg)
         return last()
 
