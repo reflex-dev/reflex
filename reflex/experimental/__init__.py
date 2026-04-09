@@ -9,6 +9,7 @@ from reflex.utils.misc import run_in_thread
 
 from . import hooks as hooks
 from .client_state import ClientStateVar as ClientStateVar
+from .hybrid_property import hybrid_property as hybrid_property
 from .memo import memo as memo
 
 
@@ -61,4 +62,5 @@ _x = ExperimentalNamespace(
     hooks=hooks,
     code_block=code_block,
     memo=memo,
+    hybrid_property=hybrid_property,
 )
