@@ -9,7 +9,7 @@ from reflex_ui.components.component import CoreComponent
 class ClassNames:
     """Class names for textarea components."""
 
-    ROOT = "focus:shadow-[0px_0px_0px_2px_var(--primary-4)] focus:border-primary-7 focus:hover:border-primary-7 bg-secondary-1 border border-secondary-a4 hover:border-secondary-a6 transition-[color,box-shadow] disabled:border-secondary-4 disabled:bg-secondary-3 disabled:text-secondary-8 disabled:cursor-not-allowed cursor-text min-h-24 rounded-ui-md text-secondary-12 placeholder:text-secondary-9 text-sm disabled:placeholder:text-secondary-8 w-full outline-none max-h-[15rem] resize-none overflow-y-auto px-3 py-2.5 font-medium"
+    ROOT = "outline-none bg-white dark:bg-secondary-3 shrink-0 border border-secondary-4 hover:border-secondary-a6 transition-[color,box-shadow] focus:shadow-[0px_0px_0px_2px_var(--primary-4)] focus:border-primary-a6 not-data-[invalid]:focus:hover:border-primary-a6 shadow-[0_1px_2px_0_rgba(0,0,0,0.02),0_1px_4px_0_rgba(0,0,0,0.02)] dark:shadow-none dark:border-secondary-5 disabled:border-secondary-4 disabled:bg-secondary-3 disabled:text-secondary-8 disabled:placeholder:text-secondary-8 disabled:cursor-not-allowed cursor-text has-data-[invalid]:border-destructive-10 has-data-[invalid]:focus:border-destructive-a11 has-data-[invalid]:focus:shadow-[0px_0px_0px_2px_var(--destructive-4)] has-data-[invalid]:hover:border-destructive-a11 text-secondary-12 placeholder:text-secondary-10 text-sm leading-normal w-full font-medium min-h-24 max-h-[15rem] resize-none overflow-y-auto px-2.5 py-1.5 rounded-ui-md"
 
 
 class Textarea(TextareaComponent, CoreComponent):
