@@ -413,7 +413,7 @@ def run(
 
     if single_port:
         if env != constants.Env.PROD:
-            console.error("The --single-port option is only available in production.")
+            console.error("--single-port can only be used with --env=PROD.")
             raise SystemExit(1)
         if frontend_only or backend_only:
             console.error(

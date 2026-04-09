@@ -1168,7 +1168,6 @@ class App(MiddlewareMixin, LifespanMixin):
                 for route in stateful_pages:
                     console.debug(f"BE Evaluating stateful page: {route}")
                     self._compile_page(route, save_page=False)
-                    console.debug(f"BE Finished evaluating stateful page: {route}")
             self._add_optional_endpoints()
             return
 
