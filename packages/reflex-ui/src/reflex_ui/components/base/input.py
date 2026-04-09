@@ -1,6 +1,6 @@
 """Custom input component."""
 
-from typing import Literal
+from typing import ClassVar, Literal
 
 from reflex_components_core.el.elements.forms import Button
 from reflex_components_core.el.elements.forms import Input as ReflexInput
@@ -19,7 +19,7 @@ INPUT_SIZE_VARIANTS = {
     "xs": "px-1.5 h-7 rounded-ui-xs gap-1.5",
     "sm": "px-2 h-8 rounded-ui-sm gap-2",
     "md": "px-2.5 h-9 rounded-ui-md gap-2",
-    "lg": "px-3 h-10 rounded-lg gap-2.5",
+    "lg": "px-3 h-10 rounded-ui-lg gap-2.5",
     "xl": "px-3.5 h-12 rounded-ui-xl gap-3",
 }
 
@@ -36,8 +36,8 @@ DEFAULT_INPUT_ATTRS = {
 class ClassNames:
     """Class names for input components."""
 
-    INPUT = "outline-none bg-transparent text-secondary-12 placeholder:text-secondary-9 text-sm leading-normal peer disabled:text-secondary-8 disabled:placeholder:text-secondary-8 w-full data-[disabled]:pointer-events-none font-medium"
-    DIV = "flex flex-row items-center focus-within:shadow-[0px_0px_0px_2px_var(--primary-4)] focus-within:border-primary-a6 not-data-[invalid]:focus-within:hover:border-primary-a6 bg-secondary-1 shrink-0 border border-secondary-a4 hover:border-secondary-a6 transition-[color,box-shadow] text-secondary-9 [&_svg]:pointer-events-none has-data-[disabled]:border-secondary-4 has-data-[disabled]:bg-secondary-3 has-data-[disabled]:text-secondary-8 has-data-[disabled]:cursor-not-allowed cursor-text has-data-[invalid]:border-destructive-10 has-data-[invalid]:focus-within:border-destructive-a11 has-data-[invalid]:focus-within:shadow-[0px_0px_0px_2px_var(--destructive-4)] has-data-[invalid]:hover:border-destructive-a11"
+    INPUT = "outline-none bg-transparent text-secondary-12 placeholder:text-secondary-10 text-sm leading-normal peer disabled:text-secondary-8 disabled:placeholder:text-secondary-8 w-full data-[disabled]:pointer-events-none font-medium"
+    DIV = "flex flex-row items-center focus-within:shadow-[0px_0px_0px_2px_var(--primary-4)] focus-within:border-primary-a6 not-data-[invalid]:focus-within:hover:border-primary-a6 bg-white dark:bg-secondary-3 shrink-0 border border-secondary-4 hover:border-secondary-a6 transition-[color,box-shadow] text-secondary-9 [&_svg]:pointer-events-none has-data-[disabled]:border-secondary-4 has-data-[disabled]:bg-secondary-3 has-data-[disabled]:text-secondary-8 has-data-[disabled]:cursor-not-allowed cursor-text has-data-[invalid]:border-destructive-10 has-data-[invalid]:focus-within:border-destructive-a11 has-data-[invalid]:focus-within:shadow-[0px_0px_0px_2px_var(--destructive-4)] has-data-[invalid]:hover:border-destructive-a11 shadow-[0_1px_2px_0_rgba(0,0,0,0.02),0_1px_4px_0_rgba(0,0,0,0.02)] dark:shadow-none dark:border-secondary-5"
 
 
 class InputBaseComponent(BaseUIComponent):
@@ -80,7 +80,7 @@ class HighLevelInput(InputBaseComponent):
     icon: Var[str]
 
     # Whether to show the clear button.
-    show_clear_button: Var[bool]
+    show_clear_button: ClassVar[bool]
 
     # Events to fire when the clear button is clicked.
     clear_events: Var[list[EventHandler]]
@@ -142,18 +142,19 @@ class HighLevelInput(InputBaseComponent):
         show_clear_button = props.pop("show_clear_button", True)
         clear_events = props.pop("clear_events", [])
         # Configure input with merged attributes
+        custom_attrs_override = props.pop("custom_attrs", {})
         input_props.update({
             "id": id,
             "custom_attrs": {
                 **DEFAULT_INPUT_ATTRS,
-                **input_props.get("custom_attrs", {}),
+                **custom_attrs_override,
             },
         })
 
         return Div.create(  # pyright: ignore[reportReturnType]
             (
                 Span.create(
-                    hi(icon, class_name="text-secondary-9 size-4 pointer-events-none"),
+                    hi(icon, class_name="text-secondary-12 size-4 pointer-events-none"),
                     aria_hidden="true",
                 )
                 if icon
@@ -183,7 +184,7 @@ class HighLevelInput(InputBaseComponent):
                 *clear_events,
             ],
             tab_index=-1,
-            class_name="opacity-100 peer-placeholder-shown:opacity-0 hover:text-secondary-12 transition-colors peer-placeholder-shown:pointer-events-none peer-disabled:pointer-events-none peer-disabled:opacity-0 h-full",
+            class_name="opacity-100 peer-placeholder-shown:opacity-0 hover:text-secondary-12 transition-colors peer-placeholder-shown:pointer-events-none peer-disabled:pointer-events-none peer-disabled:opacity-0 h-full text-secondary-11",
         )
 
     def _exclude_props(self) -> list[str]:
