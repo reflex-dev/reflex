@@ -101,6 +101,7 @@ def render_select(prop: PropDocumentation, component: type[Component], prop_dict
             name = get_id(f"{component.__qualname__}_{prop.name}")
             PropDocsState.add_var(name, bool, False)
             var = getattr(PropDocsState, name)
+            PropDocsState._create_setter(name, var)
             setter = getattr(PropDocsState, f"set_{name}")
             prop_dict[prop.name] = var
             return rx.checkbox(
@@ -133,6 +134,7 @@ def render_select(prop: PropDocumentation, component: type[Component], prop_dict
             name = get_id(f"{component.__qualname__}_{prop.name}")
             PropDocsState.add_var(name, str, option)
             var = getattr(PropDocsState, name)
+            PropDocsState._create_setter(name, var)
             setter = getattr(PropDocsState, f"set_{name}")
             prop_dict[prop.name] = var
             return rx.select.root(
@@ -154,6 +156,7 @@ def render_select(prop: PropDocumentation, component: type[Component], prop_dict
     name = get_id(f"{component.__qualname__}_{prop.name}")
     PropDocsState.add_var(name, str, option)
     var = getattr(PropDocsState, name)
+    PropDocsState._create_setter(name, var)
     setter = getattr(PropDocsState, f"set_{name}")
     prop_dict[prop.name] = var
 

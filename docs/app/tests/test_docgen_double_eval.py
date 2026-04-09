@@ -83,3 +83,34 @@ def test_double_eval_browser_javascript():
     vpath = "docs/api-reference/browser-javascript"
     render_docgen_document(vpath, filepath)
     render_docgen_document(vpath, filepath)
+
+
+# ---------------------------------------------------------------------------
+# Parametrized test: evaluate every markdown doc file twice
+# ---------------------------------------------------------------------------
+
+_app_root = Path(__file__).resolve().parent.parent  # …/app/
+_docs_dir = _app_root.parent  # …/docs/ (parent of app/)
+
+_all_docs: dict[str, str] = {}  # virtual_path → actual_path
+for _md_file in sorted(_docs_dir.rglob("*.md")):
+    if _md_file.is_relative_to(_app_root):
+        continue
+    _virtual = "docs/" + str(_md_file.relative_to(_docs_dir)).replace("\\", "/")
+    _all_docs[_virtual] = str(_md_file)
+
+
+@pytest.fixture(params=list(_all_docs.keys()))
+def doc_file(request) -> tuple[str, str]:
+    """Yield (virtual_path, actual_path) for each discovered markdown doc."""
+    virtual_path = request.param
+    return virtual_path, _all_docs[virtual_path]
+
+
+def test_double_eval_all_docs(doc_file: tuple[str, str]):
+    """Every markdown doc must survive two evaluations without error."""
+    from reflex_docs.docgen_pipeline import render_docgen_document
+
+    virtual_path, actual_path = doc_file
+    render_docgen_document(virtual_path, actual_path)
+    render_docgen_document(virtual_path, actual_path)
