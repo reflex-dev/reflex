@@ -380,6 +380,7 @@ class EventProcessor:
         self,
         token: str,
         event: Event,
+        on_task_future: Callable[[EventFuture], None] | None = None,
     ) -> AsyncGenerator[Mapping[str, Any]]:
         """Enqueue an event to be processed and yield deltas emitted by the event handler.
 
@@ -393,6 +394,8 @@ class EventProcessor:
         Args:
             token: The client token associated with the event.
             event: The event to be enqueued.
+            on_task_future: Optional callback invoked with the EventFuture for the
+                enqueued handler as soon as it is created.
 
         Yields:
             Deltas emitted by the event handler for the specified token.
@@ -425,6 +428,8 @@ class EventProcessor:
                 emit_delta_impl=_emit_delta_impl,
             ),
         )
+        if on_task_future is not None:
+            on_task_future(task_future)
         all_task_futures = asyncio.create_task(task_future.wait_all())
         waiting_for = {all_task_futures, asyncio.create_task(deltas.get())}
         try:
@@ -442,6 +447,8 @@ class EventProcessor:
         finally:
             for future in waiting_for:
                 future.cancel()
+            if not task_future.done():
+                task_future.cancel()
         # Raise any exceptions for the caller, waiting for all chained events.
         await task_future.wait_all()
 

@@ -22,7 +22,8 @@ from starlette.responses import JSONResponse, Response, StreamingResponse
 from typing_extensions import Self
 
 if TYPE_CHECKING:
-    from reflex_base.utils.types import Receive, Scope, Send
+    from reflex_base.event.processor import EventFuture
+    from reflex_base.utils.types import Message, Receive, Scope, Send
 
     from reflex.app import App
 
@@ -403,20 +404,82 @@ class _UploadStreamingResponse(StreamingResponse):
     """Streaming response that always releases upload form resources."""
 
     _on_finish: Callable[[], Awaitable[None]]
+    _on_disconnect: Callable[[], None] | None
+    _disconnect_handled: bool
 
     def __init__(
         self,
         *args: Any,
         on_finish: Callable[[], Awaitable[None]],
+        on_disconnect: Callable[[], None] | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(*args, **kwargs)
         self._on_finish = on_finish
+        self._on_disconnect = on_disconnect
+        self._disconnect_handled = False
+
+    def _handle_disconnect(self) -> None:
+        """Run disconnect cleanup exactly once."""
+        if self._disconnect_handled or self._on_disconnect is None:
+            return
+        self._disconnect_handled = True
+        self._on_disconnect()
+
+    async def _watch_disconnect(self, receive: Receive) -> None:
+        """Wait for the client connection to close."""
+        while True:
+            message = await receive()
+            if message["type"] == "http.disconnect":
+                self._handle_disconnect()
+                return
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        spec_version = tuple(
+            map(int, scope.get("asgi", {}).get("spec_version", "2.0").split("."))
+        )
+        disconnect_task: asyncio.Task[None] | None = None
+        use_watcher = spec_version >= (2, 4) and self._on_disconnect is not None
+
+        if use_watcher:
+            body_iterator = self.body_iterator
+
+            async def body_with_probe() -> AsyncGenerator[
+                str | bytes | memoryview[int], None
+            ]:
+                """Yield a tiny probe chunk before the real response body."""
+                yield b"\n"
+                async for chunk in body_iterator:
+                    yield chunk
+
+            self.body_iterator = body_with_probe()
+
+        async def wrapped_receive() -> Message:
+            message = await receive()
+            if message["type"] == "http.disconnect":
+                self._handle_disconnect()
+            return message
+
         try:
-            await super().__call__(scope, receive, send)
+            if use_watcher:
+                # ASGI >= 2.4: Starlette does not call receive() while
+                # streaming. Use a dedicated task so disconnect fires the
+                # callback; pass raw receive to avoid racing wrapped_receive.
+                disconnect_task = asyncio.create_task(self._watch_disconnect(receive))
+            try:
+                await super().__call__(
+                    scope,
+                    wrapped_receive if not use_watcher else receive,
+                    send,
+                )
+            except ClientDisconnect:
+                self._handle_disconnect()
+                raise
         finally:
+            if disconnect_task is not None:
+                disconnect_task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await disconnect_task
             await self._on_finish()
 
 
@@ -515,20 +578,50 @@ async def _upload_buffered_file(
         msg = "Upload event was not created."
         raise RuntimeError(msg)
 
+    task_future: EventFuture | None = None
+    disconnect_seen = False
+
+    def _try_cancel() -> None:
+        """Cancel the task future if it exists and is still running."""
+        if task_future is not None and not task_future.done():
+            task_future.cancel()
+
+    def _remember_task_future(future: EventFuture) -> None:
+        """Keep a handle to the upload task for disconnect cancellation."""
+        nonlocal task_future
+        task_future = future
+        if disconnect_seen:
+            _try_cancel()
+
+    def _cancel_upload_task() -> None:
+        """Cancel the queued upload handler when the client disconnects."""
+        nonlocal disconnect_seen
+        disconnect_seen = True
+        _try_cancel()
+
     async def _ndjson_updates():
         """Process the upload event, generating ndjson updates.
 
         Yields:
             Each state update as newline-delimited JSON.
         """
+        # Let the disconnect watcher run before we enqueue the upload handler.
+        await asyncio.sleep(0)
+        if disconnect_seen:
+            return
         # Enqueue the task on the main event loop, but emit deltas to the local queue.
-        async for delta in app.event_processor.enqueue_stream_delta(token, event):
+        async for delta in app.event_processor.enqueue_stream_delta(
+            token,
+            event,
+            on_task_future=_remember_task_future,
+        ):
             yield json_dumps(StateUpdate(delta=delta)) + "\n"
 
     return _UploadStreamingResponse(
         _ndjson_updates(),
         media_type="application/x-ndjson",
         on_finish=_close_form_data,
+        on_disconnect=_cancel_upload_task,
     )
 
 

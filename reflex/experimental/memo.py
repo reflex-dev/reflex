@@ -76,6 +76,19 @@ class ExperimentalMemoComponent(Component):
 
     library = f"$/{constants.Dirs.COMPONENTS_PATH}"
 
+    def _validate_component_children(self, children: list[Component]) -> None:
+        """Skip direct parent/child validation for memo wrapper instances.
+
+        Experimental memos wrap an underlying compiled component definition.
+        The runtime wrapper should not interpose on `_valid_parents` checks for
+        the authored subtree because the wrapper itself is not the semantic
+        parent in the user-authored component tree.
+
+        Args:
+            children: The children of the component (ignored).
+        """
+        del children
+
     def _post_init(self, **kwargs):
         """Initialize the experimental memo component.
 
@@ -950,6 +963,40 @@ def _create_component_wrapper(
     return _ExperimentalMemoComponentWrapper(definition)
 
 
+@cache
+def create_passthrough_component_memo(
+    export_name: str,
+) -> tuple[
+    Callable[..., ExperimentalMemoComponent],
+    ExperimentalMemoComponentDefinition,
+]:
+    """Create an unregistered ``@rx._x.memo``-style passthrough component memo.
+
+    This is used by compiler auto-memoization so generated wrappers compile
+    through the experimental memo pipeline instead of emitting ad-hoc page-local
+    ``React.memo`` declarations.
+
+    Args:
+        export_name: The exported memo component name.
+
+    Returns:
+        The callable memo wrapper and its component definition.
+    """
+
+    def passthrough(children: Var[Component]) -> Component:
+        return Bare.create(children)
+
+    passthrough.__name__ = format.to_snake_case(export_name)
+    passthrough.__qualname__ = passthrough.__name__
+    passthrough.__module__ = __name__
+
+    definition = _create_component_definition(passthrough, Component)
+    if definition.export_name != export_name:
+        definition = dataclasses.replace(definition, export_name=export_name)
+
+    return _create_component_wrapper(definition), definition
+
+
 def memo(fn: Callable[..., Any]) -> Callable[..., Any]:
     """Create an experimental memo from a function.
 
@@ -986,3 +1033,14 @@ def memo(fn: Callable[..., Any]) -> Callable[..., Any]:
         f"got `{return_annotation}`."
     )
     raise TypeError(msg)
+
+
+__all__ = [
+    "EXPERIMENTAL_MEMOS",
+    "ExperimentalMemoComponent",
+    "ExperimentalMemoComponentDefinition",
+    "ExperimentalMemoDefinition",
+    "ExperimentalMemoFunctionDefinition",
+    "create_passthrough_component_memo",
+    "memo",
+]

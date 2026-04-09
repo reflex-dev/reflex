@@ -20,8 +20,8 @@
   "packages/reflex-components-core/src/reflex_components_core/core/helmet.pyi": "257b7d1ff394d7dfb79fc6e9bf583463",
   "packages/reflex-components-core/src/reflex_components_core/core/html.pyi": "0515ecd0f7a1e6175b5781ee2a15a519",
   "packages/reflex-components-core/src/reflex_components_core/core/sticky.pyi": "c13b4c9ddeccc854f7d4f735b6b8bf35",
-  "packages/reflex-components-core/src/reflex_components_core/core/upload.pyi": "f5529c6cb678c5287d5b06c7e288bce6",
-  "packages/reflex-components-core/src/reflex_components_core/core/window_events.pyi": "ccbd7f4c55eb499a058b4822db3639a3",
+  "packages/reflex-components-core/src/reflex_components_core/core/upload.pyi": "61f29d6489915bffb43eb398bcfb4d00",
+  "packages/reflex-components-core/src/reflex_components_core/core/window_events.pyi": "bb76f741c2849a11b14bfdb6a95cb264",
   "packages/reflex-components-core/src/reflex_components_core/datadisplay/__init__.pyi": "c96fed4da42a13576d64f84e3c7cb25c",
   "packages/reflex-components-core/src/reflex_components_core/el/__init__.pyi": "f09129ddefb57ab4c7769c86dc9a3153",
   "packages/reflex-components-core/src/reflex_components_core/el/element.pyi": "3250cce0348494dac0075468bdc6daae",
@@ -120,5 +120,5 @@
   "packages/reflex-components-sonner/src/reflex_components_sonner/toast.pyi": "94fd94b9e127bbc98b7bf0011d6305fa",
   "reflex/__init__.pyi": "3a9bb8544cbc338ffaf0a5927d9156df",
   "reflex/components/__init__.pyi": "f39a2af77f438fa243c58c965f19d42e",
-  "reflex/experimental/memo.pyi": "5912c6017337c852fff42cdfcf95cd6c"
+  "reflex/experimental/memo.pyi": "100ec039af46a5b0225da521ca4fbd6a"
 }

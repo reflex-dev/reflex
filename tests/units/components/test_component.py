@@ -7,7 +7,6 @@ from reflex_base.components.component import (
     CUSTOM_COMPONENTS,
     Component,
     CustomComponent,
-    StatefulComponent,
     custom_component,
 )
 from reflex_base.constants import EventTriggers
@@ -1163,47 +1162,6 @@ def test_format_component(component, rendered):
         rendered: The expected rendered component.
     """
     assert str(component) == rendered
-
-
-def test_stateful_component(test_state: type[TestState]):
-    """Test that a stateful component is created correctly.
-
-    Args:
-        test_state: A test state.
-    """
-    text_component = rx.text(test_state.num)
-    stateful_component = StatefulComponent.compile_from(text_component)
-    assert isinstance(stateful_component, StatefulComponent)
-    assert stateful_component.tag is not None
-    assert stateful_component.tag.startswith("Text_")
-    assert stateful_component.references == 1
-    sc2 = StatefulComponent.compile_from(rx.text(test_state.num))
-    assert isinstance(sc2, StatefulComponent)
-    assert stateful_component.references == 2
-    assert sc2.references == 2
-
-
-def test_stateful_component_memoize_event_trigger(test_state: type[TestState]):
-    """Test that a stateful component is created correctly with events.
-
-    Args:
-        test_state: A test state.
-    """
-    button_component = rx.button("Click me", on_blur=test_state.do_something)
-    stateful_component = StatefulComponent.compile_from(button_component)
-    assert isinstance(stateful_component, StatefulComponent)
-
-    # No event trigger? No StatefulComponent
-    assert not isinstance(
-        StatefulComponent.compile_from(rx.button("Click me")), StatefulComponent
-    )
-
-
-def test_stateful_banner():
-    """Test that a stateful component is created correctly with events."""
-    connection_modal_component = rx.connection_modal()
-    stateful_component = StatefulComponent.compile_from(connection_modal_component)
-    assert isinstance(stateful_component, StatefulComponent)
 
 
 TEST_VAR = LiteralVar.create("p")._replace(

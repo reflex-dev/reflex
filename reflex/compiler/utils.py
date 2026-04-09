@@ -656,19 +656,6 @@ def get_components_path() -> str:
     )
 
 
-def get_stateful_components_path() -> str:
-    """Get the path of the compiled stateful components.
-
-    Returns:
-        The path of the compiled stateful components.
-    """
-    return str(
-        get_web_dir()
-        / constants.Dirs.UTILS
-        / (constants.PageNames.STATEFUL_COMPONENTS + constants.Ext.JSX)
-    )
-
-
 def add_meta(
     page: Component,
     title: str,

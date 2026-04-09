@@ -30,6 +30,7 @@ from reflex_components_core.base.fragment import Fragment
 from reflex_components_radix.themes.typography.text import Text
 from starlette.applications import Starlette
 from starlette.datastructures import FormData, Headers, UploadFile
+from starlette.requests import ClientDisconnect
 from starlette.responses import StreamingResponse
 from starlette_admin.auth import AuthProvider
 
@@ -1307,6 +1308,147 @@ async def test_upload_file_closes_form_if_response_cancelled_before_stream_start
 
 
 @pytest.mark.asyncio
+async def test_upload_file_cancels_buffered_handler_on_disconnect_before_future_capture(
+    token: str,
+):
+    """Buffered uploads cancel the handler even if disconnect wins the race.
+
+    This exercises the ASGI 2.4 path where the response must watch
+    ``receive()`` directly because Starlette does not listen for disconnects
+    while streaming the response body.
+
+    Args:
+        token: A token.
+    """
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": f"{FileUploadState.get_full_name()}.multi_handle_upload",
+    }
+
+    bio = io.BytesIO(b"contents of image one")
+    file1 = UploadFile(filename="image1.jpg", file=bio)
+    form_data = FormData([("files", file1)])
+    original_close = form_data.close
+    form_close = AsyncMock(side_effect=original_close)
+    form_data.close = form_close
+
+    async def form():  # noqa: RUF029
+        return form_data
+
+    request_mock.form = form
+
+    cancelled = asyncio.Event()
+    task_future = Mock()
+    task_future.done = Mock(side_effect=cancelled.is_set)
+    task_future.cancel = Mock(side_effect=cancelled.set)
+
+    async def enqueue_stream_delta(_token, _event, on_task_future=None):
+        assert on_task_future is not None
+        on_task_future(task_future)
+        await cancelled.wait()
+        if False:  # pragma: no cover
+            yield {}
+
+    app = Mock(
+        event_processor=Mock(enqueue_stream_delta=enqueue_stream_delta),
+    )
+
+    upload_fn = upload(app)
+    streaming_response = await upload_fn(request_mock)
+
+    assert isinstance(streaming_response, StreamingResponse)
+
+    async def receive():
+        await asyncio.sleep(0)
+        return {"type": "http.disconnect"}
+
+    async def send(_message):  # noqa: RUF029
+        return None
+
+    await asyncio.wait_for(
+        streaming_response(
+            {"type": "http", "asgi": {"spec_version": "2.4"}},
+            receive,
+            send,
+        ),
+        timeout=1,
+    )
+
+    assert task_future.cancel.call_count == 1
+    assert form_close.await_count == 1
+    assert bio.closed
+
+
+@pytest.mark.asyncio
+async def test_upload_file_skips_buffered_handler_when_disconnect_detected_on_probe(
+    token: str,
+):
+    """Buffered uploads skip handler dispatch when the probe send disconnects.
+
+    This models ASGI 2.4+ behavior where the upload request can finish parsing,
+    but the client disconnect is only surfaced on the first response-body send.
+
+    Args:
+        token: A token.
+    """
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": f"{FileUploadState.get_full_name()}.multi_handle_upload",
+    }
+
+    bio = io.BytesIO(b"contents of image one")
+    file1 = UploadFile(filename="image1.jpg", file=bio)
+    form_data = FormData([("files", file1)])
+    original_close = form_data.close
+    form_close = AsyncMock(side_effect=original_close)
+    form_data.close = form_close
+
+    async def form():  # noqa: RUF029
+        return form_data
+
+    request_mock.form = form
+
+    msg = "upload handler should not be enqueued"
+    probe_chunk = b"\n"
+    asgi_24_scope = {"type": "http", "asgi": {"spec_version": "2.4"}}
+    enqueue_stream_delta = Mock(side_effect=AssertionError(msg))
+    app = Mock(
+        event_processor=Mock(enqueue_stream_delta=enqueue_stream_delta),
+    )
+
+    upload_fn = upload(app)
+    streaming_response = await upload_fn(request_mock)
+
+    assert isinstance(streaming_response, StreamingResponse)
+
+    async def receive():
+        await asyncio.sleep(0)
+        return {"type": "http.disconnect"}
+
+    async def send(message):
+        await asyncio.sleep(0)
+        if (
+            message.get("type") == "http.response.body"
+            and message.get("body") == probe_chunk
+        ):
+            err = "client disconnected"
+            raise OSError(err)
+
+    with pytest.raises(ClientDisconnect):
+        await streaming_response(
+            asgi_24_scope,
+            receive,
+            send,
+        )
+
+    assert enqueue_stream_delta.call_count == 0
+    assert form_close.await_count == 1
+    assert bio.closed
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "state",
     [FileUploadState, ChildFileUploadState, GrandChildFileUploadState],
@@ -2025,6 +2167,54 @@ def test_app_wrap_compile_theme(
         "\n}"
     )
     assert expected.split(",") == function_app_definition.split(",")
+
+
+def test_compile_writes_app_wrap_memo_components(
+    compilable_app: tuple[App, Path],
+    mocker,
+) -> None:
+    """App-wrap memo components are emitted to the shared components module."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+
+    app.add_page(rx.box("Index"), route="/")
+    app._compile()
+
+    components_js = (
+        web_dir
+        / constants.Dirs.UTILS
+        / f"{constants.PageNames.COMPONENTS}{constants.Ext.JSX}"
+    ).read_text()
+
+    assert "export const DefaultOverlayComponents" in components_js
+    assert "export const MemoizedToastProvider" in components_js
+
+
+def test_compile_writes_upload_files_provider_app_wrap(
+    compilable_app: tuple[App, Path],
+    mocker,
+) -> None:
+    """Upload pages emit the UploadFilesProvider app wrap into the app root."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+
+    app.add_page(
+        lambda: rx.upload.root(
+            rx.vstack(
+                rx.button("Select File"),
+                rx.text("Drag and drop files here or click to select files"),
+            ),
+        ),
+        route="/",
+    )
+    app._compile()
+
+    root_js = web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    root_contents = root_js.read_text()
+
+    assert "UploadFilesProvider" in root_contents
 
 
 @pytest.mark.parametrize(

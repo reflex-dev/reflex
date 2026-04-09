@@ -2,12 +2,14 @@
 
 from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, ParamSpec, Protocol, TypedDict
+from typing import TYPE_CHECKING, Any, ParamSpec, Protocol, TypedDict
 
 from typing_extensions import Unpack
 
 if TYPE_CHECKING:
     from reflex.app import App, UnevaluatedPage
+    from reflex_base.components.component import BaseComponent
+    from reflex_base.plugins.compiler import ComponentAndChildren, PageContext
 
 
 class CommonContext(TypedDict):
@@ -116,6 +118,80 @@ class Plugin:
         Args:
             context: The context for the plugin.
         """
+
+    def eval_page(
+        self,
+        page_fn: Any,
+        /,
+        **kwargs: Any,
+    ) -> "PageContext | None":
+        """Evaluate a page-like object into a page context.
+
+        Args:
+            page_fn: The page-like object to evaluate.
+            kwargs: Additional compiler-specific context.
+
+        Returns:
+            A page context when the plugin can evaluate the page, otherwise ``None``.
+        """
+        del page_fn, kwargs
+        return None
+
+    def compile_page(
+        self,
+        page_ctx: "PageContext",
+        /,
+        **kwargs: Any,
+    ) -> None:
+        """Finalize a page context after its component tree has been traversed."""
+        del page_ctx, kwargs
+        return
+
+    def enter_component(
+        self,
+        comp: "BaseComponent",
+        /,
+        *,
+        page_context: "PageContext",
+        compile_context: Any,
+        in_prop_tree: bool = False,
+    ) -> "BaseComponent | ComponentAndChildren | None":
+        """Inspect or transform a component before visiting its descendants.
+
+        Args:
+            comp: The component being compiled.
+            page_context: The active page compilation state.
+            compile_context: The active compile-run state.
+            in_prop_tree: Whether the component is being visited through a prop subtree.
+
+        Returns:
+            An optional replacement component and/or structural children.
+        """
+        return None
+
+    def leave_component(
+        self,
+        comp: "BaseComponent",
+        children: tuple["BaseComponent", ...],
+        /,
+        *,
+        page_context: "PageContext",
+        compile_context: Any,
+        in_prop_tree: bool = False,
+    ) -> "BaseComponent | ComponentAndChildren | None":
+        """Inspect or transform a component after visiting its descendants.
+
+        Args:
+            comp: The component being compiled.
+            children: The compiled structural children for the component.
+            page_context: The active page compilation state.
+            compile_context: The active compile-run state.
+            in_prop_tree: Whether the component is being visited through a prop subtree.
+
+        Returns:
+            An optional replacement component and/or structural children.
+        """
+        return None
 
     def __repr__(self):
         """Return a string representation of the plugin.
