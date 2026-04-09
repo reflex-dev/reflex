@@ -79,6 +79,37 @@ def _make_module_name(filename: str) -> str:
     return f"{_PARENT_PKG}.{slug}"
 
 
+def _last_defined_name(content: str) -> str | None:
+    """Return the name of the last top-level definition in *content*.
+
+    Considers functions, async functions, classes, and simple/annotated
+    assignments with a value.
+
+    Args:
+        content: A string of Python source code.
+
+    Returns:
+        The name of the last top-level definition, or None if there are none.
+    """
+    import ast
+
+    last: str | None = None
+    for node in ast.parse(content).body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            last = node.name
+        elif isinstance(node, ast.Assign):
+            target = node.targets[0]
+            if isinstance(target, ast.Name):
+                last = target.id
+        elif (
+            isinstance(node, ast.AnnAssign)
+            and node.value is not None
+            and isinstance(node.target, ast.Name)
+        ):
+            last = node.target.id
+    return last
+
+
 def _exec_code(content: str, env: dict, filename: str) -> None:
     """Execute a ``python exec`` code block via an in-memory module.
 
@@ -379,6 +410,19 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
     # Demo / exec helpers
     # ------------------------------------------------------------------
 
+    def _exec_and_get_last_callable(self, content: str):
+        """Run _exec_code and return the last callable defined by the block."""
+        _exec_code(content, self.env, self.virtual_filepath)
+        last_name = _last_defined_name(content)
+        if last_name is None:
+            msg = "Exec block defines no function or class"
+            raise RuntimeError(msg)
+        last = self.env[last_name]
+        if not callable(last):
+            msg = f"Last defined name {last_name!r} is not callable"
+            raise TypeError(msg)
+        return last()
+
     def _render_demo(self, content: str, flags: set[str]) -> rx.Component:
         """Render a ``python demo`` block — code + live component."""
         comp_id = None
@@ -388,11 +432,9 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
 
         try:
             if "exec" in flags:
-                _exec_code(content, self.env, self.virtual_filepath)
-                comp = self.env[list(self.env.keys())[-1]]()
+                comp = self._exec_and_get_last_callable(content)
             elif "graphing" in flags:
-                _exec_code(content, self.env, self.virtual_filepath)
-                comp = self.env[list(self.env.keys())[-1]]()
+                comp = self._exec_and_get_last_callable(content)
                 parts = content.rpartition("def")
                 data, code = parts[0], parts[1] + parts[2]
                 return docgraphing(code, comp=comp, data=data)
@@ -426,11 +468,9 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
 
         try:
             if "exec" in flags:
-                _exec_code(content, self.env, self.virtual_filepath)
-                comp = self.env[list(self.env.keys())[-1]]()
+                comp = self._exec_and_get_last_callable(content)
             elif "graphing" in flags:
-                _exec_code(content, self.env, self.virtual_filepath)
-                comp = self.env[list(self.env.keys())[-1]]()
+                comp = self._exec_and_get_last_callable(content)
                 parts = content.rpartition("def")
                 data, code = parts[0], parts[1] + parts[2]
                 return docgraphing(code, comp=comp, data=data)

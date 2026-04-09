@@ -204,7 +204,7 @@ class TableForEachState(rx.State):
     ]
 
 
-def show_person(person: list):
+def show_person_from_list(person: list):
     """Show a person in a table row."""
     return rx.table.row(
         rx.table.cell(person[0]),
@@ -222,7 +222,7 @@ def foreach_table_example():
                 rx.table.column_header_cell("Group"),
             ),
         ),
-        rx.table.body(rx.foreach(TableForEachState.people, show_person)),
+        rx.table.body(rx.foreach(TableForEachState.people, show_person_from_list)),
         width="100%",
     )
 ```
