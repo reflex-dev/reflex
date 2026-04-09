@@ -1,6 +1,6 @@
 """Custom input component."""
 
-from typing import Literal
+from typing import ClassVar, Literal
 
 from reflex_components_core.el.elements.forms import Button
 from reflex_components_core.el.elements.forms import Input as ReflexInput
@@ -19,7 +19,7 @@ INPUT_SIZE_VARIANTS = {
     "xs": "px-1.5 h-7 rounded-ui-xs gap-1.5",
     "sm": "px-2 h-8 rounded-ui-sm gap-2",
     "md": "px-2.5 h-9 rounded-ui-md gap-2",
-    "lg": "px-3 h-10 rounded-lg gap-2.5",
+    "lg": "px-3 h-10 rounded-ui-lg gap-2.5",
     "xl": "px-3.5 h-12 rounded-ui-xl gap-3",
 }
 
@@ -80,7 +80,7 @@ class HighLevelInput(InputBaseComponent):
     icon: Var[str]
 
     # Whether to show the clear button.
-    show_clear_button: Var[bool]
+    show_clear_button: ClassVar[bool]
 
     # Events to fire when the clear button is clicked.
     clear_events: Var[list[EventHandler]]
@@ -142,11 +142,12 @@ class HighLevelInput(InputBaseComponent):
         show_clear_button = props.pop("show_clear_button", True)
         clear_events = props.pop("clear_events", [])
         # Configure input with merged attributes
+        custom_attrs_override = props.pop("custom_attrs", {})
         input_props.update({
             "id": id,
             "custom_attrs": {
                 **DEFAULT_INPUT_ATTRS,
-                **input_props.get("custom_attrs", {}),
+                **custom_attrs_override,
             },
         })
 
