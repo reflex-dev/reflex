@@ -15,7 +15,7 @@ POSTHOG_SCRIPT_TEMPLATE: str = """
 posthog.init('{project_id}', {{
     api_host: '{api_host}',
     ui_host: '{ui_host}',
-    person_profiles: 'identified_only',
+    person_profiles: 'always',
     session_recording: {{
         recordCrossOriginIframes: true,
     }}
