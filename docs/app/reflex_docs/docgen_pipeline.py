@@ -82,7 +82,8 @@ def _make_module_name(filename: str) -> str:
 def _last_defined_name(content: str) -> str | None:
     """Return the name of the last top-level definition in *content*.
 
-    Considers functions, async functions, and classes.
+    Considers functions, async functions, classes, and simple/annotated
+    assignments with a value.
 
     Args:
         content: A string of Python source code.
@@ -96,6 +97,16 @@ def _last_defined_name(content: str) -> str | None:
     for node in ast.parse(content).body:
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
             last = node.name
+        elif isinstance(node, ast.Assign):
+            target = node.targets[0]
+            if isinstance(target, ast.Name):
+                last = target.id
+        elif (
+            isinstance(node, ast.AnnAssign)
+            and node.value is not None
+            and isinstance(node.target, ast.Name)
+        ):
+            last = node.target.id
     return last
 
 
