@@ -390,6 +390,10 @@ class EventProcessor:
         Any frontend events or chained events are handled normally and deltas from chained events
         will not be yielded by this method.
 
+        If the consumer stops iterating early, the in-flight event future is
+        cancelled so the handler chain does not continue running in the
+        background.
+
         Args:
             token: The client token associated with the event.
             event: The event to be enqueued.
@@ -442,6 +446,9 @@ class EventProcessor:
         finally:
             for future in waiting_for:
                 future.cancel()
+            # Cancel the event chain if the streaming consumer exits early.
+            if not task_future.done():
+                task_future.cancel()
         # Raise any exceptions for the caller, waiting for all chained events.
         await task_future.wait_all()
 

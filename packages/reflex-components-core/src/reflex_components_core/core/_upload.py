@@ -6,13 +6,14 @@ import asyncio
 import contextlib
 import dataclasses
 from collections import deque
-from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncGenerator, AsyncIterator
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, BinaryIO, cast
 
 from python_multipart.multipart import MultipartParser, parse_options_header
 from reflex_base.utils import exceptions
 from reflex_base.utils.format import json_dumps
+from reflex_base.utils.streaming_response import DisconnectAwareStreamingResponse
 from starlette.datastructures import Headers
 from starlette.datastructures import UploadFile as StarletteUploadFile
 from starlette.exceptions import HTTPException
@@ -22,8 +23,6 @@ from starlette.responses import JSONResponse, Response, StreamingResponse
 from typing_extensions import Self
 
 if TYPE_CHECKING:
-    from reflex_base.utils.types import Receive, Scope, Send
-
     from reflex.app import App
 
 
@@ -399,27 +398,6 @@ class _UploadChunkMultipartParser:
         await self._flush_emitted_chunks()
 
 
-class _UploadStreamingResponse(StreamingResponse):
-    """Streaming response that always releases upload form resources."""
-
-    _on_finish: Callable[[], Awaitable[None]]
-
-    def __init__(
-        self,
-        *args: Any,
-        on_finish: Callable[[], Awaitable[None]],
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(*args, **kwargs)
-        self._on_finish = on_finish
-
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        try:
-            await super().__call__(scope, receive, send)
-        finally:
-            await self._on_finish()
-
-
 def _require_upload_headers(request: Request) -> tuple[str, str]:
     """Extract the required upload headers from a request.
 
@@ -525,7 +503,7 @@ async def _upload_buffered_file(
         async for delta in app.event_processor.enqueue_stream_delta(token, event):
             yield json_dumps(StateUpdate(delta=delta)) + "\n"
 
-    return _UploadStreamingResponse(
+    return DisconnectAwareStreamingResponse(
         _ndjson_updates(),
         media_type="application/x-ndjson",
         on_finish=_close_form_data,
