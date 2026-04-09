@@ -1,6 +1,7 @@
 """PostHog analytics tracking integration for Reflex applications."""
 
 import json
+from typing import Any
 
 import reflex as rx
 
@@ -57,6 +58,77 @@ def identify_posthog_user(user_id: str) -> rx.event.EventSpec:
             posthog.identify({user_id});
         }}
         """
+    )
+
+
+def _track_form_posthog(
+    event_name: str,
+    form_data: dict[str, Any],
+    allowed_keys: set[str],
+) -> rx.event.EventSpec:
+    """Identify the submitter and capture a form event in PostHog.
+
+    Args:
+        event_name: PostHog event name to capture.
+        form_data: Submitted form fields as a string-keyed dict.
+        allowed_keys: Set of keys to include from form_data.
+
+    Returns:
+        Event that runs PostHog identify and capture in the browser.
+    """
+    filtered = {k: v for k, v in form_data.items() if k in allowed_keys}
+    props_json = json.dumps(filtered)
+
+    return rx.call_script(
+        f"""
+        if (typeof posthog !== 'undefined') {{
+            const props = {props_json};
+            const distinctId = props.email || ('anon_' + String(Date.now()));
+            posthog.identify(distinctId, {{
+                email: props.email,
+                first_name: props.first_name,
+                last_name: props.last_name,
+                job_title: props.job_title,
+                company_name: props.company_name,
+            }});
+            posthog.capture('{event_name}', props);
+        }}
+        """
+    )
+
+
+_COMMON_KEYS = {
+    "email",
+    "first_name",
+    "last_name",
+    "job_title",
+    "company_name",
+    "number_of_employees",
+    "how_did_you_hear_about_us",
+    "internal_tools",
+    "technical_level",
+}
+
+
+def track_demo_form_posthog_submission(form_data: dict[str, Any]) -> rx.event.EventSpec:
+    """Capture a demo_request event in PostHog.
+
+    Returns:
+        Event that runs PostHog identify and capture in the browser.
+    """
+    return _track_form_posthog("demo_request", form_data, _COMMON_KEYS)
+
+
+def track_intro_form_posthog_submission(
+    form_data: dict[str, Any],
+) -> rx.event.EventSpec:
+    """Capture an intro_submit event in PostHog.
+
+    Returns:
+        Event that runs PostHog identify and capture in the browser.
+    """
+    return _track_form_posthog(
+        "intro_submit", form_data, _COMMON_KEYS | {"phone_number"}
     )
 
 

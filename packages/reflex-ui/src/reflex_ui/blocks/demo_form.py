@@ -5,10 +5,13 @@ sends data to PostHog and Slack, and redirects users to appropriate Cal.com link
 based on company size.
 """
 
+from typing import Any
+
 import reflex as rx
 from reflex.event import EventType
 from reflex.experimental.client_state import ClientStateVar
 from reflex.vars.base import get_unique_variable_name
+from reflex_ui.blocks.telemetry.posthog import track_demo_form_posthog_submission
 from reflex_ui.components.base.button import button
 from reflex_ui.components.base.dialog import dialog
 from reflex_ui.components.base.input import input
@@ -101,6 +104,15 @@ class DemoFormStateUI(rx.State):
             ]
         else:
             yield demo_form_error_message.push("")
+
+    @rx.event
+    def track_demo_form_posthog(self, form_data: dict[str, Any]):
+        """Send demo form fields to PostHog (identify + capture) in the browser.
+
+        Returns:
+            Event that runs PostHog identify and capture in the browser.
+        """
+        return track_demo_form_posthog_submission(form_data)
 
 
 def input_field(
@@ -344,8 +356,10 @@ def demo_form(id_prefix: str = "", **props) -> rx.Component:
             "@container flex flex-col lg:gap-6 gap-2 p-6",
             props.pop("class_name", ""),
         ),
-        # Close the dialog when the form is submitted
-        on_submit=demo_form_open_cs.set_value(False),
+        on_submit=[
+            DemoFormStateUI.track_demo_form_posthog,
+            rx.call_function(demo_form_open_cs.set_value(False)),
+        ],
         data_default_form_id="965991",
         **props,
     )
