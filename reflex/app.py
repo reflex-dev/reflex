@@ -112,6 +112,7 @@ from reflex.utils.exec import (
     should_prerender_routes,
 )
 from reflex.utils.misc import run_in_thread
+from reflex.utils.precompressed_staticfiles import PrecompressedStaticFiles
 from reflex.utils.token_manager import RedisTokenManager, TokenManager
 
 if sys.version_info < (3, 13):
@@ -649,11 +650,12 @@ class App(MiddlewareMixin, LifespanMixin):
         if environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.get():
             asgi_app.mount(
                 "/" + config.frontend_path.strip("/"),
-                StaticFiles(
+                PrecompressedStaticFiles(
                     directory=prerequisites.get_web_dir()
                     / constants.Dirs.STATIC
                     / config.frontend_path.strip("/"),
                     html=True,
+                    encodings=config.frontend_compression_formats,
                 ),
                 name="frontend",
             )

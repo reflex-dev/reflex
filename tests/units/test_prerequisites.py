@@ -92,6 +92,17 @@ def test_initialise_vite_config(config, expected_output):
     assert expected_output in output
 
 
+def test_vite_config_uses_frontend_compression_formats():
+    config = Config(
+        app_name="test",
+        frontend_compression_formats=["gzip", "brotli"],
+    )
+
+    output = _compile_vite_config(config)
+
+    assert 'compressPlugin({ formats: ["gzip", "brotli"] }),' in output
+
+
 @pytest.mark.parametrize(
     ("frontend_path", "expected_command"),
     [

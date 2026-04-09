@@ -502,6 +502,7 @@ def vite_config_template(
     experimental_hmr: bool,
     sourcemap: bool | Literal["inline", "hidden"],
     allowed_hosts: bool | list[str] = False,
+    compression_formats: list[str] | None = None,
 ):
     """Template for vite.config.js.
 
@@ -512,6 +513,7 @@ def vite_config_template(
         experimental_hmr: Whether to enable experimental HMR features.
         sourcemap: The sourcemap configuration.
         allowed_hosts: Allow all hosts (True), specific hosts (list of strings), or only localhost (False).
+        compression_formats: Build-time pre-compression formats to emit.
 
     Returns:
         Rendered vite.config.js content as string.
@@ -567,7 +569,7 @@ export default defineConfig((config) => ({{
     alwaysUseReactDomServerNode(),
     reactRouter(),
     safariCacheBustPlugin(),
-    compressPlugin(),
+    compressPlugin({{ formats: {json.dumps(compression_formats if compression_formats is not None else ["gzip"])} }}),
   ].concat({"[fullReload()]" if force_full_reload else "[]"}),
   build: {{
     assetsDir: "{base}assets".slice(1),

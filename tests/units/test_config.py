@@ -133,6 +133,30 @@ def test_update_from_env_cors(
     ]
 
 
+def test_update_from_env_frontend_compression_formats(
+    base_config_values: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Test comma-delimited frontend compression formats from the environment."""
+    monkeypatch.setenv(
+        "REFLEX_FRONTEND_COMPRESSION_FORMATS", "gzip, brotli , zstd, gzip"
+    )
+    config = rx.Config(**base_config_values)
+    assert config.frontend_compression_formats == ["gzip", "brotli", "zstd"]
+
+
+def test_invalid_frontend_compression_formats(base_config_values: dict[str, Any]):
+    """Test that unsupported frontend compression formats raise config errors."""
+    with pytest.raises(
+        reflex_base.config.ConfigError,
+        match="frontend_compression_formats contains unsupported format",
+    ):
+        rx.Config(
+            **base_config_values,
+            frontend_compression_formats=["gzip", "snappy"],
+        )
+
+
 @pytest.mark.parametrize(
     ("kwargs", "expected"),
     [
