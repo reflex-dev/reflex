@@ -42,7 +42,6 @@ class StrictComponent(Component):
 
     def _internal_helper(self) -> None:
         """Private method, should be removed."""
-        pass
 
     def render_item(self) -> str:
         """Public method, body should be blanked."""

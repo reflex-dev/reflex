@@ -6,8 +6,6 @@ This module tests:
 - Empty tuple[()], single arg tuple[str], multi-arg tuple[str, int]
 """
 
-from typing import Any
-
 from reflex_base.components.component import Component, field
 from reflex_base.event import EventHandler
 from reflex_base.vars.base import Var

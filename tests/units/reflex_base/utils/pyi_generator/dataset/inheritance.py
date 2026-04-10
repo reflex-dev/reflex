@@ -6,8 +6,6 @@ This module tests:
 - Multiple levels of inheritance
 """
 
-from typing import Any
-
 from reflex_base.components.component import Component, field
 from reflex_base.event import EventHandler, passthrough_event_spec
 from reflex_base.vars.base import Var

@@ -12,11 +12,10 @@ import linecache
 import sys
 import types as builtin_types
 import typing
-from typing import Any, ClassVar, Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 import pytest
-
-from reflex_base.components.component import Component, field
+from reflex_base.components.component import Component
 from reflex_base.utils.pyi_generator import (
     StubGenerator,
     _get_type_hint,
@@ -30,7 +29,7 @@ from reflex_base.vars.base import Var
 
 
 def test_is_union_typing_union():
-    assert _is_union(Union[str, int]) is True
+    assert _is_union(Union[str, int]) is True  # noqa: UP007
 
 
 def test_is_union_pipe_union():
@@ -38,7 +37,7 @@ def test_is_union_pipe_union():
 
 
 def test_is_union_optional_is_union():
-    assert _is_union(Optional[str]) is True
+    assert _is_union(Optional[str]) is True  # noqa: UP045
 
 
 def test_is_union_plain_type():
@@ -62,7 +61,7 @@ def test_is_optional_none_type():
 
 
 def test_is_optional_optional_type():
-    assert _is_optional(Optional[str]) is True
+    assert _is_optional(Optional[str]) is True  # noqa: UP045
 
 
 def test_is_optional_union_with_none():
@@ -105,9 +104,14 @@ def test_safe_issubclass_none():
     assert _safe_issubclass(None, int) is False
 
 
-@pytest.fixture()
+@pytest.fixture
 def type_hint_globals():
-    """Provide a type_hint_globals dict with common types."""
+    """Provide a type_hint_globals dict with common types.
+
+    Returns:
+        A dict mapping type names to their corresponding types, including built-ins, typing constructs, and
+        custom types.
+    """
     return {
         "str": str,
         "int": int,
@@ -141,17 +145,17 @@ def test_get_type_hint_simple_not_optional(type_hint_globals):
 
 
 def test_get_type_hint_optional_union(type_hint_globals):
-    assert _get_type_hint(Optional[str], type_hint_globals) == "str | None"
+    assert _get_type_hint(Optional[str], type_hint_globals) == "str | None"  # noqa: UP045
 
 
 def test_get_type_hint_union_without_none(type_hint_globals):
-    result = _get_type_hint(Union[str, int], type_hint_globals, is_optional=False)
+    result = _get_type_hint(Union[str, int], type_hint_globals, is_optional=False)  # noqa: UP007
     assert "int" in result
     assert "str" in result
 
 
 def test_get_type_hint_union_with_none(type_hint_globals):
-    result = _get_type_hint(Union[str, int, None], type_hint_globals)
+    result = _get_type_hint(Union[str, int, None], type_hint_globals)  # noqa: UP007
     assert result.endswith("| None")
     assert "int" in result
     assert "str" in result
@@ -173,7 +177,9 @@ def test_get_type_hint_var_union_expansion(type_hint_globals):
 
 
 def test_get_type_hint_literal(type_hint_globals):
-    result = _get_type_hint(Literal["a", "b", "c"], type_hint_globals, is_optional=False)
+    result = _get_type_hint(
+        Literal["a", "b", "c"], type_hint_globals, is_optional=False
+    )
     assert "Literal" in result
     assert "'a'" in result
     assert "'b'" in result
@@ -208,7 +214,7 @@ def test_type_to_ast_literal():
 
 
 def test_type_to_ast_union():
-    node = type_to_ast(Union[str, int], Component)
+    node = type_to_ast(Union[str, int], Component)  # noqa: UP007
     assert isinstance(node, ast.Subscript)
     unparsed = ast.unparse(node)
     assert "str" in unparsed
@@ -235,7 +241,14 @@ _stub_gen_counter = 0
 
 
 def _generate_stub_from_source(source: str) -> str:
-    """Parse source, run StubGenerator, return unparsed result."""
+    """Parse source, run StubGenerator, return unparsed result.
+
+    Args:
+        source: The Python source code to generate a stub from.
+
+    Returns:
+        The generated stub code as a string.
+    """
     global _stub_gen_counter
     _stub_gen_counter += 1
     module_name = f"_pyi_test_mod_{_stub_gen_counter}"
@@ -280,7 +293,7 @@ def _generate_stub_from_source(source: str) -> str:
 
 
 def test_stub_private_method_removed():
-    source = '''
+    source = """
 from reflex_base.components.component import Component
 from reflex_base.vars.base import Var
 
@@ -288,7 +301,7 @@ class Foo(Component):
     x: Var[str]
     def _hidden(self): pass
     def visible(self): return 1
-'''
+"""
     result = _generate_stub_from_source(source)
     assert "_hidden" not in result
     assert "visible" in result
@@ -307,13 +320,13 @@ class Bar(Component):
 
 
 def test_stub_future_import_removed():
-    source = '''from __future__ import annotations
+    source = """from __future__ import annotations
 from reflex_base.components.component import Component
 from reflex_base.vars.base import Var
 
 class Baz(Component):
     z: Var[bool]
-'''
+"""
     result = _generate_stub_from_source(source)
     assert "__future__" not in result
 
@@ -332,20 +345,20 @@ class DocComponent(Component):
 
 
 def test_stub_non_annotated_assignment_removed():
-    source = '''
+    source = """
 from reflex_base.components.component import Component
 from reflex_base.vars.base import Var
 
 class AssignComp(Component):
     some_const = "hello"
     val: Var[str]
-'''
+"""
     result = _generate_stub_from_source(source)
     assert "some_const" not in result
 
 
 def test_stub_any_assignment_preserved():
-    source = '''
+    source = """
 from typing import Any
 from reflex_base.components.component import Component
 from reflex_base.vars.base import Var
@@ -354,13 +367,13 @@ SomeAlias = Any
 
 class AnyComp(Component):
     val: Var[str]
-'''
+"""
     result = _generate_stub_from_source(source)
     assert "SomeAlias = Any" in result
 
 
 def test_stub_annotated_assignment_value_blanked():
-    source = '''
+    source = """
 from reflex_base.components.component import Component
 from reflex_base.vars.base import Var
 
@@ -368,14 +381,14 @@ mode: str = "default"
 
 class ModeComp(Component):
     val: Var[str]
-'''
+"""
     result = _generate_stub_from_source(source)
     assert "mode: str" in result
     assert '"default"' not in result
 
 
 def test_stub_classvar_preserved():
-    source = '''
+    source = """
 from typing import ClassVar
 from reflex_base.components.component import Component
 from reflex_base.vars.base import Var
@@ -383,13 +396,13 @@ from reflex_base.vars.base import Var
 class CVComp(Component):
     _valid_children: ClassVar[list[str]] = ["A"]
     val: Var[str]
-'''
+"""
     result = _generate_stub_from_source(source)
     assert "ClassVar" in result
 
 
 def test_stub_public_function_body_blanked():
-    source = '''
+    source = """
 from reflex_base.components.component import Component
 from reflex_base.vars.base import Var
 
@@ -399,20 +412,20 @@ class FuncComp(Component):
         x = 1
         y = 2
         return str(x + y)
-'''
+"""
     result = _generate_stub_from_source(source)
     assert "helper" in result
     assert "x = 1" not in result
 
 
 def test_stub_create_method_generated():
-    source = '''
+    source = """
 from reflex_base.components.component import Component, field
 from reflex_base.vars.base import Var
 
 class CreateComp(Component):
     name: Var[str] = field(doc="The name.")
-'''
+"""
     result = _generate_stub_from_source(source)
     assert "def create" in result
     assert "name" in result

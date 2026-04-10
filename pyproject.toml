@@ -225,6 +225,7 @@ lint.flake8-bugbear.extend-immutable-calls = [
   "T",
   "N",
 ]
+"tests/units/reflex_base/utils/pyi_generator/dataset/*.py" = ["DOC201"]
 "benchmarks/*.py" = ["ANN001", "D100", "D103", "D104", "B018", "PERF", "T", "N"]
 "*/.templates/*.py" = ["D100", "D103", "D104"]
 "*.pyi" = ["D301", "D415", "D417", "D418", "E742", "N", "PGH"]

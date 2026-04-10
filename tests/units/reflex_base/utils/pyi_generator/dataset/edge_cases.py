@@ -17,8 +17,6 @@ from reflex_base.vars.base import Var
 class EmptyComponent(Component):
     """A component with no custom props at all."""
 
-    pass
-
 
 class EventOnlyComponent(Component):
     """A component with only custom event handlers, no data props."""

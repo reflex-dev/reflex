@@ -8,7 +8,7 @@ This module tests:
 - Combined: component + module-level items
 """
 
-from typing import Any, Literal
+from typing import Literal
 
 from reflex_base.components.component import Component, field
 from reflex_base.vars.base import Var

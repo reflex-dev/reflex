@@ -6,7 +6,7 @@ This module tests:
 - Var[Literal[...]] expansion (Var union with inner literal)
 """
 
-from typing import Any, Literal
+from typing import Literal
 
 from reflex_base.components.component import Component, field
 from reflex_base.vars.base import Var

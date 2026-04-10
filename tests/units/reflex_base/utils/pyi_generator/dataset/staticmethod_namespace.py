@@ -6,8 +6,6 @@ This module tests:
 - The fallback where __call__.__func__.__name__ != "create"
 """
 
-from typing import Any
-
 from reflex_base.components.component import Component, ComponentNamespace, field
 from reflex_base.event import EventSpec
 from reflex_base.vars.base import Var
@@ -31,7 +29,6 @@ def send_notification(message: str, level: str = "info") -> EventSpec:
     Returns:
         The event spec.
     """
-    ...
 
 
 class Notify(ComponentNamespace):

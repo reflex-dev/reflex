@@ -9,8 +9,6 @@ This module tests:
 - Module docstring removal in stubs
 """
 
-from typing import Any
-
 from reflex_base.components.component import Component, field
 from reflex_base.vars.base import Var
 

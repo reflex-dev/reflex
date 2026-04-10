@@ -22,7 +22,9 @@ class CustomCreateComponent(Component):
     amount: Var[int] = field(doc="The amount.")
 
     @classmethod
-    def create(cls, *children: Any, custom_kwarg: str = "default", **props: Any) -> "CustomCreateComponent":
+    def create(
+        cls, *children: Any, custom_kwarg: str = "default", **props: Any
+    ) -> "CustomCreateComponent":
         """Create a custom component with extra kwargs.
 
         Args:

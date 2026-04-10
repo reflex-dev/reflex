@@ -7,8 +7,6 @@ This module tests:
 - Module-level namespace instance assignment
 """
 
-from typing import Any
-
 from reflex_base.components.component import Component, ComponentNamespace, field
 from reflex_base.vars.base import Var
 
