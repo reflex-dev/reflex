@@ -439,9 +439,6 @@ class EventProcessor:
                             yield await result
                             waiting_for.add(asyncio.create_task(deltas.get()))
                         break
-        except (asyncio.CancelledError, GeneratorExit):
-            task_future.cancel()
-            raise
         finally:
             for future in waiting_for:
                 future.cancel()

@@ -64,14 +64,6 @@ async def _multi_delta_handler():
         await asyncio.sleep(0.01)
 
 
-async def _delta_then_slow_logging_handler():
-    """Emit an initial delta, then block long enough for cancellation to matter."""
-    ctx = EventContext.get()
-    await ctx.emit_delta({"state": {"x": 1}})
-    await asyncio.sleep(0.5)
-    _CALL_LOG.append({"value": "completed_after_stream_close"})
-
-
 async def _slow_logging_handler(value: str = "default"):
     """A slow logging handler that pauses before recording.
 
@@ -125,7 +117,6 @@ logging_event = EventHandler(fn=_logging_handler)
 chaining_event = EventHandler(fn=_chaining_handler)
 delta_event = EventHandler(fn=_delta_handler)
 multi_delta_event = EventHandler(fn=_multi_delta_handler)
-delta_then_slow_logging_event = EventHandler(fn=_delta_then_slow_logging_handler)
 slow_logging_event = EventHandler(fn=_slow_logging_handler)
 multi_chaining_event = EventHandler(fn=_multi_chaining_handler)
 background_slow_logging_event = EventHandler(fn=_background_slow_logging_handler)
@@ -149,7 +140,6 @@ def _register_handlers(forked_registration_context: RegistrationContext):
         chaining_event,
         delta_event,
         multi_delta_event,
-        delta_then_slow_logging_event,
         slow_logging_event,
         multi_chaining_event,
         background_slow_logging_event,
@@ -518,20 +508,6 @@ async def test_stream_delta_noop_handler_yields_nothing(token: str):
         event = Event.from_event_type(noop_event())[0]
         collected = [d async for d in ep.enqueue_stream_delta(token, event)]
     assert collected == []
-
-
-async def test_stream_delta_cancels_event_when_generator_closes_early(token: str):
-    """Closing enqueue_stream_delta early cancels the in-flight event."""
-    ep = EventProcessor(graceful_shutdown_timeout=2)
-    ep.configure()
-    async with ep:
-        event = Event.from_event_type(delta_then_slow_logging_event())[0]
-        stream = ep.enqueue_stream_delta(token, event)
-        assert await anext(stream) == {"state": {"x": 1}}
-        await stream.aclose()
-        await asyncio.sleep(0.1)
-
-    assert _CALL_LOG == []
 
 
 async def test_stream_delta_not_configured_raises():
