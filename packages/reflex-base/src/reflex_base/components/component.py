@@ -1750,7 +1750,12 @@ class Component(BaseComponent, ABC):
             The import dict with the required imports.
         """
         imports_ = imports.merge_parsed_imports(
-            self._get_imports(), *[child._get_all_imports() for child in self.children]
+            self._get_imports(),
+            *[child._get_all_imports() for child in self.children],
+            *[
+                component._get_all_imports()
+                for component in self._get_components_in_props()
+            ],
         )
         return imports.collapse_imports(imports_) if collapse else imports_
 
