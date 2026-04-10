@@ -42,9 +42,17 @@ class SimpleComponent(Component):
     )
 
     def _private_method(self):
-        """This should not appear in the stub."""
+        """This should not appear in the stub.
+
+        Returns:
+            A string indicating this is a private method.
+        """
         return "private"
 
     def public_helper(self) -> str:
-        """A public method that should have its body blanked out."""
+        """A public method that should have its body blanked out.
+
+        Returns:
+            A string indicating this is a public helper method.
+        """
         return "hello"

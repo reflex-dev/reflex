@@ -12,17 +12,36 @@ from reflex_base.vars.base import Var
 
 
 def on_empty_handler() -> "tuple[()]":
-    """Handler returning empty tuple."""
+    """Handler returning empty tuple.
+
+    Returns:
+        An empty tuple.
+    """
     return ()
 
 
 def on_string_handler(value: Var[str]) -> "tuple[Var[str]]":
-    """Handler returning a single string arg."""
+    """Handler returning a single string arg.
+
+    Args:
+        value: The string value from the event.
+
+    Returns:
+        A tuple containing the string value.
+    """
     return (value,)
 
 
 def on_multi_handler(name: Var[str], age: Var[int]) -> "tuple[Var[str], Var[int]]":
-    """Handler returning multiple args."""
+    """Handler returning multiple args.
+
+    Args:
+        name: The name from the event.
+        age: The age from the event.
+
+    Returns:
+        A tuple containing the name and age.
+    """
     return (name, age)
 
 
