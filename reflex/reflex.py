@@ -296,11 +296,13 @@ def _run(
     # Delete the states folder if it exists.
     reset_disk_state_manager()
 
-    # Apply the new ports to the config.
+    # Apply the new ports and host to the config.
     if frontend_port != config.frontend_port:
         config._set_persistent(frontend_port=frontend_port)
     if backend_port != config.backend_port:
         config._set_persistent(backend_port=backend_port)
+    if backend_host != config.backend_host:
+        config._set_persistent(backend_host=backend_host)
 
     # Reload the config to make sure the env vars are persistent.
     get_config(reload=True)

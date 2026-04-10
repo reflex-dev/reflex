@@ -159,10 +159,16 @@ def notify_frontend(url: str, backend_present: bool):
     )
 
 
-def notify_backend():
-    """Output a string notifying where the backend is running."""
+def notify_backend(host: str | None = None):
+    """Output a string notifying where the backend is running.
+
+    Args:
+        host: The backend host. If not provided, falls back to the config value.
+    """
+    config = get_config()
+    effective_host = host if host is not None else config.backend_host
     console.print(
-        f"Backend running at: [bold green]http://0.0.0.0:{get_config().backend_port}[/bold green]"
+        f"Backend running at: [bold green]http://{effective_host}:{config.backend_port}[/bold green]"
     )
 
 
@@ -415,7 +421,7 @@ def run_backend(
         (web_dir / constants.NOCOMPILE_FILE).touch()
 
     if not frontend_present:
-        notify_backend()
+        notify_backend(host)
 
     # Run the backend in development mode.
     if should_use_granian():
@@ -612,6 +618,7 @@ def run_backend_prod(
         loglevel: The log level.
         mount_frontend_compiled_app: Whether to mount the compiled frontend app with the backend.
     """
+
     environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.set(mount_frontend_compiled_app)
 
     if should_use_granian():
