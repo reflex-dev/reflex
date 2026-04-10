@@ -30,6 +30,7 @@ from reflex_components_core.base.fragment import Fragment
 from reflex_components_radix.themes.typography.text import Text
 from starlette.applications import Starlette
 from starlette.datastructures import FormData, Headers, UploadFile
+from starlette.requests import ClientDisconnect
 from starlette.responses import StreamingResponse
 from starlette_admin.auth import AuthProvider
 
@@ -1096,8 +1097,8 @@ async def test_upload_file_keeps_form_open_until_stream_completes(
     assert not bio1.closed
     assert not bio2.closed
 
-    # Drive the response through the full ASGI lifecycle so that
-    # _UploadStreamingResponse.__call__ invokes the on_finish callback.
+    # Drive the response through the full ASGI lifecycle so the streaming
+    # response invokes the on_finish callback.
     scope = {"type": "http"}
     done = asyncio.Event()
 
@@ -1302,6 +1303,140 @@ async def test_upload_file_closes_form_if_response_cancelled_before_stream_start
             send,
         )
 
+    assert form_close.await_count == 1
+    assert bio.closed
+
+
+@pytest.mark.asyncio
+async def test_upload_file_cancels_buffered_handler_on_disconnect(token: str):
+    """Buffered uploads cancel the streaming handler on client disconnect.
+
+    Args:
+        token: A token.
+    """
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": f"{FileUploadState.get_full_name()}.multi_handle_upload",
+    }
+
+    bio = io.BytesIO(b"contents of image one")
+    file1 = UploadFile(filename="image1.jpg", file=bio)
+    form_data = FormData([("files", file1)])
+    original_close = form_data.close
+    form_close = AsyncMock(side_effect=original_close)
+    form_data.close = form_close
+
+    async def form():  # noqa: RUF029
+        return form_data
+
+    request_mock.form = form
+
+    stream_started = asyncio.Event()
+    stream_closed = asyncio.Event()
+
+    async def enqueue_stream_delta(_token, _event):
+        try:
+            stream_started.set()
+            yield {"state": {"ok": True}}
+            await asyncio.Event().wait()
+        finally:
+            stream_closed.set()
+
+    app = Mock(
+        event_processor=Mock(enqueue_stream_delta=enqueue_stream_delta),
+    )
+
+    upload_fn = upload(app)
+    streaming_response = await upload_fn(request_mock)
+
+    assert isinstance(streaming_response, StreamingResponse)
+
+    async def receive():
+        await stream_started.wait()
+        return {"type": "http.disconnect"}
+
+    async def send(_message):  # noqa: RUF029
+        return None
+
+    await asyncio.wait_for(
+        streaming_response(
+            {"type": "http", "asgi": {"spec_version": "2.4"}},
+            receive,
+            send,
+        ),
+        timeout=1,
+    )
+
+    await asyncio.wait_for(stream_closed.wait(), timeout=1)
+    assert form_close.await_count == 1
+    assert bio.closed
+
+
+@pytest.mark.asyncio
+async def test_upload_file_raises_client_disconnect_when_stream_send_fails(
+    token: str,
+):
+    """Buffered uploads close the handler stream when send raises OSError.
+
+    Args:
+        token: A token.
+    """
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": f"{FileUploadState.get_full_name()}.multi_handle_upload",
+    }
+
+    bio = io.BytesIO(b"contents of image one")
+    file1 = UploadFile(filename="image1.jpg", file=bio)
+    form_data = FormData([("files", file1)])
+    original_close = form_data.close
+    form_close = AsyncMock(side_effect=original_close)
+    form_data.close = form_close
+
+    async def form():  # noqa: RUF029
+        return form_data
+
+    request_mock.form = form
+
+    stream_closed = asyncio.Event()
+
+    async def enqueue_stream_delta(_token, _event):
+        try:
+            yield {"state": {"ok": True}}
+            await asyncio.Event().wait()
+        finally:
+            stream_closed.set()
+
+    app = Mock(
+        event_processor=Mock(enqueue_stream_delta=enqueue_stream_delta),
+    )
+
+    upload_fn = upload(app)
+    streaming_response = await upload_fn(request_mock)
+
+    assert isinstance(streaming_response, StreamingResponse)
+
+    async def receive() -> dict[str, Any]:
+        await asyncio.Event().wait()
+        msg = "receive should not return"
+        raise AssertionError(msg)
+
+    async def send(message):
+        await asyncio.sleep(0)
+        if message.get("type") == "http.response.body":
+            err = "client disconnected"
+            raise OSError(err)
+
+    with pytest.raises(ClientDisconnect):
+        await streaming_response(
+            {"type": "http", "asgi": {"spec_version": "2.4"}},
+            receive,
+            send,
+        )
+
+    await asyncio.wait_for(stream_closed.wait(), timeout=1)
     assert form_close.await_count == 1
     assert bio.closed
 

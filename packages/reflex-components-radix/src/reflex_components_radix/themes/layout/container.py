@@ -39,10 +39,10 @@ class Container(elements.Div, RadixThemesComponent):
         """Create the container component.
 
         Args:
-            children: The children components.
+            *children: The children components.
             padding: The padding of the container.
             stack_children_full_width: If True, any vstack/hstack children will have 100% width.
-            props: The properties of the container.
+            **props: The properties of the container.
 
         Returns:
             The container component.

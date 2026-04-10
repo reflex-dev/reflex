@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
-from datetime import date, datetime, time, timedelta
+import datetime
 
 from reflex_base.components.component import NoSSRComponent, field
 from reflex_base.event import EventHandler, passthrough_event_spec
@@ -94,9 +94,9 @@ class Moment(NoSSRComponent):
         doc="Shows the duration (elapsed time) between two dates. duration property should be behind date property time-wise."
     )
 
-    date: Var[str | datetime | date | time | timedelta] = field(
-        doc="The date to display (also work if passed as children)."
-    )
+    date: Var[
+        str | datetime.datetime | datetime.date | datetime.time | datetime.timedelta
+    ] = field(doc="The date to display (also work if passed as children).")
 
     duration_from_now: Var[bool] = field(
         doc="Shows the duration (elapsed time) between now and the provided datetime."

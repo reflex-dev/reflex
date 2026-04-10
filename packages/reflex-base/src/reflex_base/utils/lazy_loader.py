@@ -17,16 +17,18 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 from __future__ import annotations
 
-import copy
 import importlib
 import os
 import sys
+from collections.abc import Mapping, Sequence
+
+SubmodAttrsType = Mapping[str, Sequence[str | tuple[str, str]]]
 
 
 def attach(
     package_name: str,
     submodules: set[str] | None = None,
-    submod_attrs: dict[str, list[str]] | None = None,
+    submod_attrs: SubmodAttrsType | None = None,
     **extra_mappings: str,
 ):
     """Replaces a package's __getattr__, __dir__, and __all__ attributes using lazy.attach.
@@ -45,24 +47,21 @@ def attach(
     Returns:
         __getattr__, __dir__, __all__
     """
-    submod_attrs = copy.deepcopy(submod_attrs)
-    if submod_attrs:
-        for k, v in submod_attrs.items():
-            # when flattening the list, only keep the alias in the tuple(mod[1])
-            submod_attrs[k] = [
-                mod if not isinstance(mod, tuple) else mod[1] for mod in v
-            ]
-
     if submod_attrs is None:
         submod_attrs = {}
 
     submodules = set(submodules) if submodules is not None else set()
 
-    attr_to_modules = {
-        attr: mod for mod, attrs in submod_attrs.items() for attr in attrs
+    alias_to_module_and_attr = {
+        comp_alias(attr): (mod, comp_name(attr))
+        for mod, attrs in submod_attrs.items()
+        for attr in attrs
     }
 
-    __all__ = sorted([*(submodules | attr_to_modules.keys()), *(extra_mappings or [])])
+    __all__ = sorted([
+        *(submodules | alias_to_module_and_attr.keys()),
+        *(extra_mappings or []),
+    ])
 
     def __getattr__(name: str):  # noqa: N807
         if name in extra_mappings:
@@ -74,15 +73,15 @@ def attach(
             return getattr(submod, attr)
         if name in submodules:
             return importlib.import_module(f"{package_name}.{name}")
-        if name in attr_to_modules:
-            submod_path = f"{package_name}.{attr_to_modules[name]}"
-            submod = importlib.import_module(submod_path)
-            attr = getattr(submod, name)
+        if name in alias_to_module_and_attr:
+            module, attr_name = alias_to_module_and_attr[name]
+            submod = importlib.import_module(f"{package_name}.{module}")
+            attr = getattr(submod, attr_name)
 
             # If the attribute lives in a file (module) with the same
             # name as the attribute, ensure that the attribute and *not*
             # the module is accessible on the package.
-            if name == attr_to_modules[name]:
+            if name == module:
                 pkg = sys.modules[package_name]
                 pkg.__dict__[name] = attr
 
@@ -94,7 +93,50 @@ def attach(
         return __all__
 
     if os.environ.get("EAGER_IMPORT", ""):
-        for attr in set(attr_to_modules.keys()) | submodules:
+        for attr in set(alias_to_module_and_attr.keys()) | submodules:
             __getattr__(attr)
 
     return __getattr__, __dir__, list(__all__)
+
+
+def comp_name(comp: str | tuple[str, str]) -> str:
+    """Get the component name from the mapping value.
+
+    This is the name used internally in the codebase.
+
+    Args:
+        comp: The component name or a tuple of (component name, alias).
+
+    Returns:
+        The component name.
+    """
+    return comp[0] if isinstance(comp, tuple) else comp
+
+
+def comp_alias(comp: str | tuple[str, str]) -> str:
+    """Get the component alias from the mapping value.
+
+    This is the name external users will import.
+
+    Args:
+        comp: The component name or a tuple of (component name, alias).
+
+    Returns:
+        The component alias, or the compoenent name if there is no alias.
+    """
+    return comp[1] if isinstance(comp, tuple) else comp
+
+
+def comp_path(path: str, comp: str | tuple[str, str]) -> str:
+    """Get the component path from the mapping key and value.
+
+    This is the internal path that will be imported.
+
+    Args:
+        path: The base path of the component.
+        comp: The component name or a tuple of (component name, alias).
+
+    Returns:
+        The component path.
+    """
+    return path + "." + comp_name(comp)

@@ -1,8 +1,7 @@
 from typing import Callable, Literal
 
-from reflex_ui_shared.components.icons import get_icon
-
 import reflex as rx
+from reflex_ui_shared.components.icons import get_icon
 
 LiteralButtonVariant = Literal[
     "primary", "success", "destructive", "secondary", "muted"
