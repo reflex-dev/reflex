@@ -6,6 +6,7 @@ This module tests:
 - Default event handlers inherited from Component
 - Props with doc strings (via field(doc=...))
 - Props with comment-based docs (# comment above prop)
+- Props with inline docstrings (triple-quoted string after prop)
 - Module docstring removal in stubs
 - visit_Assign: assignment to `Any` is preserved
 - visit_Assign: non-annotated assignments are removed
@@ -40,6 +41,18 @@ class SimpleComponent(Component):
         default=Var.create("default"),
         doc="An optional label with a default value.",
     )
+
+    description: Var[str]
+    """A detailed description of the component."""
+
+    tooltip: Var[str]
+    """A tooltip that appears on hover
+    with additional details."""
+
+    callback: Var[str]
+    """
+    The def of the callback to use when the component is clicked.
+    """
 
     def _private_method(self):
         """This should not appear in the stub.

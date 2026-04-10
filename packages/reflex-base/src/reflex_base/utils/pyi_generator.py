@@ -96,11 +96,7 @@ OVERWRITE_TYPES = {
 
 DEFAULT_TYPING_IMPORTS = {
     "Any",
-    "Callable",
     "Dict",
-    # "List",
-    "Sequence",
-    "Mapping",
     "Literal",
     "Optional",
     "Union",
@@ -109,6 +105,7 @@ DEFAULT_TYPING_IMPORTS = {
 
 # TODO: fix import ordering and unused imports with ruff later
 DEFAULT_IMPORTS = {
+    "collections.abc": ["Callable", "Mapping", "Sequence"],
     "typing": sorted(DEFAULT_TYPING_IMPORTS),
     "reflex_components_core.core.breakpoints": ["Breakpoints"],
     "reflex_base.event": [
@@ -124,6 +121,7 @@ DEFAULT_IMPORTS = {
 }
 # These pre-0.9 imports might be present in the file and should be removed since the pyi generator will handle them separately.
 EXCLUDED_IMPORTS = {
+    "typing": ["Callable", "Mapping", "Sequence"],  # moved to collections.abc
     "reflex.components.core.breakpoints": ["Breakpoints"],
     "reflex.event": [
         "EventChain",
@@ -316,28 +314,76 @@ def _get_class_prop_comments(clz: type[Component]) -> Mapping[str, tuple[str, ..
     """
     props_comments: dict[str, tuple[str, ...]] = {}
     comments = []
+    last_prop = ""
+    in_docstring = False
+    docstring_lines: list[str] = []
     for line in _get_source(clz).splitlines():
+        stripped = line.strip()
+
+        # Handle triple-quoted docstrings after prop definitions.
+        # This must be checked before the `def ` boundary so that
+        # docstring prose containing "def " doesn't break the loop.
+        if in_docstring:
+            if '"""' in stripped or "'''" in stripped:
+                # End of multi-line docstring.
+                if '"""' in stripped:
+                    end_text = stripped.partition('"""')[0].strip()
+                else:
+                    end_text = stripped.partition("'''")[0].strip()
+                if end_text:
+                    docstring_lines.append(end_text)
+                if last_prop and docstring_lines:
+                    props_comments[last_prop] = tuple(docstring_lines)
+                in_docstring = False
+                docstring_lines = []
+                last_prop = ""
+            else:
+                docstring_lines.append(stripped)
+            continue
+
         reached_functions = re.search(r"def ", line)
         if reached_functions:
             # We've reached the functions, so stop.
             break
 
+        # Check for start of a docstring right after a prop.
+        if last_prop and (stripped.startswith(('"""', "'''"))):
+            quote = '"""' if stripped.startswith('"""') else "'''"
+            content_after_open = stripped[3:]
+            if quote in content_after_open:
+                # Single-line docstring: """text"""
+                doc_text = content_after_open.partition(quote)[0].strip()
+                if doc_text:
+                    props_comments[last_prop] = (doc_text,)
+                last_prop = ""
+            else:
+                # Multi-line docstring starts here.
+                in_docstring = True
+                docstring_lines = []
+                first_line = content_after_open.strip()
+                if first_line:
+                    docstring_lines.append(first_line)
+            continue
+
         if line == "":
             # We hit a blank line, so clear comments to avoid commented out prop appearing in next prop docs.
             comments.clear()
+            last_prop = ""
             continue
 
         # Get comments for prop
-        if line.strip().startswith("#"):
+        if stripped.startswith("#"):
             # Remove noqa from the comments.
             line = line.partition(" # noqa")[0]
             comments.append(line)
+            last_prop = ""
             continue
 
         # Check if this line has a prop.
         match = re.search(r"\w+:", line)
         if match is None:
             # This line doesn't have a var, so continue.
+            last_prop = ""
             continue
 
         # Get the prop.
@@ -347,6 +393,7 @@ def _get_class_prop_comments(clz: type[Component]) -> Mapping[str, tuple[str, ..
                 comment.strip().lstrip("#").strip() for comment in comments
             )
         comments.clear()
+        last_prop = prop
 
     return MappingProxyType(props_comments)
 
@@ -629,11 +676,13 @@ def _get_visible_type_name(
     if type_hint_globals is None:
         return None
 
+    type_module = getattr(typ, "__module__", None)
     type_name = getattr(typ, "__name__", None)
-    if (
-        type_name is not None
-        and type_name in type_hint_globals
-        and type_hint_globals[type_name] is typ
+
+    if type_name is not None and (
+        type_hint_globals.get(type_name) is typ
+        or type_name in DEFAULT_IMPORTS.get(str(type_module), set())
+        or type_name in EXCLUDED_IMPORTS.get(str(type_module), set())
     ):
         return type_name
 
@@ -688,11 +737,6 @@ def type_to_ast(
                     return ast.Name(id=typ.__name__)
                 if visible_name := _get_visible_type_name(typ, type_hint_globals):
                     return ast.Name(id=visible_name)
-                if (
-                    typ.__module__ in DEFAULT_IMPORTS
-                    and typ.__name__ in DEFAULT_IMPORTS[typ.__module__]
-                ):
-                    return ast.Name(id=typ.__name__)
                 return ast.Name(id=typ.__module__ + "." + typ.__name__)
             return ast.Name(id=typ.__name__)
         if hasattr(typ, "_name"):
@@ -1289,6 +1333,23 @@ class StubGenerator(ast.NodeTransformer):
                     if isinstance(name, ast.Name) and name.id.startswith("_"):
                         return None
 
+        return node
+
+    def visit_Expr(self, node: ast.Expr) -> ast.Expr | None:
+        """Remove bare string expressions (attribute docstrings) in component classes.
+
+        Args:
+            node: The Expr node to visit.
+
+        Returns:
+            The modified Expr node (or None).
+        """
+        if (
+            self._current_class_is_component()
+            and isinstance(node.value, ast.Constant)
+            and isinstance(node.value.value, str)
+        ):
+            return None
         return node
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> ast.AnnAssign | None:
