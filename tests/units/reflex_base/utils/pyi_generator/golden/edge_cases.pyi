@@ -12,7 +12,6 @@ from reflex_base.vars.base import Var
 from reflex_components_core.core.breakpoints import Breakpoints
 
 class EmptyComponent(Component):
-
     @classmethod
     def create(
         cls,

@@ -29,6 +29,7 @@ def send_notification(message: str, level: str = "info") -> EventSpec:
     Returns:
         The event spec.
     """
+    return EventSpec()  # type: ignore[call-arg]
 
 
 class Notify(ComponentNamespace):

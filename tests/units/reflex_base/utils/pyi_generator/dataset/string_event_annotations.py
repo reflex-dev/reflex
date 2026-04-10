@@ -13,7 +13,7 @@ from reflex_base.vars.base import Var
 
 def on_empty_handler() -> "tuple[()]":
     """Handler returning empty tuple."""
-    return ((),)
+    return ()
 
 
 def on_string_handler(value: Var[str]) -> "tuple[Var[str]]":

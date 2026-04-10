@@ -12,6 +12,7 @@ import linecache
 import sys
 import types as builtin_types
 import typing
+from types import SimpleNamespace
 from typing import Any, Literal, Optional, Union
 
 import pytest
@@ -275,7 +276,7 @@ def _generate_stub_from_source(source: str) -> str:
             ):
                 obj.__module__ = module_name
 
-        classes = {
+        classes: dict[str, type[Component] | type[SimpleNamespace]] = {
             name: obj
             for name, obj in vars(mod).items()
             if isinstance(obj, type)

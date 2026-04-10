@@ -164,6 +164,7 @@ reportIncompatibleMethodOverride = false
 [tool.ruff]
 target-version = "py310"
 output-format = "concise"
+extend-exclude = ["tests/units/reflex_base/utils/pyi_generator/golden"]
 lint.isort.split-on-trailing-comma = false
 preview = true
 lint.select = ["ALL"]

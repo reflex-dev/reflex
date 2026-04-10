@@ -22,9 +22,9 @@ class StrictComponent(Component):
 
     _hidden_state: ClassVar[dict[str, Any]] = {}
 
-    tag: str = "div"
+    tag: str | None = "div"
 
-    library: str = "some-lib"
+    library: str | None = "some-lib"
 
     # The valid children for this component.
     _valid_children: ClassVar[list[str]] = ["ChildA", "ChildB"]
