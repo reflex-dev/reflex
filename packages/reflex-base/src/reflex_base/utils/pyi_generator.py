@@ -96,11 +96,7 @@ OVERWRITE_TYPES = {
 
 DEFAULT_TYPING_IMPORTS = {
     "Any",
-    "Callable",
     "Dict",
-    # "List",
-    "Sequence",
-    "Mapping",
     "Literal",
     "Optional",
     "Union",
@@ -109,6 +105,7 @@ DEFAULT_TYPING_IMPORTS = {
 
 # TODO: fix import ordering and unused imports with ruff later
 DEFAULT_IMPORTS = {
+    "collections.abc": ["Callable", "Mapping", "Sequence"],
     "typing": sorted(DEFAULT_TYPING_IMPORTS),
     "reflex_components_core.core.breakpoints": ["Breakpoints"],
     "reflex_base.event": [
@@ -124,6 +121,7 @@ DEFAULT_IMPORTS = {
 }
 # These pre-0.9 imports might be present in the file and should be removed since the pyi generator will handle them separately.
 EXCLUDED_IMPORTS = {
+    "typing": ["Callable", "Mapping", "Sequence"],  # moved to collections.abc
     "reflex.components.core.breakpoints": ["Breakpoints"],
     "reflex.event": [
         "EventChain",
