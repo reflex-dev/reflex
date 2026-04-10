@@ -314,28 +314,71 @@ def _get_class_prop_comments(clz: type[Component]) -> Mapping[str, tuple[str, ..
     """
     props_comments: dict[str, tuple[str, ...]] = {}
     comments = []
+    last_prop = ""
+    in_docstring = False
+    docstring_lines: list[str] = []
     for line in _get_source(clz).splitlines():
         reached_functions = re.search(r"def ", line)
         if reached_functions:
             # We've reached the functions, so stop.
             break
 
+        stripped = line.strip()
+
+        # Handle triple-quoted docstrings after prop definitions.
+        if in_docstring:
+            if '"""' in stripped or "'''" in stripped:
+                # End of multi-line docstring.
+                end_text = stripped.partition('"""')[0] or stripped.partition("'''")[0]
+                if end_text:
+                    docstring_lines.append(end_text.strip())
+                if last_prop and docstring_lines:
+                    props_comments[last_prop] = tuple(docstring_lines)
+                in_docstring = False
+                docstring_lines = []
+                last_prop = ""
+            else:
+                docstring_lines.append(stripped)
+            continue
+
+        # Check for start of a docstring right after a prop.
+        if last_prop and (stripped.startswith(('"""', "'''"))):
+            quote = '"""' if stripped.startswith('"""') else "'''"
+            content_after_open = stripped[3:]
+            if quote in content_after_open:
+                # Single-line docstring: """text"""
+                doc_text = content_after_open.partition(quote)[0].strip()
+                if doc_text:
+                    props_comments[last_prop] = (doc_text,)
+                last_prop = ""
+            else:
+                # Multi-line docstring starts here.
+                in_docstring = True
+                docstring_lines = []
+                first_line = content_after_open.strip()
+                if first_line:
+                    docstring_lines.append(first_line)
+            continue
+
         if line == "":
             # We hit a blank line, so clear comments to avoid commented out prop appearing in next prop docs.
             comments.clear()
+            last_prop = ""
             continue
 
         # Get comments for prop
-        if line.strip().startswith("#"):
+        if stripped.startswith("#"):
             # Remove noqa from the comments.
             line = line.partition(" # noqa")[0]
             comments.append(line)
+            last_prop = ""
             continue
 
         # Check if this line has a prop.
         match = re.search(r"\w+:", line)
         if match is None:
             # This line doesn't have a var, so continue.
+            last_prop = ""
             continue
 
         # Get the prop.
@@ -345,6 +388,7 @@ def _get_class_prop_comments(clz: type[Component]) -> Mapping[str, tuple[str, ..
                 comment.strip().lstrip("#").strip() for comment in comments
             )
         comments.clear()
+        last_prop = prop
 
     return MappingProxyType(props_comments)
 
@@ -1284,6 +1328,23 @@ class StubGenerator(ast.NodeTransformer):
                     if isinstance(name, ast.Name) and name.id.startswith("_"):
                         return None
 
+        return node
+
+    def visit_Expr(self, node: ast.Expr) -> ast.Expr | None:
+        """Remove bare string expressions (attribute docstrings) in component classes.
+
+        Args:
+            node: The Expr node to visit.
+
+        Returns:
+            The modified Expr node (or None).
+        """
+        if (
+            self._current_class_is_component()
+            and isinstance(node.value, ast.Constant)
+            and isinstance(node.value.value, str)
+        ):
+            return None
         return node
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> ast.AnnAssign | None:

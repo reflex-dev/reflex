@@ -25,6 +25,8 @@ class SimpleComponent(Component):
         is_active: Var[bool] | bool | None = None,
         opacity: Var[float] | float | None = None,
         label: Var[str] | str | None = None,
+        description: Var[str] | str | None = None,
+        tooltip: Var[str] | str | None = None,
         style: Sequence[Mapping[str, Any]]
         | Mapping[str, Any]
         | Var[Mapping[str, Any]]
@@ -62,6 +64,8 @@ class SimpleComponent(Component):
             is_active: Whether the component is active.
             opacity: The opacity of the component.
             label: An optional label with a default value.
+            description: A detailed description of the component.
+            tooltip: A tooltip that appears on hover with additional details.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
