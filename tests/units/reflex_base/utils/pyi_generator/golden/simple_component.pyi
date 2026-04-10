@@ -27,6 +27,7 @@ class SimpleComponent(Component):
         label: Var[str] | str | None = None,
         description: Var[str] | str | None = None,
         tooltip: Var[str] | str | None = None,
+        callback: Var[str] | str | None = None,
         style: Sequence[Mapping[str, Any]]
         | Mapping[str, Any]
         | Var[Mapping[str, Any]]
@@ -66,6 +67,7 @@ class SimpleComponent(Component):
             label: An optional label with a default value.
             description: A detailed description of the component.
             tooltip: A tooltip that appears on hover with additional details.
+            callback: The def of the callback to use when the component is clicked.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

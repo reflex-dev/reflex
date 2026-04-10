@@ -49,6 +49,11 @@ class SimpleComponent(Component):
     """A tooltip that appears on hover
     with additional details."""
 
+    callback: Var[str]
+    """
+    The def of the callback to use when the component is clicked.
+    """
+
     def _private_method(self):
         """This should not appear in the stub.
 

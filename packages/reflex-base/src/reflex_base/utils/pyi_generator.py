@@ -318,20 +318,20 @@ def _get_class_prop_comments(clz: type[Component]) -> Mapping[str, tuple[str, ..
     in_docstring = False
     docstring_lines: list[str] = []
     for line in _get_source(clz).splitlines():
-        reached_functions = re.search(r"def ", line)
-        if reached_functions:
-            # We've reached the functions, so stop.
-            break
-
         stripped = line.strip()
 
         # Handle triple-quoted docstrings after prop definitions.
+        # This must be checked before the `def ` boundary so that
+        # docstring prose containing "def " doesn't break the loop.
         if in_docstring:
             if '"""' in stripped or "'''" in stripped:
                 # End of multi-line docstring.
-                end_text = stripped.partition('"""')[0] or stripped.partition("'''")[0]
+                if '"""' in stripped:
+                    end_text = stripped.partition('"""')[0].strip()
+                else:
+                    end_text = stripped.partition("'''")[0].strip()
                 if end_text:
-                    docstring_lines.append(end_text.strip())
+                    docstring_lines.append(end_text)
                 if last_prop and docstring_lines:
                     props_comments[last_prop] = tuple(docstring_lines)
                 in_docstring = False
@@ -340,6 +340,11 @@ def _get_class_prop_comments(clz: type[Component]) -> Mapping[str, tuple[str, ..
             else:
                 docstring_lines.append(stripped)
             continue
+
+        reached_functions = re.search(r"def ", line)
+        if reached_functions:
+            # We've reached the functions, so stop.
+            break
 
         # Check for start of a docstring right after a prop.
         if last_prop and (stripped.startswith(('"""', "'''"))):
