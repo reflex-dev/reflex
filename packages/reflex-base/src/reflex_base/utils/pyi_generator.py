@@ -627,11 +627,12 @@ def _get_visible_type_name(
     if type_hint_globals is None:
         return None
 
+    type_module = getattr(typ, "__module__", None)
     type_name = getattr(typ, "__name__", None)
-    if (
-        type_name is not None
-        and type_name in type_hint_globals
-        and type_hint_globals[type_name] is typ
+
+    if type_name is not None and (
+        type_hint_globals.get(type_name) is typ
+        or type_name in DEFAULT_IMPORTS.get(str(type_module), set())
     ):
         return type_name
 
@@ -686,11 +687,6 @@ def type_to_ast(
                     return ast.Name(id=typ.__name__)
                 if visible_name := _get_visible_type_name(typ, type_hint_globals):
                     return ast.Name(id=visible_name)
-                if (
-                    typ.__module__ in DEFAULT_IMPORTS
-                    and typ.__name__ in DEFAULT_IMPORTS[typ.__module__]
-                ):
-                    return ast.Name(id=typ.__name__)
                 return ast.Name(id=typ.__module__ + "." + typ.__name__)
             return ast.Name(id=typ.__name__)
         if hasattr(typ, "_name"):
