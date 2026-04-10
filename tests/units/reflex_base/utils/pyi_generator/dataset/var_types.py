@@ -4,10 +4,12 @@ This module tests:
 - Var[T] expansion: Var[str] -> Var[str] | str
 - Var with Union args: Var[str | int] -> Var[str | int] | str | int
 - Complex nested types: Var[list[str]], Var[dict[str, Any]], Var[list[dict[str, Any]]]
+- Callable prop: Var[Callable[[], bool]] (should NOT expand inner type)
 - Component with no custom props (just inherited defaults)
 - Component with only event handlers (no data props)
 """
 
+from collections.abc import Callable
 from typing import Any
 
 from reflex_base.components.component import Component, field
@@ -43,3 +45,6 @@ class VarTypesComponent(Component):
     items: Var[list[str]] = field(doc="A list of string items.")
     metadata: Var[dict[str, Any]] = field(doc="Metadata dictionary.")
     nested: Var[list[dict[str, Any]]] = field(doc="Nested structures.")
+
+    # Callable prop — the inner Callable type should not be expanded.
+    on_check: Var[Callable[[], bool]] = field(doc="A callable that returns bool.")
