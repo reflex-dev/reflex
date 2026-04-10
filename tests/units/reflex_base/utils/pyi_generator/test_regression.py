@@ -1,7 +1,7 @@
 """Regression tests for pyi_generator.
 
-Runs pyi_generator against a directory of curated Python files and compares
-the generated .pyi stubs against a set of golden reference files.
+Runs PyiGenerator.scan_all against a directory of curated Python files and
+compares the generated .pyi stubs against a set of golden reference files.
 
 Usage as CLI to regenerate golden files:
     python -m tests.units.reflex_base.utils.pyi_generator --update
@@ -19,7 +19,7 @@ from pathlib import Path
 
 import pytest
 
-from reflex_base.utils.pyi_generator import _scan_file
+from reflex_base.utils.pyi_generator import PyiGenerator
 
 _HERE = Path(__file__).resolve().parent
 DATASET_DIR = _HERE / "dataset"
@@ -27,41 +27,15 @@ GOLDEN_DIR = _HERE / "golden"
 
 _UPDATE_CMD = "python -m tests.units.reflex_base.utils.pyi_generator --update"
 
-DATASET_MODULES = sorted(
-    p
-    for p in DATASET_DIR.rglob("*.py")
-    if p.name != "__init__.py" and not p.name.startswith("_")
-)
 
-DATASET_INIT_MODULES = sorted(
-    p for p in DATASET_DIR.rglob("__init__.py") if p != DATASET_DIR / "__init__.py"
-)
-
-ALL_DATASET_FILES = DATASET_MODULES + DATASET_INIT_MODULES
-
-
-def _golden_path_for(module_path: Path) -> Path:
+def _golden_path_for(source_path: Path) -> Path:
     """Map a dataset .py file to its golden .pyi counterpart."""
-    relative = module_path.relative_to(DATASET_DIR)
+    relative = source_path.relative_to(DATASET_DIR)
     return GOLDEN_DIR / relative.with_suffix(".pyi")
 
 
-def _generate_stub(module_path: Path) -> str | None:
-    """Generate a .pyi stub for a single dataset module and return its content.
-
-    Returns None if the generator decides no stub is needed.
-    """
-    result = _scan_file(module_path)
-    if result is None:
-        return None
-    pyi_path = Path(result[0])
-    content = pyi_path.read_text()
-    pyi_path.unlink(missing_ok=True)
-    return content
-
-
 def _normalize_stub(content: str) -> str:
-    """Strip the file-specific header (path line) so golden files are portable."""
+    """Replace the absolute-path docstring header so golden files are portable."""
     lines = content.splitlines(keepends=True)
     normalized: list[str] = []
     for line in lines:
@@ -72,11 +46,26 @@ def _normalize_stub(content: str) -> str:
     return "".join(normalized)
 
 
-def update_golden_files() -> list[str]:
-    """Regenerate all golden .pyi files from the dataset.
+def _run_generator() -> dict[Path, str]:
+    """Run PyiGenerator.scan_all on the dataset dir and collect results.
 
-    Returns a list of updated file names.
+    Generated .pyi files are read back and then removed from the dataset
+    tree so the working copy stays clean.
     """
+    gen = PyiGenerator()
+    gen.scan_all([str(DATASET_DIR)])
+
+    results: dict[Path, str] = {}
+    for pyi_str, _hash in gen.written_files:
+        pyi_path = Path(pyi_str)
+        source_path = pyi_path.with_suffix(".py")
+        results[source_path] = pyi_path.read_text()
+        pyi_path.unlink(missing_ok=True)
+    return results
+
+
+def update_golden_files() -> list[str]:
+    """Regenerate all golden .pyi files from the dataset."""
     GOLDEN_DIR.mkdir(parents=True, exist_ok=True)
     for subdir in DATASET_DIR.rglob("*"):
         if subdir.is_dir() and subdir != DATASET_DIR:
@@ -84,18 +73,16 @@ def update_golden_files() -> list[str]:
                 parents=True, exist_ok=True
             )
 
+    generated = _run_generator()
     updated: list[str] = []
-    for module_path in ALL_DATASET_FILES:
-        content = _generate_stub(module_path)
-        if content is None:
-            continue
-        golden = _golden_path_for(module_path)
-        normalized = _normalize_stub(content)
-        golden.write_text(normalized)
-        updated.append(str(golden.relative_to(_HERE)))
-        print(f"  updated: {golden.relative_to(_HERE)}")
+    for source_path, content in sorted(generated.items()):
+        golden = _golden_path_for(source_path)
+        golden.write_text(_normalize_stub(content))
+        rel = golden.relative_to(_HERE)
+        updated.append(str(rel))
+        print(f"  updated: {rel}")
 
-    expected_goldens = {_golden_path_for(p) for p in ALL_DATASET_FILES}
+    expected_goldens = {_golden_path_for(s) for s in generated}
     for existing in GOLDEN_DIR.rglob("*.pyi"):
         if existing not in expected_goldens:
             existing.unlink()
@@ -104,44 +91,40 @@ def update_golden_files() -> list[str]:
     return updated
 
 
-def _get_test_cases() -> list[tuple[str, Path]]:
-    """Build parameterized test cases: (test_id, module_path)."""
+@pytest.fixture(scope="module")
+def generated_stubs():
+    """Run the generator once for the whole test module."""
+    return _run_generator()
+
+
+def _existing_golden_cases() -> list[tuple[str, Path]]:
+    """Build test IDs from existing golden files (no generator run needed)."""
     cases = []
-    for module_path in ALL_DATASET_FILES:
-        golden = _golden_path_for(module_path)
-        if golden.exists():
-            test_id = str(module_path.relative_to(DATASET_DIR)).replace("/", ".")
-            cases.append((test_id, module_path))
+    for golden in sorted(GOLDEN_DIR.rglob("*.pyi")):
+        relative = golden.relative_to(GOLDEN_DIR)
+        source = DATASET_DIR / relative.with_suffix(".py")
+        tid = str(relative.with_suffix(".py")).replace("/", ".")
+        cases.append((tid, source))
     return cases
 
 
-@pytest.fixture(autouse=True, scope="module")
-def _ensure_dataset_importable():
-    """Ensure the dataset directory is on sys.path so modules can be imported."""
-    repo_root = _HERE.parent.parent.parent.parent.parent
-    if str(repo_root) not in sys.path:
-        sys.path.insert(0, str(repo_root))
-
-
 @pytest.mark.parametrize(
-    "module_path",
-    [p for _, p in _get_test_cases()],
-    ids=[tid for tid, _ in _get_test_cases()],
+    "source_path",
+    [p for _, p in _existing_golden_cases()],
+    ids=[tid for tid, _ in _existing_golden_cases()],
 )
-def test_pyi_golden(module_path: Path):
+def test_pyi_golden(generated_stubs: dict[Path, str], source_path: Path):
     """Compare generated .pyi output against golden reference."""
-    golden_path = _golden_path_for(module_path)
-    if not golden_path.exists():
-        pytest.skip(f"No golden file for {module_path.name}. Run `{_UPDATE_CMD}` to generate.")
+    golden_path = _golden_path_for(source_path)
 
-    generated = _generate_stub(module_path)
-    if generated is None:
+    content = generated_stubs.get(source_path)
+    if content is None:
         pytest.fail(
-            f"pyi_generator produced no output for {module_path.name}, "
+            f"pyi_generator produced no output for {source_path.name}, "
             f"but a golden file exists at {golden_path}"
         )
 
-    normalized = _normalize_stub(generated)
+    normalized = _normalize_stub(content)
     expected = golden_path.read_text()
 
     if normalized != expected:
@@ -151,16 +134,15 @@ def test_pyi_golden(module_path: Path):
             fromfile=f"golden/{golden_path.name}",
             tofile=f"generated/{golden_path.name}",
         )
-        diff_text = "".join(diff)
         pytest.fail(
-            f"Generated stub differs from golden reference for {module_path.name}.\n"
-            f"Run `{_UPDATE_CMD}` to regenerate.\n\n{diff_text}"
+            f"Generated stub differs from golden reference for {source_path.name}.\n"
+            f"Run `{_UPDATE_CMD}` to regenerate.\n\n{''.join(diff)}"
         )
 
 
-def test_no_extra_golden_files():
+def test_no_extra_golden_files(generated_stubs: dict[Path, str]):
     """Ensure no golden files exist without corresponding dataset sources."""
-    expected_goldens = {_golden_path_for(p) for p in ALL_DATASET_FILES}
+    expected_goldens = {_golden_path_for(s) for s in generated_stubs}
     for existing in GOLDEN_DIR.rglob("*.pyi"):
         assert existing in expected_goldens, (
             f"Stale golden file {existing.relative_to(_HERE)} has no dataset source. "
@@ -181,18 +163,14 @@ def main():
         print("Review the changes and commit them with your PR.")
     elif args.check:
         print("Checking generated stubs against golden files...")
+        generated = _run_generator()
         failures = []
-        for module_path in ALL_DATASET_FILES:
-            golden_path = _golden_path_for(module_path)
+        for source_path, content in sorted(generated.items()):
+            golden_path = _golden_path_for(source_path)
             if not golden_path.exists():
                 continue
-            generated = _generate_stub(module_path)
-            if generated is None:
-                failures.append(f"  {module_path.name}: no output generated")
-                continue
-            normalized = _normalize_stub(generated)
-            if normalized != golden_path.read_text():
-                failures.append(f"  {module_path.name}: differs from golden")
+            if _normalize_stub(content) != golden_path.read_text():
+                failures.append(f"  {source_path.name}: differs from golden")
         if failures:
             print("FAILED:")
             print("\n".join(failures))
