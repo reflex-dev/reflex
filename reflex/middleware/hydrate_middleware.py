@@ -5,8 +5,9 @@ from __future__ import annotations
 import dataclasses
 from typing import TYPE_CHECKING
 
-from reflex import constants
-from reflex.event import Event, get_hydrate_event
+from reflex_base import constants
+from reflex_base.event import Event, get_hydrate_event
+
 from reflex.middleware.middleware import Middleware
 from reflex.state import BaseState, StateUpdate, _resolve_delta
 

@@ -4,14 +4,13 @@ from pathlib import Path
 
 import pytest
 from click.testing import CliRunner
+from reflex_base.config import Config
+from reflex_base.constants.installer import PackageJson
+from reflex_base.utils.decorator import cached_procedure
 
-from reflex.config import Config
-from reflex.constants.installer import PackageJson
 from reflex.reflex import cli
 from reflex.testing import chdir
-from reflex.utils.decorator import cached_procedure
 from reflex.utils.frontend_skeleton import (
-    _compile_package_json,
     _compile_vite_config,
     _update_react_router_config,
 )
@@ -108,29 +107,6 @@ def test_initialise_vite_config(config, expected_output):
 )
 def test_get_prod_command(frontend_path, expected_command):
     assert PackageJson.Commands.get_prod_command(frontend_path) == expected_command
-
-
-@pytest.mark.parametrize(
-    ("config", "expected_prod_script"),
-    [
-        (
-            Config(app_name="test"),
-            "sirv ./build/client --single 404.html --host",
-        ),
-        (
-            Config(app_name="test", frontend_path="/app"),
-            "sirv ./build/client --single app/404.html --host",
-        ),
-        (
-            Config(app_name="test", frontend_path="/deep/nested"),
-            "sirv ./build/client --single deep/nested/404.html --host",
-        ),
-    ],
-)
-def test_compile_package_json_prod_command(config, expected_prod_script, monkeypatch):
-    monkeypatch.setattr("reflex.utils.frontend_skeleton.get_config", lambda: config)
-    output = _compile_package_json()
-    assert f'"prod": "{expected_prod_script}"' in output
 
 
 def test_cached_procedure():

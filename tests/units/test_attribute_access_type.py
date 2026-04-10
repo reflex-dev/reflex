@@ -4,15 +4,15 @@ from typing import List  # noqa: UP035
 
 import attrs
 import pytest
+from reflex_base.utils.types import GenericType, get_attribute_access_type
 
 import reflex as rx
-from reflex.utils.types import GenericType, get_attribute_access_type
 
 pytest.importorskip("sqlalchemy")
 pytest.importorskip("sqlmodel")
 pytest.importorskip("pydantic")
 
-import pydantic.v1
+import pydantic
 import sqlalchemy
 import sqlmodel
 from sqlalchemy import JSON, TypeDecorator
@@ -217,19 +217,21 @@ class ModelClass(rx.Model):
         return self.labels[0] if self.labels else None
 
 
-class BaseClass(rx.Base):
-    """Test rx.Base class."""
+class BaseClass(pydantic.BaseModel):
+    """Test pydantic BaseModel class."""
 
-    no_default: int | None = pydantic.v1.Field(required=False)
-    count: int = 0
-    name: str = "test"
-    int_list: list[int] = []
-    str_list: list[str] = []
-    optional_int: int | None = None
-    sqla_tag: SQLATag | None = None
-    labels: list[SQLALabel] = []
-    dict_str_str: dict[str, str] = {}
-    default_factory: list[int] = pydantic.v1.Field(default_factory=list)
+    model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
+
+    no_default: int | None = pydantic.Field(default=None)
+    count: int = pydantic.Field(default=0)
+    name: str = pydantic.Field(default="test")
+    int_list: list[int] = pydantic.Field(default_factory=list)
+    str_list: list[str] = pydantic.Field(default_factory=list)
+    optional_int: int | None = pydantic.Field(default=None)
+    sqla_tag: SQLATag | None = pydantic.Field(default=None)
+    labels: list[SQLALabel] = pydantic.Field(default_factory=list)
+    dict_str_str: dict[str, str] = pydantic.Field(default_factory=dict)
+    default_factory: list[int] = pydantic.Field(default_factory=list)
 
     @property
     def str_property(self) -> str:

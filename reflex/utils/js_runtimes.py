@@ -7,13 +7,13 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from packaging import version
+from reflex_base import constants
+from reflex_base.config import Config, get_config
+from reflex_base.environment import environment
+from reflex_base.utils.decorator import cached_procedure, once
+from reflex_base.utils.exceptions import SystemPackageMissingError
 
-from reflex import constants
-from reflex.config import Config, get_config
-from reflex.environment import environment
 from reflex.utils import console, net, path_ops, processes
-from reflex.utils.decorator import cached_procedure, once
-from reflex.utils.exceptions import SystemPackageMissingError
 from reflex.utils.prerequisites import get_web_dir, windows_check_onedrive_in_path
 
 

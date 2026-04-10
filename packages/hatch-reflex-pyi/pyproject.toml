@@ -1,0 +1,25 @@
+[project]
+name = "hatch-reflex-pyi"
+dynamic = ["version"]
+description = "Hatch build hook that generates .pyi stubs for Reflex component packages."
+readme = "README.md"
+authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
+maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
+requires-python = ">=3.10"
+dependencies = [
+    "hatchling",
+]
+
+[project.entry-points.hatch]
+reflex-pyi = "hatch_reflex_pyi.hooks"
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+pattern-prefix = "hatch-reflex-pyi-"
+fallback-version = "0.0.0dev0"
+
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"

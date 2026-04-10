@@ -1,0 +1,42 @@
+[project]
+name = "reflex-components-core"
+dynamic = ["version"]
+description = "UI components for Reflex."
+readme = "README.md"
+authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
+maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
+requires-python = ">=3.10"
+dependencies = [
+    "reflex-components-lucide",
+    "reflex-components-sonner",
+    "python_multipart",
+    "starlette",
+    "typing_extensions",
+]
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+pattern-prefix = "reflex-components-core-"
+fallback-version = "0.0.0dev0"
+
+[tool.hatch.build]
+targets.sdist.artifacts = ["*.pyi"]
+targets.wheel.artifacts = ["*.pyi"]
+
+[tool.hatch.build.hooks.reflex-pyi]
+dependencies = [
+    "ruff",
+    "reflex-base",
+    "reflex-components-lucide",
+    "reflex-components-sonner",
+    "python_multipart",
+    "starlette",
+    "typing_extensions",
+]
+
+
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning", "hatch-reflex-pyi"]
+build-backend = "hatchling.build"

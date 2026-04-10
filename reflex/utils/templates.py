@@ -7,8 +7,9 @@ import zipfile
 from pathlib import Path
 from urllib.parse import urlparse
 
-from reflex import constants
-from reflex.config import get_config
+from reflex_base import constants
+from reflex_base.config import get_config
+
 from reflex.utils import console, net, path_ops, redir
 
 
@@ -181,10 +182,15 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
         template_code_dir_name=template_name,
         template_dir=template_dir,
     )
-    req_file = Path("requirements.txt")
-    if req_file.exists() and len(req_file.read_text().splitlines()) > 1:
+    pyproject_file = Path(constants.PyprojectToml.FILE)
+    req_file = Path(constants.RequirementsTxt.FILE)
+    if pyproject_file.exists():
         console.info(
-            "Run `pip install -r requirements.txt` to install the required python packages for this template."
+            "Run `uv sync` to install the required Python packages for this template."
+        )
+    elif req_file.exists() and len(req_file.read_text().splitlines()) > 1:
+        console.info(
+            "Run `uv pip install -r requirements.txt` to install the required Python packages for this template."
         )
     #  Clean up the temp directories.
     shutil.rmtree(temp_dir)

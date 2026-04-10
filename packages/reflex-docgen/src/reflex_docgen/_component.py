@@ -3,8 +3,8 @@
 from dataclasses import dataclass
 from typing import Any
 
-from reflex.components.component import DEFAULT_TRIGGERS_AND_DESC, Component
-from reflex.event import EventHandler
+from reflex_base.components.component import DEFAULT_TRIGGERS_AND_DESC, Component
+from reflex_base.event import EventHandler
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

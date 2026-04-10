@@ -1,5 +1,6 @@
 """Module for generating documentation for Reflex components and classes."""
 
+from reflex_docgen import markdown as markdown
 from reflex_docgen._class import ClassDocumentation as ClassDocumentation
 from reflex_docgen._class import FieldDocumentation as FieldDocumentation
 from reflex_docgen._class import MethodDocumentation as MethodDocumentation
@@ -28,4 +29,5 @@ __all__ = [
     "generate_documentation",
     "get_component_event_handlers",
     "get_component_props",
+    "markdown",
 ]

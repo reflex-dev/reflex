@@ -1,0 +1,23 @@
+[project]
+name = "reflex-integrations-docs"
+dynamic = ["version"]
+description = "Reflex Integrations Docs."
+readme = "README.md"
+authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
+maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
+requires-python = ">=3.10"
+dependencies = []
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+pattern-prefix = "reflex-integrations-docs-"
+fallback-version = "0.0.0dev0"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/integrations_docs"]
+
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"

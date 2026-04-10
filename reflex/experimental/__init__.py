@@ -2,12 +2,14 @@
 
 from types import SimpleNamespace
 
-from reflex.components.datadisplay.shiki_code_block import code_block as code_block
-from reflex.utils.console import warn
+from reflex_base.utils.console import warn
+from reflex_components_code.shiki_code_block import code_block as code_block
+
 from reflex.utils.misc import run_in_thread
 
 from . import hooks as hooks
 from .client_state import ClientStateVar as ClientStateVar
+from .memo import memo as memo
 
 
 class ExperimentalNamespace(SimpleNamespace):
@@ -58,4 +60,5 @@ _x = ExperimentalNamespace(
     client_state=ClientStateVar.create,
     hooks=hooks,
     code_block=code_block,
+    memo=memo,
 )

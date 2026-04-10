@@ -1,4 +1,4 @@
-from reflex.components.el.elements.media import (
+from reflex_components_core.el.elements.media import (
     Circle,
     Defs,
     Ellipse,

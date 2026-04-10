@@ -2,13 +2,13 @@
 
 import json
 import random
-import re
 from pathlib import Path
 
-from reflex import constants
+from reflex_base import constants
+from reflex_base.config import Config, get_config
+from reflex_base.environment import environment
+
 from reflex.compiler import templates
-from reflex.config import Config, get_config
-from reflex.environment import environment
 from reflex.utils import console, path_ops
 from reflex.utils.prerequisites import get_project_hash, get_web_dir
 from reflex.utils.registry import get_npm_registry
@@ -41,44 +41,101 @@ def initialize_gitignore(
     gitignore_file.write_text("\n".join(files_to_ignore) + "\n")
 
 
-def initialize_requirements_txt() -> bool:
+def _read_dependency_file(file_path: Path) -> tuple[str | None, str | None]:
+    """Read a dependency file with a forgiving encoding strategy.
+
+    Args:
+        file_path: The file to read.
+
+    Returns:
+        A tuple of file content and the encoding used to read it.
+    """
+    try:
+        return file_path.read_text(), None
+    except UnicodeDecodeError:
+        pass
+    except Exception as e:
+        console.error(f"Failed to read {file_path} due to {e}.")
+        raise SystemExit(1) from None
+
+    try:
+        return file_path.read_text(encoding="utf-8"), "utf-8"
+    except UnicodeDecodeError:
+        return None, None
+    except Exception as e:
+        console.error(f"Failed to read {file_path} due to {e}.")
+        raise SystemExit(1) from None
+
+
+def _has_reflex_requirement_line(requirements_text: str) -> bool:
+    """Check whether requirements.txt already contains reflex.
+
+    Returns:
+        Whether reflex is already present in the requirements text.
+    """
+    return any(
+        _is_reflex_dependency_spec(line) for line in requirements_text.splitlines()
+    )
+
+
+def _is_reflex_dependency_spec(requirement: str) -> bool:
+    """Check whether a dependency specification refers to the reflex package.
+
+    Args:
+        requirement: The dependency specification to check.
+
+    Returns:
+        Whether the specification refers to the reflex package.
+    """
+    requirement = requirement.strip()
+    if not requirement.lower().startswith("reflex"):
+        return False
+
+    suffix = requirement[len("reflex") :]
+    if suffix.startswith("["):
+        extras_end = suffix.find("]")
+        if extras_end == -1:
+            return False
+        suffix = suffix[extras_end + 1 :]
+
+    return not suffix or suffix.lstrip().startswith((
+        "==",
+        "!=",
+        ">=",
+        "<=",
+        "~=",
+        ">",
+        "<",
+        ";",
+        "@",
+    ))
+
+
+def initialize_requirements_txt(
+    requirements_file_path: Path = Path(constants.RequirementsTxt.FILE),
+    pyproject_file_path: Path = Path(constants.PyprojectToml.FILE),
+) -> bool:
     """Initialize the requirements.txt file.
-    If absent and no pyproject.toml file exists, generate one for the user.
-    If the requirements.txt does not have reflex as dependency,
-    generate a requirement pinning current version and append to
-    the requirements.txt file.
+
+    If a project already uses pyproject.toml, leave dependency management to the
+    package manager. Otherwise ensure requirements.txt pins the current Reflex
+    version for legacy workflows.
 
     Returns:
         True if the user has to update the requirements.txt file.
-
-    Raises:
-        SystemExit: If the requirements.txt file cannot be read or written to.
     """
-    requirements_file_path = Path(constants.RequirementsTxt.FILE)
-    if (
-        not requirements_file_path.exists()
-        and Path(constants.PyprojectToml.FILE).exists()
-    ):
-        return True
+    if not requirements_file_path.exists() and pyproject_file_path.exists():
+        return False
 
     requirements_file_path.touch(exist_ok=True)
 
-    for encoding in [None, "utf-8"]:
-        try:
-            content = requirements_file_path.read_text(encoding)
-            break
-        except UnicodeDecodeError:
-            continue
-        except Exception as e:
-            console.error(f"Failed to read {requirements_file_path} due to {e}.")
-            raise SystemExit(1) from None
-    else:
+    content, encoding = _read_dependency_file(requirements_file_path)
+    if content is None:
         return True
 
-    for line in content.splitlines():
-        if re.match(r"^reflex[^a-zA-Z0-9]", line):
-            console.debug(f"{requirements_file_path} already has reflex as dependency.")
-            return False
+    if _has_reflex_requirement_line(content):
+        console.debug(f"{requirements_file_path} already has reflex as dependency.")
+        return False
 
     console.debug(
         f"Appending {constants.RequirementsTxt.DEFAULTS_STUB} to {requirements_file_path}"
@@ -168,14 +225,10 @@ def _update_react_router_config(config: Config, prerender_routes: bool = False):
 
 
 def _compile_package_json():
-    config = get_config()
     return templates.package_json_template(
         scripts={
             "dev": constants.PackageJson.Commands.DEV,
             "export": constants.PackageJson.Commands.EXPORT,
-            "prod": constants.PackageJson.Commands.get_prod_command(
-                config.frontend_path
-            ),
         },
         dependencies=constants.PackageJson.DEPENDENCIES,
         dev_dependencies=constants.PackageJson.DEV_DEPENDENCIES,

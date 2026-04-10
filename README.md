@@ -1,5 +1,9 @@
 <div align="center">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex.svg" alt="Reflex Logo" width="300px">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_light.svg">
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_dark.svg">
+  <img alt="Reflex Logo" src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex.svg" width="300px">
+</picture>
 
 <hr>
 
@@ -52,42 +56,47 @@ mkdir my_app_name
 cd my_app_name
 ```
 
-### 2. Set up a virtual environment
+### 2. Install uv
 
-Create and activate virtual environment
-
-```bash
-# On Windows:
-python -m venv .venv
-.venv\Scripts\activate
-
-# On macOS/Linux:
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-### 3. Install Reflex
-
-Reflex is available as a pip package (Requires Python 3.10+):
+Reflex recommends [uv](https://docs.astral.sh/uv/) for managing your project environment and dependencies.
+See the [uv installation docs](https://docs.astral.sh/uv/getting-started/installation/) for your platform.
 
 ```bash
-pip install reflex
+# macOS/Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows (PowerShell)
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
-### 4. Initialize the project
+### 3. Initialize the Python project
+
+```bash
+uv init
+```
+
+### 4. Add Reflex
+
+Reflex requires Python 3.10+:
+
+```bash
+uv add reflex
+```
+
+### 5. Initialize the project
 
 This command initializes a template app in your new directory:
 
 ```bash
-reflex init
+uv run reflex init
 ```
 
-### 5. Run the app
+### 6. Run the app
 
 You can run this app in development mode:
 
 ```bash
-reflex run
+uv run reflex run
 ```
 
 You should see your app running at http://localhost:3000.
@@ -96,7 +105,7 @@ Now you can modify the source code in `my_app_name/my_app_name.py`. Reflex has f
 
 ### Troubleshooting
 
-If you installed Reflex without a virtual environment and the `reflex` command is not found, you can run commands using: `python3 -m reflex init` and `python3 -m reflex run`
+If the `reflex` command is not on your PATH, run it through uv instead: `uv run reflex init` and `uv run reflex run`
 
 ## 🫧 Example App
 
