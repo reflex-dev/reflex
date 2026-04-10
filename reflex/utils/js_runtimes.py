@@ -13,7 +13,7 @@ from reflex_base.environment import environment
 from reflex_base.utils.decorator import cached_procedure, once
 from reflex_base.utils.exceptions import SystemPackageMissingError
 
-from reflex.utils import console, net, path_ops, processes
+from reflex.utils import console, frontend_skeleton, net, path_ops, processes
 from reflex.utils.prerequisites import get_web_dir, windows_check_onedrive_in_path
 
 
@@ -353,24 +353,59 @@ def remove_existing_bun_installation():
         path_ops.rm(constants.Bun.ROOT_PATH)
 
 
+def _frontend_packages_cache_path() -> Path:
+    """Get the cache file path for frontend package installs.
+
+    Returns:
+        The cache file path for frontend package installs.
+    """
+    return get_web_dir() / "reflex.install_frontend_packages.cached"
+
+
+def _sync_root_bun_lock_for_frontend_install():
+    """Sync the canonical bun.lock into .web and invalidate the install cache when needed."""
+    root_bun_lock_path = frontend_skeleton.get_root_bun_lock_path()
+    web_bun_lock_path = frontend_skeleton.get_web_bun_lock_path()
+    cache_file = _frontend_packages_cache_path()
+
+    if not root_bun_lock_path.exists():
+        if web_bun_lock_path.exists():
+            frontend_skeleton.sync_root_bun_lock_to_web()
+            if cache_file.exists():
+                path_ops.rm(cache_file)
+        return
+
+    if not web_bun_lock_path.exists():
+        frontend_skeleton.sync_root_bun_lock_to_web()
+        return
+
+    if web_bun_lock_path.read_bytes() != root_bun_lock_path.read_bytes():
+        frontend_skeleton.sync_root_bun_lock_to_web()
+        if cache_file.exists():
+            path_ops.rm(cache_file)
+
+
 @cached_procedure(
-    cache_file_path=lambda: get_web_dir() / "reflex.install_frontend_packages.cached",
-    payload_fn=lambda packages, config: f"{sorted(packages)!r},{config.json()}",
+    cache_file_path=_frontend_packages_cache_path,
+    payload_fn=lambda packages, config, install_package_managers: (
+        f"{sorted(packages)!r},{config.json()},{list(install_package_managers)!r}"
+    ),
 )
-def install_frontend_packages(packages: set[str], config: Config):
+def _install_frontend_packages(
+    packages: set[str],
+    config: Config,
+    install_package_managers: Sequence[str],
+):
     """Installs the base and custom frontend packages.
 
     Args:
         packages: A list of package names to be installed.
         config: The config object.
+        install_package_managers: The package managers available for install.
 
     Example:
         >>> install_frontend_packages(["react", "react-dom"], get_config())
     """
-    install_package_managers = get_nodejs_compatible_package_managers(
-        raise_on_none=True
-    )
-
     env = (
         {
             "NODE_TLS_REJECT_UNAUTHORIZED": "0",
@@ -419,3 +454,13 @@ def install_frontend_packages(packages: set[str], config: Config):
             [primary_package_manager, "add", "--legacy-peer-deps", *packages],
             show_status_message="Installing frontend packages from config and components",
         )
+
+
+def install_frontend_packages(packages: set[str], config: Config):
+    """Install frontend packages while respecting the canonical root bun.lock."""
+    install_package_managers = tuple(
+        get_nodejs_compatible_package_managers(raise_on_none=True)
+    )
+    _sync_root_bun_lock_for_frontend_install()
+    _install_frontend_packages(set(packages), config, install_package_managers)
+    frontend_skeleton.sync_web_bun_lock_to_root()
