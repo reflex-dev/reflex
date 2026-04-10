@@ -11,6 +11,9 @@ from reflex_base.event import EventType, PointerEventInfo
 from reflex_base.vars.base import Var
 from reflex_components_core.core.breakpoints import Breakpoints
 
+SomeType = Any
+SOME_CONSTANT = 42
+
 class SimpleComponent(Component):
     def public_helper(self) -> str: ...
     @classmethod

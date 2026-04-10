@@ -151,40 +151,34 @@ def test_get_type_hint_optional_union(type_hint_globals):
 
 def test_get_type_hint_union_without_none(type_hint_globals):
     result = _get_type_hint(Union[str, int], type_hint_globals, is_optional=False)  # noqa: UP007
-    assert "int" in result
-    assert "str" in result
+    assert result == "int | str"
 
 
 def test_get_type_hint_union_with_none(type_hint_globals):
     result = _get_type_hint(Union[str, int, None], type_hint_globals)  # noqa: UP007
-    assert result.endswith("| None")
-    assert "int" in result
-    assert "str" in result
+    assert result == "int | str | None"
 
 
 def test_get_type_hint_var_expansion(type_hint_globals):
-    """Var[str] should expand to include both Var[str] and str."""
+    """Var[str] should expand to Var[str] | str."""
     result = _get_type_hint(Var[str], type_hint_globals, is_optional=False)
-    assert "Var[str]" in result
-    assert "str" in result
+    assert result == "Var[str] | str"
 
 
 def test_get_type_hint_var_union_expansion(type_hint_globals):
-    """Var[str | int] should expand to Var[str | int] | str | int."""
+    """Var[str | int] should expand to include Var, str, and int."""
     result = _get_type_hint(Var[str | int], type_hint_globals, is_optional=False)
-    assert "Var[" in result
-    assert "str" in result
-    assert "int" in result
+    parts = {p.strip() for p in result.split("|")}
+    assert "str" in parts
+    assert "int" in parts
+    assert any("Var[" in p for p in parts)
 
 
 def test_get_type_hint_literal(type_hint_globals):
     result = _get_type_hint(
         Literal["a", "b", "c"], type_hint_globals, is_optional=False
     )
-    assert "Literal" in result
-    assert "'a'" in result
-    assert "'b'" in result
-    assert "'c'" in result
+    assert result == "Literal['a', 'b', 'c']"
 
 
 def test_type_to_ast_none_type():
@@ -304,8 +298,10 @@ class Foo(Component):
     def visible(self): return 1
 """
     result = _generate_stub_from_source(source)
-    assert "_hidden" not in result
-    assert "visible" in result
+    assert "def _hidden" not in result
+    assert "def visible" in result
+    # Public method body should be blanked to ellipsis.
+    assert "return 1" not in result
 
 
 def test_stub_module_docstring_removed():
@@ -318,6 +314,9 @@ class Bar(Component):
 '''
     result = _generate_stub_from_source(source)
     assert "This is a module docstring" not in result
+    # Should still have the class and create method.
+    assert "class Bar" in result
+    assert "def create" in result
 
 
 def test_stub_future_import_removed():
@@ -330,6 +329,8 @@ class Baz(Component):
 """
     result = _generate_stub_from_source(source)
     assert "__future__" not in result
+    # Default imports should be injected instead.
+    assert "from reflex_base.event import" in result
 
 
 def test_stub_class_docstring_removed():
@@ -343,6 +344,7 @@ class DocComponent(Component):
 '''
     result = _generate_stub_from_source(source)
     assert "This class docstring should be removed" not in result
+    assert "class DocComponent" in result
 
 
 def test_stub_non_annotated_assignment_removed():
@@ -356,6 +358,7 @@ class AssignComp(Component):
 """
     result = _generate_stub_from_source(source)
     assert "some_const" not in result
+    assert "hello" not in result
 
 
 def test_stub_any_assignment_preserved():
@@ -385,7 +388,9 @@ class ModeComp(Component):
 """
     result = _generate_stub_from_source(source)
     assert "mode: str" in result
+    # Value should be stripped — only the annotation remains.
     assert '"default"' not in result
+    assert "mode: str =" not in result
 
 
 def test_stub_classvar_preserved():
@@ -395,11 +400,28 @@ from reflex_base.components.component import Component
 from reflex_base.vars.base import Var
 
 class CVComp(Component):
+    allowed_types: ClassVar[list[str]] = ["A"]
+    val: Var[str]
+"""
+    result = _generate_stub_from_source(source)
+    assert "ClassVar[list[str]]" in result
+    # ClassVar props should NOT appear as create() kwargs.
+    assert "allowed_types" not in result.split("def create")[1]
+
+
+def test_stub_private_classvar_removed():
+    source = """
+from typing import ClassVar
+from reflex_base.components.component import Component
+from reflex_base.vars.base import Var
+
+class PVComp(Component):
     _valid_children: ClassVar[list[str]] = ["A"]
     val: Var[str]
 """
     result = _generate_stub_from_source(source)
-    assert "ClassVar" in result
+    # Private ClassVar annotations are stripped entirely.
+    assert "_valid_children" not in result
 
 
 def test_stub_public_function_body_blanked():
@@ -415,8 +437,9 @@ class FuncComp(Component):
         return str(x + y)
 """
     result = _generate_stub_from_source(source)
-    assert "helper" in result
+    assert "def helper(self) -> str:" in result
     assert "x = 1" not in result
+    assert "x + y" not in result
 
 
 def test_stub_create_method_generated():
@@ -428,6 +451,10 @@ class CreateComp(Component):
     name: Var[str] = field(doc="The name.")
 """
     result = _generate_stub_from_source(source)
-    assert "def create" in result
-    assert "name" in result
-    assert "classmethod" in result
+    assert "@classmethod" in result
+    assert "def create(cls, *children" in result
+    # name prop should appear as a keyword arg with Var expansion.
+    assert "name:" in result
+    assert "**props" in result
+    # Return type should reference the class.
+    assert "CreateComp" in result

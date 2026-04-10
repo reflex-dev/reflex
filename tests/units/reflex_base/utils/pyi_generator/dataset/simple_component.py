@@ -7,10 +7,20 @@ This module tests:
 - Props with doc strings (via field(doc=...))
 - Props with comment-based docs (# comment above prop)
 - Module docstring removal in stubs
+- visit_Assign: assignment to `Any` is preserved
+- visit_Assign: non-annotated assignments are removed
 """
+
+from typing import Any
 
 from reflex_base.components.component import Component, field
 from reflex_base.vars.base import Var
+
+# Assignment to Any should be preserved in the stub.
+SomeType = Any
+
+# A regular non-annotated assignment should be removed.
+SOME_CONSTANT = 42
 
 
 class SimpleComponent(Component):
