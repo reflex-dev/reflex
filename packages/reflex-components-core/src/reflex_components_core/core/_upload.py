@@ -577,6 +577,11 @@ async def _upload_chunk_file(
     return Response(status_code=202)
 
 
+header_content_disposition = b"content-disposition"
+header_content_type = b"content-type"
+header_x_content_type_options = b"x-content-type-options"
+
+
 class UploadedFilesHeadersMiddleware:
     """ASGI middleware that adds security headers to uploaded file responses."""
 
@@ -600,16 +605,28 @@ class UploadedFilesHeadersMiddleware:
             await self.app(scope, receive, send)
             return
 
-        is_pdf = scope.get("path", "").lower().endswith(".pdf")
-
         async def send_with_headers(message: MutableMapping[str, Any]) -> None:
             if message["type"] == "http.response.start":
-                headers = list(message.get("headers", []))
-                headers.append((b"x-content-type-options", b"nosniff"))
-                if is_pdf:
-                    headers.append((b"content-type", b"application/pdf"))
-                else:
-                    headers.append((b"content-disposition", b"attachment"))
+                content_disposition = None
+                content_type = None
+                headers = [(header_x_content_type_options, b"nosniff")]
+                for header_name, header_value in message.get("headers", []):
+                    lower_name = header_name.lower()
+                    if lower_name == header_content_disposition:
+                        content_disposition = header_value.lower()
+                        # Always append content-disposition header if non-empty.
+                        continue
+                    if lower_name == header_x_content_type_options:
+                        # Always replace this value with "nosniff", so ignore existing value.
+                        continue
+                    if lower_name == header_content_type:
+                        content_type = header_value.lower()
+                    headers.append((header_name, header_value))
+                if content_type != b"application/pdf":
+                    # Unknown content or non-PDF forces download.
+                    content_disposition = b"attachment"
+                if content_disposition:
+                    headers.append((header_content_disposition, content_disposition))
                 message = {**message, "headers": headers}
             await send(message)
 

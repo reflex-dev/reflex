@@ -749,17 +749,44 @@ def test_upload_download_file(
     assert downloaded_file.read_text() == exp_contents
 
 
+@pytest.mark.parametrize(
+    ("exp_name", "exp_contents", "expect_attachment", "expected_mime_type"),
+    [
+        (
+            "malicious.html",
+            "<html><body><script>alert('xss')</script></body></html>",
+            True,
+            "text/html; charset=utf-8",
+        ),
+        ("document.pdf", "%PDF-1.4 fake pdf contents", False, "application/pdf"),
+        ("readme.txt", "plain text contents", True, "text/plain; charset=utf-8"),
+    ],
+    ids=["html", "pdf", "txt"],
+)
 def test_uploaded_file_security_headers(
     tmp_path,
     upload_file: AppHarness,
     driver: WebDriver,
+    exp_name: str,
+    exp_contents: str,
+    expect_attachment: bool,
+    expected_mime_type: str,
 ):
-    """Upload an HTML file and verify security headers prevent inline rendering.
+    """Upload a file and verify security headers on the served response.
+
+    For non-PDF files, Content-Disposition: attachment must be set to force a
+    download.  For PDF files, Content-Disposition must NOT be set so the browser
+    can render them inline, but Content-Type: application/pdf is always present.
+    X-Content-Type-Options: nosniff is always required.
 
     Args:
         tmp_path: pytest tmp_path fixture
         upload_file: harness for UploadFile app.
         driver: WebDriver instance.
+        exp_name: filename to upload.
+        exp_contents: file contents to upload.
+        expect_attachment: whether the response should force a download.
+        expected_mime_type: expected Content-Type mime type.
     """
     import httpx
     from reflex_base.config import get_config
@@ -772,8 +799,6 @@ def test_uploaded_file_security_headers(
     upload_box = driver.find_elements(By.XPATH, "//input[@type='file']")[2]
     upload_button = driver.find_element(By.ID, "upload_button_tertiary")
 
-    exp_name = "malicious.html"
-    exp_contents = "<html><body><script>alert('xss')</script></body></html>"
     target_file = tmp_path / exp_name
     target_file.write_text(exp_contents)
 
@@ -788,8 +813,17 @@ def test_uploaded_file_security_headers(
     resp = httpx.get(upload_url)
     assert resp.status_code == 200
     assert resp.text == exp_contents
-    assert resp.headers["content-disposition"] == "attachment"
     assert resp.headers["x-content-type-options"] == "nosniff"
+    assert resp.headers["content-type"] == expected_mime_type
+
+    if expect_attachment:
+        assert resp.headers["content-disposition"] == "attachment"
+    else:
+        assert "content-disposition" not in resp.headers
+
+    if not expect_attachment:
+        # PDF: no browser download test needed, skip the rest.
+        return
 
     # Configure the download directory using CDP.
     download_dir = tmp_path / "downloads"
