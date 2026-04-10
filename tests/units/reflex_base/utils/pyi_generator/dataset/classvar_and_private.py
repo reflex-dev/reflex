@@ -44,5 +44,9 @@ class StrictComponent(Component):
         """Private method, should be removed."""
 
     def render_item(self) -> str:
-        """Public method, body should be blanked."""
+        """Public method, body should be blanked.
+
+        Returns:
+            The rendered item.
+        """
         return f"<div>{self.visible_prop}</div>"
