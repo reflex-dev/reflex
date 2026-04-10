@@ -63,7 +63,8 @@ def _run_generator() -> dict[Path, str]:
     """Run PyiGenerator.scan_all on the dataset dir and collect results.
 
     Generated .pyi files are read back and then removed from the dataset
-    tree so the working copy stays clean.
+    tree so the working copy stays clean.  A ``try/finally`` block ensures
+    generated files are always cleaned up, even if reading one of them fails.
 
     Returns:
         A mapping from dataset source .py files to their generated .pyi content.
@@ -71,12 +72,15 @@ def _run_generator() -> dict[Path, str]:
     gen = PyiGenerator()
     gen.scan_all([str(DATASET_DIR)])
 
-    results: dict[Path, str] = {}
-    for pyi_str, _hash in gen.written_files:
-        pyi_path = Path(pyi_str)
-        source_path = pyi_path.with_suffix(".py")
-        results[source_path] = pyi_path.read_text()
-        pyi_path.unlink(missing_ok=True)
+    pyi_paths = [Path(pyi_str) for pyi_str, _hash in gen.written_files]
+    try:
+        results: dict[Path, str] = {}
+        for pyi_path in pyi_paths:
+            source_path = pyi_path.with_suffix(".py")
+            results[source_path] = pyi_path.read_text()
+    finally:
+        for pyi_path in pyi_paths:
+            pyi_path.unlink(missing_ok=True)
     return results
 
 
@@ -187,6 +191,28 @@ def test_no_extra_golden_files(generated_stubs: dict[Path, str]):
         )
 
 
+def test_no_missing_golden_files(generated_stubs: dict[Path, str]):
+    """Ensure every generated stub has a corresponding golden file.
+
+    Catches the case where a new dataset file is added but ``--update`` is
+    not run, so no golden reference exists and the new scenario silently
+    goes untested.
+
+    Args:
+        generated_stubs: The mapping of dataset source paths to generated .pyi content.
+    """
+    existing_goldens = set(GOLDEN_DIR.rglob("*.pyi"))
+    missing = []
+    for source_path in sorted(generated_stubs):
+        golden = _golden_path_for(source_path)
+        if golden not in existing_goldens:
+            missing.append(str(golden.relative_to(_HERE)))
+    assert not missing, (
+        f"Generated stubs have no golden files: {', '.join(missing)}. "
+        f"Run `{_UPDATE_CMD}` to create them."
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(description="pyi_generator regression test suite")
     parser.add_argument(
@@ -215,9 +241,16 @@ def main():
         for source_path, content in sorted(generated.items()):
             golden_path = _golden_path_for(source_path)
             if not golden_path.exists():
+                failures.append(f"  {source_path.name}: missing golden file")
                 continue
             if _normalize_stub(content) != golden_path.read_text():
                 failures.append(f"  {source_path.name}: differs from golden")
+        expected_goldens = {_golden_path_for(s) for s in generated}
+        for existing in sorted(GOLDEN_DIR.rglob("*.pyi")):
+            if existing not in expected_goldens:
+                failures.append(
+                    f"  {existing.relative_to(_HERE)}: stale golden (no dataset source)"
+                )
         if failures:
             print("FAILED:")
             print("\n".join(failures))
