@@ -289,7 +289,7 @@ function _RxPlotLocale({ locale, config, _plotComponent, ...rest }) {
     }, [locale]);
 
     const mergedConfig = locale
-        ? { locale: locale.toLowerCase(), locales: localeData ? { [locale.toLowerCase()]: localeData } : {}, ...config }
+        ? { ...config, locale: locale.toLowerCase(), locales: localeData ? { [locale.toLowerCase()]: localeData } : {} }
         : config;
 
     return React.createElement(PlotComponent, { ...rest, config: mergedConfig });
