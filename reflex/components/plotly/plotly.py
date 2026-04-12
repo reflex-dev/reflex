@@ -385,7 +385,7 @@ CREATE_PLOTLY_COMPONENT: ImportDict = {
     "react-plotly.js": [
         ImportVar(
             tag="createPlotlyComponent",
-            is_default=False,
+            is_default=True,
             package_path="/factory",
         ),
     ]
