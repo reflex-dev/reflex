@@ -1,6 +1,4 @@
 """Tests for rx.plotly locale support."""
-from types import SimpleNamespace
-from unittest.mock import patch
 from reflex.components.plotly.plotly import Plotly
 from reflex.vars.base import LiteralVar
 

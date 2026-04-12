@@ -238,18 +238,21 @@ const extractPoints = (points) => {
 const _rxLocaleCache = {};
 
 function _rxLoadLocale(locale) {
-    const key = (locale || "").toLowerCase();
-
-    if (!/^[a-z]{2,3}(-[a-z]{2,4})?$/.test(key)) {
-        console.warn("[rx.plotly] Invalid locale:", locale);
+    // Guard against path traversal / invalid locale codes
+    if (!/^[a-z]{2,3}(-[a-z]{2,4})?$/.test(locale.toLowerCase())) {
+        console.warn(
+            "[rx.plotly] Locale \"" + locale + "\" is not a valid BCP-47 code and was ignored."
+        );
         return Promise.resolve(null);
     }
 
-    if (_rxLocaleCache[key]) {
-        return _rxLocaleCache[key];
-    }
+    const key = locale.toLowerCase();
 
-    const url = `https://cdn.jsdelivr.net/npm/plotly.js-locales@3.3.1/${key}.js`;
+    // Store the Promise itself — prevents duplicate in-flight fetches
+    if (_rxLocaleCache[key]) return _rxLocaleCache[key];
+
+    // Use CDN so locale files are available in production builds
+    const url = "https://cdn.jsdelivr.net/npm/plotly.js-locales@3.3.1/" + key + ".js";
 
     _rxLocaleCache[key] = fetch(url)
         .then(r => {
@@ -258,15 +261,16 @@ function _rxLoadLocale(locale) {
         })
         .then(code => {
             const mod = { exports: {} };
-
             new Function("module", "exports", code)(mod, mod.exports);
-
             return mod.exports;
         })
         .catch(e => {
             console.warn(
-                `[rx.plotly] Locale "${locale}" could not be loaded: ${e.message}`
+                "[rx.plotly] Locale \"" + locale + "\" could not be loaded: " + e.message +
+                ". See https://www.npmjs.com/package/plotly.js-locales for supported codes."
             );
+            // Remove failed entry so next mount can retry
+            delete _rxLocaleCache[key];
             return null;
         });
 
@@ -274,45 +278,21 @@ function _rxLoadLocale(locale) {
 }
 
 function _RxPlotLocale({ locale, config, _plotComponent, ...rest }) {
+    const [localeData, setLocaleData] = React.useState(null);
     const PlotComponent = _plotComponent || Plot;
 
-    const isEnglish = !locale || locale === "en";
-
-    const [localeData, setLocaleData] = useState(null);
-    const [localeReady, setLocaleReady] = useState(isEnglish);
-
-    useEffect(() => {
-        if (isEnglish) {
-            setLocaleData(null);
-            setLocaleReady(true);
-            return;
-        }
-
-        setLocaleReady(false);
-
+    React.useEffect(() => {
+        if (!locale) return;
         _rxLoadLocale(locale).then(data => {
-            setLocaleData(data);
-            setLocaleReady(true);
+            if (data) setLocaleData(data);
         });
-    }, [locale, isEnglish]);
+    }, [locale]);
 
-    if (!localeReady) return null;
+    const mergedConfig = locale
+        ? { locale: locale.toLowerCase(), locales: localeData ? { [locale.toLowerCase()]: localeData } : {}, ...config }
+        : config;
 
-    const key = locale ? locale.toLowerCase() : "en";
-
-    const mergedConfig =
-        (!isEnglish && localeData)
-            ? {
-                ...(config || {}),
-                locale: key,
-                locales: { [key]: localeData },
-            }
-            : (config || {});
-
-    return React.createElement(PlotComponent, {
-        ...rest,
-        config: mergedConfig,
-    });
+    return React.createElement(PlotComponent, { ...rest, config: mergedConfig });
 }
 """,
         ]
@@ -333,7 +313,7 @@ function _RxPlotLocale({ locale, config, _plotComponent, ...rest }) {
         from reflex.config import get_config
 
         # Apply global plotly_locale from rxconfig.py if no per-chart locale given.
-        if not props.get("locale"):
+        if "locale" not in props:
             global_locale = get_config().plotly_locale
             if global_locale:
                 props["locale"] = global_locale
@@ -356,9 +336,10 @@ function _RxPlotLocale({ locale, config, _plotComponent, ...rest }) {
 
     def _render(self):
         tag = super()._render()
-        # Render through _RxPlotLocale wrapper which handles locale loading.
-        # `tag = "Plot"` above tells Reflex to auto-import Plot from react-plotly.js;
-        # we override the rendered element name here so the JSX uses _RxPlotLocale.
+        # Route all Plotly components through the _RxPlotLocale wrapper for
+        # locale support. The original tag name (e.g. "Plot", "BasicPlotlyPlot")
+        # is forwarded as _plotComponent so each subclass still uses its own
+        # lightweight dist bundle instead of the full react-plotly.js bundle.
         original_tag_name = tag.name
         tag = tag.set(
                 name="_RxPlotLocale",
