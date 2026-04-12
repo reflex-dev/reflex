@@ -261,7 +261,8 @@ class BaseConfig:
 
     # List of plugin types to disable in the app.
     disable_plugins: list[type[Plugin]] = dataclasses.field(default_factory=list)
-.
+
+    # The default BCP-47 locale code for all rx.plotly charts (e.g. "de", "fr", "zh-CN").
     # Override per-chart with locale= prop or via REFLEX_PLOTLY_LOCALE env var.
     plotly_locale: str = ""
 
