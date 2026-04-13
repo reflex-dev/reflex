@@ -8,6 +8,7 @@ from reflex_base.components.component import (
     Component,
     CustomComponent,
     custom_component,
+    field,
 )
 from reflex_base.constants import EventTriggers
 from reflex_base.constants.state import FIELD_MARKER
@@ -519,6 +520,27 @@ def test_get_imports(component1, component2):
         "react-redux": [ImportVar(tag="connect")],
         "react": [ImportVar(tag="Component")],
     }
+
+
+def test_get_imports_includes_components_in_props():
+    """Test that component-valued props contribute their imports."""
+
+    class PropComponent(Component):
+        tag = "PropComponent"
+        library = "prop-lib"
+
+    class ParentComponent(Component):
+        tag = "ParentComponent"
+        library = "parent-lib"
+
+        slot: Component | None = field(default=None)
+
+    imports_ = ParentComponent.create(slot=PropComponent.create())._get_all_imports()
+
+    assert imports_ == parse_imports({
+        "parent-lib": ["ParentComponent"],
+        "prop-lib": ["PropComponent"],
+    })
 
 
 def test_get_custom_code(component1: Component, component2: Component):

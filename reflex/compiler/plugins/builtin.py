@@ -175,10 +175,11 @@ class DefaultCollectorPlugin(Plugin):
         if not isinstance(comp, Component):
             return
 
+        imports = comp._get_imports()
+        if imports:
+            self._extend_imports(page_context.frontend_imports, imports)
+
         if not in_prop_tree:
-            imports = comp._get_imports()
-            if imports:
-                self._extend_imports(page_context.frontend_imports, imports)
             self._collect_component_custom_code(page_context.module_code, comp)
 
             self._collect_component_hooks(page_context.hooks, comp)
@@ -254,10 +255,11 @@ class DefaultCollectorPlugin(Plugin):
             if not isinstance(comp, Component):
                 return
 
+            imports_for_component = comp._get_imports()
+            if imports_for_component:
+                extend_imports(frontend_imports, imports_for_component)
+
             if not in_prop_tree:
-                imports_for_component = comp._get_imports()
-                if imports_for_component:
-                    extend_imports(frontend_imports, imports_for_component)
                 collect_component_custom_code(module_code, comp)
 
                 collect_component_hooks(hooks, comp)

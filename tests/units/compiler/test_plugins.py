@@ -729,12 +729,15 @@ def test_apply_style_plugin_matches_legacy_style_behavior() -> None:
 
 def test_default_collector_matches_legacy_collectors() -> None:
     component = create_component_tree()
+    assert "prop-lib" in component._get_all_imports(collapse=True)
+
     page_ctx = collect_page_context(
         component,
         plugins=(DefaultCollectorPlugin(),),
     )
 
     assert page_ctx.imports == [component._get_all_imports(collapse=True)]
+    assert "prop-lib" in page_ctx.frontend_imports
     assert page_ctx.hooks == component._get_all_hooks()
     assert "usePropHook" not in "".join(page_ctx.hooks)
     assert page_ctx.module_code == component._get_all_custom_code()
@@ -779,7 +782,9 @@ def test_compile_context_compiles_pages_and_matches_legacy_output() -> None:
     assert isinstance(page_ctx.root_component, Component)
     assert page_ctx.name == "create_component_tree"
     assert page_ctx.route == "/demo"
+    assert "prop-lib" in page_ctx.root_component._get_all_imports(collapse=True)
     assert page_ctx.frontend_imports == page_ctx.merged_imports(collapse=True)
+    assert "prop-lib" in page_ctx.frontend_imports
     compile_ctx_imports = collapse_imports(compile_ctx.all_imports)
     for lib, fields in page_ctx.frontend_imports.items():
         assert lib in compile_ctx_imports
