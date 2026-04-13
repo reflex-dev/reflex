@@ -1097,8 +1097,8 @@ async def test_upload_file_keeps_form_open_until_stream_completes(
     assert not bio1.closed
     assert not bio2.closed
 
-    # Drive the response through the full ASGI lifecycle so that
-    # _UploadStreamingResponse.__call__ invokes the on_finish callback.
+    # Drive the response through the full ASGI lifecycle so the streaming
+    # response invokes the on_finish callback.
     scope = {"type": "http"}
     done = asyncio.Event()
 
@@ -1414,6 +1414,7 @@ async def test_upload_file_skips_buffered_handler_when_disconnect_detected_on_pr
     probe_chunk = b"\n"
     asgi_24_scope = {"type": "http", "asgi": {"spec_version": "2.4"}}
     enqueue_stream_delta = Mock(side_effect=AssertionError(msg))
+
     app = Mock(
         event_processor=Mock(enqueue_stream_delta=enqueue_stream_delta),
     )

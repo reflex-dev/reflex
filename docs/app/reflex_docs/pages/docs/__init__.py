@@ -1,20 +1,15 @@
 import os
-import sys
 from collections import defaultdict, namedtuple
 from pathlib import Path
 from types import SimpleNamespace
 
-import flexdown
-from flexdown.document import Document
+import reflex as rx
+from reflex_docgen.markdown import parse_document
 
 # External Components
 from reflex_pyplot import pyplot as pyplot
-from reflex_ui_shared.components.blocks.flexdown import xd
-from reflex_ui_shared.constants import REFLEX_ASSETS_CDN
 from reflex_ui_shared.route import Route
-from reflex_ui_shared.utils.docpage import get_toc
 
-import reflex as rx
 from reflex_docs.docgen_pipeline import get_docgen_toc, render_docgen_document
 from reflex_docs.pages.docs.component import multi_docs
 from reflex_docs.pages.library_previews import components_previews_pages
@@ -27,22 +22,6 @@ from .cloud_cliref import pages as cloud_cliref_pages
 from .custom_components import custom_components
 from .library import library
 from .recipes_overview import overview
-
-
-def should_skip_compile(doc: flexdown.Document):
-    """Skip compilation if the markdown file has not been modified since the last compilation."""
-    if not os.environ.get("REFLEX_PERSIST_WEB_DIR", False):
-        return False
-
-    # Check if the doc has been compiled already.
-    compiled_output = f".web/pages/{doc.replace('.md', '.js')}"
-    # Get the timestamp of the compiled file.
-    compiled_time = (
-        os.path.getmtime(compiled_output) if os.path.exists(compiled_output) else 0
-    )
-    # Get the timestamp of the source file.
-    source_time = os.path.getmtime(doc)
-    return compiled_time > source_time
 
 
 def to_title_case(text: str) -> str:
@@ -78,10 +57,14 @@ def build_nested_namespace(
     return parent_namespace
 
 
-def get_components_from_metadata(current_doc):
+def get_components_from_frontmatter(filepath: str) -> list:
+    """Extract component tuples from a doc's frontmatter."""
+    source = Path(filepath).read_text(encoding="utf-8")
+    doc = parse_document(source)
+    if doc.frontmatter is None:
+        return []
     components = []
-
-    for comp_str in current_doc.metadata.get("components", []):
+    for comp_str in doc.frontmatter.components:
         component = eval(comp_str)
         if isinstance(component, type):
             components.append((component, comp_str))
@@ -91,16 +74,31 @@ def get_components_from_metadata(current_doc):
             components.append((component.__call__.__self__, comp_str))
         else:
             raise ValueError(f"Invalid component: {component}")
-
     return components
 
 
+def get_previews_from_frontmatter(filepath: str) -> dict[str, str]:
+    """Extract component preview sources from a doc's frontmatter."""
+    source = Path(filepath).read_text(encoding="utf-8")
+    doc = parse_document(source)
+    if doc.frontmatter is None:
+        return {}
+    return {p.name: p.source for p in doc.frontmatter.component_previews}
+
+
 # ---------------------------------------------------------------------------
-# Local docs — processed via flexdown
+# Discover all docs — single pipeline via reflex_docgen
 # ---------------------------------------------------------------------------
-flexdown_docs = [
-    str(doc).replace("\\", "/") for doc in flexdown.utils.get_flexdown_files("docs/")
-]
+_app_root = Path(__file__).resolve().parent.parent.parent.parent  # …/app/
+_docs_dir = _app_root.parent  # …/docs/ (parent of app/)
+
+all_docs: dict[str, str] = {}  # virtual_path → actual_path
+for _md_file in sorted(_docs_dir.rglob("*.md")):
+    # Skip anything inside the app/ subdirectory.
+    if _md_file.is_relative_to(_app_root):
+        continue
+    _virtual = "docs/" + str(_md_file.relative_to(_docs_dir)).replace("\\", "/")
+    all_docs[_virtual] = str(_md_file)
 
 # Add integration docs from the installed package
 doc_path_mapping: dict[str, str] = {}
@@ -112,34 +110,11 @@ if DOCS_DIR.exists():
         if integration_doc.name in ("snowflake.md", "overview.md"):
             continue
         virtual_path = f"docs/ai_builder/integrations/{integration_doc.name}"
+        vp = virtual_path.replace("\\", "/")
         actual_path = str(integration_doc).replace("\\", "/")
-        if virtual_path.replace("\\", "/") not in flexdown_docs:
-            doc_path_mapping[virtual_path.replace("\\", "/")] = actual_path
-            flexdown_docs.append(virtual_path.replace("\\", "/"))
-
-# ---------------------------------------------------------------------------
-# Reflex-shipped docs (installed in site-packages/docs/) — processed via
-# reflex_docgen.markdown pipeline (no flexdown).
-# ---------------------------------------------------------------------------
-# Maps virtual path (e.g. "docs/getting_started/basics.md") → absolute path.
-docgen_docs: dict[str, str] = {}
-_app_root = Path(__file__).resolve().parent.parent.parent.parent  # …/app/
-_reflex_docs_dir = _app_root.parent  # …/reflex/docs/ (parent of app/)
-# Add parent of docs dir to sys.path so exec blocks can `from docs.X import Y`.
-_docs_parent = str(_reflex_docs_dir.parent)
-if _docs_parent not in sys.path:
-    sys.path.insert(0, _docs_parent)
-if _reflex_docs_dir.is_dir():
-    for _pkg_doc in sorted(_reflex_docs_dir.rglob("*.md")):
-        # Skip anything inside the app/ subdirectory.
-        if _pkg_doc.is_relative_to(_app_root):
-            continue
-        _virtual = "docs/" + str(_pkg_doc.relative_to(_reflex_docs_dir)).replace(
-            "\\", "/"
-        )
-        # Only add if not already provided locally (local overrides package).
-        if _virtual not in flexdown_docs:
-            docgen_docs[_virtual] = str(_pkg_doc)
+        if vp not in all_docs:
+            doc_path_mapping[vp] = actual_path
+            all_docs[vp] = actual_path
 
 graphing_components = defaultdict(list)
 component_list = defaultdict(list)
@@ -147,22 +122,6 @@ recipes_list = defaultdict(list)
 docs_ns = SimpleNamespace()
 
 doc_markdown_sources: dict[str, str] = {}
-
-
-def exec_blocks(doc, href):
-    """Execute the exec and demo blocks in the document."""
-    source = doc.content
-    env = doc.metadata.copy()
-    env["__xd"] = xd
-    env["__exec"] = True
-    blocks = xd.get_blocks(source, href)
-    # Get only the exec and demo blocks.
-    blocks = [b for b in blocks if b.__class__.__name__ in ["ExecBlock", "DemoBlock"]]
-    for block in blocks:
-        block.render(env)
-
-
-outblocks = []
 
 
 manual_titles = {
@@ -225,13 +184,6 @@ def make_docpage(route: str, title: str, doc_virtual: str, render_fn):
     return docpage(set_path=route, t=title)(render_fn)
 
 
-def load_flexdown_doc(actual_path: str) -> Document:
-    """Load a flexdown Document and inject standard metadata."""
-    d = Document.from_file(actual_path)
-    d.metadata["REFLEX_ASSETS_CDN"] = REFLEX_ASSETS_CDN
-    return d
-
-
 def handle_library_doc(
     doc: str,
     actual_path: str,
@@ -239,53 +191,28 @@ def handle_library_doc(
     resolved: ResolvedDoc,
 ):
     """Handle docs/library/** docs — component API reference via multi_docs."""
-    d = load_flexdown_doc(actual_path)
-    clist = [title, *get_components_from_metadata(d)]
+    clist = [title, *get_components_from_frontmatter(actual_path)]
+    previews = get_previews_from_frontmatter(actual_path)
     if doc.startswith("docs/library/graphing"):
         graphing_components[resolved.category].append(clist)
     else:
         component_list[resolved.category].append(clist)
-    if should_skip_compile(actual_path):
-        outblocks.append((d, resolved.route))
-        return None
     return multi_docs(
         path=resolved.route,
-        comp=d,
+        virtual_path=doc,
+        actual_path=actual_path,
+        previews=previews,
         component_list=clist,
         title=resolved.display_title,
     )
 
 
-def get_component(doc: str, title: str):
-    """Build a page component for a local (flexdown) doc."""
-    resolved = resolve_doc_route(doc, title)
-    if resolved is None:
-        return None
-
-    actual_doc_path = doc_path_mapping.get(doc, doc)
-
-    if doc.startswith("docs/library"):
-        return handle_library_doc(doc, actual_doc_path, title, resolved)
-
-    if should_skip_compile(actual_doc_path):
-        outblocks.append((load_flexdown_doc(actual_doc_path), resolved.route))
-        return None
-
-    d = load_flexdown_doc(actual_doc_path)
-
-    def comp():
-        return (get_toc(d, actual_doc_path), xd.render(d, actual_doc_path))
-
-    return make_docpage(resolved.route, resolved.display_title, doc, comp)
-
-
 def get_component_docgen(virtual_doc: str, actual_path: str, title: str):
-    """Build a page component for a reflex-package doc via reflex_docgen."""
+    """Build a page component for a doc via reflex_docgen."""
     resolved = resolve_doc_route(virtual_doc, title)
     if resolved is None:
         return None
 
-    # Library docs still need component introspection via multi_docs (flexdown-based).
     if virtual_doc.startswith("docs/library"):
         return handle_library_doc(virtual_doc, actual_path, title, resolved)
 
@@ -300,20 +227,14 @@ def get_component_docgen(virtual_doc: str, actual_path: str, title: str):
     return make_docpage(resolved.route, resolved.display_title, virtual_doc, comp)
 
 
-for fd in flexdown_docs:
-    if fd.endswith("-style.md") or fd.endswith("-ll.md"):
+# Build doc_markdown_sources mapping
+for _virtual, _actual in all_docs.items():
+    if _virtual.endswith("-style.md") or _virtual.endswith("-ll.md"):
         continue
-    route = doc_route_from_path(fd)
-    if not _check_whitelisted_path(route):
+    _route = doc_route_from_path(_virtual)
+    if not _check_whitelisted_path(_route):
         continue
-    doc_markdown_sources[route] = doc_path_mapping.get(fd, fd)
-for virtual_doc, actual_path in docgen_docs.items():
-    if virtual_doc.endswith("-style.md") or virtual_doc.endswith("-ll.md"):
-        continue
-    route = doc_route_from_path(virtual_doc)
-    if not _check_whitelisted_path(route):
-        continue
-    doc_markdown_sources[route] = actual_path
+    doc_markdown_sources[_route] = _actual
 
 doc_routes = [
     library,
@@ -364,16 +285,12 @@ def register_doc(virtual_doc: str, comp):
 library_: Route = library  # type: ignore[assignment]
 
 
-# Process local docs (flexdown pipeline).
-for _doc in sorted(flexdown_docs):
-    register_doc(_doc, get_component(_doc, doc_title_from_path(_doc)))
-
-# Process reflex-package docs (reflex_docgen pipeline).
-for _virtual, _actual in sorted(docgen_docs.items()):
+# Process all docs via reflex_docgen pipeline.
+for _virtual, _actual in sorted(all_docs.items()):
     register_doc(
         _virtual,
         get_component_docgen(_virtual, _actual, doc_title_from_path(_virtual)),
     )
 
 for name, ns in docs_ns.__dict__.items():
-    locals()[name] = ns
+    globals()[name] = ns

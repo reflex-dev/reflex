@@ -1,12 +1,12 @@
+import reflex as rx
 import reflex_ui as ui
-from reflex_docs.components.docpage.navbar.buttons.sidebar import navbar_sidebar_button
-from reflex_docs.pages.docs import ai_builder, getting_started, hosting
-from reflex_docs.views.search import search_bar
 from reflex_ui.blocks.demo_form import demo_form_dialog
 from reflex_ui_shared.components.marketing_button import button
 from reflex_ui_shared.constants import REFLEX_ASSETS_CDN
 
-import reflex as rx
+from reflex_docs.components.docpage.navbar.buttons.sidebar import navbar_sidebar_button
+from reflex_docs.pages.docs import ai_builder, getting_started, hosting
+from reflex_docs.views.search import search_bar
 
 
 def logo() -> rx.Component:

@@ -1228,10 +1228,10 @@
     --animate-ellipse-reversed: ellipse-reversed 2400ms ease-out infinite;
     /* Radius */
     --radius-ui-xxs: calc(var(--radius) - 0.25rem);
-    --radius-ui-xs: calc(var(--radius) - 0.125rem);
+    --radius-ui-xs: var(--radius);
     --radius-ui-sm: var(--radius);
     --radius-ui-md: calc(var(--radius) + 0.125rem);
-    --radius-ui-lg: calc(var(--radius) + 0.25rem);
+    --radius-ui-lg: calc(var(--radius) + 0.125rem);
     --radius-ui-xl: calc(var(--radius) + 0.375rem);
     --radius-ui-2xl: calc(var(--radius) + 0.5rem);
     /* Width */

@@ -2,13 +2,13 @@
 
 import re
 
-import flexdown
 import reflex_ui as ui
 
 import reflex as rx
 from reflex_ui_shared.constants import INTEGRATIONS_IMAGES_URL, REFLEX_ASSETS_CDN
 from reflex_ui_shared.gallery.r_svg_loader import r_svg_loader
 from reflex_ui_shared.templates.webpage import webpage
+from reflex_ui_shared.utils.md import MarkdownDocument, get_md_files
 
 REFLEX_BUILD_TEMPLATES_PATH = "reflex_build_templates/"
 REFLEX_BUILD_TEMPLATES_IMAGES = "reflex_build_template_images/"
@@ -22,13 +22,13 @@ def get_templatey_apps(paths: list):
     """
     gallery_apps = {}
     for path in sorted(paths, reverse=True):
-        document = flexdown.Document.from_file(path)  # This has metadata
+        document = MarkdownDocument.from_file(path)
         key = str(path).replace(".md", "/")
         gallery_apps[key] = document
     return gallery_apps
 
 
-paths = flexdown.utils.get_flexdown_files(REFLEX_BUILD_TEMPLATES_PATH)
+paths = get_md_files(REFLEX_BUILD_TEMPLATES_PATH)
 template_apps_data = get_templatey_apps(paths)
 
 
