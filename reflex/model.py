@@ -8,11 +8,10 @@ from contextlib import suppress
 from importlib.util import find_spec
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from reflex.config import get_config
-from reflex.environment import environment
-from reflex.utils import console
-from reflex.utils.compat import sqlmodel_field_has_primary_key
-from reflex.utils.serializers import serializer
+from reflex_base.config import get_config
+from reflex_base.environment import environment
+from reflex_base.utils import console
+from reflex_base.utils.serializers import serializer
 
 if TYPE_CHECKING:
     from typing import TypeVar
@@ -175,11 +174,14 @@ if find_spec("sqlalchemy"):
         return sqlalchemy.orm.Session(get_engine(url))
 
     class ModelRegistry:
-        """Registry for all models."""
+        """Registry for all models.
+
+        Attributes:
+            _metadata: Cache the metadata to avoid re-creating it.
+        """
 
         models: ClassVar[set[SQLModelOrSqlAlchemy]] = set()
 
-        # Cache the metadata to avoid re-creating it.
         _metadata: ClassVar[sqlalchemy.MetaData | None] = None
 
         @classmethod
@@ -351,9 +353,12 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
         }
 
     class Model(sqlmodel.SQLModel):
-        """Base class to define a table in the database."""
+        """Base class to define a table in the database.
 
-        # The primary key for the table.
+        Attributes:
+            id: The primary key for the table.
+        """
+
         id: int | None = sqlmodel.Field(default=None, primary_key=True)
 
         model_config = {  # pyright: ignore [reportAssignmentType]
@@ -361,26 +366,6 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
             "use_enum_values": True,
             "extra": "allow",
         }
-
-        @classmethod
-        def __pydantic_init_subclass__(cls):
-            """Drop the default primary key field if any primary key field is defined."""
-            non_default_primary_key_fields = [
-                field_name
-                for field_name, field_info in cls.model_fields.items()
-                if field_name != "id" and sqlmodel_field_has_primary_key(field_info)
-            ]
-            if non_default_primary_key_fields:
-                cls.model_fields.pop("id", None)
-                console.deprecate(
-                    feature_name="Overriding default primary key",
-                    reason=(
-                        "Register sqlmodel.SQLModel classes with `@rx.ModelRegistry.register`"
-                    ),
-                    deprecation_version="0.8.15",
-                    removal_version="0.9.0",
-                )
-            super().__pydantic_init_subclass__()
 
         @staticmethod
         def create_all():

@@ -4,11 +4,13 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+import reflex_base.config
 from pytest_mock import MockerFixture
+from reflex_base.constants import Endpoint, Env
+from reflex_base.plugins import Plugin
+from reflex_base.plugins.sitemap import SitemapPlugin
 
 import reflex as rx
-import reflex.config
-from reflex.constants import Endpoint, Env
 from reflex.environment import (
     EnvVar,
     env_var,
@@ -153,9 +155,9 @@ def test_event_namespace(mocker: MockerFixture, kwargs, expected):
         expected: Expected namespace
     """
     conf = rx.Config(**kwargs)
-    mocker.patch("reflex.config.get_config", return_value=conf)
+    mocker.patch("reflex_base.config.get_config", return_value=conf)
 
-    config = reflex.config.get_config()
+    config = reflex_base.config.get_config()
     assert conf == config
     assert config.get_event_namespace() == expected
 
@@ -244,7 +246,7 @@ def test_replace_defaults(
         exp_config_values: The expected config values.
     """
     mock_os_env = os.environ.copy()
-    monkeypatch.setattr(reflex.config.os, "environ", mock_os_env)
+    monkeypatch.setattr(reflex_base.config.os, "environ", mock_os_env)  # pyright: ignore[reportPrivateImportUsage]
     mock_os_env.update({k: str(v) for k, v in env_vars.items()})
     c = rx.Config(app_name="a", **config_kwargs)
     c._set_persistent(**set_persistent_vars)
@@ -402,3 +404,61 @@ def test_env_file(
     )
     for key, value in exp_env_vars.items():
         assert os.environ.get(key) == value
+
+
+class TestDisablePlugins:
+    """Tests for the disable_plugins config option."""
+
+    def test_disable_with_plugin_class(self):
+        """Test disabling a plugin by passing the class (type)."""
+        config = rx.Config(app_name="test", disable_plugins=[SitemapPlugin])
+        assert not any(isinstance(p, SitemapPlugin) for p in config.plugins)
+
+    def test_disable_with_plugin_instance_backward_compat(self):
+        """Test disabling a plugin by passing an instance (deprecated)."""
+        config = rx.Config(app_name="test", disable_plugins=[SitemapPlugin()])  # pyright: ignore[reportArgumentType]
+        assert not any(isinstance(p, SitemapPlugin) for p in config.plugins)
+
+    def test_disable_with_string_backward_compat(self):
+        """Test disabling a plugin by passing a string (deprecated)."""
+        config = rx.Config(
+            app_name="test",
+            disable_plugins=["reflex.plugins.sitemap.SitemapPlugin"],  # pyright: ignore[reportArgumentType]
+        )
+        assert not any(isinstance(p, SitemapPlugin) for p in config.plugins)
+
+    def test_disable_plugins_normalized_to_classes(self):
+        """Test that disable_plugins entries are normalized to Plugin subclasses."""
+        config = rx.Config(app_name="test", disable_plugins=[SitemapPlugin])
+        assert all(
+            isinstance(dp, type) and issubclass(dp, Plugin)
+            for dp in config.disable_plugins
+        )
+
+    def test_disable_instance_normalized_to_class(self):
+        """Test that a Plugin instance in disable_plugins is normalized to its class."""
+        config = rx.Config(app_name="test", disable_plugins=[SitemapPlugin()])  # pyright: ignore[reportArgumentType]
+        assert config.disable_plugins == [SitemapPlugin]
+
+    def test_disable_string_normalized_to_class(self):
+        """Test that a string in disable_plugins is normalized to the class."""
+        config = rx.Config(
+            app_name="test",
+            disable_plugins=["reflex.plugins.sitemap.SitemapPlugin"],  # pyright: ignore[reportArgumentType]
+        )
+        assert config.disable_plugins == [SitemapPlugin]
+
+    def test_disable_and_plugins_conflict_warns(self):
+        """Test that a warning is issued when a plugin is both enabled and disabled."""
+        config = rx.Config(
+            app_name="test",
+            plugins=[SitemapPlugin()],
+            disable_plugins=[SitemapPlugin],
+        )
+        # Plugin should still be in plugins list (just warned)
+        assert any(isinstance(p, SitemapPlugin) for p in config.plugins)
+
+    def test_no_disable_adds_builtin(self):
+        """Test that builtin plugins are added when not disabled."""
+        config = rx.Config(app_name="test")
+        assert any(isinstance(p, SitemapPlugin) for p in config.plugins)

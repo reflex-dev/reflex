@@ -1,13 +1,14 @@
+import math
 from pathlib import Path
 from unittest import mock
 
 import pytest
+from reflex_base.utils.serializers import serializer
 
 import reflex.constants
 import reflex.model
 from reflex.model import Model, ModelRegistry, sqla_session
 from reflex.state import MutableProxy
-from reflex.utils.serializers import serializer
 
 pytest.importorskip("sqlalchemy")
 pytest.importorskip("sqlmodel")
@@ -248,7 +249,7 @@ def test_automigration(
         result = session.scalars(select(AlembicSecond)).all()
         assert len(result) == 1
         assert result[0].a == 42
-        assert result[0].b == 4.2
+        assert math.isclose(result[0].b, 4.2)
 
     # No-op
     # assert Model.migrate(autogenerate=True) #noqa: ERA001

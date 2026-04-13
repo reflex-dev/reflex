@@ -6,9 +6,9 @@ from types import MappingProxyType
 from typing import TYPE_CHECKING
 from urllib.parse import _NetlocResultMixinStr, parse_qsl, urlsplit
 
-from reflex import constants
-from reflex.utils import console, format
-from reflex.utils.serializers import serializer
+from reflex_base import constants
+from reflex_base.utils import console, format
+from reflex_base.utils.serializers import serializer
 
 
 @dataclasses.dataclass(frozen=True, init=False)
@@ -239,7 +239,7 @@ class RouterData:
             feature_name="RouterData.page",
             reason="Use RouterData.url instead",
             deprecation_version="0.8.1",
-            removal_version="0.9.0",
+            removal_version="1.0",
         )
         return self._page
 

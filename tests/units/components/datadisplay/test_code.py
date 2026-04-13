@@ -1,6 +1,5 @@
 import pytest
-
-from reflex.components.datadisplay.code import CodeBlock, Theme
+from reflex_components_code.code import CodeBlock, Theme
 
 
 @pytest.mark.parametrize(

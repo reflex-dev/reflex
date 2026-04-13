@@ -7,8 +7,9 @@ from reflex.testing import AppHarness
 
 
 def DefaultLightModeApp():
+    from reflex_base.style import color_mode
+
     import reflex as rx
-    from reflex.style import color_mode
 
     app = rx.App(theme=rx.theme(appearance="light"))
 
@@ -18,8 +19,9 @@ def DefaultLightModeApp():
 
 
 def DefaultDarkModeApp():
+    from reflex_base.style import color_mode
+
     import reflex as rx
-    from reflex.style import color_mode
 
     app = rx.App(theme=rx.theme(appearance="dark"))
 
@@ -29,8 +31,9 @@ def DefaultDarkModeApp():
 
 
 def DefaultSystemModeApp():
+    from reflex_base.style import color_mode
+
     import reflex as rx
-    from reflex.style import color_mode
 
     app = rx.App()
 
@@ -40,8 +43,9 @@ def DefaultSystemModeApp():
 
 
 def ColorToggleApp():
+    from reflex_base.style import color_mode, resolved_color_mode, set_color_mode
+
     import reflex as rx
-    from reflex.style import color_mode, resolved_color_mode, set_color_mode
 
     app = rx.App(theme=rx.theme(appearance="light"))
 
