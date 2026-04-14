@@ -79,7 +79,7 @@ def code_card(app: dict) -> rx.Component:
     """
     return rx.flex(
         rx.box(
-            rx.el.a(
+            rx.el.elements.a(
                 rx.image(
                     src=app["image_url"],
                     loading="lazy",
@@ -87,7 +87,7 @@ def code_card(app: dict) -> rx.Component:
                     class_name="size-full duration-150 object-top object-cover hover:scale-105 transition-transform ease-out",
                 ),
                 href=app["demo_url"],
-                is_external=True,
+                target="_blank",
             ),
             class_name="relative border-slate-5 border-b border-solid w-full overflow-hidden h-[180px]",
         ),
