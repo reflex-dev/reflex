@@ -74,7 +74,7 @@ def github() -> rx.Component:
     Returns:
         The component.
     """
-    return rx.el.a(
+    return rx.el.elements.a(
         marketing_button(
             get_icon(icon="github_navbar", class_name="shrink-0"),
             f"{GITHUB_STARS // 1000}K",
@@ -84,7 +84,7 @@ def github() -> rx.Component:
             size="sm",
             variant="ghost",
         ),
-        to=GITHUB_URL,
+        href=GITHUB_URL,
         custom_attrs={
             "aria-label": f"View Reflex on GitHub - {GITHUB_STARS // 1000}K stars"
         },
@@ -97,7 +97,7 @@ def logo() -> rx.Component:
     Returns:
         The component.
     """
-    return rx.el.a(
+    return rx.el.elements.a(
         rx.image(
             src=f"{REFLEX_ASSETS_CDN}logos/light/reflex.svg",
             alt="Reflex Logo",
@@ -108,7 +108,7 @@ def logo() -> rx.Component:
             alt="Reflex Logo",
             class_name="shrink-0 hidden dark:block",
         ),
-        to="/",
+        href="/",
         class_name="block shrink-0 lg:mr-9",
     )
 
@@ -192,7 +192,7 @@ def platform_item(image: str, title: str, description: str, href: str) -> rx.Com
             ),
             class_name="flex flex-col",
         ),
-        rx.el.a(class_name="absolute inset-0", to=href),
+        rx.el.elements.a(class_name="absolute inset-0", href=href),
         class_name="p-4 flex flex-row gap-6 relative cursor-pointer rounded-sm hover-card-shadow",
     )
 
@@ -223,9 +223,9 @@ def platform_content() -> rx.Component:
                         alt="AI Builder Navbar Pattern",
                         class_name="pointer-events-none",
                     ),
-                    rx.el.a(
+                    rx.el.elements.a(
                         class_name="absolute inset-0",
-                        to=REFLEX_BUILD_URL,
+                        href=REFLEX_BUILD_URL,
                         target="_blank",
                     ),
                     class_name="relative flex flex-col hover-card-shadow rounded-md",
@@ -272,13 +272,13 @@ def solutions_item(title: str, icon: str, href: str) -> rx.Component:
     Returns:
         The component.
     """
-    return rx.el.a(
+    return rx.el.elements.a(
         ui.icon(
             icon,
             class_name="shrink-0 text-m-slate-7 dark:text-m-slate-6 size-4.5",
         ),
         title,
-        to=href,
+        href=href,
         class_name="flex flex-row px-4 py-2 rounded-sm text-sm font-[525] text-m-slate-12 dark:text-m-slate-3 gap-3 items-center justify-start cursor-pointer hover-card-shadow",
     )
 
@@ -329,8 +329,8 @@ def blog_item(post: BlogPostDict) -> rx.Component:
             post["title"],
             class_name="dark:text-m-slate-3 text-m-slate-12 text-sm font-[525] group-hover:text-primary-10 dark:group-hover:text-primary-9 line-clamp-3",
         ),
-        rx.el.a(
-            to=post["url"],
+        rx.el.elements.a(
+            href=post["url"],
             class_name="absolute inset-0",
         ),
         class_name="relative group flex flex-col gap-2 mb-2",
@@ -348,10 +348,10 @@ def blog_column() -> rx.Component:
             RecentBlogsState.posts[:2],
             blog_item,
         ),
-        rx.el.a(
+        rx.el.elements.a(
             "Read All in Blog",
             ui.icon("ArrowRight01Icon", class_name="ml-auto"),
-            to="/blog",
+            href="/blog",
             class_name="dark:text-m-slate-3 text-m-slate-12 text-sm font-[525] h-10 flex items-center justify-start gap-2 hover:text-primary-10 dark:hover:text-primary-9 mt-auto",
         ),
         on_mount=RecentBlogsState.fetch_recent_blogs,
@@ -386,7 +386,7 @@ def customers_column() -> rx.Component:
                 logos_carousel(),
                 class_name="flex flex-col gap-2 px-4 pb-4 h-full",
             ),
-            rx.el.a(class_name="absolute inset-0", to="/customers/"),
+            rx.el.elements.a(class_name="absolute inset-0", href="/customers/"),
             class_name="flex flex-col gap-6 hover-card-shadow rounded-lg relative h-full hover:[--m-slate-11:var(--m-slate-10)] hover:shadow-card dark:hover:shadow-card-dark",
         ),
         class_name="p-4 block rounded-lg shadow-card dark:shadow-card-dark z-[1] bg-white-1 dark:bg-m-slate-11 dark:border-x dark:border-m-slate-9",
@@ -537,26 +537,26 @@ def navigation_menu() -> rx.Component:
             menu_trigger("Solutions", solutions_content()),
             menu_trigger("Resources", resources_content()),
             ui.navigation_menu.item(
-                rx.el.a(
+                rx.el.elements.a(
                     marketing_button(
                         "Pricing",
                         size="sm",
                         variant="ghost",
                         native_button=False,
                     ),
-                    to="/pricing",
+                    href="/pricing",
                 ),
                 class_name="xl:flex hidden px-1",
                 custom_attrs={"role": "menuitem"},
             ),
             ui.navigation_menu.item(
-                rx.el.a(
+                rx.el.elements.a(
                     marketing_button(
                         "Docs",
                         size="sm",
                         variant="ghost",
                     ),
-                    to="/docs",
+                    href="/docs",
                 ),
                 class_name="xl:flex hidden px-1",
                 custom_attrs={"role": "menuitem"},
@@ -571,7 +571,7 @@ def navigation_menu() -> rx.Component:
                 custom_attrs={"role": "menuitem"},
             ),
             ui.navigation_menu.item(
-                rx.el.a(
+                rx.el.elements.a(
                     marketing_button(
                         "Sign In",
                         ui.icon("Login01Icon", class_name="scale-x-[-1]"),
@@ -579,7 +579,7 @@ def navigation_menu() -> rx.Component:
                         variant="outline",
                         native_button=False,
                     ),
-                    to=REFLEX_BUILD_URL,
+                    href=REFLEX_BUILD_URL,
                     target="_blank",
                 ),
                 custom_attrs={"role": "menuitem"},

@@ -50,7 +50,7 @@ def logo() -> rx.Component:
     Returns:
         The component.
     """
-    return rx.el.a(
+    return rx.el.elements.a(
         rx.image(
             src=f"{REFLEX_ASSETS_CDN}logos/light/reflex.svg",
             alt="Reflex Logo",
@@ -61,7 +61,7 @@ def logo() -> rx.Component:
             alt="Reflex Logo",
             class_name="shrink-0 hidden dark:block",
         ),
-        to="/",
+        href="/",
         class_name="block shrink-0 mr-[7rem] md:hidden xl:block",
     )
 
@@ -105,14 +105,14 @@ def footer_link(text: str, href: str) -> rx.Component:
     Returns:
         The component.
     """
-    return rx.el.a(
+    return rx.el.elements.a(
         text,
         rx.icon(
             tag="chevron-right",
             size=16,
             class_name="shrink-0 lg:hidden flex",
         ),
-        to=href,
+        href=href,
         target="_blank",
         class_name="font-[525] text-m-slate-7 hover:text-m-slate-8 dark:hover:text-m-slate-5 dark:text-m-slate-6 text-sm transition-color w-full lg:w-fit flex flex-row justify-between items-center",
     )
@@ -142,7 +142,7 @@ def social_menu_item(icon: str, url: str, name: str) -> rx.Component:
     Returns:
         The component.
     """
-    return rx.el.a(
+    return rx.el.elements.a(
         marketing_button(
             get_icon(icon, class_name="shrink-0"),
             variant="ghost",
@@ -150,7 +150,7 @@ def social_menu_item(icon: str, url: str, name: str) -> rx.Component:
             class_name="text-m-slate-7 dark:text-m-slate-6",
             native_button=False,
         ),
-        to=url,
+        href=url,
         custom_attrs={"aria-label": "Social link for " + name},
         target="_blank",
     )

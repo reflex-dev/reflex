@@ -94,7 +94,7 @@ def hosting_banner() -> rx.Component:
         rx.cond(
             HostingBannerState.is_banner_visible,
             rx.el.div(
-                rx.el.a(
+                rx.el.elements.a(
                     rx.box(
                         rx.image(
                             src=f"{REFLEX_ASSETS_CDN}common/{rx.color_mode_cond('light', 'dark')}/squares_banner.svg",
@@ -135,8 +135,7 @@ def hosting_banner() -> rx.Component:
                         ),
                         class_name="flex flex-row items-center relative",
                     ),
-                    to=BLOG_LINK,
-                    is_external=False,
+                    href=BLOG_LINK,
                     class_name="flex justify-start md:justify-center md:col-start-2 max-w-[73rem]",
                 ),
                 rx.el.button(
