@@ -4,6 +4,7 @@ import inspect
 from pathlib import Path
 
 from reflex_base import constants
+from reflex_base.config import get_config
 from reflex_base.environment import EnvironmentVariables
 
 
@@ -92,7 +93,7 @@ def asset(
         if not backend_only and not src_file_local.exists():
             msg = f"File not found: {src_file_local}"
             raise FileNotFoundError(msg)
-        return f"/{path}"
+        return get_config().prepend_frontend_path(f"/{path}")
 
     # Shared asset handling
     # Determine the file by which the asset is exposed.
