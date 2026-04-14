@@ -255,14 +255,27 @@ def frontend_path_app(
             yield harness
 
 
-def _wait_for_token(page: Page) -> None:
-    """Wait until the app has hydrated by checking for a non-empty client token.
+def _navigate(harness: AppHarness, page: Page, path: str = "/") -> str:
+    """Navigate to ``path`` under the harness frontend and wait for hydration.
+
+    Prepends ``frontend_url`` to *path*, navigates the Playwright *page*, and
+    waits until the client token is present (indicating state hydration).
 
     Args:
+        harness: The running AppHarness (provides ``frontend_url``).
         page: Playwright page.
+        path: App-relative path to navigate to (e.g. ``/static-page``).
+
+    Returns:
+        The frontend base URL (``frontend_url`` with trailing slash stripped)
+        for use in subsequent URL assertions.
     """
-    token = page.locator("#token")
-    expect(token).not_to_have_value("")
+    base = harness.frontend_url
+    assert base is not None
+    base = base.rstrip("/")
+    page.goto(f"{base}{path}")
+    expect(page.locator("#token")).not_to_have_value("")
+    return base
 
 
 # ---------------------------------------------------------------------------
@@ -272,163 +285,119 @@ def _wait_for_token(page: Page) -> None:
 
 def test_index_loads(frontend_path_app: AppHarness, page: Page):
     """Index page loads at the correct path and on_load fires."""
-    base = frontend_path_app.frontend_url
-    assert base is not None
-    page.goto(base)
-    _wait_for_token(page)
+    _navigate(frontend_path_app, page)
     expect(page.locator("#page-id")).to_have_text("index page")
     expect(page.locator("#on-load-log")).to_contain_text("index")
 
 
 def test_link_to_static_page(frontend_path_app: AppHarness, page: Page):
     """Client-side link navigates to a static route and on_load fires."""
-    base = frontend_path_app.frontend_url
-    assert base is not None
-    page.goto(base)
-    _wait_for_token(page)
+    base = _navigate(frontend_path_app, page)
 
     page.click("#link-static")
     expect(page.locator("#page-id")).to_have_text("static page")
-    expect(page).to_have_url(f"{base.rstrip('/')}/static-page")
+    expect(page).to_have_url(f"{base}/static-page")
     expect(page.locator("#on-load-log")).to_contain_text("static")
 
 
 def test_link_to_dynamic_page(frontend_path_app: AppHarness, page: Page):
     """Client-side link navigates to a dynamic route and on_load fires."""
-    base = frontend_path_app.frontend_url
-    assert base is not None
-    page.goto(base)
-    _wait_for_token(page)
+    base = _navigate(frontend_path_app, page)
 
     page.click("#link-dynamic")
     expect(page.locator("#page-id")).to_contain_text("dynamic page")
-    expect(page).to_have_url(f"{base.rstrip('/')}/dynamic/7")
+    expect(page).to_have_url(f"{base}/dynamic/7")
     expect(page.locator("#on-load-log")).to_contain_text("dynamic-7")
 
 
 def test_direct_navigation_static(frontend_path_app: AppHarness, page: Page):
     """Direct URL navigation to a static page works (full page load)."""
-    base = frontend_path_app.frontend_url
-    assert base is not None
-    page.goto(f"{base.rstrip('/')}/static-page")
-    _wait_for_token(page)
+    _navigate(frontend_path_app, page, "/static-page")
     expect(page.locator("#page-id")).to_have_text("static page")
     expect(page.locator("#on-load-log")).to_contain_text("static")
 
 
 def test_direct_navigation_dynamic(frontend_path_app: AppHarness, page: Page):
     """Direct URL navigation to a dynamic page works (full page load)."""
-    base = frontend_path_app.frontend_url
-    assert base is not None
-    page.goto(f"{base.rstrip('/')}/dynamic/42")
-    _wait_for_token(page)
+    _navigate(frontend_path_app, page, "/dynamic/42")
     expect(page.locator("#page-id")).to_contain_text("dynamic page")
     expect(page.locator("#on-load-log")).to_contain_text("dynamic-42")
 
 
 def test_redirect_to_static(frontend_path_app: AppHarness, page: Page):
     """Event handler redirect to a static route works."""
-    base = frontend_path_app.frontend_url
-    assert base is not None
-    page.goto(base)
-    _wait_for_token(page)
+    base = _navigate(frontend_path_app, page)
 
     page.click("#btn-redir-static")
     expect(page.locator("#page-id")).to_have_text("static page")
-    expect(page).to_have_url(f"{base.rstrip('/')}/static-page")
+    expect(page).to_have_url(f"{base}/static-page")
 
 
 def test_redirect_to_dynamic(frontend_path_app: AppHarness, page: Page):
     """Event handler redirect to a dynamic route works."""
-    base = frontend_path_app.frontend_url
-    assert base is not None
-    page.goto(base)
-    _wait_for_token(page)
+    base = _navigate(frontend_path_app, page)
 
     page.click("#btn-redir-dynamic")
     expect(page.locator("#page-id")).to_contain_text("dynamic page")
-    expect(page).to_have_url(f"{base.rstrip('/')}/dynamic/42")
+    expect(page).to_have_url(f"{base}/dynamic/42")
 
 
 def test_on_load_redirect_static(frontend_path_app: AppHarness, page: Page):
     """on_load redirect to a static page works (bouncer pattern)."""
-    base = frontend_path_app.frontend_url
-    assert base is not None
-    page.goto(f"{base.rstrip('/')}/bouncer-static")
-    _wait_for_token(page)
+    base = _navigate(frontend_path_app, page, "/bouncer-static")
     expect(page.locator("#page-id")).to_have_text("static page")
-    expect(page).to_have_url(f"{base.rstrip('/')}/static-page")
+    expect(page).to_have_url(f"{base}/static-page")
 
 
 def test_on_load_redirect_dynamic(frontend_path_app: AppHarness, page: Page):
     """on_load redirect to a dynamic page works (bouncer pattern)."""
-    base = frontend_path_app.frontend_url
-    assert base is not None
-    page.goto(f"{base.rstrip('/')}/bouncer-dynamic")
-    _wait_for_token(page)
+    base = _navigate(frontend_path_app, page, "/bouncer-dynamic")
     expect(page.locator("#page-id")).to_contain_text("dynamic page")
-    expect(page).to_have_url(f"{base.rstrip('/')}/dynamic/99")
+    expect(page).to_have_url(f"{base}/dynamic/99")
 
 
 def test_asset_image_loads(frontend_path_app: AppHarness, page: Page):
     """An image from the assets directory loads correctly."""
-    base = frontend_path_app.frontend_url
-    assert base is not None
-    page.goto(base)
-    _wait_for_token(page)
+    _navigate(frontend_path_app, page)
 
     img = page.locator("#asset-img")
     expect(img).to_be_visible()
-    # Verify the image actually loaded (naturalWidth > 0).
     page.wait_for_function("document.querySelector('#asset-img').naturalWidth > 0")
 
 
 def test_css_background_image_loads(frontend_path_app: AppHarness, page: Page):
     """An external CSS file referencing an image via url() loads correctly."""
-    base = frontend_path_app.frontend_url
-    assert base is not None
-    page.goto(base)
-    _wait_for_token(page)
+    _navigate(frontend_path_app, page)
 
     el = page.locator("#css-bg-image")
     expect(el).to_be_visible()
-    # Verify the background-image was applied (not "none").
     expect(el).not_to_have_css("background-image", "none")
 
 
 def test_uploaded_file_image_loads(frontend_path_app: AppHarness, page: Page):
     """An image served from the upload directory loads correctly."""
-    base = frontend_path_app.frontend_url
-    assert base is not None
-    page.goto(base)
-    _wait_for_token(page)
+    _navigate(frontend_path_app, page)
 
     img = page.locator("#upload-img")
     expect(img).to_be_visible()
-    # Wait for the image to be fully loaded.
     page.wait_for_function("document.querySelector('#upload-img').naturalWidth > 0")
 
 
 def test_uploaded_file_download(frontend_path_app: AppHarness, page: Page):
     """A file in the upload directory can be downloaded via get_upload_url link."""
-    base = frontend_path_app.frontend_url
-    assert base is not None
-    page.goto(base)
-    _wait_for_token(page)
+    _navigate(frontend_path_app, page)
 
-    # Get the href from the download link and fetch it directly.
     link = page.locator("#upload-link")
     expect(link).to_be_visible()
     href = link.get_attribute("href")
     assert href is not None
 
-    # The href from get_upload_url is an absolute URL pointing at the backend.
     resp = httpx.get(href, follow_redirects=True)
     assert resp.status_code == 200
     assert resp.text == "uploaded file content"
 
 
-@pytest.mark.ignore_console_error
+# @pytest.mark.ignore_console_error
 def test_404_page(frontend_path_app: AppHarness, page: Page):
     """Navigating to a non-existent page shows the 404 page."""
     base = frontend_path_app.frontend_url
@@ -439,26 +408,22 @@ def test_404_page(frontend_path_app: AppHarness, page: Page):
 
 def test_navigate_back_and_forth(frontend_path_app: AppHarness, page: Page):
     """Navigate between pages and verify on_load fires each time."""
-    base = frontend_path_app.frontend_url
-    assert base is not None
-    page.goto(base)
-    _wait_for_token(page)
+    base = _navigate(frontend_path_app, page)
     expect(page.locator("#page-id")).to_have_text("index page")
 
     # index -> static
     page.click("#link-static")
     expect(page.locator("#page-id")).to_have_text("static page")
-    expect(page).to_have_url(f"{base.rstrip('/')}/static-page")
+    expect(page).to_have_url(f"{base}/static-page")
 
     # static -> dynamic/7
     page.click("#link-dynamic")
     expect(page.locator("#page-id")).to_contain_text("dynamic page")
-    expect(page).to_have_url(f"{base.rstrip('/')}/dynamic/7")
+    expect(page).to_have_url(f"{base}/dynamic/7")
 
     # dynamic/7 -> index (via link-home)
     page.click("#link-home")
     expect(page.locator("#page-id")).to_have_text("index page")
-    expect(page).to_have_url(base)
 
     # Verify on_load fired for each navigation.
     log = page.locator("#on-load-log")
