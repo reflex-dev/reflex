@@ -185,9 +185,9 @@ def _duplicate_index_html_to_parent_directory(
                 if not target.exists():
                     console.debug(f"Copying {index_html} to {target}")
                     path_ops.cp(index_html, target)
+                    _copy_precompressed_sidecars(index_html, target, suffixes)
                 else:
                     console.debug(f"Skipping {index_html}, already exists at {target}")
-                _copy_precompressed_sidecars(index_html, target, suffixes)
             # Recursively call this function for the child directory.
             _duplicate_index_html_to_parent_directory(child, suffixes)
 
@@ -252,9 +252,7 @@ def build():
 
     config = get_config()
     sidecar_suffixes = tuple(
-        _SUPPORTED_ENCODINGS[fmt].suffix
-        for fmt in config.frontend_compression_formats
-        if fmt in _SUPPORTED_ENCODINGS
+        _SUPPORTED_ENCODINGS[fmt].suffix for fmt in config.frontend_compression_formats
     )
 
     _duplicate_index_html_to_parent_directory(

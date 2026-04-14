@@ -12,8 +12,10 @@ import subprocess
 import time
 import urllib.request
 from dataclasses import dataclass
+from functools import cache
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit, urlunsplit
 
 import pytest
 
@@ -24,6 +26,8 @@ LIGHTHOUSE_RUN_ENV_VAR = "REFLEX_RUN_LIGHTHOUSE"
 LIGHTHOUSE_COMMAND_ENV_VAR = "REFLEX_LIGHTHOUSE_COMMAND"
 LIGHTHOUSE_CHROME_PATH_ENV_VAR = "REFLEX_LIGHTHOUSE_CHROME_PATH"
 LIGHTHOUSE_CLI_PACKAGE = "lighthouse@13.1.0"
+LIGHTHOUSE_COMMAND_PREP_TIMEOUT_SECONDS = 300
+LIGHTHOUSE_RUN_TIMEOUT_SECONDS = 300
 TRUTHY_ENV_VALUES = {"1", "true", "yes", "on"}
 LIGHTHOUSE_CATEGORY_THRESHOLDS = {
     "performance": 0.9,
@@ -32,7 +36,6 @@ LIGHTHOUSE_CATEGORY_THRESHOLDS = {
     "seo": 0.9,
 }
 LIGHTHOUSE_CATEGORIES = tuple(LIGHTHOUSE_CATEGORY_THRESHOLDS)
-LIGHTHOUSE_APP_NAME = "lighthouse_blank"
 LIGHTHOUSE_LANDING_APP_NAME = "lighthouse_landing"
 
 LANDING_PAGE_SOURCE = '''\
@@ -692,10 +695,108 @@ def get_lighthouse_command() -> list[str]:
         return ["lighthouse"]
     if shutil.which("npx") is not None:
         return ["npx", "--yes", LIGHTHOUSE_CLI_PACKAGE]
+    if shutil.which("pnpx") is not None:
+        return ["pnpx", LIGHTHOUSE_CLI_PACKAGE]
     pytest.skip(
         "Lighthouse CLI is unavailable. "
-        f"Install `lighthouse`, make `npx` available, or set {LIGHTHOUSE_COMMAND_ENV_VAR}."
+        "Install `lighthouse`, make `npx` or `pnpx` available, "
+        f"or set {LIGHTHOUSE_COMMAND_ENV_VAR}."
     )
+
+
+def _format_subprocess_output(output: str | bytes | None) -> str:
+    """Normalize subprocess output for failure messages.
+
+    Args:
+        output: The captured subprocess output.
+
+    Returns:
+        The output as a decoded string.
+    """
+    if output is None:
+        return ""
+    if isinstance(output, bytes):
+        return output.decode(errors="replace")
+    return output
+
+
+@cache
+def _prepare_lighthouse_command(command: tuple[str, ...]) -> tuple[str, ...]:
+    """Warm package-runner-based Lighthouse commands before the benchmark.
+
+    Args:
+        command: The Lighthouse command prefix.
+
+    Returns:
+        The original command prefix.
+    """
+    if not command or command[0] not in {"npx", "pnpx"}:
+        return command
+
+    prepare_command = [*command, "--version"]
+    try:
+        subprocess.run(
+            prepare_command,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=LIGHTHOUSE_COMMAND_PREP_TIMEOUT_SECONDS,
+        )
+    except subprocess.CalledProcessError as err:
+        pytest.fail(
+            "Lighthouse CLI preparation failed. "
+            "If Lighthouse is not already installed, make sure the npm registry "
+            f"is reachable or set {LIGHTHOUSE_COMMAND_ENV_VAR} to an installed CLI.\n"
+            f"Command: {' '.join(prepare_command)}\n"
+            f"stdout:\n{_format_subprocess_output(err.stdout)}\n"
+            f"stderr:\n{_format_subprocess_output(err.stderr)}"
+        )
+    except subprocess.TimeoutExpired as err:
+        pytest.fail(
+            "Lighthouse CLI preparation timed out. "
+            "If Lighthouse is not already installed, make sure the npm registry "
+            f"is reachable or set {LIGHTHOUSE_COMMAND_ENV_VAR} to an installed CLI.\n"
+            f"Command: {' '.join(prepare_command)}\n"
+            f"stdout:\n{_format_subprocess_output(err.stdout)}\n"
+            f"stderr:\n{_format_subprocess_output(err.stderr)}"
+        )
+
+    return command
+
+
+def _get_lighthouse_target_url(url: str) -> str:
+    """Convert bind-all URLs into loopback URLs that browser clients can reach.
+
+    Args:
+        url: The reported frontend URL.
+
+    Returns:
+        A client-reachable URL for Lighthouse.
+    """
+    parsed = urlsplit(url)
+    replacement_host = {
+        "0.0.0.0": "127.0.0.1",
+        "::": "::1",
+    }.get(parsed.hostname or "")
+    if replacement_host is None:
+        return url
+
+    auth = ""
+    if parsed.username is not None:
+        auth = parsed.username
+        if parsed.password is not None:
+            auth += f":{parsed.password}"
+        auth += "@"
+
+    host = replacement_host
+    if ":" in host:
+        host = f"[{host}]"
+
+    netloc = f"{auth}{host}"
+    if parsed.port is not None:
+        netloc = f"{netloc}:{parsed.port}"
+
+    return urlunsplit(parsed._replace(netloc=netloc))
 
 
 def get_chrome_path() -> str:
@@ -792,7 +893,7 @@ def run_lighthouse(url: str, report_path: Path) -> dict[str, Any]:
         The parsed Lighthouse JSON report.
     """
     command = [
-        *get_lighthouse_command(),
+        *_prepare_lighthouse_command(tuple(get_lighthouse_command())),
         url,
         "--output=json",
         f"--output-path={report_path}",
@@ -808,14 +909,21 @@ def run_lighthouse(url: str, report_path: Path) -> dict[str, Any]:
             check=True,
             capture_output=True,
             text=True,
-            timeout=180,
+            timeout=LIGHTHOUSE_RUN_TIMEOUT_SECONDS,
         )
     except subprocess.CalledProcessError as err:
         pytest.fail(
             "Lighthouse execution failed.\n"
             f"Command: {' '.join(command)}\n"
-            f"stdout:\n{err.stdout}\n"
-            f"stderr:\n{err.stderr}"
+            f"stdout:\n{_format_subprocess_output(err.stdout)}\n"
+            f"stderr:\n{_format_subprocess_output(err.stderr)}"
+        )
+    except subprocess.TimeoutExpired as err:
+        pytest.fail(
+            "Lighthouse execution timed out.\n"
+            f"Command: {' '.join(command)}\n"
+            f"stdout:\n{_format_subprocess_output(err.stdout)}\n"
+            f"stderr:\n{_format_subprocess_output(err.stderr)}"
         )
     return json.loads(report_path.read_text())
 
@@ -905,21 +1013,26 @@ def _run_prod_lighthouse_benchmark(
             f"Captured output:\n{output}"
         )
 
+    benchmark_url = _get_lighthouse_target_url(frontend_url)
+
     # Warmup request: ensure the server is fully ready before benchmarking.
     warmup_deadline = time.monotonic() + 30
     while time.monotonic() < warmup_deadline:
         try:
-            urllib.request.urlopen(frontend_url, timeout=5)
+            urllib.request.urlopen(benchmark_url, timeout=5)
             break
         except Exception:
             time.sleep(0.5)
     else:
         proc.terminate()
         proc.wait(timeout=10)
-        pytest.fail(f"Warmup request to {frontend_url} never succeeded for {label}")
+        pytest.fail(
+            f"Warmup request to {benchmark_url} "
+            f"(reported as {frontend_url}) never succeeded for {label}"
+        )
 
     try:
-        report = run_lighthouse(frontend_url, report_path)
+        report = run_lighthouse(benchmark_url, report_path)
     finally:
         proc.terminate()
         try:
@@ -939,28 +1052,6 @@ def _run_prod_lighthouse_benchmark(
         report_path=report_path,
         summary=format_lighthouse_summary(report, report_path, label=label),
         failures=failures,
-    )
-
-
-def run_blank_prod_lighthouse_benchmark(
-    app_root: Path,
-    report_path: Path,
-) -> LighthouseBenchmarkResult:
-    """Run Lighthouse against the stock blank Reflex app in prod mode.
-
-    Args:
-        app_root: The app root to initialize or reuse.
-        report_path: Where to save the Lighthouse JSON report.
-
-    Returns:
-        A structured benchmark result.
-    """
-    _ensure_lighthouse_app(app_root, LIGHTHOUSE_APP_NAME)
-    return _run_prod_lighthouse_benchmark(
-        app_root=app_root,
-        app_name=LIGHTHOUSE_APP_NAME,
-        report_path=report_path,
-        label="blank prod app",
     )
 
 

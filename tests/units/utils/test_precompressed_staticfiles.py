@@ -10,10 +10,16 @@ from starlette.responses import FileResponse
 from reflex.utils.precompressed_staticfiles import PrecompressedStaticFiles
 
 
-def _scope(path: str, accept_encoding: str | None = None) -> dict:
+def _scope(
+    path: str,
+    accept_encoding: str | None = None,
+    accept: str | None = None,
+) -> dict:
     headers = []
     if accept_encoding is not None:
         headers.append((b"accept-encoding", accept_encoding.encode()))
+    if accept is not None:
+        headers.append((b"accept", accept.encode()))
     return {
         "type": "http",
         "http_version": "1.1",
@@ -118,3 +124,138 @@ async def test_precompressed_static_files_fall_back_to_identity(tmp_path: Path):
     assert str(response.path).endswith("app.js")
     assert "content-encoding" not in response.headers
     assert response.headers["vary"] == "Accept-Encoding"
+
+
+@pytest.mark.asyncio
+async def test_image_format_negotiation_serves_webp(tmp_path: Path):
+    """Serve a WebP variant when the client accepts image/webp."""
+    (tmp_path / "hero.png").write_bytes(b"png-data")
+    (tmp_path / "hero.webp").write_bytes(b"webp-data")
+
+    static_files = PrecompressedStaticFiles(
+        directory=tmp_path,
+        image_formats=["webp"],
+    )
+
+    response = await static_files.get_response(
+        "hero.png",
+        _scope("/hero.png", accept="image/webp, image/png, */*"),
+    )
+
+    assert isinstance(response, FileResponse)
+    assert str(response.path).endswith("hero.webp")
+    assert response.media_type == "image/webp"
+    assert "Accept" in response.headers["vary"]
+
+
+@pytest.mark.asyncio
+async def test_image_format_negotiation_serves_avif(tmp_path: Path):
+    """Serve an AVIF variant when the client accepts image/avif."""
+    (tmp_path / "photo.jpg").write_bytes(b"jpeg-data")
+    (tmp_path / "photo.avif").write_bytes(b"avif-data")
+
+    static_files = PrecompressedStaticFiles(
+        directory=tmp_path,
+        image_formats=["avif"],
+    )
+
+    response = await static_files.get_response(
+        "photo.jpg",
+        _scope("/photo.jpg", accept="image/avif, image/jpeg"),
+    )
+
+    assert isinstance(response, FileResponse)
+    assert str(response.path).endswith("photo.avif")
+    assert response.media_type == "image/avif"
+
+
+@pytest.mark.asyncio
+async def test_image_format_negotiation_prefers_best_quality(tmp_path: Path):
+    """Prefer the highest-quality accepted image format."""
+    (tmp_path / "hero.png").write_bytes(b"png-data")
+    (tmp_path / "hero.webp").write_bytes(b"webp-data")
+    (tmp_path / "hero.avif").write_bytes(b"avif-data")
+
+    static_files = PrecompressedStaticFiles(
+        directory=tmp_path,
+        image_formats=["webp", "avif"],
+    )
+
+    response = await static_files.get_response(
+        "hero.png",
+        _scope("/hero.png", accept="image/webp;q=0.5, image/avif;q=1"),
+    )
+
+    assert isinstance(response, FileResponse)
+    assert str(response.path).endswith("hero.avif")
+    assert response.media_type == "image/avif"
+
+
+@pytest.mark.asyncio
+async def test_image_format_negotiation_falls_back_to_original(tmp_path: Path):
+    """Serve the original image when no accepted format variant exists."""
+    (tmp_path / "hero.png").write_bytes(b"png-data")
+
+    static_files = PrecompressedStaticFiles(
+        directory=tmp_path,
+        image_formats=["webp", "avif"],
+    )
+
+    response = await static_files.get_response(
+        "hero.png",
+        _scope("/hero.png", accept="image/png"),
+    )
+
+    assert isinstance(response, FileResponse)
+    assert str(response.path).endswith("hero.png")
+    assert "Accept" in response.headers["vary"]
+
+
+@pytest.mark.asyncio
+async def test_image_format_negotiation_ignores_non_image_files(tmp_path: Path):
+    """Non-image files are not affected by image format negotiation."""
+    (tmp_path / "app.js").write_text("console.log('hello');")
+
+    static_files = PrecompressedStaticFiles(
+        directory=tmp_path,
+        image_formats=["webp"],
+    )
+
+    response = await static_files.get_response(
+        "app.js",
+        _scope("/app.js", accept="image/webp, */*"),
+    )
+
+    assert isinstance(response, FileResponse)
+    assert str(response.path).endswith("app.js")
+
+
+@pytest.mark.asyncio
+async def test_image_and_encoding_negotiation_combined(tmp_path: Path):
+    """Both image format and encoding negotiation work together."""
+    (tmp_path / "hero.png").write_bytes(b"png-data")
+    (tmp_path / "hero.webp").write_bytes(b"webp-data")
+    (tmp_path / "hero.webp.gz").write_bytes(b"webp-gzip")
+
+    static_files = PrecompressedStaticFiles(
+        directory=tmp_path,
+        encodings=["gzip"],
+        image_formats=["webp"],
+    )
+
+    response = await static_files.get_response(
+        "hero.png",
+        _scope(
+            "/hero.png",
+            accept_encoding="gzip",
+            accept="image/webp, image/png",
+        ),
+    )
+
+    assert isinstance(response, FileResponse)
+    # Image format negotiation serves webp, but encoding negotiation
+    # does not apply since the path changed and the compressed sidecar
+    # is for the original path.
+    assert str(response.path).endswith("hero.webp")
+    assert response.media_type == "image/webp"
+    assert "Accept" in response.headers["vary"]

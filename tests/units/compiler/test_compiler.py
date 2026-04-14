@@ -1,10 +1,12 @@
 import importlib.util
 import os
+import re
 from pathlib import Path
 
 import pytest
 from pytest_mock import MockerFixture
 from reflex_base import constants
+from reflex_base.compiler.templates import vite_config_template
 from reflex_base.constants.compiler import PageNames
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
 from reflex_base.vars.base import Var
@@ -448,3 +450,49 @@ def test_create_document_root_with_meta_viewport():
     assert str(root.children[0].children[2].name) == '"viewport"'  # pyright: ignore [reportAttributeAccessIssue]
     assert str(root.children[0].children[2].content) == '"foo"'  # pyright: ignore [reportAttributeAccessIssue]
     assert str(root.children[0].children[3].char_set) == '"utf-8"'  # pyright: ignore [reportAttributeAccessIssue]
+
+
+class TestViteConfigChunking:
+    """Tests for Vite config chunk splitting strategy."""
+
+    def _generate_vite_config(self) -> str:
+        return vite_config_template(
+            base="/",
+            hmr=True,
+            force_full_reload=False,
+            experimental_hmr=False,
+            sourcemap=False,
+        )
+
+    def test_no_monolithic_radix_ui_chunk(self):
+        """Radix-ui packages must not be grouped into a single monolithic chunk.
+
+        A single 'radix-ui' chunk forces every page to download ALL radix code
+        even when it only uses a fraction, wasting 55+ KB on typical pages.
+        """
+        config = self._generate_vite_config()
+
+        # There should be no chunk rule that matches ALL @radix-ui/* packages
+        # under a single name like "radix-ui".
+        monolithic_radix = re.search(r"""name:\s*["']radix-ui["']""", config)
+        assert monolithic_radix is None, (
+            "Vite config must not group all @radix-ui/* packages into a single "
+            "'radix-ui' chunk. This forces pages to download unused radix code. "
+            "Remove the monolithic radix-ui chunk rule and let Vite split per-route."
+        )
+
+    def test_vendor_chunks_exist_for_large_libraries(self):
+        """Key vendor libraries should still have dedicated chunks for caching."""
+        config = self._generate_vite_config()
+
+        # These libraries are large and benefit from dedicated chunks for
+        # cross-page cache reuse.
+        for lib_name in ["socket-io", "mantine", "recharts"]:
+            assert re.search(rf"""name:\s*["']{lib_name}["']""", config), (
+                f"Expected dedicated chunk for '{lib_name}'"
+            )
+
+    def test_reflex_env_chunk_exists(self):
+        """The env.json chunk should always exist for config isolation."""
+        config = self._generate_vite_config()
+        assert re.search(r"""name:\s*["']reflex-env["']""", config)

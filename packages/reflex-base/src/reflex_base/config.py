@@ -168,6 +168,7 @@ class BaseConfig:
         vite_allowed_hosts: Allowed hosts for the Vite dev server. Set to True to allow all hosts, or provide a list of hostnames (e.g. ["myservice.local"]) to allow specific ones. Prevents 403 errors in Docker, Codespaces, reverse proxies, etc.
         react_strict_mode: Whether to use React strict mode.
         frontend_compression_formats: Pre-compressed frontend asset formats to generate for production builds. Supported values are "gzip", "brotli", and "zstd". Use an empty list to disable build-time pre-compression.
+        frontend_image_formats: Optimized image formats to generate as sidecar files alongside originals during production builds. Supported values are "webp" and "avif". The server negotiates the ``Accept`` header and serves the best variant. Use an empty list to disable.
         frontend_packages: Additional frontend packages to install.
         state_manager_mode: Indicate which type of state manager to use.
         redis_lock_expiration: Maximum expiration lock time for redis state manager.
@@ -226,6 +227,11 @@ class BaseConfig:
         list[str],
         SequenceOptions(delimiter=",", strip=True),
     ] = dataclasses.field(default_factory=lambda: ["gzip"])
+
+    frontend_image_formats: Annotated[
+        list[str],
+        SequenceOptions(delimiter=",", strip=True),
+    ] = dataclasses.field(default_factory=lambda: ["webp", "avif"])
 
     frontend_packages: list[str] = dataclasses.field(default_factory=list)
 
@@ -311,7 +317,7 @@ class Config(BaseConfig):
     - **App Settings**: `app_name`, `loglevel`, `telemetry_enabled`
     - **Server**: `frontend_port`, `backend_port`, `api_url`, `cors_allowed_origins`
     - **Database**: `db_url`, `async_db_url`, `redis_url`
-    - **Frontend**: `frontend_packages`, `react_strict_mode`, `frontend_compression_formats`
+    - **Frontend**: `frontend_packages`, `react_strict_mode`, `frontend_compression_formats`, `frontend_image_formats`
     - **State Management**: `state_manager_mode`, `state_auto_setters`
     - **Plugins**: `plugins`, `disable_plugins`
 
@@ -352,6 +358,7 @@ class Config(BaseConfig):
             setattr(self, key, env_value)
 
         self._normalize_frontend_compression_formats()
+        self._normalize_frontend_image_formats()
 
         # Normalize disable_plugins: convert strings and Plugin subclasses to instances.
         self._normalize_disable_plugins()
@@ -423,31 +430,59 @@ class Config(BaseConfig):
                 )
         self.disable_plugins = normalized
 
-    def _normalize_frontend_compression_formats(self):
-        """Normalize and validate configured frontend compression formats.
+    @staticmethod
+    def _normalize_format_list(
+        formats: list[str],
+        supported: set[str],
+        config_key: str,
+    ) -> list[str]:
+        """Normalize, deduplicate, and validate a list of format names.
+
+        Args:
+            formats: The raw format names from config.
+            supported: Set of valid format names.
+            config_key: Config field name for error messages.
+
+        Returns:
+            Normalized list of valid format names.
 
         Raises:
-            ConfigError: If an unsupported format is configured.
+            ConfigError: If an unsupported format is found.
         """
-        supported_formats = {"brotli", "gzip", "zstd"}
-        normalized = []
-        seen = set()
+        normalized: list[str] = []
+        seen: set[str] = set()
 
-        for format_name in self.frontend_compression_formats:
+        for format_name in formats:
             normalized_name = format_name.strip().lower()
             if not normalized_name or normalized_name in seen:
                 continue
-            if normalized_name not in supported_formats:
-                supported = ", ".join(sorted(supported_formats))
+            if normalized_name not in supported:
+                supported_str = ", ".join(sorted(supported))
                 msg = (
-                    "frontend_compression_formats contains unsupported format "
-                    f"{format_name!r}. Expected one of: {supported}."
+                    f"{config_key} contains unsupported format "
+                    f"{format_name!r}. Expected one of: {supported_str}."
                 )
                 raise ConfigError(msg)
             normalized.append(normalized_name)
             seen.add(normalized_name)
 
-        self.frontend_compression_formats = normalized
+        return normalized
+
+    def _normalize_frontend_compression_formats(self):
+        """Normalize and validate configured frontend compression formats."""
+        self.frontend_compression_formats = self._normalize_format_list(
+            self.frontend_compression_formats,
+            {"brotli", "gzip", "zstd"},
+            "frontend_compression_formats",
+        )
+
+    def _normalize_frontend_image_formats(self):
+        """Normalize and validate configured frontend image formats."""
+        self.frontend_image_formats = self._normalize_format_list(
+            self.frontend_image_formats,
+            {"avif", "webp"},
+            "frontend_image_formats",
+        )
 
     def _add_builtin_plugins(self):
         """Add the builtin plugins to the config."""

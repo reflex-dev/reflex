@@ -6,9 +6,14 @@
  */
 
 import * as zlib from "node:zlib";
-import { dirname, join } from "node:path";
-import { readdir, readFile, stat, writeFile } from "node:fs/promises";
+import { dirname } from "node:path";
+import { readFile, writeFile } from "node:fs/promises";
 import { promisify } from "node:util";
+import {
+  validateFormats,
+  outputDirectoryExists,
+  walkFiles,
+} from "./vite-plugin-utils.js";
 
 const gzipAsync = promisify(zlib.gzip);
 const brotliAsync =
@@ -45,40 +50,8 @@ const COMPRESSORS = {
   },
 };
 
-function normalizeFormats(formats = ["gzip"]) {
-  const normalized = [];
-  const seen = new Set();
-
-  for (const format of formats) {
-    const normalizedFormat = String(format).trim().toLowerCase();
-    if (!normalizedFormat || seen.has(normalizedFormat)) {
-      continue;
-    }
-    if (!(normalizedFormat in COMPRESSORS)) {
-      throw new Error(
-        `Unsupported frontend compression format "${format}". ` +
-          'Expected one of: "gzip", "brotli", "zstd".',
-      );
-    }
-    normalized.push(normalizedFormat);
-    seen.add(normalizedFormat);
-  }
-
-  return normalized;
-}
-
-async function* walkFiles(directory) {
-  for (const entry of await readdir(directory, { withFileTypes: true })) {
-    const entryPath = join(directory, entry.name);
-    if (entry.isDirectory()) {
-      yield* walkFiles(entryPath);
-      continue;
-    }
-    if (entry.isFile()) {
-      yield entryPath;
-    }
-  }
-}
+// Concurrency limit for parallel file compression.
+const CONCURRENCY = 16;
 
 function ensureFormatsSupported(formats) {
   const unavailableFormats = formats.filter(
@@ -89,14 +62,6 @@ function ensureFormatsSupported(formats) {
       `The configured frontend compression formats are not supported by this Node.js runtime: ${unavailableFormats.join(", ")}`,
     );
   }
-}
-
-async function outputDirectoryExists(outputDir) {
-  return Boolean(
-    await stat(outputDir).catch((error) =>
-      error?.code === "ENOENT" ? null : Promise.reject(error),
-    ),
-  );
 }
 
 async function compressFile(filePath, formats) {
@@ -116,20 +81,26 @@ async function compressFile(filePath, formats) {
 }
 
 export async function compressDirectory(directory, formats = ["gzip"]) {
-  const normalizedFormats = normalizeFormats(formats);
-  ensureFormatsSupported(normalizedFormats);
+  validateFormats(formats, COMPRESSORS, "frontend compression format");
+  ensureFormatsSupported(formats);
 
   if (!(await outputDirectoryExists(directory))) {
     return;
   }
 
-  const jobs = [];
+  const pending = [];
   for await (const filePath of walkFiles(directory)) {
     if (!COMPRESSIBLE_EXTENSIONS.test(filePath)) continue;
-    jobs.push(compressFile(filePath, normalizedFormats));
+    pending.push(filePath);
   }
 
-  await Promise.all(jobs);
+  for (let i = 0; i < pending.length; i += CONCURRENCY) {
+    await Promise.all(
+      pending
+        .slice(i, i + CONCURRENCY)
+        .map((file) => compressFile(file, formats)),
+    );
+  }
 }
 
 /**
@@ -138,7 +109,8 @@ export async function compressDirectory(directory, formats = ["gzip"]) {
  * @returns {import('vite').Plugin}
  */
 export default function compressPlugin(options = {}) {
-  const formats = normalizeFormats(options.formats);
+  const formats = options.formats ?? ["gzip"];
+  validateFormats(formats, COMPRESSORS, "frontend compression format");
 
   return {
     name: "vite-plugin-compress",

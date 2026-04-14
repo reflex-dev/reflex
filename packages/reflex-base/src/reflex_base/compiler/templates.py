@@ -188,14 +188,29 @@ def app_root_template(
 
     custom_code_str = "\n".join(custom_codes)
 
-    import_window_libraries = "\n".join([
-        f'import * as {lib_alias} from "{lib_path}";'
-        for lib_alias, lib_path in window_libraries
-    ])
-
-    window_imports_str = "\n".join([
-        f'    "{lib_path}": {lib_alias},' for lib_alias, lib_path in window_libraries
-    ])
+    if window_libraries:
+        # Use dynamic imports to avoid blocking the critical rendering path.
+        # These libraries are only needed for dynamically eval'd components.
+        lazy_import_entries = ",\n      ".join([
+            f'import("{lib_path}").then(m => ["{lib_path}", m])'
+            for _lib_alias, lib_path in window_libraries
+        ])
+        window_libraries_block = f"""
+  useEffect(() => {{
+    if (!window["__reflex"]) {{
+      Promise.all([
+      {lazy_import_entries}
+      ]).then((modules) => {{
+        const imports = {{}};
+        for (const [path, mod] of modules) {{
+          imports[path] = mod;
+        }}
+        window["__reflex"] = imports;
+      }});
+    }}
+  }}, []);"""
+    else:
+        window_libraries_block = ""
 
     return f"""
 {imports_str}
@@ -204,7 +219,6 @@ import {{ EventLoopProvider, StateProvider, defaultColorMode }} from "$/utils/co
 import {{ ThemeProvider }} from '$/utils/react-theme';
 import {{ Layout as AppLayout }} from './_document';
 import {{ Outlet }} from 'react-router';
-{import_window_libraries}
 
 {custom_code_str}
 
@@ -215,13 +229,7 @@ return ({_RenderUtils.render(render)})
 
 
 export function Layout({{children}}) {{
-  useEffect(() => {{
-    // Make contexts and state objects available globally for dynamic eval'd components
-    let windowImports = {{
-      {window_imports_str}
-    }};
-    window["__reflex"] = windowImports;
-  }}, []);
+{window_libraries_block}
 
   return jsx(AppLayout, {{}},
     jsx(ThemeProvider, {{defaultTheme: defaultColorMode, attribute: "class"}},
@@ -488,6 +496,7 @@ def package_json_template(
     return json.dumps({
         "name": "reflex",
         "type": "module",
+        "sideEffects": ["*.css"],
         "scripts": scripts,
         "dependencies": dependencies,
         "devDependencies": dev_dependencies,
@@ -503,6 +512,7 @@ def vite_config_template(
     sourcemap: bool | Literal["inline", "hidden"],
     allowed_hosts: bool | list[str] = False,
     compression_formats: list[str] | None = None,
+    image_formats: list[str] | None = None,
 ):
     """Template for vite.config.js.
 
@@ -514,6 +524,7 @@ def vite_config_template(
         sourcemap: The sourcemap configuration.
         allowed_hosts: Allow all hosts (True), specific hosts (list of strings), or only localhost (False).
         compression_formats: Build-time pre-compression formats to emit.
+        image_formats: Optimized image formats to generate (e.g. ["webp", "avif"]).
 
     Returns:
         Rendered vite.config.js content as string.
@@ -528,7 +539,9 @@ def vite_config_template(
 import {{ reactRouter }} from "@react-router/dev/vite";
 import {{ defineConfig }} from "vite";
 import safariCacheBustPlugin from "./vite-plugin-safari-cachebust";
+import imageOptimizePlugin from "./vite-plugin-image-optimize";
 import compressPlugin from "./vite-plugin-compress";
+import purgeCSSPlugin from "./vite-plugin-purgecss";
 
 // Ensure that bun always uses the react-dom/server.node functions.
 function alwaysUseReactDomServerNode() {{
@@ -569,9 +582,12 @@ export default defineConfig((config) => ({{
     alwaysUseReactDomServerNode(),
     reactRouter(),
     safariCacheBustPlugin(),
+    imageOptimizePlugin({{ formats: {json.dumps(image_formats if image_formats is not None else ["webp", "avif"])}, quality: 80 }}),
     compressPlugin({{ formats: {json.dumps(compression_formats if compression_formats is not None else ["gzip"])} }}),
+    ...(config.mode === "production" ? [purgeCSSPlugin()] : []),
   ].concat({"[fullReload()]" if force_full_reload else "[]"}),
   build: {{
+    target: "es2022",
     assetsDir: "{base}assets".slice(1),
     sourcemap: {"true" if sourcemap is True else "false" if sourcemap is False else repr(sourcemap)},
     rollupOptions: {{
@@ -592,8 +608,20 @@ export default defineConfig((config) => ({{
               name: "socket-io",
             }},
             {{
-              test: /node_modules\/@radix-ui/,
-              name: "radix-ui",
+              test: /node_modules\/@mantine/,
+              name: "mantine",
+            }},
+            {{
+              test: /node_modules\/lucide-react/,
+              name: "lucide-icons",
+            }},
+            {{
+              test: /node_modules\/react-helmet/,
+              name: "react-helmet",
+            }},
+            {{
+              test: /node_modules\/recharts|node_modules\/d3-/,
+              name: "recharts",
             }},
           ],
         }},

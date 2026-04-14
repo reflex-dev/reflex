@@ -136,7 +136,6 @@ class PackageJson(SimpleNamespace):
             A dictionary of dependencies with their versions.
         """
         return {
-            "json5": "2.2.3",
             "react-router": cls._react_router_version,
             "react-router-dom": cls._react_router_version,
             "@react-router/node": cls._react_router_version,
@@ -154,6 +153,8 @@ class PackageJson(SimpleNamespace):
         "autoprefixer": "10.4.27",
         "postcss": "8.5.8",
         "postcss-import": "16.1.1",
+        "purgecss": "7.0.2",
+        "sharp": "0.34.5",
         "@react-router/dev": _react_router_version,
         "@react-router/fs-routes": _react_router_version,
         "vite": "8.0.0",

@@ -5,10 +5,11 @@ from __future__ import annotations
 import errno
 import os
 import stat
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from mimetypes import guess_type
 from pathlib import Path
+from typing import TypeVar
 
 from anyio import to_thread
 from starlette.datastructures import URL, Headers
@@ -46,45 +47,59 @@ _SUPPORTED_ENCODINGS = {
 }
 
 
-def _normalize_encoding_formats(formats: Sequence[str]) -> tuple[_EncodingFormat, ...]:
-    """Normalize configured encoding names to supported sidecar formats.
+@dataclass(frozen=True, slots=True)
+class _ImageFormat:
+    """Mapping between an image format and its HTTP/static-file details."""
+
+    name: str
+    media_type: str
+    suffix: str
+
+
+_SUPPORTED_IMAGE_FORMATS = {
+    "webp": _ImageFormat(name="webp", media_type="image/webp", suffix=".webp"),
+    "avif": _ImageFormat(name="avif", media_type="image/avif", suffix=".avif"),
+}
+
+# Extensions of image files that can have optimized format variants.
+_OPTIMIZABLE_IMAGE_EXTENSIONS = frozenset({
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".bmp",
+    ".tif",
+    ".tiff",
+})
+
+
+_T = TypeVar("_T")
+
+
+def _resolve_formats(
+    names: Sequence[str],
+    registry: Mapping[str, _T],
+) -> tuple[_T, ...]:
+    """Look up format objects by name. Config already validates inputs.
 
     Args:
-        formats: The configured compression format names.
+        names: Validated format names from config.
+        registry: Mapping of format name to format object.
 
     Returns:
-        The normalized supported sidecar encodings in configured order.
-
-    Raises:
-        ValueError: If an unknown format is configured.
+        Format objects in the configured order.
     """
-    normalized_formats = []
-    seen = set()
-    for format_name in formats:
-        normalized_name = format_name.strip().lower()
-        if not normalized_name or normalized_name in seen:
-            continue
-        encoding = _SUPPORTED_ENCODINGS.get(normalized_name)
-        if encoding is None:
-            supported = ", ".join(sorted(_SUPPORTED_ENCODINGS))
-            msg = (
-                f"Unsupported frontend compression format {format_name!r}. "
-                f"Expected one of: {supported}."
-            )
-            raise ValueError(msg)
-        normalized_formats.append(encoding)
-        seen.add(normalized_name)
-    return tuple(normalized_formats)
+    return tuple(registry[n] for n in names if n in registry)
 
 
-def _parse_accept_encoding(header_value: str | None) -> dict[str, float]:
-    """Parse an ``Accept-Encoding`` header into quality values.
+def _parse_quality_header(header_value: str | None) -> dict[str, float]:
+    """Parse a ``token;q=value`` HTTP header (Accept, Accept-Encoding, etc.).
 
     Args:
-        header_value: The raw ``Accept-Encoding`` header value.
+        header_value: The raw header value.
 
     Returns:
-        A mapping of accepted encodings to their quality values.
+        A mapping of tokens to their quality values.
     """
     if not header_value:
         return {}
@@ -92,8 +107,8 @@ def _parse_accept_encoding(header_value: str | None) -> dict[str, float]:
     parsed: dict[str, float] = {}
     for entry in header_value.split(","):
         token, *params = entry.split(";")
-        encoding = token.strip().lower()
-        if not encoding:
+        token = token.strip().lower()
+        if not token:
             continue
 
         quality = 1.0
@@ -107,7 +122,7 @@ def _parse_accept_encoding(header_value: str | None) -> dict[str, float]:
                 quality = 0.0
             break
 
-        parsed[encoding] = max(parsed.get(encoding, 0.0), quality)
+        parsed[token] = max(parsed.get(token, 0.0), quality)
     return parsed
 
 
@@ -118,6 +133,7 @@ class PrecompressedStaticFiles(StaticFiles):
         self,
         *args,
         encodings: Sequence[str] = (),
+        image_formats: Sequence[str] = (),
         **kwargs,
     ):
         """Initialize the static file server.
@@ -125,10 +141,13 @@ class PrecompressedStaticFiles(StaticFiles):
         Args:
             *args: Passed through to ``StaticFiles``.
             encodings: Ordered list of supported precompressed formats.
+            image_formats: Ordered list of optimized image formats to negotiate.
             **kwargs: Passed through to ``StaticFiles``.
         """
         super().__init__(*args, **kwargs)
-        self._encodings = _normalize_encoding_formats(encodings)
+        self._encodings = _resolve_formats(encodings, _SUPPORTED_ENCODINGS)
+        self._encoding_suffixes = tuple(fmt.suffix for fmt in self._encodings)
+        self._image_formats = _resolve_formats(image_formats, _SUPPORTED_IMAGE_FORMATS)
 
     def _find_precompressed_variant_sync(
         self,
@@ -169,6 +188,47 @@ class PrecompressedStaticFiles(StaticFiles):
 
         return best_match
 
+    def _find_image_format_variant_sync(
+        self,
+        path: str,
+        accepted_types: dict[str, float],
+    ) -> tuple[_ImageFormat, str, os.stat_result] | None:
+        """Select the best matching optimized image variant for a request path.
+
+        This performs blocking filesystem lookups and must be called via
+        ``to_thread.run_sync`` from async contexts.
+
+        Args:
+            path: The requested relative file path.
+            accepted_types: Parsed Accept header quality values.
+
+        Returns:
+            The selected image format, file path, and stat result, or ``None``.
+        """
+        best_match = None
+        best_quality = 0.0
+
+        # Strip the original extension to build sidecar paths.
+        stem, _dot, _ext = path.rpartition(".")
+
+        for fmt in self._image_formats:
+            quality = accepted_types.get(fmt.media_type, accepted_types.get("*/*", 0.0))
+            if quality <= 0:
+                continue
+
+            sidecar_path = f"{stem}{fmt.suffix}"
+            full_path, stat_result = self.lookup_path(sidecar_path)
+            if stat_result is None or not stat.S_ISREG(stat_result.st_mode):
+                continue
+
+            if quality > best_quality:
+                best_match = (fmt, full_path, stat_result)
+                best_quality = quality
+                if best_quality >= 1.0:
+                    break
+
+        return best_match
+
     async def _build_file_response(
         self,
         *,
@@ -195,11 +255,34 @@ class PrecompressedStaticFiles(StaticFiles):
         response_path = full_path
         response_stat = stat_result
         media_type = None
+        vary_parts: list[str] = []
 
-        if self._encodings and not any(
-            path.endswith(fmt.suffix) for fmt in self._encodings
+        # Image format negotiation via Accept header.
+        if self._image_formats:
+            ext = Path(path).suffix
+            if ext.lower() in _OPTIMIZABLE_IMAGE_EXTENSIONS:
+                accepted_types = _parse_quality_header(request_headers.get("accept"))
+                if accepted_types:
+                    matched_image = await to_thread.run_sync(
+                        lambda: self._find_image_format_variant_sync(
+                            path, accepted_types
+                        )
+                    )
+                    if matched_image:
+                        fmt, response_path, response_stat = matched_image
+                        media_type = fmt.media_type
+                vary_parts.append("Accept")
+
+        # Encoding negotiation via Accept-Encoding header.
+        # Skip if image format negotiation already changed the response — the
+        # precompressed sidecars are keyed to the original path, and modern
+        # image formats (WebP, AVIF) are already compressed.
+        if (
+            self._encodings
+            and media_type is None
+            and not path.endswith(self._encoding_suffixes)
         ):
-            accepted_encodings = _parse_accept_encoding(
+            accepted_encodings = _parse_quality_header(
                 request_headers.get("accept-encoding")
             )
             if accepted_encodings:
@@ -214,7 +297,10 @@ class PrecompressedStaticFiles(StaticFiles):
                     media_type = guess_type(path)[0] or "text/plain"
 
         if self._encodings:
-            response_headers["Vary"] = "Accept-Encoding"
+            vary_parts.append("Accept-Encoding")
+
+        if vary_parts:
+            response_headers["Vary"] = ", ".join(vary_parts)
 
         response = FileResponse(
             response_path,

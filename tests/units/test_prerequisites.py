@@ -103,6 +103,28 @@ def test_vite_config_uses_frontend_compression_formats():
     assert 'compressPlugin({ formats: ["gzip", "brotli"] }),' in output
 
 
+def test_vite_config_uses_frontend_image_formats():
+    config = Config(
+        app_name="test",
+        frontend_image_formats=["webp"],
+    )
+
+    output = _compile_vite_config(config)
+
+    assert 'imageOptimizePlugin({ formats: ["webp"], quality: 80 }),' in output
+
+
+def test_vite_config_disables_image_optimization():
+    config = Config(
+        app_name="test",
+        frontend_image_formats=[],
+    )
+
+    output = _compile_vite_config(config)
+
+    assert "imageOptimizePlugin({ formats: [], quality: 80 })," in output
+
+
 @pytest.mark.parametrize(
     ("frontend_path", "expected_command"),
     [

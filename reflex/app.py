@@ -656,6 +656,7 @@ class App(MiddlewareMixin, LifespanMixin):
                     / config.frontend_path.strip("/"),
                     html=True,
                     encodings=config.frontend_compression_formats,
+                    image_formats=config.frontend_image_formats,
                 ),
                 name="frontend",
             )
