@@ -506,7 +506,7 @@ def vite_config_template(
     """Template for vite.config.js.
 
     Args:
-        base: The base path for the Vite config.
+        base: The base path for the Vite config (for handling frontend_path config).
         hmr: Whether to enable hot module replacement.
         force_full_reload: Whether to force a full reload on changes.
         experimental_hmr: Whether to enable experimental HMR features.
@@ -562,13 +562,13 @@ function fullReload() {{
 }}
 
 export default defineConfig((config) => ({{
+  base: "{base}",
   plugins: [
     alwaysUseReactDomServerNode(),
     reactRouter(),
     safariCacheBustPlugin(),
   ].concat({"[fullReload()]" if force_full_reload else "[]"}),
   build: {{
-    assetsDir: "{base}assets".slice(1),
     sourcemap: {"true" if sourcemap is True else "false" if sourcemap is False else repr(sourcemap)},
     rollupOptions: {{
       onwarn(warning, warn) {{
