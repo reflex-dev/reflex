@@ -541,7 +541,6 @@ import {{ defineConfig }} from "vite";
 import safariCacheBustPlugin from "./vite-plugin-safari-cachebust";
 import imageOptimizePlugin from "./vite-plugin-image-optimize";
 import compressPlugin from "./vite-plugin-compress";
-import purgeCSSPlugin from "./vite-plugin-purgecss";
 
 // Ensure that bun always uses the react-dom/server.node functions.
 function alwaysUseReactDomServerNode() {{
@@ -584,7 +583,6 @@ export default defineConfig((config) => ({{
     safariCacheBustPlugin(),
     imageOptimizePlugin({{ formats: {json.dumps(image_formats if image_formats is not None else ["webp", "avif"])}, quality: 80 }}),
     compressPlugin({{ formats: {json.dumps(compression_formats if compression_formats is not None else ["gzip"])} }}),
-    ...(config.mode === "production" ? [purgeCSSPlugin()] : []),
   ].concat({"[fullReload()]" if force_full_reload else "[]"}),
   build: {{
     target: "es2022",

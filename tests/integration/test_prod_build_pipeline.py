@@ -184,18 +184,6 @@ def test_gzip_content_negotiation(prod_app: AppHarness):
     assert body[:2] == b"\x1f\x8b"
 
 
-# -- CSS purging --
-
-
-def test_css_was_purged(prod_app: AppHarness):
-    """Total CSS should be well under the raw radix-ui CSS (~200KB)."""
-    css_files = _find_build_files(prod_app, "**/*.css")
-    assert css_files, "No CSS files in build"
-
-    total = sum(f.stat().st_size for f in css_files)
-    assert total < 150_000, f"Total CSS is {total} bytes — PurgeCSS may not be running"
-
-
 # -- Image optimization --
 
 
