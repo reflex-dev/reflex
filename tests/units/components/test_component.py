@@ -1,7 +1,7 @@
 from contextlib import nullcontext
+from dataclasses import dataclass
 from typing import Any, ClassVar
 
-import pydantic
 import pytest
 from reflex_base.components.component import (
     CUSTOM_COMPONENTS,
@@ -522,6 +522,32 @@ def test_get_imports(component1, component2):
     }
 
 
+def test_get_all_imports_includes_components_in_props():
+    """Test that _get_all_imports collects imports from components in props."""
+
+    class InnerComponent(Component):
+        """A component that requires a specific import."""
+
+        def _get_imports(self) -> ParsedImportDict:
+            return {"some-library": [ImportVar(tag="SomeTag")]}
+
+    class OuterComponent(Component):
+        """A component with a component-typed prop."""
+
+        fallback: Component | None = None
+
+        def _get_imports(self) -> ParsedImportDict:
+            return {"outer-library": [ImportVar(tag="OuterTag")]}
+
+    inner = InnerComponent.create()
+    outer = OuterComponent.create(fallback=inner)
+    all_imports = outer._get_all_imports()
+    assert "some-library" in all_imports, (
+        "_get_all_imports() should collect imports from components in props"
+    )
+    assert "outer-library" in all_imports
+
+
 def test_get_custom_code(component1: Component, component2: Component):
     """Test getting the custom code of a component.
 
@@ -802,7 +828,8 @@ def test_component_create_unpack_tuple_child(test_component, element, expected):
     assert fragment_wrapper.render() == expected
 
 
-class _Obj(pydantic.BaseModel):
+@dataclass
+class _Obj:
     custom: int = 0
 
 

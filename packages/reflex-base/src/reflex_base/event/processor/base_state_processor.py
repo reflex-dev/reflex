@@ -115,10 +115,7 @@ def _transform_event_arg(value: Any, hinted_args: Any) -> Any:
             return hinted_args(**value)
         if find_spec("pydantic"):
             from pydantic import BaseModel as BaseModelV2
-            from pydantic.v1 import BaseModel as BaseModelV1
 
-            if issubclass(hinted_args, BaseModelV1):
-                return hinted_args.parse_obj(value)
             if issubclass(hinted_args, BaseModelV2):
                 return hinted_args.model_validate(value)
     if isinstance(value, list) and (hinted_args is set or hinted_args is frozenset):

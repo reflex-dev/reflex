@@ -2,6 +2,7 @@
 
 import datetime
 from collections.abc import Sequence
+from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Literal, TypedDict
@@ -15,6 +16,8 @@ from .base import Plugin as PluginBase
 
 if TYPE_CHECKING:
     from reflex.app import UnevaluatedPage
+
+TrailingSlashOption = Literal["always", "never", "preserve"]
 
 Location = str
 LastModified = datetime.datetime
@@ -49,7 +52,11 @@ class Constants(SimpleNamespace):
 
 
 def configuration_with_loc(
-    *, config: SitemapLinkConfiguration, deploy_url: str | None, loc: Location
+    *,
+    config: SitemapLinkConfiguration,
+    deploy_url: str | None,
+    loc: Location,
+    trailing_slash: TrailingSlashOption,
 ) -> SitemapLink:
     """Set the 'loc' field of the configuration.
 
@@ -57,12 +64,18 @@ def configuration_with_loc(
         config: The configuration dictionary.
         deploy_url: The deployment URL, if any.
         loc: The location to set.
+        trailing_slash: Option for handling trailing slashes in URLs.
 
     Returns:
         A SitemapLink dictionary with the 'loc' field set.
     """
     if deploy_url and not loc.startswith("http://") and not loc.startswith("https://"):
         loc = f"{deploy_url.rstrip('/')}/{loc.lstrip('/')}"
+    if trailing_slash == "always" and not loc.endswith("/"):
+        loc += "/"
+    elif trailing_slash == "never":
+        stripped = loc.rstrip("/")
+        loc = stripped or loc
     link: SitemapLink = {"loc": loc}
     if (lastmod := config.get("lastmod")) is not None:
         link["lastmod"] = lastmod
@@ -121,11 +134,13 @@ def is_route_dynamic(route: str) -> bool:
 
 def generate_links_for_sitemap(
     unevaluated_pages: Sequence["UnevaluatedPage"],
+    trailing_slash: TrailingSlashOption,
 ) -> list[SitemapLink]:
     """Generate sitemap links from unevaluated pages.
 
     Args:
         unevaluated_pages: Sequence of unevaluated pages.
+        trailing_slash: Option for handling trailing slashes in URLs.
 
     Returns:
         A list of SitemapLink dictionaries.
@@ -159,12 +174,18 @@ def generate_links_for_sitemap(
                 continue
 
             sitemap_link = configuration_with_loc(
-                config=sitemap_config, deploy_url=deploy_url, loc=loc
+                config=sitemap_config,
+                deploy_url=deploy_url,
+                loc=loc,
+                trailing_slash=trailing_slash,
             )
 
         elif (loc := sitemap_config.get("loc")) is not None:
             sitemap_link = configuration_with_loc(
-                config=sitemap_config, deploy_url=deploy_url, loc=loc
+                config=sitemap_config,
+                deploy_url=deploy_url,
+                loc=loc,
+                trailing_slash=trailing_slash,
             )
 
         else:
@@ -172,30 +193,39 @@ def generate_links_for_sitemap(
             if not loc.startswith("/"):
                 loc = "/" + loc
             sitemap_link = configuration_with_loc(
-                config=sitemap_config, deploy_url=deploy_url, loc=loc
+                config=sitemap_config,
+                deploy_url=deploy_url,
+                loc=loc,
+                trailing_slash=trailing_slash,
             )
 
         links.append(sitemap_link)
     return links
 
 
-def sitemap_task(unevaluated_pages: Sequence["UnevaluatedPage"]) -> tuple[str, str]:
+def sitemap_task(
+    unevaluated_pages: Sequence["UnevaluatedPage"], trailing_slash: TrailingSlashOption
+) -> tuple[str, str]:
     """Task to generate the sitemap XML file.
 
     Args:
         unevaluated_pages: Sequence of unevaluated pages.
+        trailing_slash: Option for handling trailing slashes in URLs.
 
     Returns:
         A tuple containing the file path and the generated XML content.
     """
     return (
         str(Constants.FILE_PATH),
-        generate_xml(generate_links_for_sitemap(unevaluated_pages)),
+        generate_xml(generate_links_for_sitemap(unevaluated_pages, trailing_slash)),
     )
 
 
+@dataclass(kw_only=True, frozen=True)
 class SitemapPlugin(PluginBase):
     """Sitemap plugin for Reflex."""
+
+    trailing_slash: TrailingSlashOption = "preserve"
 
     def pre_compile(self, **context):
         """Generate the sitemap XML file before compilation.
@@ -204,7 +234,7 @@ class SitemapPlugin(PluginBase):
             context: The context for the plugin.
         """
         unevaluated_pages = context.get("unevaluated_pages", [])
-        context["add_save_task"](sitemap_task, unevaluated_pages)
+        context["add_save_task"](sitemap_task, unevaluated_pages, self.trailing_slash)
 
 
 Plugin = SitemapPlugin

@@ -6,13 +6,14 @@ import asyncio
 import contextlib
 import dataclasses
 from collections import deque
-from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncGenerator, AsyncIterator, MutableMapping
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, BinaryIO, cast
 
 from python_multipart.multipart import MultipartParser, parse_options_header
 from reflex_base.utils import exceptions
 from reflex_base.utils.format import json_dumps
+from reflex_base.utils.streaming_response import DisconnectAwareStreamingResponse
 from starlette.datastructures import Headers
 from starlette.datastructures import UploadFile as StarletteUploadFile
 from starlette.exceptions import HTTPException
@@ -22,7 +23,7 @@ from starlette.responses import JSONResponse, Response, StreamingResponse
 from typing_extensions import Self
 
 if TYPE_CHECKING:
-    from reflex_base.utils.types import Receive, Scope, Send
+    from reflex_base.utils.types import ASGIApp, Receive, Scope, Send
 
     from reflex.app import App
 
@@ -399,27 +400,6 @@ class _UploadChunkMultipartParser:
         await self._flush_emitted_chunks()
 
 
-class _UploadStreamingResponse(StreamingResponse):
-    """Streaming response that always releases upload form resources."""
-
-    _on_finish: Callable[[], Awaitable[None]]
-
-    def __init__(
-        self,
-        *args: Any,
-        on_finish: Callable[[], Awaitable[None]],
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(*args, **kwargs)
-        self._on_finish = on_finish
-
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        try:
-            await super().__call__(scope, receive, send)
-        finally:
-            await self._on_finish()
-
-
 def _require_upload_headers(request: Request) -> tuple[str, str]:
     """Extract the required upload headers from a request.
 
@@ -525,7 +505,7 @@ async def _upload_buffered_file(
         async for delta in app.event_processor.enqueue_stream_delta(token, event):
             yield json_dumps(StateUpdate(delta=delta)) + "\n"
 
-    return _UploadStreamingResponse(
+    return DisconnectAwareStreamingResponse(
         _ndjson_updates(),
         media_type="application/x-ndjson",
         on_finish=_close_form_data,
@@ -595,6 +575,62 @@ async def _upload_chunk_file(
     if acknowledge_on_upload_endpoint:
         return _background_upload_accepted_response()
     return Response(status_code=202)
+
+
+header_content_disposition = b"content-disposition"
+header_content_type = b"content-type"
+header_x_content_type_options = b"x-content-type-options"
+
+
+class UploadedFilesHeadersMiddleware:
+    """ASGI middleware that adds security headers to uploaded file responses."""
+
+    def __init__(self, app: ASGIApp) -> None:
+        """Wrap an ASGI application with upload security headers.
+
+        Args:
+            app: The ASGI application to wrap.
+        """
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """Add Content-Disposition and X-Content-Type-Options headers.
+
+        Args:
+            scope: The ASGI scope.
+            receive: The ASGI receive callable.
+            send: The ASGI send callable.
+        """
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        async def send_with_headers(message: MutableMapping[str, Any]) -> None:
+            if message["type"] == "http.response.start":
+                content_disposition = None
+                content_type = None
+                headers = [(header_x_content_type_options, b"nosniff")]
+                for header_name, header_value in message.get("headers", []):
+                    lower_name = header_name.lower()
+                    if lower_name == header_content_disposition:
+                        content_disposition = header_value.lower()
+                        # Always append content-disposition header if non-empty.
+                        continue
+                    if lower_name == header_x_content_type_options:
+                        # Always replace this value with "nosniff", so ignore existing value.
+                        continue
+                    if lower_name == header_content_type:
+                        content_type = header_value.lower()
+                    headers.append((header_name, header_value))
+                if content_type != b"application/pdf":
+                    # Unknown content or non-PDF forces download.
+                    content_disposition = b"attachment"
+                if content_disposition:
+                    headers.append((header_content_disposition, content_disposition))
+                message = {**message, "headers": headers}
+            await send(message)
+
+        await self.app(scope, receive, send_with_headers)
 
 
 def upload(app: App):
