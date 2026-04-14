@@ -7,7 +7,7 @@
 
 import * as zlib from "node:zlib";
 import { dirname } from "node:path";
-import { readFile, writeFile } from "node:fs/promises";
+import { access, readFile, writeFile } from "node:fs/promises";
 import { promisify } from "node:util";
 import {
   validateFormats,
@@ -25,8 +25,8 @@ const zstdAsync =
 
 const COMPRESSIBLE_EXTENSIONS = /\.(js|css|html|json|svg|xml|txt|map|mjs)$/;
 
-// Only compress files above this size (bytes).  Tiny files don't benefit
-// and the overhead of Content-Encoding negotiation can outweigh the saving.
+// Only compress files above this size (bytes). Tiny assets rarely benefit,
+// but HTML entrypoints are always compressed so their negotiated sidecars exist.
 const MIN_SIZE = 256;
 
 const COMPRESSORS = {
@@ -65,12 +65,23 @@ function ensureFormatsSupported(formats) {
 }
 
 async function compressFile(filePath, formats) {
+  const pendingFormats = [];
+  for (const format of formats) {
+    const compressor = COMPRESSORS[format];
+    try {
+      await access(filePath + compressor.extension);
+    } catch {
+      pendingFormats.push([format, compressor]);
+    }
+  }
+
+  if (pendingFormats.length === 0) return;
+
   const raw = await readFile(filePath);
-  if (raw.length < MIN_SIZE) return;
+  if (raw.length < MIN_SIZE && !filePath.endsWith(".html")) return;
 
   await Promise.all(
-    formats.map((format) => {
-      const compressor = COMPRESSORS[format];
+    pendingFormats.map(([_format, compressor]) => {
       return compressor
         .compress(raw)
         .then((compressed) =>

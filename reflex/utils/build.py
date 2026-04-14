@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import zipfile
 from pathlib import Path, PosixPath
@@ -210,6 +211,43 @@ def _copy_precompressed_sidecars(source: Path, target: Path, suffixes: tuple[str
         path_ops.cp(source_sidecar, target_sidecar)
 
 
+def _compress_static_output(directory: Path, formats: tuple[str, ...]) -> None:
+    """Run the shared frontend compressor against the final static output tree.
+
+    Args:
+        directory: The static output directory.
+        formats: The configured frontend compression formats.
+
+    Raises:
+        SystemExit: If no JavaScript runtime is available or compression fails.
+    """
+    if not formats:
+        return
+
+    web_dir = prerequisites.get_web_dir().resolve()
+    runtime = path_ops.get_node_path() or path_ops.get_bun_path()
+    if runtime is None:
+        console.error("Node.js or Bun is required to compress the exported frontend.")
+        raise SystemExit(1)
+
+    result = processes.new_process(
+        [
+            runtime,
+            web_dir / "compress-static.js",
+            directory.resolve(),
+            json.dumps(formats),
+        ],
+        cwd=web_dir,
+        shell=constants.IS_WINDOWS,
+        run=True,
+    )
+    if result.returncode != 0:
+        console.error(
+            "Failed to compress the exported frontend. Please run with --loglevel debug for more information."
+        )
+        raise SystemExit(1)
+
+
 def build():
     """Build the app for deployment.
 
@@ -270,6 +308,11 @@ def build():
             target_404,
         )
         _copy_precompressed_sidecars(spa_fallback, target_404, sidecar_suffixes)
+
+    _compress_static_output(
+        wdir / constants.Dirs.STATIC,
+        tuple(config.frontend_compression_formats),
+    )
 
     if frontend_path := config.frontend_path.strip("/"):
         frontend_path = PosixPath(frontend_path)
