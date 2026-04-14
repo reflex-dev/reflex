@@ -1,5 +1,7 @@
 import reflex as rx
 
+from agent_files import AgentFilesPlugin
+
 config = rx.Config(
     app_name="reflex_docs",
     deploy_url="https://reflex.dev",
@@ -7,5 +9,9 @@ config = rx.Config(
         "tailwindcss-animated",
     ],
     telemetry_enabled=False,
-    plugins=[rx.plugins.TailwindV4Plugin(), rx.plugins.SitemapPlugin()],
+    plugins=[
+        rx.plugins.TailwindV4Plugin(),
+        rx.plugins.SitemapPlugin(),
+        AgentFilesPlugin(),
+    ],
 )
