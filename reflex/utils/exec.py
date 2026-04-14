@@ -24,6 +24,7 @@ from reflex_base.utils.decorator import once
 
 from reflex.utils import path_ops
 from reflex.utils.misc import get_module_path
+from reflex.utils.precompressed_staticfiles import PrecompressedStaticFiles
 from reflex.utils.prerequisites import get_web_dir
 
 # For uvicorn windows bug fix (#2335)
@@ -273,19 +274,17 @@ def get_frontend_mount():
         A Mount serving the compiled frontend static files.
     """
     from starlette.routing import Mount
-    from starlette.staticfiles import StaticFiles
-
-    from reflex.utils import prerequisites
 
     config = get_config()
+    frontend_path = config.frontend_path.strip("/")
 
     return Mount(
-        "/" + config.frontend_path.strip("/"),
-        app=StaticFiles(
-            directory=prerequisites.get_web_dir()
-            / constants.Dirs.STATIC
-            / config.frontend_path.strip("/"),
+        "/" + frontend_path,
+        app=PrecompressedStaticFiles(
+            directory=get_web_dir() / constants.Dirs.STATIC / frontend_path,
             html=True,
+            encodings=config.frontend_compression_formats,
+            image_formats=config.frontend_image_formats,
         ),
         name="frontend",
     )
