@@ -30,7 +30,6 @@ from reflex_components_core.base.fragment import Fragment
 from reflex_components_radix.themes.typography.text import Text
 from starlette.applications import Starlette
 from starlette.datastructures import FormData, Headers, UploadFile
-from starlette.requests import ClientDisconnect
 from starlette.responses import StreamingResponse
 from starlette_admin.auth import AuthProvider
 
@@ -1296,26 +1295,27 @@ async def test_upload_file_closes_form_if_response_cancelled_before_stream_start
     assert form_close.await_count == 0
     assert not bio.closed
 
-    with pytest.raises(asyncio.CancelledError):
-        await streaming_response(
-            {"type": "http", "asgi": {"spec_version": "2.4"}},
-            receive,
-            send,
-        )
+    await streaming_response(
+        {"type": "http", "asgi": {"spec_version": "2.4"}},
+        receive,
+        send,
+    )
 
     assert form_close.await_count == 1
     assert bio.closed
 
 
 @pytest.mark.asyncio
-async def test_upload_file_cancels_buffered_handler_on_disconnect_before_future_capture(
+async def test_upload_file_skips_handler_on_disconnect_asgi24(
     token: str,
 ):
-    """Buffered uploads cancel the handler even if disconnect wins the race.
+    """Buffered uploads skip handler dispatch on disconnect (ASGI 2.4 path).
 
     This exercises the ASGI 2.4 path where the response must watch
     ``receive()`` directly because Starlette does not listen for disconnects
-    while streaming the response body.
+    while streaming the response body.  The disconnect watcher fires the
+    ``on_disconnect`` callback before the upload handler is enqueued, so
+    ``enqueue_stream_delta`` is never called.
 
     Args:
         token: A token.
@@ -1338,17 +1338,8 @@ async def test_upload_file_cancels_buffered_handler_on_disconnect_before_future_
 
     request_mock.form = form
 
-    cancelled = asyncio.Event()
-    task_future = Mock()
-    task_future.done = Mock(side_effect=cancelled.is_set)
-    task_future.cancel = Mock(side_effect=cancelled.set)
-
-    async def enqueue_stream_delta(_token, _event, on_task_future=None):
-        assert on_task_future is not None
-        on_task_future(task_future)
-        await cancelled.wait()
-        if False:  # pragma: no cover
-            yield {}
+    msg = "upload handler should not be enqueued"
+    enqueue_stream_delta = Mock(side_effect=AssertionError(msg))
 
     app = Mock(
         event_processor=Mock(enqueue_stream_delta=enqueue_stream_delta),
@@ -1375,7 +1366,7 @@ async def test_upload_file_cancels_buffered_handler_on_disconnect_before_future_
         timeout=1,
     )
 
-    assert task_future.cancel.call_count == 1
+    assert enqueue_stream_delta.call_count == 0
     assert form_close.await_count == 1
     assert bio.closed
 
@@ -1437,12 +1428,11 @@ async def test_upload_file_skips_buffered_handler_when_disconnect_detected_on_pr
             err = "client disconnected"
             raise OSError(err)
 
-    with pytest.raises(ClientDisconnect):
-        await streaming_response(
-            asgi_24_scope,
-            receive,
-            send,
-        )
+    await streaming_response(
+        asgi_24_scope,
+        receive,
+        send,
+    )
 
     assert enqueue_stream_delta.call_count == 0
     assert form_close.await_count == 1

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import builtins
 import contextlib
 import sys
@@ -83,9 +82,11 @@ class DisconnectAwareStreamingResponse(StreamingResponse):
         super().__init__(*args, **kwargs)
         self._on_finish = on_finish
         self._on_disconnect = on_disconnect
+        self._disconnected = False
 
     def _notify_disconnect(self) -> None:
         """Invoke the on_disconnect callback if one was provided."""
+        self._disconnected = True
         if self._on_disconnect is not None:
             self._on_disconnect()
 
@@ -127,45 +128,38 @@ class DisconnectAwareStreamingResponse(StreamingResponse):
                         else:
                             await wrap(partial(self.listen_for_disconnect, receive))
             else:
-                # Verified against Starlette 0.52.1: the ASGI >= 2.4 path in
-                # StreamingResponse.__call__ delegates straight to
-                # stream_response(send) and does not read from receive().
-                # Keep calling stream_response(send) directly here so the
-                # disconnect watcher remains the only receive() consumer; if
-                # Starlette changes that contract, re-check this logic.
-                stream_task = asyncio.create_task(self.stream_response(send))
-                disconnect_task = asyncio.create_task(self._watch_disconnect(receive))
-                should_close_body_iterator = False
-
+                # ASGI >= 2.4: Starlette's StreamingResponse.__call__
+                # delegates straight to stream_response(send) without
+                # reading from receive().  We still need a disconnect
+                # watcher so that the on_disconnect callback fires.
+                # Use the same anyio task-group pattern as the < 2.4
+                # path to avoid asyncio.wait race conditions.
                 try:
-                    done, _ = await asyncio.wait(
-                        {stream_task, disconnect_task},
-                        return_when=asyncio.FIRST_COMPLETED,
-                    )
-                    if disconnect_task in done and not stream_task.done():
-                        self._notify_disconnect()
-                        should_close_body_iterator = True
-                        stream_task.cancel()
-                        with contextlib.suppress(asyncio.CancelledError):
-                            await stream_task
-                    else:
-                        try:
-                            await stream_task
-                        except OSError as err:
-                            should_close_body_iterator = True
-                            raise ClientDisconnect from err
-                finally:
-                    if not disconnect_task.done():
-                        disconnect_task.cancel()
-                        with contextlib.suppress(asyncio.CancelledError):
-                            await disconnect_task
-                    if not stream_task.done():
-                        should_close_body_iterator = True
-                        stream_task.cancel()
-                        with contextlib.suppress(asyncio.CancelledError):
-                            await stream_task
-                    if should_close_body_iterator:
-                        await self._close_body_iterator()
+                    with _collapse_excgroups():
+                        async with anyio.create_task_group() as task_group:
+
+                            async def wrap(
+                                func: Callable[[], Awaitable[None]],
+                            ) -> None:
+                                await func()
+                                task_group.cancel_scope.cancel()
+
+                            task_group.start_soon(
+                                wrap, partial(self.stream_response, send)
+                            )
+
+                            async def _disconnect_then_notify() -> None:
+                                await self._watch_disconnect(receive)
+                                self._notify_disconnect()
+
+                            await wrap(_disconnect_then_notify)
+                except OSError as err:
+                    await self._close_body_iterator()
+                    raise ClientDisconnect from err
+                # anyio cancellation does not call aclose() on the body
+                # async generator, so close it explicitly on disconnect.
+                if self._disconnected:
+                    await self._close_body_iterator()
         finally:
             await self._on_finish()
 
