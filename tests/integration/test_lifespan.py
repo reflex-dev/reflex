@@ -26,9 +26,11 @@ def LifespanApp(
     from contextlib import asynccontextmanager
 
     import reflex as rx
+    from reflex.istate.manager.token import BaseStateToken
 
     lifespan_task_global = 0
     lifespan_context_global = 0
+    connected_tokens: set[str] = set()
 
     @asynccontextmanager
     async def lifespan_context(app, inc: int = 1):  # noqa: RUF029
@@ -54,10 +56,15 @@ def LifespanApp(
 
     class LifespanState(rx.State):
         interval: int = 100
+        modify_count: int = 0
 
         @rx.event
         def set_interval(self, interval: int):
             self.interval = interval
+
+        @rx.event
+        def register_token(self):
+            connected_tokens.add(self.router.session.client_token)
 
         @rx.var(cache=False)
         def task_global(self) -> int:
@@ -71,10 +78,30 @@ def LifespanApp(
         def tick(self, date):
             pass
 
+    async def modify_state_task():
+        from reflex.utils.prerequisites import get_app
+
+        reflex_app = get_app().app
+        try:
+            while True:
+                for token in list(connected_tokens):
+                    try:
+                        async with reflex_app.modify_state(
+                            BaseStateToken(ident=token, cls=LifespanState)
+                        ) as state:
+                            lifespan_state = await state.get_state(LifespanState)
+                            lifespan_state.modify_count += 1
+                    except Exception:
+                        pass
+                await asyncio.sleep(0.1)
+        except asyncio.CancelledError:
+            print("modify_state_task cancelled.")
+
     def index():
         return rx.vstack(
             rx.text(LifespanState.task_global, id="task_global"),
             rx.text(LifespanState.context_global, id="context_global"),
+            rx.text(LifespanState.modify_count, id="modify_count"),
             rx.button(
                 rx.moment(
                     interval=LifespanState.interval, on_change=LifespanState.tick
@@ -84,6 +111,7 @@ def LifespanApp(
                 ),
                 id="toggle-tick",
             ),
+            on_mount=LifespanState.register_token,
         )
 
     from fastapi import FastAPI
@@ -95,6 +123,7 @@ def LifespanApp(
 
     app.register_lifespan_task(lifespan_task)
     app.register_lifespan_task(lifespan_context, inc=2)
+    app.register_lifespan_task(modify_state_task)
     app.add_page(index)
 
 
@@ -158,6 +187,30 @@ def lifespan_app(
         app_name=f"lifespanapp_fastapi{mount_cached_fastapi}_transformer{mount_api_transformer}",
     ) as harness:
         yield harness
+
+
+def test_lifespan_modify_state(lifespan_app: AppHarness):
+    """Test that a lifespan task can use app.modify_state to push state updates.
+
+    Args:
+        lifespan_app: harness for LifespanApp app
+    """
+    assert lifespan_app.app_module is not None, "app module is not found"
+    assert lifespan_app.app_instance is not None, "app is not running"
+    driver = lifespan_app.frontend()
+
+    ss = SessionStorage(driver)
+    assert AppHarness._poll_for(lambda: ss.get("token") is not None), "token not found"
+
+    modify_count = driver.find_element(By.ID, "modify_count")
+
+    # Wait for modify_count to become non-zero (lifespan task is pushing updates)
+    assert lifespan_app.poll_for_content(modify_count, exp_not_equal="0")
+
+    # Verify it continues to increase
+    first_value = modify_count.text
+    lifespan_app.poll_for_content(modify_count, exp_not_equal=first_value)
+    assert int(modify_count.text) > int(first_value)
 
 
 def test_lifespan(lifespan_app: AppHarness):

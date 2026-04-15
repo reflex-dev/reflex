@@ -13,6 +13,7 @@ from collections.abc import Callable, Coroutine
 from reflex_base.utils import console
 from reflex_base.utils.exceptions import InvalidLifespanTaskTypeError
 from starlette.applications import Starlette
+from typing_extensions import deprecated
 
 from .mixin import AppMixin
 
@@ -22,19 +23,43 @@ class LifespanMixin(AppMixin):
     """A Mixin that allow tasks to run during the whole app lifespan.
 
     Attributes:
-        lifespan_tasks: Lifespan tasks that are planned to run.
+        lifespan_tasks: Set of lifespan tasks that are planned to run (deprecated).
     """
 
-    lifespan_tasks: set[asyncio.Task | Callable] = dataclasses.field(
-        default_factory=set
+    _lifespan_tasks: dict[asyncio.Task | Callable, None] = dataclasses.field(
+        default_factory=dict
     )
+
+    @property
+    @deprecated("Use get_registered_tasks method instead.")
+    def lifespan_tasks(self) -> set[asyncio.Task | Callable]:
+        """Get a copy of registered lifespan tasks.
+
+        Returns:
+            A set of registered lifespan tasks.
+        """
+        console.deprecate(
+            feature_name="LifespanMixin.lifespan_tasks",
+            reason="Use get_lifespan_tasks method instead to get a copy of registered lifespan tasks.",
+            deprecation_version="0.9.0",
+            removal_version="1.0",
+        )
+        return set(self._lifespan_tasks)
+
+    def get_lifespan_tasks(self) -> tuple[asyncio.Task | Callable, ...]:
+        """Get a copy of currently registered lifespan tasks.
+
+        Returns:
+            A tuple of registered lifespan tasks.
+        """
+        return tuple(self._lifespan_tasks)
 
     @contextlib.asynccontextmanager
     async def _run_lifespan_tasks(self, app: Starlette):
         running_tasks = []
         try:
             async with contextlib.AsyncExitStack() as stack:
-                for task in self.lifespan_tasks:
+                for task in self._lifespan_tasks:
                     run_msg = f"Started lifespan task: {task.__name__} as {{type}}"  # pyright: ignore [reportAttributeAccessIssue]
                     if isinstance(task, asyncio.Task):
                         running_tasks.append(task)
@@ -100,5 +125,5 @@ class LifespanMixin(AppMixin):
             original_task = task
             task = functools.partial(task, **task_kwargs)  # pyright: ignore [reportArgumentType]
             functools.update_wrapper(task, original_task)  # pyright: ignore [reportArgumentType]
-        self.lifespan_tasks.add(task)
+        self._lifespan_tasks[task] = None
         console.debug(f"Registered lifespan task: {task_name}")
