@@ -413,7 +413,7 @@ def intro_form_dialog(
                         ),
                         dialog.close(
                             render_=button(
-                                hi("Cancel01Icon"),
+                                hi("Cancel01Icon"), aria_label="Close",
                                 variant="ghost",
                                 size="icon-sm",
                                 on_click=intro_form_open_cs.set_value(False),
