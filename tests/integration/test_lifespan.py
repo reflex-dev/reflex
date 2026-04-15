@@ -209,8 +209,8 @@ def test_lifespan_modify_state(lifespan_app: AppHarness):
 
     # Verify it continues to increase
     first_value = modify_count.text
-    lifespan_app.poll_for_content(modify_count, exp_not_equal=first_value)
-    assert int(modify_count.text) > int(first_value)
+    next_value = lifespan_app.poll_for_content(modify_count, exp_not_equal=first_value)
+    assert int(next_value) > int(first_value)
 
 
 def test_lifespan(lifespan_app: AppHarness):
