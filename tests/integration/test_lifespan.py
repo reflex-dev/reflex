@@ -30,6 +30,7 @@ def LifespanApp(
 
     lifespan_task_global = 0
     lifespan_context_global = 0
+    raw_asyncio_task_global = 0
     connected_tokens: set[str] = set()
 
     @asynccontextmanager
@@ -54,6 +55,26 @@ def LifespanApp(
             print(f"Lifespan global cancelled: {ce}.")
             lifespan_task_global = 0
 
+    async def raw_asyncio_task_coro():
+        global raw_asyncio_task_global
+        print("Raw asyncio task started.")
+        try:
+            while True:
+                raw_asyncio_task_global += 1  # pyright: ignore[reportUnboundVariable]
+                await asyncio.sleep(0.1)
+        except asyncio.CancelledError as ce:
+            print(f"Raw asyncio task cancelled: {ce}.")
+            raw_asyncio_task_global = 0
+
+    @asynccontextmanager
+    async def register_raw_asyncio_task(app):  # noqa: RUF029
+        from reflex.utils.prerequisites import get_app
+
+        reflex_app = get_app().app
+        task = asyncio.create_task(raw_asyncio_task_coro(), name="raw_asyncio_task")
+        reflex_app.register_lifespan_task(task)
+        yield
+
     class LifespanState(rx.State):
         interval: int = 100
         modify_count: int = 0
@@ -73,6 +94,10 @@ def LifespanApp(
         @rx.var(cache=False)
         def context_global(self) -> int:
             return lifespan_context_global
+
+        @rx.var(cache=False)
+        def asyncio_task_global(self) -> int:
+            return raw_asyncio_task_global
 
         @rx.event
         def tick(self, date):
@@ -99,6 +124,7 @@ def LifespanApp(
             rx.text(LifespanState.task_global, id="task_global"),
             rx.text(LifespanState.context_global, id="context_global"),
             rx.text(LifespanState.modify_count, id="modify_count"),
+            rx.text(LifespanState.asyncio_task_global, id="asyncio_task_global"),
             rx.button(
                 rx.moment(
                     interval=LifespanState.interval, on_change=LifespanState.tick
@@ -120,6 +146,7 @@ def LifespanApp(
 
     app.register_lifespan_task(lifespan_task)
     app.register_lifespan_task(lifespan_context, inc=2)
+    app.register_lifespan_task(register_raw_asyncio_task)
     app.register_lifespan_task(modify_state_task)
     app.add_page(index)
 
@@ -210,6 +237,33 @@ def test_lifespan_modify_state(lifespan_app: AppHarness):
     assert int(next_value) > int(first_value)
 
 
+def test_lifespan_raw_asyncio_task(lifespan_app: AppHarness):
+    """Test that a pre-created asyncio.Task registered as a lifespan task works.
+
+    Args:
+        lifespan_app: harness for LifespanApp app
+    """
+    assert lifespan_app.app_module is not None, "app module is not found"
+    assert lifespan_app.app_instance is not None, "app is not running"
+    driver = lifespan_app.frontend()
+
+    ss = SessionStorage(driver)
+    assert AppHarness._poll_for(lambda: ss.get("token") is not None), "token not found"
+
+    asyncio_task_global = driver.find_element(By.ID, "asyncio_task_global")
+
+    # Wait for asyncio_task_global to become non-zero
+    assert lifespan_app.poll_for_content(asyncio_task_global, exp_not_equal="0")
+
+    # Verify it continues to increase
+    first_value = asyncio_task_global.text
+    next_value = lifespan_app.poll_for_content(
+        asyncio_task_global, exp_not_equal=first_value
+    )
+    assert int(next_value) > int(first_value)
+    assert lifespan_app.app_module.raw_asyncio_task_global > 0
+
+
 def test_lifespan(lifespan_app: AppHarness):
     """Test the lifespan integration.
 
@@ -245,3 +299,4 @@ def test_lifespan(lifespan_app: AppHarness):
     # Check that the lifespan tasks have been cancelled
     assert lifespan_app.app_module.lifespan_task_global == 0
     assert lifespan_app.app_module.lifespan_context_global == 4
+    assert lifespan_app.app_module.raw_asyncio_task_global == 0

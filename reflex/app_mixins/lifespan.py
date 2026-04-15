@@ -21,6 +21,20 @@ if TYPE_CHECKING:
     from typing_extensions import deprecated
 
 
+def _get_task_name(task: asyncio.Task | Callable) -> str:
+    """Get a display name for a lifespan task.
+
+    Args:
+        task: The task to get the name for.
+
+    Returns:
+        The name of the task.
+    """
+    if isinstance(task, asyncio.Task):
+        return task.get_name()
+    return task.__name__  # pyright: ignore[reportAttributeAccessIssue]
+
+
 @dataclasses.dataclass
 class LifespanMixin(AppMixin):
     """A Mixin that allow tasks to run during the whole app lifespan.
@@ -73,11 +87,11 @@ class LifespanMixin(AppMixin):
         try:
             async with contextlib.AsyncExitStack() as stack:
                 for task in self._lifespan_tasks:
-                    run_msg = f"Started lifespan task: {task.__name__} as {{type}}"  # pyright: ignore [reportAttributeAccessIssue]
+                    task_name = _get_task_name(task)
+                    run_msg = f"Started lifespan task: {task_name} as {{type}}"
                     if isinstance(task, asyncio.Task):
                         running_tasks.append(task)
                     else:
-                        task_name = task.__name__
                         signature = inspect.signature(task)
                         if "app" in signature.parameters:
                             task = functools.partial(task, app=app)
@@ -133,7 +147,7 @@ class LifespanMixin(AppMixin):
             msg = f"Task {task.__name__} of type generator must be decorated with contextlib.asynccontextmanager."
             raise InvalidLifespanTaskTypeError(msg)
 
-        task_name = task.__name__  # pyright: ignore [reportAttributeAccessIssue]
+        task_name = _get_task_name(task)
         if task_kwargs:
             original_task = task
             task = functools.partial(task, **task_kwargs)  # pyright: ignore [reportArgumentType]
