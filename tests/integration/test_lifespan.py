@@ -264,6 +264,12 @@ def test_lifespan_raw_asyncio_task(lifespan_app: AppHarness):
     assert lifespan_app.app_module.raw_asyncio_task_global > 0
 
 
+# --- test_lifespan MUST be the last test in this file. ---
+# It shuts down the backend and asserts cancellation of lifespan tasks.
+# The lifespan_app fixture is session-scoped (expensive to rebuild), so all
+# other tests that need a running backend must be defined ABOVE this point.
+
+
 def test_lifespan(lifespan_app: AppHarness):
     """Test the lifespan integration.
 
@@ -300,3 +306,8 @@ def test_lifespan(lifespan_app: AppHarness):
     assert lifespan_app.app_module.lifespan_task_global == 0
     assert lifespan_app.app_module.lifespan_context_global == 4
     assert lifespan_app.app_module.raw_asyncio_task_global == 0
+
+
+# --- Do NOT add new test cases below this line. ---
+# test_lifespan (above) kills the backend; any test defined after it will
+# find the harness in a stopped state and fail.
