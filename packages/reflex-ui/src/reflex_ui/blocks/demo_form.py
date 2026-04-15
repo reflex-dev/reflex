@@ -397,7 +397,8 @@ def demo_form_dialog(
                         ),
                         dialog.close(
                             render_=button(
-                                hi("Cancel01Icon"), aria_label="Close",
+                                hi("Cancel01Icon"),
+                                aria_label="Close",
                                 variant="ghost",
                                 size="icon-sm",
                                 class_name="text-secondary-11",
