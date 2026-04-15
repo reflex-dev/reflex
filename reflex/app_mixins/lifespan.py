@@ -9,13 +9,16 @@ import functools
 import inspect
 import time
 from collections.abc import Callable, Coroutine
+from typing import TYPE_CHECKING
 
 from reflex_base.utils import console
 from reflex_base.utils.exceptions import InvalidLifespanTaskTypeError
 from starlette.applications import Starlette
-from typing_extensions import deprecated
 
 from .mixin import AppMixin
+
+if TYPE_CHECKING:
+    from typing_extensions import deprecated
 
 
 @dataclasses.dataclass
@@ -30,21 +33,31 @@ class LifespanMixin(AppMixin):
         default_factory=dict
     )
 
-    @property
-    @deprecated("Use get_lifespan_tasks method instead.")
-    def lifespan_tasks(self) -> frozenset[asyncio.Task | Callable]:
-        """Get a copy of registered lifespan tasks.
+    if TYPE_CHECKING:
+        # Static deprecation warning for IDE/type checkers.
+        @property
+        @deprecated("Use get_lifespan_tasks method instead.")
+        def lifespan_tasks(self) -> frozenset[asyncio.Task | Callable]:
+            """Get a copy of registered lifespan tasks (deprecated)."""
+            ...
 
-        Returns:
-            A frozenset of registered lifespan tasks.
-        """
-        console.deprecate(
-            feature_name="LifespanMixin.lifespan_tasks",
-            reason="Use get_lifespan_tasks method instead to get a copy of registered lifespan tasks.",
-            deprecation_version="0.9.0",
-            removal_version="1.0",
-        )
-        return frozenset(self._lifespan_tasks)
+    else:
+
+        @property
+        def lifespan_tasks(self) -> frozenset[asyncio.Task | Callable]:
+            """Get a copy of registered lifespan tasks.
+
+            Returns:
+                A frozenset of registered lifespan tasks.
+            """
+            # Runtime deprecation warning prints to the console when accessed.
+            console.deprecate(
+                feature_name="LifespanMixin.lifespan_tasks",
+                reason="Use get_lifespan_tasks method instead to get a copy of registered lifespan tasks.",
+                deprecation_version="0.9.0",
+                removal_version="1.0",
+            )
+            return frozenset(self._lifespan_tasks)
 
     def get_lifespan_tasks(self) -> tuple[asyncio.Task | Callable, ...]:
         """Get a copy of currently registered lifespan tasks.
