@@ -85,14 +85,11 @@ def LifespanApp(
         try:
             while True:
                 for token in list(connected_tokens):
-                    try:
-                        async with reflex_app.modify_state(
-                            BaseStateToken(ident=token, cls=LifespanState)
-                        ) as state:
-                            lifespan_state = await state.get_state(LifespanState)
-                            lifespan_state.modify_count += 1
-                    except Exception:
-                        pass
+                    async with reflex_app.modify_state(
+                        BaseStateToken(ident=token, cls=LifespanState)
+                    ) as state:
+                        lifespan_state = await state.get_state(LifespanState)
+                        lifespan_state.modify_count += 1
                 await asyncio.sleep(0.1)
         except asyncio.CancelledError:
             print("modify_state_task cancelled.")
