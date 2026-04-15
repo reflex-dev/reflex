@@ -1,3 +1,4 @@
-"""Re-export from reflex_core.constants.utils."""
+# pyright: reportWildcardImportFromLibrary=false
+"""Re-export from reflex_base.constants.utils."""
 
-from reflex_core.constants.utils import *
+from reflex_base.constants.utils import *  # pragma: no cover

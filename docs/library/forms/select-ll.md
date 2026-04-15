@@ -119,7 +119,6 @@ can also be controlled using state and a button without direct interaction with 
 
 ```python demo exec
 class SelectState2(rx.State):
-
     values: list[str] = ["apple", "grape", "pear"]
 
     value: str = ""
@@ -141,12 +140,13 @@ def select_example2():
             rx.select.trigger(placeholder="No Selection"),
             rx.select.content(
                 rx.select.group(
-                    rx.foreach(SelectState2.values, lambda x: rx.select.item(x, value=x))
+                    rx.foreach(
+                        SelectState2.values, lambda x: rx.select.item(x, value=x)
+                    )
                 ),
             ),
             value=SelectState2.value,
             on_change=SelectState2.set_value,
-
         ),
         rx.button("Choose Randomly", on_click=SelectState2.choose_randomly),
         rx.button("Reset", on_click=SelectState2.set_value("")),
@@ -164,6 +164,7 @@ class SelectState8(rx.State):
     @rx.event
     def set_is_open(self, value: bool):
         self.is_open = value
+
 
 def select_example8():
     return rx.flex(
@@ -246,14 +247,23 @@ def form_select():
 ```python demo
 rx.card(
     rx.flex(
-        rx.image(src="https://web.reflex-assets.dev/other/reflex_banner.png", width="100%", height="auto"),
+        rx.image(
+            src="https://web.reflex-assets.dev/other/reflex_banner.png",
+            width="100%",
+            height="auto",
+        ),
         rx.flex(
             rx.heading("Reflex Swag", size="4", margin_bottom="4px"),
             rx.heading("$99", size="6", margin_bottom="4px"),
-            direction="row", justify="between",
+            direction="row",
+            justify="between",
             width="100%",
         ),
-        rx.text("Reflex swag with a sense of nostalgia, as if they carry whispered tales of past adventures", size="2", margin_bottom="4px"),
+        rx.text(
+            "Reflex swag with a sense of nostalgia, as if they carry whispered tales of past adventures",
+            size="2",
+            margin_bottom="4px",
+        ),
         rx.divider(size="4"),
         rx.flex(
             rx.flex(

@@ -6,10 +6,10 @@ from collections.abc import Iterator
 from hashlib import md5
 from typing import Any, ClassVar, Literal
 
-from reflex_core.components.component import field
-from reflex_core.components.tags.tag import Tag
-from reflex_core.constants import Dirs, EventTriggers
-from reflex_core.event import (
+from reflex_base.components.component import field
+from reflex_base.components.tags.tag import Tag
+from reflex_base.constants import Dirs, EventTriggers
+from reflex_base.event import (
     FORM_DATA,
     EventChain,
     EventHandler,
@@ -22,10 +22,10 @@ from reflex_core.event import (
     on_submit_string_event,
     prevent_default,
 )
-from reflex_core.utils.imports import ImportDict
-from reflex_core.vars import VarData
-from reflex_core.vars.base import LiteralVar, Var
-from reflex_core.vars.number import ternary_operation
+from reflex_base.utils.imports import ImportDict
+from reflex_base.vars import VarData
+from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.number import ternary_operation
 
 from reflex_components_core.el.element import Element
 

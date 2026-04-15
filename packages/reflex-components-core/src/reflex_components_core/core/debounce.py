@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from reflex_core.components.component import Component, field
-from reflex_core.constants import EventTriggers
-from reflex_core.event import EventHandler, no_args_event_spec
-from reflex_core.vars import VarData
-from reflex_core.vars.base import Var
+from reflex_base.components.component import Component, field
+from reflex_base.constants import EventTriggers
+from reflex_base.event import EventHandler, no_args_event_spec
+from reflex_base.vars import VarData
+from reflex_base.vars.base import Var
 
 DEFAULT_DEBOUNCE_TIMEOUT = 300
 
@@ -65,8 +65,8 @@ class DebounceInput(Component):
         the child, and then neuter the child's render method so it produces no output.
 
         Args:
-            children: The child component to wrap.
-            props: The component props.
+            *children: The child component to wrap.
+            **props: The component props.
 
         Returns:
             The DebounceInput component.

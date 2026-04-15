@@ -2,10 +2,11 @@
 
 ```python exec
 import reflex as rx
+
 image_style = {
-  "width": "400px",
-  "border_radius": "12px",
-  "border": "1px solid var(--c-slate-5)",
+    "width": "400px",
+    "border_radius": "12px",
+    "border": "1px solid var(--c-slate-5)",
 }
 ```
 
@@ -17,7 +18,12 @@ It is straightforward to create accounts and API tokens with PyPI. There is offi
 
 ```python eval
 rx.center(
-  rx.image(src="https://web.reflex-assets.dev/custom_components/pypi_register.webp", style=image_style, margin_bottom="16px", loading="lazy"),
+    rx.image(
+        src="https://web.reflex-assets.dev/custom_components/pypi_register.webp",
+        style=image_style,
+        margin_bottom="16px",
+        loading="lazy",
+    ),
 )
 ```
 
@@ -25,7 +31,12 @@ A user can use username and password to authenticate with PyPI when publishing.
 
 ```python eval
 rx.center(
-  rx.image(src="https://web.reflex-assets.dev/custom_components/pypi_account_settings.webp", style=image_style, margin_bottom="16px", loading="lazy"),
+    rx.image(
+        src="https://web.reflex-assets.dev/custom_components/pypi_account_settings.webp",
+        style=image_style,
+        margin_bottom="16px",
+        loading="lazy",
+    ),
 )
 ```
 
@@ -33,6 +44,11 @@ Scroll down to the API tokens section and click on the "Add API token" button. F
 
 ```python eval
 rx.center(
-  rx.image(src="https://web.reflex-assets.dev/custom_components/pypi_api_tokens.webp", style=image_style, width="700px", loading="lazy"),
+    rx.image(
+        src="https://web.reflex-assets.dev/custom_components/pypi_api_tokens.webp",
+        style=image_style,
+        width="700px",
+        loading="lazy",
+    ),
 )
 ```

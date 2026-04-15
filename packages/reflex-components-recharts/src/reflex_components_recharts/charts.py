@@ -5,11 +5,11 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any, ClassVar
 
-from reflex_core.components.component import Component, field
-from reflex_core.constants import EventTriggers
-from reflex_core.constants.colors import Color
-from reflex_core.event import EventHandler, no_args_event_spec
-from reflex_core.vars.base import Var
+from reflex_base.components.component import Component, field
+from reflex_base.constants import EventTriggers
+from reflex_base.constants.colors import Color
+from reflex_base.event import EventHandler, no_args_event_spec
+from reflex_base.vars.base import Var
 
 from reflex_components_recharts.general import ResponsiveContainer
 
@@ -206,6 +206,7 @@ class BarChart(CategoricalChartBase):
         "Legend",
         "GraphingTooltip",
         "Bar",
+        "Defs",
     ]
 
 
@@ -228,6 +229,7 @@ class LineChart(CategoricalChartBase):
         "Legend",
         "GraphingTooltip",
         "Line",
+        "Defs",
     ]
 
 
@@ -272,6 +274,7 @@ class ComposedChart(CategoricalChartBase):
         "Area",
         "Line",
         "Bar",
+        "Defs",
     ]
 
 
@@ -294,6 +297,7 @@ class PieChart(ChartBase):
         "Legend",
         "GraphingTooltip",
         "Pie",
+        "Defs",
     ]
 
     on_mouse_down: EventHandler[no_args_event_spec] = field(
@@ -360,6 +364,7 @@ class RadarChart(ChartBase):
         "Legend",
         "GraphingTooltip",
         "Radar",
+        "Defs",
     ]
 
     @classmethod
@@ -435,6 +440,7 @@ class RadialBarChart(ChartBase):
         "Legend",
         "GraphingTooltip",
         "RadialBar",
+        "Defs",
     ]
 
 
@@ -462,6 +468,7 @@ class ScatterChart(ChartBase):
         "Legend",
         "GraphingTooltip",
         "Scatter",
+        "Defs",
     ]
 
     @classmethod
@@ -501,7 +508,12 @@ class FunnelChart(ChartBase):
     )
 
     # Valid children components
-    _valid_children: ClassVar[list[str]] = ["Legend", "GraphingTooltip", "Funnel"]
+    _valid_children: ClassVar[list[str]] = [
+        "Legend",
+        "GraphingTooltip",
+        "Funnel",
+        "Defs",
+    ]
 
 
 class Treemap(RechartsCharts):

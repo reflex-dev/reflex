@@ -5,7 +5,6 @@ import time
 import numpy as np
 
 import reflex as rx
-
 ```
 
 # Var Operations
@@ -21,6 +20,7 @@ the state vars. For example, the following code will **not work.**
 class State(rx.State):
     number: int
 
+
 def index():
     # This will be compiled before runtime, before `State.number` has a known value.
     # Since `float` is not a valid var operation, this will throw an error.
@@ -35,11 +35,13 @@ In this example below we use a var operation to concatenate a `string` with a `v
 ```python demo exec
 coins = ["BTC", "ETH", "LTC", "DOGE"]
 
+
 class VarSelectState(rx.State):
     selected: str = "DOGE"
 
     def set_selected(self, value: str):
         self.selected = value
+
 
 def var_operations_example():
     return rx.vstack(
@@ -51,7 +53,7 @@ def var_operations_example():
             coins,
             value=VarSelectState.selected,
             on_change=VarSelectState.set_selected,
-        )
+        ),
     )
 ```
 
@@ -68,8 +70,8 @@ Var operations allow us to change vars on the front-end without having to create
 Some simple examples are the `==` var operator, which is used to check if two vars are equal and the `to_string()` var operator, which is used to convert a var to a string.
 
 ```python demo exec
-
 fruits = ["Apple", "Banana", "Orange", "Mango"]
+
 
 class EqualsState(rx.State):
     selected: str = "Apple"
@@ -93,7 +95,6 @@ def var_equals_example():
             rx.text("The selected fruit is not equal to the favorite fruit."),
         ),
     )
-
 ```
 
 ### Negate, Absolute and Length
@@ -102,6 +103,7 @@ The `-` operator is used to get the negative version of the var. The `abs()` ope
 
 ```python demo exec
 import random
+
 
 class OperState(rx.State):
     number: int
@@ -112,13 +114,25 @@ class OperState(rx.State):
         self.number = random.randint(-100, 100)
         self.numbers_seen.append(self.number)
 
+
 def var_operation_example():
     return rx.vstack(
         rx.heading(f"The number: {OperState.number}", size="3"),
         rx.hstack(
-            rx.text("Negated:", rx.badge(-OperState.number, variant="soft", color_scheme="green")),
-            rx.text("Absolute:", rx.badge(abs(OperState.number), variant="soft", color_scheme="blue")),
-            rx.text("Numbers seen:", rx.badge(OperState.numbers_seen.length(), variant="soft", color_scheme="red")),
+            rx.text(
+                "Negated:",
+                rx.badge(-OperState.number, variant="soft", color_scheme="green"),
+            ),
+            rx.text(
+                "Absolute:",
+                rx.badge(abs(OperState.number), variant="soft", color_scheme="blue"),
+            ),
+            rx.text(
+                "Numbers seen:",
+                rx.badge(
+                    OperState.numbers_seen.length(), variant="soft", color_scheme="red"
+                ),
+            ),
         ),
         rx.button("Update", on_click=OperState.update),
     )
@@ -133,6 +147,7 @@ There are operators to add two vars `+`, subtract two vars `-`, multiply two var
 ```python demo exec
 import random
 
+
 class CompState(rx.State):
     number_1: int
     number_2: int
@@ -142,10 +157,11 @@ class CompState(rx.State):
         self.number_1 = random.randint(-10, 10)
         self.number_2 = random.randint(-10, 10)
 
+
 def var_comparison_example():
 
     return rx.vstack(
-                rx.table.root(
+        rx.table.root(
             rx.table.header(
                 rx.table.row(
                     rx.table.column_header_cell("Integer 1"),
@@ -159,39 +175,52 @@ def var_comparison_example():
                     rx.table.row_header_cell(CompState.number_1),
                     rx.table.cell(CompState.number_2),
                     rx.table.cell("Int 1 == Int 2"),
-                    rx.table.cell((CompState.number_1 == CompState.number_2).to_string()),
+                    rx.table.cell(
+                        (CompState.number_1 == CompState.number_2).to_string()
+                    ),
                 ),
                 rx.table.row(
                     rx.table.row_header_cell(CompState.number_1),
                     rx.table.cell(CompState.number_2),
                     rx.table.cell("Int 1 != Int 2"),
-                    rx.table.cell((CompState.number_1 != CompState.number_2).to_string()),
+                    rx.table.cell(
+                        (CompState.number_1 != CompState.number_2).to_string()
+                    ),
                 ),
                 rx.table.row(
                     rx.table.row_header_cell(CompState.number_1),
                     rx.table.cell(CompState.number_2),
                     rx.table.cell("Int 1 > Int 2"),
-                    rx.table.cell((CompState.number_1 > CompState.number_2).to_string()),
+                    rx.table.cell(
+                        (CompState.number_1 > CompState.number_2).to_string()
+                    ),
                 ),
                 rx.table.row(
                     rx.table.row_header_cell(CompState.number_1),
                     rx.table.cell(CompState.number_2),
                     rx.table.cell("Int 1 >= Int 2"),
-                    rx.table.cell((CompState.number_1 >= CompState.number_2).to_string()),
+                    rx.table.cell(
+                        (CompState.number_1 >= CompState.number_2).to_string()
+                    ),
                 ),
                 rx.table.row(
                     rx.table.row_header_cell(CompState.number_1),
-                    rx.table.cell(CompState.number_2, ),
+                    rx.table.cell(
+                        CompState.number_2,
+                    ),
                     rx.table.cell("Int 1 < Int 2 "),
-                    rx.table.cell((CompState.number_1 < CompState.number_2).to_string()),
+                    rx.table.cell(
+                        (CompState.number_1 < CompState.number_2).to_string()
+                    ),
                 ),
                 rx.table.row(
                     rx.table.row_header_cell(CompState.number_1),
                     rx.table.cell(CompState.number_2),
                     rx.table.cell("Int 1 <= Int 2"),
-                    rx.table.cell((CompState.number_1 <= CompState.number_2).to_string()),
+                    rx.table.cell(
+                        (CompState.number_1 <= CompState.number_2).to_string()
+                    ),
                 ),
-
                 rx.table.row(
                     rx.table.row_header_cell(CompState.number_1),
                     rx.table.cell(CompState.number_2),
@@ -230,6 +259,7 @@ The operator `/` represents true division. The operator `//` represents floor di
 ```python demo exec
 import random
 
+
 class DivState(rx.State):
     number_1: float = 3.5
     number_2: float = 1.4
@@ -238,6 +268,7 @@ class DivState(rx.State):
     def update(self):
         self.number_1 = round(random.uniform(5.1, 9.9), 2)
         self.number_2 = round(random.uniform(0.1, 4.9), 2)
+
 
 def var_div_example():
     return rx.vstack(
@@ -285,6 +316,7 @@ The `~` operator is used to invert a var. It is used on a var of type `bool` and
 ```python demo exec
 import random
 
+
 class LogicState(rx.State):
     var_1: bool = True
     var_2: bool = True
@@ -293,6 +325,7 @@ class LogicState(rx.State):
     def update(self):
         self.var_1 = random.choice([True, False])
         self.var_2 = random.choice([True, False])
+
 
 def var_logical_example():
     return rx.vstack(
@@ -324,7 +357,6 @@ def var_logical_example():
                     rx.table.cell("The invert of Var 1 (~)"),
                     rx.table.cell((~LogicState.var_1).to_string()),
                 ),
-
             ),
             width="100%",
         ),
@@ -345,7 +377,8 @@ Finally we use the `join` operation to join a list var into a string.
 class ListsState(rx.State):
     list_1: list = [1, 2, 3, 4, 6]
     list_2: list = [7, 8, 9, 10]
-    list_3: list = ["p","y","t","h","o","n"]
+    list_3: list = ["p", "y", "t", "h", "o", "n"]
+
 
 def var_list_example():
     return rx.hstack(
@@ -396,6 +429,7 @@ Indexing is only supported for strings, lists, tuples, dicts, and dataframes. To
 class GetItemState1(rx.State):
     list_1: list = [50, 10, 20]
 
+
 def get_item_error_1():
     return rx.progress(value=GetItemState1.list_1[0])
 ```
@@ -405,6 +439,7 @@ In the code above you would expect to index into the first index of the list_1 s
 ```python demo exec
 class GetItemState1(rx.State):
     list_1: list[int] = [50, 10, 20]
+
 
 def get_item_error_1():
     return rx.progress(value=GetItemState1.list_1[0])
@@ -418,22 +453,28 @@ Errors frequently occur when using indexing and `foreach`.
 class ProjectsState(rx.State):
     projects: List[dict] = [
         {
-            "technologies": ["Next.js", "Prisma", "Tailwind", "Google Cloud", "Docker", "MySQL"]
+            "technologies": [
+                "Next.js",
+                "Prisma",
+                "Tailwind",
+                "Google Cloud",
+                "Docker",
+                "MySQL",
+            ]
         },
-        {
-            "technologies": ["Python", "Flask", "Google Cloud", "Docker"]
-        }
+        {"technologies": ["Python", "Flask", "Google Cloud", "Docker"]},
     ]
+
 
 def get_badge(technology: str) -> rx.Component:
     return rx.badge(technology, variant="soft", color_scheme="green")
 
+
 def project_item(project: dict):
     return rx.box(
-        rx.hstack(
-            rx.foreach(project["technologies"], get_badge)
-        ),
+        rx.hstack(rx.foreach(project["technologies"], get_badge)),
     )
+
 
 def failing_projects_example() -> rx.Component:
     return rx.box(rx.foreach(ProjectsState.projects, project_item))
@@ -447,11 +488,16 @@ We must change `projects: list[dict]` => `projects: list[dict[str, list]]` becau
 class ProjectsState(rx.State):
     projects: list[dict[str, list]] = [
         {
-            "technologies": ["Next.js", "Prisma", "Tailwind", "Google Cloud", "Docker", "MySQL"]
+            "technologies": [
+                "Next.js",
+                "Prisma",
+                "Tailwind",
+                "Google Cloud",
+                "Docker",
+                "MySQL",
+            ]
         },
-        {
-            "technologies": ["Python", "Flask", "Google Cloud", "Docker"]
-        }
+        {"technologies": ["Python", "Flask", "Google Cloud", "Docker"]},
     ]
 
 
@@ -462,10 +508,9 @@ def projects_example() -> rx.Component:
     def project_item(project: dict) -> rx.Component:
 
         return rx.box(
-            rx.hstack(
-                rx.foreach(project["technologies"], get_badge)
-            ),
+            rx.hstack(rx.foreach(project["technologies"], get_badge)),
         )
+
     return rx.box(rx.foreach(ProjectsState.projects, project_item))
 ```
 
@@ -474,30 +519,36 @@ The previous example had only a single type for each of the dictionaries `keys` 
 ```python demo exec
 import dataclasses
 
+
 @dataclasses.dataclass
 class ActressType:
     actress_name: str
     age: int
     pages: list[dict[str, str]]
 
+
 class MultiDataTypeState(rx.State):
     """The app state."""
+
     actresses: list[ActressType] = [
         ActressType(
             actress_name="Ariana Grande",
             age=30,
             pages=[
-                {"url": "arianagrande.com"}, {"url": "https://es.wikipedia.org/wiki/Ariana_Grande"}
-            ]
+                {"url": "arianagrande.com"},
+                {"url": "https://es.wikipedia.org/wiki/Ariana_Grande"},
+            ],
         ),
         ActressType(
             actress_name="Gal Gadot",
             age=38,
             pages=[
-                {"url": "http://www.galgadot.com/"}, {"url": "https://es.wikipedia.org/wiki/Gal_Gadot"}
-            ]
-        )
+                {"url": "http://www.galgadot.com/"},
+                {"url": "https://es.wikipedia.org/wiki/Gal_Gadot"},
+            ],
+        ),
     ]
+
 
 def actresses_example() -> rx.Component:
     def showpage(page: dict[str, str]):
@@ -513,8 +564,8 @@ def actresses_example() -> rx.Component:
             ),
             rx.foreach(item.pages, showpage),
         )
-    return rx.box(rx.foreach(MultiDataTypeState.actresses, showlist))
 
+    return rx.box(rx.foreach(MultiDataTypeState.actresses, showlist))
 ```
 
 Setting the type of `actresses` to be `actresses: list[dict[str,str]]` would fail as it cannot be understood that the `value` for the `pages key` is actually a `list`.
@@ -526,12 +577,14 @@ You can also combine multiple var operations together, as seen in the next examp
 ```python demo exec
 import random
 
+
 class VarNumberState(rx.State):
     number: int
 
     @rx.event
     def update(self):
         self.number = random.randint(0, 100)
+
 
 def var_number_example():
     return rx.vstack(

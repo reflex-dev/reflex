@@ -38,15 +38,15 @@ If the type is known, it can be any of the following:
 State fields are converted to `Var` by default. Additionally, you can create a `Var` from Python values using `rx.Var.create()`:
 
 ```py
-rx.Var.create(4) # NumberVar
-rx.Var.create("hello") # StringVar
-rx.Var.create([1, 2, 3]) # ArrayVar
+rx.Var.create(4)  # NumberVar
+rx.Var.create("hello")  # StringVar
+rx.Var.create([1, 2, 3])  # ArrayVar
 ```
 
 If you want to explicitly create a `Var` from a raw Javascript string, you can instantiate `rx.Var` directly:
 
 ```py
-rx.Var("2", _var_type=int).guess_type() # NumberVar
+rx.Var("2", _var_type=int).guess_type()  # NumberVar
 ```
 
 In the example above, `.guess_type()` will attempt to downcast from a generic `Var` type into `NumberVar`.
@@ -63,6 +63,7 @@ Custom `Var` operations can also be defined:
 ```py
 from reflex.vars import var_operation, var_operation_return, ArrayVar, NumberVar
 
+
 @var_operation
 def multiply_array_values(a: ArrayVar):
     return var_operation_return(
@@ -70,12 +71,9 @@ def multiply_array_values(a: ArrayVar):
         var_type=int,
     )
 
+
 def factorial(value: NumberVar):
-    return rx.cond(
-        value <= 1,
-        1,
-        multiply_array_values(rx.Var.range(1, value+1))
-    )
+    return rx.cond(value <= 1, 1, multiply_array_values(rx.Var.range(1, value + 1)))
 ```
 
 Use `js_expression` to pass explicit JavaScript expressions; in the `multiply_array_values` example, we pass in a JavaScript expression that calculates the product of all elements in an array called `a` by using the reduce method to multiply each element with the accumulated result, starting from an initial value of 1.

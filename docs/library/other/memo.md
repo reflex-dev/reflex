@@ -26,6 +26,7 @@ class DemoState(rx.State):
     def increment(self):
         self.count += 1
 
+
 # Define a memoized component
 @rx.memo
 def expensive_component(label: str) -> rx.Component:
@@ -34,6 +35,7 @@ def expensive_component(label: str) -> rx.Component:
         rx.text("This component only re-renders when props change!"),
         rx.divider(),
     )
+
 
 # Use the memoized component in your app
 def index():
@@ -65,19 +67,18 @@ class ButtonState(rx.State):
     def increment(self):
         self.clicks += 1
 
+
 # Define a memoized button component
 @rx.memo
 def my_button(text: str, on_click: rx.EventHandler) -> rx.Component:
     return rx.button(text, on_click=on_click)
 
+
 # Use the memoized button in your app
 def index():
     return rx.vstack(
         rx.text("Clicks: 0"),  # This will update with state.clicks
-        my_button(
-            text="Click me",
-            on_click=ButtonState.increment
-        ),
+        my_button(text="Click me", on_click=ButtonState.increment),
         spacing="4",
     )
 ```
@@ -100,10 +101,12 @@ class AppState(rx.State):
     def set_name(self, name: str):
         self.name = name
 
+
 # Define a memoized greeting component
 @rx.memo
 def greeting(name: str) -> rx.Component:
     return rx.heading("Hello, " + name)  # Will display the name prop
+
 
 # Use the memoized component with state variables
 def index():
@@ -133,15 +136,19 @@ class MessageState(rx.State):
     def set_message(self, text: str):
         self.message = text
 
+
 # Define a memoized component with event handlers that pass arguments
 @rx.memo
-def action_buttons(on_action: rx.EventHandler[rx.event.passthrough_event_spec(str)]) -> rx.Component:
+def action_buttons(
+    on_action: rx.EventHandler[rx.event.passthrough_event_spec(str)],
+) -> rx.Component:
     return rx.hstack(
         rx.button("Save", on_click=on_action("Saved!")),
         rx.button("Delete", on_click=on_action("Deleted!")),
         rx.button("Cancel", on_click=on_action("Cancelled!")),
         spacing="2",
     )
+
 
 # Use the memoized component with event handlers
 def index():

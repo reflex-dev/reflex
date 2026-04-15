@@ -1,3 +1,4 @@
-"""Re-export from reflex_core."""
+# pyright: reportWildcardImportFromLibrary=false
+"""Re-export from reflex_base."""
 
-from reflex_core.utils.compat import *
+from reflex_base.utils.compat import *  # pragma: no cover

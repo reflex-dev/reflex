@@ -23,8 +23,10 @@ To create a substate, simply inherit from `rx.State` multiple times:
 # index.py
 import reflex as rx
 
+
 class IndexState(rx.State):
     """Define your main state here."""
+
     data: str = "Hello World"
 
 
@@ -32,17 +34,18 @@ class IndexState(rx.State):
 def index():
     return rx.box(rx.text(IndexState.data))
 
+
 # signup.py
 import reflex as rx
 
 
 class SignupState(rx.State):
     """Define your signup state here."""
+
     username: str = ""
     password: str = ""
 
-    def signup(self):
-        ...
+    def signup(self): ...
 
 
 @rx.page()
@@ -52,16 +55,19 @@ def signup_page():
         rx.input(value=SignupState.password),
     )
 
+
 # login.py
 import reflex as rx
 
+
 class LoginState(rx.State):
     """Define your login state here."""
+
     username: str = ""
     password: str = ""
 
-    def login(self):
-        ...
+    def login(self): ...
+
 
 @rx.page()
 def login_page():
@@ -81,6 +87,7 @@ import reflex as rx
 from signup import SignupState
 
 ...
+
 
 def index():
     return rx.box(
@@ -104,10 +111,11 @@ input `on_change` event, which improves performance.
 
 ```python demo exec
 class SettingsState(rx.State):
-     salutation: str = "Hello"
+    salutation: str = "Hello"
 
-     def set_salutation(self, value: str):
+    def set_salutation(self, value: str):
         self.salutation = value
+
 
 def set_salutation_popover():
     return rx.popover.root(
@@ -116,8 +124,7 @@ def set_salutation_popover():
         ),
         rx.popover.content(
             rx.input(
-                value=SettingsState.salutation,
-                on_change=SettingsState.set_salutation
+                value=SettingsState.salutation, on_change=SettingsState.set_salutation
             ),
         ),
     )
@@ -177,6 +184,7 @@ class CounterState(rx.State):
         # Increment the counter when the button is clicked
         self.count += 1
 
+
 # Define a separate state that will display information
 class DisplayState(rx.State):
     # This will show the current count value
@@ -188,6 +196,7 @@ class DisplayState(rx.State):
         # This is more efficient than loading the entire state with get_state
         current = await self.get_var_value(CounterState.count)
         self.message = f"Current count: {current}"
+
 
 def var_value_example():
     return rx.vstack(

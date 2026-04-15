@@ -121,14 +121,12 @@ class PostState(rx.State):
     def load_posts(self):
         with rx.session() as session:
             self.posts = session.exec(
-                Post.select
-                .options(
+                Post.select.options(
                     sqlalchemy.orm.selectinload(Post.user),
                     sqlalchemy.orm.selectinload(Post.flags).options(
                         sqlalchemy.orm.selectinload(Flag.user),
                     ),
-                )
-                .limit(15)
+                ).limit(15)
             ).all()
 ```
 

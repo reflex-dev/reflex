@@ -9,21 +9,20 @@ from hashlib import md5
 from types import SimpleNamespace
 from typing import Any
 
-from reflex_components_core.core.markdown_component_map import MarkdownComponentMap
-from reflex_components_core.el.elements.typography import Div
-from reflex_core.components.component import (
+from reflex_base.components.component import (
     BaseComponent,
     Component,
     ComponentNamespace,
     CustomComponent,
     field,
 )
-from reflex_core.components.tags.tag import Tag
-from reflex_core.utils import console
-from reflex_core.utils.imports import ImportDict, ImportTypes, ImportVar
-from reflex_core.vars.base import LiteralVar, Var, VarData
-from reflex_core.vars.number import ternary_operation
-from reflex_core.vars.sequence import LiteralArrayVar
+from reflex_base.components.tags.tag import Tag
+from reflex_base.utils.imports import ImportDict, ImportTypes, ImportVar
+from reflex_base.vars.base import LiteralVar, Var, VarData
+from reflex_base.vars.number import ternary_operation
+from reflex_base.vars.sequence import LiteralArrayVar
+from reflex_components_core.core.markdown_component_map import MarkdownComponentMap
+from reflex_components_core.el.elements.typography import Div
 
 # Special vars used in the component map.
 _CHILDREN = Var(_js_expr="children", _var_type=str)
@@ -242,14 +241,6 @@ class Markdown(Component):
 
         # Update the base component map with the custom component map.
         component_map = {**get_base_component_map(), **props.pop("component_map", {})}
-        if "codeblock" in component_map:
-            console.deprecate(
-                feature_name="'codeblock' in component_map",
-                reason="Use 'pre' instead of 'codeblock' to customize code block rendering in markdown",
-                deprecation_version="0.8.25",
-                removal_version="0.9.0",
-            )
-            component_map["pre"] = component_map.pop("codeblock")
 
         # Get the markdown source.
         src = children[0]
@@ -449,7 +440,7 @@ let {_LANGUAGE!s} = match ? match[1] : '';
 
     def _get_custom_code(self) -> str | None:
         hooks = {}
-        from reflex_core.compiler.templates import _render_hooks
+        from reflex_base.compiler.templates import _render_hooks
 
         for component_factory in self.component_map.values():
             comp = component_factory(_MOCK_ARG)

@@ -62,9 +62,7 @@ rx.scroll_area(
     type="always",
     scrollbars="vertical",
     style={"height": 180},
-
 )
-
 ```
 
 ## Control the scrollable axes
@@ -80,7 +78,8 @@ rx.grid(
         aesthetics. Although in a non-technical sense "legible" and "readable"
         are often used synonymously, typographically they are separate but
         related concepts.""",
-                size="2", trim="both",
+                size="2",
+                trim="both",
             ),
             rx.text(
                 """Legibility describes how easily individual characters can be
@@ -88,9 +87,13 @@ rx.grid(
         quality of being decipherable and recognisable". For instance, if a "b"
         and an "h", or a "3" and an "8", are difficult to distinguish at small
         sizes, this is a problem of legibility.""",
-                size="2", trim="both",
+                size="2",
+                trim="both",
             ),
-            padding="8px", padding_right="48px", direction="column", spacing="4",
+            padding="8px",
+            padding_right="48px",
+            direction="column",
+            spacing="4",
         ),
         type="always",
         scrollbars="vertical",
@@ -103,7 +106,8 @@ rx.grid(
         aesthetics. Although in a non-technical sense "legible" and "readable"
         are often used synonymously, typographically they are separate but
         related concepts.""",
-                size="2", trim="both",
+                size="2",
+                trim="both",
             ),
             rx.text(
                 """Legibility describes how easily individual characters can be
@@ -111,9 +115,12 @@ rx.grid(
         quality of being decipherable and recognisable". For instance, if a "b"
         and an "h", or a "3" and an "8", are difficult to distinguish at small
         sizes, this is a problem of legibility.""",
-                size="2", trim="both",
+                size="2",
+                trim="both",
             ),
-            padding="8px", spacing="4", style={"width": 700},
+            padding="8px",
+            spacing="4",
+            style={"width": 700},
         ),
         type="always",
         scrollbars="horizontal",
@@ -126,7 +133,8 @@ rx.grid(
         aesthetics. Although in a non-technical sense "legible" and "readable"
         are often used synonymously, typographically they are separate but
         related concepts.""",
-                size="2", trim="both",
+                size="2",
+                trim="both",
             ),
             rx.text(
                 """Legibility describes how easily individual characters can be
@@ -134,9 +142,12 @@ rx.grid(
         quality of being decipherable and recognisable". For instance, if a "b"
         and an "h", or a "3" and an "8", are difficult to distinguish at small
         sizes, this is a problem of legibility.""",
-                size="2", trim="both",
+                size="2",
+                trim="both",
             ),
-            padding="8px", spacing="4", style={"width": 400},
+            padding="8px",
+            spacing="4",
+            style={"width": 400},
         ),
         type="always",
         scrollbars="both",
@@ -163,16 +174,19 @@ The `type` prop describes the nature of scrollbar visibility.
 rx.grid(
     rx.scroll_area(
         rx.flex(
-            rx.text("type = 'auto'",  weight="bold"),
+            rx.text("type = 'auto'", weight="bold"),
             rx.text(
                 """Legibility describes how easily individual characters can be
         distinguished from one another. It is described by Walter Tracy as "the
         quality of being decipherable and recognisable". For instance, if a "b"
         and an "h", or a "3" and an "8", are difficult to distinguish at small
         sizes, this is a problem of legibility.""",
-                size="2", trim="both",
+                size="2",
+                trim="both",
             ),
-            padding="8px", direction="column", spacing="4",
+            padding="8px",
+            direction="column",
+            spacing="4",
         ),
         type="auto",
         scrollbars="vertical",
@@ -180,16 +194,19 @@ rx.grid(
     ),
     rx.scroll_area(
         rx.flex(
-            rx.text("type = 'always'",  weight="bold"),
+            rx.text("type = 'always'", weight="bold"),
             rx.text(
                 """Legibility describes how easily individual characters can be
         distinguished from one another. It is described by Walter Tracy as "the
         quality of being decipherable and recognisable". For instance, if a "b"
         and an "h", or a "3" and an "8", are difficult to distinguish at small
         sizes, this is a problem of legibility.""",
-                size="2", trim="both",
+                size="2",
+                trim="both",
             ),
-            padding="8px", direction="column", spacing="4",
+            padding="8px",
+            direction="column",
+            spacing="4",
         ),
         type="always",
         scrollbars="vertical",
@@ -197,16 +214,19 @@ rx.grid(
     ),
     rx.scroll_area(
         rx.flex(
-            rx.text("type = 'scroll'",  weight="bold"),
+            rx.text("type = 'scroll'", weight="bold"),
             rx.text(
                 """Legibility describes how easily individual characters can be
         distinguished from one another. It is described by Walter Tracy as "the
         quality of being decipherable and recognisable". For instance, if a "b"
         and an "h", or a "3" and an "8", are difficult to distinguish at small
         sizes, this is a problem of legibility.""",
-                size="2", trim="both",
+                size="2",
+                trim="both",
             ),
-            padding="8px", direction="column", spacing="4",
+            padding="8px",
+            direction="column",
+            spacing="4",
         ),
         type="scroll",
         scrollbars="vertical",
@@ -214,16 +234,19 @@ rx.grid(
     ),
     rx.scroll_area(
         rx.flex(
-            rx.text("type = 'hover'",  weight="bold"),
+            rx.text("type = 'hover'", weight="bold"),
             rx.text(
                 """Legibility describes how easily individual characters can be
         distinguished from one another. It is described by Walter Tracy as "the
         quality of being decipherable and recognisable". For instance, if a "b"
         and an "h", or a "3" and an "8", are difficult to distinguish at small
         sizes, this is a problem of legibility.""",
-                size="2", trim="both",
+                size="2",
+                trim="both",
             ),
-            padding="8px", direction="column", spacing="4",
+            padding="8px",
+            direction="column",
+            spacing="4",
         ),
         type="hover",
         scrollbars="vertical",
@@ -232,5 +255,4 @@ rx.grid(
     columns="4",
     spacing="2",
 )
-
 ```

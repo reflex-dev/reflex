@@ -4,11 +4,11 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-import reflex_core.config
+import reflex_base.config
 from pytest_mock import MockerFixture
-from reflex_core.constants import Endpoint, Env
-from reflex_core.plugins import Plugin
-from reflex_core.plugins.sitemap import SitemapPlugin
+from reflex_base.constants import Endpoint, Env
+from reflex_base.plugins import Plugin
+from reflex_base.plugins.sitemap import SitemapPlugin
 
 import reflex as rx
 from reflex.environment import (
@@ -155,9 +155,9 @@ def test_event_namespace(mocker: MockerFixture, kwargs, expected):
         expected: Expected namespace
     """
     conf = rx.Config(**kwargs)
-    mocker.patch("reflex_core.config.get_config", return_value=conf)
+    mocker.patch("reflex_base.config.get_config", return_value=conf)
 
-    config = reflex_core.config.get_config()
+    config = reflex_base.config.get_config()
     assert conf == config
     assert config.get_event_namespace() == expected
 
@@ -246,7 +246,7 @@ def test_replace_defaults(
         exp_config_values: The expected config values.
     """
     mock_os_env = os.environ.copy()
-    monkeypatch.setattr(reflex_core.config.os, "environ", mock_os_env)
+    monkeypatch.setattr(reflex_base.config.os, "environ", mock_os_env)  # pyright: ignore[reportPrivateImportUsage]
     mock_os_env.update({k: str(v) for k, v in env_vars.items()})
     c = rx.Config(app_name="a", **config_kwargs)
     c._set_persistent(**set_persistent_vars)

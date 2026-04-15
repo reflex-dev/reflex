@@ -26,7 +26,7 @@ rx.vstack(
         rx.spinner(size="2"),
         rx.spinner(size="3"),
         align="center",
-        gap="1em"
+        gap="1em",
     )
 )
 ```
@@ -44,11 +44,5 @@ rx.button("Bookmark", loading=True)
 If you have an icon inside the button, you can use the button's disabled state and wrap the icon in a standalone rx.spinner to achieve a more sophisticated design.
 
 ```python demo
-rx.button(
-    rx.spinner(
-        loading=True
-    ),
-    "Bookmark",
-    disabled=True
-)
+rx.button(rx.spinner(loading=True), "Bookmark", disabled=True)
 ```

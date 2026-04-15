@@ -26,6 +26,7 @@ class TextAreaBlur(rx.State):
     def set_text(self, text: str):
         self.text = text
 
+
 def blur_example():
     return rx.vstack(
         rx.heading(TextAreaBlur.text),
@@ -58,13 +59,16 @@ class TextAreaFeedbackState(rx.State):
         self.feedback = ""
         self.submitted = False
 
+
 def feedback_form():
     return rx.cond(
         TextAreaFeedbackState.submitted,
         rx.card(
             rx.vstack(
                 rx.text("Thank you for your feedback!"),
-                rx.button("Submit another response", on_click=TextAreaFeedbackState.reset_form),
+                rx.button(
+                    "Submit another response", on_click=TextAreaFeedbackState.reset_form
+                ),
             ),
         ),
         rx.card(

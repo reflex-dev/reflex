@@ -48,7 +48,7 @@ rx.hstack(
         rx.list.item("Example 2"),
         rx.list.item("Example 3"),
         list_style_type="none",
-    )
+    ),
 )
 ```
 
@@ -57,14 +57,14 @@ Lists can also be used with icons.
 ```python demo
 rx.list(
     rx.list.item(
-        rx.icon("circle_check_big", color="green"), " Allowed",
+        rx.icon("circle_check_big", color="green"),
+        " Allowed",
     ),
     rx.list.item(
-        rx.icon("octagon_x", color="red"), " Not",
+        rx.icon("octagon_x", color="red"),
+        " Not",
     ),
-    rx.list.item(
-        rx.icon("settings", color="grey"), " Settings"
-    ),
+    rx.list.item(rx.icon("settings", color="grey"), " Settings"),
     list_style_type="none",
 )
 ```

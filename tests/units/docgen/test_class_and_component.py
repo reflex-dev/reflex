@@ -3,16 +3,17 @@
 import dataclasses
 import inspect
 import sys
+from importlib.util import find_spec
 
 import pytest
-from reflex_core.components.component import (
+from reflex_base.components.component import (
     DEFAULT_TRIGGERS_AND_DESC,
     Component,
     TriggerDefinition,
     field,
 )
-from reflex_core.constants import EventTriggers
-from reflex_core.event import EventHandler, no_args_event_spec
+from reflex_base.constants import EventTriggers
+from reflex_base.event import EventHandler, no_args_event_spec
 from reflex_docgen import (
     generate_class_documentation,
     generate_documentation,
@@ -259,6 +260,10 @@ def test_rx_state_fields():
         assert not name.startswith("_")
 
 
+@pytest.mark.skipif(
+    not find_spec("pydantic"),
+    reason="pydantic not installed",
+)
 def test_class_with_class_vars():
     """Class variables are extracted from __class_vars__."""
     from pydantic import BaseModel

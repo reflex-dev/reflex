@@ -184,7 +184,9 @@ class DropdownMenuState(rx.State):
 
 def dropdown_menu_example():
     return rx.flex(
-        rx.heading(f"Number of times Dropdown Menu opened or closed: {DropdownMenuState.num_opens}"),
+        rx.heading(
+            f"Number of times Dropdown Menu opened or closed: {DropdownMenuState.num_opens}"
+        ),
         rx.heading(f"Dropdown Menu open: {DropdownMenuState.opened}"),
         rx.menu.root(
             rx.menu.trigger(

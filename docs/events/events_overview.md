@@ -1,6 +1,5 @@
 ```python exec
 import reflex as rx
-
 ```
 
 # Events Overview
@@ -32,13 +31,13 @@ class WordCycleState(rx.State):
     def get_text(self) -> str:
         return self.text[self.index]
 
+
 def event_triggers_example():
     return rx.heading(
         WordCycleState.get_text,
         on_mouse_over=WordCycleState.next_word,
         color="green",
     )
-
 ```
 
 In this example, the heading component has the **event trigger**, `on_mouse_over`.

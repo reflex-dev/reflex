@@ -16,9 +16,10 @@ class State(rx.State):
         # Fetch data
         self.data = fetch_data()
 
+
 @rx.page(on_load=State.get_data)
 def index():
-    return rx.text('A Beautiful App')
+    return rx.text("A Beautiful App")
 ```
 
 Another example would be checking if the user is authenticated when the page loads. If the user is not authenticated, we redirect them to the login page. If they are authenticated, we don't do anything, letting them access the page. This `on_load` event would be placed on every page that requires authentication to access.
@@ -32,9 +33,10 @@ class State(rx.State):
         # Check if user is authenticated
         self.authenticated = check_auth()
         if not self.authenticated:
-            return rx.redirect('/login')
+            return rx.redirect("/login")
+
 
 @rx.page(on_load=State.check_auth)
 def index():
-    return rx.text('A Beautiful App')
+    return rx.text("A Beautiful App")
 ```

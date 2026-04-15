@@ -24,14 +24,18 @@ In this tutorial, you are building an interactive data dashboard with Reflex.
 You can see what the finished app and code will look like here:
 
 ```python exec
+import dataclasses
 from collections import Counter
 
-class User(rx.Base):
+
+@dataclasses.dataclass
+class User:
     """The user model."""
 
     name: str
     email: str
     gender: str
+
 
 class State5(rx.State):
     users: list[User] = [
@@ -56,10 +60,7 @@ class State5(rx.State):
 
         # Transform into list of dict so it can be used in the graph
         self.users_for_graph = [
-            {
-                "name": gender_group,
-                "value": count
-            }
+            {"name": gender_group, "value": count}
             for gender_group, count in gender_counts.items()
         ]
 
@@ -73,6 +74,7 @@ def show_user5(user: User):
         style={"_hover": {"bg": rx.color("gray", 3)}},
         align="center",
     )
+
 
 def add_customer_button5() -> rx.Component:
     return rx.dialog.root(
@@ -91,9 +93,7 @@ def add_customer_button5() -> rx.Component:
             ),
             rx.form(
                 rx.flex(
-                    rx.input(
-                        placeholder="User Name", name="name", required=True
-                    ),
+                    rx.input(placeholder="User Name", name="name", required=True),
                     rx.input(
                         placeholder="user@reflex.dev",
                         name="email",
@@ -112,9 +112,7 @@ def add_customer_button5() -> rx.Component:
                             ),
                         ),
                         rx.dialog.close(
-                            rx.button(
-                                "Submit", type="submit"
-                            ),
+                            rx.button("Submit", type="submit"),
                         ),
                         spacing="3",
                         justify="end",
@@ -128,6 +126,7 @@ def add_customer_button5() -> rx.Component:
             max_width="450px",
         ),
     )
+
 
 def graph5():
     return rx.recharts.bar_chart(
@@ -146,39 +145,39 @@ def graph5():
 
 ```python eval
 rx.vstack(
-        add_customer_button5(),
-        rx.table.root(
-            rx.table.header(
-                rx.table.row(
-                    rx.table.column_header_cell("Name"),
-                    rx.table.column_header_cell("Email"),
-                    rx.table.column_header_cell("Gender"),
-                ),
+    add_customer_button5(),
+    rx.table.root(
+        rx.table.header(
+            rx.table.row(
+                rx.table.column_header_cell("Name"),
+                rx.table.column_header_cell("Email"),
+                rx.table.column_header_cell("Gender"),
             ),
-            rx.table.body(
-                rx.foreach(
-                    State5.users, show_user5
-                ),
-            ),
-            variant="surface",
-            size="3",
-            width="100%",
         ),
-        graph5(),
-        align="center",
+        rx.table.body(
+            rx.foreach(State5.users, show_user5),
+        ),
+        variant="surface",
+        size="3",
         width="100%",
-        on_mouse_enter=State5.transform_data,
-        border_width="2px",
-        border_radius="10px",
-        padding="1em",
-    )
+    ),
+    graph5(),
+    align="center",
+    width="100%",
+    on_mouse_enter=State5.transform_data,
+    border_width="2px",
+    border_radius="10px",
+    padding="1em",
+)
 ```
 
 ```python
 import reflex as rx
 from collections import Counter
 
-class User(rx.Base):
+
+@dataclasses.dataclass
+class User:
     """The user model."""
 
     name: str
@@ -204,10 +203,7 @@ class State(rx.State):
 
         # Transform into list of dict so it can be used in the graph
         self.users_for_graph = [
-            {
-                "name": gender_group,
-                "value": count
-            }
+            {"name": gender_group, "value": count}
             for gender_group, count in gender_counts.items()
         ]
 
@@ -218,13 +214,10 @@ def show_user(user: User):
         rx.table.cell(user.name),
         rx.table.cell(user.email),
         rx.table.cell(user.gender),
-        style={
-            "_hover": {
-                "bg": rx.color("gray", 3)
-            }
-        },
+        style={"_hover": {"bg": rx.color("gray", 3)}},
         align="center",
     )
+
 
 def add_customer_button() -> rx.Component:
     return rx.dialog.root(
@@ -243,9 +236,7 @@ def add_customer_button() -> rx.Component:
             ),
             rx.form(
                 rx.flex(
-                    rx.input(
-                        placeholder="User Name", name="name", required=True
-                    ),
+                    rx.input(placeholder="User Name", name="name", required=True),
                     rx.input(
                         placeholder="user@reflex.dev",
                         name="email",
@@ -264,9 +255,7 @@ def add_customer_button() -> rx.Component:
                             ),
                         ),
                         rx.dialog.close(
-                            rx.button(
-                                "Submit", type="submit"
-                            ),
+                            rx.button("Submit", type="submit"),
                         ),
                         spacing="3",
                         justify="end",
@@ -280,6 +269,7 @@ def add_customer_button() -> rx.Component:
             max_width="450px",
         ),
     )
+
 
 def graph():
     return rx.recharts.bar_chart(
@@ -295,6 +285,7 @@ def graph():
         height=250,
     )
 
+
 def index() -> rx.Component:
     return rx.vstack(
         add_customer_button(),
@@ -307,9 +298,7 @@ def index() -> rx.Component:
                 ),
             ),
             rx.table.body(
-                rx.foreach(
-                    State.users, show_user
-                ),
+                rx.foreach(State.users, show_user),
             ),
             variant="surface",
             size="3",
@@ -322,9 +311,7 @@ def index() -> rx.Component:
 
 
 app = rx.App(
-    theme=rx.theme(
-        radius="full", accent_color="grass"
-    ),
+    theme=rx.theme(radius="full", accent_color="grass"),
 )
 
 app.add_page(
@@ -339,9 +326,9 @@ Don't worry if you don't understand the code above, in this tutorial we are goin
 
 ## Setup for the tutorial
 
-Check out the [installation docs](/docs/getting_started/installation) to get Reflex set up on your machine. Follow these to create a folder called `dashboard_tutorial`, which you will `cd` into and `pip install reflex`.
+Check out the [installation docs](/docs/getting_started/installation) to get Reflex set up on your machine. Follow these to create a folder called `dashboard_tutorial`, which you will `cd` into, then run `uv init` and `uv add reflex`.
 
-We will choose template `0` when we run `reflex init` to get the blank template. Finally run `reflex run` to start the app and confirm everything is set up correctly.
+We will choose template `0` when we run `uv run reflex init` to get the blank template. Finally run `uv run reflex run` to start the app and confirm everything is set up correctly.
 
 ## Overview
 
@@ -368,6 +355,7 @@ import reflex as rx
 def index() -> rx.Component:
     return rx.text("Hello World!")
 
+
 app = rx.App()
 app.add_page(index)
 ```
@@ -375,11 +363,7 @@ app.add_page(index)
 This code will render a page with the text "Hello World!" when you run your app like below:
 
 ```python eval
-rx.text("Hello World!",
-    border_width="2px",
-    border_radius="10px",
-    padding="1em"
-)
+rx.text("Hello World!", border_width="2px", border_radius="10px", padding="1em")
 ```
 
 ```md alert info
@@ -392,29 +376,29 @@ Let's create a new component that will render a table. We will use the `table` c
 
 ```python eval
 rx.table.root(
-        rx.table.header(
-            rx.table.row(
-                rx.table.column_header_cell("Name"),
-                rx.table.column_header_cell("Email"),
-                rx.table.column_header_cell("Gender"),
-            ),
+    rx.table.header(
+        rx.table.row(
+            rx.table.column_header_cell("Name"),
+            rx.table.column_header_cell("Email"),
+            rx.table.column_header_cell("Gender"),
         ),
-        rx.table.body(
-            rx.table.row(
-                rx.table.cell("Danilo Sousa"),
-                rx.table.cell("danilo@example.com"),
-                rx.table.cell("Male"),
-            ),
-            rx.table.row(
-                rx.table.cell("Zahra Ambessa"),
-                rx.table.cell("zahra@example.com"),
-                rx.table.cell("Female"),
-            ),
+    ),
+    rx.table.body(
+        rx.table.row(
+            rx.table.cell("Danilo Sousa"),
+            rx.table.cell("danilo@example.com"),
+            rx.table.cell("Male"),
         ),
-        border_width="2px",
-        border_radius="10px",
-        padding="1em",
-    )
+        rx.table.row(
+            rx.table.cell("Zahra Ambessa"),
+            rx.table.cell("zahra@example.com"),
+            rx.table.cell("Female"),
+        ),
+    ),
+    border_width="2px",
+    border_radius="10px",
+    padding="1em",
+)
 ```
 
 ```python
@@ -448,31 +432,31 @@ The `rx.table.root` component has for example the `variant` and `size` props, wh
 
 ```python eval
 rx.table.root(
-        rx.table.header(
-            rx.table.row(
-                rx.table.column_header_cell("Name"),
-                rx.table.column_header_cell("Email"),
-                rx.table.column_header_cell("Gender"),
-            ),
+    rx.table.header(
+        rx.table.row(
+            rx.table.column_header_cell("Name"),
+            rx.table.column_header_cell("Email"),
+            rx.table.column_header_cell("Gender"),
         ),
-        rx.table.body(
-            rx.table.row(
-                rx.table.cell("Danilo Sousa"),
-                rx.table.cell("danilo@example.com"),
-                rx.table.cell("Male"),
-            ),
-            rx.table.row(
-                rx.table.cell("Zahra Ambessa"),
-                rx.table.cell("zahra@example.com"),
-                rx.table.cell("Female"),
-            ),
+    ),
+    rx.table.body(
+        rx.table.row(
+            rx.table.cell("Danilo Sousa"),
+            rx.table.cell("danilo@example.com"),
+            rx.table.cell("Male"),
         ),
-        variant="surface",
-        size="3",
-        border_width="2px",
-        border_radius="10px",
-        padding="1em",
-    )
+        rx.table.row(
+            rx.table.cell("Zahra Ambessa"),
+            rx.table.cell("zahra@example.com"),
+            rx.table.cell("Female"),
+        ),
+    ),
+    variant="surface",
+    size="3",
+    border_width="2px",
+    border_radius="10px",
+    padding="1em",
+)
 ```
 
 ```python
@@ -537,6 +521,7 @@ class State1(rx.State):
         ["Zahra Ambessa", "zahra@example.com", "Female"],
     ]
 
+
 def show_user1(person: list):
     """Show a person in a table row."""
     return rx.table.row(
@@ -548,23 +533,21 @@ def show_user1(person: list):
 
 ```python eval
 rx.table.root(
-        rx.table.header(
-            rx.table.row(
-                rx.table.column_header_cell("Name"),
-                rx.table.column_header_cell("Email"),
-                rx.table.column_header_cell("Gender"),
-            ),
+    rx.table.header(
+        rx.table.row(
+            rx.table.column_header_cell("Name"),
+            rx.table.column_header_cell("Email"),
+            rx.table.column_header_cell("Gender"),
         ),
-        rx.table.body(
-            rx.foreach(
-                State1.users, show_user1
-            ),
-        ),
-        variant="surface",
-        size="3",
-        border_width="2px",
-        border_radius="10px",
-        padding="1em",
+    ),
+    rx.table.body(
+        rx.foreach(State1.users, show_user1),
+    ),
+    variant="surface",
+    size="3",
+    border_width="2px",
+    border_radius="10px",
+    padding="1em",
 )
 ```
 
@@ -575,6 +558,7 @@ class State(rx.State):
         ["Zahra Ambessa", "zahra@example.com", "Female"],
     ]
 
+
 def show_user(person: list):
     """Show a person in a table row."""
     return rx.table.row(
@@ -582,6 +566,7 @@ def show_user(person: list):
         rx.table.cell(person[1]),
         rx.table.cell(person[2]),
     )
+
 
 def index() -> rx.Component:
     return rx.table.root(
@@ -593,13 +578,11 @@ def index() -> rx.Component:
             ),
         ),
         rx.table.body(
-            rx.foreach(
-                State.users, show_user
-            ),
+            rx.foreach(State.users, show_user),
         ),
         variant="surface",
         size="3",
-)
+    )
 ```
 
 As you can see the output above looks the same as before, except now the data is no longer static and can change with user input to the app.
@@ -610,14 +593,16 @@ So far our data has been defined in a list of lists, where the data is accessed 
 
 A better way to structure our data in Reflex is to use a class to represent a user. This way we can access the data using attributes i.e. `user.name`, `user.email`.
 
-In Reflex when we create these classes to showcase our data, the class must inherit from `rx.Base`.
-
-`rx.Base` is also necessary if we want to have a state var that is an iterable with different types. For example if we wanted to have `age` as an `int` we would have to use `rx.base` as we could not do this with a state var defined as `list[list[str]]`.
+In Reflex when we create these classes to showcase our data, we can use dataclasses.
 
 The `show_user` render function is also updated to access the data by named attributes, instead of indexing.
 
 ```python exec
-class User(rx.Base):
+import dataclasses
+
+
+@dataclasses.dataclass
+class User:
     """The user model."""
 
     name: str
@@ -631,6 +616,7 @@ class State2(rx.State):
         User(name="Zahra Ambessa", email="zahra@example.com", gender="Female"),
     ]
 
+
 def show_user2(user: User):
     """Show a person in a table row."""
     return rx.table.row(
@@ -642,28 +628,27 @@ def show_user2(user: User):
 
 ```python eval
 rx.table.root(
-        rx.table.header(
-            rx.table.row(
-                rx.table.column_header_cell("Name"),
-                rx.table.column_header_cell("Email"),
-                rx.table.column_header_cell("Gender"),
-            ),
+    rx.table.header(
+        rx.table.row(
+            rx.table.column_header_cell("Name"),
+            rx.table.column_header_cell("Email"),
+            rx.table.column_header_cell("Gender"),
         ),
-        rx.table.body(
-            rx.foreach(
-                State2.users, show_user2
-            ),
-        ),
-        variant="surface",
-        size="3",
-        border_width="2px",
-        border_radius="10px",
-        padding="1em",
+    ),
+    rx.table.body(
+        rx.foreach(State2.users, show_user2),
+    ),
+    variant="surface",
+    size="3",
+    border_width="2px",
+    border_radius="10px",
+    padding="1em",
 )
 ```
 
 ```python
-class User(rx.Base):
+@dataclasses.dataclass
+class User:
     """The user model."""
 
     name: str
@@ -677,6 +662,7 @@ class State(rx.State):
         User(name="Zahra Ambessa", email="zahra@example.com", gender="Female"),
     ]
 
+
 def show_user(user: User):
     """Show a person in a table row."""
     return rx.table.row(
@@ -684,6 +670,7 @@ def show_user(user: User):
         rx.table.cell(user.email),
         rx.table.cell(user.gender),
     )
+
 
 def index() -> rx.Component:
     return rx.table.root(
@@ -695,13 +682,11 @@ def index() -> rx.Component:
             ),
         ),
         rx.table.body(
-            rx.foreach(
-                State.users, show_user
-            ),
+            rx.foreach(State.users, show_user),
         ),
         variant="surface",
         size="3",
-)
+    )
 ```
 
 Next let's add a form to the app so we can add new users to the table.
@@ -716,9 +701,7 @@ The `rx.select` component takes in a list of options that are displayed in the d
 
 ```python demo
 rx.form(
-    rx.input(
-        placeholder="User Name", name="name", required=True
-    ),
+    rx.input(placeholder="User Name", name="name", required=True),
     rx.input(
         placeholder="user@reflex.dev",
         name="email",
@@ -736,9 +719,7 @@ This form is all very compact as you can see from the example, so we need to add
 ```python demo
 rx.form(
     rx.vstack(
-        rx.input(
-            placeholder="User Name", name="name", required=True
-        ),
+        rx.input(placeholder="User Name", name="name", required=True),
         rx.input(
             placeholder="user@reflex.dev",
             name="email",
@@ -762,7 +743,6 @@ The `on_submit` event trigger of `rx.form` is hooked up to the `add_user` event 
 
 ```python
 class State(rx.State):
-
     ...
 
     def add_user(self, form_data: dict):
@@ -772,9 +752,7 @@ class State(rx.State):
 def form():
     return rx.form(
         rx.vstack(
-            rx.input(
-                placeholder="User Name", name="name", required=True
-            ),
+            rx.input(placeholder="User Name", name="name", required=True),
             rx.input(
                 placeholder="user@reflex.dev",
                 name="email",
@@ -805,11 +783,11 @@ class State3(rx.State):
     def add_user(self, form_data: dict):
         self.users.append(User(**form_data))
 
-
         return rx.toast.info(
             f"User has been added: {form_data}.",
             position="bottom-right",
         )
+
 
 def show_user(user: User):
     """Show a person in a table row."""
@@ -819,12 +797,11 @@ def show_user(user: User):
         rx.table.cell(user.gender),
     )
 
+
 def form():
     return rx.form(
         rx.vstack(
-            rx.input(
-                placeholder="User Name", name="name", required=True
-            ),
+            rx.input(placeholder="User Name", name="name", required=True),
             rx.input(
                 placeholder="user@reflex.dev",
                 name="email",
@@ -853,9 +830,7 @@ rx.vstack(
             ),
         ),
         rx.table.body(
-            rx.foreach(
-                State3.users, show_user
-            ),
+            rx.foreach(State3.users, show_user),
         ),
         variant="surface",
         size="3",
@@ -885,12 +860,11 @@ def show_user(user: User):
         rx.table.cell(user.gender),
     )
 
+
 def form():
     return rx.form(
         rx.vstack(
-            rx.input(
-                placeholder="User Name", name="name", required=True
-            ),
+            rx.input(placeholder="User Name", name="name", required=True),
             rx.input(
                 placeholder="user@reflex.dev",
                 name="email",
@@ -906,6 +880,7 @@ def form():
         reset_on_submit=True,
     )
 
+
 def index() -> rx.Component:
     return rx.vstack(
         form(),
@@ -918,9 +893,7 @@ def index() -> rx.Component:
                 ),
             ),
             rx.table.body(
-                rx.foreach(
-                    State.users, show_user
-                ),
+                rx.foreach(State.users, show_user),
             ),
             variant="surface",
             size="3",
@@ -946,17 +919,17 @@ rx.dialog.trigger(
 After the trigger we have the `rx.dialog.content` which contains everything within our dialog, including a title, a description and our form. The first way to close the dialog is without submitting the form and the second way is to close the dialog by submitting the form as shown below. This requires two `rx.dialog.close` components within the dialog.
 
 ```python
-rx.dialog.close(
-    rx.button(
-        "Cancel",
-        variant="soft",
-        color_scheme="gray",
+(
+    rx.dialog.close(
+        rx.button(
+            "Cancel",
+            variant="soft",
+            color_scheme="gray",
+        ),
     ),
-),
+)
 rx.dialog.close(
-    rx.button(
-        "Submit", type="submit"
-    ),
+    rx.button("Submit", type="submit"),
 )
 ```
 
@@ -980,9 +953,7 @@ rx.dialog.root(
         rx.form(
             # flex is similar to vstack and used to layout the form fields
             rx.flex(
-                rx.input(
-                    placeholder="User Name", name="name", required=True
-                ),
+                rx.input(placeholder="User Name", name="name", required=True),
                 rx.input(
                     placeholder="user@reflex.dev",
                     name="email",
@@ -1001,9 +972,7 @@ rx.dialog.root(
                         ),
                     ),
                     rx.dialog.close(
-                        rx.button(
-                            "Submit", type="submit"
-                        ),
+                        rx.button("Submit", type="submit"),
                     ),
                     spacing="3",
                     justify="end",
@@ -1040,9 +1009,7 @@ def add_customer_button() -> rx.Component:
             ),
             rx.form(
                 rx.flex(
-                    rx.input(
-                        placeholder="User Name", name="name", required=True
-                    ),
+                    rx.input(placeholder="User Name", name="name", required=True),
                     rx.input(
                         placeholder="user@reflex.dev",
                         name="email",
@@ -1061,9 +1028,7 @@ def add_customer_button() -> rx.Component:
                             ),
                         ),
                         rx.dialog.close(
-                            rx.button(
-                                "Submit", type="submit"
-                            ),
+                            rx.button("Submit", type="submit"),
                         ),
                         spacing="3",
                         justify="end",
@@ -1091,9 +1056,7 @@ rx.vstack(
             ),
         ),
         rx.table.body(
-            rx.foreach(
-                State3.users, show_user
-            ),
+            rx.foreach(State3.users, show_user),
         ),
         variant="surface",
         size="3",
@@ -1105,7 +1068,8 @@ rx.vstack(
 ```
 
 ```python
-class User(rx.Base):
+@dataclasses.dataclass
+class User:
     """The user model."""
 
     name: str
@@ -1123,7 +1087,6 @@ class State(rx.State):
         self.users.append(User(**form_data))
 
 
-
 def show_user(user: User):
     """Show a person in a table row."""
     return rx.table.row(
@@ -1131,6 +1094,7 @@ def show_user(user: User):
         rx.table.cell(user.email),
         rx.table.cell(user.gender),
     )
+
 
 def add_customer_button() -> rx.Component:
     return rx.dialog.root(
@@ -1149,9 +1113,7 @@ def add_customer_button() -> rx.Component:
             ),
             rx.form(
                 rx.flex(
-                    rx.input(
-                        placeholder="User Name", name="name", required=True
-                    ),
+                    rx.input(placeholder="User Name", name="name", required=True),
                     rx.input(
                         placeholder="user@reflex.dev",
                         name="email",
@@ -1170,9 +1132,7 @@ def add_customer_button() -> rx.Component:
                             ),
                         ),
                         rx.dialog.close(
-                            rx.button(
-                                "Submit", type="submit"
-                            ),
+                            rx.button("Submit", type="submit"),
                         ),
                         spacing="3",
                         justify="end",
@@ -1187,6 +1147,7 @@ def add_customer_button() -> rx.Component:
         ),
     )
 
+
 def index() -> rx.Component:
     return rx.vstack(
         add_customer_button(),
@@ -1199,9 +1160,7 @@ def index() -> rx.Component:
                 ),
             ),
             rx.table.body(
-                rx.foreach(
-                    State.users, show_user
-                ),
+                rx.foreach(State.users, show_user),
             ),
             variant="surface",
             size="3",
@@ -1220,6 +1179,7 @@ The graphing components in Reflex expect to take in a list of dictionaries. Each
 ```python
 from collections import Counter
 
+
 class State(rx.State):
     users: list[User] = []
     users_for_graph: list[dict] = []
@@ -1235,10 +1195,7 @@ class State(rx.State):
 
         # Transform into list of dict so it can be used in the graph
         self.users_for_graph = [
-            {
-                "name": gender_group,
-                "value": count
-            }
+            {"name": gender_group, "value": count}
             for gender_group, count in gender_counts.items()
         ]
 ```
@@ -1274,6 +1231,7 @@ Finally we add this `graph()` component to our `index()` component so that the g
 ```python exec
 from collections import Counter
 
+
 class State4(rx.State):
     users: list[User] = [
         User(name="Danilo Sousa", email="danilo@example.com", gender="Male"),
@@ -1297,12 +1255,10 @@ class State4(rx.State):
 
         # Transform into list of dict so it can be used in the graph
         self.users_for_graph = [
-            {
-                "name": gender_group,
-                "value": count
-            }
+            {"name": gender_group, "value": count}
             for gender_group, count in gender_counts.items()
         ]
+
 
 def add_customer_button() -> rx.Component:
     return rx.dialog.root(
@@ -1321,9 +1277,7 @@ def add_customer_button() -> rx.Component:
             ),
             rx.form(
                 rx.flex(
-                    rx.input(
-                        placeholder="User Name", name="name", required=True
-                    ),
+                    rx.input(placeholder="User Name", name="name", required=True),
                     rx.input(
                         placeholder="user@reflex.dev",
                         name="email",
@@ -1342,9 +1296,7 @@ def add_customer_button() -> rx.Component:
                             ),
                         ),
                         rx.dialog.close(
-                            rx.button(
-                                "Submit", type="submit"
-                            ),
+                            rx.button("Submit", type="submit"),
                         ),
                         spacing="3",
                         justify="end",
@@ -1358,6 +1310,7 @@ def add_customer_button() -> rx.Component:
             max_width="450px",
         ),
     )
+
 
 def graph():
     return rx.recharts.bar_chart(
@@ -1386,9 +1339,7 @@ rx.vstack(
             ),
         ),
         rx.table.body(
-            rx.foreach(
-                State4.users, show_user
-            ),
+            rx.foreach(State4.users, show_user),
         ),
         variant="surface",
         size="3",
@@ -1402,6 +1353,7 @@ rx.vstack(
 
 ```python
 from collections import Counter
+
 
 class State(rx.State):
     users: list[User] = [
@@ -1421,10 +1373,7 @@ class State(rx.State):
 
         # Transform into list of dict so it can be used in the graph
         self.users_for_graph = [
-            {
-                "name": gender_group,
-                "value": count
-            }
+            {"name": gender_group, "value": count}
             for gender_group, count in gender_counts.items()
         ]
 
@@ -1436,6 +1385,7 @@ def show_user(user: User):
         rx.table.cell(user.email),
         rx.table.cell(user.gender),
     )
+
 
 def add_customer_button() -> rx.Component:
     return rx.dialog.root(
@@ -1454,9 +1404,7 @@ def add_customer_button() -> rx.Component:
             ),
             rx.form(
                 rx.flex(
-                    rx.input(
-                        placeholder="User Name", name="name", required=True
-                    ),
+                    rx.input(placeholder="User Name", name="name", required=True),
                     rx.input(
                         placeholder="user@reflex.dev",
                         name="email",
@@ -1475,9 +1423,7 @@ def add_customer_button() -> rx.Component:
                             ),
                         ),
                         rx.dialog.close(
-                            rx.button(
-                                "Submit", type="submit"
-                            ),
+                            rx.button("Submit", type="submit"),
                         ),
                         spacing="3",
                         justify="end",
@@ -1491,6 +1437,7 @@ def add_customer_button() -> rx.Component:
             max_width="450px",
         ),
     )
+
 
 def graph():
     return rx.recharts.bar_chart(
@@ -1506,6 +1453,7 @@ def graph():
         height=250,
     )
 
+
 def index() -> rx.Component:
     return rx.vstack(
         add_customer_button(),
@@ -1518,9 +1466,7 @@ def index() -> rx.Component:
                 ),
             ),
             rx.table.body(
-                rx.foreach(
-                    State.users, show_user
-                ),
+                rx.foreach(State.users, show_user),
             ),
             variant="surface",
             size="3",
@@ -1555,9 +1501,7 @@ rx.vstack(
             ),
         ),
         rx.table.body(
-            rx.foreach(
-                State4.users, show_user
-            ),
+            rx.foreach(State4.users, show_user),
         ),
         variant="surface",
         size="3",
@@ -1593,9 +1537,7 @@ To see other props that can be set at the app level check out this [documentatio
 
 ```python
 app = rx.App(
-    theme=rx.theme(
-        radius="full", accent_color="grass"
-    ),
+    theme=rx.theme(radius="full", accent_color="grass"),
 )
 ```
 
@@ -1611,39 +1553,39 @@ Check out the full code and interactive app below:
 
 ```python eval
 rx.vstack(
-        add_customer_button5(),
-        rx.table.root(
-            rx.table.header(
-                rx.table.row(
-                    rx.table.column_header_cell("Name"),
-                    rx.table.column_header_cell("Email"),
-                    rx.table.column_header_cell("Gender"),
-                ),
+    add_customer_button5(),
+    rx.table.root(
+        rx.table.header(
+            rx.table.row(
+                rx.table.column_header_cell("Name"),
+                rx.table.column_header_cell("Email"),
+                rx.table.column_header_cell("Gender"),
             ),
-            rx.table.body(
-                rx.foreach(
-                    State5.users, show_user5
-                ),
-            ),
-            variant="surface",
-            size="3",
-            width="100%",
         ),
-        graph5(),
-        align="center",
+        rx.table.body(
+            rx.foreach(State5.users, show_user5),
+        ),
+        variant="surface",
+        size="3",
         width="100%",
-        on_mouse_enter=State5.transform_data,
-        border_width="2px",
-        border_radius="10px",
-        padding="1em",
-    )
+    ),
+    graph5(),
+    align="center",
+    width="100%",
+    on_mouse_enter=State5.transform_data,
+    border_width="2px",
+    border_radius="10px",
+    padding="1em",
+)
 ```
 
 ```python
 import reflex as rx
 from collections import Counter
 
-class User(rx.Base):
+
+@dataclasses.dataclass
+class User:
     """The user model."""
 
     name: str
@@ -1669,10 +1611,7 @@ class State(rx.State):
 
         # Transform into list of dict so it can be used in the graph
         self.users_for_graph = [
-            {
-                "name": gender_group,
-                "value": count
-            }
+            {"name": gender_group, "value": count}
             for gender_group, count in gender_counts.items()
         ]
 
@@ -1683,13 +1622,10 @@ def show_user(user: User):
         rx.table.cell(user.name),
         rx.table.cell(user.email),
         rx.table.cell(user.gender),
-        style={
-            "_hover": {
-                "bg": rx.color("gray", 3)
-            }
-        },
+        style={"_hover": {"bg": rx.color("gray", 3)}},
         align="center",
     )
+
 
 def add_customer_button() -> rx.Component:
     return rx.dialog.root(
@@ -1708,9 +1644,7 @@ def add_customer_button() -> rx.Component:
             ),
             rx.form(
                 rx.flex(
-                    rx.input(
-                        placeholder="User Name", name="name", required=True
-                    ),
+                    rx.input(placeholder="User Name", name="name", required=True),
                     rx.input(
                         placeholder="user@reflex.dev",
                         name="email",
@@ -1729,9 +1663,7 @@ def add_customer_button() -> rx.Component:
                             ),
                         ),
                         rx.dialog.close(
-                            rx.button(
-                                "Submit", type="submit"
-                            ),
+                            rx.button("Submit", type="submit"),
                         ),
                         spacing="3",
                         justify="end",
@@ -1745,6 +1677,7 @@ def add_customer_button() -> rx.Component:
             max_width="450px",
         ),
     )
+
 
 def graph():
     return rx.recharts.bar_chart(
@@ -1760,6 +1693,7 @@ def graph():
         height=250,
     )
 
+
 def index() -> rx.Component:
     return rx.vstack(
         add_customer_button(),
@@ -1772,9 +1706,7 @@ def index() -> rx.Component:
                 ),
             ),
             rx.table.body(
-                rx.foreach(
-                    State.users, show_user
-                ),
+                rx.foreach(State.users, show_user),
             ),
             variant="surface",
             size="3",
@@ -1787,9 +1719,7 @@ def index() -> rx.Component:
 
 
 app = rx.App(
-    theme=rx.theme(
-        radius="full", accent_color="grass"
-    ),
+    theme=rx.theme(radius="full", accent_color="grass"),
 )
 
 app.add_page(

@@ -44,9 +44,14 @@ class CollaborativeCounter(rx.SharedState):
             linked_state = await self._link_to("shared-global-counter")
             linked_state.count += 1  # Increment count on link
 
+    @rx.event
+    def set_count(self, count: int):
+        self.count = count
+
     @rx.var
     def is_linked(self) -> bool:
         return bool(self._linked_to)
+
 
 def shared_state_example():
     return rx.vstack(
@@ -56,7 +61,10 @@ def shared_state_example():
             rx.button("Unlink", on_click=CollaborativeCounter.toggle_link),
             rx.button("Link", on_click=CollaborativeCounter.toggle_link),
         ),
-        rx.button("Increment", on_click=CollaborativeCounter.set_count(CollaborativeCounter.count + 1)),
+        rx.button(
+            "Increment",
+            on_click=CollaborativeCounter.set_count(CollaborativeCounter.count + 1),
+        ),
     )
 ```
 
@@ -74,6 +82,7 @@ Each client linked to a shared state can be uniquely identified by their `self.r
 
 ```python demo exec
 import uuid
+
 
 class SharedRoom(rx.SharedState):
     shared_room: str = rx.LocalStorage()
@@ -161,6 +170,7 @@ A shared state should primarily use backend-only vars (prefixed with an undersco
 
 ```python
 from typing import Literal
+
 
 class SharedGameState(rx.SharedState):
     # Sensitive user metadata stored in backend-only variable.

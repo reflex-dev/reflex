@@ -14,12 +14,20 @@ import reflex as rx
 It is useful for maintaining the layout's structure and providing users with a sense of progression while awaiting the final content.
 
 ```python demo
-rx.vstack(
-    rx.skeleton(rx.button("button-small"), height="10px"),
-    rx.skeleton(rx.button("button-big"), height="20px"),
-    rx.skeleton(rx.text("Text is loaded."), loading=True,),
-    rx.skeleton(rx.text("Text is already loaded."), loading=False,),
-),
+(
+    rx.vstack(
+        rx.skeleton(rx.button("button-small"), height="10px"),
+        rx.skeleton(rx.button("button-big"), height="20px"),
+        rx.skeleton(
+            rx.text("Text is loaded."),
+            loading=True,
+        ),
+        rx.skeleton(
+            rx.text("Text is already loaded."),
+            loading=False,
+        ),
+    ),
+)
 ```
 
 When using `Skeleton` with text, wrap the text itself instead of the parent element to have a placeholder of the same size.

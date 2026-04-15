@@ -5,9 +5,9 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any, Literal
 
-from reflex_core.components.component import Component, ComponentNamespace, field
-from reflex_core.event import EventHandler, passthrough_event_spec
-from reflex_core.vars.base import Var
+from reflex_base.components.component import Component, ComponentNamespace, field
+from reflex_base.event import EventHandler, passthrough_event_spec
+from reflex_base.vars.base import Var
 
 from reflex_components_radix.primitives.base import RadixPrimitiveComponentWithClassName
 

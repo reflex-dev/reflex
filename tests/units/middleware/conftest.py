@@ -1,12 +1,11 @@
 import pytest
-from reflex_core.event import Event
+from reflex_base.event import Event
 
 from reflex.state import State
 
 
 def create_event(name):
     return Event(
-        token="<token>",
         name=name,
         router_data={
             "pathname": "/",

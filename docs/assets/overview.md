@@ -58,11 +58,12 @@ Shared assets are placed next to your Python file and are linked to the app's ex
 # my_component.py
 import reflex as rx
 
+
 # my_script.js is located in the same directory as this Python file
 def my_component():
     return rx.box(
         rx.script(src=rx.asset("my_script.js", shared=True)),
-        "Component with custom script"
+        "Component with custom script",
     )
 ```
 
@@ -72,11 +73,10 @@ You can also specify a subfolder for shared assets:
 # my_component.py
 import reflex as rx
 
+
 # image.png is located in a subfolder next to this Python file
 def my_component_with_image():
-    return rx.image(
-        src=rx.asset("image.png", shared=True, subfolder="images")
-    )
+    return rx.image(src=rx.asset("image.png", shared=True, subfolder="images"))
 ```
 
 ```md alert

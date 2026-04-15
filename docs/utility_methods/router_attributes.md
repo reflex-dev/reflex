@@ -1,37 +1,106 @@
 ```python exec box
 import reflex as rx
-cell_style = {"font_family": "Instrument Sans", "font_style": "normal", "font_weight": "500", "font_size": "14px", "line_height": "1.5", "letter_spacing": "-0.0125em", "color": "var(--c-slate-11)"}
+
+cell_style = {
+    "font_family": "Instrument Sans",
+    "font_style": "normal",
+    "font_weight": "500",
+    "font_size": "14px",
+    "line_height": "1.5",
+    "letter_spacing": "-0.0125em",
+    "color": "var(--c-slate-11)",
+}
+
 
 class RouterState(rx.State):
     pass
 
 
 router_data = [
-      {"name": "rx.State.router.page.host", "value": RouterState.router.page.host},
-      {"name": "rx.State.router.page.path", "value": RouterState.router.page.path},
-      {"name": "rx.State.router.page.raw_path", "value": RouterState.router.page.raw_path},
-      {"name": "rx.State.router.page.full_path", "value": RouterState.router.page.full_path},
-      {"name": "rx.State.router.page.full_raw_path", "value": RouterState.router.page.full_raw_path},
-      {"name": "rx.State.router.page.params", "value": RouterState.router.page.params.to_string()},
-      {"name": "rx.State.router.session.client_token", "value": RouterState.router.session.client_token},
-      {"name": "rx.State.router.session.session_id", "value": RouterState.router.session.session_id},
-      {"name": "rx.State.router.session.client_ip", "value": RouterState.router.session.client_ip},
-      {"name": "rx.State.router.headers.host", "value": RouterState.router.headers.host},
-      {"name": "rx.State.router.headers.origin", "value": RouterState.router.headers.origin},
-      {"name": "rx.State.router.headers.upgrade", "value": RouterState.router.headers.upgrade},
-      {"name": "rx.State.router.headers.connection", "value": RouterState.router.headers.connection},
-      {"name": "rx.State.router.headers.cookie", "value": RouterState.router.headers.cookie},
-      {"name": "rx.State.router.headers.pragma", "value": RouterState.router.headers.pragma},
-      {"name": "rx.State.router.headers.cache_control", "value": RouterState.router.headers.cache_control},
-      {"name": "rx.State.router.headers.user_agent", "value": RouterState.router.headers.user_agent},
-      {"name": "rx.State.router.headers.sec_websocket_version", "value": RouterState.router.headers.sec_websocket_version},
-      {"name": "rx.State.router.headers.sec_websocket_key", "value": RouterState.router.headers.sec_websocket_key},
-      {"name": "rx.State.router.headers.sec_websocket_extensions", "value": RouterState.router.headers.sec_websocket_extensions},
-      {"name": "rx.State.router.headers.accept_encoding", "value": RouterState.router.headers.accept_encoding},
-      {"name": "rx.State.router.headers.accept_language", "value": RouterState.router.headers.accept_language},
-      {"name": "rx.State.router.headers.raw_headers", "value": RouterState.router.headers.raw_headers.to_string()},
-  ]
-
+    {"name": "rx.State.router.page.host", "value": RouterState.router.page.host},
+    {"name": "rx.State.router.page.path", "value": RouterState.router.page.path},
+    {
+        "name": "rx.State.router.page.raw_path",
+        "value": RouterState.router.page.raw_path,
+    },
+    {
+        "name": "rx.State.router.page.full_path",
+        "value": RouterState.router.page.full_path,
+    },
+    {
+        "name": "rx.State.router.page.full_raw_path",
+        "value": RouterState.router.page.full_raw_path,
+    },
+    {
+        "name": "rx.State.router.page.params",
+        "value": RouterState.router.page.params.to_string(),
+    },
+    {
+        "name": "rx.State.router.session.client_token",
+        "value": RouterState.router.session.client_token,
+    },
+    {
+        "name": "rx.State.router.session.session_id",
+        "value": RouterState.router.session.session_id,
+    },
+    {
+        "name": "rx.State.router.session.client_ip",
+        "value": RouterState.router.session.client_ip,
+    },
+    {"name": "rx.State.router.headers.host", "value": RouterState.router.headers.host},
+    {
+        "name": "rx.State.router.headers.origin",
+        "value": RouterState.router.headers.origin,
+    },
+    {
+        "name": "rx.State.router.headers.upgrade",
+        "value": RouterState.router.headers.upgrade,
+    },
+    {
+        "name": "rx.State.router.headers.connection",
+        "value": RouterState.router.headers.connection,
+    },
+    {
+        "name": "rx.State.router.headers.cookie",
+        "value": RouterState.router.headers.cookie,
+    },
+    {
+        "name": "rx.State.router.headers.pragma",
+        "value": RouterState.router.headers.pragma,
+    },
+    {
+        "name": "rx.State.router.headers.cache_control",
+        "value": RouterState.router.headers.cache_control,
+    },
+    {
+        "name": "rx.State.router.headers.user_agent",
+        "value": RouterState.router.headers.user_agent,
+    },
+    {
+        "name": "rx.State.router.headers.sec_websocket_version",
+        "value": RouterState.router.headers.sec_websocket_version,
+    },
+    {
+        "name": "rx.State.router.headers.sec_websocket_key",
+        "value": RouterState.router.headers.sec_websocket_key,
+    },
+    {
+        "name": "rx.State.router.headers.sec_websocket_extensions",
+        "value": RouterState.router.headers.sec_websocket_extensions,
+    },
+    {
+        "name": "rx.State.router.headers.accept_encoding",
+        "value": RouterState.router.headers.accept_encoding,
+    },
+    {
+        "name": "rx.State.router.headers.accept_language",
+        "value": RouterState.router.headers.accept_language,
+    },
+    {
+        "name": "rx.State.router.headers.raw_headers",
+        "value": RouterState.router.headers.raw_headers.to_string(),
+    },
+]
 ```
 
 # State Utility Methods
@@ -76,24 +145,32 @@ The `self.router` attribute has several sub-attributes that provide various info
 
 ```python eval
 rx.table.root(
-        rx.table.header(
-            rx.table.row(
-                rx.table.column_header_cell("Name"),
-                rx.table.column_header_cell("Value"),
-            ),
+    rx.table.header(
+        rx.table.row(
+            rx.table.column_header_cell("Name"),
+            rx.table.column_header_cell("Value"),
         ),
-        rx.table.body(
-            *[
-                rx.table.row(
-                    rx.table.cell(item["name"], style=cell_style),
-                    rx.table.cell(rx.code(item["value"], style={"color": rx.color("violet", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('violet', 5)}", "background": rx.color("violet", 3)})),
+    ),
+    rx.table.body(*[
+        rx.table.row(
+            rx.table.cell(item["name"], style=cell_style),
+            rx.table.cell(
+                rx.code(
+                    item["value"],
+                    style={
+                        "color": rx.color("violet", 11),
+                        "border_radius": "0.25rem",
+                        "border": f"1px solid {rx.color('violet', 5)}",
+                        "background": rx.color("violet", 3),
+                    },
                 )
-                for item in router_data
-            ]
-        ),
-        variant="surface",
-        margin_y="1em",
-    )
+            ),
+        )
+        for item in router_data
+    ]),
+    variant="surface",
+    margin_y="1em",
+)
 ```
 
 ### Accessing Raw Headers

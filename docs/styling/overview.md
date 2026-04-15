@@ -4,7 +4,7 @@ import reflex as rx
 
 # Styling
 
-Reflex components can be styled using the full power of [CSS]({"https://www.w3schools.com/css/"}).
+Reflex components can be styled using the full power of [CSS](https://developer.mozilla.org/en-US/docs/Web/CSS).
 
 There are three main ways to add style to your app and they take precedence in the following order:
 
@@ -117,7 +117,7 @@ text_style = {
 ```
 
 ```python
-text_style={text_style}
+text_style = {text_style}
 ```
 
 ```python demo
@@ -142,8 +142,8 @@ style2 = {
 ```
 
 ```python
-style1={style1}
-style2={style2}
+style1 = {style1}
+style2 = {style2}
 ```
 
 ```python demo
@@ -173,7 +173,7 @@ Additionally you can modify the theme of your app through using the `Theme Panel
 
 ## Special Styles
 
-We support all of Chakra UI's [pseudo styles]({"https://v2.chakra-ui.com/docs/styled-system/style-props#pseudo"}).
+We support all of Chakra UI's [pseudo styles](https://v2.chakra-ui.com/docs/styled-system/style-props#pseudo).
 
 Below is an example of text that changes color when you hover over it.
 

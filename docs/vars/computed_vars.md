@@ -178,9 +178,13 @@ def async_cached_var_example():
         rx.text(f"User Email: {AsyncCachedVarState.user_data['email']}"),
         rx.hstack(
             rx.button("Change User", on_click=AsyncCachedVarState.change_user),
-            rx.button("Force Refresh (No Effect)", on_click=AsyncCachedVarState.force_refresh),
+            rx.button(
+                "Force Refresh (No Effect)", on_click=AsyncCachedVarState.force_refresh
+            ),
         ),
-        rx.text("Note: The cached async var only updates when user_id changes, not when refresh_trigger changes."),
+        rx.text(
+            "Note: The cached async var only updates when user_id changes, not when refresh_trigger changes."
+        ),
         spacing="4",
     )
 ```

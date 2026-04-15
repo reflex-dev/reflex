@@ -1,3 +1,4 @@
-"""Re-export from reflex_core."""
+# pyright: reportWildcardImportFromLibrary=false
+"""Re-export from reflex_base."""
 
-from reflex_core.components.tags.cond_tag import *
+from reflex_base.components.tags.cond_tag import *  # pragma: no cover

@@ -31,8 +31,10 @@ class CounterMixin(rx.State, mixin=True):
     def increment(self):
         self.count += 1
 
+
 class MyState(CounterMixin, rx.State):
     name: str = "App"
+
 
 def counter_example():
     return rx.vstack(
@@ -57,7 +59,9 @@ class TimestampMixin(rx.State, mixin=True):
     @rx.event
     def update_timestamp(self):
         import datetime
+
         self.last_updated = datetime.datetime.now().strftime("%H:%M:%S")
+
 
 class LoggingMixin(rx.State, mixin=True):
     log_messages: list[str] = []
@@ -65,6 +69,7 @@ class LoggingMixin(rx.State, mixin=True):
     @rx.event
     def log_message(self, message: str):
         self.log_messages.append(message)
+
 
 class CombinedState(CounterMixin, TimestampMixin, LoggingMixin, rx.State):
     app_name: str = "Multi-Mixin App"
@@ -75,6 +80,7 @@ class CombinedState(CounterMixin, TimestampMixin, LoggingMixin, rx.State):
         self.update_timestamp()
         self.log_message(f"Count incremented to {self.count}")
 
+
 def multi_mixin_example():
     return rx.vstack(
         rx.heading(CombinedState.app_name),
@@ -84,13 +90,9 @@ def multi_mixin_example():
         rx.cond(
             CombinedState.log_messages.length() > 0,
             rx.vstack(
-                rx.foreach(
-                    CombinedState.log_messages[-3:],
-                    rx.text
-                ),
-                spacing="1"
+                rx.foreach(CombinedState.log_messages[-3:], rx.text), spacing="1"
             ),
-            rx.text("No logs yet")
+            rx.text("No logs yet"),
         ),
         spacing="4",
         align="center",
@@ -104,15 +106,17 @@ Mixins can also include backend variables (prefixed with `_`) that are not sent 
 ```python demo exec
 class DatabaseMixin(rx.State, mixin=True):
     _db_connection: dict = {}  # Backend only
-    user_count: int = 0        # Sent to client
+    user_count: int = 0  # Sent to client
 
     @rx.event
     def fetch_user_count(self):
         # Simulate database query
         self.user_count = len(self._db_connection.get("users", []))
 
+
 class AppState(DatabaseMixin, rx.State):
     app_title: str = "User Management"
+
 
 def database_example():
     return rx.vstack(
@@ -142,6 +146,7 @@ class FormattingMixin(rx.State, mixin=True):
     def is_positive(self) -> bool:
         return self.value > 0
 
+
 class PriceState(FormattingMixin, rx.State):
     product_name: str = "Widget"
 
@@ -151,6 +156,7 @@ class PriceState(FormattingMixin, rx.State):
             self.value = float(price)
         except ValueError:
             self.value = 0.0
+
 
 def formatting_example():
     return rx.vstack(
@@ -174,6 +180,7 @@ Mixins can inherit from other mixins to create hierarchical functionality:
 class BaseMixin(rx.State, mixin=True):
     base_value: str = "base"
 
+
 class ExtendedMixin(BaseMixin, mixin=True):
     extended_value: str = "extended"
 
@@ -181,8 +188,10 @@ class ExtendedMixin(BaseMixin, mixin=True):
     def combined_value(self) -> str:
         return f"{self.base_value}-{self.extended_value}"
 
+
 class FinalState(ExtendedMixin, rx.State):
     final_value: str = "final"
+
 
 def nested_mixin_example():
     return rx.vstack(
@@ -255,6 +264,7 @@ class ValidationMixin(rx.State, mixin=True):
     def clear_errors(self):
         self.errors = {}
 
+
 class ContactFormState(ValidationMixin, rx.State):
     name: str = ""
     email: str = ""
@@ -283,6 +293,7 @@ class ContactFormState(ValidationMixin, rx.State):
             self.name = ""
             self.email = ""
             self.message = ""
+
 
 def validation_example():
     return rx.vstack(

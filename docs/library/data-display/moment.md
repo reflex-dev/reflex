@@ -26,6 +26,7 @@ be reflected in the subsequent examples.
 ```python demo exec
 from datetime import datetime, timezone
 
+
 class MomentState(rx.State):
     date_now: datetime = datetime.now(timezone.utc)
 
@@ -35,7 +36,9 @@ class MomentState(rx.State):
 
 
 def moment_update_example():
-    return rx.button("Update", rx.moment(MomentState.date_now), on_click=MomentState.update)
+    return rx.button(
+        "Update", rx.moment(MomentState.date_now), on_click=MomentState.update
+    )
 ```
 
 ### Display the date as-is:
@@ -59,7 +62,9 @@ rx.moment(MomentState.date_now, to_now=True)
 You can also set a duration (in milliseconds) with `from_now_during` where the date will display as relative, then after that, it will be displayed as defined in `format`.
 
 ```python demo
-rx.moment(MomentState.date_now, from_now_during=100000)  # after 100 seconds, date will display normally
+rx.moment(
+    MomentState.date_now, from_now_during=100000
+)  # after 100 seconds, date will display normally
 ```
 
 ### Formatting dates
@@ -80,14 +85,44 @@ With the props `add` and `subtract`, you can pass an `rx.MomentDelta` object to 
 
 ```python demo
 rx.vstack(
-    rx.moment(MomentState.date_now, add=rx.MomentDelta(years=2), format="YYYY-MM-DD - HH:mm:ss"),
-    rx.moment(MomentState.date_now, add=rx.MomentDelta(quarters=2), format="YYYY-MM-DD - HH:mm:ss"),
-    rx.moment(MomentState.date_now, add=rx.MomentDelta(months=2), format="YYYY-MM-DD - HH:mm:ss"),
-    rx.moment(MomentState.date_now, add=rx.MomentDelta(weeks=2), format="YYYY-MM-DD - HH:mm:ss"),
-    rx.moment(MomentState.date_now, add=rx.MomentDelta(days=2), format="YYYY-MM-DD - HH:mm:ss"),
-    rx.moment(MomentState.date_now, add=rx.MomentDelta(hours=2), format="YYYY-MM-DD - HH:mm:ss"),
-    rx.moment(MomentState.date_now, add=rx.MomentDelta(minutes=2), format="YYYY-MM-DD - HH:mm:ss"),
-    rx.moment(MomentState.date_now, add=rx.MomentDelta(seconds=2), format="YYYY-MM-DD - HH:mm:ss"),
+    rx.moment(
+        MomentState.date_now,
+        add=rx.MomentDelta(years=2),
+        format="YYYY-MM-DD - HH:mm:ss",
+    ),
+    rx.moment(
+        MomentState.date_now,
+        add=rx.MomentDelta(quarters=2),
+        format="YYYY-MM-DD - HH:mm:ss",
+    ),
+    rx.moment(
+        MomentState.date_now,
+        add=rx.MomentDelta(months=2),
+        format="YYYY-MM-DD - HH:mm:ss",
+    ),
+    rx.moment(
+        MomentState.date_now,
+        add=rx.MomentDelta(weeks=2),
+        format="YYYY-MM-DD - HH:mm:ss",
+    ),
+    rx.moment(
+        MomentState.date_now, add=rx.MomentDelta(days=2), format="YYYY-MM-DD - HH:mm:ss"
+    ),
+    rx.moment(
+        MomentState.date_now,
+        add=rx.MomentDelta(hours=2),
+        format="YYYY-MM-DD - HH:mm:ss",
+    ),
+    rx.moment(
+        MomentState.date_now,
+        add=rx.MomentDelta(minutes=2),
+        format="YYYY-MM-DD - HH:mm:ss",
+    ),
+    rx.moment(
+        MomentState.date_now,
+        add=rx.MomentDelta(seconds=2),
+        format="YYYY-MM-DD - HH:mm:ss",
+    ),
 )
 ```
 
@@ -95,14 +130,46 @@ rx.vstack(
 
 ```python demo
 rx.vstack(
-    rx.moment(MomentState.date_now, subtract=rx.MomentDelta(years=2), format="YYYY-MM-DD - HH:mm:ss"),
-    rx.moment(MomentState.date_now, subtract=rx.MomentDelta(quarters=2), format="YYYY-MM-DD - HH:mm:ss"),
-    rx.moment(MomentState.date_now, subtract=rx.MomentDelta(months=2), format="YYYY-MM-DD - HH:mm:ss"),
-    rx.moment(MomentState.date_now, subtract=rx.MomentDelta(weeks=2), format="YYYY-MM-DD - HH:mm:ss"),
-    rx.moment(MomentState.date_now, subtract=rx.MomentDelta(days=2), format="YYYY-MM-DD - HH:mm:ss"),
-    rx.moment(MomentState.date_now, subtract=rx.MomentDelta(hours=2), format="YYYY-MM-DD - HH:mm:ss"),
-    rx.moment(MomentState.date_now, subtract=rx.MomentDelta(minutes=2), format="YYYY-MM-DD - HH:mm:ss"),
-    rx.moment(MomentState.date_now, subtract=rx.MomentDelta(seconds=2), format="YYYY-MM-DD - HH:mm:ss"),
+    rx.moment(
+        MomentState.date_now,
+        subtract=rx.MomentDelta(years=2),
+        format="YYYY-MM-DD - HH:mm:ss",
+    ),
+    rx.moment(
+        MomentState.date_now,
+        subtract=rx.MomentDelta(quarters=2),
+        format="YYYY-MM-DD - HH:mm:ss",
+    ),
+    rx.moment(
+        MomentState.date_now,
+        subtract=rx.MomentDelta(months=2),
+        format="YYYY-MM-DD - HH:mm:ss",
+    ),
+    rx.moment(
+        MomentState.date_now,
+        subtract=rx.MomentDelta(weeks=2),
+        format="YYYY-MM-DD - HH:mm:ss",
+    ),
+    rx.moment(
+        MomentState.date_now,
+        subtract=rx.MomentDelta(days=2),
+        format="YYYY-MM-DD - HH:mm:ss",
+    ),
+    rx.moment(
+        MomentState.date_now,
+        subtract=rx.MomentDelta(hours=2),
+        format="YYYY-MM-DD - HH:mm:ss",
+    ),
+    rx.moment(
+        MomentState.date_now,
+        subtract=rx.MomentDelta(minutes=2),
+        format="YYYY-MM-DD - HH:mm:ss",
+    ),
+    rx.moment(
+        MomentState.date_now,
+        subtract=rx.MomentDelta(seconds=2),
+        format="YYYY-MM-DD - HH:mm:ss",
+    ),
 )
 ```
 
@@ -141,6 +208,7 @@ class MomentLiveState(rx.State):
     @rx.event
     def set_updating(self, value: bool):
         self.updating = value
+
 
 def moment_live_example():
     return rx.hstack(

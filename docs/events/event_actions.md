@@ -27,7 +27,9 @@ specifying `rx.prevent_default` as an event handler.
 A common use case for this is to prevent navigation when clicking a link.
 
 ```python demo
-rx.link("This Link Does Nothing", href="https://reflex.dev/", on_click=rx.prevent_default)
+rx.link(
+    "This Link Does Nothing", href="https://reflex.dev/", on_click=rx.prevent_default
+)
 ```
 
 ```python demo exec
@@ -37,6 +39,7 @@ class LinkPreventDefaultState(rx.State):
     @rx.event
     def toggle_status(self):
         self.status = not self.status
+
 
 def prevent_default_example():
     return rx.vstack(
@@ -73,6 +76,7 @@ class StopPropagationState(rx.State):
     def handle_reset(self):
         self.where_clicked = []
 
+
 def stop_propagation_example():
     return rx.vstack(
         rx.button(
@@ -90,7 +94,7 @@ def stop_propagation_example():
         ),
         padding="2em",
         border=f"1px dashed {rx.color('accent', 5)}",
-        on_click=StopPropagationState.handle_click("outer")
+        on_click=StopPropagationState.handle_click("outer"),
     )
 ```
 
@@ -126,6 +130,7 @@ class ThrottleState(rx.State):
     def handle_scroll(self):
         self.last_scroll = datetime.datetime.now(datetime.timezone.utc)
 
+
 def scroll_box():
     return rx.scroll_area(
         rx.heading("Scroll Me"),
@@ -135,6 +140,7 @@ def scroll_box():
         border=f"1px solid {rx.color('accent', 5)}",
         on_scroll=ThrottleState.handle_scroll.throttle(500),
     )
+
 
 def throttle_example():
     return (
@@ -192,6 +198,7 @@ def debounced_slider():
         width="100%",
     )
 
+
 def debounce_example():
     return rx.vstack(
         debounced_slider(),
@@ -238,6 +245,7 @@ class TemporalState(rx.State):
     @rx.event
     def update_time(self):
         self.current_time = datetime.datetime.now().strftime("%H:%M:%S")
+
 
 def temporal_example():
     return rx.vstack(

@@ -1,1 +1,1 @@
-"""Getting started docs."""
+"""Getting started documentation examples."""

@@ -69,6 +69,7 @@ class TopBannerBasic(rx.ComponentState):
             ),
         )
 
+
 top_banner_basic = TopBannerBasic.create
 ```
 
@@ -86,33 +87,33 @@ class TopBannerSignup(rx.ComponentState):
     def get_component(cls, **props):
         return rx.cond(
             ~cls.hide,
+            rx.flex(
+                rx.image(
+                    src="https://web.reflex-assets.dev/other/logo.jpg",
+                    width="2em",
+                    height="auto",
+                    border_radius="25%",
+                ),
+                rx.text(
+                    "Web apps in pure Python. Deploy with a single command.",
+                    weight="medium",
+                ),
                 rx.flex(
-                    rx.image(
-                        src="https://web.reflex-assets.dev/other/logo.jpg",
-                        width="2em",
-                        height="auto",
-                        border_radius="25%",
+                    rx.button(
+                        "Sign up",
+                        cursor="pointer",
+                        radius="large",
                     ),
-                    rx.text(
-                        "Web apps in pure Python. Deploy with a single command.",
-                        weight="medium",
+                    rx.icon(
+                        "x",
+                        cursor="pointer",
+                        justify="end",
+                        flex_shrink=0,
+                        on_click=cls.toggle,
                     ),
-                    rx.flex(
-                        rx.button(
-                            "Sign up",
-                            cursor="pointer",
-                            radius="large",
-                        ),
-                        rx.icon(
-                            "x",
-                            cursor="pointer",
-                            justify="end",
-                            flex_shrink=0,
-                            on_click=cls.toggle,
-                        ),
-                        spacing="4",
-                        align="center",
-                    ),
+                    spacing="4",
+                    align="center",
+                ),
                 wrap="nowrap",
                 # position="fixed",
                 flex_direction=["column", "column", "row"],
@@ -135,6 +136,7 @@ class TopBannerSignup(rx.ComponentState):
             ),
         )
 
+
 top_banner_signup = TopBannerSignup.create
 ```
 
@@ -152,27 +154,27 @@ class TopBannerGradient(rx.ComponentState):
     def get_component(cls, **props):
         return rx.cond(
             ~cls.hide,
-                rx.flex(
-                    rx.text(
-                        "The new Reflex version is now available! ",
-                        rx.link(
-                            "Read the release notes",
-                            href="#",
-                            underline="always",
-                            display="inline",
-                            underline_offset="2px",
-                        ),
-                        align_items=["start", "center"],
-                        margin="auto",
-                        spacing="3",
-                        weight="medium",
+            rx.flex(
+                rx.text(
+                    "The new Reflex version is now available! ",
+                    rx.link(
+                        "Read the release notes",
+                        href="#",
+                        underline="always",
+                        display="inline",
+                        underline_offset="2px",
                     ),
-                    rx.icon(
-                        "x",
-                        cursor="pointer",
-                        justify="end",
-                        flex_shrink=0,
-                        on_click=cls.toggle,
+                    align_items=["start", "center"],
+                    margin="auto",
+                    spacing="3",
+                    weight="medium",
+                ),
+                rx.icon(
+                    "x",
+                    cursor="pointer",
+                    justify="end",
+                    flex_shrink=0,
+                    on_click=cls.toggle,
                 ),
                 wrap="nowrap",
                 # position="fixed",
@@ -193,6 +195,7 @@ class TopBannerGradient(rx.ComponentState):
                 on_click=cls.toggle,
             ),
         )
+
 
 top_banner_gradient = TopBannerGradient.create
 ```
@@ -265,6 +268,7 @@ class TopBannerNewsletter(rx.ComponentState):
                 on_click=cls.toggle,
             ),
         )
+
 
 top_banner_newsletter = TopBannerNewsletter.create
 ```

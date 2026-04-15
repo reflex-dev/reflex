@@ -1,6 +1,5 @@
 ```python exec
 import reflex as rx
-
 ```
 
 # Rendering Iterables
@@ -26,7 +25,6 @@ def dynamic_buttons():
     return rx.vstack(
         rx.foreach(IterState.color, colored_box),
     )
-
 ```
 
 Here's the same example using a lambda function.
@@ -43,7 +41,9 @@ You can also use lambda functions directly with components without defining a se
 ```python
 def dynamic_buttons():
     return rx.vstack(
-        rx.foreach(IterState.color, lambda color: rx.button(color, background_color=color)),
+        rx.foreach(
+            IterState.color, lambda color: rx.button(color, background_color=color)
+        ),
     )
 ```
 
@@ -67,6 +67,8 @@ The above example could have been written using a regular Python `for` loop, sin
 
 ```python demo exec
 colors = ["red", "green", "blue"]
+
+
 def dynamic_buttons_for():
     return rx.vstack(
         [colored_box(color) for color in colors],
@@ -86,6 +88,7 @@ class DynamicIterState(rx.State):
     def add_color(self, form_data):
         self.color.append(form_data["color"])
 
+
 def dynamic_buttons_foreach():
     return rx.vstack(
         rx.foreach(DynamicIterState.color, colored_box),
@@ -93,7 +96,7 @@ def dynamic_buttons_foreach():
             rx.input(name="color", placeholder="Add a color"),
             rx.button("Add"),
             on_submit=DynamicIterState.add_color,
-        )
+        ),
     )
 ```
 
@@ -109,14 +112,15 @@ class IterState2(rx.State):
         "blue",
     ]
 
+
 def colored_box(color: rx.Var[str]):
     return rx.button(color, background_color=color)
+
 
 def dynamic_buttons2():
     return rx.vstack(
         rx.foreach(IterState2.color, colored_box),
     )
-
 ```
 
 Notice that the type annotation for the `color` parameter in the `colored_box` function is `rx.Var[str]` (rather than just `str`). This is because the `rx.foreach` function passes the item as a `Var` object, which is a wrapper around the actual value. This is what allows us to compile the frontend without knowing the actual value of the state var (which is only known at runtime).
@@ -140,12 +144,10 @@ def create_button(color: rx.Var[str], index: int):
         padding_y="0.5em",
     )
 
+
 def enumerate_foreach():
     return rx.vstack(
-        rx.foreach(
-            IterIndexState.color,
-            create_button
-        ),
+        rx.foreach(IterIndexState.color, create_button),
     )
 ```
 
@@ -155,8 +157,7 @@ Here's the same example using a lambda function.
 def enumerate_foreach():
     return rx.vstack(
         rx.foreach(
-            IterIndexState.color,
-            lambda color, index: create_button(color, index)
+            IterIndexState.color, lambda color, index: create_button(color, index)
         ),
     )
 ```
@@ -187,7 +188,6 @@ def dict_foreach():
         ),
         columns="3",
     )
-
 ```
 
 ```md alert warning
@@ -204,22 +204,28 @@ It is essential to provide the correct full type annotation for the dictionary i
 class NestedStateFE(rx.State):
     projects: list[dict[str, list]] = [
         {
-            "technologies": ["Next.js", "Prisma", "Tailwind", "Google Cloud", "Docker", "MySQL"]
+            "technologies": [
+                "Next.js",
+                "Prisma",
+                "Tailwind",
+                "Google Cloud",
+                "Docker",
+                "MySQL",
+            ]
         },
-        {
-            "technologies": ["Python", "Flask", "Google Cloud", "Docker"]
-        }
+        {"technologies": ["Python", "Flask", "Google Cloud", "Docker"]},
     ]
+
 
 def get_badge(technology: rx.Var[str]) -> rx.Component:
     return rx.badge(technology, variant="soft", color_scheme="green")
 
+
 def project_item(project: rx.Var[dict[str, list]]) -> rx.Component:
     return rx.box(
-        rx.hstack(
-            rx.foreach(project["technologies"], get_badge)
-        ),
+        rx.hstack(rx.foreach(project["technologies"], get_badge)),
     )
+
 
 def projects_example() -> rx.Component:
     return rx.box(rx.foreach(NestedStateFE.projects, project_item))
@@ -244,9 +250,7 @@ def display_colors(color: rx.Var[tuple[str, list[str]]]):
         rx.hstack(
             rx.foreach(
                 color[1],
-                lambda x: rx.box(
-                    rx.text(x, color="black"), bg=x
-                ),
+                lambda x: rx.box(rx.text(x, color="black"), bg=x),
             )
         ),
     )
@@ -260,7 +264,6 @@ def nested_dict_foreach():
         ),
         columns="3",
     )
-
 ```
 
 ## Foreach with Cond
@@ -272,30 +275,32 @@ In this example we define the function `render_item`. This function takes in an 
 ```python demo exec
 import dataclasses
 
+
 @dataclasses.dataclass
 class ToDoListItem:
     item_name: str
     is_packed: bool
+
 
 class ForeachCondState(rx.State):
     to_do_list: list[ToDoListItem] = [
         ToDoListItem(item_name="Space suit", is_packed=True),
         ToDoListItem(item_name="Helmet", is_packed=True),
         ToDoListItem(item_name="Back Pack", is_packed=False),
-        ]
+    ]
 
 
 def render_item(item: rx.Var[ToDoListItem]):
     return rx.cond(
         item.is_packed,
-        rx.list.item(item.item_name + ' ✔'),
+        rx.list.item(item.item_name + " ✔"),
         rx.list.item(item.item_name),
     )
+
 
 def packing_list():
     return rx.vstack(
         rx.text("Sammy's Packing List"),
         rx.list(rx.foreach(ForeachCondState.to_do_list, render_item)),
     )
-
 ```

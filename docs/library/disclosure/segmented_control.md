@@ -7,6 +7,7 @@ components:
 ```python exec
 import reflex as rx
 
+
 class SegmentedState(rx.State):
     """The app state."""
 
@@ -15,8 +16,6 @@ class SegmentedState(rx.State):
     @rx.event
     def set_control(self, value: str | list[str]):
         self.control = value
-
-
 ```
 
 # Segmented Control

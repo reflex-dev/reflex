@@ -1,7 +1,7 @@
 """The colors used in Reflex are a wrapper around https://www.radix-ui.com/colors."""
 
-from reflex_core.constants.base import REFLEX_VAR_OPENING_TAG
-from reflex_core.constants.colors import (
+from reflex_base.constants.base import REFLEX_VAR_OPENING_TAG
+from reflex_base.constants.colors import (
     COLORS,
     MAX_SHADE_VALUE,
     MIN_SHADE_VALUE,
@@ -9,7 +9,7 @@ from reflex_core.constants.colors import (
     ColorType,
     ShadeType,
 )
-from reflex_core.vars.base import Var
+from reflex_base.vars.base import Var
 
 
 def color(

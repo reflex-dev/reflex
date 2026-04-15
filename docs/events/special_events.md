@@ -1,6 +1,5 @@
 ```python exec
 import reflex as rx
-
 ```
 
 # Special Events
@@ -14,6 +13,7 @@ class SpecialEventsState(rx.State):
     @rx.event
     def alert(self):
         return rx.window_alert("Hello World!")
+
 
 def special_events_example():
     return rx.button("Alert", on_click=SpecialEventsState.alert)

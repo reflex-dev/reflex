@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import dataclasses
 from collections.abc import Sequence
+from typing import ClassVar
 
-from reflex_core.vars.base import Var, VarData
-from reflex_core.vars.function import ArgsFunctionOperation, DestructuredArg
+from reflex_base.vars.base import Var, VarData
+from reflex_base.vars.function import ArgsFunctionOperation, DestructuredArg
 
 # Special vars used in the component map.
 _CHILDREN = Var(_js_expr="children", _var_type=str)
@@ -17,7 +18,7 @@ _PROPS_SPREAD = Var(_js_expr="...props")
 class MarkdownComponentMap:
     """Mixin class for handling custom component maps in Markdown components."""
 
-    _explicit_return: bool = dataclasses.field(default=False)
+    _explicit_return: ClassVar[bool] = False
 
     @classmethod
     def get_component_map_custom_code(cls) -> Var:

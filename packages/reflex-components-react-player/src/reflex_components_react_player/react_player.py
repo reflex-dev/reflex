@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from typing import Any, TypedDict
 
+from reflex_base.components.component import Component, field
+from reflex_base.event import EventHandler, no_args_event_spec
+from reflex_base.utils import console
+from reflex_base.vars.base import Var
+from reflex_base.vars.object import ObjectVar
 from reflex_components_core.core.cond import cond
-from reflex_core.components.component import Component, field
-from reflex_core.event import EventHandler, no_args_event_spec
-from reflex_core.utils import console
-from reflex_core.vars.base import Var
-from reflex_core.vars.object import ObjectVar
 
 ReactPlayerEvent = ObjectVar[dict[str, dict[str, dict[str, Any]]]]
 
@@ -236,8 +236,8 @@ class ReactPlayer(Component):
         """Create a component.
 
         Args:
-            children: The children of the component.
-            props: The props of the component.
+            *children: The children of the component.
+            **props: The props of the component.
 
         Returns:
             The created component.

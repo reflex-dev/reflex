@@ -16,13 +16,13 @@ Parameters
 ```python
 class CookieState(rx.State):
     c1: str = rx.Cookie()
-    c2: str = rx.Cookie('c2 default')
+    c2: str = rx.Cookie("c2 default")
 
     # cookies with custom settings
     c3: str = rx.Cookie(max_age=2)  # expires after 2 second
-    c4: str = rx.Cookie(same_site='strict')
-    c5: str = rx.Cookie(path='/foo/')  # only accessible on `/foo/`
-    c6: str = rx.Cookie(name='c6-custom-name')
+    c4: str = rx.Cookie(same_site="strict")
+    c5: str = rx.Cookie(path="/foo/")  # only accessible on `/foo/`
+    c6: str = rx.Cookie(name="c6-custom-name")
 ```
 
 ```md alert warning
@@ -61,9 +61,7 @@ Parameters:
 - `key`: The name of cookie to remove.
 
 ```python
-rx.button(
-    'Remove cookie', on_click=rx.remove_cookie('key')
-)
+rx.button("Remove cookie", on_click=rx.remove_cookie("key"))
 ```
 
 This event can also be returned from an event handler:
@@ -71,8 +69,9 @@ This event can also be returned from an event handler:
 ```python
 class CookieState(rx.State):
     ...
+
     def logout(self):
-        return rx.remove_cookie('auth_token')
+        return rx.remove_cookie("auth_token")
 ```
 
 ## rx.LocalStorage
@@ -115,8 +114,8 @@ Parameters
 
 ```python
 rx.button(
-    'Remove Local Storage',
-    on_click=rx.remove_local_storage('key'),
+    "Remove Local Storage",
+    on_click=rx.remove_local_storage("key"),
 )
 ```
 
@@ -125,8 +124,9 @@ This event can also be returned from an event handler:
 ```python
 class LocalStorageState(rx.State):
     ...
+
     def logout(self):
-        return rx.remove_local_storage('local_storage_state.l1')
+        return rx.remove_local_storage("local_storage_state.l1")
 ```
 
 ## rx.clear_local_storage()
@@ -137,7 +137,7 @@ storage.
 
 ```python
 rx.button(
-    'Clear all Local Storage',
+    "Clear all Local Storage",
     on_click=rx.clear_local_storage(),
 )
 ```
@@ -176,8 +176,8 @@ Parameters
 
 ```python
 rx.button(
-    'Remove Session Storage',
-    on_click=rx.remove_session_storage('key'),
+    "Remove Session Storage",
+    on_click=rx.remove_session_storage("key"),
 )
 ```
 
@@ -186,8 +186,9 @@ This event can also be returned from an event handler:
 ```python
 class SessionStorageState(rx.State):
     ...
+
     def logout(self):
-        return rx.remove_session_storage('session_storage_state.s1')
+        return rx.remove_session_storage("session_storage_state.s1")
 ```
 
 ## rx.clear_session_storage()
@@ -198,7 +199,7 @@ storage.
 
 ```python
 rx.button(
-    'Clear all Session Storage',
+    "Clear all Session Storage",
     on_click=rx.clear_session_storage(),
 )
 ```
@@ -213,7 +214,7 @@ import pydantic
 
 
 class AppSettings(pydantic.BaseModel):
-    theme: str = 'light'
+    theme: str = "light"
     sidebar_visible: bool = True
     update_frequency: int = 60
     error_messages: list[str] = pydantic.Field(default_factory=list)
@@ -283,6 +284,7 @@ def app_settings():
         ),
         on_submit=lambda _: ComplexLocalStorageState.save_settings(),
     )
+
 
 def app_settings_example():
     return rx.dialog.root(

@@ -3,11 +3,11 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
-from reflex_core.components.component import evaluate_style_namespaces
-from reflex_core.style import Style
-from reflex_core.utils.exceptions import ReflexError
-from reflex_core.vars import VarData
-from reflex_core.vars.base import LiteralVar, Var
+from reflex_base.components.component import evaluate_style_namespaces
+from reflex_base.style import Style
+from reflex_base.utils.exceptions import ReflexError
+from reflex_base.vars import VarData
+from reflex_base.vars.base import LiteralVar, Var
 
 import reflex as rx
 from reflex import style

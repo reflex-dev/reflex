@@ -30,6 +30,7 @@ class CountState(rx.State):
     def decrement(self):
         self.count -= 1
 
+
 def counter():
     return rx.flex(
         rx.button(

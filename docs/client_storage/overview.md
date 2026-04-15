@@ -36,10 +36,29 @@ class ClientStorageState(rx.State):
     def set_custom_cookie(self, value: str):
         self.custom_cookie = value
 
+
 def client_storage_example():
     return rx.vstack(
-        rx.hstack(rx.text("my_cookie"), rx.input(value=ClientStorageState.my_cookie, on_change=ClientStorageState.set_my_cookie)),
-        rx.hstack(rx.text("my_local_storage"), rx.input(value=ClientStorageState.my_local_storage, on_change=ClientStorageState.set_my_local_storage)),
-        rx.hstack(rx.text("custom_cookie"), rx.input(value=ClientStorageState.custom_cookie, on_change=ClientStorageState.set_custom_cookie)),
+        rx.hstack(
+            rx.text("my_cookie"),
+            rx.input(
+                value=ClientStorageState.my_cookie,
+                on_change=ClientStorageState.set_my_cookie,
+            ),
+        ),
+        rx.hstack(
+            rx.text("my_local_storage"),
+            rx.input(
+                value=ClientStorageState.my_local_storage,
+                on_change=ClientStorageState.set_my_local_storage,
+            ),
+        ),
+        rx.hstack(
+            rx.text("custom_cookie"),
+            rx.input(
+                value=ClientStorageState.custom_cookie,
+                on_change=ClientStorageState.set_custom_cookie,
+            ),
+        ),
     )
 ```

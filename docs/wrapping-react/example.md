@@ -15,6 +15,7 @@ Lets start by importing the library [reactflow](https://www.npmjs.com/package/re
 import reflex as rx
 from typing import Any, Dict, List, Union
 
+
 class ReactFlowLib(rx.Component):
     """A component that wraps a react flow lib."""
 
@@ -39,11 +40,11 @@ For this tutorial we will define `EventHandler` props `on_nodes_change` and `on_
 import reflex as rx
 from typing import Any, Dict, List, Union
 
-class ReactFlowLib(rx.Component):
-    ...
+
+class ReactFlowLib(rx.Component): ...
+
 
 class ReactFlow(ReactFlowLib):
-
     tag = "ReactFlow"
 
     nodes: rx.Var[List[Dict[str, Any]]]
@@ -69,14 +70,14 @@ Now lets add the `Background` and `Controls` components. We will also create the
 import reflex as rx
 from typing import Any, Dict, List, Union
 
-class ReactFlowLib(rx.Component):
-    ...
 
-class ReactFlow(ReactFlowLib):
-    ...
+class ReactFlowLib(rx.Component): ...
+
+
+class ReactFlow(ReactFlowLib): ...
+
 
 class Background(ReactFlowLib):
-
     tag = "Background"
 
     color: rx.Var[str]
@@ -87,9 +88,10 @@ class Background(ReactFlowLib):
 
     variant: rx.Var[str]
 
-class Controls(ReactFlowLib):
 
+class Controls(ReactFlowLib):
     tag = "Controls"
+
 
 react_flow = ReactFlow.create
 background = Background.create
@@ -242,6 +244,7 @@ from typing import Any, Dict, List, Union
 from collections import defaultdict
 import random
 
+
 class ReactFlowLib(rx.Component):
     """A component that wraps a react flow lib."""
 
@@ -251,8 +254,8 @@ class ReactFlowLib(rx.Component):
         return """import 'reactflow/dist/style.css';
         """
 
-class ReactFlow(ReactFlowLib):
 
+class ReactFlow(ReactFlowLib):
     tag = "ReactFlow"
 
     nodes: rx.Var[List[Dict[str, Any]]]
@@ -273,7 +276,6 @@ class ReactFlow(ReactFlowLib):
 
 
 class Background(ReactFlowLib):
-
     tag = "Background"
 
     color: rx.Var[str]
@@ -284,9 +286,10 @@ class Background(ReactFlowLib):
 
     variant: rx.Var[str]
 
-class Controls(ReactFlowLib):
 
+class Controls(ReactFlowLib):
     tag = "Controls"
+
 
 react_flow = ReactFlow.create
 background = Background.create
@@ -294,50 +297,51 @@ controls = Controls.create
 
 initial_nodes = [
     {
-        'id': '1',
-        'type': 'input',
-        'data': {'label': '150'},
-        'position': {'x': 250, 'y': 25},
+        "id": "1",
+        "type": "input",
+        "data": {"label": "150"},
+        "position": {"x": 250, "y": 25},
     },
     {
-        'id': '2',
-        'data': {'label': '25'},
-        'position': {'x': 100, 'y': 125},
+        "id": "2",
+        "data": {"label": "25"},
+        "position": {"x": 100, "y": 125},
     },
     {
-        'id': '3',
-        'type': 'output',
-        'data': {'label': '5'},
-        'position': {'x': 250, 'y': 250},
+        "id": "3",
+        "type": "output",
+        "data": {"label": "5"},
+        "position": {"x": 250, "y": 250},
     },
 ]
 
 initial_edges = [
-    {'id': 'e1-2', 'source': '1', 'target': '2', 'label': '*', 'animated': True},
-    {'id': 'e2-3', 'source': '2', 'target': '3', 'label': '+', 'animated': True},
+    {"id": "e1-2", "source": "1", "target": "2", "label": "*", "animated": True},
+    {"id": "e2-3", "source": "2", "target": "3", "label": "+", "animated": True},
 ]
 
 
 class ReactFlowState(rx.State):
     """The app state."""
+
     nodes: List[Dict[str, Any]] = initial_nodes
     edges: List[Dict[str, Any]] = initial_edges
 
     @rx.event
     def add_random_node(self):
-        new_node_id = f'{len(self.nodes) + 1}'
-        node_type = random.choice(['default'])
+        new_node_id = f"{len(self.nodes) + 1}"
+        node_type = random.choice(["default"])
         # Label is random number
         label = new_node_id
         x = random.randint(0, 250)
         y = random.randint(0, 250)
 
         new_node = {
-            'id': new_node_id,
-            'type': node_type,
-            'data': {'label': label},
-            'position': {'x': x, 'y': y},
-            'draggable': True,
+            "id": new_node_id,
+            "type": node_type,
+            "data": {"label": label},
+            "position": {"x": x, "y": y},
+            "draggable": True,
         }
         self.nodes.append(new_node)
 
@@ -386,23 +390,23 @@ Here is an example of the app running:
 
 ```python eval
 rx.vstack(
-        react_flow(
-            background(),
-            controls(),
-            nodes_draggable=True,
-            nodes_connectable=True,
-            on_connect=lambda e0: ReactFlowState.on_connect(e0),
-            on_nodes_change=lambda e0: ReactFlowState.on_nodes_change(e0),
-            nodes=ReactFlowState.nodes,
-            edges=ReactFlowState.edges,
-            fit_view=True,
-        ),
-        rx.hstack(
-            rx.button("Clear graph", on_click=ReactFlowState.clear_graph, width="50%"),
-            rx.button("Add node", on_click=ReactFlowState.add_random_node, width="50%"),
-            width="100%",
-        ),
-        height="30em",
+    react_flow(
+        background(),
+        controls(),
+        nodes_draggable=True,
+        nodes_connectable=True,
+        on_connect=lambda e0: ReactFlowState.on_connect(e0),
+        on_nodes_change=lambda e0: ReactFlowState.on_nodes_change(e0),
+        nodes=ReactFlowState.nodes,
+        edges=ReactFlowState.edges,
+        fit_view=True,
+    ),
+    rx.hstack(
+        rx.button("Clear graph", on_click=ReactFlowState.clear_graph, width="50%"),
+        rx.button("Add node", on_click=ReactFlowState.add_random_node, width="50%"),
         width="100%",
-    )
+    ),
+    height="30em",
+    width="100%",
+)
 ```

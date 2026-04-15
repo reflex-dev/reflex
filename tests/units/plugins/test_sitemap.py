@@ -3,7 +3,7 @@
 import datetime
 from unittest.mock import MagicMock, patch
 
-from reflex_core.plugins.sitemap import (
+from reflex_base.plugins.sitemap import (
     SitemapLink,
     generate_links_for_sitemap,
     generate_xml,
@@ -70,8 +70,8 @@ def test_generate_xml_multiple_links_all_fields():
     assert xml_output == expected
 
 
-@patch("reflex_core.config.get_config")
-@patch("reflex_core.utils.console.warn")
+@patch("reflex_base.config.get_config")
+@patch("reflex_base.utils.console.warn")
 def test_generate_links_for_sitemap_static_routes(
     mock_warn: MagicMock, mock_get_config: MagicMock
 ):
@@ -118,7 +118,7 @@ def test_generate_links_for_sitemap_static_routes(
             context={"sitemap": {"priority": 0.7, "changefreq": "monthly"}},
         ),
     ]
-    links = generate_links_for_sitemap(pages)
+    links = generate_links_for_sitemap(pages, trailing_slash="preserve")
     assert len(links) == 3
     assert {"loc": "https://example.com/"} in links
     assert {"loc": "https://example.com/about"} in links
@@ -130,8 +130,8 @@ def test_generate_links_for_sitemap_static_routes(
     mock_warn.assert_not_called()
 
 
-@patch("reflex_core.config.get_config")
-@patch("reflex_core.utils.console.warn")
+@patch("reflex_base.config.get_config")
+@patch("reflex_base.utils.console.warn")
 def test_generate_links_for_sitemap_dynamic_routes(
     mock_warn: MagicMock, mock_get_config: MagicMock
 ):
@@ -185,7 +185,7 @@ def test_generate_links_for_sitemap_dynamic_routes(
             context={"sitemap": {"changefreq": "yearly"}},
         ),  # Has sitemap config but no loc
     ]
-    links = generate_links_for_sitemap(pages)
+    links = generate_links_for_sitemap(pages, trailing_slash="preserve")
     assert len(links) == 1
     expected_link = {
         "loc": "https://sub.example.org/custom-blog-path",
@@ -199,8 +199,8 @@ def test_generate_links_for_sitemap_dynamic_routes(
     )
 
 
-@patch("reflex_core.config.get_config")
-@patch("reflex_core.utils.console.warn")
+@patch("reflex_base.config.get_config")
+@patch("reflex_base.utils.console.warn")
 def test_generate_links_for_sitemap_404_route(
     mock_warn: MagicMock, mock_get_config: MagicMock
 ):
@@ -237,7 +237,7 @@ def test_generate_links_for_sitemap_404_route(
             context={"sitemap": {"priority": 0.2}},
         ),  # Has sitemap config but no loc
     ]
-    links = generate_links_for_sitemap(pages)
+    links = generate_links_for_sitemap(pages, trailing_slash="preserve")
     assert len(links) == 1
     assert {"loc": "/custom-404", "priority": 0.1} in links
     mock_warn.assert_called_once_with(
@@ -245,7 +245,7 @@ def test_generate_links_for_sitemap_404_route(
     )
 
 
-@patch("reflex_core.config.get_config")
+@patch("reflex_base.config.get_config")
 def test_generate_links_for_sitemap_opt_out(mock_get_config: MagicMock):
     """Test generate_links_for_sitemap with sitemap set to None.
 
@@ -279,12 +279,12 @@ def test_generate_links_for_sitemap_opt_out(mock_get_config: MagicMock):
             context={},
         ),
     ]
-    links = generate_links_for_sitemap(pages)
+    links = generate_links_for_sitemap(pages, trailing_slash="preserve")
     assert len(links) == 1
     assert {"loc": "/listed"} in links
 
 
-@patch("reflex_core.config.get_config")
+@patch("reflex_base.config.get_config")
 def test_generate_links_for_sitemap_loc_override(mock_get_config: MagicMock):
     """Test generate_links_for_sitemap with loc override in sitemap config.
 
@@ -318,13 +318,13 @@ def test_generate_links_for_sitemap_loc_override(mock_get_config: MagicMock):
             context={"sitemap": {"loc": "/custom_pricing"}},
         ),
     ]
-    links = generate_links_for_sitemap(pages)
+    links = generate_links_for_sitemap(pages, trailing_slash="preserve")
     assert len(links) == 2
     assert {"loc": "https://override.com/features_page"} in links
     assert {"loc": "http://localhost:3000/custom_pricing"} in links
 
 
-@patch("reflex_core.config.get_config")
+@patch("reflex_base.config.get_config")
 def test_generate_links_for_sitemap_priority_clamping(mock_get_config: MagicMock):
     """Test that priority is clamped between 0.0 and 1.0.
 
@@ -368,7 +368,7 @@ def test_generate_links_for_sitemap_priority_clamping(mock_get_config: MagicMock
             context={"sitemap": {"priority": 0.5}},
         ),
     ]
-    links = generate_links_for_sitemap(pages)
+    links = generate_links_for_sitemap(pages, trailing_slash="preserve")
     expected_links = [
         {"loc": "https://example.com/high_prio", "priority": 1.0},
         {"loc": "https://example.com/low_prio", "priority": 0.0},
@@ -378,7 +378,7 @@ def test_generate_links_for_sitemap_priority_clamping(mock_get_config: MagicMock
         assert expected_link in links
 
 
-@patch("reflex_core.config.get_config")
+@patch("reflex_base.config.get_config")
 def test_generate_links_for_sitemap_no_deploy_url(mock_get_config: MagicMock):
     """Test generate_links_for_sitemap when deploy_url is not set.
 
@@ -422,14 +422,14 @@ def test_generate_links_for_sitemap_no_deploy_url(mock_get_config: MagicMock):
             context={},
         ),  # Special case for index
     ]
-    links = generate_links_for_sitemap(pages)
+    links = generate_links_for_sitemap(pages, trailing_slash="preserve")
     assert len(links) == 3
     expected_links = [{"loc": "/home"}, {"loc": "/about"}, {"loc": "/"}]
     for expected_link in expected_links:
         assert expected_link in links
 
 
-@patch("reflex_core.config.get_config")
+@patch("reflex_base.config.get_config")
 def test_generate_links_for_sitemap_deploy_url_trailing_slash(
     mock_get_config: MagicMock,
 ):
@@ -455,12 +455,12 @@ def test_generate_links_for_sitemap_deploy_url_trailing_slash(
             context={},
         ),
     ]
-    links = generate_links_for_sitemap(pages)
+    links = generate_links_for_sitemap(pages, trailing_slash="preserve")
     assert len(links) == 1
     assert {"loc": "https://example.com/testpage"} in links
 
 
-@patch("reflex_core.config.get_config")
+@patch("reflex_base.config.get_config")
 def test_generate_links_for_sitemap_loc_leading_slash(mock_get_config: MagicMock):
     """Test generate_links_for_sitemap with loc having a leading slash.
 
@@ -484,12 +484,12 @@ def test_generate_links_for_sitemap_loc_leading_slash(mock_get_config: MagicMock
             context={"sitemap": {"loc": "/another"}},
         ),
     ]
-    links = generate_links_for_sitemap(pages)
+    links = generate_links_for_sitemap(pages, trailing_slash="preserve")
     assert len(links) == 1
     assert {"loc": "https://example.com/another"} in links
 
 
-@patch("reflex_core.config.get_config")
+@patch("reflex_base.config.get_config")
 def test_generate_links_for_sitemap_loc_full_url(mock_get_config: MagicMock):
     """Test generate_links_for_sitemap with loc being a full URL.
 
@@ -513,6 +513,194 @@ def test_generate_links_for_sitemap_loc_full_url(mock_get_config: MagicMock):
             context={"sitemap": {"loc": "http://othersite.com/page"}},
         ),
     ]
-    links = generate_links_for_sitemap(pages)
+    links = generate_links_for_sitemap(pages, trailing_slash="preserve")
     assert len(links) == 1
     assert {"loc": "http://othersite.com/page"} in links
+
+
+@patch("reflex_base.config.get_config")
+def test_generate_links_trailing_slash_always(mock_get_config: MagicMock):
+    """Test that trailing_slash='always' appends a slash to all URLs.
+
+    Args:
+        mock_get_config: Mock for the get_config function.
+    """
+    mock_get_config.return_value.deploy_url = "https://example.com"
+
+    def mock_component():
+        return rx.text("Test")
+
+    pages = [
+        UnevaluatedPage(
+            component=mock_component,
+            route="index",
+            title=None,
+            description=None,
+            image="favicon.ico",
+            on_load=None,
+            meta=[],
+            context={},
+        ),
+        UnevaluatedPage(
+            component=mock_component,
+            route="about",
+            title=None,
+            description=None,
+            image="favicon.ico",
+            on_load=None,
+            meta=[],
+            context={},
+        ),
+        UnevaluatedPage(
+            component=mock_component,
+            route="contact",
+            title=None,
+            description=None,
+            image="favicon.ico",
+            on_load=None,
+            meta=[],
+            context={"sitemap": {"loc": "https://override.com/contact"}},
+        ),
+    ]
+    links = generate_links_for_sitemap(pages, trailing_slash="always")
+    assert len(links) == 3
+    assert {"loc": "https://example.com/"} in links
+    assert {"loc": "https://example.com/about/"} in links
+    assert {"loc": "https://override.com/contact/"} in links
+
+
+@patch("reflex_base.config.get_config")
+def test_generate_links_trailing_slash_never(mock_get_config: MagicMock):
+    """Test that trailing_slash='never' strips trailing slashes from all URLs.
+
+    Args:
+        mock_get_config: Mock for the get_config function.
+    """
+    mock_get_config.return_value.deploy_url = "https://example.com"
+
+    def mock_component():
+        return rx.text("Test")
+
+    pages = [
+        UnevaluatedPage(
+            component=mock_component,
+            route="index",
+            title=None,
+            description=None,
+            image="favicon.ico",
+            on_load=None,
+            meta=[],
+            context={},
+        ),
+        UnevaluatedPage(
+            component=mock_component,
+            route="about",
+            title=None,
+            description=None,
+            image="favicon.ico",
+            on_load=None,
+            meta=[],
+            context={},
+        ),
+        UnevaluatedPage(
+            component=mock_component,
+            route="docs",
+            title=None,
+            description=None,
+            image="favicon.ico",
+            on_load=None,
+            meta=[],
+            context={"sitemap": {"loc": "https://override.com/docs/"}},
+        ),
+    ]
+    links = generate_links_for_sitemap(pages, trailing_slash="never")
+    assert len(links) == 3
+    # index route becomes "/" which stripped is "" — but rstrip("/") on "https://example.com/" strips the path slash
+    assert {"loc": "https://example.com"} in links
+    assert {"loc": "https://example.com/about"} in links
+    assert {"loc": "https://override.com/docs"} in links
+
+
+@patch("reflex_base.config.get_config")
+def test_generate_links_trailing_slash_never_no_deploy_url_index(
+    mock_get_config: MagicMock,
+):
+    """Test that trailing_slash='never' with no deploy_url preserves '/' for index.
+
+    Args:
+        mock_get_config: Mock for the get_config function.
+    """
+    mock_get_config.return_value.deploy_url = None
+
+    def mock_component():
+        return rx.text("Test")
+
+    pages = [
+        UnevaluatedPage(
+            component=mock_component,
+            route="index",
+            title=None,
+            description=None,
+            image="favicon.ico",
+            on_load=None,
+            meta=[],
+            context={},
+        ),
+        UnevaluatedPage(
+            component=mock_component,
+            route="about",
+            title=None,
+            description=None,
+            image="favicon.ico",
+            on_load=None,
+            meta=[],
+            context={},
+        ),
+    ]
+    links = generate_links_for_sitemap(pages, trailing_slash="never")
+    assert len(links) == 2
+    # "/" should not become "" — it should be preserved as "/"
+    assert {"loc": "/"} in links
+    assert {"loc": "/about"} in links
+
+
+@patch("reflex_base.config.get_config")
+def test_generate_links_trailing_slash_preserve(mock_get_config: MagicMock):
+    """Test that trailing_slash='preserve' does not modify URLs.
+
+    Args:
+        mock_get_config: Mock for the get_config function.
+    """
+    mock_get_config.return_value.deploy_url = "https://example.com"
+
+    def mock_component():
+        return rx.text("Test")
+
+    pages = [
+        UnevaluatedPage(
+            component=mock_component,
+            route="about",
+            title=None,
+            description=None,
+            image="favicon.ico",
+            on_load=None,
+            meta=[],
+            context={},
+        ),
+        UnevaluatedPage(
+            component=mock_component,
+            route="docs",
+            title=None,
+            description=None,
+            image="favicon.ico",
+            on_load=None,
+            meta=[],
+            context={"sitemap": {"loc": "/docs/"}},
+        ),
+    ]
+    links = generate_links_for_sitemap(pages, trailing_slash="preserve")
+    assert len(links) == 2
+    # No slash added to about
+    assert {"loc": "https://example.com/about"} in links
+    # Existing trailing slash preserved on docs
+    assert {"loc": "https://example.com/docs/"} in links

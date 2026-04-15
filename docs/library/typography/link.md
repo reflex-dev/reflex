@@ -18,7 +18,10 @@ rx.link("Reflex Home Page.", href="https://reflex.dev/")
 You can also provide local links to other pages in your project without writing the full url.
 
 ```python demo
-rx.link("Example", href="/docs/library",)
+rx.link(
+    "Example",
+    href="/docs/library",
+)
 ```
 
 The `link` component can be used to wrap other components to make them link to other pages.
@@ -88,17 +91,23 @@ Use the `trim` prop to trim the leading space at the start, end, or both sides o
 
 ```python demo
 rx.flex(
-    rx.link("Without Trim",
+    rx.link(
+        "Without Trim",
         trim="normal",
-        style={"background": "var(--gray-a2)",
-                "border_top": "1px dashed var(--gray-a7)",
-                "border_bottom": "1px dashed var(--gray-a7)",}
+        style={
+            "background": "var(--gray-a2)",
+            "border_top": "1px dashed var(--gray-a7)",
+            "border_bottom": "1px dashed var(--gray-a7)",
+        },
     ),
-    rx.link("With Trim",
+    rx.link(
+        "With Trim",
         trim="both",
-        style={"background": "var(--gray-a2)",
-                "border_top": "1px dashed var(--gray-a7)",
-                "border_bottom": "1px dashed var(--gray-a7)",}
+        style={
+            "background": "var(--gray-a2)",
+            "border_top": "1px dashed var(--gray-a7)",
+            "border_bottom": "1px dashed var(--gray-a7)",
+        },
     ),
     direction="column",
     spacing="3",

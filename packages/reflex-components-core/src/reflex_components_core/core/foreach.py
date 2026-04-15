@@ -8,13 +8,13 @@ from collections.abc import Callable, Iterable
 from hashlib import md5
 from typing import Any
 
-from reflex_core.components.component import Component, field
-from reflex_core.components.tags import IterTag
-from reflex_core.constants import MemoizationMode
-from reflex_core.constants.state import FIELD_MARKER
-from reflex_core.utils import types
-from reflex_core.utils.exceptions import UntypedVarError
-from reflex_core.vars.base import LiteralVar, Var
+from reflex_base.components.component import Component, field
+from reflex_base.components.tags import IterTag
+from reflex_base.constants import MemoizationMode
+from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.utils import types
+from reflex_base.utils.exceptions import UntypedVarError
+from reflex_base.vars.base import LiteralVar, Var
 
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core.cond import cond
@@ -64,7 +64,7 @@ class Foreach(Component):
         # noqa: DAR401 with_traceback
         # noqa: DAR402 UntypedVarError
         """
-        from reflex_core.vars import ArrayVar, ObjectVar, StringVar
+        from reflex_base.vars import ArrayVar, ObjectVar, StringVar
 
         from reflex.state import ComponentState
 

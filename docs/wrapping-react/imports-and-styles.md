@@ -12,6 +12,7 @@ Values can be either a string or a list of strings. If the import needs to be al
 ```python
 from reflex.utils.imports import ImportVar
 
+
 class ComponentWithImports(MyBaseComponent):
     def add_imports(self):
         """Add imports to the component."""
@@ -21,7 +22,9 @@ class ComponentWithImports(MyBaseComponent):
             # If you have multiple imports, you can pass a list.
             "my-package2": ["my-import2"],
             # If you need to control the import in a more detailed way, you can use an ImportVar object.
-            "my-package3": ImportVar(tag="my-import3", alias="my-alias", install=False, is_default=False),
+            "my-package3": ImportVar(
+                tag="my-import3", alias="my-alias", install=False, is_default=False
+            ),
             # To import a CSS file, pass the full path to the file, and use an empty string as the key.
             "": "my-package-with-css/styles.css",
         }

@@ -18,10 +18,10 @@ This page gives an introduction to the most common concepts that you will use to
 - Create pages and navigate between them
 ```
 
-[Install](/docs/getting_started/installation) `reflex` using pip.
+[Install](/docs/getting_started/installation) `reflex` with uv before continuing.
 
 ```bash
-pip install reflex
+uv add reflex
 ```
 
 Import the `reflex` library to get started.
@@ -50,7 +50,7 @@ def my_page():
     return rx.box(
         rx.text("This is a page"),
         # Reference components defined in other functions.
-        my_button()
+        my_button(),
     )
 ```
 
@@ -125,6 +125,7 @@ class MyState(rx.State):
     count: int = 0
     color: str = "red"
 
+
 def counter():
     return rx.hstack(
         # The heading `color` prop is set to the `color` var in MyState.
@@ -154,10 +155,11 @@ class CounterState(rx.State):
     def increment(self):
         self.count += 1
 
+
 def counter_increment():
     return rx.hstack(
         rx.heading(CounterState.count),
-        rx.button("Increment", on_click=CounterState.increment)
+        rx.button("Increment", on_click=CounterState.increment),
     )
 ```
 
@@ -181,6 +183,7 @@ class CounterState2(rx.State):
     def increment(self, amount: int):
         self.count += amount
 
+
 def counter_variable():
     return rx.hstack(
         rx.heading(CounterState2.count),
@@ -198,6 +201,7 @@ class TextState(rx.State):
     @rx.event
     def update_text(self, new_text: str):
         self.text = new_text
+
 
 def text_input():
     return rx.vstack(
@@ -230,6 +234,7 @@ Within an event handler, use any Python code or library.
 def check_even(num: int):
     return num % 2 == 0
 
+
 class MyState3(rx.State):
     count: int = 0
     text: str = "even"
@@ -244,10 +249,10 @@ class MyState3(rx.State):
             self.text = "odd"
         self.count += 1
 
+
 def count_and_check():
     return rx.box(
-        rx.heading(MyState3.text),
-        rx.button("Increment", on_click=MyState3.increment)
+        rx.heading(MyState3.text), rx.button("Increment", on_click=MyState3.increment)
     )
 ```
 
@@ -255,12 +260,7 @@ Use any Python function within components, as long as it is defined at compile t
 
 ```python demo exec
 def show_numbers():
-    return rx.vstack(
-        *[
-            rx.hstack(i, check_even(i))
-            for i in range(10)
-        ]
-    )
+    return rx.vstack(*[rx.hstack(i, check_even(i)) for i in range(10)])
 ```
 
 ### Examples that don't work
@@ -270,6 +270,7 @@ You cannot do an `if` statement on vars in components, since the value is not kn
 ```python
 class BadState(rx.State):
     count: int = 0
+
 
 def count_if_even():
     return rx.box(
@@ -287,6 +288,7 @@ You cannot do a `for` loop over a list of vars.
 class BadState(rx.State):
     items: list[str] = ["Apple", "Banana", "Cherry"]
 
+
 def loop_over_list():
     return rx.box(
         # This will raise a compile error, as BadState.items is a list and not known at compile time.
@@ -299,6 +301,7 @@ You cannot do arbitrary Python operations on state vars in components.
 ```python
 class BadTextState(rx.State):
     text: str = "Hello world"
+
 
 def format_text():
     return rx.box(
@@ -321,6 +324,7 @@ class LoginState(rx.State):
     def toggle_login(self):
         self.logged_in = not self.logged_in
 
+
 def show_login():
     return rx.box(
         rx.cond(
@@ -328,7 +332,7 @@ def show_login():
             rx.heading("Logged In"),
             rx.heading("Not Logged In"),
         ),
-        rx.button("Toggle Login", on_click=LoginState.toggle_login)
+        rx.button("Toggle Login", on_click=LoginState.toggle_login),
     )
 ```
 
@@ -342,10 +346,12 @@ Pass the list var and a function that returns a component as arguments to `rx.fo
 class ListState(rx.State):
     items: list[str] = ["Apple", "Banana", "Cherry"]
 
+
 def render_item(item: rx.Var[str]):
     """Render a single item."""
     # Note that item here is a Var, not a str!
     return rx.list.item(item)
+
 
 def show_fruits():
     return rx.box(
@@ -369,6 +375,7 @@ class CountEvenState(rx.State):
     def increment(self):
         self.count += 1
 
+
 def count_if_even():
     return rx.box(
         rx.heading("Count: "),
@@ -388,7 +395,8 @@ Reflex apps are created by instantiating the `rx.App` class. Pages are linked to
 
 ```python
 def index():
-    return rx.text('Root Page')
+    return rx.text("Root Page")
+
 
 rx.app = rx.App()
 app.add_page(index, route="/")

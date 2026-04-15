@@ -41,13 +41,14 @@ rx.data_table(
 
 ```python
 import pandas as pd
+
 nba_data = pd.read_csv("data/nba.csv")
 ...
 rx.data_table(
-    data = nba_data[["Name", "Height", "Age"]],
-    pagination= True,
-    search= True,
-    sort= True,
+    data=nba_data[["Name", "Height", "Age"]],
+    pagination=True,
+    search=True,
+    sort=True,
 )
 ```
 
@@ -57,11 +58,9 @@ The example below shows how to create a data table from from a list.
 
 ```python
 class State(rx.State):
-    data: List = [
-        ["Lionel", "Messi", "PSG"],
-        ["Christiano", "Ronaldo", "Al-Nasir"]
-     ]
+    data: List = [["Lionel", "Messi", "PSG"], ["Christiano", "Ronaldo", "Al-Nasir"]]
     columns: List[str] = ["First Name", "Last Name"]
+
 
 def index():
     return rx.data_table(

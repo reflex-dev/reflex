@@ -99,12 +99,7 @@ def select(label, items, value, on_change):
         rx.text(label),
         rx.select.root(
             rx.select.trigger(),
-            rx.select.content(
-                *[
-                    rx.select.item(item, value=item)
-                    for item in items
-                ]
-            ),
+            rx.select.content(*[rx.select.item(item, value=item) for item in items]),
             value=value,
             on_change=on_change,
         ),
@@ -116,10 +111,30 @@ def select(label, items, value, on_change):
 
 def selectors():
     return rx.flex(
-        select("Wrap", ["nowrap", "wrap", "wrap-reverse"], FlexPlaygroundState.wrap, FlexPlaygroundState.set_wrap),
-        select("Direction", ["row", "column", "row-reverse", "column-reverse"], FlexPlaygroundState.direction, FlexPlaygroundState.set_direction),
-        select("Align", ["start", "center", "end", "baseline", "stretch"], FlexPlaygroundState.align, FlexPlaygroundState.set_align),
-        select("Justify", ["start", "center", "end", "between"], FlexPlaygroundState.justify, FlexPlaygroundState.set_justify),
+        select(
+            "Wrap",
+            ["nowrap", "wrap", "wrap-reverse"],
+            FlexPlaygroundState.wrap,
+            FlexPlaygroundState.set_wrap,
+        ),
+        select(
+            "Direction",
+            ["row", "column", "row-reverse", "column-reverse"],
+            FlexPlaygroundState.direction,
+            FlexPlaygroundState.set_direction,
+        ),
+        select(
+            "Align",
+            ["start", "center", "end", "baseline", "stretch"],
+            FlexPlaygroundState.align,
+            FlexPlaygroundState.set_align,
+        ),
+        select(
+            "Justify",
+            ["start", "center", "end", "between"],
+            FlexPlaygroundState.justify,
+            FlexPlaygroundState.set_justify,
+        ),
         width="100%",
         spacing="2",
         justify="between",

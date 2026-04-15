@@ -38,8 +38,8 @@ class QueryUser(rx.State):
     def get_users(self):
         with rx.session() as session:
             self.users = session.exec(
-                User.select().where(
-                    User.username.contains(self.name))).all()
+                User.select().where(User.username.contains(self.name))
+            ).all()
 ```
 
 The `get_users` method will query the database for all users that contain the
@@ -75,8 +75,9 @@ class ChangeEmail(rx.State):
     @rx.event
     def modify_user(self):
         with rx.session() as session:
-            user = session.exec(User.select().where(
-                (User.username == self.username))).first()
+            user = session.exec(
+                User.select().where((User.username == self.username))
+            ).first()
             user.email = self.email
             session.add(user)
             session.commit()
@@ -94,8 +95,9 @@ class RemoveUser(rx.State):
     @rx.event
     def delete_user(self):
         with rx.session() as session:
-            user = session.exec(User.select().where(
-                User.username == self.username)).first()
+            user = session.exec(
+                User.select().where(User.username == self.username)
+            ).first()
             session.delete(user)
             session.commit()
 ```
@@ -319,8 +321,7 @@ class AsyncRawSQL(rx.State):
         async with rx.asession() as asession:
             await asession.execute(
                 sqlalchemy.text(
-                    "INSERT INTO user (username, email) "
-                    "VALUES (:username, :email)"
+                    "INSERT INTO user (username, email) VALUES (:username, :email)"
                 ),
                 dict(username=username, email=email),
             )

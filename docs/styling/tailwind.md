@@ -1,11 +1,10 @@
 ```python exec
 import reflex as rx
-
 ```
 
 # Tailwind
 
-Reflex supports [Tailwind CSS]({"https://tailwindcss.com/"}) through a plugin system that provides better control and supports multiple Tailwind versions.
+Reflex supports [Tailwind CSS](https://tailwindcss.com/) through a plugin system that provides better control and supports multiple Tailwind versions.
 
 ## Plugin-Based Configuration
 
@@ -63,7 +62,6 @@ config = rx.Config(
     },
 )
 ```
-```````
 
 **New approach (plugin-based):**
 
@@ -80,8 +78,7 @@ config = rx.Config(
     ],
 )
 ```
-
-````
+```````
 
 ### Choosing Between Tailwind Versions
 
@@ -102,11 +99,11 @@ config = rx.Config(
     app_name="myapp",
     plugins=[rx.plugins.TailwindV3Plugin()],
 )
-````
+```
 
 All Tailwind configuration options are supported.
 
-You can use any of the [utility classes]({"https://tailwindcss.com/docs/utility-first"}) under the `class_name` prop:
+You can use any of the [utility classes](https://tailwindcss.com/docs/utility-first) under the `class_name` prop:
 
 ```python demo
 rx.box(
@@ -158,7 +155,7 @@ tailwind_config = {
         "extend": {
             "colors": {
                 "background": "var(--background)",
-                "foreground": "var(--foreground)"
+                "foreground": "var(--foreground)",
             },
         }
     },
@@ -208,6 +205,7 @@ class TailwindState(rx.State):
     def toggle_active(self):
         self.active = not self.active
 
+
 def tailwind_demo():
     return rx.el.div(
         rx.el.button(
@@ -232,7 +230,7 @@ When using Tailwind with Reflex, it's important to understand that class names m
 For example, this won't work correctly because the class names are defined in the state:
 
 ```python demo exec
-class TailwindState(rx.State):
+class TailwindDynamicClassState(rx.State):
     active = False
 
     @rx.var
@@ -243,11 +241,12 @@ class TailwindState(rx.State):
     def toggle_active(self):
         self.active = not self.active
 
-def tailwind_demo():
+
+def tailwind_dynamic_class_demo():
     return rx.el.button(
-        f"Click me: {TailwindState.active}",
-        class_name=TailwindState.button_class,
-        on_click=TailwindState.toggle_active,
+        f"Click me: {TailwindDynamicClassState.active}",
+        class_name=TailwindDynamicClassState.button_class,
+        on_click=TailwindDynamicClassState.toggle_active,
     )
 ```
 

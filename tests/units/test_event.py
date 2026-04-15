@@ -3,8 +3,8 @@ from collections.abc import Callable
 from typing import Any, cast
 
 import pytest
-from reflex_core.constants.compiler import Hooks, Imports
-from reflex_core.event import (
+from reflex_base.constants.compiler import Hooks, Imports
+from reflex_base.event import (
     BACKGROUND_TASK_MARKER,
     Event,
     EventChain,
@@ -16,8 +16,8 @@ from reflex_core.event import (
     event,
     fix_events,
 )
-from reflex_core.utils import format
-from reflex_core.vars.base import Field, LiteralVar, Var, VarData, field
+from reflex_base.utils import format
+from reflex_base.vars.base import Field, LiteralVar, Var, VarData, field
 
 import reflex as rx
 from reflex.state import BaseState
@@ -43,8 +43,7 @@ def make_timeout_logger() -> EventChainVar:
 
 def test_create_event():
     """Test creating an event."""
-    event = Event(token="token", name="state.do_thing", payload={"arg": "value"})
-    assert event.token == "token"
+    event = Event(name="state.do_thing", payload={"arg": "value"})
     assert event.name == "state.do_thing"
     assert event.payload == {"arg": "value"}
 
@@ -57,7 +56,7 @@ def test_call_event_handler():
 
     test_fn.__qualname__ = "test_fn"
 
-    def fn_with_args(_, arg1, arg2):
+    def fn_with_args(arg1, arg2):
         pass
 
     fn_with_args.__qualname__ = "fn_with_args"
@@ -112,7 +111,7 @@ def test_call_event_handler():
 def test_call_event_handler_partial():
     """Calling an EventHandler with incomplete args returns an EventSpec that can be extended."""
 
-    def fn_with_args(_, arg1, arg2):
+    def fn_with_args(arg1, arg2):
         pass
 
     fn_with_args.__qualname__ = "fn_with_args"
@@ -120,7 +119,7 @@ def test_call_event_handler_partial():
     def spec(a2: Var[str]) -> list[Var[str]]:
         return [a2]
 
-    handler = EventHandler(fn=fn_with_args, state_full_name="BigState")
+    handler = EventHandler(fn=fn_with_args)
     event_spec = handler(make_var("first"))
     event_spec2 = call_event_handler(event_spec, spec)
 
@@ -129,8 +128,7 @@ def test_call_event_handler_partial():
     assert event_spec.args[0][0].equals(Var(_js_expr="arg1"))
     assert event_spec.args[0][1].equals(Var(_js_expr="first"))
     assert (
-        format.format_event(event_spec)
-        == 'ReflexEvent("BigState.fn_with_args", {arg1:first})'
+        format.format_event(event_spec) == 'ReflexEvent("fn_with_args", {arg1:first})'
     )
 
     assert event_spec2 is not event_spec
@@ -142,7 +140,7 @@ def test_call_event_handler_partial():
     assert event_spec2.args[1][1].equals(Var(_js_expr="_a2", _var_type=str))
     assert (
         format.format_event(event_spec2)
-        == 'ReflexEvent("BigState.fn_with_args", {arg1:first,arg2:_a2})'
+        == 'ReflexEvent("fn_with_args", {arg1:first,arg2:_a2})'
     )
 
 
@@ -162,16 +160,15 @@ def test_fix_events(arg1, arg2):
         arg2: The second arg passed to the handler.
     """
 
-    def fn_with_args(_, arg1, arg2):
+    def fn_with_args(arg1, arg2):
         pass
 
     fn_with_args.__qualname__ = "fn_with_args"
 
     handler = EventHandler(fn=fn_with_args)
     event_spec = handler(arg1, arg2)
-    event = fix_events([event_spec], token="foo")[0]
+    event = fix_events([event_spec])[0]
     assert event.name == fn_with_args.__qualname__
-    assert event.token == "foo"
     assert event.payload == {"arg1": arg1, "arg2": arg2}
 
 
@@ -280,6 +277,33 @@ def test_focus(func: str, qualname: str):
     spec = getattr(event, func)("input1")
     assert (
         format.format_event(spec) == f'ReflexEvent("{qualname}", {{ref:"ref_input1"}})'
+    )
+
+
+@pytest.mark.parametrize(
+    ("func", "qualname"), [("set_focus", "_set_focus"), ("blur_focus", "_blur_focus")]
+)
+def test_focus_event_chain_preserves_args(func: str, qualname: str):
+    """Test that set_focus/blur_focus ref arg survives EventChain.create.
+
+    Args:
+        func: The event function name.
+        qualname: The sig qual name passed to JS.
+    """
+    spec = getattr(event, func)("input1")
+    chain = EventChain.create(value=spec, args_spec=lambda: ())
+    assert isinstance(chain, EventChain)
+    assert len(chain.events) == 1
+    chain_spec = chain.events[0]
+    assert isinstance(chain_spec, EventSpec)
+    # The ref arg must survive the EventChain pipeline.
+    assert len(chain_spec.args) == 1
+    assert chain_spec.args[0][0].equals(Var(_js_expr="ref"))
+    assert chain_spec.args[0][1].equals(LiteralVar.create("ref_input1"))
+    # Verify the serialized output includes the ref in the payload.
+    assert (
+        format.format_event(chain_spec)
+        == f'ReflexEvent("{qualname}", {{ref:"ref_input1"}})'
     )
 
 

@@ -2,8 +2,6 @@
 import reflex as rx
 ```
 
-<!-- TODO how do we consistently rename page title? -->
-
 # Introduction
 
 **Reflex** is an open-source framework for quickly building beautiful, interactive web applications in **pure Python**.
@@ -46,6 +44,7 @@ class CounterExampleState(rx.State):
     def decrement(self):
         self.count -= 1
 
+
 class IntroTabsState(rx.State):
     """The app state."""
 
@@ -57,21 +56,13 @@ class IntroTabsState(rx.State):
         self.tab_selected = f"{val} clicked!"
         self.value = val
 
+
 def tabs():
     return rx.tabs.root(
         rx.tabs.list(
-            rx.tabs.trigger(
-                "Frontend", value="tab1",
-                class_name="tab-style"
-            ),
-            rx.tabs.trigger(
-                "Backend", value="tab2",
-                class_name="tab-style"
-            ),
-            rx.tabs.trigger(
-                "Page", value="tab3",
-                class_name="tab-style"
-            ),
+            rx.tabs.trigger("Frontend", value="tab1", class_name="tab-style"),
+            rx.tabs.trigger("Backend", value="tab2", class_name="tab-style"),
+            rx.tabs.trigger("Page", value="tab3", class_name="tab-style"),
         ),
         rx.tabs.content(
             rx.markdown(
@@ -83,7 +74,7 @@ def tabs():
                 """,
             ),
             value="tab1",
-            class_name="pt-4"
+            class_name="pt-4",
         ),
         rx.tabs.content(
             rx.markdown(
@@ -91,7 +82,7 @@ def tabs():
                 """,
             ),
             value="tab2",
-            class_name="pt-4"
+            class_name="pt-4",
         ),
         rx.tabs.content(
             rx.markdown(
@@ -101,14 +92,12 @@ def tabs():
                 """,
             ),
             value="tab3",
-            class_name="pt-4"
+            class_name="pt-4",
         ),
         class_name="text-slate-12 font-normal",
         default_value="tab1",
         value=IntroTabsState.value,
-        on_change=lambda x: IntroTabsState.change_value(
-            x
-        ),
+        on_change=lambda x: IntroTabsState.change_value(x),
     )
 ```
 
@@ -160,7 +149,7 @@ rx.box(
         border=rx.cond(
             IntroTabsState.value == "tab2",
             "1px solid var(--c-violet-5)",
-            "none !important"
+            "none !important",
         ),
         class_name="code-block",
     ),
@@ -241,6 +230,7 @@ Here our state has a single var, `count`, which holds the current value of the c
 def increment(self):
     self.count += 1
 
+
 @rx.event
 def decrement(self):
     self.count -= 1
@@ -282,7 +272,7 @@ Reflex comes with [50+ built-in components](/docs/library) to help you get start
 We are actively adding more components. Also, it's easy to [wrap your own React components](/docs/wrapping-react/overview).
 
 ```python
-rx.heading(State.count, font_size="2em"),
+(rx.heading(State.count, font_size="2em"),)
 ```
 
 Components can reference the app's state vars.
@@ -290,11 +280,13 @@ The `rx.heading` component displays the current value of the counter by referenc
 All components that reference state will reactively update whenever the state changes.
 
 ```python
-rx.button(
-    "Decrement",
-    color_scheme="ruby",
-    on_click=State.decrement,
-),
+(
+    rx.button(
+        "Decrement",
+        color_scheme="ruby",
+        on_click=State.decrement,
+    ),
+)
 ```
 
 Components interact with the state by binding events triggers to event handlers.

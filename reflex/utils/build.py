@@ -6,8 +6,8 @@ import os
 import zipfile
 from pathlib import Path, PosixPath
 
-from reflex_core import constants
-from reflex_core.config import get_config
+from reflex_base import constants
+from reflex_base.config import get_config
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 
 from reflex.utils import console, js_runtimes, path_ops, prerequisites, processes

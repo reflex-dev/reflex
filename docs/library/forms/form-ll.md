@@ -124,8 +124,8 @@ rx.form.root(
             ),
             rx.form.message("Please enter a valid email", match="typeMismatch"),
             rx.form.submit(
-                  rx.button("Submit"),
-                  as_child=True,
+                rx.button("Submit"),
+                as_child=True,
             ),
             direction="column",
             spacing="2",
@@ -175,6 +175,7 @@ As previously mentioned, the various pieces of data in the form are submitted to
 ```python demo exec
 import reflex as rx
 import reflex.components.radix.primitives as rdxp
+
 
 class RadixFormSubmissionState(rx.State):
     form_data: dict
@@ -242,14 +243,8 @@ def radix_form_submission_example():
                     ),
                     rx.select.content(
                         rx.select.group(
-                            rx.select.item(
-                                "Orange",
-                                value="orange"
-                            ),
-                            rx.select.item(
-                                "Apple",
-                                value="apple"
-                            ),
+                            rx.select.item("Orange", value="orange"),
+                            rx.select.item("Apple", value="apple"),
                         ),
                     ),
                     name="box4",
@@ -293,8 +288,11 @@ def radix_form_submission_example():
             "Results",
             weight="bold",
         ),
-        rx.foreach(RadixFormSubmissionState.form_data_keys,
-            lambda key, idx: rx.text(key, " : ", RadixFormSubmissionState.form_data_values[idx])
+        rx.foreach(
+            RadixFormSubmissionState.form_data_keys,
+            lambda key, idx: rx.text(
+                key, " : ", RadixFormSubmissionState.form_data_values[idx]
+            ),
         ),
         direction="column",
         spacing="4",
@@ -313,6 +311,7 @@ The final example shows a form that collects username and email during sign-up a
 import re
 import reflex as rx
 import reflex.components.radix.primitives as rdxp
+
 
 class RadixFormState(rx.State):
     # These track the user input real time for validation
@@ -359,6 +358,7 @@ class RadixFormState(rx.State):
         """Handle the form submit."""
         self.username = form_data.get("username")
         self.email = form_data.get("email")
+
 
 def radix_form_example():
     return rx.flex(

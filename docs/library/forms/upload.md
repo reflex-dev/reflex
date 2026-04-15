@@ -21,6 +21,8 @@ You can let users upload files and keep track of them in your app’s state. The
 
 ```python
 import reflex as rx
+
+
 class State(rx.State):
     uploaded_files: list[str] = []
 
@@ -32,6 +34,7 @@ class State(rx.State):
             with path.open("wb") as f:
                 f.write(data)
             self.uploaded_files.append(file.name)
+
 
 def upload_component():
     return rx.vstack(
@@ -48,8 +51,11 @@ on the frontend using the `rx.selected_files(id)` special Var. To clear the
 selected files, you can use another special Var `rx.clear_selected_files(id)` as
 an event handler.
 
-To upload the file(s), you need to bind an event handler and pass the special
-`rx.upload_files(upload_id=id)` event arg to it.
+To upload the file(s), bind an event handler and pass one of these special
+event args:
+
+- `rx.upload_files(upload_id=id)` for uploads
+- `rx.upload_files_chunk(upload_id=id)` for larger files that should be processed incrementally
 
 ## File Storage Functions
 
@@ -81,12 +87,14 @@ Here is the standard pattern for handling file uploads:
 ```python
 import reflex as rx
 
+
 def create_unique_filename(file_name: str):
     import random
     import string
 
     filename = "".join(random.choices(string.ascii_letters + string.digits, k=10))
     return filename + "_" + file_name
+
 
 class State(rx.State):
     uploaded_files: list[str] = []
@@ -117,6 +125,7 @@ class State(rx.State):
             # Store filename for frontend display
             self.uploaded_files.append(unique_filename)
 
+
 def upload_component():
     return rx.vstack(
         rx.upload(
@@ -132,10 +141,9 @@ def upload_component():
         # Display uploaded files using rx.get_upload_url()
         rx.foreach(
             State.uploaded_files,
-            lambda filename: rx.image(src=rx.get_upload_url(filename))
+            lambda filename: rx.image(src=rx.get_upload_url(filename)),
         ),
     )
-
 ```
 
 ### Multiple File Upload
@@ -180,7 +188,9 @@ def index():
     return rx.vstack(
         rx.upload(
             rx.vstack(
-                rx.button("Select File", color=color, bg="white", border=f"1px solid {color}"),
+                rx.button(
+                    "Select File", color=color, bg="white", border=f"1px solid {color}"
+                ),
                 rx.text("Drag and drop files here or click to select files"),
             ),
             id="upload1",
@@ -206,7 +216,12 @@ def index():
 Below is an example of how to allow only a single file upload and render (in this case a video).
 
 ```python demo box
-rx.el.video(src="https://web.reflex-assets.dev/other/upload_single_video.webm", auto_play=True, controls=True, loop=True)
+rx.el.video(
+    src="https://web.reflex-assets.dev/other/upload_single_video.webm",
+    auto_play=True,
+    controls=True,
+    loop=True,
+)
 ```
 
 ```python
@@ -217,9 +232,7 @@ class State(rx.State):
     video: str
 
     @rx.event
-    async def handle_upload(
-        self, files: list[rx.UploadFile]
-    ):
+    async def handle_upload(self, files: list[rx.UploadFile]):
         """Handle the upload of file(s).
 
         Args:
@@ -251,9 +264,7 @@ def index():
                     bg="white",
                     border=f"1px solid \{color}",
                 ),
-                rx.text(
-                    "Drag and drop files here or click to select files"
-                ),
+                rx.text("Drag and drop files here or click to select files"),
             ),
             id="upload1",
             max_files=1,
@@ -263,9 +274,7 @@ def index():
         rx.text(rx.selected_files("upload1")),
         rx.button(
             "Upload",
-            on_click=State.handle_upload(
-                rx.upload_files(upload_id="upload1")
-            ),
+            on_click=State.handle_upload(rx.upload_files(upload_id="upload1")),
         ),
         rx.button(
             "Clear",
@@ -320,12 +329,14 @@ def index():
     return rx.vstack(
         rx.upload(
             rx.vstack(
-                rx.button("Select File", color=color, bg="white", border=f"1px solid {color}"),
+                rx.button(
+                    "Select File", color=color, bg="white", border=f"1px solid {color}"
+                ),
                 rx.text("Drag and drop files here or click to select files"),
             ),
             id="upload2",
             multiple=True,
-            accept = {
+            accept={
                 "application/pdf": [".pdf"],
                 "image/png": [".png"],
                 "image/jpeg": [".jpg", ".jpeg"],
@@ -364,7 +375,12 @@ rx.upload.root(
     rx.box(
         rx.icon(
             tag="cloud_upload",
-            style={"width": "3rem", "height": "3rem", "color": "#2563eb", "marginBottom": "0.75rem"},
+            style={
+                "width": "3rem",
+                "height": "3rem",
+                "color": "#2563eb",
+                "marginBottom": "0.75rem",
+            },
         ),
         rx.hstack(
             rx.text(
@@ -409,9 +425,7 @@ rx.upload.root(
 
 ## Handling the Upload
 
-Your event handler should be an async function that accepts a single argument,
-`files: list[UploadFile]`, which will contain [FastAPI UploadFile](https://fastapi.tiangolo.com/tutorial/request-files) instances.
-You can read the files and save them anywhere as shown in the example.
+For uploads, your event handler should be an async function that accepts a single argument, `files: list[UploadFile]`, which will contain [Starlette UploadFile](https://www.starlette.io/requests/#request-files) instances. You can read the files and save them anywhere as shown in the example.
 
 In your UI, you can bind the event handler to a trigger, such as a button
 `on_click` event or upload `on_drop` event, and pass in the files using
@@ -446,13 +460,105 @@ The files are automatically served at:
 - `/_upload/document.pdf` ← `rx.get_upload_url("document.pdf")`
 - `/_upload/video.mp4` ← `rx.get_upload_url("video.mp4")`
 
+### Chunked Uploads for Large Files
+
+Use `rx.upload_files_chunk(...)` when files may be large or when you want the backend to write data incrementally. Standard uploads spool files to disk before the handler starts, but calling `await file.read()` in the handler loads the entire file into memory at once, which can cause high memory consumption for large files.
+
+Chunked upload handlers:
+
+- must be declared with `@rx.event(background=True)`
+- must accept `chunk_iter: rx.UploadChunkIterator`
+- must fully consume `chunk_iter`
+
+To use chunked uploads in your own app:
+
+1. Create an `@rx.event(background=True)` handler.
+2. Accept `chunk_iter: rx.UploadChunkIterator`.
+3. Iterate over the chunks and write `chunk.data` at `chunk.offset`.
+4. Trigger the handler with `rx.upload_files_chunk(upload_id=...)`.
+
+Each chunk includes:
+
+- `chunk.filename`
+- `chunk.offset`
+- `chunk.content_type`
+- `chunk.data`
+
+```python
+class ChunkUploadState(rx.State):
+    uploaded_files: list[str] = []
+    status: str = "No chunked upload has finished yet."
+
+    @rx.event(background=True)
+    async def handle_large_upload(self, chunk_iter: rx.UploadChunkIterator):
+        file_handles = {}
+        destinations = {}
+
+        try:
+            async with self:
+                self.status = "Streaming upload in progress."
+            async for chunk in chunk_iter:
+                path = destinations.setdefault(
+                    chunk.filename,
+                    rx.get_upload_dir() / "stream" / chunk.filename,
+                )
+                path.parent.mkdir(parents=True, exist_ok=True)
+
+                fh = file_handles.get(chunk.filename)
+                if fh is None:
+                    fh = path.open("wb")
+                    file_handles[chunk.filename] = fh
+
+                fh.seek(chunk.offset)
+                fh.write(chunk.data)
+        finally:
+            for fh in file_handles.values():
+                fh.close()
+
+        async with self:
+            self.uploaded_files = sorted(destinations)
+            self.status = "Chunked upload complete."
+
+
+def chunked_upload_component():
+    return rx.vstack(
+        rx.upload(
+            rx.text("Drop files here or click to select"),
+            id="large_upload",
+            border="2px dashed #ccc",
+            padding="2em",
+        ),
+        rx.button(
+            "Upload Large Files",
+            on_click=ChunkUploadState.handle_large_upload(
+                rx.upload_files_chunk(upload_id="large_upload")
+            ),
+        ),
+        rx.text(ChunkUploadState.status),
+        rx.foreach(
+            ChunkUploadState.uploaded_files,
+            lambda filename: rx.text(filename),
+        ),
+    )
+```
+
+Returning early from the handler will fail the upload because the remaining
+chunks were not consumed.
+
+If you want a progress bar or a cancel button, `rx.upload_files_chunk(...)`
+supports the same `on_upload_progress` callback as uploads, and
+you can stop the upload with `rx.cancel_upload(upload_id)`.
+
 ## Cancellation
 
 The `id` provided to the `rx.upload` component can be passed to the special event handler `rx.cancel_upload(id)` to stop uploading on demand. Cancellation can be triggered directly by a frontend event trigger, or it can be returned from a backend event handler.
 
 ## Progress
 
-The `rx.upload_files` special event arg also accepts an `on_upload_progress` event trigger which will be fired about every second during the upload operation to report the progress of the upload. This can be used to update a progress bar or other UI elements to show the user the progress of the upload.
+Both `rx.upload_files` and `rx.upload_files_chunk` accept an
+`on_upload_progress` event trigger which will be fired during the upload
+operation to report the progress of the upload. This can be used to update a
+progress bar or other UI elements to show the user the progress of the upload.
 
 ```python
 class UploadExample(rx.State):
@@ -508,15 +614,10 @@ def upload_form():
 
 The `progress` dictionary contains the following keys:
 
-```javascript
-\{
-    'loaded': 36044800,
-    'total': 54361908,
-    'progress': 0.6630525183185255,
-    'bytes': 20447232,
-    'rate': None,
-    'estimated': None,
-    'event': \{'isTrusted': True},
-    'upload': True
+```python
+{
+    "loaded": 36044800,
+    "total": 54361908,
+    "progress": 0.6630525183185255,
 }
 ```

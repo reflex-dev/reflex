@@ -1,6 +1,15 @@
 ```python exec
 import reflex as rx
-cell_style = {"font_family": "Instrument Sans", "font_style": "normal", "font_weight": "500", "font_size": "14px", "line_height": "1.5", "letter_spacing": "-0.0125em", "color": "var(--c-slate-11)"}
+
+cell_style = {
+    "font_family": "Instrument Sans",
+    "font_style": "normal",
+    "font_weight": "500",
+    "font_size": "14px",
+    "line_height": "1.5",
+    "letter_spacing": "-0.0125em",
+    "color": "var(--c-slate-11)",
+}
 ```
 
 # Theming
@@ -32,45 +41,215 @@ rx.table.root(
     ),
     rx.table.body(
         rx.table.row(
-            rx.table.row_header_cell(rx.code("has_background", style={"color": rx.color("violet", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('violet', 5)}", "background": rx.color("violet", 3)}, class_name="code-style")),
-            rx.table.cell(rx.code("Bool", style={"color": rx.color("gray", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('gray', 5)}", "background": rx.color("gray", 3)}, class_name="code-style")),
-            rx.table.cell("Whether to apply the themes background color to the theme node. Defaults to True.", style=cell_style),
+            rx.table.row_header_cell(
+                rx.code(
+                    "has_background",
+                    style={
+                        "color": rx.color("violet", 11),
+                        "border_radius": "0.25rem",
+                        "border": f"1px solid {rx.color('violet', 5)}",
+                        "background": rx.color("violet", 3),
+                    },
+                    class_name="code-style",
+                )
+            ),
+            rx.table.cell(
+                rx.code(
+                    "Bool",
+                    style={
+                        "color": rx.color("gray", 11),
+                        "border_radius": "0.25rem",
+                        "border": f"1px solid {rx.color('gray', 5)}",
+                        "background": rx.color("gray", 3),
+                    },
+                    class_name="code-style",
+                )
+            ),
+            rx.table.cell(
+                "Whether to apply the themes background color to the theme node. Defaults to True.",
+                style=cell_style,
+            ),
         ),
         rx.table.row(
-            rx.table.row_header_cell(rx.code("appearance", style={"color": rx.color("violet", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('violet', 5)}", "background": rx.color("violet", 3)}, class_name="code-style")),
-            rx.table.cell(rx.code('"inherit" | "light" | "dark"', style={"color": rx.color("gray", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('gray', 5)}", "background": rx.color("gray", 3)}, class_name="code-style")),
-            rx.table.cell("The appearance of the theme. Can be 'light' or 'dark'. Defaults to 'light'.", style=cell_style),
+            rx.table.row_header_cell(
+                rx.code(
+                    "appearance",
+                    style={
+                        "color": rx.color("violet", 11),
+                        "border_radius": "0.25rem",
+                        "border": f"1px solid {rx.color('violet', 5)}",
+                        "background": rx.color("violet", 3),
+                    },
+                    class_name="code-style",
+                )
+            ),
+            rx.table.cell(
+                rx.code(
+                    '"inherit" | "light" | "dark"',
+                    style={
+                        "color": rx.color("gray", 11),
+                        "border_radius": "0.25rem",
+                        "border": f"1px solid {rx.color('gray', 5)}",
+                        "background": rx.color("gray", 3),
+                    },
+                    class_name="code-style",
+                )
+            ),
+            rx.table.cell(
+                "The appearance of the theme. Can be 'light' or 'dark'. Defaults to 'light'.",
+                style=cell_style,
+            ),
         ),
         rx.table.row(
-            rx.table.row_header_cell(rx.code("accent_color", style={"color": rx.color("violet", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('violet', 5)}", "background": rx.color("violet", 3)}, class_name="code-style")),
-            rx.table.cell(rx.code("Str", style={"color": rx.color("gray", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('gray', 5)}", "background": rx.color("gray", 3)}, class_name="code-style")),
-            rx.table.cell("The primary color used for default buttons, typography, backgrounds, etc.", style=cell_style),
+            rx.table.row_header_cell(
+                rx.code(
+                    "accent_color",
+                    style={
+                        "color": rx.color("violet", 11),
+                        "border_radius": "0.25rem",
+                        "border": f"1px solid {rx.color('violet', 5)}",
+                        "background": rx.color("violet", 3),
+                    },
+                    class_name="code-style",
+                )
+            ),
+            rx.table.cell(
+                rx.code(
+                    "Str",
+                    style={
+                        "color": rx.color("gray", 11),
+                        "border_radius": "0.25rem",
+                        "border": f"1px solid {rx.color('gray', 5)}",
+                        "background": rx.color("gray", 3),
+                    },
+                    class_name="code-style",
+                )
+            ),
+            rx.table.cell(
+                "The primary color used for default buttons, typography, backgrounds, etc.",
+                style=cell_style,
+            ),
         ),
         rx.table.row(
-            rx.table.row_header_cell(rx.code("gray_color", style={"color": rx.color("violet", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('violet', 5)}", "background": rx.color("violet", 3)}, class_name="code-style")),
-            rx.table.cell(rx.code("Str", style={"color": rx.color("gray", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('gray', 5)}", "background": rx.color("gray", 3)}, class_name="code-style")),
-            rx.table.cell("The secondary color used for default buttons, typography, backgrounds, etc.", style=cell_style),
+            rx.table.row_header_cell(
+                rx.code(
+                    "gray_color",
+                    style={
+                        "color": rx.color("violet", 11),
+                        "border_radius": "0.25rem",
+                        "border": f"1px solid {rx.color('violet', 5)}",
+                        "background": rx.color("violet", 3),
+                    },
+                    class_name="code-style",
+                )
+            ),
+            rx.table.cell(
+                rx.code(
+                    "Str",
+                    style={
+                        "color": rx.color("gray", 11),
+                        "border_radius": "0.25rem",
+                        "border": f"1px solid {rx.color('gray', 5)}",
+                        "background": rx.color("gray", 3),
+                    },
+                    class_name="code-style",
+                )
+            ),
+            rx.table.cell(
+                "The secondary color used for default buttons, typography, backgrounds, etc.",
+                style=cell_style,
+            ),
         ),
         rx.table.row(
-            rx.table.row_header_cell(rx.code("panel_background", style={"color": rx.color("violet", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('violet', 5)}", "background": rx.color("violet", 3)}, class_name="code-style")),
-            rx.table.cell(rx.code('"solid" | "translucent"', style={"color": rx.color("gray", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('gray', 5)}", "background": rx.color("gray", 3)}, class_name="code-style")),
-            rx.table.cell('Whether panel backgrounds are translucent: "solid" | "translucent" (default).', style=cell_style),
+            rx.table.row_header_cell(
+                rx.code(
+                    "panel_background",
+                    style={
+                        "color": rx.color("violet", 11),
+                        "border_radius": "0.25rem",
+                        "border": f"1px solid {rx.color('violet', 5)}",
+                        "background": rx.color("violet", 3),
+                    },
+                    class_name="code-style",
+                )
+            ),
+            rx.table.cell(
+                rx.code(
+                    '"solid" | "translucent"',
+                    style={
+                        "color": rx.color("gray", 11),
+                        "border_radius": "0.25rem",
+                        "border": f"1px solid {rx.color('gray', 5)}",
+                        "background": rx.color("gray", 3),
+                    },
+                    class_name="code-style",
+                )
+            ),
+            rx.table.cell(
+                'Whether panel backgrounds are translucent: "solid" | "translucent" (default).',
+                style=cell_style,
+            ),
         ),
         rx.table.row(
-            rx.table.row_header_cell(rx.code("radius", style={"color": rx.color("violet", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('violet', 5)}", "background": rx.color("violet", 3)}, class_name="code-style")),
-            rx.table.cell(rx.code('"none" | "small" | "medium" | "large" | "full"', style={"color": rx.color("gray", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('gray', 5)}", "background": rx.color("gray", 3)})),
-            rx.table.cell("The radius of the theme. Can be 'small', 'medium', or 'large'. Defaults to 'medium'.", style=cell_style),
+            rx.table.row_header_cell(
+                rx.code(
+                    "radius",
+                    style={
+                        "color": rx.color("violet", 11),
+                        "border_radius": "0.25rem",
+                        "border": f"1px solid {rx.color('violet', 5)}",
+                        "background": rx.color("violet", 3),
+                    },
+                    class_name="code-style",
+                )
+            ),
+            rx.table.cell(
+                rx.code(
+                    '"none" | "small" | "medium" | "large" | "full"',
+                    style={
+                        "color": rx.color("gray", 11),
+                        "border_radius": "0.25rem",
+                        "border": f"1px solid {rx.color('gray', 5)}",
+                        "background": rx.color("gray", 3),
+                    },
+                )
+            ),
+            rx.table.cell(
+                "The radius of the theme. Can be 'small', 'medium', or 'large'. Defaults to 'medium'.",
+                style=cell_style,
+            ),
         ),
         rx.table.row(
-            rx.table.row_header_cell(rx.code("scaling", style={"color": rx.color("violet", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('violet', 5)}", "background": rx.color("violet", 3)}, class_name="code-style")),
-            rx.table.cell(rx.code('"90%" | "95%" | "100%" | "105%" | "110%"', style={"color": rx.color("gray", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('gray', 5)}", "background": rx.color("gray", 3)}, class_name="code-style")),
+            rx.table.row_header_cell(
+                rx.code(
+                    "scaling",
+                    style={
+                        "color": rx.color("violet", 11),
+                        "border_radius": "0.25rem",
+                        "border": f"1px solid {rx.color('violet', 5)}",
+                        "background": rx.color("violet", 3),
+                    },
+                    class_name="code-style",
+                )
+            ),
+            rx.table.cell(
+                rx.code(
+                    '"90%" | "95%" | "100%" | "105%" | "110%"',
+                    style={
+                        "color": rx.color("gray", 11),
+                        "border_radius": "0.25rem",
+                        "border": f"1px solid {rx.color('gray', 5)}",
+                        "background": rx.color("gray", 3),
+                    },
+                    class_name="code-style",
+                )
+            ),
             rx.table.cell("Scale of all theme items.", style=cell_style),
         ),
     ),
     variant="surface",
     margin_y="1em",
 )
-
 ```
 
 Additionally you can modify the theme of your app through using the `Theme Panel` component which can be found in the [Theme Panel docs](/docs/library/other/theme).
@@ -93,7 +272,7 @@ rx.flex(
         "Hello World",
         color_scheme="teal",
     ),
-    spacing="2"
+    spacing="2",
 )
 ```
 
@@ -111,7 +290,7 @@ rx.flex(
         background_color=rx.color("grass", 7),
         border_color=f"1px solid {rx.color('grass', 1)}",
     ),
-    spacing="2"
+    spacing="2",
 )
 ```
 
@@ -126,25 +305,101 @@ rx.table.root(
     ),
     rx.table.body(
         rx.table.row(
-            rx.table.row_header_cell(rx.code("color", style={"color": rx.color("violet", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('violet', 5)}", "background": rx.color("violet", 3)}, class_name="code-style")),
-            rx.table.cell(rx.code("Str", style={"color": rx.color("gray", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('gray', 5)}", "background": rx.color("gray", 3)}, class_name="code-style")),
-            rx.table.cell("The color to use. Can be any valid accent color or 'accent' to reference the current theme color.", style=cell_style),
+            rx.table.row_header_cell(
+                rx.code(
+                    "color",
+                    style={
+                        "color": rx.color("violet", 11),
+                        "border_radius": "0.25rem",
+                        "border": f"1px solid {rx.color('violet', 5)}",
+                        "background": rx.color("violet", 3),
+                    },
+                    class_name="code-style",
+                )
+            ),
+            rx.table.cell(
+                rx.code(
+                    "Str",
+                    style={
+                        "color": rx.color("gray", 11),
+                        "border_radius": "0.25rem",
+                        "border": f"1px solid {rx.color('gray', 5)}",
+                        "background": rx.color("gray", 3),
+                    },
+                    class_name="code-style",
+                )
+            ),
+            rx.table.cell(
+                "The color to use. Can be any valid accent color or 'accent' to reference the current theme color.",
+                style=cell_style,
+            ),
         ),
         rx.table.row(
-            rx.table.row_header_cell(rx.code("shade", style={"color": rx.color("violet", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('violet', 5)}", "background": rx.color("violet", 3)}, class_name="code-style")),
-            rx.table.cell(rx.link(rx.code('1 - 12', style={"color": rx.color("gray", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('gray', 5)}", "background": rx.color("gray", 3)}, class_name="code-style"), href="https://www.radix-ui.com/colors")),
-            rx.table.cell("The shade of the color to use. Defaults to 7.", style=cell_style),
+            rx.table.row_header_cell(
+                rx.code(
+                    "shade",
+                    style={
+                        "color": rx.color("violet", 11),
+                        "border_radius": "0.25rem",
+                        "border": f"1px solid {rx.color('violet', 5)}",
+                        "background": rx.color("violet", 3),
+                    },
+                    class_name="code-style",
+                )
+            ),
+            rx.table.cell(
+                rx.link(
+                    rx.code(
+                        "1 - 12",
+                        style={
+                            "color": rx.color("gray", 11),
+                            "border_radius": "0.25rem",
+                            "border": f"1px solid {rx.color('gray', 5)}",
+                            "background": rx.color("gray", 3),
+                        },
+                        class_name="code-style",
+                    ),
+                    href="https://www.radix-ui.com/colors",
+                )
+            ),
+            rx.table.cell(
+                "The shade of the color to use. Defaults to 7.", style=cell_style
+            ),
         ),
         rx.table.row(
-            rx.table.row_header_cell(rx.code("alpha", style={"color": rx.color("violet", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('violet', 5)}", "background": rx.color("violet", 3)}, class_name="code-style")),
-            rx.table.cell(rx.code("Bool", style={"color": rx.color("gray", 11), "border_radius": "0.25rem", "border": f"1px solid {rx.color('gray', 5)}", "background": rx.color("gray", 3)}, class_name="code-style")),
-            rx.table.cell("Whether to use the alpha value of the color. Defaults to False.", style=cell_style),
-        )
+            rx.table.row_header_cell(
+                rx.code(
+                    "alpha",
+                    style={
+                        "color": rx.color("violet", 11),
+                        "border_radius": "0.25rem",
+                        "border": f"1px solid {rx.color('violet', 5)}",
+                        "background": rx.color("violet", 3),
+                    },
+                    class_name="code-style",
+                )
+            ),
+            rx.table.cell(
+                rx.code(
+                    "Bool",
+                    style={
+                        "color": rx.color("gray", 11),
+                        "border_radius": "0.25rem",
+                        "border": f"1px solid {rx.color('gray', 5)}",
+                        "background": rx.color("gray", 3),
+                    },
+                    class_name="code-style",
+                )
+            ),
+            rx.table.cell(
+                "Whether to use the alpha value of the color. Defaults to False.",
+                style=cell_style,
+            ),
+        ),
     ),
     variant="surface",
     margin_y="1em",
 )
-
 ```
 
 ### Regular Colors
@@ -159,7 +414,7 @@ rx.flex(
         background_color="#87CEFA",
         border="1px solid rgb(176,196,222)",
     ),
-    spacing="2"
+    spacing="2",
 )
 ```
 
@@ -168,9 +423,7 @@ rx.flex(
 To toggle between the light and dark mode manually, you can use the `toggle_color_mode` with the desired event trigger of your choice.
 
 ```python
-
 from reflex.style import toggle_color_mode
-
 
 
 def index():
@@ -186,8 +439,16 @@ To render a different component depending on whether the app is in `light` mode 
 
 ```python demo
 rx.color_mode_cond(
-    light=rx.image(src="https://web.reflex-assets.dev/logos/light/reflex.svg", alt="Reflex Logo light", height="4em"),
-    dark=rx.image(src="https://web.reflex-assets.dev/logos/dark/reflex.svg", alt="Reflex Logo dark", height="4em"),
+    light=rx.image(
+        src="https://web.reflex-assets.dev/logos/light/reflex.svg",
+        alt="Reflex Logo light",
+        height="4em",
+    ),
+    dark=rx.image(
+        src="https://web.reflex-assets.dev/logos/dark/reflex.svg",
+        alt="Reflex Logo dark",
+        height="4em",
+    ),
 )
 ```
 

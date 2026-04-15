@@ -2,7 +2,6 @@
 import reflex as rx
 import dataclasses
 from typing import TypedDict
-
 ```
 
 # Custom Vars
@@ -22,10 +21,12 @@ import googletrans
 import dataclasses
 from typing import TypedDict
 
+
 @dataclasses.dataclass
 class Translation:
     original_text: str
     translated_text: str
+
 
 class TranslationState(rx.State):
     input_text: str = "Hola Mundo"
@@ -38,7 +39,10 @@ class TranslationState(rx.State):
     @rx.event
     def translate(self):
         self.current_translation.original_text = self.input_text
-        self.current_translation.translated_text = googletrans.Translator().translate(self.input_text, dest="en").text
+        self.current_translation.translated_text = (
+            googletrans.Translator().translate(self.input_text, dest="en").text
+        )
+
 
 def translation_example():
     return rx.vstack(
@@ -61,6 +65,7 @@ You can also use TypedDict for defining custom var types:
 ```python
 from typing import TypedDict
 
+
 class Translation(TypedDict):
     original_text: str
     translated_text: str
@@ -72,6 +77,7 @@ Pydantic models are another option for complex data structures:
 
 ```python
 from pydantic import BaseModel
+
 
 class Translation(BaseModel):
     original_text: str

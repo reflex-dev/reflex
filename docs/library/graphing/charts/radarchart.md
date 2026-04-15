@@ -19,43 +19,14 @@ For a radar chart we must define an `rx.recharts.radar()` component for each set
 
 ```python demo graphing
 data = [
-  {
-    "subject": "Math",
-    "A": 120,
-    "B": 110,
-    "fullMark": 150
-  },
-  {
-    "subject": "Chinese",
-    "A": 98,
-    "B": 130,
-    "fullMark": 150
-  },
-  {
-    "subject": "English",
-    "A": 86,
-    "B": 130,
-    "fullMark": 150
-  },
-  {
-    "subject": "Geography",
-    "A": 99,
-    "B": 100,
-    "fullMark": 150
-  },
-  {
-    "subject": "Physics",
-    "A": 85,
-    "B": 90,
-    "fullMark": 150
-  },
-  {
-    "subject": "History",
-    "A": 65,
-    "B": 85,
-    "fullMark": 150
-  }
+    {"subject": "Math", "A": 120, "B": 110, "fullMark": 150},
+    {"subject": "Chinese", "A": 98, "B": 130, "fullMark": 150},
+    {"subject": "English", "A": 86, "B": 130, "fullMark": 150},
+    {"subject": "Geography", "A": 99, "B": 100, "fullMark": 150},
+    {"subject": "Physics", "A": 85, "B": 90, "fullMark": 150},
+    {"subject": "History", "A": 65, "B": 85, "fullMark": 150},
 ]
+
 
 def radar_simple():
     return rx.recharts.radar_chart(
@@ -80,45 +51,15 @@ We can also add two radars on one chart by using two `rx.recharts.radar` compone
 In this plot an `inner_radius` and an `outer_radius` are set which determine the chart's size and shape. The `inner_radius` sets the distance from the center to the innermost part of the chart (creating a hollow center if greater than zero), while the `outer_radius` defines the chart's overall size by setting the distance from the center to the outermost edge of the radar plot.
 
 ```python demo graphing
-
 data = [
-  {
-    "subject": "Math",
-    "A": 120,
-    "B": 110,
-    "fullMark": 150
-  },
-  {
-    "subject": "Chinese",
-    "A": 98,
-    "B": 130,
-    "fullMark": 150
-  },
-  {
-    "subject": "English",
-    "A": 86,
-    "B": 130,
-    "fullMark": 150
-  },
-  {
-    "subject": "Geography",
-    "A": 99,
-    "B": 100,
-    "fullMark": 150
-  },
-  {
-    "subject": "Physics",
-    "A": 85,
-    "B": 90,
-    "fullMark": 150
-  },
-  {
-    "subject": "History",
-    "A": 65,
-    "B": 85,
-    "fullMark": 150
-  }
+    {"subject": "Math", "A": 120, "B": 110, "fullMark": 150},
+    {"subject": "Chinese", "A": 98, "B": 130, "fullMark": 150},
+    {"subject": "English", "A": 86, "B": 130, "fullMark": 150},
+    {"subject": "Geography", "A": 99, "B": 100, "fullMark": 150},
+    {"subject": "Physics", "A": 85, "B": 90, "fullMark": 150},
+    {"subject": "History", "A": 65, "B": 85, "fullMark": 150},
 ]
+
 
 def radar_multiple():
     return rx.recharts.radar_chart(
@@ -143,7 +84,6 @@ def radar_multiple():
         width="100%",
         height=300,
     )
-
 ```
 
 ## Using More Props
@@ -151,69 +91,37 @@ def radar_multiple():
 The `dot` prop shows points at each data vertex when true. `legend_type="line"` displays a line in the chart legend. `animation_begin=0` starts the animation immediately, `animation_duration=8000` sets an 8-second animation, and `animation_easing="ease-in"` makes the animation start slowly and speed up. These props control the chart's appearance and animation behavior.
 
 ```python demo graphing
-
 data = [
-    {
-        "subject": "Math",
-        "A": 120,
-        "B": 110,
-        "fullMark": 150
-    },
-    {
-        "subject": "Chinese",
-        "A": 98,
-        "B": 130,
-        "fullMark": 150
-    },
-    {
-        "subject": "English",
-        "A": 86,
-        "B": 130,
-        "fullMark": 150
-    },
-    {
-        "subject": "Geography",
-        "A": 99,
-        "B": 100,
-        "fullMark": 150
-    },
-    {
-        "subject": "Physics",
-        "A": 85,
-        "B": 90,
-        "fullMark": 150
-    },
-    {
-        "subject": "History",
-        "A": 65,
-        "B": 85,
-        "fullMark": 150
-    }
-    ]
+    {"subject": "Math", "A": 120, "B": 110, "fullMark": 150},
+    {"subject": "Chinese", "A": 98, "B": 130, "fullMark": 150},
+    {"subject": "English", "A": 86, "B": 130, "fullMark": 150},
+    {"subject": "Geography", "A": 99, "B": 100, "fullMark": 150},
+    {"subject": "Physics", "A": 85, "B": 90, "fullMark": 150},
+    {"subject": "History", "A": 65, "B": 85, "fullMark": 150},
+]
 
 
 def radar_start_end():
     return rx.recharts.radar_chart(
-            rx.recharts.radar(
-                data_key="A",
-                dot=True,
-                stroke="#8884d8",
-                fill="#8884d8",
-                fill_opacity=0.6,
-                legend_type="line",
-                animation_begin=0,
-                animation_duration=8000,
-                animation_easing="ease-in",
-            ),
-            rx.recharts.polar_grid(),
-            rx.recharts.polar_angle_axis(data_key="subject"),
-            rx.recharts.polar_radius_axis(angle=90, domain=[0, 150]),
-            rx.recharts.legend(),
-            data=data,
-            width="100%",
-            height=300,
-        )
-
+        rx.recharts.radar(
+            data_key="A",
+            dot=True,
+            stroke="#8884d8",
+            fill="#8884d8",
+            fill_opacity=0.6,
+            legend_type="line",
+            animation_begin=0,
+            animation_duration=8000,
+            animation_easing="ease-in",
+        ),
+        rx.recharts.polar_grid(),
+        rx.recharts.polar_angle_axis(data_key="subject"),
+        rx.recharts.polar_radius_axis(angle=90, domain=[0, 150]),
+        rx.recharts.legend(),
+        data=data,
+        width="100%",
+        height=300,
+    )
 ```
 
 # Dynamic Data
@@ -252,6 +160,7 @@ class RadarChartState(rx.State):
                 t["value"] = value
                 break
 
+
 def radar_dynamic():
     return rx.hstack(
         rx.recharts.radar_chart(
@@ -271,10 +180,12 @@ def radar_dynamic():
                     rx.text(trait_name, width="7em"),
                     rx.slider(
                         default_value=RadarChartState.traits[i]["value"].to(int),
-                        on_change=lambda value: RadarChartState.set_trait(trait_name, value[0]),
+                        on_change=lambda value: RadarChartState.set_trait(
+                            trait_name, value[0]
+                        ),
                         width="25vw",
                     ),
-                    rx.text(RadarChartState.traits[i]['value']),
+                    rx.text(RadarChartState.traits[i]["value"]),
                 ),
             ),
             rx.text("Remaining points: ", RadarChartState.remaining_points),

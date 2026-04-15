@@ -10,7 +10,10 @@ A pricing card shows the price of a product or service. It typically includes a 
 
 ```python demo exec toggle
 def feature_item(text: str) -> rx.Component:
-    return rx.hstack(rx.icon("check", color=rx.color("grass", 9)), rx.text(text, size="4"))
+    return rx.hstack(
+        rx.icon("check", color=rx.color("grass", 9)), rx.text(text, size="4")
+    )
+
 
 def features() -> rx.Component:
     return rx.vstack(
@@ -23,24 +26,32 @@ def features() -> rx.Component:
         align_items="start",
     )
 
+
 def pricing_card_beginner() -> rx.Component:
     return rx.vstack(
         rx.vstack(
             rx.text("Beginner", weight="bold", size="6"),
-            rx.text("Ideal choice for personal use & for your next project.", size="4", opacity=0.8, align="center"),
+            rx.text(
+                "Ideal choice for personal use & for your next project.",
+                size="4",
+                opacity=0.8,
+                align="center",
+            ),
             rx.hstack(
                 rx.text("$39", weight="bold", font_size="3rem", trim="both"),
                 rx.text("/month", size="4", opacity=0.8, trim="both"),
                 width="100%",
                 align_items="end",
-                justify="center"
+                justify="center",
             ),
             width="100%",
             align="center",
             spacing="6",
         ),
         features(),
-        rx.button("Get started", size="3", variant="solid", width="100%", color_scheme="blue"),
+        rx.button(
+            "Get started", size="3", variant="solid", width="100%", color_scheme="blue"
+        ),
         spacing="6",
         border=f"1.5px solid {rx.color('gray', 5)}",
         background=rx.color("gray", 1),

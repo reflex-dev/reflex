@@ -13,7 +13,9 @@ The Image component can display an image given a `src` path as an argument.
 This could either be a local path from the assets folder or an external link.
 
 ```python demo
-rx.image(src="https://web.reflex-assets.dev/other/logo.jpg", width="100px", height="auto")
+rx.image(
+    src="https://web.reflex-assets.dev/other/logo.jpg", width="100px", height="auto"
+)
 ```
 
 Image composes a box and can be styled similarly.
@@ -45,9 +47,7 @@ class ImageState(rx.State):
 
 
 def image_pil_example():
-    return rx.vstack(
-        rx.image(src=ImageState.image)
-    )
+    return rx.vstack(rx.image(src=ImageState.image))
 ```
 
 ```md alert info

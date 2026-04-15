@@ -28,6 +28,7 @@ data = [
     {"name": "I", "x": 9, "fill": rx.color("accent", 6)},
 ]
 
+
 def radial_bar_simple():
     return rx.recharts.radial_bar_chart(
         rx.recharts.radial_bar(
@@ -35,8 +36,8 @@ def radial_bar_simple():
             min_angle=15,
         ),
         data=data,
-        width = "100%",
-        height = 500,
+        width="100%",
+        height=500,
     )
 ```
 
@@ -45,51 +46,16 @@ def radial_bar_simple():
 The `start_angle` and `end_angle` define the circular arc over which the bars are distributed, while `inner_radius` and `outer_radius` determine the radial extent of the bars from the center.
 
 ```python demo graphing
-
 data_radial_bar = [
-    {
-        "name": "18-24",
-        "uv": 31.47,
-        "pv": 2400,
-        "fill": "#8884d8"
-    },
-    {
-        "name": "25-29",
-        "uv": 26.69,
-        "pv": 4567,
-        "fill": "#83a6ed"
-    },
-    {
-        "name": "30-34",
-        "uv": -15.69,
-        "pv": 1398,
-        "fill": "#8dd1e1"
-    },
-    {
-        "name": "35-39",
-        "uv": 8.22,
-        "pv": 9800,
-        "fill": "#82ca9d"
-    },
-    {
-        "name": "40-49",
-        "uv": -8.63,
-        "pv": 3908,
-        "fill": "#a4de6c"
-    },
-    {
-        "name": "50+",
-        "uv": -2.63,
-        "pv": 4800,
-        "fill": "#d0ed57"
-    },
-    {
-        "name": "unknown",
-        "uv": 6.67,
-        "pv": 4800,
-        "fill": "#ffc658"
-    }
+    {"name": "18-24", "uv": 31.47, "pv": 2400, "fill": "#8884d8"},
+    {"name": "25-29", "uv": 26.69, "pv": 4567, "fill": "#83a6ed"},
+    {"name": "30-34", "uv": -15.69, "pv": 1398, "fill": "#8dd1e1"},
+    {"name": "35-39", "uv": 8.22, "pv": 9800, "fill": "#82ca9d"},
+    {"name": "40-49", "uv": -8.63, "pv": 3908, "fill": "#a4de6c"},
+    {"name": "50+", "uv": -2.63, "pv": 4800, "fill": "#d0ed57"},
+    {"name": "unknown", "uv": 6.67, "pv": 4800, "fill": "#ffc658"},
 ]
+
 
 def radial_bar_advanced():
     return rx.recharts.radial_bar_chart(
@@ -97,7 +63,7 @@ def radial_bar_advanced():
             data_key="uv",
             min_angle=90,
             background=True,
-            label={"fill": '#666', "position": 'insideStart'},
+            label={"fill": "#666", "position": "insideStart"},
         ),
         data=data_radial_bar,
         inner_radius="10%",

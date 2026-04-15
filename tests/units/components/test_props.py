@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 import pytest
-from reflex_core.components.props import NoExtrasAllowedProps, PropsBase
-from reflex_core.event import (
+from reflex_base.components.props import NoExtrasAllowedProps, PropsBase
+from reflex_base.event import (
     EventChain,
     EventHandler,
     event,
     no_args_event_spec,
     passthrough_event_spec,
 )
-from reflex_core.utils.exceptions import InvalidPropValueError
+from reflex_base.utils.exceptions import InvalidPropValueError
 
 from reflex.state import State
 

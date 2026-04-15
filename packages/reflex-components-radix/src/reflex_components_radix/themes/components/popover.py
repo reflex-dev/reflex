@@ -2,12 +2,12 @@
 
 from typing import Literal
 
+from reflex_base.components.component import ComponentNamespace, field
+from reflex_base.constants.compiler import MemoizationMode
+from reflex_base.event import EventHandler, no_args_event_spec, passthrough_event_spec
+from reflex_base.vars.base import Var
 from reflex_components_core.core.breakpoints import Responsive
 from reflex_components_core.el import elements
-from reflex_core.components.component import ComponentNamespace, field
-from reflex_core.constants.compiler import MemoizationMode
-from reflex_core.event import EventHandler, no_args_event_spec, passthrough_event_spec
-from reflex_core.vars.base import Var
 
 from reflex_components_radix.themes.base import (
     RadixThemesComponent,

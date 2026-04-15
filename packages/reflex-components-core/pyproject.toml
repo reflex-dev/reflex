@@ -28,7 +28,7 @@ targets.wheel.artifacts = ["*.pyi"]
 [tool.hatch.build.hooks.reflex-pyi]
 dependencies = [
     "ruff",
-    "reflex-core",
+    "reflex-base",
     "reflex-components-lucide",
     "reflex-components-sonner",
     "python_multipart",

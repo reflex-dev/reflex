@@ -1,3 +1,4 @@
-"""Re-export from reflex_core.components.literals."""
+# pyright: reportWildcardImportFromLibrary=false
+"""Re-export from reflex_base.components.literals."""
 
-from reflex_core.components.literals import *
+from reflex_base.components.literals import *  # pragma: no cover

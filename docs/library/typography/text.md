@@ -58,7 +58,9 @@ Use the `weight` prop to set the text weight.
 ```python demo
 rx.flex(
     rx.text("The quick brown fox jumps over the lazy dog.", weight="light", as_="div"),
-    rx.text("The quick brown fox jumps over the lazy dog.", weight="regular", as_="div"),
+    rx.text(
+        "The quick brown fox jumps over the lazy dog.", weight="regular", as_="div"
+    ),
     rx.text("The quick brown fox jumps over the lazy dog.", weight="medium", as_="div"),
     rx.text("The quick brown fox jumps over the lazy dog.", weight="bold", as_="div"),
     direction="column",
@@ -87,17 +89,23 @@ Use the `trim` prop to trim the leading space at the start, end, or both sides o
 
 ```python demo
 rx.flex(
-    rx.text("Without Trim",
+    rx.text(
+        "Without Trim",
         trim="normal",
-        style={"background": "var(--gray-a2)",
-                "border_top": "1px dashed var(--gray-a7)",
-                "border_bottom": "1px dashed var(--gray-a7)",}
+        style={
+            "background": "var(--gray-a2)",
+            "border_top": "1px dashed var(--gray-a7)",
+            "border_bottom": "1px dashed var(--gray-a7)",
+        },
     ),
-    rx.text("With Trim",
+    rx.text(
+        "With Trim",
         trim="both",
-        style={"background": "var(--gray-a2)",
-                "border_top": "1px dashed var(--gray-a7)",
-                "border_bottom": "1px dashed var(--gray-a7)",}
+        style={
+            "background": "var(--gray-a2)",
+            "border_top": "1px dashed var(--gray-a7)",
+            "border_bottom": "1px dashed var(--gray-a7)",
+        },
     ),
     direction="column",
     spacing="3",
@@ -109,17 +117,29 @@ Trimming the leading is useful when dialing in vertical spacing in cards or othe
 ```python demo
 rx.flex(
     rx.box(
-        rx.heading("Without trim", margin_bottom="4px", size="3",),
-        rx.text("The goal of typography is to relate font size, line height, and line width in a proportional way that maximizes beauty and makes reading easier and more pleasant."),
-        style={"background": "var(--gray-a2)",
-                "border": "1px dashed var(--gray-a7)",},
+        rx.heading(
+            "Without trim",
+            margin_bottom="4px",
+            size="3",
+        ),
+        rx.text(
+            "The goal of typography is to relate font size, line height, and line width in a proportional way that maximizes beauty and makes reading easier and more pleasant."
+        ),
+        style={
+            "background": "var(--gray-a2)",
+            "border": "1px dashed var(--gray-a7)",
+        },
         padding="16px",
     ),
     rx.box(
         rx.heading("With trim", margin_bottom="4px", size="3", trim="start"),
-        rx.text("The goal of typography is to relate font size, line height, and line width in a proportional way that maximizes beauty and makes reading easier and more pleasant."),
-        style={"background": "var(--gray-a2)",
-                "border": "1px dashed var(--gray-a7)",},
+        rx.text(
+            "The goal of typography is to relate font size, line height, and line width in a proportional way that maximizes beauty and makes reading easier and more pleasant."
+        ),
+        style={
+            "background": "var(--gray-a2)",
+            "border": "1px dashed var(--gray-a7)",
+        },
         padding="16px",
     ),
     direction="column",
@@ -147,10 +167,26 @@ Use the `high_contrast` prop to increase color contrast with the background.
 
 ```python demo
 rx.flex(
-    rx.text("The quick brown fox jumps over the lazy dog.", color_scheme="indigo", high_contrast=True),
-    rx.text("The quick brown fox jumps over the lazy dog.", color_scheme="cyan", high_contrast=True),
-    rx.text("The quick brown fox jumps over the lazy dog.", color_scheme="crimson", high_contrast=True),
-    rx.text("The quick brown fox jumps over the lazy dog.", color_scheme="orange", high_contrast=True),
+    rx.text(
+        "The quick brown fox jumps over the lazy dog.",
+        color_scheme="indigo",
+        high_contrast=True,
+    ),
+    rx.text(
+        "The quick brown fox jumps over the lazy dog.",
+        color_scheme="cyan",
+        high_contrast=True,
+    ),
+    rx.text(
+        "The quick brown fox jumps over the lazy dog.",
+        color_scheme="crimson",
+        high_contrast=True,
+    ),
+    rx.text(
+        "The quick brown fox jumps over the lazy dog.",
+        color_scheme="orange",
+        high_contrast=True,
+    ),
     direction="column",
 )
 ```

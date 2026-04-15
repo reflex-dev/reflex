@@ -28,16 +28,19 @@ The expected signature for an error handler is `def handler(exception: Exception
 ```python
 import reflex as rx
 
+
 def custom_frontend_handler(exception: Exception) -> None:
     # My custom logic for frontend errors
     print("Frontend Error: " + str(exception))
+
 
 def custom_backend_handler(exception: Exception) -> Optional[rx.event.EventSpec]:
     # My custom logic for backend errors
     print("Backend Error: " + str(exception))
 
+
 app = rx.App(
-    frontend_exception_handler = custom_frontend_handler,
-    backend_exception_handler = custom_backend_handler
-    )
+    frontend_exception_handler=custom_frontend_handler,
+    backend_exception_handler=custom_backend_handler,
+)
 ```

@@ -25,7 +25,10 @@ import reflex as rx
 A `callout` is a short message to attract user's attention.
 
 ```python demo
-rx.callout("You will need admin privileges to install and access this application.", icon="info")
+rx.callout(
+    "You will need admin privileges to install and access this application.",
+    icon="info",
+)
 ```
 
 The `icon` prop allows an icon to be passed to the `callout` component. See the [**icon** component for all icons that are available.](/docs/library/data-display/icon)
@@ -33,7 +36,12 @@ The `icon` prop allows an icon to be passed to the `callout` component. See the 
 ## As alert
 
 ```python demo
-rx.callout("Access denied. Please contact the network administrator to view this page.", icon="triangle_alert", color_scheme="red", role="alert")
+rx.callout(
+    "Access denied. Please contact the network administrator to view this page.",
+    icon="triangle_alert",
+    color_scheme="red",
+    role="alert",
+)
 ```
 
 ## Style
@@ -44,9 +52,21 @@ Use the `size` prop to control the size.
 
 ```python demo
 rx.flex(
-    rx.callout("You will need admin privileges to install and access this application.", icon="info", size="3",),
-    rx.callout("You will need admin privileges to install and access this application.", icon="info", size="2",),
-    rx.callout("You will need admin privileges to install and access this application.", icon="info", size="1",),
+    rx.callout(
+        "You will need admin privileges to install and access this application.",
+        icon="info",
+        size="3",
+    ),
+    rx.callout(
+        "You will need admin privileges to install and access this application.",
+        icon="info",
+        size="2",
+    ),
+    rx.callout(
+        "You will need admin privileges to install and access this application.",
+        icon="info",
+        size="1",
+    ),
     direction="column",
     spacing="3",
     align="start",
@@ -59,9 +79,21 @@ Use the `variant` prop to control the visual style. It is set to `soft` by defau
 
 ```python demo
 rx.flex(
-    rx.callout("You will need admin privileges to install and access this application.", icon="info", variant="soft",),
-    rx.callout("You will need admin privileges to install and access this application.", icon="info", variant="surface",),
-    rx.callout("You will need admin privileges to install and access this application.", icon="info", variant="outline",),
+    rx.callout(
+        "You will need admin privileges to install and access this application.",
+        icon="info",
+        variant="soft",
+    ),
+    rx.callout(
+        "You will need admin privileges to install and access this application.",
+        icon="info",
+        variant="surface",
+    ),
+    rx.callout(
+        "You will need admin privileges to install and access this application.",
+        icon="info",
+        variant="outline",
+    ),
     direction="column",
     spacing="3",
 )
@@ -73,9 +105,21 @@ Use the `color_scheme` prop to assign a specific color, ignoring the global them
 
 ```python demo
 rx.flex(
-    rx.callout("You will need admin privileges to install and access this application.", icon="info", color_scheme="blue",),
-    rx.callout("You will need admin privileges to install and access this application.", icon="info", color_scheme="green",),
-    rx.callout("You will need admin privileges to install and access this application.", icon="info", color_scheme="red",),
+    rx.callout(
+        "You will need admin privileges to install and access this application.",
+        icon="info",
+        color_scheme="blue",
+    ),
+    rx.callout(
+        "You will need admin privileges to install and access this application.",
+        icon="info",
+        color_scheme="green",
+    ),
+    rx.callout(
+        "You will need admin privileges to install and access this application.",
+        icon="info",
+        color_scheme="red",
+    ),
     direction="column",
     spacing="3",
 )
@@ -87,8 +131,15 @@ Use the `high_contrast` prop to add additional contrast.
 
 ```python demo
 rx.flex(
-    rx.callout("You will need admin privileges to install and access this application.", icon="info",),
-    rx.callout("You will need admin privileges to install and access this application.", icon="info", high_contrast=True,),
+    rx.callout(
+        "You will need admin privileges to install and access this application.",
+        icon="info",
+    ),
+    rx.callout(
+        "You will need admin privileges to install and access this application.",
+        icon="info",
+        high_contrast=True,
+    ),
     direction="column",
     spacing="3",
 )

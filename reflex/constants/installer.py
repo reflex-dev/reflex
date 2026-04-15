@@ -1,3 +1,4 @@
-"""Re-export from reflex_core.constants.installer."""
+# pyright: reportWildcardImportFromLibrary=false
+"""Re-export from reflex_base.constants.installer."""
 
-from reflex_core.constants.installer import *
+from reflex_base.constants.installer import *  # pragma: no cover

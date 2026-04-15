@@ -2,4 +2,4 @@
 
 import os
 
-from reflex_core import constants
+from reflex_base import constants

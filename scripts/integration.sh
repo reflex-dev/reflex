@@ -11,7 +11,11 @@ export PYTHONUNBUFFERED=1
 
 env_mode=$1
 shift
-check_ports=${1:-3000 8000}
+if [ "$env_mode" = "prod" ]; then
+  check_ports=${1:-3000}
+else
+  check_ports=${1:-3000 8000}
+fi
 shift
 
 # Start the server in the background

@@ -55,9 +55,9 @@ class ReflexPyiBuildHook(BuildHookInterface):
             return
 
         try:
-            from reflex_core.utils.pyi_generator import PyiGenerator  # noqa: F401
+            from reflex_base.utils.pyi_generator import PyiGenerator  # noqa: F401
         except ImportError:
-            # reflex-core is not installed — skip pyi generation.
+            # reflex-base is not installed — skip pyi generation.
             # Pre-generated .pyi files in the sdist will be used.
             return
 
@@ -68,7 +68,7 @@ class ReflexPyiBuildHook(BuildHookInterface):
         # (e.g. "reflex_components_core.core.banner" instead of
         # "packages.reflex-components-core.src.reflex_components_core.core.banner").
         subprocess.run(
-            [sys.executable, "-m", "reflex_core.utils.pyi_generator", src_dir.name],
+            [sys.executable, "-m", "reflex_base.utils.pyi_generator", src_dir.name],
             cwd=src_dir.parent,
             check=True,
         )

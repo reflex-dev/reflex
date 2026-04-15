@@ -14,10 +14,7 @@ A Fragment is a Component that allow you to group multiple Components without a 
 Refer to the React docs at [React/Fragment](https://react.dev/reference/react/Fragment) for more information on its use-case.
 
 ```python demo
-rx.fragment(
-    rx.text("Component1"),
-    rx.text("Component2")
-)
+rx.fragment(rx.text("Component1"), rx.text("Component2"))
 ```
 
 ```md video https://youtube.com/embed/ITOZkzjtjUA?start=3196&end=3340

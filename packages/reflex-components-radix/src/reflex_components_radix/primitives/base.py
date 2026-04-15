@@ -2,10 +2,10 @@
 
 from typing import Any
 
-from reflex_core.components.component import Component, field
-from reflex_core.components.tags.tag import Tag
-from reflex_core.utils import format
-from reflex_core.vars.base import Var
+from reflex_base.components.component import Component, field
+from reflex_base.components.tags.tag import Tag
+from reflex_base.utils import format
+from reflex_base.vars.base import Var
 
 
 class RadixPrimitiveComponent(Component):
@@ -43,8 +43,8 @@ class RadixPrimitiveTriggerComponent(RadixPrimitiveComponent):
         """Create a new RadixPrimitiveTriggerComponent instance.
 
         Args:
-            children: The children of the component.
-            props: The properties of the component.
+            *children: The children of the component.
+            **props: The properties of the component.
 
         Returns:
             The new RadixPrimitiveTriggerComponent instance.

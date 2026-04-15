@@ -24,6 +24,7 @@ class CheckboxState(rx.State):
     def set_checked(self, value: bool):
         self.checked = value
 
+
 def checkbox_example():
     return rx.vstack(
         rx.heading(CheckboxState.checked),

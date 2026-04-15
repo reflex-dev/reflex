@@ -120,8 +120,7 @@ They facilitate the organization and navigation between sets of content that sha
 ```python demo
 rx.tabs.root(
     rx.tabs.list(
-        rx.tabs.trigger("Tab 1", value="tab1"),
-        rx.tabs.trigger("Tab 2", value="tab2")
+        rx.tabs.trigger("Tab 1", value="tab1"), rx.tabs.trigger("Tab 2", value="tab2")
     ),
     rx.tabs.content(
         rx.text("item on tab 1"),
@@ -132,7 +131,6 @@ rx.tabs.root(
         value="tab2",
     ),
 )
-
 ```
 
 The `tabs` component is made up of a `rx.tabs.root` which groups `rx.tabs.list` and `rx.tabs.content` parts.
@@ -146,8 +144,7 @@ We use the `default_value` prop to set a default active tab, this will select th
 ```python demo
 rx.tabs.root(
     rx.tabs.list(
-        rx.tabs.trigger("Tab 1", value="tab1"),
-        rx.tabs.trigger("Tab 2", value="tab2")
+        rx.tabs.trigger("Tab 1", value="tab1"), rx.tabs.trigger("Tab 2", value="tab2")
     ),
     rx.tabs.content(
         rx.text("item on tab 1"),
@@ -180,8 +177,7 @@ Defining triggers without content will result in a visual bug where the width of
 ```python demo
 rx.tabs.root(
     rx.tabs.list(
-        rx.tabs.trigger("Tab 1", value="tab1"),
-        rx.tabs.trigger("Tab 2", value="tab2")
+        rx.tabs.trigger("Tab 1", value="tab1"), rx.tabs.trigger("Tab 2", value="tab2")
     ),
     rx.tabs.content(
         rx.text("item on tab 1"),
@@ -199,8 +195,7 @@ rx.tabs.root(
 ```python demo
 rx.tabs.root(
     rx.tabs.list(
-        rx.tabs.trigger("Tab 1", value="tab1"),
-        rx.tabs.trigger("Tab 2", value="tab2")
+        rx.tabs.trigger("Tab 1", value="tab1"), rx.tabs.trigger("Tab 2", value="tab2")
     ),
     rx.tabs.content(
         rx.text("item on tab 1"),
@@ -242,7 +237,7 @@ def index() -> rx.Component:
                     rx.tabs.trigger("Tab 2", value="tab2"),
                 ),
                 rx.tabs.content(
-                        rx.text("items on tab 1"),
+                    rx.text("items on tab 1"),
                     value="tab1",
                 ),
                 rx.tabs.content(
@@ -281,7 +276,7 @@ rx.tabs.root(
     rx.tabs.list(
         rx.tabs.trigger("Tab 1", value="tab1"),
         rx.tabs.trigger("Tab 2", value="tab2"),
-        rx.tabs.trigger("Tab 3", value="tab3")
+        rx.tabs.trigger("Tab 3", value="tab3"),
     ),
 )
 ```
@@ -295,7 +290,7 @@ rx.tabs.root(
     rx.tabs.list(
         rx.tabs.trigger("Tab 1", value="tab1"),
         rx.tabs.trigger("Tab 2", value="tab2"),
-        rx.tabs.trigger("Tab 3", value="tab3", disabled=True)
+        rx.tabs.trigger("Tab 3", value="tab3", disabled=True),
     ),
 )
 ```
@@ -313,8 +308,7 @@ We use the `value` prop to assign a unique value that associates the content wit
 ```python
 rx.tabs.root(
     rx.tabs.list(
-        rx.tabs.trigger("Tab 1", value="tab1"),
-        rx.tabs.trigger("Tab 2", value="tab2")
+        rx.tabs.trigger("Tab 1", value="tab1"), rx.tabs.trigger("Tab 2", value="tab2")
     ),
     rx.tabs.content(
         rx.text("item on tab 1"),

@@ -136,7 +136,7 @@ This package is included in the default Reflex installation, so you typically do
 
 You can take advantage of Reflex's support for custom stylesheets to add custom fonts to your app.
 
-In this example, we will use the [JetBrains Mono]({"https://fonts.google.com/specimen/JetBrains+Mono"}) font from Google Fonts. First, add the stylesheet with the font to your app. You can get this link from the "Get embed code" section of the Google font page.
+In this example, we will use the [JetBrains Mono](https://fonts.google.com/specimen/JetBrains+Mono) font from Google Fonts. First, add the stylesheet with the font to your app. You can get this link from the "Get embed code" section of the Google font page.
 
 ```python
 app = rx.App(

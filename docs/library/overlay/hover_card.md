@@ -106,7 +106,9 @@ class HovercardState(rx.State):
 
 def hovercard_example():
     return rx.flex(
-        rx.heading(f"Number of times hovercard opened or closed: {HovercardState.num_opens}"),
+        rx.heading(
+            f"Number of times hovercard opened or closed: {HovercardState.num_opens}"
+        ),
         rx.heading(f"Hovercard open: {HovercardState.opened}"),
         rx.text(
             "Hover over the text to see the hover card. ",

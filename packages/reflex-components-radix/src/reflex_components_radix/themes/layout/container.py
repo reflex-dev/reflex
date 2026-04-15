@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from typing import Literal
 
+from reflex_base.components.component import field
+from reflex_base.style import STACK_CHILDREN_FULL_WIDTH
+from reflex_base.vars.base import LiteralVar, Var
 from reflex_components_core.core.breakpoints import Responsive
 from reflex_components_core.el import elements
-from reflex_core.components.component import field
-from reflex_core.style import STACK_CHILDREN_FULL_WIDTH
-from reflex_core.vars.base import LiteralVar, Var
 
 from reflex_components_radix.themes.base import RadixThemesComponent
 
@@ -39,10 +39,10 @@ class Container(elements.Div, RadixThemesComponent):
         """Create the container component.
 
         Args:
-            children: The children components.
+            *children: The children components.
             padding: The padding of the container.
             stack_children_full_width: If True, any vstack/hstack children will have 100% width.
-            props: The properties of the container.
+            **props: The properties of the container.
 
         Returns:
             The container component.

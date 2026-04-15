@@ -1,0 +1,53 @@
+fail_fast: true
+repos:
+- hooks:
+  - args:
+    - reflex
+    - tests
+    - docs/app
+    - packages
+    id: ruff-format
+  - args:
+    - --fix
+    - --exit-non-zero-on-fix
+    exclude: ^integration/benchmarks/
+    id: ruff-check
+  repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: v0.15.6
+- hooks:
+  - additional_dependencies:
+    - tomli
+    args:
+    - reflex
+    id: codespell
+  repo: https://github.com/codespell-project/codespell
+  rev: v2.4.1
+- hooks:
+  - always_run: true
+    description: Update pyi files as needed
+    entry: python3 scripts/make_pyi.py
+    id: update-pyi-files
+    language: system
+    name: update-pyi-files
+    require_serial: true
+  repo: local
+- hooks:
+  - args:
+    - reflex
+    - tests
+    id: pyright
+    language: system
+  repo: https://github.com/RobertCraigie/pyright-python
+  rev: v1.1.408
+- hooks:
+  - additional_dependencies:
+    - '@biomejs/biome@2.4.8'
+    args:
+    - --indent-width
+    - '2'
+    - --indent-style
+    - space
+    exclude: (\.css$|docs/app/)
+    id: biome-format
+  repo: https://github.com/biomejs/pre-commit
+  rev: v0.6.1

@@ -5,8 +5,8 @@ Check out what the community is building with Reflex. See 2000+ more public proj
 ```python exec
 import reflex as rx
 
-from pcweb.components.code_card import gallery_app_card
-from pcweb.pages.gallery.sidebar import TemplatesState, pagination, sidebar
+from reflex_ui_shared.components.code_card import gallery_app_card
+from reflex_ui_shared.gallery.sidebar import TemplatesState, pagination, sidebar
 
 
 @rx.memo
@@ -18,7 +18,7 @@ def skeleton_card() -> rx.Component:
 
 
 def component_grid() -> rx.Component:
-    from pcweb.pages.gallery.apps import gallery_apps_data
+    from reflex_ui_shared.gallery.apps import gallery_apps_data
 
     posts = []
     for path, document in list(gallery_apps_data.items()):
@@ -56,7 +56,6 @@ def gallery() -> rx.Component:
         id="gallery",
         class_name="mx-auto",
     )
-
 ```
 
 ```python eval

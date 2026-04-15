@@ -4,9 +4,9 @@ import dataclasses
 import pickle
 from asyncio import CancelledError
 from contextlib import asynccontextmanager
-from unittest.mock import patch
 
 import pytest
+from reflex_base.event.context import EventContext
 
 import reflex as rx
 from reflex.istate.proxy import MutableProxy, StateProxy
@@ -42,14 +42,15 @@ def test_mutable_proxy_pickle_preserves_object_identity():
     assert unpickled["direct"][0] is unpickled["proxied"][0]
 
 
-@pytest.mark.usefixtures("mock_app")
 @pytest.mark.asyncio
-async def test_state_proxy_recovery():
+async def test_state_proxy_recovery(
+    attached_mock_event_context: EventContext, monkeypatch: pytest.MonkeyPatch
+):
     """Ensure that `async with self` can be re-entered after a lock issue."""
     state = ProxyTestState()
     state_proxy = StateProxy(state)
 
-    with patch("reflex.app.App.modify_state") as mock_modify_state:
+    with monkeypatch.context() as m:
 
         @asynccontextmanager
         async def mock_modify_state_context(*args, **kwargs):  # noqa: RUF029
@@ -57,7 +58,11 @@ async def test_state_proxy_recovery():
             raise CancelledError(msg)
             yield
 
-        mock_modify_state.side_effect = mock_modify_state_context
+        m.setattr(
+            attached_mock_event_context.state_manager,
+            "modify_state",
+            mock_modify_state_context,
+        )
 
         with pytest.raises(CancelledError, match="Simulated lock issue"):
             async with state_proxy:
