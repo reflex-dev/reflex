@@ -60,7 +60,7 @@ def LifespanApp(
         print("Raw asyncio task started.")
         try:
             while True:
-                raw_asyncio_task_global += 1  # pyright: ignore[reportUnboundVariable]
+                raw_asyncio_task_global += 1  # pyright: ignore[reportUnboundVariable, reportPossiblyUnboundVariable]
                 await asyncio.sleep(0.1)
         except asyncio.CancelledError as ce:
             print(f"Raw asyncio task cancelled: {ce}.")
