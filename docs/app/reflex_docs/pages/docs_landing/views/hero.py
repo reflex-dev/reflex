@@ -27,7 +27,7 @@ def hero() -> rx.Component:
             rx.el.a(
                 button(
                     "Get Started",
-                    ui.icon("ArrowRightIcon"),
+                    ui.icon("ArrowRight01Icon"),
                     variant="primary",
                     size="md",
                     native_button=False,
