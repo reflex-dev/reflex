@@ -48,6 +48,10 @@ app = rx.App()
 app.register_lifespan_task(long_running_task, foo=42, bar=os.environ["BAR_PARAM"])
 ```
 
+All tasks must be registered before the app starts. Calling
+`register_lifespan_task` after the lifespan has begun (for example, from an
+event handler or from within another lifespan task) will raise a `RuntimeError`.
+
 ### Inspecting Registered Tasks
 
 To get the currently registered lifespan tasks, use `app.get_lifespan_tasks()`,
