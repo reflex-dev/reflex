@@ -46,6 +46,9 @@ class LifespanMixin(AppMixin):
     _lifespan_tasks: dict[asyncio.Task | Callable, None] = dataclasses.field(
         default_factory=dict, init=False, repr=False
     )
+    _lifespan_tasks_started: bool = dataclasses.field(
+        default=False, init=False, repr=False
+    )
 
     if TYPE_CHECKING:
         # Static deprecation warning for IDE/type checkers.
@@ -83,6 +86,7 @@ class LifespanMixin(AppMixin):
 
     @contextlib.asynccontextmanager
     async def _run_lifespan_tasks(self, app: Starlette):
+        self._lifespan_tasks_started = True
         running_tasks = []
         try:
             async with contextlib.AsyncExitStack() as stack:
@@ -142,7 +146,14 @@ class LifespanMixin(AppMixin):
 
         Raises:
             InvalidLifespanTaskTypeError: If the task is a generator function.
+            RuntimeError: If lifespan tasks are already running.
         """
+        if self._lifespan_tasks_started:
+            msg = (
+                f"Cannot register lifespan task {_get_task_name(task)!r} after "
+                "lifespan has started. Register all tasks before the app starts."
+            )
+            raise RuntimeError(msg)
         if inspect.isgeneratorfunction(task) or inspect.isasyncgenfunction(task):
             msg = f"Task {task.__name__} of type generator must be decorated with contextlib.asynccontextmanager."
             raise InvalidLifespanTaskTypeError(msg)

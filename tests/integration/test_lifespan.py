@@ -67,12 +67,21 @@ def LifespanApp(
             raw_asyncio_task_global = 0
 
     @asynccontextmanager
-    async def register_raw_asyncio_task(app):  # noqa: RUF029
+    async def assert_register_blocked_during_lifespan(app):  # noqa: RUF029
+        """Negative test: registering a task after lifespan has started must raise."""
         from reflex.utils.prerequisites import get_app
 
         reflex_app = get_app().app
         task = asyncio.create_task(raw_asyncio_task_coro(), name="raw_asyncio_task")
-        reflex_app.register_lifespan_task(task)
+        try:
+            reflex_app.register_lifespan_task(task)
+        except RuntimeError as exc:
+            print(f"Expected RuntimeError: {exc}")
+        else:
+            msg = "register_lifespan_task should have raised RuntimeError"
+            raise AssertionError(msg)
+        finally:
+            task.cancel()
         yield
 
     class LifespanState(rx.State):
@@ -146,7 +155,8 @@ def LifespanApp(
 
     app.register_lifespan_task(lifespan_task)
     app.register_lifespan_task(lifespan_context, inc=2)
-    app.register_lifespan_task(register_raw_asyncio_task)
+    app.register_lifespan_task(raw_asyncio_task_coro)
+    app.register_lifespan_task(assert_register_blocked_during_lifespan)
     app.register_lifespan_task(modify_state_task)
     app.add_page(index)
 
@@ -238,7 +248,7 @@ def test_lifespan_modify_state(lifespan_app: AppHarness):
 
 
 def test_lifespan_raw_asyncio_task(lifespan_app: AppHarness):
-    """Test that a pre-created asyncio.Task registered as a lifespan task works.
+    """Test that a coroutine function registered as a lifespan task runs as an asyncio.Task.
 
     Args:
         lifespan_app: harness for LifespanApp app
