@@ -32,11 +32,11 @@ class LifespanMixin(AppMixin):
 
     @property
     @deprecated("Use get_lifespan_tasks method instead.")
-    def lifespan_tasks(self) -> set[asyncio.Task | Callable]:
+    def lifespan_tasks(self) -> frozenset[asyncio.Task | Callable]:
         """Get a copy of registered lifespan tasks.
 
         Returns:
-            A set of registered lifespan tasks.
+            A frozenset of registered lifespan tasks.
         """
         console.deprecate(
             feature_name="LifespanMixin.lifespan_tasks",
@@ -44,7 +44,7 @@ class LifespanMixin(AppMixin):
             deprecation_version="0.9.0",
             removal_version="1.0",
         )
-        return set(self._lifespan_tasks)
+        return frozenset(self._lifespan_tasks)
 
     def get_lifespan_tasks(self) -> tuple[asyncio.Task | Callable, ...]:
         """Get a copy of currently registered lifespan tasks.
