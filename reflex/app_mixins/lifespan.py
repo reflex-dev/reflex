@@ -30,7 +30,7 @@ class LifespanMixin(AppMixin):
     """
 
     _lifespan_tasks: dict[asyncio.Task | Callable, None] = dataclasses.field(
-        default_factory=dict
+        default_factory=dict, init=False, repr=False
     )
 
     if TYPE_CHECKING:
