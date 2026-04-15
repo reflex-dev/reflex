@@ -96,6 +96,9 @@ def FrontendPathApp():
         " width: 50px; height: 50px; }"
     )
 
+    # Write a shared asset next to the app module so rx.asset(shared=True) can find it.
+    (Path(__file__).parent / "shared_image.png").write_bytes(_make_png())
+
     # Write a test file to the upload directory so it's served by the backend.
     upload_dir = rx.get_upload_dir()
     upload_dir.mkdir(parents=True, exist_ok=True)
@@ -118,8 +121,14 @@ def FrontendPathApp():
             rx.link("go to static", href="/static-page", id="link-static"),
             rx.link("go to dynamic 7", href="/dynamic/7", id="link-dynamic"),
             rx.link("go to dynamic 99", href="/dynamic/99", id="link-dynamic-99"),
-            # Asset image using app-relative path.
+            # Asset image using app-relative path (local asset).
             rx.el.img(src=rx.asset("test_image.png"), id="asset-img", alt="asset"),
+            # Shared asset image (library-style asset next to the module file).
+            rx.el.img(
+                src=rx.asset("shared_image.png", shared=True),
+                id="shared-asset-img",
+                alt="shared asset",
+            ),
             # Uploaded file via get_upload_url.
             rx.el.img(
                 src=rx.get_upload_url("test.png"),
@@ -363,6 +372,17 @@ def test_asset_image_loads(frontend_path_app: AppHarness, page: Page):
     img = page.locator("#asset-img")
     expect(img).to_be_visible()
     page.wait_for_function("document.querySelector('#asset-img').naturalWidth > 0")
+
+
+def test_shared_asset_image_loads(frontend_path_app: AppHarness, page: Page):
+    """A shared (library-style) asset image loads correctly."""
+    _navigate(frontend_path_app, page)
+
+    img = page.locator("#shared-asset-img")
+    expect(img).to_be_visible()
+    page.wait_for_function(
+        "document.querySelector('#shared-asset-img').naturalWidth > 0"
+    )
 
 
 def test_css_background_image_loads(frontend_path_app: AppHarness, page: Page):

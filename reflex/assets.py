@@ -129,4 +129,4 @@ def asset(
                 dst_file.unlink()
                 dst_file.symlink_to(src_file_shared)
 
-    return f"/{external}/{subfolder}/{path}"
+    return get_config().prepend_frontend_path(f"/{external}/{subfolder}/{path}")
