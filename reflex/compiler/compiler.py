@@ -992,6 +992,13 @@ def compile_app(
             for page_ctx in compile_ctx.compiled_pages.values()
             if page_ctx.output_path is not None and page_ctx.output_code is not None
         ]
+
+        # Reinitialize vite config in case runtime options have changed.
+        compile_results.append((
+            constants.ReactRouter.VITE_CONFIG_FILE,
+            frontend_skeleton._compile_vite_config(config),
+        ))
+
         all_imports = compile_ctx.all_imports
 
         if app._state is None and any(

@@ -32,13 +32,13 @@ def cta_card():
                         variant="primary",
                     ),
                 ),
-                rx.el.a(
+                rx.el.elements.a(
                     marketing_button(
                         "Try for free",
                         ui.icon("ArrowRight01Icon"),
                         variant="ghost",
                     ),
-                    to=REFLEX_BUILD_URL,
+                    href=REFLEX_BUILD_URL,
                     target="_blank",
                 ),
                 class_name="flex flex-row gap-4 items-center",

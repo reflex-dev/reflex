@@ -476,6 +476,19 @@ class Config(BaseConfig):
 
         return json.dumps(self, default=serialize)
 
+    def prepend_frontend_path(self, path: str) -> str:
+        """Prepend the frontend path to a given path.
+
+        Args:
+            path: The path to prepend the frontend path to.
+
+        Returns:
+            The path with the frontend path prepended if it begins with a slash, otherwise the original path.
+        """
+        if self.frontend_path and path.startswith("/"):
+            return f"/{self.frontend_path.strip('/')}{path}"
+        return path
+
     @property
     def app_module(self) -> ModuleType | None:
         """Return the app module if `app_module_import` is set.
