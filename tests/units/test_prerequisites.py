@@ -67,21 +67,21 @@ def test_update_react_router_config(config, export, expected_output):
                 app_name="test",
                 frontend_path="",
             ),
-            'assetsDir: "/assets".slice(1),',
+            'base: "/",',
         ),
         (
             Config(
                 app_name="test",
                 frontend_path="/test",
             ),
-            'assetsDir: "/test/assets".slice(1),',
+            'base: "/test/",',
         ),
         (
             Config(
                 app_name="test",
                 frontend_path="/test/",
             ),
-            'assetsDir: "/test/assets".slice(1),',
+            'base: "/test/",',
         ),
     ],
 )

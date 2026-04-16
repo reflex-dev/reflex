@@ -896,18 +896,19 @@ class AppHarnessProd(AppHarness):
             / reflex.utils.prerequisites.get_web_dir()
             / reflex.constants.Dirs.STATIC
         )
-        error_page_map = {
-            404: web_root / "404.html",
-        }
+        config = reflex.config.get_config()
         with Subdir404TCPServer(
             ("", 0),
             SimpleHTTPRequestHandlerCustomErrors,
             root=web_root,
-            error_page_map=error_page_map,
+            error_page_map={
+                404: web_root / config.prepend_frontend_path("/404.html").lstrip("/"),
+            },
         ) as self.frontend_server:
+            frontend_path = config.frontend_path.strip("/")
             self.frontend_url = "http://localhost:{1}".format(
                 *self.frontend_server.socket.getsockname()
-            )
+            ) + (f"/{frontend_path}/" if frontend_path else "/")
             self.frontend_server.serve_forever()
 
     def _start_frontend(self):

@@ -280,7 +280,7 @@ def get_frontend_mount():
     config = get_config()
 
     return Mount(
-        "/" + config.frontend_path.strip("/"),
+        config.prepend_frontend_path("/"),
         app=StaticFiles(
             directory=prerequisites.get_web_dir()
             / constants.Dirs.STATIC
