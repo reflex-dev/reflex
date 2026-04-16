@@ -58,6 +58,7 @@ jobs:
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: "3.14"
+          node-version: "22"
           run-uv-sync: true
 
       - name: Install playwright

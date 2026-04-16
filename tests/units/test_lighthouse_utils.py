@@ -1,5 +1,6 @@
 """Unit tests for Lighthouse benchmark utilities."""
 
+import subprocess
 from types import SimpleNamespace
 
 import pytest
@@ -82,6 +83,55 @@ def test_prepare_lighthouse_command_warms_package_runner_once(
             },
         )
     ]
+
+
+def test_prepare_lighthouse_command_timeout_has_friendly_message(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Timeouts during CLI warmup should fail with helpful pytest output."""
+
+    def fake_run(*_args, **_kwargs):
+        raise subprocess.TimeoutExpired(
+            cmd=["npx", "--yes", lighthouse_utils.LIGHTHOUSE_CLI_PACKAGE, "--version"],
+            timeout=lighthouse_utils.LIGHTHOUSE_COMMAND_PREP_TIMEOUT_SECONDS,
+            output="prep stdout",
+            stderr="prep stderr",
+        )
+
+    monkeypatch.setattr(lighthouse_utils.subprocess, "run", fake_run)
+    command = ("npx", "--yes", lighthouse_utils.LIGHTHOUSE_CLI_PACKAGE)
+
+    with pytest.raises(pytest.fail.Exception, match="timed out after 300s"):
+        lighthouse_utils._prepare_lighthouse_command(command)
+
+
+def test_run_lighthouse_timeout_has_friendly_message(
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Timeouts during a Lighthouse run should be reported via pytest.fail."""
+
+    def fake_run(*_args, **_kwargs):
+        raise subprocess.TimeoutExpired(
+            cmd=["lighthouse", "http://localhost:3000"],
+            timeout=lighthouse_utils.LIGHTHOUSE_RUN_TIMEOUT_SECONDS,
+            output="run stdout",
+            stderr="run stderr",
+        )
+
+    monkeypatch.setattr(
+        lighthouse_utils, "_prepare_lighthouse_command", lambda command: command
+    )
+    monkeypatch.setattr(
+        lighthouse_utils, "get_lighthouse_command", lambda: ["lighthouse"]
+    )
+    monkeypatch.setattr(lighthouse_utils, "get_chrome_path", lambda: "/tmp/chrome")
+    monkeypatch.setattr(lighthouse_utils.subprocess, "run", fake_run)
+
+    with pytest.raises(pytest.fail.Exception, match="timed out after 300s"):
+        lighthouse_utils.run_lighthouse(
+            "http://localhost:3000", tmp_path / "lighthouse-report.json"
+        )
 
 
 @pytest.mark.parametrize(

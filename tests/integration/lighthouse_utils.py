@@ -753,7 +753,7 @@ def _prepare_lighthouse_command(command: tuple[str, ...]) -> tuple[str, ...]:
         )
     except subprocess.TimeoutExpired as err:
         pytest.fail(
-            "Lighthouse CLI preparation timed out. "
+            f"Lighthouse CLI preparation timed out after {err.timeout}s. "
             "If Lighthouse is not already installed, make sure the npm registry "
             f"is reachable or set {LIGHTHOUSE_COMMAND_ENV_VAR} to an installed CLI.\n"
             f"Command: {' '.join(prepare_command)}\n"
@@ -920,7 +920,7 @@ def run_lighthouse(url: str, report_path: Path) -> dict[str, Any]:
         )
     except subprocess.TimeoutExpired as err:
         pytest.fail(
-            "Lighthouse execution timed out.\n"
+            f"Lighthouse execution timed out after {err.timeout}s.\n"
             f"Command: {' '.join(command)}\n"
             f"stdout:\n{_format_subprocess_output(err.stdout)}\n"
             f"stderr:\n{_format_subprocess_output(err.stderr)}"
