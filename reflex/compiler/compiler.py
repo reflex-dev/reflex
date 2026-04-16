@@ -943,196 +943,189 @@ def compile_app(
     base_total = (len(app._unevaluated_pages) * 2) + fixed_steps + len(config.plugins)
     progress.start()
     task = progress.add_task("Compiling:", total=base_total)
-    try:
-        compile_ctx = CompileContext(
-            app=app,
-            pages=list(app._unevaluated_pages.values()),
-            hooks=CompilerHooks(
-                plugins=default_page_plugins(style=app.style, plugins=compiler_plugins)
-            ),
+    compile_ctx = CompileContext(
+        app=app,
+        pages=list(app._unevaluated_pages.values()),
+        hooks=CompilerHooks(
+            plugins=default_page_plugins(style=app.style, plugins=compiler_plugins)
+        ),
+    )
+
+    with console.timing("Compile pages"), compile_ctx:
+        compile_ctx.compile(
+            evaluate_progress=lambda: progress.advance(task),
+            render_progress=lambda: progress.advance(task),
         )
 
-        with console.timing("Compile pages"), compile_ctx:
-            compile_ctx.compile(
-                evaluate_progress=lambda: progress.advance(task),
-                render_progress=lambda: progress.advance(task),
-            )
-
-        for route, page_ctx in compile_ctx.compiled_pages.items():
-            app._check_routes_conflict(route)
-            if not isinstance(page_ctx.root_component, Component):
-                msg = (
-                    f"Compiled page {route!r} root must be a Component before it can "
-                    "be registered on the app."
-                )
-                raise TypeError(msg)
-            app._pages[route] = page_ctx.root_component
-
-        app._stateful_pages.update(compile_ctx.stateful_routes)
-        app._write_stateful_pages_marker()
-        app._add_optional_endpoints()
-        app._validate_var_dependencies()
-
-        if config.show_built_with_reflex is None:
-            if (
-                get_compile_context() == constants.CompileContext.DEPLOY
-                and prerequisites.get_user_tier() in ["pro", "team", "enterprise"]
-            ):
-                config.show_built_with_reflex = False
-            else:
-                config.show_built_with_reflex = True
-
-        if is_prod_mode() and config.show_built_with_reflex:
-            app._setup_sticky_badge()
-
-        progress.advance(task)
-
-        compile_results = [
-            (page_ctx.output_path, page_ctx.output_code)
-            for page_ctx in compile_ctx.compiled_pages.values()
-            if page_ctx.output_path is not None and page_ctx.output_code is not None
-        ]
-
-        # Reinitialize vite config in case runtime options have changed.
-        compile_results.append((
-            constants.ReactRouter.VITE_CONFIG_FILE,
-            frontend_skeleton._compile_vite_config(config),
-        ))
-
-        all_imports = compile_ctx.all_imports
-
-        if app._state is None and any(
-            code_uses_state_contexts(page_ctx.output_code or "")
-            for page_ctx in compile_ctx.compiled_pages.values()
-        ):
+    for route, page_ctx in compile_ctx.compiled_pages.items():
+        app._check_routes_conflict(route)
+        if not isinstance(page_ctx.root_component, Component):
             msg = (
-                "To access rx.State in frontend components, at least one "
-                "subclass of rx.State must be defined in the app."
+                f"Compiled page {route!r} root must be a Component before it can "
+                "be registered on the app."
             )
-            raise ReflexRuntimeError(msg)
-        progress.advance(task)
+            raise TypeError(msg)
+        app._pages[route] = page_ctx.root_component
 
-        app_wrappers = _resolve_app_wrap_components(
-            app, compile_ctx.app_wrap_components
+    app._stateful_pages.update(compile_ctx.stateful_routes)
+    app._write_stateful_pages_marker()
+    app._add_optional_endpoints()
+    app._validate_var_dependencies()
+
+    if config.show_built_with_reflex is None:
+        if (
+            get_compile_context() == constants.CompileContext.DEPLOY
+            and prerequisites.get_user_tier() in ["pro", "team", "enterprise"]
+        ):
+            config.show_built_with_reflex = False
+        else:
+            config.show_built_with_reflex = True
+
+    if is_prod_mode() and config.show_built_with_reflex:
+        app._setup_sticky_badge()
+
+    progress.advance(task)
+
+    compile_results = [
+        (page_ctx.output_path, page_ctx.output_code)
+        for page_ctx in compile_ctx.compiled_pages.values()
+        if page_ctx.output_path is not None and page_ctx.output_code is not None
+    ]
+
+    # Reinitialize vite config in case runtime options have changed.
+    compile_results.append((
+        constants.ReactRouter.VITE_CONFIG_FILE,
+        frontend_skeleton._compile_vite_config(config),
+    ))
+
+    all_imports = compile_ctx.all_imports
+
+    if app._state is None and any(
+        code_uses_state_contexts(page_ctx.output_code or "")
+        for page_ctx in compile_ctx.compiled_pages.values()
+    ):
+        msg = (
+            "To access rx.State in frontend components, at least one "
+            "subclass of rx.State must be defined in the app."
         )
-        app_root = app._app_root(app_wrappers)
-        all_imports = utils.merge_imports(all_imports, app_root._get_all_imports())
+        raise ReflexRuntimeError(msg)
+    progress.advance(task)
 
+    app_wrappers = _resolve_app_wrap_components(app, compile_ctx.app_wrap_components)
+    app_root = app._app_root(app_wrappers)
+    all_imports = utils.merge_imports(all_imports, app_root._get_all_imports())
+
+    (
+        memo_components_output,
+        memo_components_result,
+        memo_components_imports,
+    ) = compile_memo_components(
+        dict.fromkeys(CUSTOM_COMPONENTS.values()),
         (
-            memo_components_output,
-            memo_components_result,
-            memo_components_imports,
-        ) = compile_memo_components(
-            dict.fromkeys(CUSTOM_COMPONENTS.values()),
-            (
-                *tuple(EXPERIMENTAL_MEMOS.values()),
-                *tuple(compile_ctx.auto_memo_components.values()),
+            *tuple(EXPERIMENTAL_MEMOS.values()),
+            *tuple(compile_ctx.auto_memo_components.values()),
+        ),
+    )
+    compile_results.append((memo_components_output, memo_components_result))
+    all_imports = utils.merge_imports(all_imports, memo_components_imports)
+    progress.advance(task)
+
+    compile_results.append(
+        compile_document_root(
+            app.head_components,
+            html_lang=app.html_lang,
+            html_custom_attrs=(
+                {"suppressHydrationWarning": True, **app.html_custom_attrs}
+                if app.html_custom_attrs
+                else {"suppressHydrationWarning": True}
             ),
         )
-        compile_results.append((memo_components_output, memo_components_result))
-        all_imports = utils.merge_imports(all_imports, memo_components_imports)
-        progress.advance(task)
+    )
+    progress.advance(task)
 
-        compile_results.append(
-            compile_document_root(
-                app.head_components,
-                html_lang=app.html_lang,
-                html_custom_attrs=(
-                    {"suppressHydrationWarning": True, **app.html_custom_attrs}
-                    if app.html_custom_attrs
-                    else {"suppressHydrationWarning": True}
-                ),
+    assets_src = Path.cwd() / constants.Dirs.APP_ASSETS
+    if assets_src.is_dir() and not dry_run:
+        with console.timing("Copy assets"):
+            path_ops.update_directory_tree(
+                src=assets_src,
+                dest=Path.cwd() / prerequisites.get_web_dir() / constants.Dirs.PUBLIC,
             )
+
+    save_tasks: list[
+        tuple[
+            Callable[..., list[tuple[str, str]] | tuple[str, str] | None],
+            tuple[Any, ...],
+            dict[str, Any],
+        ]
+    ] = []
+    modify_files_tasks: list[tuple[str, str, Callable[[str], str]]] = []
+
+    def add_save_task(
+        task_fn: Callable[..., list[tuple[str, str]] | tuple[str, str] | None],
+        /,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
+        save_tasks.append((task_fn, args, kwargs))
+
+    for plugin in config.plugins:
+        plugin.pre_compile(
+            add_save_task=add_save_task,
+            add_modify_task=lambda *args, plugin=plugin: modify_files_tasks.append((
+                plugin.__class__.__module__ + plugin.__class__.__name__,
+                *args,
+            )),
+            radix_themes_plugin=radix_themes_plugin,
+            unevaluated_pages=list(app._unevaluated_pages.values()),
         )
-        progress.advance(task)
 
-        assets_src = Path.cwd() / constants.Dirs.APP_ASSETS
-        if assets_src.is_dir() and not dry_run:
-            with console.timing("Copy assets"):
-                path_ops.update_directory_tree(
-                    src=assets_src,
-                    dest=Path.cwd()
-                    / prerequisites.get_web_dir()
-                    / constants.Dirs.PUBLIC,
-                )
+    if save_tasks:
+        _set_progress_total(progress, task, base_total + len(save_tasks))
 
-        save_tasks: list[
-            tuple[
-                Callable[..., list[tuple[str, str]] | tuple[str, str] | None],
-                tuple[Any, ...],
-                dict[str, Any],
-            ]
-        ] = []
-        modify_files_tasks: list[tuple[str, str, Callable[[str], str]]] = []
+    progress.advance(task, advance=len(config.plugins))
 
-        def add_save_task(
-            task_fn: Callable[..., list[tuple[str, str]] | tuple[str, str] | None],
-            /,
-            *args: Any,
-            **kwargs: Any,
-        ) -> None:
-            save_tasks.append((task_fn, args, kwargs))
-
-        for plugin in config.plugins:
-            plugin.pre_compile(
-                add_save_task=add_save_task,
-                add_modify_task=lambda *args, plugin=plugin: modify_files_tasks.append((
-                    plugin.__class__.__module__ + plugin.__class__.__name__,
-                    *args,
-                )),
-                radix_themes_plugin=radix_themes_plugin,
-                unevaluated_pages=list(app._unevaluated_pages.values()),
-            )
-
-        if save_tasks:
-            _set_progress_total(progress, task, base_total + len(save_tasks))
-
-        progress.advance(task, advance=len(config.plugins))
-
-        compile_results.append(
-            compile_root_stylesheet(
-                app.stylesheets,
-                app.reset_style,
-                plugins=compiler_plugins,
-            )
+    compile_results.append(
+        compile_root_stylesheet(
+            app.stylesheets,
+            app.reset_style,
+            plugins=compiler_plugins,
         )
-        progress.advance(task)
+    )
+    progress.advance(task)
 
-        compile_results.append(compile_theme(app.style))
-        progress.advance(task)
+    compile_results.append(compile_theme(app.style))
+    progress.advance(task)
 
-        for task_fn, args, kwargs in save_tasks:
-            result = task_fn(*args, **kwargs)
-            if result is None:
-                progress.advance(task)
-                continue
-            if isinstance(result, list):
-                compile_results.extend(result)
-            else:
-                compile_results.append(result)
+    for task_fn, args, kwargs in save_tasks:
+        result = task_fn(*args, **kwargs)
+        if result is None:
             progress.advance(task)
-
-        compile_results.append(
-            compile_contexts(app._state, radix_themes_plugin.get_theme())
-        )
+            continue
+        if isinstance(result, list):
+            compile_results.extend(result)
+        else:
+            compile_results.append(result)
         progress.advance(task)
 
-        compile_results.append(compile_app_root(app_root))
-        progress.advance(task)
+    compile_results.append(
+        compile_contexts(app._state, radix_themes_plugin.get_theme())
+    )
+    progress.advance(task)
 
-        progress.stop()
+    compile_results.append(compile_app_root(app_root))
+    progress.advance(task)
 
-        if dry_run:
-            return
+    progress.stop()
 
-        with console.timing("Install Frontend Packages"):
-            app._get_frontend_packages(all_imports)
+    if dry_run:
+        return
 
-        frontend_skeleton.update_react_router_config(
-            prerender_routes=prerender_routes,
-        )
-    finally:
-        reset_bundled_libraries()
+    with console.timing("Install Frontend Packages"):
+        app._get_frontend_packages(all_imports)
+
+    frontend_skeleton.update_react_router_config(
+        prerender_routes=prerender_routes,
+    )
 
     if is_prod_mode():
         purge_web_pages_dir()
