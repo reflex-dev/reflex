@@ -188,29 +188,14 @@ def app_root_template(
 
     custom_code_str = "\n".join(custom_codes)
 
-    if window_libraries:
-        # Use dynamic imports to avoid blocking the critical rendering path.
-        # These libraries are only needed for dynamically eval'd components.
-        lazy_import_entries = ",\n      ".join([
-            f'import("{lib_path}").then(m => ["{lib_path}", m])'
-            for _lib_alias, lib_path in window_libraries
-        ])
-        window_libraries_block = f"""
-  useEffect(() => {{
-    if (!window["__reflex"]) {{
-      Promise.all([
-      {lazy_import_entries}
-      ]).then((modules) => {{
-        const imports = {{}};
-        for (const [path, mod] of modules) {{
-          imports[path] = mod;
-        }}
-        window["__reflex"] = imports;
-      }});
-    }}
-  }}, []);"""
-    else:
-        window_libraries_block = ""
+    import_window_libraries = "\n".join([
+        f'import * as {lib_alias} from "{lib_path}";'
+        for lib_alias, lib_path in window_libraries
+    ])
+
+    window_imports_str = "\n".join([
+        f'    "{lib_path}": {lib_alias},' for lib_alias, lib_path in window_libraries
+    ])
 
     return f"""
 {imports_str}
@@ -219,6 +204,7 @@ import {{ EventLoopProvider, StateProvider, defaultColorMode }} from "$/utils/co
 import {{ ThemeProvider }} from '$/utils/react-theme';
 import {{ Layout as AppLayout }} from './_document';
 import {{ Outlet }} from 'react-router';
+{import_window_libraries}
 
 {custom_code_str}
 
@@ -229,7 +215,12 @@ return ({_RenderUtils.render(render)})
 
 
 export function Layout({{children}}) {{
-{window_libraries_block}
+  useEffect(() => {{
+    // Make contexts and state objects available globally for dynamic eval'd components.
+    window["__reflex"] = {{
+{window_imports_str}
+    }};
+  }}, []);
 
   return jsx(AppLayout, {{}},
     jsx(ThemeProvider, {{defaultTheme: defaultColorMode, attribute: "class"}},
@@ -496,7 +487,6 @@ def package_json_template(
     return json.dumps({
         "name": "reflex",
         "type": "module",
-        "sideEffects": ["*.css"],
         "scripts": scripts,
         "dependencies": dependencies,
         "devDependencies": dev_dependencies,
