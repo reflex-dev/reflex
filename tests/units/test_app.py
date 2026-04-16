@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import contextvars
 import functools
 import io
 import json
@@ -2611,3 +2612,112 @@ async def test_app_modify_state_clean(token: str, substate: bool, frontend: bool
         )
     else:
         assert app._event_namespace.emit_update.call_count == 0
+
+
+@pytest.fixture
+def app_with_processor() -> App:
+    """Create an App with a mocked event processor that has a root context.
+
+    Returns:
+        An App instance with a mock event processor and root context.
+    """
+    app = App(_state=EmptyState)
+    root_context = EventContext(
+        token="",
+        state_manager=StateManagerMemory(),
+        enqueue_impl=AsyncMock(),
+    )
+    processor = Mock()
+    processor._root_context = root_context
+    app._event_processor = processor
+    return app
+
+
+def _run_isolated(fn):
+    """Run fn in a fresh empty context so all contextvars start unset.
+
+    Args:
+        fn: A zero-argument callable to run.
+    """
+    contextvars.Context().run(fn)
+
+
+@pytest.mark.parametrize(
+    ("pre_set_registration", "pre_set_event"),
+    [
+        pytest.param(False, False, id="neither_set"),
+        pytest.param(True, False, id="registration_already_set"),
+        pytest.param(False, True, id="event_already_set"),
+        pytest.param(True, True, id="both_already_set"),
+    ],
+)
+def test_set_contexts(
+    app_with_processor: App,
+    pre_set_registration: bool,
+    pre_set_event: bool,
+):
+    """set_contexts sets absent contexts, preserves existing ones, and resets on exit."""
+
+    def _test():
+        existing_reg = None
+        existing_ev = None
+
+        if pre_set_registration:
+            existing_reg = RegistrationContext()
+            RegistrationContext.set(existing_reg)
+        if pre_set_event:
+            existing_ev = EventContext(
+                token="pre-existing",
+                state_manager=StateManagerMemory(),
+                enqueue_impl=AsyncMock(),
+            )
+            EventContext.set(existing_ev)
+
+        with app_with_processor.set_contexts():
+            # Pre-existing contexts are preserved; absent ones are filled in.
+            if existing_reg is not None:
+                assert RegistrationContext.get() is existing_reg
+            else:
+                assert (
+                    RegistrationContext.get()
+                    is app_with_processor._registration_context
+                )
+
+            if existing_ev is not None:
+                assert EventContext.get() is existing_ev
+            else:
+                assert app_with_processor._event_processor is not None
+                assert (
+                    EventContext.get()
+                    is app_with_processor._event_processor._root_context
+                )
+
+        # After exit: pushed contexts are reset, pre-existing ones remain.
+        if existing_reg is not None:
+            assert RegistrationContext.get() is existing_reg
+        else:
+            with pytest.raises(LookupError):
+                RegistrationContext.get()
+
+        if existing_ev is not None:
+            assert EventContext.get() is existing_ev
+        else:
+            with pytest.raises(LookupError):
+                EventContext.get()
+
+    _run_isolated(_test)
+
+
+def test_set_contexts_no_event_processor():
+    """When event processor is None, EventContext should not be touched."""
+
+    def _test():
+        app = App(_state=EmptyState)
+        assert app._event_processor is None
+
+        with app.set_contexts():
+            assert RegistrationContext.get() is app._registration_context
+            with pytest.raises(LookupError):
+                EventContext.get()
+
+    _run_isolated(_test)
