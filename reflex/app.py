@@ -1277,7 +1277,7 @@ class App(MiddlewareMixin, LifespanMixin):
         )
 
         # try to be somewhat accurate - but still not 100%
-        adhoc_steps_without_executor = 7
+        adhoc_steps_without_executor = 8
         fixed_pages_within_executor = 4
         plugin_count = len(config.plugins)
         progress.start()
@@ -1333,6 +1333,13 @@ class App(MiddlewareMixin, LifespanMixin):
         # Store the compile results.
         compile_results: list[tuple[str, str]] = []
 
+        progress.advance(task)
+
+        # Reinitialize vite config in case runtime options have changed.
+        compile_results.append((
+            constants.ReactRouter.VITE_CONFIG_FILE,
+            frontend_skeleton._compile_vite_config(config),
+        ))
         progress.advance(task)
 
         # Track imports found.
