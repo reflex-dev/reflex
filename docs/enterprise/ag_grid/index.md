@@ -157,7 +157,7 @@ column_defs = [
 ]
 
 
-def ag_grid_simple_column_filtering():
+def ag_grid_column_filter_types():
     return rxe.ag_grid(
         id="ag_grid_basic_column_filtering",
         row_data=df.to_dict("records"),

@@ -99,7 +99,7 @@ del sys
 
 from reflex_components_radix.mappings import RADIX_MAPPING  # noqa: E402
 
-_COMPONENTS_CORE_MAPPING: dict[str, list[str]] = {
+_COMPONENTS_CORE_MAPPING: lazy_loader.SubmodAttrsType = {
     "reflex_components_core.core.banner": [
         "connection_banner",
         "connection_modal",
@@ -131,12 +131,12 @@ _COMPONENTS_CORE_MAPPING: dict[str, list[str]] = {
     "reflex_components_core.core.window_events": ["window_event_listener"],
 }
 
-_COMPONENTS_BASE_MAPPING: dict[str, list[str]] = {
+_COMPONENTS_BASE_MAPPING: lazy_loader.SubmodAttrsType = {
     "reflex_components_core.base.fragment": ["fragment", "Fragment"],
     "reflex_components_core.base.script": ["script", "Script"],
 }
 
-_ALL_COMPONENTS_MAPPING: dict[str, list[str]] = {
+_ALL_COMPONENTS_MAPPING: lazy_loader.SubmodAttrsType = {
     "reflex_base.components.component": [
         "Component",
         "NoSSRComponent",
@@ -167,7 +167,7 @@ _ALL_COMPONENTS_MAPPING: dict[str, list[str]] = {
 }
 
 _COMPONENT_NAME_TO_PATH: dict[str, str] = {
-    comp: path + "." + comp
+    lazy_loader.comp_alias(comp): lazy_loader.comp_path(path, comp)
     for path, comps in _ALL_COMPONENTS_MAPPING.items()
     for comp in comps
 } | {
@@ -176,7 +176,7 @@ _COMPONENT_NAME_TO_PATH: dict[str, str] = {
     "recharts": "reflex_components_recharts",
 }
 
-_MAPPING: dict[str, list[str]] = {
+_MAPPING: lazy_loader.SubmodAttrsType = {
     "experimental": ["_x"],
     "admin": ["AdminDash"],
     "app": ["App", "UploadFile"],
@@ -253,7 +253,7 @@ _SUBMODULES: set[str] = {
     "compiler",
     "plugins",
 }
-_SUBMOD_ATTRS: dict[str, list[str]] = _MAPPING
+_SUBMOD_ATTRS: lazy_loader.SubmodAttrsType = _MAPPING
 _EXTRA_MAPPINGS: dict[str, str] = _COMPONENT_NAME_TO_PATH
 getattr, __dir__, __all__ = lazy_loader.attach(
     __name__,

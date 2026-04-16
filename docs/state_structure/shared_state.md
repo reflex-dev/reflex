@@ -44,6 +44,10 @@ class CollaborativeCounter(rx.SharedState):
             linked_state = await self._link_to("shared-global-counter")
             linked_state.count += 1  # Increment count on link
 
+    @rx.event
+    def set_count(self, count: int):
+        self.count = count
+
     @rx.var
     def is_linked(self) -> bool:
         return bool(self._linked_to)

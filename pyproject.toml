@@ -131,7 +131,7 @@ targets.wheel.artifacts = ["*.pyi"]
 
 [tool.hatch.build.hooks.custom]
 path = "scripts/hatch_build.py"
-dependencies = ["plotly", "ruff", "pre_commit", "toml"]
+dependencies = ["plotly", "ruff"]
 require-runtime-dependencies = true
 
 [tool.pyright]
@@ -149,12 +149,22 @@ extraPaths = [
   "packages/reflex-react-router/src",
   "packages/reflex-recharts/src",
   "packages/reflex-sonner/src",
+  "packages/reflex-ui/src",
+  "packages/reflex-ui-shared/src",
+  "packages/integrations-docs/src",
+]
+exclude = [
+  "docs",
+  "packages/reflex-ui-shared",
+  "packages/integrations-docs",
+  "**/.templates",
 ]
 reportIncompatibleMethodOverride = false
 
 [tool.ruff]
 target-version = "py310"
 output-format = "concise"
+extend-exclude = ["tests/units/reflex_base/utils/pyi_generator/golden"]
 lint.isort.split-on-trailing-comma = false
 preview = true
 lint.select = ["ALL"]
@@ -251,6 +261,9 @@ source = [
   "reflex_components_sonner",
   "reflex_base",
   "reflex_docgen",
+  "reflex_ui_shared",
+  "reflex_ui",
+  "reflex_integrations_docs",
 ]
 branch = true
 omit = [
@@ -288,60 +301,6 @@ exclude_also = [
 [tool.coverage.html]
 directory = "coverage_html_report"
 
-[tool.pre-commit]
-fail_fast = true
-
-[[tool.pre-commit.repos]]
-repo = "https://github.com/astral-sh/ruff-pre-commit"
-rev = "v0.15.6"
-hooks = [
-  { id = "ruff-format", args = [
-    "reflex",
-    "tests",
-  ] },
-  { id = "ruff-check", args = [
-    "--fix",
-    "--exit-non-zero-on-fix",
-  ], exclude = "^integration/benchmarks/" },
-]
-
-[[tool.pre-commit.repos]]
-repo = "https://github.com/codespell-project/codespell"
-rev = "v2.4.1"
-hooks = [
-  { id = "codespell", args = [
-    "reflex",
-  ], additional_dependencies = [
-    "tomli",
-  ] },
-]
-
-# Run pyi check before pyright because pyright can fail if pyi files are wrong.
-[[tool.pre-commit.repos]]
-repo = "local"
-hooks = [
-  { id = "update-pyi-files", name = "update-pyi-files", always_run = true, language = "system", require_serial = true, description = "Update pyi files as needed", entry = "python3 scripts/make_pyi.py" },
-]
-
-[[tool.pre-commit.repos]]
-repo = "https://github.com/RobertCraigie/pyright-python"
-rev = "v1.1.408"
-hooks = [{ id = "pyright", args = ["reflex", "tests"], language = "system" }]
-
-[[tool.pre-commit.repos]]
-repo = "https://github.com/biomejs/pre-commit"
-rev = "v0.6.1"
-hooks = [
-  { id = "biome-format", args = [
-    "--indent-width",
-    "2",
-    "--indent-style",
-    "space",
-  ], additional_dependencies = [
-    "@biomejs/biome@2.4.8",
-  ] },
-]
-
 [tool.uv]
 required-version = ">=0.7.0"
 
@@ -361,6 +320,10 @@ reflex-components-react-player.workspace = true
 reflex-components-recharts.workspace = true
 reflex-components-sonner.workspace = true
 reflex-docgen.workspace = true
+reflex-ui.workspace = true
+reflex-ui-shared.workspace = true
+reflex-integrations-docs.workspace = true
+reflex.workspace = true
 
 [tool.uv.workspace]
-members = ["packages/*"]
+members = ["packages/*", "docs/app"]

@@ -8,16 +8,14 @@ import time
 from collections.abc import Generator
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlsplit
 
 import pytest
 from reflex_base.constants.event import Endpoint
+from selenium.common.exceptions import NoAlertPresentException
 from selenium.webdriver.common.by import By
 
 import reflex as rx
 from reflex.testing import AppHarness, WebDriver
-
-from .utils import poll_for_navigation
 
 
 def UploadFile():
@@ -723,24 +721,132 @@ def test_upload_download_file(
     upload_box.send_keys(str(target_file))
     upload_button.click()
 
+    # Wait for the upload to complete.
+    upload_done = driver.find_element(By.ID, "upload_done")
+    assert upload_file.poll_for_value(upload_done, exp_not_equal="false") == "true"
+
+    # Configure the download directory using CDP.
+    download_dir = tmp_path / "downloads"
+    download_dir.mkdir()
+    driver.execute_cdp_cmd(
+        "Page.setDownloadBehavior",
+        {"behavior": "allow", "downloadPath": str(download_dir)},
+    )
+
+    downloaded_file = download_dir / exp_name
+
     # Download via event embedded in frontend code.
     download_frontend = driver.find_element(By.ID, "download-frontend")
-    with poll_for_navigation(driver):
-        download_frontend.click()
-    assert urlsplit(driver.current_url).path == f"/{Endpoint.UPLOAD.value}/test.txt"
-    assert driver.find_element(by=By.TAG_NAME, value="body").text == exp_contents
-
-    # Go back and wait for the app to reload.
-    with poll_for_navigation(driver):
-        driver.back()
-    poll_for_token(driver, upload_file)
+    download_frontend.click()
+    AppHarness.expect(lambda: downloaded_file.exists())
+    assert downloaded_file.read_text() == exp_contents
+    downloaded_file.unlink()
 
     # Download via backend event handler.
     download_backend = driver.find_element(By.ID, "download-backend")
-    with poll_for_navigation(driver):
-        download_backend.click()
-    assert urlsplit(driver.current_url).path == f"/{Endpoint.UPLOAD.value}/test.txt"
-    assert driver.find_element(by=By.TAG_NAME, value="body").text == exp_contents
+    download_backend.click()
+    AppHarness.expect(lambda: downloaded_file.exists())
+    assert downloaded_file.read_text() == exp_contents
+
+
+@pytest.mark.parametrize(
+    ("exp_name", "exp_contents", "expect_attachment", "expected_mime_type"),
+    [
+        (
+            "malicious.html",
+            "<html><body><script>alert('xss')</script></body></html>",
+            True,
+            "text/html; charset=utf-8",
+        ),
+        ("document.pdf", "%PDF-1.4 fake pdf contents", False, "application/pdf"),
+        ("readme.txt", "plain text contents", True, "text/plain; charset=utf-8"),
+    ],
+    ids=["html", "pdf", "txt"],
+)
+def test_uploaded_file_security_headers(
+    tmp_path,
+    upload_file: AppHarness,
+    driver: WebDriver,
+    exp_name: str,
+    exp_contents: str,
+    expect_attachment: bool,
+    expected_mime_type: str,
+):
+    """Upload a file and verify security headers on the served response.
+
+    For non-PDF files, Content-Disposition: attachment must be set to force a
+    download.  For PDF files, Content-Disposition must NOT be set so the browser
+    can render them inline, but Content-Type: application/pdf is always present.
+    X-Content-Type-Options: nosniff is always required.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+        upload_file: harness for UploadFile app.
+        driver: WebDriver instance.
+        exp_name: filename to upload.
+        exp_contents: file contents to upload.
+        expect_attachment: whether the response should force a download.
+        expected_mime_type: expected Content-Type mime type.
+    """
+    import httpx
+    from reflex_base.config import get_config
+
+    assert upload_file.app_instance is not None
+    poll_for_token(driver, upload_file)
+    clear_btn = driver.find_element(By.ID, "clear_uploads")
+    clear_btn.click()
+
+    upload_box = driver.find_elements(By.XPATH, "//input[@type='file']")[2]
+    upload_button = driver.find_element(By.ID, "upload_button_tertiary")
+
+    target_file = tmp_path / exp_name
+    target_file.write_text(exp_contents)
+
+    upload_box.send_keys(str(target_file))
+    upload_button.click()
+
+    upload_done = driver.find_element(By.ID, "upload_done")
+    assert upload_file.poll_for_value(upload_done, exp_not_equal="false") == "true"
+
+    # Fetch the uploaded file directly via httpx and check security headers.
+    upload_url = f"{get_config().api_url}/{Endpoint.UPLOAD.value}/{exp_name}"
+    resp = httpx.get(upload_url)
+    assert resp.status_code == 200
+    assert resp.text == exp_contents
+    assert resp.headers["x-content-type-options"] == "nosniff"
+    assert resp.headers["content-type"] == expected_mime_type
+
+    if expect_attachment:
+        assert resp.headers["content-disposition"] == "attachment"
+    else:
+        assert "content-disposition" not in resp.headers
+
+    if not expect_attachment:
+        # PDF: no browser download test needed, skip the rest.
+        return
+
+    # Configure the download directory using CDP.
+    download_dir = tmp_path / "downloads"
+    download_dir.mkdir()
+    driver.execute_cdp_cmd(
+        "Page.setDownloadBehavior",
+        {"behavior": "allow", "downloadPath": str(download_dir)},
+    )
+
+    downloaded_file = download_dir / exp_name
+
+    # Navigate to the uploaded HTML file in the browser and verify the script
+    # does not execute (Content-Disposition: attachment prevents rendering).
+    driver.get(upload_url)
+    # If the browser rendered the HTML, an alert('xss') dialog would appear.
+    # Verify no alert is present — the file should be downloaded, not rendered.
+    with pytest.raises(NoAlertPresentException):
+        alert = driver.switch_to.alert
+        alert.dismiss()
+
+    # Also verify the file was downloaded with the correct contents.
+    AppHarness.expect(lambda: downloaded_file.exists())
+    assert downloaded_file.read_text() == exp_contents
 
 
 def test_on_drop(

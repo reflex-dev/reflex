@@ -2140,8 +2140,9 @@ def get_handler_args(
         The handler args.
     """
     args = event_spec.handler._parameters
+    n_self_args = 1 if event_spec.handler.state is not None else 0
 
-    return event_spec.args if len(args) > 1 else ()
+    return event_spec.args if len(args) > n_self_args else ()
 
 
 def fix_events(

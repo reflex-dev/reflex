@@ -120,15 +120,14 @@ class AxisState(rx.State):
 
     label_offsets: list[str] = ["-30", "-20", "-10", "0", "10", "20", "30"]
 
-    x_axis_postion: str = "bottom"
+    x_axis_position: str = "bottom"
 
     x_axis_offset: int
 
-    y_axis_postion: str = "left"
+    y_axis_position: str = "left"
 
     y_axis_offset: int
 
-    @rx.event
     @rx.event
     def set_y_axis_position(self, position: str):
         self.y_axis_position = position
@@ -169,7 +168,7 @@ def axis_labels():
                 data_key="name",
                 label={
                     "value": "Pages",
-                    "position": AxisState.x_axis_postion,
+                    "position": AxisState.x_axis_position,
                     "offset": AxisState.x_axis_offset,
                 },
             ),
@@ -178,7 +177,7 @@ def axis_labels():
                 label={
                     "value": "Views",
                     "angle": -90,
-                    "position": AxisState.y_axis_postion,
+                    "position": AxisState.y_axis_position,
                     "offset": AxisState.y_axis_offset,
                 },
             ),
@@ -195,8 +194,8 @@ def axis_labels():
             rx.text("X Label Position: "),
             rx.select(
                 AxisState.label_positions,
-                value=AxisState.x_axis_postion,
-                on_change=AxisState.set_x_axis_postion,
+                value=AxisState.x_axis_position,
+                on_change=AxisState.set_x_axis_position,
             ),
             rx.text("X Label Offset: "),
             rx.select(
@@ -207,8 +206,8 @@ def axis_labels():
             rx.text("Y Label Position: "),
             rx.select(
                 AxisState.label_positions,
-                value=AxisState.y_axis_postion,
-                on_change=AxisState.set_y_axis_postion,
+                value=AxisState.y_axis_position,
+                on_change=AxisState.set_y_axis_position,
             ),
             rx.text("Y Label Offset: "),
             rx.select(

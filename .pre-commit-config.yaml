@@ -4,12 +4,13 @@ repos:
   - args:
     - reflex
     - tests
-    exclude: ^docs/
+    - docs/app
+    - packages
     id: ruff-format
   - args:
     - --fix
     - --exit-non-zero-on-fix
-    exclude: ^(integration/benchmarks/|docs/)
+    exclude: ^integration/benchmarks/
     id: ruff-check
   repo: https://github.com/astral-sh/ruff-pre-commit
   rev: v0.15.6
@@ -34,7 +35,6 @@ repos:
   - args:
     - reflex
     - tests
-    exclude: ^docs/
     id: pyright
     language: system
   repo: https://github.com/RobertCraigie/pyright-python
@@ -47,7 +47,7 @@ repos:
     - '2'
     - --indent-style
     - space
-    exclude: ^docs/
+    exclude: (\.css$|docs/app/)
     id: biome-format
   repo: https://github.com/biomejs/pre-commit
   rev: v0.6.1

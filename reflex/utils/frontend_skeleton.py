@@ -205,12 +205,8 @@ def update_react_router_config(prerender_routes: bool = False):
 
 
 def _update_react_router_config(config: Config, prerender_routes: bool = False):
-    basename = "/" + (config.frontend_path or "").strip("/")
-    if not basename.endswith("/"):
-        basename += "/"
-
     react_router_config = {
-        "basename": basename,
+        "basename": config.prepend_frontend_path("/"),
         "future": {
             "unstable_optimizeDeps": True,
         },
@@ -225,14 +221,10 @@ def _update_react_router_config(config: Config, prerender_routes: bool = False):
 
 
 def _compile_package_json():
-    config = get_config()
     return templates.package_json_template(
         scripts={
             "dev": constants.PackageJson.Commands.DEV,
             "export": constants.PackageJson.Commands.EXPORT,
-            "prod": constants.PackageJson.Commands.get_prod_command(
-                config.frontend_path
-            ),
         },
         dependencies=constants.PackageJson.DEPENDENCIES,
         dev_dependencies=constants.PackageJson.DEV_DEPENDENCIES,
@@ -248,11 +240,8 @@ def initialize_package_json():
 
 def _compile_vite_config(config: Config):
     # base must have exactly one trailing slash
-    base = "/"
-    if frontend_path := config.frontend_path.strip("/"):
-        base += frontend_path + "/"
     return templates.vite_config_template(
-        base=base,
+        base=config.prepend_frontend_path("/"),
         hmr=environment.VITE_HMR.get(),
         force_full_reload=environment.VITE_FORCE_FULL_RELOAD.get(),
         experimental_hmr=environment.VITE_EXPERIMENTAL_HMR.get(),

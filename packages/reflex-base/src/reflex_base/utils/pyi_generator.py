@@ -13,6 +13,7 @@ import re
 import subprocess
 import sys
 import typing
+from collections import deque
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from concurrent.futures import ProcessPoolExecutor
 from functools import cache
@@ -21,9 +22,9 @@ from inspect import getfullargspec
 from itertools import chain
 from pathlib import Path
 from types import MappingProxyType, ModuleType, SimpleNamespace, UnionType
-from typing import Any, get_args, get_origin
+from typing import Any, ClassVar, get_args, get_origin
 
-from reflex_base.components.component import Component
+from reflex_base.components.component import DEFAULT_TRIGGERS_AND_DESC, Component
 from reflex_base.vars.base import Var
 
 
@@ -95,11 +96,7 @@ OVERWRITE_TYPES = {
 
 DEFAULT_TYPING_IMPORTS = {
     "Any",
-    "Callable",
     "Dict",
-    # "List",
-    "Sequence",
-    "Mapping",
     "Literal",
     "Optional",
     "Union",
@@ -108,6 +105,7 @@ DEFAULT_TYPING_IMPORTS = {
 
 # TODO: fix import ordering and unused imports with ruff later
 DEFAULT_IMPORTS = {
+    "collections.abc": ["Callable", "Mapping", "Sequence"],
     "typing": sorted(DEFAULT_TYPING_IMPORTS),
     "reflex_components_core.core.breakpoints": ["Breakpoints"],
     "reflex_base.event": [
@@ -124,6 +122,7 @@ DEFAULT_IMPORTS = {
 }
 # These pre-0.9 imports might be present in the file and should be removed since the pyi generator will handle them separately.
 EXCLUDED_IMPORTS = {
+    "typing": ["Callable", "Mapping", "Sequence"],  # moved to collections.abc
     "reflex.components.core.breakpoints": ["Breakpoints"],
     "reflex.event": [
         "EventChain",
@@ -271,8 +270,21 @@ def _get_type_hint(
             _get_type_hint(arg, type_hint_globals, _is_optional(arg)) for arg in value
         ]
         return f"[{', '.join(res)}]"
+    elif (visible_name := _get_visible_type_name(value, type_hint_globals)) is not None:
+        res = visible_name
     else:
-        res = value.__name__
+        # Best effort to find a submodule path in the globals.
+        for ix, part in enumerate(value.__module__.split(".")):
+            if part in type_hint_globals:
+                res = ".".join([
+                    part,
+                    *value.__module__.split(".")[ix + 1 :],
+                    value.__name__,
+                ])
+                break
+        else:
+            # Fallback to the type name.
+            res = value.__name__
     if is_optional and not res.startswith("Optional") and not res.endswith("| None"):
         res = f"{res} | None"
     return res
@@ -303,37 +315,86 @@ def _get_class_prop_comments(clz: type[Component]) -> Mapping[str, tuple[str, ..
     """
     props_comments: dict[str, tuple[str, ...]] = {}
     comments = []
+    last_prop = ""
+    in_docstring = False
+    docstring_lines: list[str] = []
     for line in _get_source(clz).splitlines():
+        stripped = line.strip()
+
+        # Handle triple-quoted docstrings after prop definitions.
+        # This must be checked before the `def ` boundary so that
+        # docstring prose containing "def " doesn't break the loop.
+        if in_docstring:
+            if '"""' in stripped or "'''" in stripped:
+                # End of multi-line docstring.
+                if '"""' in stripped:
+                    end_text = stripped.partition('"""')[0].strip()
+                else:
+                    end_text = stripped.partition("'''")[0].strip()
+                if end_text:
+                    docstring_lines.append(end_text)
+                if last_prop and docstring_lines:
+                    props_comments[last_prop] = tuple(docstring_lines)
+                in_docstring = False
+                docstring_lines = []
+                last_prop = ""
+            else:
+                docstring_lines.append(stripped)
+            continue
+
         reached_functions = re.search(r"def ", line)
         if reached_functions:
             # We've reached the functions, so stop.
             break
 
+        # Check for start of a docstring right after a prop.
+        if last_prop and (stripped.startswith(('"""', "'''"))):
+            quote = '"""' if stripped.startswith('"""') else "'''"
+            content_after_open = stripped[3:]
+            if quote in content_after_open:
+                # Single-line docstring: """text"""
+                doc_text = content_after_open.partition(quote)[0].strip()
+                if doc_text:
+                    props_comments[last_prop] = (doc_text,)
+                last_prop = ""
+            else:
+                # Multi-line docstring starts here.
+                in_docstring = True
+                docstring_lines = []
+                first_line = content_after_open.strip()
+                if first_line:
+                    docstring_lines.append(first_line)
+            continue
+
         if line == "":
             # We hit a blank line, so clear comments to avoid commented out prop appearing in next prop docs.
             comments.clear()
+            last_prop = ""
             continue
 
         # Get comments for prop
-        if line.strip().startswith("#"):
+        if stripped.startswith("#"):
             # Remove noqa from the comments.
             line = line.partition(" # noqa")[0]
             comments.append(line)
+            last_prop = ""
             continue
 
         # Check if this line has a prop.
         match = re.search(r"\w+:", line)
         if match is None:
             # This line doesn't have a var, so continue.
+            last_prop = ""
             continue
 
         # Get the prop.
         prop = match.group(0).strip(":")
         if comments:
             props_comments[prop] = tuple(
-                comment.strip().strip("#") for comment in comments
+                comment.strip().lstrip("#").strip() for comment in comments
             )
         comments.clear()
+        last_prop = prop
 
     return MappingProxyType(props_comments)
 
@@ -451,6 +512,24 @@ def _generate_imports(
     ]
 
 
+def _maybe_default_event_handler_docstring(
+    prop_name: str, fallback: str = "no description"
+) -> tuple[str, ...]:
+    """Add a docstring for default event handler prop.
+
+    Args:
+        prop_name: The name of the prop.
+        fallback: The fallback docstring to use if the prop is not a default event handler and has no description.
+
+    Returns:
+        The event handler description or the fallback if the prop is not a default event handler.
+    """
+    try:
+        return (DEFAULT_TRIGGERS_AND_DESC[prop_name].description,)
+    except KeyError:
+        return (fallback,)
+
+
 def _generate_docstrings(clzs: list[type[Component]], props: list[str]) -> str:
     """Generate the docstrings for the create method.
 
@@ -466,13 +545,17 @@ def _generate_docstrings(clzs: list[type[Component]], props: list[str]) -> str:
         for prop, comment_lines in _get_class_prop_comments(clz).items():
             if prop in props:
                 props_comments[prop] = list(comment_lines)
+        for prop, field in clz._fields.items():
+            if prop in props and field.doc:
+                props_comments[prop] = [field.doc]
     clz = clzs[0]
     new_docstring = []
     for line in (clz.create.__doc__ or "").splitlines():
         if "**" in line:
             indent = line.split("**")[0]
             new_docstring.extend([
-                f"{indent}{n}:{' '.join(c)}" for n, c in props_comments.items()
+                f"{indent}{prop_name}: {' '.join(props_comments.get(prop_name, _maybe_default_event_handler_docstring(prop_name)))}"
+                for prop_name in props
             ])
         new_docstring.append(line)
     return "\n".join(new_docstring)
@@ -512,7 +595,7 @@ def _extract_class_props_as_ast_nodes(
     clzs: list[type],
     type_hint_globals: dict[str, Any],
     extract_real_default: bool = False,
-) -> list[tuple[ast.arg, ast.Constant | None]]:
+) -> Sequence[tuple[ast.arg, ast.Constant | None]]:
     """Get the props defined on the class and all parents.
 
     Args:
@@ -523,13 +606,13 @@ def _extract_class_props_as_ast_nodes(
             pydantic field definition.
 
     Returns:
-        The list of props as ast arg nodes
+        The sequence of props as ast arg nodes
     """
     spec = _get_full_argspec(func)
     func_kwonlyargs = set(spec.kwonlyargs)
     all_props: set[str] = set()
-    kwargs = []
-    for target_class in clzs:
+    kwargs = deque()
+    for target_class in reversed(clzs):
         event_triggers = _get_class_event_triggers(target_class)
         # Import from the target class to ensure type hints are resolvable.
         type_hint_globals.update(_get_module_star_imports(target_class.__module__))
@@ -537,13 +620,16 @@ def _extract_class_props_as_ast_nodes(
             **type_hint_globals,
             **_get_class_annotation_globals(target_class),
         }
-        for name, value in target_class.__annotations__.items():
+        # State attr isn't really a prop and cannot be resolved, so pop it off.
+        target_class.__annotations__.pop("State", None)
+        type_hints = typing.get_type_hints(target_class, globalns=annotation_globals)
+        for name, value in reversed(type_hints.items()):
             if (
                 name in func_kwonlyargs
                 or name in EXCLUDED_PROPS
                 or name in all_props
                 or name in event_triggers
-                or (isinstance(value, str) and "ClassVar" in value)
+                or get_origin(value) is ClassVar
             ):
                 continue
             all_props.add(name)
@@ -558,7 +644,7 @@ def _extract_class_props_as_ast_nodes(
                     if isinstance(default, Var):
                         default = default._decode()
 
-            kwargs.append((
+            kwargs.appendleft((
                 ast.arg(
                     arg=name,
                     annotation=ast.Name(
@@ -591,11 +677,13 @@ def _get_visible_type_name(
     if type_hint_globals is None:
         return None
 
+    type_module = getattr(typ, "__module__", None)
     type_name = getattr(typ, "__name__", None)
-    if (
-        type_name is not None
-        and type_name in type_hint_globals
-        and type_hint_globals[type_name] is typ
+
+    if type_name is not None and (
+        type_hint_globals.get(type_name) is typ
+        or type_name in DEFAULT_IMPORTS.get(str(type_module), set())
+        or type_name in EXCLUDED_IMPORTS.get(str(type_module), set())
     ):
         return type_name
 
@@ -650,11 +738,6 @@ def type_to_ast(
                     return ast.Name(id=typ.__name__)
                 if visible_name := _get_visible_type_name(typ, type_hint_globals):
                     return ast.Name(id=visible_name)
-                if (
-                    typ.__module__ in DEFAULT_IMPORTS
-                    and typ.__name__ in DEFAULT_IMPORTS[typ.__module__]
-                ):
-                    return ast.Name(id=typ.__name__)
                 return ast.Name(id=typ.__module__ + "." + typ.__name__)
             return ast.Name(id=typ.__name__)
         if hasattr(typ, "_name"):
@@ -1253,6 +1336,23 @@ class StubGenerator(ast.NodeTransformer):
 
         return node
 
+    def visit_Expr(self, node: ast.Expr) -> ast.Expr | None:
+        """Remove bare string expressions (attribute docstrings) in component classes.
+
+        Args:
+            node: The Expr node to visit.
+
+        Returns:
+            The modified Expr node (or None).
+        """
+        if (
+            self._current_class_is_component()
+            and isinstance(node.value, ast.Constant)
+            and isinstance(node.value.value, str)
+        ):
+            return None
+        return node
+
     def visit_AnnAssign(self, node: ast.AnnAssign) -> ast.AnnAssign | None:
         """Visit an AnnAssign node (Annotated assignment).
 
@@ -1597,8 +1697,8 @@ class PyiGenerator:
 
         # Fix generated pyi files with ruff.
         if file_paths:
-            subprocess.run(["ruff", "check", "--fix", *file_paths])
             subprocess.run(["ruff", "format", *file_paths])
+            subprocess.run(["ruff", "check", "--fix", *file_paths])
 
         if use_json:
             if file_paths and changed_files is None:
