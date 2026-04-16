@@ -71,12 +71,11 @@ This will fail if code coverage is below 70%.
 uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
 ```
 
-Next make sure all the following tests pass. This ensures that every new change has proper documentation and type checking.
+Next make sure all the following tests pass. This ensures that every new change has proper type checking.
 
 ```bash
 uv run ruff check .
 uv run pyright reflex tests
-find reflex tests -name "*.py" -not -path reflex/reflex.py | xargs uv run darglint
 ```
 
 Finally, run `ruff` to format your code.
@@ -85,7 +84,7 @@ Finally, run `ruff` to format your code.
 uv run ruff format .
 ```
 
-Consider installing git pre-commit hooks so Ruff, Pyright, Darglint and `make_pyi` will run automatically before each commit.
+Consider installing git pre-commit hooks so Ruff, Pyright, and `make_pyi` will run automatically before each commit.
 
 ```bash
 uv run pre-commit install
