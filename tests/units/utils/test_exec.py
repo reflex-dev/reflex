@@ -52,6 +52,9 @@ async def test_get_frontend_mount_uses_precompressed_staticfiles(
         frontend_path="app",
         frontend_compression_formats=["gzip"],
         frontend_image_formats=["webp"],
+        prepend_frontend_path=lambda path: (
+            "/app" + path if path.startswith("/") else path
+        ),
     )
     monkeypatch.setattr(exec_utils, "get_config", lambda: config)
     monkeypatch.setattr(exec_utils, "get_web_dir", lambda: web_dir)
