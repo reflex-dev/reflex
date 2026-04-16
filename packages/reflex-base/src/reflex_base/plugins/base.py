@@ -43,6 +43,7 @@ class PreCompileContext(CommonContext):
 
     add_save_task: AddTaskProtocol
     add_modify_task: Callable[[str, Callable[[str], str]], None]
+    radix_themes_plugin: Any
     unevaluated_pages: Sequence["UnevaluatedPage"]
 
 

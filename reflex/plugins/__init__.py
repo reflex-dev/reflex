@@ -17,6 +17,7 @@ from reflex_base.plugins import (
     tailwind_v3,
     tailwind_v4,
 )
+from reflex_components_radix.plugin import RadixThemesPlugin
 
 __all__ = [
     "BaseContext",
@@ -27,6 +28,7 @@ __all__ = [
     "PageContext",
     "Plugin",
     "PreCompileContext",
+    "RadixThemesPlugin",
     "SitemapPlugin",
     "TailwindV3Plugin",
     "TailwindV4Plugin",

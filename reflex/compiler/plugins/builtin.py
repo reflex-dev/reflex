@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import Any
 
 from reflex_base.components.component import BaseComponent, Component, ComponentStyle
@@ -74,7 +74,6 @@ class ApplyStylePlugin(Plugin):
 
     _compiler_can_replace_enter_component = False
     style: ComponentStyle | None = None
-    theme: Component | None = None
 
     @staticmethod
     def _apply_style(comp: Component, style: ComponentStyle) -> None:
@@ -410,16 +409,16 @@ class DefaultCollectorPlugin(Plugin):
 def default_page_plugins(
     *,
     style: ComponentStyle | None = None,
-    theme: Component | None = None,
+    plugins: Sequence[Plugin] = (),
 ) -> tuple[Plugin, ...]:
     """Return the default compiler plugin ordering for page compilation."""
     from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
 
-    plugins: list[Plugin] = [DefaultPagePlugin()]
+    chain: list[Plugin] = [*plugins, DefaultPagePlugin()]
     if style is not None:
-        plugins.append(ApplyStylePlugin(style=style, theme=theme))
-    plugins.extend((MemoizeStatefulPlugin(), DefaultCollectorPlugin()))
-    return tuple(plugins)
+        chain.append(ApplyStylePlugin(style=style))
+    chain.extend((MemoizeStatefulPlugin(), DefaultCollectorPlugin()))
+    return tuple(chain)
 
 
 __all__ = [

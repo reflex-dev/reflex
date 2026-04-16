@@ -2096,6 +2096,128 @@ def test_app_wrap_compile_theme(
     assert expected.split(",") == function_app_definition.split(",")
 
 
+def test_compile_without_radix_components_skips_radix_plugin(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """Pure HTML apps should not include Radix Themes assets or wrappers."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mock_deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+
+    app.add_page(lambda: rx.el.div("Index"), route="/")
+    app.add_page(lambda: rx.el.div("404"), route=constants.Page404.SLUG)
+    app._compile()
+
+    root_stylesheet = (
+        web_dir
+        / constants.Dirs.STYLES
+        / f"{constants.PageNames.STYLESHEET_ROOT}{constants.Ext.CSS}"
+    ).read_text()
+    app_root = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+
+    assert "@radix-ui/themes/styles.css" not in root_stylesheet
+    assert "RadixThemesTheme" not in app_root
+    mock_deprecate.assert_not_called()
+
+
+def test_compile_with_radix_component_auto_enables_radix_plugin(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """Using a Radix Themes component should enable the plugin with a warning."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mock_deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+
+    app.add_page(lambda: rx.box("Index"), route="/")
+    app.add_page(lambda: rx.el.div("404"), route=constants.Page404.SLUG)
+    app._compile()
+
+    root_stylesheet = (
+        web_dir
+        / constants.Dirs.STYLES
+        / f"{constants.PageNames.STYLESHEET_ROOT}{constants.Ext.CSS}"
+    ).read_text()
+    app_root = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+
+    assert "@radix-ui/themes/styles.css" in root_stylesheet
+    assert 'RadixThemesTheme,{accentColor:"blue"' in app_root
+    mock_deprecate.assert_called_once()
+    assert (
+        mock_deprecate.call_args.kwargs["feature_name"]
+        == "Implicit Radix Themes enablement"
+    )
+
+
+def test_compile_with_legacy_app_theme_warns_and_enables_radix_plugin(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """``App(theme=...)`` should continue to work with a deprecation warning."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mock_deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+
+    app.theme = rx.theme(accent_color="plum")
+    app.add_page(lambda: rx.el.div("Index"), route="/")
+    app.add_page(lambda: rx.el.div("404"), route=constants.Page404.SLUG)
+    app._compile()
+
+    root_stylesheet = (
+        web_dir
+        / constants.Dirs.STYLES
+        / f"{constants.PageNames.STYLESHEET_ROOT}{constants.Ext.CSS}"
+    ).read_text()
+    app_root = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+
+    assert "@radix-ui/themes/styles.css" in root_stylesheet
+    assert 'RadixThemesTheme,{accentColor:"plum"' in app_root
+    mock_deprecate.assert_called_once()
+    assert mock_deprecate.call_args.kwargs["feature_name"] == "App(theme=...)"
+
+
+def test_explicit_radix_plugin_wins_over_legacy_app_theme(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """Explicit RadixThemesPlugin config should win over deprecated App.theme."""
+    conf = rx.Config(
+        app_name="testing",
+        plugins=[rx.plugins.RadixThemesPlugin(theme=rx.theme(accent_color="green"))],
+    )
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mock_deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+
+    app.theme = rx.theme(accent_color="plum")
+    app.add_page(lambda: rx.el.div("Index"), route="/")
+    app.add_page(lambda: rx.el.div("404"), route=constants.Page404.SLUG)
+    app._compile()
+
+    app_root = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+
+    assert 'RadixThemesTheme,{accentColor:"green"' in app_root
+    assert 'RadixThemesTheme,{accentColor:"plum"' not in app_root
+    mock_deprecate.assert_called_once()
+    assert mock_deprecate.call_args.kwargs["feature_name"] == "App(theme=...)"
+
+
 def test_compile_writes_app_wrap_memo_components(
     compilable_app: tuple[App, Path],
     mocker,

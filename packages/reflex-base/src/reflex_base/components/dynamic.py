@@ -26,14 +26,20 @@ def get_cdn_url(lib: str) -> str:
     return f"https://cdn.jsdelivr.net/npm/{lib}" + "/+esm"
 
 
-bundled_libraries = [
+DEFAULT_BUNDLED_LIBRARIES = [
     "react",
-    "@radix-ui/themes",
     "@emotion/react",
     f"$/{constants.Dirs.UTILS}/context",
     f"$/{constants.Dirs.UTILS}/state",
     f"$/{constants.Dirs.UTILS}/components",
 ]
+bundled_libraries = list(DEFAULT_BUNDLED_LIBRARIES)
+
+
+def reset_bundled_libraries() -> None:
+    """Reset the bundled library registry to its default values."""
+    bundled_libraries.clear()
+    bundled_libraries.extend(DEFAULT_BUNDLED_LIBRARIES)
 
 
 def bundle_library(component: Union["Component", str]):
@@ -46,7 +52,7 @@ def bundle_library(component: Union["Component", str]):
         DynamicComponentMissingLibraryError: Raised when a dynamic component is missing a library.
     """
     if isinstance(component, str):
-        bundled_libraries.append(component)
+        bundled_libraries.append(format_library_name(component))
         return
     if component.library is None:
         msg = "Component must have a library to bundle."

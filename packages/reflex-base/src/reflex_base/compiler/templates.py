@@ -348,7 +348,12 @@ import {{ jsx }} from "@emotion/react";
 export const initialState = {"{}" if not initial_state else json_dumps(initial_state)}
 
 export const defaultColorMode = {default_color_mode}
-export const ColorModeContext = createContext(null);
+export const ColorModeContext = createContext({{
+  colorMode: defaultColorMode,
+  resolvedColorMode: defaultColorMode === "dark" ? "dark" : "light",
+  toggleColorMode: () => {{}},
+  setColorMode: () => {{}},
+}});
 export const UploadFilesContext = createContext(null);
 export const DispatchContext = createContext(null);
 export const StateContexts = {{{state_contexts_str}}};

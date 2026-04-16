@@ -51,7 +51,6 @@ from reflex_components_core.core.banner import (
 )
 from reflex_components_core.core.breakpoints import set_breakpoints
 from reflex_components_core.core.sticky import sticky
-from reflex_components_radix import themes
 from reflex_components_sonner.toast import toast
 from socketio import ASGIApp as EngineIOApp
 from socketio import AsyncNamespace, AsyncServer
@@ -273,13 +272,13 @@ class App(MiddlewareMixin, LifespanMixin):
     app = rx.App(
         # Set global level style.
         style={...},
-        # Set the top level theme.
+        # Deprecated legacy shortcut for the Radix Themes plugin.
         theme=rx.theme(accent_color="blue"),
     )
     ```
 
     Attributes:
-        theme: The global [theme](https://reflex.dev/docs/styling/theming/#theme) for the entire app.
+        theme: Deprecated legacy shortcut for configuring the app-level Radix theme.
         style: The [global style](https://reflex.dev/docs/styling/overview/#global-styles}) for the app.
         stylesheets: A list of URLs to [stylesheets](https://reflex.dev/docs/styling/custom-stylesheets/) to include in the app.
         reset_style: Whether to include CSS reset for margin and padding. Defaults to True.
@@ -297,9 +296,7 @@ class App(MiddlewareMixin, LifespanMixin):
         api_transformer: Transform the ASGI app before running it.
     """
 
-    theme: Component | None = dataclasses.field(
-        default_factory=lambda: themes.theme(accent_color="blue")
-    )
+    theme: Component | None = dataclasses.field(default=None)
 
     style: ComponentStyle = dataclasses.field(default_factory=dict)
 

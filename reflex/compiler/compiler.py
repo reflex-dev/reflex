@@ -22,7 +22,7 @@ from reflex_base.config import get_config
 from reflex_base.constants.compiler import PageNames, ResetStylesheet
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
-from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
+from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
 from reflex_base.style import SYSTEM_COLOR_MODE
 from reflex_base.utils.exceptions import ReflexError
 from reflex_base.utils.format import to_title_case
@@ -30,6 +30,7 @@ from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_components_core.base.app_wrap import AppWrap
 from reflex_components_core.base.fragment import Fragment
+from reflex_components_radix.plugin import RadixThemesPlugin
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 
 from reflex.compiler import templates, utils
@@ -44,6 +45,8 @@ from reflex.state import BaseState, code_uses_state_contexts
 from reflex.utils import console, frontend_skeleton, path_ops, prerequisites
 from reflex.utils.exec import get_compile_context, is_prod_mode
 from reflex.utils.prerequisites import get_web_dir
+
+RADIX_THEMES_STYLESHEET = "@radix-ui/themes/styles.css"
 
 
 def _set_progress_total(
@@ -191,20 +194,23 @@ def _compile_page(component: BaseComponent) -> str:
 
 
 def compile_root_stylesheet(
-    stylesheets: list[str], reset_style: bool = True
+    stylesheets: list[str],
+    reset_style: bool = True,
+    plugins: Sequence[Plugin] | None = None,
 ) -> tuple[str, str]:
     """Compile the root stylesheet.
 
     Args:
         stylesheets: The stylesheets to include in the root stylesheet.
         reset_style: Whether to include CSS reset for margin and padding.
+        plugins: The effective plugins for the active compile.
 
     Returns:
         The path and code of the compiled root stylesheet.
     """
     output_path = utils.get_root_stylesheet_path()
 
-    code = _compile_root_stylesheet(stylesheets, reset_style)
+    code = _compile_root_stylesheet(stylesheets, reset_style, plugins)
 
     return output_path, code
 
@@ -244,15 +250,17 @@ def _validate_stylesheet(stylesheet_full_path: Path, assets_app_path: Path) -> N
         raise ValueError(msg)
 
 
-RADIX_THEMES_STYLESHEET = "@radix-ui/themes/styles.css"
-
-
-def _compile_root_stylesheet(stylesheets: list[str], reset_style: bool = True) -> str:
+def _compile_root_stylesheet(
+    stylesheets: list[str],
+    reset_style: bool = True,
+    plugins: Sequence[Plugin] | None = None,
+) -> str:
     """Compile the root stylesheet.
 
     Args:
         stylesheets: The stylesheets to include in the root stylesheet.
         reset_style: Whether to include CSS reset for margin and padding.
+        plugins: The effective plugins for the active compile.
 
     Returns:
         The compiled root stylesheet.
@@ -268,14 +276,10 @@ def _compile_root_stylesheet(stylesheets: list[str], reset_style: bool = True) -
         # Reference the vendored style reset file (automatically copied from .templates/web)
         sheets.append(f"./{ResetStylesheet.FILENAME}")
 
-    sheets.extend(
-        [RADIX_THEMES_STYLESHEET]
-        + [
-            sheet
-            for plugin in get_config().plugins
-            for sheet in plugin.get_stylesheet_paths()
-        ]
-    )
+    active_plugins = get_config().plugins if plugins is None else plugins
+    sheets.extend([
+        sheet for plugin in active_plugins for sheet in plugin.get_stylesheet_paths()
+    ])
 
     failed_to_import_sass = False
     assets_app_path = Path.cwd() / constants.Dirs.APP_ASSETS
@@ -826,9 +830,6 @@ def _resolve_app_wrap_components(
     }
     app_wrappers.update(page_app_wrap_components)
 
-    if app.theme is not None:
-        app_wrappers[20, "Theme"] = app.theme
-
     if config.react_strict_mode:
         from reflex_components_core.base.strict_mode import StrictMode
 
@@ -852,6 +853,32 @@ def _resolve_app_wrap_components(
     return app_wrappers
 
 
+def _resolve_radix_themes_plugin(
+    app: App,
+    plugins: Sequence[Plugin],
+) -> tuple[tuple[Plugin, ...], RadixThemesPlugin]:
+    """Resolve the effective Radix Themes plugin for the active compile.
+
+    Returns:
+        The compiler plugin chain and the effective Radix Themes plugin.
+    """
+    explicit_plugin = next(
+        (plugin for plugin in plugins if isinstance(plugin, RadixThemesPlugin)),
+        None,
+    )
+    if explicit_plugin is not None:
+        radix_plugin = explicit_plugin
+        plugin_chain = tuple(plugins)
+    else:
+        radix_plugin = RadixThemesPlugin.create_implicit()
+        plugin_chain = (*plugins, radix_plugin)
+
+    if app.theme is not None:
+        radix_plugin.apply_app_theme(app.theme)
+
+    return plugin_chain, radix_plugin
+
+
 def compile_app(
     app: App,
     *,
@@ -860,6 +887,7 @@ def compile_app(
     use_rich: bool = True,
 ) -> None:
     """Compile an app using the compiler plugin pipeline."""
+    from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
     from reflex_base.utils.exceptions import ReflexRuntimeError
 
     app._apply_decorated_pages()
@@ -904,179 +932,200 @@ def compile_app(
         else console.PoorProgress()
     )
     fixed_steps = 7
+    compiler_plugins, radix_themes_plugin = _resolve_radix_themes_plugin(
+        app,
+        config.plugins,
+    )
+    reset_bundled_libraries()
+    for plugin in compiler_plugins:
+        for dependency in plugin.get_frontend_dependencies():
+            bundle_library(dependency)
     base_total = (len(app._unevaluated_pages) * 2) + fixed_steps + len(config.plugins)
     progress.start()
     task = progress.add_task("Compiling:", total=base_total)
-
-    compile_ctx = CompileContext(
-        app=app,
-        pages=list(app._unevaluated_pages.values()),
-        hooks=CompilerHooks(
-            plugins=default_page_plugins(style=app.style, theme=app.theme)
-        ),
-    )
-
-    with console.timing("Compile pages"), compile_ctx:
-        compile_ctx.compile(
-            evaluate_progress=lambda: progress.advance(task),
-            render_progress=lambda: progress.advance(task),
-        )
-
-    for route, page_ctx in compile_ctx.compiled_pages.items():
-        app._check_routes_conflict(route)
-        if not isinstance(page_ctx.root_component, Component):
-            msg = (
-                f"Compiled page {route!r} root must be a Component before it can "
-                "be registered on the app."
-            )
-            raise TypeError(msg)
-        app._pages[route] = page_ctx.root_component
-
-    app._stateful_pages.update(compile_ctx.stateful_routes)
-    app._write_stateful_pages_marker()
-    app._add_optional_endpoints()
-    app._validate_var_dependencies()
-
-    if config.show_built_with_reflex is None:
-        if (
-            get_compile_context() == constants.CompileContext.DEPLOY
-            and prerequisites.get_user_tier() in ["pro", "team", "enterprise"]
-        ):
-            config.show_built_with_reflex = False
-        else:
-            config.show_built_with_reflex = True
-
-    if is_prod_mode() and config.show_built_with_reflex:
-        app._setup_sticky_badge()
-
-    progress.advance(task)
-
-    compile_results = [
-        (page_ctx.output_path, page_ctx.output_code)
-        for page_ctx in compile_ctx.compiled_pages.values()
-        if page_ctx.output_path is not None and page_ctx.output_code is not None
-    ]
-    all_imports = compile_ctx.all_imports
-
-    if app._state is None and any(
-        code_uses_state_contexts(page_ctx.output_code or "")
-        for page_ctx in compile_ctx.compiled_pages.values()
-    ):
-        msg = (
-            "To access rx.State in frontend components, at least one "
-            "subclass of rx.State must be defined in the app."
-        )
-        raise ReflexRuntimeError(msg)
-    progress.advance(task)
-
-    app_wrappers = _resolve_app_wrap_components(app, compile_ctx.app_wrap_components)
-    app_root = app._app_root(app_wrappers)
-    all_imports = utils.merge_imports(all_imports, app_root._get_all_imports())
-
-    (
-        memo_components_output,
-        memo_components_result,
-        memo_components_imports,
-    ) = compile_memo_components(
-        dict.fromkeys(CUSTOM_COMPONENTS.values()),
-        (
-            *tuple(EXPERIMENTAL_MEMOS.values()),
-            *tuple(compile_ctx.auto_memo_components.values()),
-        ),
-    )
-    compile_results.append((memo_components_output, memo_components_result))
-    all_imports = utils.merge_imports(all_imports, memo_components_imports)
-    progress.advance(task)
-
-    compile_results.append(
-        compile_document_root(
-            app.head_components,
-            html_lang=app.html_lang,
-            html_custom_attrs=(
-                {"suppressHydrationWarning": True, **app.html_custom_attrs}
-                if app.html_custom_attrs
-                else {"suppressHydrationWarning": True}
+    try:
+        compile_ctx = CompileContext(
+            app=app,
+            pages=list(app._unevaluated_pages.values()),
+            hooks=CompilerHooks(
+                plugins=default_page_plugins(style=app.style, plugins=compiler_plugins)
             ),
         )
-    )
-    progress.advance(task)
 
-    assets_src = Path.cwd() / constants.Dirs.APP_ASSETS
-    if assets_src.is_dir() and not dry_run:
-        with console.timing("Copy assets"):
-            path_ops.update_directory_tree(
-                src=assets_src,
-                dest=Path.cwd() / prerequisites.get_web_dir() / constants.Dirs.PUBLIC,
+        with console.timing("Compile pages"), compile_ctx:
+            compile_ctx.compile(
+                evaluate_progress=lambda: progress.advance(task),
+                render_progress=lambda: progress.advance(task),
             )
 
-    save_tasks: list[
-        tuple[
-            Callable[..., list[tuple[str, str]] | tuple[str, str] | None],
-            tuple[Any, ...],
-            dict[str, Any],
-        ]
-    ] = []
-    modify_files_tasks: list[tuple[str, str, Callable[[str], str]]] = []
+        for route, page_ctx in compile_ctx.compiled_pages.items():
+            app._check_routes_conflict(route)
+            if not isinstance(page_ctx.root_component, Component):
+                msg = (
+                    f"Compiled page {route!r} root must be a Component before it can "
+                    "be registered on the app."
+                )
+                raise TypeError(msg)
+            app._pages[route] = page_ctx.root_component
 
-    def add_save_task(
-        task_fn: Callable[..., list[tuple[str, str]] | tuple[str, str] | None],
-        /,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
-        save_tasks.append((task_fn, args, kwargs))
+        app._stateful_pages.update(compile_ctx.stateful_routes)
+        app._write_stateful_pages_marker()
+        app._add_optional_endpoints()
+        app._validate_var_dependencies()
 
-    for plugin in config.plugins:
-        plugin.pre_compile(
-            add_save_task=add_save_task,
-            add_modify_task=lambda *args, plugin=plugin: modify_files_tasks.append((
-                plugin.__class__.__module__ + plugin.__class__.__name__,
-                *args,
-            )),
-            unevaluated_pages=list(app._unevaluated_pages.values()),
-        )
+        if config.show_built_with_reflex is None:
+            if (
+                get_compile_context() == constants.CompileContext.DEPLOY
+                and prerequisites.get_user_tier() in ["pro", "team", "enterprise"]
+            ):
+                config.show_built_with_reflex = False
+            else:
+                config.show_built_with_reflex = True
 
-    if save_tasks:
-        _set_progress_total(progress, task, base_total + len(save_tasks))
+        if is_prod_mode() and config.show_built_with_reflex:
+            app._setup_sticky_badge()
 
-    progress.advance(task, advance=len(config.plugins))
-
-    compile_results.append(compile_root_stylesheet(app.stylesheets, app.reset_style))
-    progress.advance(task)
-
-    compile_results.append(compile_theme(app.style))
-    progress.advance(task)
-
-    for task_fn, args, kwargs in save_tasks:
-        result = task_fn(*args, **kwargs)
-        if result is None:
-            progress.advance(task)
-            continue
-        if isinstance(result, list):
-            compile_results.extend(result)
-        else:
-            compile_results.append(result)
         progress.advance(task)
 
-    compile_results.append(compile_contexts(app._state, app.theme))
-    if app.theme is not None:
-        app.theme.appearance = None  # pyright: ignore[reportAttributeAccessIssue]
-    progress.advance(task)
+        compile_results = [
+            (page_ctx.output_path, page_ctx.output_code)
+            for page_ctx in compile_ctx.compiled_pages.values()
+            if page_ctx.output_path is not None and page_ctx.output_code is not None
+        ]
+        all_imports = compile_ctx.all_imports
 
-    compile_results.append(compile_app_root(app_root))
-    progress.advance(task)
+        if app._state is None and any(
+            code_uses_state_contexts(page_ctx.output_code or "")
+            for page_ctx in compile_ctx.compiled_pages.values()
+        ):
+            msg = (
+                "To access rx.State in frontend components, at least one "
+                "subclass of rx.State must be defined in the app."
+            )
+            raise ReflexRuntimeError(msg)
+        progress.advance(task)
 
-    progress.stop()
+        app_wrappers = _resolve_app_wrap_components(
+            app, compile_ctx.app_wrap_components
+        )
+        app_root = app._app_root(app_wrappers)
+        all_imports = utils.merge_imports(all_imports, app_root._get_all_imports())
 
-    if dry_run:
-        return
+        (
+            memo_components_output,
+            memo_components_result,
+            memo_components_imports,
+        ) = compile_memo_components(
+            dict.fromkeys(CUSTOM_COMPONENTS.values()),
+            (
+                *tuple(EXPERIMENTAL_MEMOS.values()),
+                *tuple(compile_ctx.auto_memo_components.values()),
+            ),
+        )
+        compile_results.append((memo_components_output, memo_components_result))
+        all_imports = utils.merge_imports(all_imports, memo_components_imports)
+        progress.advance(task)
 
-    with console.timing("Install Frontend Packages"):
-        app._get_frontend_packages(all_imports)
+        compile_results.append(
+            compile_document_root(
+                app.head_components,
+                html_lang=app.html_lang,
+                html_custom_attrs=(
+                    {"suppressHydrationWarning": True, **app.html_custom_attrs}
+                    if app.html_custom_attrs
+                    else {"suppressHydrationWarning": True}
+                ),
+            )
+        )
+        progress.advance(task)
 
-    frontend_skeleton.update_react_router_config(
-        prerender_routes=prerender_routes,
-    )
+        assets_src = Path.cwd() / constants.Dirs.APP_ASSETS
+        if assets_src.is_dir() and not dry_run:
+            with console.timing("Copy assets"):
+                path_ops.update_directory_tree(
+                    src=assets_src,
+                    dest=Path.cwd()
+                    / prerequisites.get_web_dir()
+                    / constants.Dirs.PUBLIC,
+                )
+
+        save_tasks: list[
+            tuple[
+                Callable[..., list[tuple[str, str]] | tuple[str, str] | None],
+                tuple[Any, ...],
+                dict[str, Any],
+            ]
+        ] = []
+        modify_files_tasks: list[tuple[str, str, Callable[[str], str]]] = []
+
+        def add_save_task(
+            task_fn: Callable[..., list[tuple[str, str]] | tuple[str, str] | None],
+            /,
+            *args: Any,
+            **kwargs: Any,
+        ) -> None:
+            save_tasks.append((task_fn, args, kwargs))
+
+        for plugin in config.plugins:
+            plugin.pre_compile(
+                add_save_task=add_save_task,
+                add_modify_task=lambda *args, plugin=plugin: modify_files_tasks.append((
+                    plugin.__class__.__module__ + plugin.__class__.__name__,
+                    *args,
+                )),
+                radix_themes_plugin=radix_themes_plugin,
+                unevaluated_pages=list(app._unevaluated_pages.values()),
+            )
+
+        if save_tasks:
+            _set_progress_total(progress, task, base_total + len(save_tasks))
+
+        progress.advance(task, advance=len(config.plugins))
+
+        compile_results.append(
+            compile_root_stylesheet(
+                app.stylesheets,
+                app.reset_style,
+                plugins=compiler_plugins,
+            )
+        )
+        progress.advance(task)
+
+        compile_results.append(compile_theme(app.style))
+        progress.advance(task)
+
+        for task_fn, args, kwargs in save_tasks:
+            result = task_fn(*args, **kwargs)
+            if result is None:
+                progress.advance(task)
+                continue
+            if isinstance(result, list):
+                compile_results.extend(result)
+            else:
+                compile_results.append(result)
+            progress.advance(task)
+
+        compile_results.append(
+            compile_contexts(app._state, radix_themes_plugin.get_theme())
+        )
+        progress.advance(task)
+
+        compile_results.append(compile_app_root(app_root))
+        progress.advance(task)
+
+        progress.stop()
+
+        if dry_run:
+            return
+
+        with console.timing("Install Frontend Packages"):
+            app._get_frontend_packages(all_imports)
+
+        frontend_skeleton.update_react_router_config(
+            prerender_routes=prerender_routes,
+        )
+    finally:
+        reset_bundled_libraries()
 
     if is_prod_mode():
         purge_web_pages_dir()

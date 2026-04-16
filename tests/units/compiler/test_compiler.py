@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 from pytest_mock import MockerFixture
 from reflex_base import constants
+from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
 from reflex_base.constants.compiler import PageNames
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
 from reflex_base.vars.base import Var
@@ -12,6 +13,7 @@ from reflex_base.vars.sequence import LiteralStringVar
 from reflex_components_core.base import document
 from reflex_components_core.el.elements.metadata import Link
 
+import reflex as rx
 from reflex.compiler import compiler, utils
 
 
@@ -162,7 +164,6 @@ def test_compile_stylesheets(tmp_path: Path, mocker: MockerFixture):
         (
             "@layer __reflex_base;\n"
             "@import url('./__reflex_style_reset.css');\n"
-            "@import url('@radix-ui/themes/styles.css');\n"
             "@import url('https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple');\n"
             "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css');\n"
             "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css');\n"
@@ -226,7 +227,6 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker: MockerFixture):
         (
             "@layer __reflex_base;\n"
             "@import url('./__reflex_style_reset.css');\n"
-            "@import url('@radix-ui/themes/styles.css');\n"
             "@import url('./style.css');\n"
             f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}');\n"
             f"@import url('./{Path('preprocess') / Path('styles_b.css')!s}');"
@@ -248,7 +248,6 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker: MockerFixture):
         (
             "@layer __reflex_base;\n"
             "@import url('./__reflex_style_reset.css');\n"
-            "@import url('@radix-ui/themes/styles.css');\n"
             "@import url('./style.css');\n"
             f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}');\n"
             f"@import url('./{Path('preprocess') / Path('styles_b.css')!s}');"
@@ -295,7 +294,7 @@ def test_compile_stylesheets_exclude_tailwind(tmp_path, mocker: MockerFixture):
 
     assert compiler.compile_root_stylesheet(stylesheets) == (
         str(Path(".web") / "styles" / (PageNames.STYLESHEET_ROOT + ".css")),
-        "@layer __reflex_base;\n@import url('./__reflex_style_reset.css');\n@import url('@radix-ui/themes/styles.css');\n@import url('./style.css');",
+        "@layer __reflex_base;\n@import url('./__reflex_style_reset.css');\n@import url('./style.css');",
     )
 
 
@@ -334,8 +333,73 @@ def test_compile_stylesheets_no_reset(tmp_path: Path, mocker: MockerFixture):
             / "styles"
             / (PageNames.STYLESHEET_ROOT + ".css")
         ),
-        "@layer __reflex_base;\n@import url('@radix-ui/themes/styles.css');\n@import url('./style.css');",
+        "@layer __reflex_base;\n@import url('./style.css');",
     )
+
+
+def test_compile_stylesheets_includes_radix_plugin(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """Explicit RadixThemesPlugin should add the Radix stylesheet import."""
+    project = tmp_path / "test_project"
+    project.mkdir()
+
+    assets_dir = project / "assets"
+    assets_dir.mkdir()
+    (assets_dir / "style.css").write_text(".root { color: red; }")
+
+    config = mocker.Mock()
+    config.plugins = [rx.plugins.RadixThemesPlugin()]
+    mocker.patch("reflex.compiler.compiler.get_config", return_value=config)
+    mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
+    mocker.patch(
+        "reflex.compiler.compiler.get_web_dir",
+        return_value=project / constants.Dirs.WEB,
+    )
+    mocker.patch(
+        "reflex.compiler.utils.get_web_dir", return_value=project / constants.Dirs.WEB
+    )
+
+    assert compiler.compile_root_stylesheet(["/style.css"]) == (
+        str(
+            project
+            / constants.Dirs.WEB
+            / "styles"
+            / (PageNames.STYLESHEET_ROOT + ".css")
+        ),
+        "@layer __reflex_base;\n@import url('./__reflex_style_reset.css');\n@import url('@radix-ui/themes/styles.css');\n@import url('./style.css');",
+    )
+
+
+def test_compile_app_root_omits_radix_window_library_by_default():
+    """Apps without Radix should not import it in the app root."""
+    reset_bundled_libraries()
+
+    _, code = compiler.compile_app_root(rx.el.div("hello"))
+
+    assert "@radix-ui/themes" not in code
+
+
+def test_compile_app_root_includes_radix_window_library_when_bundled():
+    """Bundled Radix libraries should be exposed to window.__reflex."""
+    reset_bundled_libraries()
+    try:
+        bundle_library("@radix-ui/themes@3.3.0")
+
+        _, code = compiler.compile_app_root(rx.el.div("hello"))
+
+        assert 'import * as radix_ui_themes from "@radix-ui/themes";' in code
+        assert '"@radix-ui/themes": radix_ui_themes' in code
+    finally:
+        reset_bundled_libraries()
+
+
+def test_compile_contexts_has_default_color_mode_context():
+    """ColorModeContext should have a safe fallback value without Radix."""
+    _, code = compiler.compile_contexts(None, None)
+
+    assert "createContext({" in code
+    assert 'resolvedColorMode: defaultColorMode === "dark" ? "dark" : "light"' in code
 
 
 def test_compile_nonexistent_stylesheet(tmp_path, mocker: MockerFixture):
