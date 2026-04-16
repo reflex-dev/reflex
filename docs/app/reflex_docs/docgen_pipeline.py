@@ -4,6 +4,7 @@ import sys
 import types
 from pathlib import Path
 
+import reflex as rx
 from reflex_base.constants.colors import ColorType
 from reflex_docgen.markdown import (
     Block,
@@ -52,15 +53,14 @@ from reflex_ui_shared.components.blocks.typography import (
 )
 from reflex_ui_shared.constants import REFLEX_ASSETS_CDN
 
-import reflex as rx
-
 # ---------------------------------------------------------------------------
-# Exec environment — mirrors flexdown's module-based exec mechanism
+# Exec environment — mirrors reflex_docgen's module-based exec mechanism
 # ---------------------------------------------------------------------------
 
 # One in-memory module per file — all exec blocks within a doc accumulate
 # into the same namespace, so later definitions shadow earlier ones cleanly.
 _file_modules: dict[str, types.ModuleType] = {}
+_executed_blocks: set[tuple[str, str]] = set()
 
 # Register the parent package so pickle can resolve child modules.
 _PARENT_PKG = "_docgen_exec"
@@ -79,12 +79,51 @@ def _make_module_name(filename: str) -> str:
     return f"{_PARENT_PKG}.{slug}"
 
 
+def _last_defined_name(content: str) -> str | None:
+    """Return the name of the last top-level definition in *content*.
+
+    Considers functions, async functions, classes, and simple/annotated
+    assignments with a value.
+
+    Args:
+        content: A string of Python source code.
+
+    Returns:
+        The name of the last top-level definition, or None if there are none.
+    """
+    import ast
+
+    last: str | None = None
+    for node in ast.parse(content).body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            last = node.name
+        elif isinstance(node, ast.Assign):
+            target = node.targets[0]
+            if isinstance(target, ast.Name):
+                last = target.id
+        elif (
+            isinstance(node, ast.AnnAssign)
+            and node.value is not None
+            and isinstance(node.target, ast.Name)
+        ):
+            last = node.target.id
+    return last
+
+
 def _exec_code(content: str, env: dict, filename: str) -> None:
     """Execute a ``python exec`` code block via an in-memory module.
 
     All exec blocks within the same file share one module so that State
-    subclass redefinitions shadow correctly.
+    subclass redefinitions shadow correctly.  When the same block is
+    encountered a second time (e.g. the frontend is evaluated twice —
+    once for compilation and once on the backend), skip re-execution and
+    just populate *env* from the cached module namespace.
     """
+    key = (filename, content)
+    if key in _executed_blocks:
+        env.update(_file_modules[filename].__dict__)
+        return
+
     if filename not in _file_modules:
         mod_name = _make_module_name(filename)
         module = types.ModuleType(mod_name)
@@ -99,6 +138,7 @@ def _exec_code(content: str, env: dict, filename: str) -> None:
     exec(compile(content, filename or "<docgen-exec>", "exec"), module.__dict__)
 
     env.update(module.__dict__)
+    _executed_blocks.add(key)
 
 
 # ---------------------------------------------------------------------------
@@ -165,7 +205,7 @@ def _spans_to_plaintext(spans: tuple[Span, ...]) -> str:
 class ReflexDocTransformer(DocumentTransformer[rx.Component]):
     """Transforms a reflex_docgen Document into Reflex components.
 
-    Mirrors the rendering that the flexdown pipeline produces, so docs from
+    Mirrors the rendering that the reflex_docgen pipeline produces, so docs from
     the parent docs directory look identical to the locally-authored ones.
     """
 
@@ -370,6 +410,19 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
     # Demo / exec helpers
     # ------------------------------------------------------------------
 
+    def _exec_and_get_last_callable(self, content: str):
+        """Run _exec_code and return the last callable defined by the block."""
+        _exec_code(content, self.env, self.virtual_filepath)
+        last_name = _last_defined_name(content)
+        if last_name is None:
+            msg = "Exec block defines no function or class"
+            raise RuntimeError(msg)
+        last = self.env[last_name]
+        if not callable(last):
+            msg = f"Last defined name {last_name!r} is not callable"
+            raise TypeError(msg)
+        return last()
+
     def _render_demo(self, content: str, flags: set[str]) -> rx.Component:
         """Render a ``python demo`` block — code + live component."""
         comp_id = None
@@ -379,11 +432,9 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
 
         try:
             if "exec" in flags:
-                _exec_code(content, self.env, self.virtual_filepath)
-                comp = self.env[list(self.env.keys())[-1]]()
+                comp = self._exec_and_get_last_callable(content)
             elif "graphing" in flags:
-                _exec_code(content, self.env, self.virtual_filepath)
-                comp = self.env[list(self.env.keys())[-1]]()
+                comp = self._exec_and_get_last_callable(content)
                 parts = content.rpartition("def")
                 data, code = parts[0], parts[1] + parts[2]
                 return docgraphing(code, comp=comp, data=data)
@@ -417,11 +468,9 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
 
         try:
             if "exec" in flags:
-                _exec_code(content, self.env, self.virtual_filepath)
-                comp = self.env[list(self.env.keys())[-1]]()
+                comp = self._exec_and_get_last_callable(content)
             elif "graphing" in flags:
-                _exec_code(content, self.env, self.virtual_filepath)
-                comp = self.env[list(self.env.keys())[-1]]()
+                comp = self._exec_and_get_last_callable(content)
                 parts = content.rpartition("def")
                 data, code = parts[0], parts[1] + parts[2]
                 return docgraphing(code, comp=comp, data=data)
@@ -503,27 +552,34 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             ),
         ]
 
-        if children:
-            # Has body content — render as collapsible accordion.
-            if title_spans:
-                trigger.append(title_comp())
-                body = rx.accordion.content(
-                    self._render_children(children),
-                    padding="0px",
-                    margin_top="16px",
-                )
-            else:
-                trigger.append(
-                    rx.box(
-                        self._render_children(children),
-                        class_name="font-[475] !text-secondary-11",
-                    ),
-                )
-                body = rx.fragment()
+        if children and title_spans:
+            # Has heading + body — render as collapsible accordion.
+            trigger.append(title_comp())
+            body = rx.accordion.content(
+                self._render_children(children),
+                padding="0px",
+                margin_top="16px",
+            )
             return collapsible_box(trigger, body, color)
 
-        # Title only, no body — simple box.
-        trigger.append(title_comp())
+        # Title only, or text-only (no heading) — simple non-collapsible box.
+        if title_spans:
+            trigger.append(title_comp())
+        elif children:
+            # Render inline spans directly — avoid text_block's mb-4 margin.
+            spans: list[rx.Component | str] = []
+            for child in children:
+                if isinstance(child, TextBlock):
+                    spans.extend(_render_spans(child.children))
+                else:
+                    spans.append(self.transform_block(child))
+            trigger.append(
+                rx.box(
+                    *spans,
+                    class_name="font-[475]",
+                    color=f"{rx.color(color, 11)}",
+                ),
+            )
         return rx.vstack(
             rx.hstack(
                 *trigger,
@@ -694,6 +750,13 @@ def render_docgen_document(
 
 
 def get_docgen_toc(filepath: str | Path) -> list[tuple[int, str]]:
-    """Extract TOC headings as (level, text) tuples — same format as flexdown's get_toc."""
+    """Extract TOC headings as (level, text) tuples — same format as reflex_docgen's get_toc."""
     doc = _parse_doc(filepath)
     return [(h.level, _spans_to_plaintext(h.children)) for h in doc.headings]
+
+
+def render_markdown(text: str) -> rx.Component:
+    """Render a plain markdown text string into Reflex components."""
+    doc = parse_document(text)
+    transformer = ReflexDocTransformer()
+    return transformer.transform(doc)

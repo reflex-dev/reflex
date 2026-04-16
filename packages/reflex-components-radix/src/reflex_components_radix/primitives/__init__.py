@@ -6,7 +6,7 @@ from reflex_base.utils import lazy_loader
 
 from reflex_components_radix.mappings import RADIX_PRIMITIVES_MAPPING
 
-_SUBMOD_ATTRS: dict[str, list[str]] = {
+_SUBMOD_ATTRS: lazy_loader.SubmodAttrsType = {
     "".join(k.split("reflex_components_radix.primitives.")[-1]): v
     for k, v in RADIX_PRIMITIVES_MAPPING.items()
 } | {"dialog": ["dialog"]}

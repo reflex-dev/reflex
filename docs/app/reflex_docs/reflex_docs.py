@@ -3,28 +3,21 @@
 import os
 import sys
 
+import reflex as rx
 import reflex_enterprise as rxe
+from reflex.utils.exec import is_prod_mode
 from reflex_ui_shared import styles
 from reflex_ui_shared.constants import REFLEX_ASSETS_CDN
 from reflex_ui_shared.meta.meta import favicons_links, to_cdn_image_url
 from reflex_ui_shared.telemetry import get_pixel_website_trackers
 
-import reflex as rx
-from reflex.utils.exec import is_prod_mode
 from reflex_docs.pages import page404, routes
-from reflex_docs.pages.docs import exec_blocks, outblocks
-from reflex_docs.pages.docs.markdown_api import generate_markdown_files
 from reflex_docs.whitelist import _check_whitelisted_path
 
 # This number discovered by trial and error on Windows 11 w/ Node 18, any
 # higher and the prod build fails with EMFILE error.
 WINDOWS_MAX_ROUTES = int(os.environ.get("REFLEX_WEB_WINDOWS_MAX_ROUTES", "100"))
 
-# Execute all the exec blocks in the documents.
-for doc, href in outblocks:
-    exec_blocks(doc, href)
-
-generate_markdown_files()
 # Create the app.
 app = rxe.App(
     style=styles.BASE_STYLE,

@@ -68,8 +68,8 @@ from starlette.responses import JSONResponse, Response
 from starlette.staticfiles import StaticFiles
 from typing_extensions import Unpack
 
+from reflex._upload import UploadedFilesHeadersMiddleware, upload
 from reflex._upload import UploadFile as UploadFile
-from reflex._upload import upload
 from reflex.admin import AdminDash
 from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
 from reflex.compiler import compiler
@@ -647,16 +647,9 @@ class App(MiddlewareMixin, LifespanMixin):
         asgi_app = self._api
 
         if environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.get():
-            asgi_app.mount(
-                "/" + config.frontend_path.strip("/"),
-                StaticFiles(
-                    directory=prerequisites.get_web_dir()
-                    / constants.Dirs.STATIC
-                    / config.frontend_path.strip("/"),
-                    html=True,
-                ),
-                name="frontend",
-            )
+            from reflex.utils.exec import get_frontend_mount
+
+            asgi_app.routes.append(get_frontend_mount())
 
         if self.api_transformer is not None:
             api_transformers: Sequence[Starlette | Callable[[ASGIApp], ASGIApp]] = (
@@ -721,7 +714,7 @@ class App(MiddlewareMixin, LifespanMixin):
             # To access uploaded files.
             self._api.mount(
                 str(constants.Endpoint.UPLOAD),
-                StaticFiles(directory=get_upload_dir()),
+                UploadedFilesHeadersMiddleware(StaticFiles(directory=get_upload_dir())),
                 name="uploaded_files",
             )
 
@@ -1227,7 +1220,7 @@ class App(MiddlewareMixin, LifespanMixin):
         )
 
         # try to be somewhat accurate - but still not 100%
-        adhoc_steps_without_executor = 7
+        adhoc_steps_without_executor = 8
         fixed_pages_within_executor = 4
         plugin_count = len(config.plugins)
         progress.start()
@@ -1283,6 +1276,13 @@ class App(MiddlewareMixin, LifespanMixin):
         # Store the compile results.
         compile_results: list[tuple[str, str]] = []
 
+        progress.advance(task)
+
+        # Reinitialize vite config in case runtime options have changed.
+        compile_results.append((
+            constants.ReactRouter.VITE_CONFIG_FILE,
+            frontend_skeleton._compile_vite_config(config),
+        ))
         progress.advance(task)
 
         # Track imports found.

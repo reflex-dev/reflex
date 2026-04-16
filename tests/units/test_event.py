@@ -280,6 +280,33 @@ def test_focus(func: str, qualname: str):
     )
 
 
+@pytest.mark.parametrize(
+    ("func", "qualname"), [("set_focus", "_set_focus"), ("blur_focus", "_blur_focus")]
+)
+def test_focus_event_chain_preserves_args(func: str, qualname: str):
+    """Test that set_focus/blur_focus ref arg survives EventChain.create.
+
+    Args:
+        func: The event function name.
+        qualname: The sig qual name passed to JS.
+    """
+    spec = getattr(event, func)("input1")
+    chain = EventChain.create(value=spec, args_spec=lambda: ())
+    assert isinstance(chain, EventChain)
+    assert len(chain.events) == 1
+    chain_spec = chain.events[0]
+    assert isinstance(chain_spec, EventSpec)
+    # The ref arg must survive the EventChain pipeline.
+    assert len(chain_spec.args) == 1
+    assert chain_spec.args[0][0].equals(Var(_js_expr="ref"))
+    assert chain_spec.args[0][1].equals(LiteralVar.create("ref_input1"))
+    # Verify the serialized output includes the ref in the payload.
+    assert (
+        format.format_event(chain_spec)
+        == f'ReflexEvent("{qualname}", {{ref:"ref_input1"}})'
+    )
+
+
 def test_set_value():
     """Test the event window alert function."""
     spec = event.set_value("input1", "")

@@ -107,20 +107,6 @@ class PackageJson(SimpleNamespace):
         DEV = "react-router dev --host"
         EXPORT = "react-router build"
 
-        @staticmethod
-        def get_prod_command(frontend_path: str = "") -> str:
-            """Get the prod command with the correct 404.html path for the given frontend_path.
-
-            Args:
-                frontend_path: The frontend path prefix (e.g. "/app").
-
-            Returns:
-                The sirv command with the correct --single fallback path.
-            """
-            stripped = frontend_path.strip("/")
-            fallback = f"{stripped}/404.html" if stripped else "404.html"
-            return f"sirv ./build/client --single {fallback} --host"
-
     PATH = "package.json"
 
     _react_version = _determine_react_version()
@@ -140,7 +126,6 @@ class PackageJson(SimpleNamespace):
             "react-router": cls._react_router_version,
             "react-router-dom": cls._react_router_version,
             "@react-router/node": cls._react_router_version,
-            "sirv-cli": "3.0.1",
             "react": cls._react_version,
             "react-helmet": "6.1.0",
             "react-dom": cls._react_version,
