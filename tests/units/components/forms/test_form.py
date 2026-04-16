@@ -84,12 +84,29 @@ def test_on_submit_accepts_typed_dict_with_optional_fields():
         def on_submit(self, form_data: SignupData):
             pass
 
+    # RED: without NotRequired handling, nickname would be treated as required
+    # and the form below (which only has "email") would raise.
     form = HTMLForm.create(
         Input.create(name="email"),
         on_submit=SignupState.on_submit,
     )
-
     assert isinstance(form.event_triggers["on_submit"], EventChain)
+
+    # Prove validation is active: a truly missing required field still raises.
+    class StrictData(TypedDict):
+        email: str
+        nickname: str
+
+    class StrictState(rx.State):
+        @rx.event
+        def on_submit(self, form_data: StrictData):
+            pass
+
+    with pytest.raises(EventHandlerValueError):
+        HTMLForm.create(
+            Input.create(name="email"),
+            on_submit=StrictState.on_submit,
+        )
 
 
 def test_on_submit_allows_extra_typed_dict_form_fields():
@@ -174,12 +191,21 @@ def test_on_submit_accepts_typed_dict_with_inherited_optional_fields():
         def on_submit(self, form_data: SignupData):
             pass
 
+    # RED: without proper inheritance handling, nickname (from the total=False
+    # parent) would be treated as required, and this form would raise.
     form = HTMLForm.create(
         Input.create(name="email"),
         on_submit=SignupState.on_submit,
     )
-
     assert isinstance(form.event_triggers["on_submit"], EventChain)
+
+    # Prove the inherited field IS accepted when provided.
+    form_with_both = HTMLForm.create(
+        Input.create(name="email"),
+        Input.create(name="nickname"),
+        on_submit=SignupState.on_submit,
+    )
+    assert isinstance(form_with_both.event_triggers["on_submit"], EventChain)
 
 
 def test_on_submit_accepts_controls_associated_via_form_attribute():
@@ -193,6 +219,10 @@ def test_on_submit_accepts_controls_associated_via_form_attribute():
         def on_submit(self, form_data: SignupData):
             pass
 
+    # RED: without the form-id escape hatch, this would raise
+    # EventHandlerValueError because the form has no child inputs
+    # matching the TypedDict's required "email" field.
+    # (The input is associated externally via form="signup".)
     form = HTMLForm.create(
         id="signup",
         on_submit=SignupState.on_submit,
@@ -200,6 +230,12 @@ def test_on_submit_accepts_controls_associated_via_form_attribute():
     Input.create(name="email", form="signup")
 
     assert isinstance(form.event_triggers["on_submit"], EventChain)
+
+    # Verify it WOULD fail without the id (proving the escape hatch matters).
+    with pytest.raises(EventHandlerValueError):
+        HTMLForm.create(
+            on_submit=SignupState.on_submit,
+        )
 
 
 def test_on_submit_typed_dict_skips_dynamic_field_identifiers():
@@ -213,9 +249,19 @@ def test_on_submit_typed_dict_skips_dynamic_field_identifiers():
         def on_submit(self, form_data: SignupData):
             pass
 
+    # RED: without the dynamic-field escape hatch, this would raise
+    # because "email" isn't statically present.  The dynamic Var name
+    # could resolve to "email" at runtime, so validation must be skipped.
     form = HTMLForm.create(
         Input.create(name=Var(_js_expr="dynamic_name", _var_type=str)),
         on_submit=SignupState.on_submit,
     )
 
     assert isinstance(form.event_triggers["on_submit"], EventChain)
+
+    # Verify it WOULD fail with a static non-matching name.
+    with pytest.raises(EventHandlerValueError):
+        HTMLForm.create(
+            Input.create(name="wrong_field"),
+            on_submit=SignupState.on_submit,
+        )

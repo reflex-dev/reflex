@@ -108,12 +108,40 @@ def TypedDictInheritedFormSubmit(form_component):
         )
 
 
+# Each variant carries its own input actions and expected output.
+_CONTACT_FIELDS = {
+    "inputs": {"name": "Alice", "email": "alice@example.com"},
+    "textarea": "Hello there",
+    "expected": {
+        "name": "Alice",
+        "email": "alice@example.com",
+        "message": "Hello there",
+    },
+}
+_INHERITED_FIELDS = {
+    "inputs": {"email": "user@example.com", "nickname": "cooluser"},
+    "textarea": None,
+    "expected": {"email": "user@example.com", "nickname": "cooluser"},
+}
+
+
 @pytest.fixture(
     scope="module",
     params=[
-        functools.partial(TypedDictFormSubmit, form_component="rx.form.root"),
-        functools.partial(TypedDictFormSubmit, form_component="rx.el.form"),
-        functools.partial(TypedDictInheritedFormSubmit, form_component="rx.el.form"),
+        (
+            functools.partial(TypedDictFormSubmit, form_component="rx.form.root"),
+            _CONTACT_FIELDS,
+        ),
+        (
+            functools.partial(TypedDictFormSubmit, form_component="rx.el.form"),
+            _CONTACT_FIELDS,
+        ),
+        (
+            functools.partial(
+                TypedDictInheritedFormSubmit, form_component="rx.el.form"
+            ),
+            _INHERITED_FIELDS,
+        ),
     ],
     ids=[
         "typeddict-radix",
@@ -121,7 +149,9 @@ def TypedDictInheritedFormSubmit(form_component):
         "inherited-html",
     ],
 )
-def typeddict_form(request, tmp_path_factory) -> Generator[AppHarness, None, None]:
+def typeddict_form(
+    request, tmp_path_factory
+) -> Generator[tuple[AppHarness, dict], None, None]:
     """Start a TypedDict form app at tmp_path via AppHarness.
 
     Args:
@@ -129,29 +159,31 @@ def typeddict_form(request, tmp_path_factory) -> Generator[AppHarness, None, Non
         tmp_path_factory: pytest tmp_path_factory fixture
 
     Yields:
-        running AppHarness instance
+        running AppHarness instance and its test field config
     """
+    app_source, fields = request.param
     param_id = request._pyfuncitem.callspec.id.replace("-", "_")
     with AppHarness.create(
         root=tmp_path_factory.mktemp("typeddict_form"),
-        app_source=request.param,
-        app_name=request.param.func.__name__ + f"_{param_id}",
+        app_source=app_source,
+        app_name=app_source.func.__name__ + f"_{param_id}",
     ) as harness:
         assert harness.app_instance is not None, "app is not running"
-        yield harness
+        yield harness, fields
 
 
 @pytest.fixture
-def driver(typeddict_form: AppHarness):
+def driver(typeddict_form: tuple[AppHarness, dict]):
     """Get an instance of the browser open to the app.
 
     Args:
-        typeddict_form: harness for the TypedDict form app
+        typeddict_form: harness and fields for the TypedDict form app
 
     Yields:
         WebDriver instance.
     """
-    driver = typeddict_form.frontend()
+    harness, _ = typeddict_form
+    driver = harness.frontend()
     try:
         yield driver
     finally:
@@ -159,42 +191,29 @@ def driver(typeddict_form: AppHarness):
 
 
 @pytest.mark.asyncio
-async def test_typeddict_form_submit(driver, typeddict_form: AppHarness):
+async def test_typeddict_form_submit(driver, typeddict_form: tuple[AppHarness, dict]):
     """Fill a TypedDict-backed form, submit it, and verify the data arrives.
 
     Args:
         driver: selenium WebDriver open to the app
-        typeddict_form: harness for the app
+        typeddict_form: harness and fields for the app
     """
-    assert typeddict_form.app_instance is not None, "app is not running"
+    harness, fields = typeddict_form
+    assert harness.app_instance is not None, "app is not running"
 
     token_input = AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "token")
     )
-    token = typeddict_form.poll_for_value(token_input)
+    token = harness.poll_for_value(token_input)
     assert token
 
-    app_source = typeddict_form.app_source
-    is_inherited = (
-        isinstance(app_source, functools.partial)
-        and app_source.func is TypedDictInheritedFormSubmit
-    )
+    for input_name, input_value in fields["inputs"].items():
+        el = driver.find_element(By.NAME, input_name)
+        el.send_keys(input_value)
 
-    if is_inherited:
-        email_input = driver.find_element(By.NAME, "email")
-        email_input.send_keys("user@example.com")
-
-        nickname_input = driver.find_element(By.NAME, "nickname")
-        nickname_input.send_keys("cooluser")
-    else:
-        name_input = driver.find_element(By.NAME, "name")
-        name_input.send_keys("Alice")
-
-        email_input = driver.find_element(By.NAME, "email")
-        email_input.send_keys("alice@example.com")
-
-        message_input = driver.find_element(By.TAG_NAME, "textarea")
-        message_input.send_keys("Hello there")
+    if fields["textarea"] is not None:
+        textarea = driver.find_element(By.TAG_NAME, "textarea")
+        textarea.send_keys(fields["textarea"])
 
     await asyncio.sleep(0.5)
 
@@ -203,20 +222,15 @@ async def test_typeddict_form_submit(driver, typeddict_form: AppHarness):
     submit_btn = driver.find_element(By.CLASS_NAME, "rt-Button")
     submit_btn.click()
 
-    typeddict_form.poll_for_content(
+    harness.poll_for_content(
         driver.find_element(By.ID, "form-data"), exp_not_equal="{}"
     )
     form_data = json.loads(driver.find_element(By.ID, "form-data").text)
     assert isinstance(form_data, dict)
     form_data = format.collect_form_dict_names(form_data)
 
-    if is_inherited:
-        assert form_data["email"] == "user@example.com"
-        assert form_data["nickname"] == "cooluser"
-    else:
-        assert form_data["name"] == "Alice"
-        assert form_data["email"] == "alice@example.com"
-        assert form_data["message"] == "Hello there"
+    for key, expected_value in fields["expected"].items():
+        assert form_data[key] == expected_value, f"Mismatch for {key!r}"
 
     # submitting the form should NOT change the url (preventDefault)
     assert driver.current_url == prev_url
