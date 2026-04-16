@@ -256,6 +256,7 @@ class HighLevelDialog(DialogRoot):
                                     hi("Cancel01Icon"),
                                     variant="ghost",
                                     size="icon-sm",
+                                    aria_label="Close",
                                     class_name="text-secondary-11",
                                 ),
                             ),

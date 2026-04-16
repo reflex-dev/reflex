@@ -177,6 +177,7 @@ class HighLevelInput(InputBaseComponent):
         """
         return Button.create(
             hi("CancelCircleIcon"),
+            aria_label="Clear",
             type="button",
             on_click=[
                 set_value(id, ""),
