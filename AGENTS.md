@@ -39,6 +39,9 @@ docs/                   # documentation site (separate workspace member)
 
 - Concise, robust code. Reflex is a framework used in many ways — handle edge cases without unnecessary complexity.
 - Performance matters. Avoid suboptimal patterns (e.g. iterating a dict to find a value by identity). Suggest restructuring data/APIs if an operation can't be done efficiently.
+- Don't add expensive workarounds (e.g. `isinstance` checks) to paper over type-level problems — fix the root cause instead.
+- Don't repeat validation or be over-defensive; trust data that was already validated upstream.
+- Think in CPU cycles: avoid unnecessary data copies, redundant allocations, and gratuitous indirection.
 - Extract duplicated code into parameterized helpers.
 - No block comments (`# --- Section ---`, `# ============`). Plain inline comments only.
 - Be cautious creating new public APIs — they must be documented and supported long-term.
