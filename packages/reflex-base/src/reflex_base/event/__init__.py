@@ -66,8 +66,6 @@ if TYPE_CHECKING:
     from reflex.state import BaseState
 
     BASE_STATE = TypeVar("BASE_STATE", bound=BaseState)
-else:
-    BASE_STATE = TypeVar("BASE_STATE")
 
 
 @dataclasses.dataclass(
@@ -825,6 +823,7 @@ def checked_input_event(e: ObjectVar[JavascriptInputEvent]) -> tuple[Var[bool]]:
 
 
 FORM_DATA = Var(_js_expr="form_data")
+FORM_SUBMIT_MAPPING = TypeVar("FORM_SUBMIT_MAPPING", bound=Mapping[str, Any])
 
 
 def on_submit_event() -> tuple[Var[dict[str, Any]]]:
@@ -2648,6 +2647,7 @@ class EventNamespace:
     EVENT_ACTIONS_MARKER = EVENT_ACTIONS_MARKER
     _EVENT_FIELDS = _EVENT_FIELDS
     FORM_DATA = FORM_DATA
+    FORM_SUBMIT_MAPPING = FORM_SUBMIT_MAPPING
     upload_files = upload_files
     upload_files_chunk = upload_files_chunk
     stop_propagation = stop_propagation
@@ -2681,7 +2681,7 @@ class EventNamespace:
     @overload
     def __new__(
         cls,
-        func: Callable[[BASE_STATE, Unpack[P]], Any],
+        func: "Callable[[BASE_STATE, Unpack[P]], Any]",
         *,
         background: bool | None = None,
         stop_propagation: bool | None = None,
@@ -2693,7 +2693,7 @@ class EventNamespace:
 
     def __new__(
         cls,
-        func: Callable[[BASE_STATE, Unpack[P]], Any] | None = None,
+        func: "Callable[[BASE_STATE, Unpack[P]], Any] | None" = None,
         *,
         background: bool | None = None,
         stop_propagation: bool | None = None,
@@ -2701,10 +2701,7 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
-    ) -> (
-        EventCallback[Unpack[P]]
-        | Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]]
-    ):
+    ) -> "EventCallback[Unpack[P]] | Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]]":
         """Wrap a function to be used as an event.
 
         Args:
@@ -2752,7 +2749,7 @@ class EventNamespace:
             return event_actions
 
         def wrapper(
-            func: Callable[[BASE_STATE, Unpack[P]], T],
+            func: "Callable[[BASE_STATE, Unpack[P]], T]",
         ) -> EventCallback[Unpack[P]]:
             if background is True:
                 if not inspect.iscoroutinefunction(

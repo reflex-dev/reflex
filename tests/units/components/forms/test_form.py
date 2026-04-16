@@ -160,6 +160,48 @@ def test_on_submit_typed_dict_missing_fields_raises_helpful_error():
     assert "Matching fields present in the form" in error
 
 
+def test_on_submit_accepts_typed_dict_with_inherited_optional_fields():
+    """Inherited optional TypedDict keys should remain optional."""
+
+    class BaseSignupData(TypedDict, total=False):
+        nickname: str
+
+    class SignupData(BaseSignupData):
+        email: str
+
+    class SignupState(rx.State):
+        @rx.event
+        def on_submit(self, form_data: SignupData):
+            pass
+
+    form = HTMLForm.create(
+        Input.create(name="email"),
+        on_submit=SignupState.on_submit,
+    )
+
+    assert isinstance(form.event_triggers["on_submit"], EventChain)
+
+
+def test_on_submit_accepts_controls_associated_via_form_attribute():
+    """Controls associated via the HTML form attribute should not fail validation."""
+
+    class SignupData(TypedDict):
+        email: str
+
+    class SignupState(rx.State):
+        @rx.event
+        def on_submit(self, form_data: SignupData):
+            pass
+
+    form = HTMLForm.create(
+        id="signup",
+        on_submit=SignupState.on_submit,
+    )
+    Input.create(name="email", form="signup")
+
+    assert isinstance(form.event_triggers["on_submit"], EventChain)
+
+
 def test_on_submit_typed_dict_skips_dynamic_field_identifiers():
     """Dynamic field names should skip strict validation instead of raising."""
 
