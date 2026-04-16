@@ -821,7 +821,7 @@ class AppHarnessProd(AppHarness):
         config = get_config()
         frontend_app = Starlette()
         frontend_app.mount(
-            "/" + config.frontend_path.strip("/"),
+            config.prepend_frontend_path("/"),
             PrecompressedStaticFiles(
                 directory=web_root / config.frontend_path.strip("/"),
                 html=True,
@@ -884,7 +884,9 @@ class AppHarnessProd(AppHarness):
         if not frontend_socket.fileno():
             msg = "Frontend did not start"
             raise RuntimeError(msg)
-        self.frontend_url = "http://{}:{}".format(*frontend_socket.getsockname())
+        self.frontend_url = "http://{}:{}".format(
+            *frontend_socket.getsockname()
+        ) + get_config().prepend_frontend_path("/")
         get_config().deploy_url = self.frontend_url
 
     def _start_backend(self):
