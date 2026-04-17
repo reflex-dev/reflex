@@ -39,7 +39,7 @@ def text_comp(text: rx.Var[str]) -> rx.Component:
     Returns:
         The component.
     """
-    return rx.text(text, class_name="font-[475] text-secondary-11 mb-4 leading-7")
+    return rx.text(text, class_name="font-normal text-secondary-11 mb-4 leading-7")
 
 
 @rx.memo
@@ -51,7 +51,7 @@ def text_comp_2(text: rx.Var[str]) -> rx.Component:
     """
     return rx.text(
         text,
-        class_name="font-[475] text-secondary-11 max-w-[80%] mb-10",
+        class_name="font-normal text-secondary-11 max-w-[80%] mb-10",
     )
 
 
@@ -62,7 +62,7 @@ def list_comp(text: rx.Var[str]) -> rx.Component:
     Returns:
         The component.
     """
-    return rx.list_item(text, class_name="font-[475] text-secondary-11 mb-4")
+    return rx.list_item(text, class_name="font-normal text-secondary-11 mb-4")
 
 
 @rx.memo

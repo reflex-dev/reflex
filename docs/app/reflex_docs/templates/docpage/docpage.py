@@ -533,8 +533,8 @@ def docpage(
                             class_name="lg:mt-0 h-auto",
                         ),
                         class_name=ui.cn(
-                            "flex-1 h-auto mx-auto lg:max-w-[42rem] px-4 overflow-y-auto",
-                            "lg:max-w-[56rem]" if not show_right_sidebar else "",
+                            "flex-1 h-auto mx-auto lg:max-w-[52rem] px-4 overflow-y-auto",
+                            "lg:max-w-[64rem]" if not show_right_sidebar else "",
                         ),
                     ),
                     rx.box(
@@ -613,7 +613,7 @@ def docpage(
                             ),
                         ),
                         class_name=(
-                            "w-[240px] h-screen sticky top-0 shrink-0 hidden xl:block"
+                            "w-[240px] h-screen sticky top-0 shrink-0 hidden 2xl:block"
                         ),
                     )
                     if show_right_sidebar and not pseudo_right_bar

@@ -1699,6 +1699,14 @@
         /* padding: 0rem 0.125rem 0rem 0.125rem; */
     }
 
+    /* Override Radix Code (rt-Code) accent coloring so inline code matches slate theme */
+    code.rt-Code,
+    code.rt-Code.rt-variant-soft,
+    .rt-Code.rt-variant-soft {
+        color: var(--c-slate-11) !important;
+        background-color: var(--c-slate-3) !important;
+    }
+
     .code-error-style {
         font-family: var(--font-jetbrains);
         font-size: 0.835rem;
@@ -1803,6 +1811,44 @@
         }
     }
 
+    .code-block button,
+    .code-block > button {
+        border: none !important;
+        border-width: 0 !important;
+        background: transparent !important;
+        background-color: transparent !important;
+        opacity: 0 !important;
+        transition: opacity 0.15s ease-out !important;
+        pointer-events: none;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.375rem !important;
+        font-size: 0.8125rem !important;
+        font-weight: 500 !important;
+        color: var(--c-slate-11) !important;
+        top: 8px !important;
+        right: 12px !important;
+        padding: 6px 8px !important;
+    }
+
+    .code-block button::after,
+    .code-block > button::after {
+        content: "Copy";
+    }
+
+    .code-block:hover button,
+    .code-block:hover > button,
+    .code-block button:focus-visible {
+        opacity: 1 !important;
+        pointer-events: auto;
+    }
+
+    .code-block button:hover,
+    .code-block > button:hover {
+        background: var(--c-slate-3) !important;
+        background-color: var(--c-slate-3) !important;
+    }
+
 
     .tab-style {
         color: var(--c-slate-9);
@@ -1812,6 +1858,89 @@
         font-weight: 500;
         line-height: 1.25rem;
         letter-spacing: -0.01094rem;
+    }
+
+    .pill-tab-list {
+        display: inline-flex !important;
+        gap: 2px !important;
+        padding: 4px !important;
+        background: var(--c-slate-3) !important;
+        border-radius: 10px !important;
+        border-bottom: none !important;
+        box-shadow: none !important;
+        width: fit-content !important;
+        max-width: 100%;
+        overflow-x: auto;
+    }
+
+    .pill-tab-list::before,
+    .pill-tab-list::after {
+        display: none !important;
+        content: none !important;
+    }
+
+    .pill-tab {
+        appearance: none !important;
+        background: transparent !important;
+        background-color: transparent !important;
+        border: none !important;
+        padding: 8px 16px !important;
+        font-size: 0.9375rem !important;
+        font-weight: 450 !important;
+        color: var(--c-slate-11) !important;
+        border-radius: 7px !important;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: color 0.12s, background-color 0.12s, box-shadow 0.12s;
+        letter-spacing: 0 !important;
+        line-height: 1.25rem !important;
+        box-shadow: none !important;
+    }
+
+    .pill-tab::before,
+    .pill-tab::after,
+    .pill-tab:hover::before,
+    .pill-tab:hover::after,
+    .pill-tab[data-state='active']::before,
+    .pill-tab[data-state='active']::after,
+    .pill-tab[data-state='active']:hover::before,
+    .pill-tab[data-state='active']:hover::after {
+        background: transparent !important;
+        background-color: transparent !important;
+        box-shadow: none !important;
+        content: none !important;
+        display: none !important;
+    }
+
+    .pill-tab:hover {
+        color: var(--c-slate-11) !important;
+        background: transparent !important;
+    }
+
+    .pill-tab .rt-BaseTabListTriggerInner,
+    .pill-tab:hover .rt-BaseTabListTriggerInner,
+    .pill-tab:focus-visible .rt-BaseTabListTriggerInner,
+    .pill-tab:focus-visible:hover .rt-BaseTabListTriggerInner {
+        background-color: transparent !important;
+        background: transparent !important;
+    }
+
+    .pill-tab[data-state='active'],
+    .pill-tab[data-state='active']:hover {
+        color: var(--c-slate-12) !important;
+        font-weight: 500 !important;
+        background: var(--c-slate-1) !important;
+        background-color: var(--c-slate-1) !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+    }
+
+    :where(.dark, .dark *) .pill-tab[data-state='active'] {
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+    }
+
+    .tab-style:hover:not([data-state='active'])::before {
+        background: transparent !important;
+        background-color: transparent !important;
     }
 
     .tab-style:hover {

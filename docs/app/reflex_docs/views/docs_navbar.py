@@ -71,7 +71,7 @@ def menu_item(text: str, href: str, active_str: str = "") -> rx.Component:
             href=href,
         ),
         class_name=ui.cn(
-            "xl:flex hidden h-full items-center justify-center",
+            "md:flex hidden h-full items-center justify-center",
             rx.cond(active, active_cn, ""),
         ),
         custom_attrs={"role": "menuitem"},
@@ -112,7 +112,7 @@ def navigation_menu() -> rx.Component:
             ),
             ui.navigation_menu.item(
                 navbar_sidebar_button(),
-                class_name="xl:hidden flex",
+                class_name="md:hidden flex",
                 unstyled=True,
                 custom_attrs={"role": "menuitem"},
             ),
