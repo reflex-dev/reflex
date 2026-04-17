@@ -58,6 +58,8 @@ def LinkedStateApp():
                 assert linked_state._linked_to == self.room  # pyright: ignore[reportAttributeAccessIssue]
             else:
                 assert linked_state._linked_to == "default"
+            if linked_state.counter == 0:
+                linked_state.counter = -1
 
         @rx.event
         async def handle_submit(self, form_data: dict[str, Any]):
@@ -73,9 +75,9 @@ def LinkedStateApp():
 
         @rx.event
         async def on_load_link_default(self):
-            await self._link_to(self.room or "default")  # pyright: ignore[reportAttributeAccessIssue]
-            if not self.note:
-                self.note = "linked"
+            linked_state = await self._link_to(self.room or "default")  # pyright: ignore[reportAttributeAccessIssue]
+            if not linked_state.note:
+                linked_state.note = "linked"
 
     class PrivateState(rx.State):
         @rx.var
@@ -447,11 +449,10 @@ def _open_linked_tab(
         lambda: tab.find_element(By.ID, "counter-button")
     )
     assert counter_button
-    assert harness.poll_for_content(counter_button) == "0"
+    # Wait for SharedState.on_load_link_default (sets counter=-1).
+    assert harness.poll_for_content(counter_button, exp_not_equal="0") == "-1"
     note = tab.find_element(By.ID, "shared-note")
-    # Wait for SharedNotes.on_load_link_default to complete (sets note="linked").
-    # This ensures both on_load handlers have finished before returning, since
-    # SharedNotes' handler runs after SharedState's and events are sequential.
+    # Wait for SharedNotes.on_load_link_default (sets note="linked").
     assert harness.poll_for_content(note) == "linked"
     return counter_button, note
 
@@ -483,8 +484,8 @@ def test_modify_shared_state_by_shared_token(
     assert response.status_code == 200
 
     # Both tabs should see updates to both SharedState and SharedNotes
-    assert linked_state.poll_for_content(counter_button_1, exp_not_equal="0") == "42"
-    assert linked_state.poll_for_content(counter_button_2, exp_not_equal="0") == "42"
+    assert linked_state.poll_for_content(counter_button_1, exp_not_equal="-1") == "42"
+    assert linked_state.poll_for_content(counter_button_2, exp_not_equal="-1") == "42"
     assert (
         linked_state.poll_for_content(note_1, exp_not_equal="linked")
         == "counter set to 42"
