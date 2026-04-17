@@ -161,12 +161,79 @@ export function Layout({{children}}) {{
 }}"""
 
 
+def _normalize_window_lib_alias(lib: str) -> str:
+    """Produce a safe JS identifier for a library path.
+
+    Args:
+        lib: The library path to normalize.
+
+    Returns:
+        A JS-safe identifier derived from the library path.
+    """
+    return (
+        lib
+        .replace("$/", "")
+        .replace("@", "")
+        .replace("/", "_")
+        .replace("-", "_")
+        .replace(".", "_")
+    )
+
+
+def _render_window_reflex_block(
+    window_library_imports: dict[str, set[str] | None],
+) -> tuple[str, str]:
+    """Render the extra imports + useEffect block for window.__reflex.
+
+    External libraries (``@radix-ui/themes`` etc.) use named imports derived
+    from the app's actual usage so Rolldown can tree-shake unused exports;
+    a star import would pin the library's entire surface onto the critical
+    path. Internal ``$/utils/*`` modules still use star imports since their
+    surface is small and Reflex-controlled.
+
+    Args:
+        window_library_imports: Mapping from library path to the set of
+            named exports to expose (external libs) or ``None`` (internal
+            libs, star import).
+
+    Returns:
+        A tuple of ``(import_block, useEffect_body)``. Both are empty when
+        no dynamic components are in play.
+    """
+    if not window_library_imports:
+        return "", ""
+    import_lines: list[str] = []
+    entries: list[str] = []
+    for lib, names in window_library_imports.items():
+        alias = f"__reflex_{_normalize_window_lib_alias(lib)}"
+        if names is None:
+            import_lines.append(f'import * as {alias} from "{lib}";')
+            entries.append(f'      "{lib}": {alias},')
+        else:
+            sorted_names = sorted(names)
+            specs = ", ".join(f"{n} as {alias}_{n}" for n in sorted_names)
+            import_lines.append(f'import {{ {specs} }} from "{lib}";')
+            obj_entries = ", ".join(f"{n}: {alias}_{n}" for n in sorted_names)
+            entries.append(f'      "{lib}": {{ {obj_entries} }},')
+    if not entries:
+        return "", ""
+    import_block = "\n".join(import_lines)
+    effect = (
+        "  useEffect(() => {\n"
+        '    window["__reflex"] = {\n'
+        f"{chr(10).join(entries)}\n"
+        "    };\n"
+        "  }, []);\n"
+    )
+    return import_block, effect
+
+
 def app_root_template(
     *,
     imports: list[_ImportDict],
     custom_codes: Iterable[str],
     hooks: dict[str, VarData | None],
-    window_libraries: list[tuple[str, str]],
+    window_library_imports: dict[str, set[str] | None],
     render: dict[str, Any],
     dynamic_imports: set[str],
 ):
@@ -176,7 +243,8 @@ def app_root_template(
         imports: The list of import statements.
         custom_codes: The set of custom code snippets.
         hooks: The dictionary of hooks.
-        window_libraries: The list of window libraries.
+        window_library_imports: Per-library named-export surface for
+            ``window.__reflex`` (see ``collect_window_library_imports``).
         render: The dictionary of render functions.
         dynamic_imports: The set of dynamic imports.
 
@@ -188,14 +256,9 @@ def app_root_template(
 
     custom_code_str = "\n".join(custom_codes)
 
-    import_window_libraries = "\n".join([
-        f'import * as {lib_alias} from "{lib_path}";'
-        for lib_alias, lib_path in window_libraries
-    ])
-
-    window_imports_str = "\n".join([
-        f'    "{lib_path}": {lib_alias},' for lib_alias, lib_path in window_libraries
-    ])
+    window_imports_block, window_reflex_effect = _render_window_reflex_block(
+        window_library_imports
+    )
 
     return f"""
 {imports_str}
@@ -204,7 +267,7 @@ import {{ EventLoopProvider, StateProvider, defaultColorMode }} from "$/utils/co
 import {{ ThemeProvider }} from '$/utils/react-theme';
 import {{ Layout as AppLayout }} from './_document';
 import {{ Outlet }} from 'react-router';
-{import_window_libraries}
+{window_imports_block}
 
 {custom_code_str}
 
@@ -215,13 +278,7 @@ return ({_RenderUtils.render(render)})
 
 
 export function Layout({{children}}) {{
-  useEffect(() => {{
-    // Make contexts and state objects available globally for dynamic eval'd components.
-    window["__reflex"] = {{
-{window_imports_str}
-    }};
-  }}, []);
-
+{window_reflex_effect}
   return jsx(AppLayout, {{}},
     jsx(ThemeProvider, {{defaultTheme: defaultColorMode, attribute: "class"}},
       jsx(StateProvider, {{}},

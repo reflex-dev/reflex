@@ -361,6 +361,132 @@ def test_compile_nonexistent_stylesheet(tmp_path, mocker: MockerFixture):
         compiler.compile_root_stylesheet(stylesheets)
 
 
+class TestGetRadixThemesStylesheets:
+    """Tests for the granular Radix Themes stylesheet selection."""
+
+    def test_no_roots_falls_back_to_monolith(self):
+        """When no roots are provided, use the monolithic stylesheet."""
+        assert compiler.get_radix_themes_stylesheets(None) == [
+            "@radix-ui/themes/styles.css"
+        ]
+
+    def test_literal_accent_emits_granular_imports(self):
+        """A literal accent_color emits only the needed granular imports."""
+        import reflex as rx
+
+        sheets = compiler.get_radix_themes_stylesheets([rx.theme(accent_color="blue")])
+        assert sheets == [
+            "@radix-ui/themes/tokens/base.css",
+            # blue's natural gray pairing is slate
+            "@radix-ui/themes/tokens/colors/slate.css",
+            "@radix-ui/themes/tokens/colors/blue.css",
+            "@radix-ui/themes/components.css",
+            "@radix-ui/themes/utilities.css",
+        ]
+
+    def test_explicit_gray_overrides_auto_pairing(self):
+        """An explicit gray_color replaces the accent's auto-paired gray."""
+        import reflex as rx
+
+        sheets = compiler.get_radix_themes_stylesheets([
+            rx.theme(accent_color="red", gray_color="mauve")
+        ])
+        assert "@radix-ui/themes/tokens/colors/mauve.css" in sheets
+        assert "@radix-ui/themes/tokens/colors/red.css" in sheets
+        # The default auto pairing for red is also mauve, so no extra colors.
+        color_sheets = [s for s in sheets if "/colors/" in s]
+        assert len(color_sheets) == 2
+
+    def test_nested_themes_union_colors(self):
+        """Nested Theme components contribute the union of their colors."""
+        import reflex as rx
+
+        root = rx.box(
+            rx.theme(accent_color="green"),
+            rx.theme(accent_color="pink"),
+        )
+        sheets = compiler.get_radix_themes_stylesheets([root])
+        color_sheets = {s for s in sheets if "/colors/" in s}
+        assert "@radix-ui/themes/tokens/colors/green.css" in color_sheets
+        assert "@radix-ui/themes/tokens/colors/pink.css" in color_sheets
+
+    def test_dynamic_color_falls_back_to_monolith(self):
+        """A state-driven Theme color forces the monolithic stylesheet."""
+        from typing import Literal
+
+        import reflex as rx
+
+        class _S(rx.State):
+            color: Literal["red", "blue"] = "red"
+
+        sheets = compiler.get_radix_themes_stylesheets([
+            rx.theme(accent_color=_S.color)
+        ])
+        assert sheets == ["@radix-ui/themes/styles.css"]
+
+
+class TestCollectWindowLibraryImports:
+    """Tests for the named-import collection that drives window.__reflex."""
+
+    def test_always_emits_internal_modules(self):
+        """Internal Reflex modules always map to None (star import) so that
+        ``window.__reflex`` is populated for dynamic components / plugins even
+        when the app has no statically-referenced external tags.
+        """
+        result = compiler.collect_window_library_imports([{}])
+        assert result["$/utils/state"] is None
+        # External libs with no referenced tags are omitted entirely.
+        assert "@radix-ui/themes" not in result
+
+    def test_external_lib_gets_named_imports_from_usage(self):
+        """External library exposure on window.__reflex uses named imports.
+
+        Star imports would pin every export of the library onto the critical
+        path and defeat Rolldown's tree-shaking.
+        """
+        from reflex_base.utils.imports import ImportVar
+
+        # Separate sources = separate pages/app_root. Mirrors how app.py
+        # passes per-source dicts so tags from multiple sources don't clobber.
+        sources = [
+            # Page that renders a Component-typed Var triggers evalReactComponent
+            {"$/utils/state": [ImportVar(tag="evalReactComponent")]},
+            # App root uses Theme + Button from Radix Themes
+            {
+                "@radix-ui/themes@3.3.0": [
+                    ImportVar(tag="Theme"),
+                    ImportVar(tag="Button"),
+                ]
+            },
+        ]
+        result = compiler.collect_window_library_imports(sources)
+        assert result["@radix-ui/themes"] == {"Theme", "Button"}
+
+    def test_multiple_sources_union_tags_per_library(self):
+        """Tags from different sources for the same lib must be unioned."""
+        from reflex_base.utils.imports import ImportVar
+
+        sources = [
+            {
+                "$/utils/state": [ImportVar(tag="evalReactComponent")],
+                "@radix-ui/themes@3.3.0": [ImportVar(tag="Theme")],
+            },
+            # A different page that uses Button instead of Theme
+            {"@radix-ui/themes@3.3.0": [ImportVar(tag="Button")]},
+        ]
+        result = compiler.collect_window_library_imports(sources)
+        assert result["@radix-ui/themes"] == {"Theme", "Button"}
+
+    def test_internal_lib_uses_star_import(self):
+        """Internal Reflex modules still use star imports (small, controlled)."""
+        from reflex_base.utils.imports import ImportVar
+
+        sources = [{"$/utils/state": [ImportVar(tag="evalReactComponent")]}]
+        result = compiler.collect_window_library_imports(sources)
+        # Internal modules map to None (= star import)
+        assert result["$/utils/state"] is None
+
+
 def test_create_document_root():
     """Test that the document root is created correctly."""
     # Test with no components.

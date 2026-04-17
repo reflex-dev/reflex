@@ -1,6 +1,7 @@
 """Tailwind CSS configuration types for Reflex plugins."""
 
 import dataclasses
+import re
 from collections.abc import Mapping
 from copy import deepcopy
 from typing import Any, Literal, TypedDict
@@ -8,6 +9,27 @@ from typing import Any, Literal, TypedDict
 from typing_extensions import NotRequired, Unpack
 
 from .base import Plugin as PluginBase
+
+_RADIX_IMPORT_RE = re.compile(
+    r"^@import url\(['\"]@radix-ui/themes/[^'\"]+['\"]\);\s*\n?",
+    re.MULTILINE,
+)
+
+
+def strip_radix_theme_imports(css: str) -> tuple[str, int]:
+    """Remove every Radix Themes @import line from a stylesheet.
+
+    Handles both the monolithic ``styles.css`` and the granular per-token
+    imports emitted by the compiler.
+
+    Args:
+        css: The stylesheet content.
+
+    Returns:
+        The stripped content and the number of imports removed.
+    """
+    return _RADIX_IMPORT_RE.subn("", css)
+
 
 TailwindPluginImport = TypedDict(
     "TailwindPluginImport",
