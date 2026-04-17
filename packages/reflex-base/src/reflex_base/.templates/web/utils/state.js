@@ -1,6 +1,5 @@
 // State management for Reflex web apps.
 import io from "socket.io-client";
-import JSON5 from "json5";
 import env from "$/env.json";
 import reflexEnvironment from "$/reflex.json";
 import Cookies from "universal-cookie";
@@ -436,6 +435,22 @@ const resolveSocket = (socket) => {
   return socket?.current ?? socket;
 };
 
+// Python's json.dumps emits bare Infinity/-Infinity/NaN tokens (invalid JSON).
+// Rewrite them outside string literals so JSON.parse accepts the payload.
+// 1e999 / -1e999 overflow to ±Infinity; NaN has no JSON literal so it becomes null.
+// The alternation matches whole string literals first (passed through unchanged),
+// guaranteeing bare-token matches only land in numeric positions.
+const NON_FINITE_FLOAT_RE = /"(?:[^"\\]|\\.)*"|-?Infinity|NaN/g;
+const NON_FINITE_REPLACEMENTS = {
+  Infinity: "1e999",
+  "-Infinity": "-1e999",
+  NaN: "null",
+};
+const rewriteBareNonFiniteFloats = (str) =>
+  str.replace(NON_FINITE_FLOAT_RE, (match) =>
+    match[0] === '"' ? match : NON_FINITE_REPLACEMENTS[match],
+  );
+
 /**
  * Queue events to be processed and trigger processing of queue.
  * @param events Array of events to queue.
@@ -541,9 +556,13 @@ export const connect = async (
   socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
   socket.current.io.decoder.tryParse = (str) => {
     try {
-      return JSON5.parse(str);
+      return JSON.parse(str);
     } catch (e) {
-      return false;
+      try {
+        return JSON.parse(rewriteBareNonFiniteFloats(str));
+      } catch (e2) {
+        return false;
+      }
     }
   };
   // Set up a reconnect helper function
