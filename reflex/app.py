@@ -1563,8 +1563,9 @@ class App(MiddlewareMixin, LifespanMixin):
         def all_routes(_request: Request) -> Response:
             return JSONResponse(list(self._unevaluated_pages.keys()))
 
+        config = get_config()
         self._api.add_route(
-            get_config().prepend_backend_path(str(constants.Endpoint.ALL_ROUTES)),
+            config.prepend_backend_path(str(constants.Endpoint.ALL_ROUTES)),
             all_routes,
             methods=["GET"],
         )
