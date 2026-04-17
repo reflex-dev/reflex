@@ -789,7 +789,6 @@ def test_uploaded_file_security_headers(
         expected_mime_type: expected Content-Type mime type.
     """
     import httpx
-    from reflex_base.config import get_config
 
     assert upload_file.app_instance is not None
     poll_for_token(driver, upload_file)
@@ -809,7 +808,7 @@ def test_uploaded_file_security_headers(
     assert upload_file.poll_for_value(upload_done, exp_not_equal="false") == "true"
 
     # Fetch the uploaded file directly via httpx and check security headers.
-    upload_url = f"{get_config().api_url}/{Endpoint.UPLOAD.value}/{exp_name}"
+    upload_url = f"{Endpoint.UPLOAD.get_url()}/{exp_name}"
     resp = httpx.get(upload_url)
     assert resp.status_code == 200
     assert resp.text == exp_contents

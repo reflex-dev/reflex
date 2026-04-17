@@ -26,6 +26,30 @@ config = rx.Config(
 It is also possible to set the environment variable `API_URL` at run time or
 export time to retain the default for local development.
 
+## Proxying to a Subpath
+
+If you want to serve the backend behind a reverse proxy at a subpath (e.g.
+nginx routing `/api/*` to Reflex), set `backend_path` on the config instead of
+baking the prefix into `api_url`. Every backend endpoint (event websocket,
+`/ping`, `/_upload`, `/_health`, `/_all_routes`) is mounted under that prefix,
+and the frontend baked into the export automatically calls the backend at the
+prefixed URLs — no request rewriting in the proxy is required.
+
+```python
+config = rx.Config(
+    app_name="your_app_name",
+    api_url="http://app.example.com:8000",
+    backend_path="/api",
+)
+```
+
+`frontend_path` plays the analogous role for the frontend and the two are
+independent.
+
+Note: changing `backend_path` (or `frontend_path`) requires a full restart of
+`reflex run` — routes and mount points are registered at startup, so hot
+reload alone will not move them.
+
 ## Production Mode
 
 Then run your app in production mode:

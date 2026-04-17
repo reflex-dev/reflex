@@ -163,7 +163,7 @@ def index():
                 "Generate Image",
                 on_click=State.get_image,
                 width="25em",
-                loading=State.processing
+                loading=State.processing,
             ),
             rx.cond(
                 State.complete,
@@ -174,6 +174,7 @@ def index():
         width="100%",
         height="100vh",
     )
+
 
 # Add state and page to the app.
 app = rx.App()
@@ -192,9 +193,7 @@ Let's start with the UI.
 
 ```python
 def index():
-    return rx.center(
-        ...
-    )
+    return rx.center(...)
 ```
 
 This `index` function defines the frontend of the app.
@@ -211,11 +210,11 @@ Reflex represents your UI as a function of your state.
 ```python
 class State(rx.State):
     """The app state."""
+
     prompt = ""
     image_url = ""
     processing = False
     complete = False
-
 ```
 
 The state defines all the variables (called vars) in an app that can change and the functions that change them.
@@ -232,9 +231,7 @@ def get_image(self):
 
     self.processing, self.complete = True, False
     yield
-    response = openai_client.images.generate(
-        prompt=self.prompt, n=1, size="1024x1024"
-    )
+    response = openai_client.images.generate(prompt=self.prompt, n=1, size="1024x1024")
     self.image_url = response.data[0].url
     self.processing, self.complete = False, True
 ```
