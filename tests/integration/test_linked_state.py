@@ -74,6 +74,8 @@ def LinkedStateApp():
         @rx.event
         async def on_load_link_default(self):
             await self._link_to(self.room or "default")  # pyright: ignore[reportAttributeAccessIssue]
+            if not self.note:
+                self.note = "linked"
 
     class PrivateState(rx.State):
         @rx.var
@@ -447,7 +449,10 @@ def _open_linked_tab(
     assert counter_button
     assert harness.poll_for_content(counter_button) == "0"
     note = tab.find_element(By.ID, "shared-note")
-    assert note.text == ""
+    # Wait for SharedNotes.on_load_link_default to complete (sets note="linked").
+    # This ensures both on_load handlers have finished before returning, since
+    # SharedNotes' handler runs after SharedState's and events are sequential.
+    assert harness.poll_for_content(note) == "linked"
     return counter_button, note
 
 
@@ -481,10 +486,12 @@ def test_modify_shared_state_by_shared_token(
     assert linked_state.poll_for_content(counter_button_1, exp_not_equal="0") == "42"
     assert linked_state.poll_for_content(counter_button_2, exp_not_equal="0") == "42"
     assert (
-        linked_state.poll_for_content(note_1, exp_not_equal="") == "counter set to 42"
+        linked_state.poll_for_content(note_1, exp_not_equal="linked")
+        == "counter set to 42"
     )
     assert (
-        linked_state.poll_for_content(note_2, exp_not_equal="") == "counter set to 42"
+        linked_state.poll_for_content(note_2, exp_not_equal="linked")
+        == "counter set to 42"
     )
 
     # After the API-driven update, normal event handlers should still work
