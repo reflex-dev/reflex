@@ -50,7 +50,7 @@ def BackendPathApp():
             ),
         )
 
-    rx.App()
+    app = rx.App()  # noqa: F841
 
 
 @pytest.fixture(
