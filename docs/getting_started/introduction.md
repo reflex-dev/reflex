@@ -71,7 +71,7 @@ def tabs():
         ),
         rx.tabs.content(
             rx.markdown(
-                """`State` holds your backend. It runs on the server — plain Python, no caveats — so you can use any library. Define vars and event handlers here and reference them from the UI.
+                """Write your backend in the `State` class. Here you can define functions and variables that can be referenced in the frontend. This code runs directly on the server and is not compiled, so there are no special caveats. Here you can use any Python external library and call any method/function.
                 """,
             ),
             value="tab2",
