@@ -65,18 +65,17 @@ Once you solve a current issue or improvement to Reflex, you can make a PR, and 
 Before submitting, a pull request, ensure the following steps are taken and test passing.
 
 In your `reflex` directory run make sure all the unit tests are still passing using the following command.
-This will fail if code coverage is below 70%.
+This will fail if code coverage is below 72%.
 
 ```bash
 uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
 ```
 
-Next make sure all the following tests pass. This ensures that every new change has proper documentation and type checking.
+Next make sure all the following tests pass. This ensures that every new change has proper type checking.
 
 ```bash
 uv run ruff check .
 uv run pyright reflex tests
-find reflex tests -name "*.py" -not -path reflex/reflex.py | xargs uv run darglint
 ```
 
 Finally, run `ruff` to format your code.
@@ -85,13 +84,25 @@ Finally, run `ruff` to format your code.
 uv run ruff format .
 ```
 
-Consider installing git pre-commit hooks so Ruff, Pyright, Darglint and `make_pyi` will run automatically before each commit.
+Consider installing git pre-commit hooks so Ruff, Pyright, and `make_pyi` will run automatically before each commit.
 
 ```bash
 uv run pre-commit install
 ```
 
 That's it you can now submit your PR. Thanks for contributing to Reflex!
+
+## 🤖 AI-Assisted PRs
+
+We welcome AI-assisted contributions, but they must meet the same quality bar as any other PR.
+
+- **A human developer must be responsible for the PR contents and review process.** Bot account PRs are subject to prejudicial closure.
+- Ensure pre-commit hooks and unit tests pass before submitting.
+- Review the patch locally with an "adversarial" prompt before opening the PR.
+- Apply fixes for reasonable feedback from Greptile and/or Copilot review bots.
+- Resolve or dismiss irrelevant bot feedback with a brief explanation.
+- All added/changed lines MUST have unit or integration test coverage with _real_ assertions. No untested code, no bogus test code.
+- PRs with merge conflicts or failing tests will not be reviewed or merged. The maintainers do not spend time on PRs that are not in a ready state. If you need attention on a PR that is not ready, mention the maintainers in a comment.
 
 ## Editing Templates
 
