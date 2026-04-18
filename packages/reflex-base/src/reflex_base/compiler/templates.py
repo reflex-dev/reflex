@@ -668,6 +668,10 @@ export default defineConfig((config) => ({{
               test: /node_modules\/recharts|node_modules\/d3-/,
               name: "recharts",
             }},
+            {{
+              test: /node_modules\/@radix-ui\/themes/,
+              name: "radix-themes",
+            }},
           ],
         }},
       }},

@@ -426,32 +426,33 @@ class TestGetRadixThemesStylesheets:
 
 
 class TestCollectWindowLibraryImports:
-    """Tests for the named-import collection that drives window.__reflex."""
+    """Tests for the import collection that drives window.__reflex."""
 
-    def test_always_emits_internal_modules(self):
-        """Internal Reflex modules always map to None (star import) so that
-        ``window.__reflex`` is populated for dynamic components / plugins even
-        when the app has no statically-referenced external tags.
+    @pytest.fixture(autouse=True)
+    def _isolate_dynamic_imports(self):
+        from reflex_base.components.dynamic import reset_dynamic_component_imports
+
+        reset_dynamic_component_imports()
+        yield
+        reset_dynamic_component_imports()
+
+    def test_internal_modules_always_star_imported(self):
+        """Internal Reflex modules map to None (star import) so dynamic
+        components / plugins reading window.__reflex find what they need
+        even when the app has no static external references.
         """
         result = compiler.collect_window_library_imports([{}])
         assert result["$/utils/state"] is None
-        # External libs with no referenced tags are omitted entirely.
         assert "@radix-ui/themes" not in result
 
-    def test_external_lib_gets_named_imports_from_usage(self):
-        """External library exposure on window.__reflex uses named imports.
-
-        Star imports would pin every export of the library onto the critical
-        path and defeat Rolldown's tree-shaking.
+    def test_external_lib_uses_named_imports_from_static_usage(self):
+        """External library exposure on window.__reflex uses named imports
+        so Rolldown can tree-shake unused exports.
         """
         from reflex_base.utils.imports import ImportVar
 
-        # Separate sources = separate pages/app_root. Mirrors how app.py
-        # passes per-source dicts so tags from multiple sources don't clobber.
         sources = [
-            # Page that renders a Component-typed Var triggers evalReactComponent
             {"$/utils/state": [ImportVar(tag="evalReactComponent")]},
-            # App root uses Theme + Button from Radix Themes
             {
                 "@radix-ui/themes@3.3.0": [
                     ImportVar(tag="Theme"),
@@ -462,29 +463,19 @@ class TestCollectWindowLibraryImports:
         result = compiler.collect_window_library_imports(sources)
         assert result["@radix-ui/themes"] == {"Theme", "Button"}
 
-    def test_multiple_sources_union_tags_per_library(self):
-        """Tags from different sources for the same lib must be unioned."""
+    def test_unions_dynamic_component_tags(self):
+        """Tags captured during dynamic-Component serialization are unioned
+        into the named-import surface so runtime-eval'd code finds them on
+        window.__reflex.
+        """
+        from reflex_base.components.dynamic import dynamic_component_imports
         from reflex_base.utils.imports import ImportVar
 
-        sources = [
-            {
-                "$/utils/state": [ImportVar(tag="evalReactComponent")],
-                "@radix-ui/themes@3.3.0": [ImportVar(tag="Theme")],
-            },
-            # A different page that uses Button instead of Theme
-            {"@radix-ui/themes@3.3.0": [ImportVar(tag="Button")]},
-        ]
-        result = compiler.collect_window_library_imports(sources)
-        assert result["@radix-ui/themes"] == {"Theme", "Button"}
+        sources = [{"@radix-ui/themes@3.3.0": [ImportVar(tag="Theme")]}]
+        dynamic_component_imports["@radix-ui/themes@3.3.0"] = {ImportVar(tag="Flex")}
 
-    def test_internal_lib_uses_star_import(self):
-        """Internal Reflex modules still use star imports (small, controlled)."""
-        from reflex_base.utils.imports import ImportVar
-
-        sources = [{"$/utils/state": [ImportVar(tag="evalReactComponent")]}]
         result = compiler.collect_window_library_imports(sources)
-        # Internal modules map to None (= star import)
-        assert result["$/utils/state"] is None
+        assert result["@radix-ui/themes"] == {"Theme", "Flex"}
 
 
 def test_create_document_root():

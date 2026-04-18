@@ -1149,7 +1149,10 @@ class App(MiddlewareMixin, LifespanMixin):
             ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
             FileNotFoundError: When a plugin requires a file that does not exist.
         """
+        from reflex_base.components.dynamic import reset_dynamic_component_imports
         from reflex_base.utils.exceptions import ReflexRuntimeError
+
+        reset_dynamic_component_imports()
 
         self._apply_decorated_pages()
 

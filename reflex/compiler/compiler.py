@@ -5,6 +5,7 @@ from __future__ import annotations
 import sys
 from collections.abc import Callable, Iterable, Sequence
 from inspect import getmodule
+from itertools import chain
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -79,11 +80,12 @@ def collect_window_library_imports(
     collected from the app's actual static usage so Rolldown can tree-shake) or
     ``None`` (for internal Reflex modules, which use a star import).
 
-    ``window.__reflex`` is always emitted because consumers are diverse --
-    ``evalReactComponent`` (dynamic components) is one, but plugins like
-    ``reflex_enterprise``'s ``LiteralLambdaVar`` also emit JS that reads
-    ``window.__reflex['<pkg>']`` and a static detection is fragile. Named
-    imports keep the bundle tree-shakable regardless.
+    External library tags come from two sources:
+    (1) static page / app-root imports, and
+    (2) tags captured during compile-time serialization of dynamic Component
+    values (Component-typed state field defaults, computed Component vars
+    evaluated when generating the initial state) -- see
+    ``reflex_base.components.dynamic.dynamic_component_imports``.
 
     Takes an iterable of import dicts (one per page / app_root / memo group)
     instead of a single merged dict because ``dict.update`` loses information
@@ -96,11 +98,14 @@ def collect_window_library_imports(
         Mapping from library path to either the set of named exports to expose
         (external libs) or None (internal libs, use star import).
     """
-    from reflex_base.components.dynamic import bundled_libraries
+    from reflex_base.components.dynamic import (
+        bundled_libraries,
+        dynamic_component_imports,
+    )
     from reflex_base.utils.format import format_library_name
 
     per_lib_tags: dict[str, set[str]] = {}
-    for source in import_sources:
+    for source in chain(import_sources, (dynamic_component_imports,)):
         for imported_lib, import_vars in source.items():
             key = format_library_name(imported_lib)
             for iv in import_vars:
