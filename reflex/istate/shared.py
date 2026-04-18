@@ -173,6 +173,38 @@ class SharedStateBaseInternal(State):
             State.set_is_hydrated(True),
         ]
 
+    async def _resolve_linked_state(
+        self, state_cls: type["BaseState"], linked_token: str
+    ) -> "BaseState":
+        """Load and patch a linked state that was not pre-loaded in the tree.
+
+        Called by State._get_state_from_redis when a state in
+        _reflex_internal_links is not yet in the cache. This loads the
+        private copy into the tree first, then patches the linked version
+        on top of it via _internal_patch_linked_state.
+
+        Args:
+            state_cls: The shared state class to resolve.
+            linked_token: The shared token the state is linked to.
+
+        Returns:
+            The linked state instance, patched into the current tree.
+
+        Raises:
+            ReflexRuntimeError: If the resolved state is not a SharedState.
+        """
+        root_state = self._get_root_state()
+
+        # Load the private copy into the tree so _internal_patch_linked_state
+        # has an original to swap out (needed for unlink / restore).
+        original_state = await BaseState._get_state_from_redis(root_state, state_cls)
+
+        if isinstance(original_state, SharedStateBaseInternal):
+            return await original_state._internal_patch_linked_state(linked_token)
+
+        msg = f"Failed to resolve linked state {state_cls.get_full_name()} for token {linked_token}: state does not inherit from rx.SharedState"
+        raise ReflexRuntimeError(msg)
+
     async def _link_to(self, token: str) -> Self:
         """Link this shared state to a token.
 
@@ -194,7 +226,7 @@ class SharedStateBaseInternal(State):
             raise ReflexRuntimeError(msg)
         if not isinstance(self, SharedState):
             msg = "Can only link SharedState instances."
-            raise RuntimeError(msg)
+            raise ReflexRuntimeError(msg)
         if self._linked_to == token:
             return self  # already linked to this token
         if self._linked_to and self._linked_to != token:
@@ -280,6 +312,18 @@ class SharedStateBaseInternal(State):
                     BaseStateToken(ident=token, cls=type(self))
                 )
             )
+            # Set client_token on the linked root so that subsequent get_state
+            # calls when directly modifying a linked token will load the
+            # associated instance.
+            if linked_root_state.router.session.client_token != token:
+                import dataclasses as dc
+
+                linked_root_state.router = dc.replace(
+                    linked_root_state.router,
+                    session=dc.replace(
+                        linked_root_state.router.session, client_token=token
+                    ),
+                )
             self._held_locks.setdefault(token, {})
         else:
             linked_root_state = await get_state_manager().get_state(
