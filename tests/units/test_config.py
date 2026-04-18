@@ -161,6 +161,14 @@ def test_update_from_env_cors(
             },
             f"/api{Endpoint.EVENT}",
         ),
+        (
+            {
+                "app_name": "test_app",
+                "api_url": "http://example.com",
+                "backend_path": "/api/v1",
+            },
+            f"/api/v1{Endpoint.EVENT}",
+        ),
     ],
 )
 def test_event_namespace(mocker: MockerFixture, kwargs, expected):
@@ -188,6 +196,10 @@ def test_event_namespace(mocker: MockerFixture, kwargs, expected):
         ("/api/", "/ping", "/api/ping"),
         ("/api", "", ""),
         ("/api", "relative/path", "relative/path"),
+        ("/api/v1", "/ping", "/api/v1/ping"),
+        ("api/v1/", "/ping", "/api/v1/ping"),
+        ("/api/v1", "", ""),
+        ("/api/v1", "relative/path", "relative/path"),
     ],
 )
 def test_prepend_backend_path(backend_path: str, path: str, expected: str):
@@ -202,7 +214,7 @@ def test_prepend_backend_path(backend_path: str, path: str, expected: str):
     assert config.prepend_backend_path(path) == expected
 
 
-@pytest.mark.parametrize("backend_path", ["", "/api", "api/"])
+@pytest.mark.parametrize("backend_path", ["", "/api", "api/", "/api/v1"])
 @pytest.mark.parametrize("endpoint", list(Endpoint))
 def test_endpoint_get_url_with_backend_path(
     mocker: MockerFixture, backend_path: str, endpoint: Endpoint

@@ -55,11 +55,11 @@ def BackendPathApp():
 
 @pytest.fixture(
     scope="module",
-    params=["", "/api"],
-    ids=["no-prefix", "with-prefix"],
+    params=["", "/api", "/api/v1"],
+    ids=["no-prefix", "single-level", "two-level"],
 )
 def backend_path(request: pytest.FixtureRequest) -> str:
-    """Parametrise over no-prefix and /api.
+    """Parametrise over no-prefix and various prefix depths.
 
     Args:
         request: pytest fixture for accessing the current parameter.
@@ -81,12 +81,12 @@ def backend_path_app(
     Args:
         app_harness_env: AppHarness (dev) or AppHarnessProd (prod).
         tmp_path_factory: pytest fixture for creating temporary directories.
-        backend_path: "" or "/api".
+        backend_path: The backend_path prefix for this parametrised instance.
 
     Yields:
         Running AppHarness instance.
     """
-    suffix = backend_path.strip("/") or "root"
+    suffix = backend_path.strip("/").replace("/", "_") or "root"
     name = f"backendpath_{suffix}_{app_harness_env.__name__.lower()}"
 
     with pytest.MonkeyPatch.context() as mp:
