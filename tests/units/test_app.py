@@ -2643,23 +2643,6 @@ def isolated_context() -> contextvars.Context:
     return contextvars.Context()
 
 
-@pytest.fixture
-def run_isolated(isolated_context: contextvars.Context):
-    """Return a helper that runs a callable inside the isolated context.
-
-    Args:
-        isolated_context: The empty context to run in.
-
-    Returns:
-        A function that accepts a zero-argument callable and runs it.
-    """
-
-    def _run(fn):
-        isolated_context.run(fn)
-
-    return _run
-
-
 @pytest.fixture(
     params=[False, True],
     ids=["unset_registration_context", "preset_registration_context"],
@@ -2715,7 +2698,7 @@ def test_set_contexts(
     app_with_processor: App,
     pre_set_registration_context: RegistrationContext | None,
     pre_set_event_context: EventContext | None,
-    run_isolated,
+    isolated_context: contextvars.Context,
 ):
     """set_contexts sets absent contexts, preserves existing ones, and resets on exit."""
 
@@ -2752,10 +2735,10 @@ def test_set_contexts(
             with pytest.raises(LookupError):
                 EventContext.get()
 
-    run_isolated(_test)
+    isolated_context.run(_test)
 
 
-def test_set_contexts_no_event_processor(run_isolated):
+def test_set_contexts_no_event_processor(isolated_context: contextvars.Context):
     """When event processor is None, EventContext should not be touched."""
 
     def _test():
@@ -2767,4 +2750,4 @@ def test_set_contexts_no_event_processor(run_isolated):
             with pytest.raises(LookupError):
                 EventContext.get()
 
-    run_isolated(_test)
+    isolated_context.run(_test)
