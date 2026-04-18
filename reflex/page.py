@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
     from reflex_base.event import EventType
 
-DECORATED_PAGES: dict[str, list] = defaultdict(list)
+DECORATED_PAGES: dict[str, list[tuple[Callable, dict[str, Any]]]] = defaultdict(list)
 
 
 def page(
@@ -48,7 +48,7 @@ def page(
     from reflex_base.config import get_config
 
     def decorator(render_fn: Callable):
-        kwargs = {}
+        kwargs: dict[str, Any] = {}
         if route:
             kwargs["route"] = route
         if title:
