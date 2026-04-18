@@ -434,7 +434,16 @@ class SharedStateBaseInternal(State):
                 # the held locks will be empty. Check SharedState substates for linked
                 # clients that need to be notified.
                 if not self._reflex_internal_links:
-                    self._collect_shared_token_updates(
+                    shared_state_base_internal = await self.get_state(
+                        SharedStateBaseInternal
+                    )
+                    if not isinstance(
+                        shared_state_base_internal, SharedStateBaseInternal
+                    ):
+                        msg = "Expected SharedStateBaseInternal in substates."
+                        raise ReflexRuntimeError(msg)
+                    # Collect affected tokens from all potentially linked states.
+                    shared_state_base_internal._collect_shared_token_updates(
                         affected_tokens, current_dirty_vars
                     )
         finally:
@@ -453,26 +462,28 @@ class SharedStateBaseInternal(State):
         affected_tokens: set[str],
         current_dirty_vars: dict[str, set[str]],
     ) -> None:
-        """Collect dirty vars and linked clients from SharedState substates.
+        """Recursively collect dirty vars and linked clients from SharedState substates.
 
         When a shared state is modified directly by its shared token (rather than
         through a private client token), the held locks are empty so the normal
-        collection loop above finds nothing. This method checks the SharedState
-        substates directly for linked clients that need to be notified.
+        collection loop above finds nothing. This method recursively checks
+        SharedState substates for linked clients that need to be notified.
 
         Args:
             affected_tokens: Set to update with client tokens that need notification.
             current_dirty_vars: Dict to update with dirty var mappings per state.
         """
         for substate in self.substates.values():
-            if not isinstance(substate, SharedState) or not substate._linked_from:
+            if not isinstance(substate, SharedState):
                 continue
-            if substate._previous_dirty_vars:
-                current_dirty_vars[substate.get_full_name()] = set(
-                    substate._previous_dirty_vars
-                )
-            if substate._get_was_touched() or substate._previous_dirty_vars:
-                affected_tokens.update(substate._linked_from)
+            if substate._linked_from:
+                if substate._previous_dirty_vars:
+                    current_dirty_vars[substate.get_full_name()] = set(
+                        substate._previous_dirty_vars
+                    )
+                if substate._get_was_touched() or substate._previous_dirty_vars:
+                    affected_tokens.update(substate._linked_from)
+            substate._collect_shared_token_updates(affected_tokens, current_dirty_vars)
 
 
 class SharedState(SharedStateBaseInternal, mixin=True):
