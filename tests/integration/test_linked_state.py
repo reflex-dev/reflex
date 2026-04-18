@@ -58,8 +58,6 @@ def LinkedStateApp():
                 assert linked_state._linked_to == self.room  # pyright: ignore[reportAttributeAccessIssue]
             else:
                 assert linked_state._linked_to == "default"
-            if linked_state.counter == 0:
-                linked_state.counter = -1
 
         @rx.event
         async def handle_submit(self, form_data: dict[str, Any]):
@@ -76,10 +74,13 @@ def LinkedStateApp():
         @rx.event
         async def on_load_link_default(self):
             linked_state = await self._link_to(self.room or "default")  # pyright: ignore[reportAttributeAccessIssue]
-            if not linked_state.note:
-                linked_state.note = "linked"
+            initial_note = self.router.page.params.get("initial_note", "")
+            if initial_note:
+                linked_state.note = initial_note
 
     class PrivateState(rx.State):
+        fetched_note: str = ""
+
         @rx.var
         async def greeting(self) -> str:
             ss = await self.get_state(SharedState)
@@ -89,6 +90,12 @@ def LinkedStateApp():
         async def linked_to(self) -> str:
             ss = await self.get_state(SharedState)
             return ss._linked_to
+
+        @rx.event
+        async def fetch_shared_note(self):
+            """Fetch SharedNotes via get_state from an unrelated state handler."""
+            sn = await self.get_state(SharedNotes)
+            self.fetched_note = sn.note
 
         @rx.event(background=True)
         async def bump_counter_bg(self):
@@ -157,6 +164,12 @@ def LinkedStateApp():
                 id="link-increment-button",
             ),
             rx.text(SharedNotes.note, id="shared-note"),
+            rx.button(
+                "Fetch Note via get_state",
+                on_click=PrivateState.fetch_shared_note,
+                id="fetch-note-button",
+            ),
+            rx.text(PrivateState.fetched_note, id="fetched-note"),
         )
 
     from fastapi import FastAPI
@@ -449,11 +462,12 @@ def _open_linked_tab(
         lambda: tab.find_element(By.ID, "counter-button")
     )
     assert counter_button
-    # Wait for SharedState.on_load_link_default (sets counter=-1).
-    assert harness.poll_for_content(counter_button, exp_not_equal="0") == "-1"
+    assert harness.poll_for_content(counter_button) == "0"
+    # Wait for SharedState.on_load_link_default to complete (linked-to shows the token).
+    linked_to = tab.find_element(By.ID, "linked-to")
+    assert harness.poll_for_content(linked_to) == shared_token
     note = tab.find_element(By.ID, "shared-note")
-    # Wait for SharedNotes.on_load_link_default (sets note="linked").
-    assert harness.poll_for_content(note) == "linked"
+    assert note.text == ""
     return counter_button, note
 
 
@@ -484,18 +498,63 @@ def test_modify_shared_state_by_shared_token(
     assert response.status_code == 200
 
     # Both tabs should see updates to both SharedState and SharedNotes
-    assert linked_state.poll_for_content(counter_button_1, exp_not_equal="-1") == "42"
-    assert linked_state.poll_for_content(counter_button_2, exp_not_equal="-1") == "42"
+    assert linked_state.poll_for_content(counter_button_1, exp_not_equal="0") == "42"
+    assert linked_state.poll_for_content(counter_button_2, exp_not_equal="0") == "42"
     assert (
-        linked_state.poll_for_content(note_1, exp_not_equal="linked")
-        == "counter set to 42"
+        linked_state.poll_for_content(note_1, exp_not_equal="") == "counter set to 42"
     )
     assert (
-        linked_state.poll_for_content(note_2, exp_not_equal="linked")
-        == "counter set to 42"
+        linked_state.poll_for_content(note_2, exp_not_equal="") == "counter set to 42"
     )
 
     # After the API-driven update, normal event handlers should still work
     counter_button_1.click()
     assert linked_state.poll_for_content(counter_button_1, exp_not_equal="42") == "43"
     assert linked_state.poll_for_content(counter_button_2, exp_not_equal="42") == "43"
+
+
+def test_get_state_returns_linked_state(
+    linked_state: AppHarness,
+    tab_factory: Callable[[], WebDriver],
+):
+    """Test that get_state from an unrelated handler returns the linked instance.
+
+    When SharedNotes is linked to a shared token, calling
+    ``await self.get_state(SharedNotes)`` from PrivateState (an unrelated
+    state handler) should return the linked SharedNotes — not the private
+    copy.  With the Redis state manager, SharedNotes may not be pre-loaded
+    in the tree, so ``get_state`` falls through to the redis fetch path.
+
+    Args:
+        linked_state: harness for LinkedStateApp.
+        tab_factory: factory to create WebDriver instances.
+    """
+    assert linked_state.app_instance is not None
+
+    shared_token = f"get-state-test-{uuid.uuid4()}"
+    initial_note = f"note-{uuid.uuid4()}"
+
+    # Open a tab linked to the shared token via on_load, setting the note
+    # immediately during linking via query param.
+    tab = tab_factory()
+    tab.get(
+        f"{linked_state.frontend_url}room/{shared_token}?initial_note={initial_note}"
+    )
+    ss = utils.SessionStorage(tab)
+    assert AppHarness._poll_for(lambda: ss.get("token") is not None), "token not found"
+    linked_to = AppHarness._poll_for(lambda: tab.find_element(By.ID, "linked-to"))
+    assert linked_to
+    # Wait for on_load to link SharedState (confirms event processing started).
+    assert linked_state.poll_for_content(linked_to) == shared_token
+
+    # Verify the linked note appears on the page (direct SharedNotes binding).
+    note = tab.find_element(By.ID, "shared-note")
+    assert linked_state.poll_for_content(note, exp_not_equal="") == initial_note
+
+    # Now trigger PrivateState.fetch_shared_note — this calls get_state(SharedNotes)
+    # from an unrelated state handler.  The returned instance must be the
+    # *linked* SharedNotes (with the note set from the query param), not
+    # the private copy (which would have an empty note).
+    tab.find_element(By.ID, "fetch-note-button").click()
+    fetched = tab.find_element(By.ID, "fetched-note")
+    assert linked_state.poll_for_content(fetched, exp_not_equal="") == initial_note
