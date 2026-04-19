@@ -15,6 +15,10 @@ _RADIX_IMPORT_RE = re.compile(
     re.MULTILINE,
 )
 
+
+def strip_radix_theme_imports(css: str) -> tuple[str, int]:
+    """Remove every Radix Themes @import line from a stylesheet.
+
     Handles both the monolithic ``styles.css`` and the granular per-token
     imports emitted by the compiler.
 
