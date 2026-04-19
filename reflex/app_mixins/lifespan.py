@@ -137,17 +137,32 @@ class LifespanMixin(AppMixin):
         else:
             await state_manager.close()
 
-    def register_lifespan_task(self, task: Callable | asyncio.Task, **task_kwargs):
+    def register_lifespan_task(
+        self,
+        task: Callable | asyncio.Task | None = None,
+        **task_kwargs,
+    ) -> (
+        Callable
+        | asyncio.Task
+        | Callable[[Callable | asyncio.Task], Callable | asyncio.Task]
+    ):
         """Register a task to run during the lifespan of the app.
 
         Args:
             task: The task to register.
             **task_kwargs: The kwargs of the task.
 
+        Returns:
+            The original task when called directly, or a decorator when called
+            with kwargs only.
+
         Raises:
             InvalidLifespanTaskTypeError: If the task is a generator function.
             RuntimeError: If lifespan tasks are already running.
         """
+        if task is None:
+            return functools.partial(self.register_lifespan_task, **task_kwargs)
+
         if self._lifespan_tasks_started:
             msg = (
                 f"Cannot register lifespan task {_get_task_name(task)!r} after "
@@ -159,9 +174,14 @@ class LifespanMixin(AppMixin):
             raise InvalidLifespanTaskTypeError(msg)
 
         task_name = _get_task_name(task)
+        registered_task = task
         if task_kwargs:
-            original_task = task
-            task = functools.partial(task, **task_kwargs)  # pyright: ignore [reportArgumentType]
-            functools.update_wrapper(task, original_task)  # pyright: ignore [reportArgumentType]
-        self._lifespan_tasks[task] = None
+            registered_task = functools.partial(
+                task, **task_kwargs
+            )  # pyright: ignore [reportArgumentType]
+            functools.update_wrapper(
+                registered_task, task
+            )  # pyright: ignore [reportArgumentType]
+        self._lifespan_tasks[registered_task] = None
         console.debug(f"Registered lifespan task: {task_name}")
+        return task
