@@ -21,6 +21,7 @@ class SelectRoot(RadixThemesComponent):
     """Displays a list of options for the user to pick from, triggered by a button."""
 
     tag = "Select.Root"
+    _is_form_control = True
 
     size: Var[Responsive[Literal["1", "2", "3"]]] = field(
         doc='The size of the select: "1" | "2" | "3"'

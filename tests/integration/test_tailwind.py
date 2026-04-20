@@ -42,7 +42,7 @@ def TailwindApp(
             id="p-content",
         )
 
-    assets = Path(__file__).resolve().parent.parent / "assets"
+    assets = Path("assets")
     assets.mkdir(exist_ok=True)
     stylesheet = assets / "test_styles.css"
     stylesheet.write_text(".external { color: rgba(0, 0, 255, 0.5) }")

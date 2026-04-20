@@ -701,6 +701,9 @@ class Component(BaseComponent, ABC):
     # props to change the name of
     _rename_props: ClassVar[dict[str, str]] = {}
 
+    # Whether this component contributes a named field to form submission data.
+    _is_form_control: ClassVar[bool] = False
+
     custom_attrs: dict[str, Var | Any] = field(
         doc="Attributes passed directly to the component.",
         default_factory=dict,

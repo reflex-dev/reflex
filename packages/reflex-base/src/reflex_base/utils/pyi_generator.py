@@ -113,6 +113,7 @@ DEFAULT_IMPORTS = {
         "EventHandler",
         "EventSpec",
         "EventType",
+        "FORM_SUBMIT_MAPPING",
         "KeyInputInfo",
         "PointerEventInfo",
     ],
