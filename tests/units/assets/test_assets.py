@@ -6,7 +6,7 @@ import pytest
 
 import reflex as rx
 import reflex.constants as constants
-from reflex.assets import remove_stale_external_asset_symlinks
+from reflex.assets import AssetPathStr, remove_stale_external_asset_symlinks
 
 
 @pytest.fixture
@@ -106,6 +106,53 @@ def test_local_asset(custom_script_in_asset_dir: Path) -> None:
     """
     asset = rx.asset("custom_script.js", shared=False)
     assert asset == "/custom_script.js"
+
+
+def test_asset_importable_path_local(custom_script_in_asset_dir: Path) -> None:
+    """A local asset path exposes an `importable_path` prefixed with $/public.
+
+    Args:
+        custom_script_in_asset_dir: Fixture that creates a custom_script.js file in the app's assets directory.
+    """
+    asset = rx.asset("custom_script.js", shared=False)
+    assert isinstance(asset, AssetPathStr)
+    assert asset.importable_path == "$/public/custom_script.js"
+
+
+def test_asset_importable_path_shared(mock_asset_path: Path) -> None:
+    """A shared asset path exposes an `importable_path` prefixed with $/public."""
+    asset = rx.asset(path="custom_script.js", shared=True)
+    assert isinstance(asset, AssetPathStr)
+    assert asset.importable_path == "$/public/external/test_assets/custom_script.js"
+
+
+def test_asset_importable_path_with_frontend_path(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """With frontend_path configured, str value is prefixed but importable_path is not.
+
+    Args:
+        monkeypatch: A pytest fixture for patching.
+    """
+    import reflex.assets as assets_module
+
+    class _StubConfig:
+        frontend_path = "/my-app"
+
+        @staticmethod
+        def prepend_frontend_path(path: str) -> str:
+            return f"/my-app{path}" if path.startswith("/") else path
+
+    monkeypatch.setattr(assets_module, "get_config", lambda: _StubConfig)
+
+    asset = AssetPathStr("/external/mod/custom_script.js")
+    assert asset == "/my-app/external/mod/custom_script.js"
+    assert asset.importable_path == "$/public/external/mod/custom_script.js"
+
+    # Bytes + encoding form (matches str() signature) also works.
+    asset_from_bytes = AssetPathStr(b"/external/mod/file.js", "utf-8")
+    assert asset_from_bytes == "/my-app/external/mod/file.js"
+    assert asset_from_bytes.importable_path == "$/public/external/mod/file.js"
 
 
 def test_remove_stale_external_asset_symlinks(mock_asset_path: Path) -> None:
