@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from types import SimpleNamespace
-from typing import Any, ClassVar, Literal
+from typing import Any, ClassVar, Literal, cast
 
 from reflex_base.components.component import Component, field
 from reflex_base.event import EventHandler
@@ -34,48 +34,43 @@ def on_value_change(
 
 
 def _collect_item_values(children: Sequence[Any]) -> ArrayVar | None:
-    """Collect item `value` props as an ArrayVar, or None if unsupported.
+    """Return the ordered item values, or None if the children shape isn't one we handle.
+
+    Supports a single `rx.foreach` producing items, or a flat list of
+    `SegmentedControlItem`. Everything else falls back to Radix's default.
 
     Args:
-        children: The children passed to `SegmentedControlRoot.create`.
+        children: Children passed to `SegmentedControlRoot.create`.
 
     Returns:
-        An ArrayVar of values for a single `rx.foreach` producing items, or
-        for a flat list of `SegmentedControlItem`. None for anything else so
-        the caller skips the fix and Radix's default behavior applies.
+        ArrayVar of item values, or None.
     """
     if len(children) == 1 and isinstance(children[0], Foreach):
         foreach = children[0]
-        iterable = foreach.iterable
-        if not isinstance(iterable, ArrayVar) or not isinstance(
-            foreach.render_fn(iterable[0]), SegmentedControlItem
-        ):
-            return None
-        return iterable.foreach(lambda element: foreach.render_fn(element).value)  # pyright: ignore[reportAttributeAccessIssue]
+        iterable = cast("ArrayVar", foreach.iterable)
+        return iterable.foreach(
+            lambda element: (
+                cast("SegmentedControlItem", foreach.render_fn(element)).value
+            )
+        )
 
-    values: list[Var] = []
-    for child in children:
-        if not isinstance(child, SegmentedControlItem):
-            return None
-        value = getattr(child, "value", None)
-        if value is None:
-            return None
-        values.append(value)
-    return LiteralArrayVar.create(values) if values else None
+    if not all(isinstance(c, SegmentedControlItem) for c in children):
+        return None
+    return LiteralArrayVar.create([c.value for c in children])
 
 
 @var_operation
 def _array_index_of_operation(
     haystack: ArrayVar, needle: Var
 ) -> CustomVarOperationReturn[int]:
-    """Build a JS `haystack.indexOf(needle)` expression as a Var.
+    """Build a JS `haystack.indexOf(needle)` expression.
 
     Args:
         haystack: The array to search.
         needle: The value to find.
 
     Returns:
-        A NumberVar that evaluates to the 0-based index or -1.
+        Var yielding the 0-based index, or -1.
     """
     return CustomVarOperationReturn.create(
         js_expression=f"({haystack}.indexOf({needle}))",
@@ -138,6 +133,9 @@ class SegmentedControlRoot(RadixThemesComponent):
         Returns:
             The SegmentedControlRoot component.
         """
+        # type="multiple" is skipped: a single sliding indicator can't
+        # represent multiple selections, and Radix's nth-child rules still
+        # apply to it regardless of item count.
         if props.get("type") != "multiple":
             values_var = _collect_item_values(children)
             selected = props.get("value", props.get("default_value"))
