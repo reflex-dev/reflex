@@ -2146,7 +2146,6 @@ class State(BaseState):
         Returns:
             The instance of state_cls associated with this state's client_token.
         """
-        state_instance = await super()._get_state_from_redis(state_cls)
         if (
             self._reflex_internal_links
             and (
@@ -2155,15 +2154,12 @@ class State(BaseState):
                 )
             )
             is not None
-            and (
-                internal_patch_linked_state := getattr(
-                    state_instance, "_internal_patch_linked_state", None
-                )
-            )
-            is not None
         ):
-            return await internal_patch_linked_state(linked_token)
-        return state_instance
+            from reflex.istate.shared import SharedStateBaseInternal
+
+            shared_base = await self.get_state(SharedStateBaseInternal)
+            return await shared_base._resolve_linked_state(state_cls, linked_token)  # type: ignore[return-value]
+        return await super()._get_state_from_redis(state_cls)
 
     @event
     async def hydrate(self) -> None:
