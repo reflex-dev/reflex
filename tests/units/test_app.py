@@ -377,12 +377,17 @@ def test_add_duplicate_page_route_error(app: App, first_page, second_page, route
     or not find_spec("pydantic"),
     reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
 )
-def test_initialize_with_admin_dashboard(test_model: Model):
+def test_initialize_with_admin_dashboard(
+    test_model: type[Model], mocker: MockerFixture
+):
     """Test setting the admin dashboard of an app.
 
     Args:
         test_model: The default model.
+        mocker: pytest mocker object.
     """
+    conf = rx.Config(app_name="testing", db_url="sqlite:///reflex.db")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
     app = App(admin_dash=AdminDash(models=[test_model]))
     assert app.admin_dash is not None
     assert len(app.admin_dash.models) > 0
@@ -425,16 +430,22 @@ def test_initialize_with_custom_admin_dashboard(
     or not find_spec("pydantic"),
     reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
 )
-def test_initialize_admin_dashboard_with_view_overrides(test_model):
+def test_initialize_admin_dashboard_with_view_overrides(
+    test_model: type[Model], mocker: MockerFixture
+):
     """Test setting the admin dashboard of an app with view class overridden.
 
     Args:
         test_model: The default model.
+        mocker: pytest mocker object.
     """
     from starlette_admin.contrib.sqla.view import ModelView
 
     class TestModelView(ModelView):
         pass
+
+    conf = rx.Config(app_name="testing", db_url="sqlite:///reflex.db")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
 
     app = App(
         admin_dash=AdminDash(
