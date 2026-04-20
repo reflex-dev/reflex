@@ -203,7 +203,7 @@ class BaseConfig:
 
     backend_host: str = "0.0.0.0"
 
-    db_url: str | None = "sqlite:///reflex.db"
+    db_url: str | None = None
 
     async_db_url: str | None = None
 
