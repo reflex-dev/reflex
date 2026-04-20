@@ -4,6 +4,7 @@ import pytest
 from reflex_base.event import EventChain, EventHandler, EventSpec, parse_args_spec
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_components_core.core.upload import (
+    GhostUpload,
     StyledUpload,
     Upload,
     UploadNamespace,
@@ -76,8 +77,9 @@ def test__on_drop_spec():
     assert isinstance(_on_drop_spec(LiteralVar.create([])), tuple)
 
 
-def test_on_drop_rejected_uses_file_rejection_payload_spec():
-    rejected_spec = Upload.get_event_triggers()["on_drop_rejected"]
+@pytest.mark.parametrize("component", [Upload, GhostUpload])
+def test_on_drop_rejected_uses_file_rejection_payload_spec(component):
+    rejected_spec = component.get_event_triggers()["on_drop_rejected"]
     placeholders, _ = parse_args_spec(rejected_spec)
 
     assert placeholders[0]._var_type == list[dict[str, Any]]
