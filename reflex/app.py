@@ -566,7 +566,10 @@ class App(MiddlewareMixin, LifespanMixin):
                     return await self.app(scope, receive, modified_send)
 
             socket_app_with_headers = HeaderMiddleware(socket_app)
-            self._api.mount(str(constants.Endpoint.EVENT), socket_app_with_headers)
+            self._api.mount(
+                config.prepend_backend_path(str(constants.Endpoint.EVENT)),
+                socket_app_with_headers,
+            )
 
         # Check the exception handlers
         self._validate_exception_handlers()
@@ -683,13 +686,14 @@ class App(MiddlewareMixin, LifespanMixin):
         if not self._api:
             return
 
+        config = get_config()
         self._api.add_route(
-            str(constants.Endpoint.PING),
+            config.prepend_backend_path(str(constants.Endpoint.PING)),
             ping,
             methods=["GET"],
         )
         self._api.add_route(
-            str(constants.Endpoint.HEALTH),
+            config.prepend_backend_path(str(constants.Endpoint.HEALTH)),
             health,
             methods=["GET"],
         )
@@ -700,20 +704,21 @@ class App(MiddlewareMixin, LifespanMixin):
 
         if not self._api:
             return
+        config = get_config()
         upload_is_used_marker = (
             prerequisites.get_backend_dir() / constants.Dirs.UPLOAD_IS_USED
         )
         if Upload.is_used or upload_is_used_marker.exists():
             # To upload files.
             self._api.add_route(
-                str(constants.Endpoint.UPLOAD),
+                config.prepend_backend_path(str(constants.Endpoint.UPLOAD)),
                 upload(self),
                 methods=["POST"],
             )
 
             # To access uploaded files.
             self._api.mount(
-                str(constants.Endpoint.UPLOAD),
+                config.prepend_backend_path(str(constants.Endpoint.UPLOAD)),
                 UploadedFilesHeadersMiddleware(StaticFiles(directory=get_upload_dir())),
                 name="uploaded_files",
             )
@@ -722,7 +727,7 @@ class App(MiddlewareMixin, LifespanMixin):
             upload_is_used_marker.touch()
         if codespaces.is_running_in_codespaces():
             self._api.add_route(
-                str(constants.Endpoint.AUTH_CODESPACE),
+                config.prepend_backend_path(str(constants.Endpoint.AUTH_CODESPACE)),
                 codespaces.auth_codespace,
                 methods=["GET"],
             )
@@ -1558,8 +1563,11 @@ class App(MiddlewareMixin, LifespanMixin):
         def all_routes(_request: Request) -> Response:
             return JSONResponse(list(self._unevaluated_pages.keys()))
 
+        config = get_config()
         self._api.add_route(
-            str(constants.Endpoint.ALL_ROUTES), all_routes, methods=["GET"]
+            config.prepend_backend_path(str(constants.Endpoint.ALL_ROUTES)),
+            all_routes,
+            methods=["GET"],
         )
 
     @overload

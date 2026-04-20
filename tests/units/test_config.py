@@ -44,6 +44,7 @@ def test_set_app_name(base_config_values):
         ("REFLEX_FRONTEND_PORT", 3001),
         ("REFLEX_FRONTEND_PATH", "/test"),
         ("REFLEX_BACKEND_PORT", 8001),
+        ("REFLEX_BACKEND_PATH", "/api"),
         ("REFLEX_API_URL", "https://mybackend.com:8000"),
         ("REFLEX_DEPLOY_URL", "https://myfrontend.com"),
         ("REFLEX_BACKEND_HOST", "127.0.0.1"),
@@ -144,6 +145,30 @@ def test_update_from_env_cors(
             {"app_name": "test_app", "api_url": "http://example.com/api"},
             f"/api{Endpoint.EVENT}",
         ),
+        (
+            {
+                "app_name": "test_app",
+                "api_url": "http://example.com",
+                "backend_path": "/api",
+            },
+            f"/api{Endpoint.EVENT}",
+        ),
+        (
+            {
+                "app_name": "test_app",
+                "api_url": "http://example.com",
+                "backend_path": "api/",
+            },
+            f"/api{Endpoint.EVENT}",
+        ),
+        (
+            {
+                "app_name": "test_app",
+                "api_url": "http://example.com",
+                "backend_path": "/api/v1",
+            },
+            f"/api/v1{Endpoint.EVENT}",
+        ),
     ],
 )
 def test_event_namespace(mocker: MockerFixture, kwargs, expected):
@@ -160,6 +185,76 @@ def test_event_namespace(mocker: MockerFixture, kwargs, expected):
     config = reflex_base.config.get_config()
     assert conf == config
     assert config.get_event_namespace() == expected
+
+
+@pytest.mark.parametrize(
+    ("backend_path", "path", "expected"),
+    [
+        ("", "/ping", "/ping"),
+        ("/api", "/ping", "/api/ping"),
+        ("api", "/ping", "/api/ping"),
+        ("/api/", "/ping", "/api/ping"),
+        ("/api", "", ""),
+        ("/api", "relative/path", "relative/path"),
+        ("/api/v1", "/ping", "/api/v1/ping"),
+        ("api/v1/", "/ping", "/api/v1/ping"),
+        ("/api/v1", "", ""),
+        ("/api/v1", "relative/path", "relative/path"),
+    ],
+)
+def test_prepend_backend_path(backend_path: str, path: str, expected: str):
+    """Test that prepend_backend_path normalizes and prefixes paths correctly.
+
+    Args:
+        backend_path: The configured backend_path.
+        path: The input path to prefix.
+        expected: The expected output.
+    """
+    config = rx.Config(app_name="test_app", backend_path=backend_path)
+    assert config.prepend_backend_path(path) == expected
+
+
+@pytest.mark.parametrize("backend_path", ["", "/api", "api/", "/api/v1"])
+@pytest.mark.parametrize("endpoint", list(Endpoint))
+def test_endpoint_get_url_with_backend_path(
+    mocker: MockerFixture, backend_path: str, endpoint: Endpoint
+):
+    """Endpoint.get_url() includes backend_path; WS protocol swap still works for EVENT.
+
+    Args:
+        mocker: The pytest mock object.
+        backend_path: The configured backend_path.
+        endpoint: The endpoint to generate a URL for.
+    """
+    conf = rx.Config(
+        app_name="test_app",
+        api_url="http://example.com",
+        backend_path=backend_path,
+    )
+    mocker.patch("reflex_base.config.get_config", return_value=conf)
+
+    url = endpoint.get_url()
+    prefix = f"/{backend_path.strip('/')}" if backend_path.strip("/") else ""
+    if endpoint is Endpoint.EVENT:
+        assert url == f"ws://example.com{prefix}{endpoint}"
+    else:
+        assert url == f"http://example.com{prefix}{endpoint}"
+
+
+def test_get_event_namespace_matches_mount_path(mocker: MockerFixture):
+    """Socket.IO namespace must equal the HTTP mount path for EVENT.
+
+    Args:
+        mocker: The pytest mock object.
+    """
+    conf = rx.Config(
+        app_name="test_app",
+        api_url="http://example.com",
+        backend_path="/api",
+    )
+    mocker.patch("reflex_base.config.get_config", return_value=conf)
+
+    assert conf.get_event_namespace() == conf.prepend_backend_path(str(Endpoint.EVENT))
 
 
 DEFAULT_CONFIG = rx.Config(app_name="a")

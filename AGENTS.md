@@ -62,16 +62,22 @@ Apps as factory functions, run via `AppHarness`:
 ```python
 def SomeApp():
     import reflex as rx
+
     class State(rx.State):
         value: str = ""
+
     def index():
         return rx.box(rx.text(State.value))
+
     app = rx.App()
     app.add_page(index)
 
+
 @pytest.fixture(scope="module")
 def some_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
-    with AppHarness.create(root=tmp_path_factory.mktemp("some_app"), app_source=SomeApp) as harness:
+    with AppHarness.create(
+        root=tmp_path_factory.mktemp("some_app"), app_source=SomeApp
+    ) as harness:
         yield harness
 ```
 
@@ -88,6 +94,7 @@ Reflex has downstream users — don't break them. Provide a fallback path during
 **Runtime warning** via `console.deprecate()`:
 ```python
 from reflex_base.utils import console
+
 console.deprecate(
     feature_name="OldFeature",
     reason="Use NewFeature instead.",
@@ -101,8 +108,10 @@ Set `deprecation_version` to the next dot version of the latest tag (`git fetch 
 ```python
 from __future__ import annotations
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from typing_extensions import deprecated
+
     @deprecated("Use new_method() instead")
     def old_method(self) -> str: ...
 ```

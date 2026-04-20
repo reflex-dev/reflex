@@ -155,6 +155,7 @@ class BaseConfig:
         frontend_port: The port to run the frontend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
         frontend_path: The path to run the frontend on. For example, "/app" will run the frontend on http://localhost:3000/app
         backend_port: The port to run the backend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
+        backend_path: The path prefix for backend routes. For example, "/api" mounts the event websocket, /ping, /_upload, /_health, and /_all_routes under /api, and is automatically included in URLs baked into the frontend. Changing this requires a full `reflex run` restart — routes are registered at startup.
         api_url: The backend url the frontend will connect to. This must be updated if the backend is hosted elsewhere, or in production.
         deploy_url: The url the frontend will be hosted on.
         backend_host: The url the backend will be hosted on.
@@ -193,6 +194,8 @@ class BaseConfig:
     frontend_path: str = ""
 
     backend_port: int | None = None
+
+    backend_path: str = ""
 
     api_url: str = f"http://localhost:{constants.DefaultPorts.BACKEND_PORT}"
 
@@ -476,6 +479,21 @@ class Config(BaseConfig):
 
         return json.dumps(self, default=serialize)
 
+    @staticmethod
+    def _prepend_path(path: str, prefix: str) -> str:
+        """Prepend ``prefix`` (normalized to ``/prefix``) to ``path`` when both are non-empty.
+
+        Args:
+            path: The path to prepend the prefix to.
+            prefix: The configured prefix (e.g. ``frontend_path`` or ``backend_path``).
+
+        Returns:
+            The path with the prefix prepended if it begins with a slash, otherwise the original path.
+        """
+        if prefix and path.startswith("/"):
+            return f"/{prefix.strip('/')}{path}"
+        return path
+
     def prepend_frontend_path(self, path: str) -> str:
         """Prepend the frontend path to a given path.
 
@@ -485,9 +503,18 @@ class Config(BaseConfig):
         Returns:
             The path with the frontend path prepended if it begins with a slash, otherwise the original path.
         """
-        if self.frontend_path and path.startswith("/"):
-            return f"/{self.frontend_path.strip('/')}{path}"
-        return path
+        return self._prepend_path(path, self.frontend_path)
+
+    def prepend_backend_path(self, path: str) -> str:
+        """Prepend the backend path to a given path.
+
+        Args:
+            path: The path to prepend the backend path to.
+
+        Returns:
+            The path with the backend path prepended if it begins with a slash, otherwise the original path.
+        """
+        return self._prepend_path(path, self.backend_path)
 
     @property
     def app_module(self) -> ModuleType | None:
