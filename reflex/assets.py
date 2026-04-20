@@ -75,6 +75,20 @@ class AssetPathStr(str):
         instance.importable_path = f"$/public{relative_path}"
         return instance
 
+    def __getnewargs__(self) -> tuple[str]:
+        """Return the unprefixed path for pickle/copy reconstruction.
+
+        Python's default ``str`` pickle path would feed the frontend-prefixed
+        value back into :meth:`__new__`, double-applying the prefix and
+        losing the :attr:`importable_path` slot. Returning the raw path
+        (recovered by stripping the ``$/public`` prefix) lets ``__new__``
+        rebuild both forms correctly.
+
+        Returns:
+            A one-tuple containing the unprefixed asset path.
+        """
+        return (self.importable_path[len("$/public") :],)
+
 
 def remove_stale_external_asset_symlinks():
     """Remove broken symlinks and empty directories in assets/external/.

@@ -1,3 +1,5 @@
+import copy
+import pickle
 import shutil
 from collections.abc import Generator
 from pathlib import Path
@@ -153,6 +155,39 @@ def test_asset_importable_path_with_frontend_path(
     asset_from_bytes = AssetPathStr(b"/external/mod/file.js", "utf-8")
     assert asset_from_bytes == "/my-app/external/mod/file.js"
     assert asset_from_bytes.importable_path == "$/public/external/mod/file.js"
+
+
+def test_asset_path_pickle_roundtrip(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Pickle/copy round-trips must not double-apply the frontend prefix.
+
+    Regression test for https://github.com/reflex-dev/reflex/pull/6348#discussion_r3113958087.
+
+    Args:
+        monkeypatch: A pytest fixture for patching.
+    """
+    import reflex.assets as assets_module
+
+    class _StubConfig:
+        frontend_path = "/my-app"
+
+        @staticmethod
+        def prepend_frontend_path(path: str) -> str:
+            return f"/my-app{path}" if path.startswith("/") else path
+
+    monkeypatch.setattr(assets_module, "get_config", lambda: _StubConfig)
+
+    original = AssetPathStr("/external/mod/file.js")
+    assert original == "/my-app/external/mod/file.js"
+    assert original.importable_path == "$/public/external/mod/file.js"
+
+    for clone in (
+        pickle.loads(pickle.dumps(original)),
+        copy.copy(original),
+        copy.deepcopy(original),
+    ):
+        assert isinstance(clone, AssetPathStr)
+        assert clone == "/my-app/external/mod/file.js"
+        assert clone.importable_path == "$/public/external/mod/file.js"
 
 
 def test_remove_stale_external_asset_symlinks(mock_asset_path: Path) -> None:
