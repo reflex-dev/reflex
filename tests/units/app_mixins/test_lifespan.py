@@ -2,22 +2,21 @@
 
 from __future__ import annotations
 
-import functools
+import asyncio
+import contextlib
+
+import pytest
+from reflex_base.utils.exceptions import InvalidLifespanTaskTypeError
 
 from reflex.app_mixins.lifespan import LifespanMixin
 
 
 def test_register_lifespan_task_can_be_used_as_decorator():
-    """Decorating a task registers it and preserves the task callable."""
+    """Bare decorator registers the task and preserves the name binding."""
     mixin = LifespanMixin()
 
     @mixin.register_lifespan_task
     def polling_task() -> str:
-        """Return a sentinel value for direct-call verification.
-
-        Returns:
-            A sentinel string.
-        """
         return "ok"
 
     assert polling_task() == "ok"
@@ -25,26 +24,32 @@ def test_register_lifespan_task_can_be_used_as_decorator():
 
 
 def test_register_lifespan_task_with_kwargs_can_be_used_as_decorator():
-    """Decorator-with-kwargs preserves function binding and registers partial."""
+    """Decorator-with-kwargs registers a partial that applies the kwargs."""
     mixin = LifespanMixin()
 
     @mixin.register_lifespan_task(timeout=10)
     def check_for_updates(timeout: int) -> int:
-        """Echo timeout to verify direct function access is preserved.
-
-        Args:
-            timeout: Timeout value in seconds.
-
-        Returns:
-            The timeout value passed to the function.
-        """
         return timeout
 
     assert check_for_updates(timeout=4) == 4
 
-    registered_tasks = mixin.get_lifespan_tasks()
-    assert len(registered_tasks) == 1
-    registered_task = registered_tasks[0]
-    assert isinstance(registered_task, functools.partial)
-    assert registered_task.func is check_for_updates
-    assert registered_task.keywords == {"timeout": 10}
+    (registered_task,) = mixin.get_lifespan_tasks()
+    assert not isinstance(registered_task, asyncio.Task)
+    assert registered_task() == 10
+
+
+async def test_register_lifespan_task_rejects_kwargs_for_asyncio_task():
+    """Registering kwargs against an asyncio.Task raises a clear error."""
+    mixin = LifespanMixin()
+    task = asyncio.create_task(asyncio.sleep(0), name="scheduled-lifespan-task")
+
+    try:
+        with pytest.raises(
+            InvalidLifespanTaskTypeError,
+            match=r"of type asyncio\.Task cannot be registered with kwargs",
+        ):
+            mixin.register_lifespan_task(task, timeout=10)
+    finally:
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
