@@ -81,7 +81,7 @@ Each PR that changes the source of a published package must add a news fragment 
 **Create a fragment from the CLI:**
 
 ```bash
-uv run towncrier create --config pyproject.toml --dir packages/reflex-ui 1234.feature.md
+uv run towncrier create --config pyproject.toml --dir packages/reflex-components-lucide 1234.feature.md
 ```
 
 Drop `--dir` for a fragment against the main `reflex` package.
