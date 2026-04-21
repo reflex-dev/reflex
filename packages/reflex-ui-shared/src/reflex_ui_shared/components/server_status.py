@@ -23,11 +23,20 @@ STATUS_VARIANT_TEXT: dict[StatusVariant, str] = {
     "Critical": "All servers are down",
 }
 
-STATUS_VARIANT_ICON: dict[StatusVariant, rx.Component] = {
-    "Success": get_icon("circle", class_name="!text-success-8"),
-    "Warning": get_icon("circle", class_name="!text-warning-8"),
-    "Critical": get_icon("circle", class_name="!text-destructive-9"),
+STATUS_ICON_COLORS: dict[StatusVariant, str] = {
+    "Success": "!text-success-8",
+    "Warning": "!text-warning-8",
+    "Critical": "!text-destructive-9",
 }
+
+
+def _status_icon(color: str) -> rx.Component:
+    """Create a fresh status icon component for each render branch.
+
+    Returns:
+        A new circle icon component with the given color class.
+    """
+    return get_icon("circle", class_name=color)
 
 
 def server_status(status: StatusVariant | rx.Var[str]) -> rx.Component:
@@ -46,7 +55,7 @@ def server_status(status: StatusVariant | rx.Var[str]) -> rx.Component:
             (
                 "Success",
                 rx.el.div(
-                    STATUS_VARIANT_ICON["Success"],
+                    _status_icon(STATUS_ICON_COLORS["Success"]),
                     STATUS_VARIANT_TEXT["Success"],
                     class_name=f"{DEFAULT_CLASS_NAME} {STATUS_TEXT_COLORS['Success']}",
                 ),
@@ -54,7 +63,7 @@ def server_status(status: StatusVariant | rx.Var[str]) -> rx.Component:
             (
                 "Warning",
                 rx.el.div(
-                    STATUS_VARIANT_ICON["Warning"],
+                    _status_icon(STATUS_ICON_COLORS["Warning"]),
                     STATUS_VARIANT_TEXT["Warning"],
                     class_name=f"{DEFAULT_CLASS_NAME} {STATUS_TEXT_COLORS['Warning']}",
                 ),
@@ -62,13 +71,13 @@ def server_status(status: StatusVariant | rx.Var[str]) -> rx.Component:
             (
                 "Critical",
                 rx.el.div(
-                    STATUS_VARIANT_ICON["Critical"],
+                    _status_icon(STATUS_ICON_COLORS["Critical"]),
                     STATUS_VARIANT_TEXT["Critical"],
                     class_name=f"{DEFAULT_CLASS_NAME} {STATUS_TEXT_COLORS['Critical']}",
                 ),
             ),
             rx.el.div(
-                STATUS_VARIANT_ICON["Success"],
+                _status_icon(STATUS_ICON_COLORS["Success"]),
                 STATUS_VARIANT_TEXT["Success"],
                 class_name=f"{DEFAULT_CLASS_NAME} {STATUS_TEXT_COLORS['Success']}",
             ),

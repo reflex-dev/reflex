@@ -9,6 +9,7 @@ import httpx
 import reflex as rx
 from reflex_ui_shared.constants import (
     CHECKLY_ACCOUNT_ID,
+    CHECKLY_API_BASE_URL,
     CHECKLY_API_KEY,
     CHECKLY_CHECK_GROUP_ID,
 )
@@ -32,7 +33,7 @@ async def check_status(check_id: str) -> dict:
     Returns:
         A dictionary with failure and degraded flags.
     """
-    status_url = f"https://api.checklyhq.com/v1/check-statuses/{check_id}"
+    status_url = f"{CHECKLY_API_BASE_URL}/check-statuses/{check_id}"
     async with httpx.AsyncClient() as client:
         status_response = await client.get(
             status_url,
@@ -60,6 +61,9 @@ async def monitor_checkly_status() -> None:
     - Success: all checks are healthy
 
     """
+    if not all((CHECKLY_API_KEY, CHECKLY_ACCOUNT_ID, CHECKLY_CHECK_GROUP_ID)):
+        return
+
     headers = {
         "Authorization": f"Bearer {CHECKLY_API_KEY}",
         "X-Checkly-Account": CHECKLY_ACCOUNT_ID,
@@ -71,7 +75,9 @@ async def monitor_checkly_status() -> None:
                 global CURRENT_STATUS
 
                 # Get checks in this group
-                checks_url = f"https://api.checklyhq.com/v1/check-groups/{CHECKLY_CHECK_GROUP_ID}/checks"
+                checks_url = (
+                    f"{CHECKLY_API_BASE_URL}/check-groups/{CHECKLY_CHECK_GROUP_ID}/checks"
+                )
                 async with httpx.AsyncClient(timeout=httpx.Timeout(30)) as client:
                     checks_response = await client.get(checks_url, headers=headers)
                 if checks_response.status_code == 200:
