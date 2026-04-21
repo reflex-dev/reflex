@@ -39,6 +39,7 @@ RECENT_BLOGS_API_URL: str = os.environ.get(
 )
 
 
+CHECKLY_API_BASE_URL: str = "https://api.checklyhq.com/v1"
 CHECKLY_ACCOUNT_ID = os.environ.get("CHECKLY_ACCOUNT_ID", "")
 CHECKLY_API_KEY = os.environ.get("CHECKLY_API_KEY", "")
 CHECKLY_CHECK_GROUP_ID = os.environ.get("CHECKLY_CHECK_GROUP_ID", "")

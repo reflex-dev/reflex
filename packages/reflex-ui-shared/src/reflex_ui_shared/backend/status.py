@@ -75,9 +75,7 @@ async def monitor_checkly_status() -> None:
                 global CURRENT_STATUS
 
                 # Get checks in this group
-                checks_url = (
-                    f"{CHECKLY_API_BASE_URL}/check-groups/{CHECKLY_CHECK_GROUP_ID}/checks"
-                )
+                checks_url = f"{CHECKLY_API_BASE_URL}/check-groups/{CHECKLY_CHECK_GROUP_ID}/checks"
                 async with httpx.AsyncClient(timeout=httpx.Timeout(30)) as client:
                     checks_response = await client.get(checks_url, headers=headers)
                 if checks_response.status_code == 200:

@@ -54,8 +54,7 @@ jobs:
           python-version: 3.13
 
       - name: Install Requirements for reflex-docs
-        working-directory: ./docs/app
-        run: uv sync
+        run: uv sync --package reflex-docs-app
       - name: Init Website for reflex-docs
         working-directory: ./docs/app
         run: uv run --no-sync reflex init
