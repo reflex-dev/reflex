@@ -58,10 +58,10 @@ jobs:
         run: uv sync
       - name: Init Website for reflex-docs
         working-directory: ./docs/app
-        run: uv run --active --no-sync reflex init
+        run: uv run --no-sync reflex init
       - name: Run Website and Check for errors
         run: |
-          uv run --active --no-sync bash scripts/integration.sh ./docs/app prod
+          uv run --no-sync bash scripts/integration.sh ./docs/app prod
       - name: Check outdated frontend dependencies
         working-directory: ./docs/app/.web
         run: |
