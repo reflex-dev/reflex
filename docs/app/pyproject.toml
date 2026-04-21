@@ -95,3 +95,10 @@ skip = "data/*"
 
 [tool.uv]
 required-version = ">=0.7.0"
+
+[tool.uv.sources]
+reflex = { path = "../..", editable = true }
+reflex-ui = { path = "../../packages/reflex-ui", editable = true }
+reflex-ui-shared = { path = "../../packages/reflex-ui-shared", editable = true }
+reflex-docgen = { path = "../../packages/reflex-docgen", editable = true }
+reflex-integrations-docs = { path = "../../packages/integrations-docs", editable = true }

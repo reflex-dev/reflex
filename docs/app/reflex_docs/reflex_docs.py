@@ -7,6 +7,7 @@ import reflex as rx
 import reflex_enterprise as rxe
 from reflex.utils.exec import is_prod_mode
 from reflex_ui_shared import styles
+from reflex_ui_shared.backend.status import monitor_checkly_status
 from reflex_ui_shared.constants import REFLEX_ASSETS_CDN
 from reflex_ui_shared.meta.meta import favicons_links, to_cdn_image_url
 from reflex_ui_shared.telemetry import get_pixel_website_trackers
@@ -47,6 +48,8 @@ app = rxe.App(
         ),
     ],
 )
+
+app.register_lifespan_task(monitor_checkly_status)
 
 # XXX: The app is TOO BIG to build on Windows, so explicitly disallow it except for testing
 if sys.platform == "win32":

@@ -326,4 +326,4 @@ reflex-integrations-docs.workspace = true
 reflex.workspace = true
 
 [tool.uv.workspace]
-members = ["packages/*", "docs/app"]
+members = ["packages/*"]
