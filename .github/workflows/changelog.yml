@@ -19,8 +19,10 @@ jobs:
       - name: Check for skip-changelog label
         id: skip
         shell: bash
+        env:
+          SKIP_CHANGELOG: ${{ contains(github.event.pull_request.labels.*.name, 'skip-changelog') }}
         run: |
-          if ${{ contains(github.event.pull_request.labels.*.name, 'skip-changelog') }}; then
+          if [ "$SKIP_CHANGELOG" = "true" ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
             echo "PR has 'skip-changelog' label; bypassing changelog check."
           else
