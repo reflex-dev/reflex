@@ -3731,7 +3731,7 @@ requires-dist = [
 [[package]]
 name = "reflex-docs-app"
 version = "0.0.1"
-source = { editable = "docs/app" }
+source = { virtual = "docs/app" }
 dependencies = [
     { name = "alembic" },
     { name = "email-validator" },

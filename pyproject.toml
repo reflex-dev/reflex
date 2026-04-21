@@ -324,7 +324,6 @@ reflex-ui.workspace = true
 reflex-ui-shared.workspace = true
 reflex-integrations-docs.workspace = true
 reflex.workspace = true
-reflex-docs-app.workspace = true
 
 [tool.uv.workspace]
 members = ["packages/*", "docs/app"]
