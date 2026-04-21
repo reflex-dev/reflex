@@ -2053,6 +2053,38 @@ def call_event_fn(
     # while keeping other scalar values for validation below.
     out = list(out) if isinstance(out, (list, tuple)) else [out]
 
+    def _dispatch_mixed_event_var(event_like_var: Var) -> FunctionVar:
+        """Wrap a mixed event-like Var into a callable frontend dispatcher.
+
+        Args:
+            event_like_var: A Var that may resolve to either an EventSpec-like object
+                or a callable frontend function at runtime.
+
+        Returns:
+            A FunctionVar that dispatches runtime values as frontend calls or
+            backend addEvents queueing.
+        """
+        event_like_name = "__event_or_fn"
+        return Var(
+            _js_expr=(
+                "(...args) => {"
+                f"const {event_like_name} = {event_like_var!s};"
+                f'if (typeof {event_like_name} === "function") {{'
+                f"return {event_like_name}(...args);"
+                "}"
+                f"return {CompileVars.ADD_EVENTS}([{event_like_name}], args, ({{  }}));"
+                "}"
+            ),
+            _var_type=Callable,
+            _var_data=VarData.merge(
+                event_like_var._get_all_var_data(),
+                VarData(
+                    imports=Imports.EVENTS,
+                    hooks={Hooks.EVENTS: None},
+                ),
+            ),
+        ).to(FunctionVar)
+
     # Convert any event specs to event specs.
     events = []
     for e in out:
@@ -2063,6 +2095,13 @@ def call_event_fn(
         if isinstance(e, EventChain):
             # Nested EventChain is treated like a FunctionVar.
             e = Var.create(e)
+
+        if (
+            isinstance(e, Var)
+            and not isinstance(e, (EventVar, FunctionVar))
+            and typehint_issubclass(e._var_type, EventSpec | Callable)
+        ):
+            e = _dispatch_mixed_event_var(e)
 
         # Make sure the event spec is valid.
         if not isinstance(e, (EventSpec, FunctionVar, EventVar)):

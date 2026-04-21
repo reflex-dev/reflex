@@ -824,6 +824,34 @@ def test_event_chain_create_lambda_preserves_explicit_event_chain():
     assert chain_event.equals(Var.create(inner))
 
 
+def test_event_chain_create_lambda_allows_conditional_mixed_function_and_event():
+    """Lambdas should allow rx.cond returning FunctionVar or EventSpec."""
+
+    class MixedState(BaseState):
+        @event
+        def do_a_thing(self, value: str):
+            pass
+
+    log_after_timeout = make_timeout_logger()
+
+    def return_conditional_mixed(v: Var[Any]) -> Any:
+        return rx.cond(
+            v == "foo",
+            log_after_timeout.partial("Input was foo!"),
+            MixedState.do_a_thing(v.to(str)),
+        )
+
+    chain = EventChain.create(
+        cast(LambdaEventCallback[Any], return_conditional_mixed),
+        args_spec=lambda e: [e],
+    )
+    rendered = str(LiteralVar.create(chain))
+
+    assert isinstance(chain, EventChain)
+    assert "Timeout reached!" in rendered
+    assert "addEvents(" in rendered
+
+
 def test_event_chain_create_wraps_plain_function_var_kwargs():
     """FunctionVars should compose with chain-level kwargs instead of bypassing wrapping."""
     frontend_handler = rx.vars.FunctionStringVar.create(
