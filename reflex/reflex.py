@@ -338,14 +338,25 @@ def _run(
 
         _run_dev(running_mode, frontend_port, backend_port, backend_host)
     else:
-        port = (
-            frontend_port or backend_port or config.frontend_port or config.backend_port
-        )
+        if running_mode == constants.RunningMode.BACKEND_ONLY:
+            requested_port = backend_port or config.backend_port
+            fallback_port = constants.DefaultPorts.BACKEND_PORT
+        elif running_mode == constants.RunningMode.FRONTEND_ONLY:
+            requested_port = frontend_port or config.frontend_port
+            fallback_port = constants.DefaultPorts.FRONTEND_PORT
+        else:
+            requested_port = (
+                frontend_port
+                or backend_port
+                or config.frontend_port
+                or config.backend_port
+            )
+            fallback_port = constants.DefaultPorts.FRONTEND_PORT
 
         port = processes.handle_port(
             service_name=running_mode.name.lower(),
-            port=(port or constants.DefaultPorts.FRONTEND_PORT),
-            auto_increment=port is None,
+            port=requested_port or fallback_port,
+            auto_increment=requested_port is None,
         )
 
         _run_prod(running_mode, port, backend_host)

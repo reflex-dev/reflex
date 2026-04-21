@@ -11,6 +11,7 @@ from reflex_base import constants
 from reflex_base.config import get_config
 
 from reflex.utils import console, net, path_ops, redir
+from reflex.utils.rename import rename_imports_and_app_name
 
 
 @dataclasses.dataclass(frozen=True)
@@ -175,7 +176,9 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
     # the source code repo name on github.
     template_name = new_config.app_name
 
-    create_config(app_name)
+    # Rewrite in place instead of regenerating from a stock template, so the
+    # template's own config (db_url, redis_url, plugins, etc.) is preserved.
+    rename_imports_and_app_name(constants.Config.FILE, template_name, app_name)
     initialize_app_directory(
         app_name,
         template_name=template_name,

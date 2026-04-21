@@ -5,9 +5,12 @@ from __future__ import annotations
 import uuid
 from collections.abc import Callable, Generator
 
+import httpx
 import pytest
+from reflex_base.config import get_config
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.remote.webelement import WebElement
 
 from reflex.testing import AppHarness, WebDriver
 
@@ -63,7 +66,21 @@ def LinkedStateApp():
             if "token" in form_data:
                 await self.link_to(form_data["token"])
 
+    class SharedNotes(rx.SharedState):
+        """A second SharedState to test multi-SharedState propagation."""
+
+        note: str = ""
+
+        @rx.event
+        async def on_load_link_default(self):
+            linked_state = await self._link_to(self.room or "default")  # pyright: ignore[reportAttributeAccessIssue]
+            initial_note = self.router.page.params.get("initial_note", "")
+            if initial_note:
+                linked_state.note = initial_note
+
     class PrivateState(rx.State):
+        fetched_note: str = ""
+
         @rx.var
         async def greeting(self) -> str:
             ss = await self.get_state(SharedState)
@@ -73,6 +90,12 @@ def LinkedStateApp():
         async def linked_to(self) -> str:
             ss = await self.get_state(SharedState)
             return ss._linked_to
+
+        @rx.event
+        async def fetch_shared_note(self):
+            """Fetch SharedNotes via get_state from an unrelated state handler."""
+            sn = await self.get_state(SharedNotes)
+            self.fetched_note = sn.note
 
         @rx.event(background=True)
         async def bump_counter_bg(self):
@@ -140,10 +163,38 @@ def LinkedStateApp():
                 on_click=SharedState.link_to_and_increment,
                 id="link-increment-button",
             ),
+            rx.text(SharedNotes.note, id="shared-note"),
+            rx.button(
+                "Fetch Note via get_state",
+                on_click=PrivateState.fetch_shared_note,
+                id="fetch-note-button",
+            ),
+            rx.text(PrivateState.fetched_note, id="fetched-note"),
         )
 
-    app = rx.App()
-    app.add_page(index, route="/room/[room]", on_load=SharedState.on_load_link_default)
+    from fastapi import FastAPI
+
+    api = FastAPI()
+
+    @api.get("/api/set-counter/{shared_token}/{value}")
+    async def set_counter_api(shared_token: str, value: int):
+        """Modify shared state by its shared token from an API route."""
+        from reflex.istate.manager.token import BaseStateToken
+
+        async with app.modify_state(
+            BaseStateToken(ident=shared_token, cls=SharedState),
+        ) as state:
+            ss = await state.get_state(SharedState)
+            ss.counter = value
+            notes = await state.get_state(SharedNotes)
+            notes.note = f"counter set to {value}"
+
+    app = rx.App(api_transformer=api)
+    app.add_page(
+        index,
+        route="/room/[room]",
+        on_load=[SharedState.on_load_link_default, SharedNotes.on_load_link_default],
+    )
     app.add_page(index)
 
 
@@ -386,3 +437,124 @@ def test_linked_state(
     # Link to a new state and increment the counter in the same event
     tab1.find_element(By.ID, "link-increment-button").click()
     assert linked_state.poll_for_content(counter_button_1, exp_not_equal="3") == "1"
+
+
+def _open_linked_tab(
+    harness: AppHarness,
+    tab_factory: Callable[[], WebDriver],
+    shared_token: str,
+) -> tuple[WebElement, WebElement]:
+    """Open a new tab linked to a shared token and return key elements.
+
+    Args:
+        harness: The running AppHarness.
+        tab_factory: Factory to create WebDriver instances.
+        shared_token: The shared token to link to via on_load.
+
+    Returns:
+        Tuple of (counter_button, note_element).
+    """
+    tab = tab_factory()
+    tab.get(f"{harness.frontend_url}room/{shared_token}")
+    ss = utils.SessionStorage(tab)
+    assert AppHarness._poll_for(lambda: ss.get("token") is not None), "token not found"
+    counter_button = AppHarness._poll_for(
+        lambda: tab.find_element(By.ID, "counter-button")
+    )
+    assert counter_button
+    assert harness.poll_for_content(counter_button) == "0"
+    # Wait for SharedState.on_load_link_default to complete (linked-to shows the token).
+    linked_to = tab.find_element(By.ID, "linked-to")
+    assert harness.poll_for_content(linked_to) == shared_token
+    note = tab.find_element(By.ID, "shared-note")
+    assert note.text == ""
+    return counter_button, note
+
+
+def test_modify_shared_state_by_shared_token(
+    linked_state: AppHarness,
+    tab_factory: Callable[[], WebDriver],
+):
+    """Test that modifying shared state by shared token propagates to all linked clients.
+
+    This exercises the use case of modifying shared state from an API route
+    where only the shared token is known (no private client token).
+
+    Args:
+        linked_state: harness for LinkedStateApp.
+        tab_factory: factory to create WebDriver instances.
+    """
+    assert linked_state.app_instance is not None
+
+    shared_token = f"api-test-{uuid.uuid4()}"
+
+    # Open two tabs linked to the same shared token via on_load
+    counter_button_1, note_1 = _open_linked_tab(linked_state, tab_factory, shared_token)
+    counter_button_2, note_2 = _open_linked_tab(linked_state, tab_factory, shared_token)
+
+    # Modify both shared states by shared token via API route
+    api_url = f"{get_config().api_url}/api/set-counter/{shared_token}/42"
+    response = httpx.get(api_url)
+    assert response.status_code == 200
+
+    # Both tabs should see updates to both SharedState and SharedNotes
+    assert linked_state.poll_for_content(counter_button_1, exp_not_equal="0") == "42"
+    assert linked_state.poll_for_content(counter_button_2, exp_not_equal="0") == "42"
+    assert (
+        linked_state.poll_for_content(note_1, exp_not_equal="") == "counter set to 42"
+    )
+    assert (
+        linked_state.poll_for_content(note_2, exp_not_equal="") == "counter set to 42"
+    )
+
+    # After the API-driven update, normal event handlers should still work
+    counter_button_1.click()
+    assert linked_state.poll_for_content(counter_button_1, exp_not_equal="42") == "43"
+    assert linked_state.poll_for_content(counter_button_2, exp_not_equal="42") == "43"
+
+
+def test_get_state_returns_linked_state(
+    linked_state: AppHarness,
+    tab_factory: Callable[[], WebDriver],
+):
+    """Test that get_state from an unrelated handler returns the linked instance.
+
+    When SharedNotes is linked to a shared token, calling
+    ``await self.get_state(SharedNotes)`` from PrivateState (an unrelated
+    state handler) should return the linked SharedNotes — not the private
+    copy.  With the Redis state manager, SharedNotes may not be pre-loaded
+    in the tree, so ``get_state`` falls through to the redis fetch path.
+
+    Args:
+        linked_state: harness for LinkedStateApp.
+        tab_factory: factory to create WebDriver instances.
+    """
+    assert linked_state.app_instance is not None
+
+    shared_token = f"get-state-test-{uuid.uuid4()}"
+    initial_note = f"note-{uuid.uuid4()}"
+
+    # Open a tab linked to the shared token via on_load, setting the note
+    # immediately during linking via query param.
+    tab = tab_factory()
+    tab.get(
+        f"{linked_state.frontend_url}room/{shared_token}?initial_note={initial_note}"
+    )
+    ss = utils.SessionStorage(tab)
+    assert AppHarness._poll_for(lambda: ss.get("token") is not None), "token not found"
+    linked_to = AppHarness._poll_for(lambda: tab.find_element(By.ID, "linked-to"))
+    assert linked_to
+    # Wait for on_load to link SharedState (confirms event processing started).
+    assert linked_state.poll_for_content(linked_to) == shared_token
+
+    # Verify the linked note appears on the page (direct SharedNotes binding).
+    note = tab.find_element(By.ID, "shared-note")
+    assert linked_state.poll_for_content(note, exp_not_equal="") == initial_note
+
+    # Now trigger PrivateState.fetch_shared_note — this calls get_state(SharedNotes)
+    # from an unrelated state handler.  The returned instance must be the
+    # *linked* SharedNotes (with the note set from the query param), not
+    # the private copy (which would have an empty note).
+    tab.find_element(By.ID, "fetch-note-button").click()
+    fetched = tab.find_element(By.ID, "fetched-note")
+    assert linked_state.poll_for_content(fetched, exp_not_equal="") == initial_note
