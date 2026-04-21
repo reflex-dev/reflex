@@ -33,14 +33,14 @@ app = rxe.App(
     + [
         rx.el.link(
             rel="preload",
-            href="/fonts/instrument-sans.woff2",
+            href=rx.asset("fonts/instrument-sans.woff2"),
             custom_attrs={"as": "font"},
             type="font/woff2",
             cross_origin="anonymous",
         ),
         rx.el.link(
             rel="preload",
-            href="/fonts/jetbrains-mono.woff2",
+            href=rx.asset("fonts/jetbrains-mono.woff2"),
             custom_attrs={"as": "font"},
             type="font/woff2",
             cross_origin="anonymous",
