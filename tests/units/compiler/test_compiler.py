@@ -9,8 +9,9 @@ from reflex_base.constants.compiler import PageNames
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
 from reflex_base.vars.base import Var
 from reflex_base.vars.sequence import LiteralStringVar
-from reflex_components_core.base.document import Links, Meta, Scripts
-from reflex_components_core.el.elements.metadata import Head, Link
+from reflex_components_core.base import document
+from reflex_components_core.base.document import Links, Scripts
+from reflex_components_core.el.elements.metadata import Head, Link, Meta
 from reflex_components_core.el.elements.other import Html
 
 from reflex.compiler import compiler, utils
@@ -381,7 +382,7 @@ def test_create_document_root():
     name = root.children[0].children[2].name  # pyright: ignore [reportAttributeAccessIssue]
     assert isinstance(name, LiteralStringVar)
     assert name.equals(Var.create("viewport"))
-    assert isinstance(root.children[0].children[3], Meta)
+    assert isinstance(root.children[0].children[3], document.Meta)
     assert isinstance(root.children[0].children[4], Link)
     assert isinstance(root.children[0].children[5], Links)
 

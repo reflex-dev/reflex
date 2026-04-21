@@ -275,8 +275,8 @@ def test_nested_function():
     """Test tracking dependencies in nested functions."""
 
     def func_with_nested(self: DependencyTestState):
-        async def inner():
-            pass
+        async def inner():  # noqa: RUF029
+            _ = self.board
 
         return self.count
 
