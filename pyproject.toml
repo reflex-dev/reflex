@@ -110,6 +110,7 @@ dev = [
   "sqlmodel",
   "starlette-admin",
   "toml",
+  "towncrier",
   "uvicorn",
 ]
 
@@ -166,7 +167,6 @@ target-version = "py310"
 output-format = "concise"
 extend-exclude = ["tests/units/reflex_base/utils/pyi_generator/golden"]
 lint.isort.split-on-trailing-comma = false
-preview = true
 lint.select = ["ALL"]
 lint.ignore = [
   "A",
@@ -212,6 +212,7 @@ lint.flake8-bugbear.extend-immutable-calls = [
   "reflex_base.utils.types.Unset",
   "reflex_base.vars.base.Var.create",
 ]
+preview = true
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
@@ -300,6 +301,53 @@ exclude_also = [
 
 [tool.coverage.html]
 directory = "coverage_html_report"
+
+[tool.towncrier]
+# Shared monorepo config. package/name intentionally empty — each invocation
+# passes --dir <package_path> --name <package> --version <vX.Y.Z> to target a
+# specific package. See https://towncrier.readthedocs.io/en/stable/monorepo.html
+package = ""
+name = ""
+directory = "news"
+filename = "CHANGELOG.md"
+title_format = "## {version} ({project_date})"
+issue_format = "[#{issue}](https://github.com/reflex-dev/reflex/issues/{issue})"
+start_string = "<!-- towncrier release notes start -->\n"
+
+[[tool.towncrier.type]]
+directory = "breaking"
+name = "Breaking Changes"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "deprecation"
+name = "Deprecations"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "feature"
+name = "Features"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "bugfix"
+name = "Bug Fixes"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "performance"
+name = "Performance"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "docs"
+name = "Documentation"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "misc"
+name = "Miscellaneous"
+showcontent = true
 
 [tool.uv]
 required-version = ">=0.7.0"

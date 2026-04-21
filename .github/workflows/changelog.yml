@@ -1,0 +1,88 @@
+name: changelog
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.id }}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  changelog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check for skip-changelog label
+        id: skip
+        shell: bash
+        env:
+          SKIP_CHANGELOG: ${{ contains(github.event.pull_request.labels.*.name, 'skip-changelog') }}
+        run: |
+          if [ "$SKIP_CHANGELOG" = "true" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "PR has 'skip-changelog' label; bypassing changelog check."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.skip.outputs.skip != 'true'
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup_build_env
+        if: steps.skip.outputs.skip != 'true'
+        with:
+          python-version: "3.14"
+          run-uv-sync: true
+      - name: Determine affected packages
+        if: steps.skip.outputs.skip != 'true'
+        id: affected
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed=$(git diff --name-only origin/main...HEAD)
+          affected=()
+          if printf '%s\n' "$changed" | grep -qE '^reflex/'; then
+            affected+=(".")
+          fi
+          for pkg_dir in packages/*/; do
+            pkg=$(basename "$pkg_dir")
+            case "$pkg" in
+              integrations-docs|reflex-ui|reflex-ui-shared) continue ;;
+            esac
+            if printf '%s\n' "$changed" | grep -qE "^packages/$pkg/src/"; then
+              affected+=("${pkg_dir%/}")
+            fi
+          done
+          printf '%s\n' "${affected[@]}" > affected.txt
+          echo "Affected packages:"
+          cat affected.txt
+      - name: Check for news fragments
+        if: steps.skip.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -s affected.txt ]; then
+            echo "No packaged source changes in this PR; no changelog fragments required."
+            exit 0
+          fi
+          failed=0
+          while IFS= read -r pkg_dir; do
+            [ -z "$pkg_dir" ] && continue
+            echo "::group::towncrier check ($pkg_dir)"
+            if ! uv run towncrier check --config pyproject.toml --dir "$pkg_dir" --compare-with origin/main; then
+              failed=1
+            fi
+            echo "::endgroup::"
+          done < affected.txt
+          if [ "$failed" -ne 0 ]; then
+            echo ""
+            echo "One or more affected packages is missing a news fragment under <package>/news/."
+            echo "Add a fragment named <pr-number>.<type>.md where <type> is one of:"
+            echo "  breaking, deprecation, feature, bugfix, performance, docs, misc"
+            echo "Or apply the 'skip-changelog' label if the change is genuinely not user-facing."
+            exit 1
+          fi
