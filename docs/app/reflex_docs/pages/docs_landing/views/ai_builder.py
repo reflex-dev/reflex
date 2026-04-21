@@ -51,17 +51,15 @@ def get_integration_path() -> list:
                 if title == "Open Ai":
                     title = "Open AI"
 
-            result.append(
-                {
-                    key: {
-                        "path": f"{web_path_prefix}/{slug}",
-                        "tags": tag,
-                        "description": description,
-                        "name": key,
-                        "title": title,
-                    }
+            result.append({
+                key: {
+                    "path": f"{web_path_prefix}/{slug}",
+                    "tags": tag,
+                    "description": description,
+                    "name": key,
+                    "title": title,
                 }
-            )
+            })
 
     return result
 

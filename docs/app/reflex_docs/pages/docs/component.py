@@ -140,12 +140,10 @@ def render_select(prop: PropDocumentation, component: type[Component], prop_dict
             return rx.select.root(
                 rx.select.trigger(class_name="w-32 font-small text-slate-11"),
                 rx.select.content(
-                    rx.select.group(
-                        *[
-                            rx.select.item(item, value=item, class_name="font-small")
-                            for item in literal_values
-                        ]
-                    )
+                    rx.select.group(*[
+                        rx.select.item(item, value=item, class_name="font-small")
+                        for item in literal_values
+                    ])
                 ),
                 value=var,
                 on_change=setter,
@@ -204,22 +202,20 @@ def render_select(prop: PropDocumentation, component: type[Component], prop_dict
     return rx.select.root(
         rx.select.trigger(class_name="font-small w-32 text-slate-11"),
         rx.select.content(
-            rx.select.group(
-                *[
-                    rx.select.item(
-                        item,
-                        value=item,
-                        class_name="font-small",
-                        _hover=(
-                            {"background": f"var(--{item}-9)"}
-                            if prop.name == "color_scheme"
-                            else None
-                        ),
-                    )
-                    for item in list(map(str, type_.__args__))
-                    if item != ""
-                ]
-            ),
+            rx.select.group(*[
+                rx.select.item(
+                    item,
+                    value=item,
+                    class_name="font-small",
+                    _hover=(
+                        {"background": f"var(--{item}-9)"}
+                        if prop.name == "color_scheme"
+                        else None
+                    ),
+                )
+                for item in list(map(str, type_.__args__))
+                if item != ""
+            ]),
         ),
         value=var,
         on_change=setter,

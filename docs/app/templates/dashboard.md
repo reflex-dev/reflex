@@ -36,6 +36,7 @@ Additionally you will want to change the `Item` class to match the data in your 
 ```python
 import dataclasses
 
+
 @dataclasses.dataclass
 class Item:
     """The item class."""
