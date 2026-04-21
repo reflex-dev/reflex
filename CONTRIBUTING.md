@@ -58,6 +58,38 @@ Within the 'test' directory of Reflex you can add to a test file already there o
 - Any edge cases or potential problem areas.
 - Any interactions between different parts of the code.
 
+## 📝 Changelog Fragments
+
+Each PR that changes the source of a published package must add a news fragment describing the change. Fragments are assembled into `CHANGELOG.md` at release time by [towncrier](https://towncrier.readthedocs.io/).
+
+**Where:** add the fragment under the affected package's `news/` directory. For the main `reflex` package, that's the repo-root `news/`. For sub-packages it's `packages/<name>/news/`.
+
+**Filename:** `<pr-or-issue-number>.<type>.md`, where `<type>` is one of:
+
+| Type | When to use |
+| --- | --- |
+| `breaking` | Backwards-incompatible change users need to adapt to |
+| `deprecation` | API marked deprecated but still functional |
+| `feature` | New user-facing functionality |
+| `bugfix` | Fix for an incorrect behavior |
+| `performance` | Speed, memory, or startup improvement |
+| `docs` | Documentation or docstring changes |
+| `misc` | Internal refactor, build, or dependency change that still warrants mention |
+
+**Content:** one or two sentences, written for users reading release notes (not reviewers of the diff).
+
+**Create a fragment from the CLI:**
+
+```bash
+uv run towncrier create --config pyproject.toml --dir packages/reflex-ui 1234.feature.md
+```
+
+Drop `--dir` for a fragment against the main `reflex` package.
+
+If you don't yet know the PR number, use an [orphan fragment](https://towncrier.readthedocs.io/en/stable/cli.html#towncrier-create) (`+.feature.md`) and rename it after opening the PR.
+
+**Skipping the fragment check:** for PRs that are genuinely not user-facing (CI-only tweaks, script fixes, test-only changes), apply the `skip-changelog` label on the PR to bypass the changelog CI check.
+
 ## ✅ Making a PR
 
 Once you solve a current issue or improvement to Reflex, you can make a PR, and we will review the changes.
