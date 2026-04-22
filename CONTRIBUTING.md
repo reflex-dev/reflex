@@ -131,12 +131,6 @@ WHITELISTED_PAGES = [
 
 Paths must start with `/`, have no trailing slash, and are prefix-matched. An empty list builds everything. Restart the dev server after editing.
 
-**3. Style and review:**
-
-- Keep code examples runnable and minimal.
-- Match the tone and structure of surrounding pages.
-- Preview your changes locally before opening a PR.
-
 ## Editing Templates
 
 To edit the templates in Reflex you can do so in two way.
