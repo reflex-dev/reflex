@@ -207,7 +207,7 @@ def ask_ai_chat() -> rx.Component:
             class_name="justify-start pl-0 text-m-slate-7 dark:text-m-slate-6",
             native_button=False,
         ),
-        to="/docs/ai-builder/integrations/mcp-overview/",
+        to="/ai-builder/integrations/mcp-overview/",
     )
 
 
@@ -263,14 +263,10 @@ def docpage_footer(path: str):
                 footer_link_flex(
                     "Documentation",
                     [
-                        footer_link(
-                            "Introduction", "/docs/getting-started/introduction/"
-                        ),
-                        footer_link(
-                            "Installation", "/docs/getting-started/installation/"
-                        ),
-                        footer_link("Components", "/docs/library/"),
-                        footer_link("Hosting", "/docs/hosting/deploy-quick-start/"),
+                        footer_link("Introduction", "/getting-started/introduction/"),
+                        footer_link("Installation", "/getting-started/installation/"),
+                        footer_link("Components", "/library/"),
+                        footer_link("Hosting", "/hosting/deploy-quick-start/"),
                     ],
                 ),
                 footer_link_flex(
@@ -313,8 +309,8 @@ def breadcrumb(path: str, nav_sidebar: rx.Component):
     # Initialize an empty list to store the breadcrumbs and their separators
     breadcrumbs = []
 
-    # Iteratively build the href for each segment
-    current_path = "/docs"
+    # Iteratively build the href for each segment (paths are app-relative, no /docs prefix)
+    current_path = ""
     for i, segment in enumerate(segments):
         current_path += f"/{segment.lower()}"
 

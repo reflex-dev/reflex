@@ -56,7 +56,7 @@ def code_block() -> rx.Component:
                     size="lg",
                     class_name="font-semibold text-lg",
                 ),
-                to="/docs/getting-started/introduction/",
+                to="/getting-started/introduction/",
                 target="_blank",
             ),
             class_name="flex flex-row justify-between items-center gap-2",

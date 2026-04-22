@@ -152,7 +152,14 @@ def doc_title_from_path(doc: str) -> str:
 
 
 def doc_route_from_path(doc: str) -> str:
-    """Compute the URL route from a doc path."""
+    """Compute the URL route from a doc path.
+
+    Virtual paths are rooted at ``docs/`` (the content directory). The site is
+    already served under ``frontend_path`` (e.g. ``/docs``), so the public path
+    must not repeat that segment (``/docs/docs/...``).
+    """
+    doc = doc.replace("\\", "/")
+    doc = doc.removeprefix("docs/")
     route = rx.utils.format.to_kebab_case(f"/{doc.replace('.md', '/')}")
     if route.endswith("/index/"):
         route = route[:-7] + "/"

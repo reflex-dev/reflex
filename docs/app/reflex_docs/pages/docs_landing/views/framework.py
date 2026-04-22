@@ -77,7 +77,7 @@ def component_link(name: str, href: str) -> rx.Component:
             size="xs",
             class_name="font-[525] w-full text-m-slate-12 dark:text-m-slate-3 px-0",
         ),
-        to=f"/docs/library/{href.strip('/')}",
+        to=f"/library/{href.strip('/')}",
         class_name="w-full",
     )
 

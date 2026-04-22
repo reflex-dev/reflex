@@ -87,16 +87,24 @@ def favicons_links() -> list[dict[str, str] | rx.Component]:
     """
     return [
         rx.el.link(
-            rel="apple-touch-icon", sizes="180x180", href="/meta/apple-touch-icon.png"
+            rel="apple-touch-icon",
+            sizes="180x180",
+            href=rx.asset("meta/apple-touch-icon.png"),
         ),
         rx.el.link(
-            rel="icon", type="image/png", sizes="32x32", href="/meta/favicon-32x32.png"
+            rel="icon",
+            type="image/png",
+            sizes="32x32",
+            href=rx.asset("meta/favicon-32x32.png"),
         ),
         rx.el.link(
-            rel="icon", type="image/png", sizes="16x16", href="/meta/favicon-16x16.png"
+            rel="icon",
+            type="image/png",
+            sizes="16x16",
+            href=rx.asset("meta/favicon-16x16.png"),
         ),
-        rx.el.link(rel="manifest", href="/meta/site.webmanifest"),
-        rx.el.link(rel="shortcut icon", href="/favicon.ico"),
+        rx.el.link(rel="manifest", href=rx.asset("meta/site.webmanifest")),
+        rx.el.link(rel="shortcut icon", href=rx.asset("favicon.ico")),
     ]
 
 

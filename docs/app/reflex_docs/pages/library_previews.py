@@ -54,7 +54,7 @@ def create_previews(
 ):
     @docpage(
         right_sidebar=False,
-        set_path=f"/docs/library{prefix.rstrip('/')}/" + path.strip("/") + "/",
+        set_path=f"/library{prefix.rstrip('/')}/" + path.strip("/") + "/",
         page_title=component_category + " Library",
     )
     def page() -> rx.Component:

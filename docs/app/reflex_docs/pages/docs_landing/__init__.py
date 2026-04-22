@@ -18,7 +18,7 @@ from reflex_docs.views.docs_navbar import docs_navbar
 
 
 @rx.page(
-    route="/docs",
+    route="/",
     title="Reflex Documentation - Build Web Apps in Pure Python",
     meta=create_meta_tags(
         title="Reflex Documentation - Build Web Apps in Pure Python",

@@ -5,7 +5,6 @@ import sys
 
 import reflex as rx
 import reflex_enterprise as rxe
-from reflex.utils.exec import is_prod_mode
 from reflex_site_shared import styles
 from reflex_site_shared.constants import REFLEX_ASSETS_CDN
 from reflex_site_shared.meta.meta import favicons_links, to_cdn_image_url
@@ -92,9 +91,6 @@ for route in routes:
 
 # Add redirects
 redirects = []
-
-if not is_prod_mode():
-    redirects.append(("/", "/docs"))
 
 
 def _redirect_page():
