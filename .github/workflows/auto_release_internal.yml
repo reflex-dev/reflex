@@ -89,7 +89,7 @@ jobs:
         run: |
           set -euo pipefail
           gh release create "$TAG" \
-            --title "$TAG" \
+            --title "$PKG@$VERSION" \
             --notes "Automated release for $PKG v$VERSION" \
             --target "$GITHUB_SHA" \
             --latest=false
