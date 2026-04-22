@@ -857,6 +857,63 @@ def test_reset_does_not_reset_inherited_backend_vars(
     assert test_state._backend == 0  # Reset to default
 
 
+def test_backend_vars_does_not_include_inherited(
+    test_state: TestState, child_state: ChildState
+):
+    """Test that _backend_vars only contains non-inherited backend vars.
+
+    This ensures that each state instance only copies backend vars it owns,
+    not those inherited from parent states (which remain in the parent).
+
+    Args:
+        test_state: A state with backend vars.
+        child_state: A child state inheriting from test_state.
+    """
+    # ChildState inherits _backend from TestState
+    assert "_backend" in TestState.backend_vars
+    assert "_backend" in ChildState.backend_vars  # Present in the combined dict
+    assert "_backend" in ChildState.inherited_backend_vars  # But marked as inherited
+
+    # The child state instance's _backend_vars should NOT contain _backend
+    # (it's inherited, so it's stored only in the parent instance)
+    assert "_backend" not in child_state._backend_vars
+
+    # But the parent instance's _backend_vars should contain it
+    assert "_backend" in test_state._backend_vars
+
+
+def test_setting_inherited_backend_var_does_not_mark_child_touched(
+    test_state: TestState, child_state: ChildState
+):
+    """Test that setting a parent's backend var through a child doesn't mark child as touched.
+
+    When a backend var from a parent state is modified through a child state instance,
+    only the parent should be marked as touched, not the child.
+
+    Args:
+        test_state: A state with backend vars.
+        child_state: A child state inheriting from test_state.
+    """
+    # Initially neither should be touched
+    assert not test_state._was_touched
+    assert not child_state._was_touched
+
+    # Modify an inherited backend var through the child
+    # (This routes through __setattr__ to the parent)
+    child_state._backend = 99
+
+    # Call _get_was_touched to update the flags based on dirty_vars
+    parent_touched = test_state._get_was_touched()
+    child_touched = child_state._get_was_touched()
+
+    # The parent should be marked as touched (the var belongs to it)
+    assert parent_touched
+
+    # But the child should NOT be marked as touched
+    # (the var doesn't belong to the child, it belongs to the parent)
+    assert not child_touched
+
+
 @pytest.mark.asyncio
 async def test_process_event_simple(
     token: str,
