@@ -64,6 +64,19 @@ async def _multi_delta_handler():
         await asyncio.sleep(0.01)
 
 
+async def _rapid_multi_delta_handler():
+    """A handler that emits multiple deltas back-to-back with no intervening awaits.
+
+    This is the pattern an ``@rx.event`` async-generator handler produces when
+    it yields once early (emitting an intermediate state delta) and then runs
+    to completion synchronously before the framework emits the final state
+    delta on its behalf — exactly what ``rx.upload``-driven handlers do.
+    """
+    ctx = EventContext.get()
+    for i in range(2):
+        await ctx.emit_delta({"state": {"i": i}})
+
+
 async def _slow_logging_handler(value: str = "default"):
     """A slow logging handler that pauses before recording.
 
@@ -117,6 +130,7 @@ logging_event = EventHandler(fn=_logging_handler)
 chaining_event = EventHandler(fn=_chaining_handler)
 delta_event = EventHandler(fn=_delta_handler)
 multi_delta_event = EventHandler(fn=_multi_delta_handler)
+rapid_multi_delta_event = EventHandler(fn=_rapid_multi_delta_handler)
 slow_logging_event = EventHandler(fn=_slow_logging_handler)
 multi_chaining_event = EventHandler(fn=_multi_chaining_handler)
 background_slow_logging_event = EventHandler(fn=_background_slow_logging_handler)
@@ -140,6 +154,7 @@ def _register_handlers(forked_registration_context: RegistrationContext):
         chaining_event,
         delta_event,
         multi_delta_event,
+        rapid_multi_delta_event,
         slow_logging_event,
         multi_chaining_event,
         background_slow_logging_event,
@@ -493,6 +508,31 @@ async def test_stream_delta_yields_multiple_deltas(token: str):
         {"state": {"i": 0}},
         {"state": {"i": 1}},
         {"state": {"i": 2}},
+    ]
+
+
+async def test_stream_delta_yields_rapid_back_to_back_deltas(token: str):
+    """Regression: back-to-back deltas must not be dropped.
+
+    When a handler emits multiple deltas without an intervening await that
+    yields to the event loop, the final delta could race with the handler's
+    own completion: during the ``as_completed`` tick that yields
+    ``all_task_futures``, a pending ``deltas.get()`` task in ``waiting_for``
+    could silently consume the last queued delta. The outer loop would then
+    exit (``all_task_futures.done()`` and queue empty) and the ``finally``
+    cancel would drop the delta held in that get-task's result.
+
+    Args:
+        token: The client token.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2)
+    ep.configure()
+    async with ep:
+        event = Event.from_event_type(rapid_multi_delta_event())[0]
+        collected = [d async for d in ep.enqueue_stream_delta(token, event)]
+    assert collected == [
+        {"state": {"i": 0}},
+        {"state": {"i": 1}},
     ]
 
 

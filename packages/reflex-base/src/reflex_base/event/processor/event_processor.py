@@ -429,23 +429,29 @@ class EventProcessor:
                 emit_delta_impl=_emit_delta_impl,
             ),
         )
-        all_task_futures = asyncio.create_task(task_future.wait_all())
-        waiting_for = {all_task_futures, asyncio.create_task(deltas.get())}
+
+        # Single-channel coordination: deltas and an end-of-stream sentinel
+        # travel through the same queue, so the consumer never has to race
+        # handler-completion against a pending ``queue.get()``.
+        end_of_stream = object()
+
+        async def _signal_end() -> None:
+            try:
+                await task_future.wait_all()
+            except Exception:
+                pass
+            finally:
+                deltas.put_nowait(end_of_stream)
+
+        end_signal = asyncio.create_task(_signal_end())
         try:
-            while not all_task_futures.done() or not deltas.empty():
-                with contextlib.suppress(asyncio.TimeoutError):
-                    async for result in as_completed(
-                        waiting_for,
-                        timeout=1,
-                    ):
-                        waiting_for.remove(result)
-                        if result is not all_task_futures:
-                            yield await result
-                            waiting_for.add(asyncio.create_task(deltas.get()))
-                        break
+            while True:
+                item = await deltas.get()
+                if item is end_of_stream:
+                    break
+                yield item
         finally:
-            for future in waiting_for:
-                future.cancel()
+            end_signal.cancel()
             # Cancel the event chain if the streaming consumer exits early.
             if not task_future.done():
                 task_future.cancel()

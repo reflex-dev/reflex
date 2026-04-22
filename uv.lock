@@ -3868,14 +3868,22 @@ wheels = [
 name = "reflex-site-shared"
 source = { editable = "packages/reflex-site-shared" }
 dependencies = [
+    { name = "email-validator" },
+    { name = "httpx" },
+    { name = "pyyaml" },
     { name = "reflex" },
     { name = "reflex-components-internal" },
+    { name = "ruff-format" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "email-validator" },
+    { name = "httpx" },
+    { name = "pyyaml" },
     { name = "reflex", editable = "." },
     { name = "reflex-components-internal", editable = "packages/reflex-components-internal" },
+    { name = "ruff-format" },
 ]
 
 [[package]]
