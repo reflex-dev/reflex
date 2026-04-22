@@ -15,9 +15,6 @@ dependencies = [
     "typing-inspection>=0.4.2",
 ]
 
-[tool.uv.sources]
-reflex = { workspace = true }
-
 [tool.hatch.version]
 source = "uv-dynamic-versioning"
 
