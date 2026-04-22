@@ -1,6 +1,6 @@
 import reflex as rx
-import reflex_ui as ui
-from reflex_ui_shared.components.icons import get_icon
+import reflex_components_internal as ui
+from reflex_site_shared.components.icons import get_icon
 
 from reflex_docs.components.hint import hint
 

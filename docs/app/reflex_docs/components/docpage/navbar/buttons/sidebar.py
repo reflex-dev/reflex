@@ -1,10 +1,10 @@
 import reflex as rx
-import reflex_ui as ui
+import reflex_components_internal as ui
 from reflex.style import toggle_color_mode
-from reflex_ui_shared.components.icons import get_icon
-from reflex_ui_shared.components.marketing_button import button
-from reflex_ui_shared.constants import DISCORD_URL, GITHUB_URL, TWITTER_URL
-from reflex_ui_shared.views.hosting_banner import HostingBannerState
+from reflex_site_shared.components.icons import get_icon
+from reflex_site_shared.components.marketing_button import button
+from reflex_site_shared.constants import DISCORD_URL, GITHUB_URL, TWITTER_URL
+from reflex_site_shared.views.hosting_banner import HostingBannerState
 
 _DRAWER_LINKS_DOCS = "/docs"
 _DRAWER_LINKS_TEMPLATES = "/templates"

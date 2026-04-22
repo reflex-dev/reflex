@@ -35,23 +35,23 @@ from reflex_docgen.markdown._types import (
     TextSpan,
 )
 from reflex_docgen.markdown.transformer import DocumentTransformer
-from reflex_ui_shared.components.blocks.code import code_block
-from reflex_ui_shared.components.blocks.collapsible import collapsible_box
-from reflex_ui_shared.components.blocks.demo import docdemo, docdemobox, docgraphing
-from reflex_ui_shared.components.blocks.headings import (
+from reflex_site_shared.components.blocks.code import code_block
+from reflex_site_shared.components.blocks.collapsible import collapsible_box
+from reflex_site_shared.components.blocks.demo import docdemo, docdemobox, docgraphing
+from reflex_site_shared.components.blocks.headings import (
     h1_comp_xd,
     h2_comp_xd,
     h3_comp_xd,
     h4_comp_xd,
     img_comp_xd,
 )
-from reflex_ui_shared.components.blocks.typography import (
+from reflex_site_shared.components.blocks.typography import (
     code_comp,
     doclink2,
     list_comp,
     text_comp,
 )
-from reflex_ui_shared.constants import REFLEX_ASSETS_CDN
+from reflex_site_shared.constants import REFLEX_ASSETS_CDN
 
 # ---------------------------------------------------------------------------
 # Exec environment — mirrors reflex_docgen's module-based exec mechanism
@@ -681,7 +681,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
 
     def _render_definition(self, block: DirectiveBlock) -> rx.Component:
         """Render a ``md definition`` directive."""
-        from reflex_ui_shared.components.blocks.typography import definition
+        from reflex_site_shared.components.blocks.typography import definition
 
         sections = self._split_children_by_heading(block.children)
         defs = [
@@ -702,7 +702,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
 
     def _render_section(self, block: DirectiveBlock) -> rx.Component:
         """Render a ``md section`` directive."""
-        from reflex_ui_shared.styles.colors import c_color
+        from reflex_site_shared.styles.colors import c_color
 
         sections = self._split_children_by_heading(block.children)
         return rx.box(

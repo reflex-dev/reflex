@@ -1,8 +1,8 @@
 import reflex as rx
-import reflex_ui as ui
-from reflex_ui.blocks.demo_form import demo_form_dialog
-from reflex_ui_shared.components.marketing_button import button
-from reflex_ui_shared.constants import REFLEX_ASSETS_CDN
+import reflex_components_internal as ui
+from reflex_components_internal.blocks.demo_form import demo_form_dialog
+from reflex_site_shared.components.marketing_button import button
+from reflex_site_shared.constants import REFLEX_ASSETS_CDN
 
 from reflex_docs.components.docpage.navbar.buttons.sidebar import navbar_sidebar_button
 from reflex_docs.pages.docs import ai_builder, getting_started, hosting
@@ -140,7 +140,7 @@ def navigation_menu() -> rx.Component:
 
 @rx.memo
 def docs_navbar() -> rx.Component:
-    from reflex_ui_shared.views.hosting_banner import hosting_banner
+    from reflex_site_shared.views.hosting_banner import hosting_banner
 
     return rx.el.div(
         hosting_banner(),

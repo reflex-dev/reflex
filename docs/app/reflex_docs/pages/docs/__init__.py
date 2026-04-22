@@ -8,7 +8,7 @@ from reflex_docgen.markdown import parse_document
 
 # External Components
 from reflex_pyplot import pyplot as pyplot
-from reflex_ui_shared.route import Route
+from reflex_site_shared.route import Route
 
 from reflex_docs.docgen_pipeline import get_docgen_toc, render_docgen_document
 from reflex_docs.pages.docs.component import multi_docs

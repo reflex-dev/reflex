@@ -1,8 +1,8 @@
 import reflex as rx
-import reflex_ui as ui
-from reflex_ui_shared.components.marketing_button import button
-from reflex_ui_shared.constants import REFLEX_ASSETS_CDN
-from reflex_ui_shared.views.hosting_banner import HostingBannerState
+import reflex_components_internal as ui
+from reflex_site_shared.components.marketing_button import button
+from reflex_site_shared.constants import REFLEX_ASSETS_CDN
+from reflex_site_shared.views.hosting_banner import HostingBannerState
 
 from reflex_docs.pages.docs import getting_started
 

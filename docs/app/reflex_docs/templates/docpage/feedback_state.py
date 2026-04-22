@@ -6,7 +6,9 @@ from typing import Optional
 import httpx
 import reflex as rx
 from httpx import Response
-from reflex_ui_shared.constants import REFLEX_DEV_WEB_GENERAL_FORM_FEEDBACK_WEBHOOK_URL
+from reflex_site_shared.constants import (
+    REFLEX_DEV_WEB_GENERAL_FORM_FEEDBACK_WEBHOOK_URL,
+)
 
 
 class FeedbackState(rx.State):

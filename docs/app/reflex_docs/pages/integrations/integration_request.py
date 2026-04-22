@@ -1,5 +1,5 @@
 import reflex as rx
-import reflex_ui as ui
+import reflex_components_internal as ui
 
 from reflex_docs.templates.docpage.feedback_state import FeedbackState
 
