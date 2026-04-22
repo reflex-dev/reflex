@@ -6,11 +6,8 @@ readme = "README.md"
 authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 requires-python = ">=3.10"
-dependencies = ["reflex-base", "reflex-components-core"]
+dependencies = ["reflex"]
 
-[tool.uv.sources]
-reflex-base = { workspace = true }
-reflex-components-core = { workspace = true }
 
 [tool.hatch.version]
 source = "uv-dynamic-versioning"
@@ -26,9 +23,19 @@ targets.wheel.artifacts = ["*.pyi"]
 [tool.hatch.build.hooks.reflex-pyi]
 dependencies = [
     "ruff",
+    "reflex",
     "reflex-base",
+    "reflex-components-code",
     "reflex-components-core",
+    "reflex-components-dataeditor",
+    "reflex-components-gridjs",
     "reflex-components-lucide",
+    "reflex-components-markdown",
+    "reflex-components-moment",
+    "reflex-components-plotly",
+    "reflex-components-radix",
+    "reflex-components-react-player",
+    "reflex-components-recharts",
     "reflex-components-sonner",
     "httpx",
     "email-validator",
