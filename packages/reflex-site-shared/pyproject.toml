@@ -48,7 +48,6 @@ dependencies = [
     "httpx",
     "email-validator",
     "ruff-format",
-    "pyyaml",
 ]
 
 [build-system]

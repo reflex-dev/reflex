@@ -49,3 +49,5 @@ jobs:
           run-uv-sync: false
       - name: Build ${{ matrix.name }}
         run: uv build --directory "${{ matrix.dir }}"
+        env:
+          PYI_GENERATOR_RAISE_FAILED_IMPORTS: "1"
