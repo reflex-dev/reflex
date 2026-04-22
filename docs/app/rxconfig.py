@@ -1,5 +1,3 @@
-import os
-
 import reflex as rx
 
 from agent_files import AgentFilesPlugin
@@ -7,7 +5,7 @@ from agent_files import AgentFilesPlugin
 config = rx.Config(
     app_name="reflex_docs",
     deploy_url="https://reflex.dev",
-    frontend_path=os.environ.get("REFLEX_FRONTEND_PATH", "/docs"),
+    frontend_path="/docs",
     frontend_packages=[
         "tailwindcss-animated",
     ],
