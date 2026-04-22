@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 requires-python = ">=3.10"
-dependencies = ["reflex"]
+dependencies = ["reflex", "reflex-components-internal"]
 
 
 [tool.hatch.version]
@@ -37,6 +37,7 @@ dependencies = [
     "reflex-components-react-player",
     "reflex-components-recharts",
     "reflex-components-sonner",
+    "reflex-components-internal",
     "httpx",
     "email-validator",
     "ruff-format",

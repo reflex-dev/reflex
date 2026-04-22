@@ -3869,10 +3869,14 @@ name = "reflex-site-shared"
 source = { editable = "packages/reflex-site-shared" }
 dependencies = [
     { name = "reflex" },
+    { name = "reflex-components-internal" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "reflex", editable = "." }]
+requires-dist = [
+    { name = "reflex", editable = "." },
+    { name = "reflex-components-internal", editable = "packages/reflex-components-internal" },
+]
 
 [[package]]
 name = "requests"
