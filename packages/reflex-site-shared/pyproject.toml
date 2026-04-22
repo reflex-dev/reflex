@@ -6,7 +6,14 @@ readme = "README.md"
 authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 requires-python = ">=3.10"
-dependencies = ["reflex"]
+dependencies = [
+    "email-validator",
+    "httpx",
+    "pyyaml",
+    "reflex-components-internal",
+    "reflex",
+    "ruff-format",
+]
 
 
 [tool.hatch.version]
@@ -22,13 +29,15 @@ targets.wheel.artifacts = ["*.pyi"]
 
 [tool.hatch.build.hooks.reflex-pyi]
 dependencies = [
-    "ruff",
-    "reflex",
+    "email-validator",
+    "httpx",
+    "pyyaml",
     "reflex-base",
     "reflex-components-code",
     "reflex-components-core",
     "reflex-components-dataeditor",
     "reflex-components-gridjs",
+    "reflex-components-internal",
     "reflex-components-lucide",
     "reflex-components-markdown",
     "reflex-components-moment",
@@ -37,9 +46,9 @@ dependencies = [
     "reflex-components-react-player",
     "reflex-components-recharts",
     "reflex-components-sonner",
-    "httpx",
-    "email-validator",
+    "reflex",
     "ruff-format",
+    "ruff",
 ]
 
 [build-system]
