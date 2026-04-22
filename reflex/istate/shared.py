@@ -98,7 +98,7 @@ async def _patch_state(
     try:
         if full_delta:
             linked_state.dirty_vars.update(linked_state.base_vars)
-            linked_state.dirty_vars.update(linked_state.backend_vars)
+            linked_state.dirty_vars.update(linked_state._backend_vars)
             linked_state.dirty_vars.update(linked_state.computed_vars)
             linked_state._mark_dirty()
         # Apply the updates into the existing state tree for rehydrate.
