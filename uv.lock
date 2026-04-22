@@ -3638,15 +3638,11 @@ source = { editable = "packages/reflex-components-gridjs" }
 name = "reflex-components-internal"
 source = { editable = "packages/reflex-components-internal" }
 dependencies = [
-    { name = "reflex-base" },
-    { name = "reflex-components-core" },
+    { name = "reflex" },
 ]
 
 [package.metadata]
-requires-dist = [
-    { name = "reflex-base", editable = "packages/reflex-base" },
-    { name = "reflex-components-core", editable = "packages/reflex-components-core" },
-]
+requires-dist = [{ name = "reflex", editable = "." }]
 
 [[package]]
 name = "reflex-components-lucide"
@@ -3872,15 +3868,11 @@ wheels = [
 name = "reflex-site-shared"
 source = { editable = "packages/reflex-site-shared" }
 dependencies = [
-    { name = "reflex-base" },
-    { name = "reflex-components-core" },
+    { name = "reflex" },
 ]
 
 [package.metadata]
-requires-dist = [
-    { name = "reflex-base", editable = "packages/reflex-base" },
-    { name = "reflex-components-core", editable = "packages/reflex-components-core" },
-]
+requires-dist = [{ name = "reflex", editable = "." }]
 
 [[package]]
 name = "requests"
