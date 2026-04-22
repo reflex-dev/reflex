@@ -825,6 +825,38 @@ def test_reset(test_state: TestState, child_state: ChildState):
     }
 
 
+def test_reset_does_not_reset_inherited_backend_vars(
+    test_state: TestState, child_state: ChildState
+):
+    """Test that reset() does not reset backend vars from parent states.
+
+    This is a regression test for the issue where calling reset() on a child state
+    would also reset backend vars that are inherited from the parent state, which
+    breaks SharedState linkage when an unrelated state calls reset().
+
+    Args:
+        test_state: A state with backend vars.
+        child_state: A child state inheriting from test_state.
+    """
+    # Set a backend var on the parent state to a non-default value
+    original_backend_value = 42
+    test_state._backend = original_backend_value
+
+    # Verify it's been changed
+    assert test_state._backend == original_backend_value
+
+    # Reset only the child state
+    child_state.reset()
+
+    # The parent state's backend vars should NOT be reset
+    # (they should retain their modified value)
+    assert test_state._backend == original_backend_value
+
+    # Now verify that resetting the parent state DOES reset its own backend vars
+    test_state.reset()
+    assert test_state._backend == 0  # Reset to default
+
+
 @pytest.mark.asyncio
 async def test_process_event_simple(
     token: str,

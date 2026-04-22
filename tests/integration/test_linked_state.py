@@ -28,6 +28,7 @@ def LinkedStateApp():
         _who: str = "world"
         n_changes: int = 0
         counter: int = 0
+        event_seen_linked_to: str = ""
 
         @rx.event
         def set_counter(self, value: int) -> None:
@@ -50,6 +51,10 @@ def LinkedStateApp():
         @rx.event
         async def unlink(self):
             return await self._unlink()
+
+        @rx.event
+        def record_event_link_status(self):
+            self.event_seen_linked_to = self._linked_to
 
         @rx.event
         async def on_load_link_default(self):
@@ -116,6 +121,10 @@ def LinkedStateApp():
                 ss.counter += 1
                 yield
 
+        @rx.event
+        def reset_self(self):
+            self.reset()
+
     def index() -> rx.Component:
         return rx.vstack(
             rx.text(
@@ -133,6 +142,7 @@ def LinkedStateApp():
                 reset_on_submit=True,
             ),
             rx.text(PrivateState.linked_to, id="linked-to"),
+            rx.text(SharedState.event_seen_linked_to, id="event-seen-linked-to"),
             rx.button("Unlink", id="unlink-button", on_click=SharedState.unlink),
             rx.form(
                 rx.input(name="token", id="token-input"),
@@ -157,6 +167,16 @@ def LinkedStateApp():
                 "Bump Counter with Yield",
                 on_click=PrivateState.bump_counter_yield,
                 id="yield-button",
+            ),
+            rx.button(
+                "Record Event Link Status",
+                on_click=SharedState.record_event_link_status,
+                id="record-link-status-button",
+            ),
+            rx.button(
+                "Reset Private State",
+                on_click=PrivateState.reset_self,
+                id="reset-private-state-button",
             ),
             rx.button(
                 "Link to arbitrary token and Increment n_changes",
@@ -558,3 +578,40 @@ def test_get_state_returns_linked_state(
     tab.find_element(By.ID, "fetch-note-button").click()
     fetched = tab.find_element(By.ID, "fetched-note")
     assert linked_state.poll_for_content(fetched, exp_not_equal="") == initial_note
+
+
+def test_unrelated_reset_does_not_break_shared_event_link_context(
+    linked_state: AppHarness,
+    tab_factory: Callable[[], WebDriver],
+):
+    """Ensure private-state reset does not break SharedState event linkage context.
+
+    Repro sequence from reported issue:
+    1. Link SharedState to a shared token.
+    2. Confirm a SharedState event sees linked token in ``self._linked_to``.
+    3. Call ``self.reset()`` on an unrelated non-shared state.
+    4. Confirm subsequent SharedState events still see linked token.
+
+    Args:
+        linked_state: harness for LinkedStateApp.
+        tab_factory: factory to create WebDriver instances.
+    """
+    assert linked_state.app_instance is not None
+
+    tab = tab_factory()
+    ss = utils.SessionStorage(tab)
+    assert AppHarness._poll_for(lambda: ss.get("token") is not None), "token not found"
+
+    shared_token = f"reset-repro-{uuid.uuid4()}"
+    tab.find_element(By.ID, "token-input").send_keys(shared_token, Keys.ENTER)
+
+    linked_to = tab.find_element(By.ID, "linked-to")
+    assert linked_state.poll_for_content(linked_to, exp_not_equal="") == shared_token
+
+    event_seen = tab.find_element(By.ID, "event-seen-linked-to")
+    tab.find_element(By.ID, "record-link-status-button").click()
+    assert linked_state.poll_for_content(event_seen, exp_not_equal="") == shared_token
+
+    tab.find_element(By.ID, "reset-private-state-button").click()
+    tab.find_element(By.ID, "record-link-status-button").click()
+    assert linked_state.poll_for_content(event_seen, exp_not_equal="") == shared_token

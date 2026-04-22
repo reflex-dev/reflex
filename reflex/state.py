@@ -1460,9 +1460,10 @@ class BaseState(EvenMoreBasicBaseState):
                 default = copy.deepcopy(field.default)
             setattr(self, prop_name, default)
 
-        # Reset the backend vars.
+        # Reset the backend vars that are not inherited from parent states.
         for prop_name, value in self.backend_vars.items():
-            setattr(self, prop_name, copy.deepcopy(value))
+            if prop_name not in self.inherited_backend_vars:
+                setattr(self, prop_name, copy.deepcopy(value))
 
         # Recursively reset the substates.
         for substate in self.substates.values():
