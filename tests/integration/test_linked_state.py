@@ -57,6 +57,10 @@ def LinkedStateApp():
             self.event_seen_linked_to = self._linked_to
 
         @rx.event
+        def clear_event_link_status(self):
+            self.event_seen_linked_to = ""
+
+        @rx.event
         async def on_load_link_default(self):
             linked_state = await self._link_to(self.room or "default")  # pyright: ignore[reportAttributeAccessIssue]
             if self.room:  # pyright: ignore[reportAttributeAccessIssue]
@@ -172,6 +176,11 @@ def LinkedStateApp():
                 "Record Event Link Status",
                 on_click=SharedState.record_event_link_status,
                 id="record-link-status-button",
+            ),
+            rx.button(
+                "Clear Event Link Status",
+                on_click=SharedState.clear_event_link_status,
+                id="clear-link-status-button",
             ),
             rx.button(
                 "Reset Private State",
@@ -612,6 +621,10 @@ def test_unrelated_reset_does_not_break_shared_event_link_context(
     tab.find_element(By.ID, "record-link-status-button").click()
     assert linked_state.poll_for_content(event_seen, exp_not_equal="") == shared_token
 
+    # Clear the field first so we can distinguish a fresh record from the stale value,
+    # then trigger reset + record and wait for the DOM to reflect the new result.
+    tab.find_element(By.ID, "clear-link-status-button").click()
+    assert linked_state.poll_for_content(event_seen, exp_not_equal=shared_token) == ""
     tab.find_element(By.ID, "reset-private-state-button").click()
     tab.find_element(By.ID, "record-link-status-button").click()
     assert linked_state.poll_for_content(event_seen, exp_not_equal="") == shared_token
