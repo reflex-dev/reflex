@@ -95,3 +95,8 @@ skip = "data/*"
 
 [tool.uv]
 required-version = ">=0.7.0"
+
+[tool.uv.sources]
+reflex-ui.workspace = true
+reflex-integrations-docs.workspace = true
+reflex-ui-shared.workspace = true

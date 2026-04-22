@@ -320,9 +320,6 @@ reflex-components-react-player.workspace = true
 reflex-components-recharts.workspace = true
 reflex-components-sonner.workspace = true
 reflex-docgen.workspace = true
-reflex-ui.workspace = true
-reflex-ui-shared.workspace = true
-reflex-integrations-docs.workspace = true
 reflex.workspace = true
 
 [tool.uv.workspace]
