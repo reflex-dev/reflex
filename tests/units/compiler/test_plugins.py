@@ -761,8 +761,8 @@ def test_default_page_plugins_are_minimal_and_ordered() -> None:
     assert len(plugins) == 4
     assert isinstance(plugins[0], DefaultPagePlugin)
     assert isinstance(plugins[1], ApplyStylePlugin)
-    assert isinstance(plugins[2], MemoizeStatefulPlugin)
-    assert isinstance(plugins[3], DefaultCollectorPlugin)
+    assert isinstance(plugins[2], DefaultCollectorPlugin)
+    assert isinstance(plugins[3], MemoizeStatefulPlugin)
 
 
 def test_compile_context_compiles_pages_and_matches_legacy_output() -> None:
@@ -791,7 +791,13 @@ def test_compile_context_compiles_pages_and_matches_legacy_output() -> None:
         assert set(compile_ctx_imports[lib]) >= set(fields)
     assert page_ctx.output_path is not None
     assert page_ctx.output_code is not None
-    assert page_ctx.imports == [page_ctx.root_component._get_all_imports(collapse=True)]
+    # `collapse_imports` uses `list(set(...))`, so the per-library ImportVar
+    # lists don't have a stable order across processes. Compare as sets.
+    [actual_imports] = page_ctx.imports
+    expected_imports = page_ctx.root_component._get_all_imports(collapse=True)
+    assert actual_imports.keys() == expected_imports.keys()
+    for lib, actual_vars in actual_imports.items():
+        assert set(actual_vars) == set(expected_imports[lib])
     assert page_ctx.hooks == page_ctx.root_component._get_all_hooks()
     assert page_ctx.module_code == page_ctx.root_component._get_all_custom_code()
     assert (
@@ -818,8 +824,26 @@ def test_compile_context_compiles_pages_and_matches_legacy_output() -> None:
         page_style(),
         None,
     )
-    expected_output = compiler.compile_page(page.route, legacy_component)[1]
-    assert page_ctx.output_code == expected_output
+    legacy_output = compiler.compile_page(page.route, legacy_component)[1]
+
+    # The two compile paths produce the same content but the plugin pipeline
+    # inserts imports and hoistable const declarations in post-order (leaf
+    # first) while legacy inserts them in pre-order. Neither order matters to
+    # the JS engine — imports are hoisted, and the consts don't reference one
+    # another. Compare the preamble as a set of lines, and the component body
+    # (where hook order and JSX are meaningful) byte-for-byte.
+    preamble_marker = "export default function Component"
+
+    def preamble_lines(output: str) -> set[str]:
+        preamble, _, _ = output.partition(preamble_marker)
+        return set(preamble.splitlines())
+
+    def component_body(output: str) -> str:
+        _, sep, body = output.partition(preamble_marker)
+        return sep + body
+
+    assert preamble_lines(page_ctx.output_code) == preamble_lines(legacy_output)
+    assert component_body(page_ctx.output_code) == component_body(legacy_output)
 
 
 def test_default_page_plugin_handles_var_backed_title_like_legacy_compiler() -> None:

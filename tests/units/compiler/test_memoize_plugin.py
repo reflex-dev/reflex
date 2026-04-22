@@ -9,6 +9,7 @@ from reflex_base.constants.compiler import MemoizationDisposition, MemoizationMo
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
+from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
 
 from reflex.compiler.plugins import DefaultCollectorPlugin, default_page_plugins
@@ -69,16 +70,22 @@ def test_should_memoize_catches_direct_state_var_in_prop() -> None:
     assert _should_memoize(comp)
 
 
-def test_should_memoize_catches_state_var_in_child_bare() -> None:
+def test_should_not_memoize_state_var_in_child_bare() -> None:
     """A component whose Bare child contains state VarData should memoize."""
     comp = Plain.create(STATE_VAR)
-    assert _should_memoize(comp)
+    assert not _should_memoize(comp)
 
 
 def test_should_not_memoize_plain_component() -> None:
     """A component with no state vars and no event triggers is not memoized."""
     comp = Plain.create(LiteralVar.create("static-content"))
     assert not _should_memoize(comp)
+
+
+def test_should_memoize_state_var_in_child_cond() -> None:
+    """A Bare containing state VarData should memoize."""
+    comp = Bare.create(STATE_VAR)
+    assert _should_memoize(comp)
 
 
 def test_should_not_memoize_when_disposition_never() -> None:
@@ -143,14 +150,16 @@ def test_memoization_leaf_suppresses_descendant_wrapping() -> None:
 
 def test_generated_memo_component_is_not_itself_memoized() -> None:
     """The generated memo component instance itself is skipped by the heuristic."""
-    wrapper_factory, _definition = create_passthrough_component_memo("MyTag")
+    wrapper_factory, _definition = create_passthrough_component_memo(
+        "MyTag", Fragment.create()
+    )
     wrapper = wrapper_factory(Plain.create())
     assert isinstance(wrapper, ExperimentalMemoComponent)
     assert not _should_memoize(wrapper)
 
 
-def test_event_trigger_memoization_emits_usecallback_in_page_hooks() -> None:
-    """Components with event triggers get useCallback wrappers at the page level."""
+def test_event_trigger_memoization_not_emit_usecallback_in_page_hooks() -> None:
+    """Components with event triggers do not get useCallback wrappers at the page level."""
     from reflex_base.event import EventChain
 
     # Construct an event chain referencing state so _get_memoized_event_triggers
@@ -166,15 +175,17 @@ def test_event_trigger_memoization_emits_usecallback_in_page_hooks() -> None:
 
     # Check that a useCallback hook line was added to the page hooks dict.
     hook_lines = list(page_ctx.hooks.keys())
-    assert any(
+    assert not any(
         "useCallback" in hook_line and "on_click_" in hook_line
         for hook_line in hook_lines
-    ), f"Expected on_click useCallback hook in {hook_lines!r}"
+    ), f"Expected no on_click useCallback hook in {hook_lines!r}"
 
 
 def test_generated_memo_component_renders_as_its_exported_tag() -> None:
     """The generated experimental memo component renders as its exported tag."""
-    wrapper_factory, definition = create_passthrough_component_memo("MyWrapper_abc")
+    wrapper_factory, definition = create_passthrough_component_memo(
+        "MyWrapper_abc", Fragment.create()
+    )
     wrapper = wrapper_factory(Plain.create())
     assert isinstance(wrapper, ExperimentalMemoComponent)
     assert wrapper.tag == "MyWrapper_abc"
@@ -203,14 +214,94 @@ def test_shared_subtree_across_pages_uses_same_tag() -> None:
         assert f"jsx({tag}," in output
 
 
+def test_memoization_leaf_internal_hooks_do_not_leak_into_page() -> None:
+    """Hooks from a ``MemoizationLeaf``'s internal children stay in its memo body.
+
+    ``MemoizationLeaf``-derived components (e.g. ``rx.upload.root``) build
+    internal machinery as their own structural children, attaching stateful
+    hooks via ``special_props``/``VarData``. Those hooks belong to the memo
+    component's function body — not to the page — because the whole point of
+    the leaf is to isolate its subtree from page-level re-renders.
+
+    The test asserts both directions: the hook lines do not appear in the
+    page's collected hooks, *and* they do appear in the compiled memo module
+    (otherwise a regression that drops them entirely would pass the negative
+    check).
+    """
+    from reflex_base.components.component import MemoizationLeaf
+    from reflex_base.event import EventChain
+    from reflex_base.vars.base import Var
+
+    from reflex.compiler.compiler import compile_memo_components
+
+    class StatefulLeaf(MemoizationLeaf):
+        tag = "StatefulLeaf"
+        library = "stateful-leaf-lib"
+
+        @classmethod
+        def create(cls, *children, **props):
+            # Simulate what rx.upload.root does: build an internal child whose
+            # special_props carry stateful hook lines via VarData.
+            internal_hook_var = Var(
+                _js_expr="__internal_leaf_probe()",
+                _var_type=None,
+                _var_data=VarData(
+                    hooks={
+                        "const __internal_leaf_probe = useLeafProbe();": None,
+                        "const on_drop_xyz = useCallback(() => {}, []);": None,
+                    },
+                    state="LeafState",
+                ),
+            )
+            internal_child = Plain.create(*children)
+            internal_child.special_props = [internal_hook_var]
+            return super().create(internal_child, **props)
+
+    stateful_event = Var(_js_expr="evt")._replace(
+        _var_type=EventChain,
+        merge_var_data=VarData(state="LeafState"),
+    )
+    leaf = StatefulLeaf.create()
+    leaf.event_triggers["on_something"] = stateful_event
+
+    ctx, page_ctx = _compile_single_page(lambda: leaf)
+
+    page_hook_lines = list(page_ctx.hooks)
+    leaking_hooks = [
+        hook
+        for hook in page_hook_lines
+        if "useLeafProbe" in hook or "on_drop_xyz" in hook
+    ]
+    assert not leaking_hooks, (
+        f"MemoizationLeaf internal hooks leaked into page: {leaking_hooks!r}"
+    )
+
+    # The hooks must survive somewhere — in the compiled memo module for the
+    # generated leaf wrapper. Compile the auto-memo definitions collected
+    # during the page compile and check that the hook lines are present.
+    assert ctx.auto_memo_components, (
+        "expected an auto-memo wrapper to be generated for the leaf"
+    )
+    _output_path, memo_code, _memo_imports = compile_memo_components(
+        components=(),
+        experimental_memos=tuple(ctx.auto_memo_components.values()),
+    )
+    assert "useLeafProbe" in memo_code, (
+        "leaf's internal probe hook was dropped from the memo module"
+    )
+    assert "on_drop_xyz" in memo_code, (
+        "leaf's internal useCallback hook was dropped from the memo module"
+    )
+
+
 def test_plugin_only_registered_once_in_default_page_plugins() -> None:
     """MemoizeStatefulPlugin appears exactly once in the default plugin pipeline."""
     plugins = default_page_plugins()
     memoize_plugins = [p for p in plugins if isinstance(p, MemoizeStatefulPlugin)]
     assert len(memoize_plugins) == 1
-    # And it is registered before the DefaultCollectorPlugin.
+    # And it is registered after the DefaultCollectorPlugin.
     collector_index = next(
         i for i, p in enumerate(plugins) if isinstance(p, DefaultCollectorPlugin)
     )
     memoize_index = plugins.index(memoize_plugins[0])
-    assert memoize_index < collector_index
+    assert memoize_index > collector_index

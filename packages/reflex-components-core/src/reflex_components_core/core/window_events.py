@@ -98,8 +98,7 @@ class WindowEventListener(Fragment):
         from reflex_base.components.memoize_helpers import fix_event_triggers_for_memo
 
         real_component = cast("WindowEventListener", super().create(**props))
-        hooks = fix_event_triggers_for_memo(real_component)
-        real_component.hooks = hooks
+        fix_event_triggers_for_memo(real_component)
         return real_component
 
     def _exclude_props(self) -> list[str]:

@@ -363,10 +363,7 @@ class Upload(MemoizationLeaf):
                 on_drop_rejected=upload_props["on_drop_rejected"],
             )
         )
-        callback_hooks = []
-        for trigger_name, (event_var, callback_str) in event_triggers.items():
-            upload_props[trigger_name] = event_var
-            callback_hooks.append(callback_str)
+        upload_props.update(event_triggers)
 
         upload_props = {
             format.to_camel_case(key): value for key, value in upload_props.items()
@@ -391,7 +388,6 @@ class Upload(MemoizationLeaf):
             use_dropzone_arguments._get_all_var_data(),
             VarData(
                 hooks={
-                    **dict.fromkeys(callback_hooks, None),
                     f"{left_side} = {right_side};": None,
                 },
                 imports={

@@ -5,12 +5,14 @@ from __future__ import annotations
 import dataclasses
 import inspect
 from collections.abc import Callable
+from copy import copy
 from functools import cache, update_wrapper
 from typing import Any, get_args, get_origin, get_type_hints
 
 from reflex_base import constants
 from reflex_base.components.component import Component
 from reflex_base.components.dynamic import bundled_libraries
+from reflex_base.components.memoize_helpers import is_snapshot_boundary
 from reflex_base.constants.compiler import SpecialAttributes
 from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER
 from reflex_base.utils import format
@@ -132,22 +134,40 @@ class ExperimentalMemoComponent(Component):
 @cache
 def _get_experimental_memo_component_class(
     export_name: str,
+    wrapped_component_type: type[Component] = Component,
 ) -> type[ExperimentalMemoComponent]:
     """Get the component subclass for an experimental memo export.
 
+    Class-level metadata that the compiler reads via ``type(comp)._get_*()``
+    (notably ``_get_app_wrap_components``, which carries providers like
+    ``UploadFilesProvider`` that must reach the app root) is inherited from
+    ``wrapped_component_type`` so the wrapper is a transparent substitute for
+    the original in the compile tree.
+
     Args:
         export_name: The exported React component name.
+        wrapped_component_type: The class of the component being memoized.
+            Defaults to ``Component`` for memos that don't wrap a user
+            component (e.g. function memos, raw passthroughs).
 
     Returns:
         A cached component subclass with the tag set at class definition time.
     """
+    attrs: dict[str, Any] = {
+        "__module__": __name__,
+        "tag": export_name,
+    }
+    if (
+        wrapped_component_type._get_app_wrap_components
+        is not Component._get_app_wrap_components
+    ):
+        attrs["_get_app_wrap_components"] = staticmethod(
+            wrapped_component_type._get_app_wrap_components
+        )
     return type(
         f"ExperimentalMemoComponent_{export_name}",
         (ExperimentalMemoComponent,),
-        {
-            "__module__": __name__,
-            "tag": export_name,
-        },
+        attrs,
     )
 
 
@@ -919,7 +939,9 @@ class _ExperimentalMemoComponentWrapper:
             raise TypeError(msg)
 
         # Build the component props passed into the memo wrapper.
-        return _get_experimental_memo_component_class(definition.export_name)._create(
+        return _get_experimental_memo_component_class(
+            definition.export_name, type(definition.component)
+        )._create(
             children=list(children),
             memo_definition=definition,
             **explicit_values,
@@ -963,9 +985,9 @@ def _create_component_wrapper(
     return _ExperimentalMemoComponentWrapper(definition)
 
 
-@cache
 def create_passthrough_component_memo(
     export_name: str,
+    component: Component,
 ) -> tuple[
     Callable[..., ExperimentalMemoComponent],
     ExperimentalMemoComponentDefinition,
@@ -978,13 +1000,25 @@ def create_passthrough_component_memo(
 
     Args:
         export_name: The exported memo component name.
+        component: The component to wrap.
 
     Returns:
         The callable memo wrapper and its component definition.
     """
+    # Snapshot-boundary components (see ``is_snapshot_boundary``) own their
+    # subtree — the ``.children`` slot is internal machinery from the
+    # subclass's ``.create`` (e.g. the dropzone Div built inside
+    # ``Upload.create``), not a user content hole. The memoize plugin wraps
+    # the boundary with no structural children on the page side, so the memo
+    # body renders the full snapshot rather than a ``{children}``-holed
+    # template.
+    snapshot_only = is_snapshot_boundary(component)
 
     def passthrough(children: Var[Component]) -> Component:
-        return Bare.create(children)
+        new_component = copy(component)
+        if not snapshot_only:
+            new_component.children = [Bare.create(children)]
+        return new_component
 
     passthrough.__name__ = format.to_snake_case(export_name)
     passthrough.__qualname__ = passthrough.__name__

@@ -1862,13 +1862,13 @@ class Component(BaseComponent, ABC):
             return cached
 
         result = {
+            **self._get_events_hooks(),
             **{
                 str(hook): VarData(position=Hooks.HookPosition.INTERNAL)
                 for hook in [self._get_ref_hook(), self._get_mount_lifecycle_hook()]
                 if hook is not None
             },
             **self._get_vars_hooks(),
-            **self._get_events_hooks(),
         }
         self._hooks_internal_cache = result
         return result

@@ -68,17 +68,16 @@ def _get_deps_from_event_trigger(
 
 def get_memoized_event_triggers(
     component: Component,
-) -> dict[str, tuple[Var, str]]:
+) -> dict[str, Var]:
     """Generate ``useCallback`` wrappers for the component's event triggers.
 
     Args:
         component: The component whose event triggers should be memoized.
 
     Returns:
-        A dict mapping event trigger name to
-        ``(memoized_var, useCallback_hook_line)``.
+        A dict mapping event trigger name to memoized_triger.
     """
-    trigger_memo: dict[str, tuple[Var, str]] = {}
+    trigger_memo: dict[str, Var] = {}
     for event_trigger, event_args in component._get_vars_from_event_triggers(
         component.event_triggers
     ):
@@ -91,7 +90,7 @@ def get_memoized_event_triggers(
             continue
 
         event = component.event_triggers[event_trigger]
-        rendered_chain = str(LiteralVar.create(event))
+        rendered_chain = LiteralVar.create(event)
 
         chain_hash = md5(
             str(rendered_chain).encode("utf-8"), usedforsecurity=False
@@ -101,28 +100,33 @@ def get_memoized_event_triggers(
         var_deps = ["addEvents", "ReflexEvent"]
         var_deps.extend(_get_deps_from_event_trigger(event))
 
+        event_var_data = []
         for arg in event_args:
             var_data = arg._get_all_var_data()
             if var_data is None:
                 continue
+            event_var_data.append(var_data)
             for hook in var_data.hooks:
                 var_deps.extend(_get_hook_deps(hook))
 
         memo_var_data = VarData.merge(
-            *[var._get_all_var_data() for var in event_args],
-            VarData(imports={"react": [ImportVar(tag="useCallback")]}),
+            *event_var_data,
+            rendered_chain._get_all_var_data(),
+            VarData(
+                hooks=[
+                    f"const {memo_name} = useCallback({rendered_chain!s}, [{', '.join(var_deps)}])"
+                ],
+                imports={"react": [ImportVar(tag="useCallback")]},
+            ),
         )
 
-        trigger_memo[event_trigger] = (
-            Var(_js_expr=memo_name)._replace(
-                _var_type=EventChain, merge_var_data=memo_var_data
-            ),
-            f"const {memo_name} = useCallback({rendered_chain}, [{', '.join(var_deps)}])",
+        trigger_memo[event_trigger] = Var(
+            _js_expr=memo_name, _var_type=EventChain, _var_data=memo_var_data
         )
     return trigger_memo
 
 
-def fix_event_triggers_for_memo(component: Component) -> list[str]:
+def fix_event_triggers_for_memo(component: Component) -> None:
     """Memoize ``component.event_triggers`` in place and return hook code.
 
     Replaces each (non-lifecycle) event-trigger value on ``component`` with a
@@ -131,22 +135,39 @@ def fix_event_triggers_for_memo(component: Component) -> list[str]:
 
     Args:
         component: The component whose event triggers to memoize.
-
-    Returns:
-        The ``useCallback`` hook lines to emit at the top of the page body.
     """
     memo_event_triggers = tuple(get_memoized_event_triggers(component).items())
-    memo_trigger_hooks: list[str] = []
 
-    if memo_event_triggers:
-        component.event_triggers = dict(
-            component.event_triggers
-        )  # isolate so original dict is not mutated
-        for event_trigger, (memo_trigger, memo_trigger_hook) in memo_event_triggers:
-            memo_trigger_hooks.append(memo_trigger_hook)
-            component.event_triggers[event_trigger] = memo_trigger
+    if not memo_event_triggers:
+        return
+    # XXX: what is this doing? if we're overwriting the reference to the original dict anyway
+    component.event_triggers = dict(
+        component.event_triggers
+    )  # isolate so original dict is not mutated
+    for event_trigger, memo_trigger in memo_event_triggers:
+        component.event_triggers[event_trigger] = memo_trigger
 
-    return memo_trigger_hooks
+
+def is_snapshot_boundary(component: Component) -> bool:
+    """Whether ``component`` owns its subtree for memoization purposes.
+
+    Snapshot boundaries (``MemoizationLeaf``-style components with
+    ``_memoization_mode.recursive=False``) encapsulate internal machinery as
+    their own structural children. The auto-memoize compiler pass must wrap
+    them whole and not walk or independently memoize that subtree.
+
+    The check is the behavioral flag, not ``isinstance(MemoizationLeaf)``, so
+    components that opt into non-recursive memoization without subclassing
+    ``MemoizationLeaf`` are handled identically.
+
+    Args:
+        component: The component to classify.
+
+    Returns:
+        ``True`` iff descendants of ``component`` must not be independently
+        memoized and the memo wrapper must carry the full subtree snapshot.
+    """
+    return not component._memoization_mode.recursive
 
 
 def invalidate_event_trigger_caches(component: Component) -> None:
@@ -172,4 +193,5 @@ __all__ = [
     "fix_event_triggers_for_memo",
     "get_memoized_event_triggers",
     "invalidate_event_trigger_caches",
+    "is_snapshot_boundary",
 ]

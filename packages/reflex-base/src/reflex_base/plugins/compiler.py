@@ -666,6 +666,12 @@ class PageContext(BaseContext):
     frontend_imports: ParsedImportDict = dataclasses.field(default_factory=dict)
     output_path: str | None = None
     output_code: str | None = None
+    # Stack of ``id(component)`` for components whose subtree is
+    # memoize-suppressed. Populated by ``MemoizeStatefulPlugin`` when it
+    # encounters a ``MemoizationLeaf``-style snapshot boundary and popped on
+    # the matching ``leave_component``. Non-empty iff we are inside such a
+    # subtree.
+    memoize_suppressor_stack: list[int] = dataclasses.field(default_factory=list)
 
     def merged_imports(self, *, collapse: bool = False) -> ParsedImportDict:
         """Return the imports accumulated for this page.

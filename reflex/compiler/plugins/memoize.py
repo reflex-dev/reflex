@@ -19,9 +19,7 @@ No shared ``stateful_components`` file is produced.
 
 from __future__ import annotations
 
-import contextlib
 import dataclasses
-from functools import cache
 from typing import Any
 
 from reflex_base.components.component import (
@@ -33,6 +31,7 @@ from reflex_base.components.component import (
 from reflex_base.components.memoize_helpers import (
     fix_event_triggers_for_memo,
     invalidate_event_trigger_caches,
+    is_snapshot_boundary,
 )
 from reflex_base.constants.compiler import MemoizationDisposition
 from reflex_base.plugins import ComponentAndChildren, PageContext
@@ -42,15 +41,11 @@ from reflex_base.vars.base import Var
 
 from reflex.experimental.memo import create_passthrough_component_memo
 
-# --------------------------------------------------------------------------- #
-# Tag naming + memoize-eligibility                                            #
-# --------------------------------------------------------------------------- #
-
 
 def _child_var(child: Component) -> Var | Component:
     """Return the core Var of a structural child, for memoize-eligibility checks.
 
-    For special wrappers (``Bare``/``Cond``/``Foreach``/``Match``) we peek at
+    For special wrappers (``Cond``/``Foreach``/``Match``) we peek at
     the contained Var instead of recursing into the wrapper component itself.
 
     Args:
@@ -59,13 +54,10 @@ def _child_var(child: Component) -> Var | Component:
     Returns:
         The contained Var if ``child`` is a special wrapper, else ``child``.
     """
-    from reflex_components_core.base.bare import Bare
     from reflex_components_core.core.cond import Cond
     from reflex_components_core.core.foreach import Foreach
     from reflex_components_core.core.match import Match
 
-    if isinstance(child, Bare):
-        return child.contents
     if isinstance(child, Cond):
         return child.cond
     if isinstance(child, Foreach):
@@ -81,6 +73,14 @@ def _compute_memo_tag(component: Component) -> str | None:
     Returns ``None`` for components that render empty (non-visual components
     are never memoized).
 
+    The class qualname is encoded directly in the tag prefix so that distinct
+    classes which render identically never collide on a tag. Tag collision
+    would silently share a single cached memo wrapper across classes and drop
+    the later class's class-level metadata (e.g. ``_get_app_wrap_components``,
+    which carries providers like ``UploadFilesProvider`` that must reach the
+    app root). Baking the qualname into the prefix avoids re-concatenating
+    the rendered JSX into the hash input on every call.
+
     Args:
         component: The component to name.
 
@@ -92,7 +92,7 @@ def _compute_memo_tag(component: Component) -> str | None:
         return None
     code_hash = _hash_str(_deterministic_hash(rendered_code))
     return format.format_state_name(
-        f"{component.tag or 'Comp'}_{code_hash}"
+        f"{type(component).__qualname__}_{component.tag or 'Comp'}_{code_hash}"
     ).capitalize()
 
 
@@ -109,10 +109,14 @@ def _should_memoize(component: Component) -> bool:
     Returns:
         True if the component should be wrapped in a memo definition.
     """
+    from reflex_components_core.base.bare import Bare
     from reflex_components_core.core.foreach import Foreach
 
     if component._memoization_mode.disposition == MemoizationDisposition.NEVER:
         return False
+    if isinstance(component, Bare) and component.contents._get_all_var_data():
+        # A stateful value will be wrapped in a separate component.
+        return True
     if component.tag is None:
         return False
     if component._memoization_mode.disposition == MemoizationDisposition.ALWAYS:
@@ -123,7 +127,7 @@ def _should_memoize(component: Component) -> bool:
         if prop_var._get_all_var_data():
             return True
 
-    # Special-case structural children that are Var wrappers (Bare/Cond/
+    # Special-case structural children that are Var wrappers (Cond/
     # Foreach/Match). Foreach is always memoized because it produces dynamic
     # child trees that React must reconcile by key.
     for child in component.children:
@@ -139,41 +143,51 @@ def _should_memoize(component: Component) -> bool:
     return bool(component.event_triggers)
 
 
-@cache
-def _get_passthrough_memo_component(tag: str) -> tuple[Any, Any]:
+_KNOWN_MEMO_TAGS: dict[str, tuple[Any, Any]] = {}
+
+
+def _get_passthrough_memo_component(tag: str, component: Component) -> tuple[Any, Any]:
     """Return the generated experimental memo wrapper callable and definition.
 
     Args:
         tag: The wrapper's exported component name.
+        component: The component to wrap.
 
     Returns:
         The memo wrapper callable and its definition.
     """
-    return create_passthrough_component_memo(tag)
-
-
-# --------------------------------------------------------------------------- #
-# The plugin                                                                   #
-# --------------------------------------------------------------------------- #
+    if tag in _KNOWN_MEMO_TAGS:
+        return _KNOWN_MEMO_TAGS[tag]
+    memo_wrapper, memo_definition = create_passthrough_component_memo(tag, component)
+    _KNOWN_MEMO_TAGS[tag] = (memo_wrapper, memo_definition)
+    return memo_wrapper, memo_definition
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class MemoizeStatefulPlugin(Plugin):
-    """Auto-memoize stateful components with ``{children}``-pass-through memos.
+    """Auto-memoize stateful components with experimental-memo wrappers.
 
-    Registered in ``default_page_plugins`` between ``ApplyStylePlugin`` and
-    ``DefaultCollectorPlugin``. On ``enter_component`` it decides whether a
-    component should be memoized, and if so wraps it in a generated
-    experimental memo component whose single child is the original. The walker
-    then descends into the original component normally so
-    ``DefaultCollectorPlugin`` still sees its subtree.
+    Registered in ``default_page_plugins`` before ``DefaultCollectorPlugin``.
+    Two memoization modes, driven by whether the component is a snapshot
+    boundary (see ``is_snapshot_boundary``):
 
-    A ``_memoize_wrapped`` attribute marks the original component so the
-    recursive visit doesn't re-wrap it.
+    - Snapshot boundaries (``MemoizationLeaf``-style): wrapped in
+      ``enter_component`` and returned with empty structural children. The
+      walker skips descent, so hooks attached to the leaf's internal children
+      are captured in the memo body only — never hoisted into the page scope.
+    - Non-leaf memoizable components: wrapped in ``leave_component`` after
+      descendants have already compiled, so any inner memo wrappers flow into
+      this wrapper's children.
+
+    Descendants of a snapshot boundary are never independently memoized; the
+    boundary owns the wrapping decision for its whole subtree. This is tracked
+    via ``PageContext.memoize_suppressor_stack`` — a stack of component ids
+    that pushed suppression, popped in ``leave_component`` when the matching
+    component leaves.
     """
 
     _compiler_can_replace_enter_component = True
-    _compiler_can_replace_leave_component = False
+    _compiler_can_replace_leave_component = True
 
     def enter_component(
         self,
@@ -184,7 +198,20 @@ class MemoizeStatefulPlugin(Plugin):
         compile_context: Any,
         in_prop_tree: bool = False,
     ) -> BaseComponent | ComponentAndChildren | None:
-        """Wrap eligible stateful components in an experimental memo component.
+        """Memoize snapshot-boundary subtrees before descent.
+
+        Snapshot boundaries (``MemoizationLeaf``-style, see
+        ``is_snapshot_boundary``) stash state-referencing hooks inside
+        internally-built structural children. If we waited until
+        ``leave_component`` to swap the boundary for its memo wrapper, the
+        walker would have already descended and the collector plugin would
+        have pulled those hooks into page scope. Returning the wrapper with
+        empty structural children here causes the walker to skip the descent
+        entirely — the boundary's full snapshot lives only in the memo
+        component definition compiled separately.
+
+        Non-boundary components are handled in ``leave_component`` so their
+        already-compiled children flow into the wrapper.
 
         Args:
             comp: The component being visited.
@@ -193,66 +220,26 @@ class MemoizeStatefulPlugin(Plugin):
             in_prop_tree: Whether the component is in a prop subtree.
 
         Returns:
-            A ``(wrapper, (comp,))`` tuple replacement when ``comp`` is
-            memoizable, else ``None``.
+            A ``(wrapper, ())`` replacement for memoized boundaries, otherwise
+            ``None``.
         """
         if in_prop_tree:
             return None
         if not isinstance(comp, Component):
             return None
-
-        # Re-entry guard: when the walker descends into our wrapped child, it
-        # calls enter_component on the original comp again. Clear the marker
-        # and pass through.
-        if getattr(comp, "_memoize_wrapped", False):
-            with contextlib.suppress(AttributeError):
-                del comp._memoize_wrapped  # pyright: ignore[reportAttributeAccessIssue]
+        if page_context.memoize_suppressor_stack:
             return None
-
-        # Inside a MemoizationLeaf subtree, do not independently wrap
-        # descendants (the leaf owns the wrapping decision for its subtree).
-        if getattr(page_context, "_memoize_suppress_depth", 0) > 0:
+        if not is_snapshot_boundary(comp):
             return None
-
-        is_memoization_leaf = not comp._memoization_mode.recursive
 
         if not _should_memoize(comp):
-            if is_memoization_leaf:
-                # Leaf that wasn't memoized still suppresses descendants.
-                page_context._memoize_suppress_depth = (  # type: ignore[attr-defined]
-                    getattr(page_context, "_memoize_suppress_depth", 0) + 1
-                )
-                comp._memoize_pushed_suppression = True  # type: ignore[attr-defined]
+            # Boundary not worth wrapping — still suppress descendants so
+            # they don't memoize independently of the boundary's subtree.
+            page_context.memoize_suppressor_stack.append(id(comp))
             return None
 
-        tag = _compute_memo_tag(comp)
-        if tag is None:
-            return None
-
-        # Memoize event triggers, collect useCallback hooks for the page body.
-        memo_trigger_hooks = fix_event_triggers_for_memo(comp)
-        if memo_trigger_hooks:
-            invalidate_event_trigger_caches(comp)
-        for hook in memo_trigger_hooks:
-            page_context.hooks[hook] = None
-
-        compile_context.memoize_wrappers[tag] = None
-        wrapper_factory, definition = _get_passthrough_memo_component(tag)
-        compile_context.auto_memo_components[tag] = definition
-
-        # If comp is a MemoizationLeaf that IS being wrapped, suppress
-        # descendant wrapping for its subtree.
-        if is_memoization_leaf:
-            page_context._memoize_suppress_depth = (  # type: ignore[attr-defined]
-                getattr(page_context, "_memoize_suppress_depth", 0) + 1
-            )
-            comp._memoize_pushed_suppression = True  # type: ignore[attr-defined]
-
-        # Mark the original so the recursive re-enter skips wrapping.
-        comp._memoize_wrapped = True  # type: ignore[attr-defined]
-
-        wrapper = wrapper_factory(comp)
-        return (wrapper, (comp,))
+        wrapper = self._build_wrapper(comp, compile_context)
+        return None if wrapper is None else (wrapper, ())
 
     def leave_component(
         self,
@@ -264,26 +251,68 @@ class MemoizeStatefulPlugin(Plugin):
         compile_context: Any,
         in_prop_tree: bool = False,
     ) -> BaseComponent | ComponentAndChildren | None:
-        """Pop the ``MemoizationLeaf`` suppression counter if we pushed one.
+        """Wrap non-boundary memoizables and pop any suppression this component pushed.
 
         Args:
             comp: The component being visited.
-            children: Its compiled children (unused).
+            children: Its compiled children (unused; the wrapper reads from
+                ``comp.children`` which the walker has already updated).
             page_context: The active page context.
-            compile_context: The active compile context (unused).
-            in_prop_tree: Whether the component is in a prop subtree (unused).
+            compile_context: The active compile context.
+            in_prop_tree: Whether the component is in a prop subtree.
 
         Returns:
-            Always ``None``.
+            The memo wrapper for non-boundary memoizables, else ``None``.
         """
-        del children, compile_context, in_prop_tree
-        if getattr(comp, "_memoize_pushed_suppression", False):
-            page_context._memoize_suppress_depth = (  # type: ignore[attr-defined]
-                getattr(page_context, "_memoize_suppress_depth", 1) - 1
-            )
-            with contextlib.suppress(AttributeError):
-                del comp._memoize_pushed_suppression  # pyright: ignore[reportAttributeAccessIssue]
-        return None
+        del children
+        if in_prop_tree:
+            return None
+        if not isinstance(comp, Component):
+            return None
+
+        stack = page_context.memoize_suppressor_stack
+        if stack and stack[-1] == id(comp):
+            stack.pop()
+
+        if stack:
+            return None
+
+        if is_snapshot_boundary(comp):
+            return None
+
+        if not _should_memoize(comp):
+            return None
+
+        return self._build_wrapper(comp, compile_context)
+
+    @staticmethod
+    def _build_wrapper(comp: Component, compile_context: Any) -> BaseComponent | None:
+        """Return the memo wrapper component for ``comp``, or ``None`` if untagged.
+
+        Mutates ``comp.event_triggers`` in place so the memo body renders the
+        memoized ``useCallback`` forms, and registers the memo definition on
+        ``compile_context`` so the memo module compile pass emits it.
+
+        Args:
+            comp: The component being memoized.
+            compile_context: The active compile context.
+
+        Returns:
+            The wrapper instance, or ``None`` if the component's render is
+            empty and has no meaningful tag.
+        """
+        tag = _compute_memo_tag(comp)
+        if tag is None:
+            return None
+
+        fix_event_triggers_for_memo(comp)
+        invalidate_event_trigger_caches(comp)
+
+        compile_context.memoize_wrappers[tag] = None
+        wrapper_factory, definition = _get_passthrough_memo_component(tag, comp)
+        compile_context.auto_memo_components[tag] = definition
+
+        return wrapper_factory()
 
 
 __all__ = ["MemoizeStatefulPlugin"]

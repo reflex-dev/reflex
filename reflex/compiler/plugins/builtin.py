@@ -159,9 +159,10 @@ class DefaultCollectorPlugin(Plugin):
     _compiler_can_replace_enter_component = False
     _compiler_can_replace_leave_component = False
 
-    def enter_component(
+    def leave_component(
         self,
         comp: BaseComponent,
+        children: tuple[BaseComponent, ...],
         /,
         *,
         page_context: PageContext,
@@ -222,15 +223,15 @@ class DefaultCollectorPlugin(Plugin):
             else []
         )
 
-    def _compiler_bind_enter_component(
+    def _compiler_bind_leave_component(
         self,
         page_context: PageContext,
         compile_context: CompileContext,
-    ) -> Callable[[BaseComponent, bool], None]:
-        """Bind a positional fast-path enter hook for artifact collection.
+    ) -> Callable[[BaseComponent, tuple[BaseComponent, ...], bool], None]:
+        """Bind a positional fast-path leave hook for artifact collection.
 
         Returns:
-            A compiled enter hook that only takes hot-loop positional state.
+            A compiled leave hook that only takes hot-loop positional state.
         """
         del compile_context
 
@@ -247,8 +248,9 @@ class DefaultCollectorPlugin(Plugin):
         base_get_app_wrap_components = Component._get_app_wrap_components
         seen_app_wrap_methods: set[object] = set()
 
-        def enter_component(
+        def leave_component(
             comp: BaseComponent,
+            children: tuple[BaseComponent, ...],
             in_prop_tree: bool,
         ) -> None:
             if not isinstance(comp, Component):
@@ -279,7 +281,7 @@ class DefaultCollectorPlugin(Plugin):
             if ref is not None:
                 refs[ref] = None
 
-        return enter_component
+        return leave_component
 
     @staticmethod
     def _collect_component_hooks(
@@ -417,7 +419,7 @@ def default_page_plugins(
     chain: list[Plugin] = [*plugins, DefaultPagePlugin()]
     if style is not None:
         chain.append(ApplyStylePlugin(style=style))
-    chain.extend((MemoizeStatefulPlugin(), DefaultCollectorPlugin()))
+    chain.extend((DefaultCollectorPlugin(), MemoizeStatefulPlugin()))
     return tuple(chain)
 
 
