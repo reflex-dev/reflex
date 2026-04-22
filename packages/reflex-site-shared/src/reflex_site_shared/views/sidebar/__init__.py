@@ -1,13 +1,13 @@
 """Sidebar module."""
 
-import reflex_ui as ui
-from reflex_ui import button
+import reflex_components_internal as ui
+from reflex_components_internal import button
 
 import reflex as rx
 from reflex.style import toggle_color_mode
-from reflex_ui_shared.components.icons import get_icon
-from reflex_ui_shared.constants import DISCORD_URL, GITHUB_URL, TWITTER_URL
-from reflex_ui_shared.views.hosting_banner import HostingBannerState
+from reflex_site_shared.components.icons import get_icon
+from reflex_site_shared.constants import DISCORD_URL, GITHUB_URL, TWITTER_URL
+from reflex_site_shared.views.hosting_banner import HostingBannerState
 
 
 def social_menu_item(

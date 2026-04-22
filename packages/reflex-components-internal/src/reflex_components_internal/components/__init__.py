@@ -1,4 +1,4 @@
-"""Components for Reflex UI."""
+"""Components for reflex-components-internal."""
 
 from __future__ import annotations
 

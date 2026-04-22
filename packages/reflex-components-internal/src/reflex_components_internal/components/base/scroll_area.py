@@ -7,8 +7,8 @@ from reflex_components_core.core.cond import cond
 from reflex.components.component import Component, ComponentNamespace
 from reflex.utils.imports import ImportVar
 from reflex.vars.base import Var
-from reflex_ui.components.base_ui import PACKAGE_NAME, BaseUIComponent
-from reflex_ui.utils.twmerge import cn
+from reflex_components_internal.components.base_ui import PACKAGE_NAME, BaseUIComponent
+from reflex_components_internal.utils.twmerge import cn
 
 LiteralOrientation = Literal["horizontal", "vertical"]
 

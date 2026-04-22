@@ -11,14 +11,16 @@ import reflex as rx
 from reflex.event import EventType
 from reflex.experimental.client_state import ClientStateVar
 from reflex.vars.base import get_unique_variable_name
-from reflex_ui.blocks.telemetry.posthog import track_demo_form_posthog_submission
-from reflex_ui.components.base.button import button
-from reflex_ui.components.base.dialog import dialog
-from reflex_ui.components.base.input import input
-from reflex_ui.components.base.textarea import textarea
-from reflex_ui.components.icons.hugeicon import hi
-from reflex_ui.components.icons.others import select_arrow
-from reflex_ui.utils.twmerge import cn
+from reflex_components_internal.blocks.telemetry.posthog import (
+    track_demo_form_posthog_submission,
+)
+from reflex_components_internal.components.base.button import button
+from reflex_components_internal.components.base.dialog import dialog
+from reflex_components_internal.components.base.input import input
+from reflex_components_internal.components.base.textarea import textarea
+from reflex_components_internal.components.icons.hugeicon import hi
+from reflex_components_internal.components.icons.others import select_arrow
+from reflex_components_internal.utils.twmerge import cn
 
 demo_form_error_message = ClientStateVar.create("demo_form_error_message", "")
 demo_form_open_cs = ClientStateVar.create("demo_form_open", False)

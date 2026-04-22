@@ -4,7 +4,7 @@ import functools
 from collections.abc import Callable
 
 import reflex as rx
-from reflex_ui_shared.route import Route
+from reflex_site_shared.route import Route
 
 DEFAULT_TITLE = "The platform to build and scale enterprise apps"
 DEFAULT_DESCRIPTION = "Build secure internal apps with AI. Deploy on prem or cloud with governance. Technical and nontechnical teams ship together."
@@ -59,10 +59,10 @@ def webpage(
                 The component with the template applied.
             """
             # Import here to avoid circular imports.
-            from reflex_ui_shared.components.patterns import default_patterns
-            from reflex_ui_shared.views.cta_card import cta_card
-            from reflex_ui_shared.views.footer import footer_index
-            from reflex_ui_shared.views.marketing_navbar import marketing_navbar
+            from reflex_site_shared.components.patterns import default_patterns
+            from reflex_site_shared.views.cta_card import cta_card
+            from reflex_site_shared.views.footer import footer_index
+            from reflex_site_shared.views.marketing_navbar import marketing_navbar
 
             # Wrap the component in the template.
             return rx.box(

@@ -1,3 +1,3 @@
-# reflex-ui
+# reflex-components-internal
 
-Reflex UI.
+Reflex internal components.

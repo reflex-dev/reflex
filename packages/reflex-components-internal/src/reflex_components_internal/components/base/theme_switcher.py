@@ -6,8 +6,8 @@ from reflex_components_core.el.elements.typography import Div
 
 from reflex.components.component import Component, memo
 from reflex.style import LiteralColorMode, color_mode, set_color_mode
-from reflex_ui.components.icons.hugeicon import hi
-from reflex_ui.utils.twmerge import cn
+from reflex_components_internal.components.icons.hugeicon import hi
+from reflex_components_internal.utils.twmerge import cn
 
 
 def theme_switcher_item(mode: LiteralColorMode, icon: str) -> Component:

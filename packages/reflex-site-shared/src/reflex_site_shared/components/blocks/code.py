@@ -1,8 +1,8 @@
 """Code block components for documentation pages."""
 
 import reflex as rx
-import reflex_ui_shared.styles.fonts as fonts
-from reflex_ui_shared import styles
+import reflex_site_shared.styles.fonts as fonts
+from reflex_site_shared import styles
 
 
 @rx.memo

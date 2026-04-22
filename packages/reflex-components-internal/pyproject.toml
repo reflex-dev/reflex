@@ -1,7 +1,7 @@
 [project]
-name = "reflex-ui"
+name = "reflex-components-internal"
 dynamic = ["version"]
-description = "Reflex UI."
+description = "Reflex internal components."
 readme = "README.md"
 authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
@@ -16,7 +16,7 @@ reflex-components-core = { workspace = true }
 source = "uv-dynamic-versioning"
 
 [tool.uv-dynamic-versioning]
-pattern-prefix = "reflex-ui-"
+pattern-prefix = "reflex-components-internal-"
 fallback-version = "0.0.0dev0"
 
 [tool.hatch.build]

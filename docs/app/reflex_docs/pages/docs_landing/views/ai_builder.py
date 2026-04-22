@@ -2,9 +2,9 @@ import os
 
 import frontmatter
 import reflex as rx
-import reflex_ui as ui
-from reflex_ui_shared.components.marquee import marquee
-from reflex_ui_shared.constants import INTEGRATIONS_IMAGES_URL, REFLEX_ASSETS_CDN
+import reflex_components_internal as ui
+from reflex_site_shared.components.marquee import marquee
+from reflex_site_shared.constants import INTEGRATIONS_IMAGES_URL, REFLEX_ASSETS_CDN
 
 from reflex_docs.pages.docs import ai_builder as ai_builder_pages
 

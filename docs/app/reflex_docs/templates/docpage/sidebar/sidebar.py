@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import reflex as rx
-import reflex_ui as ui
-from reflex_ui_shared.styles.colors import c_color
+import reflex_components_internal as ui
+from reflex_site_shared.styles.colors import c_color
 
 from reflex_docs.templates.docpage.state import NavbarState
 

@@ -1,4 +1,4 @@
-"""Cal.com integration components for Reflex UI."""
+"""Cal.com integration components."""
 
 import os
 

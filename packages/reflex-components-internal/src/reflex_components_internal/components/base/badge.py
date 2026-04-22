@@ -5,7 +5,7 @@ from typing import Literal
 from reflex_components_core.el.elements.inline import Span
 
 from reflex.vars.base import Var
-from reflex_ui.components.component import CoreComponent
+from reflex_components_internal.components.component import CoreComponent
 
 BaseColorType = Literal[
     "primary",

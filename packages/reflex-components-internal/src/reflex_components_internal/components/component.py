@@ -4,7 +4,7 @@ from typing import Any
 
 from reflex.components.component import Component
 from reflex.vars.base import Var
-from reflex_ui.utils.twmerge import cn
+from reflex_components_internal.utils.twmerge import cn
 
 
 class CoreComponent(Component):

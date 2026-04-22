@@ -1,11 +1,11 @@
 """Cta Card module."""
 
-import reflex_ui as ui
-from reflex_ui.blocks.demo_form import demo_form_dialog
+import reflex_components_internal as ui
+from reflex_components_internal.blocks.demo_form import demo_form_dialog
 
 import reflex as rx
-from reflex_ui_shared.components.marketing_button import button as marketing_button
-from reflex_ui_shared.constants import REFLEX_ASSETS_CDN, REFLEX_BUILD_URL
+from reflex_site_shared.components.marketing_button import button as marketing_button
+from reflex_site_shared.constants import REFLEX_ASSETS_CDN, REFLEX_BUILD_URL
 
 
 @rx.memo

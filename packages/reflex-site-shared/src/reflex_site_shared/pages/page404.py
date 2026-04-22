@@ -1,8 +1,8 @@
 """Page404 module."""
 
 import reflex as rx
-from reflex_ui_shared.components.blocks.flexdown import markdown_with_shiki
-from reflex_ui_shared.templates.webpage import webpage
+from reflex_site_shared.components.blocks.flexdown import markdown_with_shiki
+from reflex_site_shared.templates.webpage import webpage
 
 contents = f"""
 # Page Not Found

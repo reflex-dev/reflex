@@ -1,7 +1,7 @@
 [project]
-name = "reflex-ui-shared"
+name = "reflex-site-shared"
 dynamic = ["version"]
-description = "Reflex UI Shared."
+description = "Reflex Site Shared."
 readme = "README.md"
 authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
@@ -16,7 +16,7 @@ reflex-components-core = { workspace = true }
 source = "uv-dynamic-versioning"
 
 [tool.uv-dynamic-versioning]
-pattern-prefix = "reflex-ui-shared-"
+pattern-prefix = "reflex-site-shared-"
 fallback-version = "0.0.0dev0"
 
 [tool.hatch.build]

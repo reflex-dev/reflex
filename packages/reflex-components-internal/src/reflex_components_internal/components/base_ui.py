@@ -2,7 +2,7 @@
 
 # Based on https://base-ui.com/
 
-from reflex_ui.components.component import CoreComponent
+from reflex_components_internal.components.component import CoreComponent
 
 PACKAGE_NAME = "@base-ui/react"
 PACKAGE_VERSION = "1.3.0"

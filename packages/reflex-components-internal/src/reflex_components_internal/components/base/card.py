@@ -4,7 +4,7 @@ from reflex_components_core.el.elements.typography import Div
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.vars.base import Var
-from reflex_ui.components.component import CoreComponent
+from reflex_components_internal.components.component import CoreComponent
 
 
 class ClassNames:

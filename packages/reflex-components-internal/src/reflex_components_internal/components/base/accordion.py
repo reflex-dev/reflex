@@ -10,8 +10,8 @@ from reflex.event import EventHandler, passthrough_event_spec
 from reflex.utils.imports import ImportVar
 from reflex.vars.base import Var
 from reflex.vars.object import ObjectVar
-from reflex_ui.components.base_ui import PACKAGE_NAME, BaseUIComponent
-from reflex_ui.components.icons.hugeicon import icon
+from reflex_components_internal.components.base_ui import PACKAGE_NAME, BaseUIComponent
+from reflex_components_internal.components.icons.hugeicon import icon
 
 LiteralOrientation = Literal["horizontal", "vertical"]
 

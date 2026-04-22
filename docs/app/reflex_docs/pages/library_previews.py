@@ -1,6 +1,6 @@
 import reflex as rx
 from reflex.utils.format import to_snake_case, to_title_case
-from reflex_ui_shared.constants import REFLEX_ASSETS_CDN
+from reflex_site_shared.constants import REFLEX_ASSETS_CDN
 
 from reflex_docs.templates.docpage import docpage, h1_comp, text_comp_2
 

@@ -1,4 +1,4 @@
-"""Telemetry blocks for the Reflex UI library."""
+"""Telemetry blocks for reflex-components-internal."""
 
 from .clearbit import get_clearbit_trackers
 from .common_room import get_common_room_trackers, identify_common_room_user

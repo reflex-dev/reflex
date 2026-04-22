@@ -1,8 +1,8 @@
 """App styling."""
 
 import reflex as rx
-import reflex_ui_shared.styles.fonts as fonts
-from reflex_ui_shared.styles.colors import c_color
+import reflex_site_shared.styles.fonts as fonts
+from reflex_site_shared.styles.colors import c_color
 
 font_weights = {
     "bold": "800",

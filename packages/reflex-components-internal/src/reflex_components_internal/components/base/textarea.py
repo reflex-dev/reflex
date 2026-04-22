@@ -3,7 +3,7 @@
 from reflex_components_core.el.elements.forms import Textarea as TextareaComponent
 
 from reflex.components.component import Component
-from reflex_ui.components.component import CoreComponent
+from reflex_components_internal.components.component import CoreComponent
 
 
 class ClassNames:

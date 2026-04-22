@@ -3,7 +3,7 @@
 import json
 
 import reflex as rx
-from reflex_ui_shared.constants import (
+from reflex_site_shared.constants import (
     DISCORD_URL,
     FORUM_URL,
     GITHUB_URL,

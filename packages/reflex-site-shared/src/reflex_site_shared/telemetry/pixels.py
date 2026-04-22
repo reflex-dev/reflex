@@ -1,6 +1,6 @@
 """This module contains the pixel trackers for the website."""
 
-from reflex_ui.blocks.telemetry import (
+from reflex_components_internal.blocks.telemetry import (
     get_default_telemetry_script,
     get_google_analytics_trackers,
     get_posthog_trackers,

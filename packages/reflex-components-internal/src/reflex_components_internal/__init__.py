@@ -1,8 +1,8 @@
-"""Reflex UI package."""
+"""Reflex internal components package."""
 
 from reflex.utils import lazy_loader
 
-_REFLEX_UI_MAPPING = {
+_COMPONENTS_MAPPING = {
     "components.base.accordion": ["accordion"],
     "components.base.avatar": ["avatar"],
     "components.base.badge": ["badge"],
@@ -35,7 +35,7 @@ _REFLEX_UI_MAPPING = {
 
 _SUBMODULES = {"components", "utils"}
 _SUBMOD_ATTRS = {
-    **_REFLEX_UI_MAPPING,
+    **_COMPONENTS_MAPPING,
     "components": ["base"],
     "components.icons.hugeicon": ["hi", "icon"],
     "components.icons.simple_icon": ["simple_icon"],

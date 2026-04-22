@@ -4,18 +4,18 @@
 from reflex_base.constants.colors import ColorType
 
 import reflex as rx
-from reflex_ui_shared.components.blocks.code import (
+from reflex_site_shared.components.blocks.code import (
     code_block_markdown,
     code_block_markdown_dark,
 )
-from reflex_ui_shared.components.blocks.headings import (
+from reflex_site_shared.components.blocks.headings import (
     h1_comp_xd,
     h2_comp_xd,
     h3_comp_xd,
     h4_comp_xd,
     img_comp_xd,
 )
-from reflex_ui_shared.components.blocks.typography import (
+from reflex_site_shared.components.blocks.typography import (
     code_comp,
     doclink2,
     list_comp,
@@ -23,7 +23,7 @@ from reflex_ui_shared.components.blocks.typography import (
     text_comp,
     unordered_list_comp,
 )
-from reflex_ui_shared.styles.fonts import base, code
+from reflex_site_shared.styles.fonts import base, code
 
 
 def get_code_style(color: ColorType):

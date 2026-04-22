@@ -8,7 +8,7 @@ import httpx
 from email_validator import EmailNotValidError, ValidatedEmail, validate_email
 
 import reflex as rx
-from reflex_ui_shared.constants import (
+from reflex_site_shared.constants import (
     API_BASE_URL_LOOPS,
     REFLEX_DEV_WEB_NEWSLETTER_FORM_WEBHOOK_URL,
 )

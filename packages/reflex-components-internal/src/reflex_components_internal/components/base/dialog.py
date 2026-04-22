@@ -8,9 +8,9 @@ from reflex.components.component import Component, ComponentNamespace
 from reflex.event import EventHandler, passthrough_event_spec
 from reflex.utils.imports import ImportVar
 from reflex.vars.base import Var
-from reflex_ui.components.base.button import button
-from reflex_ui.components.base_ui import PACKAGE_NAME, BaseUIComponent
-from reflex_ui.components.icons.hugeicon import hi
+from reflex_components_internal.components.base.button import button
+from reflex_components_internal.components.base_ui import PACKAGE_NAME, BaseUIComponent
+from reflex_components_internal.components.icons.hugeicon import hi
 
 
 class ClassNames:

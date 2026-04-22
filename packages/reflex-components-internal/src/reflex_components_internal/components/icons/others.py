@@ -4,8 +4,8 @@ from reflex_components_core.el.elements.media import svg
 
 from reflex.components.component import Component, memo
 from reflex.vars.base import Var
-from reflex_ui.components.icons.hugeicon import hi
-from reflex_ui.utils.twmerge import cn
+from reflex_components_internal.components.icons.hugeicon import hi
+from reflex_components_internal.utils.twmerge import cn
 
 
 @memo

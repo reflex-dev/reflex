@@ -6,8 +6,8 @@ from reflex.components.component import Component, ComponentNamespace
 from reflex.event import EventHandler, passthrough_event_spec
 from reflex.utils.imports import ImportVar
 from reflex.vars.base import Var
-from reflex_ui.components.base_ui import PACKAGE_NAME, BaseUIComponent
-from reflex_ui.components.icons.others import arrow_svg
+from reflex_components_internal.components.base_ui import PACKAGE_NAME, BaseUIComponent
+from reflex_components_internal.components.icons.others import arrow_svg
 
 LiteralSide = Literal["top", "right", "bottom", "left", "inline-end", "inline-start"]
 LiteralAlign = Literal["start", "center", "end"]

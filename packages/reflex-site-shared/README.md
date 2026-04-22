@@ -1,3 +1,3 @@
-# reflex-ui-shared
+# reflex-site-shared
 
-Reflex UI Shared.
+Shared site scaffolding used across Reflex's web properties (pages, templates, views, gallery, styles).

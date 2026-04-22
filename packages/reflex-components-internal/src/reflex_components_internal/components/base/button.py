@@ -7,8 +7,8 @@ from reflex_components_core.el.elements.forms import Button as BaseButton
 
 from reflex.components.component import ComponentNamespace
 from reflex.vars.base import Var
-from reflex_ui.components.component import CoreComponent
-from reflex_ui.components.icons.others import spinner
+from reflex_components_internal.components.component import CoreComponent
+from reflex_components_internal.components.icons.others import spinner
 
 LiteralButtonVariant = Literal[
     "primary",

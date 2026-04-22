@@ -2,12 +2,12 @@
 
 import re
 
-import reflex_ui as ui
+import reflex_components_internal as ui
 
 import reflex as rx
-from reflex_ui_shared.constants import INTEGRATIONS_IMAGES_URL, REFLEX_ASSETS_CDN
-from reflex_ui_shared.gallery.r_svg_loader import r_svg_loader
-from reflex_ui_shared.utils.md import MarkdownDocument, get_md_files
+from reflex_site_shared.constants import INTEGRATIONS_IMAGES_URL, REFLEX_ASSETS_CDN
+from reflex_site_shared.gallery.r_svg_loader import r_svg_loader
+from reflex_site_shared.utils.md import MarkdownDocument, get_md_files
 
 REFLEX_BUILD_TEMPLATES_PATH = "reflex_build_templates/"
 REFLEX_BUILD_TEMPLATES_IMAGES = "reflex_build_template_images/"

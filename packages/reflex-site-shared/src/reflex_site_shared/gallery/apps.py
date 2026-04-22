@@ -3,17 +3,17 @@
 import copy
 import re
 
-import reflex_ui as ui
-from reflex_ui.blocks.demo_form import demo_form_dialog
+import reflex_components_internal as ui
+from reflex_components_internal.blocks.demo_form import demo_form_dialog
 
 import reflex as rx
-from reflex_ui_shared.components.blocks.flexdown import markdown
-from reflex_ui_shared.components.code_card import gallery_app_card
-from reflex_ui_shared.components.icons import get_icon
-from reflex_ui_shared.constants import REFLEX_ASSETS_CDN, SCREENSHOT_BUCKET
-from reflex_ui_shared.gallery.common import MarkdownDocument
-from reflex_ui_shared.gallery.gallery import integrations_stack
-from reflex_ui_shared.templates.gallery_app_page import gallery_app_page
+from reflex_site_shared.components.blocks.flexdown import markdown
+from reflex_site_shared.components.code_card import gallery_app_card
+from reflex_site_shared.components.icons import get_icon
+from reflex_site_shared.constants import REFLEX_ASSETS_CDN, SCREENSHOT_BUCKET
+from reflex_site_shared.gallery.common import MarkdownDocument
+from reflex_site_shared.gallery.gallery import integrations_stack
+from reflex_site_shared.templates.gallery_app_page import gallery_app_page
 
 GALLERY_APP_SOURCES = [
     ("templates/", "docs/getting-started/open-source-templates/"),
@@ -54,7 +54,7 @@ def load_all_gallery_apps():
     Returns:
         The component.
     """
-    from reflex_ui_shared.utils.md import MarkdownDocument, get_md_files
+    from reflex_site_shared.utils.md import MarkdownDocument, get_md_files
 
     gallery_apps: dict[tuple[str, str], MarkdownDocument] = {}
     for folder, _ in GALLERY_APP_SOURCES:

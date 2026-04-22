@@ -2,14 +2,14 @@
 
 from datetime import datetime
 
-import reflex_ui as ui
-from reflex_ui import button as marketing_button
+import reflex_components_internal as ui
+from reflex_components_internal import button as marketing_button
 
 import reflex as rx
 from reflex.style import color_mode, set_color_mode
-from reflex_ui_shared.backend.signup import IndexState
-from reflex_ui_shared.components.icons import get_icon
-from reflex_ui_shared.constants import (
+from reflex_site_shared.backend.signup import IndexState
+from reflex_site_shared.components.icons import get_icon
+from reflex_site_shared.constants import (
     CHANGELOG_URL,
     DISCORD_URL,
     FORUM_URL,

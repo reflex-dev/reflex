@@ -1,14 +1,14 @@
 """Marketing Navbar module."""
 
-import reflex_ui as ui
-from reflex_ui.blocks.demo_form import demo_form_dialog
+import reflex_components_internal as ui
+from reflex_components_internal.blocks.demo_form import demo_form_dialog
 
 import reflex as rx
-from reflex_ui_shared.backend.get_blogs import BlogPostDict, RecentBlogsState
-from reflex_ui_shared.components.icons import get_icon
-from reflex_ui_shared.components.marketing_button import button as marketing_button
-from reflex_ui_shared.components.marquee import marquee
-from reflex_ui_shared.constants import (
+from reflex_site_shared.backend.get_blogs import BlogPostDict, RecentBlogsState
+from reflex_site_shared.components.icons import get_icon
+from reflex_site_shared.components.marketing_button import button as marketing_button
+from reflex_site_shared.components.marquee import marquee
+from reflex_site_shared.constants import (
     CHANGELOG_URL,
     CONTRIBUTING_URL,
     DISCUSSIONS_URL,
@@ -18,7 +18,7 @@ from reflex_ui_shared.constants import (
     REFLEX_ASSETS_CDN,
     REFLEX_BUILD_URL,
 )
-from reflex_ui_shared.views.sidebar import navbar_sidebar_button
+from reflex_site_shared.views.sidebar import navbar_sidebar_button
 
 
 def social_proof_card(image: str) -> rx.Component:
@@ -637,7 +637,7 @@ def marketing_navbar() -> rx.Component:
     Returns:
         The component.
     """
-    from reflex_ui_shared.views.hosting_banner import hosting_banner
+    from reflex_site_shared.views.hosting_banner import hosting_banner
 
     return rx.el.div(
         hosting_banner(),

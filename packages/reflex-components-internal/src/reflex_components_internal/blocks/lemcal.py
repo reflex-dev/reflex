@@ -1,10 +1,10 @@
 """Lemcal calendar embed components."""
 
 import reflex as rx
-from reflex_ui.components.base.button import button
-from reflex_ui.components.base.dialog import dialog
-from reflex_ui.components.icons.hugeicon import hi
-from reflex_ui.utils.twmerge import cn
+from reflex_components_internal.components.base.button import button
+from reflex_components_internal.components.base.dialog import dialog
+from reflex_components_internal.components.icons.hugeicon import hi
+from reflex_components_internal.utils.twmerge import cn
 
 LEMCAL_DEMO_URL = "https://app.lemcal.com/@alek/reflex-demo-call"
 

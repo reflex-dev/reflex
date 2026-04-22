@@ -4,7 +4,7 @@ import functools
 from collections.abc import Callable
 
 import reflex as rx
-from reflex_ui_shared.route import Route
+from reflex_site_shared.route import Route
 
 
 def gallery_app_page(
@@ -58,8 +58,8 @@ def gallery_app_page(
                 The component with the template applied.
             """
             # Import here to avoid circular imports.
-            from reflex_ui_shared.views.footer import footer_index
-            from reflex_ui_shared.views.marketing_navbar import marketing_navbar
+            from reflex_site_shared.views.footer import footer_index
+            from reflex_site_shared.views.marketing_navbar import marketing_navbar
 
             # Wrap the component in the template.
             return rx.box(

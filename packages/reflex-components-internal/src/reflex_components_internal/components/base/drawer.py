@@ -6,7 +6,7 @@ from typing import Literal
 from reflex.components.component import Component, ComponentNamespace
 from reflex.event import EventHandler, passthrough_event_spec
 from reflex.vars.base import Var
-from reflex_ui.components.component import CoreComponent
+from reflex_components_internal.components.component import CoreComponent
 
 LiteralDirectionType = Literal["top", "bottom", "left", "right"]
 

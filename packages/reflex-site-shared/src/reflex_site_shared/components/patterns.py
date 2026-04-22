@@ -1,9 +1,9 @@
 """Patterns module."""
 
 import reflex as rx
-from reflex_ui_shared.components.icons import get_icon
-from reflex_ui_shared.constants import REFLEX_ASSETS_CDN
-from reflex_ui_shared.views.hosting_banner import HostingBannerState
+from reflex_site_shared.components.icons import get_icon
+from reflex_site_shared.constants import REFLEX_ASSETS_CDN
+from reflex_site_shared.views.hosting_banner import HostingBannerState
 
 
 def create_pattern(

@@ -1,9 +1,9 @@
 """Sidebar module."""
 
-import reflex_ui as ui
+import reflex_components_internal as ui
 
 import reflex as rx
-from reflex_ui_shared.gallery.apps import gallery_apps_data
+from reflex_site_shared.gallery.apps import gallery_apps_data
 
 TAGS = {
     "Category": [

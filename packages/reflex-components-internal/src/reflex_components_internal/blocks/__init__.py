@@ -1,1 +1,1 @@
-"""Blocks for the Reflex UI library."""
+"""Blocks for reflex-components-internal."""

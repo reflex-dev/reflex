@@ -4,7 +4,7 @@
 from typing import ClassVar
 
 import reflex as rx
-from reflex_ui_shared.views.hosting_banner import HostingBannerState
+from reflex_site_shared.views.hosting_banner import HostingBannerState
 
 icon_margins = {
     "h1": "10px",

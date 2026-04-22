@@ -2,11 +2,11 @@
 
 import re
 
-import reflex_ui as ui
+import reflex_components_internal as ui
 
 import reflex as rx
 from reflex.experimental.client_state import ClientStateVar
-from reflex_ui_shared.components.icons import get_icon
+from reflex_site_shared.components.icons import get_icon
 
 
 @rx.memo

@@ -2,7 +2,7 @@
 
 from reflex.components.component import Component
 from reflex.vars.base import Var
-from reflex_ui.components.component import CoreComponent
+from reflex_components_internal.components.component import CoreComponent
 
 DEFAULT_CLASS_NAME = "size-4 pointer-events-none rounded-full"
 

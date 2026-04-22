@@ -2,10 +2,10 @@
 
 import datetime
 
-import reflex_ui as ui
+import reflex_components_internal as ui
 
 import reflex as rx
-from reflex_ui_shared.constants import REFLEX_ASSETS_CDN
+from reflex_site_shared.constants import REFLEX_ASSETS_CDN
 
 
 def glow() -> rx.Component:

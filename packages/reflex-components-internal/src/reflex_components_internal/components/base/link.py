@@ -5,8 +5,8 @@ from typing import Literal
 from reflex_components_core.react_router.dom import ReactRouterLink, To
 
 from reflex.vars.base import Var
-from reflex_ui.components.icons.hugeicon import hi
-from reflex_ui.utils.twmerge import cn
+from reflex_components_internal.components.icons.hugeicon import hi
+from reflex_components_internal.utils.twmerge import cn
 
 LiteralLinkVariant = Literal["primary", "secondary"]
 LiteralLinkSize = Literal["xs", "sm", "md", "lg", "xl"]
