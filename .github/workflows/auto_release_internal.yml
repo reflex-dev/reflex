@@ -57,6 +57,9 @@ jobs:
       matrix:
         package: ${{ fromJson(needs.detect.outputs.packages) }}
       fail-fast: false
+    concurrency:
+      group: release-${{ matrix.package }}
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v6
         with:
