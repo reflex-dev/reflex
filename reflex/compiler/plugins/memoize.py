@@ -264,7 +264,6 @@ class MemoizeStatefulPlugin(Plugin):
         Returns:
             The memo wrapper for non-boundary memoizables, else ``None``.
         """
-        del children
         if in_prop_tree:
             return None
         if not isinstance(comp, Component):

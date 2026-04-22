@@ -89,7 +89,6 @@ class ExperimentalMemoComponent(Component):
         Args:
             children: The children of the component (ignored).
         """
-        del children
 
     def _post_init(self, **kwargs):
         """Initialize the experimental memo component.

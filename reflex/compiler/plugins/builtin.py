@@ -36,8 +36,6 @@ class DefaultPagePlugin(Plugin):
         """
         from reflex.compiler import compiler
 
-        del kwargs
-
         try:
             component = compiler.into_component(page_fn)
             component = Fragment.create(component)
@@ -110,8 +108,6 @@ class ApplyStylePlugin(Plugin):
         in_prop_tree: bool = False,
     ) -> None:
         """Apply the non-recursive portion of ``_add_style_recursive``."""
-        del page_context, compile_context
-
         if self.style is not None and isinstance(comp, Component) and not in_prop_tree:
             self._apply_style(comp, self.style)
 
@@ -125,8 +121,6 @@ class ApplyStylePlugin(Plugin):
         Returns:
             A compiled enter hook that only takes hot-loop positional state.
         """
-        del page_context, compile_context
-
         style = self.style
         if style is None:
 
@@ -134,7 +128,7 @@ class ApplyStylePlugin(Plugin):
                 comp: BaseComponent,
                 in_prop_tree: bool,
             ) -> None:
-                del comp, in_prop_tree
+                return
 
             return enter_component
 
@@ -170,8 +164,6 @@ class DefaultCollectorPlugin(Plugin):
         in_prop_tree: bool = False,
     ) -> None:
         """Collect imports and page artifacts for the active component node."""
-        del compile_context
-
         if not isinstance(comp, Component):
             return
 
@@ -206,7 +198,6 @@ class DefaultCollectorPlugin(Plugin):
         **kwargs: Any,
     ) -> None:
         """Collapse collected imports into a single legacy-shaped entry."""
-        del kwargs
         if page_ctx.frontend_imports:
             collapsed_imports = collapse_imports(
                 merge_imports(page_ctx.frontend_imports, *page_ctx.imports)
@@ -233,8 +224,6 @@ class DefaultCollectorPlugin(Plugin):
         Returns:
             A compiled leave hook that only takes hot-loop positional state.
         """
-        del compile_context
-
         frontend_imports = page_context.frontend_imports
         module_code = page_context.module_code
         hooks = page_context.hooks

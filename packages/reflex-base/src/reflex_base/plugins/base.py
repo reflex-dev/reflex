@@ -135,7 +135,6 @@ class Plugin:
         Returns:
             A page context when the plugin can evaluate the page, otherwise ``None``.
         """
-        del page_fn, kwargs
         return None
 
     def compile_page(
@@ -145,7 +144,6 @@ class Plugin:
         **kwargs: Any,
     ) -> None:
         """Finalize a page context after its component tree has been traversed."""
-        del page_ctx, kwargs
         return
 
     def enter_component(

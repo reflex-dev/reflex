@@ -47,12 +47,10 @@ class RadixThemesPlugin(Plugin):
 
     def get_stylesheet_paths(self, **context: Any) -> tuple[str, ...]:
         """Return the Radix Themes stylesheet when enabled."""
-        del context
         return (RADIX_THEMES_STYLESHEET,) if self.enabled else ()
 
     def get_frontend_dependencies(self, **context: Any) -> tuple[str, ...]:
         """Return the Radix Themes package when enabled."""
-        del context
         return (RADIX_THEMES_PACKAGE,) if self.enabled else ()
 
     def enter_component(
@@ -65,8 +63,6 @@ class RadixThemesPlugin(Plugin):
         in_prop_tree: bool = False,
     ) -> None:
         """Auto-enable the plugin when a Radix Themes component is compiled."""
-        del page_context, compile_context, in_prop_tree
-
         if self.enabled or not isinstance(comp, RadixThemesComponent):
             return
 
@@ -92,8 +88,6 @@ class RadixThemesPlugin(Plugin):
         **kwargs: Any,
     ) -> None:
         """Inject the app-level theme wrapper when Radix Themes is active."""
-        del kwargs
-
         if self.enabled and self.theme is not None:
             page_ctx.app_wrap_components[20, "Theme"] = self.theme
 
