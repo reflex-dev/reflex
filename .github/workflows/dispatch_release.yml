@@ -1,0 +1,235 @@
+name: Dispatch release
+
+on:
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: "Release kind"
+        required: true
+        type: choice
+        options:
+          - prerelease
+          - release
+          - breaking
+      reflex:
+        description: "reflex"
+        type: boolean
+        default: false
+      hatch_reflex_pyi:
+        description: "hatch-reflex-pyi"
+        type: boolean
+        default: false
+      reflex_base:
+        description: "reflex-base"
+        type: boolean
+        default: false
+      reflex_components_code:
+        description: "reflex-components-code"
+        type: boolean
+        default: false
+      reflex_components_core:
+        description: "reflex-components-core"
+        type: boolean
+        default: false
+      reflex_components_dataeditor:
+        description: "reflex-components-dataeditor"
+        type: boolean
+        default: false
+      reflex_components_gridjs:
+        description: "reflex-components-gridjs"
+        type: boolean
+        default: false
+      reflex_components_lucide:
+        description: "reflex-components-lucide"
+        type: boolean
+        default: false
+      reflex_components_markdown:
+        description: "reflex-components-markdown"
+        type: boolean
+        default: false
+      reflex_components_moment:
+        description: "reflex-components-moment"
+        type: boolean
+        default: false
+      reflex_components_plotly:
+        description: "reflex-components-plotly"
+        type: boolean
+        default: false
+      reflex_components_radix:
+        description: "reflex-components-radix"
+        type: boolean
+        default: false
+      reflex_components_react_player:
+        description: "reflex-components-react-player"
+        type: boolean
+        default: false
+      reflex_components_recharts:
+        description: "reflex-components-recharts"
+        type: boolean
+        default: false
+      reflex_components_sonner:
+        description: "reflex-components-sonner"
+        type: boolean
+        default: false
+      reflex_docgen:
+        description: "reflex-docgen"
+        type: boolean
+        default: false
+      reflex_hosting_cli:
+        description: "reflex-hosting-cli"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.detect.outputs.packages }}
+    steps:
+      - id: detect
+        env:
+          reflex: ${{ inputs.reflex }}
+          hatch_reflex_pyi: ${{ inputs.hatch_reflex_pyi }}
+          reflex_base: ${{ inputs.reflex_base }}
+          reflex_components_code: ${{ inputs.reflex_components_code }}
+          reflex_components_core: ${{ inputs.reflex_components_core }}
+          reflex_components_dataeditor: ${{ inputs.reflex_components_dataeditor }}
+          reflex_components_gridjs: ${{ inputs.reflex_components_gridjs }}
+          reflex_components_lucide: ${{ inputs.reflex_components_lucide }}
+          reflex_components_markdown: ${{ inputs.reflex_components_markdown }}
+          reflex_components_moment: ${{ inputs.reflex_components_moment }}
+          reflex_components_plotly: ${{ inputs.reflex_components_plotly }}
+          reflex_components_radix: ${{ inputs.reflex_components_radix }}
+          reflex_components_react_player: ${{ inputs.reflex_components_react_player }}
+          reflex_components_recharts: ${{ inputs.reflex_components_recharts }}
+          reflex_components_sonner: ${{ inputs.reflex_components_sonner }}
+          reflex_docgen: ${{ inputs.reflex_docgen }}
+          reflex_hosting_cli: ${{ inputs.reflex_hosting_cli }}
+        run: |
+          set -euo pipefail
+          declare -A MAP=(
+            [reflex]=reflex
+            [hatch_reflex_pyi]=hatch-reflex-pyi
+            [reflex_base]=reflex-base
+            [reflex_components_code]=reflex-components-code
+            [reflex_components_core]=reflex-components-core
+            [reflex_components_dataeditor]=reflex-components-dataeditor
+            [reflex_components_gridjs]=reflex-components-gridjs
+            [reflex_components_lucide]=reflex-components-lucide
+            [reflex_components_markdown]=reflex-components-markdown
+            [reflex_components_moment]=reflex-components-moment
+            [reflex_components_plotly]=reflex-components-plotly
+            [reflex_components_radix]=reflex-components-radix
+            [reflex_components_react_player]=reflex-components-react-player
+            [reflex_components_recharts]=reflex-components-recharts
+            [reflex_components_sonner]=reflex-components-sonner
+            [reflex_docgen]=reflex-docgen
+            [reflex_hosting_cli]=reflex-hosting-cli
+          )
+          ORDER=(reflex hatch_reflex_pyi reflex_base reflex_components_code reflex_components_core reflex_components_dataeditor reflex_components_gridjs reflex_components_lucide reflex_components_markdown reflex_components_moment reflex_components_plotly reflex_components_radix reflex_components_react_player reflex_components_recharts reflex_components_sonner reflex_docgen reflex_hosting_cli)
+          PACKAGES=()
+          for key in "${ORDER[@]}"; do
+            if [[ "${!key}" == "true" ]]; then
+              PACKAGES+=("\"${MAP[$key]}\"")
+            fi
+          done
+          if [[ ${#PACKAGES[@]} -eq 0 ]]; then
+            echo "Error: select at least one package"
+            exit 1
+          fi
+          JOINED=$(IFS=,; echo "${PACKAGES[*]}")
+          echo "packages=[$JOINED]" >> "$GITHUB_OUTPUT"
+
+  release:
+    needs: detect
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package: ${{ fromJson(needs.detect.outputs.packages) }}
+      fail-fast: false
+    concurrency:
+      group: dispatch-release-${{ matrix.package }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+      - name: Compute next version
+        id: version
+        env:
+          PKG: ${{ matrix.package }}
+          KIND: ${{ inputs.kind }}
+        run: |
+          set -euo pipefail
+          if [[ "$PKG" == "reflex" ]]; then
+            TAG_PREFIX="v"
+          else
+            TAG_PREFIX="${PKG}-v"
+          fi
+          LATEST=$(git tag -l "${TAG_PREFIX}*" | sed "s|^${TAG_PREFIX}||" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+(a[0-9]+)?$' | sort -V | tail -1 || true)
+          if [[ -z "$LATEST" ]]; then
+            case "$KIND" in
+              prerelease) NEXT="0.1.0a1" ;;
+              release)    NEXT="0.0.1" ;;
+              breaking)   NEXT="0.1.0" ;;
+            esac
+          elif [[ "$LATEST" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)a([0-9]+)$ ]]; then
+            MAJOR="${BASH_REMATCH[1]}"
+            MINOR="${BASH_REMATCH[2]}"
+            PATCH="${BASH_REMATCH[3]}"
+            ALPHA="${BASH_REMATCH[4]}"
+            case "$KIND" in
+              prerelease) NEXT="${MAJOR}.${MINOR}.${PATCH}a$((ALPHA + 1))" ;;
+              release)    NEXT="${MAJOR}.${MINOR}.${PATCH}" ;;
+              breaking)   NEXT="${MAJOR}.$((MINOR + 1)).0" ;;
+            esac
+          elif [[ "$LATEST" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            MAJOR="${BASH_REMATCH[1]}"
+            MINOR="${BASH_REMATCH[2]}"
+            PATCH="${BASH_REMATCH[3]}"
+            case "$KIND" in
+              prerelease) NEXT="${MAJOR}.$((MINOR + 1)).0a1" ;;
+              release)    NEXT="${MAJOR}.${MINOR}.$((PATCH + 1))" ;;
+              breaking)   NEXT="${MAJOR}.$((MINOR + 1)).0" ;;
+            esac
+          else
+            echo "Error: cannot parse latest version '$LATEST'"
+            exit 1
+          fi
+          TAG="${TAG_PREFIX}${NEXT}"
+          if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+            echo "Error: tag ${TAG} already exists"
+            exit 1
+          fi
+          echo "Latest: ${LATEST:-<none>} -> Next: $NEXT (kind=$KIND)"
+          echo "version=$NEXT" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+          PKG: ${{ matrix.package }}
+          VERSION: ${{ steps.version.outputs.version }}
+          KIND: ${{ inputs.kind }}
+        run: |
+          set -euo pipefail
+          ARGS=(--title "$PKG@$VERSION" --notes "Dispatch $KIND release for $PKG v$VERSION" --target "$GITHUB_SHA")
+          if [[ "$KIND" == "prerelease" ]]; then
+            ARGS+=(--prerelease --latest=false)
+          elif [[ "$PKG" != "reflex" ]]; then
+            ARGS+=(--latest=false)
+          fi
+          gh release create "$TAG" "${ARGS[@]}"
+      - name: Trigger publish workflow
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+          REF: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          gh workflow run publish.yml --ref "$REF" -f tag="$TAG"
