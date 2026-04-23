@@ -1574,17 +1574,21 @@ def get_app_logs(
     if not app:
         console.warn("no app with given id found")
         return None
-    params = f"?offset={offset}" if offset else f"?start={start}&end={end}"
+    params: dict[str, str | int | None] = (
+        {"offset": offset} if offset else {"start": start, "end": end}
+    )
     if cursor:
-        params += f"&cursor={cursor}"
+        params["cursor"] = cursor
     try:
         with console.status("Fetching application logs..."):
             response = httpx.get(
                 urljoin(
                     constants.Hosting.HOSTING_SERVICE,
-                    f"/api/v1/apps/{app['id']}/logsv2{params}",
+                    f"/api/v1/apps/{app['id']}/logsv2",
                 ),
+                params=params,
                 headers=authorization_header(client.token),
+                timeout=constants.Hosting.TIMEOUT,
             )
             response.raise_for_status()
     except httpx.RequestError:
