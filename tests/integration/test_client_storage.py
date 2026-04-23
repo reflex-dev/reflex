@@ -6,10 +6,8 @@ import asyncio
 from collections.abc import Generator
 
 import pytest
+from playwright.sync_api import Page, expect
 from reflex_base.constants.state import FIELD_MARKER
-from selenium.webdriver.common.by import By
-from selenium.webdriver.firefox.webdriver import WebDriver as Firefox
-from selenium.webdriver.remote.webdriver import WebDriver
 
 from reflex.testing import AppHarness
 
@@ -165,83 +163,67 @@ def client_side(tmp_path_factory) -> Generator[AppHarness, None, None]:
 
 
 @pytest.fixture
-def driver(client_side: AppHarness) -> Generator[WebDriver, None, None]:
-    """Get an instance of the browser open to the client_side app.
-
-    Args:
-        client_side: harness for ClientSide app
-
-    Yields:
-        WebDriver instance.
-    """
-    assert client_side.app_instance is not None, "app is not running"
-    driver = client_side.frontend()
-    try:
-        yield driver
-    finally:
-        driver.quit()
-
-
-@pytest.fixture
-def local_storage(driver: WebDriver) -> Generator[utils.LocalStorage, None, None]:
+def local_storage(page: Page) -> Generator[utils.LocalStorage, None, None]:
     """Get an instance of the local storage helper.
 
     Args:
-        driver: WebDriver instance.
+        page: Playwright page instance.
 
     Yields:
         Local storage helper.
     """
-    ls = utils.LocalStorage(driver)
+    ls = utils.LocalStorage(page)
     yield ls
     ls.clear()
 
 
 @pytest.fixture
-def session_storage(driver: WebDriver) -> Generator[utils.SessionStorage, None, None]:
+def session_storage(page: Page) -> Generator[utils.SessionStorage, None, None]:
     """Get an instance of the session storage helper.
 
     Args:
-        driver: WebDriver instance.
+        page: Playwright page instance.
 
     Yields:
         Session storage helper.
     """
-    ss = utils.SessionStorage(driver)
+    ss = utils.SessionStorage(page)
     yield ss
     ss.clear()
 
 
 @pytest.fixture(autouse=True)
-def delete_all_cookies(driver: WebDriver) -> Generator[None, None, None]:
+def delete_all_cookies(page: Page) -> Generator[None, None, None]:
     """Delete all cookies after each test.
 
     Args:
-        driver: WebDriver instance.
+        page: Playwright page instance.
 
     Yields:
         None
     """
     yield
-    driver.delete_all_cookies()
+    page.context.clear_cookies()
 
 
-def cookie_info_map(driver: WebDriver) -> dict[str, dict[str, str]]:
+def cookie_info_map(page: Page) -> dict[str, dict]:
     """Get a map of cookie names to cookie info.
 
     Args:
-        driver: WebDriver instance.
+        page: Playwright page instance.
 
     Returns:
         A map of cookie names to cookie info.
     """
-    return {cookie_info["name"]: cookie_info for cookie_info in driver.get_cookies()}
+    return {
+        cookie_info["name"]: dict(cookie_info) for cookie_info in page.context.cookies()
+    }
 
 
 @pytest.mark.asyncio
 async def test_client_side_state(
     client_side: AppHarness,
-    driver: WebDriver,
+    page: Page,
     local_storage: utils.LocalStorage,
     session_storage: utils.SessionStorage,
 ):
@@ -249,92 +231,78 @@ async def test_client_side_state(
 
     Args:
         client_side: harness for ClientSide app.
-        driver: WebDriver instance.
+        page: Playwright page instance.
         local_storage: Local storage helper.
         session_storage: Session storage helper.
     """
     app = client_side.app_instance
     assert app is not None
     assert client_side.frontend_url is not None
-
-    def poll_for_token():
-        token_input = AppHarness.poll_for_or_raise_timeout(
-            lambda: driver.find_element(By.ID, "token")
-        )
-
-        # wait for the backend connection to send the token
-        token = client_side.poll_for_value(token_input)
-        assert token is not None
-        return token
+    page.goto(client_side.frontend_url)
 
     def set_sub(var: str, value: str):
-        # Get a reference to the cookie manipulation form.
-        state_var_input = driver.find_element(By.ID, "state_var")
-        input_value_input = driver.find_element(By.ID, "input_value")
-        set_sub_state_button = driver.find_element(By.ID, "set_sub_state")
-        AppHarness.expect(lambda: state_var_input.get_attribute("value") == "")
-        AppHarness.expect(lambda: input_value_input.get_attribute("value") == "")
+        state_var_input = page.locator("#state_var")
+        input_value_input = page.locator("#input_value")
+        set_sub_state_button = page.locator("#set_sub_state")
+        expect(state_var_input).to_have_value("")
+        expect(input_value_input).to_have_value("")
 
-        # Set the values.
-        state_var_input.send_keys(var)
-        input_value_input.send_keys(value)
+        state_var_input.fill(var)
+        input_value_input.fill(value)
         set_sub_state_button.click()
 
     def set_sub_sub(var: str, value: str):
-        # Get a reference to the cookie manipulation form.
-        state_var_input = driver.find_element(By.ID, "state_var")
-        input_value_input = driver.find_element(By.ID, "input_value")
-        set_sub_sub_state_button = driver.find_element(By.ID, "set_sub_sub_state")
-        AppHarness.expect(lambda: state_var_input.get_attribute("value") == "")
-        AppHarness.expect(lambda: input_value_input.get_attribute("value") == "")
+        state_var_input = page.locator("#state_var")
+        input_value_input = page.locator("#input_value")
+        set_sub_sub_state_button = page.locator("#set_sub_sub_state")
+        expect(state_var_input).to_have_value("")
+        expect(input_value_input).to_have_value("")
 
-        # Set the values.
-        state_var_input.send_keys(var)
-        input_value_input.send_keys(value)
+        state_var_input.fill(var)
+        input_value_input.fill(value)
         set_sub_sub_state_button.click()
 
-    token = poll_for_token()
+    token = utils.poll_for_token(page)
 
-    # get a reference to all cookie and local storage elements
-    c1 = driver.find_element(By.ID, "c1")
-    c2 = driver.find_element(By.ID, "c2")
-    c3 = driver.find_element(By.ID, "c3")
-    c4 = driver.find_element(By.ID, "c4")
-    c5 = driver.find_element(By.ID, "c5")
-    c6 = driver.find_element(By.ID, "c6")
-    c7 = driver.find_element(By.ID, "c7")
-    l1 = driver.find_element(By.ID, "l1")
-    l2 = driver.find_element(By.ID, "l2")
-    l3 = driver.find_element(By.ID, "l3")
-    l4 = driver.find_element(By.ID, "l4")
-    s1 = driver.find_element(By.ID, "s1")
-    s2 = driver.find_element(By.ID, "s2")
-    s3 = driver.find_element(By.ID, "s3")
-    c1s = driver.find_element(By.ID, "c1s")
-    l1s = driver.find_element(By.ID, "l1s")
-    s1s = driver.find_element(By.ID, "s1s")
+    c1 = page.locator("#c1")
+    c2 = page.locator("#c2")
+    c3 = page.locator("#c3")
+    c4 = page.locator("#c4")
+    c5 = page.locator("#c5")
+    c6 = page.locator("#c6")
+    c7 = page.locator("#c7")
+    l1 = page.locator("#l1")
+    l2 = page.locator("#l2")
+    l3 = page.locator("#l3")
+    l4 = page.locator("#l4")
+    s1 = page.locator("#s1")
+    s2 = page.locator("#s2")
+    s3 = page.locator("#s3")
+    c1s = page.locator("#c1s")
+    l1s = page.locator("#l1s")
+    s1s = page.locator("#s1s")
 
     # assert on defaults where present
-    assert c1.text == ""
-    assert c2.text == "c2 default"
-    assert c3.text == ""
-    assert c4.text == ""
-    assert c5.text == ""
-    assert c6.text == ""
-    assert c7.text == "c7 default"
-    assert l1.text == ""
-    assert l2.text == "l2 default"
-    assert l3.text == ""
-    assert l4.text == "l4 default"
-    assert s1.text == ""
-    assert s2.text == "s2 default"
-    assert s3.text == ""
-    assert c1s.text == ""
-    assert l1s.text == ""
-    assert s1s.text == ""
+    expect(c1).to_have_text("")
+    expect(c2).to_have_text("c2 default")
+    expect(c3).to_have_text("")
+    expect(c4).to_have_text("")
+    expect(c5).to_have_text("")
+    expect(c6).to_have_text("")
+    expect(c7).to_have_text("c7 default")
+    expect(l1).to_have_text("")
+    expect(l2).to_have_text("l2 default")
+    expect(l3).to_have_text("")
+    expect(l4).to_have_text("l4 default")
+    expect(s1).to_have_text("")
+    expect(s2).to_have_text("s2 default")
+    expect(s3).to_have_text("")
+    expect(c1s).to_have_text("")
+    expect(l1s).to_have_text("")
+    expect(s1s).to_have_text("")
 
     # no cookies should be set yet!
-    assert not driver.get_cookies()
+    assert not page.context.cookies()
     local_storage_items = local_storage.items()
     local_storage_items.pop("last_compiled_theme", None)
     local_storage_items.pop("theme", None)
@@ -369,91 +337,56 @@ async def test_client_side_state(
         "_client_side_sub_sub_state",
     ])
 
+    def _exp(name: str, value: str, path: str = "/", same_site: str = "Lax") -> dict:
+        return {
+            "domain": "localhost",
+            "httpOnly": False,
+            "name": name,
+            "path": path,
+            "sameSite": same_site,
+            "secure": False,
+            "value": value,
+        }
+
     exp_cookies = {
-        f"{sub_state_name}.c1" + FIELD_MARKER: {
-            "domain": "localhost",
-            "httpOnly": False,
-            "name": f"{sub_state_name}.c1" + FIELD_MARKER,
-            "path": "/",
-            "sameSite": "Lax",
-            "secure": False,
-            "value": "c1%20value",
-        },
-        f"{sub_state_name}.c2" + FIELD_MARKER: {
-            "domain": "localhost",
-            "httpOnly": False,
-            "name": f"{sub_state_name}.c2" + FIELD_MARKER,
-            "path": "/",
-            "sameSite": "Lax",
-            "secure": False,
-            "value": "c2%20value",
-        },
-        f"{sub_state_name}.c4" + FIELD_MARKER: {
-            "domain": "localhost",
-            "httpOnly": False,
-            "name": f"{sub_state_name}.c4" + FIELD_MARKER,
-            "path": "/",
-            "sameSite": "Strict",
-            "secure": False,
-            "value": "c4%20value",
-        },
-        "c6": {
-            "domain": "localhost",
-            "httpOnly": False,
-            "name": "c6",
-            "path": "/",
-            "sameSite": "Lax",
-            "secure": False,
-            "value": "c6%20value",
-        },
-        f"{sub_state_name}.c7" + FIELD_MARKER: {
-            "domain": "localhost",
-            "httpOnly": False,
-            "name": f"{sub_state_name}.c7" + FIELD_MARKER,
-            "path": "/",
-            "sameSite": "Lax",
-            "secure": False,
-            "value": "c7%20value",
-        },
-        f"{sub_sub_state_name}.c1s" + FIELD_MARKER: {
-            "domain": "localhost",
-            "httpOnly": False,
-            "name": f"{sub_sub_state_name}.c1s" + FIELD_MARKER,
-            "path": "/",
-            "sameSite": "Lax",
-            "secure": False,
-            "value": "c1s%20value",
-        },
+        f"{sub_state_name}.c1" + FIELD_MARKER: _exp(
+            f"{sub_state_name}.c1" + FIELD_MARKER, "c1%20value"
+        ),
+        f"{sub_state_name}.c2" + FIELD_MARKER: _exp(
+            f"{sub_state_name}.c2" + FIELD_MARKER, "c2%20value"
+        ),
+        f"{sub_state_name}.c4" + FIELD_MARKER: _exp(
+            f"{sub_state_name}.c4" + FIELD_MARKER, "c4%20value", same_site="Strict"
+        ),
+        "c6": _exp("c6", "c6%20value"),
+        f"{sub_state_name}.c7" + FIELD_MARKER: _exp(
+            f"{sub_state_name}.c7" + FIELD_MARKER, "c7%20value"
+        ),
+        f"{sub_sub_state_name}.c1s" + FIELD_MARKER: _exp(
+            f"{sub_sub_state_name}.c1s" + FIELD_MARKER, "c1s%20value"
+        ),
     }
     AppHarness.expect(
-        lambda: all(cookie_key in cookie_info_map(driver) for cookie_key in exp_cookies)
+        lambda: all(cookie_key in cookie_info_map(page) for cookie_key in exp_cookies)
     )
-    cookies = cookie_info_map(driver)
+    cookies = cookie_info_map(page)
     for exp_cookie_key, exp_cookie_data in exp_cookies.items():
-        assert cookies.pop(exp_cookie_key) == exp_cookie_data
+        got = cookies.pop(exp_cookie_key)
+        got.pop("expires", None)
+        assert got == exp_cookie_data
     # assert all cookies have been popped for this page
     assert not cookies
 
     # Test cookie with expiry by itself to avoid timing flakiness
     set_sub("c3", "c3 value")
     AppHarness.expect(
-        lambda: f"{sub_state_name}.c3" + FIELD_MARKER in cookie_info_map(driver)
+        lambda: f"{sub_state_name}.c3" + FIELD_MARKER in cookie_info_map(page)
     )
-    c3_cookie = cookie_info_map(driver)[f"{sub_state_name}.c3" + FIELD_MARKER]
-    assert c3_cookie.pop("expiry") is not None
-    assert c3_cookie == {
-        "domain": "localhost",
-        "httpOnly": False,
-        "name": f"{sub_state_name}.c3" + FIELD_MARKER,
-        "path": "/",
-        "sameSite": "Lax",
-        "secure": False,
-        "value": "c3%20value",
-    }
+    c3_cookie = cookie_info_map(page)[f"{sub_state_name}.c3" + FIELD_MARKER]
+    assert c3_cookie.pop("expires") not in (None, -1)
+    assert c3_cookie == _exp(f"{sub_state_name}.c3" + FIELD_MARKER, "c3%20value")
     await asyncio.sleep(2)  # wait for c3 to expire
-    if not isinstance(driver, Firefox):
-        # Note: Firefox does not remove expired cookies Bug 576347
-        assert f"{sub_state_name}.c3" + FIELD_MARKER not in cookie_info_map(driver)
+    assert f"{sub_state_name}.c3" + FIELD_MARKER not in cookie_info_map(page)
 
     local_storage_items = local_storage.items()
     local_storage_items.pop("last_compiled_theme", None)
@@ -483,289 +416,213 @@ async def test_client_side_state(
     )
     assert not session_storage_items
 
-    assert c1.text == "c1 value"
-    assert c2.text == "c2 value"
-    assert c3.text == "c3 value"
-    assert c4.text == "c4 value"
-    assert c5.text == "c5 value"
-    assert c6.text == "c6 value"
-    assert c7.text == "c7 value"
-    assert l1.text == "l1 value"
-    assert l2.text == "l2 value"
-    assert l3.text == "l3 value"
-    assert l4.text == "l4 value"
-    assert s1.text == "s1 value"
-    assert s2.text == "s2 value"
-    assert s3.text == "s3 value"
-    assert c1s.text == "c1s value"
-    assert l1s.text == "l1s value"
-    assert s1s.text == "s1s value"
+    expect(c1).to_have_text("c1 value")
+    expect(c2).to_have_text("c2 value")
+    expect(c3).to_have_text("c3 value")
+    expect(c4).to_have_text("c4 value")
+    expect(c5).to_have_text("c5 value")
+    expect(c6).to_have_text("c6 value")
+    expect(c7).to_have_text("c7 value")
+    expect(l1).to_have_text("l1 value")
+    expect(l2).to_have_text("l2 value")
+    expect(l3).to_have_text("l3 value")
+    expect(l4).to_have_text("l4 value")
+    expect(s1).to_have_text("s1 value")
+    expect(s2).to_have_text("s2 value")
+    expect(s3).to_have_text("s3 value")
+    expect(c1s).to_have_text("c1s value")
+    expect(l1s).to_have_text("l1s value")
+    expect(s1s).to_have_text("s1s value")
 
     # navigate to the /foo route
-    with utils.poll_for_navigation(driver):
-        driver.get(client_side.frontend_url.removesuffix("/") + "/foo/")
+    with utils.poll_for_navigation(page):
+        page.goto(client_side.frontend_url.removesuffix("/") + "/foo/")
 
-    # get new references to all cookie and local storage elements
-    c1 = AppHarness.poll_for_or_raise_timeout(lambda: driver.find_element(By.ID, "c1"))
-    c2 = driver.find_element(By.ID, "c2")
-    c3 = driver.find_element(By.ID, "c3")
-    c4 = driver.find_element(By.ID, "c4")
-    c5 = driver.find_element(By.ID, "c5")
-    c6 = driver.find_element(By.ID, "c6")
-    c7 = driver.find_element(By.ID, "c7")
-    l1 = driver.find_element(By.ID, "l1")
-    l2 = driver.find_element(By.ID, "l2")
-    l3 = driver.find_element(By.ID, "l3")
-    l4 = driver.find_element(By.ID, "l4")
-    s1 = driver.find_element(By.ID, "s1")
-    s2 = driver.find_element(By.ID, "s2")
-    s3 = driver.find_element(By.ID, "s3")
-    c1s = driver.find_element(By.ID, "c1s")
-    l1s = driver.find_element(By.ID, "l1s")
-    s1s = driver.find_element(By.ID, "s1s")
+    # locators are re-evaluated on each use
+    c1 = page.locator("#c1")
+    c2 = page.locator("#c2")
+    c3 = page.locator("#c3")
+    c4 = page.locator("#c4")
+    c5 = page.locator("#c5")
+    c6 = page.locator("#c6")
+    c7 = page.locator("#c7")
+    l1 = page.locator("#l1")
+    l2 = page.locator("#l2")
+    l3 = page.locator("#l3")
+    l4 = page.locator("#l4")
+    s1 = page.locator("#s1")
+    s2 = page.locator("#s2")
+    s3 = page.locator("#s3")
+    c1s = page.locator("#c1s")
+    l1s = page.locator("#l1s")
+    s1s = page.locator("#s1s")
 
-    assert c1.text == "c1 value"
-    assert c2.text == "c2 value"
-    assert c3.text == ""  # cookie expired so value removed from state
-    assert c4.text == "c4 value"
-    assert c5.text == "c5 value"
-    assert c6.text == "c6 value"
-    assert c7.text == "c7 value"
-    assert l1.text == "l1 value"
-    assert l2.text == "l2 value"
-    assert l3.text == "l3 value"
-    assert l4.text == "l4 value"
-    assert s1.text == "s1 value"
-    assert s2.text == "s2 value"
-    assert s3.text == "s3 value"
-    assert c1s.text == "c1s value"
-    assert l1s.text == "l1s value"
-    assert s1s.text == "s1s value"
+    expect(c1).to_have_text("c1 value")
+    expect(c2).to_have_text("c2 value")
+    expect(c3).to_have_text("")  # cookie expired so value removed from state
+    expect(c4).to_have_text("c4 value")
+    expect(c5).to_have_text("c5 value")
+    expect(c6).to_have_text("c6 value")
+    expect(c7).to_have_text("c7 value")
+    expect(l1).to_have_text("l1 value")
+    expect(l2).to_have_text("l2 value")
+    expect(l3).to_have_text("l3 value")
+    expect(l4).to_have_text("l4 value")
+    expect(s1).to_have_text("s1 value")
+    expect(s2).to_have_text("s2 value")
+    expect(s3).to_have_text("s3 value")
+    expect(c1s).to_have_text("c1s value")
+    expect(l1s).to_have_text("l1s value")
+    expect(s1s).to_have_text("s1s value")
 
     # set a new token to force reloading the values from client
-    driver.execute_script("window.sessionStorage.setItem('token', '');")
-    driver.refresh()
+    page.evaluate("() => window.sessionStorage.setItem('token', '')")
+    page.reload()
 
     # wait for the backend connection to send the token (again)
-    token_input = AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "token")
-    )
-    assert token_input
-    token = client_side.poll_for_value(token_input)
-    assert token is not None
+    token = utils.poll_for_token(page)
 
-    # get new references to all cookie and local storage elements (again)
-    c1 = driver.find_element(By.ID, "c1")
-    c2 = driver.find_element(By.ID, "c2")
-    c3 = driver.find_element(By.ID, "c3")
-    c4 = driver.find_element(By.ID, "c4")
-    c5 = driver.find_element(By.ID, "c5")
-    c6 = driver.find_element(By.ID, "c6")
-    c7 = driver.find_element(By.ID, "c7")
-    l1 = driver.find_element(By.ID, "l1")
-    l2 = driver.find_element(By.ID, "l2")
-    l3 = driver.find_element(By.ID, "l3")
-    l4 = driver.find_element(By.ID, "l4")
-    s1 = driver.find_element(By.ID, "s1")
-    s2 = driver.find_element(By.ID, "s2")
-    s3 = driver.find_element(By.ID, "s3")
-    c1s = driver.find_element(By.ID, "c1s")
-    l1s = driver.find_element(By.ID, "l1s")
-    s1s = driver.find_element(By.ID, "s1s")
-
-    assert c1.text == "c1 value"
-    assert c2.text == "c2 value"
-    assert c3.text == ""  # temporary cookie expired after reset state!
-    assert c4.text == "c4 value"
-    assert c5.text == "c5 value"
-    assert c6.text == "c6 value"
-    assert c7.text == "c7 value"
-    assert l1.text == "l1 value"
-    assert l2.text == "l2 value"
-    assert l3.text == "l3 value"
-    assert l4.text == "l4 value"
-    assert s1.text == "s1 value"
-    assert s2.text == "s2 value"
-    assert s3.text == "s3 value"
-    assert c1s.text == "c1s value"
-    assert l1s.text == "l1s value"
-    assert s1s.text == "s1s value"
+    expect(page.locator("#c1")).to_have_text("c1 value")
+    expect(page.locator("#c2")).to_have_text("c2 value")
+    expect(page.locator("#c3")).to_have_text("")
+    expect(page.locator("#c4")).to_have_text("c4 value")
+    expect(page.locator("#c5")).to_have_text("c5 value")
+    expect(page.locator("#c6")).to_have_text("c6 value")
+    expect(page.locator("#c7")).to_have_text("c7 value")
+    expect(page.locator("#l1")).to_have_text("l1 value")
+    expect(page.locator("#l2")).to_have_text("l2 value")
+    expect(page.locator("#l3")).to_have_text("l3 value")
+    expect(page.locator("#l4")).to_have_text("l4 value")
+    expect(page.locator("#s1")).to_have_text("s1 value")
+    expect(page.locator("#s2")).to_have_text("s2 value")
+    expect(page.locator("#s3")).to_have_text("s3 value")
+    expect(page.locator("#c1s")).to_have_text("c1s value")
+    expect(page.locator("#l1s")).to_have_text("l1s value")
+    expect(page.locator("#s1s")).to_have_text("s1s value")
 
     # make sure c5 cookie shows up on the `/foo` route
     AppHarness.expect(
-        lambda: f"{sub_state_name}.c5" + FIELD_MARKER in cookie_info_map(driver)
+        lambda: f"{sub_state_name}.c5" + FIELD_MARKER in cookie_info_map(page)
     )
-    assert cookie_info_map(driver)[f"{sub_state_name}.c5" + FIELD_MARKER] == {
-        "domain": "localhost",
-        "httpOnly": False,
-        "name": f"{sub_state_name}.c5" + FIELD_MARKER,
-        "path": "/foo/",
-        "sameSite": "Lax",
-        "secure": False,
-        "value": "c5%20value",
-    }
+    c5_cookie = cookie_info_map(page)[f"{sub_state_name}.c5" + FIELD_MARKER]
+    c5_cookie.pop("expires", None)
+    assert c5_cookie == _exp(
+        f"{sub_state_name}.c5" + FIELD_MARKER, "c5%20value", path="/foo/"
+    )
 
     # Open a new tab to check that sync'd local storage is working
-    main_tab = driver.window_handles[0]
-    driver.switch_to.new_window("window")
-    driver.get(client_side.frontend_url)
+    main_tab = page
+    new_tab = page.context.new_page()
+    new_tab.goto(client_side.frontend_url)
+
+    def new_tab_set_sub(var: str, value: str):
+        state_var_input = new_tab.locator("#state_var")
+        input_value_input = new_tab.locator("#input_value")
+        set_sub_state_button = new_tab.locator("#set_sub_state")
+        expect(state_var_input).to_have_value("")
+        expect(input_value_input).to_have_value("")
+        state_var_input.fill(var)
+        input_value_input.fill(value)
+        set_sub_state_button.click()
 
     # New tab should have a different state token.
-    assert poll_for_token() != token
+    assert utils.poll_for_token(new_tab) != token
 
     # Set values and check them in the new tab.
-    set_sub("l5", "l5 value")
-    set_sub("l6", "l6 value")
-    l5 = driver.find_element(By.ID, "l5")
-    l6 = driver.find_element(By.ID, "l6")
-    AppHarness.expect(lambda: l6.text == "l6 value")
-    assert l5.text == "l5 value"
+    new_tab_set_sub("l5", "l5 value")
+    new_tab_set_sub("l6", "l6 value")
+    expect(new_tab.locator("#l6")).to_have_text("l6 value")
+    expect(new_tab.locator("#l5")).to_have_text("l5 value")
 
     # Set session storage values in the new tab
-    set_sub("s1", "other tab s1")
-    s1 = driver.find_element(By.ID, "s1")
-    s2 = driver.find_element(By.ID, "s2")
-    s3 = driver.find_element(By.ID, "s3")
-    AppHarness.expect(lambda: s1.text == "other tab s1")
-    assert s2.text == "s2 default"
-    assert s3.text == ""
+    new_tab_set_sub("s1", "other tab s1")
+    expect(new_tab.locator("#s1")).to_have_text("other tab s1")
+    expect(new_tab.locator("#s2")).to_have_text("s2 default")
+    expect(new_tab.locator("#s3")).to_have_text("")
 
-    # Switch back to main window.
-    driver.switch_to.window(main_tab)
+    # Switch back to main window — the values should have updated automatically.
+    expect(main_tab.locator("#l6")).to_have_text("l6 value")
+    expect(main_tab.locator("#l5")).to_have_text("l5 value")
+    expect(main_tab.locator("#s1")).to_have_text("s1 value")
+    expect(main_tab.locator("#s2")).to_have_text("s2 value")
+    expect(main_tab.locator("#s3")).to_have_text("s3 value")
 
-    # The values should have updated automatically.
-    l5 = driver.find_element(By.ID, "l5")
-    l6 = driver.find_element(By.ID, "l6")
-    AppHarness.expect(lambda: l6.text == "l6 value")
-    assert l5.text == "l5 value"
-
-    s1 = driver.find_element(By.ID, "s1")
-    s2 = driver.find_element(By.ID, "s2")
-    s3 = driver.find_element(By.ID, "s3")
-    AppHarness.expect(lambda: s1.text == "s1 value")
-    assert s2.text == "s2 value"
-    assert s3.text == "s3 value"
+    new_tab.close()
 
     # Simulate state expiration
-    new_token_btn = driver.find_element(By.ID, "new_token")
-    new_token_btn.click()
+    main_tab.locator("#new_token").click()
 
     # Trigger event to get a new instance of the state since the old was expired.
     set_sub("c1", "c1 post expire")
 
-    # get new references to all cookie and local storage elements (again)
-    c1 = driver.find_element(By.ID, "c1")
-    c2 = driver.find_element(By.ID, "c2")
-    c3 = driver.find_element(By.ID, "c3")
-    c4 = driver.find_element(By.ID, "c4")
-    c5 = driver.find_element(By.ID, "c5")
-    c6 = driver.find_element(By.ID, "c6")
-    c7 = driver.find_element(By.ID, "c7")
-    l1 = driver.find_element(By.ID, "l1")
-    l2 = driver.find_element(By.ID, "l2")
-    l3 = driver.find_element(By.ID, "l3")
-    l4 = driver.find_element(By.ID, "l4")
-    s1 = driver.find_element(By.ID, "s1")
-    s2 = driver.find_element(By.ID, "s2")
-    s3 = driver.find_element(By.ID, "s3")
-    c1s = driver.find_element(By.ID, "c1s")
-    l1s = driver.find_element(By.ID, "l1s")
-    s1s = driver.find_element(By.ID, "s1s")
-
-    assert c1.text == "c1 post expire"
-    assert c2.text == "c2 value"
-    assert c3.text == ""  # temporary cookie expired after reset state!
-    assert c4.text == "c4 value"
-    assert c5.text == "c5 value"
-    assert c6.text == "c6 value"
-    assert c7.text == "c7 value"
-    assert l1.text == "l1 value"
-    assert l2.text == "l2 value"
-    assert l3.text == "l3 value"
-    assert l4.text == "l4 value"
-    assert s1.text == "s1 value"
-    assert s2.text == "s2 value"
-    assert s3.text == "s3 value"
-    assert c1s.text == "c1s value"
-    assert l1s.text == "l1s value"
-    assert s1s.text == "s1s value"
+    expect(main_tab.locator("#c1")).to_have_text("c1 post expire")
+    expect(main_tab.locator("#c2")).to_have_text("c2 value")
+    expect(main_tab.locator("#c3")).to_have_text("")
+    expect(main_tab.locator("#c4")).to_have_text("c4 value")
+    expect(main_tab.locator("#c5")).to_have_text("c5 value")
+    expect(main_tab.locator("#c6")).to_have_text("c6 value")
+    expect(main_tab.locator("#c7")).to_have_text("c7 value")
+    expect(main_tab.locator("#l1")).to_have_text("l1 value")
+    expect(main_tab.locator("#l2")).to_have_text("l2 value")
+    expect(main_tab.locator("#l3")).to_have_text("l3 value")
+    expect(main_tab.locator("#l4")).to_have_text("l4 value")
+    expect(main_tab.locator("#s1")).to_have_text("s1 value")
+    expect(main_tab.locator("#s2")).to_have_text("s2 value")
+    expect(main_tab.locator("#s3")).to_have_text("s3 value")
+    expect(main_tab.locator("#c1s")).to_have_text("c1s value")
+    expect(main_tab.locator("#l1s")).to_have_text("l1s value")
+    expect(main_tab.locator("#s1s")).to_have_text("s1s value")
 
     # clear the cookie jar and local storage, ensure state reset to default
-    driver.delete_all_cookies()
+    page.context.clear_cookies()
     local_storage.clear()
 
     # refresh the page to trigger re-hydrate
-    driver.refresh()
+    page.reload()
 
     # wait for the backend connection to send the token (again)
-    token_input = AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "token")
-    )
-    token = client_side.poll_for_value(token_input)
-    assert token is not None
+    utils.poll_for_token(page)
 
     # all values should be back to their defaults
-    c1 = driver.find_element(By.ID, "c1")
-    c2 = driver.find_element(By.ID, "c2")
-    c3 = driver.find_element(By.ID, "c3")
-    c4 = driver.find_element(By.ID, "c4")
-    c5 = driver.find_element(By.ID, "c5")
-    c6 = driver.find_element(By.ID, "c6")
-    c7 = driver.find_element(By.ID, "c7")
-    l1 = driver.find_element(By.ID, "l1")
-    l2 = driver.find_element(By.ID, "l2")
-    l3 = driver.find_element(By.ID, "l3")
-    l4 = driver.find_element(By.ID, "l4")
-    c1s = driver.find_element(By.ID, "c1s")
-    l1s = driver.find_element(By.ID, "l1s")
-
-    # assert on defaults where present
-    assert c1.text == ""
-    assert c2.text == "c2 default"
-    assert c3.text == ""
-    assert c4.text == ""
-    assert c5.text == ""
-    assert c6.text == ""
-    assert c7.text == "c7 default"
-    assert l1.text == ""
-    assert l2.text == "l2 default"
-    assert l3.text == ""
-    assert l4.text == "l4 default"
-    assert c1s.text == ""
-    assert l1s.text == ""
+    expect(page.locator("#c1")).to_have_text("")
+    expect(page.locator("#c2")).to_have_text("c2 default")
+    expect(page.locator("#c3")).to_have_text("")
+    expect(page.locator("#c4")).to_have_text("")
+    expect(page.locator("#c5")).to_have_text("")
+    expect(page.locator("#c6")).to_have_text("")
+    expect(page.locator("#c7")).to_have_text("c7 default")
+    expect(page.locator("#l1")).to_have_text("")
+    expect(page.locator("#l2")).to_have_text("l2 default")
+    expect(page.locator("#l3")).to_have_text("")
+    expect(page.locator("#l4")).to_have_text("l4 default")
+    expect(page.locator("#c1s")).to_have_text("")
+    expect(page.locator("#l1s")).to_have_text("")
 
 
 def test_json_cookie_values(
     client_side: AppHarness,
-    driver: WebDriver,
+    page: Page,
 ):
     """Test that JSON-formatted cookie values are preserved as strings.
 
     Args:
         client_side: harness for ClientSide app.
-        driver: WebDriver instance.
+        page: Playwright page instance.
     """
     app = client_side.app_instance
     assert app is not None
     assert client_side.frontend_url is not None
-
-    def poll_for_token():
-        token_input = AppHarness.poll_for_or_raise_timeout(
-            lambda: driver.find_element(By.ID, "token")
-        )
-        token = client_side.poll_for_value(token_input)
-        assert token is not None
-        return token
+    page.goto(client_side.frontend_url)
 
     def set_sub(var: str, value: str):
-        state_var_input = driver.find_element(By.ID, "state_var")
-        input_value_input = driver.find_element(By.ID, "input_value")
-        set_sub_state_button = driver.find_element(By.ID, "set_sub_state")
-        AppHarness.expect(lambda: state_var_input.get_attribute("value") == "")
-        AppHarness.expect(lambda: input_value_input.get_attribute("value") == "")
+        state_var_input = page.locator("#state_var")
+        input_value_input = page.locator("#input_value")
+        set_sub_state_button = page.locator("#set_sub_state")
+        expect(state_var_input).to_have_value("")
+        expect(input_value_input).to_have_value("")
 
-        state_var_input.send_keys(var)
-        input_value_input.send_keys(value)
+        state_var_input.fill(var)
+        input_value_input.fill(value)
         set_sub_state_button.click()
 
     def _assert_json_cookie_with_refresh(cookie_id: str, json_value: str):
@@ -775,15 +632,15 @@ def test_json_cookie_values(
             cookie_id: ID of the cookie element to manipulate.
             json_value: JSON string to set as the cookie value.
         """
-        poll_for_token()
-        element = driver.find_element(By.ID, cookie_id)
+        utils.poll_for_token(page)
+        element = page.locator(f"#{cookie_id}")
         set_sub(cookie_id, json_value)
-        AppHarness.expect(lambda: element.text == json_value)
+        expect(element).to_have_text(json_value)
 
-        driver.refresh()
-        poll_for_token()
-        element = driver.find_element(By.ID, cookie_id)
-        AppHarness.expect(lambda: element.text == json_value)
+        page.reload()
+        utils.poll_for_token(page)
+        element = page.locator(f"#{cookie_id}")
+        expect(element).to_have_text(json_value)
 
     json_dict = '{"access_token": "redacted", "refresh_token": "redacted", "created_at": 1234567890, "expires_in": 3600}'
     _assert_json_cookie_with_refresh("c1", json_dict)

@@ -3,7 +3,7 @@
 from collections.abc import Generator
 
 import pytest
-from selenium.webdriver.common.by import By
+from playwright.sync_api import Page, expect
 
 from reflex.testing import AppHarness
 
@@ -58,49 +58,43 @@ def MemoApp():
     app.add_page(index)
 
 
-@pytest.fixture
-def memo_app(tmp_path) -> Generator[AppHarness, None, None]:
+@pytest.fixture(scope="module")
+def memo_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start MemoApp app at tmp_path via AppHarness.
 
     Args:
-        tmp_path: pytest tmp_path fixture
+        tmp_path_factory: pytest tmp_path_factory fixture
 
     Yields:
         running AppHarness instance
     """
     with AppHarness.create(
-        root=tmp_path,
+        root=tmp_path_factory.mktemp("memo_app"),
         app_source=MemoApp,
     ) as harness:
         yield harness
 
 
-def test_memo_app(memo_app: AppHarness):
+def test_memo_app(memo_app: AppHarness, page: Page):
     """Render various memo'd components and assert on the output.
 
     Args:
         memo_app: harness for MemoApp app
+        page: Playwright Page fixture
     """
     assert memo_app.app_instance is not None, "app is not running"
-    driver = memo_app.frontend()
+    assert memo_app.frontend_url is not None
+    page.goto(memo_app.frontend_url)
 
     # check that the output matches
-    memo_custom_code_stack = AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "memo-custom-code")
-    )
-    assert (
-        memo_app.poll_for_content(memo_custom_code_stack, exp_not_equal="")
-        == "foobarbarbar"
-    )
-    assert memo_custom_code_stack.text == "foobarbarbar"
+    memo_custom_code_stack = page.locator("#memo-custom-code")
+    expect(memo_custom_code_stack).to_have_text("foobarbarbar")
 
     # click the button to trigger partial event application
-    button = driver.find_element(By.ID, "memo-button")
-    button.click()
-    last_value = driver.find_element(By.ID, "memo-last-value")
-    assert memo_app.poll_for_content(last_value, exp_not_equal="") == "memod_some_value"
+    page.locator("#memo-button").click()
+    last_value = page.locator("#memo-last-value")
+    expect(last_value).to_have_text("memod_some_value")
 
     # enter text to trigger passed argument to event handler
-    textbox = driver.find_element(By.ID, "memo-input")
-    textbox.send_keys("new_value")
-    AppHarness.expect(lambda: memo_app.poll_for_content(last_value) == "new_value")
+    page.locator("#memo-input").fill("new_value")
+    expect(last_value).to_have_text("new_value")

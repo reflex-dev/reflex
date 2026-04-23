@@ -7,12 +7,10 @@ from collections.abc import Callable, Generator
 
 import httpx
 import pytest
+from playwright.sync_api import Locator, Page, expect
 from reflex_base.config import get_config
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.remote.webelement import WebElement
 
-from reflex.testing import AppHarness, WebDriver
+from reflex.testing import AppHarness
 
 from . import utils
 
@@ -198,7 +196,7 @@ def LinkedStateApp():
     app.add_page(index)
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def linked_state(
     tmp_path_factory,
 ) -> Generator[AppHarness, None, None]:
@@ -221,259 +219,237 @@ def linked_state(
 @pytest.fixture
 def tab_factory(
     linked_state: AppHarness,
-) -> Generator[Callable[[], WebDriver], None, None]:
-    """Get an instance of the browser open to the linked_state app.
+    page: Page,
+) -> Generator[Callable[[], Page], None, None]:
+    """Factory that opens new Playwright pages against the linked_state app.
+
+    The first call returns the default function-scoped `page` fixture so that
+    Playwright still manages its lifecycle; later calls open additional pages
+    in the same browser context and will be closed on teardown.
 
     Args:
         linked_state: harness for LinkedStateApp
+        page: The default Playwright page fixture.
 
     Yields:
-        WebDriver instance.
-
+        A zero-argument callable returning a Page navigated to the app.
     """
     assert linked_state.app_instance is not None, "app is not running"
+    assert linked_state.frontend_url is not None
 
-    drivers = []
+    pages: list[Page] = []
+    extra_pages: list[Page] = []
 
-    def driver() -> WebDriver:
-        d = linked_state.frontend()
-        drivers.append(d)
-        return d
+    def factory() -> Page:
+        if not pages:
+            page.goto(linked_state.frontend_url)
+            pages.append(page)
+            return page
+        new_page = page.context.new_page()
+        new_page.goto(linked_state.frontend_url)
+        pages.append(new_page)
+        extra_pages.append(new_page)
+        return new_page
 
     try:
-        yield driver
+        yield factory
     finally:
-        for d in drivers:
-            d.quit()
+        for p in extra_pages:
+            p.close()
+
+
+def _wait_for_token(tab: Page) -> None:
+    """Block until the session-storage token is present in the given tab."""
+    ss = utils.SessionStorage(tab)
+    assert AppHarness._poll_for(lambda: ss.get("token") is not None), "token not found"
 
 
 def test_linked_state(
     linked_state: AppHarness,
-    tab_factory: Callable[[], WebDriver],
+    tab_factory: Callable[[], Page],
 ):
     """Test that multiple tabs can link to and share state.
 
     Args:
         linked_state: harness for LinkedStateApp.
-        tab_factory: factory to create WebDriver instances.
-
+        tab_factory: factory to create Playwright pages.
     """
     assert linked_state.app_instance is not None
 
     tab1 = tab_factory()
     tab2 = tab_factory()
-    ss = utils.SessionStorage(tab1)
-    assert AppHarness._poll_for(lambda: ss.get("token") is not None), "token not found"
-    n_changes_1 = tab1.find_element(By.ID, "n-changes")
-    greeting_1 = tab1.find_element(By.ID, "greeting")
-    ss = utils.SessionStorage(tab2)
-    assert AppHarness._poll_for(lambda: ss.get("token") is not None), "token not found"
-    n_changes_2 = tab2.find_element(By.ID, "n-changes")
-    greeting_2 = tab2.find_element(By.ID, "greeting")
+    _wait_for_token(tab1)
+    n_changes_1 = tab1.locator("#n-changes")
+    greeting_1 = tab1.locator("#greeting")
+    _wait_for_token(tab2)
+    n_changes_2 = tab2.locator("#n-changes")
+    greeting_2 = tab2.locator("#greeting")
 
     # Initial state
-    assert n_changes_1.text == "0"
-    assert greeting_1.text == "Hello, world!"
-    assert n_changes_2.text == "0"
-    assert greeting_2.text == "Hello, world!"
+    expect(n_changes_1).to_have_text("0")
+    expect(greeting_1).to_have_text("Hello, world!")
+    expect(n_changes_2).to_have_text("0")
+    expect(greeting_2).to_have_text("Hello, world!")
 
     # Change state in tab 1
-    tab1.find_element(By.ID, "who-input").send_keys("Alice", Keys.ENTER)
-    assert linked_state.poll_for_content(n_changes_1, exp_not_equal="0") == "1"
-    assert (
-        linked_state.poll_for_content(greeting_1, exp_not_equal="Hello, world!")
-        == "Hello, Alice!"
-    )
+    tab1.locator("#who-input").fill("Alice")
+    tab1.locator("#who-input").press("Enter")
+    expect(n_changes_1).to_have_text("1")
+    expect(greeting_1).to_have_text("Hello, Alice!")
 
     # Change state in tab 2
-    tab2.find_element(By.ID, "who-input").send_keys("Bob", Keys.ENTER)
-    assert linked_state.poll_for_content(n_changes_2, exp_not_equal="0") == "1"
-    assert (
-        linked_state.poll_for_content(greeting_2, exp_not_equal="Hello, world!")
-        == "Hello, Bob!"
-    )
+    tab2.locator("#who-input").fill("Bob")
+    tab2.locator("#who-input").press("Enter")
+    expect(n_changes_2).to_have_text("1")
+    expect(greeting_2).to_have_text("Hello, Bob!")
 
     # Link both tabs to the same token, "shared-foo"
     shared_token = f"shared-foo-{uuid.uuid4()}"
     for tab in (tab1, tab2):
-        tab.find_element(By.ID, "token-input").send_keys(shared_token, Keys.ENTER)
-    assert linked_state.poll_for_content(n_changes_1, exp_not_equal="1") == "0"
-    assert (
-        linked_state.poll_for_content(greeting_1, exp_not_equal="Hello, Alice!")
-        == "Hello, world!"
-    )
-    assert linked_state.poll_for_content(n_changes_2, exp_not_equal="1") == "0"
-    assert (
-        linked_state.poll_for_content(greeting_2, exp_not_equal="Hello, Bob!")
-        == "Hello, world!"
-    )
+        tab.locator("#token-input").fill(shared_token)
+        tab.locator("#token-input").press("Enter")
+    expect(n_changes_1).to_have_text("0")
+    expect(greeting_1).to_have_text("Hello, world!")
+    expect(n_changes_2).to_have_text("0")
+    expect(greeting_2).to_have_text("Hello, world!")
 
     # Set a new value in tab 1, should reflect in tab 2
-    tab1.find_element(By.ID, "who-input").send_keys("Charlie", Keys.ENTER)
-    assert linked_state.poll_for_content(n_changes_1, exp_not_equal="0") == "1"
-    assert (
-        linked_state.poll_for_content(greeting_1, exp_not_equal="Hello, world!")
-        == "Hello, Charlie!"
-    )
-    assert linked_state.poll_for_content(n_changes_2, exp_not_equal="0") == "1"
-    assert (
-        linked_state.poll_for_content(greeting_2, exp_not_equal="Hello, world!")
-        == "Hello, Charlie!"
-    )
+    tab1.locator("#who-input").fill("Charlie")
+    tab1.locator("#who-input").press("Enter")
+    expect(n_changes_1).to_have_text("1")
+    expect(greeting_1).to_have_text("Hello, Charlie!")
+    expect(n_changes_2).to_have_text("1")
+    expect(greeting_2).to_have_text("Hello, Charlie!")
 
     # Bump the counter in tab 2, should reflect in tab 1
-    counter_button_1 = tab1.find_element(By.ID, "counter-button")
-    counter_button_2 = tab2.find_element(By.ID, "counter-button")
-    assert counter_button_1.text == "0"
-    assert counter_button_2.text == "0"
+    counter_button_1 = tab1.locator("#counter-button")
+    counter_button_2 = tab2.locator("#counter-button")
+    expect(counter_button_1).to_have_text("0")
+    expect(counter_button_2).to_have_text("0")
     counter_button_2.click()
-    assert linked_state.poll_for_content(counter_button_1, exp_not_equal="0") == "1"
-    assert linked_state.poll_for_content(counter_button_2, exp_not_equal="0") == "1"
+    expect(counter_button_1).to_have_text("1")
+    expect(counter_button_2).to_have_text("1")
     counter_button_1.click()
-    assert linked_state.poll_for_content(counter_button_1, exp_not_equal="1") == "2"
-    assert linked_state.poll_for_content(counter_button_2, exp_not_equal="1") == "2"
+    expect(counter_button_1).to_have_text("2")
+    expect(counter_button_2).to_have_text("2")
     counter_button_2.click()
-    assert linked_state.poll_for_content(counter_button_1, exp_not_equal="2") == "3"
-    assert linked_state.poll_for_content(counter_button_2, exp_not_equal="2") == "3"
+    expect(counter_button_1).to_have_text("3")
+    expect(counter_button_2).to_have_text("3")
 
     # Unlink tab 2, should revert to previous private values
-    tab2.find_element(By.ID, "unlink-button").click()
-    assert n_changes_2.text == "1"
-    assert (
-        linked_state.poll_for_content(greeting_2, exp_not_equal="Hello, Charlie!")
-        == "Hello, Bob!"
-    )
-    assert linked_state.poll_for_content(counter_button_2, exp_not_equal="3") == "0"
+    tab2.locator("#unlink-button").click()
+    expect(n_changes_2).to_have_text("1")
+    expect(greeting_2).to_have_text("Hello, Bob!")
+    expect(counter_button_2).to_have_text("0")
 
     # Relink tab 2, should go back to shared values
-    tab2.find_element(By.ID, "token-input").send_keys(shared_token, Keys.ENTER)
-    assert n_changes_2.text == "1"
-    assert (
-        linked_state.poll_for_content(greeting_2, exp_not_equal="Hello, Bob!")
-        == "Hello, Charlie!"
-    )
-    assert linked_state.poll_for_content(counter_button_2, exp_not_equal="0") == "3"
+    tab2.locator("#token-input").fill(shared_token)
+    tab2.locator("#token-input").press("Enter")
+    expect(n_changes_2).to_have_text("1")
+    expect(greeting_2).to_have_text("Hello, Charlie!")
+    expect(counter_button_2).to_have_text("3")
 
     # Unlink tab 1, change the shared value in tab 2, and relink tab 1
-    tab1.find_element(By.ID, "unlink-button").click()
-    assert n_changes_1.text == "1"
-    assert (
-        linked_state.poll_for_content(greeting_1, exp_not_equal="Hello, Charlie!")
-        == "Hello, Alice!"
-    )
-    tab2.find_element(By.ID, "who-input").send_keys("Diana", Keys.ENTER)
-    assert linked_state.poll_for_content(n_changes_2, exp_not_equal="1") == "2"
-    assert (
-        linked_state.poll_for_content(greeting_2, exp_not_equal="Hello, Charlie!")
-        == "Hello, Diana!"
-    )
-    assert counter_button_2.text == "3"
-    assert n_changes_1.text == "1"
-    assert greeting_1.text == "Hello, Alice!"
-    tab1.find_element(By.ID, "token-input").send_keys(shared_token, Keys.ENTER)
-    assert linked_state.poll_for_content(n_changes_1, exp_not_equal="1") == "2"
-    assert (
-        linked_state.poll_for_content(greeting_1, exp_not_equal="Hello, Alice!")
-        == "Hello, Diana!"
-    )
-    assert linked_state.poll_for_content(counter_button_1, exp_not_equal="0") == "3"
+    tab1.locator("#unlink-button").click()
+    expect(n_changes_1).to_have_text("1")
+    expect(greeting_1).to_have_text("Hello, Alice!")
+    tab2.locator("#who-input").fill("Diana")
+    tab2.locator("#who-input").press("Enter")
+    expect(n_changes_2).to_have_text("2")
+    expect(greeting_2).to_have_text("Hello, Diana!")
+    expect(counter_button_2).to_have_text("3")
+    expect(n_changes_1).to_have_text("1")
+    expect(greeting_1).to_have_text("Hello, Alice!")
+    tab1.locator("#token-input").fill(shared_token)
+    tab1.locator("#token-input").press("Enter")
+    expect(n_changes_1).to_have_text("2")
+    expect(greeting_1).to_have_text("Hello, Diana!")
+    expect(counter_button_1).to_have_text("3")
 
     # Open a third tab linked to the shared token on_load
     tab3 = tab_factory()
-    tab3.get(f"{linked_state.frontend_url}room/{shared_token}")
-    ss = utils.SessionStorage(tab3)
-    assert AppHarness._poll_for(lambda: ss.get("token") is not None), "token not found"
-    n_changes_3 = AppHarness._poll_for(lambda: tab3.find_element(By.ID, "n-changes"))
-    assert n_changes_3
-    greeting_3 = tab3.find_element(By.ID, "greeting")
-    counter_button_3 = tab3.find_element(By.ID, "counter-button")
-    assert linked_state.poll_for_content(n_changes_3, exp_not_equal="0") == "2"
-    assert (
-        linked_state.poll_for_content(greeting_3, exp_not_equal="Hello, world!")
-        == "Hello, Diana!"
-    )
-    assert linked_state.poll_for_content(counter_button_3, exp_not_equal="0") == "3"
-    assert tab3.find_element(By.ID, "linked-to").text == shared_token
+    tab3.goto(f"{linked_state.frontend_url}room/{shared_token}")  # pyright: ignore[reportOptionalMemberAccess]
+    _wait_for_token(tab3)
+    n_changes_3 = tab3.locator("#n-changes")
+    greeting_3 = tab3.locator("#greeting")
+    counter_button_3 = tab3.locator("#counter-button")
+    expect(n_changes_3).to_have_text("2")
+    expect(greeting_3).to_have_text("Hello, Diana!")
+    expect(counter_button_3).to_have_text("3")
+    expect(tab3.locator("#linked-to")).to_have_text(shared_token)
 
     # Trigger a background task in all shared states, assert on final value
-    tab1.find_element(By.ID, "bg-button").click()
-    tab2.find_element(By.ID, "bg-button").click()
-    tab3.find_element(By.ID, "bg-button").click()
-    assert AppHarness._poll_for(lambda: counter_button_1.text == "33")
-    assert AppHarness._poll_for(lambda: counter_button_2.text == "33")
-    assert AppHarness._poll_for(lambda: counter_button_3.text == "33")
+    tab1.locator("#bg-button").click()
+    tab2.locator("#bg-button").click()
+    tab3.locator("#bg-button").click()
+    expect(counter_button_1).to_have_text("33")
+    expect(counter_button_2).to_have_text("33")
+    expect(counter_button_3).to_have_text("33")
 
     # Trigger a yield-based task in all shared states, assert on final value
-    tab1.find_element(By.ID, "yield-button").click()
-    tab2.find_element(By.ID, "yield-button").click()
-    tab3.find_element(By.ID, "yield-button").click()
-    assert AppHarness._poll_for(lambda: counter_button_1.text == "48")
-    assert AppHarness._poll_for(lambda: counter_button_2.text == "48")
-    assert AppHarness._poll_for(lambda: counter_button_3.text == "48")
+    tab1.locator("#yield-button").click()
+    tab2.locator("#yield-button").click()
+    tab3.locator("#yield-button").click()
+    expect(counter_button_1).to_have_text("48")
+    expect(counter_button_2).to_have_text("48")
+    expect(counter_button_3).to_have_text("48")
 
     # Link to a new token when we're already linked
     new_shared_token = f"shared-bar-{uuid.uuid4()}"
-    tab1.find_element(By.ID, "token-input").send_keys(new_shared_token, Keys.ENTER)
-    assert linked_state.poll_for_content(n_changes_1, exp_not_equal="2") == "0"
-    assert (
-        linked_state.poll_for_content(greeting_1, exp_not_equal="Hello, Diana!")
-        == "Hello, world!"
-    )
-    assert linked_state.poll_for_content(counter_button_1, exp_not_equal="48") == "0"
+    tab1.locator("#token-input").fill(new_shared_token)
+    tab1.locator("#token-input").press("Enter")
+    expect(n_changes_1).to_have_text("0")
+    expect(greeting_1).to_have_text("Hello, world!")
+    expect(counter_button_1).to_have_text("0")
     counter_button_1.click()
-    assert linked_state.poll_for_content(counter_button_1, exp_not_equal="0") == "1"
+    expect(counter_button_1).to_have_text("1")
     counter_button_1.click()
-    assert linked_state.poll_for_content(counter_button_1, exp_not_equal="1") == "2"
+    expect(counter_button_1).to_have_text("2")
     counter_button_1.click()
-    assert linked_state.poll_for_content(counter_button_1, exp_not_equal="2") == "3"
+    expect(counter_button_1).to_have_text("3")
     # Ensure other tabs are unaffected
-    assert n_changes_2.text == "2"
-    assert greeting_2.text == "Hello, Diana!"
-    assert counter_button_2.text == "48"
-    assert n_changes_3.text == "2"
-    assert greeting_3.text == "Hello, Diana!"
-    assert counter_button_3.text == "48"
+    expect(n_changes_2).to_have_text("2")
+    expect(greeting_2).to_have_text("Hello, Diana!")
+    expect(counter_button_2).to_have_text("48")
+    expect(n_changes_3).to_have_text("2")
+    expect(greeting_3).to_have_text("Hello, Diana!")
+    expect(counter_button_3).to_have_text("48")
 
     # Link to a new state and increment the counter in the same event
-    tab1.find_element(By.ID, "link-increment-button").click()
-    assert linked_state.poll_for_content(counter_button_1, exp_not_equal="3") == "1"
+    tab1.locator("#link-increment-button").click()
+    expect(counter_button_1).to_have_text("1")
 
 
 def _open_linked_tab(
     harness: AppHarness,
-    tab_factory: Callable[[], WebDriver],
+    tab_factory: Callable[[], Page],
     shared_token: str,
-) -> tuple[WebElement, WebElement]:
-    """Open a new tab linked to a shared token and return key elements.
+) -> tuple[Locator, Locator]:
+    """Open a new tab linked to a shared token and return key locators.
 
     Args:
         harness: The running AppHarness.
-        tab_factory: Factory to create WebDriver instances.
+        tab_factory: Factory to create Playwright pages.
         shared_token: The shared token to link to via on_load.
 
     Returns:
         Tuple of (counter_button, note_element).
     """
     tab = tab_factory()
-    tab.get(f"{harness.frontend_url}room/{shared_token}")
-    ss = utils.SessionStorage(tab)
-    assert AppHarness._poll_for(lambda: ss.get("token") is not None), "token not found"
-    counter_button = AppHarness._poll_for(
-        lambda: tab.find_element(By.ID, "counter-button")
-    )
-    assert counter_button
-    assert harness.poll_for_content(counter_button) == "0"
+    tab.goto(f"{harness.frontend_url}room/{shared_token}")  # pyright: ignore[reportOptionalMemberAccess]
+    _wait_for_token(tab)
+    counter_button = tab.locator("#counter-button")
+    expect(counter_button).to_have_text("0")
     # Wait for SharedState.on_load_link_default to complete (linked-to shows the token).
-    linked_to = tab.find_element(By.ID, "linked-to")
-    assert harness.poll_for_content(linked_to) == shared_token
-    note = tab.find_element(By.ID, "shared-note")
-    assert note.text == ""
+    expect(tab.locator("#linked-to")).to_have_text(shared_token)
+    note = tab.locator("#shared-note")
+    expect(note).to_have_text("")
     return counter_button, note
 
 
 def test_modify_shared_state_by_shared_token(
     linked_state: AppHarness,
-    tab_factory: Callable[[], WebDriver],
+    tab_factory: Callable[[], Page],
 ):
     """Test that modifying shared state by shared token propagates to all linked clients.
 
@@ -482,7 +458,7 @@ def test_modify_shared_state_by_shared_token(
 
     Args:
         linked_state: harness for LinkedStateApp.
-        tab_factory: factory to create WebDriver instances.
+        tab_factory: factory to create Playwright pages.
     """
     assert linked_state.app_instance is not None
 
@@ -498,24 +474,20 @@ def test_modify_shared_state_by_shared_token(
     assert response.status_code == 200
 
     # Both tabs should see updates to both SharedState and SharedNotes
-    assert linked_state.poll_for_content(counter_button_1, exp_not_equal="0") == "42"
-    assert linked_state.poll_for_content(counter_button_2, exp_not_equal="0") == "42"
-    assert (
-        linked_state.poll_for_content(note_1, exp_not_equal="") == "counter set to 42"
-    )
-    assert (
-        linked_state.poll_for_content(note_2, exp_not_equal="") == "counter set to 42"
-    )
+    expect(counter_button_1).to_have_text("42")
+    expect(counter_button_2).to_have_text("42")
+    expect(note_1).to_have_text("counter set to 42")
+    expect(note_2).to_have_text("counter set to 42")
 
     # After the API-driven update, normal event handlers should still work
     counter_button_1.click()
-    assert linked_state.poll_for_content(counter_button_1, exp_not_equal="42") == "43"
-    assert linked_state.poll_for_content(counter_button_2, exp_not_equal="42") == "43"
+    expect(counter_button_1).to_have_text("43")
+    expect(counter_button_2).to_have_text("43")
 
 
 def test_get_state_returns_linked_state(
     linked_state: AppHarness,
-    tab_factory: Callable[[], WebDriver],
+    tab_factory: Callable[[], Page],
 ):
     """Test that get_state from an unrelated handler returns the linked instance.
 
@@ -527,7 +499,7 @@ def test_get_state_returns_linked_state(
 
     Args:
         linked_state: harness for LinkedStateApp.
-        tab_factory: factory to create WebDriver instances.
+        tab_factory: factory to create Playwright pages.
     """
     assert linked_state.app_instance is not None
 
@@ -537,24 +509,22 @@ def test_get_state_returns_linked_state(
     # Open a tab linked to the shared token via on_load, setting the note
     # immediately during linking via query param.
     tab = tab_factory()
-    tab.get(
-        f"{linked_state.frontend_url}room/{shared_token}?initial_note={initial_note}"
+    tab.goto(
+        f"{linked_state.frontend_url}room/{shared_token}?initial_note={initial_note}"  # pyright: ignore[reportOptionalMemberAccess]
     )
-    ss = utils.SessionStorage(tab)
-    assert AppHarness._poll_for(lambda: ss.get("token") is not None), "token not found"
-    linked_to = AppHarness._poll_for(lambda: tab.find_element(By.ID, "linked-to"))
-    assert linked_to
+    _wait_for_token(tab)
+    linked_to = tab.locator("#linked-to")
     # Wait for on_load to link SharedState (confirms event processing started).
-    assert linked_state.poll_for_content(linked_to) == shared_token
+    expect(linked_to).to_have_text(shared_token)
 
     # Verify the linked note appears on the page (direct SharedNotes binding).
-    note = tab.find_element(By.ID, "shared-note")
-    assert linked_state.poll_for_content(note, exp_not_equal="") == initial_note
+    note = tab.locator("#shared-note")
+    expect(note).to_have_text(initial_note)
 
     # Now trigger PrivateState.fetch_shared_note — this calls get_state(SharedNotes)
     # from an unrelated state handler.  The returned instance must be the
     # *linked* SharedNotes (with the note set from the query param), not
     # the private copy (which would have an empty note).
-    tab.find_element(By.ID, "fetch-note-button").click()
-    fetched = tab.find_element(By.ID, "fetched-note")
-    assert linked_state.poll_for_content(fetched, exp_not_equal="") == initial_note
+    tab.locator("#fetch-note-button").click()
+    fetched = tab.locator("#fetched-note")
+    expect(fetched).to_have_text(initial_note)

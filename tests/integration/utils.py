@@ -5,33 +5,48 @@ from __future__ import annotations
 from collections.abc import Generator, Iterator, Sequence
 from contextlib import contextmanager
 
-from selenium.webdriver.common.by import By
-from selenium.webdriver.remote.webdriver import WebDriver
+from playwright.sync_api import Page
 
-from reflex.testing import AppHarness
+from reflex.testing import AppHarness, TimeoutType
+
+
+def poll_for_token(page: Page, timeout: TimeoutType = None) -> str:
+    """Wait for the backend connection to send the token and return it.
+
+    Args:
+        page: Playwright page showing a hydrated app page with a ``#token`` input.
+        timeout: Optional timeout (seconds) to wait for the token to appear.
+
+    Returns:
+        The client token as displayed in the ``#token`` input.
+    """
+    token_input = page.locator("#token")
+
+    def _get_token() -> str | None:
+        value = token_input.input_value()
+        return value or None
+
+    token = AppHarness.poll_for_or_raise_timeout(_get_token, timeout=timeout)
+    assert token is not None
+    return token
 
 
 @contextmanager
 def poll_for_navigation(
-    driver: WebDriver, timeout: int = 5
+    page: Page, timeout: float = 5.0
 ) -> Generator[None, None, None]:
-    """Wait for driver url to change.
-
-    Use as a contextmanager, and apply the navigation event inside the context
-    block, polling will occur after the context block exits.
+    """Wait for the page URL to change after an action inside the ``with`` block.
 
     Args:
-        driver: WebDriver instance.
-        timeout: Time to wait for url to change.
+        page: Playwright page to observe.
+        timeout: Time (seconds) to wait for the URL to change.
 
     Yields:
         None
     """
-    prev_url = driver.current_url
-
+    prev_url = page.url
     yield
-
-    AppHarness.expect(lambda: prev_url != driver.current_url, timeout=timeout)
+    AppHarness.expect(lambda: prev_url != page.url, timeout=timeout)
 
 
 def n_expected_events(exp_event_order: Sequence[str | set[str]]) -> int:
@@ -82,33 +97,29 @@ def assert_event_order(
 
 
 def poll_assert_event_order(
-    driver: WebDriver,
+    page: Page,
     exp_event_order: Sequence[str | set[str]],
-    xpath: str = '//*[@id="event_order"]/p',
+    selector: str = '//*[@id="event_order"]/p',
 ) -> None:
     """Poll until the actual event order matches the expected event order, accounting for sets in the expected order.
 
     Args:
-        driver: WebDriver instance.
+        page: Playwright page to query.
         exp_event_order: the expected events recorded in the State, where some entries may be sets of events that can occur in any order.
-        xpath: The XPath to the event order elements.
+        selector: CSS or XPath selector for the event-order elements.
 
     Raises:
         AssertionError: if the actual event order does not match the expected event order after polling.
     """
     n_exp_events = n_expected_events(exp_event_order)
+    locator = page.locator(selector)
 
-    def _has_number_of_expected_events():
-        event_elements = driver.find_elements(By.XPATH, xpath)
-        return len(event_elements) == n_exp_events
+    AppHarness._poll_for(lambda: locator.count() == n_exp_events)
 
-    AppHarness._poll_for(_has_number_of_expected_events)
-
-    event_elements = driver.find_elements(By.XPATH, xpath)
-    assert_event_order([elem.text for elem in event_elements], exp_event_order)
+    actual = [item.text_content() or "" for item in locator.all()]
+    assert_event_order(actual, exp_event_order)
 
 
-# Type alias for an ordering rule: ((event_a, occurrence_a), (event_b, occurrence_b)).
 OrderingRule = tuple[tuple[str, int], tuple[str, int]]
 
 
@@ -144,7 +155,6 @@ def assert_relative_event_order(
         f"Expected {sum(expected_counts.values())} total events, got {len(actual)}. Actual: {actual}"
     )
 
-    # Build occurrence index: (event, occ) -> position in actual list
     occurrence_indices: dict[tuple[str, int], int] = {}
     event_counters: dict[str, int] = {}
     for i, event in enumerate(actual):
@@ -162,137 +172,132 @@ def assert_relative_event_order(
 
 
 def poll_assert_relative_event_order(
-    driver: WebDriver,
+    page: Page,
     expected_counts: dict[str, int],
     ordering_rules: list[OrderingRule],
-    xpath: str = '//*[@id="event_order"]/p',
+    selector: str = '//*[@id="event_order"]/p',
 ) -> None:
     """Poll until the expected number of events appear, then assert relative ordering.
 
     Args:
-        driver: WebDriver instance.
+        page: Playwright page to query.
         expected_counts: mapping of event name to expected occurrence count.
         ordering_rules: ordering constraints (see assert_relative_event_order).
-        xpath: The XPath to the event order elements.
+        selector: CSS or XPath selector for the event-order elements.
     """
     n_exp = sum(expected_counts.values())
+    locator = page.locator(selector)
 
-    def _has_number_of_expected_events():
-        return len(driver.find_elements(By.XPATH, xpath)) == n_exp
+    AppHarness._poll_for(lambda: locator.count() == n_exp)
 
-    AppHarness._poll_for(_has_number_of_expected_events)
-
-    event_elements = driver.find_elements(By.XPATH, xpath)
-    assert_relative_event_order(
-        [elem.text for elem in event_elements], expected_counts, ordering_rules
-    )
+    actual = [item.text_content() or "" for item in locator.all()]
+    assert_relative_event_order(actual, expected_counts, ordering_rules)
 
 
 class LocalStorage:
-    """Class to access local storage.
+    """Helper for interacting with ``window.localStorage`` via a Playwright page.
 
     https://stackoverflow.com/a/46361900
     """
 
     storage_key = "localStorage"
 
-    def __init__(self, driver: WebDriver):
+    def __init__(self, page: Page):
         """Initialize the class.
 
         Args:
-            driver: WebDriver instance.
+            page: Playwright page bound to the app.
         """
-        self.driver = driver
+        self.page = page
 
     def __len__(self) -> int:
-        """Get the number of items in local storage.
+        """Get the number of items in the storage.
 
         Returns:
-            The number of items in local storage.
+            The number of items in the storage.
         """
-        return int(
-            self.driver.execute_script(f"return window.{self.storage_key}.length;")
-        )
+        return int(self.page.evaluate(f"window.{self.storage_key}.length"))
 
     def items(self) -> dict[str, str]:
-        """Get all items in local storage.
+        """Get all items in the storage.
 
         Returns:
             A dict mapping keys to values.
         """
-        return self.driver.execute_script(
-            f"var ls = window.{self.storage_key}, items = {{}}; "
-            "for (var i = 0, k; i < ls.length; ++i) "
-            "  items[k = ls.key(i)] = ls.getItem(k); "
-            "return items; "
+        return self.page.evaluate(
+            f"() => {{"
+            f"  const ls = window.{self.storage_key};"
+            f"  const items = {{}};"
+            f"  for (let i = 0; i < ls.length; ++i) {{"
+            f"    const k = ls.key(i);"
+            f"    items[k] = ls.getItem(k);"
+            f"  }}"
+            f"  return items;"
+            f"}}"
         )
 
     def keys(self) -> list[str]:
-        """Get all keys in local storage.
+        """Get all keys in the storage.
 
         Returns:
             A list of keys.
         """
-        return self.driver.execute_script(
-            f"var ls = window.{self.storage_key}, keys = []; "
-            "for (var i = 0; i < ls.length; ++i) "
-            "  keys[i] = ls.key(i); "
-            "return keys; "
+        return self.page.evaluate(
+            f"() => {{"
+            f"  const ls = window.{self.storage_key};"
+            f"  const keys = [];"
+            f"  for (let i = 0; i < ls.length; ++i) keys.push(ls.key(i));"
+            f"  return keys;"
+            f"}}"
         )
 
-    def get(self, key) -> str:
-        """Get a key from local storage.
+    def get(self, key: str) -> str | None:
+        """Get a key from the storage.
 
         Args:
             key: The key to get.
 
         Returns:
-            The value of the key.
+            The value of the key, or None if not present.
         """
-        return self.driver.execute_script(
-            f"return window.{self.storage_key}.getItem(arguments[0]);", key
-        )
+        return self.page.evaluate(f"(k) => window.{self.storage_key}.getItem(k)", key)
 
-    def set(self, key, value) -> None:
-        """Set a key in local storage.
+    def set(self, key: str, value: str) -> None:
+        """Set a key in the storage.
 
         Args:
             key: The key to set.
             value: The value to set the key to.
         """
-        self.driver.execute_script(
-            f"window.{self.storage_key}.setItem(arguments[0], arguments[1]);",
-            key,
-            value,
+        self.page.evaluate(
+            f"([k, v]) => window.{self.storage_key}.setItem(k, v)", [key, value]
         )
 
-    def has(self, key) -> bool:
-        """Check if key is in local storage.
+    def has(self, key: str) -> bool:
+        """Check if ``key`` is in the storage.
 
         Args:
             key: The key to check.
 
         Returns:
-            True if key is in local storage, False otherwise.
+            True if ``key`` is in the storage, False otherwise.
         """
-        return key in self
+        return self.get(key) is not None
 
-    def remove(self, key) -> None:
-        """Remove a key from local storage.
+    def remove(self, key: str) -> None:
+        """Remove a key from the storage.
 
         Args:
             key: The key to remove.
         """
-        self.driver.execute_script(
-            f"window.{self.storage_key}.removeItem(arguments[0]);", key
-        )
+        self.page.evaluate(f"(k) => window.{self.storage_key}.removeItem(k)", key)
 
     def clear(self) -> None:
-        """Clear all local storage."""
-        self.driver.execute_script(f"window.{self.storage_key}.clear();")
+        """Clear all items in the storage."""
+        self.page.evaluate(f"() => window.{self.storage_key}.clear()")
 
-    def __getitem__(self, key) -> str:
-        """Get a key from local storage.
+    def __getitem__(self, key: str) -> str:
+        """Get a key from the storage.
 
         Args:
             key: The key to get.
@@ -301,15 +306,15 @@ class LocalStorage:
             The value of the key.
 
         Raises:
-            KeyError: If key is not in local storage.
+            KeyError: If ``key`` is not in the storage.
         """
         value = self.get(key)
         if value is None:
             raise KeyError(key)
         return value
 
-    def __setitem__(self, key, value) -> None:
-        """Set a key in local storage.
+    def __setitem__(self, key: str, value: str) -> None:
+        """Set a key in the storage.
 
         Args:
             key: The key to set.
@@ -317,28 +322,28 @@ class LocalStorage:
         """
         self.set(key, value)
 
-    def __contains__(self, key) -> bool:
-        """Check if key is in local storage.
+    def __contains__(self, key: str) -> bool:
+        """Check if ``key`` is in the storage.
 
         Args:
             key: The key to check.
 
         Returns:
-            True if key is in local storage, False otherwise.
+            True if ``key`` is in the storage, False otherwise.
         """
         return self.has(key)
 
     def __iter__(self) -> Iterator[str]:
-        """Iterate over the keys in local storage.
+        """Iterate over the keys in the storage.
 
         Returns:
-            An iterator over the items in local storage.
+            An iterator over the keys in the storage.
         """
         return iter(self.keys())
 
 
 class SessionStorage(LocalStorage):
-    """Class to access session storage.
+    """Helper for interacting with ``window.sessionStorage`` via a Playwright page.
 
     https://stackoverflow.com/a/46361900
     """

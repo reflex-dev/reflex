@@ -6,11 +6,12 @@ import json
 from collections.abc import Generator
 
 import pytest
+from playwright.sync_api import Page, expect
 from reflex_base.utils import format
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 
 from reflex.testing import AppHarness
+
+from . import utils
 
 
 def FormSubmit(form_component):
@@ -165,74 +166,58 @@ def form_submit(request, tmp_path_factory) -> Generator[AppHarness, None, None]:
         yield harness
 
 
-@pytest.fixture
-def driver(form_submit: AppHarness):
-    """GEt an instance of the browser open to the form_submit app.
-
-    Args:
-        form_submit: harness for ServerSideEvent app
-
-    Yields:
-        WebDriver instance.
-    """
-    driver = form_submit.frontend()
-    try:
-        yield driver
-    finally:
-        driver.quit()
-
-
 @pytest.mark.asyncio
-async def test_submit(driver, form_submit: AppHarness):
+async def test_submit(page: Page, form_submit: AppHarness):
     """Fill a form with various different output, submit it to backend and verify
     the output.
 
     Args:
-        driver: selenium WebDriver open to the app
+        page: Playwright page.
         form_submit: harness for FormSubmit app
     """
     assert form_submit.app_instance is not None, "app is not running"
-    by = By.ID if form_submit.app_source is FormSubmit else By.NAME
+    assert form_submit.frontend_url is not None
+    page.goto(form_submit.frontend_url)
 
-    # get a reference to the connected client
-    token_input = AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "token")
-    )
+    by_id = form_submit.app_source is FormSubmit
+
+    def by_name_or_id(value: str):
+        if by_id:
+            return page.locator(f"id={value}")
+        return page.locator(f"[name={value}]")
 
     # wait for the backend connection to send the token
-    token = form_submit.poll_for_value(token_input)
-    assert token
+    utils.poll_for_token(page)
 
-    name_input = driver.find_element(by, "name_input")
-    name_input.send_keys("foo")
+    name_input = by_name_or_id("name_input")
+    name_input.fill("foo")
 
-    checkbox_input = driver.find_element(By.XPATH, "//button[@role='checkbox']")
+    checkbox_input = page.locator("button[role='checkbox']")
     checkbox_input.click()
 
-    switch_input = driver.find_element(By.XPATH, "//button[@role='switch']")
+    switch_input = page.locator("button[role='switch']")
     switch_input.click()
 
-    radio_buttons = driver.find_elements(By.XPATH, "//button[@role='radio']")
+    radio_buttons = page.locator("button[role='radio']").all()
     radio_buttons[1].click()
 
-    textarea_input = driver.find_element(By.TAG_NAME, "textarea")
-    textarea_input.send_keys("Some", Keys.ENTER, "Text")
+    textarea_input = page.locator("textarea")
+    textarea_input.fill("Some\nText")
 
-    debounce_input = driver.find_element(by, "debounce_input")
-    debounce_input.send_keys("bar baz")
+    debounce_input = by_name_or_id("debounce_input")
+    debounce_input.fill("bar baz")
 
     await asyncio.sleep(1)
 
-    prev_url = driver.current_url
+    prev_url = page.url
 
-    submit_input = driver.find_element(By.CLASS_NAME, "rt-Button")
+    submit_input = page.locator(".rt-Button").first
     submit_input.click()
 
     # wait for the form data to arrive at the backend
-    form_submit.poll_for_content(
-        driver.find_element(By.ID, "form-data"), exp_not_equal="{}"
-    )
-    form_data = json.loads(driver.find_element(By.ID, "form-data").text)
+    form_data_locator = page.locator("#form-data")
+    expect(form_data_locator).not_to_have_text("{}")
+    form_data = json.loads(form_data_locator.text_content() or "")
     assert isinstance(form_data, dict)
     form_data = format.collect_form_dict_names(form_data)
 
@@ -251,4 +236,4 @@ async def test_submit(driver, form_submit: AppHarness):
     assert form_data["debounce_input"] == "bar baz"
 
     # submitting the form should NOT change the url (preventDefault on_submit event)
-    assert driver.current_url == prev_url
+    assert page.url == prev_url

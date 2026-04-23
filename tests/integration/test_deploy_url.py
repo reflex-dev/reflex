@@ -5,9 +5,7 @@ from __future__ import annotations
 from collections.abc import Generator
 
 import pytest
-from selenium.webdriver.common.by import By
-from selenium.webdriver.remote.webdriver import WebDriver
-from selenium.webdriver.support.ui import WebDriverWait
+from playwright.sync_api import Page
 
 from reflex.testing import AppHarness
 
@@ -51,30 +49,12 @@ def deploy_url_sample(
         yield harness
 
 
-@pytest.fixture
-def driver(deploy_url_sample: AppHarness) -> Generator[WebDriver, None, None]:
-    """WebDriver fixture for testing deploy_url.
-
-    Args:
-        deploy_url_sample: AppHarness fixture for testing deploy_url.
-
-    Yields:
-        WebDriver: A WebDriver instance.
-    """
-    assert deploy_url_sample.app_instance is not None, "app is not running"
-    driver = deploy_url_sample.frontend()
-    try:
-        yield driver
-    finally:
-        driver.quit()
-
-
-def test_deploy_url(deploy_url_sample: AppHarness, driver: WebDriver) -> None:
+def test_deploy_url(deploy_url_sample: AppHarness, page: Page) -> None:
     """Test deploy_url is correct.
 
     Args:
         deploy_url_sample: AppHarness fixture for testing deploy_url.
-        driver: WebDriver fixture for testing deploy_url.
+        page: Playwright page instance.
     """
     import reflex as rx
 
@@ -82,24 +62,20 @@ def test_deploy_url(deploy_url_sample: AppHarness, driver: WebDriver) -> None:
     assert deploy_url is not None
     assert deploy_url != "http://localhost:3000"
     assert deploy_url == deploy_url_sample.frontend_url
-    driver.get(deploy_url)
-    assert driver.current_url.removesuffix("/") == deploy_url.removesuffix("/")
+    page.goto(deploy_url)
+    assert page.url.removesuffix("/") == deploy_url.removesuffix("/")
 
 
-def test_deploy_url_in_app(deploy_url_sample: AppHarness, driver: WebDriver) -> None:
+def test_deploy_url_in_app(deploy_url_sample: AppHarness, page: Page) -> None:
     """Test deploy_url is correct in app.
 
     Args:
         deploy_url_sample: AppHarness fixture for testing deploy_url.
-        driver: WebDriver fixture for testing deploy_url.
+        page: Playwright page instance.
     """
-    driver.implicitly_wait(10)
-    driver.find_element(By.ID, "goto_self").click()
+    assert deploy_url_sample.frontend_url is not None
+    target = deploy_url_sample.frontend_url.removesuffix("/")
+    page.goto(deploy_url_sample.frontend_url)
+    page.locator("#goto_self").click()
 
-    WebDriverWait(driver, 10).until(
-        lambda driver: (
-            deploy_url_sample.frontend_url
-            and driver.current_url.removesuffix("/")
-            == deploy_url_sample.frontend_url.removesuffix("/")
-        )
-    )
+    AppHarness.expect(lambda: page.url.removesuffix("/") == target, timeout=10)

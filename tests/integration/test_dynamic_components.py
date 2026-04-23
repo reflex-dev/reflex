@@ -4,9 +4,11 @@ from collections.abc import Generator
 from typing import TypeVar
 
 import pytest
-from selenium.webdriver.common.by import By
+from playwright.sync_api import Page, expect
 
 from reflex.testing import AppHarness
+
+from . import utils
 
 # pyright: reportOptionalMemberAccess=false, reportGeneralTypeIssues=false, reportUnknownMemberType=false
 
@@ -95,52 +97,26 @@ def dynamic_components(tmp_path_factory) -> Generator[AppHarness, None, None]:
 T = TypeVar("T")
 
 
-@pytest.fixture
-def driver(dynamic_components: AppHarness):
-    """Get an instance of the browser open to the dynamic components app.
-
-    Args:
-        dynamic_components: AppHarness for the dynamic components
-
-    Yields:
-        WebDriver instance.
-    """
-    driver = dynamic_components.frontend()
-    try:
-        token_input = AppHarness.poll_for_or_raise_timeout(
-            lambda: driver.find_element(By.ID, "token")
-        )
-        # wait for the backend connection to send the token
-        token = dynamic_components.poll_for_value(token_input)
-        assert token is not None
-
-        yield driver
-    finally:
-        driver.quit()
-
-
-def test_dynamic_components(driver, dynamic_components: AppHarness):
+def test_dynamic_components(page: Page, dynamic_components: AppHarness):
     """Test that the var operations produce the right results.
 
     Args:
-        driver: selenium WebDriver open to the app
+        page: Playwright page.
         dynamic_components: AppHarness for the dynamic components
     """
-    button = AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "button")
-    )
-    assert button.text == "Click me"
+    assert dynamic_components.frontend_url is not None
+    page.goto(dynamic_components.frontend_url)
 
-    update_button = driver.find_element(By.ID, "update")
-    assert update_button
+    utils.poll_for_token(page)
+
+    button = page.locator("#button")
+    expect(button).to_have_text("Click me")
+
+    update_button = page.locator("#update")
+    expect(update_button).to_be_visible()
     update_button.click()
 
-    assert (
-        dynamic_components.poll_for_content(button, exp_not_equal="Click me")
-        == "Clicked"
-    )
+    expect(button).to_have_text("Clicked")
 
-    factorial = AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "factorial")
-    )
-    assert factorial.text == "3628800"
+    factorial = page.locator("#factorial")
+    expect(factorial).to_have_text("3628800")

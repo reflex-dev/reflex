@@ -5,11 +5,11 @@ from __future__ import annotations
 from collections.abc import Generator
 
 import pytest
-from selenium.webdriver.common.by import By
-from selenium.webdriver.remote.webdriver import WebDriver
+from playwright.sync_api import Page, expect
 
 from reflex.testing import AppHarness
 
+from . import utils
 from .utils import SessionStorage
 
 
@@ -377,180 +377,167 @@ def call_script(tmp_path_factory) -> Generator[AppHarness, None, None]:
         yield harness
 
 
-@pytest.fixture
-def driver(call_script: AppHarness) -> Generator[WebDriver, None, None]:
-    """Get an instance of the browser open to the call_script app.
-
-    Args:
-        call_script: harness for CallScript app
-
-    Yields:
-        WebDriver instance.
-    """
-    assert call_script.app_instance is not None, "app is not running"
-    driver = call_script.frontend()
-    try:
-        yield driver
-    finally:
-        driver.quit()
-
-
-def assert_token(driver: WebDriver) -> str:
+def assert_token(page: Page) -> str:
     """Get the token associated with backend state.
 
     Args:
-        driver: WebDriver instance.
+        page: Playwright page.
 
     Returns:
-        The token visible in the driver browser.
+        The token visible in the page's session storage.
     """
-    ss = SessionStorage(driver)
+    ss = SessionStorage(page)
     assert AppHarness._poll_for(lambda: ss.get("token") is not None), "token not found"
     assert AppHarness._poll_for(
-        lambda: driver.execute_script("return typeof external4 !== 'undefined'")
+        lambda: page.evaluate("typeof external4 !== 'undefined'")
     ), "scripts not loaded"
-    return ss.get("token")
+    token = ss.get("token")
+    assert token is not None
+    return token
 
 
 @pytest.mark.parametrize("script", ["inline", "external"])
 def test_call_script(
     call_script: AppHarness,
-    driver: WebDriver,
+    page: Page,
     script: str,
 ):
     """Test calling javascript functions from python.
 
     Args:
         call_script: harness for CallScript app.
-        driver: WebDriver instance.
+        page: Playwright page.
         script: The type of script to test.
     """
-    assert_token(driver)
-    reset_button = driver.find_element(By.ID, "reset")
-    update_counter_button = driver.find_element(By.ID, f"update_{script}_counter")
-    counter = driver.find_element(By.ID, f"{script}_counter")
-    results = driver.find_element(By.ID, "results")
-    yield_button = driver.find_element(By.ID, f"{script}_yield")
-    return_button = driver.find_element(By.ID, f"{script}_return")
-    yield_callback_button = driver.find_element(By.ID, f"{script}_yield_callback")
-    return_callback_button = driver.find_element(By.ID, f"{script}_return_callback")
-    return_lambda_button = driver.find_element(By.ID, f"{script}_return_lambda")
+    assert call_script.frontend_url is not None
+    page.goto(call_script.frontend_url)
+
+    utils.poll_for_token(page)
+    assert_token(page)
+
+    reset_button = page.locator("#reset")
+    update_counter_button = page.locator(f"#update_{script}_counter")
+    counter = page.locator(f"#{script}_counter")
+    results = page.locator("#results")
+    yield_button = page.locator(f"#{script}_yield")
+    return_button = page.locator(f"#{script}_return")
+    yield_callback_button = page.locator(f"#{script}_yield_callback")
+    return_callback_button = page.locator(f"#{script}_return_callback")
+    return_lambda_button = page.locator(f"#{script}_return_lambda")
 
     yield_button.click()
     update_counter_button.click()
-    assert call_script.poll_for_value(counter, exp_not_equal="0") == "4"
+    expect(counter).to_have_value("4")
     reset_button.click()
-    assert call_script.poll_for_value(counter, exp_not_equal="4") == "0"
+    expect(counter).to_have_value("0")
     return_button.click()
     update_counter_button.click()
-    assert call_script.poll_for_value(counter, exp_not_equal="0") == "1"
+    expect(counter).to_have_value("1")
     reset_button.click()
-    assert call_script.poll_for_value(counter, exp_not_equal="1") == "0"
+    expect(counter).to_have_value("0")
 
     yield_callback_button.click()
     update_counter_button.click()
-    assert call_script.poll_for_value(counter, exp_not_equal="0") == "4"
-    assert (
-        call_script.poll_for_value(results, exp_not_equal="[]")
-        == f'["{script}1",null,{{"{script}3":42,"a":[1,2,3],"s":"js","o":{{"a":1,"b":2}}}},"async {script}4"]'
+    expect(counter).to_have_value("4")
+    expect(results).to_have_value(
+        f'["{script}1",null,{{"{script}3":42,"a":[1,2,3],"s":"js","o":{{"a":1,"b":2}}}},"async {script}4"]'
     )
     reset_button.click()
-    assert call_script.poll_for_value(counter, exp_not_equal="4") == "0"
+    expect(counter).to_have_value("0")
 
     return_callback_button.click()
     update_counter_button.click()
-    assert call_script.poll_for_value(counter, exp_not_equal="0") == "1"
-    assert (
-        call_script.poll_for_value(results, exp_not_equal="[]")
-        == f'[{{"{script}3":42,"a":[1,2,3],"s":"js","o":{{"a":1,"b":2}}}}]'
+    expect(counter).to_have_value("1")
+    expect(results).to_have_value(
+        f'[{{"{script}3":42,"a":[1,2,3],"s":"js","o":{{"a":1,"b":2}}}}]'
     )
     reset_button.click()
-    assert call_script.poll_for_value(counter, exp_not_equal="1") == "0"
+    expect(counter).to_have_value("0")
 
     return_lambda_button.click()
     update_counter_button.click()
-    assert call_script.poll_for_value(counter, exp_not_equal="0") == "1"
-    assert (
-        call_script.poll_for_value(results, exp_not_equal="[]") == '[["lambda",null]]'
-    )
+    expect(counter).to_have_value("1")
+    expect(results).to_have_value('[["lambda",null]]')
     reset_button.click()
-    assert call_script.poll_for_value(counter, exp_not_equal="1") == "0"
+    expect(counter).to_have_value("0")
 
     # Check that triggering script from event trigger calls callback
-    update_value_button = driver.find_element(By.ID, "update_value")
+    update_value_button = page.locator("#update_value")
     update_value_button.click()
 
-    assert (
-        call_script.poll_for_content(update_value_button, exp_not_equal="Initial")
-        == "updated"
-    )
+    expect(update_value_button).to_have_text("updated")
 
 
 def test_call_script_w_var(
     call_script: AppHarness,
-    driver: WebDriver,
+    page: Page,
 ):
     """Test evaluating javascript expressions containing Vars.
 
     Args:
         call_script: harness for CallScript app.
-        driver: WebDriver instance.
+        page: Playwright page.
     """
-    assert_token(driver)
-    last_result = driver.find_element(By.ID, "last_result")
-    assert last_result.get_attribute("value") == "0"
+    assert call_script.frontend_url is not None
+    page.goto(call_script.frontend_url)
 
-    inline_return_button = driver.find_element(By.ID, "inline_return")
+    utils.poll_for_token(page)
+    assert_token(page)
 
-    call_with_var_f_string_button = driver.find_element(By.ID, "call_with_var_f_string")
-    call_with_var_str_cast_button = driver.find_element(By.ID, "call_with_var_str_cast")
-    call_with_var_f_string_wrapped_button = driver.find_element(
-        By.ID, "call_with_var_f_string_wrapped"
+    last_result = page.locator("#last_result")
+    expect(last_result).to_have_value("0")
+
+    inline_return_button = page.locator("#inline_return")
+
+    call_with_var_f_string_button = page.locator("#call_with_var_f_string")
+    call_with_var_str_cast_button = page.locator("#call_with_var_str_cast")
+    call_with_var_f_string_wrapped_button = page.locator(
+        "#call_with_var_f_string_wrapped"
     )
-    call_with_var_str_cast_wrapped_button = driver.find_element(
-        By.ID, "call_with_var_str_cast_wrapped"
+    call_with_var_str_cast_wrapped_button = page.locator(
+        "#call_with_var_str_cast_wrapped"
     )
-    call_with_var_f_string_inline_button = driver.find_element(
-        By.ID, "call_with_var_f_string_inline"
+    call_with_var_f_string_inline_button = page.locator(
+        "#call_with_var_f_string_inline"
     )
-    call_with_var_str_cast_inline_button = driver.find_element(
-        By.ID, "call_with_var_str_cast_inline"
+    call_with_var_str_cast_inline_button = page.locator(
+        "#call_with_var_str_cast_inline"
     )
-    call_with_var_f_string_wrapped_inline_button = driver.find_element(
-        By.ID, "call_with_var_f_string_wrapped_inline"
+    call_with_var_f_string_wrapped_inline_button = page.locator(
+        "#call_with_var_f_string_wrapped_inline"
     )
-    call_with_var_str_cast_wrapped_inline_button = driver.find_element(
-        By.ID, "call_with_var_str_cast_wrapped_inline"
+    call_with_var_str_cast_wrapped_inline_button = page.locator(
+        "#call_with_var_str_cast_wrapped_inline"
     )
 
     inline_return_button.click()
     call_with_var_f_string_button.click()
-    assert call_script.poll_for_value(last_result, exp_not_equal=("", "0")) == "1"
+    expect(last_result).to_have_value("1")
 
     inline_return_button.click()
     call_with_var_str_cast_button.click()
-    assert call_script.poll_for_value(last_result, exp_not_equal="1") == "2"
+    expect(last_result).to_have_value("2")
 
     inline_return_button.click()
     call_with_var_f_string_wrapped_button.click()
-    assert call_script.poll_for_value(last_result, exp_not_equal="2") == "3"
+    expect(last_result).to_have_value("3")
 
     inline_return_button.click()
     call_with_var_str_cast_wrapped_button.click()
-    assert call_script.poll_for_value(last_result, exp_not_equal="3") == "4"
+    expect(last_result).to_have_value("4")
 
     inline_return_button.click()
     call_with_var_f_string_inline_button.click()
-    assert call_script.poll_for_value(last_result, exp_not_equal="4") == "9"
+    expect(last_result).to_have_value("9")
 
     inline_return_button.click()
     call_with_var_str_cast_inline_button.click()
-    assert call_script.poll_for_value(last_result, exp_not_equal="9") == "6"
+    expect(last_result).to_have_value("6")
 
     inline_return_button.click()
     call_with_var_f_string_wrapped_inline_button.click()
-    assert call_script.poll_for_value(last_result, exp_not_equal="6") == "13"
+    expect(last_result).to_have_value("13")
 
     inline_return_button.click()
     call_with_var_str_cast_wrapped_inline_button.click()
-    assert call_script.poll_for_value(last_result, exp_not_equal="13") == "8"
+    expect(last_result).to_have_value("8")

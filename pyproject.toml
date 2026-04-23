@@ -105,7 +105,6 @@ dev = [
   "python-dotenv",
   "reflex-docgen",
   "ruff",
-  "selenium",
   "sqlalchemy",
   "sqlmodel",
   "starlette-admin",

@@ -58,6 +58,12 @@ Within the 'test' directory of Reflex you can add to a test file already there o
 - Any edge cases or potential problem areas.
 - Any interactions between different parts of the code.
 
+#### Integration tests
+
+Integration tests live in `tests/integration/` and exercise a real Reflex app in a browser. They are written with **sync Playwright** on top of `reflex.testing.AppHarness`; Selenium is no longer supported. See `AGENTS.md` for the idiomatic patterns, and reuse the helpers in `tests/integration/utils.py` (`poll_for_token`, `poll_for_navigation`, `LocalStorage`, `SessionStorage`, `poll_assert_event_order`, etc.) rather than inlining ad-hoc polling.
+
+Each `AppHarness`-returning fixture should be `scope="module"` so the app server shuts down only after every test in the module has finished.
+
 ## ✅ Making a PR
 
 Once you solve a current issue or improvement to Reflex, you can make a PR, and we will review the changes.
