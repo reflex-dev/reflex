@@ -101,6 +101,7 @@ jobs:
     outputs:
       packages: ${{ steps.detect.outputs.packages }}
     steps:
+      - uses: actions/checkout@v6
       - id: detect
         env:
           reflex: ${{ inputs.reflex }}
@@ -120,192 +121,62 @@ jobs:
           reflex_components_sonner: ${{ inputs.reflex_components_sonner }}
           reflex_docgen: ${{ inputs.reflex_docgen }}
           reflex_hosting_cli: ${{ inputs.reflex_hosting_cli }}
-        run: |
-          set -euo pipefail
-          declare -A MAP=(
-            [reflex]=reflex
-            [hatch_reflex_pyi]=hatch-reflex-pyi
-            [reflex_base]=reflex-base
-            [reflex_components_code]=reflex-components-code
-            [reflex_components_core]=reflex-components-core
-            [reflex_components_dataeditor]=reflex-components-dataeditor
-            [reflex_components_gridjs]=reflex-components-gridjs
-            [reflex_components_lucide]=reflex-components-lucide
-            [reflex_components_markdown]=reflex-components-markdown
-            [reflex_components_moment]=reflex-components-moment
-            [reflex_components_plotly]=reflex-components-plotly
-            [reflex_components_radix]=reflex-components-radix
-            [reflex_components_react_player]=reflex-components-react-player
-            [reflex_components_recharts]=reflex-components-recharts
-            [reflex_components_sonner]=reflex-components-sonner
-            [reflex_docgen]=reflex-docgen
-            [reflex_hosting_cli]=reflex-hosting-cli
-          )
-          ORDER=(reflex hatch_reflex_pyi reflex_base reflex_components_code reflex_components_core reflex_components_dataeditor reflex_components_gridjs reflex_components_lucide reflex_components_markdown reflex_components_moment reflex_components_plotly reflex_components_radix reflex_components_react_player reflex_components_recharts reflex_components_sonner reflex_docgen reflex_hosting_cli)
-          PACKAGES=()
-          for key in "${ORDER[@]}"; do
-            if [[ "${!key}" == "true" ]]; then
-              PACKAGES+=("\"${MAP[$key]}\"")
-            fi
-          done
-          if [[ ${#PACKAGES[@]} -eq 0 ]]; then
-            echo "Error: select at least one package"
-            exit 1
-          fi
-          JOINED=$(IFS=,; echo "${PACKAGES[*]}")
-          echo "packages=[$JOINED]" >> "$GITHUB_OUTPUT"
+        run: bash .github/scripts/dispatch_release/detect.sh
+
+  plan:
+    needs: detect
+    runs-on: ubuntu-latest
+    outputs:
+      releases: ${{ steps.plan.outputs.releases }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v7
+      - id: plan
+        env:
+          PACKAGES_JSON: ${{ needs.detect.outputs.packages }}
+          ACTION: ${{ inputs.action }}
+        run: uv run --script .github/scripts/dispatch_release/plan.py
 
   gate:
-    needs: detect
+    needs: plan
     if: ${{ startsWith(inputs.action, 'release-') }}
     runs-on: ubuntu-latest
     environment: dispatch-release-approval
     steps:
-      - run: echo "Stable release approved for ${{ needs.detect.outputs.packages }} (action=${{ inputs.action }})."
+      - uses: actions/checkout@v6
+      - name: Show release plan
+        env:
+          RELEASES: ${{ needs.plan.outputs.releases }}
+          ACTION: ${{ inputs.action }}
+        run: bash .github/scripts/dispatch_release/show_plan.sh
 
   release:
-    needs: [detect, gate]
-    if: ${{ always() && needs.detect.result == 'success' && (needs.gate.result == 'success' || needs.gate.result == 'skipped') }}
+    needs: [plan, gate]
+    if: ${{ always() && needs.plan.result == 'success' && (needs.gate.result == 'success' || needs.gate.result == 'skipped') }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        package: ${{ fromJson(needs.detect.outputs.packages) }}
+        include: ${{ fromJson(needs.plan.outputs.releases) }}
       fail-fast: false
     concurrency:
       group: dispatch-release-${{ matrix.package }}
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v6
-        with:
-          fetch-tags: true
-          fetch-depth: 0
-      - name: Compute next version
-        id: version
-        env:
-          PKG: ${{ matrix.package }}
-          ACTION: ${{ inputs.action }}
-        run: |
-          set -euo pipefail
-
-          case "$ACTION" in
-            new-prerelease-patch)    MODE="new-prerelease"; SUB="patch" ;;
-            new-prerelease-minor)    MODE="new-prerelease"; SUB="minor" ;;
-            new-prerelease-major)    MODE="new-prerelease"; SUB="major" ;;
-            continued-prerelease)    MODE="continued-prerelease"; SUB="" ;;
-            release-from-prerelease) MODE="release"; SUB="from-prerelease" ;;
-            release-post)            MODE="release"; SUB="post" ;;
-            release-patch)           MODE="release"; SUB="patch" ;;
-            release-minor)           MODE="release"; SUB="minor" ;;
-            release-major)           MODE="release"; SUB="major" ;;
-            *) echo "Error: unknown action '$ACTION'"; exit 1 ;;
-          esac
-
-          if [[ "$PKG" == "reflex" ]]; then
-            TAG_PREFIX="v"
-          else
-            TAG_PREFIX="${PKG}-v"
-          fi
-
-          LATEST=$(git tag -l "${TAG_PREFIX}*" \
-            | sed "s|^${TAG_PREFIX}||" \
-            | grep -E '^[0-9]+\.[0-9]+\.[0-9]+(a[0-9]+|\.post[0-9]+)?$' \
-            | sort -V | tail -1 || true)
-
-          IS_ALPHA=0
-          IS_POST=0
-          if [[ -z "$LATEST" ]]; then
-            M=0; N=0; P=0
-          elif [[ "$LATEST" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)a([0-9]+)$ ]]; then
-            M="${BASH_REMATCH[1]}"; N="${BASH_REMATCH[2]}"; P="${BASH_REMATCH[3]}"; AN="${BASH_REMATCH[4]}"
-            IS_ALPHA=1
-          elif [[ "$LATEST" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)\.post([0-9]+)$ ]]; then
-            M="${BASH_REMATCH[1]}"; N="${BASH_REMATCH[2]}"; P="${BASH_REMATCH[3]}"; POSTN="${BASH_REMATCH[4]}"
-            IS_POST=1
-          elif [[ "$LATEST" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
-            M="${BASH_REMATCH[1]}"; N="${BASH_REMATCH[2]}"; P="${BASH_REMATCH[3]}"
-          else
-            echo "Error: cannot parse latest '$LATEST' for $PKG"
-            exit 1
-          fi
-
-          case "$MODE" in
-            new-prerelease)
-              case "$SUB" in
-                patch) NM=$M; NN=$N; NP=$((P + 1)) ;;
-                minor) NM=$M; NN=$((N + 1)); NP=0 ;;
-                major) NM=$((M + 1)); NN=0; NP=0 ;;
-              esac
-              NEXT="${NM}.${NN}.${NP}a1"
-              ;;
-            continued-prerelease)
-              if [[ "$IS_ALPHA" != "1" ]]; then
-                echo "Error: continued-prerelease requires latest to be an alpha; latest for $PKG is '${LATEST:-<none>}'"
-                exit 1
-              fi
-              NEXT="${M}.${N}.${P}a$((AN + 1))"
-              ;;
-            release)
-              case "$SUB" in
-                from-prerelease)
-                  if [[ "$IS_ALPHA" != "1" ]]; then
-                    echo "Error: release-from-prerelease requires latest to be an alpha; latest for $PKG is '${LATEST:-<none>}'"
-                    exit 1
-                  fi
-                  NEXT="${M}.${N}.${P}"
-                  ;;
-                post)
-                  if [[ -z "$LATEST" ]]; then
-                    echo "Error: release-post requires an existing release; no tags for $PKG"
-                    exit 1
-                  fi
-                  if [[ "$IS_ALPHA" == "1" ]]; then
-                    echo "Error: release-post cannot follow an alpha; latest for $PKG is '$LATEST'"
-                    exit 1
-                  fi
-                  if [[ "$IS_POST" == "1" ]]; then
-                    NEXT="${M}.${N}.${P}.post$((POSTN + 1))"
-                  else
-                    NEXT="${M}.${N}.${P}.post1"
-                  fi
-                  ;;
-                patch) NEXT="${M}.${N}.$((P + 1))" ;;
-                minor) NEXT="${M}.$((N + 1)).0" ;;
-                major) NEXT="$((M + 1)).0.0" ;;
-              esac
-              ;;
-          esac
-
-          TAG="${TAG_PREFIX}${NEXT}"
-          if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
-            echo "Error: tag ${TAG} already exists"
-            exit 1
-          fi
-          echo "Latest: ${LATEST:-<none>} -> Next: $NEXT (action=$ACTION)"
-          echo "version=$NEXT" >> "$GITHUB_OUTPUT"
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ steps.version.outputs.tag }}
+          TAG: ${{ matrix.tag }}
           PKG: ${{ matrix.package }}
-          VERSION: ${{ steps.version.outputs.version }}
+          VERSION: ${{ matrix.next }}
           ACTION: ${{ inputs.action }}
-        run: |
-          set -euo pipefail
-          ARGS=(--title "$PKG@$VERSION" --notes "Dispatch release for $PKG v$VERSION (action=$ACTION)" --target "$GITHUB_SHA")
-          if [[ "$ACTION" == release-* ]]; then
-            if [[ "$PKG" != "reflex" ]]; then
-              ARGS+=(--latest=false)
-            fi
-          else
-            ARGS+=(--prerelease --latest=false)
-          fi
-          gh release create "$TAG" "${ARGS[@]}"
+        run: bash .github/scripts/dispatch_release/create_release.sh
       - name: Trigger publish workflow
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ steps.version.outputs.tag }}
+          TAG: ${{ matrix.tag }}
           REF: ${{ github.ref_name }}
-        run: |
-          set -euo pipefail
-          gh workflow run publish.yml --ref "$REF" -f tag="$TAG"
+        run: bash .github/scripts/dispatch_release/trigger_publish.sh
