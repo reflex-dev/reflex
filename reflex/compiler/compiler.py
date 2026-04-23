@@ -366,70 +366,152 @@ def _compile_component(component: Component) -> str:
 def _compile_memo_components(
     components: Iterable[CustomComponent],
     experimental_memos: Iterable[ExperimentalMemoDefinition] = (),
-) -> tuple[str, dict[str, list[ImportVar]]]:
-    """Compile the components.
+) -> tuple[list[tuple[str, str]], dict[str, list[ImportVar]]]:
+    """Compile each memo/custom-component as its own module plus an index.
+
+    Each memo lands in ``.web/<components>/<name>.jsx`` with only the imports
+    it actually uses. Experimental memo wrappers declare their ``library`` as
+    that per-memo file path so page-side imports resolve directly to the
+    individual module.
+
+    The ``$/utils/components`` index only re-exports the legacy
+    ``@rx.memo`` custom components, which are the ones app-level code
+    (``root.jsx``) imports by name. Keeping experimental memos out of the
+    index is what lets root's ``import * as utils_components`` avoid
+    transitively dragging every page-specific memo into the always-loaded
+    chunk — the tree-shaking win of per-memo files relies on that.
 
     Args:
         components: The components to compile.
         experimental_memos: The experimental memos to compile.
 
     Returns:
-        The compiled components.
+        A list of ``(path, code)`` pairs to write — one per memo plus one
+        index — and the aggregated imports across all memo modules.
     """
-    imports: dict[str, list[ImportVar]] = {}
-    component_renders = []
-    function_renders = []
+    per_memo_files: list[tuple[str, str]] = []
+    # Only legacy custom components go through the index: they are the ones
+    # root.jsx/custom code imports by name from ``$/utils/components``.
+    # Experimental memos declare their library per-file (see
+    # ``_get_experimental_memo_component_class``) so pages import them
+    # directly and the index stays small.
+    index_entries: list[tuple[str, str]] = []
+    aggregate_imports: dict[str, list[ImportVar]] = {}
 
-    # Compile each component.
+    base_dir = utils.get_memo_components_dir()
+
     for component in components:
         component_render, component_imports = utils.compile_custom_component(component)
-        component_renders.append(component_render)
-        imports = utils.merge_imports(imports, component_imports)
+        name = component_render["name"]
+        code, file_imports = _compile_single_memo_component(
+            component_render, component_imports
+        )
+        path = _memo_component_file_path(base_dir, name)
+        specifier = _memo_component_index_specifier(name)
+        per_memo_files.append((path, code))
+        index_entries.append((name, specifier))
+        aggregate_imports = utils.merge_imports(aggregate_imports, file_imports)
 
     for memo in experimental_memos:
         if isinstance(memo, ExperimentalMemoComponentDefinition):
             memo_render, memo_imports = utils.compile_experimental_component_memo(memo)
-            component_renders.append(memo_render)
-            imports = utils.merge_imports(imports, memo_imports)
+            name = memo_render["name"]
+            code, file_imports = _compile_single_memo_component(
+                memo_render, memo_imports
+            )
+            path = _memo_component_file_path(base_dir, name)
+            per_memo_files.append((path, code))
+            aggregate_imports = utils.merge_imports(aggregate_imports, file_imports)
         elif isinstance(memo, ExperimentalMemoFunctionDefinition):
             memo_render, memo_imports = utils.compile_experimental_function_memo(memo)
-            function_renders.append(memo_render)
-            imports = utils.merge_imports(imports, memo_imports)
+            name = memo_render["name"]
+            code, file_imports = _compile_single_memo_function(
+                memo_render, memo_imports
+            )
+            path = _memo_component_file_path(base_dir, name)
+            per_memo_files.append((path, code))
+            aggregate_imports = utils.merge_imports(aggregate_imports, file_imports)
 
-    if component_renders:
-        imports = utils.merge_imports(
-            {
-                "react": [ImportVar(tag="memo")],
-                f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
-            },
-            imports,
-        )
-        _apply_common_imports(imports)
+    index_path = utils.get_components_path()
+    index_code = templates.memo_index_template(index_entries)
+    return [(index_path, index_code), *per_memo_files], aggregate_imports
 
-    dynamic_imports = {
-        comp_import: None
-        for comp_render in component_renders
-        if "dynamic_imports" in comp_render
-        for comp_import in comp_render["dynamic_imports"]
-    }
 
-    custom_codes = {
-        comp_custom_code: None
-        for comp_render in component_renders
-        for comp_custom_code in comp_render.get("custom_code", [])
-    }
+def _compile_single_memo_component(
+    component_render: dict,
+    component_imports: dict[str, list[ImportVar]],
+) -> tuple[str, dict[str, list[ImportVar]]]:
+    """Render one memoized component as a standalone module.
 
-    # Compile the components page.
-    return (
-        templates.memo_components_template(
-            imports=utils.compile_imports(imports),
-            components=component_renders,
-            functions=function_renders,
-            dynamic_imports=sorted(dynamic_imports),
-            custom_codes=custom_codes,
-        ),
-        imports,
+    Args:
+        component_render: The component's render dict.
+        component_imports: The component's imports before common/common-memo
+            additions.
+
+    Returns:
+        The file contents and the full import dict used to compile it.
+    """
+    imports = utils.merge_imports(
+        {
+            "react": [ImportVar(tag="memo")],
+            f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
+        },
+        component_imports,
     )
+    _apply_common_imports(imports)
+    code = templates.memo_single_component_template(
+        imports=utils.compile_imports(imports),
+        component=component_render,
+        dynamic_imports=sorted(component_render.get("dynamic_imports", []) or []),
+        custom_codes=component_render.get("custom_code", []) or [],
+    )
+    return code, imports
+
+
+def _compile_single_memo_function(
+    function_render: dict,
+    function_imports: dict[str, list[ImportVar]],
+) -> tuple[str, dict[str, list[ImportVar]]]:
+    """Render one function memo as a standalone module.
+
+    Args:
+        function_render: The function's render dict.
+        function_imports: The function's imports.
+
+    Returns:
+        The file contents and the full import dict used to compile it.
+    """
+    imports = utils.merge_imports({}, function_imports)
+    code = templates.memo_single_function_template(
+        imports=utils.compile_imports(imports),
+        function=function_render,
+    )
+    return code, imports
+
+
+def _memo_component_file_path(base_dir: str, name: str) -> str:
+    """Return the on-disk path for a per-memo module.
+
+    Args:
+        base_dir: The directory that holds per-memo files.
+        name: The memo's export name.
+
+    Returns:
+        The absolute path for the memo's ``.jsx`` file.
+    """
+    return str(Path(base_dir) / f"{name}{constants.Ext.JSX}")
+
+
+def _memo_component_index_specifier(name: str) -> str:
+    """Return the module specifier the index uses to re-export a memo.
+
+    Args:
+        name: The memo's export name.
+
+    Returns:
+        A relative specifier resolvable from the memo index module.
+    """
+    return f"./{constants.PageNames.COMPONENTS}/{name}"
 
 
 def compile_document_root(
@@ -568,22 +650,18 @@ def compile_page_from_context(page_ctx: PageContext) -> tuple[str, str]:
 def compile_memo_components(
     components: Iterable[CustomComponent],
     experimental_memos: Iterable[ExperimentalMemoDefinition] = (),
-) -> tuple[str, str, dict[str, list[ImportVar]]]:
-    """Compile the custom components.
+) -> tuple[list[tuple[str, str]], dict[str, list[ImportVar]]]:
+    """Compile the custom components into one module per memo plus an index.
 
     Args:
         components: The custom components to compile.
         experimental_memos: The experimental memos to compile.
 
     Returns:
-        The path and code of the compiled components.
+        A list of ``(path, code)`` pairs (one per memo module and one index)
+        alongside the aggregated imports across all memo modules.
     """
-    # Get the path for the output file.
-    output_path = utils.get_components_path()
-
-    # Compile the components.
-    code, imports = _compile_memo_components(components, experimental_memos)
-    return output_path, code, imports
+    return _compile_memo_components(components, experimental_memos)
 
 
 def purge_web_pages_dir():
@@ -1015,18 +1093,14 @@ def compile_app(
     app_root = app._app_root(app_wrappers)
     all_imports = utils.merge_imports(all_imports, app_root._get_all_imports())
 
-    (
-        memo_components_output,
-        memo_components_result,
-        memo_components_imports,
-    ) = compile_memo_components(
+    memo_component_files, memo_components_imports = compile_memo_components(
         dict.fromkeys(CUSTOM_COMPONENTS.values()),
         (
             *tuple(EXPERIMENTAL_MEMOS.values()),
             *tuple(compile_ctx.auto_memo_components.values()),
         ),
     )
-    compile_results.append((memo_components_output, memo_components_result))
+    compile_results.extend(memo_component_files)
     all_imports = utils.merge_imports(all_imports, memo_components_imports)
     progress.advance(task)
 

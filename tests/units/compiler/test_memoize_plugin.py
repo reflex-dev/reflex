@@ -109,7 +109,7 @@ def test_memoize_wrapper_uses_experimental_memo_component_and_call_site() -> Non
     wrapper_tag = next(iter(ctx.memoize_wrappers))
     assert wrapper_tag in ctx.auto_memo_components
     output = page_ctx.output_code or ""
-    assert f'import {{{wrapper_tag}}} from "$/utils/components"' in output
+    assert f'import {{{wrapper_tag}}} from "$/utils/components/{wrapper_tag}"' in output
     assert f"jsx({wrapper_tag}," in (page_ctx.output_code or "")
     assert f"const {wrapper_tag} = memo" not in output
 
@@ -126,7 +126,7 @@ def test_memoize_wrapper_deduped_across_repeated_subtrees() -> None:
     wrapper_tag = next(iter(ctx.memoize_wrappers))
     assert list(ctx.auto_memo_components) == [wrapper_tag]
     assert (page_ctx.output_code or "").count(
-        f'import {{{wrapper_tag}}} from "$/utils/components"'
+        f'import {{{wrapper_tag}}} from "$/utils/components/{wrapper_tag}"'
     ) == 1
 
 
@@ -210,7 +210,7 @@ def test_shared_subtree_across_pages_uses_same_tag() -> None:
     assert list(ctx.auto_memo_components) == [tag]
     for route in ("/a", "/b"):
         output = ctx.compiled_pages[route].output_code or ""
-        assert f'import {{{tag}}} from "$/utils/components"' in output
+        assert f'import {{{tag}}} from "$/utils/components/{tag}"' in output
         assert f"jsx({tag}," in output
 
 
@@ -248,7 +248,7 @@ def test_shared_parent_instance_across_pages_preserves_original() -> None:
     tag = next(iter(ctx.memoize_wrappers))
     for route in ("/a", "/b"):
         output = ctx.compiled_pages[route].output_code or ""
-        assert f'import {{{tag}}} from "$/utils/components"' in output, (
+        assert f'import {{{tag}}} from "$/utils/components/{tag}"' in output, (
             f"route {route} missing memo tag import"
         )
         assert f"jsx({tag}," in output, f"route {route} does not render the memo tag"
@@ -293,7 +293,7 @@ def test_shared_nested_parent_mirroring_common_elements_preserves_original() -> 
     tag = next(iter(ctx.memoize_wrappers))
     for route in ("/a", "/b", "/c"):
         output = ctx.compiled_pages[route].output_code or ""
-        assert f'import {{{tag}}} from "$/utils/components"' in output
+        assert f'import {{{tag}}} from "$/utils/components/{tag}"' in output
         assert f"jsx({tag}," in output
 
 
@@ -365,10 +365,11 @@ def test_memoization_leaf_internal_hooks_do_not_leak_into_page() -> None:
     assert ctx.auto_memo_components, (
         "expected an auto-memo wrapper to be generated for the leaf"
     )
-    _output_path, memo_code, _memo_imports = compile_memo_components(
+    memo_files, _memo_imports = compile_memo_components(
         components=(),
         experimental_memos=tuple(ctx.auto_memo_components.values()),
     )
+    memo_code = "\n".join(code for _, code in memo_files)
     assert "useLeafProbe" in memo_code, (
         "leaf's internal probe hook was dropped from the memo module"
     )

@@ -2242,14 +2242,22 @@ def test_compile_writes_app_wrap_memo_components(
     app.add_page(rx.box("Index"), route="/")
     app._compile()
 
-    components_js = (
+    components_index = (
         web_dir
         / constants.Dirs.UTILS
         / f"{constants.PageNames.COMPONENTS}{constants.Ext.JSX}"
     ).read_text()
 
-    assert "export const DefaultOverlayComponents" in components_js
-    assert "export const MemoizedToastProvider" in components_js
+    # Per-memo modules live under .web/utils/components/; the index re-exports
+    # each one so page-side ``$/utils/components`` resolves the same tags.
+    assert "DefaultOverlayComponents" in components_index
+    assert "MemoizedToastProvider" in components_index
+    assert 'from "./components/DefaultOverlayComponents"' in components_index
+    assert 'from "./components/MemoizedToastProvider"' in components_index
+
+    memo_dir = web_dir / constants.Dirs.UTILS / constants.PageNames.COMPONENTS
+    assert (memo_dir / f"DefaultOverlayComponents{constants.Ext.JSX}").exists()
+    assert (memo_dir / f"MemoizedToastProvider{constants.Ext.JSX}").exists()
 
 
 def test_compile_writes_upload_files_provider_app_wrap(

@@ -656,6 +656,18 @@ def get_components_path() -> str:
     )
 
 
+def get_memo_components_dir() -> str:
+    """Get the directory that holds per-memo module files.
+
+    Returns:
+        The directory used for per-memo ``.jsx`` modules re-exported by the
+        top-level components index.
+    """
+    return str(
+        get_web_dir() / constants.Dirs.UTILS / constants.PageNames.COMPONENTS,
+    )
+
+
 def add_meta(
     page: Component,
     title: str,

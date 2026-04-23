@@ -160,6 +160,11 @@ def _get_experimental_memo_component_class(
     attrs: dict[str, Any] = {
         "__module__": __name__,
         "tag": export_name,
+        # Point each memo at its own per-file module so pages import directly
+        # from ``$/utils/components/<name>`` rather than through the index.
+        # Per-file import paths give Vite distinct module boundaries per
+        # memo, enabling actual code-split by page.
+        "library": f"$/{constants.Dirs.COMPONENTS_PATH}/{export_name}",
     }
     if (
         wrapped_component_type._get_app_wrap_components

@@ -940,7 +940,10 @@ def test_compile_context_memoize_wrappers_registers_shared_subtree_tag() -> None
     assert list(compile_ctx.auto_memo_components) == [wrapper_tag]
     # Each page imports the generated experimental memo component.
     page_a_code = compile_ctx.compiled_pages["/a"].output_code or ""
-    assert f'import {{{wrapper_tag}}} from "$/utils/components"' in page_a_code
+    assert (
+        f'import {{{wrapper_tag}}} from "$/utils/components/{wrapper_tag}"'
+        in page_a_code
+    )
     assert f"jsx({wrapper_tag}," in page_a_code
     assert f"const {wrapper_tag} = memo" not in page_a_code
     # The removed shared-stateful-components path should not appear anywhere.

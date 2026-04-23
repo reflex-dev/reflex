@@ -715,6 +715,83 @@ export const {component["name"]} = memo(({component["signature"]}) => {{
 {components_code}"""
 
 
+def memo_single_component_template(
+    imports: list[_ImportDict],
+    component: dict[str, Any],
+    dynamic_imports: Iterable[str],
+    custom_codes: Iterable[str],
+) -> str:
+    """Template for a single memoized component in its own module.
+
+    Args:
+        imports: List of import statements for this memo only.
+        component: The single component definition to render.
+        dynamic_imports: Dynamic import statements scoped to this memo.
+        custom_codes: Custom code snippets scoped to this memo.
+
+    Returns:
+        The rendered standalone memo module code.
+    """
+    imports_str = "\n".join([_RenderUtils.get_import(imp) for imp in imports])
+    dynamic_imports_str = "\n".join(dynamic_imports)
+    custom_code_str = "\n".join(custom_codes)
+
+    component_code = f"""
+export const {component["name"]} = memo(({component["signature"]}) => {{
+    {_render_hooks(component.get("hooks", {}))}
+    return(
+        {_RenderUtils.render(component["render"])}
+    )
+}});
+"""
+
+    return f"""
+{imports_str}
+
+{dynamic_imports_str}
+
+{custom_code_str}
+
+{component_code}"""
+
+
+def memo_single_function_template(
+    imports: list[_ImportDict],
+    function: dict[str, Any],
+) -> str:
+    """Template for a single function memo in its own module.
+
+    Args:
+        imports: List of import statements for this memo only.
+        function: The single function memo definition.
+
+    Returns:
+        The rendered standalone function memo module code.
+    """
+    imports_str = "\n".join([_RenderUtils.get_import(imp) for imp in imports])
+    return f"""
+{imports_str}
+
+export const {function["name"]} = {function["function"]};
+"""
+
+
+def memo_index_template(reexports: Iterable[tuple[str, str]]) -> str:
+    """Template for the memo index module that re-exports every memo file.
+
+    Args:
+        reexports: Iterable of ``(export_name, relative_module_specifier)``.
+
+    Returns:
+        The rendered index module code.
+    """
+    lines = [
+        f'export {{ {export_name} }} from "{specifier}";'
+        for export_name, specifier in reexports
+    ]
+    return "\n".join(lines) + "\n"
+
+
 def styles_template(stylesheets: list[str]) -> str:
     """Template for styles.css.
 
