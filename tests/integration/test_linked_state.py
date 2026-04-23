@@ -129,6 +129,39 @@ def LinkedStateApp():
         def reset_self(self):
             self.reset()
 
+    class RaceState(rx.State):
+        """State with multiple async vars that race for the linked token lock."""
+
+        trigger: int = 0
+
+        @rx.var
+        async def race_val_0(self) -> str:
+            n = self.trigger
+            ss = await self.get_state(SharedState)
+            return f"{n}-{ss.counter}"
+
+        @rx.var
+        async def race_val_1(self) -> str:
+            n = self.trigger
+            ss = await self.get_state(SharedState)
+            return f"{n}-{ss.counter}"
+
+        @rx.var
+        async def race_val_2(self) -> str:
+            n = self.trigger
+            ss = await self.get_state(SharedState)
+            return f"{n}-{ss.counter}"
+
+        @rx.var
+        async def race_val_3(self) -> str:
+            n = self.trigger
+            ss = await self.get_state(SharedState)
+            return f"{n}-{ss.counter}"
+
+        @rx.event
+        def bump_trigger(self):
+            self.trigger += 1
+
     def index() -> rx.Component:
         return rx.vstack(
             rx.text(
@@ -199,6 +232,15 @@ def LinkedStateApp():
                 id="fetch-note-button",
             ),
             rx.text(PrivateState.fetched_note, id="fetched-note"),
+            rx.text(RaceState.race_val_0, id="race-val-0"),
+            rx.text(RaceState.race_val_1, id="race-val-1"),
+            rx.text(RaceState.race_val_2, id="race-val-2"),
+            rx.text(RaceState.race_val_3, id="race-val-3"),
+            rx.button(
+                "Bump Trigger",
+                on_click=RaceState.bump_trigger,
+                id="bump-trigger-button",
+            ),
         )
 
     from fastapi import FastAPI
@@ -628,3 +670,75 @@ def test_unrelated_reset_does_not_break_shared_event_link_context(
     tab.find_element(By.ID, "reset-private-state-button").click()
     tab.find_element(By.ID, "record-link-status-button").click()
     assert linked_state.poll_for_content(event_seen, exp_not_equal="") == shared_token
+
+
+def test_concurrent_async_vars_do_not_deadlock_linked_token(
+    linked_state: AppHarness,
+    tab_factory: Callable[[], WebDriver],
+):
+    """Ensure concurrent async vars accessing a linked SharedState do not deadlock.
+
+    When multiple async rx.var functions simultaneously call ``await
+    self.get_state(SharedState)`` and SharedState is not yet cached, each
+    resolves the linked state independently, meaning multiple concurrent calls
+    to ``state_manager.modify_state`` for the same linked token.  Without a lock
+    protecting this operation these races hit the Redis lock timeout
+    (~lock_expiration delay per blocked var).
+
+    Only meaningful with the Redis state manager; skipped otherwise.
+
+    Args:
+        linked_state: harness for LinkedStateApp.
+        tab_factory: factory to create WebDriver instances.
+    """
+    import time
+
+    from reflex.istate.manager.redis import StateManagerRedis
+
+    assert linked_state.app_instance is not None
+    sm = linked_state.app_instance.state_manager
+    if not isinstance(sm, StateManagerRedis):
+        pytest.skip("Only applicable with Redis state manager")
+
+    lock_expiration_s = sm.lock_expiration / 1000
+    # All 4 vars must update well within the lock expiration window.
+    # If any var hits a lock timeout it will delay by ~lock_expiration_s,
+    # which would exceed this threshold and fail the assertion.
+    max_acceptable_s = lock_expiration_s / 2
+
+    tab = tab_factory()
+    ss_storage = utils.SessionStorage(tab)
+    assert AppHarness._poll_for(lambda: ss_storage.get("token") is not None), (
+        "token not found"
+    )
+
+    shared_token = f"race-repro-{uuid.uuid4()}"
+    tab.find_element(By.ID, "token-input").send_keys(shared_token, Keys.ENTER)
+    linked_to = tab.find_element(By.ID, "linked-to")
+    assert linked_state.poll_for_content(linked_to, exp_not_equal="") == shared_token
+
+    race_elements = [tab.find_element(By.ID, f"race-val-{i}") for i in range(4)]
+
+    # Wait for all 4 vars to settle to their initial value after linking.
+    initial_texts = []
+    for el in race_elements:
+        assert AppHarness._poll_for(lambda e=el: e.text != ""), (
+            "race var never populated"
+        )
+        initial_texts.append(el.text)
+
+    # Trigger the race: bump_trigger causes all 4 async vars to recompute
+    # concurrently, each independently calling get_state(SharedState) which
+    # resolves via modify_state on the linked token.
+    tab.find_element(By.ID, "bump-trigger-button").click()
+
+    t0 = time.monotonic()
+    for el, initial in zip(race_elements, initial_texts, strict=True):
+        linked_state.poll_for_content(el, exp_not_equal=initial)
+    elapsed = time.monotonic() - t0
+
+    assert elapsed < max_acceptable_s, (
+        f"Async vars took {elapsed:.2f}s to update — expected < {max_acceptable_s:.2f}s "
+        f"(lock_expiration={lock_expiration_s:.2f}s). "
+        "Likely caused by concurrent async vars racing for the linked token lock."
+    )
