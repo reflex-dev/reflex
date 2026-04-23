@@ -1,9 +1,13 @@
 """Tests for ReflexURL parsing, serialization, and Var attribute access."""
 
+from collections.abc import Mapping
 from urllib.parse import parse_qsl
 
+from reflex_base.vars.object import ObjectVar
+from reflex_base.vars.sequence import StringVar
+
 import reflex as rx
-from reflex.istate.data import ReflexURL
+from reflex.istate.data import ReflexURL, ReflexURLCastedVar
 
 SAMPLE_URL = "https://example.com:3000/posts/123?tab=comments&sort=new#top"
 
@@ -40,27 +44,48 @@ def test_reflex_url_serializes_with_all_components():
     assert payload["fragment"] == "top"
 
 
-def test_router_url_var_supports_component_access():
-    """rx.State.router.url.<component> should produce a Var whose JS expression
-    accesses the corresponding key on the serialized URL object. Regression
+def test_router_url_var_is_casted():
+    """rx.State.router.url should be wrapped in a ReflexURLCastedVar so the
+    URL component properties resolve correctly.
+    """
+    assert isinstance(rx.State.router.url, ReflexURLCastedVar)
+
+
+def test_router_url_var_string_components():
+    """Each string component of router.url should render as a bracket-key on
+    the router.url object and produce a StringVar typed as str. Regression
     test for VarAttributeError: StringVar has no attribute 'scheme'.
     """
+    url_var = rx.State.router.url
+    base = str(url_var._original)
 
-    class _State(rx.State):
-        pass
-
-    url_var = _State.router.url
-
-    for component in ("scheme", "netloc", "origin", "path", "query", "fragment"):
+    for component in (
+        "scheme",
+        "netloc",
+        "origin",
+        "path",
+        "query",
+        "fragment",
+        "href",
+    ):
         child = getattr(url_var, component)
-        child_js = str(child)
-        assert f'"{component}"' in child_js, (
-            f"expected child Var for {component!r} to reference key "
-            f"{component!r} in JS, got {child_js!r}"
+        assert isinstance(child, StringVar), (
+            f"{component!r} should be a StringVar, got {type(child).__name__}"
         )
+        assert child._var_type is str
+        assert str(child) == f'{base}?.["{component}"]'
 
-    # query_parameters is a mapping; attribute access must still succeed.
-    assert '"query_parameters"' in str(url_var.query_parameters)
+
+def test_router_url_var_query_parameters_is_object():
+    """query_parameters should be an ObjectVar over Mapping[str, str] so
+    indexing and iteration produce correctly typed child Vars.
+    """
+    url_var = rx.State.router.url
+    qp = url_var.query_parameters
+
+    assert isinstance(qp, ObjectVar)
+    assert qp._var_type == Mapping[str, str]
+    assert str(qp) == f'{url_var._original!s}?.["query_parameters"]'
 
 
 def test_router_url_var_renders_as_href_at_top_level():
@@ -68,11 +93,5 @@ def test_router_url_var_renders_as_href_at_top_level():
     emit JS that resolves to the full URL string by reading the 'href'
     property on the serialized object.
     """
-
-    class _State(rx.State):
-        pass
-
-    url_js = str(_State.router.url)
-    assert '"href"' in url_js, (
-        f"expected top-level router.url to resolve to .href in JS, got {url_js!r}"
-    )
+    url_var = rx.State.router.url
+    assert str(url_var) == f'{url_var._original!s}?.["href"]'

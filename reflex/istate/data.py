@@ -159,21 +159,6 @@ class ReflexURL(str, _NetlocResultMixinStr):
         return obj
 
 
-# Keys exposed on the serialized ReflexURL payload and accessible as attributes
-# on ReflexURLVar. Values are the Python type of each key (used to pick the
-# right Var subclass via guess_type).
-_REFLEX_URL_COMPONENT_TYPES: dict[str, Any] = {
-    "scheme": str,
-    "netloc": str,
-    "origin": str,
-    "path": str,
-    "query": str,
-    "query_parameters": Mapping[str, str],
-    "fragment": str,
-    "href": str,
-}
-
-
 @serializer(to=dict)
 def _serialize_reflex_url(obj: ReflexURL) -> dict:
     """Serialize a ReflexURL to an object with its parsed components.
@@ -201,44 +186,12 @@ def _serialize_reflex_url(obj: ReflexURL) -> dict:
 
 
 class ReflexURLVar(StringVar[ReflexURL]):
-    """Var for ReflexURL that exposes URL components as child Vars.
+    """Var type marker for ReflexURL.
 
-    Accessing ``scheme``/``netloc``/``origin``/``path``/``query``/
-    ``query_parameters``/``fragment``/``href`` returns a typed child Var that
-    reads the corresponding key on the serialized URL object. Using the Var
-    itself as a string (e.g. ``rx.text(State.router.url)``) emits JS that
-    reads the ``href`` key so the full URL string is rendered.
+    Exists only to anchor the type registration for ``ReflexURL``; actual
+    instances returned by the Var system are always ``ReflexURLCastedVar``,
+    which exposes URL components as typed properties.
     """
-
-    def __getattr__(self, name: str) -> Var:
-        """Get a URL component Var by attribute name.
-
-        Args:
-            name: The component name.
-
-        Returns:
-            A child Var for the component.
-        """
-        component_type = _REFLEX_URL_COMPONENT_TYPES.get(name)
-        if component_type is not None:
-            return ObjectItemOperation.create(
-                _reflex_url_as_object(self),
-                name,
-                component_type,
-            ).guess_type()
-        return super().__getattr__(name)  # pyright: ignore[reportAttributeAccessIssue]
-
-
-def _reflex_url_as_object(url_var: Var) -> ObjectVar:
-    """View a ReflexURL-typed Var as an object for key access.
-
-    Args:
-        url_var: The ReflexURL-typed Var.
-
-    Returns:
-        An ObjectVar wrapping the same JS expression.
-    """
-    return url_var.to(ObjectVar, Mapping[str, Any])
 
 
 @dataclasses.dataclass(
@@ -252,8 +205,8 @@ class ReflexURLCastedVar(CachedVarOperation, ReflexURLVar):
     Constructed when ``guess_type`` / ``to(ReflexURLVar)`` is invoked on any
     Var typed as ReflexURL (e.g. ``State.router.url``). Its top-level JS
     expression is ``{original}?.["href"]`` so string-context usage produces
-    the full URL; component access (via ``__getattr__`` inherited from
-    ``ReflexURLVar``) reads the matching key on ``{original}`` instead.
+    the full URL; component access via the typed properties below reads the
+    matching key on ``{original}`` instead.
     """
 
     _original: Var = dataclasses.field(
@@ -270,23 +223,95 @@ class ReflexURLCastedVar(CachedVarOperation, ReflexURLVar):
         """
         return f'{self._original!s}?.["href"]'
 
-    def __getattr__(self, name: str) -> Any:
-        """Dispatch URL component access to the original object.
+    def _component(self, name: str, var_type: Any) -> Var:
+        """Build a child Var that reads ``name`` on the serialized URL object.
 
         Args:
-            name: The attribute name.
+            name: The component key on the serialized URL object.
+            var_type: The python type of the component value.
 
         Returns:
-            The child Var for the URL component, or the inherited attribute.
+            The child Var, already guess_type'd to the appropriate subclass.
         """
-        component_type = _REFLEX_URL_COMPONENT_TYPES.get(name)
-        if component_type is not None:
-            return ObjectItemOperation.create(
-                _reflex_url_as_object(self._original),
-                name,
-                component_type,
-            ).guess_type()
-        return CachedVarOperation.__getattr__(self, name)
+        return ObjectItemOperation.create(
+            self._original.to(ObjectVar, Mapping[str, Any]),
+            name,
+            var_type,
+        ).guess_type()
+
+    @property
+    def scheme(self) -> StringVar:
+        """The URL scheme (e.g. ``"https"``).
+
+        Returns:
+            StringVar accessing ``scheme`` on the serialized URL.
+        """
+        return self._component("scheme", str)  # pyright: ignore[reportReturnType]
+
+    @property
+    def netloc(self) -> StringVar:
+        """The network location, including host and optional port.
+
+        Returns:
+            StringVar accessing ``netloc`` on the serialized URL.
+        """
+        return self._component("netloc", str)  # pyright: ignore[reportReturnType]
+
+    @property
+    def origin(self) -> StringVar:
+        """The scheme and netloc joined (e.g. ``"https://example.com:3000"``).
+
+        Returns:
+            StringVar accessing ``origin`` on the serialized URL.
+        """
+        return self._component("origin", str)  # pyright: ignore[reportReturnType]
+
+    @property
+    def path(self) -> StringVar:
+        """The URL path as shown in the browser (no query or fragment).
+
+        Returns:
+            StringVar accessing ``path`` on the serialized URL.
+        """
+        return self._component("path", str)  # pyright: ignore[reportReturnType]
+
+    @property
+    def query(self) -> StringVar:
+        """The raw query string, without a leading ``?``.
+
+        Returns:
+            StringVar accessing ``query`` on the serialized URL.
+        """
+        return self._component("query", str)  # pyright: ignore[reportReturnType]
+
+    @property
+    def query_parameters(self) -> ObjectVar[Mapping[str, str]]:
+        """The parsed query string as a mapping.
+
+        Returns:
+            ObjectVar accessing ``query_parameters`` on the serialized URL.
+        """
+        return self._component(  # pyright: ignore[reportReturnType]
+            "query_parameters", Mapping[str, str]
+        )
+
+    @property
+    def fragment(self) -> StringVar:
+        """The URL fragment, without a leading ``#``.
+
+        Returns:
+            StringVar accessing ``fragment`` on the serialized URL.
+        """
+        return self._component("fragment", str)  # pyright: ignore[reportReturnType]
+
+    @property
+    def href(self) -> StringVar:
+        """The full URL string.
+
+        Returns:
+            StringVar accessing ``href`` on the serialized URL.
+        """
+        return self._component("href", str)  # pyright: ignore[reportReturnType]
 
     @classmethod
     def create(
