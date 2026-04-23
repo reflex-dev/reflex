@@ -29,7 +29,7 @@ pattern-prefix = "reflex-hosting-cli-"
 fallback-version = "0.0.0dev0"
 
 [tool.hatch.build.targets.wheel]
-packages = ["reflex_cli"]
+packages = ["src/reflex_cli"]
 
 [build-system]
 requires = ["hatchling", "uv-dynamic-versioning"]
