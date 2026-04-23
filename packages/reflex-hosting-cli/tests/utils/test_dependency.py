@@ -2,7 +2,6 @@ from pathlib import Path
 
 import pytest
 from pytest_mock import MockFixture
-
 from reflex_cli.utils.dependency import detect_encoding, is_valid_url
 
 

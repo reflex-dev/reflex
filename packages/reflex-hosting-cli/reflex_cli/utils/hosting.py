@@ -656,7 +656,7 @@ def search_app(
         )
         raise click.exceptions.Exit(1)
 
-    elif len(apps) > 1 and interactive:
+    if len(apps) > 1 and interactive:
         return interactive_resolve_project_or_app_name_conflicts(
             apps,
             rows=[
@@ -667,10 +667,9 @@ def search_app(
             conflict_warn_msg="Found multiple apps with the same name. Select one to continue",
             conflict_ask_msg="Which app would you like to use?",
         )
-    elif len(apps) == 1:
+    if len(apps) == 1:
         return apps[0]
-    else:
-        return None
+    return None
 
 
 def search_project(
@@ -722,7 +721,7 @@ def search_project(
         )
         raise click.exceptions.Exit(1)
 
-    elif len(projects) > 1 and interactive:
+    if len(projects) > 1 and interactive:
         return interactive_resolve_project_or_app_name_conflicts(
             projects,
             rows=[[f"({i})", x["id"], x["name"]] for i, x in enumerate(projects)],
@@ -730,10 +729,9 @@ def search_project(
             conflict_warn_msg="Found multiple projects with the same name. Select one to continue",
             conflict_ask_msg="Which project would you like to use?",
         )
-    elif len(projects) == 1:
+    if len(projects) == 1:
         return projects[0]
-    else:
-        return None
+    return None
 
 
 def get_app(app_id: str, client: AuthenticatedClient) -> dict:
@@ -1521,7 +1519,7 @@ def delete_app(app_id: str, client: AuthenticatedClient):
     app = get_app(app_id=app_id, client=client)
     if not app:
         console.warn("no app with given id found")
-        return
+        return None
     response = httpx.delete(
         urljoin(constants.Hosting.HOSTING_SERVICE, f"/api/v1/apps/{app['id']}/delete"),
         headers=authorization_header(client.token),
@@ -1567,10 +1565,10 @@ def get_app_logs(
         app = get_app(app_id=app_id, client=client)
     except GetAppError:
         console.warn(f"No application found with ID '{app_id}'")
-        return
+        return None
     if not app:
         console.warn("no app with given id found")
-        return
+        return None
     params = f"?offset={offset}" if offset else f"?start={start}&end={end}"
     if cursor:
         params += f"&cursor={cursor}"
@@ -1896,7 +1894,7 @@ def list_projects():
         None
 
     """
-    return None
+    return
 
 
 def fetch_token(request_id: str) -> str:
@@ -1973,8 +1971,7 @@ def authenticate_on_browser() -> tuple[str, dict[str, Any]]:
             access_token = fetch_token(request_id)
             if access_token:
                 break
-            else:
-                time.sleep(1)
+            time.sleep(1)
 
     if access_token and (validated_info := validate_token_with_retries(access_token)):
         save_token_to_config(access_token)

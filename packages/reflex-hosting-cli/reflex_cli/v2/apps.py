@@ -23,7 +23,6 @@ from reflex_cli.utils.exceptions import (
 @click.group()
 def apps_cli():
     """Commands for managing apps."""
-    pass
 
 
 @apps_cli.command(name="history")
@@ -551,21 +550,20 @@ def app_logs(
             if prompt.lower() == "exit":
                 console.info("Exiting log retrieval.")
                 raise click.exceptions.Exit(0)
-            else:
-                ctx = click.get_current_context()
-                ctx.invoke(
-                    app_logs,
-                    app_id=app_id,
-                    app_name=None,  # Don't pass app_name again since we have app_id
-                    token=token,
-                    offset=offset,
-                    start=start,
-                    end=end,
-                    loglevel=loglevel,
-                    interactive=interactive,
-                    cursor=cursor,
-                    pretty=pretty,
-                )
+            ctx = click.get_current_context()
+            ctx.invoke(
+                app_logs,
+                app_id=app_id,
+                app_name=None,  # Don't pass app_name again since we have app_id
+                token=token,
+                offset=offset,
+                start=start,
+                end=end,
+                loglevel=loglevel,
+                interactive=interactive,
+                cursor=cursor,
+                pretty=pretty,
+            )
     except ResponseError as err:
         console.error(f"Error retrieving logs: {err}")
         raise click.exceptions.Exit(1) from err

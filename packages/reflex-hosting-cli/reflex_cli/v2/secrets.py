@@ -12,7 +12,6 @@ from reflex_cli.utils.exceptions import NotAuthenticatedError
 @click.group()
 def secrets_cli():
     """Commands for managing secrets."""
-    pass
 
 
 @secrets_cli.command(name="list")

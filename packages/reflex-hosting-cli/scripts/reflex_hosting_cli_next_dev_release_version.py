@@ -36,12 +36,11 @@ def get_latest_package_version_info(
         if not dev:
             # Stable release
             return version.parse(response_json["info"]["version"])
-        else:
-            # All the releases including pre-releases
-            releases = response_json["releases"]
-            parsed_versions = [version.parse(v) for v in releases]
-            dev_releases = [v for v in parsed_versions if v.dev is not None]
-            return max(dev_releases)
+        # All the releases including pre-releases
+        releases = response_json["releases"]
+        parsed_versions = [version.parse(v) for v in releases]
+        dev_releases = [v for v in parsed_versions if v.dev is not None]
+        return max(dev_releases)
     except httpx.HTTPError as he:
         sys.stderr.write(f"Failed to fetch package info from PyPI: {he}")
         raise
@@ -75,14 +74,13 @@ def get_next_dev_release_version(
     if latest_stable_version > latest_dev_version:
         # we bump the micro version
         return f"{latest_stable_version.major}.{latest_stable_version.minor}.{latest_stable_version.micro + 1}dev0"
-    else:
-        dev = latest_dev_version.dev
-        if dev is None:
-            raise ValueError(
-                f"The latest dev version not in expected format: got {latest_dev_version}"
-            )
-        # we bump the dev build version
-        return f"{latest_dev_version.major}.{latest_dev_version.minor}.{latest_dev_version.micro}dev{dev + 1}"
+    dev = latest_dev_version.dev
+    if dev is None:
+        raise ValueError(
+            f"The latest dev version not in expected format: got {latest_dev_version}"
+        )
+    # we bump the dev build version
+    return f"{latest_dev_version.major}.{latest_dev_version.minor}.{latest_dev_version.micro}dev{dev + 1}"
 
 
 def main():

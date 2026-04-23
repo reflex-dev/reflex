@@ -9,7 +9,6 @@ import httpx
 import pytest
 from packaging import version
 from pytest_mock import MockerFixture, MockFixture
-
 from reflex_cli.utils import hosting
 from reflex_cli.v2 import cli
 

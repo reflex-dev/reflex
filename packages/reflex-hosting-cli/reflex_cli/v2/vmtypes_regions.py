@@ -11,7 +11,6 @@ from reflex_cli.utils import console
 @click.group()
 def vm_types_regions_cli():
     """Commands for VM types and regions."""
-    pass
 
 
 @vm_types_regions_cli.command("create-token")

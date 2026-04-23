@@ -110,6 +110,7 @@ dev = [
   "sqlmodel",
   "starlette-admin",
   "toml",
+  "typer",
   "uvicorn",
 ]
 
@@ -231,6 +232,29 @@ lint.flake8-bugbear.extend-immutable-calls = [
 "*.pyi" = ["D301", "D415", "D417", "D418", "E742", "N", "PGH"]
 "pyi_generator.py" = ["N802"]
 "packages/reflex-base/src/reflex_base/constants/*.py" = ["N"]
+"packages/reflex-hosting-cli/reflex_cli/**/*.py" = [
+  "B008",
+  "D420",
+  "EM101",
+  "EM102",
+  "RET504",
+]
+"packages/reflex-hosting-cli/scripts/**/*.py" = [
+  "D420",
+  "EM102",
+  "EXE002",
+  "FURB113",
+  "INP001",
+  "T201",
+]
+"packages/reflex-hosting-cli/tests/**/*.py" = [
+  "D100",
+  "D103",
+  "D104",
+  "DOC201",
+  "PT006",
+  "RUF052",
+]
 "*/.templates/apps/blank/code/*" = ["INP001"]
 "*/blank.py" = ["I001"]
 

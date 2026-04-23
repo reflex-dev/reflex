@@ -3,11 +3,10 @@ from pathlib import Path
 
 from click.testing import CliRunner
 from pytest_mock import MockFixture
-from typer import Typer
-from typer.main import get_command
-
 from reflex_cli.utils import hosting
 from reflex_cli.v2.deployments import hosting_cli
+from typer import Typer
+from typer.main import get_command
 
 hosting_cli = (
     get_command(hosting_cli) if isinstance(hosting_cli, Typer) else hosting_cli
@@ -111,9 +110,10 @@ def test_get_secrets_json_output(mocker: MockFixture):
             token="fake-token", validated_data={"foo": "bar"}
         ),
     )
-    mock_console_print.assert_called_once_with(
-        {"secret_key_1": "value1", "secret_key_2": "value2"}
-    )
+    mock_console_print.assert_called_once_with({
+        "secret_key_1": "value1",
+        "secret_key_2": "value2",
+    })
     assert result.exit_code == 0, result.output
 
 

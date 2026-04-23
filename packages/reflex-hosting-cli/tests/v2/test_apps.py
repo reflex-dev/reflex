@@ -7,12 +7,11 @@ import httpx
 import pytest
 from click.testing import CliRunner
 from pytest_mock import MockerFixture, MockFixture
-from typer.main import Typer, get_command
-
 from reflex_cli.core.config import Config
 from reflex_cli.utils import hosting
 from reflex_cli.utils.exceptions import GetAppError
 from reflex_cli.v2.deployments import hosting_cli
+from typer.main import Typer, get_command
 
 hosting_cli = (
     get_command(hosting_cli) if isinstance(hosting_cli, Typer) else hosting_cli
@@ -103,19 +102,17 @@ def test_app_history_as_json(mocker: MockFixture):
         ),
     )
     mock_console_print.assert_called_once_with(
-        json.dumps(
-            [
-                {
-                    "id": "deployment1",
-                    "status": "success",
-                    "hostname": "example.com",
-                    "python version": "3.10",
-                    "reflex version": "1.2.3",
-                    "vm type": "small",
-                    "timestamp": "2024-11-29T12:00:00Z",
-                }
-            ]
-        )
+        json.dumps([
+            {
+                "id": "deployment1",
+                "status": "success",
+                "hostname": "example.com",
+                "python version": "3.10",
+                "reflex version": "1.2.3",
+                "vm type": "small",
+                "timestamp": "2024-11-29T12:00:00Z",
+            }
+        ])
     )
 
 
@@ -468,9 +465,10 @@ def test_start_app_success(mocker: MockFixture):
             token="fake-token", validated_data={"foo": "bar"}
         ),
     )
-    mock_success.assert_called_once_with(
-        {"status": "success", "message": "App started successfully"}
-    )
+    mock_success.assert_called_once_with({
+        "status": "success",
+        "message": "App started successfully",
+    })
 
 
 def test_start_app_failure(mocker: MockFixture):
@@ -584,9 +582,10 @@ def test_delete_app_success(mocker: MockFixture):
             token="fake-token", validated_data={"foo": "bar"}
         ),
     )
-    mock_warn.assert_called_once_with(
-        {"status": "success", "message": "App deleted successfully"}
-    )
+    mock_warn.assert_called_once_with({
+        "status": "success",
+        "message": "App deleted successfully",
+    })
 
 
 def test_delete_app_failure(mocker: MockFixture):
@@ -778,9 +777,10 @@ def test_delete_app_non_interactive_skips_confirmation(mocker: MockFixture):
             token="fake-token", validated_data={"foo": "bar"}
         ),
     )
-    mock_warn.assert_called_once_with(
-        {"status": "success", "message": "App deleted successfully"}
-    )
+    mock_warn.assert_called_once_with({
+        "status": "success",
+        "message": "App deleted successfully",
+    })
 
 
 def test_delete_app_get_app_fails_fallback_to_unknown(mocker: MockFixture):
@@ -848,9 +848,10 @@ def test_delete_app_with_app_name_confirmation(mocker: MockFixture):
             token="fake-token", validated_data={"foo": "bar"}
         ),
     )
-    mock_warn.assert_called_once_with(
-        {"status": "success", "message": "App deleted successfully"}
-    )
+    mock_warn.assert_called_once_with({
+        "status": "success",
+        "message": "App deleted successfully",
+    })
 
 
 def test_delete_app_not_found_early_exit(mocker: MockFixture):

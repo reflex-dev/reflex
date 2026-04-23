@@ -3,12 +3,11 @@ import json
 import httpx
 from click.testing import CliRunner
 from pytest_mock import MockFixture
-from typer import Typer
-from typer.main import get_command
-
 from reflex_cli.utils import hosting
 from reflex_cli.utils.exceptions import NotAuthenticatedError
 from reflex_cli.v2.deployments import hosting_cli
+from typer import Typer
+from typer.main import get_command
 
 hosting_cli = (
     get_command(hosting_cli) if isinstance(hosting_cli, Typer) else hosting_cli
@@ -494,12 +493,10 @@ def test_get_project_roles_as_json(mocker: MockFixture):
         ),
     )
     mock_console_print.assert_called_once_with(
-        json.dumps(
-            [
-                {"role": "admin", "user": "user1@example.com"},
-                {"role": "viewer", "user": "user2@example.com"},
-            ]
-        )
+        json.dumps([
+            {"role": "admin", "user": "user1@example.com"},
+            {"role": "viewer", "user": "user2@example.com"},
+        ])
     )
 
 
@@ -665,12 +662,10 @@ def test_get_project_role_permissions_as_json(mocker: MockFixture):
         ),
     )
     mock_console_print.assert_called_once_with(
-        json.dumps(
-            [
-                {"permission": "read", "resource": "resource1"},
-                {"permission": "write", "resource": "resource2"},
-            ]
-        )
+        json.dumps([
+            {"permission": "read", "resource": "resource1"},
+            {"permission": "write", "resource": "resource2"},
+        ])
     )
 
 
@@ -800,12 +795,10 @@ def test_get_project_role_users_as_json(mocker: MockFixture):
         ),
     )
     mock_console_print.assert_called_once_with(
-        json.dumps(
-            [
-                {"user_id": "user1", "role": "admin"},
-                {"user_id": "user2", "role": "developer"},
-            ]
-        )
+        json.dumps([
+            {"user_id": "user1", "role": "admin"},
+            {"user_id": "user2", "role": "developer"},
+        ])
     )
 
 

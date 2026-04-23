@@ -12,7 +12,6 @@ from reflex_cli.utils.exceptions import NotAuthenticatedError
 @click.group()
 def project_cli():
     """Commands for managing projects."""
-    pass
 
 
 @project_cli.command(name="create")

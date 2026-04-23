@@ -6,7 +6,6 @@ from unittest.mock import mock_open
 import click
 import pytest
 from pytest_mock import MockerFixture, MockFixture
-
 from reflex_cli.utils.hosting import (
     authenticated_token,
     delete_token_from_config,

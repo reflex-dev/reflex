@@ -4,10 +4,9 @@ import httpx
 import pytest
 from click.testing import CliRunner
 from pytest_mock import MockerFixture, MockFixture
+from reflex_cli.v2.deployments import hosting_cli
 from typer import Typer
 from typer.main import get_command
-
-from reflex_cli.v2.deployments import hosting_cli
 
 hosting_cli = (
     get_command(hosting_cli) if isinstance(hosting_cli, Typer) else hosting_cli
@@ -169,12 +168,10 @@ def test_get_deployment_regions_as_json(mocker: MockFixture):
     assert result.exit_code == 0, result.output
     mock_get_regions.assert_called_once()
     mock_print.assert_called_once_with(
-        json.dumps(
-            [
-                {"name": "Amsterdam, Netherlands", "code": "ams"},
-                {"name": "Stockholm, Sweden", "code": "arn"},
-            ]
-        )
+        json.dumps([
+            {"name": "Amsterdam, Netherlands", "code": "ams"},
+            {"name": "Stockholm, Sweden", "code": "arn"},
+        ])
     )
 
 
