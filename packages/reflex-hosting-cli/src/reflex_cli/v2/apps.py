@@ -468,78 +468,74 @@ def app_logs(
     follow: bool = True,
 ):
     """Retrieve logs for a given application."""
+    import pprint
+
     from reflex_cli.utils import hosting
-
-    if pretty:
-        try:
-            import pprint
-        except ImportError:
-            console.error(
-                "pprint module is not available. Please install pprint to use pretty printing."
-            )
-            raise click.exceptions.Exit(1) from ImportError
-
-    authenticated_client = hosting.get_authenticated_client(
-        token=token, interactive=interactive
-    )
-
-    if not app_id:
-        config = hosting.read_config()
-        if config:
-            app_id = config.appid
-            if not isinstance(app_id, (str, type(None))):
-                console.error(
-                    "app_id must be a string or None. Please check your config file."
-                )
-                raise click.exceptions.Exit(1)
-
-    if app_name is not None and app_id is None:
-        app_result = hosting.search_app(
-            app_name=app_name,
-            project_id=None,
-            client=authenticated_client,
-            interactive=interactive,
-        )
-        app_id = app_result.get("id") if app_result else None
-
-    if not app_id:
-        console.error("No valid app_id or app_name provided.")
-        raise click.exceptions.Exit(1)
-
-    if offset is None and start is None and end is None:
-        offset = 3600
-    if not offset and not (start and end):
-        console.error("must provide both start and end")
-        raise click.exceptions.Exit(1)
 
     console.set_log_level(loglevel)
 
     try:
-        console.debug(f"fetching logs with cursor: {cursor}")
-        result = hosting.get_app_logs(
-            app_id=app_id,
-            offset=offset,
-            start=start,
-            end=end,
-            client=authenticated_client,
-            cursor=cursor,
+        authenticated_client = hosting.get_authenticated_client(
+            token=token, interactive=interactive
         )
-        if isinstance(result, list):
-            if len(result) == 2:
+
+        if not app_id:
+            config = hosting.read_config()
+            if config:
+                app_id = config.appid
+                if not isinstance(app_id, (str, type(None))):
+                    console.error(
+                        "app_id must be a string or None. Please check your config file."
+                    )
+                    raise click.exceptions.Exit(1)
+
+        if app_name is not None and app_id is None:
+            app_result = hosting.search_app(
+                app_name=app_name,
+                project_id=None,
+                client=authenticated_client,
+                interactive=interactive,
+            )
+            app_id = app_result.get("id") if app_result else None
+
+        if not app_id:
+            console.error("No valid app_id or app_name provided.")
+            raise click.exceptions.Exit(1)
+
+        if offset is None and start is None and end is None:
+            offset = 3600
+        if not offset and not (start and end):
+            console.error("must provide both start and end")
+            raise click.exceptions.Exit(1)
+
+        while True:
+            console.debug(f"fetching logs with cursor: {cursor}")
+            result = hosting.get_app_logs(
+                app_id=app_id,
+                offset=offset,
+                start=start,
+                end=end,
+                client=authenticated_client,
+                cursor=cursor,
+            )
+            if not isinstance(result, list):
+                console.warn("Unable to retrieve logs.")
+                return
+            if len(result) == 2 and isinstance(result[1], str):
                 cursor = result[1]
                 result = result[0]
+            else:
+                cursor = None
             if not result:
                 console.warn("No logs found for the specified criteria.")
                 return
             result.reverse()
             for log in result:
                 if pretty:
-                    log = pprint.pformat(log, indent=2)  # type: ignore  # noqa: PGH003
+                    log = pprint.pformat(log, indent=2)
                 console.info(log)
-        else:
-            console.warn("Unable to retrieve logs.")
-            return
-        if interactive and follow:
+            if not (interactive and follow):
+                return
             from rich.prompt import Prompt
 
             prompt = Prompt.ask(
@@ -549,21 +545,7 @@ def app_logs(
             )
             if prompt.lower() == "exit":
                 console.info("Exiting log retrieval.")
-                raise click.exceptions.Exit(0)
-            ctx = click.get_current_context()
-            ctx.invoke(
-                app_logs,
-                app_id=app_id,
-                app_name=None,  # Don't pass app_name again since we have app_id
-                token=token,
-                offset=offset,
-                start=start,
-                end=end,
-                loglevel=loglevel,
-                interactive=interactive,
-                cursor=cursor,
-                pretty=pretty,
-            )
+                return
     except ResponseError as err:
         console.error(f"Error retrieving logs: {err}")
         raise click.exceptions.Exit(1) from err
