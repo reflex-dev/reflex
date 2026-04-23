@@ -214,6 +214,89 @@ def test_shared_subtree_across_pages_uses_same_tag() -> None:
         assert f"jsx({tag}," in output
 
 
+def test_shared_parent_instance_across_pages_preserves_original() -> None:
+    """A parent instance reused across pages must not have its children rebound.
+
+    Regression: the compile walker replaces memoizable descendants with memo
+    wrappers and writes the new children list onto their parent. If the parent
+    is the same Python object on two pages (e.g. a module-scope layout), page
+    A's compile would mutate page B's starting tree, producing a ``ReferenceError``
+    for the memo tag on the second page.
+    """
+    shared_parent = Fragment.create(WithProp.create(label=STATE_VAR))
+    original_children = list(shared_parent.children)
+    original_child = shared_parent.children[0]
+
+    ctx = CompileContext(
+        pages=[
+            FakePage(route="/a", component=lambda: shared_parent),
+            FakePage(route="/b", component=lambda: shared_parent),
+        ],
+        hooks=CompilerHooks(plugins=default_page_plugins()),
+    )
+    with ctx:
+        ctx.compile()
+
+    assert shared_parent.children == original_children, (
+        f"shared parent's children mutated: {shared_parent.children!r}"
+    )
+    assert shared_parent.children[0] is original_child, (
+        "shared parent's child reference replaced by a memo wrapper"
+    )
+
+    assert len(ctx.memoize_wrappers) == 1
+    tag = next(iter(ctx.memoize_wrappers))
+    for route in ("/a", "/b"):
+        output = ctx.compiled_pages[route].output_code or ""
+        assert f'import {{{tag}}} from "$/utils/components"' in output, (
+            f"route {route} missing memo tag import"
+        )
+        assert f"jsx({tag}," in output, f"route {route} does not render the memo tag"
+
+
+def test_shared_nested_parent_mirroring_common_elements_preserves_original() -> None:
+    """Deeper nested shape — mirrors ``common_elements`` in test_event_chain.
+
+    ``common_elements`` is an outer ``rx.vstack`` that contains an inner
+    ``rx.vstack(rx.foreach(...))`` memoizable subtree. The walker must clone
+    the entire spine from the memoized descendant up to the shared root, not
+    just the immediate parent.
+    """
+    inner_parent = Fragment.create(WithProp.create(label=STATE_VAR))
+    shared_outer = Fragment.create(
+        WithProp.create(label=LiteralVar.create("static")),
+        inner_parent,
+        WithProp.create(label=LiteralVar.create("trailing")),
+    )
+    original_outer_children = list(shared_outer.children)
+    original_inner = shared_outer.children[1]
+    original_inner_children = list(inner_parent.children)
+    original_innermost = inner_parent.children[0]
+
+    ctx = CompileContext(
+        pages=[
+            FakePage(route="/a", component=lambda: shared_outer),
+            FakePage(route="/b", component=lambda: shared_outer),
+            FakePage(route="/c", component=lambda: shared_outer),
+        ],
+        hooks=CompilerHooks(plugins=default_page_plugins()),
+    )
+    with ctx:
+        ctx.compile()
+
+    assert shared_outer.children == original_outer_children
+    assert shared_outer.children[1] is original_inner
+    assert inner_parent.children == original_inner_children
+    assert inner_parent.children[0] is original_innermost
+
+    assert len(ctx.memoize_wrappers) == 1
+    tag = next(iter(ctx.memoize_wrappers))
+    for route in ("/a", "/b", "/c"):
+        output = ctx.compiled_pages[route].output_code or ""
+        assert f'import {{{tag}}} from "$/utils/components"' in output
+        assert f"jsx({tag}," in output
+
+
 def test_memoization_leaf_internal_hooks_do_not_leak_into_page() -> None:
     """Hooks from a ``MemoizationLeaf``'s internal children stay in its memo body.
 

@@ -318,6 +318,31 @@ class BaseComponent(metaclass=BaseComponentMeta):
             setattr(self, key, value)
         return self
 
+    def __copy__(self) -> BaseComponent:
+        """Return a shallow copy suitable for compile-time mutation.
+
+        Bypasses ``copy.copy``'s generic ``__reduce_ex__`` dispatch. Nested
+        mutable containers (``children``, ``style``, ``event_triggers``) are
+        shared with the original until the caller explicitly rebinds them.
+        Render-path caches populated on the original are dropped so the clone
+        recomputes against its (potentially rebound) fields.
+
+        Returns:
+            A new instance of the same class with ``__dict__`` shallow-copied.
+        """
+        new = self.__class__.__new__(self.__class__)
+        new_dict = vars(new)
+        new_dict.update(vars(self))
+        for attr in (
+            "_cached_render_result",
+            "_vars_cache",
+            "_imports_cache",
+            "_hooks_internal_cache",
+            "_get_component_prop_property",
+        ):
+            new_dict.pop(attr, None)
+        return new
+
     def __eq__(self, value: Any) -> bool:
         """Check if the component is equal to another value.
 
@@ -1459,8 +1484,6 @@ class Component(BaseComponent, ABC):
         Yields:
             Each var referenced by the component (props, styles, event handlers).
         """
-        # Default-args fast path is cached per instance. Invalidated by the
-        # auto-memoize plugin when fix_event_triggers_for_memo mutates event_triggers.
         if not include_children and ignore_ids is None:
             cached = self.__dict__.get("_vars_cache")
             if cached is not None:

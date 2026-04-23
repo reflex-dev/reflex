@@ -30,7 +30,6 @@ from reflex_base.components.component import (
 )
 from reflex_base.components.memoize_helpers import (
     fix_event_triggers_for_memo,
-    invalidate_event_trigger_caches,
     is_snapshot_boundary,
 )
 from reflex_base.constants.compiler import MemoizationDisposition
@@ -238,7 +237,7 @@ class MemoizeStatefulPlugin(Plugin):
             page_context.memoize_suppressor_stack.append(id(comp))
             return None
 
-        wrapper = self._build_wrapper(comp, compile_context)
+        wrapper = self._build_wrapper(comp, page_context, compile_context)
         return None if wrapper is None else (wrapper, ())
 
     def leave_component(
@@ -282,18 +281,22 @@ class MemoizeStatefulPlugin(Plugin):
         if not _should_memoize(comp):
             return None
 
-        return self._build_wrapper(comp, compile_context)
+        return self._build_wrapper(comp, page_context, compile_context)
 
     @staticmethod
-    def _build_wrapper(comp: Component, compile_context: Any) -> BaseComponent | None:
+    def _build_wrapper(
+        comp: Component, page_context: PageContext, compile_context: Any
+    ) -> BaseComponent | None:
         """Return the memo wrapper component for ``comp``, or ``None`` if untagged.
 
-        Mutates ``comp.event_triggers`` in place so the memo body renders the
+        Rewrites ``comp.event_triggers`` on a page-local clone via
+        :func:`fix_event_triggers_for_memo` so the memo body renders the
         memoized ``useCallback`` forms, and registers the memo definition on
         ``compile_context`` so the memo module compile pass emits it.
 
         Args:
             comp: The component being memoized.
+            page_context: The active page context.
             compile_context: The active compile context.
 
         Returns:
@@ -304,8 +307,7 @@ class MemoizeStatefulPlugin(Plugin):
         if tag is None:
             return None
 
-        fix_event_triggers_for_memo(comp)
-        invalidate_event_trigger_caches(comp)
+        comp = fix_event_triggers_for_memo(comp, page_context)
 
         compile_context.memoize_wrappers[tag] = None
         wrapper_factory, definition = _get_passthrough_memo_component(tag, comp)

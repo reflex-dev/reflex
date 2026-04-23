@@ -707,24 +707,31 @@ def test_apply_style_plugin_matches_legacy_style_behavior() -> None:
 
     legacy_component._add_style_recursive(page_style())
 
+    original_style_snapshot = normalize_style(component)
+    original_child_style_snapshot = normalize_style(component.children[0])
+
     hooks = CompilerHooks(plugins=(ApplyStylePlugin(style=page_style()),))
     page_ctx = PageContext(name="page", route="/page", root_component=component)
     compile_ctx = create_compile_context(hooks)
 
     with compile_ctx, page_ctx:
-        hooks.compile_component(
+        compiled = hooks.compile_component(
             component,
             page_context=page_ctx,
             compile_context=compile_ctx,
         )
 
-    assert normalize_style(component) == normalize_style(legacy_component)
-    assert normalize_style(component.children[0]) == normalize_style(
+    assert normalize_style(compiled) == normalize_style(legacy_component)
+    assert normalize_style(compiled.children[0]) == normalize_style(
         legacy_component.children[0]
     )
-    assert component.slot is not None
+    assert isinstance(compiled, type(legacy_component))
+    assert compiled.slot is not None
     assert legacy_component.slot is not None
-    assert normalize_style(component.slot) == normalize_style(legacy_component.slot)
+    assert normalize_style(compiled.slot) == normalize_style(legacy_component.slot)
+
+    assert normalize_style(component) == original_style_snapshot
+    assert normalize_style(component.children[0]) == original_child_style_snapshot
 
 
 def test_default_collector_matches_legacy_collectors() -> None:

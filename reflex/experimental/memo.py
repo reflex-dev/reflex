@@ -13,7 +13,11 @@ from reflex_base import constants
 from reflex_base.components.component import Component
 from reflex_base.components.dynamic import bundled_libraries
 from reflex_base.components.memoize_helpers import is_snapshot_boundary
-from reflex_base.constants.compiler import SpecialAttributes
+from reflex_base.constants.compiler import (
+    MemoizationDisposition,
+    MemoizationMode,
+    SpecialAttributes,
+)
 from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER
 from reflex_base.utils import format
 from reflex_base.utils.imports import ImportVar
@@ -77,6 +81,7 @@ class ExperimentalMemoComponent(Component):
     """A rendered instance of an experimental memo component."""
 
     library = f"$/{constants.Dirs.COMPONENTS_PATH}"
+    _memoization_mode = MemoizationMode(disposition=MemoizationDisposition.NEVER)
 
     def _validate_component_children(self, children: list[Component]) -> None:
         """Skip direct parent/child validation for memo wrapper instances.

@@ -70,33 +70,45 @@ class DefaultPagePlugin(Plugin):
 class ApplyStylePlugin(Plugin):
     """Apply app-level styles in the descending phase of the walk."""
 
-    _compiler_can_replace_enter_component = False
+    _compiler_can_replace_enter_component = True
     style: ComponentStyle | None = None
 
     @staticmethod
-    def _apply_style(comp: Component, style: ComponentStyle) -> None:
+    def _apply_style(
+        comp: Component, style: ComponentStyle, page_context: PageContext
+    ) -> Component | None:
         """Apply app-level styles to a single component.
 
         Args:
             comp: The component to style.
             style: The app-level component style map.
+            page_context: The active page context, used to obtain a page-local
+                clone before rewriting ``style``.
+
+        Returns:
+            A page-local clone with the merged style, or ``None`` when the
+            component has no type-level or app-level style to apply.
         """
         if type(comp)._add_style != Component._add_style:
             msg = "Do not override _add_style directly. Use add_style instead."
             raise UserWarning(msg)
 
         new_style = comp._add_style()
-        style_vars = [new_style._var_data]
-
         component_style = comp._get_component_style(style)
+        if not new_style and not component_style:
+            return None
+
+        style_vars = [new_style._var_data]
         if component_style:
             new_style.update(component_style)
             style_vars.append(component_style._var_data)
-
         new_style.update(comp.style)
         style_vars.append(comp.style._var_data)
         new_style._var_data = VarData.merge(*style_vars)
-        comp.style = new_style
+
+        owned = page_context.own(comp)
+        owned.style = new_style
+        return owned
 
     def enter_component(
         self,
@@ -106,16 +118,22 @@ class ApplyStylePlugin(Plugin):
         page_context: PageContext,
         compile_context: Any,
         in_prop_tree: bool = False,
-    ) -> None:
-        """Apply the non-recursive portion of ``_add_style_recursive``."""
+    ) -> BaseComponent | None:
+        """Apply the non-recursive portion of ``_add_style_recursive``.
+
+        Returns:
+            A page-local clone carrying the merged style, or ``None`` when no
+            style change applies to this component.
+        """
         if self.style is not None and isinstance(comp, Component) and not in_prop_tree:
-            self._apply_style(comp, self.style)
+            return self._apply_style(comp, self.style, page_context)
+        return None
 
     def _compiler_bind_enter_component(
         self,
         page_context: PageContext,
         compile_context: CompileContext,
-    ) -> Callable[[BaseComponent, bool], None]:
+    ) -> Callable[[BaseComponent, bool], BaseComponent | None]:
         """Bind a positional fast-path enter hook for style application.
 
         Returns:
@@ -127,8 +145,8 @@ class ApplyStylePlugin(Plugin):
             def enter_component(
                 comp: BaseComponent,
                 in_prop_tree: bool,
-            ) -> None:
-                return
+            ) -> BaseComponent | None:
+                return None
 
             return enter_component
 
@@ -137,11 +155,10 @@ class ApplyStylePlugin(Plugin):
         def enter_component(
             comp: BaseComponent,
             in_prop_tree: bool,
-        ) -> None:
+        ) -> BaseComponent | None:
             if not isinstance(comp, Component) or in_prop_tree:
-                return
-
-            apply_style(comp, style)
+                return None
+            return apply_style(comp, style, page_context)
 
         return enter_component
 

@@ -9,8 +9,8 @@ in ``reflex-components-core`` (e.g. ``WindowEventListener``, ``upload``).
 
 from __future__ import annotations
 
-import contextlib
 from hashlib import md5
+from typing import TYPE_CHECKING
 
 from reflex_base.components.component import Component
 from reflex_base.constants import EventTriggers
@@ -18,6 +18,9 @@ from reflex_base.event import EventChain, EventSpec
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
+
+if TYPE_CHECKING:
+    from reflex_base.plugins.compiler import PageContext
 
 
 def _get_hook_deps(hook: str) -> list[str]:
@@ -126,26 +129,33 @@ def get_memoized_event_triggers(
     return trigger_memo
 
 
-def fix_event_triggers_for_memo(component: Component) -> None:
-    """Memoize ``component.event_triggers`` in place and return hook code.
+def fix_event_triggers_for_memo(
+    component: Component, page_context: PageContext
+) -> Component:
+    """Return a component whose event triggers reference memoized ``useCallback``s.
 
-    Replaces each (non-lifecycle) event-trigger value on ``component`` with a
-    ``Var`` naming a memoized ``useCallback`` wrapper, and returns the
-    ``useCallback`` hook lines in trigger order.
+    Replaces each (non-lifecycle) event-trigger value with a ``Var`` naming a
+    memoized ``useCallback`` wrapper. The original is never mutated — a
+    page-local clone is taken via ``page_context.own`` on first write.
 
     Args:
         component: The component whose event triggers to memoize.
+        page_context: The active page context, used to obtain a page-local
+            clone before rewriting ``event_triggers``.
+
+    Returns:
+        Either ``component`` (when nothing needed rewriting) or a page-local
+        clone with the rewritten ``event_triggers``.
     """
     memo_event_triggers = tuple(get_memoized_event_triggers(component).items())
-
     if not memo_event_triggers:
-        return
-    # XXX: what is this doing? if we're overwriting the reference to the original dict anyway
-    component.event_triggers = dict(
-        component.event_triggers
-    )  # isolate so original dict is not mutated
-    for event_trigger, memo_trigger in memo_event_triggers:
-        component.event_triggers[event_trigger] = memo_trigger
+        return component
+    owned = page_context.own(component)
+    owned.event_triggers = {
+        **component.event_triggers,
+        **dict(memo_event_triggers),
+    }
+    return owned
 
 
 def is_snapshot_boundary(component: Component) -> bool:
@@ -170,28 +180,8 @@ def is_snapshot_boundary(component: Component) -> bool:
     return not component._memoization_mode.recursive
 
 
-def invalidate_event_trigger_caches(component: Component) -> None:
-    """Drop caches that depend on ``component.event_triggers``.
-
-    After :func:`fix_event_triggers_for_memo` mutates the shared event-triggers
-    dict, cached derivatives become stale.
-
-    Args:
-        component: The original (pre-mutation) component.
-    """
-    for attr in (
-        "_cached_render_result",
-        "_vars_cache",
-        "_imports_cache",
-        "_hooks_internal_cache",
-    ):
-        with contextlib.suppress(AttributeError):
-            delattr(component, attr)
-
-
 __all__ = [
     "fix_event_triggers_for_memo",
     "get_memoized_event_triggers",
-    "invalidate_event_trigger_caches",
     "is_snapshot_boundary",
 ]
