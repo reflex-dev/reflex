@@ -2,6 +2,7 @@
 name = "hatch-reflex-pyi"
 dynamic = ["version"]
 description = "Hatch build hook that generates .pyi stubs for Reflex component packages."
+license.text = "Apache-2.0"
 readme = "README.md"
 authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]

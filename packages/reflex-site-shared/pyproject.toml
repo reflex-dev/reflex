@@ -2,6 +2,7 @@
 name = "reflex-site-shared"
 dynamic = ["version"]
 description = "Reflex Site Shared."
+license.text = "Apache-2.0"
 readme = "README.md"
 authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
@@ -46,6 +47,7 @@ dependencies = [
     "reflex-components-react-player",
     "reflex-components-recharts",
     "reflex-components-sonner",
+    "reflex-hosting-cli",
     "reflex",
     "ruff-format",
     "ruff",

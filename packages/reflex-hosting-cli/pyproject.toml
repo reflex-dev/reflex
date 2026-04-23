@@ -1,8 +1,9 @@
 [project]
 name = "reflex-hosting-cli"
-version = "0.1.62"
+dynamic = ["version"]
 description = "Reflex Hosting CLI"
-license = "Apache-2.0"
+license.text = "Apache-2.0"
+readme = "README.md"
 authors = [
     { name = "Nikhil Rao", email = "nikhil@reflex.dev" },
     { name = "Alek Petuskey", email = "alek@reflex.dev" },
@@ -11,9 +12,6 @@ maintainers = [
     { name = "Simon Young", email = "simon@reflex.dev" },
     { name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" },
 ]
-readme = "README.md"
-keywords = ["web", "framework"]
-classifiers = ["Development Status :: 4 - Beta"]
 requires-python = ">=3.10"
 dependencies = [
     "click >=8.2",
@@ -23,82 +21,16 @@ dependencies = [
     "rich >=13,<15",
 ]
 
-[project.urls]
-homepage = "https://reflex.dev"
-repository = "https://github.com/reflex-dev/reflex"
-documentation = "https://reflex.dev/docs/getting-started/introduction"
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
 
-[dependency-groups]
-dev = [
-    "coverage",
-    "darglint",
-    "ruff",
-    "pre-commit",
-    "pyright",
-    "pytest",
-    "pytest-benchmark",
-    "pytest-cov",
-    "pytest-mock",
-    "typer",
-    "reflex",
-    "pyyaml",
-]
+[tool.uv-dynamic-versioning]
+pattern-prefix = "reflex-hosting-cli-"
+fallback-version = "0.0.0dev0"
 
+[tool.hatch.build.targets.wheel]
+packages = ["reflex_cli"]
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "uv-dynamic-versioning"]
 build-backend = "hatchling.build"
-
-[tool.hatch.build]
-include = ["reflex_cli"]
-
-[tool.pyright]
-
-[tool.ruff]
-output-format = "concise"
-lint.isort.split-on-trailing-comma = false
-lint.select = [
-    "ANN001",
-    "B",
-    "C4",
-    "D",
-    "E",
-    "ERA",
-    "F",
-    "FURB",
-    "I",
-    "N",
-    "PERF",
-    "PGH",
-    "PTH",
-    "RUF",
-    "SIM",
-    "T",
-    "TRY",
-    "UP",
-    "W",
-]
-lint.ignore = [
-    "B008",
-    "D205",
-    "E501",
-    "F403",
-    "SIM115",
-    "RUF006",
-    "RUF008",
-    "RUF012",
-    "TRY0",
-]
-lint.pydocstyle.convention = "google"
-target-version = "py310"
-
-
-[tool.ruff.lint.per-file-ignores]
-"tests/*.py" = ["D100", "D103", "D104"]
-"scripts/*.py" = ["T201"]
-
-[[tool.uv.index]]
-name = "testpypi"
-url = "https://test.pypi.org/simple/"
-publish-url = "https://test.pypi.org/legacy/"
-explicit = true
