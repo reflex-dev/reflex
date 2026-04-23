@@ -1464,6 +1464,7 @@ def stop_app(app_id: str, client: AuthenticatedClient):
     response = httpx.post(
         urljoin(constants.Hosting.HOSTING_SERVICE, f"/api/v1/apps/{app_id}/stop"),
         headers=authorization_header(client.token),
+        timeout=constants.Hosting.TIMEOUT,
     )
     try:
         response.raise_for_status()
@@ -1494,6 +1495,7 @@ def start_app(app_id: str, client: AuthenticatedClient):
     response = httpx.post(
         urljoin(constants.Hosting.HOSTING_SERVICE, f"/api/v1/apps/{app_id}/start"),
         headers=authorization_header(client.token),
+        timeout=constants.Hosting.TIMEOUT,
     )
     try:
         response.raise_for_status()
@@ -1528,6 +1530,7 @@ def delete_app(app_id: str, client: AuthenticatedClient):
     response = httpx.delete(
         urljoin(constants.Hosting.HOSTING_SERVICE, f"/api/v1/apps/{app['id']}/delete"),
         headers=authorization_header(client.token),
+        timeout=constants.Hosting.TIMEOUT,
     )
     try:
         response.raise_for_status()
@@ -1665,6 +1668,7 @@ def get_app_history(app_id: str, client: AuthenticatedClient) -> list:
     response = httpx.get(
         urljoin(constants.Hosting.HOSTING_SERVICE, f"/api/v1/apps/{app_id}/history"),
         headers=authorization_header(client.token),
+        timeout=constants.Hosting.TIMEOUT,
     )
 
     response.raise_for_status()
@@ -1709,6 +1713,7 @@ def get_app_status(app_id: str, client: AuthenticatedClient) -> str:
                 f"/api/v1/deployments/{app_id}/status",
             ),
             headers=authorization_header(client.token),
+            timeout=constants.Hosting.TIMEOUT,
         )
     except httpx.RequestError as e:
         return "lost connection: trying again" + f"({e.__class__.__name__}: {e})"
@@ -1778,6 +1783,7 @@ def get_deployment_status(deployment_id: str, client: AuthenticatedClient) -> st
             f"/api/v1/deployments/{deployment_id}/status",
         ),
         headers=authorization_header(client.token),
+        timeout=constants.Hosting.TIMEOUT,
     )
     try:
         response.raise_for_status()
@@ -1807,6 +1813,7 @@ def _get_deployment_status(deployment_id: str, token: str) -> str:
                 f"/api/v1/deployments/{deployment_id}/status",
             ),
             headers=authorization_header(token),
+            timeout=constants.Hosting.TIMEOUT,
         )
     except httpx.RequestError as e:
         return "lost connection: trying again" + f"({e.__class__.__name__}: {e})"
@@ -1891,6 +1898,7 @@ def get_deployment_build_logs(deployment_id: str, client: AuthenticatedClient):
             f"/api/v1/deployments/{deployment_id}/build/logs",
         ),
         headers=authorization_header(client.token),
+        timeout=constants.Hosting.TIMEOUT,
     )
 
     response.raise_for_status()

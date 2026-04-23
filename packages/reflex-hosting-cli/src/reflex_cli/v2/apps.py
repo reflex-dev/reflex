@@ -590,28 +590,33 @@ def list_apps(
 
     console.set_log_level(loglevel)
 
-    authenticated_client = hosting.get_authenticated_client(
-        token=token, interactive=interactive
-    )
-
-    if project_name and not project_id:
-        result = hosting.search_project(
-            project_name, client=authenticated_client, interactive=interactive
-        )
-        project_id = result.get("id") if result else None
-
-    if project_id is None:
-        project_id = hosting.get_selected_project()
-
-    if project_id is not None and not as_json:
-        try:
-            project = hosting.get_project(project_id, client=authenticated_client)
-            console.info(f"Listing apps for project '{project['name']}' ({project_id})")
-        except Exception:
-            pass
-
     try:
+        authenticated_client = hosting.get_authenticated_client(
+            token=token, interactive=interactive
+        )
+
+        if project_name and not project_id:
+            result = hosting.search_project(
+                project_name, client=authenticated_client, interactive=interactive
+            )
+            project_id = result.get("id") if result else None
+
+        if project_id is None:
+            project_id = hosting.get_selected_project()
+
+        if project_id is not None and not as_json:
+            try:
+                project = hosting.get_project(project_id, client=authenticated_client)
+                console.info(
+                    f"Listing apps for project '{project['name']}' ({project_id})"
+                )
+            except Exception:
+                pass
+
         deployments = hosting.list_apps(project=project_id, client=authenticated_client)
+    except NotAuthenticatedError as err:
+        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        raise click.exceptions.Exit(1) from err
     except Exception as ex:
         console.error("Unable to list deployments")
         raise click.exceptions.Exit(1) from ex

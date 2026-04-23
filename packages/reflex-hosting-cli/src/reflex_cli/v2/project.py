@@ -155,6 +155,9 @@ def select_project(
         # check if provided project exists.
         if project_id:
             hosting.get_project(project_id, client=authenticated_client)
+    except NotAuthenticatedError as err:
+        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        raise click.exceptions.Exit(1) from err
     except httpx.HTTPStatusError as ex:
         try:
             console.error(ex.response.json().get("detail"))
