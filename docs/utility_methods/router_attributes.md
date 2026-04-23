@@ -140,7 +140,7 @@ The `self.router` attribute has several sub-attributes that provide various info
 - `path`: The URL path as displayed in the browser, including any filled-in dynamic segments but excluding the query string and fragment (e.g. `"/posts/123"`).
 - `query`: The raw query string, without the leading `?` (e.g. `"tab=comments&sort=new"`).
 - `query_parameters`: The query string parsed into a frozen, immutable `Mapping[str, str]`. Use this instead of parsing `query` by hand.
-- `fragment`: The URL fragment, without the leading `#` (e.g. `"section-2"`). Browsers do not send the fragment to the server in HTTP requests, so this is usually empty unless the URL was constructed with one explicitly.
+- `fragment`: The URL fragment, without the leading `#` (e.g. `"section-2"`). The client-side router sends the current fragment over the WebSocket, so this reflects whatever is shown in the browser URL bar.
 
 ### Example
 
