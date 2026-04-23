@@ -118,10 +118,6 @@
   "packages/reflex-components-recharts/src/reflex_components_recharts/polar.pyi": "1979bb6c22bb7a0d3342b2d63fb19d74",
   "packages/reflex-components-recharts/src/reflex_components_recharts/recharts.pyi": "234407dbd466bf9c87d75ce979ab0e2d",
   "packages/reflex-components-sonner/src/reflex_components_sonner/toast.pyi": "2c5fadcc014056f041cd4d916137d9e7",
-  "packages/reflex-site-shared/src/reflex_site_shared/components/blocks/headings.pyi": "542ccba14de2456c1a046697982e0147",
-  "packages/reflex-site-shared/src/reflex_site_shared/components/image_zoom.pyi": "3999125aeb7c1768495659b20b033f54",
-  "packages/reflex-site-shared/src/reflex_site_shared/components/marketing_button.pyi": "74b01fba2002f202c07c005195c67dc8",
-  "packages/reflex-site-shared/src/reflex_site_shared/components/marquee.pyi": "596f0121f0bd409500da85cdd842a35d",
   "reflex/__init__.pyi": "3a9bb8544cbc338ffaf0a5927d9156df",
   "reflex/components/__init__.pyi": "f39a2af77f438fa243c58c965f19d42e",
   "reflex/experimental/memo.pyi": "2c119a0dfea362dcd8193786363cbc02"
