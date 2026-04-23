@@ -432,8 +432,13 @@ class BaseState(EvenMoreBasicBaseState):
                     _reflex_internal_init=True,
                 )
 
-        # Create a fresh copy of the backend variables for this instance
-        self._backend_vars = copy.deepcopy(self.backend_vars)
+        # Create a fresh copy of only the non-inherited backend variables for this instance.
+        # Inherited backend vars are stored in the parent state, not in this instance.
+        self._backend_vars = {
+            k: copy.deepcopy(v)
+            for k, v in self.backend_vars.items()
+            if k not in self.inherited_backend_vars
+        }
 
     def __repr__(self) -> str:
         """Get the string representation of the state.
@@ -1460,9 +1465,10 @@ class BaseState(EvenMoreBasicBaseState):
                 default = copy.deepcopy(field.default)
             setattr(self, prop_name, default)
 
-        # Reset the backend vars.
+        # Reset the backend vars that are not inherited from parent states.
         for prop_name, value in self.backend_vars.items():
-            setattr(self, prop_name, copy.deepcopy(value))
+            if prop_name not in self.inherited_backend_vars:
+                setattr(self, prop_name, copy.deepcopy(value))
 
         # Recursively reset the substates.
         for substate in self.substates.values():
@@ -1791,6 +1797,7 @@ class BaseState(EvenMoreBasicBaseState):
         """Update the _was_touched flag based on dirty_vars."""
         if self.dirty_vars and not self._was_touched:
             for var in self.dirty_vars:
+                # Mark touched if a base var or owned backend var (not inherited) changed.
                 if var in self.base_vars or var in self._backend_vars:
                     self._was_touched = True
                     break
