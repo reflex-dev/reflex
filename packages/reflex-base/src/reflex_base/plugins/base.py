@@ -1,10 +1,20 @@
 """Base class for all plugins."""
 
 from collections.abc import Callable, Sequence
+from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ParamSpec, Protocol, TypedDict
+from typing import TYPE_CHECKING, Any, ClassVar, ParamSpec, Protocol, TypedDict
 
 from typing_extensions import Unpack
+
+
+class HookOrder(str, Enum):
+    """Dispatch bucket for a compiler ``enter_component`` / ``leave_component`` hook."""
+
+    PRE = "pre"
+    NORMAL = "normal"
+    POST = "post"
+
 
 if TYPE_CHECKING:
     from reflex.app import App, UnevaluatedPage
@@ -55,6 +65,13 @@ class PostCompileContext(CommonContext):
 
 class Plugin:
     """Base class for all plugins."""
+
+    # Dispatch position for ``enter_component`` and ``leave_component`` hooks.
+    # Plugins run in ``PRE`` → ``NORMAL`` → ``POST`` order. Within a bucket,
+    # enter hooks fire in plugin-chain order while leave hooks fire in
+    # reverse plugin-chain order (mirroring an enter/leave stack).
+    _compiler_enter_component_order: ClassVar[HookOrder] = HookOrder.NORMAL
+    _compiler_leave_component_order: ClassVar[HookOrder] = HookOrder.NORMAL
 
     def get_frontend_development_dependencies(
         self, **context: Unpack[CommonContext]

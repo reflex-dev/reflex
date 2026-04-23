@@ -9,6 +9,7 @@ from typing import Any
 from reflex_base.components.component import BaseComponent, Component, ComponentStyle
 from reflex_base.config import get_config
 from reflex_base.plugins import CompileContext, PageContext, PageDefinition, Plugin
+from reflex_base.plugins.base import HookOrder
 from reflex_base.utils.format import make_default_page_title
 from reflex_base.utils.imports import collapse_imports, merge_imports
 from reflex_base.vars import VarData
@@ -70,7 +71,6 @@ class DefaultPagePlugin(Plugin):
 class ApplyStylePlugin(Plugin):
     """Apply app-level styles in the descending phase of the walk."""
 
-    _compiler_can_replace_enter_component = True
     style: ComponentStyle | None = None
 
     @staticmethod
@@ -167,7 +167,9 @@ class ApplyStylePlugin(Plugin):
 class DefaultCollectorPlugin(Plugin):
     """Collect page artifacts in one fused enter/leave hook pair."""
 
-    _compiler_can_replace_enter_component = False
+    # Run after replacing leave hooks so collected imports/custom-code reflect
+    # the final post-replacement component (e.g. memoize wrappers).
+    _compiler_leave_component_order = HookOrder.POST
     _compiler_can_replace_leave_component = False
 
     def leave_component(
@@ -188,9 +190,9 @@ class DefaultCollectorPlugin(Plugin):
         if imports:
             self._extend_imports(page_context.frontend_imports, imports)
 
-        if not in_prop_tree:
-            self._collect_component_custom_code(page_context.module_code, comp)
+        self._collect_component_custom_code(page_context.module_code, comp)
 
+        if not in_prop_tree:
             self._collect_component_hooks(page_context.hooks, comp)
 
             if (
@@ -266,9 +268,9 @@ class DefaultCollectorPlugin(Plugin):
             if imports_for_component:
                 extend_imports(frontend_imports, imports_for_component)
 
-            if not in_prop_tree:
-                collect_component_custom_code(module_code, comp)
+            collect_component_custom_code(module_code, comp)
 
+            if not in_prop_tree:
                 collect_component_hooks(hooks, comp)
 
                 app_wrap_method = type(comp)._get_app_wrap_components
@@ -314,48 +316,18 @@ class DefaultCollectorPlugin(Plugin):
         module_code: dict[str, None],
         component: Component,
     ) -> None:
-        """Collect custom code for one structural-tree component in legacy order."""
+        """Collect custom code contributed directly by one component.
+
+        The compiler walker visits every structural child and every component
+        in prop subtrees, firing ``leave_component`` on each — so this helper
+        only handles the current node and does not recurse.
+        """
         if (custom_code := component._get_custom_code()) is not None:
             module_code[custom_code] = None
-
-        for prop_component in component._get_components_in_props():
-            DefaultCollectorPlugin._collect_prop_custom_code_into(
-                prop_component,
-                module_code,
-            )
 
         for clz in component._iter_parent_classes_with_method("add_custom_code"):
             for item in clz.add_custom_code(component):
                 module_code[item] = None
-
-    @staticmethod
-    def _collect_prop_custom_code_into(
-        component: BaseComponent,
-        module_code: dict[str, None],
-    ) -> None:
-        """Recursively collect prop-tree custom code directly into ``module_code``."""
-        if not isinstance(component, Component):
-            module_code.update(component._get_all_custom_code())
-            return
-
-        if (custom_code := component._get_custom_code()) is not None:
-            module_code[custom_code] = None
-
-        for prop_component in component._get_components_in_props():
-            DefaultCollectorPlugin._collect_prop_custom_code_into(
-                prop_component,
-                module_code,
-            )
-
-        for clz in component._iter_parent_classes_with_method("add_custom_code"):
-            for item in clz.add_custom_code(component):
-                module_code[item] = None
-
-        for child in component.children:
-            DefaultCollectorPlugin._collect_prop_custom_code_into(
-                child,
-                module_code,
-            )
 
     def _collect_app_wrap_components(
         self,

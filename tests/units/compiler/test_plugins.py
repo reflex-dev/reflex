@@ -20,6 +20,7 @@ from reflex_base.plugins import (
     PageDefinition,
     Plugin,
 )
+from reflex_base.plugins.base import HookOrder
 from reflex_base.utils import format as format_utils
 from reflex_base.utils.imports import ImportVar, collapse_imports, merge_imports
 from reflex_base.vars import VarData
@@ -122,6 +123,14 @@ class SharedLibraryComponent(Component):
 class InlineStatefulComponent(Component):
     tag = "InlineStatefulComponent"
     library = "inline-lib"
+
+
+class ReplacementComponent(Component):
+    tag = "ReplacementComponent"
+    library = "replacement-lib"
+
+    def _get_custom_code(self) -> str | None:
+        return "const replacementCustomCode = 1;"
 
 
 class StubPlugin(Plugin):
@@ -760,6 +769,25 @@ def test_default_collector_matches_legacy_collectors() -> None:
     )
 
 
+def test_default_collector_collects_nested_prop_tree_custom_code_without_recursion() -> (
+    None
+):
+    component = RootComponent.create(
+        slot=PropComponent.create(
+            ChildComponent.create(),
+        )
+    )
+
+    page_ctx = collect_page_context(
+        component,
+        plugins=(DefaultCollectorPlugin(),),
+    )
+
+    assert page_ctx.module_code == component._get_all_custom_code()
+    assert "const propCustomCode = 1;" in page_ctx.module_code
+    assert "const childCustomCode = 1;" in page_ctx.module_code
+
+
 def test_default_page_plugins_are_minimal_and_ordered() -> None:
     from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
 
@@ -770,6 +798,98 @@ def test_default_page_plugins_are_minimal_and_ordered() -> None:
     assert isinstance(plugins[1], ApplyStylePlugin)
     assert isinstance(plugins[2], DefaultCollectorPlugin)
     assert isinstance(plugins[3], MemoizeStatefulPlugin)
+
+
+def test_compile_context_collects_artifacts_from_leave_replacement_plugins() -> None:
+    page = FakePage(route="/replacement", component=create_component_tree)
+
+    class ReplaceRootPlugin(StubPlugin):
+        def leave_component(
+            self,
+            comp: BaseComponent,
+            children: tuple[BaseComponent, ...],
+            /,
+            *,
+            page_context: PageContext,
+            compile_context: CompileContext,
+            in_prop_tree: bool = False,
+        ) -> BaseComponent | None:
+            del page_context, compile_context, in_prop_tree
+            if isinstance(comp, RootComponent):
+                return ReplacementComponent.create(*children)
+            return None
+
+    compile_ctx = CompileContext(
+        pages=[page],
+        hooks=CompilerHooks(
+            plugins=default_page_plugins(plugins=(ReplaceRootPlugin(),))
+        ),
+    )
+
+    with compile_ctx:
+        compile_ctx.compile()
+
+    page_ctx = compile_ctx.compiled_pages["/replacement"]
+    assert (
+        page_ctx.root_component.render()["children"][0]["name"]
+        == "ReplacementComponent"
+    )
+    assert "replacement-lib" in page_ctx.frontend_imports
+    assert "root-lib" not in page_ctx.frontend_imports
+    assert "const replacementCustomCode = 1;" in page_ctx.module_code
+    assert "const rootAddedCode = 1;" not in page_ctx.module_code
+    assert ("import {" + 'ReplacementComponent} from "replacement-lib"') in (
+        page_ctx.output_code or ""
+    )
+    assert ("import {" + 'RootComponent} from "root-lib"') not in (
+        page_ctx.output_code or ""
+    )
+
+
+def test_leave_component_order_dispatches_pre_normal_post() -> None:
+    calls: list[str] = []
+
+    class LabelledLeavePlugin(StubPlugin):
+        label: str = ""
+
+        def leave_component(
+            self,
+            comp: BaseComponent,
+            children: tuple[BaseComponent, ...],
+            /,
+            *,
+            page_context: PageContext,
+            compile_context: CompileContext,
+            in_prop_tree: bool = False,
+        ) -> None:
+            del children, page_context, compile_context, in_prop_tree
+            if isinstance(comp, RootComponent):
+                calls.append(self.label)
+
+    class PrePlugin(LabelledLeavePlugin):
+        _compiler_leave_component_order = HookOrder.PRE
+        label = "pre"
+
+    class NormalPlugin(LabelledLeavePlugin):
+        label = "normal"
+
+    class PostPlugin(LabelledLeavePlugin):
+        _compiler_leave_component_order = HookOrder.POST
+        label = "post"
+
+    component = create_component_tree()
+    hooks = CompilerHooks(plugins=(PostPlugin(), NormalPlugin(), PrePlugin()))
+    page_ctx = PageContext(name="page", route="/page", root_component=component)
+    compile_ctx = create_compile_context(hooks)
+
+    with compile_ctx, page_ctx:
+        hooks.compile_component(
+            component,
+            page_context=page_ctx,
+            compile_context=compile_ctx,
+        )
+
+    assert calls == ["pre", "normal", "post"]
 
 
 def test_compile_context_compiles_pages_and_matches_legacy_output() -> None:

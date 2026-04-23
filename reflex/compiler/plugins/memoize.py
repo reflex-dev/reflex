@@ -165,9 +165,6 @@ class MemoizeStatefulPlugin(Plugin):
     component leaves.
     """
 
-    _compiler_can_replace_enter_component = True
-    _compiler_can_replace_leave_component = True
-
     def enter_component(
         self,
         comp: BaseComponent,

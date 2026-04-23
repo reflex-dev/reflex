@@ -16,7 +16,7 @@ from reflex_base.components.component import BaseComponent, Component
 from reflex_base.utils.imports import ParsedImportDict, collapse_imports, merge_imports
 from reflex_base.vars import VarData
 
-from .base import Plugin
+from .base import HookOrder, Plugin
 
 if TYPE_CHECKING:
     from reflex.app import App, ComponentCallable
@@ -103,48 +103,49 @@ class CompilerHooks:
             "_compile_page_hooks",
             self._resolve_hooks("compile_page"),
         )
-        enter_hook_binders: list[EnterHookBinder] = []
-        leave_hook_binders: list[LeaveHookBinder] = []
+        enter_buckets: dict[HookOrder, list[EnterHookBinder]] = {
+            order: [] for order in HookOrder
+        }
+        leave_buckets: dict[HookOrder, list[LeaveHookBinder]] = {
+            order: [] for order in HookOrder
+        }
         component_hooks_can_replace = False
 
         for plugin in self.plugins:
+            plugin_type = type(plugin)
             if (
                 hook_impl := self._get_hook_impl(plugin, "enter_component")
             ) is not None:
-                enter_hook_binders.append(
+                enter_buckets[plugin_type._compiler_enter_component_order].append(
                     self._get_enter_hook_binder(plugin, hook_impl)
                 )
                 component_hooks_can_replace = component_hooks_can_replace or bool(
-                    getattr(
-                        type(plugin),
-                        "_compiler_can_replace_enter_component",
-                        True,
-                    )
+                    getattr(plugin_type, "_compiler_can_replace_enter_component", True)
                 )
 
             if (
                 hook_impl := self._get_hook_impl(plugin, "leave_component")
             ) is not None:
-                leave_hook_binders.append(
+                leave_buckets[plugin_type._compiler_leave_component_order].append(
                     self._get_leave_hook_binder(plugin, hook_impl)
                 )
                 component_hooks_can_replace = component_hooks_can_replace or bool(
-                    getattr(
-                        type(plugin),
-                        "_compiler_can_replace_leave_component",
-                        True,
-                    )
+                    getattr(plugin_type, "_compiler_can_replace_leave_component", True)
                 )
 
         object.__setattr__(
             self,
             "_enter_component_hook_binders",
-            tuple(enter_hook_binders),
+            tuple(binder for order in HookOrder for binder in enter_buckets[order]),
         )
         object.__setattr__(
             self,
             "_leave_component_hook_binders",
-            tuple(reversed(tuple(leave_hook_binders))),
+            tuple(
+                binder
+                for order in HookOrder
+                for binder in reversed(leave_buckets[order])
+            ),
         )
         object.__setattr__(
             self,
@@ -534,6 +535,11 @@ class CompilerHooks:
                 )
                 if replacement_children is not compiled_children:
                     assert replacement_children is not None
+                    # Re-walking fires enter/leave again on any child objects
+                    # carried over from the original children tuple. Observing
+                    # collectors dedupe by dict key, so this is idempotent for
+                    # today's plugins; stateful side effects on the page
+                    # context would be double-applied.
                     compiled_children = visit_children(
                         replacement_children,
                         current_in_prop_tree,
