@@ -20,6 +20,7 @@ members = [
     "reflex-components-core",
     "reflex-components-dataeditor",
     "reflex-components-gridjs",
+    "reflex-components-internal",
     "reflex-components-lucide",
     "reflex-components-markdown",
     "reflex-components-moment",
@@ -31,8 +32,7 @@ members = [
     "reflex-docgen",
     "reflex-docs-app",
     "reflex-integrations-docs",
-    "reflex-ui",
-    "reflex-ui-shared",
+    "reflex-site-shared",
 ]
 
 [[package]]
@@ -3635,6 +3635,16 @@ name = "reflex-components-gridjs"
 source = { editable = "packages/reflex-components-gridjs" }
 
 [[package]]
+name = "reflex-components-internal"
+source = { editable = "packages/reflex-components-internal" }
+dependencies = [
+    { name = "reflex" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "reflex", editable = "." }]
+
+[[package]]
 name = "reflex-components-lucide"
 source = { editable = "packages/reflex-components-lucide" }
 
@@ -3745,13 +3755,13 @@ dependencies = [
     { name = "psycopg", extra = ["binary"] },
     { name = "python-frontmatter" },
     { name = "reflex" },
+    { name = "reflex-components-internal" },
     { name = "reflex-docgen" },
     { name = "reflex-enterprise" },
     { name = "reflex-hosting-cli" },
     { name = "reflex-integrations-docs" },
     { name = "reflex-pyplot" },
-    { name = "reflex-ui" },
-    { name = "reflex-ui-shared" },
+    { name = "reflex-site-shared" },
     { name = "requests" },
     { name = "ruff-format" },
     { name = "sqlalchemy" },
@@ -3782,13 +3792,13 @@ requires-dist = [
     { name = "psycopg", extras = ["binary"] },
     { name = "python-frontmatter" },
     { name = "reflex", editable = "." },
+    { name = "reflex-components-internal", editable = "packages/reflex-components-internal" },
     { name = "reflex-docgen", editable = "packages/reflex-docgen" },
     { name = "reflex-enterprise" },
     { name = "reflex-hosting-cli" },
     { name = "reflex-integrations-docs", editable = "packages/integrations-docs" },
     { name = "reflex-pyplot" },
-    { name = "reflex-ui", editable = "packages/reflex-ui" },
-    { name = "reflex-ui-shared", editable = "packages/reflex-ui-shared" },
+    { name = "reflex-site-shared", editable = "packages/reflex-site-shared" },
     { name = "requests" },
     { name = "ruff-format" },
     { name = "sqlalchemy" },
@@ -3855,31 +3865,25 @@ wheels = [
 ]
 
 [[package]]
-name = "reflex-ui"
-source = { editable = "packages/reflex-ui" }
+name = "reflex-site-shared"
+source = { editable = "packages/reflex-site-shared" }
 dependencies = [
-    { name = "reflex-base" },
-    { name = "reflex-components-core" },
+    { name = "email-validator" },
+    { name = "httpx" },
+    { name = "pyyaml" },
+    { name = "reflex" },
+    { name = "reflex-components-internal" },
+    { name = "ruff-format" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "reflex-base", editable = "packages/reflex-base" },
-    { name = "reflex-components-core", editable = "packages/reflex-components-core" },
-]
-
-[[package]]
-name = "reflex-ui-shared"
-source = { editable = "packages/reflex-ui-shared" }
-dependencies = [
-    { name = "reflex-base" },
-    { name = "reflex-components-core" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "reflex-base", editable = "packages/reflex-base" },
-    { name = "reflex-components-core", editable = "packages/reflex-components-core" },
+    { name = "email-validator" },
+    { name = "httpx" },
+    { name = "pyyaml" },
+    { name = "reflex", editable = "." },
+    { name = "reflex-components-internal", editable = "packages/reflex-components-internal" },
+    { name = "ruff-format" },
 ]
 
 [[package]]

@@ -1,6 +1,6 @@
 import reflex as rx
 from reflex.utils.format import to_snake_case, to_title_case
-from reflex_ui_shared.constants import REFLEX_ASSETS_CDN
+from reflex_site_shared.constants import REFLEX_ASSETS_CDN
 
 from reflex_docs.templates.docpage import docpage, h1_comp, text_comp_2
 
@@ -54,7 +54,7 @@ def create_previews(
 ):
     @docpage(
         right_sidebar=False,
-        set_path=f"/docs/library{prefix.rstrip('/')}/" + path.strip("/") + "/",
+        set_path=f"/library{prefix.rstrip('/')}/" + path.strip("/") + "/",
         page_title=component_category + " Library",
     )
     def page() -> rx.Component:

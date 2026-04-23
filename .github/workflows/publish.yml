@@ -21,6 +21,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
           fetch-tags: true
           fetch-depth: 0
 

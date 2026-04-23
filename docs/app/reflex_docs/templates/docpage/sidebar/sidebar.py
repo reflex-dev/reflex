@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import reflex as rx
-import reflex_ui as ui
-from reflex_ui_shared.styles.colors import c_color
+import reflex_components_internal as ui
+from reflex_site_shared.styles.colors import c_color
 
 from reflex_docs.templates.docpage.state import NavbarState
 
@@ -57,8 +57,8 @@ window.addEventListener("popstate", () => {
 });
 
 document.addEventListener('click', (e) => {
-  const link = e.target.closest('#sidebar-container a[href^="/docs"]');
-  if (link) {
+  const link = e.target.closest('#sidebar-container a[href]');
+  if (link && !link.getAttribute('href')?.startsWith('http')) {
     setTimeout(scrollToActiveSidebarLink, 200);
   }
 });
@@ -423,10 +423,18 @@ def sidebar_comp(
     from reflex_docs.pages.docs.library import library
     from reflex_docs.pages.docs.recipes_overview import overview
 
+    _path = rx.State.router.page.path
+    _is_docs_hosting = _path.startswith("/docs/hosting/") | _path.startswith(
+        "/hosting/"
+    )
+    _is_docs_ai_builder = _path.startswith("/docs/ai-builder/") | _path.startswith(
+        "/ai-builder/"
+    )
+
     return rx.box(  # pyright: ignore [reportCallIssue]
         # Handle sidebar categories for docs/cloud first
         rx.cond(  # pyright: ignore [reportCallIssue]
-            rx.State.router.page.path.startswith("/docs/hosting/"),
+            _is_docs_hosting,
             rx.el.ul(
                 sidebar_category(
                     "Cloud", hosting_page.deploy_quick_start.path, "cloud", 0
@@ -437,7 +445,7 @@ def sidebar_comp(
                 class_name="flex flex-col items-start gap-2 w-full list-none",
             ),
             rx.cond(  # pyright: ignore [reportCallIssue]
-                rx.State.router.page.path.startswith("/docs/ai-builder/"),
+                _is_docs_ai_builder,
                 rx.el.ul(
                     sidebar_category(
                         "AI Builder",
@@ -459,42 +467,38 @@ def sidebar_comp(
                     # ),
                     class_name="flex flex-col items-start gap-2 w-full list-none",
                 ),
-                # If the path doesn't start with /docs/cloud, check for general docs
-                rx.cond(  # pyright: ignore [reportCallIssue]
-                    rx.State.router.page.path.startswith("/docs/"),
-                    rx.el.ul(
-                        sidebar_category(
-                            "Learn",
-                            getting_started.introduction.path,
-                            "graduation-cap",
-                            0,
-                        ),
-                        sidebar_category(
-                            "Components",
-                            library.path,
-                            "layout-panel-left",
-                            1,
-                        ),
-                        sidebar_category(
-                            "API Reference",
-                            pages[0].path,
-                            "book-text",
-                            2,
-                        ),
-                        sidebar_category(
-                            "Enterprise",
-                            enterprise.overview.path,
-                            "building-2",
-                            3,
-                        ),
-                        class_name="flex flex-col items-start gap-2 w-full list-none",
+                rx.el.ul(
+                    sidebar_category(
+                        "Learn",
+                        getting_started.introduction.path,
+                        "graduation-cap",
+                        0,
                     ),
+                    sidebar_category(
+                        "Components",
+                        library.path,
+                        "layout-panel-left",
+                        1,
+                    ),
+                    sidebar_category(
+                        "API Reference",
+                        pages[0].path,
+                        "book-text",
+                        2,
+                    ),
+                    sidebar_category(
+                        "Enterprise",
+                        enterprise.overview.path,
+                        "building-2",
+                        3,
+                    ),
+                    class_name="flex flex-col items-start gap-2 w-full list-none",
                 ),
             ),
         ),
         # Handle the sidebar content based on docs/cloud or docs
         rx.cond(  # pyright: ignore [reportCallIssue]
-            rx.State.router.page.path.startswith("/docs/hosting/"),
+            _is_docs_hosting,
             rx.match(  # pyright: ignore [reportCallIssue]
                 SidebarState.sidebar_index,
                 (
@@ -525,7 +529,7 @@ def sidebar_comp(
                 # ),
             ),
             rx.cond(  # pyright: ignore [reportCallIssue]
-                rx.State.router.page.path.startswith("/docs/ai-builder/"),
+                _is_docs_ai_builder,
                 rx.match(  # pyright: ignore [reportCallIssue]
                     SidebarState.sidebar_index,
                     (
@@ -575,116 +579,113 @@ def sidebar_comp(
                     #     ),
                     # ),
                 ),
-                rx.cond(  # pyright: ignore [reportCallIssue]
-                    rx.State.router.page.path.startswith("/docs/"),
-                    rx.match(  # pyright: ignore [reportCallIssue]
-                        SidebarState.sidebar_index,
-                        (
-                            0,
-                            rx.el.ul(
-                                create_sidebar_section(
-                                    "Onboarding",
-                                    getting_started.introduction.path,
-                                    learn,
-                                    learn_index,
-                                    url,
-                                ),
-                                create_sidebar_section(
-                                    "User Interface",
-                                    ui.overview.path,
-                                    filter_out_non_sidebar_items(frontend),
-                                    frontend_index,
-                                    url,
-                                ),
-                                create_sidebar_section(
-                                    "State",
-                                    state.overview.path,
-                                    filter_out_non_sidebar_items(backend),
-                                    backend_index,
-                                    url,
-                                ),
-                                create_sidebar_section(
-                                    "Recipes",
-                                    overview.path,
-                                    recipes,
-                                    recipes_index,
-                                    url,
-                                ),
-                                class_name="flex flex-col items-start gap-8  w-full list-none list-style-none",
+                rx.match(  # pyright: ignore [reportCallIssue]
+                    SidebarState.sidebar_index,
+                    (
+                        0,
+                        rx.el.ul(
+                            create_sidebar_section(
+                                "Onboarding",
+                                getting_started.introduction.path,
+                                learn,
+                                learn_index,
+                                url,
                             ),
+                            create_sidebar_section(
+                                "User Interface",
+                                ui.overview.path,
+                                filter_out_non_sidebar_items(frontend),
+                                frontend_index,
+                                url,
+                            ),
+                            create_sidebar_section(
+                                "State",
+                                state.overview.path,
+                                filter_out_non_sidebar_items(backend),
+                                backend_index,
+                                url,
+                            ),
+                            create_sidebar_section(
+                                "Recipes",
+                                overview.path,
+                                recipes,
+                                recipes_index,
+                                url,
+                            ),
+                            class_name="flex flex-col items-start gap-8  w-full list-none list-style-none",
                         ),
-                        (
-                            1,
-                            rx.el.ul(
-                                create_sidebar_section(
-                                    "Core",
-                                    library.path,
-                                    component_lib,
-                                    component_lib_index,
-                                    url,
-                                ),
-                                create_sidebar_section(
-                                    "Graphing",
-                                    library.path,
-                                    graphing_libs,
-                                    graphing_libs_index,
-                                    url,
-                                ),
-                                rx.link(  # pyright: ignore [reportCallIssue]
+                    ),
+                    (
+                        1,
+                        rx.el.ul(
+                            create_sidebar_section(
+                                "Core",
+                                library.path,
+                                component_lib,
+                                component_lib_index,
+                                url,
+                            ),
+                            create_sidebar_section(
+                                "Graphing",
+                                library.path,
+                                graphing_libs,
+                                graphing_libs_index,
+                                url,
+                            ),
+                            rx.link(  # pyright: ignore [reportCallIssue]
+                                rx.box(  # pyright: ignore [reportCallIssue]
                                     rx.box(  # pyright: ignore [reportCallIssue]
-                                        rx.box(  # pyright: ignore [reportCallIssue]
-                                            rx.icon("atom", size=16),  # pyright: ignore [reportCallIssue]
-                                            rx.el.h5(
-                                                "Custom Components",
-                                                class_name="font-smbold text-[0.875rem] text-slate-12 leading-5 tracking-[-0.01313rem] transition-color",
-                                            ),
-                                            class_name="flex flex-row items-center gap-3 text-slate-12",
+                                        rx.icon("atom", size=16),  # pyright: ignore [reportCallIssue]
+                                        rx.el.h5(
+                                            "Custom Components",
+                                            class_name="font-smbold text-[0.875rem] text-slate-12 leading-5 tracking-[-0.01313rem] transition-color",
                                         ),
-                                        rx.text(  # pyright: ignore [reportCallIssue]
-                                            "See what components people have made with Reflex!",
-                                            class_name="font-small text-slate-9",
-                                        ),
-                                        class_name="flex flex-col gap-2 border-slate-5 bg-slate-1 hover:bg-slate-3 shadow-large px-3.5 py-2 border rounded-xl transition-bg",
+                                        class_name="flex flex-row items-center gap-3 text-slate-12",
                                     ),
-                                    underline="none",
-                                    href=custom_components.path,
-                                    class_name="w-fit lg:ml-[2.5rem]",
+                                    rx.text(  # pyright: ignore [reportCallIssue]
+                                        "See what components people have made with Reflex!",
+                                        class_name="font-small text-slate-9",
+                                    ),
+                                    class_name="flex flex-col gap-2 border-slate-5 bg-slate-1 hover:bg-slate-3 shadow-large px-3.5 py-2 border rounded-xl transition-bg",
                                 ),
-                                class_name="flex flex-col items-start gap-8  w-full list-none list-style-none",
+                                underline="none",
+                                href=custom_components.path,
+                                class_name="w-fit lg:ml-[2.5rem]",
                             ),
+                            class_name="flex flex-col items-start gap-8  w-full list-none list-style-none",
                         ),
-                        (
-                            2,
-                            rx.el.ul(
-                                create_sidebar_section(
-                                    "Reference",
-                                    pages[0].path,
-                                    api_reference,
-                                    api_reference_index,
-                                    url,
-                                ),
-                                class_name="flex flex-col items-start gap-8  w-full list-none list-style-none",
+                    ),
+                    (
+                        2,
+                        rx.el.ul(
+                            create_sidebar_section(
+                                "Reference",
+                                pages[0].path,
+                                api_reference,
+                                api_reference_index,
+                                url,
                             ),
+                            class_name="flex flex-col items-start gap-8  w-full list-none list-style-none",
                         ),
-                        (
-                            3,
-                            rx.el.ul(
-                                create_sidebar_section(
-                                    "Enterprise Usage",
-                                    enterprise.overview.path,
-                                    enterprise_usage_items,
-                                    enterprise_usage_index,
-                                    url,
-                                ),
-                                create_sidebar_section(
-                                    "Components",
-                                    enterprise.components.path,
-                                    enterprise_component_items,
-                                    enterprise_component_index,
-                                    url,
-                                ),
-                                class_name="flex flex-col items-start gap-8  w-full list-none list-style-none",
+                    ),
+                    (
+                        3,
+                        rx.el.ul(
+                            create_sidebar_section(
+                                "Enterprise Usage",
+                                enterprise.overview.path,
+                                enterprise_usage_items,
+                                enterprise_usage_index,
+                                url,
                             ),
+                            create_sidebar_section(
+                                "Components",
+                                enterprise.components.path,
+                                enterprise_component_items,
+                                enterprise_component_index,
+                                url,
+                            ),
+                            class_name="flex flex-col items-start gap-8  w-full list-none list-style-none",
                         ),
                     ),
                 ),

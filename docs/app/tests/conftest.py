@@ -15,11 +15,11 @@ def reflex_web_app():
 
     WHITELISTED_PAGES.extend(
         [
-            "/docs/events",
-            "/docs/vars",
-            "/docs/getting-started",
-            "/docs/library/graphing",
-            "/docs/api-reference/special-events",
+            "/events",
+            "/vars",
+            "/getting-started",
+            "/library/graphing",
+            "/api-reference/special-events",
         ]
     )
 

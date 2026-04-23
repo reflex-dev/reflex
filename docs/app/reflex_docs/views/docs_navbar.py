@@ -1,8 +1,8 @@
 import reflex as rx
-import reflex_ui as ui
-from reflex_ui.blocks.demo_form import demo_form_dialog
-from reflex_ui_shared.components.marketing_button import button
-from reflex_ui_shared.constants import REFLEX_ASSETS_CDN
+import reflex_components_internal as ui
+from reflex_components_internal.blocks.demo_form import demo_form_dialog
+from reflex_site_shared.components.marketing_button import button
+from reflex_site_shared.constants import REFLEX_ASSETS_CDN, REFLEX_URL
 
 from reflex_docs.components.docpage.navbar.buttons.sidebar import navbar_sidebar_button
 from reflex_docs.pages.docs import ai_builder, getting_started, hosting
@@ -10,7 +10,7 @@ from reflex_docs.views.search import search_bar
 
 
 def logo() -> rx.Component:
-    return rx.el.a(
+    return rx.el.elements.a(
         rx.el.div(
             rx.image(
                 src=f"{REFLEX_ASSETS_CDN}logos/light/reflex.svg",
@@ -35,7 +35,7 @@ def logo() -> rx.Component:
                 class_name="shrink-0 hidden dark:block",
             ),
         ),
-        to="/",
+        href=REFLEX_URL,
         class_name="flex flex-row gap-2.5 items-center shrink-0 mr-10",
     )
 
@@ -48,14 +48,15 @@ def menu_item(text: str, href: str, active_str: str = "") -> rx.Component:
     # For "framework", it's the default - active when in /docs but not matching other sections
     # For other segments (like "ai-builder"), use contains
     if active_str.startswith("/"):
-        active = router_path == active_str
+        if active_str == "/":
+            active = (router_path == "/") | (router_path == "/index")
+        else:
+            active = router_path == active_str
     elif active_str == "framework":
-        # Framework is active when in /docs but not in other specific sections
-        is_docs = router_path.contains("/docs")
+        is_overview = (router_path == "/") | (router_path == "/index")
         is_ai_builder = router_path.contains("ai-builder")
         is_hosting = router_path.contains("hosting")
-        is_start = router_path == "/docs"
-        active = is_docs & ~is_ai_builder & ~is_hosting & ~is_start
+        active = ~is_overview & ~is_ai_builder & ~is_hosting
     else:
         active = router_path.contains(active_str)
 
@@ -67,7 +68,7 @@ def menu_item(text: str, href: str, active_str: str = "") -> rx.Component:
                 variant="ghost",
                 native_button=False,
             ),
-            to=href,
+            href=href,
         ),
         class_name=ui.cn(
             "xl:flex hidden h-full items-center justify-center",
@@ -80,7 +81,7 @@ def menu_item(text: str, href: str, active_str: str = "") -> rx.Component:
 def navigation_menu() -> rx.Component:
     return ui.navigation_menu.root(
         ui.navigation_menu.list(
-            menu_item("Overview", "/docs", "/docs"),
+            menu_item("Overview", "/", "/"),
             menu_item(
                 "Build with AI", ai_builder.overview.best_practices.path, "ai-builder"
             ),
@@ -140,7 +141,7 @@ def navigation_menu() -> rx.Component:
 
 @rx.memo
 def docs_navbar() -> rx.Component:
-    from reflex_ui_shared.views.hosting_banner import hosting_banner
+    from reflex_site_shared.views.hosting_banner import hosting_banner
 
     return rx.el.div(
         hosting_banner(),
