@@ -1627,12 +1627,15 @@ def list_apps(client: AuthenticatedClient, project: str | None = None) -> list[d
     if not isinstance(client, AuthenticatedClient):
         raise NotAuthenticatedError("not authenticated")
 
-    url = urljoin(
-        constants.Hosting.HOSTING_SERVICE,
-        f"/api/v1/apps?project={project}" if project else "/api/v1/apps",
-    )
+    url = urljoin(constants.Hosting.HOSTING_SERVICE, "/api/v1/apps")
+    params = {"project": project} if project else None
 
-    response = httpx.get(url, headers=authorization_header(client.token), timeout=5)
+    response = httpx.get(
+        url,
+        params=params,
+        headers=authorization_header(client.token),
+        timeout=constants.Hosting.TIMEOUT,
+    )
     try:
         response.raise_for_status()
     except httpx.HTTPStatusError as ex:

@@ -130,48 +130,51 @@ def update_secrets(
     from reflex_cli.utils import hosting
 
     console.set_log_level(loglevel)
-    authenticated_client = hosting.get_authenticated_client(
-        token=token, interactive=interactive
-    )
+    try:
+        authenticated_client = hosting.get_authenticated_client(
+            token=token, interactive=interactive
+        )
 
-    if not app_id:
-        config = hosting.read_config()
-        if config:
-            app_id = config.appid
-            if not isinstance(app_id, (str, type(None))):
-                console.error(
-                    "app_id must be a string or None. Please check your config file."
+        if not app_id:
+            config = hosting.read_config()
+            if config:
+                app_id = config.appid
+                if not isinstance(app_id, (str, type(None))):
+                    console.error(
+                        "app_id must be a string or None. Please check your config file."
+                    )
+                    raise click.exceptions.Exit(1)
+
+        if not app_id:
+            console.error("No valid app_id provided.")
+            raise click.exceptions.Exit(1)
+
+        if envfile is None and not envs:
+            console.error("--envfile or --env must be provided")
+            raise click.exceptions.Exit(1)
+
+        if envfile and envs:
+            console.warn("--envfile is set; ignoring --env")
+
+        if envfile:
+            try:
+                from dotenv import (  # pyright: ignore[reportMissingImports]
+                    dotenv_values,
                 )
-                raise click.exceptions.Exit(1)
-
-    if not app_id:
-        console.error("No valid app_id provided.")
-        raise click.exceptions.Exit(1)
-
-    if envfile is None and not envs:
-        console.error("--envfile or --env must be provided")
-        raise click.exceptions.Exit(1)
-
-    if envfile and envs:
-        console.warn("--envfile is set; ignoring --env")
-
-    secrets = {}
-
-    if envfile:
-        try:
-            from dotenv import dotenv_values  # pyright: ignore[reportMissingImports]
-
+            except ImportError:
+                console.error(
+                    """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.0.1"`."""
+                )
+                raise click.exceptions.Exit(1) from None
             secrets = dotenv_values(envfile)
-        except ImportError:
-            console.error(
-                """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.0.1"`."""
-            )
-
-    else:
-        secrets = hosting.process_envs(list(envs))
-    hosting.update_secrets(
-        app_id=app_id, secrets=secrets, reboot=reboot, client=authenticated_client
-    )
+        else:
+            secrets = hosting.process_envs(list(envs))
+        hosting.update_secrets(
+            app_id=app_id, secrets=secrets, reboot=reboot, client=authenticated_client
+        )
+    except NotAuthenticatedError as err:
+        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        raise click.exceptions.Exit(1) from err
 
 
 @secrets_cli.command(name="delete")
