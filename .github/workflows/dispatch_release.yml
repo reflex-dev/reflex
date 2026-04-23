@@ -1,16 +1,27 @@
 name: Dispatch release
 
+# Note: any action starting with `release-` is gated on the `dispatch-release-approval`
+# environment. Configure required reviewers for that environment in repo Settings →
+# Environments to actually enforce the second approval; otherwise the gate is a no-op.
+
 on:
   workflow_dispatch:
     inputs:
-      kind:
-        description: "Release kind"
+      action:
+        description: "Release action"
         required: true
         type: choice
+        default: new-prerelease-patch
         options:
-          - prerelease
-          - release
-          - breaking
+          - new-prerelease-patch
+          - new-prerelease-minor
+          - new-prerelease-major
+          - continued-prerelease
+          - release-from-prerelease
+          - release-post
+          - release-patch
+          - release-minor
+          - release-major
       reflex:
         description: "reflex"
         type: boolean
@@ -144,8 +155,17 @@ jobs:
           JOINED=$(IFS=,; echo "${PACKAGES[*]}")
           echo "packages=[$JOINED]" >> "$GITHUB_OUTPUT"
 
-  release:
+  gate:
     needs: detect
+    if: ${{ startsWith(inputs.action, 'release-') }}
+    runs-on: ubuntu-latest
+    environment: dispatch-release-approval
+    steps:
+      - run: echo "Stable release approved for ${{ needs.detect.outputs.packages }} (action=${{ inputs.action }})."
+
+  release:
+    needs: [detect, gate]
+    if: ${{ always() && needs.detect.result == 'success' && (needs.gate.result == 'success' || needs.gate.result == 'skipped') }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -163,50 +183,104 @@ jobs:
         id: version
         env:
           PKG: ${{ matrix.package }}
-          KIND: ${{ inputs.kind }}
+          ACTION: ${{ inputs.action }}
         run: |
           set -euo pipefail
+
+          case "$ACTION" in
+            new-prerelease-patch)    MODE="new-prerelease"; SUB="patch" ;;
+            new-prerelease-minor)    MODE="new-prerelease"; SUB="minor" ;;
+            new-prerelease-major)    MODE="new-prerelease"; SUB="major" ;;
+            continued-prerelease)    MODE="continued-prerelease"; SUB="" ;;
+            release-from-prerelease) MODE="release"; SUB="from-prerelease" ;;
+            release-post)            MODE="release"; SUB="post" ;;
+            release-patch)           MODE="release"; SUB="patch" ;;
+            release-minor)           MODE="release"; SUB="minor" ;;
+            release-major)           MODE="release"; SUB="major" ;;
+            *) echo "Error: unknown action '$ACTION'"; exit 1 ;;
+          esac
+
           if [[ "$PKG" == "reflex" ]]; then
             TAG_PREFIX="v"
           else
             TAG_PREFIX="${PKG}-v"
           fi
-          LATEST=$(git tag -l "${TAG_PREFIX}*" | sed "s|^${TAG_PREFIX}||" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+(a[0-9]+)?$' | sort -V | tail -1 || true)
+
+          LATEST=$(git tag -l "${TAG_PREFIX}*" \
+            | sed "s|^${TAG_PREFIX}||" \
+            | grep -E '^[0-9]+\.[0-9]+\.[0-9]+(a[0-9]+|\.post[0-9]+)?$' \
+            | sort -V | tail -1 || true)
+
+          IS_ALPHA=0
+          IS_POST=0
           if [[ -z "$LATEST" ]]; then
-            case "$KIND" in
-              prerelease) NEXT="0.1.0a1" ;;
-              release)    NEXT="0.0.1" ;;
-              breaking)   NEXT="0.1.0" ;;
-            esac
+            M=0; N=0; P=0
           elif [[ "$LATEST" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)a([0-9]+)$ ]]; then
-            MAJOR="${BASH_REMATCH[1]}"
-            MINOR="${BASH_REMATCH[2]}"
-            PATCH="${BASH_REMATCH[3]}"
-            ALPHA="${BASH_REMATCH[4]}"
-            case "$KIND" in
-              prerelease) NEXT="${MAJOR}.${MINOR}.${PATCH}a$((ALPHA + 1))" ;;
-              release)    NEXT="${MAJOR}.${MINOR}.${PATCH}" ;;
-              breaking)   NEXT="${MAJOR}.$((MINOR + 1)).0" ;;
-            esac
+            M="${BASH_REMATCH[1]}"; N="${BASH_REMATCH[2]}"; P="${BASH_REMATCH[3]}"; AN="${BASH_REMATCH[4]}"
+            IS_ALPHA=1
+          elif [[ "$LATEST" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)\.post([0-9]+)$ ]]; then
+            M="${BASH_REMATCH[1]}"; N="${BASH_REMATCH[2]}"; P="${BASH_REMATCH[3]}"; POSTN="${BASH_REMATCH[4]}"
+            IS_POST=1
           elif [[ "$LATEST" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
-            MAJOR="${BASH_REMATCH[1]}"
-            MINOR="${BASH_REMATCH[2]}"
-            PATCH="${BASH_REMATCH[3]}"
-            case "$KIND" in
-              prerelease) NEXT="${MAJOR}.$((MINOR + 1)).0a1" ;;
-              release)    NEXT="${MAJOR}.${MINOR}.$((PATCH + 1))" ;;
-              breaking)   NEXT="${MAJOR}.$((MINOR + 1)).0" ;;
-            esac
+            M="${BASH_REMATCH[1]}"; N="${BASH_REMATCH[2]}"; P="${BASH_REMATCH[3]}"
           else
-            echo "Error: cannot parse latest version '$LATEST'"
+            echo "Error: cannot parse latest '$LATEST' for $PKG"
             exit 1
           fi
+
+          case "$MODE" in
+            new-prerelease)
+              case "$SUB" in
+                patch) NM=$M; NN=$N; NP=$((P + 1)) ;;
+                minor) NM=$M; NN=$((N + 1)); NP=0 ;;
+                major) NM=$((M + 1)); NN=0; NP=0 ;;
+              esac
+              NEXT="${NM}.${NN}.${NP}a1"
+              ;;
+            continued-prerelease)
+              if [[ "$IS_ALPHA" != "1" ]]; then
+                echo "Error: continued-prerelease requires latest to be an alpha; latest for $PKG is '${LATEST:-<none>}'"
+                exit 1
+              fi
+              NEXT="${M}.${N}.${P}a$((AN + 1))"
+              ;;
+            release)
+              case "$SUB" in
+                from-prerelease)
+                  if [[ "$IS_ALPHA" != "1" ]]; then
+                    echo "Error: release-from-prerelease requires latest to be an alpha; latest for $PKG is '${LATEST:-<none>}'"
+                    exit 1
+                  fi
+                  NEXT="${M}.${N}.${P}"
+                  ;;
+                post)
+                  if [[ -z "$LATEST" ]]; then
+                    echo "Error: release-post requires an existing release; no tags for $PKG"
+                    exit 1
+                  fi
+                  if [[ "$IS_ALPHA" == "1" ]]; then
+                    echo "Error: release-post cannot follow an alpha; latest for $PKG is '$LATEST'"
+                    exit 1
+                  fi
+                  if [[ "$IS_POST" == "1" ]]; then
+                    NEXT="${M}.${N}.${P}.post$((POSTN + 1))"
+                  else
+                    NEXT="${M}.${N}.${P}.post1"
+                  fi
+                  ;;
+                patch) NEXT="${M}.${N}.$((P + 1))" ;;
+                minor) NEXT="${M}.$((N + 1)).0" ;;
+                major) NEXT="$((M + 1)).0.0" ;;
+              esac
+              ;;
+          esac
+
           TAG="${TAG_PREFIX}${NEXT}"
           if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
             echo "Error: tag ${TAG} already exists"
             exit 1
           fi
-          echo "Latest: ${LATEST:-<none>} -> Next: $NEXT (kind=$KIND)"
+          echo "Latest: ${LATEST:-<none>} -> Next: $NEXT (action=$ACTION)"
           echo "version=$NEXT" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
       - name: Create GitHub release
@@ -215,14 +289,16 @@ jobs:
           TAG: ${{ steps.version.outputs.tag }}
           PKG: ${{ matrix.package }}
           VERSION: ${{ steps.version.outputs.version }}
-          KIND: ${{ inputs.kind }}
+          ACTION: ${{ inputs.action }}
         run: |
           set -euo pipefail
-          ARGS=(--title "$PKG@$VERSION" --notes "Dispatch $KIND release for $PKG v$VERSION" --target "$GITHUB_SHA")
-          if [[ "$KIND" == "prerelease" ]]; then
+          ARGS=(--title "$PKG@$VERSION" --notes "Dispatch release for $PKG v$VERSION (action=$ACTION)" --target "$GITHUB_SHA")
+          if [[ "$ACTION" == release-* ]]; then
+            if [[ "$PKG" != "reflex" ]]; then
+              ARGS+=(--latest=false)
+            fi
+          else
             ARGS+=(--prerelease --latest=false)
-          elif [[ "$PKG" != "reflex" ]]; then
-            ARGS+=(--latest=false)
           fi
           gh release create "$TAG" "${ARGS[@]}"
       - name: Trigger publish workflow
