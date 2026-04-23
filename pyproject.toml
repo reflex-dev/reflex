@@ -320,6 +320,7 @@ reflex-components-react-player.workspace = true
 reflex-components-recharts.workspace = true
 reflex-components-sonner.workspace = true
 reflex-docgen.workspace = true
+reflex-hosting-cli.workspace = true
 reflex-components-internal.workspace = true
 reflex-site-shared.workspace = true
 reflex-integrations-docs.workspace = true

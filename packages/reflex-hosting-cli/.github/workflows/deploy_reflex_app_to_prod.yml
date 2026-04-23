@@ -1,0 +1,68 @@
+name: deploy-reflex-app-to-prod
+on:
+  workflow_dispatch:
+    inputs:
+      reflex-app-repo:
+        description: 'reflex app github repo to deploy. e.g. `reflex-dev/reflex-chat`'
+        required: true
+      reflex-app-ref:
+        description: 'reflex app ref to deploy. e.g. git sha or `main`'
+      reflex-pin:
+        description: 'Reflex pin (@, ==, all ok)'
+      deployment-key:
+        description: 'The key for the instance to be deployed. Must be a new app or already owned by the CI user.'
+        required: true
+  repository_dispatch:
+
+jobs:
+  deploy-reflex-app-to-prod:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TELEMETRY_ENABLED: false
+      DEPLOYMENT_KEY: pcweb-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Check out reflex-hosting-cli repo
+        uses: actions/checkout@v3
+        with:
+          repository: reflex-dev/reflex-hosting-cli
+      - name: Set reflex app envs
+        id: set-reflex-app-envs
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "reflex-app-repo=${{ inputs.reflex-app-repo }}" >> "$GITHUB_OUTPUT"
+            echo "reflex-app-ref=${{ inputs.reflex-app-ref }}" >> "$GITHUB_OUTPUT"
+            echo "deployment-key=${{ inputs.deployment-key }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "reflex-app-repo=${{ github.event.client_payload.repo }}" >> "$GITHUB_OUTPUT"
+            echo "reflex-app-ref=${{ github.event.client_payload.sha }}" >> "$GITHUB_OUTPUT"
+            # if the deployment-key is provided in the client payload, use it
+            # otherwise, use the default deployment key which is the repo name
+            if [ -z "${{ github.event.client_payload.deployment-key }}" ]; then
+              owner_and_repo="${{ github.event.client_payload.repo }}"
+              echo "deployment-key=${owner_and_repo##*/}" >> "$GITHUB_OUTPUT"
+            else
+              echo "deployment-key=${{ github.event.client_payload.deployment-key }}" >> "$GITHUB_OUTPUT"
+            fi
+            if [ 'true' == "${{ github.event.client_payload.with-openai }}" ]; then
+              echo "openai-api-key=${{ secrets.OPENAI_API_KEY }}" >> "$GITHUB_OUTPUT"
+            fi
+            if [ 'true' == "${{ github.event.client_payload.with-local-db }}" ]; then
+              echo "with-local-db='true'" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+      - name: Deploy reflex app
+        uses: ./.github/actions/cli_deploy_reflex_app
+        with:
+          reflex-app-repo: ${{ steps.set-reflex-app-envs.outputs.reflex-app-repo }}
+          reflex-app-ref: ${{ steps.set-reflex-app-envs.outputs.reflex-app-ref }}
+          deployment-key: ${{ steps.set-reflex-app-envs.outputs.deployment-key }}
+          openai-api-key: ${{ steps.set-reflex-app-envs.outputs.openai-api-key }}
+          with-local-db: ${{ steps.set-reflex-app-envs.outputs.with-local-db }}
+          reflex-pin: ${{ inputs.reflex-pin }}
+          cp-web-url: ${{ secrets.PROD_CP_WEB_URL }}
+          cp-backend-url: ${{ secrets.PROD_CP_BACKEND_URL }}
+          cp-env: 'prod'
+          user-email: ${{ secrets.PROD_CI_TEST_USER_EMAIL }}
+          user-password: ${{ secrets.PROD_CI_TEST_USER_PASSWORD }}

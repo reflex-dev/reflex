@@ -1,0 +1,22 @@
+name: pre-commit
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    # Note even though this job is called "pre-commit" and runs "pre-commit", this job will run
+    # also POST-commit on main also!  In case there are mishandled merge conflicts / bad auto-resolves
+    # when merging into main branch.
+    branches: [main]
+
+jobs:
+  pre-commit:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: 3.13
+      - run: uv run pre-commit run --all-files
