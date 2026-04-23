@@ -144,7 +144,5 @@ class PackageJson(SimpleNamespace):
         "vite": "8.0.9",
     }
     OVERRIDES = {
-        # This should always match the `react` version in DEPENDENCIES for recharts compatibility.
-        "react-is": _react_version,
         "cookie": "1.1.1",
     }
