@@ -3,12 +3,22 @@
 import dataclasses
 from collections.abc import Mapping
 from types import MappingProxyType
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, ClassVar
 from urllib.parse import _NetlocResultMixinStr, parse_qsl, urlsplit
 
 from reflex_base import constants
 from reflex_base.utils import console, format
 from reflex_base.utils.serializers import serializer
+from reflex_base.vars.base import (
+    CachedVarOperation,
+    Var,
+    VarData,
+    VarSubclassEntry,
+    _var_subclasses,
+    cached_property_no_lock,
+)
+from reflex_base.vars.object import ObjectItemOperation, ObjectVar
+from reflex_base.vars.sequence import StringVar
 
 
 @dataclasses.dataclass(frozen=True, init=False)
@@ -147,6 +157,169 @@ class ReflexURL(str, _NetlocResultMixinStr):
         )
         object.__setattr__(obj, "fragment", fragment)
         return obj
+
+
+# Keys exposed on the serialized ReflexURL payload and accessible as attributes
+# on ReflexURLVar. Values are the Python type of each key (used to pick the
+# right Var subclass via guess_type).
+_REFLEX_URL_COMPONENT_TYPES: dict[str, Any] = {
+    "scheme": str,
+    "netloc": str,
+    "origin": str,
+    "path": str,
+    "query": str,
+    "query_parameters": Mapping[str, str],
+    "fragment": str,
+    "href": str,
+}
+
+
+@serializer(to=dict)
+def _serialize_reflex_url(obj: ReflexURL) -> dict:
+    """Serialize a ReflexURL to an object with its parsed components.
+
+    The full URL is exposed under the ``href`` key so the frontend can read
+    either the whole URL or any individual component without re-parsing.
+
+    Args:
+        obj: the ReflexURL to serialize.
+
+    Returns:
+        A dict with scheme, netloc, origin, path, query, query_parameters,
+        fragment, and href.
+    """
+    return {
+        "scheme": obj.scheme,
+        "netloc": obj.netloc,
+        "origin": obj.origin,
+        "path": obj.path,
+        "query": obj.query,
+        "query_parameters": dict(obj.query_parameters),
+        "fragment": obj.fragment,
+        "href": str.__str__(obj),
+    }
+
+
+class ReflexURLVar(StringVar[ReflexURL]):
+    """Var for ReflexURL that exposes URL components as child Vars.
+
+    Accessing ``scheme``/``netloc``/``origin``/``path``/``query``/
+    ``query_parameters``/``fragment``/``href`` returns a typed child Var that
+    reads the corresponding key on the serialized URL object. Using the Var
+    itself as a string (e.g. ``rx.text(State.router.url)``) emits JS that
+    reads the ``href`` key so the full URL string is rendered.
+    """
+
+    def __getattr__(self, name: str) -> Var:
+        """Get a URL component Var by attribute name.
+
+        Args:
+            name: The component name.
+
+        Returns:
+            A child Var for the component.
+        """
+        component_type = _REFLEX_URL_COMPONENT_TYPES.get(name)
+        if component_type is not None:
+            return ObjectItemOperation.create(
+                _reflex_url_as_object(self),
+                name,
+                component_type,
+            ).guess_type()
+        return super().__getattr__(name)  # pyright: ignore[reportAttributeAccessIssue]
+
+
+def _reflex_url_as_object(url_var: Var) -> ObjectVar:
+    """View a ReflexURL-typed Var as an object for key access.
+
+    Args:
+        url_var: The ReflexURL-typed Var.
+
+    Returns:
+        An ObjectVar wrapping the same JS expression.
+    """
+    return url_var.to(ObjectVar, Mapping[str, Any])
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    slots=True,
+)
+class ReflexURLCastedVar(CachedVarOperation, ReflexURLVar):
+    """Cast-to-ReflexURL operation whose default rendering reads ``href``.
+
+    Constructed when ``guess_type`` / ``to(ReflexURLVar)`` is invoked on any
+    Var typed as ReflexURL (e.g. ``State.router.url``). Its top-level JS
+    expression is ``{original}?.["href"]`` so string-context usage produces
+    the full URL; component access (via ``__getattr__`` inherited from
+    ``ReflexURLVar``) reads the matching key on ``{original}`` instead.
+    """
+
+    _original: Var = dataclasses.field(
+        default_factory=lambda: Var(_js_expr="null", _var_type=None),
+    )
+    _default_var_type: ClassVar[Any] = ReflexURL
+
+    @cached_property_no_lock
+    def _cached_var_name(self) -> str:
+        """Render the URL as its ``href`` string in JS.
+
+        Returns:
+            The JS expression for the full URL string.
+        """
+        return f'{self._original!s}?.["href"]'
+
+    def __getattr__(self, name: str) -> Any:
+        """Dispatch URL component access to the original object.
+
+        Args:
+            name: The attribute name.
+
+        Returns:
+            The child Var for the URL component, or the inherited attribute.
+        """
+        component_type = _REFLEX_URL_COMPONENT_TYPES.get(name)
+        if component_type is not None:
+            return ObjectItemOperation.create(
+                _reflex_url_as_object(self._original),
+                name,
+                component_type,
+            ).guess_type()
+        return CachedVarOperation.__getattr__(self, name)
+
+    @classmethod
+    def create(
+        cls,
+        value: Var,
+        _var_type: Any = None,
+        _var_data: VarData | None = None,
+    ) -> "ReflexURLCastedVar":
+        """Create a ReflexURLCastedVar wrapping another Var.
+
+        Args:
+            value: The Var being cast to ReflexURL.
+            _var_type: Optional override for the var type.
+            _var_data: Additional VarData to merge in.
+
+        Returns:
+            The new ReflexURLCastedVar.
+        """
+        return cls(
+            _js_expr="",
+            _var_type=_var_type or ReflexURL,
+            _var_data=_var_data,
+            _original=value,
+        )
+
+
+# ReflexURLCastedVar intentionally uses the CachedVarOperation lineage rather
+# than ToOperation so _js_expr can render as {original}?.["href"]. The registry
+# entry still accepts it because .to()/guess_type() only call .create(...),
+# which has a compatible signature.
+_var_subclasses.append(
+    VarSubclassEntry(ReflexURLVar, ReflexURLCastedVar, (ReflexURL,))  # pyright: ignore[reportArgumentType]
+)
 
 
 @dataclasses.dataclass(frozen=True)

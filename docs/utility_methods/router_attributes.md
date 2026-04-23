@@ -17,7 +17,7 @@ class RouterState(rx.State):
 
 
 router_data = [
-    {"name": "rx.State.router.url", "value": RouterState.router.url.to_string()},
+    {"name": "rx.State.router.url", "value": RouterState.router.url},
     {"name": "rx.State.router.url.scheme", "value": RouterState.router.url.scheme},
     {"name": "rx.State.router.url.netloc", "value": RouterState.router.url.netloc},
     {"name": "rx.State.router.url.origin", "value": RouterState.router.url.origin},
