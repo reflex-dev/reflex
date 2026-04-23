@@ -55,16 +55,18 @@ def drawer_item(text: str, url: str, active_str: str = "") -> rx.Component:
         url += "/"
     active = router_path.contains(active_str)
     if active_str == "docs":
+        is_docs_home = (router_path == "/") | (router_path == "/index")
         active = rx.cond(
-            router_path.contains("hosting")
-            | router_path.contains("library")
-            | router_path.contains("gallery"),
+            is_docs_home,
             False,
-            active,
+            ~router_path.contains("hosting")
+            & ~router_path.contains("library")
+            & ~router_path.contains("gallery")
+            & ~router_path.contains("ai-builder"),
         )
     if active_str == "":
         active = False
-    return rx.link(
+    return rx.el.elements.a(
         text,
         href=url,
         underline="none",

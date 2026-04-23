@@ -403,7 +403,7 @@ def create_pagination():
     )
 
 
-@docpage(right_sidebar=False)
+@docpage(set_path="/custom-components/", right_sidebar=False)
 def custom_components() -> rx.Component:
     return rx.box(
         rx.box(

@@ -352,6 +352,6 @@ pages = []
 for module_name, module_value in modules.items():
     docs = generate_docs(module_value)
     title = module_name.replace("_", " ").title()
-    page_data = docpage(f"/docs/hosting/cli/{module_name}/", title)(docs)
+    page_data = docpage(f"/hosting/cli/{module_name}/", title)(docs)
     page_data.title = page_data.title.split("·")[0].strip()
     pages.append(page_data)

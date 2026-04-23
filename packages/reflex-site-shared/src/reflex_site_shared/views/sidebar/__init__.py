@@ -73,7 +73,7 @@ def drawer_item(text: str, url: str, active_str: str = "") -> rx.Component:
         )
     if active_str == "":
         active = False
-    return rx.link(
+    return rx.el.elements.a(
         text,
         href=url,
         underline="none",

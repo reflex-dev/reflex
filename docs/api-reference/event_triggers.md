@@ -266,7 +266,7 @@ def unmount_example():
         rx.text(UnmountState.status),
         rx.link(
             rx.button("Navigate Away (Triggers Unmount)"),
-            href="/docs",
+            href="/",
         ),
         on_mount=UnmountState.initialize_resource,
         on_unmount=UnmountState.on_unmount,
