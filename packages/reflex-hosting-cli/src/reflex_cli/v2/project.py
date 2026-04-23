@@ -221,7 +221,7 @@ def get_select_project(
             console.error(
                 "You are not authenticated. Run `reflex login` to authenticate."
             )
-            click.exceptions.Exit(1)
+            raise click.exceptions.Exit(1) from None
         except Exception as e:
             console.error(f"Unable to get the currently selected project: {e}")
     else:
@@ -288,7 +288,7 @@ def get_projects(
             console.print(str(projects))
     except NotAuthenticatedError:
         console.error("You are not authenticated. Run `reflex login` to authenticate.")
-        click.exceptions.Exit(1)
+        raise click.exceptions.Exit(1) from None
     except Exception as e:
         console.error(f"Unable to get projects: {e}")
         raise click.exceptions.Exit(1) from e

@@ -429,7 +429,7 @@ def validate_token(token: str) -> dict[str, Any]:
         console.debug(f"Unable to validate the token due to: {ex}")
         raise Exception("server error") from ex
     except ValueError as ve:
-        console.debug(f"Access denied for {token}")
+        console.debug("Access denied")
         raise ValueError("access denied") from ve
     except Exception as ex:
         console.debug(f"Unexpected error: {ex}")
@@ -440,9 +440,10 @@ def delete_token_from_config():
     """Delete the invalid token from the config file if applicable."""
     if constants.Hosting.HOSTING_JSON.exists():
         try:
-            with constants.Hosting.HOSTING_JSON.open("w") as config_file:
+            with constants.Hosting.HOSTING_JSON.open("r") as config_file:
                 hosting_config = json.load(config_file)
-                del hosting_config["access_token"]
+            hosting_config.pop("access_token", None)
+            with constants.Hosting.HOSTING_JSON.open("w") as config_file:
                 json.dump(hosting_config, config_file)
         except Exception as ex:
             # Best efforts removing invalid token is OK
@@ -631,12 +632,12 @@ def search_app(
 
     if not isinstance(client, AuthenticatedClient):
         raise NotAuthenticatedError("not authenticated")
+    params: dict[str, str] = {"app_name": app_name}
+    if project_id:
+        params["project_id"] = project_id
     response = httpx.get(
-        urljoin(
-            constants.Hosting.HOSTING_SERVICE,
-            f"/api/v1/apps/search?app_name={app_name}"
-            + (f"&project_id={project_id}" if project_id else ""),
-        ),
+        urljoin(constants.Hosting.HOSTING_SERVICE, "/api/v1/apps/search"),
+        params=params,
         headers=authorization_header(client.token),
         timeout=constants.Hosting.TIMEOUT,
     )
@@ -697,10 +698,8 @@ def search_project(
         raise NotAuthenticatedError("not authenticated")
 
     response = httpx.get(
-        urljoin(
-            constants.Hosting.HOSTING_SERVICE,
-            f"/api/v1/project/search?project_name={project_name}",
-        ),
+        urljoin(constants.Hosting.HOSTING_SERVICE, "/api/v1/project/search"),
+        params={"project_name": project_name},
         headers=authorization_header(client.token),
         timeout=constants.Hosting.TIMEOUT,
     )

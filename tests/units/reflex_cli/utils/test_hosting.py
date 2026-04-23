@@ -35,18 +35,17 @@ def test_get_existing_access_token(
 
 
 @pytest.mark.parametrize(
-    "file_exists, config_content, expected_deleted",
+    "file_exists, config_content",
     [
-        (True, '{"access_token": "valid_token"}', True),
-        (True, '{"another_key": "value"}', False),
-        (False, "", False),
+        (True, '{"access_token": "valid_token"}'),
+        (True, '{"another_key": "value"}'),
+        (False, ""),
     ],
 )
 def test_delete_token_from_config(
     mocker: MockerFixture,
     file_exists: bool,
     config_content: str,
-    expected_deleted: bool,
 ):
     mocker.patch("pathlib.Path.exists", return_value=file_exists)
     mock_os_remove = mocker.patch("pathlib.Path.unlink")
@@ -61,12 +60,10 @@ def test_delete_token_from_config(
     delete_token_from_config()
 
     if file_exists:
-        mocked_open.assert_called_once()
-        if expected_deleted:
-            mock_json_load.assert_called_once()
-            mock_json_dump.assert_called_once()
-        else:
-            mock_json_dump.assert_not_called()
+        assert mocked_open.call_count == 2
+        mock_json_load.assert_called_once()
+        mock_json_dump.assert_called_once()
+        assert "access_token" not in mock_json_dump.call_args.args[0]
         mock_os_remove.assert_called_once()
     else:
         mocked_open.assert_not_called()
