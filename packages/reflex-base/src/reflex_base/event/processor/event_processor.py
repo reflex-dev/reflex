@@ -415,7 +415,6 @@ class EventProcessor:
         self,
         token: str,
         event: Event,
-        on_task_future: Callable[[EventFuture], None] | None = None,
     ) -> AsyncGenerator[Mapping[str, Any]]:
         """Enqueue an event to be processed and yield deltas emitted by the event handler.
 
@@ -433,8 +432,6 @@ class EventProcessor:
         Args:
             token: The client token associated with the event.
             event: The event to be enqueued.
-            on_task_future: Optional callback invoked with the EventFuture for the
-                enqueued handler as soon as it is created.
 
         Yields:
             Deltas emitted by the event handler for the specified token.
@@ -467,8 +464,7 @@ class EventProcessor:
                 emit_delta_impl=_emit_delta_impl,
             ),
         )
-        if on_task_future is not None:
-            on_task_future(task_future)
+
         try:
             async for delta in _stream_queue_until_done(
                 queue=deltas, done_when=task_future.wait_all()

@@ -23,7 +23,6 @@ from starlette.responses import JSONResponse, Response, StreamingResponse
 from typing_extensions import Self
 
 if TYPE_CHECKING:
-    from reflex_base.event.processor import EventFuture
     from reflex_base.utils.types import ASGIApp, Receive, Scope, Send
 
     from reflex.app import App
@@ -496,26 +495,11 @@ async def _upload_buffered_file(
         msg = "Upload event was not created."
         raise RuntimeError(msg)
 
-    task_future: EventFuture | None = None
     disconnect_seen = False
 
-    def _try_cancel() -> None:
-        """Cancel the task future if it exists and is still running."""
-        if task_future is not None and not task_future.done():
-            task_future.cancel()
-
-    def _remember_task_future(future: EventFuture) -> None:
-        """Keep a handle to the upload task for disconnect cancellation."""
-        nonlocal task_future
-        task_future = future
-        if disconnect_seen:
-            _try_cancel()
-
-    def _cancel_upload_task() -> None:
-        """Cancel the queued upload handler when the client disconnects."""
+    def _mark_disconnected() -> None:
         nonlocal disconnect_seen
         disconnect_seen = True
-        _try_cancel()
 
     async def _ndjson_updates():
         """Process the upload event, generating ndjson updates.
@@ -528,18 +512,14 @@ async def _upload_buffered_file(
         if disconnect_seen:
             return
         # Enqueue the task on the main event loop, but emit deltas to the local queue.
-        async for delta in app.event_processor.enqueue_stream_delta(
-            token,
-            event,
-            on_task_future=_remember_task_future,
-        ):
+        async for delta in app.event_processor.enqueue_stream_delta(token, event):
             yield json_dumps(StateUpdate(delta=delta)) + "\n"
 
     return DisconnectAwareStreamingResponse(
         _ndjson_updates(),
         media_type="application/x-ndjson",
         on_finish=_close_form_data,
-        on_disconnect=_cancel_upload_task,
+        on_disconnect=_mark_disconnected,
     )
 
 

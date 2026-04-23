@@ -1348,7 +1348,7 @@ async def test_upload_file_raises_client_disconnect_when_stream_send_fails(
 
     stream_closed = asyncio.Event()
 
-    async def enqueue_stream_delta(_token, _event, on_task_future=None):
+    async def enqueue_stream_delta(_token, _event):
         try:
             yield {"state": {"ok": True}}
             await asyncio.Event().wait()
