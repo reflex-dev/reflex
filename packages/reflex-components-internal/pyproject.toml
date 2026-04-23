@@ -2,6 +2,7 @@
 name = "reflex-components-internal"
 dynamic = ["version"]
 description = "Reflex internal components."
+license.text = "Apache-2.0"
 readme = "README.md"
 authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
@@ -36,6 +37,7 @@ dependencies = [
     "reflex-components-react-player",
     "reflex-components-recharts",
     "reflex-components-sonner",
+    "reflex-hosting-cli",
 ]
 
 [build-system]
