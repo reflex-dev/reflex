@@ -45,6 +45,9 @@ jobs:
           - 6379:6379
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+          fetch-depth: 0
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: ${{ matrix.python-version }}

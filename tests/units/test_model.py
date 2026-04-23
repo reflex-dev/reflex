@@ -1,13 +1,15 @@
+import math
 from pathlib import Path
 from unittest import mock
 
 import pytest
+from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.event import Event
 
 import reflex.constants
 import reflex.model
-from reflex.constants.state import FIELD_MARKER
 from reflex.model import Model, ModelRegistry
-from reflex.state import BaseState
+from reflex.state import BaseState, State
 from tests.units.test_state import (
     mock_app_simple,  # noqa: F401 # for pytest.mark.usefixtures
 )
@@ -48,7 +50,7 @@ def model_custom_primary() -> Model:
 
 
 def test_default_primary_key(model_default_primary: Model):
-    """Test that if a primary key is not defined a default is added.
+    """Test that if no primary key is defined, an "id" field is added.
 
     Args:
         model_default_primary: Fixture.
@@ -57,12 +59,12 @@ def test_default_primary_key(model_default_primary: Model):
 
 
 def test_custom_primary_key(model_custom_primary: Model):
-    """Test that if a primary key is defined no default key is added.
+    """Test that if a primary key is defined it is not overridden.
 
     Args:
         model_custom_primary: Fixture.
     """
-    assert "id" not in type(model_custom_primary).model_fields
+    assert "id" in type(model_custom_primary).model_fields
 
 
 @pytest.mark.filterwarnings(
@@ -161,7 +163,7 @@ def test_automigration(
         result = session.exec(sqlmodel.select(AlembicSecond)).all()
         assert len(result) == 1
         assert result[0].a == 42
-        assert result[0].b == 4.2
+        assert math.isclose(result[0].b, 4.2)
 
     # No-op
     assert Model.migrate(autogenerate=True)
@@ -220,22 +222,74 @@ class UpcastStateWithSqlAlchemy(BaseState):
 
 
 @pytest.mark.asyncio
-@pytest.mark.usefixtures("mock_app_simple")
 @pytest.mark.parametrize(
     ("handler", "payload"),
     [
         (UpcastStateWithSqlAlchemy.rx_model, {"m": {"foo": "bar"}}),
     ],
 )
-async def test_upcast_event_handler_arg(handler, payload):
+async def test_upcast_event_handler_arg(
+    handler, payload, mock_base_state_event_processor, emitted_deltas
+):
     """Test that upcast event handler args work correctly.
 
     Args:
         handler: The handler to test.
         payload: The payload to test.
+        mock_base_state_event_processor: Fixture for processing events with a BaseState.
+        emitted_deltas: List to store emitted deltas.
     """
-    state = UpcastStateWithSqlAlchemy()
-    async for update in state._process_event(handler, state, payload):
-        assert update.delta == {
-            UpcastStateWithSqlAlchemy.get_full_name(): {"passed" + FIELD_MARKER: True}
-        }
+    async with mock_base_state_event_processor as processor:
+        await processor.enqueue(
+            "test_token", Event.from_event_type(handler(**payload))[0]
+        )
+    assert emitted_deltas == [
+        (
+            "test_token",
+            {
+                UpcastStateWithSqlAlchemy.get_full_name(): {
+                    "passed" + FIELD_MARKER: True
+                }
+            },
+        ),
+    ]
+
+
+def test_no_rebind_mutable_proxy_for_instrumented_functions():
+    """Test that we don't rebind mutable proxies for instrumented functions."""
+    import sqlalchemy
+    import sqlalchemy.orm
+
+    class SABase(sqlalchemy.orm.MappedAsDataclass, sqlalchemy.orm.DeclarativeBase):
+        pass
+
+    class SAKeyword(SABase):
+        __tablename__ = "sa_keyword"
+
+        id: sqlalchemy.orm.Mapped[int] = sqlalchemy.orm.mapped_column(
+            primary_key=True, init=False, default=None
+        )
+        value: sqlalchemy.orm.Mapped[str] = sqlalchemy.orm.mapped_column(default="")
+        obj_id: sqlalchemy.orm.Mapped[int] = sqlalchemy.orm.mapped_column(
+            sqlalchemy.ForeignKey("sa_obj.id"), default=None
+        )
+
+    class SAObj(SABase):
+        __tablename__ = "sa_obj"
+
+        id: sqlalchemy.orm.Mapped[int] = sqlalchemy.orm.mapped_column(
+            primary_key=True, init=False, default=None
+        )
+        keywords: sqlalchemy.orm.Mapped[list[SAKeyword]] = sqlalchemy.orm.relationship(
+            lazy="selectin",  # codespell:ignore
+            cascade="all, delete",
+            default_factory=list,
+        )
+
+    class SAState(State):
+        sa_obj: SAObj = SAObj()
+
+    sa_state = SAState()
+    assert "sa_obj" not in sa_state.dirty_vars
+    sa_state.sa_obj.keywords.append(SAKeyword(value="test"))
+    assert "sa_obj" in sa_state.dirty_vars

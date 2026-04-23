@@ -1,5 +1,6 @@
+from reflex_base.config import get_config
+
 from reflex import text
-from reflex.config import get_config
 from reflex.page import DECORATED_PAGES, page
 
 

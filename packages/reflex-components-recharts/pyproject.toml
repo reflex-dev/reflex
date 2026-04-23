@@ -1,0 +1,27 @@
+[project]
+name = "reflex-components-recharts"
+dynamic = ["version"]
+description = "Reflex recharts components."
+readme = "README.md"
+authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
+maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
+requires-python = ">=3.10"
+dependencies = []
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+pattern-prefix = "reflex-components-recharts-"
+fallback-version = "0.0.0dev0"
+
+[tool.hatch.build]
+targets.sdist.artifacts = ["*.pyi"]
+targets.wheel.artifacts = ["*.pyi"]
+
+[tool.hatch.build.hooks.reflex-pyi]
+dependencies = ["ruff", "reflex-base"]
+
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning", "hatch-reflex-pyi"]
+build-backend = "hatchling.build"

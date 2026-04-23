@@ -26,6 +26,12 @@ def mock_redis() -> Redis:
     expire_times: dict[bytes, float] = {}
     event_log: list[dict[str, bytes]] = []
     event_log_new_events = asyncio.Event()
+    event_log_on_update = asyncio.Event()
+
+    def _event_log_append_notify(event: dict[str, bytes]) -> None:
+        event_log.append(event)
+        event_log_new_events.set()
+        event_log_on_update.set()
 
     def _key_bytes(key: KeyT) -> bytes:
         if isinstance(key, str):
@@ -39,8 +45,7 @@ def mock_redis() -> Redis:
             key = key.encode()
         if isinstance(data, str):
             data = data.encode()
-        event_log.append({"channel": b"__keyspace@1__:" + key, "data": data})
-        event_log_new_events.set()
+        _event_log_append_notify({"channel": b"__keyspace@1__:" + key, "data": data})
 
     def _expire_keys():
         to_delete = []
@@ -192,12 +197,16 @@ def mock_redis() -> Redis:
 
             for pattern in patterns:
                 watch_patterns[pattern] = None
-                event_log.append({"channel": b"psubscribe", "data": pattern.encode()})
-                event_log_new_events.set()
+                _event_log_append_notify({
+                    "channel": b"psubscribe",
+                    "data": pattern.encode(),
+                })
             for pattern, handler in handlers.items():
                 watch_patterns[pattern] = handler
-                event_log.append({"channel": b"psubscribe", "data": pattern.encode()})
-                event_log_new_events.set()
+                _event_log_append_notify({
+                    "channel": b"psubscribe",
+                    "data": pattern.encode(),
+                })
 
         async def listen() -> AsyncGenerator[dict[str, Any] | None, None]:
             nonlocal event_log_pointer
@@ -243,6 +252,7 @@ def mock_redis() -> Redis:
         "keys": keys,
         "expire_times": expire_times,
         "event_log": event_log,
+        "event_log_on_update": event_log_on_update,
     }
     return redis_mock
 
@@ -261,24 +271,30 @@ async def real_redis() -> AsyncGenerator[Redis | None]:
 
     # Create a pubsub to keep the internal event log for assertions.
     event_log = []
+    event_log_on_update = asyncio.Event()
     object.__setattr__(
         redis,
         "_internals",
         {
             "event_log": event_log,
+            "event_log_on_update": event_log_on_update,
         },
     )
     redis_db = redis.get_connection_kwargs().get("db", 0)
+    pubsub_ready = asyncio.Event()
 
     async def log_events():
         async with redis.pubsub() as pubsub:
             await pubsub.psubscribe(f"__keyspace@{redis_db}__:*")
+            pubsub_ready.set()
             async for message in pubsub.listen():
                 if message is None:
                     continue
                 event_log.append(message)
+                event_log_on_update.set()
 
     log_events_task = asyncio.create_task(log_events())
+    await pubsub_ready.wait()
     try:
         yield redis
     finally:

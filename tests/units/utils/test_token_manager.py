@@ -265,7 +265,7 @@ class TestRedisTokenManager:
         Returns:
             RedisTokenManager instance for testing.
         """
-        with patch("reflex.config.get_config") as mock_get_config:
+        with patch("reflex_base.config.get_config") as mock_get_config:
             mock_config = Mock()
             mock_config.redis_token_expiration = 3600
             mock_get_config.return_value = mock_config

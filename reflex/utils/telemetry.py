@@ -11,11 +11,12 @@ from contextlib import suppress
 from datetime import datetime, timezone
 from typing import TypedDict
 
-from reflex import constants
-from reflex.environment import environment
+from reflex_base import constants
+from reflex_base.environment import environment
+from reflex_base.utils.decorator import once, once_unless_none
+from reflex_base.utils.exceptions import ReflexError
+
 from reflex.utils import console, processes
-from reflex.utils.decorator import once, once_unless_none
-from reflex.utils.exceptions import ReflexError
 from reflex.utils.js_runtimes import get_bun_version, get_node_version
 from reflex.utils.prerequisites import ensure_reflex_installation_id, get_project_hash
 
@@ -316,7 +317,7 @@ def _send_event(event_data: _Event) -> bool:
 
 
 def _send(event: str, telemetry_enabled: bool | None, **kwargs) -> bool:
-    from reflex.config import get_config
+    from reflex_base.config import get_config
 
     # Get the telemetry_enabled from the config if it is not specified.
     if telemetry_enabled is None:

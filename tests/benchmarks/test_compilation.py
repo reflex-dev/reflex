@@ -1,7 +1,7 @@
 from pytest_codspeed import BenchmarkFixture
+from reflex_base.components.component import Component
 
 from reflex.compiler.compiler import _compile_page, _compile_stateful_components
-from reflex.components.component import Component
 
 
 def import_templates():

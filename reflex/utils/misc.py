@@ -57,11 +57,11 @@ async def run_in_thread(func: Callable) -> Any:
     Args:
         func: The non-async function to run.
 
-    Raises:
-        ValueError: If the function is an async function.
-
     Returns:
         Any: The return value of the function.
+
+    Raises:
+        ValueError: If the function is an async function.
     """
     if inspect.iscoroutinefunction(func):
         msg = "func must be a non-async function"
@@ -103,7 +103,7 @@ def preload_color_theme():
     Returns:
         Script: A script component to add to App.head_components
     """
-    from reflex.components.el.elements.scripts import Script
+    from reflex_components_core.el.elements.scripts import Script
 
     # Create direct inline script content (like next-themes dangerouslySetInnerHTML)
     script_content = """

@@ -1,6 +1,6 @@
 paths:
   - .github
   - reflex
-  - reflex/.templates
+  - packages
 paths-ignore:
   - "**/tests/**"

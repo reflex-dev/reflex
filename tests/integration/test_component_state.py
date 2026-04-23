@@ -5,7 +5,6 @@ from collections.abc import Generator
 import pytest
 from selenium.webdriver.common.by import By
 
-from reflex.state import State, _substate_key
 from reflex.testing import AppHarness
 
 from . import utils
@@ -32,15 +31,58 @@ def ComponentStateApp():
             self.count += 1
             self._be = self.count  # pyright: ignore [reportAttributeAccessIssue]
 
+        @rx.event
+        def assert_be(self, value: E):
+            assert self._backend_vars != self.backend_vars
+            assert self._be == int(value)  # pyright: ignore [reportAttributeAccessIssue, reportArgumentType]
+
+        @rx.event
+        def assert_be_none(self):
+            assert self._backend_vars == self.backend_vars
+            assert self._be is None  # pyright: ignore [reportAttributeAccessIssue]
+
+        @rx.event
+        def assert_be_int(self, value: int):
+            assert self._be_int == value  # pyright: ignore [reportAttributeAccessIssue]
+
+        @rx.event
+        def assert_be_str(self, value: str):
+            assert self._be_str == value  # pyright: ignore [reportAttributeAccessIssue]
+
         @classmethod
         def get_component(cls, *children, **props):
+            eid = props.get("id", "default")
             return rx.vstack(
                 *children,
-                rx.heading(cls.count, id=f"count-{props.get('id', 'default')}"),
+                rx.heading(cls.count, id=f"count-{eid}"),
                 rx.button(
                     "Increment",
                     on_click=cls.increment,
-                    id=f"button-{props.get('id', 'default')}",
+                    id=f"button-{eid}",
+                ),
+                rx.form(
+                    rx.input(id=f"{eid}-assert-be-value", name="be_value"),
+                    rx.button(
+                        "Assert _be",
+                        id=f"{eid}-assert-be",
+                    ),
+                    on_submit=lambda fd: cls.assert_be(fd.to(dict)["be_value"]),  # pyright: ignore [reportAttributeAccessIssue]
+                    reset_on_submit=True,
+                ),
+                rx.button(
+                    "Assert _be_none",
+                    id=f"{eid}-assert-be-none",
+                    on_click=cls.assert_be_none,
+                ),
+                rx.button(
+                    "Assert _be_int == 0",
+                    id=f"{eid}-assert-be-int",
+                    on_click=cls.assert_be_int(0),
+                ),
+                rx.button(
+                    "Assert _be_str == '42'",
+                    id=f"{eid}-assert-be-str",
+                    on_click=cls.assert_be_str("42"),
                 ),
                 **props,
             )
@@ -120,8 +162,7 @@ def component_state_app(tmp_path) -> Generator[AppHarness, None, None]:
         yield harness
 
 
-@pytest.mark.asyncio
-async def test_component_state_app(component_state_app: AppHarness):
+def test_component_state_app(component_state_app: AppHarness):
     """Increment counters independently.
 
     Args:
@@ -132,7 +173,6 @@ async def test_component_state_app(component_state_app: AppHarness):
 
     ss = utils.SessionStorage(driver)
     assert AppHarness._poll_for(lambda: ss.get("token") is not None), "token not found"
-    root_state_token = _substate_key(ss.get("token"), State)
 
     count_a = driver.find_element(By.ID, "count-a")
     count_b = driver.find_element(By.ID, "count-b")
@@ -141,16 +181,9 @@ async def test_component_state_app(component_state_app: AppHarness):
     button_inc_a = driver.find_element(By.ID, "inc-a")
 
     # Check that backend vars in mixins are okay
-    a_state_name = driver.find_element(By.ID, "a_state_name").text
-    b_state_name = driver.find_element(By.ID, "b_state_name").text
-    root_state = await component_state_app.get_state(root_state_token)
-    a_state = root_state.substates[a_state_name]
-    b_state = root_state.substates[b_state_name]
-    assert a_state._backend_vars == a_state.backend_vars
-    assert a_state._backend_vars == b_state._backend_vars
-    assert a_state._backend_vars["_be"] is None
-    assert a_state._backend_vars["_be_int"] == 0
-    assert a_state._backend_vars["_be_str"] == "42"
+    driver.find_element(By.ID, "a-assert-be-none").click()
+    driver.find_element(By.ID, "a-assert-be-int").click()
+    driver.find_element(By.ID, "a-assert-be-str").click()
 
     assert count_a.text == "0"
 
@@ -163,13 +196,9 @@ async def test_component_state_app(component_state_app: AppHarness):
     button_inc_a.click()
     assert component_state_app.poll_for_content(count_a, exp_not_equal="2") == "3"
 
-    root_state = await component_state_app.get_state(root_state_token)
-    a_state = root_state.substates[a_state_name]
-    b_state = root_state.substates[b_state_name]
-    assert a_state._backend_vars != a_state.backend_vars
-    assert a_state._be == a_state._backend_vars["_be"] == 3  # pyright: ignore[reportAttributeAccessIssue]
-    assert b_state._be is None  # pyright: ignore[reportAttributeAccessIssue]
-    assert b_state._backend_vars["_be"] is None
+    driver.find_element(By.ID, "a-assert-be-value").send_keys("3")
+    driver.find_element(By.ID, "a-assert-be").click()
+    driver.find_element(By.ID, "b-assert-be-none").click()
 
     assert count_b.text == "0"
 
@@ -179,11 +208,8 @@ async def test_component_state_app(component_state_app: AppHarness):
     button_b.click()
     assert component_state_app.poll_for_content(count_b, exp_not_equal="1") == "2"
 
-    root_state = await component_state_app.get_state(root_state_token)
-    a_state = root_state.substates[a_state_name]
-    b_state = root_state.substates[b_state_name]
-    assert b_state._backend_vars != b_state.backend_vars
-    assert b_state._be == b_state._backend_vars["_be"] == 2  # pyright: ignore[reportAttributeAccessIssue]
+    driver.find_element(By.ID, "b-assert-be-value").send_keys("2")
+    driver.find_element(By.ID, "b-assert-be").click()
 
     # Check locally-defined substate style
     count_c = driver.find_element(By.ID, "count-c")

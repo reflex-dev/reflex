@@ -9,26 +9,27 @@ import sys
 import time
 import uuid
 from collections.abc import AsyncIterator
-from typing import TypedDict
+from typing import Any, TypedDict, cast
 
 from redis import ResponseError
 from redis.asyncio import Redis
+from reflex_base.config import get_config
+from reflex_base.environment import environment
+from reflex_base.utils import console
+from reflex_base.utils.exceptions import (
+    InvalidLockWarningThresholdError,
+    LockExpiredError,
+    StateSchemaMismatchError,
+)
 from typing_extensions import Unpack, override
 
-from reflex.config import get_config
-from reflex.environment import environment
 from reflex.istate.manager import (
     StateManager,
     StateModificationContext,
     _default_token_expiration,
 )
-from reflex.state import BaseState, _split_substate_key, _substate_key
-from reflex.utils import console
-from reflex.utils.exceptions import (
-    InvalidLockWarningThresholdError,
-    LockExpiredError,
-    StateSchemaMismatchError,
-)
+from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
+from reflex.state import BaseState
 from reflex.utils.tasks import ensure_task
 
 
@@ -59,6 +60,10 @@ def _default_oplock_hold_time_ms() -> int:
     return environment.REFLEX_OPLOCK_HOLD_TIME_MS.get() or (
         _default_lock_expiration() // 2
     )
+
+
+# The lock waiter task should subscribe to lock channel updates within this period.
+LOCK_SUBSCRIBE_TASK_TIMEOUT = 2  # seconds
 
 
 SMR = f"[SMR:{os.getpid()}]"
@@ -134,9 +139,7 @@ class StateManagerRedis(StateManager):
     )
 
     # Cached states
-    _cached_states: dict[str, BaseState] = dataclasses.field(
-        default_factory=dict, init=False
-    )
+    _cached_states: dict[str, Any] = dataclasses.field(default_factory=dict, init=False)
     _cached_states_locks: dict[str, asyncio.Lock] = dataclasses.field(
         default_factory=dict, init=False
     )
@@ -151,6 +154,10 @@ class StateManagerRedis(StateManager):
     # Lock waiters for redis per-token lock.
     _lock_waiters: dict[bytes, list[asyncio.Event]] = dataclasses.field(
         default_factory=dict,
+        init=False,
+    )
+    _lock_updates_subscribed: asyncio.Event = dataclasses.field(
+        default_factory=asyncio.Event,
         init=False,
     )
     _lock_task: asyncio.Task | None = dataclasses.field(default=None, init=False)
@@ -257,32 +264,32 @@ class StateManagerRedis(StateManager):
     @override
     async def get_state(
         self,
-        token: str,
+        token: StateToken[TOKEN_TYPE],
         top_level: bool = True,
         for_state_instance: BaseState | None = None,
-    ) -> BaseState:
+    ) -> TOKEN_TYPE:
         """Get the state for a token.
 
         Args:
             token: The token to get the state for.
-            top_level: If true, return an instance of the top-level state (self.state).
+            top_level: If true, return the top-level root state.
             for_state_instance: If provided, attach the requested states to this existing state tree.
 
         Returns:
             The state for the token.
 
         Raises:
-            RuntimeError: when the state_cls is not specified in the token, or when the parent state for a
-                requested state was not fetched.
+            RuntimeError: when the parent state for a requested state was not fetched.
         """
-        # Split the actual token from the fully qualified substate name.
-        token, state_path = _split_substate_key(token)
-        if state_path:
-            # Get the State class associated with the given path.
-            requested_state_cls = self.state.get_class_substate(state_path)
-        else:
-            msg = f"StateManagerRedis requires token to be specified in the form of {{token}}_{{state_full_name}}, but got {token}"
-            raise RuntimeError(msg)
+        token = self._coerce_token(token)
+        if not isinstance(token, BaseStateToken):
+            # Non-BaseState token: simple single-key fetch.
+            redis_data = await self.redis.get(str(token))
+            if redis_data is not None:
+                return token.deserialize(data=redis_data)
+            return token.cls()
+
+        requested_state_cls = token.cls
 
         # Determine which states we already have.
         flat_state_tree: dict[str, BaseState] = (
@@ -298,7 +305,7 @@ class StateManagerRedis(StateManager):
 
         redis_pipeline = self.redis.pipeline()
         for state_cls in required_state_classes:
-            redis_pipeline.get(_substate_key(token, state_cls))
+            redis_pipeline.get(str(token.with_cls(state_cls)))
 
         for state_cls, redis_state in zip(
             required_state_classes,
@@ -336,14 +343,17 @@ class StateManagerRedis(StateManager):
         # To retain compatibility with previous implementation, by default, we return
         # the top-level state which should always be fetched or already cached.
         if top_level:
-            return flat_state_tree[self.state.get_full_name()]
-        return flat_state_tree[requested_state_cls.get_full_name()]
+            return cast(
+                TOKEN_TYPE,
+                flat_state_tree[requested_state_cls.get_root_state().get_full_name()],
+            )
+        return cast(TOKEN_TYPE, flat_state_tree[requested_state_cls.get_full_name()])
 
     @override
     async def set_state(
         self,
-        token: str,
-        state: BaseState,
+        token: StateToken[TOKEN_TYPE],
+        state: TOKEN_TYPE,
         *,
         lock_id: bytes | None = None,
         **context: Unpack[StateModificationContext],
@@ -353,22 +363,25 @@ class StateManagerRedis(StateManager):
         Args:
             token: The token to set the state for.
             state: The state to set.
-            lock_id: If provided, the lock_key must be set to this value to set the state.
+            lock_id: If provided, the lock must be held with this value to set the state.
             context: The event context.
 
         Raises:
             LockExpiredError: If lock_id is provided and the lock for the token is not held by that ID.
             RuntimeError: If the state instance doesn't match the state name in the token.
         """
+        token = self._coerce_token(token)
         # Check that we're holding the lock.
         if (
             lock_id is not None
-            and await self.redis.get(self._lock_key(token)) != lock_id
+            and (existing_lock_id := await self.redis.get(self._lock_key(token)))
+            != lock_id
         ):
             msg = (
                 f"Lock expired for token {token} while processing. Consider increasing "
                 f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
-                "or use `@rx.event(background=True)` decorator for long-running tasks."
+                "or use `@rx.event(background=True)` decorator for long-running tasks. "
+                f"Current lock id: {existing_lock_id!r}, expected lock id: {lock_id!r}."
                 + (
                     f" Happened in event: {event.name}"
                     if (event := context.get("event")) is not None
@@ -377,9 +390,18 @@ class StateManagerRedis(StateManager):
             )
             raise LockExpiredError(msg)
 
-        client_token, substate_name = _split_substate_key(token)
+        if not isinstance(token, BaseStateToken):
+            # Non-BaseState token: simple single-key write.
+            pickle_state = token.serialize(state)
+            if pickle_state:
+                await self.redis.set(str(token), pickle_state, ex=self.token_expiration)
+            return
 
-        if lock_id is not None and client_token not in self._local_leases:
+        base_state = cast(BaseState, state)
+
+        lock_key = token.lock_key
+
+        if lock_id is not None and lock_key not in self._local_leases:
             time_taken = (
                 self.lock_expiration - (await self.redis.pttl(self._lock_key(token)))
             ) / 1000
@@ -395,30 +417,25 @@ class StateManagerRedis(StateManager):
                     dedupe=True,
                 )
 
-        # If the substate name on the token doesn't match the instance name, it cannot have a parent.
-        if state.parent_state is not None and state.get_full_name() != substate_name:
-            msg = f"Cannot `set_state` with mismatching token {token} and substate {state.get_full_name()}."
-            raise RuntimeError(msg)
-
         # Recursively set_state on all known substates.
         tasks = [
             asyncio.create_task(
                 self.set_state(
-                    _substate_key(client_token, substate),
+                    token,
                     substate,
                     lock_id=lock_id,
                     **context,
                 ),
-                name=f"reflex_set_state|{client_token}|{substate.get_full_name()}",
+                name=f"reflex_set_state|{lock_key}|{substate.get_full_name()}",
             )
-            for substate in state.substates.values()
+            for substate in base_state.substates.values()
         ]
         # Persist only the given state (parents or substates are excluded by BaseState.__getstate__).
-        if state._get_was_touched():
-            pickle_state = state._serialize()
+        if base_state._get_was_touched():
+            pickle_state = base_state._serialize()
             if pickle_state:
                 await self.redis.set(
-                    _substate_key(client_token, state),
+                    str(token.with_cls(type(base_state))),
                     pickle_state,
                     ex=self.token_expiration,
                 )
@@ -429,8 +446,8 @@ class StateManagerRedis(StateManager):
 
     @contextlib.asynccontextmanager
     async def _try_modify_state(
-        self, token: str, **context: Unpack[StateModificationContext]
-    ) -> AsyncIterator[BaseState | None]:
+        self, token: StateToken[TOKEN_TYPE], **context: Unpack[StateModificationContext]
+    ) -> AsyncIterator[TOKEN_TYPE | None]:
         """Modify the state for a token while holding exclusive lock.
 
         Args:
@@ -440,9 +457,10 @@ class StateManagerRedis(StateManager):
         Yields:
             The state for the token or None if we couldn't get the lock.
         """
+        event_name = event.name if (event := context.get("event")) is not None else None
         if not self._oplock_enabled:
             # OpLock is disabled, get a fresh lock, write, and release.
-            async with self._lock(token) as lock_id:
+            async with self._lock(token, event_name=event_name) as lock_id:
                 state = await self.get_state(token)
                 yield state
                 await self.set_state(token, state, lock_id=lock_id, **context)
@@ -456,22 +474,24 @@ class StateManagerRedis(StateManager):
                 return
 
         # Opportunistic locking is enabled, so try to hold the lock across multiple calls.
-        client_token, _ = _split_substate_key(token)
+        lock_key = token.lock_key
         lock_held_ctx = contextlib.AsyncExitStack()
         try:
-            lock_id = await lock_held_ctx.enter_async_context(self._lock(token))
+            lock_id = await lock_held_ctx.enter_async_context(
+                self._lock(token, event_name=event_name)
+            )
         except OplockFound:
             # While waiting for the lock, another process has acquired it, but we can piggy back.
             pass
         else:
             # Do not create a lease break task when multiple instances are waiting.
             if (
-                not await self._get_local_lease(client_token)
+                not await self._get_local_lease(lock_key)
                 and await self._n_lock_contenders(self._lock_key(token)) > 0
             ):
                 if self._debug_enabled:
                     console.debug(
-                        f"{SMR} [{time.monotonic() - start:.3f}] {client_token} has contention, not leasing"
+                        f"{SMR} [{time.monotonic() - start:.3f}] {lock_key} has contention, not leasing"
                     )
                 async with lock_held_ctx:
                     state = await self.get_state(token)
@@ -485,11 +505,11 @@ class StateManagerRedis(StateManager):
                     token, lock_id, cleanup_ctx=lock_held_ctx, **context
                 )
             ) is (
-                current_lease_task := await self._get_local_lease(client_token)
+                current_lease_task := await self._get_local_lease(lock_key)
             ) and new_lease_task is not None:
                 if self._debug_enabled:
                     console.debug(
-                        f"{SMR} [{time.monotonic() - start:.3f}] {client_token} obtained lock {lock_id.decode()}."
+                        f"{SMR} [{time.monotonic() - start:.3f}] {lock_key} obtained lock {lock_id.decode()}."
                     )
             elif current_lease_task is None:
                 # Check if we still have the redis lock, then just try to send this one update and release it.
@@ -497,7 +517,7 @@ class StateManagerRedis(StateManager):
                 if await self.redis.get(self._lock_key(token)) == lock_id:
                     if self._debug_enabled:
                         console.debug(
-                            f"{SMR} [{time.monotonic() - start:.3f}] {client_token} holding lock {lock_id.decode()}, {new_lease_task=} already exited, doing single update..."
+                            f"{SMR} [{time.monotonic() - start:.3f}] {lock_key} holding lock {lock_id.decode()}, {new_lease_task=} already exited, doing single update..."
                         )
                     async with lock_held_ctx:
                         state = await self.get_state(token)
@@ -506,7 +526,7 @@ class StateManagerRedis(StateManager):
                     return
                 elif self._debug_enabled:
                     console.debug(
-                        f"{SMR} [{time.monotonic() - start:.3f}] {client_token} lock {lock_id.decode()} expired while waiting for lease task to exit..."
+                        f"{SMR} [{time.monotonic() - start:.3f}] {lock_key} lock {lock_id.decode()} expired while waiting for lease task to exit..."
                     )
         # Have to retry getting the state, but now it's probably cached.
         yield None
@@ -514,8 +534,8 @@ class StateManagerRedis(StateManager):
     @override
     @contextlib.asynccontextmanager
     async def modify_state(
-        self, token: str, **context: Unpack[StateModificationContext]
-    ) -> AsyncIterator[BaseState]:
+        self, token: StateToken[TOKEN_TYPE], **context: Unpack[StateModificationContext]
+    ) -> AsyncIterator[TOKEN_TYPE]:
         """Modify the state for a token while holding exclusive lock.
 
         Args:
@@ -525,14 +545,17 @@ class StateManagerRedis(StateManager):
         Yields:
             The state for the token.
         """
+        token = self._coerce_token(token)
         while True:
             async with self._try_modify_state(token, **context) as state_instance:
                 if state_instance is not None:
-                    yield state_instance
+                    yield cast(TOKEN_TYPE, state_instance)
                     return
 
     @contextlib.asynccontextmanager
-    async def _get_state_cached(self, token: str) -> AsyncIterator[BaseState | None]:
+    async def _get_state_cached(
+        self, token: StateToken[TOKEN_TYPE]
+    ) -> AsyncIterator[TOKEN_TYPE | None]:
         """Get the cached state for a token, while holding the local lease lock.
 
         Args:
@@ -540,40 +563,41 @@ class StateManagerRedis(StateManager):
 
         Yields:
             The cached state for the token, or None if not cached/uncachable.
-
-        Raises:
-            RuntimeError: when the state_cls is not specified in the token.
         """
-        client_token, state_path = _split_substate_key(token)
+        lock_key = token.lock_key
         # Opportunistically reuse existing lock.
         if (
-            client_token in self._local_leases
-            and (state_lock := self._cached_states_locks.get(client_token)) is not None
+            lock_key in self._local_leases
+            and (state_lock := self._cached_states_locks.get(lock_key)) is not None
         ):
             async with state_lock:
-                if await self._get_local_lease(client_token) is not None:
-                    if (
-                        cached_state := self._cached_states.get(client_token)
-                    ) is not None:
-                        # Make sure we have the substate cached (or fetch it from redis).
-                        try:
-                            substate = cached_state.get_substate(state_path.split("."))
-                            if len(substate.substates) != len(
-                                type(substate).get_substates()
-                            ):
-                                # If the substate is missing substates, we need to refetch it.
-                                raise ValueError  # noqa: TRY301
-                        except ValueError:
-                            await self.get_state(token, for_state_instance=cached_state)
-                        yield cached_state
+                if await self._get_local_lease(lock_key) is not None:
+                    if (cached_state := self._cached_states.get(lock_key)) is not None:
+                        if isinstance(token, BaseStateToken):
+                            # Make sure we have the substate cached (or fetch it from redis).
+                            state_path = token.cls.get_full_name()
+                            try:
+                                substate = cached_state.get_substate(
+                                    state_path.split(".")
+                                )
+                                if len(substate.substates) != len(
+                                    type(substate).get_substates()
+                                ):
+                                    # If the substate is missing substates, we need to refetch it.
+                                    raise ValueError  # noqa: TRY301
+                            except ValueError:
+                                await self.get_state(
+                                    token, for_state_instance=cached_state
+                                )
+                        yield cast(TOKEN_TYPE, cached_state)
                         return
                     elif self._debug_enabled:
                         console.debug(
-                            f"{SMR} [{time.monotonic() - start:.3f}] {client_token} lease task found, lock held, but no cached state"
+                            f"{SMR} [{time.monotonic() - start:.3f}] {lock_key} lease task found, lock held, but no cached state"
                         )
                 elif self._debug_enabled:
                     console.debug(
-                        f"{SMR} [{time.monotonic() - start:.3f}] {client_token} no active lease task found"
+                        f"{SMR} [{time.monotonic() - start:.3f}] {lock_key} no active lease task found"
                     )
         yield None
 
@@ -595,7 +619,7 @@ class StateManagerRedis(StateManager):
 
     async def _create_lease_break_task(
         self,
-        token: str,
+        token: StateToken[TOKEN_TYPE],
         lock_id: bytes,
         cleanup_ctx: contextlib.AsyncExitStack,
         **context: Unpack[StateModificationContext],
@@ -613,32 +637,32 @@ class StateManagerRedis(StateManager):
         """
         self._ensure_lock_task()
 
-        client_token, _ = _split_substate_key(token)
+        lock_key = token.lock_key
 
         async def do_flush() -> None:
-            if (state_lock := self._cached_states_locks.get(client_token)) is None:
+            if (state_lock := self._cached_states_locks.get(lock_key)) is None:
                 # If we lost the lock, we can't write the state, something went wrong.
                 console.warn(
-                    f"State lock for {client_token} missing while finalizing lease."
+                    f"State lock for {lock_key} missing while finalizing lease."
                 )
                 return
             async with state_lock:
                 # Write the state to redis while no one else can modify the cached copy.
-                state = self._cached_states.pop(client_token, None)
+                state = self._cached_states.pop(lock_key, None)
                 try:
                     if state:
                         if self._debug_enabled:
                             console.debug(
-                                f"{SMR} [{time.monotonic() - start:.3f}] {client_token} lease breaker {lock_id.decode()} flushing state"
+                                f"{SMR} [{time.monotonic() - start:.3f}] {lock_key} lease breaker {lock_id.decode()} flushing state"
                             )
                         await self.set_state(token, state, lock_id=lock_id, **context)
                 finally:
-                    if (current_lease := self._local_leases.get(client_token)) is task:
-                        self._local_leases.pop(client_token, None)
+                    if (current_lease := self._local_leases.get(lock_key)) is task:
+                        self._local_leases.pop(lock_key, None)
                         # TODO: clean up the cached states locks periodically
                     elif self._debug_enabled:
                         console.debug(
-                            f"{SMR} [{time.monotonic() - start:.3f}] {client_token} lease breaker {lock_id.decode()} cleanup of {task=} found different task in _local_leases {current_lease=}."
+                            f"{SMR} [{time.monotonic() - start:.3f}] {lock_key} lease breaker {lock_id.decode()} cleanup of {task=} found different task in _local_leases {current_lease=}."
                         )
 
         async def lease_breaker():
@@ -647,7 +671,7 @@ class StateManagerRedis(StateManager):
                 lease_break_time = self.oplock_hold_time_ms / 1000
                 if self._debug_enabled:
                     console.debug(
-                        f"{SMR} [{time.monotonic() - start:.3f}] {client_token} lease breaker {lock_id.decode()} started, sleeping for {lease_break_time}s"
+                        f"{SMR} [{time.monotonic() - start:.3f}] {lock_key} lease breaker {lock_id.decode()} started, sleeping for {lease_break_time}s"
                     )
                 try:
                     await asyncio.sleep(lease_break_time)
@@ -656,7 +680,7 @@ class StateManagerRedis(StateManager):
                     # We got cancelled so if someone is holding the lock,
                     # extend the timeout so they get the full time to complete.
                     if (
-                        state_lock := self._cached_states_locks[client_token]
+                        state_lock := self._cached_states_locks[lock_key]
                     ) is not None and state_lock.locked():
                         await self._try_extend_lock(self._lock_key(token))
                 try:
@@ -675,10 +699,10 @@ class StateManagerRedis(StateManager):
                     if cancelled_error is not None:
                         raise cancelled_error
 
-        if (state_lock := self._cached_states_locks.get(client_token)) is not None:
+        if (state_lock := self._cached_states_locks.get(lock_key)) is not None:
             # We have an existing lock, so lets see if we have an existing lease to cancel.
             async with state_lock:
-                if (existing_task := self._local_leases.get(client_token)) is not None:
+                if (existing_task := self._local_leases.get(lock_key)) is not None:
                     # There's already a lease break task, so cancel it to clear it out.
                     existing_task.cancel()
             if existing_task is not None:
@@ -686,30 +710,28 @@ class StateManagerRedis(StateManager):
                     await existing_task
 
         # Now we might need to create a new lock.
-        if (state_lock := self._cached_states_locks.get(client_token)) is None:
+        if (state_lock := self._cached_states_locks.get(lock_key)) is None:
             async with self._state_manager_lock:
-                if (state_lock := self._cached_states_locks.get(client_token)) is None:
-                    state_lock = self._cached_states_locks[client_token] = (
-                        asyncio.Lock()
-                    )
+                if (state_lock := self._cached_states_locks.get(lock_key)) is None:
+                    state_lock = self._cached_states_locks[lock_key] = asyncio.Lock()
 
         async with state_lock:
             # Create the task now if one didn't sneak past us.
             if (
-                client_token not in self._local_leases
+                lock_key not in self._local_leases
                 and await self._n_lock_contenders(self._lock_key(token)) == 0
             ):
-                self._local_leases[client_token] = task = asyncio.create_task(
+                self._local_leases[lock_key] = task = asyncio.create_task(
                     lease_breaker(),
-                    name=f"reflex_lease_breaker|{client_token}|{lock_id.decode()}",
+                    name=f"reflex_lease_breaker|{lock_key}|{lock_id.decode()}",
                 )
                 # Fetch the requested state into the cache.
-                self._cached_states[client_token] = await self.get_state(token)
+                self._cached_states[lock_key] = await self.get_state(token)
                 return task
         return None
 
     @staticmethod
-    def _lock_key(token: str) -> bytes:
+    def _lock_key(token: StateToken[Any]) -> bytes:
         """Get the redis key for a token's lock.
 
         Args:
@@ -718,9 +740,7 @@ class StateManagerRedis(StateManager):
         Returns:
             The redis lock key for the token.
         """
-        # All substates share the same lock domain, so ignore any substate path suffix.
-        client_token = _split_substate_key(token)[0]
-        return f"{client_token}_lock".encode()
+        return f"{token.lock_key}_lock".encode()
 
     async def _try_extend_lock(self, lock_key: bytes) -> bool | None:
         """Extends the current lock for another lock_expiration period.
@@ -797,8 +817,12 @@ class StateManagerRedis(StateManager):
         }
         async with self.redis.pubsub() as pubsub:
             await pubsub.psubscribe(**handlers)  # pyright: ignore[reportArgumentType]
-            async for _ in pubsub.listen():
-                pass
+            self._lock_updates_subscribed.set()
+            try:
+                async for _ in pubsub.listen():
+                    pass
+            finally:
+                self._lock_updates_subscribed.clear()
 
     def _ensure_lock_task(self) -> None:
         """Ensure the lock updates subscriber task is running."""
@@ -807,6 +831,30 @@ class StateManagerRedis(StateManager):
             task_attribute="_lock_task",
             coro_function=self._subscribe_lock_updates,
             suppress_exceptions=[Exception],
+        )
+
+    async def _ensure_lock_task_subscribed(self, timeout: float | None = None) -> None:
+        """Ensure the lock updates subscriber task is running and subscribed to avoid missing notifications.
+
+        Args:
+            timeout: How long to wait for the subscriber to be subscribed before
+                raising an error. If None, defaults to
+                min(LOCK_SUBSCRIBE_TASK_TIMEOUT, lock_expiration).
+
+        Raises:
+            TimeoutError: If the lock updates subscriber task fails to subscribe in time.
+        """
+        if timeout is None:
+            timeout = min(
+                LOCK_SUBSCRIBE_TASK_TIMEOUT,
+                max(self.lock_expiration / 1000, 0),
+            )
+        # Make sure lock waiter task is running.
+        self._ensure_lock_task()
+        # Make sure the lock waiter is subscribed to avoid missing notifications.
+        await asyncio.wait_for(
+            self._lock_updates_subscribed.wait(),
+            timeout=timeout,
         )
 
     async def _enable_keyspace_notifications(self):
@@ -965,7 +1013,8 @@ class StateManagerRedis(StateManager):
                 )
             return
         # Make sure lock waiter task is running.
-        self._ensure_lock_task()
+        with contextlib.suppress(TimeoutError, asyncio.TimeoutError):
+            await self._ensure_lock_task_subscribed()
         async with (
             self._lock_waiter(lock_key) as lock_released_event,
             self._request_lock_release(lock_key, lock_id),
@@ -1000,11 +1049,14 @@ class StateManagerRedis(StateManager):
                 )
 
     @contextlib.asynccontextmanager
-    async def _lock(self, token: str):
+    async def _lock(
+        self, token: StateToken[Any], event_name: str | None = None
+    ) -> AsyncIterator[bytes]:
         """Obtain a redis lock for a token.
 
         Args:
             token: The token to obtain a lock for.
+            event_name: The name of the event associated with the lock.
 
         Yields:
             The ID of the lock (to be passed to set_state).
@@ -1013,7 +1065,9 @@ class StateManagerRedis(StateManager):
             LockExpiredError: If the lock has expired while processing the event.
         """
         lock_key = self._lock_key(token)
-        lock_id = uuid.uuid4().hex.encode()
+        lock_id = (
+            f"{event_name}:{uuid.uuid4().hex}" if event_name else uuid.uuid4().hex
+        ).encode()
 
         await self._wait_lock(lock_key, lock_id)
         state_is_locked = True

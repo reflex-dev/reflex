@@ -8,9 +8,8 @@ from typing import Annotated
 from unittest.mock import patch
 
 import pytest
-
-from reflex import constants
-from reflex.environment import (
+from reflex_base import constants
+from reflex_base.environment import (
     EnvironmentVariables,
     EnvVar,
     ExecutorType,
@@ -30,10 +29,11 @@ from reflex.environment import (
     interpret_existing_path_env,
     interpret_int_env,
     interpret_path_env,
+    interpret_plugin_class_env,
     interpret_plugin_env,
 )
-from reflex.plugins import Plugin
-from reflex.utils.exceptions import EnvironmentVarValueError
+from reflex_base.plugins import Plugin
+from reflex_base.utils.exceptions import EnvironmentVarValueError
 
 
 class TestPlugin(Plugin):
@@ -125,6 +125,30 @@ class TestInterpretFunctions:
         with pytest.raises(EnvironmentVarValueError, match="Invalid plugin class"):
             interpret_plugin_env("tests.units.test_environment.TestEnum", "TEST_FIELD")
 
+    def test_interpret_plugin_class_env_valid(self):
+        """Test plugin class interpretation returns the class, not an instance."""
+        result = interpret_plugin_class_env(
+            "tests.units.test_environment.TestPlugin", "TEST_FIELD"
+        )
+        assert result is TestPlugin
+
+    def test_interpret_plugin_class_env_invalid_format(self):
+        """Test plugin class interpretation with invalid format."""
+        with pytest.raises(EnvironmentVarValueError, match="Invalid plugin value"):
+            interpret_plugin_class_env("invalid_format", "TEST_FIELD")
+
+    def test_interpret_plugin_class_env_import_error(self):
+        """Test plugin class interpretation with import error."""
+        with pytest.raises(EnvironmentVarValueError, match="Failed to import module"):
+            interpret_plugin_class_env("non.existent.module.Plugin", "TEST_FIELD")
+
+    def test_interpret_plugin_class_env_invalid_class(self):
+        """Test plugin class interpretation with invalid class."""
+        with pytest.raises(EnvironmentVarValueError, match="Invalid plugin class"):
+            interpret_plugin_class_env(
+                "tests.units.test_environment.TestEnum", "TEST_FIELD"
+            )
+
     def test_interpret_enum_env_valid(self):
         """Test enum interpretation with valid values."""
         result = interpret_enum_env("value1", _TestEnum, "TEST_FIELD")
@@ -172,6 +196,15 @@ class TestInterpretEnvVarValue:
         )
         assert isinstance(result, TestPlugin)
 
+    def test_interpret_plugin_class(self):
+        """Test type[Plugin] interpretation returns the class."""
+        result = interpret_env_var_value(
+            "tests.units.test_environment.TestPlugin",
+            type[Plugin],
+            "TEST_FIELD",
+        )
+        assert result is TestPlugin
+
     def test_interpret_list(self):
         """Test list interpretation."""
         result = interpret_env_var_value("1:2:3", list[int], "TEST_FIELD")
@@ -190,10 +223,19 @@ class TestInterpretEnvVarValue:
         result = interpret_env_var_value("value1", _TestEnum, "TEST_FIELD")
         assert result == _TestEnum.VALUE1
 
-    def test_interpret_union_error(self):
-        """Test that union types raise an error."""
-        with pytest.raises(ValueError, match="Union types are not supported"):
-            interpret_env_var_value("test", int | str, "TEST_FIELD")
+    def test_interpret_union_tries_each_type(self):
+        """Test that union types try each type in order."""
+        # str matches first
+        assert interpret_env_var_value("hello", int | str, "TEST_FIELD") == "hello"
+        # int matches first
+        assert interpret_env_var_value("42", int | str, "TEST_FIELD") == 42
+        # bool matches before str
+        assert interpret_env_var_value("true", bool | str, "TEST_FIELD") is True
+
+    def test_interpret_union_no_match(self):
+        """Test that union types raise an error if no type matches."""
+        with pytest.raises(EnvironmentVarValueError, match="Could not interpret"):
+            interpret_env_var_value("not_a_number", int | bool, "TEST_FIELD")
 
     def test_interpret_unsupported_type(self):
         """Test unsupported type raises an error."""
@@ -467,7 +509,7 @@ class TestUtilityFunctions:
         result = _paths_from_environment()
         assert result == []
 
-    @patch("reflex.environment.load_dotenv")
+    @patch("reflex_base.environment.load_dotenv")
     def test_load_dotenv_from_files_with_dotenv(self, mock_load_dotenv):
         """Test _load_dotenv_from_files when dotenv is available.
 
@@ -486,8 +528,8 @@ class TestUtilityFunctions:
             mock_load_dotenv.assert_any_call(file1, override=True)
             mock_load_dotenv.assert_any_call(file2, override=True)
 
-    @patch("reflex.environment.load_dotenv", None)
-    @patch("reflex.utils.console")
+    @patch("reflex_base.environment.load_dotenv", None)
+    @patch("reflex_base.utils.console")
     def test_load_dotenv_from_files_without_dotenv(self, mock_console):
         """Test _load_dotenv_from_files when dotenv is not available.
 
@@ -506,7 +548,7 @@ class TestUtilityFunctions:
         # Should not raise any errors
         _load_dotenv_from_files([])
 
-    @patch("reflex.environment.load_dotenv")
+    @patch("reflex_base.environment.load_dotenv")
     def test_load_dotenv_from_files_nonexistent_file(self, mock_load_dotenv):
         """Test _load_dotenv_from_files with non-existent file.
 

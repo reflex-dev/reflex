@@ -1,9 +1,9 @@
 import numpy as np
 import plotly.graph_objects as go
 import pytest
+from reflex_base.utils.serializers import serialize, serialize_figure
 
 import reflex as rx
-from reflex.utils.serializers import serialize, serialize_figure
 
 
 @pytest.fixture

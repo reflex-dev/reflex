@@ -43,11 +43,14 @@ jobs:
       matrix:
         # Show OS combos first in GUI
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.14"]
 
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+          fetch-depth: 0
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: ${{ matrix.python-version }}
@@ -100,7 +103,7 @@ jobs:
           npm -v
           uv run bash scripts/integration.sh ./reflex-examples/nba-proxy dev
 
-  reflex-web:
+  reflex-docs:
     strategy:
       fail-fast: false
       matrix:
@@ -111,35 +114,58 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup_build_env
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+
+      # Install sfw BEFORE any dependency installation so all packages are scanned.
+      - name: Install Socket.dev Firewall (free)
+        uses: SocketDev/action@2d3f25590c6ed6ba11a9a14c064d962a3a04698f # v1.3.1
+        with:
+          mode: firewall-free
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+      - name: Activate sfw shims for npm and bun
+        run: |
+          SHIM_DIR="$(cd scripts/sfw-shims && pwd)"
+          echo "$SHIM_DIR" >> "$GITHUB_PATH"
+          echo "REFLEX_USE_SYSTEM_BUN=1" >> "$GITHUB_ENV"
+
+      # Inline setup_build_env steps so all installs go through sfw.
+      - name: Install UV
+        uses: astral-sh/setup-uv@v6
         with:
           python-version: ${{ matrix.python-version }}
-          run-uv-sync: true
-
-      - name: Clone Reflex Website Repo
-        uses: actions/checkout@v4
+          enable-cache: true
+          prune-cache: false
+          activate-environment: true
+          cache-dependency-glob: "uv.lock"
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          repository: reflex-dev/reflex-web
-          ref: main
-          path: reflex-web
-          submodules: recursive
+          node-version: 22
 
-      - name: Compile pyproject.toml into requirements.txt
-        working-directory: ./reflex-web
-        run: |
-          uv pip compile pyproject.toml --no-annotate --no-header --no-deps --output-file requirements.txt
-          grep -ivE "reflex " requirements.txt > requirements.txt.tmp && mv requirements.txt.tmp requirements.txt
-      - name: Install Requirements for reflex-web
-        working-directory: ./reflex-web
-        run: uv pip install -r requirements.txt
-      - name: Init Website for reflex-web
-        working-directory: ./reflex-web
+      - name: Install reflex-docs dependencies
+        working-directory: ./docs/app
+        run: sfw uv sync
+
+      - name: Init Website for reflex-docs
+        working-directory: ./docs/app
         run: uv run --active --no-sync reflex init
       - name: Run Website and Check for errors
         run: |
-          # Check that npm is home
-          npm -v
-          uv run --active --no-sync bash scripts/integration.sh ./reflex-web prod
+          # Verify sfw wrappers are on PATH
+          which npm && npm -v
+          uv run --active --no-sync bash scripts/integration.sh ./docs/app prod
+
+      - name: Upload Socket.dev Firewall report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sfw-report-reflex-docs-py${{ matrix.python-version }}
+          path: ${{ env.SFW_JSON_REPORT_PATH }}
+          if-no-files-found: warn
 
   rx-shout-from-template:
     strategy:
@@ -147,6 +173,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+          fetch-depth: 0
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: 3.14
@@ -169,7 +198,7 @@ jobs:
           npm -v
           uv run bash scripts/integration.sh ./rx-shout-from-template prod
 
-  reflex-web-macos:
+  reflex-docs-macos:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     strategy:
       fail-fast: false
@@ -179,31 +208,20 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+          fetch-depth: 0
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: ${{ matrix.python-version }}
-          run-uv-sync: true
-
-      - name: Clone Reflex Website Repo
-        uses: actions/checkout@v4
-        with:
-          repository: reflex-dev/reflex-web
-          ref: main
-          path: reflex-web
-          submodules: recursive
-      - name: Compile pyproject.toml into requirements.txt
-        working-directory: ./reflex-web
-        run: |
-          uv pip compile pyproject.toml --no-annotate --no-header --no-deps --output-file requirements.txt
-          grep -ivE "reflex " requirements.txt > requirements.txt.tmp && mv requirements.txt.tmp requirements.txt
-      - name: Install Requirements for reflex-web
-        working-directory: ./reflex-web
-        run: uv pip install -r requirements.txt
-      - name: Init Website for reflex-web
-        working-directory: ./reflex-web
+      - name: Install Requirements for reflex-docs
+        working-directory: ./docs/app
+        run: uv sync
+      - name: Init Website for reflex-docs
+        working-directory: ./docs/app
         run: uv run --active --no-sync reflex init
       - name: Run Website and Check for errors
         run: |
           # Check that npm is home
           npm -v
-          uv run --active --no-sync bash scripts/integration.sh ./reflex-web prod
+          uv run --active --no-sync bash scripts/integration.sh ./docs/app prod

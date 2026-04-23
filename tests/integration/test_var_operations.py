@@ -12,11 +12,13 @@ def VarOperations():
     """App with var operations."""
     from typing import TypedDict
 
-    import reflex as rx
-    from reflex.vars.base import LiteralVar
-    from reflex.vars.sequence import ArrayVar
+    import pydantic
+    from reflex_base.vars.base import LiteralVar
+    from reflex_base.vars.sequence import ArrayVar
 
-    class Object(rx.Base):
+    import reflex as rx
+
+    class Object(pydantic.BaseModel):
         name: str = "hello"
         optional_none: str | None = None
         optional_str: str | None = "hello"

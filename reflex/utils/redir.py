@@ -14,7 +14,7 @@ def open_browser(target_url: "SplitResult") -> None:
     """
     import webbrowser
 
-    from reflex.utils import console
+    from reflex_base.utils import console
 
     if not webbrowser.open(target_url.geturl()):
         console.warn(
@@ -29,7 +29,7 @@ def reflex_build_redirect() -> None:
     """Open the browser window to reflex.build."""
     from urllib.parse import urlsplit
 
-    from reflex import constants
+    from reflex_base import constants
 
     open_browser(urlsplit(constants.Templates.REFLEX_BUILD_FRONTEND_WITH_REFERRER))
 
@@ -38,6 +38,6 @@ def reflex_templates():
     """Open the browser window to reflex.build/templates."""
     from urllib.parse import urlsplit
 
-    from reflex import constants
+    from reflex_base import constants
 
     open_browser(urlsplit(constants.Templates.REFLEX_TEMPLATES_URL))
