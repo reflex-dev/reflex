@@ -28,7 +28,7 @@ dependencies = [
   "python-multipart >=0.0.20,<1.0",
   "python-socketio >=5.12.0,<6.0",
   "redis >=5.2.1,<8.0",
-  "reflex-hosting-cli >=0.1.61",
+  "reflex-hosting-cli",
   "rich >=13,<16",
   "starlette >=0.47.0",
   "typing_extensions >=4.13.0",
@@ -111,6 +111,7 @@ dev = [
   "sqlmodel",
   "starlette-admin",
   "toml",
+  "typer",
   "uvicorn",
 ]
 
@@ -150,8 +151,8 @@ extraPaths = [
   "packages/reflex-react-router/src",
   "packages/reflex-recharts/src",
   "packages/reflex-sonner/src",
-  "packages/reflex-ui/src",
-  "packages/reflex-ui-shared/src",
+  "packages/reflex-components-internal/src",
+  "packages/reflex-site-shared/src",
   "packages/integrations-docs/src",
 ]
 exclude = [
@@ -161,6 +162,7 @@ exclude = [
   "**/.templates",
   "**/node_modules",
   "docs",
+  "packages/reflex-site-shared",
   "packages/integrations-docs",
   "packages/reflex-ui-shared",
 ]
@@ -236,6 +238,14 @@ lint.flake8-bugbear.extend-immutable-calls = [
 "*.pyi" = ["D301", "D415", "D417", "D418", "E742", "N", "PGH"]
 "pyi_generator.py" = ["N802"]
 "packages/reflex-base/src/reflex_base/constants/*.py" = ["N"]
+"packages/reflex-hosting-cli/src/reflex_cli/**/*.py" = [
+  "B008",
+  "D420",
+  "EM101",
+  "EM102",
+  "RET504",
+]
+"tests/units/reflex_cli/**/*.py" = ["DOC201", "PT006", "RUF052"]
 "*/.templates/apps/blank/code/*" = ["INP001"]
 "*/blank.py" = ["I001"]
 
@@ -266,8 +276,8 @@ source = [
   "reflex_components_sonner",
   "reflex_base",
   "reflex_docgen",
-  "reflex_ui_shared",
-  "reflex_ui",
+  "reflex_site_shared",
+  "reflex_components_internal",
   "reflex_integrations_docs",
 ]
 branch = true
@@ -325,8 +335,9 @@ reflex-components-react-player.workspace = true
 reflex-components-recharts.workspace = true
 reflex-components-sonner.workspace = true
 reflex-docgen.workspace = true
-reflex-ui.workspace = true
-reflex-ui-shared.workspace = true
+reflex-hosting-cli.workspace = true
+reflex-components-internal.workspace = true
+reflex-site-shared.workspace = true
 reflex-integrations-docs.workspace = true
 reflex.workspace = true
 

@@ -1,6 +1,6 @@
 import reflex as rx
 from reflex.utils.format import to_snake_case, to_title_case
-from reflex_ui_shared.components.icons import get_icon
+from reflex_site_shared.components.icons import get_icon
 
 from reflex_docs.templates.docpage import docpage, h1_comp, text_comp_2
 
@@ -21,7 +21,7 @@ def component_grid():
                         class_name="font-large text-slate-12",
                     ),
                     get_icon("new_tab", class_name="text-slate-11 [&>svg]:size-4"),
-                    href=f"/docs/library/{prefix.strip('/') + '/' if prefix.strip('/') else ''}{category.lower()}",
+                    href=f"/library/{prefix.strip('/') + '/' if prefix.strip('/') else ''}{category.lower()}",
                     underline="none",
                     class_name="px-4 py-2 bg-slate-1 hover:bg-slate-3 transition-bg flex flex-row justify-between items-center !text-slate-12",
                 ),
@@ -50,7 +50,7 @@ def component_grid():
     core = generate_gallery(
         components=component_list,
     )
-    # add `graphing/` prefix when generating graphing components to assume the url `/docs/library/graphing/<category>/<component>`.
+    # add `graphing/` prefix when generating graphing components to assume the url `/library/graphing/<category>/<component>`.
     graphs = generate_gallery(
         components=graphing_components,
         prefix="/graphing/",
@@ -78,6 +78,7 @@ def component_grid():
 
 
 @docpage(
+    set_path="/library/",
     right_sidebar=True,
     pseudo_right_bar=True,
 )

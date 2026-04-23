@@ -8,7 +8,7 @@ def get_integration_path() -> list:
     from integrations_docs import DOCS_DIR
 
     base_dir = str(DOCS_DIR)
-    web_path_prefix = "/docs/ai-builder/integrations"
+    web_path_prefix = "/ai-builder/integrations"
     result = []
 
     exclude_files = [

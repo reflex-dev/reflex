@@ -5,20 +5,20 @@ from datetime import datetime
 from typing import Callable
 
 import reflex as rx
-import reflex_ui as ui
+import reflex_components_internal as ui
 from reflex.components.radix.themes.base import LiteralAccentColor
 from reflex.experimental.client_state import ClientStateVar
 from reflex.utils.format import to_snake_case, to_title_case
-from reflex_ui_shared.components.blocks.code import *
-from reflex_ui_shared.components.blocks.demo import *
-from reflex_ui_shared.components.blocks.headings import *
-from reflex_ui_shared.components.blocks.typography import *
-from reflex_ui_shared.components.icons import get_icon
-from reflex_ui_shared.components.marketing_button import button as marketing_button
-from reflex_ui_shared.route import Route, get_path
-from reflex_ui_shared.styles.colors import c_color
-from reflex_ui_shared.utils.docpage import right_sidebar_item_highlight
-from reflex_ui_shared.views.footer import dark_mode_toggle
+from reflex_site_shared.components.blocks.code import *
+from reflex_site_shared.components.blocks.demo import *
+from reflex_site_shared.components.blocks.headings import *
+from reflex_site_shared.components.blocks.typography import *
+from reflex_site_shared.components.icons import get_icon
+from reflex_site_shared.components.marketing_button import button as marketing_button
+from reflex_site_shared.route import Route, get_path
+from reflex_site_shared.styles.colors import c_color
+from reflex_site_shared.utils.docpage import right_sidebar_item_highlight
+from reflex_site_shared.views.footer import dark_mode_toggle
 
 
 class FeedbackState(rx.State):
@@ -207,7 +207,7 @@ def ask_ai_chat() -> rx.Component:
             class_name="justify-start pl-0 text-m-slate-7 dark:text-m-slate-6",
             native_button=False,
         ),
-        to="/docs/ai-builder/integrations/mcp-overview/",
+        to="/ai-builder/integrations/mcp-overview/",
     )
 
 
@@ -222,8 +222,8 @@ def link_pill(text: str, href: str) -> rx.Component:
 
 @rx.memo
 def docpage_footer(path: str):
-    from reflex_ui_shared.constants import FORUM_URL, ROADMAP_URL
-    from reflex_ui_shared.views.footer import menu_socials
+    from reflex_site_shared.constants import FORUM_URL, ROADMAP_URL
+    from reflex_site_shared.views.footer import menu_socials
 
     return rx.el.footer(
         rx.box(
@@ -263,14 +263,10 @@ def docpage_footer(path: str):
                 footer_link_flex(
                     "Documentation",
                     [
-                        footer_link(
-                            "Introduction", "/docs/getting-started/introduction/"
-                        ),
-                        footer_link(
-                            "Installation", "/docs/getting-started/installation/"
-                        ),
-                        footer_link("Components", "/docs/library/"),
-                        footer_link("Hosting", "/docs/hosting/deploy-quick-start/"),
+                        footer_link("Introduction", "/getting-started/introduction/"),
+                        footer_link("Installation", "/getting-started/installation/"),
+                        footer_link("Components", "/library/"),
+                        footer_link("Hosting", "/hosting/deploy-quick-start/"),
                     ],
                 ),
                 footer_link_flex(
@@ -313,8 +309,8 @@ def breadcrumb(path: str, nav_sidebar: rx.Component):
     # Initialize an empty list to store the breadcrumbs and their separators
     breadcrumbs = []
 
-    # Iteratively build the href for each segment
-    current_path = "/docs"
+    # Iteratively build the href for each segment (paths are app-relative, no /docs prefix)
+    current_path = ""
     for i, segment in enumerate(segments):
         current_path += f"/{segment.lower()}"
 
@@ -343,7 +339,7 @@ def breadcrumb(path: str, nav_sidebar: rx.Component):
                     class_name="font-sm dark:text-m-slate-6 text-m-slate-7 lg:hidden flex",
                 )
             )
-    from reflex_ui_shared.views.hosting_banner import HostingBannerState
+    from reflex_site_shared.views.hosting_banner import HostingBannerState
 
     # Return the list of breadcrumb items with separators
     return rx.box(
@@ -418,7 +414,7 @@ def docpage(
             Returns:
                 The page with the template applied.
             """
-            from reflex_ui_shared.views.hosting_banner import HostingBannerState
+            from reflex_site_shared.views.hosting_banner import HostingBannerState
 
             from reflex_docs.templates.docpage.sidebar import get_prev_next
             from reflex_docs.templates.docpage.sidebar import sidebar as sb

@@ -2,6 +2,7 @@
 name = "reflex-components-dataeditor"
 dynamic = ["version"]
 description = "Reflex dataeditor components."
+license.text = "Apache-2.0"
 readme = "README.md"
 authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]

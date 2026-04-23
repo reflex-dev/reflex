@@ -1,5 +1,5 @@
 import reflex as rx
-from reflex_ui_shared.templates.webpage import webpage
+from reflex_site_shared.templates.webpage import webpage
 
 
 @webpage(path="/flexdown-guide", title="Flexdown Guide")

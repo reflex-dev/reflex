@@ -5,11 +5,10 @@ import sys
 
 import reflex as rx
 import reflex_enterprise as rxe
-from reflex.utils.exec import is_prod_mode
-from reflex_ui_shared import styles
-from reflex_ui_shared.constants import REFLEX_ASSETS_CDN
-from reflex_ui_shared.meta.meta import favicons_links, to_cdn_image_url
-from reflex_ui_shared.telemetry import get_pixel_website_trackers
+from reflex_site_shared import styles
+from reflex_site_shared.constants import REFLEX_ASSETS_CDN
+from reflex_site_shared.meta.meta import favicons_links, to_cdn_image_url
+from reflex_site_shared.telemetry import get_pixel_website_trackers
 
 from reflex_docs.pages import page404, routes
 from reflex_docs.whitelist import _check_whitelisted_path
@@ -33,14 +32,14 @@ app = rxe.App(
     + [
         rx.el.link(
             rel="preload",
-            href="/fonts/instrument-sans.woff2",
+            href=rx.asset("fonts/instrument-sans.woff2"),
             custom_attrs={"as": "font"},
             type="font/woff2",
             cross_origin="anonymous",
         ),
         rx.el.link(
             rel="preload",
-            href="/fonts/jetbrains-mono.woff2",
+            href=rx.asset("fonts/jetbrains-mono.woff2"),
             custom_attrs={"as": "font"},
             type="font/woff2",
             cross_origin="anonymous",
@@ -92,9 +91,6 @@ for route in routes:
 
 # Add redirects
 redirects = []
-
-if not is_prod_mode():
-    redirects.append(("/", "/docs"))
 
 
 def _redirect_page():

@@ -27,7 +27,7 @@ uv run pre-commit run --all-files                                # all pre-commi
 
 ```
 reflex/                 # main framework package (app, state, compiler, components, utils, istate)
-packages/               # workspace sub-packages (reflex-base, reflex-components-*, reflex-docgen, reflex-ui)
+packages/               # workspace sub-packages (reflex-base, reflex-components-*, reflex-docgen, reflex-components-internal)
 tests/units/            # unit tests, mirrors source tree
 tests/integration/      # Selenium integration tests (run in dev+prod modes)
   tests_playwright/     # Playwright integration tests (preferred for new tests)
