@@ -149,13 +149,13 @@ extraPaths = [
   "packages/reflex-react-router/src",
   "packages/reflex-recharts/src",
   "packages/reflex-sonner/src",
-  "packages/reflex-ui/src",
-  "packages/reflex-ui-shared/src",
+  "packages/reflex-components-internal/src",
+  "packages/reflex-site-shared/src",
   "packages/integrations-docs/src",
 ]
 exclude = [
   "docs",
-  "packages/reflex-ui-shared",
+  "packages/reflex-site-shared",
   "packages/integrations-docs",
   "**/.templates",
 ]
@@ -261,8 +261,8 @@ source = [
   "reflex_components_sonner",
   "reflex_base",
   "reflex_docgen",
-  "reflex_ui_shared",
-  "reflex_ui",
+  "reflex_site_shared",
+  "reflex_components_internal",
   "reflex_integrations_docs",
 ]
 branch = true
@@ -320,8 +320,8 @@ reflex-components-react-player.workspace = true
 reflex-components-recharts.workspace = true
 reflex-components-sonner.workspace = true
 reflex-docgen.workspace = true
-reflex-ui.workspace = true
-reflex-ui-shared.workspace = true
+reflex-components-internal.workspace = true
+reflex-site-shared.workspace = true
 reflex-integrations-docs.workspace = true
 reflex.workspace = true
 

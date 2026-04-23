@@ -1,10 +1,10 @@
 import reflex as rx
-import reflex_ui as ui
+import reflex_components_internal as ui
 from reflex.style import toggle_color_mode
-from reflex_ui_shared.components.icons import get_icon
-from reflex_ui_shared.components.marketing_button import button
-from reflex_ui_shared.constants import DISCORD_URL, GITHUB_URL, TWITTER_URL
-from reflex_ui_shared.views.hosting_banner import HostingBannerState
+from reflex_site_shared.components.icons import get_icon
+from reflex_site_shared.components.marketing_button import button
+from reflex_site_shared.constants import DISCORD_URL, GITHUB_URL, TWITTER_URL
+from reflex_site_shared.views.hosting_banner import HostingBannerState
 
 _DRAWER_LINKS_DOCS = "/docs"
 _DRAWER_LINKS_TEMPLATES = "/templates"
@@ -55,16 +55,18 @@ def drawer_item(text: str, url: str, active_str: str = "") -> rx.Component:
         url += "/"
     active = router_path.contains(active_str)
     if active_str == "docs":
+        is_docs_home = (router_path == "/") | (router_path == "/index")
         active = rx.cond(
-            router_path.contains("hosting")
-            | router_path.contains("library")
-            | router_path.contains("gallery"),
+            is_docs_home,
             False,
-            active,
+            ~router_path.contains("hosting")
+            & ~router_path.contains("library")
+            & ~router_path.contains("gallery")
+            & ~router_path.contains("ai-builder"),
         )
     if active_str == "":
         active = False
-    return rx.link(
+    return rx.el.elements.a(
         text,
         href=url,
         underline="none",

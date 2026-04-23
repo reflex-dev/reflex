@@ -6,8 +6,8 @@ Tips:
 - Do not include a trailing slash '/' at the end of the path.
 
 Examples:
-- Correct: WHITELISTED_PAGES = ["/blog/enterprise-ready-ai-app-builder"]
-- Incorrect: WHITELISTED_PAGES = ["/blog/enterprise-ready-ai-app-builder/"]
+- Correct: WHITELISTED_PAGES = ["/getting-started/introduction"]
+- Incorrect: WHITELISTED_PAGES = ["/getting-started/introduction/"]
 """
 
 WHITELISTED_PAGES = []
