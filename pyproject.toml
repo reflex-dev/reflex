@@ -239,14 +239,6 @@ lint.flake8-bugbear.extend-immutable-calls = [
   "EM102",
   "RET504",
 ]
-"packages/reflex-hosting-cli/scripts/**/*.py" = [
-  "D420",
-  "EM102",
-  "EXE002",
-  "FURB113",
-  "INP001",
-  "T201",
-]
 "packages/reflex-hosting-cli/tests/**/*.py" = [
   "D100",
   "D103",
