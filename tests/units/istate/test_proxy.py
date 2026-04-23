@@ -53,7 +53,7 @@ async def test_state_proxy_recovery(
     with monkeypatch.context() as m:
 
         @asynccontextmanager
-        async def mock_modify_state_context(*args, **kwargs):  # noqa: RUF029
+        async def mock_modify_state_context(*args, **kwargs):
             msg = "Simulated lock issue"
             raise CancelledError(msg)
             yield

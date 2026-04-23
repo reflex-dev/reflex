@@ -10,7 +10,6 @@ from docs.getting_started.chat_tutorial_utils import ChatappState
 # If it's in environment, no need to hardcode (openai SDK will pick it up)
 if "OPENAI_API_KEY" not in os.environ:
     openai.api_key = "YOUR_OPENAI_KEY"
-
 ```
 
 # Interactive Tutorial: AI Chat App
@@ -113,6 +112,7 @@ rx.container(
 
 import reflex as rx
 
+
 def index() -> rx.Component:
     return rx.container(
         rx.box(
@@ -186,7 +186,10 @@ def qa(question: str, answer: str) -> rx.Component:
 def chat() -> rx.Component:
     qa_pairs = [
         ("What is Reflex?", "A way to build web apps in pure Python!"),
-        ("What can I make with it?", "Anything from a simple website to a complex web app!"),
+        (
+            "What can I make with it?",
+            "Anything from a simple website to a complex web app!",
+        ),
     ]
     return rx.box(*[qa(question, answer) for question, answer in qa_pairs])
 
@@ -221,6 +224,7 @@ def action_bar() -> rx.Component:
         rx.button("Ask"),
     )
 
+
 def index() -> rx.Component:
     return rx.container(
         chat(),
@@ -249,12 +253,16 @@ message_style = dict(
 )
 
 # Set specific styles for questions and answers.
-question_style = message_style | dict(margin_left=chat_margin, background_color=rx.color("gray", 4))
-answer_style = message_style | dict(margin_right=chat_margin, background_color=rx.color("accent", 8))
+question_style = message_style | dict(
+    margin_left=chat_margin, background_color=rx.color("gray", 4)
+)
+answer_style = message_style | dict(
+    margin_right=chat_margin, background_color=rx.color("accent", 8)
+)
 
 # Styles for the action bar.
 input_style = dict(
-    border_width="1px", padding="0.5em", box_shadow=shadow,width="350px"
+    border_width="1px", padding="0.5em", box_shadow=shadow, width="350px"
 )
 button_style = dict(background_color=rx.color("accent", 10), box_shadow=shadow)
 ```
@@ -314,10 +322,14 @@ def qa(question: str, answer: str) -> rx.Component:
         width="100%",
     )
 
+
 def chat() -> rx.Component:
     qa_pairs = [
         ("What is Reflex?", "A way to build web apps in pure Python!"),
-        ("What can I make with it?", "Anything from a simple website to a complex web app!"),
+        (
+            "What can I make with it?",
+            "Anything from a simple website to a complex web app!",
+        ),
     ]
     return rx.box(*[qa(question, answer) for question, answer in qa_pairs])
 
@@ -359,7 +371,6 @@ import reflex as rx
 
 
 class State(rx.State):
-
     # The current question being asked.
     question: str
 
@@ -371,7 +382,6 @@ class State(rx.State):
         # Our chatbot is not very smart right now...
         answer = "I don't know!"
         self.chat_history.append((self.question, answer))
-
 ```
 
 ### Binding State to Components
@@ -421,17 +431,17 @@ from chatapp.state import State
 
 def chat() -> rx.Component:
     return rx.box(
-        rx.foreach(
-            State.chat_history,
-            lambda messages: qa(messages[0], messages[1])
-        )
+        rx.foreach(State.chat_history, lambda messages: qa(messages[0], messages[1]))
     )
-
 
 
 def action_bar() -> rx.Component:
     return rx.hstack(
-        rx.input(placeholder="Ask a question", on_change=State.set_question1, style=style.input_style),
+        rx.input(
+            placeholder="Ask a question",
+            on_change=State.set_question1,
+            style=style.input_style,
+        ),
         rx.button("Ask", on_click=State.answer, style=style.button_style),
     )
 ```
@@ -472,7 +482,8 @@ def action_bar() -> rx.Component:
             value=State.question,
             placeholder="Ask a question",
             on_change=State.set_question2,
-            style=style.input_style),
+            style=style.input_style,
+        ),
         rx.button("Ask", on_click=State.answer, style=style.button_style),
     )
 ```
@@ -515,6 +526,7 @@ rx.container(
 # state.py
 import asyncio
 
+
 async def answer(self):
     # Our chatbot is not very smart right now...
     answer = "I don't know!"
@@ -529,7 +541,7 @@ async def answer(self):
         # Pause to show the streaming effect.
         await asyncio.sleep(0.1)
         # Add one letter at a time to the output.
-        self.chat_history[-1] = (self.chat_history[-1][0], answer[:i + 1])
+        self.chat_history[-1] = (self.chat_history[-1][0], answer[: i + 1])
         yield
 ```
 
@@ -561,7 +573,6 @@ import reflex as rx
 
 # Initialize the OpenAI client
 client = AsyncOpenAI(api_key="YOUR_OPENAI_API_KEY")  # Replace with your actual API key
-
 ```
 
 ### Using the API
@@ -581,8 +592,8 @@ def action_bar() -> rx.Component:
             placeholder="Ask a question",
             # on_change event updates the input as the user types a prompt.
             on_change=State.set_question3,
-            style=style.input_style),
-
+            style=style.input_style,
+        ),
         # on_click event triggers the API to send the prompt to OpenAI.
         rx.button("Ask", on_click=State.answer, style=style.button_style),
     )
@@ -658,12 +669,14 @@ import reflex as rx
 from chatapp import style
 from chatapp.state import State
 
+
 def qa(question: str, answer: str) -> rx.Component:
     return rx.box(
         rx.box(rx.text(question, style=style.question_style), text_align="right"),
         rx.box(rx.text(answer, style=style.answer_style), text_align="left"),
         margin_y="1em",
     )
+
 
 def chat() -> rx.Component:
     return rx.box(
@@ -672,6 +685,7 @@ def chat() -> rx.Component:
             lambda messages: qa(messages[0], messages[1]),
         )
     )
+
 
 def action_bar() -> rx.Component:
     return rx.hstack(
@@ -688,6 +702,7 @@ def action_bar() -> rx.Component:
         ),
     )
 
+
 def index() -> rx.Component:
     return rx.center(
         rx.vstack(
@@ -696,6 +711,7 @@ def index() -> rx.Component:
             align="center",
         )
     )
+
 
 app = rx.App()
 app.add_page(index)
@@ -769,7 +785,9 @@ answer_style = message_style | dict(
 )
 
 # Styles for input elements
-input_style = dict(border_width="1px", padding="0.5em", box_shadow=shadow, width="350px")
+input_style = dict(
+    border_width="1px", padding="0.5em", box_shadow=shadow, width="350px"
+)
 button_style = dict(background_color=rx.color("accent", 10), box_shadow=shadow)
 ```
 

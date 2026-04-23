@@ -10,7 +10,9 @@ from reflex_base.utils.imports import ImportVar, ParsedImportDict
 from reflex_base.vars.base import Var
 from reflex_base.vars.sequence import LiteralStringVar
 from reflex_components_core.base import document
-from reflex_components_core.el.elements.metadata import Link
+from reflex_components_core.base.document import Links, Scripts
+from reflex_components_core.el.elements.metadata import Head, Link, Meta
+from reflex_components_core.el.elements.other import Html
 
 from reflex.compiler import compiler, utils
 
@@ -364,39 +366,39 @@ def test_create_document_root():
     # Test with no components.
     root = utils.create_document_root()
     root.render()
-    assert isinstance(root, utils.Html)
-    assert isinstance(root.children[0], utils.Head)
+    assert isinstance(root, Html)
+    assert isinstance(root.children[0], Head)
     # Default language.
     lang = root.lang  # pyright: ignore [reportAttributeAccessIssue]
     assert isinstance(lang, LiteralStringVar)
     assert lang.equals(Var.create("en"))
     # No children in head.
     assert len(root.children[0].children) == 6
-    assert isinstance(root.children[0].children[1], utils.Meta)
+    assert isinstance(root.children[0].children[1], Meta)
     char_set = root.children[0].children[1].char_set  # pyright: ignore [reportAttributeAccessIssue]
     assert isinstance(char_set, LiteralStringVar)
     assert char_set.equals(Var.create("utf-8"))
-    assert isinstance(root.children[0].children[2], utils.Meta)
+    assert isinstance(root.children[0].children[2], Meta)
     name = root.children[0].children[2].name  # pyright: ignore [reportAttributeAccessIssue]
     assert isinstance(name, LiteralStringVar)
     assert name.equals(Var.create("viewport"))
     assert isinstance(root.children[0].children[3], document.Meta)
     assert isinstance(root.children[0].children[4], Link)
-    assert isinstance(root.children[0].children[5], document.Links)
+    assert isinstance(root.children[0].children[5], Links)
 
 
 def test_create_document_root_with_scripts():
     # Test with components.
     comps = [
-        utils.Scripts.create(src="foo.js"),
-        utils.Scripts.create(src="bar.js"),
+        Scripts.create(src="foo.js"),
+        Scripts.create(src="bar.js"),
     ]
     root = utils.create_document_root(
         head_components=comps,
         html_lang="rx",
         html_custom_attrs={"project": "reflex"},
     )
-    assert isinstance(root, utils.Html)
+    assert isinstance(root, Html)
     assert len(root.children[0].children) == 8
     names = [c.tag for c in root.children[0].children]
     assert names == [
@@ -419,12 +421,12 @@ def test_create_document_root_with_scripts():
 def test_create_document_root_with_meta_char_set():
     # Test with components.
     comps = [
-        utils.Meta.create(char_set="cp1252"),
+        Meta.create(char_set="cp1252"),
     ]
     root = utils.create_document_root(
         head_components=comps,
     )
-    assert isinstance(root, utils.Html)
+    assert isinstance(root, Html)
     assert len(root.children[0].children) == 6
     names = [c.tag for c in root.children[0].children]
     assert names == ["script", "meta", "meta", "Meta", "link", "Links"]
@@ -434,13 +436,13 @@ def test_create_document_root_with_meta_char_set():
 def test_create_document_root_with_meta_viewport():
     # Test with components.
     comps = [
-        utils.Meta.create(http_equiv="refresh", content="5"),
-        utils.Meta.create(name="viewport", content="foo"),
+        Meta.create(http_equiv="refresh", content="5"),
+        Meta.create(name="viewport", content="foo"),
     ]
     root = utils.create_document_root(
         head_components=comps,
     )
-    assert isinstance(root, utils.Html)
+    assert isinstance(root, Html)
     assert len(root.children[0].children) == 7
     names = [c.tag for c in root.children[0].children]
     assert names == ["script", "meta", "meta", "meta", "Meta", "link", "Links"]
