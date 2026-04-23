@@ -1763,17 +1763,13 @@ def test_custom_component_get_imports():
         tag = "Inner"
         library = "inner"
 
-    class Other(Component):
-        tag = "Other"
-        library = "other"
-
     @rx.memo
     def wrapper():
         return Inner.create()
 
     @rx.memo
-    def outer(c: Component):
-        return Other.create(c)
+    def outer():
+        return wrapper()
 
     custom_comp = wrapper()
 
@@ -1787,16 +1783,16 @@ def test_custom_component_get_imports():
     assert "inner" in imports_inner
     assert "outer" not in imports_inner
 
-    outer_comp = outer(c=wrapper())
+    outer_comp = outer()
 
-    # Libraries are not imported directly, but are imported by the custom component.
+    # Nested custom components are only imported during compilation.
     assert "inner" not in outer_comp._get_all_imports()
-    assert "other" not in outer_comp._get_all_imports()
 
     # The imports are only resolved during compilation.
     _, imports_outer = compile_custom_component(outer_comp)
     assert "inner" not in imports_outer
-    assert "other" in imports_outer
+    assert "$/utils/components" in imports_outer
+    assert imports_outer["$/utils/components"] == [ImportVar(tag="Wrapper")]
 
 
 def test_custom_component_declare_event_handlers_in_fields():

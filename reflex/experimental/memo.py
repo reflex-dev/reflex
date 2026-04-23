@@ -75,6 +75,14 @@ class ExperimentalMemoComponentDefinition(ExperimentalMemoDefinition):
 
     export_name: str
     component: Component
+    # For passthrough wrappers built by the auto-memoize plugin: the
+    # ``Bare``-wrapped ``{children}`` placeholder used when rendering the memo
+    # body. The ``component`` keeps its ORIGINAL children so compile-time
+    # walkers (``Form._get_form_refs`` etc.) can introspect the subtree; the
+    # compiler swaps to this placeholder only for the JSX render and for
+    # imports collection, so descendants emit their refs/imports/hooks in the
+    # page scope rather than being duplicated inside the memo body.
+    passthrough_hole_child: Component | None = None
 
 
 class ExperimentalMemoComponent(Component):
@@ -342,7 +350,9 @@ def _imported_function_var(name: str, return_type: Any) -> FunctionVar:
         name,
         _var_type=ReflexCallable[Any, return_type],
         _var_data=VarData(
-            imports={f"$/{constants.Dirs.COMPONENTS_PATH}": [ImportVar(tag=name)]}
+            imports={
+                f"$/{constants.Dirs.COMPONENTS_PATH}/{name}": [ImportVar(tag=name)]
+            }
         ),
     )
 
@@ -361,7 +371,7 @@ def _component_import_var(name: str) -> Var:
         _var_type=type[Component],
         _var_data=VarData(
             imports={
-                f"$/{constants.Dirs.COMPONENTS_PATH}": [ImportVar(tag=name)],
+                f"$/{constants.Dirs.COMPONENTS_PATH}/{name}": [ImportVar(tag=name)],
                 "@emotion/react": [ImportVar(tag="jsx")],
             }
         ),
@@ -1023,10 +1033,18 @@ def create_passthrough_component_memo(
     # template.
     snapshot_only = is_snapshot_boundary(component)
 
+    captured_hole_child: list[Component] = []
+
     def passthrough(children: Var[Component]) -> Component:
         new_component = copy(component)
-        if not snapshot_only:
-            new_component.children = [Bare.create(children)]
+        if snapshot_only:
+            return new_component
+        # Keep ``new_component.children`` as the ORIGINAL children so
+        # compile-time walkers that introspect the subtree (e.g. Form's
+        # ``_get_form_refs``) see the real descendants. The ``{children}``
+        # hole lives on the definition and the compiler swaps it in only for
+        # JSX render / imports collection.
+        captured_hole_child.append(Bare.create(children))
         return new_component
 
     passthrough.__name__ = format.to_snake_case(export_name)
@@ -1034,8 +1052,13 @@ def create_passthrough_component_memo(
     passthrough.__module__ = __name__
 
     definition = _create_component_definition(passthrough, Component)
+    replacements: dict[str, Any] = {}
     if definition.export_name != export_name:
-        definition = dataclasses.replace(definition, export_name=export_name)
+        replacements["export_name"] = export_name
+    if captured_hole_child:
+        replacements["passthrough_hole_child"] = captured_hole_child[0]
+    if replacements:
+        definition = dataclasses.replace(definition, **replacements)
 
     return _create_component_wrapper(definition), definition
 
