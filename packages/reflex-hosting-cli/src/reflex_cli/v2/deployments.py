@@ -29,6 +29,8 @@ def hosting_cli(ctx: click.Context) -> None:
     It provides commands for managing apps, projects, secrets, and VM types/regions.
 
     """
+    if _reflex_version is None:
+        ctx.fail("Reflex is not installed. Install it with `pip install reflex`.")
     if _reflex_version < constants.ReflexHostingCli.MINIMUM_REFLEX_VERSION:
         ctx.fail(
             f"Reflex version {_reflex_version} is not compatible with reflex-hosting-cli. "
@@ -42,7 +44,12 @@ def hosting_cli(ctx: click.Context) -> None:
     check_version()
 
 
-_reflex_version = version.parse(importlib.metadata.version("reflex"))
+try:
+    _reflex_version: version.Version | None = version.parse(
+        importlib.metadata.version("reflex")
+    )
+except importlib.metadata.PackageNotFoundError:
+    _reflex_version = None
 
 
 hosting_cli.add_command(

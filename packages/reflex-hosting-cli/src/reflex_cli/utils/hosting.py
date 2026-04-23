@@ -462,11 +462,17 @@ def save_token_to_config(token: str):
         token: The access token to save.
 
     """
-    hosting_config: dict[str, str] = {"access_token": token}
-
     try:
         if not Path(constants.Reflex.DIR).exists():
             Path(constants.Reflex.DIR).mkdir(parents=True, exist_ok=True)
+        hosting_config: dict[str, str] = {}
+        if constants.Hosting.HOSTING_JSON.exists():
+            try:
+                with constants.Hosting.HOSTING_JSON.open("r") as config_file:
+                    hosting_config = json.load(config_file)
+            except (OSError, ValueError):
+                hosting_config = {}
+        hosting_config["access_token"] = token
         with constants.Hosting.HOSTING_JSON.open("w") as config_file:
             json.dump(hosting_config, config_file)
     except Exception as ex:
