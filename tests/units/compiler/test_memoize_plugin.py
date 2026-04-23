@@ -2,7 +2,8 @@
 
 import dataclasses
 from collections.abc import Callable
-from typing import Any
+from types import SimpleNamespace
+from typing import Any, cast
 
 from reflex_base.components.component import Component, field
 from reflex_base.constants.compiler import MemoizationDisposition, MemoizationMode
@@ -12,6 +13,7 @@ from reflex_base.vars.base import LiteralVar, Var
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
 
+import reflex.compiler.plugins.memoize as memoize_plugin
 from reflex.compiler.plugins import DefaultCollectorPlugin, default_page_plugins
 from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin, _should_memoize
 from reflex.experimental.memo import (
@@ -191,6 +193,56 @@ def test_generated_memo_component_renders_as_its_exported_tag() -> None:
     assert wrapper.tag == "MyWrapper_abc"
     assert definition.export_name == "MyWrapper_abc"
     assert wrapper.render()["name"] == "MyWrapper_abc"
+
+
+def test_passthrough_memo_definitions_are_not_shared_globally(monkeypatch) -> None:
+    """Repeated tags across compiles rebuild their passthrough definitions.
+
+    Regression: sharing auto-memo definitions globally by tag leaks the first
+    app's captured component tree into later compiles, which can stale-bind
+    state event names across AppHarness apps.
+    """
+    tag = "SharedMemoTag"
+    first_component = Plain.create(STATE_VAR)
+    second_component = Plain.create(STATE_VAR)
+
+    monkeypatch.setattr(memoize_plugin, "_compute_memo_tag", lambda comp: tag)
+    monkeypatch.setattr(
+        memoize_plugin,
+        "fix_event_triggers_for_memo",
+        lambda comp, page_context: comp,
+    )
+
+    def fake_create_passthrough_component_memo(export_name: str, component: Component):
+        definition = SimpleNamespace(export_name=export_name, component=component)
+        return (lambda definition=definition: definition), definition
+
+    monkeypatch.setattr(
+        memoize_plugin,
+        "create_passthrough_component_memo",
+        fake_create_passthrough_component_memo,
+    )
+
+    first_compile = SimpleNamespace(memoize_wrappers={}, auto_memo_components={})
+    second_compile = SimpleNamespace(memoize_wrappers={}, auto_memo_components={})
+    page_context = cast(PageContext, SimpleNamespace())
+
+    MemoizeStatefulPlugin._build_wrapper(
+        first_component,
+        page_context=page_context,
+        compile_context=first_compile,
+    )
+    MemoizeStatefulPlugin._build_wrapper(
+        second_component,
+        page_context=page_context,
+        compile_context=second_compile,
+    )
+
+    first_definition = first_compile.auto_memo_components[tag]
+    second_definition = second_compile.auto_memo_components[tag]
+    assert first_definition.component is first_component
+    assert second_definition.component is second_component
+    assert second_definition is not first_definition
 
 
 def test_shared_subtree_across_pages_uses_same_tag() -> None:

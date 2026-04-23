@@ -142,26 +142,6 @@ def _should_memoize(component: Component) -> bool:
     return bool(component.event_triggers)
 
 
-_KNOWN_MEMO_TAGS: dict[str, tuple[Any, Any]] = {}
-
-
-def _get_passthrough_memo_component(tag: str, component: Component) -> tuple[Any, Any]:
-    """Return the generated experimental memo wrapper callable and definition.
-
-    Args:
-        tag: The wrapper's exported component name.
-        component: The component to wrap.
-
-    Returns:
-        The memo wrapper callable and its definition.
-    """
-    if tag in _KNOWN_MEMO_TAGS:
-        return _KNOWN_MEMO_TAGS[tag]
-    memo_wrapper, memo_definition = create_passthrough_component_memo(tag, component)
-    _KNOWN_MEMO_TAGS[tag] = (memo_wrapper, memo_definition)
-    return memo_wrapper, memo_definition
-
-
 @dataclasses.dataclass(frozen=True, slots=True)
 class MemoizeStatefulPlugin(Plugin):
     """Auto-memoize stateful components with experimental-memo wrappers.
@@ -310,7 +290,9 @@ class MemoizeStatefulPlugin(Plugin):
         comp = fix_event_triggers_for_memo(comp, page_context)
 
         compile_context.memoize_wrappers[tag] = None
-        wrapper_factory, definition = _get_passthrough_memo_component(tag, comp)
+        # Passthrough memo definitions capture app-specific event/state vars, so
+        # they must be rebuilt for each compile instead of shared globally.
+        wrapper_factory, definition = create_passthrough_component_memo(tag, comp)
         compile_context.auto_memo_components[tag] = definition
 
         return wrapper_factory()
