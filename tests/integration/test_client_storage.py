@@ -216,7 +216,8 @@ def cookie_info_map(page: Page) -> dict[str, dict]:
         A map of cookie names to cookie info.
     """
     return {
-        cookie_info["name"]: dict(cookie_info) for cookie_info in page.context.cookies()
+        cookie_info.get("name", ""): dict(cookie_info)
+        for cookie_info in page.context.cookies()
     }
 
 

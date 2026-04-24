@@ -307,17 +307,18 @@ def tab_factory(
     """
     assert linked_state.app_instance is not None, "app is not running"
     assert linked_state.frontend_url is not None
+    frontend_url = linked_state.frontend_url
 
     pages: list[Page] = []
     extra_pages: list[Page] = []
 
     def factory() -> Page:
         if not pages:
-            page.goto(linked_state.frontend_url)
+            page.goto(frontend_url)
             pages.append(page)
             return page
         new_page = page.context.new_page()
-        new_page.goto(linked_state.frontend_url)
+        new_page.goto(frontend_url)
         pages.append(new_page)
         extra_pages.append(new_page)
         return new_page
