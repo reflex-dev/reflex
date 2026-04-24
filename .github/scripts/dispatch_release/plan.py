@@ -176,6 +176,29 @@ def main() -> None:
             "tag": tag,
         })
 
+    # reflex is not independently releasable via dispatch: when reflex-base is
+    # released, reflex is released alongside it with a matching version. The
+    # publish workflow pins reflex-base exactly when building reflex.
+    reflex_base_release = next(
+        (r for r in releases if r["package"] == "reflex-base"), None
+    )
+    if reflex_base_release is not None:
+        reflex_version = reflex_base_release["next"]
+        reflex_tag = f"v{reflex_version}"
+        if tag_exists(reflex_tag):
+            fail(f"tag {reflex_tag} already exists")
+        current_reflex = pick_latest("v")
+        display = current_reflex if current_reflex is not None else "<none>"
+        summary_rows.append(
+            f"| `reflex` | `{display}` | `{reflex_version}` | `{reflex_tag}` |"
+        )
+        releases.append({
+            "package": "reflex",
+            "current": current_reflex or "",
+            "next": reflex_version,
+            "tag": reflex_tag,
+        })
+
     with pathlib.Path(github_step_summary).open("a") as f:
         f.write("\n".join(summary_rows) + "\n")
     with pathlib.Path(github_output).open("a") as f:

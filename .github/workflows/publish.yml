@@ -1,5 +1,7 @@
 name: Publish to PyPI
 
+run-name: Publish ${{ github.event.release.tag_name || inputs.tag }}
+
 on:
   release:
     types: [published]
@@ -36,6 +38,7 @@ jobs:
           if [[ "$TAG" =~ ^v([0-9].*)$ ]]; then
             echo "package=reflex" >> "$GITHUB_OUTPUT"
             echo "build_dir=." >> "$GITHUB_OUTPUT"
+            echo "version=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
           elif [[ "$TAG" =~ ^(.+)-v([0-9].*)$ ]]; then
             PACKAGE="${BASH_REMATCH[1]}"
             if [ ! -d "packages/$PACKAGE" ]; then
@@ -44,10 +47,22 @@ jobs:
             fi
             echo "package=$PACKAGE" >> "$GITHUB_OUTPUT"
             echo "build_dir=packages/$PACKAGE" >> "$GITHUB_OUTPUT"
+            echo "version=${BASH_REMATCH[2]}" >> "$GITHUB_OUTPUT"
           else
             echo "Error: Tag '$TAG' does not match expected format (v* or <package>-v*)"
             exit 1
           fi
+
+      - name: Pin reflex-base to exact version
+        if: steps.parse.outputs.package == 'reflex'
+        run: |
+          VERSION="${{ steps.parse.outputs.version }}"
+          if ! grep -q '"reflex-base >= ' pyproject.toml; then
+            echo "Error: expected 'reflex-base >= ...' dependency in pyproject.toml"
+            exit 1
+          fi
+          sed -i 's|"reflex-base >= [^"]*"|"reflex-base == '"$VERSION"'"|' pyproject.toml
+          grep '"reflex-base' pyproject.toml
 
       - name: Build
         run: uv build --directory "${{ steps.parse.outputs.build_dir }}"

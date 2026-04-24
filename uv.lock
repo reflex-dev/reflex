@@ -3602,6 +3602,7 @@ requires-dist = [
 name = "reflex-components-code"
 source = { editable = "packages/reflex-components-code" }
 dependencies = [
+    { name = "reflex-base" },
     { name = "reflex-components-core" },
     { name = "reflex-components-lucide" },
     { name = "reflex-components-radix" },
@@ -3609,6 +3610,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "reflex-base", editable = "packages/reflex-base" },
     { name = "reflex-components-core", editable = "packages/reflex-components-core" },
     { name = "reflex-components-lucide", editable = "packages/reflex-components-lucide" },
     { name = "reflex-components-radix", editable = "packages/reflex-components-radix" },
@@ -3619,6 +3621,7 @@ name = "reflex-components-core"
 source = { editable = "packages/reflex-components-core" }
 dependencies = [
     { name = "python-multipart" },
+    { name = "reflex-base" },
     { name = "reflex-components-lucide" },
     { name = "reflex-components-sonner" },
     { name = "starlette" },
@@ -3628,6 +3631,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "python-multipart" },
+    { name = "reflex-base", editable = "packages/reflex-base" },
     { name = "reflex-components-lucide", editable = "packages/reflex-components-lucide" },
     { name = "reflex-components-sonner", editable = "packages/reflex-components-sonner" },
     { name = "starlette" },
@@ -3638,15 +3642,25 @@ requires-dist = [
 name = "reflex-components-dataeditor"
 source = { editable = "packages/reflex-components-dataeditor" }
 dependencies = [
+    { name = "reflex-base" },
     { name = "reflex-components-core" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "reflex-components-core", editable = "packages/reflex-components-core" }]
+requires-dist = [
+    { name = "reflex-base", editable = "packages/reflex-base" },
+    { name = "reflex-components-core", editable = "packages/reflex-components-core" },
+]
 
 [[package]]
 name = "reflex-components-gridjs"
 source = { editable = "packages/reflex-components-gridjs" }
+dependencies = [
+    { name = "reflex-base" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "reflex-base", editable = "packages/reflex-base" }]
 
 [[package]]
 name = "reflex-components-internal"
@@ -3661,11 +3675,18 @@ requires-dist = [{ name = "reflex", editable = "." }]
 [[package]]
 name = "reflex-components-lucide"
 source = { editable = "packages/reflex-components-lucide" }
+dependencies = [
+    { name = "reflex-base" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "reflex-base", editable = "packages/reflex-base" }]
 
 [[package]]
 name = "reflex-components-markdown"
 source = { editable = "packages/reflex-components-markdown" }
 dependencies = [
+    { name = "reflex-base" },
     { name = "reflex-components-code" },
     { name = "reflex-components-core" },
     { name = "reflex-components-radix" },
@@ -3673,6 +3694,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "reflex-base", editable = "packages/reflex-base" },
     { name = "reflex-components-code", editable = "packages/reflex-components-code" },
     { name = "reflex-components-core", editable = "packages/reflex-components-core" },
     { name = "reflex-components-radix", editable = "packages/reflex-components-radix" },
@@ -3681,27 +3703,39 @@ requires-dist = [
 [[package]]
 name = "reflex-components-moment"
 source = { editable = "packages/reflex-components-moment" }
+dependencies = [
+    { name = "reflex-base" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "reflex-base", editable = "packages/reflex-base" }]
 
 [[package]]
 name = "reflex-components-plotly"
 source = { editable = "packages/reflex-components-plotly" }
 dependencies = [
+    { name = "reflex-base" },
     { name = "reflex-components-core" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "reflex-components-core", editable = "packages/reflex-components-core" }]
+requires-dist = [
+    { name = "reflex-base", editable = "packages/reflex-base" },
+    { name = "reflex-components-core", editable = "packages/reflex-components-core" },
+]
 
 [[package]]
 name = "reflex-components-radix"
 source = { editable = "packages/reflex-components-radix" }
 dependencies = [
+    { name = "reflex-base" },
     { name = "reflex-components-core" },
     { name = "reflex-components-lucide" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "reflex-base", editable = "packages/reflex-base" },
     { name = "reflex-components-core", editable = "packages/reflex-components-core" },
     { name = "reflex-components-lucide", editable = "packages/reflex-components-lucide" },
 ]
@@ -3710,25 +3744,39 @@ requires-dist = [
 name = "reflex-components-react-player"
 source = { editable = "packages/reflex-components-react-player" }
 dependencies = [
+    { name = "reflex-base" },
     { name = "reflex-components-core" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "reflex-components-core", editable = "packages/reflex-components-core" }]
+requires-dist = [
+    { name = "reflex-base", editable = "packages/reflex-base" },
+    { name = "reflex-components-core", editable = "packages/reflex-components-core" },
+]
 
 [[package]]
 name = "reflex-components-recharts"
 source = { editable = "packages/reflex-components-recharts" }
+dependencies = [
+    { name = "reflex-base" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "reflex-base", editable = "packages/reflex-base" }]
 
 [[package]]
 name = "reflex-components-sonner"
 source = { editable = "packages/reflex-components-sonner" }
 dependencies = [
+    { name = "reflex-base" },
     { name = "reflex-components-lucide" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "reflex-components-lucide", editable = "packages/reflex-components-lucide" }]
+requires-dist = [
+    { name = "reflex-base", editable = "packages/reflex-base" },
+    { name = "reflex-components-lucide", editable = "packages/reflex-components-lucide" },
+]
 
 [[package]]
 name = "reflex-docgen"
