@@ -247,7 +247,7 @@ class TestRedisTokenManager:
             return
 
         @asynccontextmanager
-        async def pubsub():  # noqa: RUF029
+        async def pubsub():
             pubsub_mock = AsyncMock()
             pubsub_mock.listen = listen
             yield pubsub_mock

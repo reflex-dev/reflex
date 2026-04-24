@@ -276,8 +276,7 @@ def test_nested_function():
 
     def func_with_nested(self: DependencyTestState):
         async def inner():  # noqa: RUF029
-            if self.board:
-                pass
+            _ = self.board
 
         return self.count
 

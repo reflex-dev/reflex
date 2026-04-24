@@ -28,14 +28,12 @@ def format_fields(
         rx.scroll_area(
             rx.table.root(
                 rx.table.header(
-                    rx.table.row(
-                        *[
-                            rx.table.column_header_cell(
-                                header, class_name=table_header_class_name
-                            )
-                            for header in headers
-                        ]
-                    )
+                    rx.table.row(*[
+                        rx.table.column_header_cell(
+                            header, class_name=table_header_class_name
+                        )
+                        for header in headers
+                    ])
                 ),
                 rx.table.body(
                     *[
