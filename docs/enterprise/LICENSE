@@ -1,0 +1,77 @@
+**END-USER LICENSE AGREEMENT (EULA) FOR REFLEX-ENTERPRISE**  
+**Version 1.0**  
+**Issued by Pynecone Inc.**  
+
+This End-User License Agreement ("Agreement") is a legal agreement between you (either an individual or a single entity, referred to as "User" or "you") and Pynecone Inc. ("Pynecone", "we", "us", or "our") for the use of the reflex-enterprise software package ("Software"). By installing, copying, or otherwise using the Software, you agree to be bound by the terms of this Agreement. If you do not agree to the terms of this Agreement, do not install, copy, or use the Software.
+
+---
+
+### 1. **GRANT OF LICENSE**
+Pynecone Inc. grants you a limited, non-exclusive, non-transferable, revocable license to use the reflex-enterprise software package under the following conditions:  
+
+1.1 **Permitted Use**:  
+You are permitted to use the Software solely for the purpose of developing, creating, and distributing derivative applications ("Derivative Applications") using the Reflex framework.  
+
+1.2 **Auth Token Requirement**:  
+To use the Software, you must have a valid authentication token ("Auth Token") issued by the Reflex Cloud service. Unauthorized use of the Software without a valid Auth Token is strictly prohibited.  
+
+1.3 **Subscription Tiers**:  
+If you are exporting a Derivative Application and are not on a paid subscription tier (Pro, Team, or Enterprise), your use of the Software is contingent upon displaying the "Built with Reflex" badge ("Badge") in its unmodified form on the Derivative Application. The Badge must be prominently displayed and easily visible to end-users.  
+
+1.4 **Restrictions**:  
+You may not:  
+- Reverse engineer, decompile, disassemble, or otherwise attempt to derive the source code of the Software.  
+- Redistribute, sublicense, lease, rent, or sell the Software to any third party.  
+- Remove or alter any proprietary notices, labels, or marks on the Software.  
+- Use the Software for any unlawful purpose or in violation of any applicable laws or regulations.  
+
+---
+
+### 2. **OWNERSHIP**
+The Software is licensed, not sold. Pynecone Inc. retains all right, title, and interest in and to the Software, including all intellectual property rights. This Agreement does not grant you any rights to patents, copyrights, trade secrets, trademarks, or any other rights in respect to the Software.
+
+---
+
+### 3. **SUBSCRIPTION TIERS**
+The Software may be used under different subscription tiers (e.g., Free, Pro, Team, Enterprise). Your rights and obligations under this Agreement may vary depending on your subscription tier. Pynecone Inc. reserves the right to modify subscription tiers, pricing, and features at any time.
+
+---
+
+### 4. **TERMINATION**
+This Agreement is effective until terminated. Pynecone Inc. may terminate this Agreement immediately if you fail to comply with any of its terms. Upon termination, you must cease all use of the Software and destroy all copies of the Software in your possession.
+
+---
+
+### 5. **DISCLAIMER OF WARRANTIES**
+THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. PYNEECONE INC. DOES NOT WARRANT THAT THE SOFTWARE WILL MEET YOUR REQUIREMENTS OR THAT ITS OPERATION WILL BE UNINTERRUPTED OR ERROR-FREE.
+
+---
+
+### 6. **LIMITATION OF LIABILITY**
+IN NO EVENT SHALL PYNECONE INC. BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO LOSS OF PROFITS, DATA, OR USE, ARISING OUT OF OR IN CONNECTION WITH THIS AGREEMENT OR THE USE OF THE SOFTWARE, EVEN IF PYNECONE INC. HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.  
+
+PYNECONE INC.'S TOTAL LIABILITY TO YOU FOR ANY CLAIMS ARISING OUT OF OR RELATED TO THIS AGREEMENT SHALL NOT EXCEED THE AMOUNT PAID BY YOU FOR THE SOFTWARE IN THE 12 MONTHS PRECEDING THE CLAIM.
+
+---
+
+### 7. **GOVERNING LAW**
+This Agreement shall be governed by and construed in accordance with the laws of the State of Delaware, United States, without regard to its conflict of law principles. Any disputes arising under this Agreement shall be resolved exclusively in the courts located in Delaware.
+
+---
+
+### 8. **MISCELLANEOUS**
+8.1 **Entire Agreement**: This Agreement constitutes the entire agreement between you and Pynecone Inc. regarding the Software and supersedes all prior or contemporaneous understandings.  
+8.2 **Amendments**: Pynecone Inc. reserves the right to modify this Agreement at any time. Continued use of the Software after such modifications constitutes your acceptance of the revised terms.  
+8.3 **Severability**: If any provision of this Agreement is found to be invalid or unenforceable, the remaining provisions shall remain in full force and effect.  
+8.4 **Waiver**: Failure by Pynecone Inc. to enforce any provision of this Agreement shall not constitute a waiver of future enforcement of that or any other provision.  
+
+---
+
+**BY USING THE SOFTWARE, YOU ACKNOWLEDGE THAT YOU HAVE READ THIS AGREEMENT, UNDERSTAND IT, AND AGREE TO BE BOUND BY ITS TERMS AND CONDITIONS.**  
+
+**Pynecone Inc.**  
+**Effective Date: 2025-02-18**  
+
+--- 
+
+For questions or concerns regarding this Agreement, please contact Pynecone Inc. at [support@reflex.dev].
