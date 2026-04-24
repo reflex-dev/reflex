@@ -2,6 +2,8 @@
 import reflex as rx
 ```
 
+# Introduction
+
 **~5 min** · **Reflex** lets you build and deploy full-stack web apps — frontend, backend, and database — in **pure Python**. No JavaScript, no separate API, no context switching.
 
 ## Goals

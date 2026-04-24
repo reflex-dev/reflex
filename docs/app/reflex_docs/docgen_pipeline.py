@@ -516,12 +516,18 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
         """Render a ``md alert`` directive."""
         status = block.args[0] if block.args else "info"
         colors: dict[str, ColorType] = {
-            "info": "accent",
+            "info": "slate",
             "success": "grass",
             "warning": "amber",
             "error": "red",
         }
-        color: ColorType = colors.get(status, "blue")
+        color: ColorType = colors.get(status, "slate")
+        background_shade = 2 if status == "info" else 3
+        # For "info" alerts, use the neutral custom slate scale (--c-slate-*)
+        # so the card matches the codeblock styling instead of the blue-tinted
+        # default --slate-* scale that rx.color() produces.
+        bg_override = "var(--c-slate-2)" if status == "info" else None
+        border_override = "var(--c-slate-4)" if status == "info" else None
 
         # First child may be a heading used as the alert title.
         children = block.children
@@ -560,7 +566,14 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
                 padding="0px",
                 margin_top="16px",
             )
-            return collapsible_box(trigger, body, color)
+            return collapsible_box(
+                trigger,
+                body,
+                color,
+                background_shade=background_shade,
+                background_override=bg_override,
+                border_override=border_override,
+            )
 
         # Title only, or text-only (no heading) — simple non-collapsible box.
         if title_spans:
@@ -588,8 +601,8 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
                 spacing="1",
                 padding=["16px", "24px"],
             ),
-            border=f"1px solid {rx.color(color, 4)}",
-            background_color=f"{rx.color(color, 3)}",
+            border=f"1px solid {border_override or rx.color(color, 4)}",
+            background_color=f"{bg_override or rx.color(color, background_shade)}",
             border_radius="12px",
             margin_bottom="16px",
             margin_top="16px",

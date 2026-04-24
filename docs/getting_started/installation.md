@@ -1,3 +1,5 @@
+# Installation
+
 ~3 minutes · Requires Python 3.10+.
 
 ## Virtual Environment
@@ -20,7 +22,7 @@ After installation, restart your terminal or run `source ~/.bashrc` (or `source 
 
 Alternatively, install via [Homebrew, PyPI, or other methods](https://docs.astral.sh/uv/getting-started/installation/).
 
-```md alert info
+```md alert warning
 # macOS (Apple Silicon) users: install Rosetta 2
 
 Run `/usr/sbin/softwareupdate --install-rosetta --agree-to-license`. See [Apple's instructions](https://support.apple.com/en-us/HT211861) for details.

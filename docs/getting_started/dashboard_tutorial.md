@@ -141,6 +141,35 @@ def graph5():
     )
 ```
 
+```python eval
+rx.vstack(
+    add_customer_button5(),
+    rx.table.root(
+        rx.table.header(
+            rx.table.row(
+                rx.table.column_header_cell("Name"),
+                rx.table.column_header_cell("Email"),
+                rx.table.column_header_cell("Gender"),
+            ),
+        ),
+        rx.table.body(
+            rx.foreach(State5.users, show_user5),
+        ),
+        variant="surface",
+        size="3",
+        width="100%",
+    ),
+    graph5(),
+    align="center",
+    width="100%",
+    on_mouse_enter=State5.transform_data,
+    spacing="4",
+    border=f"1px solid {rx.color('slate', 5)}",
+    border_radius="12px",
+    padding="2em",
+)
+```
+
 ## Setup for the tutorial
 
 1. [Install Reflex](/docs/getting_started/installation) if you haven't already.
