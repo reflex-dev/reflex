@@ -2236,9 +2236,6 @@ class CustomComponent(Component):
         return self.get_component()._get_all_app_wrap_components(ignore_ids=ignore_ids)
 
 
-CUSTOM_COMPONENTS: dict[str, CustomComponent] = {}
-
-
 def _register_custom_component(
     component_fn: Callable[..., Component],
 ):
@@ -2253,6 +2250,8 @@ def _register_custom_component(
     Raises:
         TypeError: If the tag name cannot be determined.
     """
+    from reflex_base.registry import RegistrationContext
+
     dummy_props = {
         prop: (
             Var(
@@ -2273,7 +2272,9 @@ def _register_custom_component(
     if dummy_component.tag is None:
         msg = f"Could not determine the tag name for {component_fn!r}"
         raise TypeError(msg)
-    CUSTOM_COMPONENTS[dummy_component.tag] = dummy_component
+    RegistrationContext.ensure_context().custom_components[dummy_component.tag] = (
+        dummy_component
+    )
     return dummy_component
 
 

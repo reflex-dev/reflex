@@ -6,13 +6,12 @@ from unittest import mock
 
 import pytest
 import reflex_base.config
-from reflex_base.components.component import CUSTOM_COMPONENTS
 from reflex_base.constants import IS_WINDOWS
+from reflex_base.registry import RegistrationContext
 
 import reflex.reflex as reflex_cli
 import reflex.testing as reflex_testing
 import reflex.utils.prerequisites
-from reflex.experimental.memo import EXPERIMENTAL_MEMOS
 from reflex.testing import AppHarness
 
 
@@ -69,10 +68,10 @@ def harness_mocks(monkeypatch):
         )
     )
 
-    monkeypatch.setattr(reflex_testing, "get_config", lambda reload=False: fake_config)
-    monkeypatch.setattr(
-        reflex_base.config, "get_config", lambda reload=False: fake_config
-    )
+    monkeypatch.setattr(reflex_testing, "get_config", lambda: fake_config)
+    monkeypatch.setattr(reflex_testing, "reload_config", lambda: fake_config)
+    monkeypatch.setattr(reflex_base.config, "get_config", lambda: fake_config)
+    monkeypatch.setattr(reflex_base.config, "reload_config", lambda: fake_config)
     monkeypatch.setattr(
         reflex.utils.prerequisites,
         "get_and_validate_app",
@@ -85,21 +84,28 @@ def harness_mocks(monkeypatch):
     )
 
 
-def test_app_harness_initialize_clears_memo_registries(
-    tmp_path, preserve_memo_registries, harness_mocks, monkeypatch
+def test_app_harness_initialize_isolates_memo_registries(
+    tmp_path, harness_mocks, monkeypatch
 ):
-    """Ensure app initialization clears leaked memo registries.
+    """Each AppHarness initialization yields a fresh registration context.
+
+    Entries registered in a prior context do not leak into the new harness's
+    registrations.
 
     Args:
         tmp_path: pytest tmp_path fixture
-        preserve_memo_registries: restores global memo registries after the test
         harness_mocks: shared AppHarness mock setup
         monkeypatch: pytest monkeypatch fixture
     """
     monkeypatch.setattr(reflex_cli, "_init", lambda **kwargs: None)
 
-    CUSTOM_COMPONENTS["FooComponent"] = mock.sentinel.component
-    EXPERIMENTAL_MEMOS["format_value"] = mock.sentinel.memo
+    outer = RegistrationContext.ensure_context()
+    # Pin a clean base so pollution on the outer context does not seed new harnesses.
+    base = RegistrationContext()
+    monkeypatch.setattr(AppHarness, "_base_registration_context", base)
+
+    outer.custom_components["FooComponent"] = mock.sentinel.component
+    outer.memo_definitions["format_value"] = mock.sentinel.memo
 
     harness = AppHarness.create(
         root=tmp_path / "memo_app",
@@ -107,21 +113,31 @@ def test_app_harness_initialize_clears_memo_registries(
         app_name="memo_app",
     )
     harness.app_module_path.parent.mkdir(parents=True, exist_ok=True)
-    harness._initialize_app()
+    try:
+        harness._initialize_app()
 
-    assert "FooComponent" not in CUSTOM_COMPONENTS
-    assert "format_value" not in EXPERIMENTAL_MEMOS
-    harness_mocks.get_and_validate_app.assert_called_once_with(reload=True)
+        new_ctx = RegistrationContext.get()
+        assert new_ctx is not outer
+        assert "FooComponent" not in new_ctx.custom_components
+        assert "format_value" not in new_ctx.memo_definitions
+        harness_mocks.get_and_validate_app.assert_called_once_with(reload=True)
+    finally:
+        # `_initialize_app` attaches a new context without a matching __exit__.
+        # Restore the outer context so other tests do not observe the leaked one.
+        if harness._registry_token is not None:
+            RegistrationContext.reset(harness._registry_token)
+        # Clean up the sentinels we added to `outer`.
+        outer.custom_components.pop("FooComponent", None)
+        outer.memo_definitions.pop("format_value", None)
 
 
 def test_app_harness_initialize_reloads_existing_imported_app(
-    tmp_path, preserve_memo_registries, harness_mocks, monkeypatch
+    tmp_path, harness_mocks, monkeypatch
 ):
     """Ensure pre-existing imported apps are reloaded after memo registry reset.
 
     Args:
         tmp_path: pytest tmp_path fixture
-        preserve_memo_registries: restores global memo registries after the test
         harness_mocks: shared AppHarness mock setup
         monkeypatch: pytest monkeypatch fixture
     """

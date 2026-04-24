@@ -88,10 +88,11 @@ def _compile_app(app_root: Component) -> str:
     Returns:
         The compiled app.
     """
-    from reflex_base.components.dynamic import bundled_libraries
+    from reflex_base.registry import RegistrationContext
 
     window_libraries = [
-        (_normalize_library_name(name), name) for name in bundled_libraries
+        (_normalize_library_name(name), name)
+        for name in RegistrationContext.ensure_context().bundled_libraries
     ]
 
     window_libraries_deduped = list(dict.fromkeys(window_libraries))

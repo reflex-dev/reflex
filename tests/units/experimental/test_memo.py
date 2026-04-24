@@ -6,7 +6,8 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
-from reflex_base.components.component import CUSTOM_COMPONENTS, Component
+from reflex_base.components.component import Component
+from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars import VarData
@@ -17,7 +18,6 @@ import reflex as rx
 from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
 from reflex.experimental.memo import (
-    EXPERIMENTAL_MEMOS,
     ExperimentalMemoComponent,
     ExperimentalMemoComponentDefinition,
     ExperimentalMemoFunctionDefinition,
@@ -25,8 +25,30 @@ from reflex.experimental.memo import (
 
 
 @pytest.fixture(autouse=True)
-def _restore_memo_registries(preserve_memo_registries):
-    """Autouse wrapper around the shared preserve_memo_registries fixture."""
+def _fresh_registration_context(clean_registration_context: RegistrationContext):
+    """Isolate each test behind a fresh RegistrationContext.
+
+    Args:
+        clean_registration_context: A fresh registration context fixture.
+    """
+
+
+def _memos() -> dict:
+    """Get the current context's memo definitions.
+
+    Returns:
+        The memo_definitions dict on the current RegistrationContext.
+    """
+    return RegistrationContext.get().memo_definitions
+
+
+def _custom_components() -> dict:
+    """Get the current context's custom components.
+
+    Returns:
+        The custom_components dict on the current RegistrationContext.
+    """
+    return RegistrationContext.get().custom_components
 
 
 def test_var_returning_memo():
@@ -49,7 +71,7 @@ def test_var_returning_memo():
     )
     assert isinstance(format_price._as_var(), FunctionVar)
 
-    definition = EXPERIMENTAL_MEMOS["format_price"]
+    definition = _memos()["format_price"]
     assert isinstance(definition, ExperimentalMemoFunctionDefinition)
     assert (
         str(definition.function) == '((amount, currency) => ((currency+": $")+amount))'
@@ -97,13 +119,11 @@ def test_component_returning_memo_with_children_and_rest():
     assert 'foo:"extra"' in rendered["props"]
     assert 'className:"extra"' in rendered["props"]
 
-    definition = EXPERIMENTAL_MEMOS["MyCard"]
+    definition = _memos()["MyCard"]
     assert isinstance(definition, ExperimentalMemoComponentDefinition)
     assert any(str(prop) == "rest" for prop in definition.component.special_props)
 
-    _, code, _ = compiler.compile_memo_components(
-        (), tuple(EXPERIMENTAL_MEMOS.values())
-    )
+    _, code, _ = compiler.compile_memo_components((), tuple(_memos().values()))
     assert "export const MyCard = memo(({children, title:title" in code
     assert "...rest" in code
     assert "jsx(RadixThemesBox,{...rest}" in code
@@ -120,15 +140,13 @@ def test_component_returning_memo_accepts_component_var_result():
     ) -> rx.Var[rx.Component]:
         return rx.cond(show, first, second)
 
-    definition = EXPERIMENTAL_MEMOS["ConditionalSlot"]
+    definition = _memos()["ConditionalSlot"]
     assert isinstance(definition, ExperimentalMemoComponentDefinition)
     assert definition.component.render() == {
         "contents": "(showRxMemo ? firstRxMemo : secondRxMemo)"
     }
 
-    _, code, _ = compiler.compile_memo_components(
-        (), tuple(EXPERIMENTAL_MEMOS.values())
-    )
+    _, code, _ = compiler.compile_memo_components((), tuple(_memos().values()))
     assert "export const ConditionalSlot = memo(({show:showRxMemo" in code
     assert "(showRxMemo ? firstRxMemo : secondRxMemo)" in code
 
@@ -151,9 +169,7 @@ def test_var_returning_memo_with_rest_props():
     assert '["color"] : "red"' in str(merged)
     assert '["className"] : "primary"' in str(merged)
 
-    _, code, _ = compiler.compile_memo_components(
-        (), tuple(EXPERIMENTAL_MEMOS.values())
-    )
+    _, code, _ = compiler.compile_memo_components((), tuple(_memos().values()))
     assert (
         "export const merge_styles = (({base, ...overrides}) => ({...base, ...overrides}));"
         in code
@@ -185,9 +201,7 @@ def test_var_returning_memo_with_children_and_rest():
     assert '["children"]' in str(rendered)
     assert '["className"] : "slot"' in str(rendered)
 
-    _, code, _ = compiler.compile_memo_components(
-        (), tuple(EXPERIMENTAL_MEMOS.values())
-    )
+    _, code, _ = compiler.compile_memo_components((), tuple(_memos().values()))
     assert "export const label_slot = (({children, label, ...rest}) => label);" in code
 
 
@@ -234,7 +248,7 @@ def test_memo_rejects_component_and_function_name_collision():
     def foo_bar() -> rx.Component:
         return rx.box()
 
-    assert "FooBar" in EXPERIMENTAL_MEMOS
+    assert "FooBar" in _memos()
 
     with pytest.raises(ValueError, match=r"name collision.*FooBar"):
 
@@ -357,8 +371,8 @@ def test_compile_memo_components_includes_experimental_functions_and_components(
         return rx.box(rx.heading(title), children)
 
     _, code, _ = compiler.compile_memo_components(
-        dict.fromkeys(CUSTOM_COMPONENTS.values()),
-        tuple(EXPERIMENTAL_MEMOS.values()),
+        dict.fromkeys(_custom_components().values()),
+        tuple(_memos().values()),
     )
 
     assert "export const OldWrapper = memo(" in code
@@ -381,7 +395,7 @@ def test_experimental_component_memo_get_imports():
 
     assert "inner" not in experimental_component._get_all_imports()
 
-    definition = EXPERIMENTAL_MEMOS["Wrapper"]
+    definition = _memos()["Wrapper"]
     assert isinstance(definition, ExperimentalMemoComponentDefinition)
     _, imports = compiler_utils.compile_experimental_component_memo(definition)
     assert "inner" in imports
@@ -396,7 +410,7 @@ def test_compile_experimental_component_memo_does_not_mutate_definition(
     def wrapper() -> rx.Component:
         return rx.box("hi")
 
-    definition = EXPERIMENTAL_MEMOS["Wrapper"]
+    definition = _memos()["Wrapper"]
     assert isinstance(definition, ExperimentalMemoComponentDefinition)
     assert definition.component.style == Style()
 
@@ -428,8 +442,6 @@ def test_compile_memo_components_includes_experimental_custom_code():
     def foo_component(label: rx.Var[str]) -> rx.Component:
         return FooComponent.create(label, rx.Var("foo"))
 
-    _, code, _ = compiler.compile_memo_components(
-        (), tuple(EXPERIMENTAL_MEMOS.values())
-    )
+    _, code, _ = compiler.compile_memo_components((), tuple(_memos().values()))
 
     assert "const foo = 'bar'" in code

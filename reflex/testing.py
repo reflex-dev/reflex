@@ -28,8 +28,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeVar
 
 import uvicorn
-from reflex_base.components.component import CUSTOM_COMPONENTS, CustomComponent
-from reflex_base.config import get_config
+from reflex_base.components.component import CustomComponent
+from reflex_base.config import get_config, reload_config
 from reflex_base.environment import environment
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.types import ASGIApp
@@ -41,7 +41,6 @@ import reflex.utils.build
 import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
-from reflex.experimental.memo import EXPERIMENTAL_MEMOS
 from reflex.istate.shared import SharedState as SharedState  # To register it.
 from reflex.state import reload_state_module
 from reflex.utils import console, js_runtimes
@@ -240,10 +239,8 @@ class AppHarness:
     def _initialize_app(self):
         # disable telemetry reporting for tests
         os.environ["REFLEX_TELEMETRY_ENABLED"] = "false"
-        # Reset global memo registries so previous AppHarness apps do not
-        # leak compiled component definitions into the next test app.
-        CUSTOM_COMPONENTS.clear()
-        EXPERIMENTAL_MEMOS.clear()
+        # Memo/custom-component registries live on the new RegistrationContext
+        # below, so previous AppHarness apps cannot leak definitions here.
         CustomComponent.create().get_component.cache_clear()
         self.app_path.mkdir(parents=True, exist_ok=True)
         if self.app_source is not None:
@@ -278,7 +275,7 @@ class AppHarness:
             new_registration_context = deepcopy(AppHarness._base_registration_context)
             self._registry_token = RegistrationContext.set(new_registration_context)
             # ensure config and app are reloaded when testing different app
-            config = get_config(reload=True)
+            config = reload_config()
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
             os.environ[reflex.constants.APP_HARNESS_FLAG] = "true"

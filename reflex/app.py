@@ -26,12 +26,11 @@ from typing import TYPE_CHECKING, Any, ParamSpec, overload
 
 from reflex_base import constants
 from reflex_base.components.component import (
-    CUSTOM_COMPONENTS,
     Component,
     ComponentStyle,
     evaluate_style_namespaces,
 )
-from reflex_base.config import get_config
+from reflex_base.config import get_config, reload_config
 from reflex_base.context.base import BaseContext
 from reflex_base.environment import ExecutorType, environment
 from reflex_base.event import (
@@ -82,10 +81,8 @@ from reflex.compiler.compiler import (
     compile_theme,
     readable_name_from_component,
 )
-from reflex.experimental.memo import EXPERIMENTAL_MEMOS
 from reflex.istate.manager import StateManager, StateModificationContext
 from reflex.istate.manager.token import BaseStateToken
-from reflex.page import DECORATED_PAGES
 from reflex.route import (
     get_route_args,
     replace_brackets_with_keywords,
@@ -455,7 +452,7 @@ class App(MiddlewareMixin, LifespanMixin):
             msg = "rx.BaseState cannot be subclassed directly. Use rx.State instead"
             raise ValueError(msg)
 
-        get_config(reload=True)
+        reload_config()
 
         if "breakpoints" in self.style:
             set_breakpoints(self.style.pop("breakpoints"))
@@ -1157,8 +1154,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def _apply_decorated_pages(self):
         """Add @rx.page decorated pages to the app."""
-        app_name = get_config().app_name
-        for render, kwargs in DECORATED_PAGES[app_name]:
+        for render, kwargs in RegistrationContext.ensure_context().decorated_pages:
             self.add_page(render, **kwargs)
 
     def _validate_var_dependencies(self, state: type[BaseState] | None = None) -> None:
@@ -1371,13 +1367,14 @@ class App(MiddlewareMixin, LifespanMixin):
                 app_wrappers[key] = component
 
         # Compile custom components.
+        ctx = RegistrationContext.ensure_context()
         (
             memo_components_output,
             memo_components_result,
             memo_components_imports,
         ) = compiler.compile_memo_components(
-            dict.fromkeys(CUSTOM_COMPONENTS.values()),
-            tuple(EXPERIMENTAL_MEMOS.values()),
+            dict.fromkeys(ctx.custom_components.values()),
+            tuple(ctx.memo_definitions.values()),
         )
         compile_results.append((memo_components_output, memo_components_result))
         all_imports.update(memo_components_imports)
