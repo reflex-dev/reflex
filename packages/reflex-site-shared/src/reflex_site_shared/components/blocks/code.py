@@ -10,7 +10,11 @@ COLLAPSED_MAX_HEIGHT = "400px"
 
 @rx.memo
 def _plain_code_block(code: str, language: str):
-    """Shared plain code block implementation."""
+    """Shared plain code block implementation.
+
+    Returns:
+        The component.
+    """
     return rx.box(
         rx._x.code_block(
             code,
