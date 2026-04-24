@@ -349,6 +349,18 @@ def _copy_page_menu_item(
     )
 
 
+def _open_in_llm_action(base_url: str):
+    return run_script(
+        f"""
+((function() {{
+  const pageUrl = window.location.origin + window.location.pathname.replace(/\\/$/, '') + '.md';
+  const prompt = 'Read from ' + pageUrl + ' so I can ask questions about its contents';
+  window.open({base_url!r} + encodeURIComponent(prompt), '_blank', 'noopener,noreferrer');
+}})())
+        """
+    )
+
+
 def _copy_page_button(doc_content: str) -> rx.Component:
     copy_action = run_script(
         """
@@ -457,6 +469,23 @@ def _copy_page_button(doc_content: str) -> rx.Component:
                                 title="llms-full.txt",
                                 description="View all docs as Markdown for LLMs",
                                 href="/docs/llms-full.txt",
+                            ),
+                            rx.el.div(class_name="h-px bg-slate-4 my-1 mx-2"),
+                            _copy_page_menu_item(
+                                icon=ui.icon("MessageProgrammingIcon", size=16),
+                                title="Open in ChatGPT",
+                                description="Ask ChatGPT about this page",
+                                on_click=_open_in_llm_action(
+                                    "https://chatgpt.com/?hints=search&q="
+                                ),
+                            ),
+                            _copy_page_menu_item(
+                                icon=ui.icon("AiChat02Icon", size=16),
+                                title="Open in Claude",
+                                description="Ask Claude about this page",
+                                on_click=_open_in_llm_action(
+                                    "https://claude.ai/new?q="
+                                ),
                             ),
                             class_name=(
                                 "flex flex-col min-w-[260px] py-1 "
