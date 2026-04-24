@@ -9,6 +9,7 @@ import reflex_components_internal as ui
 from reflex.components.radix.themes.base import LiteralAccentColor
 from reflex.experimental.client_state import ClientStateVar
 from reflex.utils.format import to_snake_case, to_title_case
+from reflex_base.event import run_script
 from reflex_site_shared.backend.status import StatusState
 from reflex_site_shared.components.blocks.code import *
 from reflex_site_shared.components.blocks.demo import *
@@ -300,7 +301,183 @@ def docpage_footer(path: str):
     )
 
 
-def breadcrumb(path: str, nav_sidebar: rx.Component):
+def _copy_page_menu_item(
+    icon: rx.Component,
+    title: str,
+    description: str,
+    on_click=None,
+    href: str | None = None,
+) -> rx.Component:
+    row = rx.el.div(
+        rx.el.div(
+            icon,
+            class_name="flex size-8 items-center justify-center rounded-md border border-slate-5 bg-slate-2 text-slate-11 shrink-0",
+        ),
+        rx.el.div(
+            rx.el.div(
+                rx.el.span(title, class_name="text-sm font-medium text-slate-12"),
+                ui.icon(
+                    "ArrowUpRight01Icon",
+                    size=12,
+                    class_name="!text-slate-9",
+                )
+                if href
+                else rx.fragment(),
+                class_name="flex items-center gap-1",
+            ),
+            rx.el.span(
+                description,
+                class_name="text-xs text-slate-10",
+            ),
+            class_name="flex flex-col items-start gap-0.5",
+        ),
+        class_name="flex items-start gap-3 px-3 py-2 w-full hover:bg-slate-3 transition-colors cursor-pointer",
+    )
+    if href:
+        return rx.el.a(
+            row,
+            href=href,
+            target="_blank",
+            rel="noopener noreferrer",
+            class_name="no-underline",
+        )
+    return rx.el.button(
+        row,
+        type="button",
+        on_click=on_click,
+        class_name="w-full text-left",
+    )
+
+
+def _copy_page_button(doc_content: str) -> rx.Component:
+    copy_action = run_script(
+        """
+((function() {
+  const mdUrl = window.location.pathname.replace(/\\/$/, '') + '.md';
+  const animate = () => {
+    document.querySelectorAll('[data-copy-icon]').forEach((icon) => {
+      if (icon.dataset.animating === '1') return;
+      icon.dataset.animating = '1';
+      const original = icon.innerHTML;
+      const check = '<svg xmlns=\\"http://www.w3.org/2000/svg\\" width=\\"16\\" height=\\"16\\" viewBox=\\"0 0 24 24\\" fill=\\"none\\" stroke=\\"currentColor\\" stroke-width=\\"2\\" stroke-linecap=\\"round\\" stroke-linejoin=\\"round\\"><polyline points=\\"20 6 9 17 4 12\\"></polyline></svg>';
+      icon.style.transition = 'transform 140ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 140ms ease-out, color 140ms ease-out';
+      icon.style.transform = 'scale(0.2)';
+      icon.style.opacity = '0';
+      setTimeout(() => {
+        icon.innerHTML = check;
+        icon.style.color = 'var(--c-grass-11)';
+        icon.style.transform = 'scale(1)';
+        icon.style.opacity = '1';
+      }, 140);
+      setTimeout(() => {
+        icon.style.transform = 'scale(0.2)';
+        icon.style.opacity = '0';
+      }, 1500);
+      setTimeout(() => {
+        icon.innerHTML = original;
+        icon.style.color = '';
+        icon.style.transform = 'scale(1)';
+        icon.style.opacity = '1';
+        icon.dataset.animating = '0';
+      }, 1640);
+    });
+  };
+  animate();
+  fetch(mdUrl)
+    .then((r) => (r.ok ? r.text() : Promise.reject(r.status)))
+    .then((text) => {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(text).catch(() => {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand('copy'); } catch (e) {}
+          document.body.removeChild(ta);
+        });
+      }
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+    })
+    .catch((err) => console.error('Copy page failed:', err));
+})())
+        """
+    )
+    trigger = rx.el.div(
+        rx.el.button(
+            rx.el.span(
+                ui.icon("Copy01Icon", size=16),
+                custom_attrs={"data-copy-icon": "main"},
+                class_name="inline-flex items-center justify-center transition-transform",
+            ),
+            type="button",
+            aria_label="Copy page as Markdown",
+            on_click=copy_action,
+            class_name=(
+                "flex items-center justify-center px-2.5 h-8 "
+                "border border-slate-5 border-r-0 rounded-l-md text-slate-11 "
+                "hover:text-slate-12 hover:bg-slate-3 active:scale-[0.96] "
+                "transition-all cursor-pointer"
+            ),
+        ),
+        ui.popover.root(
+            ui.popover.trigger(
+                render_=rx.el.button(
+                    ui.icon("ArrowDown01Icon", size=14),
+                    type="button",
+                    aria_label="Copy page options",
+                    class_name=(
+                        "flex items-center justify-center px-1.5 h-8 "
+                        "border border-slate-5 rounded-r-md text-slate-11 "
+                        "hover:text-slate-12 hover:bg-slate-3 active:scale-[0.96] "
+                        "transition-all cursor-pointer"
+                    ),
+                ),
+            ),
+            ui.popover.portal(
+                ui.popover.positioner(
+                    ui.popover.popup(
+                        render_=rx.el.div(
+                            _copy_page_menu_item(
+                                icon=ui.icon("Copy01Icon", size=16),
+                                title="Copy page",
+                                description="Copy page as Markdown for LLMs",
+                                on_click=copy_action,
+                            ),
+                            _copy_page_menu_item(
+                                icon=ui.icon("File01Icon", size=16),
+                                title="llms-full.txt",
+                                description="View all docs as Markdown for LLMs",
+                                href="/docs/llms-full.txt",
+                            ),
+                            class_name=(
+                                "flex flex-col min-w-[260px] py-1 "
+                                "bg-slate-1 border border-slate-5 rounded-lg shadow-lg "
+                                "data-[state=open]:animate-in data-[state=open]:fade-in-0 "
+                                "data-[state=open]:zoom-in-95 data-[state=open]:slide-in-from-top-2"
+                            ),
+                        ),
+                    ),
+                    side="bottom",
+                    align="end",
+                    side_offset=6,
+                ),
+            ),
+        ),
+        class_name="hidden lg:flex flex-row items-center shrink-0",
+    )
+    return trigger
+
+
+def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = None):
     from reflex_docs.components.docpage.navbar.buttons.sidebar import (
         docs_sidebar_drawer,
     )
@@ -360,8 +537,13 @@ def breadcrumb(path: str, nav_sidebar: rx.Component):
             class_name="flex flex-row items-center gap-[5px] lg:gap-4 overflow-hidden",
         ),
         rx.box(
-            ui.icon("ArrowDown01Icon", size=14, class_name="!text-slate-9"),
-            class_name="p-[0.563rem] lg:hidden flex",
+            _copy_page_button(doc_content) if doc_content else rx.fragment(),
+            ui.icon(
+                "ArrowDown01Icon",
+                size=14,
+                class_name="!text-slate-9 lg:hidden flex",
+            ),
+            class_name="flex flex-row items-center gap-2 lg:p-0 p-[0.563rem]",
         ),
         class_name=ui.cn(
             "relative z-10 flex flex-row justify-between items-center gap-4 lg:gap-0 border-slate-4 bg-slate-1 mt-[139px] lg:p-0 border-b lg:border-none w-full max-lg:py-2",
@@ -513,7 +695,11 @@ def docpage(
                     ),
                     rx.box(
                         rx.box(
-                            breadcrumb(path=path, nav_sidebar=nav_sidebar),
+                            breadcrumb(
+                                path=path,
+                                nav_sidebar=nav_sidebar,
+                                doc_content=doc_content,
+                            ),
                             class_name=(
                                 "px-0 pt-0 mb-[2rem]"
                                 + rx.cond(
