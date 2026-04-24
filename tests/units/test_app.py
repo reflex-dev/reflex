@@ -2266,6 +2266,51 @@ def test_get_frontend_packages_maps_subpath_imports_to_installable_package_names
     assert "@scope/pkg/subpath" not in install_set
 
 
+def test_get_frontend_packages_keeps_https_imports_unchanged(
+    mocker: MockerFixture,
+):
+    """URL-based imports should be passed through unchanged."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex.app.get_config", return_value=conf)
+    install_frontend_packages = mocker.patch(
+        "reflex.app.js_runtimes.install_frontend_packages"
+    )
+
+    app = App(theme=None)
+    app._get_frontend_packages(
+        {"https://cdn.skypack.dev/some-lib": {ImportVar(tag="SomeTag")}}
+    )
+
+    install_set, _ = install_frontend_packages.call_args.args
+    assert "https://cdn.skypack.dev/some-lib" in install_set
+    assert "https:" not in install_set
+
+
+def test_get_frontend_packages_maps_versioned_subpath_imports_to_pinned_base(
+    mocker: MockerFixture,
+):
+    """Versioned subpath imports should install the base package with its version."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex.app.get_config", return_value=conf)
+    install_frontend_packages = mocker.patch(
+        "reflex.app.js_runtimes.install_frontend_packages"
+    )
+
+    app = App(theme=None)
+    app._get_frontend_packages(
+        {
+            "react-map-gl@1.0.0/maplibre": {ImportVar(tag="Map")},
+            "@scope/pkg@2.0.0/subpath": {ImportVar(tag="Widget")},
+        }
+    )
+
+    install_set, _ = install_frontend_packages.call_args.args
+    assert "react-map-gl@1.0.0" in install_set
+    assert "@scope/pkg@2.0.0" in install_set
+    assert "react-map-gl@1.0.0/maplibre" not in install_set
+    assert "@scope/pkg@2.0.0/subpath" not in install_set
+
+
 def test_app_state_determination():
     """Test that the stateless status of an app is determined correctly."""
     a1 = App()

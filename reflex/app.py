@@ -1046,6 +1046,8 @@ class App(MiddlewareMixin, LifespanMixin):
             import_name.startswith(prefix) for prefix in ("/", "$/", ".")
         ):
             return None
+        if import_name.startswith(("https://", "http://")):
+            return import_name
 
         library_name = format.format_library_name(import_name)
         if library_name.startswith("@"):
@@ -1058,15 +1060,18 @@ class App(MiddlewareMixin, LifespanMixin):
         else:
             package_name = library_name.split("/", maxsplit=1)[0]
 
+        if import_name.startswith(f"{library_name}@"):
+            version_and_maybe_subpath = import_name[len(library_name) + 1 :]
+            version, slash, _ = version_and_maybe_subpath.partition("/")
+            if slash and ":" not in version:
+                return f"{package_name}@{version}"
+            if package_name == library_name:
+                return import_name
+            return f"{package_name}@{version_and_maybe_subpath}"
+
         if package_name == library_name:
             return import_name
-
-        version = (
-            import_name[len(library_name) + 1 :]
-            if import_name.startswith(f"{library_name}@")
-            else ""
-        )
-        return f"{package_name}@{version}" if version else package_name
+        return package_name
 
     def _app_root(self, app_wrappers: dict[tuple[int, str], Component]) -> Component:
         for component in tuple(app_wrappers.values()):
