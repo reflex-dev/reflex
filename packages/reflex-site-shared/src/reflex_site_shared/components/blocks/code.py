@@ -32,6 +32,10 @@ def code_block(code: str, language: str):
     Returns:
         The component.
     """
+    # During import-graph introspection ``code`` may be a Var, not a Python str.
+    # Skip the line-count check in that case and render the plain block.
+    if not isinstance(code, str):
+        return _plain_code_block(code=code, language=language)
     if code.count("\n") + 1 > EXPAND_THRESHOLD_LINES:
         return rx.el.div(
             _plain_code_block(code=code, language=language),
