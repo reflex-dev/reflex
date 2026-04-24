@@ -1,13 +1,12 @@
 """Test case for displaying the connection banner when the websocket drops."""
 
-import asyncio
 import contextlib
 import pickle
 from collections.abc import Generator, Iterator
 
 import pytest
 from playwright.sync_api import Page, expect
-from redis.asyncio import Redis
+from redis import Redis
 from reflex_base import constants
 
 from reflex.environment import environment
@@ -166,38 +165,25 @@ def _assert_token(connection_banner: AppHarness, page: Page) -> str:
 def redis(
     connection_banner: AppHarness,
 ) -> Generator[Redis | None]:
-    """Get the Redis instance from the StateManagerRedis used in the connection_banner test.
+    """Get a synchronous Redis client when the app is using the Redis state manager.
 
     Args:
         connection_banner: AppHarness instance.
 
     Yields:
-        A Redis instance or None if the StateManager is not Redis.
+        A sync Redis client, or None if the StateManager is not Redis.
     """
-    from reflex.utils.prerequisites import get_redis
+    from reflex.utils.prerequisites import get_redis_sync
 
     redis = None
     if (app := connection_banner.app_instance) is not None and isinstance(
         app.state_manager, StateManagerRedis
     ):
-        redis = get_redis()
+        redis = get_redis_sync()
     yield redis
     if redis is not None:
-        with contextlib.suppress(Exception, asyncio.CancelledError):
-            asyncio.run(redis.aclose())
-
-
-def _redis_get(redis: Redis, key: str) -> bytes | None:
-    """Synchronously read a key from an async Redis client.
-
-    Args:
-        redis: The async Redis client.
-        key: The key to read.
-
-    Returns:
-        The raw byte value stored at ``key``, or None if unset.
-    """
-    return asyncio.run(redis.get(key))
+        with contextlib.suppress(Exception):
+            redis.close()
 
 
 def test_connection_banner(
@@ -224,9 +210,7 @@ def test_connection_banner(
     sid_before = app_token_manager.token_to_sid[token]
     if redis is not None:
         assert isinstance(app_token_manager, RedisTokenManager)
-        assert _redis_get(
-            redis, app_token_manager._get_redis_key(token)
-        ) == pickle.dumps(
+        assert redis.get(app_token_manager._get_redis_key(token)) == pickle.dumps(
             SocketRecord(instance_id=app_token_manager.instance_id, sid=sid_before)
         )
 
@@ -251,7 +235,7 @@ def test_connection_banner(
         )
         if redis is not None:
             assert isinstance(app_token_manager, RedisTokenManager)
-            assert _redis_get(redis, app_token_manager._get_redis_key(token)) is None
+            assert redis.get(app_token_manager._get_redis_key(token)) is None
 
         # Increment the counter while disconnected
         increment_button.click()
@@ -267,9 +251,7 @@ def test_connection_banner(
     assert sid_before != sid_after
     if redis is not None:
         assert isinstance(app_token_manager, RedisTokenManager)
-        assert _redis_get(
-            redis, app_token_manager._get_redis_key(token)
-        ) == pickle.dumps(
+        assert redis.get(app_token_manager._get_redis_key(token)) == pickle.dumps(
             SocketRecord(instance_id=app_token_manager.instance_id, sid=sid_after)
         )
 
