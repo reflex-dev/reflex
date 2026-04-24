@@ -55,6 +55,12 @@ jobs:
       - name: Install playwright
         run: uv run playwright install chromium --only-shell
 
+      - name: Diagnostics
+        run: |
+          uv run python -c "import pytest, playwright, sys; print(f'pytest={pytest.__version__}'); print(f'playwright={playwright.__version__}'); print(f'python={sys.version}')"
+          uv run pytest --version
+          ls -la ~/.cache/ms-playwright/ || true
+
       - name: Run app harness tests
         env:
           REFLEX_REDIS_URL: ${{ matrix.state_manager == 'redis' && 'redis://localhost:6379' || '' }}
