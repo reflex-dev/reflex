@@ -5,7 +5,12 @@ from collections.abc import Callable
 from types import SimpleNamespace
 from typing import Any, cast
 
+import pytest
 from reflex_base.components.component import Component, field
+from reflex_base.components.memoize_helpers import (
+    MemoizationStrategy,
+    get_memoization_strategy,
+)
 from reflex_base.constants.compiler import MemoizationDisposition, MemoizationMode
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 from reflex_base.vars import VarData
@@ -13,6 +18,7 @@ from reflex_base.vars.base import LiteralVar, Var
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
 
+import reflex as rx
 import reflex.compiler.plugins.memoize as memoize_plugin
 from reflex.compiler.plugins import DefaultCollectorPlugin, default_page_plugins
 from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin, _should_memoize
@@ -20,6 +26,7 @@ from reflex.experimental.memo import (
     ExperimentalMemoComponent,
     create_passthrough_component_memo,
 )
+from reflex.state import BaseState
 
 STATE_VAR = LiteralVar.create("value")._replace(
     merge_var_data=VarData(hooks={"useTestState": None}, state="TestState")
@@ -42,6 +49,12 @@ class LeafComponent(Component):
     tag = "LeafComponent"
     library = "leaf-lib"
     _memoization_mode = MemoizationMode(recursive=False)
+
+
+class SpecialFormMemoState(BaseState):
+    items: list[str] = ["a"]
+    flag: bool = True
+    value: str = "a"
 
 
 @dataclasses.dataclass(slots=True)
@@ -132,6 +145,104 @@ def test_memoize_wrapper_deduped_across_repeated_subtrees() -> None:
     ) == 1
 
 
+@pytest.mark.parametrize(
+    ("special_form", "body_marker"),
+    [
+        ("foreach", "Array.prototype.map.call"),
+        ("cond", "flag_rx_state_?"),
+        ("match", "switch (JSON.stringify"),
+    ],
+)
+def test_special_form_memo_wrappers_render_structural_body(
+    special_form: str,
+    body_marker: str,
+) -> None:
+    """Generated memo wrappers for special forms render the structural body.
+
+    The memo body must subscribe to the state the special form references
+    (via ``useContext(StateContexts...)``), and the page must not — otherwise
+    the state-dependent render has leaked into page scope.
+    """
+    from reflex.compiler.compiler import compile_memo_components
+
+    def special_child() -> Component:
+        if special_form == "foreach":
+            return rx.foreach(
+                SpecialFormMemoState.items,
+                lambda item: rx.text(item),
+            )
+        if special_form == "cond":
+            return cast(
+                Component,
+                rx.cond(
+                    SpecialFormMemoState.flag,
+                    rx.text("yes"),
+                    rx.text("no"),
+                ),
+            )
+        return cast(
+            Component,
+            rx.match(
+                SpecialFormMemoState.value,
+                ("a", rx.text("A")),
+                rx.text("default"),
+            ),
+        )
+
+    ctx, page_ctx = _compile_single_page(lambda: rx.box(special_child()))
+
+    memo_files, _memo_imports = compile_memo_components(
+        components=(),
+        experimental_memos=tuple(ctx.auto_memo_components.values()),
+    )
+    memo_code = "\n".join(code for _, code in memo_files)
+
+    state_wiring = "useContext(StateContexts"
+    assert state_wiring in memo_code
+    assert state_wiring not in (page_ctx.output_code or "")
+    assert body_marker in memo_code
+    assert body_marker not in (page_ctx.output_code or "")
+
+
+def test_common_memoization_snapshot_helper_classifies_snapshot_cases() -> None:
+    """The shared memoization strategy covers leaves and structural forms."""
+    from reflex_components_core.el.elements.forms import Form, Input
+
+    foreach_parent = rx.box(
+        rx.foreach(
+            SpecialFormMemoState.items,
+            lambda item: rx.text(item),
+        )
+    )
+    cond_fragment = cast(
+        Component,
+        rx.cond(
+            SpecialFormMemoState.flag,
+            rx.text("yes"),
+            rx.text("no"),
+        ),
+    )
+    match_fragment = cast(
+        Component,
+        rx.match(
+            SpecialFormMemoState.value,
+            ("a", rx.text("A")),
+            rx.text("default"),
+        ),
+    )
+
+    assert get_memoization_strategy(foreach_parent) is MemoizationStrategy.SNAPSHOT
+    assert get_memoization_strategy(cond_fragment) is MemoizationStrategy.SNAPSHOT
+    assert get_memoization_strategy(match_fragment) is MemoizationStrategy.SNAPSHOT
+    assert (
+        get_memoization_strategy(LeafComponent.create(Plain.create()))
+        is MemoizationStrategy.SNAPSHOT
+    )
+
+    form = Form.create(Input.create(name="username", id="username"))
+    assert get_memoization_strategy(form) is MemoizationStrategy.PASSTHROUGH
+
+
 def test_memoization_leaf_suppresses_descendant_wrapping() -> None:
     """A MemoizationLeaf suppresses independent wrappers for its descendants.
 
@@ -213,7 +324,10 @@ def test_passthrough_memo_definitions_are_not_shared_globally(monkeypatch) -> No
         lambda comp, page_context: comp,
     )
 
-    def fake_create_passthrough_component_memo(export_name: str, component: Component):
+    def fake_create_passthrough_component_memo(
+        export_name: str,
+        component: Component,
+    ):
         definition = SimpleNamespace(export_name=export_name, component=component)
         return (lambda definition=definition: definition), definition
 

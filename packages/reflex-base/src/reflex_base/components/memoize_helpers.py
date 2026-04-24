@@ -1,14 +1,25 @@
-"""Event-trigger memoization helpers for auto-memoized and pseudo-stateful components.
+"""Memoization helpers for auto-memoized and pseudo-stateful components.
 
 These helpers wrap a component's non-lifecycle event triggers in ``useCallback``
 so that React can skip re-renders of subtrees whose event handlers have stable
 identities. They are used by both the compiler auto-memoization plugin (see
 ``reflex.compiler.plugins.memoize``) and by component-creation-time consumers
 in ``reflex-components-core`` (e.g. ``WindowEventListener``, ``upload``).
+
+Auto-memoized components compile using one of two render strategies:
+
+- Passthrough memo bodies render the root component with a ``{children}`` hole.
+  The page still renders the descendants, which keeps root-level introspection
+  such as ``Form._get_form_refs`` working against the authored child tree.
+- Snapshot memo bodies render the captured subtree in the memo module. This is
+  required for non-recursive memoization leaves and structural forms
+  (``Foreach``/``Cond``/``Match``) whose stateful render logic belongs inside
+  the memo component rather than the containing page.
 """
 
 from __future__ import annotations
 
+import enum
 from hashlib import md5
 from typing import TYPE_CHECKING
 
@@ -21,6 +32,13 @@ from reflex_base.vars.base import LiteralVar, Var
 
 if TYPE_CHECKING:
     from reflex_base.plugins.compiler import PageContext
+
+
+class MemoizationStrategy(enum.Enum):
+    """How an auto-memo wrapper should render a component if it is memoized."""
+
+    PASSTHROUGH = "passthrough"
+    SNAPSHOT = "snapshot"
 
 
 def _get_hook_deps(hook: str) -> list[str]:
@@ -180,8 +198,71 @@ def is_snapshot_boundary(component: Component) -> bool:
     return not component._memoization_mode.recursive
 
 
+def _is_structural_memoization_child(component: Component) -> bool:
+    """Check whether ``component`` is a structural child for memoization.
+
+    Args:
+        component: The child component to inspect.
+
+    Returns:
+        True when the component's render body must stay inside the generated
+        memo body rather than flowing through as a normal ``children`` payload.
+    """
+    from reflex_components_core.core.cond import Cond
+    from reflex_components_core.core.foreach import Foreach
+    from reflex_components_core.core.match import Match
+
+    if isinstance(component, Foreach):
+        return True
+    if isinstance(component, (Cond, Match)):
+        return bool(component.cond._get_all_var_data())
+    return False
+
+
+def _has_memoization_snapshot_child(component: Component) -> bool:
+    """Whether ``component`` has a structural child that needs a memo snapshot.
+
+    Component-valued ``Foreach``, ``Cond``, and ``Match`` are structural forms,
+    not ordinary user children. When they read state, the generated passthrough
+    memo must render their body in the memo module; otherwise state wiring
+    leaks into the page and the memo body degrades to just ``children``.
+
+    Args:
+        component: The component whose direct children should be inspected.
+
+    Returns:
+        True when a direct child requires the parent memo wrapper to render a
+        captured snapshot.
+    """
+    return any(
+        isinstance(child, Component) and _is_structural_memoization_child(child)
+        for child in component.children
+    )
+
+
+def get_memoization_strategy(component: Component) -> MemoizationStrategy:
+    """Get the render strategy for ``component`` if auto-memoization wraps it.
+
+    Args:
+        component: The component being considered by auto-memoization.
+
+    Returns:
+        The strategy to use when generating a memo wrapper.
+    """
+    if (
+        is_snapshot_boundary(component)
+        or _is_structural_memoization_child(component)
+        or _has_memoization_snapshot_child(component)
+    ):
+        return MemoizationStrategy.SNAPSHOT
+
+    return MemoizationStrategy.PASSTHROUGH
+
+
 __all__ = [
+    "MemoizationStrategy",
     "fix_event_triggers_for_memo",
+    "get_memoization_strategy",
     "get_memoized_event_triggers",
     "is_snapshot_boundary",
 ]

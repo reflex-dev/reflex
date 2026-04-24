@@ -12,7 +12,10 @@ from typing import Any, get_args, get_origin, get_type_hints
 from reflex_base import constants
 from reflex_base.components.component import Component
 from reflex_base.components.dynamic import bundled_libraries
-from reflex_base.components.memoize_helpers import is_snapshot_boundary
+from reflex_base.components.memoize_helpers import (
+    MemoizationStrategy,
+    get_memoization_strategy,
+)
 from reflex_base.constants.compiler import (
     MemoizationDisposition,
     MemoizationMode,
@@ -1031,13 +1034,15 @@ def create_passthrough_component_memo(
     # the boundary with no structural children on the page side, so the memo
     # body renders the full snapshot rather than a ``{children}``-holed
     # template.
-    snapshot_only = is_snapshot_boundary(component)
+    render_snapshot = (
+        get_memoization_strategy(component) is MemoizationStrategy.SNAPSHOT
+    )
 
     captured_hole_child: list[Component] = []
 
     def passthrough(children: Var[Component]) -> Component:
         new_component = copy(component)
-        if snapshot_only:
+        if render_snapshot:
             return new_component
         # Keep ``new_component.children`` as the ORIGINAL children so
         # compile-time walkers that introspect the subtree (e.g. Form's
