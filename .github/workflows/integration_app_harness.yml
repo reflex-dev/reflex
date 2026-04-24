@@ -53,13 +53,12 @@ jobs:
           run-uv-sync: true
 
       - name: Install playwright
-        run: uv run playwright install chromium --only-shell --with-deps
+        run: uv run playwright install chromium --only-shell
 
       - name: Run app harness tests
         env:
           REFLEX_REDIS_URL: ${{ matrix.state_manager == 'redis' && 'redis://localhost:6379' || '' }}
-        # Override asyncio_mode=auto from pyproject.toml and disable the
-        # pytest-asyncio plugin: sync Playwright's session event loop can't
-        # coexist with pytest-asyncio's scoped runner.  None of the
-        # integration tests use `async def`, so the plugin is not needed.
-        run: uv run pytest tests/integration -p no:asyncio -o asyncio_mode=strict --reruns 3 -v --maxfail=5 --splits 2 --group ${{matrix.split_index}}
+        # Disable pytest-asyncio: sync Playwright's session event loop can't
+        # coexist with pytest-asyncio's runner.  None of the integration
+        # tests use `async def`, so the plugin is not needed.
+        run: uv run pytest tests/integration -p no:asyncio --reruns 3 -v --maxfail=5 --splits 2 --group ${{matrix.split_index}}
