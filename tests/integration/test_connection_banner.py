@@ -3,10 +3,9 @@
 import asyncio
 import contextlib
 import pickle
-from collections.abc import AsyncGenerator, Generator, Iterator
+from collections.abc import Generator, Iterator
 
 import pytest
-import pytest_asyncio
 from playwright.sync_api import Page, expect
 from redis.asyncio import Redis
 from reflex_base import constants
@@ -163,10 +162,10 @@ def _assert_token(connection_banner: AppHarness, page: Page) -> str:
     return token
 
 
-@pytest_asyncio.fixture
-async def redis(
+@pytest.fixture
+def redis(
     connection_banner: AppHarness,
-) -> AsyncGenerator[Redis | None]:
+) -> Generator[Redis | None]:
     """Get the Redis instance from the StateManagerRedis used in the connection_banner test.
 
     Args:
@@ -185,11 +184,23 @@ async def redis(
     yield redis
     if redis is not None:
         with contextlib.suppress(Exception, asyncio.CancelledError):
-            await redis.aclose()
+            asyncio.run(redis.aclose())
 
 
-@pytest.mark.asyncio
-async def test_connection_banner(
+def _redis_get(redis: Redis, key: str) -> bytes | None:
+    """Synchronously read a key from an async Redis client.
+
+    Args:
+        redis: The async Redis client.
+        key: The key to read.
+
+    Returns:
+        The raw byte value stored at ``key``, or None if unset.
+    """
+    return asyncio.run(redis.get(key))
+
+
+def test_connection_banner(
     connection_banner: AppHarness, redis: Redis | None, page: Page
 ):
     """Test that the connection banner is displayed when the websocket drops.
@@ -213,7 +224,9 @@ async def test_connection_banner(
     sid_before = app_token_manager.token_to_sid[token]
     if redis is not None:
         assert isinstance(app_token_manager, RedisTokenManager)
-        assert await redis.get(app_token_manager._get_redis_key(token)) == pickle.dumps(
+        assert _redis_get(
+            redis, app_token_manager._get_redis_key(token)
+        ) == pickle.dumps(
             SocketRecord(instance_id=app_token_manager.instance_id, sid=sid_before)
         )
 
@@ -238,7 +251,7 @@ async def test_connection_banner(
         )
         if redis is not None:
             assert isinstance(app_token_manager, RedisTokenManager)
-            assert await redis.get(app_token_manager._get_redis_key(token)) is None
+            assert _redis_get(redis, app_token_manager._get_redis_key(token)) is None
 
         # Increment the counter while disconnected
         increment_button.click()
@@ -254,7 +267,9 @@ async def test_connection_banner(
     assert sid_before != sid_after
     if redis is not None:
         assert isinstance(app_token_manager, RedisTokenManager)
-        assert await redis.get(app_token_manager._get_redis_key(token)) == pickle.dumps(
+        assert _redis_get(
+            redis, app_token_manager._get_redis_key(token)
+        ) == pickle.dumps(
             SocketRecord(instance_id=app_token_manager.instance_id, sid=sid_after)
         )
 

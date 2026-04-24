@@ -1,8 +1,8 @@
 """Integration tests for forms."""
 
-import asyncio
 import functools
 import json
+import time
 from collections.abc import Generator
 
 import pytest
@@ -166,8 +166,7 @@ def form_submit(request, tmp_path_factory) -> Generator[AppHarness, None, None]:
         yield harness
 
 
-@pytest.mark.asyncio
-async def test_submit(page: Page, form_submit: AppHarness):
+def test_submit(page: Page, form_submit: AppHarness):
     """Fill a form with various different output, submit it to backend and verify
     the output.
 
@@ -207,7 +206,7 @@ async def test_submit(page: Page, form_submit: AppHarness):
     debounce_input = by_name_or_id("debounce_input")
     debounce_input.fill("bar baz")
 
-    await asyncio.sleep(1)
+    time.sleep(1)
 
     prev_url = page.url
 

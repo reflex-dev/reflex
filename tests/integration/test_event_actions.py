@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import time
 from collections.abc import Generator
 
@@ -228,8 +227,7 @@ def event_action(tmp_path_factory) -> Generator[AppHarness, None, None]:
         ),
     ],
 )
-@pytest.mark.asyncio
-async def test_event_actions(
+def test_event_actions(
     event_action: AppHarness,
     page: Page,
     element_id: str,
@@ -255,7 +253,7 @@ async def test_event_actions(
     el.click()
     if "on_click:outer" not in exp_order:
         # really make sure the outer event is not fired
-        await asyncio.sleep(0.5)
+        time.sleep(0.5)
     poll_assert_event_order(page, exp_order)
 
     if element_id.startswith("link") and "prevent-default" not in element_id:

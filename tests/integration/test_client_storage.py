@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import asyncio
+import time
 from collections.abc import Generator
 
 import pytest
@@ -220,8 +220,7 @@ def cookie_info_map(page: Page) -> dict[str, dict]:
     }
 
 
-@pytest.mark.asyncio
-async def test_client_side_state(
+def test_client_side_state(
     client_side: AppHarness,
     page: Page,
     local_storage: utils.LocalStorage,
@@ -385,7 +384,7 @@ async def test_client_side_state(
     c3_cookie = cookie_info_map(page)[f"{sub_state_name}.c3" + FIELD_MARKER]
     assert c3_cookie.pop("expires") not in (None, -1)
     assert c3_cookie == _exp(f"{sub_state_name}.c3" + FIELD_MARKER, "c3%20value")
-    await asyncio.sleep(2)  # wait for c3 to expire
+    time.sleep(2)  # wait for c3 to expire
     assert f"{sub_state_name}.c3" + FIELD_MARKER not in cookie_info_map(page)
 
     local_storage_items = local_storage.items()

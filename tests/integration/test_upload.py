@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import json
 import time
 from collections.abc import Generator
@@ -400,8 +399,7 @@ def test_upload_file(tmp_path, upload_file: AppHarness, page: Page, secondary: b
     assert actual_contents == exp_contents
 
 
-@pytest.mark.asyncio
-async def test_upload_file_multiple(tmp_path, upload_file: AppHarness, page: Page):
+def test_upload_file_multiple(tmp_path, upload_file: AppHarness, page: Page):
     """Submit several file uploads and check that they arrived on the backend.
 
     Args:
@@ -429,7 +427,7 @@ async def test_upload_file_multiple(tmp_path, upload_file: AppHarness, page: Pag
 
     upload_box.set_input_files(target_paths)
 
-    await asyncio.sleep(0.2)
+    time.sleep(0.2)
 
     # check that the selected files are displayed
     selected_files = page.locator("#selected_files")
@@ -497,8 +495,7 @@ def test_clear_files(tmp_path, upload_file: AppHarness, page: Page, secondary: b
 # https://gist.github.com/florentbr/349b1ab024ca9f3de56e6bf8af2ac69e
 
 
-@pytest.mark.asyncio
-async def test_cancel_upload(tmp_path, upload_file: AppHarness, page: Page):
+def test_cancel_upload(tmp_path, upload_file: AppHarness, page: Page):
     """Submit a large file upload and cancel it.
 
     Args:
@@ -534,11 +531,11 @@ async def test_cancel_upload(tmp_path, upload_file: AppHarness, page: Page):
 
     upload_box.set_input_files(str(target_file))
     upload_button.click()
-    await asyncio.sleep(1)
+    time.sleep(1)
     cancel_button.click()
 
     # Wait a bit for the upload to get cancelled.
-    await asyncio.sleep(12)
+    time.sleep(12)
 
     # But there should never be a final progress record for a cancelled upload.
     for p in page.locator("xpath=//*[@id='progress_dicts']/p").all():
@@ -550,8 +547,7 @@ async def test_cancel_upload(tmp_path, upload_file: AppHarness, page: Page):
     target_file.unlink()
 
 
-@pytest.mark.asyncio
-async def test_upload_chunk_file(tmp_path, upload_file: AppHarness, page: Page):
+def test_upload_chunk_file(tmp_path, upload_file: AppHarness, page: Page):
     """Submit a streaming upload and check that chunks are processed incrementally."""
     assert upload_file.app_instance is not None
     _goto_app(upload_file, page)
@@ -575,7 +571,7 @@ async def test_upload_chunk_file(tmp_path, upload_file: AppHarness, page: Page):
 
     upload_box.set_input_files(target_paths)
 
-    await asyncio.sleep(0.2)
+    time.sleep(0.2)
 
     assert [
         Path(name).name for name in (selected_files.text_content() or "").split("\n")
@@ -597,8 +593,7 @@ async def test_upload_chunk_file(tmp_path, upload_file: AppHarness, page: Page):
         ).read_text() == exp_contents
 
 
-@pytest.mark.asyncio
-async def test_cancel_upload_chunk(
+def test_cancel_upload_chunk(
     tmp_path,
     upload_file: AppHarness,
     page: Page,
@@ -632,10 +627,10 @@ async def test_cancel_upload_chunk(
 
     upload_box.set_input_files(str(target_file))
     upload_button.click()
-    await asyncio.sleep(2)
+    time.sleep(2)
     cancel_button.click()
 
-    await asyncio.sleep(11)
+    time.sleep(11)
 
     # But there should never be a final progress record for a cancelled upload.
     for p in page.locator("xpath=//*[@id='stream_progress_dicts']/p").all():

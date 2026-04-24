@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import asyncio
+import time
 from collections.abc import Generator
 
 import pytest
@@ -144,8 +144,7 @@ def computed_vars(
         yield harness
 
 
-@pytest.mark.asyncio
-async def test_computed_vars(
+def test_computed_vars(
     computed_vars: AppHarness,
     page: Page,
 ):
@@ -205,7 +204,7 @@ async def test_computed_vars(
     with pytest.raises(AssertionError):
         expect(count3).not_to_have_text("0", timeout=5000)
 
-    await asyncio.sleep(10)
+    time.sleep(10)
     expect(count3).to_have_text("0")
     expect(depends_on_count3).to_have_text("0")
     mark_dirty.click()

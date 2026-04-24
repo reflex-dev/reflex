@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import asyncio
 import json
+import time
 from collections.abc import Generator
 from urllib.parse import urlsplit
 
@@ -309,8 +309,7 @@ def test_on_load_navigate_non_dynamic(
     poll_assert_event_order(page, ["/static/x-no page id"] * 5)
 
 
-@pytest.mark.asyncio
-async def test_render_dynamic_arg(
+def test_render_dynamic_arg(
     dynamic_route: AppHarness,
     page: Page,
 ):
@@ -329,7 +328,7 @@ async def test_render_dynamic_arg(
     utils.poll_for_token(page)
 
     # TODO: drop after flakiness is resolved
-    await asyncio.sleep(3)
+    time.sleep(3)
 
     def assert_content(expected: str, expect_not: str):
         ids = [
