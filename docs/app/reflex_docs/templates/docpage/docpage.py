@@ -349,6 +349,65 @@ def _copy_page_menu_item(
     )
 
 
+def _build_reflex_action():
+    return run_script(
+        """
+((function() {
+  const pageUrl = window.location.origin + window.location.pathname.replace(/\\/$/, '') + '.md';
+  const prompt = 'Read from ' + pageUrl + ' and help me build an app based on it.';
+  window.open('https://build.reflex.dev/?prompt=' + encodeURIComponent(prompt), '_blank', 'noopener,noreferrer');
+})())
+        """
+    )
+
+
+def _build_reflex_menu_item() -> rx.Component:
+    return rx.el.button(
+        rx.el.div(
+            rx.el.div(
+                ui.icon(
+                    "AiMagicIcon",
+                    size=16,
+                    class_name="!text-white",
+                ),
+                class_name=(
+                    "flex size-8 items-center justify-center rounded-md "
+                    "bg-gradient-to-br from-violet-9 to-violet-11 "
+                    "shadow-[0_0_0_1px_var(--violet-7),0_2px_8px_-2px_var(--violet-a8)] shrink-0"
+                ),
+            ),
+            rx.el.div(
+                rx.el.div(
+                    rx.el.span(
+                        "Build this with AI",
+                        class_name="text-sm font-semibold text-slate-12",
+                    ),
+                    ui.icon(
+                        "ArrowUpRight01Icon",
+                        size=12,
+                        class_name="!text-violet-11",
+                    ),
+                    class_name="flex items-center gap-1",
+                ),
+                rx.el.span(
+                    "Open in Reflex Build",
+                    class_name="text-xs text-slate-10",
+                ),
+                class_name="flex flex-col items-start gap-0.5",
+            ),
+            class_name="flex items-start gap-3 px-3 py-2.5 w-full",
+        ),
+        type="button",
+        on_click=_build_reflex_action(),
+        class_name=(
+            "w-full text-left "
+            "bg-gradient-to-br from-violet-2 to-slate-1 "
+            "hover:from-violet-3 hover:to-violet-2 "
+            "border-b border-slate-4 transition-colors cursor-pointer"
+        ),
+    )
+
+
 def _open_in_llm_action(base_url: str):
     return run_script(
         f"""
@@ -458,6 +517,7 @@ def _copy_page_button(doc_content: str) -> rx.Component:
                 ui.popover.positioner(
                     ui.popover.popup(
                         render_=rx.el.div(
+                            _build_reflex_menu_item(),
                             _copy_page_menu_item(
                                 icon=ui.icon("Copy01Icon", size=16),
                                 title="Copy page",
