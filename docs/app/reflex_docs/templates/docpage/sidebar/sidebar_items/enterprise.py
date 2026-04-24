@@ -28,6 +28,10 @@ def get_sidebar_items_enterprise_usage():
                     names="Single Port Proxy",
                     link=enterprise.single_port_proxy.path,
                 ),
+                SideBarItem(
+                    names="Event Handler API",
+                    link=enterprise.event_handler_api.path,
+                ),
             ],
         ),
     ]
