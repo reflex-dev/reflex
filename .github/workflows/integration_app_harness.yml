@@ -58,4 +58,7 @@ jobs:
       - name: Run app harness tests
         env:
           REFLEX_REDIS_URL: ${{ matrix.state_manager == 'redis' && 'redis://localhost:6379' || '' }}
-        run: uv run pytest tests/integration --reruns 3 -v --maxfail=5 --splits 2 --group ${{matrix.split_index}}
+        # Disable pytest-asyncio for this run: sync Playwright's session event
+        # loop conflicts with pytest-asyncio's scoped runner. No integration
+        # test uses `async def`, so the plugin is not needed.
+        run: uv run pytest tests/integration -p no:asyncio --reruns 3 -v --maxfail=5 --splits 2 --group ${{matrix.split_index}}
