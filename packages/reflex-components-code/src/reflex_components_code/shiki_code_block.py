@@ -59,9 +59,9 @@ document.addEventListener('click', function(event) {
                     setTimeout(() => {
                         svgIcon.innerHTML = originalPath;  // Restore original SVG content
                         transition(svgIcon, 1, '1');
-                    }, 125);
-                }, 600);
-            }, 125);
+                    }, 60);
+                }, 350);
+            }, 60);
         } else {
             // console.error('SVG element not found within the parent.');
         }
@@ -803,9 +803,9 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
                         "_hover": {
                             "background": color("gray", 4),
                         },
-                        "transition": "background 0.250s ease-out",
+                        "transition": "background 0.12s ease-out",
                         "&>svg": {
-                            "transition": "transform 0.250s ease-out, opacity 0.250s ease-out",
+                            "transition": "transform 0.12s ease-out, opacity 0.12s ease-out",
                         },
                         "_active": {
                             "background": color("gray", 5),

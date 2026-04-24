@@ -2,7 +2,7 @@
 import reflex as rx
 ```
 
-# Tutorial: Data Dashboard
+# Data Dashboard
 
 **~20 min hands-on** · Build a small data dashboard where users can input data that renders in a table and a graph.
 
@@ -11,15 +11,15 @@ This tutorial does not assume any existing Reflex knowledge, but we do recommend
 This tutorial is divided into several sections:
 
 - **Setup**: Get your machine ready.
-- **Overview**: The fundamentals of Reflex UI (components and props).
-- **Showing dynamic data**: Use State to render data that changes.
-- **Add data to your app**: Use a Form + event handlers.
-- **Plotting data in a graph**: Reflex's graphing components.
-- **Final cleanup** + **[Full app](#full-app)**: Customize and see the finished code.
+- **Overview**: Components and props.
+- **Dynamic data with State**: Render data that changes.
+- **Add data with a form**: Forms + event handlers.
+- **Plot a graph**: Reflex's graphing components.
+- **Customize** + **[Full app](#full-app-styled)**: Customize and see the finished code.
 
 ## What are you building?
 
-An interactive data dashboard: a table of users, a form to add more, and a bar chart that updates as data changes. Want to skip ahead? Jump to the [Full app](#full-app) at the bottom.
+An interactive data dashboard: a table of users, a form to add more, and a bar chart that updates as data changes. Want to skip ahead? Jump to the [Full app](#full-app-styled) at the bottom.
 
 ```python exec
 import dataclasses
@@ -130,47 +130,91 @@ def graph5():
     return rx.recharts.bar_chart(
         rx.recharts.bar(
             data_key="value",
-            stroke=rx.color("accent", 9),
-            fill=rx.color("accent", 8),
+            fill=rx.color("accent", 9),
+            radius=6,
+            bar_size=48,
         ),
-        rx.recharts.x_axis(data_key="name"),
-        rx.recharts.y_axis(),
+        rx.recharts.x_axis(
+            data_key="name",
+            tick_line=False,
+            axis_line=False,
+            padding={"left": 24, "right": 24},
+        ),
+        rx.recharts.y_axis(
+            tick_line=False,
+            axis_line=False,
+            allow_decimals=False,
+        ),
+        rx.recharts.cartesian_grid(
+            stroke_dasharray="3 3",
+            vertical=False,
+            stroke=rx.color("slate", 4),
+        ),
         data=State5.users_for_graph,
         width="100%",
-        height=250,
+        height=200,
+        margin={"top": 8, "right": 8, "bottom": 0, "left": 0},
     )
 ```
 
 ```python eval
-rx.vstack(
-    add_customer_button5(),
-    rx.table.root(
-        rx.table.header(
-            rx.table.row(
-                rx.table.column_header_cell("Name"),
-                rx.table.column_header_cell("Email"),
-                rx.table.column_header_cell("Gender"),
+rx.box(
+    rx.vstack(
+        rx.hstack(
+            rx.vstack(
+                rx.text(
+                    "Users",
+                    size="4",
+                    weight="bold",
+                    color=rx.color("slate", 12),
+                    text_align="left",
+                    width="100%",
+                ),
+                rx.text(
+                    "Add customers and watch the chart update.",
+                    size="2",
+                    color=rx.color("slate", 10),
+                    text_align="left",
+                    width="100%",
+                ),
+                spacing="1",
+                align="start",
             ),
+            rx.spacer(),
+            add_customer_button5(),
+            align="center",
+            width="100%",
         ),
-        rx.table.body(
-            rx.foreach(State5.users, show_user5),
+        rx.table.root(
+            rx.table.header(
+                rx.table.row(
+                    rx.table.column_header_cell("Name"),
+                    rx.table.column_header_cell("Email"),
+                    rx.table.column_header_cell("Gender"),
+                ),
+            ),
+            rx.table.body(
+                rx.foreach(State5.users, show_user5),
+            ),
+            variant="surface",
+            size="2",
+            width="100%",
         ),
-        variant="surface",
-        size="3",
+        graph5(),
+        align="stretch",
         width="100%",
+        on_mouse_enter=State5.transform_data,
+        spacing="4",
+        padding="1.75em 2em",
     ),
-    graph5(),
-    align="center",
-    width="100%",
-    on_mouse_enter=State5.transform_data,
-    spacing="4",
     border=f"1px solid {rx.color('slate', 5)}",
     border_radius="12px",
-    padding="2em",
+    margin_y="1em",
+    background=rx.color("slate", 1),
 )
 ```
 
-## Setup for the tutorial
+## Setup
 
 1. [Install Reflex](/docs/getting_started/installation) if you haven't already.
 2. Create a folder called `dashboard_tutorial` and `cd` into it.
@@ -180,21 +224,11 @@ rx.vstack(
 
 ## Overview
 
-Now that you’re set up, let’s get an overview of Reflex!
+### Starter code
 
-### Inspecting the starter code
+The `reflex init` command scaffolds an `rxconfig.py` (app [config](/docs/advanced_onboarding/configuration)), an `assets/` folder for static files, and a `dashboard_tutorial/dashboard_tutorial.py` module containing your app. Open that module and replace its contents — we'll build the app up from scratch.
 
-Within our `dashboard_tutorial` folder we just `cd`'d into, there is a `rxconfig.py` file that contains the configuration for our Reflex app. (Check out the [config docs](/docs/advanced_onboarding/configuration) for more information)
-
-There is also an `assets` folder where static files such as images and stylesheets can be placed to be referenced within your app. ([asset docs](/docs/assets/overview) for more information)
-
-Most importantly there is a folder also called `dashboard_tutorial` which contains all the code for your app. Inside of this folder there is a file named `dashboard_tutorial.py`. To begin this tutorial we will delete all the code in this file so that we can start from scratch and explain every step as we go.
-
-The first thing we need to do is import `reflex`. Once we have done this we can create a component, which is a reusable piece of user interface code. Components are used to render, manage, and update the UI elements in your application.
-
-Let's look at the example below. Here we have a function called `index` that returns a `text` component (an in-built Reflex UI component) that displays the text "Hello World!".
-
-Next we define our app using `app = rx.App()` and add the component we just defined (`index`) to a page using `app.add_page(index)`. The function name (in this example `index`) which defines the component, must be what we pass into the `add_page`. The definition of the app and adding a component to a page are required for every Reflex app.
+A minimal Reflex page is just a component function plus an app that registers it:
 
 ```python
 import reflex as rx
@@ -208,82 +242,13 @@ app = rx.App()
 app.add_page(index)
 ```
 
-This code will render a page with the text "Hello World!" when you run your app like below:
-
-```python eval
-rx.box(
-    rx.text("Hello World!"),
-    border=f"1px solid {rx.color('slate', 5)}",
-    border_radius="12px",
-    padding="2em",
-)
-```
-
 ```md alert info
-For the rest of the tutorial the `app=rx.App()` and `app.add_page` will be implied and not shown in the code snippets.
+For the rest of the tutorial the `app = rx.App()` and `app.add_page` lines are implied and not shown — we'll come back to them in [Customize](#customize).
 ```
 
-### Creating a table
+### Create a table
 
-Let's create a new component that will render a table. We will use the `table` component to do this. The `table` component has a `root`, which takes in a `header` and a `body`, which in turn take in `row` components. The `row` component takes in `cell` components which are the actual data that will be displayed in the table.
-
-```python eval
-rx.box(
-    rx.table.root(
-        rx.table.header(
-            rx.table.row(
-                rx.table.column_header_cell("Name"),
-                rx.table.column_header_cell("Email"),
-                rx.table.column_header_cell("Gender"),
-            ),
-        ),
-        rx.table.body(
-            rx.table.row(
-                rx.table.cell("Danilo Sousa"),
-                rx.table.cell("danilo@example.com"),
-                rx.table.cell("Male"),
-            ),
-            rx.table.row(
-                rx.table.cell("Zahra Ambessa"),
-                rx.table.cell("zahra@example.com"),
-                rx.table.cell("Female"),
-            ),
-        ),
-    ),
-    border=f"1px solid {rx.color('slate', 5)}",
-    border_radius="12px",
-    padding="2em",
-)
-```
-
-```python
-def index() -> rx.Component:
-    return rx.table.root(
-        rx.table.header(
-            rx.table.row(
-                rx.table.column_header_cell("Name"),
-                rx.table.column_header_cell("Email"),
-                rx.table.column_header_cell("Gender"),
-            ),
-        ),
-        rx.table.body(
-            rx.table.row(
-                rx.table.cell("Danilo Sousa"),
-                rx.table.cell("danilo@example.com"),
-                rx.table.cell("Male"),
-            ),
-            rx.table.row(
-                rx.table.cell("Zahra Ambessa"),
-                rx.table.cell("zahra@example.com"),
-                rx.table.cell("Female"),
-            ),
-        ),
-    )
-```
-
-Components in Reflex have `props`, which can be used to customize the component and are passed in as keyword arguments to the component function.
-
-The `rx.table.root` component has for example the `variant` and `size` props, which customize the table as seen below.
+The `rx.table` component has a `root` that wraps a `header` and a `body`. The header takes `row` → `column_header_cell` components; the body takes `row` → `cell` components holding the actual data. Props like `variant` and `size` customize the look:
 
 ```python eval
 rx.box(
@@ -343,87 +308,38 @@ def index() -> rx.Component:
     )
 ```
 
-## Showing dynamic data (State)
+## Dynamic data with State
 
-Up until this point all the data we are showing in the app is static. This is not very useful for a data dashboard. We need to be able to show dynamic data that can be added to and updated.
+The table above is static — the rows are hardcoded. To make it dynamic, we move the data onto **state**: a Python class whose fields ([state vars](/docs/state/overview)) hold the app's data and whose methods ([event handlers](/docs/events/events_overview)) mutate them.
 
-This is where `State` comes in. `State` is a Python class that stores variables that can change when the app is running, as well as the functions that can change those variables.
-
-To define a state class, subclass `rx.State` and define fields that store the state of your app. The state variables (vars) should have a type annotation, and can be initialized with a default value. Check out the [basics](/docs/getting_started/basics) section for a simple example of how state works.
-
-In the example below we define a `State` class called `State` that has a variable called `users` that is a list of lists of strings. Each list in the `users` list represents a user and contains their name, email and gender.
+We'll model each row as a `User` dataclass so we can access fields by name (`user.name`) instead of by index:
 
 ```python
+import dataclasses
+
+
+@dataclasses.dataclass
+class User:
+    name: str
+    email: str
+    gender: str
+
+
 class State(rx.State):
-    users: list[list[str]] = [
-        ["Danilo Sousa", "danilo@example.com", "Male"],
-        ["Zahra Ambessa", "zahra@example.com", "Female"],
+    users: list[User] = [
+        User(name="Danilo Sousa", email="danilo@example.com", gender="Male"),
+        User(name="Zahra Ambessa", email="zahra@example.com", gender="Female"),
     ]
 ```
 
-To iterate over a state var that is a list, we use the [`rx.foreach`](/docs/components/rendering_iterables) function to render a list of components. The `rx.foreach` component takes an `iterable` (list, tuple or dict) and a `function` that renders each item in the `iterable`.
-
-```md alert info
-# Why can we not just splat this in a `for` loop
-
-You might be wondering why a `foreach` is even needed to render this state variable and why we cannot just splat a `for` loop. Check out this [documentation](/docs/getting_started/basics#compile-time-vs.-runtime) to learn why.
-```
-
-Here the render function is `show_user` which takes in a single user and returns a `table.row` component that displays the users name, email and gender.
-
-```python exec
-class State1(rx.State):
-    users: list[list[str]] = [
-        ["Danilo Sousa", "danilo@example.com", "Male"],
-        ["Zahra Ambessa", "zahra@example.com", "Female"],
-    ]
-
-
-def show_user1(person: list):
-    """Show a person in a table row."""
-    return rx.table.row(
-        rx.table.cell(person[0]),
-        rx.table.cell(person[1]),
-        rx.table.cell(person[2]),
-    )
-```
-
-```python eval
-rx.box(
-    rx.table.root(
-        rx.table.header(
-            rx.table.row(
-                rx.table.column_header_cell("Name"),
-                rx.table.column_header_cell("Email"),
-                rx.table.column_header_cell("Gender"),
-            ),
-        ),
-        rx.table.body(
-            rx.foreach(State1.users, show_user1),
-        ),
-        variant="surface",
-        size="3",
-    ),
-    border=f"1px solid {rx.color('slate', 5)}",
-    border_radius="12px",
-    padding="2em",
-)
-```
+To iterate a list state var, use [`rx.foreach`](/docs/components/rendering_iterables) — it takes an iterable and a function that renders each item. Here `show_user` receives a `User` and returns a `table.row`:
 
 ```python
-class State(rx.State):
-    users: list[list[str]] = [
-        ["Danilo Sousa", "danilo@example.com", "Male"],
-        ["Zahra Ambessa", "zahra@example.com", "Female"],
-    ]
-
-
-def show_user(person: list):
-    """Show a person in a table row."""
+def show_user(user: User) -> rx.Component:
     return rx.table.row(
-        rx.table.cell(person[0]),
-        rx.table.cell(person[1]),
-        rx.table.cell(person[2]),
+        rx.table.cell(user.name),
+        rx.table.cell(user.email),
+        rx.table.cell(user.gender),
     )
 
 
@@ -444,17 +360,11 @@ def index() -> rx.Component:
     )
 ```
 
-As you can see the output above looks the same as before, except now the data is no longer static and can change with user input to the app.
+```md alert info
+# Why not a `for` loop?
 
-### Using a proper class structure for our data
-
-So far our data has been defined in a list of lists, where the data is accessed by index i.e. `user[0]`, `user[1]`. This is not very maintainable as our app gets bigger.
-
-A better way to structure our data in Reflex is to use a class to represent a user. This way we can access the data using attributes i.e. `user.name`, `user.email`.
-
-In Reflex when we create these classes to showcase our data, we can use dataclasses.
-
-The `show_user` render function is also updated to access the data by named attributes, instead of indexing.
+A regular `for` loop runs at compile time, but state vars change at runtime — so the rendered rows wouldn't update. `rx.foreach` tells the compiler to re-render when the state var changes. See [compile-time vs runtime](/docs/getting_started/basics#compile-time-vs.-runtime).
+```
 
 ```python exec
 import dataclasses
@@ -507,52 +417,9 @@ rx.box(
 )
 ```
 
-```python
-@dataclasses.dataclass
-class User:
-    """The user model."""
+The table looks the same, but the rows now come from state — next we'll add a form that appends to `State.users` so new rows appear automatically.
 
-    name: str
-    email: str
-    gender: str
-
-
-class State(rx.State):
-    users: list[User] = [
-        User(name="Danilo Sousa", email="danilo@example.com", gender="Male"),
-        User(name="Zahra Ambessa", email="zahra@example.com", gender="Female"),
-    ]
-
-
-def show_user(user: User):
-    """Show a person in a table row."""
-    return rx.table.row(
-        rx.table.cell(user.name),
-        rx.table.cell(user.email),
-        rx.table.cell(user.gender),
-    )
-
-
-def index() -> rx.Component:
-    return rx.table.root(
-        rx.table.header(
-            rx.table.row(
-                rx.table.column_header_cell("Name"),
-                rx.table.column_header_cell("Email"),
-                rx.table.column_header_cell("Gender"),
-            ),
-        ),
-        rx.table.body(
-            rx.foreach(State.users, show_user),
-        ),
-        variant="surface",
-        size="3",
-    )
-```
-
-Next let's add a form to the app so we can add new users to the table.
-
-## Using a Form to Add Data
+## Add data with a form
 
 We build a form using `rx.form`, which takes several components such as `rx.input` and `rx.select`, which represent the form fields that allow you to add information to submit with the form. Check out the [form](/docs/library/forms/form) docs for more information on form components.
 
@@ -763,7 +630,7 @@ def index() -> rx.Component:
     )
 ```
 
-### Putting the Form in an Overlay
+### Put the form in a dialog
 
 In Reflex, we like to make the user interaction as intuitive as possible. Placing the form we just constructed in an overlay creates a focused interaction by dimming the background, and ensures a cleaner layout when you have multiple action points such as editing and deleting as well.
 
@@ -1031,11 +898,11 @@ def index() -> rx.Component:
     )
 ```
 
-## Plotting Data in a Graph
+## Plot a graph
 
-The last part of this tutorial is to plot the user data in a graph. We will use Reflex's built-in graphing library recharts to plot the number of users of each gender.
+Next we'll plot the user data in a graph using Reflex's built-in recharts library, counting users by gender.
 
-### Transforming the data for the graph
+### Transform the data
 
 The graphing components in Reflex expect to take in a list of dictionaries. Each dictionary represents a data point on the graph and contains the x and y values. We will create a new event handler in the state called `transform_data` to transform the user data into the format that the graphing components expect. We must also create a new state variable called `users_for_graph` to store the transformed data, which will be used to render the graph.
 
@@ -1067,7 +934,7 @@ As we can see above the `transform_data` event handler uses the `Counter` class 
 
 Finally we can see that whenever we add a new user through submitting the form and running the `add_user` event handler, we call the `transform_data` event handler to update the `users_for_graph` state variable.
 
-### Rendering the graph
+### Render the graph
 
 We use the `rx.recharts.bar_chart` component to render the graph. We pass through the state variable for our graphing data as `data=State.users_for_graph`. We also pass in a `rx.recharts.bar` component which represents the bars on the graph. The `rx.recharts.bar` component takes in the `data_key` prop which is the key in the data dictionary that represents the y value of the bar. The `stroke` and `fill` props are used to set the color of the bars.
 
@@ -1339,11 +1206,11 @@ def index() -> rx.Component:
     )
 ```
 
-One thing you may have noticed about your app is that the graph does not appear initially when you run the app, and that you must add a user to the table for it to first appear. This occurs because the `transform_data` event handler is only called when a user is added to the table. In the next section we will explore a solution to this.
+If you run the app locally with no seed users, the graph is empty until you add one — `transform_data` only runs when a user is added. The next section fixes that by calling it on page load.
 
-## Final Cleanup
+## Customize
 
-### Revisiting app.add_page
+### Revisit `app.add_page`
 
 At the beginning of this tutorial we mentioned that the `app.add_page` function is required for every Reflex app. This function is used to add a component to a page.
 
@@ -1388,7 +1255,7 @@ app.add_page(
 )
 ```
 
-### Revisiting app=rx.App()
+### Revisit `rx.App()`
 
 At the beginning of the tutorial we also mentioned that we defined our app using `app=rx.App()`. We can also pass in some props to the `rx.App` component to customize the app.
 
@@ -1396,7 +1263,7 @@ The most important one is `theme` which allows you to customize the look and fee
 
 The `radius` prop sets the global radius value for the app that is inherited by all components that have a `radius` prop. It can be overwritten locally for a specific component by manually setting the `radius` prop.
 
-The `accent_color` prop sets the accent color of the app. Check out other options for the accent color [here](/docs/library/other/theme).
+The `accent_color` prop sets the accent color of the app. See the [theme docs](/docs/library/other/theme) for the full list of options.
 
 To see other props that can be set at the app level check out this [documentation](/docs/styling/theming)
 
@@ -1406,9 +1273,9 @@ app = rx.App(
 )
 ```
 
-Unfortunately in this tutorial here we cannot actually apply this to the live example on the page, but if you copy and paste the code below into a reflex app locally you can see it in action.
+The theme applies at the app level, so you'll need to run locally to see it in action.
 
-## Full app
+## Full app styled
 
 Finally let's make some styling updates. We will add hover styling to the table rows and center the table inside `show_user` with `style={"_hover": {"bg": rx.color("gray", 3)}}, align="center"`.
 
@@ -1417,31 +1284,59 @@ In addition, we will add some `width="100%"` and `align="center"` to the `index(
 Check out the full code and interactive app below:
 
 ```python eval
-rx.vstack(
-    add_customer_button5(),
-    rx.table.root(
-        rx.table.header(
-            rx.table.row(
-                rx.table.column_header_cell("Name"),
-                rx.table.column_header_cell("Email"),
-                rx.table.column_header_cell("Gender"),
+rx.box(
+    rx.vstack(
+        rx.hstack(
+            rx.vstack(
+                rx.text(
+                    "Users",
+                    size="4",
+                    weight="bold",
+                    color=rx.color("slate", 12),
+                    text_align="left",
+                    width="100%",
+                ),
+                rx.text(
+                    "Add customers and watch the chart update.",
+                    size="2",
+                    color=rx.color("slate", 10),
+                    text_align="left",
+                    width="100%",
+                ),
+                spacing="1",
+                align="start",
             ),
+            rx.spacer(),
+            add_customer_button5(),
+            align="center",
+            width="100%",
         ),
-        rx.table.body(
-            rx.foreach(State5.users, show_user5),
+        rx.table.root(
+            rx.table.header(
+                rx.table.row(
+                    rx.table.column_header_cell("Name"),
+                    rx.table.column_header_cell("Email"),
+                    rx.table.column_header_cell("Gender"),
+                ),
+            ),
+            rx.table.body(
+                rx.foreach(State5.users, show_user5),
+            ),
+            variant="surface",
+            size="2",
+            width="100%",
         ),
-        variant="surface",
-        size="3",
+        graph5(),
+        align="stretch",
         width="100%",
+        on_mouse_enter=State5.transform_data,
+        spacing="4",
+        padding="1.75em 2em",
     ),
-    graph5(),
-    align="center",
-    width="100%",
-    on_mouse_enter=State5.transform_data,
-    spacing="4",
     border=f"1px solid {rx.color('slate', 5)}",
     border_radius="12px",
-    padding="2em",
+    margin_y="1em",
+    background=rx.color("slate", 1),
 )
 ```
 
