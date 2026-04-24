@@ -467,6 +467,10 @@ def serialize_router_data(obj: RouterData) -> dict:
         "session": obj.session,
         "headers": obj.headers,
         "page": obj._page,
-        "url": obj.url,
+        # ReflexURL is a str subclass, so json.dumps handles it natively and
+        # never invokes the `default=serialize` hook. Call the URL serializer
+        # eagerly here so the frontend receives the parsed component dict
+        # instead of just the raw URL string.
+        "url": _serialize_reflex_url(obj.url),
         "route_id": obj.route_id,
     }

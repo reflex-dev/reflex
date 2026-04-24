@@ -44,6 +44,39 @@ def test_reflex_url_serializes_with_all_components():
     assert payload["fragment"] == "top"
 
 
+def test_reflex_url_serializes_when_nested_in_router_data():
+    """When a RouterData is serialized (the normal state-sync path), the
+    ``url`` field must come out as a full component dict rather than being
+    short-circuited to a plain JSON string by json.dumps. Because ReflexURL
+    is a ``str`` subclass, json.dumps handles it natively and never invokes
+    the ``default=serialize`` hook, so the enclosing serializer has to
+    serialize it explicitly.
+    """
+    import json
+
+    from reflex_base import constants
+    from reflex_base.utils.format import json_dumps
+
+    from reflex.istate.data import RouterData
+
+    rd = RouterData.from_router_data({
+        constants.RouteVar.HEADERS: {"origin": "https://example.com:3000"},
+        constants.RouteVar.PATH: "/posts/[id]",
+        constants.RouteVar.ORIGIN: "/posts/123?tab=comments&sort=new#top",
+    })
+    payload = json.loads(json_dumps(rd))
+
+    assert isinstance(payload["url"], dict), (
+        f"expected url to serialize to a component dict, got {payload['url']!r}"
+    )
+    assert payload["url"]["href"] == SAMPLE_URL
+    assert payload["url"]["scheme"] == "https"
+    assert payload["url"]["path"] == "/posts/123"
+    assert payload["url"]["query_parameters"] == dict(
+        parse_qsl("tab=comments&sort=new")
+    )
+
+
 def test_router_url_var_is_casted():
     """rx.State.router.url should be wrapped in a ReflexURLCastedVar so the
     URL component properties resolve correctly.
