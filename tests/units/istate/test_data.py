@@ -51,6 +51,25 @@ def test_router_url_var_is_casted():
     assert isinstance(rx.State.router.url, ReflexURLCastedVar)
 
 
+def test_router_url_var_propagates_var_data():
+    """The casted URL Var (and the child component Vars it produces) must
+    carry the same VarData as the underlying state-var access, so the
+    compiler still emits the state-context imports and hook needed to read
+    ``router`` on the frontend.
+    """
+    url_var = rx.State.router.url
+    original_data = url_var._original._get_all_var_data()
+    assert original_data is not None
+    # The state import/hook needed to resolve `router` must flow through the
+    # ReflexURLCastedVar wrapper...
+    assert url_var._get_all_var_data() == original_data
+    # ...and through every child component Var (otherwise using
+    # self.router.url.scheme in a component would silently drop the state
+    # subscription).
+    assert url_var.scheme._get_all_var_data() == original_data
+    assert url_var.query_parameters._get_all_var_data() == original_data
+
+
 def test_router_url_var_string_components():
     """Each string component of router.url should render as a bracket-key on
     the router.url object and produce a StringVar typed as str. Regression
