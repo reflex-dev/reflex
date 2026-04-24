@@ -56,10 +56,13 @@ jobs:
         run: uv run playwright install chromium --only-shell
 
       - name: Diagnostics
+        continue-on-error: true
         run: |
-          uv run python -c "import pytest, playwright, sys; print(f'pytest={pytest.__version__}'); print(f'playwright={playwright.__version__}'); print(f'python={sys.version}')"
+          uv pip list | grep -iE 'pytest|playwright|asyncio' || true
           uv run pytest --version
+          uv run playwright --version
           ls -la ~/.cache/ms-playwright/ || true
+          uv run python -c "import pytest_playwright; print('pytest_playwright loaded')"
 
       - name: Run app harness tests
         env:
