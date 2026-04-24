@@ -1009,12 +1009,11 @@ class App(MiddlewareMixin, LifespanMixin):
         dependencies = constants.PackageJson.DEPENDENCIES
         dev_dependencies = constants.PackageJson.DEV_DEPENDENCIES
         page_imports = {
-            i
-            for i, tags in imports.items()
-            if i not in dependencies
-            and i not in dev_dependencies
-            and not any(i.startswith(prefix) for prefix in ["/", "$/", "."])
-            and i != ""
+            package_name
+            for import_name, tags in imports.items()
+            if (package_name := self._get_frontend_package_name(import_name))
+            and package_name not in dependencies
+            and package_name not in dev_dependencies
             and any(tag.install for tag in tags)
         }
         pinned = {i.rpartition("@")[0] for i in page_imports if "@" in i}
@@ -1031,6 +1030,43 @@ class App(MiddlewareMixin, LifespanMixin):
             filtered_frontend_packages.append(package)
         page_imports.update(filtered_frontend_packages)
         js_runtimes.install_frontend_packages(page_imports, get_config())
+
+    @staticmethod
+    def _get_frontend_package_name(import_name: str) -> str | None:
+        """Resolve the npm package name to install for a library import path.
+
+        Args:
+            import_name: The import path key used in component imports.
+
+        Returns:
+            The package name that should be installed, including pinned version when
+            available, or None when the import does not represent an installable npm package.
+        """
+        if import_name == "" or any(
+            import_name.startswith(prefix) for prefix in ("/", "$/", ".")
+        ):
+            return None
+
+        library_name = format.format_library_name(import_name)
+        if library_name.startswith("@"):
+            scope, slash, package_and_path = library_name.partition("/")
+            package_name = (
+                f"{scope}/{package_and_path.split('/', maxsplit=1)[0]}"
+                if slash and package_and_path
+                else library_name
+            )
+        else:
+            package_name = library_name.split("/", maxsplit=1)[0]
+
+        if package_name == library_name:
+            return import_name
+
+        version = (
+            import_name[len(library_name) + 1 :]
+            if import_name.startswith(f"{library_name}@")
+            else ""
+        )
+        return f"{package_name}@{version}" if version else package_name
 
     def _app_root(self, app_wrappers: dict[tuple[int, str], Component]) -> Component:
         for component in tuple(app_wrappers.values()):

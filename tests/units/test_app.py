@@ -24,6 +24,7 @@ from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
 from reflex_base.utils import console, exceptions, format
+from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import computed_var
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
@@ -2237,6 +2238,32 @@ def test_app_wrap_priority(
         ")))))))" + (")" if react_strict_mode else "") + "))\n}"
     )
     assert expected.split(",") == function_app_definition.split(",")
+
+
+def test_get_frontend_packages_maps_subpath_imports_to_installable_package_names(
+    mocker: MockerFixture,
+):
+    """Subpath imports should install the base npm package."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex.app.get_config", return_value=conf)
+    install_frontend_packages = mocker.patch(
+        "reflex.app.js_runtimes.install_frontend_packages"
+    )
+
+    app = App(theme=None)
+    app._get_frontend_packages(
+        {
+            "react-map-gl/maplibre": {ImportVar(tag="Map")},
+            "@scope/pkg/subpath": {ImportVar(tag="Widget")},
+            "react": {ImportVar(tag="useEffect")},
+        }
+    )
+
+    install_set, _ = install_frontend_packages.call_args.args
+    assert "react-map-gl" in install_set
+    assert "@scope/pkg" in install_set
+    assert "react-map-gl/maplibre" not in install_set
+    assert "@scope/pkg/subpath" not in install_set
 
 
 def test_app_state_determination():
