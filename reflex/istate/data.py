@@ -223,21 +223,22 @@ class ReflexURLCastedVar(CachedVarOperation, ReflexURLVar):
         """
         return f'{self._original!s}?.["href"]'
 
-    def _component(self, name: str, var_type: Any) -> Var:
-        """Build a child Var that reads ``name`` on the serialized URL object.
+    def _component(self, name: str) -> Var:
+        """Build an indexing operation for a key on the serialized URL object.
+
+        The returned Var is untyped; each property wraps this in a
+        ``.to(...)`` call to narrow it to the correct Var subclass.
 
         Args:
             name: The component key on the serialized URL object.
-            var_type: The python type of the component value.
 
         Returns:
-            The child Var, already guess_type'd to the appropriate subclass.
+            A Var reading ``name`` from the URL object.
         """
         return ObjectItemOperation.create(
             self._original.to(ObjectVar, Mapping[str, Any]),
             name,
-            var_type,
-        ).guess_type()
+        )
 
     @property
     def scheme(self) -> StringVar:
@@ -246,7 +247,7 @@ class ReflexURLCastedVar(CachedVarOperation, ReflexURLVar):
         Returns:
             StringVar accessing ``scheme`` on the serialized URL.
         """
-        return self._component("scheme", str)  # pyright: ignore[reportReturnType]
+        return self._component("scheme").to(str)
 
     @property
     def netloc(self) -> StringVar:
@@ -255,7 +256,7 @@ class ReflexURLCastedVar(CachedVarOperation, ReflexURLVar):
         Returns:
             StringVar accessing ``netloc`` on the serialized URL.
         """
-        return self._component("netloc", str)  # pyright: ignore[reportReturnType]
+        return self._component("netloc").to(str)
 
     @property
     def origin(self) -> StringVar:
@@ -264,7 +265,7 @@ class ReflexURLCastedVar(CachedVarOperation, ReflexURLVar):
         Returns:
             StringVar accessing ``origin`` on the serialized URL.
         """
-        return self._component("origin", str)  # pyright: ignore[reportReturnType]
+        return self._component("origin").to(str)
 
     @property
     def path(self) -> StringVar:
@@ -273,7 +274,7 @@ class ReflexURLCastedVar(CachedVarOperation, ReflexURLVar):
         Returns:
             StringVar accessing ``path`` on the serialized URL.
         """
-        return self._component("path", str)  # pyright: ignore[reportReturnType]
+        return self._component("path").to(str)
 
     @property
     def query(self) -> StringVar:
@@ -282,7 +283,7 @@ class ReflexURLCastedVar(CachedVarOperation, ReflexURLVar):
         Returns:
             StringVar accessing ``query`` on the serialized URL.
         """
-        return self._component("query", str)  # pyright: ignore[reportReturnType]
+        return self._component("query").to(str)
 
     @property
     def query_parameters(self) -> ObjectVar[Mapping[str, str]]:
@@ -291,9 +292,7 @@ class ReflexURLCastedVar(CachedVarOperation, ReflexURLVar):
         Returns:
             ObjectVar accessing ``query_parameters`` on the serialized URL.
         """
-        return self._component(  # pyright: ignore[reportReturnType]
-            "query_parameters", Mapping[str, str]
-        )
+        return self._component("query_parameters").to(ObjectVar, Mapping[str, str])
 
     @property
     def fragment(self) -> StringVar:
@@ -302,7 +301,7 @@ class ReflexURLCastedVar(CachedVarOperation, ReflexURLVar):
         Returns:
             StringVar accessing ``fragment`` on the serialized URL.
         """
-        return self._component("fragment", str)  # pyright: ignore[reportReturnType]
+        return self._component("fragment").to(str)
 
     @property
     def href(self) -> StringVar:
@@ -311,7 +310,7 @@ class ReflexURLCastedVar(CachedVarOperation, ReflexURLVar):
         Returns:
             StringVar accessing ``href`` on the serialized URL.
         """
-        return self._component("href", str)  # pyright: ignore[reportReturnType]
+        return self._component("href").to(str)
 
     @classmethod
     def create(
