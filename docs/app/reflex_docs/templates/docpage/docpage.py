@@ -349,20 +349,24 @@ def _copy_page_menu_item(
     )
 
 
-def _build_reflex_action():
-    return run_script(
-        """
-((function() {
-  const pageUrl = window.location.origin + window.location.pathname.replace(/\\/$/, '') + '.md';
-  const prompt = 'Read from ' + pageUrl + ' and help me build an app based on it.';
-  window.open('https://build.reflex.dev/?prompt=' + encodeURIComponent(prompt), '_blank', 'noopener,noreferrer');
-})())
-        """
+DOCS_PROD_BASE = "https://reflex.dev/docs"
+
+
+def _build_prefill_url(base_url: str, path: str, action: str) -> str:
+    from urllib.parse import quote
+
+    page_md_url = f"{DOCS_PROD_BASE}{path.rstrip('/')}.md"
+    prompt = f"Read from {page_md_url} {action}"
+    return f"{base_url}{quote(prompt)}"
+
+
+def _build_reflex_menu_item(path: str) -> rx.Component:
+    href = _build_prefill_url(
+        "https://build.reflex.dev/?prompt=",
+        path,
+        "and help me build an app based on it.",
     )
-
-
-def _build_reflex_menu_item() -> rx.Component:
-    return rx.el.button(
+    return rx.el.a(
         rx.el.div(
             rx.el.div(
                 ui.icon(
@@ -397,10 +401,11 @@ def _build_reflex_menu_item() -> rx.Component:
             ),
             class_name="flex items-start gap-3 px-3 py-2.5 w-full",
         ),
-        type="button",
-        on_click=_build_reflex_action(),
+        href=href,
+        target="_blank",
+        rel="noopener noreferrer",
         class_name=(
-            "w-full text-left "
+            "no-underline w-full text-left block "
             "bg-gradient-to-br from-violet-2 to-slate-1 "
             "hover:from-violet-3 hover:to-violet-2 "
             "border-b border-slate-4 transition-colors cursor-pointer"
@@ -408,19 +413,13 @@ def _build_reflex_menu_item() -> rx.Component:
     )
 
 
-def _open_in_llm_action(base_url: str):
-    return run_script(
-        f"""
-((function() {{
-  const pageUrl = window.location.origin + window.location.pathname.replace(/\\/$/, '') + '.md';
-  const prompt = 'Read from ' + pageUrl + ' so I can ask questions about its contents';
-  window.open({base_url!r} + encodeURIComponent(prompt), '_blank', 'noopener,noreferrer');
-}})())
-        """
+def _llm_menu_item_href(base_url: str, path: str) -> str:
+    return _build_prefill_url(
+        base_url, path, "so I can ask questions about its contents"
     )
 
 
-def _copy_page_button(doc_content: str) -> rx.Component:
+def _copy_page_button(doc_content: str, path: str = "") -> rx.Component:
     copy_action = run_script(
         """
 ((function() {
@@ -517,7 +516,7 @@ def _copy_page_button(doc_content: str) -> rx.Component:
                 ui.popover.positioner(
                     ui.popover.popup(
                         render_=rx.el.div(
-                            _build_reflex_menu_item(),
+                            _build_reflex_menu_item(path=path),
                             _copy_page_menu_item(
                                 icon=ui.icon("Copy01Icon", size=16),
                                 title="Copy page",
@@ -535,16 +534,16 @@ def _copy_page_button(doc_content: str) -> rx.Component:
                                 icon=ui.icon("MessageProgrammingIcon", size=16),
                                 title="Open in ChatGPT",
                                 description="Ask ChatGPT about this page",
-                                on_click=_open_in_llm_action(
-                                    "https://chatgpt.com/?hints=search&q="
+                                href=_llm_menu_item_href(
+                                    "https://chatgpt.com/?hints=search&q=", path
                                 ),
                             ),
                             _copy_page_menu_item(
                                 icon=ui.icon("AiChat02Icon", size=16),
                                 title="Open in Claude",
                                 description="Ask Claude about this page",
-                                on_click=_open_in_llm_action(
-                                    "https://claude.ai/new?q="
+                                href=_llm_menu_item_href(
+                                    "https://claude.ai/new?q=", path
                                 ),
                             ),
                             class_name=(
@@ -626,7 +625,7 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
             class_name="flex flex-row items-center gap-[5px] lg:gap-4 overflow-hidden",
         ),
         rx.box(
-            _copy_page_button(doc_content) if doc_content else rx.fragment(),
+            _copy_page_button(doc_content, path=path) if doc_content else rx.fragment(),
             ui.icon(
                 "ArrowDown01Icon",
                 size=14,
