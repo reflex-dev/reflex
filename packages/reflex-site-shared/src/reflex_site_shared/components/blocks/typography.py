@@ -16,7 +16,11 @@ def definition(title: str, *children) -> rx.Component:
     """
     return rx.vstack(
         rx.heading(
-            title, font_size="1em", font_weight="bold", color=rx.color("mauve", 12)
+            title,
+            as_="h3",
+            font_size="1em",
+            font_weight="bold",
+            color=rx.color("mauve", 12),
         ),
         *children,
         color=rx.color("mauve", 10),

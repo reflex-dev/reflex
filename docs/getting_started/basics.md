@@ -123,9 +123,9 @@ class MyState(rx.State):
 def counter():
     return rx.hstack(
         # The heading `color` prop is set to the `color` var in MyState.
-        rx.heading("Count: ", color=MyState.color, as_="h3"),
+        rx.heading("Count: ", color=MyState.color),
         # The `count` var in `MyState` is passed as a child to the heading component.
-        rx.heading(MyState.count, as_="h3"),
+        rx.heading(MyState.count),
     )
 ```
 
@@ -152,7 +152,7 @@ class CounterState(rx.State):
 
 def counter_increment():
     return rx.hstack(
-        rx.heading(CounterState.count, as_="h3"),
+        rx.heading(CounterState.count),
         rx.button("Increment", on_click=CounterState.increment),
     )
 ```
@@ -180,7 +180,7 @@ class CounterState2(rx.State):
 
 def counter_variable():
     return rx.hstack(
-        rx.heading(CounterState2.count, as_="h3"),
+        rx.heading(CounterState2.count),
         rx.button("Increment by 1", on_click=lambda: CounterState2.increment(1)),
         rx.button("Increment by 5", on_click=lambda: CounterState2.increment(5)),
     )
@@ -199,7 +199,7 @@ class TextState(rx.State):
 
 def text_input():
     return rx.vstack(
-        rx.heading(TextState.text, as_="h3"),
+        rx.heading(TextState.text),
         rx.input(default_value=TextState.text, on_blur=TextState.update_text),
     )
 ```
@@ -246,7 +246,7 @@ class MyState3(rx.State):
 
 def count_and_check():
     return rx.box(
-        rx.heading(MyState3.text, as_="h3"), rx.button("Increment", on_click=MyState3.increment)
+        rx.heading(MyState3.text), rx.button("Increment", on_click=MyState3.increment)
     )
 ```
 
@@ -268,7 +268,7 @@ class BadState(rx.State):
 
 def count_if_even():
     return rx.box(
-        rx.heading("Count: ", as_="h3"),
+        rx.heading("Count: "),
         # This will raise a compile error, as BadState.count is a var and not known at compile time.
         rx.text(BadState.count if BadState.count % 2 == 0 else "Odd"),
         # Using an if statement with a var as a prop will NOT work either.
@@ -323,8 +323,8 @@ def show_login():
     return rx.box(
         rx.cond(
             LoginState.logged_in,
-            rx.heading("Logged In", as_="h3"),
-            rx.heading("Not Logged In", as_="h3"),
+            rx.heading("Logged In"),
+            rx.heading("Not Logged In"),
         ),
         rx.button("Toggle Login", on_click=LoginState.toggle_login),
     )
@@ -372,7 +372,7 @@ class CountEvenState(rx.State):
 
 def count_if_even():
     return rx.box(
-        rx.heading("Count: ", as_="h3"),
+        rx.heading("Count: "),
         rx.cond(
             # Here we use the `%` and `==` var operations to check if the count is even.
             CountEvenState.count % 2 == 0,
