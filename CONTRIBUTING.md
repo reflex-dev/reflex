@@ -124,8 +124,8 @@ By default the dev server compiles every page, which can be slow. To only compil
 
 ```python
 WHITELISTED_PAGES = [
-    "/docs/getting-started/introduction",
-    "/docs/components/props",
+    "/getting-started/introduction",
+    "/components/props",
 ]
 ```
 
