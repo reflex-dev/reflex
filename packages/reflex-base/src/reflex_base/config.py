@@ -4,6 +4,7 @@ import dataclasses
 import importlib
 import os
 import sys
+import threading
 import urllib.parse
 from collections.abc import Sequence
 from importlib.util import find_spec
@@ -657,27 +658,32 @@ def _get_config() -> Config:
     return rxconfig.config
 
 
+# Protect sys.path from concurrent modification during config loading.
+_load_config_lock = threading.RLock()
+
+
 def _load_config() -> Config:
     """Load the config from rxconfig.py with cwd on sys.path.
 
     Returns:
         The app config.
     """
-    orig_sys_path = sys.path.copy()
-    sys.path.clear()
-    sys.path.append(str(Path.cwd()))
-    try:
-        return _get_config()
-    except Exception:
-        sys.path.extend(orig_sys_path)
-        return _get_config()
-    finally:
-        extra_paths = [
-            p for p in sys.path if p not in orig_sys_path and p != str(Path.cwd())
-        ]
+    with _load_config_lock:
+        orig_sys_path = sys.path.copy()
         sys.path.clear()
-        sys.path.extend(extra_paths)
-        sys.path.extend(orig_sys_path)
+        sys.path.append(str(Path.cwd()))
+        try:
+            return _get_config()
+        except Exception:
+            sys.path.extend(orig_sys_path)
+            return _get_config()
+        finally:
+            extra_paths = [
+                p for p in sys.path if p not in orig_sys_path and p != str(Path.cwd())
+            ]
+            sys.path.clear()
+            sys.path.extend(extra_paths)
+            sys.path.extend(orig_sys_path)
 
 
 def get_config() -> Config:
