@@ -2128,6 +2128,7 @@ def test_app_wrap_compile_theme(
     react_strict_mode: bool,
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
+    clean_registration_context,
 ):
     """Test that the radix theme component wraps the app.
 
@@ -2135,6 +2136,8 @@ def test_app_wrap_compile_theme(
         react_strict_mode: Whether to use React Strict Mode.
         compilable_app: compilable_app fixture.
         mocker: pytest mocker object.
+        clean_registration_context: Fresh registration context so the
+            `_get_config` mock below is not masked by a cached config.
     """
     conf = rx.Config(app_name="testing", react_strict_mode=react_strict_mode)
     mocker.patch("reflex_base.config._get_config", return_value=conf)
@@ -2182,6 +2185,7 @@ def test_app_wrap_priority(
     react_strict_mode: bool,
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
+    clean_registration_context,
 ):
     """Test that the app wrap components are wrapped in the correct order.
 
@@ -2189,6 +2193,8 @@ def test_app_wrap_priority(
         react_strict_mode: Whether to use React Strict Mode.
         compilable_app: compilable_app fixture.
         mocker: pytest mocker object.
+        clean_registration_context: Fresh registration context so the
+            `_get_config` mock below is not masked by a cached config.
     """
     conf = rx.Config(app_name="testing", react_strict_mode=react_strict_mode)
     mocker.patch("reflex_base.config._get_config", return_value=conf)

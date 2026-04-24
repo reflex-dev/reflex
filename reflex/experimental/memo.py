@@ -10,7 +10,6 @@ from typing import Any, get_args, get_origin, get_type_hints
 
 from reflex_base import constants
 from reflex_base.components.component import Component
-from reflex_base.components.dynamic import bundled_libraries
 from reflex_base.constants.compiler import SpecialAttributes
 from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER
 from reflex_base.utils import format
@@ -138,9 +137,6 @@ def _get_experimental_memo_component_class(
     )
 
 
-EXPERIMENTAL_MEMOS: dict[str, ExperimentalMemoDefinition] = {}
-
-
 def _memo_registry_key(definition: ExperimentalMemoDefinition) -> str:
     """Get the registry key for an experimental memo.
 
@@ -185,8 +181,11 @@ def _register_memo_definition(definition: ExperimentalMemoDefinition) -> None:
     Raises:
         ValueError: If another memo already compiles to the same exported name.
     """
+    from reflex_base.registry import RegistrationContext
+
+    memos = RegistrationContext.ensure_context().memo_definitions
     key = _memo_registry_key(definition)
-    if (existing := EXPERIMENTAL_MEMOS.get(key)) is not None and (
+    if (existing := memos.get(key)) is not None and (
         not _is_memo_reregistration(existing, definition)
     ):
         msg = (
@@ -197,7 +196,7 @@ def _register_memo_definition(definition: ExperimentalMemoDefinition) -> None:
         )
         raise ValueError(msg)
 
-    EXPERIMENTAL_MEMOS[key] = definition
+    memos[key] = definition
 
 
 def _annotation_inner_type(annotation: Any) -> Any:
@@ -355,12 +354,15 @@ def _validate_var_return_expr(return_expr: Var, func_name: str) -> None:
         )
         raise TypeError(msg)
 
+    from reflex_base.registry import RegistrationContext
+
+    bundled = RegistrationContext.ensure_context().bundled_libraries
     for lib in dict(var_data.imports):
         if not lib:
             continue
         if lib.startswith((".", "/", "$/", "http")):
             continue
-        if format.format_library_name(lib) in bundled_libraries:
+        if format.format_library_name(lib) in bundled:
             continue
         msg = (
             f"Var-returning `@rx._x.memo` `{func_name}` cannot import `{lib}` because "

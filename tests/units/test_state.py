@@ -3701,7 +3701,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
 
         state_manager = StateManagerRedis(redis=mock_redis())
         assert state_manager.lock_expiration == expected_values[0]  # pyright: ignore [reportAttributeAccessIssue]
@@ -3737,7 +3737,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
 
         with pytest.raises(InvalidLockWarningThresholdError):
             StateManagerRedis(redis=mock_redis())
@@ -3762,7 +3762,7 @@ config = rx.Config(
     monkeypatch.setenv("REFLEX_REDIS_URL", "redis://localhost:6379")
 
     with chdir(proj_root):
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
         monkeypatch.setattr(prerequisites, "get_redis", mock_redis)
         state_manager = StateManager.create()
         assert isinstance(state_manager, StateManagerMemory)
@@ -3786,7 +3786,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
         from reflex.state import State
 
         class TestState(State):
@@ -3813,7 +3813,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
         from reflex.state import State
 
         class TestState(State):

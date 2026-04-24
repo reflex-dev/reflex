@@ -8,7 +8,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from reflex_base import constants
-from reflex_base.config import get_config
+from reflex_base.config import reload_config
 
 from reflex.utils import console, net, path_ops, redir
 from reflex.utils.rename import rename_imports_and_app_name
@@ -170,7 +170,7 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
 
     # Move the rxconfig file here first.
     path_ops.mv(str(template_dir / constants.Config.FILE), constants.Config.FILE)
-    new_config = get_config(reload=True)
+    new_config = reload_config()
 
     # Get the template app's name from rxconfig in case it is different than
     # the source code repo name on github.

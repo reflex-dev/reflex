@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import Self
 
@@ -11,9 +11,30 @@ from reflex_base.context.base import BaseContext
 from reflex_base.utils.exceptions import StateValueError
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from reflex.state import BaseState
     from reflex_base.components.component import StatefulComponent
+    from reflex_base.config import Config
     from reflex_base.event import EventHandler
+
+
+def _default_bundled_libraries() -> list[str]:
+    """Return the initial set of bundled libraries for a new context.
+
+    Returns:
+        The default list of libraries bundled into every app build.
+    """
+    from reflex_base import constants
+
+    return [
+        "react",
+        "@radix-ui/themes",
+        "@emotion/react",
+        f"$/{constants.Dirs.UTILS}/context",
+        f"$/{constants.Dirs.UTILS}/state",
+        f"$/{constants.Dirs.UTILS}/components",
+    ]
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
@@ -44,6 +65,31 @@ class RegistrationContext(BaseContext):
         default_factory=dict,
         repr=False,
     )
+    config: Config | None = dataclasses.field(default=None, repr=False)
+    decorated_pages: list[tuple[Callable, dict[str, Any]]] = dataclasses.field(
+        default_factory=list,
+        repr=False,
+    )
+    custom_components: dict[str, Any] = dataclasses.field(
+        default_factory=dict,
+        repr=False,
+    )
+    memo_definitions: dict[str, Any] = dataclasses.field(
+        default_factory=dict,
+        repr=False,
+    )
+    bundled_libraries: list[str] = dataclasses.field(
+        default_factory=_default_bundled_libraries,
+        repr=False,
+    )
+
+    def _set_config(self, config: Config) -> None:
+        """Set the config for this context.
+
+        Args:
+            config: The config to associate with this context.
+        """
+        object.__setattr__(self, "config", config)
 
     @classmethod
     def ensure_context(cls) -> Self:
