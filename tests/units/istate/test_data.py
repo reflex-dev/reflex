@@ -66,7 +66,6 @@ def test_router_url_var_string_components():
         "path",
         "query",
         "fragment",
-        "href",
     ):
         child = getattr(url_var, component)
         assert isinstance(child, StringVar), (

@@ -303,15 +303,6 @@ class ReflexURLCastedVar(CachedVarOperation, ReflexURLVar):
         """
         return self._component("fragment").to(str)
 
-    @property
-    def href(self) -> StringVar:
-        """The full URL string.
-
-        Returns:
-            StringVar accessing ``href`` on the serialized URL.
-        """
-        return self._component("href").to(str)
-
     @classmethod
     def create(
         cls,
