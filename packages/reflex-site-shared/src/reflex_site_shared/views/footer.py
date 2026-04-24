@@ -8,7 +8,9 @@ from reflex_components_internal import button as marketing_button
 import reflex as rx
 from reflex.style import color_mode, set_color_mode
 from reflex_site_shared.backend.signup import IndexState
+from reflex_site_shared.backend.status import StatusState
 from reflex_site_shared.components.icons import get_icon
+from reflex_site_shared.components.server_status import server_status
 from reflex_site_shared.constants import (
     CHANGELOG_URL,
     DISCORD_URL,
@@ -62,7 +64,7 @@ def logo() -> rx.Component:
             class_name="shrink-0 hidden dark:block",
         ),
         href="/",
-        class_name="block shrink-0 mr-[7rem] md:hidden xl:block",
+        class_name="block shrink-0 mr-[7rem] md:hidden xl:block h-fit",
     )
 
 
@@ -297,11 +299,15 @@ def footer_index(class_name: str = "", grid_class_name: str = "") -> rx.Componen
             class_name="flex flex-col max-lg:gap-6 lg:flex-row w-full",
         ),
         rx.el.div(
-            rx.el.span(
-                f"Copyright © {datetime.now().year} Pynecone, Inc.",
-                class_name="text-xs text-m-slate-7 dark:text-m-slate-6 font-medium",
+            server_status(StatusState.status),
+            rx.el.div(
+                rx.el.span(
+                    f"Copyright © {datetime.now().year} Pynecone, Inc.",
+                    class_name="text-xs text-m-slate-7 dark:text-m-slate-6 font-medium",
+                ),
+                menu_socials(),
+                class_name="flex flex-row items-center gap-6",
             ),
-            menu_socials(),
             rx.el.div(
                 class_name="absolute -top-px -right-24 w-24 h-px bg-gradient-to-l from-transparent to-current text-m-slate-4 dark:text-m-slate-10 max-lg:hidden"
             ),

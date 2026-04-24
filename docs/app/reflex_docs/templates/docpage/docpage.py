@@ -9,12 +9,14 @@ import reflex_components_internal as ui
 from reflex.components.radix.themes.base import LiteralAccentColor
 from reflex.experimental.client_state import ClientStateVar
 from reflex.utils.format import to_snake_case, to_title_case
+from reflex_site_shared.backend.status import StatusState
 from reflex_site_shared.components.blocks.code import *
 from reflex_site_shared.components.blocks.demo import *
 from reflex_site_shared.components.blocks.headings import *
 from reflex_site_shared.components.blocks.typography import *
 from reflex_site_shared.components.icons import get_icon
 from reflex_site_shared.components.marketing_button import button as marketing_button
+from reflex_site_shared.components.server_status import server_status
 from reflex_site_shared.route import Route, get_path
 from reflex_site_shared.styles.colors import c_color
 from reflex_site_shared.utils.docpage import right_sidebar_item_highlight
@@ -284,9 +286,13 @@ def docpage_footer(path: str):
                 menu_socials(),
                 class_name="flex flex-row gap-6 justify-between items-end w-full",
             ),
-            rx.text(
-                f"Copyright © {datetime.now().year} Pynecone, Inc.",
-                class_name="font-small text-slate-9",
+            rx.el.div(
+                rx.text(
+                    f"Copyright © {datetime.now().year} Pynecone, Inc.",
+                    class_name="font-small text-slate-9",
+                ),
+                server_status(StatusState.status),
+                class_name="flex flex-row items-center gap-4 justify-between w-full",
             ),
             class_name="flex flex-col justify-between gap-10 py-6 lg:py-8 w-full",
         ),
