@@ -919,7 +919,6 @@ def minify_init():
         generate_minify_config,
         save_minify_config,
     )
-    from reflex.state import State
     from reflex.utils import prerequisites
 
     path = _get_minify_json_path()
@@ -930,11 +929,11 @@ def minify_init():
         )
         raise SystemExit(1)
 
-    # Load the user's app to register all state classes
+    # Load the user's app so every State subclass registers itself.
     prerequisites.get_app()
 
-    # Generate the configuration
-    config = generate_minify_config(State)
+    # Generate the configuration over every registered state.
+    config = generate_minify_config()
     save_minify_config(config)
 
     num_states = len(config["states"])
@@ -968,7 +967,6 @@ def minify_sync(reassign_deleted: bool, prune: bool):
         save_minify_config,
         sync_minify_config,
     )
-    from reflex.state import State
     from reflex.utils import prerequisites
 
     path = _get_minify_json_path()
@@ -978,7 +976,7 @@ def minify_sync(reassign_deleted: bool, prune: bool):
         )
         raise SystemExit(1)
 
-    # Load the user's app to register all state classes
+    # Load the user's app so every State subclass registers itself.
     prerequisites.get_app()
 
     # Load existing config
@@ -990,9 +988,9 @@ def minify_sync(reassign_deleted: bool, prune: bool):
     old_states = len(existing_config["states"])
     old_events = sum(len(handlers) for handlers in existing_config["events"].values())
 
-    # Sync the configuration
+    # Sync against every registered state.
     new_config = sync_minify_config(
-        existing_config, State, reassign_deleted=reassign_deleted, prune=prune
+        existing_config, reassign_deleted=reassign_deleted, prune=prune
     )
     save_minify_config(new_config)
 
@@ -1017,7 +1015,6 @@ def minify_validate():
         _load_minify_config_uncached,
         validate_minify_config,
     )
-    from reflex.state import State
     from reflex.utils import prerequisites
 
     path = _get_minify_json_path()
@@ -1037,7 +1034,7 @@ def minify_validate():
         raise SystemExit(1)
 
     # Validate
-    errors, warnings, missing = validate_minify_config(config, State)
+    errors, warnings, missing = validate_minify_config(config)
 
     if errors:
         console.error("Errors found:")
@@ -1050,11 +1047,11 @@ def minify_validate():
             console.warn(f"  - {warning}")
 
     if missing:
-        console.info("Missing entries (in code but not in config):")
+        console.warn("Missing entries (in code but not in config):")
         for entry in missing:
             console.warn(f"  - {entry}")
 
-    if errors:
+    if errors or missing:
         raise SystemExit(1)
     console.log(f"{MINIFY_JSON} is valid and up-to-date.")
 

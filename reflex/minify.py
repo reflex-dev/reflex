@@ -1,11 +1,25 @@
 """Minification configuration for state and event names.
 
-This module provides centralized ID management for minifying state and event handler
-names. The configuration is stored in a `minify.json` file at the project root.
+This module provides centralized ID management for minifying state and event
+handler names. The configuration is stored in a ``minify.json`` file at the
+project root.
+
+The minification entry point is :class:`MinifyNameResolver`, an implementation
+of :class:`reflex_base.registry.NameResolver`. To enable minification at
+runtime, install the resolver into the active registration context::
+
+    from reflex.minify import MinifyNameResolver
+    from reflex_base.registry import RegistrationContext
+
+    RegistrationContext.get().set_name_resolver(MinifyNameResolver.from_disk())
+
+:func:`clear_config_cache` does this automatically — call it whenever
+``minify.json`` or the ``REFLEX_MINIFY_*`` environment variables change.
 """
 
 from __future__ import annotations
 
+import dataclasses
 import functools
 import json
 from pathlib import Path
@@ -203,14 +217,123 @@ def save_minify_config(config: MinifyConfig) -> None:
         f.write("\n")
 
 
-def clear_config_cache() -> None:
-    """Clear the cached configuration.
+@dataclasses.dataclass(slots=True)
+class MinifyNameResolver:
+    """:class:`~reflex_base.registry.NameResolver` driven by ``minify.json``.
 
-    This should be called after modifying minify.json programmatically.
+    Returns the minified name from the configuration when the corresponding
+    ``REFLEX_MINIFY_STATES`` / ``REFLEX_MINIFY_EVENTS`` env-var is set to
+    ``enabled`` *and* the entry exists in the config. All other lookups return
+    ``None`` so the registry falls back to the default name.
+
+    The resolver is constructed once (typically via :meth:`from_disk`) and
+    held by the active :class:`~reflex_base.registry.RegistrationContext`.
+    Per-class lookups are memoized in ``_state_cache`` and ``_event_cache``
+    for O(1) amortized cost on the hot path.
+
+    Attributes:
+        config: The parsed ``minify.json`` content, or ``None`` when the file
+            is absent or malformed.
+        states_enabled: Whether ``REFLEX_MINIFY_STATES`` is on.
+        events_enabled: Whether ``REFLEX_MINIFY_EVENTS`` is on.
+    """
+
+    config: MinifyConfig | None
+    states_enabled: bool
+    events_enabled: bool
+    _state_cache: dict[type[BaseState], str] = dataclasses.field(
+        default_factory=dict, repr=False
+    )
+    _event_cache: dict[type[BaseState], dict[str, str]] = dataclasses.field(
+        default_factory=dict, repr=False
+    )
+
+    @classmethod
+    def from_disk(cls) -> MinifyNameResolver:
+        """Build a resolver from the current ``minify.json`` and env vars.
+
+        Reads each input exactly once. Subsequent state/event lookups never
+        touch the filesystem.
+
+        Returns:
+            A configured resolver. May still return ``None`` from every lookup
+            if minification is disabled or the config file is absent.
+        """
+        from reflex.environment import MinifyMode, environment
+
+        config: MinifyConfig | None
+        try:
+            config = _load_minify_config_uncached()
+        except ValueError:
+            # Treat malformed config as "no config" for the resolver — callers
+            # that need to surface the error can read it via get_minify_config.
+            config = None
+        return cls(
+            config=config,
+            states_enabled=environment.REFLEX_MINIFY_STATES.get() == MinifyMode.ENABLED,
+            events_enabled=environment.REFLEX_MINIFY_EVENTS.get() == MinifyMode.ENABLED,
+        )
+
+    def resolve_state_name(self, state_cls: type[BaseState]) -> str | None:  # noqa: D102
+        if not (self.states_enabled and self.config):
+            return None
+        cached = self._state_cache.get(state_cls)
+        if cached is not None:
+            return cached
+        resolved = self.config["states"].get(get_state_full_path(state_cls))
+        if resolved is not None:
+            self._state_cache[state_cls] = resolved
+        return resolved
+
+    def resolve_handler_name(  # noqa: D102
+        self, state_cls: type[BaseState], handler_name: str
+    ) -> str | None:
+        if not (self.events_enabled and self.config):
+            return None
+        per_state = self._event_cache.get(state_cls)
+        if per_state is None:
+            per_state = self.config["events"].get(get_state_full_path(state_cls), {})
+            self._event_cache[state_cls] = per_state
+        return per_state.get(handler_name)
+
+
+def install_minify_resolver() -> None:
+    """Install a fresh :class:`MinifyNameResolver` into the active context.
+
+    Use this after the user's app has been imported (so the registration
+    context contains the right state classes) to switch the framework over
+    to minified names.
+
+    Returns silently if no registration context is currently attached.
+    """
+    try:
+        from reflex_base.registry import RegistrationContext
+
+        ctx = RegistrationContext.get()
+    except LookupError:
+        return
+    ctx.set_name_resolver(MinifyNameResolver.from_disk())
+
+
+def clear_config_cache() -> None:
+    """Reload the minify configuration and propagate it through the registry.
+
+    Clears the module-level lru_caches for :func:`get_minify_config`,
+    :func:`is_state_minify_enabled`, :func:`is_event_minify_enabled`, then
+    rebuilds the :class:`MinifyNameResolver` from the current
+    ``minify.json`` / env vars and installs it via
+    :meth:`reflex_base.registry.RegistrationContext.set_name_resolver`. The
+    set-resolver call clears per-class name caches and re-keys the registry
+    in one atomic step.
+
+    Call this whenever ``minify.json`` is rewritten programmatically, or
+    after monkey-patching ``REFLEX_MINIFY_STATES`` / ``REFLEX_MINIFY_EVENTS``
+    at runtime.
     """
     get_minify_config.cache_clear()
     is_state_minify_enabled.cache_clear()
     is_event_minify_enabled.cache_clear()
+    install_minify_resolver()
 
 
 # Base-54 encoding for minified names
@@ -303,75 +426,81 @@ def get_state_full_path(state_cls: type[BaseState]) -> str:
 
 
 def collect_all_states(
-    root_state: type[BaseState],
+    root_state: type[BaseState] | None = None,
 ) -> list[type[BaseState]]:
-    """Recursively collect all state classes starting from root.
+    """Collect state classes in deterministic depth-first order.
+
+    Without ``root_state``, walks every state registered in the active
+    :class:`~reflex_base.registry.RegistrationContext` (each connected tree
+    starting from a parentless root), sorting siblings alphabetically by
+    class name. With ``root_state``, the walk is restricted to that subtree.
+
+    The CLI commands use the parameterless form so the result reflects the
+    user's currently-loaded app. Tests typically pass an explicit root to
+    scope the walk to the classes defined inside the test.
 
     Args:
-        root_state: The root state class to start from.
+        root_state: Optional subtree root. ``None`` means "every registered
+            state".
 
     Returns:
-        List of all state classes in depth-first order.
+        List of state classes in depth-first, sibling-sorted order.
     """
-    result = [root_state]
-    for substate in sorted(root_state.get_substates(), key=lambda s: s.__name__):
-        result.extend(collect_all_states(substate))
-    return result
+    if root_state is not None:
+        result = [root_state]
+        for substate in sorted(root_state.get_substates(), key=lambda s: s.__name__):
+            result.extend(collect_all_states(substate))
+        return result
+
+    from reflex_base.registry import RegistrationContext
+
+    ctx = RegistrationContext.get()
+    roots = sorted(
+        (cls for cls in ctx.base_states.values() if cls.get_parent_state() is None),
+        key=lambda s: s.__name__,
+    )
+    out: list[type[BaseState]] = []
+    for root in roots:
+        out.extend(collect_all_states(root))
+    return out
 
 
-def generate_minify_config(root_state: type[BaseState]) -> MinifyConfig:
-    """Generate a complete minify configuration for all states and events.
+def generate_minify_config(
+    root_state: type[BaseState] | None = None,
+) -> MinifyConfig:
+    """Generate a complete minify configuration.
 
-    Assigns minified names starting from 'a' for each scope (siblings get unique names),
-    sorted alphabetically by name for determinism.
+    Walks the state tree (see :func:`collect_all_states`) and assigns minified
+    names starting from ``"a"`` per sibling group. Siblings are sorted by
+    class name and handlers by handler name so the output is byte-stable across
+    runs (and therefore VCS-friendly).
 
     Args:
-        root_state: The root state class.
+        root_state: Optional subtree root. ``None`` (the default) generates a
+            config for every state registered in the active context.
 
     Returns:
-        A complete MinifyConfig.
+        A complete :class:`MinifyConfig`.
     """
     states: dict[str, str] = {}
     events: dict[str, dict[str, str]] = {}
+    sibling_counter: dict[type[BaseState] | None, int] = {}
 
-    def process_state(
-        state_cls: type[BaseState],
-        sibling_counter: dict[type[BaseState] | None, int],
-    ) -> None:
-        """Process a state and its children recursively.
-
-        Args:
-            state_cls: The state class to process.
-            sibling_counter: Counter for assigning sibling-unique IDs.
-        """
+    for state_cls in collect_all_states(root_state):
         parent = state_cls.get_parent_state()
-
-        # Assign state ID (unique among siblings)
-        if parent not in sibling_counter:
-            sibling_counter[parent] = 0
+        sibling_counter.setdefault(parent, 0)
         state_id = sibling_counter[parent]
         sibling_counter[parent] += 1
 
-        # Store state minified name
         state_path = get_state_full_path(state_cls)
         states[state_path] = int_to_minified_name(state_id)
 
-        # Assign event IDs for this state's handlers (sorted alphabetically)
         handler_names = sorted(state_cls.event_handlers.keys())
-        state_events: dict[str, str] = {}
-        for event_id, handler_name in enumerate(handler_names):
-            state_events[handler_name] = int_to_minified_name(event_id)
-        if state_events:
-            events[state_path] = state_events
-
-        # Process children (sorted alphabetically)
-        children = sorted(state_cls.get_substates(), key=lambda s: s.__name__)
-        for child in children:
-            process_state(child, sibling_counter)
-
-    # Start processing from root
-    sibling_counter: dict[type[BaseState] | None, int] = {}
-    process_state(root_state, sibling_counter)
+        if handler_names:
+            events[state_path] = {
+                handler_name: int_to_minified_name(event_id)
+                for event_id, handler_name in enumerate(handler_names)
+            }
 
     return MinifyConfig(
         version=SCHEMA_VERSION,
@@ -382,19 +511,21 @@ def generate_minify_config(root_state: type[BaseState]) -> MinifyConfig:
 
 def validate_minify_config(
     config: MinifyConfig,
-    root_state: type[BaseState],
+    root_state: type[BaseState] | None = None,
 ) -> tuple[list[str], list[str], list[str]]:
     """Validate a minify configuration against the current state tree.
 
     Args:
         config: The configuration to validate.
-        root_state: The root state class.
+        root_state: Optional subtree root. ``None`` validates against every
+            state in the active context.
 
     Returns:
-        A tuple of (errors, warnings, missing_entries):
-        - errors: Critical issues (duplicate IDs, etc.)
-        - warnings: Non-critical issues (orphaned entries)
-        - missing_entries: States/events in code but not in config
+        A tuple ``(errors, warnings, missing_entries)``:
+
+        * ``errors`` — critical issues (duplicate IDs, etc.)
+        * ``warnings`` — non-critical issues (orphaned entries)
+        * ``missing_entries`` — states/events in code but not in the config
     """
     errors: list[str] = []
 
@@ -480,7 +611,7 @@ def validate_minify_config(
 
 def sync_minify_config(
     existing_config: MinifyConfig,
-    root_state: type[BaseState],
+    root_state: type[BaseState] | None = None,
     reassign_deleted: bool = False,
     prune: bool = False,
 ) -> MinifyConfig:
@@ -488,7 +619,8 @@ def sync_minify_config(
 
     Args:
         existing_config: The existing configuration to update.
-        root_state: The root state class.
+        root_state: Optional subtree root. ``None`` syncs against every state
+            in the active context.
         reassign_deleted: If True, reassign IDs that are no longer in use.
         prune: If True, remove entries for states/events that no longer exist.
 

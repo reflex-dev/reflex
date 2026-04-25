@@ -5,12 +5,14 @@ from __future__ import annotations
 import json
 
 import pytest
+from reflex_base.registry import DefaultNameResolver, NameResolver, RegistrationContext
 
 from reflex.environment import MinifyMode, environment
 from reflex.minify import (
     MINIFY_JSON,
     SCHEMA_VERSION,
     MinifyConfig,
+    MinifyNameResolver,
     clear_config_cache,
     generate_minify_config,
     get_event_id,
@@ -26,6 +28,21 @@ from reflex.minify import (
     validate_minify_config,
 )
 from reflex.state import BaseState, State
+
+
+def _resolved_event_id(state_cls: type[BaseState], handler_name: str) -> str | None:
+    """Ask the active resolver for the minified name of a handler.
+
+    Args:
+        state_cls: The state class the handler is attached to.
+        handler_name: The handler's original (Python) name.
+
+    Returns:
+        The minified id, or ``None`` if the resolver doesn't override it.
+    """
+    return RegistrationContext.get().name_resolver.resolve_handler_name(
+        state_cls, handler_name
+    )
 
 
 class TestIntToMinifiedName:
@@ -112,21 +129,24 @@ class TestGetStateFullPath:
 def temp_minify_json(tmp_path, monkeypatch):
     """Create a temporary directory and mock cwd to use it for minify.json.
 
+    ``clear_config_cache()`` walks the registration context and clears
+    ``get_name``/``get_full_name``/``get_class_substate`` LRU caches on every
+    registered State class, then re-keys the registry, so we don't have to
+    remember every State subclass that earlier tests may have registered.
+
+    The teardown undoes monkeypatch *before* clearing the cache so that the
+    refresh is based on the unmodified env/cwd; otherwise the registry would
+    be left pinned to whatever minified names the test set up, breaking
+    subsequent tests that don't use this fixture.
+
     Yields:
         The temporary directory path.
     """
     monkeypatch.chdir(tmp_path)
     clear_config_cache()
-    # Clear State caches to ensure clean slate
-    State.get_name.cache_clear()
-    State.get_full_name.cache_clear()
-    State.get_class_substate.cache_clear()
     yield tmp_path
-    # Clean up: clear config and all cached state names
+    monkeypatch.undo()
     clear_config_cache()
-    State.get_name.cache_clear()
-    State.get_full_name.cache_clear()
-    State.get_class_substate.cache_clear()
 
 
 class TestMinifyConfig:
@@ -535,8 +555,8 @@ class TestEventMinification:
             f"Expected path {expected_state_path}, got {actual_path}"
         )
 
-        # The state's _event_id_to_name should be populated (key is minified name)
-        assert TestStateWithMinifiedEvent._event_id_to_name == {"d": "my_handler"}
+        # The active resolver should map this handler to its minified name.
+        assert _resolved_event_id(TestStateWithMinifiedEvent, "my_handler") == "d"
 
         handler = TestStateWithMinifiedEvent.event_handlers["my_handler"]
         _, event_name = get_event_handler_parts(handler)
@@ -581,8 +601,10 @@ class TestEventMinification:
             def my_handler(self):
                 pass
 
-        # The state's _event_id_to_name should be empty when env var is disabled
-        assert TestStateWithMinifiedEventDisabled._event_id_to_name == {}
+        # When env var is disabled, the resolver yields no minified name.
+        assert (
+            _resolved_event_id(TestStateWithMinifiedEventDisabled, "my_handler") is None
+        )
 
         handler = TestStateWithMinifiedEventDisabled.event_handlers["my_handler"]
         _, event_name = get_event_handler_parts(handler)
@@ -595,7 +617,7 @@ class TestDynamicHandlerMinification:
     """Tests for dynamic event handler minification (setvar, auto-setters)."""
 
     def test_setvar_registered_with_config(self, temp_minify_json, monkeypatch):
-        """Test that setvar is registered in _event_id_to_name when config exists."""
+        """Test that ``setvar`` is resolvable to its minified name."""
         monkeypatch.setenv(
             environment.REFLEX_MINIFY_EVENTS.name, MinifyMode.ENABLED.value
         )
@@ -621,12 +643,11 @@ class TestDynamicHandlerMinification:
         class TestStateWithSetvar(State):
             pass
 
-        # Verify setvar is registered for minification
-        assert "s" in TestStateWithSetvar._event_id_to_name
-        assert TestStateWithSetvar._event_id_to_name["s"] == "setvar"
+        # The active resolver should report setvar's minified id.
+        assert _resolved_event_id(TestStateWithSetvar, "setvar") == "s"
 
     def test_auto_setter_registered_with_config(self, temp_minify_json, monkeypatch):
-        """Test that auto-setters (set_*) are registered in _event_id_to_name when config exists."""
+        """Test that auto-setters (set_*) are resolvable to their minified name."""
         from reflex_base import config as base_config
 
         monkeypatch.setenv(
@@ -664,19 +685,19 @@ class TestDynamicHandlerMinification:
         class TestStateWithAutoSetter(State):
             count: int = 0
 
-        # Verify auto-setter is registered for minification
-        assert "c" in TestStateWithAutoSetter._event_id_to_name
-        assert TestStateWithAutoSetter._event_id_to_name["c"] == "set_count"
+        # The auto-setter should resolve to the minified id from the config.
+        assert _resolved_event_id(TestStateWithAutoSetter, "set_count") == "c"
 
     def test_dynamic_handlers_not_registered_without_config(self, temp_minify_json):
-        """Test that dynamic handlers are NOT registered when no config exists."""
+        """Test that dynamic handlers have no resolved minified name without config."""
         # No config saved - temp_minify_json fixture ensures clean state
 
         class TestStateNoConfig(State):
             count: int = 0
 
-        # Without config, _event_id_to_name should be empty
-        assert TestStateNoConfig._event_id_to_name == {}
+        # Without config, the resolver returns None for every handler.
+        for handler_name in TestStateNoConfig.event_handlers:
+            assert _resolved_event_id(TestStateNoConfig, handler_name) is None
 
     def test_add_event_handler_registered_with_config(
         self, temp_minify_json, monkeypatch
@@ -718,9 +739,9 @@ class TestDynamicHandlerMinification:
             "dynamic_handler", dynamic_handler
         )
 
-        # Verify dynamic handler is registered for minification
-        assert "d" in TestStateWithDynamicHandler._event_id_to_name
-        assert TestStateWithDynamicHandler._event_id_to_name["d"] == "dynamic_handler"
+        # Dynamically-added handlers are resolved through the same resolver,
+        # so the new name picks up the minified id without re-registering.
+        assert _resolved_event_id(TestStateWithDynamicHandler, "dynamic_handler") == "d"
 
 
 class TestMinifyModeEnvVars:
@@ -868,19 +889,19 @@ class TestMinifiedNameCollision:
             environment.REFLEX_MINIFY_STATES.name, MinifyMode.ENABLED.value
         )
 
-        # Build a hierarchy: State -> ParentClassSubstateCollision -> ChildClassSubstateCollision
-        # where both child classes get minified name "b".
-        # The substate registry is keyed by parent.get_full_name() at
-        # registration time, so the minify config must be loaded *before*
-        # the test classes are defined. Class names are deliberately unique
-        # so `_handle_local_def` does not append a numeric suffix when run
-        # alongside other tests that also define `ParentState`.
-        expected_module = "tests.units.test_minification"
-        parent_path = f"{expected_module}.State.ParentClassSubstateCollision"
-        child_path = (
-            f"{expected_module}.State.ParentClassSubstateCollision."
-            "ChildClassSubstateCollision"
-        )
+        # Build a hierarchy: State -> ParentClassSubstateCollision ->
+        # ChildClassSubstateCollision where both children minify to "b".
+        # Class names are deliberately unique so ``_handle_local_def`` does
+        # not append a numeric suffix when run alongside other tests that
+        # might also define a ``ParentState``.
+        class ParentClassSubstateCollision(State):
+            pass
+
+        class ChildClassSubstateCollision(ParentClassSubstateCollision):
+            pass
+
+        parent_path = get_state_full_path(ParentClassSubstateCollision)
+        child_path = get_state_full_path(ChildClassSubstateCollision)
 
         config: MinifyConfig = {
             "version": SCHEMA_VERSION,
@@ -892,30 +913,20 @@ class TestMinifiedNameCollision:
             "events": {},
         }
         save_minify_config(config)
+        # ``clear_config_cache`` resets the per-class name caches and re-keys
+        # the registry under the new minified names.
         clear_config_cache()
-        State.get_name.cache_clear()
-        State.get_full_name.cache_clear()
-        State.get_class_substate.cache_clear()
-
-        class ParentClassSubstateCollision(State):
-            pass
-
-        class ChildClassSubstateCollision(ParentClassSubstateCollision):
-            pass
-
-        ParentState = ParentClassSubstateCollision
-        ChildState = ChildClassSubstateCollision
 
         # Verify both get the same minified name
-        assert ParentState.get_name() == "b"
-        assert ChildState.get_name() == "b"
+        assert ParentClassSubstateCollision.get_name() == "b"
+        assert ChildClassSubstateCollision.get_name() == "b"
 
         # Full path should be a.b.b
-        assert ChildState.get_full_name() == "a.b.b"
+        assert ChildClassSubstateCollision.get_full_name() == "a.b.b"
 
-        # get_class_substate should resolve a.b.b to ChildState, not ParentState
+        # get_class_substate should resolve a.b.b to the child, not the parent.
         resolved = State.get_class_substate("a.b.b")
-        assert resolved is ChildState
+        assert resolved is ChildClassSubstateCollision
 
     def test_get_substate_with_parent_child_name_collision(
         self, temp_minify_json, monkeypatch
@@ -929,17 +940,19 @@ class TestMinifiedNameCollision:
             environment.REFLEX_MINIFY_STATES.name, MinifyMode.ENABLED.value
         )
 
-        # Substates are registered under parent.get_full_name() at class
-        # creation time, so the minify config must be in place before the
-        # test classes are defined. Class names are deliberately unique so
-        # `_handle_local_def` does not append a numeric suffix when run
-        # alongside other tests that also define `ParentState2`.
-        expected_module = "tests.units.test_minification"
-        parent_path = f"{expected_module}.State.ParentInstanceSubstateCollision"
-        child_path = (
-            f"{expected_module}.State.ParentInstanceSubstateCollision."
-            "ChildInstanceSubstateCollision"
-        )
+        # Class names are deliberately unique so ``_handle_local_def`` does
+        # not append a numeric suffix when run alongside other tests that
+        # might also define a ``ParentState2``.
+        class ParentInstanceSubstateCollision(State):
+            pass
+
+        class ChildInstanceSubstateCollision(ParentInstanceSubstateCollision):
+            @rx.event
+            def my_handler(self):
+                pass
+
+        parent_path = get_state_full_path(ParentInstanceSubstateCollision)
+        child_path = get_state_full_path(ChildInstanceSubstateCollision)
 
         config: MinifyConfig = {
             "version": SCHEMA_VERSION,
@@ -951,27 +964,16 @@ class TestMinifiedNameCollision:
             "events": {},
         }
         save_minify_config(config)
+        # ``clear_config_cache`` resets the per-class name caches and re-keys
+        # the registry under the new minified names.
         clear_config_cache()
-        State.get_name.cache_clear()
-        State.get_full_name.cache_clear()
-        State.get_class_substate.cache_clear()
-
-        class ParentInstanceSubstateCollision(State):
-            pass
-
-        class ChildInstanceSubstateCollision(ParentInstanceSubstateCollision):
-            @rx.event
-            def my_handler(self):
-                pass
-
-        ChildState2 = ChildInstanceSubstateCollision
 
         # Create a state instance tree
         root = State(_reflex_internal_init=True)  # type: ignore[call-arg]
 
-        # Instance get_substate should resolve a.b.b to ChildState2
+        # Instance get_substate should resolve a.b.b to ChildInstanceSubstateCollision
         resolved = root.get_substate(["a", "b", "b"])
-        assert type(resolved) is ChildState2
+        assert type(resolved) is ChildInstanceSubstateCollision
 
 
 class TestMinifyLookupCLI:
@@ -1117,3 +1119,219 @@ class TestMinifyLookupCLI:
         assert output_data[0]["class"] == "State"
         assert output_data[1]["class"] == "JsonTestState"
         assert output_data[1]["state_id"] == "b"
+
+
+class TestNameResolverProtocol:
+    """Tests for the pluggable :class:`NameResolver` protocol.
+
+    These exercise the contract independent of minification: any resolver that
+    implements ``resolve_state_name`` / ``resolve_handler_name`` can be slotted
+    into the registration context to rewrite names.
+    """
+
+    def test_default_resolver_returns_none(self):
+        """The default resolver yields no overrides."""
+        resolver = DefaultNameResolver()
+        assert resolver.resolve_state_name(State) is None
+        assert resolver.resolve_handler_name(State, "any_handler") is None
+
+    def test_default_resolver_satisfies_protocol(self):
+        """``DefaultNameResolver`` is a structural :class:`NameResolver`."""
+        assert isinstance(DefaultNameResolver(), NameResolver)
+
+    def test_minify_resolver_satisfies_protocol(self):
+        """``MinifyNameResolver`` is a structural :class:`NameResolver`."""
+        resolver = MinifyNameResolver(
+            config=None, states_enabled=False, events_enabled=False
+        )
+        assert isinstance(resolver, NameResolver)
+
+    def test_get_state_name_falls_back_to_default(self):
+        """``RegistrationContext.get_state_name`` returns the built-in name when
+        the resolver returns None (the default).
+        """
+        ctx = RegistrationContext.get()
+        assert ctx.get_state_name(State) == RegistrationContext.default_state_name(
+            State
+        )
+
+    def test_get_handler_name_falls_back_to_default(self):
+        """``RegistrationContext.get_handler_name`` returns the input name when
+        the resolver returns None (the default).
+        """
+        ctx = RegistrationContext.get()
+        assert ctx.get_handler_name(State, "some_handler") == "some_handler"
+
+    def test_set_name_resolver_propagates_through_get_name(self, monkeypatch):
+        """Installing a custom resolver swaps ``BaseState.get_name`` output.
+
+        The resolver overrides only ``State`` so other registered classes
+        retain their default names — without this scoping, every class would
+        collapse to one entry in the registry's name-keyed dicts.
+        """
+
+        class FixedStateNameResolver:
+            def resolve_state_name(self, state_cls):
+                return "fixed_name" if state_cls is State else None
+
+            def resolve_handler_name(self, state_cls, handler_name):
+                return None
+
+        ctx = RegistrationContext.get()
+        original = ctx.name_resolver
+        try:
+            ctx.set_name_resolver(FixedStateNameResolver())
+            assert State.get_name() == "fixed_name"
+        finally:
+            ctx.set_name_resolver(original)
+
+    def test_set_name_resolver_propagates_through_format_event_handler(self):
+        """Installing a custom resolver swaps the formatted handler name."""
+        from reflex.state import OnLoadInternalState
+        from reflex.utils.format import format_event_handler
+
+        class HandlerPrefixResolver:
+            def resolve_state_name(self, state_cls):
+                return None
+
+            def resolve_handler_name(self, state_cls, handler_name):
+                return f"px_{handler_name}"
+
+        ctx = RegistrationContext.get()
+        original = ctx.name_resolver
+        try:
+            ctx.set_name_resolver(HandlerPrefixResolver())
+            formatted = format_event_handler(OnLoadInternalState.on_load_internal)  # pyright: ignore[reportArgumentType]
+            assert formatted.endswith(".px_on_load_internal")
+        finally:
+            ctx.set_name_resolver(original)
+
+    def test_resolver_swap_clears_lru_caches(self):
+        """``set_name_resolver`` invalidates per-class name caches so that
+        ``get_full_name`` reflects the new resolver immediately.
+        """
+
+        class A:
+            def resolve_state_name(self, state_cls):
+                return "first" if state_cls is State else None
+
+            def resolve_handler_name(self, state_cls, handler_name):
+                return None
+
+        class B:
+            def resolve_state_name(self, state_cls):
+                return "second" if state_cls is State else None
+
+            def resolve_handler_name(self, state_cls, handler_name):
+                return None
+
+        ctx = RegistrationContext.get()
+        original = ctx.name_resolver
+        try:
+            ctx.set_name_resolver(A())
+            assert State.get_full_name() == "first"
+            ctx.set_name_resolver(B())
+            assert State.get_full_name() == "second"
+        finally:
+            ctx.set_name_resolver(original)
+
+    def test_chain_of_resolvers(self):
+        """Resolvers compose with a tiny user-written chain wrapper."""
+
+        class Chain:
+            """Returns the first non-None override from the wrapped resolvers."""
+
+            def __init__(self, *resolvers):
+                self.resolvers = resolvers
+
+            def resolve_state_name(self, state_cls):
+                for r in self.resolvers:
+                    v = r.resolve_state_name(state_cls)
+                    if v is not None:
+                        return v
+                return None
+
+            def resolve_handler_name(self, state_cls, handler_name):
+                for r in self.resolvers:
+                    v = r.resolve_handler_name(state_cls, handler_name)
+                    if v is not None:
+                        return v
+                return None
+
+        class FirstOnly:
+            def resolve_state_name(self, state_cls):
+                return "from_first" if state_cls is State else None
+
+            def resolve_handler_name(self, state_cls, handler_name):
+                return None
+
+        ctx = RegistrationContext.get()
+        original = ctx.name_resolver
+        try:
+            ctx.set_name_resolver(Chain(FirstOnly(), DefaultNameResolver()))
+            assert State.get_name() == "from_first"
+        finally:
+            ctx.set_name_resolver(original)
+
+
+class TestMinifyNameResolver:
+    """Tests for :class:`MinifyNameResolver` itself (config + caching)."""
+
+    def test_disabled_returns_none(self, temp_minify_json):
+        """When neither flag is enabled, the resolver returns None for all."""
+        resolver = MinifyNameResolver(
+            config={"version": SCHEMA_VERSION, "states": {}, "events": {}},
+            states_enabled=False,
+            events_enabled=False,
+        )
+        assert resolver.resolve_state_name(State) is None
+        assert resolver.resolve_handler_name(State, "any") is None
+
+    def test_no_config_returns_none(self):
+        """No config means no overrides even when flags are enabled."""
+        resolver = MinifyNameResolver(
+            config=None, states_enabled=True, events_enabled=True
+        )
+        assert resolver.resolve_state_name(State) is None
+        assert resolver.resolve_handler_name(State, "any") is None
+
+    def test_state_lookup_caches(self):
+        """Resolved state names are memoized after the first lookup."""
+        config: MinifyConfig = {
+            "version": SCHEMA_VERSION,
+            "states": {get_state_full_path(State): "rs"},
+            "events": {},
+        }
+        resolver = MinifyNameResolver(
+            config=config, states_enabled=True, events_enabled=False
+        )
+        assert resolver.resolve_state_name(State) == "rs"
+        # second call hits the cache
+        assert State in resolver._state_cache
+        assert resolver.resolve_state_name(State) == "rs"
+
+    def test_event_lookup_caches(self):
+        """Resolved handler names are memoized per state class."""
+        config: MinifyConfig = {
+            "version": SCHEMA_VERSION,
+            "states": {},
+            "events": {get_state_full_path(State): {"foo": "f", "bar": "b"}},
+        }
+        resolver = MinifyNameResolver(
+            config=config, states_enabled=False, events_enabled=True
+        )
+        assert resolver.resolve_handler_name(State, "foo") == "f"
+        assert resolver.resolve_handler_name(State, "bar") == "b"
+        assert resolver.resolve_handler_name(State, "missing") is None
+        assert State in resolver._event_cache
+
+    def test_from_disk_handles_malformed_config(self, temp_minify_json):
+        """``from_disk`` returns a usable resolver even when minify.json is bad."""
+        path = temp_minify_json / MINIFY_JSON
+        with path.open("w") as f:
+            f.write("{not valid json")
+        resolver = MinifyNameResolver.from_disk()
+        # config falls back to None — every lookup returns None.
+        assert resolver.config is None
+        assert resolver.resolve_state_name(State) is None
+        assert resolver.resolve_handler_name(State, "any") is None

@@ -357,11 +357,6 @@ class BaseState(EvenMoreBasicBaseState):
     # Set of states which might need to be recomputed if vars in this state change.
     _potentially_dirty_states: ClassVar[set[str]] = set()
 
-    # Per-class registry mapping event_id -> event handler name for minification.
-    # Populated from minify.json at class creation time.
-    # Maps minified event ID (e.g., "a") to original handler name (e.g., "increment").
-    _event_id_to_name: ClassVar[builtins.dict[str, str]] = {}
-
     # The parent state.
     parent_state: BaseState | None = field(default=None, is_var=False)
 
@@ -575,7 +570,6 @@ class BaseState(EvenMoreBasicBaseState):
             **cls.computed_vars,
         }
         cls.event_handlers = {}
-        cls._event_id_to_name = {}
 
         # Setup the base vars at the class level.
         for name, prop in cls.base_vars.items():
@@ -618,12 +612,6 @@ class BaseState(EvenMoreBasicBaseState):
             cls.event_handlers[name] = handler
             setattr(cls, name, handler)
 
-        # Register user-defined event handlers for minification
-        # (must happen before register_base_state so format_event_handler returns
-        # the minified name when registering with the context).
-        for handler_name in events:
-            cls._register_event_handler_for_minify(handler_name)
-
         RegistrationContext.register_base_state(cls)
 
         # Initialize per-class var dependency tracking.
@@ -650,33 +638,7 @@ class BaseState(EvenMoreBasicBaseState):
         handler = cls._create_event_handler(fn)
         cls.event_handlers[name] = handler
         setattr(cls, name, handler)
-        cls._register_event_handler_for_minify(name)
         return handler
-
-    @classmethod
-    def _register_event_handler_for_minify(cls, handler_name: str) -> None:
-        """Register an event handler for minification if applicable.
-
-        Called when an event handler is added to event_handlers dict.
-        Updates _event_id_to_name if minification is enabled and the handler
-        has a minified ID in the config.
-
-        Args:
-            handler_name: The original name of the event handler.
-        """
-        from reflex.minify import (
-            get_event_id,
-            get_state_full_path,
-            is_event_minify_enabled,
-        )
-
-        if not is_event_minify_enabled():
-            return
-
-        state_path = get_state_full_path(cls)
-        event_id = get_event_id(state_path, handler_name)
-        if event_id is not None:
-            cls._event_id_to_name[event_id] = handler_name
 
     @staticmethod
     def _copy_fn(fn: Callable) -> Callable:
@@ -1003,28 +965,23 @@ class BaseState(EvenMoreBasicBaseState):
     @classmethod
     @functools.lru_cache
     def get_name(cls) -> str:
-        """Get the name of the state.
+        """Get the user-visible name of the state.
+
+        Delegates to the active :class:`~reflex_base.registry.NameResolver` via
+        :meth:`~reflex_base.registry.RegistrationContext.get_state_name` so that
+        e.g. ``minify.json`` (or any other resolver a user installs) can rewrite
+        the name. Falls back to the built-in snake-cased ``module___ClassName``
+        form when no registration context is active.
 
         Returns:
-            The name of the state (minified if configured in minify.json).
+            The resolved name of the state.
         """
-        from reflex.minify import (
-            get_state_full_path,
-            get_state_id,
-            is_state_minify_enabled,
-        )
+        from reflex_base.registry import RegistrationContext
 
-        module = cls.__module__.replace(".", "___")
-        full_name = format.to_snake_case(f"{module}___{cls.__name__}")
-
-        # If state minification is enabled, look up the state ID from minify.json
-        if is_state_minify_enabled():
-            state_path = get_state_full_path(cls)
-            state_id = get_state_id(state_path)
-            if state_id is not None:
-                return state_id
-
-        return full_name
+        try:
+            return RegistrationContext.get().get_state_name(cls)
+        except LookupError:
+            return RegistrationContext.default_state_name(cls)
 
     @classmethod
     @functools.lru_cache
@@ -1049,10 +1006,12 @@ class BaseState(EvenMoreBasicBaseState):
 
         Args:
             path: The path to the substate.
-            _skip_self: If True, strip the leading segment when it matches this
-                state's name. Only the initial (root) call should use True;
-                recursive calls pass False so that a child whose minified name
-                collides with its parent is resolved correctly.
+            _skip_self: Internal recursion flag. External callers must leave
+                this at the default ``True`` — only the root call should strip
+                a leading segment that matches ``cls.get_name()``. Recursive
+                calls pass ``False`` so that a child whose minified name
+                collides with its parent (e.g. ``"a.b.b"``) resolves to the
+                child rather than terminating early at the parent.
 
         Returns:
             The class substate.
@@ -1220,7 +1179,6 @@ class BaseState(EvenMoreBasicBaseState):
         cls.setvar = cls.event_handlers[constants.event.SETVAR] = EventHandlerSetVar(
             state_cls=cls
         )
-        cls._register_event_handler_for_minify(constants.event.SETVAR)
 
     @classmethod
     def _create_setter(cls, name: str, prop: Var):
@@ -1239,7 +1197,6 @@ class BaseState(EvenMoreBasicBaseState):
             )
             cls.event_handlers[setter_name] = event_handler
             setattr(cls, setter_name, event_handler)
-            cls._register_event_handler_for_minify(setter_name)
 
     @classmethod
     def _set_default_value(cls, name: str, prop: Var):
@@ -1584,10 +1541,12 @@ class BaseState(EvenMoreBasicBaseState):
 
         Args:
             path: The path to the substate.
-            _skip_self: If True, strip the leading segment when it matches this
-                state's name. Only the initial (root) call should use True;
-                recursive calls pass False so that a child whose minified name
-                collides with its parent is resolved correctly.
+            _skip_self: Internal recursion flag. External callers must leave
+                this at the default ``True`` — only the root call should strip
+                a leading segment that matches ``self.get_name()``. Recursive
+                calls pass ``False`` so that a child whose minified name
+                collides with its parent (e.g. ``"a.b.b"``) resolves to the
+                child rather than terminating early at the parent.
 
         Returns:
             The substate.

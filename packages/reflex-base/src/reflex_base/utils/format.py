@@ -450,46 +450,43 @@ def get_event_handler_parts(
 ) -> tuple[str, str]:
     """Get the state and function name of an event handler.
 
+    Both the state name (via ``state.get_full_name()``) and the handler name
+    (via :meth:`~reflex_base.registry.RegistrationContext.get_handler_name`)
+    pass through the active :class:`~reflex_base.registry.NameResolver`, so
+    minification — or any other pluggable rewrite — is applied transparently.
+
     Args:
         handler: The event handler to get the parts of.
 
     Returns:
-        The state and function name (possibly minified based on minify.json).
+        The (resolved) state full name and (resolved) handler function name.
 
     Raises:
         TypeError: If the handler is not an EventHandler.
     """
-    from reflex.minify import is_event_minify_enabled
     from reflex_base.event import EventHandler
+    from reflex_base.registry import RegistrationContext
 
     if not isinstance(handler, EventHandler):
         msg = f"Expected EventHandler, got {type(handler)}"
         raise TypeError(msg)
 
-    # Get the name of the event function.
+    # The Python name of the handler function (e.g. "ClassName.handler_name").
     name = handler.fn.__qualname__
 
-    # Get the state full name
-    state_full_name = handler.state.get_full_name() if handler.state else ""
-
-    # If there's no enclosing state, just return the full name.
+    # If there's no enclosing state, just return the full qualname.
     if handler.state is None:
         return ("", name)
 
-    # Get the event name inside the state.
+    state_full_name = handler.state.get_full_name()
     func_name = name.rpartition(".")[2]
 
-    # Check for event_id minification from minify.json.
-    # The state class stores its mapping in _event_id_to_name where key is
-    # minified_name and value is original_handler_name. Use the handler's own
-    # state class directly to avoid touching reflex.state during init.
-    if is_event_minify_enabled():
-        for minified_name, handler_name in handler.state._event_id_to_name.items():
-            if handler_name == func_name:
-                func_name = minified_name
-                break
-
-    return (state_full_name, func_name)
+    # Let the registry's resolver have a say (e.g. minified handler names).
+    try:
+        ctx = RegistrationContext.get()
+    except LookupError:
+        return (state_full_name, func_name)
+    return (state_full_name, ctx.get_handler_name(handler.state, func_name))
 
 
 def format_event_handler(handler: EventHandler | Callable[..., Any]) -> str:
