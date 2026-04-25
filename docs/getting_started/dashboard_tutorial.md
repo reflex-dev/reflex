@@ -1444,38 +1444,86 @@ def graph():
     return rx.recharts.bar_chart(
         rx.recharts.bar(
             data_key="value",
-            stroke=rx.color("accent", 9),
-            fill=rx.color("accent", 8),
+            fill=rx.color("accent", 9),
+            radius=6,
+            bar_size=48,
         ),
-        rx.recharts.x_axis(data_key="name"),
-        rx.recharts.y_axis(),
+        rx.recharts.x_axis(
+            data_key="name",
+            tick_line=False,
+            axis_line=False,
+            padding={"left": 24, "right": 24},
+        ),
+        rx.recharts.y_axis(
+            tick_line=False,
+            axis_line=False,
+            allow_decimals=False,
+        ),
+        rx.recharts.cartesian_grid(
+            stroke_dasharray="3 3",
+            vertical=False,
+            stroke=rx.color("slate", 4),
+        ),
         data=State.users_for_graph,
         width="100%",
-        height=250,
+        height=200,
+        margin={"top": 8, "right": 8, "bottom": 0, "left": 0},
     )
 
 
 def index() -> rx.Component:
-    return rx.vstack(
-        add_customer_button(),
-        rx.table.root(
-            rx.table.header(
-                rx.table.row(
-                    rx.table.column_header_cell("Name"),
-                    rx.table.column_header_cell("Email"),
-                    rx.table.column_header_cell("Gender"),
+    return rx.box(
+        rx.vstack(
+            rx.hstack(
+                rx.vstack(
+                    rx.text(
+                        "Users",
+                        size="4",
+                        weight="bold",
+                        color=rx.color("slate", 12),
+                        text_align="left",
+                        width="100%",
+                    ),
+                    rx.text(
+                        "Add customers and watch the chart update.",
+                        size="2",
+                        color=rx.color("slate", 10),
+                        text_align="left",
+                        width="100%",
+                    ),
+                    spacing="1",
+                    align="start",
                 ),
+                rx.spacer(),
+                add_customer_button(),
+                align="center",
+                width="100%",
             ),
-            rx.table.body(
-                rx.foreach(State.users, show_user),
+            rx.table.root(
+                rx.table.header(
+                    rx.table.row(
+                        rx.table.column_header_cell("Name"),
+                        rx.table.column_header_cell("Email"),
+                        rx.table.column_header_cell("Gender"),
+                    ),
+                ),
+                rx.table.body(
+                    rx.foreach(State.users, show_user),
+                ),
+                variant="surface",
+                size="2",
+                width="100%",
             ),
-            variant="surface",
-            size="3",
+            graph(),
+            align="stretch",
             width="100%",
+            spacing="4",
+            padding="1.75em 2em",
         ),
-        graph(),
-        align="center",
-        width="100%",
+        border=f"1px solid {rx.color('slate', 5)}",
+        border_radius="12px",
+        margin_y="1em",
+        background=rx.color("slate", 1),
     )
 
 
