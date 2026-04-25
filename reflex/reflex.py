@@ -908,27 +908,37 @@ def minify():
 
 
 def _load_app_for_minify() -> None:
-    """Compile the app so dynamic states are registered.
-
-    ``ComponentState.create()`` and locally-defined states inside page
-    functions only register during page evaluation, so a plain ``get_app()``
-    would miss them.
-    """
+    """Compile the user's app so dynamic states (e.g. ``ComponentState``) register."""
     from reflex.utils import prerequisites
 
     prerequisites.get_compiled_app(dry_run=True)
 
 
 def _count_events(config: MinifyConfig) -> int:
-    """Sum the event handlers across every state in a minify config.
+    """Sum event handlers across every state in a minify config.
 
     Args:
-        config: The minify configuration to count events in.
+        config: The minify configuration.
 
     Returns:
-        The total number of event handlers across every state.
+        Total handler count.
     """
     return sum(len(handlers) for handlers in config["events"].values())
+
+
+def _load_existing_minify_config() -> MinifyConfig:
+    """Load ``minify.json`` or exit the CLI with an error.
+
+    Returns:
+        The parsed minify configuration.
+    """
+    from reflex.minify import MINIFY_JSON, _load_minify_config_uncached
+
+    config = _load_minify_config_uncached()
+    if config is None:
+        console.error(f"Failed to load {MINIFY_JSON}.")
+        raise SystemExit(1)
+    return config
 
 
 @minify.command(name="init")
@@ -979,7 +989,6 @@ def minify_sync(reassign_deleted: bool, prune: bool):
     from reflex.minify import (
         MINIFY_JSON,
         _get_minify_json_path,
-        _load_minify_config_uncached,
         save_minify_config,
         sync_minify_config,
     )
@@ -991,11 +1000,7 @@ def minify_sync(reassign_deleted: bool, prune: bool):
         raise SystemExit(1)
 
     _load_app_for_minify()
-
-    existing_config = _load_minify_config_uncached()
-    if existing_config is None:
-        console.error(f"Failed to load {MINIFY_JSON}.")
-        raise SystemExit(1)
+    existing_config = _load_existing_minify_config()
 
     new_config = sync_minify_config(
         existing_config, reassign_deleted=reassign_deleted, prune=prune
@@ -1018,12 +1023,7 @@ def minify_validate():
 
     Checks for duplicate IDs, missing entries, and orphaned entries.
     """
-    from reflex.minify import (
-        MINIFY_JSON,
-        _get_minify_json_path,
-        _load_minify_config_uncached,
-        validate_minify_config,
-    )
+    from reflex.minify import MINIFY_JSON, _get_minify_json_path, validate_minify_config
 
     if not _get_minify_json_path().exists():
         console.error(
@@ -1032,11 +1032,7 @@ def minify_validate():
         raise SystemExit(1)
 
     _load_app_for_minify()
-
-    config = _load_minify_config_uncached()
-    if config is None:
-        console.error(f"Failed to load {MINIFY_JSON}.")
-        raise SystemExit(1)
+    config = _load_existing_minify_config()
 
     errors, warnings, missing = validate_minify_config(config)
 

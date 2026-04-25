@@ -967,21 +967,19 @@ class BaseState(EvenMoreBasicBaseState):
     def get_name(cls) -> str:
         """Get the user-visible name of the state.
 
-        Delegates to the active :class:`~reflex_base.registry.NameResolver` via
-        :meth:`~reflex_base.registry.RegistrationContext.get_state_name` so that
-        e.g. ``minify.json`` (or any other resolver a user installs) can rewrite
-        the name. Falls back to the built-in snake-cased ``module___ClassName``
-        form when no registration context is active.
+        Defers to the active :class:`~reflex_base.registry.NameResolver`
+        (e.g. ``minify.json`` rewrites), falling back to the built-in
+        snake-cased ``module___ClassName`` when no context is attached.
 
         Returns:
             The resolved name of the state.
         """
         from reflex_base.registry import RegistrationContext
 
-        try:
-            return RegistrationContext.get().get_state_name(cls)
-        except LookupError:
+        ctx = RegistrationContext.try_get()
+        if ctx is None:
             return RegistrationContext.default_state_name(cls)
+        return ctx.get_state_name(cls)
 
     @classmethod
     @functools.lru_cache
@@ -1006,12 +1004,11 @@ class BaseState(EvenMoreBasicBaseState):
 
         Args:
             path: The path to the substate.
-            _skip_self: Internal recursion flag. External callers must leave
-                this at the default ``True`` — only the root call should strip
-                a leading segment that matches ``cls.get_name()``. Recursive
-                calls pass ``False`` so that a child whose minified name
-                collides with its parent (e.g. ``"a.b.b"``) resolves to the
-                child rather than terminating early at the parent.
+            _skip_self: Internal recursion flag — leave at the default. Only
+                the root call strips a leading segment that matches
+                ``cls.get_name()``; recursion passes ``False`` so a child
+                that shares a minified name with its parent (``"a.b.b"``)
+                still resolves to the child.
 
         Returns:
             The class substate.
@@ -1541,12 +1538,11 @@ class BaseState(EvenMoreBasicBaseState):
 
         Args:
             path: The path to the substate.
-            _skip_self: Internal recursion flag. External callers must leave
-                this at the default ``True`` — only the root call should strip
-                a leading segment that matches ``self.get_name()``. Recursive
-                calls pass ``False`` so that a child whose minified name
-                collides with its parent (e.g. ``"a.b.b"``) resolves to the
-                child rather than terminating early at the parent.
+            _skip_self: Internal recursion flag — leave at the default. Only
+                the root call strips a leading segment that matches
+                ``self.get_name()``; recursion passes ``False`` so a child
+                that shares a minified name with its parent (``"a.b.b"``)
+                still resolves to the child.
 
         Returns:
             The substate.

@@ -127,17 +127,11 @@ class TestGetStateFullPath:
 
 @pytest.fixture
 def temp_minify_json(tmp_path, monkeypatch):
-    """Create a temporary directory and mock cwd to use it for minify.json.
+    """Run the test against a fresh ``minify.json`` location.
 
-    ``clear_config_cache()`` walks the registration context and clears
-    ``get_name``/``get_full_name``/``get_class_substate`` LRU caches on every
-    registered State class, then re-keys the registry, so we don't have to
-    remember every State subclass that earlier tests may have registered.
-
-    The teardown undoes monkeypatch *before* clearing the cache so that the
-    refresh is based on the unmodified env/cwd; otherwise the registry would
-    be left pinned to whatever minified names the test set up, breaking
-    subsequent tests that don't use this fixture.
+    Teardown undoes monkeypatch *before* clearing the cache so the registry
+    is rebuilt under unmodified env/cwd — otherwise other tests would inherit
+    minified names.
 
     Yields:
         The temporary directory path.

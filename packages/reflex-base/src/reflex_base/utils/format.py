@@ -14,13 +14,8 @@ from reflex_base.utils import exceptions
 
 if TYPE_CHECKING:
     from reflex_base.components.component import ComponentStyle
-    from reflex_base.event import (
-        ArgsSpec,
-        EventChain,
-        EventHandler,
-        EventSpec,
-        EventType,
-    )
+    from reflex_base.event import EventChain, EventHandler, EventSpec, EventType
+    from reflex_base.utils.types import ArgsSpec
 
 WRAP_MAP = {
     "{": "}",
@@ -448,18 +443,17 @@ def format_props(*single_props, **key_value_props) -> list[str]:
 def get_event_handler_parts(
     handler: EventHandler | Callable[..., Any],
 ) -> tuple[str, str]:
-    """Get the state and function name of an event handler.
+    """Get the (state, function) name pair for an event handler.
 
-    Both the state name (via ``state.get_full_name()``) and the handler name
-    (via :meth:`~reflex_base.registry.RegistrationContext.get_handler_name`)
-    pass through the active :class:`~reflex_base.registry.NameResolver`, so
-    minification — or any other pluggable rewrite — is applied transparently.
+    Both names pass through the active
+    :class:`~reflex_base.registry.NameResolver`, so any installed rewrite
+    (minification, prefixing, etc.) is applied transparently.
 
     Args:
-        handler: The event handler to get the parts of.
+        handler: The event handler.
 
     Returns:
-        The (resolved) state full name and (resolved) handler function name.
+        ``(state_full_name, handler_name)`` — both resolved.
 
     Raises:
         TypeError: If the handler is not an EventHandler.
@@ -471,20 +465,14 @@ def get_event_handler_parts(
         msg = f"Expected EventHandler, got {type(handler)}"
         raise TypeError(msg)
 
-    # The Python name of the handler function (e.g. "ClassName.handler_name").
     name = handler.fn.__qualname__
-
-    # If there's no enclosing state, just return the full qualname.
     if handler.state is None:
         return ("", name)
 
     state_full_name = handler.state.get_full_name()
     func_name = name.rpartition(".")[2]
-
-    # Let the registry's resolver have a say (e.g. minified handler names).
-    try:
-        ctx = RegistrationContext.get()
-    except LookupError:
+    ctx = RegistrationContext.try_get()
+    if ctx is None:
         return (state_full_name, func_name)
     return (state_full_name, ctx.get_handler_name(handler.state, func_name))
 

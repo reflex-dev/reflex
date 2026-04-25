@@ -1,18 +1,9 @@
-"""A contextual registry for state and event handlers.
+"""Contextual registry for state classes, event handlers, and the
+:class:`NameResolver` strategy that turns them into user-visible names.
 
-The registry owns three kinds of bookkeeping:
-
-* the set of registered ``BaseState`` subclasses and their parent/child topology
-* the set of registered ``EventHandler`` instances keyed by their full dotted name
-* the **name resolution** strategy that turns a state class or handler name into the
-  string used by the rest of the framework
-
-The third concern is pluggable through the :class:`NameResolver` protocol. The
-default resolver is a no-op (every state and handler keeps its built-in name).
-``reflex.minify`` ships a :class:`MinifyNameResolver` that consults
-``minify.json``; users can plug in their own (custom prefixes, multi-tenant
-aliasing, deterministic test fixtures, etc.) by calling
-:meth:`RegistrationContext.set_name_resolver`.
+The default resolver is a no-op; ``reflex.minify.MinifyNameResolver``
+plugs in a :class:`minify.json`-driven implementation. Install a custom
+resolver via :meth:`RegistrationContext.set_name_resolver`.
 """
 
 from __future__ import annotations
@@ -33,16 +24,10 @@ if TYPE_CHECKING:
 
 @runtime_checkable
 class NameResolver(Protocol):
-    """Resolves the user-visible names for state classes and event handlers.
+    """Resolves user-visible names for state classes and event handlers.
 
-    Implementations may apply minification, prefixing, locale-based aliasing,
-    or any other transformation. Returning ``None`` from either method means
-    "no override — use the default name".
-
-    The protocol is intentionally tiny so resolvers compose well; see
-    :class:`DefaultNameResolver` for the no-op base case and
-    ``reflex.minify.MinifyNameResolver`` for the canonical example of a
-    resolver that consults external configuration.
+    Return ``None`` to defer to the framework default. See
+    :class:`DefaultNameResolver` (no-op) and ``reflex.minify.MinifyNameResolver``.
     """
 
     def resolve_state_name(self, state_cls: type[BaseState]) -> str | None:
@@ -118,6 +103,18 @@ class RegistrationContext(BaseContext):
             ctx = cls()
             cls._context_var.set(ctx)
             return ctx
+
+    @classmethod
+    def try_get(cls) -> Self | None:
+        """Return the active context, or ``None`` when none is attached.
+
+        Returns:
+            The registration context instance, or ``None``.
+        """
+        try:
+            return cls.get()
+        except LookupError:
+            return None
 
     @classmethod
     def register_base_state(cls, state_cls: type[BaseState]) -> type[BaseState]:
@@ -220,10 +217,7 @@ class RegistrationContext(BaseContext):
 
     @staticmethod
     def default_state_name(state_cls: type[BaseState]) -> str:
-        """Compute the built-in name for a state class (no resolver applied).
-
-        This is the snake-cased ``module___ClassName`` form used when no
-        resolver overrides it.
+        """Compute the built-in snake-cased ``module___ClassName`` for a state.
 
         Args:
             state_cls: The state class.
@@ -239,14 +233,11 @@ class RegistrationContext(BaseContext):
     def get_state_name(self, state_cls: type[BaseState]) -> str:
         """Resolve the user-visible name for a state class.
 
-        Asks the installed :class:`NameResolver` first; falls back to
-        :meth:`default_state_name` when the resolver returns ``None``.
-
         Args:
             state_cls: The state class.
 
         Returns:
-            The resolved name.
+            The resolved name (or :meth:`default_state_name` fallback).
         """
         resolved = self.name_resolver.resolve_state_name(state_cls)
         if resolved is not None:
@@ -256,15 +247,12 @@ class RegistrationContext(BaseContext):
     def get_handler_name(self, state_cls: type[BaseState], handler_name: str) -> str:
         """Resolve the user-visible name for an event handler.
 
-        Asks the installed :class:`NameResolver` first; falls back to the
-        original ``handler_name`` when the resolver returns ``None``.
-
         Args:
             state_cls: The state class the handler is attached to.
             handler_name: The original (Python) name of the handler.
 
         Returns:
-            The resolved name.
+            The resolved name (or ``handler_name`` unchanged).
         """
         resolved = self.name_resolver.resolve_handler_name(state_cls, handler_name)
         if resolved is not None:
@@ -272,16 +260,12 @@ class RegistrationContext(BaseContext):
         return handler_name
 
     def set_name_resolver(self, resolver: NameResolver) -> None:
-        """Install ``resolver`` and propagate the new names through the registry.
+        """Install ``resolver`` and rebuild the registry under the new names.
 
-        Concretely: clears the per-class ``get_name``/``get_full_name``/
-        ``get_class_substate`` lru_caches on every registered state and calls
-        :meth:`refresh_keys` so the registry's name-keyed dicts reflect what
-        the new resolver returns.
-
-        ``resolver`` is stored even on a ``frozen`` dataclass via
-        ``object.__setattr__`` — the field is conceptually mutable while the
-        rest of the context shape stays immutable.
+        Clears the per-class ``get_name`` / ``get_full_name`` /
+        ``get_class_substate`` lru_caches and calls :meth:`refresh_keys`.
+        Uses ``object.__setattr__`` to mutate the frozen ``name_resolver``
+        slot.
 
         Args:
             resolver: The resolver to install. Pass :class:`DefaultNameResolver`
@@ -295,33 +279,47 @@ class RegistrationContext(BaseContext):
         self.refresh_keys()
 
     def refresh_keys(self) -> None:
-        """Re-key all registered classes/handlers using current full names.
+        """Re-key the name-keyed dicts using current ``get_full_name`` values.
 
-        State minification rewrites ``BaseState.get_name()``, but the registry
-        uses ``parent.get_full_name()`` as the dict key at registration time.
-        If the minify config (or env var) changes after a class was registered,
-        lookups will miss. Call this after ``minify.clear_config_cache()`` to
-        rebuild the dicts with the current names.
-
-        Builds the replacement dicts before mutating ``self`` so a failure
-        partway through (e.g. an unreadable minify.json that makes
-        ``format_event_handler`` raise) leaves the existing registry intact.
+        Built atomically: the replacement dicts are populated before any of
+        ``self`` is mutated, so a partway failure (e.g. malformed minify.json
+        making ``format_event_handler`` raise) leaves the existing registry
+        intact. A console warning is emitted on full-name collisions —
+        usually a sign of duplicate ids in ``minify.json``.
         """
+        from reflex.utils import console
         from reflex.utils.format import format_event_handler
 
         all_classes = list(self.base_states.values())
         new_base_states: dict[str, type[BaseState]] = {}
         new_substates: dict[str, set[type[BaseState]]] = {}
         for cls in all_classes:
-            new_base_states[cls.get_full_name()] = cls
+            full_name = cls.get_full_name()
+            existing = new_base_states.get(full_name)
+            if existing is not None and existing is not cls:
+                console.warn(
+                    f"Two state classes resolve to the same full name "
+                    f"{full_name!r}: {existing!r} and {cls!r}. The first one "
+                    "will be unreachable in the registry. Check minify.json "
+                    "for duplicate ids."
+                )
+            new_base_states[full_name] = cls
             parent = cls.get_parent_state()
             if parent is not None:
                 new_substates.setdefault(parent.get_full_name(), set()).add(cls)
 
         all_handlers = list(self.event_handlers.values())
-        new_handlers: dict[str, RegisteredEventHandler] = {
-            format_event_handler(reg.handler): reg for reg in all_handlers
-        }
+        new_handlers: dict[str, RegisteredEventHandler] = {}
+        for reg in all_handlers:
+            full_name = format_event_handler(reg.handler)
+            existing_handler = new_handlers.get(full_name)
+            if existing_handler is not None and existing_handler is not reg:
+                console.warn(
+                    f"Two event handlers resolve to the same full name "
+                    f"{full_name!r}. The first one will be unreachable in "
+                    "the registry. Check minify.json for duplicate ids."
+                )
+            new_handlers[full_name] = reg
 
         self.base_states.clear()
         self.base_states.update(new_base_states)

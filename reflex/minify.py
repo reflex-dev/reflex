@@ -1,20 +1,10 @@
-"""Minification configuration for state and event names.
+"""State and event name minification driven by ``minify.json``.
 
-This module provides centralized ID management for minifying state and event
-handler names. The configuration is stored in a ``minify.json`` file at the
-project root.
-
-The minification entry point is :class:`MinifyNameResolver`, an implementation
-of :class:`reflex_base.registry.NameResolver`. To enable minification at
-runtime, install the resolver into the active registration context::
-
-    from reflex.minify import MinifyNameResolver
-    from reflex_base.registry import RegistrationContext
-
-    RegistrationContext.get().set_name_resolver(MinifyNameResolver.from_disk())
-
-:func:`clear_config_cache` does this automatically — call it whenever
-``minify.json`` or the ``REFLEX_MINIFY_*`` environment variables change.
+The minification entry point is :class:`MinifyNameResolver`, a
+:class:`reflex_base.registry.NameResolver` implementation. Install it via
+:func:`install_minify_resolver` (called automatically by
+:func:`reflex.utils.prerequisites.get_compiled_app` and
+:func:`clear_config_cache`).
 """
 
 from __future__ import annotations
@@ -36,12 +26,7 @@ SCHEMA_VERSION = 1
 
 
 class MinifyConfig(TypedDict):
-    """Schema for minify.json file.
-
-    Version 2 format:
-    - states: dict mapping state_path -> minified_name (string)
-    - events: dict mapping state_path -> {handler_name -> minified_name}
-    """
+    """Schema for ``minify.json`` (version :data:`SCHEMA_VERSION`)."""
 
     version: int
     states: dict[str, str]  # state_path -> minified_name
@@ -118,33 +103,30 @@ def _load_minify_config_uncached() -> MinifyConfig | None:
 
 @functools.cache
 def get_minify_config() -> MinifyConfig | None:
-    """Get the minify configuration, cached.
-
-    This function is cached so the file is only read once per process.
+    """Read ``minify.json`` once per process.
 
     Returns:
-        The parsed configuration, or None if file doesn't exist.
+        The parsed config, or ``None`` if the file is absent.
     """
     return _load_minify_config_uncached()
 
 
 def is_minify_enabled() -> bool:
-    """Check if any minification is enabled (state or event).
+    """Whether either state or event minification is enabled.
 
     Returns:
-        True if either state or event minification is enabled.
+        ``True`` if either ``REFLEX_MINIFY_STATES`` or ``REFLEX_MINIFY_EVENTS``
+        is on and a config exists.
     """
     return is_state_minify_enabled() or is_event_minify_enabled()
 
 
 @functools.cache
 def is_state_minify_enabled() -> bool:
-    """Check if state ID minification is enabled.
-
-    Requires both REFLEX_MINIFY_STATE=enabled and minify.json to exist.
+    """Whether state-id minification is enabled.
 
     Returns:
-        True if state minification is enabled.
+        ``True`` if ``REFLEX_MINIFY_STATES=enabled`` and ``minify.json`` exists.
     """
     from reflex.environment import MinifyMode, environment
 
@@ -156,12 +138,10 @@ def is_state_minify_enabled() -> bool:
 
 @functools.cache
 def is_event_minify_enabled() -> bool:
-    """Check if event ID minification is enabled.
-
-    Requires both REFLEX_MINIFY_EVENTS=enabled and minify.json to exist.
+    """Whether event-id minification is enabled.
 
     Returns:
-        True if event minification is enabled.
+        ``True`` if ``REFLEX_MINIFY_EVENTS=enabled`` and ``minify.json`` exists.
     """
     from reflex.environment import MinifyMode, environment
 
@@ -172,13 +152,13 @@ def is_event_minify_enabled() -> bool:
 
 
 def get_state_id(state_full_path: str) -> str | None:
-    """Get the minified ID for a state.
+    """Look up the minified id for a state path.
 
     Args:
-        state_full_path: The full path to the state (e.g., "myapp.state.AppState.UserState").
+        state_full_path: e.g. ``"myapp.state.AppState.UserState"``.
 
     Returns:
-        The minified state name (e.g., "a", "ba") if configured, None otherwise.
+        The minified id, or ``None`` if not configured.
     """
     config = get_minify_config()
     if config is None:
@@ -187,14 +167,14 @@ def get_state_id(state_full_path: str) -> str | None:
 
 
 def get_event_id(state_full_path: str, handler_name: str) -> str | None:
-    """Get the minified ID for an event handler.
+    """Look up the minified id for an event handler.
 
     Args:
         state_full_path: The full path to the state.
-        handler_name: The name of the event handler.
+        handler_name: The handler's original name.
 
     Returns:
-        The minified event name (e.g., "a", "ba") if configured, None otherwise.
+        The minified id, or ``None`` if not configured.
     """
     config = get_minify_config()
     if config is None:
@@ -221,19 +201,13 @@ def save_minify_config(config: MinifyConfig) -> None:
 class MinifyNameResolver:
     """:class:`~reflex_base.registry.NameResolver` driven by ``minify.json``.
 
-    Returns the minified name from the configuration when the corresponding
-    ``REFLEX_MINIFY_STATES`` / ``REFLEX_MINIFY_EVENTS`` env-var is set to
-    ``enabled`` *and* the entry exists in the config. All other lookups return
-    ``None`` so the registry falls back to the default name.
-
-    The resolver is constructed once (typically via :meth:`from_disk`) and
-    held by the active :class:`~reflex_base.registry.RegistrationContext`.
-    Per-class lookups are memoized in ``_state_cache`` and ``_event_cache``
-    for O(1) amortized cost on the hot path.
+    Returns the minified name when the matching env-var
+    (``REFLEX_MINIFY_STATES`` / ``REFLEX_MINIFY_EVENTS``) is enabled and the
+    entry exists in the config; ``None`` otherwise. Per-class lookups are
+    memoized for O(1) amortized cost.
 
     Attributes:
-        config: The parsed ``minify.json`` content, or ``None`` when the file
-            is absent or malformed.
+        config: Parsed ``minify.json``, or ``None``.
         states_enabled: Whether ``REFLEX_MINIFY_STATES`` is on.
         events_enabled: Whether ``REFLEX_MINIFY_EVENTS`` is on.
     """
@@ -252,21 +226,16 @@ class MinifyNameResolver:
     def from_disk(cls) -> MinifyNameResolver:
         """Build a resolver from the current ``minify.json`` and env vars.
 
-        Reads each input exactly once. Subsequent state/event lookups never
-        touch the filesystem.
-
         Returns:
-            A configured resolver. May still return ``None`` from every lookup
-            if minification is disabled or the config file is absent.
+            A configured resolver — may resolve nothing if minify is disabled
+            or the config is absent/malformed (the validate CLI surfaces
+            errors separately via :func:`_load_minify_config_uncached`).
         """
         from reflex.environment import MinifyMode, environment
 
-        config: MinifyConfig | None
         try:
-            config = _load_minify_config_uncached()
+            config = get_minify_config()
         except ValueError:
-            # Treat malformed config as "no config" for the resolver — callers
-            # that need to surface the error can read it via get_minify_config.
             config = None
         return cls(
             config=config,
@@ -300,35 +269,21 @@ class MinifyNameResolver:
 def install_minify_resolver() -> None:
     """Install a fresh :class:`MinifyNameResolver` into the active context.
 
-    Use this after the user's app has been imported (so the registration
-    context contains the right state classes) to switch the framework over
-    to minified names.
-
-    Returns silently if no registration context is currently attached.
+    No-op if no registration context is attached.
     """
-    try:
-        from reflex_base.registry import RegistrationContext
+    from reflex_base.registry import RegistrationContext
 
-        ctx = RegistrationContext.get()
-    except LookupError:
+    ctx = RegistrationContext.try_get()
+    if ctx is None:
         return
     ctx.set_name_resolver(MinifyNameResolver.from_disk())
 
 
 def clear_config_cache() -> None:
-    """Reload the minify configuration and propagate it through the registry.
+    """Reload ``minify.json`` and propagate the new names through the registry.
 
-    Clears the module-level lru_caches for :func:`get_minify_config`,
-    :func:`is_state_minify_enabled`, :func:`is_event_minify_enabled`, then
-    rebuilds the :class:`MinifyNameResolver` from the current
-    ``minify.json`` / env vars and installs it via
-    :meth:`reflex_base.registry.RegistrationContext.set_name_resolver`. The
-    set-resolver call clears per-class name caches and re-keys the registry
-    in one atomic step.
-
-    Call this whenever ``minify.json`` is rewritten programmatically, or
-    after monkey-patching ``REFLEX_MINIFY_STATES`` / ``REFLEX_MINIFY_EVENTS``
-    at runtime.
+    Call after editing ``minify.json`` programmatically or changing
+    ``REFLEX_MINIFY_*`` env vars at runtime.
     """
     get_minify_config.cache_clear()
     is_state_minify_enabled.cache_clear()
@@ -343,45 +298,41 @@ _MINIFY_BASE = len(_MINIFY_CHARS)  # 54
 
 
 def int_to_minified_name(id_: int) -> str:
-    """Convert integer ID to minified name using base-54 encoding.
+    """Encode a non-negative integer as a base-54 minified name.
 
     Args:
-        id_: The integer ID to convert.
+        id_: The integer to encode.
 
     Returns:
-        A minified string representation.
+        e.g. ``0 → "a"``, ``25 → "z"``, ``54 → "ba"``.
 
     Raises:
-        ValueError: If id_ is negative.
+        ValueError: If ``id_`` is negative.
     """
     if id_ < 0:
         msg = f"ID must be non-negative, got {id_}"
         raise ValueError(msg)
-
-    # Special case: 0 maps to 'a'
     if id_ == 0:
         return _MINIFY_CHARS[0]
-
     result = []
     num = id_
     while num > 0:
         result.append(_MINIFY_CHARS[num % _MINIFY_BASE])
         num //= _MINIFY_BASE
-
     return "".join(reversed(result))
 
 
 def minified_name_to_int(name: str) -> int:
-    """Convert minified name back to integer ID.
+    """Decode a base-54 minified name back to its integer id.
 
     Args:
-        name: The minified string to convert.
+        name: The minified string.
 
     Returns:
-        The integer ID.
+        The integer id.
 
     Raises:
-        ValueError: If name contains invalid characters.
+        ValueError: If ``name`` contains invalid characters.
     """
     result = 0
     for char in name:
@@ -394,57 +345,41 @@ def minified_name_to_int(name: str) -> int:
 
 
 def get_state_full_path(state_cls: type[BaseState]) -> str:
-    """Get the full path for a state class suitable for minify.json.
+    """Build the unique ``module.Class.SubClass`` path for a state class.
 
-    This returns the module path plus class name hierarchy, which uniquely
-    identifies a state class.
+    Uses ``__original_module__`` when available so dynamically-relocated
+    states (e.g. ``ComponentState.create()``) keep their import-site path.
 
     Args:
         state_cls: The state class.
 
     Returns:
-        The full path string (e.g., "myapp.state.AppState.UserState").
+        e.g. ``"myapp.state.AppState.UserState"``.
     """
-    # Build the path from module + class hierarchy
-    # Use __original_module__ if available (for dynamic states that get moved)
     module = getattr(state_cls, "__original_module__", None) or state_cls.__module__
-    parts = [module]
-
-    # Get the class hierarchy from root to this class
-    class_hierarchy = []
+    class_hierarchy: list[str] = []
     current: type[BaseState] | None = state_cls
     while current is not None:
         class_hierarchy.append(current.__name__)
         current = current.get_parent_state()  # type: ignore[union-attr]
-
-    # Reverse to get root-to-leaf order
     class_hierarchy.reverse()
-
-    # Combine module and class hierarchy
-    parts.extend(class_hierarchy)
-    return ".".join(parts)
+    return ".".join([module, *class_hierarchy])
 
 
 def collect_all_states(
     root_state: type[BaseState] | None = None,
 ) -> list[type[BaseState]]:
-    """Collect state classes in deterministic depth-first order.
+    """Collect state classes in deterministic depth-first, sibling-sorted order.
 
     Without ``root_state``, walks every state registered in the active
-    :class:`~reflex_base.registry.RegistrationContext` (each connected tree
-    starting from a parentless root), sorting siblings alphabetically by
-    class name. With ``root_state``, the walk is restricted to that subtree.
-
-    The CLI commands use the parameterless form so the result reflects the
-    user's currently-loaded app. Tests typically pass an explicit root to
-    scope the walk to the classes defined inside the test.
+    :class:`~reflex_base.registry.RegistrationContext` (one tree per
+    parentless root). With ``root_state``, restricts the walk to that subtree.
 
     Args:
-        root_state: Optional subtree root. ``None`` means "every registered
-            state".
+        root_state: Optional subtree root.
 
     Returns:
-        List of state classes in depth-first, sibling-sorted order.
+        State classes in depth-first, sibling-sorted order.
     """
     if root_state is not None:
         result = [root_state]
@@ -470,14 +405,11 @@ def generate_minify_config(
 ) -> MinifyConfig:
     """Generate a complete minify configuration.
 
-    Walks the state tree (see :func:`collect_all_states`) and assigns minified
-    names starting from ``"a"`` per sibling group. Siblings are sorted by
-    class name and handlers by handler name so the output is byte-stable across
-    runs (and therefore VCS-friendly).
+    Walks the state tree (see :func:`collect_all_states`) and assigns ids
+    starting from ``"a"`` per sibling group. Output is byte-stable.
 
     Args:
-        root_state: Optional subtree root. ``None`` (the default) generates a
-            config for every state registered in the active context.
+        root_state: Optional subtree root.
 
     Returns:
         A complete :class:`MinifyConfig`.
