@@ -627,9 +627,21 @@ class TestDynamicHandlerMinification:
 
     def test_auto_setter_registered_with_config(self, temp_minify_json, monkeypatch):
         """Test that auto-setters (set_*) are registered in _event_id_to_name when config exists."""
+        from reflex_base import config as base_config
+
         monkeypatch.setenv(
             environment.REFLEX_MINIFY_EVENTS.name, MinifyMode.ENABLED.value
         )
+        # state_auto_setters is False by default; force it on so that
+        # `_init_var` actually creates the setter we want to verify.
+        real_get_config = base_config.get_config
+
+        def _mock_get_config(*args, **kwargs):
+            cfg = real_get_config(*args, **kwargs)
+            cfg.state_auto_setters = True
+            return cfg
+
+        monkeypatch.setattr(base_config, "get_config", _mock_get_config)
         expected_module = "tests.units.test_minification"
         expected_state_path = f"{expected_module}.State.TestStateWithAutoSetter"
 
@@ -856,17 +868,19 @@ class TestMinifiedNameCollision:
             environment.REFLEX_MINIFY_STATES.name, MinifyMode.ENABLED.value
         )
 
-        # Build a hierarchy: State -> ParentState -> ChildState
-        # where ParentState and ChildState both get minified name "b"
-
-        class ParentState(State):
-            pass
-
-        class ChildState(ParentState):
-            pass
-
-        parent_path = get_state_full_path(ParentState)
-        child_path = get_state_full_path(ChildState)
+        # Build a hierarchy: State -> ParentClassSubstateCollision -> ChildClassSubstateCollision
+        # where both child classes get minified name "b".
+        # The substate registry is keyed by parent.get_full_name() at
+        # registration time, so the minify config must be loaded *before*
+        # the test classes are defined. Class names are deliberately unique
+        # so `_handle_local_def` does not append a numeric suffix when run
+        # alongside other tests that also define `ParentState`.
+        expected_module = "tests.units.test_minification"
+        parent_path = f"{expected_module}.State.ParentClassSubstateCollision"
+        child_path = (
+            f"{expected_module}.State.ParentClassSubstateCollision."
+            "ChildClassSubstateCollision"
+        )
 
         config: MinifyConfig = {
             "version": SCHEMA_VERSION,
@@ -882,10 +896,15 @@ class TestMinifiedNameCollision:
         State.get_name.cache_clear()
         State.get_full_name.cache_clear()
         State.get_class_substate.cache_clear()
-        ParentState.get_name.cache_clear()
-        ParentState.get_full_name.cache_clear()
-        ChildState.get_name.cache_clear()
-        ChildState.get_full_name.cache_clear()
+
+        class ParentClassSubstateCollision(State):
+            pass
+
+        class ChildClassSubstateCollision(ParentClassSubstateCollision):
+            pass
+
+        ParentState = ParentClassSubstateCollision
+        ChildState = ChildClassSubstateCollision
 
         # Verify both get the same minified name
         assert ParentState.get_name() == "b"
@@ -910,16 +929,17 @@ class TestMinifiedNameCollision:
             environment.REFLEX_MINIFY_STATES.name, MinifyMode.ENABLED.value
         )
 
-        class ParentState2(State):
-            pass
-
-        class ChildState2(ParentState2):
-            @rx.event
-            def my_handler(self):
-                pass
-
-        parent_path = get_state_full_path(ParentState2)
-        child_path = get_state_full_path(ChildState2)
+        # Substates are registered under parent.get_full_name() at class
+        # creation time, so the minify config must be in place before the
+        # test classes are defined. Class names are deliberately unique so
+        # `_handle_local_def` does not append a numeric suffix when run
+        # alongside other tests that also define `ParentState2`.
+        expected_module = "tests.units.test_minification"
+        parent_path = f"{expected_module}.State.ParentInstanceSubstateCollision"
+        child_path = (
+            f"{expected_module}.State.ParentInstanceSubstateCollision."
+            "ChildInstanceSubstateCollision"
+        )
 
         config: MinifyConfig = {
             "version": SCHEMA_VERSION,
@@ -935,10 +955,16 @@ class TestMinifiedNameCollision:
         State.get_name.cache_clear()
         State.get_full_name.cache_clear()
         State.get_class_substate.cache_clear()
-        ParentState2.get_name.cache_clear()
-        ParentState2.get_full_name.cache_clear()
-        ChildState2.get_name.cache_clear()
-        ChildState2.get_full_name.cache_clear()
+
+        class ParentInstanceSubstateCollision(State):
+            pass
+
+        class ChildInstanceSubstateCollision(ParentInstanceSubstateCollision):
+            @rx.event
+            def my_handler(self):
+                pass
+
+        ChildState2 = ChildInstanceSubstateCollision
 
         # Create a state instance tree
         root = State(_reflex_internal_init=True)  # type: ignore[call-arg]
