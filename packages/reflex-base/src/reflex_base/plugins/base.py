@@ -8,6 +8,7 @@ from typing_extensions import Unpack
 
 if TYPE_CHECKING:
     from reflex.app import App, UnevaluatedPage
+    from reflex_base.components.component import BaseComponent
 
 
 class CommonContext(TypedDict):
@@ -42,6 +43,7 @@ class PreCompileContext(CommonContext):
     add_save_task: AddTaskProtocol
     add_modify_task: Callable[[str, Callable[[str], str]], None]
     unevaluated_pages: Sequence["UnevaluatedPage"]
+    theme_roots: Sequence["BaseComponent | None"]
 
 
 class PostCompileContext(CommonContext):

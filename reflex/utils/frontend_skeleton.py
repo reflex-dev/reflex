@@ -247,6 +247,8 @@ def _compile_vite_config(config: Config):
         experimental_hmr=environment.VITE_EXPERIMENTAL_HMR.get(),
         sourcemap=environment.VITE_SOURCEMAP.get(),
         allowed_hosts=config.vite_allowed_hosts,
+        compression_formats=config.frontend_compression_formats,
+        image_formats=config.frontend_image_formats,
     )
 
 

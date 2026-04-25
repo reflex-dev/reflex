@@ -139,6 +139,7 @@ class PackageJson(SimpleNamespace):
         "autoprefixer": "10.5.0",
         "postcss": "8.5.10",
         "postcss-import": "16.1.1",
+        "sharp": "0.34.5",
         "@react-router/dev": _react_router_version,
         "@react-router/fs-routes": _react_router_version,
         "vite": "8.0.9",

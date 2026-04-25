@@ -45,6 +45,26 @@ In this example we create three pages:
 # Video: Pages and URL Routes
 ```
 
+## Page Structure and Accessibility
+
+For better accessibility and Lighthouse scores, wrap your page content in an `rx.el.main` element. This provides the `<main>` HTML landmark that screen readers and search engines use to identify the primary content of the page.
+
+```python
+def index():
+    return rx.el.main(
+        navbar(),
+        rx.container(
+            rx.heading("Welcome"),
+            rx.text("Page content here."),
+        ),
+        footer(),
+    )
+```
+
+```md alert
+# Every page should have exactly one `<main>` landmark. Without it, accessibility tools like Lighthouse will flag the "Document does not have a main landmark" audit.
+```
+
 ## Page Decorator
 
 You can also use the `@rx.page` decorator to add a page.
@@ -206,6 +226,8 @@ You can add page metadata such as:
 ```python
 {meta_data}
 ```
+
+For production apps, set `title` and `description` explicitly on each public page with `@rx.page(...)` or `app.add_page(...)`. Reflex will use what you provide there, so it is best to treat page metadata as part of the page definition rather than something to fill in later.
 
 ## Getting the Current Page
 

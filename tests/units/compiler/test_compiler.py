@@ -1,10 +1,12 @@
 import importlib.util
 import os
+import re
 from pathlib import Path
 
 import pytest
 from pytest_mock import MockerFixture
 from reflex_base import constants
+from reflex_base.compiler.templates import vite_config_template
 from reflex_base.constants.compiler import PageNames
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
 from reflex_base.vars.base import Var
@@ -361,6 +363,123 @@ def test_compile_nonexistent_stylesheet(tmp_path, mocker: MockerFixture):
         compiler.compile_root_stylesheet(stylesheets)
 
 
+class TestGetRadixThemesStylesheets:
+    """Tests for the granular Radix Themes stylesheet selection."""
+
+    def test_no_roots_falls_back_to_monolith(self):
+        """When no roots are provided, use the monolithic stylesheet."""
+        assert compiler.get_radix_themes_stylesheets(None) == [
+            "@radix-ui/themes/styles.css"
+        ]
+
+    def test_literal_accent_emits_granular_imports(self):
+        """A literal accent_color emits only the needed granular imports."""
+        import reflex as rx
+
+        sheets = compiler.get_radix_themes_stylesheets([rx.theme(accent_color="blue")])
+        assert sheets == [
+            "@radix-ui/themes/tokens/base.css",
+            # blue's natural gray pairing is slate
+            "@radix-ui/themes/tokens/colors/slate.css",
+            "@radix-ui/themes/tokens/colors/blue.css",
+            "@radix-ui/themes/components.css",
+            "@radix-ui/themes/utilities.css",
+        ]
+
+    def test_explicit_gray_overrides_auto_pairing(self):
+        """An explicit gray_color replaces the accent's auto-paired gray."""
+        import reflex as rx
+
+        sheets = compiler.get_radix_themes_stylesheets([
+            rx.theme(accent_color="red", gray_color="mauve")
+        ])
+        assert "@radix-ui/themes/tokens/colors/mauve.css" in sheets
+        assert "@radix-ui/themes/tokens/colors/red.css" in sheets
+        # The default auto pairing for red is also mauve, so no extra colors.
+        color_sheets = [s for s in sheets if "/colors/" in s]
+        assert len(color_sheets) == 2
+
+    def test_nested_themes_union_colors(self):
+        """Nested Theme components contribute the union of their colors."""
+        import reflex as rx
+
+        root = rx.box(
+            rx.theme(accent_color="green"),
+            rx.theme(accent_color="pink"),
+        )
+        sheets = compiler.get_radix_themes_stylesheets([root])
+        color_sheets = {s for s in sheets if "/colors/" in s}
+        assert "@radix-ui/themes/tokens/colors/green.css" in color_sheets
+        assert "@radix-ui/themes/tokens/colors/pink.css" in color_sheets
+
+    def test_dynamic_color_falls_back_to_monolith(self):
+        """A state-driven Theme color forces the monolithic stylesheet."""
+        from typing import Literal
+
+        import reflex as rx
+
+        class _S(rx.State):
+            color: Literal["red", "blue"] = "red"
+
+        sheets = compiler.get_radix_themes_stylesheets([
+            rx.theme(accent_color=_S.color)
+        ])
+        assert sheets == ["@radix-ui/themes/styles.css"]
+
+
+class TestCollectWindowLibraryImports:
+    """Tests for the import collection that drives window.__reflex."""
+
+    @pytest.fixture(autouse=True)
+    def _isolate_dynamic_imports(self):
+        from reflex_base.components.dynamic import reset_dynamic_component_imports
+
+        reset_dynamic_component_imports()
+        yield
+        reset_dynamic_component_imports()
+
+    def test_internal_modules_always_star_imported(self):
+        """Internal Reflex modules map to None (star import) so dynamic
+        components / plugins reading window.__reflex find what they need
+        even when the app has no static external references.
+        """
+        result = compiler.collect_window_library_imports([{}])
+        assert result["$/utils/state"] is None
+        assert "@radix-ui/themes" not in result
+
+    def test_external_lib_uses_named_imports_from_static_usage(self):
+        """External library exposure on window.__reflex uses named imports
+        so Rolldown can tree-shake unused exports.
+        """
+        from reflex_base.utils.imports import ImportVar
+
+        sources = [
+            {"$/utils/state": [ImportVar(tag="evalReactComponent")]},
+            {
+                "@radix-ui/themes@3.3.0": [
+                    ImportVar(tag="Theme"),
+                    ImportVar(tag="Button"),
+                ]
+            },
+        ]
+        result = compiler.collect_window_library_imports(sources)
+        assert result["@radix-ui/themes"] == {"Theme", "Button"}
+
+    def test_unions_dynamic_component_tags(self):
+        """Tags captured during dynamic-Component serialization are unioned
+        into the named-import surface so runtime-eval'd code finds them on
+        window.__reflex.
+        """
+        from reflex_base.components.dynamic import dynamic_component_imports
+        from reflex_base.utils.imports import ImportVar
+
+        sources = [{"@radix-ui/themes@3.3.0": [ImportVar(tag="Theme")]}]
+        dynamic_component_imports["@radix-ui/themes@3.3.0"] = {ImportVar(tag="Flex")}
+
+        result = compiler.collect_window_library_imports(sources)
+        assert result["@radix-ui/themes"] == {"Theme", "Flex"}
+
+
 def test_create_document_root():
     """Test that the document root is created correctly."""
     # Test with no components.
@@ -450,3 +569,49 @@ def test_create_document_root_with_meta_viewport():
     assert str(root.children[0].children[2].name) == '"viewport"'  # pyright: ignore [reportAttributeAccessIssue]
     assert str(root.children[0].children[2].content) == '"foo"'  # pyright: ignore [reportAttributeAccessIssue]
     assert str(root.children[0].children[3].char_set) == '"utf-8"'  # pyright: ignore [reportAttributeAccessIssue]
+
+
+class TestViteConfigChunking:
+    """Tests for Vite config chunk splitting strategy."""
+
+    def _generate_vite_config(self) -> str:
+        return vite_config_template(
+            base="/",
+            hmr=True,
+            force_full_reload=False,
+            experimental_hmr=False,
+            sourcemap=False,
+        )
+
+    def test_no_monolithic_radix_ui_chunk(self):
+        """Radix-ui packages must not be grouped into a single monolithic chunk.
+
+        A single 'radix-ui' chunk forces every page to download ALL radix code
+        even when it only uses a fraction, wasting 55+ KB on typical pages.
+        """
+        config = self._generate_vite_config()
+
+        # There should be no chunk rule that matches ALL @radix-ui/* packages
+        # under a single name like "radix-ui".
+        monolithic_radix = re.search(r"""name:\s*["']radix-ui["']""", config)
+        assert monolithic_radix is None, (
+            "Vite config must not group all @radix-ui/* packages into a single "
+            "'radix-ui' chunk. This forces pages to download unused radix code. "
+            "Remove the monolithic radix-ui chunk rule and let Vite split per-route."
+        )
+
+    def test_vendor_chunks_exist_for_large_libraries(self):
+        """Key vendor libraries should still have dedicated chunks for caching."""
+        config = self._generate_vite_config()
+
+        # These libraries are large and benefit from dedicated chunks for
+        # cross-page cache reuse.
+        for lib_name in ["socket-io", "mantine", "recharts"]:
+            assert re.search(rf"""name:\s*["']{lib_name}["']""", config), (
+                f"Expected dedicated chunk for '{lib_name}'"
+            )
+
+    def test_reflex_env_chunk_exists(self):
+        """The env.json chunk should always exist for config isolation."""
+        config = self._generate_vite_config()
+        assert re.search(r"""name:\s*["']reflex-env["']""", config)

@@ -1211,7 +1211,10 @@ class App(MiddlewareMixin, LifespanMixin):
             ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
             FileNotFoundError: When a plugin requires a file that does not exist.
         """
+        from reflex_base.components.dynamic import reset_dynamic_component_imports
         from reflex_base.utils.exceptions import ReflexRuntimeError
+
+        reset_dynamic_component_imports()
 
         self._apply_decorated_pages()
 
@@ -1474,9 +1477,15 @@ class App(MiddlewareMixin, LifespanMixin):
                     route,
                 )
 
-            # Compile the root stylesheet with base styles.
+            # Compile the root stylesheet with base styles. theme_roots lets
+            # the compiler ship only the Radix color scales that are actually
+            # referenced by Theme components in the tree.
+            theme_roots = [self.theme, *self._pages.values()]
             _submit_work(
-                compiler.compile_root_stylesheet, self.stylesheets, self.reset_style
+                compiler.compile_root_stylesheet,
+                self.stylesheets,
+                self.reset_style,
+                theme_roots,
             )
 
             # Compile the theme.
@@ -1500,6 +1509,7 @@ class App(MiddlewareMixin, LifespanMixin):
                         ))
                     ),
                     unevaluated_pages=list(self._unevaluated_pages.values()),
+                    theme_roots=theme_roots,
                 )
 
             # Wait for all compilation tasks to complete.
@@ -1528,9 +1538,17 @@ class App(MiddlewareMixin, LifespanMixin):
             self.theme.appearance = None  # pyright: ignore[reportAttributeAccessIssue]
         progress.advance(task)
 
+        # Star imports of large libraries (e.g. @radix-ui/themes) defeat
+        # Rolldown tree-shaking for window.__reflex; pass per-source dicts
+        # so tags from multiple pages union instead of clobbering.
+        window_library_imports = compiler.collect_window_library_imports([
+            *(p._get_all_imports() for p in self._pages.values()),
+            app_root._get_all_imports(),
+        ])
+
         # Compile the app root.
         compile_results.append(
-            compiler.compile_app(app_root),
+            compiler.compile_app(app_root, window_library_imports),
         )
         progress.advance(task)
 
