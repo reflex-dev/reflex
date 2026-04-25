@@ -8,15 +8,15 @@ from typing import Any, ClassVar, List, Literal, NoReturn  # noqa: UP035
 import pytest
 from packaging import version
 from pytest_mock import MockerFixture
+from reflex_base import constants
+from reflex_base.event import EventHandler
+from reflex_base.utils.exceptions import ReflexError, SystemPackageMissingError
+from reflex_base.vars.base import Var
 
-from reflex import constants
 from reflex.environment import environment
-from reflex.event import EventHandler
 from reflex.state import BaseState
 from reflex.utils import exec as utils_exec
 from reflex.utils import frontend_skeleton, js_runtimes, prerequisites, templates, types
-from reflex.utils.exceptions import ReflexError, SystemPackageMissingError
-from reflex.vars.base import Var
 
 
 class ExampleTestState(BaseState):
@@ -283,8 +283,8 @@ def test_is_backend_base_variable(
         (float, int | float, True),
         (str, int | float, False),
         (list[int], list[int], True),
-        (list[int], list[float], True),
-        (int | float, int | float, False),
+        (list[int], list[float], False),
+        (int | float, int | float, True),
         (int | Var[int], Var[int], False),
         (int, Any, True),
         (Any, Any, True),
@@ -296,7 +296,7 @@ def test_is_backend_base_variable(
     ],
 )
 def test_issubclass(cls: type, cls_check: type, expected: bool):
-    assert types._issubclass(cls, cls_check) == expected
+    assert types.typehint_issubclass(cls, cls_check) == expected
 
 
 @pytest.mark.parametrize("cls", [Literal["test", 1], Literal[1, "test"]])
@@ -421,6 +421,56 @@ def test_initialize_non_existent_gitignore(
     assert set(file_content) - expected == set()
 
 
+def test_initialize_requirements_txt_skips_when_pyproject_exists(tmp_path):
+    """Test that pyproject-based apps do not get a requirements.txt file."""
+    pyproject_file = tmp_path / "pyproject.toml"
+    pyproject_file.write_text('[project]\nname = "existing-app"\n')
+    requirements_file = tmp_path / "requirements.txt"
+
+    result = frontend_skeleton.initialize_requirements_txt(
+        pyproject_file_path=pyproject_file,
+        requirements_file_path=requirements_file,
+    )
+
+    assert not result
+    assert not requirements_file.exists()
+
+
+def test_initialize_requirements_txt_appends_reflex_to_existing_requirements(tmp_path):
+    """Test that legacy requirements.txt projects keep working without pyproject.toml."""
+    pyproject_file = tmp_path / "pyproject.toml"
+    requirements_file = tmp_path / "requirements.txt"
+    requirements_file.write_text("sqlmodel==0.0.37\n")
+
+    result = frontend_skeleton.initialize_requirements_txt(
+        pyproject_file_path=pyproject_file,
+        requirements_file_path=requirements_file,
+    )
+
+    assert not result
+    assert not pyproject_file.exists()
+    assert requirements_file.read_text().endswith(
+        f"\nreflex=={constants.Reflex.VERSION}"
+    )
+
+
+def test_initialize_requirements_txt_preserves_existing_requirements(tmp_path):
+    """Test that existing requirements.txt projects do not get a second manifest."""
+    pyproject_file = tmp_path / "pyproject.toml"
+    requirements_file = tmp_path / "requirements.txt"
+    requirements_text = f"reflex=={constants.Reflex.VERSION}\nredis==7.3.0\n"
+    requirements_file.write_text(requirements_text)
+
+    result = frontend_skeleton.initialize_requirements_txt(
+        pyproject_file_path=pyproject_file,
+        requirements_file_path=requirements_file,
+    )
+
+    assert not result
+    assert requirements_file.read_text() == requirements_text
+    assert not pyproject_file.exists()
+
+
 def test_validate_app_name(tmp_path, mocker: MockerFixture):
     """Test that an error is raised if the app name is reflex or if the name is not according to python package naming conventions.
 
@@ -514,7 +564,7 @@ def test_output_system_info(mocker: MockerFixture):
     This test makes no assertions about the output, other than it executes
     without crashing.
     """
-    mocker.patch("reflex.utils.console._LOG_LEVEL", constants.LogLevel.DEBUG)
+    mocker.patch("reflex_base.utils.console._LOG_LEVEL", constants.LogLevel.DEBUG)
     utils_exec.output_system_info()
 
 

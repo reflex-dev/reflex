@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import pytest
-from pytest_mock import MockerFixture
+from reflex_base.registry import RegistrationContext
 
 from reflex.app import App
 from reflex.middleware.hydrate_middleware import HydrateMiddleware
@@ -31,15 +31,17 @@ def hydrate_middleware() -> HydrateMiddleware:
 
 
 @pytest.mark.asyncio
-async def test_preprocess_no_events(hydrate_middleware, event1, mocker: MockerFixture):
+async def test_preprocess_no_events(
+    hydrate_middleware, event1, clean_registration_context: RegistrationContext
+):
     """Test that app without on_load is processed correctly.
 
     Args:
         hydrate_middleware: Instance of HydrateMiddleware
         event1: An Event.
-        mocker: pytest mock object.
+        clean_registration_context: The registration context fixture, which is cleared before each test.
     """
-    mocker.patch("reflex.state.State.class_subclasses", {TestState})
+    clean_registration_context.register_base_state(TestState)
     state = State()
     update = await hydrate_middleware.preprocess(
         app=App(_state=State),

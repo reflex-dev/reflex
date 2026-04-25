@@ -5,13 +5,13 @@ from types import ModuleType, SimpleNamespace
 from unittest import mock
 
 import pytest
+import reflex_base.config
+from reflex_base.components.component import CUSTOM_COMPONENTS
+from reflex_base.constants import IS_WINDOWS
 
-import reflex.config
 import reflex.reflex as reflex_cli
 import reflex.testing as reflex_testing
 import reflex.utils.prerequisites
-from reflex.components.component import CUSTOM_COMPONENTS
-from reflex.constants import IS_WINDOWS
 from reflex.experimental.memo import EXPERIMENTAL_MEMOS
 from reflex.testing import AppHarness
 
@@ -69,8 +69,10 @@ def harness_mocks(monkeypatch):
         )
     )
 
-    monkeypatch.setattr(reflex_testing, "get_config", lambda: fake_config)
-    monkeypatch.setattr(reflex.config, "get_config", lambda reload=False: fake_config)
+    monkeypatch.setattr(reflex_testing, "get_config", lambda reload=False: fake_config)
+    monkeypatch.setattr(
+        reflex_base.config, "get_config", lambda reload=False: fake_config
+    )
     monkeypatch.setattr(
         reflex.utils.prerequisites,
         "get_and_validate_app",

@@ -6,22 +6,21 @@ from typing import Any
 
 import plotly.graph_objects as go
 import pytest
-
-from reflex.components.tags.tag import Tag
-from reflex.constants.state import FIELD_MARKER
-from reflex.event import (
+from reflex_base.components.tags.tag import Tag
+from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.event import (
     EventChain,
     EventHandler,
     EventSpec,
     JavascriptInputEvent,
     no_args_event_spec,
 )
-from reflex.style import Style
-from reflex.utils import format
-from reflex.utils.serializers import serialize_figure
-from reflex.vars.base import LiteralVar, Var
-from reflex.vars.function import FunctionStringVar
-from reflex.vars.object import ObjectVar
+from reflex_base.style import Style
+from reflex_base.utils import format
+from reflex_base.utils.serializers import serialize_figure
+from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.function import FunctionStringVar
+from reflex_base.vars.object import ObjectVar
 
 pytest.importorskip("pydantic")
 

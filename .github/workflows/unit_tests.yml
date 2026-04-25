@@ -47,11 +47,20 @@ jobs:
           - 6379:6379
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+          fetch-depth: 0
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: ${{ matrix.python-version }}
           run-uv-sync: true
 
+      - name: Run unit tests without db dependencies
+        run: |
+          export PYTHONUNBUFFERED=1
+          uv pip uninstall pydantic alembic sqlalchemy sqlmodel
+          uv run --no-sync pytest tests/units --cov --no-cov-on-fail --cov-report= --cov-fail-under=0
+          uv sync
       - name: Run unit tests
         run: |
           export PYTHONUNBUFFERED=1
@@ -69,12 +78,6 @@ jobs:
           export REFLEX_REDIS_URL=redis://localhost:6379
           export REFLEX_OPLOCK_ENABLED=true
           uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
-      # Change to explicitly install v1 when reflex-hosting-cli is compatible with v2
-      - name: Run unit tests w/ pydantic v1
-        run: |
-          export PYTHONUNBUFFERED=1
-          uv pip install "pydantic~=1.10"
-          uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
       - name: Generate coverage report
         run: uv run coverage html
 
@@ -88,17 +91,21 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+          fetch-depth: 0
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: ${{ matrix.python-version }}
           run-uv-sync: true
 
+      - name: Run unit tests without db dependencies
+        run: |
+          export PYTHONUNBUFFERED=1
+          uv pip uninstall pydantic alembic sqlalchemy sqlmodel
+          uv run --no-sync pytest tests/units --cov --no-cov-on-fail --cov-report= --cov-fail-under=0
+          uv sync
       - name: Run unit tests
         run: |
           export PYTHONUNBUFFERED=1
-          uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
-      - name: Run unit tests w/ pydantic v1
-        run: |
-          export PYTHONUNBUFFERED=1
-          uv pip install "pydantic~=1.10"
           uv run pytest tests/units --cov --no-cov-on-fail --cov-report=

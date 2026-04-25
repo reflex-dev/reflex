@@ -1,0 +1,97 @@
+[project]
+name = "reflex-docs-app"
+version = "0.0.1"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "email-validator",
+    "fastapi",
+    "googletrans-py",
+    "openai",
+    "orjson",
+    "pandas",
+    "plotly-express",
+    "psycopg[binary]",
+    "python-frontmatter",
+    "reflex",
+    "reflex-docgen",
+    "reflex-enterprise",
+    "reflex-hosting-cli",
+    "reflex-pyplot",
+    "reflex-integrations-docs",
+    "reflex-components-internal",
+    "reflex-site-shared",
+    "alembic",
+    "requests",
+    "ruff-format",
+    "sqlalchemy",
+    "sqlmodel",
+    "typesense",
+]
+
+[dependency-groups]
+dev = [
+    "playwright",
+    "pre-commit",
+    "pytest-playwright",
+    "pytest",
+    "ruff",
+    "uvicorn",
+]
+
+[tool.setuptools.packages.find]
+where = ["reflex_docs"]
+
+[tool.ruff]
+target-version = "py311"
+output-format = "concise"
+lint.isort.split-on-trailing-comma = false
+lint.select = [
+    "ANN001",
+    "B",
+    "C4",
+    "D",
+    "E",
+    "ERA",
+    "F",
+    "FURB",
+    "I",
+    "N",
+    "PERF",
+    "PGH",
+    "RUF",
+    "SIM",
+    "T",
+    "TRY",
+    "W",
+]
+lint.ignore = [
+    "ANN001",
+    "B008",
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D107",
+    "D205",
+    "E402",
+    "E501",
+    "ERA001",
+    "F403",
+    "RUF006",
+    "RUF008",
+    "RUF012",
+    "SIM115",
+    "T201",
+    "TRY0",
+    "TRY300",
+]
+lint.pydocstyle.convention = "google"
+lint.allowed-confusables = ['’']
+
+[tool.codespell]
+skip = "data/*"
+
+[tool.uv]
+required-version = ">=0.7.0"

@@ -1,24 +1,18 @@
 from contextlib import nullcontext
+from dataclasses import dataclass
 from typing import Any, ClassVar
 
 import pytest
-
-import reflex as rx
-from reflex.base import Base
-from reflex.compiler.utils import compile_custom_component
-from reflex.components.base.bare import Bare
-from reflex.components.base.fragment import Fragment
-from reflex.components.component import (
+from reflex_base.components.component import (
     CUSTOM_COMPONENTS,
     Component,
     CustomComponent,
     StatefulComponent,
     custom_component,
 )
-from reflex.components.radix.themes.layout.box import Box
-from reflex.constants import EventTriggers
-from reflex.constants.state import FIELD_MARKER
-from reflex.event import (
+from reflex_base.constants import EventTriggers
+from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.event import (
     EventChain,
     EventHandler,
     JavascriptInputEvent,
@@ -27,18 +21,34 @@ from reflex.event import (
     parse_args_spec,
     passthrough_event_spec,
 )
-from reflex.state import BaseState
-from reflex.style import Style
-from reflex.utils import imports
-from reflex.utils.exceptions import (
+from reflex_base.style import Style
+from reflex_base.utils.exceptions import (
     ChildrenTypeError,
     EventFnArgMismatchError,
     EventHandlerArgTypeMismatchError,
 )
-from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
-from reflex.vars import VarData
-from reflex.vars.base import LiteralVar, Var
-from reflex.vars.object import ObjectVar
+from reflex_base.utils.imports import (
+    ImportDict,
+    ImportVar,
+    ParsedImportDict,
+    parse_imports,
+)
+from reflex_base.vars import VarData
+from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.object import ObjectVar
+from reflex_components_core.base.bare import Bare
+from reflex_components_core.base.fragment import Fragment
+from reflex_components_radix.mappings import RADIX_MAPPING
+from reflex_components_radix.themes.layout.box import Box
+
+import reflex as rx
+from reflex import (
+    _COMPONENTS_BASE_MAPPING,  # pyright: ignore[reportAttributeAccessIssue]
+    _COMPONENTS_CORE_MAPPING,  # pyright: ignore[reportAttributeAccessIssue]
+)
+from reflex.compiler.utils import compile_custom_component
+from reflex.state import BaseState
+from reflex.utils import imports
 
 
 class TestState(BaseState):
@@ -512,6 +522,32 @@ def test_get_imports(component1, component2):
     }
 
 
+def test_get_all_imports_includes_components_in_props():
+    """Test that _get_all_imports collects imports from components in props."""
+
+    class InnerComponent(Component):
+        """A component that requires a specific import."""
+
+        def _get_imports(self) -> ParsedImportDict:
+            return {"some-library": [ImportVar(tag="SomeTag")]}
+
+    class OuterComponent(Component):
+        """A component with a component-typed prop."""
+
+        fallback: Component | None = None
+
+        def _get_imports(self) -> ParsedImportDict:
+            return {"outer-library": [ImportVar(tag="OuterTag")]}
+
+    inner = InnerComponent.create()
+    outer = OuterComponent.create(fallback=inner)
+    all_imports = outer._get_all_imports()
+    assert "some-library" in all_imports, (
+        "_get_all_imports() should collect imports from components in props"
+    )
+    assert "outer-library" in all_imports
+
+
 def test_get_custom_code(component1: Component, component2: Component):
     """Test getting the custom code of a component.
 
@@ -792,7 +828,8 @@ def test_component_create_unpack_tuple_child(test_component, element, expected):
     assert fragment_wrapper.render() == expected
 
 
-class _Obj(Base):
+@dataclass
+class _Obj:
     custom: int = 0
 
 
@@ -861,7 +898,7 @@ def test_custom_component_wrapper():
             color=color,
         )
 
-    from reflex.components.radix.themes.typography.text import Text
+    from reflex_components_radix.themes.typography.text import Text
 
     ccomponent = my_component(
         rx.text("child"), width=LiteralVar.create(1), color=LiteralVar.create("red")
@@ -1468,9 +1505,9 @@ def test_instantiate_all_components():
         "Thead",
     }
     component_nested_list = [
-        *rx.RADIX_MAPPING.values(),
-        *rx.COMPONENTS_BASE_MAPPING.values(),
-        *rx.COMPONENTS_CORE_MAPPING.values(),
+        *RADIX_MAPPING.values(),
+        *_COMPONENTS_BASE_MAPPING.values(),
+        *_COMPONENTS_CORE_MAPPING.values(),
     ]
     for component_name in [
         comp_name

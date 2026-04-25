@@ -15,12 +15,14 @@ from pathlib import Path
 from typing import Any, NamedTuple, TypedDict
 from urllib.parse import urljoin
 
-from reflex import constants
-from reflex.config import get_config
-from reflex.constants.base import LogLevel
-from reflex.environment import environment
-from reflex.utils import console, path_ops
-from reflex.utils.decorator import once
+from reflex_base import constants
+from reflex_base.config import get_config
+from reflex_base.constants.base import LogLevel
+from reflex_base.environment import environment
+from reflex_base.utils import console
+from reflex_base.utils.decorator import once
+
+from reflex.utils import path_ops
 from reflex.utils.misc import get_module_path
 from reflex.utils.prerequisites import get_web_dir
 
@@ -264,26 +266,61 @@ def notify_app_running():
     console.rule("[bold green]App Running")
 
 
-def run_frontend_prod(root: Path, port: str, backend_present: bool = True):
-    """Run the frontend.
+def get_frontend_mount():
+    """Get a Starlette Mount for the compiled frontend static files.
+
+    Returns:
+        A Mount serving the compiled frontend static files.
+    """
+    from starlette.routing import Mount
+    from starlette.staticfiles import StaticFiles
+
+    from reflex.utils import prerequisites
+
+    config = get_config()
+
+    return Mount(
+        config.prepend_frontend_path("/"),
+        app=StaticFiles(
+            directory=prerequisites.get_web_dir()
+            / constants.Dirs.STATIC
+            / config.frontend_path.strip("/"),
+            html=True,
+        ),
+        name="frontend",
+    )
+
+
+def _frontend_prod_app():
+    """Create a Starlette app that serves the compiled frontend static files.
+
+    Returns:
+        A Starlette ASGI app serving static files.
+    """
+    from starlette.applications import Starlette
+
+    return Starlette(routes=[get_frontend_mount()])
+
+
+def run_frontend_prod(host: str, port: int):
+    """Run the frontend in production mode by serving compiled static files.
+
+    Uses the same granian/uvicorn infrastructure as the backend.
 
     Args:
-        root: The root path of the project (to keep same API as run_frontend).
-        port: The port to run the frontend on.
-        backend_present: Whether the backend is present.
+        host: The host to serve on.
+        port: The port to serve on.
     """
-    from reflex.utils import js_runtimes
+    loglevel = get_config().loglevel.subprocess_level()
 
-    # Set the port.
-    os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
-    # validate dependencies before run
-    js_runtimes.validate_frontend_dependencies(init=False)
-    # Run the frontend in production mode.
-    notify_app_running()
-    run_process_and_launch_url(
-        [*js_runtimes.get_js_package_executor(raise_on_none=True)[0], "run", "prod"],
-        backend_present,
-    )
+    if should_use_granian():
+        run_granian_backend_prod(
+            host, port, loglevel, app_target=f"{__name__}:_frontend_prod_app"
+        )
+    else:
+        run_uvicorn_backend_prod(
+            host, port, loglevel, app_target=f"{__name__}:_frontend_prod_app"
+        )
 
 
 @once
@@ -539,8 +576,7 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     from granian.constants import Interfaces
     from granian.log import LogLevels
     from granian.server import Server as Granian
-
-    from reflex.environment import _load_dotenv_from_env
+    from reflex_base.environment import _load_dotenv_from_env
 
     granian_app = Granian(
         target=get_app_instance_from_file(),
@@ -566,7 +602,6 @@ def run_backend_prod(
     host: str,
     port: int,
     loglevel: constants.LogLevel = constants.LogLevel.ERROR,
-    frontend_present: bool = False,
     mount_frontend_compiled_app: bool = False,
 ):
     """Run the backend.
@@ -575,12 +610,8 @@ def run_backend_prod(
         host: The app host
         port: The app port
         loglevel: The log level.
-        frontend_present: Whether the frontend is present.
         mount_frontend_compiled_app: Whether to mount the compiled frontend app with the backend.
     """
-    if not frontend_present:
-        notify_backend()
-
     environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.set(mount_frontend_compiled_app)
 
     if should_use_granian():
@@ -595,20 +626,23 @@ def _get_backend_workers():
     return processes.get_num_workers()
 
 
-def run_uvicorn_backend_prod(host: str, port: int, loglevel: LogLevel):
+def run_uvicorn_backend_prod(
+    host: str, port: int, loglevel: LogLevel, app_target: str | None = None
+):
     """Run the backend in production mode using Uvicorn.
 
     Args:
         host: The app host
         port: The app port
         loglevel: The log level.
+        app_target: The ASGI app target to run. Defaults to the reflex app instance.
     """
     import os
     import shlex
 
     from reflex.utils import processes
 
-    app_module = get_app_instance()
+    app_module = app_target or get_app_instance()
 
     if constants.IS_WINDOWS:
         command = [
@@ -654,43 +688,34 @@ def run_uvicorn_backend_prod(host: str, port: int, loglevel: LogLevel):
     )
 
 
-def run_granian_backend_prod(host: str, port: int, loglevel: LogLevel):
+def run_granian_backend_prod(
+    host: str, port: int, loglevel: LogLevel, app_target: str | None = None
+):
     """Run the backend in production mode using Granian.
 
     Args:
         host: The app host
         port: The app port
         loglevel: The log level.
+        app_target: The ASGI app target to run. Defaults to the reflex app instance.
     """
     from granian.constants import Interfaces
+    from granian.log import LogLevels
+    from granian.server import Server as Granian
 
-    from reflex.utils import processes
+    console.debug("Using Granian for backend")
 
-    command = [
-        sys.executable,
-        "-m",
-        "granian",
-        *("--host", host),
-        *("--port", str(port)),
-        *("--interface", str(Interfaces.ASGI)),
-        *("--factory", get_app_instance_from_file()),
-    ]
-
-    extra_env = {
-        environment.REFLEX_SKIP_COMPILE.name: "true",  # skip compile for prod backend
-    }
-
-    if "GRANIAN_WORKERS" not in os.environ:
-        extra_env["GRANIAN_WORKERS"] = str(_get_backend_workers())
-    if "GRANIAN_LOG_LEVEL" not in os.environ:
-        extra_env["GRANIAN_LOG_LEVEL"] = "critical"
-
-    processes.new_process(
-        command,
-        run=True,
-        show_logs=True,
-        env=extra_env,
+    granian_app = Granian(
+        target=app_target or get_app_instance_from_file(),
+        factory=True,
+        address=host,
+        port=port,
+        interface=Interfaces.ASGI,
+        log_level=LogLevels(os.getenv("GRANIAN_LOG_LEVEL", loglevel.value)),
+        workers=int(os.getenv("GRANIAN_WORKERS", str(_get_backend_workers()))),
     )
+
+    granian_app.serve()
 
 
 def output_system_info():

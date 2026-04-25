@@ -14,8 +14,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-
+        uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+          fetch-depth: 0
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: 3.13
@@ -43,33 +45,25 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: 3.13
-          run-uv-sync: true
 
-      - name: Clone Reflex Website Repo
-        uses: actions/checkout@v4
-        with:
-          repository: reflex-dev/reflex-web
-          ref: main
-          path: reflex-web
-      - name: Compile pyproject.toml into requirements.txt
-        working-directory: ./reflex-web
-        run: |
-          uv pip compile pyproject.toml --no-annotate --no-header --no-deps --output-file requirements.txt
-          grep -ivE "reflex " requirements.txt > requirements.txt.tmp && mv requirements.txt.tmp requirements.txt
-      - name: Install Requirements for reflex-web
-        working-directory: ./reflex-web
-        run: uv pip install -r requirements.txt
-      - name: Init Website for reflex-web
-        working-directory: ./reflex-web
-        run: uv run reflex init
+      - name: Install Requirements for reflex-docs
+        working-directory: ./docs/app
+        run: uv sync
+      - name: Init Website for reflex-docs
+        working-directory: ./docs/app
+        run: uv run --active --no-sync reflex init
       - name: Run Website and Check for errors
         run: |
-          uv run bash scripts/integration.sh ./reflex-web dev
+          uv run --active --no-sync bash scripts/integration.sh ./docs/app prod
       - name: Check outdated frontend dependencies
-        working-directory: ./reflex-web/.web
+        working-directory: ./docs/app/.web
         run: |
           raw_outdated=$(/home/runner/.local/share/reflex/bun/bin/bun outdated)
           outdated=$(echo "$raw_outdated" | grep -vE '\|\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\|' || true)

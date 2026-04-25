@@ -25,7 +25,7 @@ def ExtraOverlay():
 
     app = rx.App()
     rx.config.get_config().extra_overlay_function = (
-        "reflex.components.radix.themes.components.button"
+        "reflex_components_radix.themes.components.button"
     )
     app.add_page(index)
 

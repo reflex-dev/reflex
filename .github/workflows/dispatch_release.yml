@@ -1,0 +1,178 @@
+name: Dispatch release
+
+# Note: any action starting with `release-` is gated on the `dispatch-release-approval`
+# environment. Configure required reviewers for that environment in repo Settings →
+# Environments to actually enforce the second approval; otherwise the gate is a no-op.
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Release action"
+        required: true
+        type: choice
+        # default is continued-prerelease to prevent accidental releases.
+        default: continued-prerelease
+        options:
+          - new-prerelease-patch
+          - new-prerelease-minor
+          - new-prerelease-major
+          - continued-prerelease
+          - release-from-prerelease
+          - release-post
+          - release-patch
+          - release-minor
+          - release-major
+      hatch_reflex_pyi:
+        description: "hatch-reflex-pyi"
+        type: boolean
+        default: false
+      reflex_base:
+        description: "reflex-base"
+        type: boolean
+        default: false
+      reflex_components_code:
+        description: "reflex-components-code"
+        type: boolean
+        default: false
+      reflex_components_core:
+        description: "reflex-components-core"
+        type: boolean
+        default: false
+      reflex_components_dataeditor:
+        description: "reflex-components-dataeditor"
+        type: boolean
+        default: false
+      reflex_components_gridjs:
+        description: "reflex-components-gridjs"
+        type: boolean
+        default: false
+      reflex_components_lucide:
+        description: "reflex-components-lucide"
+        type: boolean
+        default: false
+      reflex_components_markdown:
+        description: "reflex-components-markdown"
+        type: boolean
+        default: false
+      reflex_components_moment:
+        description: "reflex-components-moment"
+        type: boolean
+        default: false
+      reflex_components_plotly:
+        description: "reflex-components-plotly"
+        type: boolean
+        default: false
+      reflex_components_radix:
+        description: "reflex-components-radix"
+        type: boolean
+        default: false
+      reflex_components_react_player:
+        description: "reflex-components-react-player"
+        type: boolean
+        default: false
+      reflex_components_recharts:
+        description: "reflex-components-recharts"
+        type: boolean
+        default: false
+      reflex_components_sonner:
+        description: "reflex-components-sonner"
+        type: boolean
+        default: false
+      reflex_docgen:
+        description: "reflex-docgen"
+        type: boolean
+        default: false
+      reflex_hosting_cli:
+        description: "reflex-hosting-cli"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.detect.outputs.packages }}
+    steps:
+      - uses: actions/checkout@v6
+      - id: detect
+        env:
+          hatch_reflex_pyi: ${{ inputs.hatch_reflex_pyi }}
+          reflex_base: ${{ inputs.reflex_base }}
+          reflex_components_code: ${{ inputs.reflex_components_code }}
+          reflex_components_core: ${{ inputs.reflex_components_core }}
+          reflex_components_dataeditor: ${{ inputs.reflex_components_dataeditor }}
+          reflex_components_gridjs: ${{ inputs.reflex_components_gridjs }}
+          reflex_components_lucide: ${{ inputs.reflex_components_lucide }}
+          reflex_components_markdown: ${{ inputs.reflex_components_markdown }}
+          reflex_components_moment: ${{ inputs.reflex_components_moment }}
+          reflex_components_plotly: ${{ inputs.reflex_components_plotly }}
+          reflex_components_radix: ${{ inputs.reflex_components_radix }}
+          reflex_components_react_player: ${{ inputs.reflex_components_react_player }}
+          reflex_components_recharts: ${{ inputs.reflex_components_recharts }}
+          reflex_components_sonner: ${{ inputs.reflex_components_sonner }}
+          reflex_docgen: ${{ inputs.reflex_docgen }}
+          reflex_hosting_cli: ${{ inputs.reflex_hosting_cli }}
+        run: bash .github/scripts/dispatch_release/detect.sh
+
+  plan:
+    needs: detect
+    runs-on: ubuntu-latest
+    outputs:
+      releases: ${{ steps.plan.outputs.releases }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v7
+      - id: plan
+        env:
+          PACKAGES_JSON: ${{ needs.detect.outputs.packages }}
+          ACTION: ${{ inputs.action }}
+        run: uv run --script .github/scripts/dispatch_release/plan.py
+
+  gate:
+    needs: plan
+    if: ${{ startsWith(inputs.action, 'release-') }}
+    runs-on: ubuntu-latest
+    environment: dispatch-release-approval
+    steps:
+      - uses: actions/checkout@v6
+      - name: Show release plan
+        env:
+          RELEASES: ${{ needs.plan.outputs.releases }}
+          ACTION: ${{ inputs.action }}
+        run: bash .github/scripts/dispatch_release/show_plan.sh
+
+  release:
+    needs: [plan, gate]
+    if: ${{ always() && needs.plan.result == 'success' && (needs.gate.result == 'success' || needs.gate.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.plan.outputs.releases) }}
+      fail-fast: false
+    concurrency:
+      group: dispatch-release-${{ matrix.package }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ matrix.tag }}
+          PKG: ${{ matrix.package }}
+          VERSION: ${{ matrix.next }}
+          ACTION: ${{ inputs.action }}
+        run: bash .github/scripts/dispatch_release/create_release.sh
+      - name: Trigger publish workflow
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ matrix.tag }}
+          REF: ${{ github.ref_name }}
+        run: bash .github/scripts/dispatch_release/trigger_publish.sh

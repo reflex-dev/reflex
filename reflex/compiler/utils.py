@@ -13,27 +13,29 @@ from pathlib import Path
 from typing import Any, TypedDict
 from urllib.parse import urlparse
 
-from reflex import constants
-from reflex.components.base import Description, Image, Scripts
-from reflex.components.base.document import Links, ScrollRestoration
-from reflex.components.base.document import Meta as ReactMeta
-from reflex.components.component import Component, ComponentStyle, CustomComponent
-from reflex.components.el.elements.metadata import Head, Link, Meta, Title
-from reflex.components.el.elements.other import Html
-from reflex.components.el.elements.sectioning import Body
-from reflex.constants.state import CAMEL_CASE_MEMO_MARKER, FIELD_MARKER
+from reflex_base import constants
+from reflex_base.components.component import Component, ComponentStyle, CustomComponent
+from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER, FIELD_MARKER
+from reflex_base.style import Style
+from reflex_base.utils import format, imports
+from reflex_base.utils.imports import ImportVar, ParsedImportDict
+from reflex_base.vars.base import Field, Var, VarData
+from reflex_base.vars.function import DestructuredArg
+from reflex_components_core.base import Description, Image, Scripts
+from reflex_components_core.base.document import Links, ScrollRestoration
+from reflex_components_core.base.document import Meta as ReactMeta
+from reflex_components_core.el.elements.metadata import Head, Link, Meta, Title
+from reflex_components_core.el.elements.other import Html
+from reflex_components_core.el.elements.sectioning import Body
+
 from reflex.experimental.memo import (
     ExperimentalMemoComponentDefinition,
     ExperimentalMemoFunctionDefinition,
 )
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.state import BaseState, _resolve_delta
-from reflex.style import Style
-from reflex.utils import format, imports, path_ops
-from reflex.utils.imports import ImportVar, ParsedImportDict
+from reflex.utils import path_ops
 from reflex.utils.prerequisites import get_web_dir
-from reflex.vars.base import Field, Var, VarData
-from reflex.vars.function import DestructuredArg
 
 # To re-export this function.
 merge_imports = imports.merge_imports
