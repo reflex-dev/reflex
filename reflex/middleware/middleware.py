@@ -5,7 +5,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
-from reflex.event import Event
+from reflex_base.event import Event
+
 from reflex.state import BaseState, StateUpdate
 
 if TYPE_CHECKING:

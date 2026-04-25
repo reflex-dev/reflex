@@ -6,22 +6,22 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
+from reflex_base.components.component import CUSTOM_COMPONENTS, Component
+from reflex_base.style import Style
+from reflex_base.utils.imports import ImportVar
+from reflex_base.vars import VarData
+from reflex_base.vars.base import Var
+from reflex_base.vars.function import FunctionVar
 
 import reflex as rx
 from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
-from reflex.components.component import CUSTOM_COMPONENTS, Component
 from reflex.experimental.memo import (
     EXPERIMENTAL_MEMOS,
     ExperimentalMemoComponent,
     ExperimentalMemoComponentDefinition,
     ExperimentalMemoFunctionDefinition,
 )
-from reflex.style import Style
-from reflex.utils.imports import ImportVar
-from reflex.vars import VarData
-from reflex.vars.base import Var
-from reflex.vars.function import FunctionVar
 
 
 @pytest.fixture(autouse=True)
@@ -117,7 +117,7 @@ def test_component_returning_memo_accepts_component_var_result():
         show: rx.Var[bool],
         first: rx.Var[rx.Component],
         second: rx.Var[rx.Component],
-    ) -> rx.Component:
+    ) -> rx.Var[rx.Component]:
         return rx.cond(show, first, second)
 
     definition = EXPERIMENTAL_MEMOS["ConditionalSlot"]

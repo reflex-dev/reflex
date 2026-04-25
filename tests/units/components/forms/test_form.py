@@ -1,6 +1,6 @@
-from reflex.components.radix.primitives.form import Form
-from reflex.event import EventChain, prevent_default
-from reflex.vars.base import Var
+from reflex_base.event import EventChain, prevent_default
+from reflex_base.vars.base import Var
+from reflex_components_radix.primitives.form import Form
 
 
 def test_render_on_submit():

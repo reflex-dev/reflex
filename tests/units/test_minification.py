@@ -702,13 +702,9 @@ class TestDynamicHandlerMinification:
         def dynamic_handler(self):
             pass
 
-        from reflex.event import EventHandler
-
-        handler = EventHandler(
-            fn=dynamic_handler,
-            state_full_name=TestStateWithDynamicHandler.get_full_name(),
+        TestStateWithDynamicHandler._add_event_handler(
+            "dynamic_handler", dynamic_handler
         )
-        TestStateWithDynamicHandler._add_event_handler("dynamic_handler", handler)
 
         # Verify dynamic handler is registered for minification
         assert "d" in TestStateWithDynamicHandler._event_id_to_name

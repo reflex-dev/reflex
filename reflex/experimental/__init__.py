@@ -2,8 +2,9 @@
 
 from types import SimpleNamespace
 
-from reflex.components.datadisplay.shiki_code_block import code_block as code_block
-from reflex.utils.console import warn
+from reflex_base.utils.console import warn
+from reflex_components_code.shiki_code_block import code_block as code_block
+
 from reflex.utils.misc import run_in_thread
 
 from . import hooks as hooks

@@ -3,12 +3,12 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
+from reflex_base.utils.serializers import serializer
 
 import reflex.constants
 import reflex.model
 from reflex.model import Model, ModelRegistry, sqla_session
 from reflex.state import MutableProxy
-from reflex.utils.serializers import serializer
 
 pytest.importorskip("sqlalchemy")
 pytest.importorskip("sqlmodel")

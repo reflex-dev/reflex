@@ -8,34 +8,35 @@ from inspect import getmodule
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from reflex import constants
-from reflex.compiler import templates, utils
-from reflex.components.base.fragment import Fragment
-from reflex.components.component import (
+from reflex_base import constants
+from reflex_base.components.component import (
     BaseComponent,
     Component,
     ComponentStyle,
     CustomComponent,
     StatefulComponent,
 )
-from reflex.config import get_config
-from reflex.constants.compiler import PageNames, ResetStylesheet
-from reflex.constants.state import FIELD_MARKER
-from reflex.environment import environment
+from reflex_base.config import get_config
+from reflex_base.constants.compiler import PageNames, ResetStylesheet
+from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.environment import environment
+from reflex_base.style import SYSTEM_COLOR_MODE
+from reflex_base.utils.exceptions import ReflexError
+from reflex_base.utils.format import to_title_case
+from reflex_base.utils.imports import ImportVar, ParsedImportDict
+from reflex_base.vars.base import LiteralVar, Var
+from reflex_components_core.base.fragment import Fragment
+
+from reflex.compiler import templates, utils
 from reflex.experimental.memo import (
     ExperimentalMemoComponentDefinition,
     ExperimentalMemoDefinition,
     ExperimentalMemoFunctionDefinition,
 )
 from reflex.state import BaseState
-from reflex.style import SYSTEM_COLOR_MODE
 from reflex.utils import console, path_ops
-from reflex.utils.exceptions import ReflexError
 from reflex.utils.exec import is_prod_mode
-from reflex.utils.format import to_title_case
-from reflex.utils.imports import ImportVar, ParsedImportDict
 from reflex.utils.prerequisites import get_web_dir
-from reflex.vars.base import LiteralVar, Var
 
 
 def _apply_common_imports(
@@ -87,7 +88,7 @@ def _compile_app(app_root: Component) -> str:
     Returns:
         The compiled app.
     """
-    from reflex.components.dynamic import bundled_libraries
+    from reflex_base.components.dynamic import bundled_libraries
 
     window_libraries = [
         (_normalize_library_name(name), name) for name in bundled_libraries
@@ -839,7 +840,7 @@ def compile_unevaluated_page(
 
         component._add_style_recursive(style or {}, theme)
 
-        from reflex.utils.format import make_default_page_title
+        from reflex_base.utils.format import make_default_page_title
 
         component = Fragment.create(component)
 

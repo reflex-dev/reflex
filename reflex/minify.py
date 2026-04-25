@@ -314,7 +314,7 @@ def collect_all_states(
         List of all state classes in depth-first order.
     """
     result = [root_state]
-    for substate in sorted(root_state.class_subclasses, key=lambda s: s.__name__):
+    for substate in sorted(root_state.get_substates(), key=lambda s: s.__name__):
         result.extend(collect_all_states(substate))
     return result
 
@@ -365,7 +365,7 @@ def generate_minify_config(root_state: type[BaseState]) -> MinifyConfig:
             events[state_path] = state_events
 
         # Process children (sorted alphabetically)
-        children = sorted(state_cls.class_subclasses, key=lambda s: s.__name__)
+        children = sorted(state_cls.get_substates(), key=lambda s: s.__name__)
         for child in children:
             process_state(child, sibling_counter)
 

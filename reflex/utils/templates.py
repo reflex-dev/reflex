@@ -7,9 +7,11 @@ import zipfile
 from pathlib import Path
 from urllib.parse import urlparse
 
-from reflex import constants
-from reflex.config import get_config
+from reflex_base import constants
+from reflex_base.config import get_config
+
 from reflex.utils import console, net, path_ops, redir
+from reflex.utils.rename import rename_imports_and_app_name
 
 
 @dataclasses.dataclass(frozen=True)
@@ -174,17 +176,24 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
     # the source code repo name on github.
     template_name = new_config.app_name
 
-    create_config(app_name)
+    # Rewrite in place instead of regenerating from a stock template, so the
+    # template's own config (db_url, redis_url, plugins, etc.) is preserved.
+    rename_imports_and_app_name(constants.Config.FILE, template_name, app_name)
     initialize_app_directory(
         app_name,
         template_name=template_name,
         template_code_dir_name=template_name,
         template_dir=template_dir,
     )
-    req_file = Path("requirements.txt")
-    if req_file.exists() and len(req_file.read_text().splitlines()) > 1:
+    pyproject_file = Path(constants.PyprojectToml.FILE)
+    req_file = Path(constants.RequirementsTxt.FILE)
+    if pyproject_file.exists():
         console.info(
-            "Run `pip install -r requirements.txt` to install the required python packages for this template."
+            "Run `uv sync` to install the required Python packages for this template."
+        )
+    elif req_file.exists() and len(req_file.read_text().splitlines()) > 1:
+        console.info(
+            "Run `uv pip install -r requirements.txt` to install the required Python packages for this template."
         )
     #  Clean up the temp directories.
     shutil.rmtree(temp_dir)

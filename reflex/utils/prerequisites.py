@@ -18,12 +18,14 @@ from types import ModuleType
 from typing import NamedTuple
 
 from packaging import version
+from reflex_base import constants
+from reflex_base.config import Config, get_config
+from reflex_base.constants.base import RunningMode
+from reflex_base.environment import environment
+from reflex_base.utils.decorator import once
 
-from reflex import constants, model
-from reflex.config import Config, get_config
-from reflex.environment import environment
+from reflex import model
 from reflex.utils import console, net, path_ops
-from reflex.utils.decorator import once
 from reflex.utils.misc import get_module_path
 
 if typing.TYPE_CHECKING:
@@ -498,7 +500,7 @@ def get_project_hash(raise_on_fail: bool = False) -> int | None:
     return data.get("project_hash")
 
 
-def check_running_mode(frontend: bool, backend: bool) -> tuple[bool, bool]:
+def check_running_mode(frontend: bool, backend: bool) -> RunningMode:
     """Check if the app is running in frontend or backend mode.
 
     Args:
@@ -509,8 +511,12 @@ def check_running_mode(frontend: bool, backend: bool) -> tuple[bool, bool]:
         The running modes.
     """
     if not frontend and not backend:
-        return True, True
-    return frontend, backend
+        return RunningMode.FULLSTACK
+    if frontend and not backend:
+        return RunningMode.FRONTEND_ONLY
+    if not frontend and backend:
+        return RunningMode.BACKEND_ONLY
+    return RunningMode.FULLSTACK
 
 
 def assert_in_reflex_dir():

@@ -1,0 +1,58 @@
+[project]
+name = "reflex-site-shared"
+dynamic = ["version"]
+description = "Reflex Site Shared."
+license.text = "Apache-2.0"
+readme = "README.md"
+authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
+maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
+requires-python = ">=3.10"
+dependencies = [
+    "email-validator",
+    "httpx",
+    "pyyaml",
+    "reflex-components-internal >= 0.9.0",
+    "reflex >= 0.9.0",
+    "ruff-format",
+]
+
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+pattern-prefix = "reflex-site-shared-"
+fallback-version = "0.0.0dev0"
+
+[tool.hatch.build]
+targets.sdist.artifacts = ["*.pyi"]
+targets.wheel.artifacts = ["*.pyi"]
+
+[tool.hatch.build.hooks.reflex-pyi]
+dependencies = [
+    "email-validator",
+    "httpx",
+    "pyyaml",
+    "reflex-base",
+    "reflex-components-code",
+    "reflex-components-core",
+    "reflex-components-dataeditor",
+    "reflex-components-gridjs",
+    "reflex-components-internal",
+    "reflex-components-lucide",
+    "reflex-components-markdown",
+    "reflex-components-moment",
+    "reflex-components-plotly",
+    "reflex-components-radix",
+    "reflex-components-react-player",
+    "reflex-components-recharts",
+    "reflex-components-sonner",
+    "reflex-hosting-cli",
+    "reflex",
+    "ruff-format",
+    "ruff",
+]
+
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning", "hatch-reflex-pyi"]
+build-backend = "hatchling.build"

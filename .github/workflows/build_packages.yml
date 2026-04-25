@@ -1,0 +1,53 @@
+name: Build all packages
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.id || github.sha }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      builds: ${{ steps.discover.outputs.builds }}
+    steps:
+      - uses: actions/checkout@v6
+      - id: discover
+        run: |
+          set -euo pipefail
+          ENTRIES=('{"name":"reflex","dir":"."}')
+          for pkg in packages/*/; do
+            name=$(basename "$pkg")
+            ENTRIES+=("{\"name\":\"$name\",\"dir\":\"$pkg\"}")
+          done
+          JOINED=$(IFS=,; echo "${ENTRIES[*]}")
+          echo "builds=[$JOINED]" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: discover
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.discover.outputs.builds) }}
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: 3.14
+          run-uv-sync: false
+      - name: Build ${{ matrix.name }}
+        run: uv build --directory "${{ matrix.dir }}"
+        env:
+          PYI_GENERATOR_RAISE_FAILED_IMPORTS: "1"

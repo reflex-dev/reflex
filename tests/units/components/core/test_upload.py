@@ -1,10 +1,9 @@
 from typing import Any, cast
 
 import pytest
-
-import reflex as rx
-from reflex import event
-from reflex.components.core.upload import (
+from reflex_base.event import EventChain, EventHandler, EventSpec
+from reflex_base.vars.base import LiteralVar, Var
+from reflex_components_core.core.upload import (
     StyledUpload,
     Upload,
     UploadNamespace,
@@ -12,9 +11,10 @@ from reflex.components.core.upload import (
     cancel_upload,
     get_upload_url,
 )
-from reflex.event import EventChain, EventHandler, EventSpec
+
+import reflex as rx
+from reflex import event
 from reflex.state import State
-from reflex.vars.base import LiteralVar, Var
 
 
 class UploadStateTest(State):
