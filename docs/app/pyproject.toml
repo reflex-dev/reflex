@@ -45,6 +45,7 @@ where = ["reflex_docs"]
 [tool.ruff]
 target-version = "py311"
 output-format = "concise"
+preview = true
 lint.isort.split-on-trailing-comma = false
 lint.select = [
     "ANN001",
