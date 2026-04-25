@@ -78,6 +78,7 @@ reflex = "reflex.reflex:cli"
 dev = [
   "alembic",
   "asynctest",
+  "attrs",
   "codespell",
   "darglint",
   "dill",
@@ -106,7 +107,6 @@ dev = [
   "python-dotenv",
   "reflex-docgen",
   "ruff",
-  "selenium",
   "sqlalchemy",
   "sqlmodel",
   "starlette-admin",

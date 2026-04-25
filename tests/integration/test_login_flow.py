@@ -5,10 +5,8 @@ from __future__ import annotations
 from collections.abc import Generator
 
 import pytest
+from playwright.sync_api import Page, expect
 from reflex_base.constants.state import FIELD_MARKER
-from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.common.by import By
-from selenium.webdriver.remote.webdriver import WebDriver
 
 from reflex.testing import AppHarness
 
@@ -73,82 +71,54 @@ def login_sample(tmp_path_factory) -> Generator[AppHarness, None, None]:
 
 
 @pytest.fixture
-def driver(login_sample: AppHarness) -> Generator[WebDriver, None, None]:
-    """Get an instance of the browser open to the login_sample app.
-
-    Args:
-        login_sample: harness for LoginSample app
-
-    Yields:
-        WebDriver instance.
-    """
-    assert login_sample.app_instance is not None, "app is not running"
-    driver = login_sample.frontend()
-    try:
-        yield driver
-    finally:
-        driver.quit()
-
-
-@pytest.fixture
-def local_storage(driver: WebDriver) -> Generator[utils.LocalStorage, None, None]:
+def local_storage(page: Page) -> Generator[utils.LocalStorage, None, None]:
     """Get an instance of the local storage helper.
 
     Args:
-        driver: WebDriver instance.
+        page: Playwright Page instance.
 
     Yields:
         Local storage helper.
     """
-    ls = utils.LocalStorage(driver)
+    ls = utils.LocalStorage(page)
     yield ls
     ls.clear()
 
 
 def test_login_flow(
-    login_sample: AppHarness, driver: WebDriver, local_storage: utils.LocalStorage
+    login_sample: AppHarness, page: Page, local_storage: utils.LocalStorage
 ):
     """Test login flow.
 
     Args:
         login_sample: harness for LoginSample app.
-        driver: WebDriver instance.
+        page: Playwright Page instance.
         local_storage: Local storage helper.
     """
     assert login_sample.frontend_url is not None
+    page.goto(login_sample.frontend_url)
     local_storage.clear()
 
-    login_button = AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "login")
-    )
-    with pytest.raises(NoSuchElementException):
-        driver.find_element(By.ID, "auth-token")
+    login_button = page.locator("#login")
+    expect(page.locator("#auth-token")).to_have_count(0)
 
-    login_sample.poll_for_content(login_button)
-    with utils.poll_for_navigation(driver):
+    with utils.poll_for_navigation(page):
         login_button.click()
-    assert driver.current_url.endswith("/login")
+    assert page.url.endswith("/login")
 
-    do_it_button = driver.find_element(By.ID, "doit")
-    with utils.poll_for_navigation(driver):
+    do_it_button = page.locator("#doit")
+    with utils.poll_for_navigation(page):
         do_it_button.click()
-    assert driver.current_url == login_sample.frontend_url
+    assert page.url == login_sample.frontend_url
 
-    def check_auth_token_header():
-        try:
-            auth_token_header = driver.find_element(By.ID, "auth-token")
-        except NoSuchElementException:
-            return False
-        return auth_token_header.text
+    auth_token_header = page.locator("#auth-token")
+    expect(auth_token_header).to_have_text("12345")
 
-    assert AppHarness.poll_for_or_raise_timeout(check_auth_token_header) == "12345"
-
-    logout_button = driver.find_element(By.ID, "logout")
+    logout_button = page.locator("#logout")
     logout_button.click()
 
     state_name = login_sample.get_full_state_name(["_state"])
     AppHarness.expect(
         lambda: local_storage[f"{state_name}.auth_token" + FIELD_MARKER] == ""
     )
-    with pytest.raises(NoSuchElementException):
-        driver.find_element(By.ID, "auth-token")
+    expect(page.locator("#auth-token")).to_have_count(0)

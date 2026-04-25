@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-import asyncio
+import time
 from collections.abc import Generator
 
 import pytest
-from selenium.webdriver.common.by import By
+from playwright.sync_api import Page, expect
 
-from reflex.testing import DEFAULT_TIMEOUT, AppHarness, WebDriver
+from reflex.testing import AppHarness
+
+from . import utils
 
 
 def ComputedVars():
@@ -142,121 +144,69 @@ def computed_vars(
         yield harness
 
 
-@pytest.fixture
-def driver(computed_vars: AppHarness) -> Generator[WebDriver, None, None]:
-    """Get an instance of the browser open to the computed_vars app.
-
-    Args:
-        computed_vars: harness for ComputedVars app
-
-    Yields:
-        WebDriver instance.
-    """
-    assert computed_vars.app_instance is not None, "app is not running"
-    driver = computed_vars.frontend()
-    try:
-        yield driver
-    finally:
-        driver.quit()
-
-
-@pytest.fixture
-def token(computed_vars: AppHarness, driver: WebDriver) -> str:
-    """Get a function that returns the active token.
-
-    Args:
-        computed_vars: harness for ComputedVars app.
-        driver: WebDriver instance.
-
-    Returns:
-        The token for the connected client
-    """
-    assert computed_vars.app_instance is not None
-    token_input = AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "token")
-    )
-
-    # wait for the backend connection to send the token
-    token = computed_vars.poll_for_value(token_input, timeout=DEFAULT_TIMEOUT * 2)
-    assert token is not None
-
-    return token
-
-
-@pytest.mark.asyncio
-async def test_computed_vars(
+def test_computed_vars(
     computed_vars: AppHarness,
-    driver: WebDriver,
-    token: str,
+    page: Page,
 ):
     """Test that computed vars are working as expected.
 
     Args:
         computed_vars: harness for ComputedVars app.
-        driver: WebDriver instance.
-        token: The token for the connected client.
+        page: Playwright page.
     """
+    assert computed_vars.frontend_url is not None
+    page.goto(computed_vars.frontend_url)
+
     assert computed_vars.app_instance is not None
+    utils.poll_for_token(page)
 
     # test that backend var is not rendered
-    count1_backend = driver.find_element(By.ID, "count1_backend")
-    assert count1_backend
-    assert count1_backend.text == ""
-    count1_backend_ = driver.find_element(By.ID, "_count1_backend")
-    assert count1_backend_
-    assert count1_backend_.text == ""
+    count1_backend = page.locator("#count1_backend")
+    expect(count1_backend).to_have_text("")
+    count1_backend_ = page.locator("#_count1_backend")
+    expect(count1_backend_).to_have_text("")
 
-    count = driver.find_element(By.ID, "count")
-    assert count
-    assert count.text == "0"
+    count = page.locator("#count")
+    expect(count).to_have_text("0")
 
-    count1 = driver.find_element(By.ID, "count1")
-    assert count1
-    assert count1.text == "0"
+    count1 = page.locator("#count1")
+    expect(count1).to_have_text("0")
 
-    count3 = driver.find_element(By.ID, "count3")
-    assert count3
-    assert count3.text == "0"
+    count3 = page.locator("#count3")
+    expect(count3).to_have_text("0")
 
-    depends_on_count = driver.find_element(By.ID, "depends_on_count")
-    assert depends_on_count
-    assert depends_on_count.text == "0"
+    depends_on_count = page.locator("#depends_on_count")
+    expect(depends_on_count).to_have_text("0")
 
-    depends_on_count1 = driver.find_element(By.ID, "depends_on_count1")
-    assert depends_on_count1
-    assert depends_on_count1.text == "0"
+    depends_on_count1 = page.locator("#depends_on_count1")
+    expect(depends_on_count1).to_have_text("0")
 
-    depends_on_count3 = driver.find_element(By.ID, "depends_on_count3")
-    assert depends_on_count3
-    assert depends_on_count3.text == "0"
+    depends_on_count3 = page.locator("#depends_on_count3")
+    expect(depends_on_count3).to_have_text("0")
 
-    special_floats = driver.find_element(By.ID, "special_floats")
-    assert special_floats
-    assert special_floats.text == "42.9, NaN, Infinity, -Infinity"
+    special_floats = page.locator("#special_floats")
+    expect(special_floats).to_have_text("42.9, NaN, Infinity, -Infinity")
 
-    increment = driver.find_element(By.ID, "increment")
-    assert increment.is_enabled()
+    increment = page.locator("#increment")
+    expect(increment).to_be_enabled()
 
-    mark_dirty = driver.find_element(By.ID, "mark_dirty")
-    assert mark_dirty.is_enabled()
+    mark_dirty = page.locator("#mark_dirty")
+    expect(mark_dirty).to_be_enabled()
 
     mark_dirty.click()
 
     increment.click()
-    assert computed_vars.poll_for_content(count, timeout=2, exp_not_equal="0") == "1"
-    assert computed_vars.poll_for_content(count1, timeout=2, exp_not_equal="0") == "1"
-    assert (
-        computed_vars.poll_for_content(depends_on_count, timeout=2, exp_not_equal="0")
-        == "1"
-    )
+    expect(count).to_have_text("1", timeout=2000)
+    expect(count1).to_have_text("1", timeout=2000)
+    expect(depends_on_count).to_have_text("1", timeout=2000)
 
     mark_dirty.click()
-    with pytest.raises(TimeoutError):
-        _ = computed_vars.poll_for_content(count3, timeout=5, exp_not_equal="0")
+    with pytest.raises(AssertionError):
+        expect(count3).not_to_have_text("0", timeout=5000)
 
-    await asyncio.sleep(10)
-    assert count3.text == "0"
-    assert depends_on_count3.text == "0"
+    time.sleep(10)
+    expect(count3).to_have_text("0")
+    expect(depends_on_count3).to_have_text("0")
     mark_dirty.click()
-    assert computed_vars.poll_for_content(count3, timeout=2, exp_not_equal="0") == "1"
-    assert depends_on_count3.text == "1"
+    expect(count3).to_have_text("1", timeout=2000)
+    expect(depends_on_count3).to_have_text("1")

@@ -713,15 +713,6 @@ class EnvironmentVariables:
     # If this env var is set to "yes", App.compile will be a no-op
     REFLEX_SKIP_COMPILE: EnvVar[bool] = env_var(False, internal=True)
 
-    # Whether to run app harness tests in headless mode.
-    APP_HARNESS_HEADLESS: EnvVar[bool] = env_var(False)
-
-    # Which app harness driver to use.
-    APP_HARNESS_DRIVER: EnvVar[str] = env_var("Chrome")
-
-    # Arguments to pass to the app harness driver.
-    APP_HARNESS_DRIVER_ARGS: EnvVar[str] = env_var("")
-
     # Whether to check for outdated package versions.
     REFLEX_CHECK_LATEST_VERSION: EnvVar[bool] = env_var(True)
 

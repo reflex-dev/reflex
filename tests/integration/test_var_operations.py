@@ -3,9 +3,11 @@
 from collections.abc import Generator
 
 import pytest
-from selenium.webdriver.common.by import By
+from playwright.sync_api import Page, expect
 
 from reflex.testing import AppHarness
+
+from . import utils
 
 
 def VarOperations():
@@ -810,37 +812,16 @@ def var_operations(tmp_path_factory) -> Generator[AppHarness, None, None]:
         yield harness
 
 
-@pytest.fixture
-def driver(var_operations: AppHarness):
-    """Get an instance of the browser open to the var operations app.
-
-    Args:
-        var_operations: harness for VarOperations app
-
-    Yields:
-        WebDriver instance.
-    """
-    driver = var_operations.frontend()
-    try:
-        token_input = AppHarness.poll_for_or_raise_timeout(
-            lambda: driver.find_element(By.ID, "token")
-        )
-        # wait for the backend connection to send the token
-        token = var_operations.poll_for_value(token_input)
-        assert token is not None
-
-        yield driver
-    finally:
-        driver.quit()
-
-
-def test_var_operations(driver, var_operations: AppHarness):
+def test_var_operations(page: Page, var_operations: AppHarness):
     """Test that the var operations produce the right results.
 
     Args:
-        driver: selenium WebDriver open to the app
+        page: Playwright page instance.
         var_operations: AppHarness for the var operations app
     """
+    assert var_operations.frontend_url is not None
+    page.goto(var_operations.frontend_url)
+    utils.poll_for_token(page)
     tests = [
         # int, int
         ("int_add_int", "15"),
@@ -1027,10 +1008,10 @@ def test_var_operations(driver, var_operations: AppHarness):
     ]
 
     for tag, expected in tests:
-        existing = driver.find_element(By.ID, tag).text
-        assert existing == expected, (
-            f"Failed on {tag}, expected {expected} but got {existing}"
+        expect(page.locator(f"#{tag}")).to_have_text(
+            expected,
+            timeout=15_000,
         )
 
     # Highlight component with var query (does not plumb ID)
-    assert driver.find_element(By.TAG_NAME, "mark").text == "second"
+    expect(page.locator("mark")).to_have_text("second")

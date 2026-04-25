@@ -4,7 +4,7 @@ import functools
 from collections.abc import Generator
 
 import pytest
-from selenium.webdriver.common.by import By
+from playwright.sync_api import Page, expect
 
 from reflex.testing import AppHarness
 
@@ -162,7 +162,7 @@ def LifespanApp(
 
 
 @pytest.fixture(
-    scope="session",
+    scope="module",
     params=[False, True],
     ids=["no_api_transformer", "mount_api_transformer"],
 )
@@ -179,7 +179,7 @@ def mount_api_transformer(request: pytest.FixtureRequest) -> bool:
 
 
 @pytest.fixture(
-    scope="session", params=[False, True], ids=["no_fastapi", "mount_cached_fastapi"]
+    scope="module", params=[False, True], ids=["no_fastapi", "mount_cached_fastapi"]
 )
 def mount_cached_fastapi(request: pytest.FixtureRequest) -> bool:
     """Whether to use cached FastAPI in the app (app.api).
@@ -193,7 +193,7 @@ def mount_cached_fastapi(request: pytest.FixtureRequest) -> bool:
     return request.param
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def lifespan_app(
     tmp_path_factory: pytest.TempPathFactory,
     app_harness_env: type[AppHarness],
@@ -223,88 +223,94 @@ def lifespan_app(
         yield harness
 
 
-def test_lifespan_modify_state(lifespan_app: AppHarness):
+def test_lifespan_modify_state(lifespan_app: AppHarness, page: Page):
     """Test that a lifespan task can use app.modify_state to push state updates.
 
     Args:
         lifespan_app: harness for LifespanApp app
+        page: Playwright page instance.
     """
     assert lifespan_app.app_module is not None, "app module is not found"
     assert lifespan_app.app_instance is not None, "app is not running"
-    driver = lifespan_app.frontend()
+    assert lifespan_app.frontend_url is not None
+    page.goto(lifespan_app.frontend_url)
 
-    ss = SessionStorage(driver)
+    ss = SessionStorage(page)
     assert AppHarness._poll_for(lambda: ss.get("token") is not None), "token not found"
 
-    modify_count = driver.find_element(By.ID, "modify_count")
+    modify_count = page.locator("#modify_count")
 
     # Wait for modify_count to become non-zero (lifespan task is pushing updates)
-    assert lifespan_app.poll_for_content(modify_count, exp_not_equal="0")
+    expect(modify_count).not_to_have_text("0")
 
     # Verify it continues to increase
-    first_value = modify_count.text
-    next_value = lifespan_app.poll_for_content(modify_count, exp_not_equal=first_value)
+    first_value = modify_count.text_content() or "0"
+    expect(modify_count).not_to_have_text(first_value)
+    next_value = modify_count.text_content() or "0"
     assert int(next_value) > int(first_value)
 
 
-def test_lifespan_raw_asyncio_task(lifespan_app: AppHarness):
+def test_lifespan_raw_asyncio_task(lifespan_app: AppHarness, page: Page):
     """Test that a coroutine function registered as a lifespan task runs as an asyncio.Task.
 
     Args:
         lifespan_app: harness for LifespanApp app
+        page: Playwright page instance.
     """
     assert lifespan_app.app_module is not None, "app module is not found"
     assert lifespan_app.app_instance is not None, "app is not running"
-    driver = lifespan_app.frontend()
+    assert lifespan_app.frontend_url is not None
+    page.goto(lifespan_app.frontend_url)
 
-    ss = SessionStorage(driver)
+    ss = SessionStorage(page)
     assert AppHarness._poll_for(lambda: ss.get("token") is not None), "token not found"
 
-    asyncio_task_global = driver.find_element(By.ID, "asyncio_task_global")
+    asyncio_task_global = page.locator("#asyncio_task_global")
 
     # Wait for asyncio_task_global to become non-zero
-    assert lifespan_app.poll_for_content(asyncio_task_global, exp_not_equal="0")
+    expect(asyncio_task_global).not_to_have_text("0")
 
     # Verify it continues to increase
-    first_value = asyncio_task_global.text
-    next_value = lifespan_app.poll_for_content(
-        asyncio_task_global, exp_not_equal=first_value
-    )
+    first_value = asyncio_task_global.text_content() or "0"
+    expect(asyncio_task_global).not_to_have_text(first_value)
+    next_value = asyncio_task_global.text_content() or "0"
     assert int(next_value) > int(first_value)
     assert lifespan_app.app_module.raw_asyncio_task_global > 0
 
 
-# --- test_lifespan MUST be the last test in this file. ---
+# test_lifespan MUST be the last test in this file.
 # It shuts down the backend and asserts cancellation of lifespan tasks.
-# The lifespan_app fixture is session-scoped (expensive to rebuild), so all
+# The lifespan_app fixture is module-scoped (expensive to rebuild), so all
 # other tests that need a running backend must be defined ABOVE this point.
 
 
-def test_lifespan(lifespan_app: AppHarness):
+def test_lifespan(lifespan_app: AppHarness, page: Page):
     """Test the lifespan integration.
 
     Args:
         lifespan_app: harness for LifespanApp app
+        page: Playwright page instance.
     """
     assert lifespan_app.app_module is not None, "app module is not found"
     assert lifespan_app.app_instance is not None, "app is not running"
-    driver = lifespan_app.frontend()
+    assert lifespan_app.frontend_url is not None
+    page.goto(lifespan_app.frontend_url)
 
-    ss = SessionStorage(driver)
+    ss = SessionStorage(page)
     assert AppHarness._poll_for(lambda: ss.get("token") is not None), "token not found"
 
-    context_global = driver.find_element(By.ID, "context_global")
-    task_global = driver.find_element(By.ID, "task_global")
+    context_global = page.locator("#context_global")
+    task_global = page.locator("#task_global")
 
-    assert lifespan_app.poll_for_content(context_global, exp_not_equal="0") == "2"
+    expect(context_global).to_have_text("2")
     assert lifespan_app.app_module.lifespan_context_global == 2
 
-    original_task_global_text = task_global.text
+    original_task_global_text = task_global.text_content() or "0"
     original_task_global_value = int(original_task_global_text)
-    lifespan_app.poll_for_content(task_global, exp_not_equal=original_task_global_text)
-    driver.find_element(By.ID, "toggle-tick").click()  # avoid teardown errors
+    expect(task_global).not_to_have_text(original_task_global_text)
+    page.locator("#toggle-tick").click()  # avoid teardown errors
     assert lifespan_app.app_module.lifespan_task_global > original_task_global_value
-    assert int(task_global.text) > original_task_global_value
+    assert int(task_global.text_content() or "0") > original_task_global_value
 
     # Kill the backend
     assert lifespan_app.backend is not None
@@ -318,6 +324,6 @@ def test_lifespan(lifespan_app: AppHarness):
     assert lifespan_app.app_module.raw_asyncio_task_global == 0
 
 
-# --- Do NOT add new test cases below this line. ---
+# Do NOT add new test cases below this line.
 # test_lifespan (above) kills the backend; any test defined after it will
 # find the harness in a stopped state and fail.
