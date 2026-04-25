@@ -153,7 +153,7 @@ class PackageJson(SimpleNamespace):
     @classproperty
     @classmethod
     def SSR_DEPENDENCIES(cls) -> dict[str, str]:
-        """Additional dependencies required when runtime_ssr is enabled.
+        """Additional dependencies required when ssr_mode is not OFF.
 
         Returns:
             A dictionary of SSR-specific dependencies with their versions.

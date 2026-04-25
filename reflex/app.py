@@ -690,7 +690,7 @@ class App(MiddlewareMixin, LifespanMixin):
             health,
             methods=["GET"],
         )
-        if get_config().runtime_ssr:
+        if get_config().ssr_mode != constants.SsrMode.OFF:
             self._api.add_route(
                 str(constants.Endpoint.SSR_DATA),
                 ssr_data(self),
@@ -1468,9 +1468,9 @@ class App(MiddlewareMixin, LifespanMixin):
         progress.advance(task)
 
         # Compile the contexts.
-        runtime_ssr = get_config().runtime_ssr
+        ssr_mode = get_config().ssr_mode
         compile_results.append(
-            compiler.compile_contexts(self._state, self.theme, runtime_ssr=runtime_ssr),
+            compiler.compile_contexts(self._state, self.theme, ssr_mode=ssr_mode),
         )
         if self.theme is not None:
             # Fix #2992 by removing the top-level appearance prop
@@ -1479,7 +1479,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # Compile the app root.
         compile_results.append(
-            compiler.compile_app(app_root, runtime_ssr=runtime_ssr),
+            compiler.compile_app(app_root, ssr_mode=ssr_mode),
         )
         progress.advance(task)
 
@@ -1498,8 +1498,8 @@ class App(MiddlewareMixin, LifespanMixin):
         )
         frontend_skeleton.initialize_package_json()
 
-        # Copy SSR scripts when runtime SSR is enabled.
-        if runtime_ssr:
+        # Copy SSR scripts when SSR is enabled.
+        if ssr_mode != constants.SsrMode.OFF:
             frontend_skeleton.copy_ssr_scripts()
 
         if is_prod_mode():

@@ -1,6 +1,6 @@
 """Integration tests for runtime SSR (server-side rendering).
 
-Spins up a blog app with ``runtime_ssr=True`` via ``AppHarnessSSR``, then
+Spins up a blog app with ``ssr_mode="bot_only"`` via ``AppHarnessSSR``, then
 verifies:
   - Bots receive fully rendered HTML with blog data.
   - Normal users receive the SPA shell (no blog content in raw HTML).

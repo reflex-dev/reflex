@@ -295,7 +295,7 @@ _MAPPING: dict = {
     "components.gridjs": ["data_table"],
     "components.moment": ["MomentDelta", "moment"],
     "config": ["Config", "DBConfig"],
-    "constants": ["Env"],
+    "constants": ["Env", "SsrMode"],
     "constants.colors": ["Color"],
     "event": [
         "event",

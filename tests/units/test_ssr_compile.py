@@ -7,6 +7,7 @@ import json
 from pytest_mock import MockerFixture
 
 import reflex as rx
+from reflex.constants import SsrMode
 from reflex.utils.frontend_skeleton import (
     _compile_package_json,
     _update_react_router_config,
@@ -14,11 +15,11 @@ from reflex.utils.frontend_skeleton import (
 
 
 class TestPackageJsonProdCommand:
-    """Tests for the package.json prod command based on runtime_ssr config."""
+    """Tests for the package.json prod command based on ssr_mode config."""
 
     def test_prod_command_ssr(self, mocker: MockerFixture):
-        """With runtime_ssr=True, prod command is 'node ssr-serve.js'."""
-        conf = rx.Config(app_name="test", runtime_ssr=True)
+        """With ssr_mode=bot_only, prod command is 'node ssr-serve.js'."""
+        conf = rx.Config(app_name="test", ssr_mode=SsrMode.BOT_ONLY)
         mocker.patch("reflex.utils.frontend_skeleton.get_config", return_value=conf)
 
         result = _compile_package_json()
@@ -27,8 +28,8 @@ class TestPackageJsonProdCommand:
         assert pkg["scripts"]["prod"] == "node ssr-serve.js"
 
     def test_prod_command_static(self, mocker: MockerFixture):
-        """With runtime_ssr=False, prod command is sirv static server."""
-        conf = rx.Config(app_name="test", runtime_ssr=False)
+        """With ssr_mode=off, prod command is sirv static server."""
+        conf = rx.Config(app_name="test", ssr_mode=SsrMode.OFF)
         mocker.patch("reflex.utils.frontend_skeleton.get_config", return_value=conf)
 
         result = _compile_package_json()
@@ -38,56 +39,62 @@ class TestPackageJsonProdCommand:
         assert "node ssr-serve.js" not in pkg["scripts"]["prod"]
 
     def test_ssr_deps_only_when_enabled(self, mocker: MockerFixture):
-        """SSR-specific deps are only included when runtime_ssr=True."""
+        """SSR-specific deps are only included when ssr_mode != OFF."""
         ssr_only_deps = ("@react-router/express", "express", "compression")
 
-        for ssr in (True, False):
-            conf = rx.Config(app_name="test", runtime_ssr=ssr)
+        for mode in (SsrMode.BOT_ONLY, SsrMode.OFF):
+            conf = rx.Config(app_name="test", ssr_mode=mode)
             mocker.patch("reflex.utils.frontend_skeleton.get_config", return_value=conf)
             pkg = json.loads(_compile_package_json())
             deps = pkg["dependencies"]
             for dep in ssr_only_deps:
-                if ssr:
-                    assert dep in deps, f"{dep} should be present when runtime_ssr=True"
+                if mode != SsrMode.OFF:
+                    assert dep in deps, f"{dep} should be present when ssr_mode={mode}"
                 else:
                     assert dep not in deps, (
-                        f"{dep} should NOT be present when runtime_ssr=False"
+                        f"{dep} should NOT be present when ssr_mode=off"
                     )
 
     def test_dev_and_export_commands_unchanged(self, mocker: MockerFixture):
-        """Dev and export commands are the same regardless of runtime_ssr."""
+        """Dev and export commands are the same regardless of ssr_mode."""
         results = {}
-        for ssr in (True, False):
-            conf = rx.Config(app_name="test", runtime_ssr=ssr)
+        for mode in (SsrMode.BOT_ONLY, SsrMode.OFF):
+            conf = rx.Config(app_name="test", ssr_mode=mode)
             mocker.patch("reflex.utils.frontend_skeleton.get_config", return_value=conf)
-            results[ssr] = json.loads(_compile_package_json())
+            results[mode] = json.loads(_compile_package_json())
 
-        assert results[True]["scripts"]["dev"] == results[False]["scripts"]["dev"]
-        assert results[True]["scripts"]["export"] == results[False]["scripts"]["export"]
+        assert (
+            results[SsrMode.BOT_ONLY]["scripts"]["dev"]
+            == results[SsrMode.OFF]["scripts"]["dev"]
+        )
+        assert (
+            results[SsrMode.BOT_ONLY]["scripts"]["export"]
+            == results[SsrMode.OFF]["scripts"]["export"]
+        )
 
 
 class TestReactRouterConfig:
-    """Tests for react-router.config.js based on runtime_ssr config."""
+    """Tests for react-router.config.js based on ssr_mode config."""
 
     def test_ssr_true_in_config(self):
-        """With runtime_ssr=True, config has ssr: true."""
-        conf = rx.Config(app_name="test", runtime_ssr=True)
+        """With ssr_mode=bot_only, config has ssr: true."""
+        conf = rx.Config(app_name="test", ssr_mode=SsrMode.BOT_ONLY)
         result = _update_react_router_config(conf)
 
         parsed = json.loads(result.removeprefix("export default ").removesuffix(";"))
         assert parsed["ssr"] is True
 
     def test_ssr_false_in_config(self):
-        """With runtime_ssr=False, config has ssr: false."""
-        conf = rx.Config(app_name="test", runtime_ssr=False)
+        """With ssr_mode=off, config has ssr: false."""
+        conf = rx.Config(app_name="test", ssr_mode=SsrMode.OFF)
         result = _update_react_router_config(conf)
 
         parsed = json.loads(result.removeprefix("export default ").removesuffix(";"))
         assert parsed["ssr"] is False
 
     def test_ssr_with_prerender(self):
-        """runtime_ssr and prerender can coexist."""
-        conf = rx.Config(app_name="test", runtime_ssr=True)
+        """ssr_mode and prerender can coexist."""
+        conf = rx.Config(app_name="test", ssr_mode=SsrMode.BOT_ONLY)
         result = _update_react_router_config(conf, prerender_routes=True)
 
         parsed = json.loads(result.removeprefix("export default ").removesuffix(";"))
@@ -102,16 +109,24 @@ class TestReactRouterConfig:
         parsed = json.loads(result.removeprefix("export default ").removesuffix(";"))
         assert parsed["ssr"] is False
 
+    def test_always_mode_enables_ssr(self):
+        """With ssr_mode=always, config has ssr: true."""
+        conf = rx.Config(app_name="test", ssr_mode=SsrMode.ALWAYS)
+        result = _update_react_router_config(conf)
+
+        parsed = json.loads(result.removeprefix("export default ").removesuffix(";"))
+        assert parsed["ssr"] is True
+
 
 class TestTemplateOutput:
-    """Tests for the generated template content based on runtime_ssr."""
+    """Tests for the generated template content based on ssr_mode."""
 
     @staticmethod
-    def _render_root(runtime_ssr: bool) -> str:
+    def _render_root(ssr_mode: SsrMode) -> str:
         """Render root template with minimal valid params.
 
         Args:
-            runtime_ssr: Whether runtime SSR is enabled.
+            ssr_mode: The server-side rendering mode.
 
         Returns:
             Rendered template string.
@@ -125,12 +140,12 @@ class TestTemplateOutput:
             window_libraries=[],
             render={"contents": "children"},
             dynamic_imports=set(),
-            runtime_ssr=runtime_ssr,
+            ssr_mode=ssr_mode,
         )
 
-    def test_root_template_has_loader_when_ssr_true(self):
-        """With runtime_ssr=True, root.jsx template contains the SSR loader."""
-        result = self._render_root(runtime_ssr=True)
+    def test_root_template_has_loader_when_ssr_enabled(self):
+        """With ssr_mode=bot_only, root.jsx template contains the SSR loader."""
+        result = self._render_root(ssr_mode=SsrMode.BOT_ONLY)
 
         assert "export async function loader" in result
         assert "useLoaderData" in result
@@ -140,24 +155,24 @@ class TestTemplateOutput:
 
     def test_root_template_loader_checks_shell_gen_header(self):
         """The SSR loader short-circuits for shell generation requests."""
-        result = self._render_root(runtime_ssr=True)
+        result = self._render_root(ssr_mode=SsrMode.BOT_ONLY)
 
         assert "x-reflex-shell-gen" in result
         assert "state: null" in result
         # isbot check should NOT be in the loader — bot routing is in ssr-serve.js.
         assert "isbot" not in result
 
-    def test_root_template_no_loader_when_ssr_false(self):
-        """With runtime_ssr=False, root.jsx template has no SSR loader."""
-        result = self._render_root(runtime_ssr=False)
+    def test_root_template_no_loader_when_ssr_off(self):
+        """With ssr_mode=off, root.jsx template has no SSR loader."""
+        result = self._render_root(ssr_mode=SsrMode.OFF)
 
         assert "export async function loader" not in result
         assert "useLoaderData" not in result
         assert "getBackendURL" not in result
         assert "ssrState" not in result
 
-    def test_context_template_has_ssr_context_when_ssr_true(self):
-        """With runtime_ssr=True, context.js has SSRContext and ssrHydrated."""
+    def test_context_template_has_ssr_context_when_ssr_enabled(self):
+        """With ssr_mode=bot_only, context.js has SSRContext and ssrHydrated."""
         from reflex.compiler.templates import context_template
 
         result = context_template(
@@ -166,7 +181,7 @@ class TestTemplateOutput:
             client_storage=None,
             is_dev_mode=False,
             default_color_mode='"system"',
-            runtime_ssr=True,
+            ssr_mode=SsrMode.BOT_ONLY,
         )
 
         assert "SSRContext" in result
@@ -174,8 +189,8 @@ class TestTemplateOutput:
         assert "ssrState = null" in result
         assert "SSRContext.Provider" in result
 
-    def test_context_template_no_ssr_context_when_ssr_false(self):
-        """With runtime_ssr=False, context.js has no SSR-related code."""
+    def test_context_template_no_ssr_context_when_ssr_off(self):
+        """With ssr_mode=off, context.js has no SSR-related code."""
         from reflex.compiler.templates import context_template
 
         result = context_template(
@@ -184,7 +199,7 @@ class TestTemplateOutput:
             client_storage=None,
             is_dev_mode=False,
             default_color_mode='"system"',
-            runtime_ssr=False,
+            ssr_mode=SsrMode.OFF,
         )
 
         assert "SSRContext" not in result
@@ -192,7 +207,7 @@ class TestTemplateOutput:
         assert "ssrState" not in result
 
     def test_context_template_ssr_reducer_uses_ssr_state(self):
-        """With runtime_ssr=True, useReducer initializers check ssrState."""
+        """With ssr_mode=bot_only, useReducer initializers check ssrState."""
         from reflex.compiler.templates import context_template
 
         result = context_template(
@@ -201,14 +216,14 @@ class TestTemplateOutput:
             client_storage=None,
             is_dev_mode=False,
             default_color_mode='"system"',
-            runtime_ssr=True,
+            ssr_mode=SsrMode.BOT_ONLY,
         )
 
         # The SSR-aware reducer initialization pattern.
         assert 'ssrState !== null && ssrState["my_app.state"]' in result
 
     def test_context_template_static_reducer_no_ssr_state(self):
-        """With runtime_ssr=False, useReducer uses initialState directly."""
+        """With ssr_mode=off, useReducer uses initialState directly."""
         from reflex.compiler.templates import context_template
 
         result = context_template(
@@ -217,7 +232,7 @@ class TestTemplateOutput:
             client_storage=None,
             is_dev_mode=False,
             default_color_mode='"system"',
-            runtime_ssr=False,
+            ssr_mode=SsrMode.OFF,
         )
 
         assert 'useReducer(applyDelta, initialState["my_app.state"]' in result

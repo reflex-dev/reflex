@@ -276,6 +276,8 @@ def run_frontend_prod(root: Path, port: str, backend_present: bool = True):
 
     # Set the port.
     os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
+    # Pass the SSR mode to ssr-serve.js (only relevant when ssr_mode != OFF).
+    os.environ["SSR_MODE"] = get_config().ssr_mode.value
     # validate dependencies before run
     js_runtimes.validate_frontend_dependencies(init=False)
     # Run the frontend in production mode.

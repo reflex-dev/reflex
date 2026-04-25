@@ -142,7 +142,7 @@ def zip_app(
 
     if frontend:
         web_dir = prerequisites.get_web_dir()
-        if get_config().runtime_ssr:
+        if get_config().ssr_mode != constants.SsrMode.OFF:
             # SSR mode: zip build/ (client + server) + ssr-serve.js + package.json.
             # Use build/ as root and include the extra files via globs from web_dir.
             _zip(
@@ -280,8 +280,8 @@ def build():
         )
         raise SystemExit(1)
 
-    # When runtime SSR is enabled, generate a static SPA shell for non-bot users.
-    if get_config().runtime_ssr:
+    # When SSR is enabled, generate a static SPA shell for non-bot users.
+    if get_config().ssr_mode != constants.SsrMode.OFF:
         _generate_ssr_shell(wdir)
 
     _duplicate_index_html_to_parent_directory(wdir / constants.Dirs.STATIC)

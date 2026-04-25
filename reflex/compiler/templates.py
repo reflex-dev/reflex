@@ -170,7 +170,7 @@ def app_root_template(
     window_libraries: list[tuple[str, str]],
     render: dict[str, Any],
     dynamic_imports: set[str],
-    runtime_ssr: bool = False,
+    ssr_mode: constants.SsrMode = constants.SsrMode.OFF,
 ):
     """Template for the App root.
 
@@ -181,7 +181,7 @@ def app_root_template(
         window_libraries: The list of window libraries.
         render: The dictionary of render functions.
         dynamic_imports: The set of dynamic imports.
-        runtime_ssr: Whether runtime SSR is enabled.
+        ssr_mode: The server-side rendering mode.
 
     Returns:
         Rendered App root component as string.
@@ -200,7 +200,7 @@ def app_root_template(
         f'    "{lib_path}": {lib_alias},' for lib_alias, lib_path in window_libraries
     ])
 
-    if runtime_ssr:
+    if ssr_mode != constants.SsrMode.OFF:
         ssr_imports = (
             'import { Outlet, useLoaderData } from "react-router";\n'
             'import { getBackendURL } from "$/utils/state";\n'
@@ -314,7 +314,7 @@ def context_template(
     initial_state: dict[str, Any] | None = None,
     state_name: str | None = None,
     client_storage: dict[str, dict[str, dict[str, Any]]] | None = None,
-    runtime_ssr: bool = False,
+    ssr_mode: constants.SsrMode = constants.SsrMode.OFF,
 ):
     """Template for the context file.
 
@@ -324,7 +324,7 @@ def context_template(
         client_storage: The client storage for the context.
         is_dev_mode: Whether the app is in development mode.
         default_color_mode: The default color mode for the context.
-        runtime_ssr: Whether runtime SSR is enabled.
+        ssr_mode: The server-side rendering mode.
 
     Returns:
         Rendered context file content as string.
@@ -382,7 +382,8 @@ export const initialEvents = () => []
 """
     )
 
-    if runtime_ssr:
+    ssr_enabled = ssr_mode != constants.SsrMode.OFF
+    if ssr_enabled:
         state_reducer_str = "\n".join(
             rf'const [{format_state_name(state_name)}, dispatch_{format_state_name(state_name)}] = useReducer(applyDelta, ssrState !== null && ssrState["{state_name}"] != null ? ssrState["{state_name}"] : initialState["{state_name}"])'
             for state_name in initial_state
@@ -417,7 +418,7 @@ export const StateContexts = {{{state_contexts_str}}};
 export const EventLoopContext = createContext(null);{
         '''
 export const SSRContext = createContext(false);'''
-        if runtime_ssr
+        if ssr_enabled
         else ""
     }
 export const clientStorage = {
@@ -460,7 +461,7 @@ export function EventLoopProvider({{ children }}) {{
   const dispatch = useContext(DispatchContext){
         '''
   const ssrHydrated = useContext(SSRContext)'''
-        if runtime_ssr
+        if ssr_enabled
         else ""
     }
   const [addEvents, connectErrors] = useEventLoop(
@@ -469,7 +470,7 @@ export function EventLoopProvider({{ children }}) {{
     clientStorage,{
         '''
     ssrHydrated,'''
-        if runtime_ssr
+        if ssr_enabled
         else ""
     }
   )
@@ -481,7 +482,7 @@ export function EventLoopProvider({{ children }}) {{
 }}
 
 export function StateProvider({{ children{
-        ", ssrState = null" if runtime_ssr else ""
+        ", ssrState = null" if ssr_enabled else ""
     } }}) {{
   {state_reducer_str}
   const dispatchers = useMemo(() => {{
@@ -491,11 +492,11 @@ export function StateProvider({{ children{
   }}, [])
 
   return (
-    {"createElement(SSRContext.Provider, {value: !!ssrState}," if runtime_ssr else ""}
+    {"createElement(SSRContext.Provider, {value: !!ssrState}," if ssr_enabled else ""}
     {create_state_contexts_str}
     createElement(DispatchContext, {{value: dispatchers}}, children)
     {")" * len(initial_state)}
-    {")" if runtime_ssr else ""}
+    {")" if ssr_enabled else ""}
   )
 }}"""
 

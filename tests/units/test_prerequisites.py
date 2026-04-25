@@ -6,6 +6,7 @@ import pytest
 from click.testing import CliRunner
 
 from reflex.config import Config
+from reflex.constants.base import SsrMode
 from reflex.constants.installer import PackageJson
 from reflex.reflex import cli
 from reflex.testing import chdir
@@ -57,7 +58,7 @@ runner = CliRunner()
         (
             Config(
                 app_name="test",
-                runtime_ssr=True,
+                ssr_mode=SsrMode.BOT_ONLY,
             ),
             False,
             'export default {"basename": "/", "future": {"unstable_optimizeDeps": true}, "ssr": true};',
@@ -65,7 +66,7 @@ runner = CliRunner()
         (
             Config(
                 app_name="test",
-                runtime_ssr=True,
+                ssr_mode=SsrMode.BOT_ONLY,
             ),
             True,
             'export default {"basename": "/", "future": {"unstable_optimizeDeps": true}, "ssr": true, "prerender": true, "build": "build"};',

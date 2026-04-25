@@ -1,10 +1,11 @@
 /**
- * Bot-aware SSR production server for Reflex apps.
+ * SSR production server for Reflex apps.
  *
- * - Crawlers/bots receive fully server-side rendered HTML (SEO).
- * - Regular users receive the static SPA shell (fast, zero SSR overhead).
+ * Supports two modes (controlled by the SSR_MODE env var):
+ *   - "bot_only" (default): Bots get SSR HTML; regular users get the SPA shell.
+ *   - "always": All users get server-side rendered HTML.
  *
- * Used when `runtime_ssr=True` is set in the Reflex config.
+ * Used when `ssr_mode` is not "off" in the Reflex config.
  */
 import { createRequestHandler } from "@react-router/express";
 import express from "express";
@@ -51,12 +52,17 @@ if (!shellHtml) {
   );
 }
 
+// SSR mode: "bot_only" serves the SPA shell to regular users and SSR to bots;
+// "always" serves SSR to everyone.
+const ssrMode = process.env.SSR_MODE || "bot_only";
+
 app.all("*", (req, res, next) => {
   const ua = req.headers["user-agent"] || "";
 
-  // Bots always get full server-side rendered HTML with state data.
-  // Also used as fallback when the static shell is unavailable.
-  if (isbot(ua) || !shellHtml) {
+  // In "always" mode every request gets SSR.
+  // In "bot_only" mode only bots get SSR.
+  // Fallback to SSR when the static shell is unavailable.
+  if (ssrMode === "always" || isbot(ua) || !shellHtml) {
     return ssrHandler(req, res, next);
   }
 

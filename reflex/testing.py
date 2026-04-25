@@ -1137,28 +1137,29 @@ class AppHarnessProd(AppHarness):
 
 
 class AppHarnessSSR(AppHarnessProd):
-    """AppHarnessSSR runs a Reflex app with runtime SSR via ssr-serve.js.
+    """AppHarnessSSR runs a Reflex app with SSR via ssr-serve.js.
 
     Instead of serving static files with Python's http.server, this harness
     runs the Node.js ``ssr-serve.js`` Express server that provides bot-aware
     server-side rendering.  Regular (non-bot) users still receive the SPA shell
     for fast hydration, while crawlers get fully rendered HTML.
 
-    Use this harness with ``runtime_ssr=True`` in ``rxconfig.py``.
+    Use this harness with ``ssr_mode="bot_only"`` (or ``"always"``) in
+    ``rxconfig.py``.
     """
 
     def _initialize_app(self):
-        """Initialize the app and patch the config for runtime SSR.
+        """Initialize the app and patch the config for SSR.
 
         The base ``_initialize_app`` scaffolds the project (``_init``), reloads
         the config from disk, then creates the app instance (which registers
-        endpoints).  We need ``runtime_ssr=True`` in the config **before** the
-        app instance is created so that the ``/_ssr_data`` endpoint is
-        registered and the ``package.json`` includes SSR dependencies.
+        endpoints).  We need ``ssr_mode`` set **before** the app instance is
+        created so that the ``/_ssr_data`` endpoint is registered and the
+        ``package.json`` includes SSR dependencies.
 
         Strategy: call ``super()`` which does everything, then:
         1. Patch ``rxconfig.py`` on disk so future reloads pick it up.
-        2. Set the live config to ``runtime_ssr=True``.
+        2. Set the live config ``ssr_mode`` to ``BOT_ONLY``.
         3. Manually register the ``/_ssr_data`` endpoint on the already-created
            ASGI app (since it was skipped during initial creation).
         """
@@ -1167,11 +1168,11 @@ class AppHarnessSSR(AppHarnessProd):
         # 1. Patch the on-disk rxconfig.py for future reinit / export.
         rxconfig_path = self.app_path / reflex.constants.Config.FILE
         content = rxconfig_path.read_text()
-        content = content.replace("rx.Config(", "rx.Config(\n    runtime_ssr=True,")
+        content = content.replace("rx.Config(", 'rx.Config(\n    ssr_mode="bot_only",')
         rxconfig_path.write_text(content)
 
-        # 2. Enable runtime_ssr on the live config singleton.
-        get_config().runtime_ssr = True
+        # 2. Enable SSR on the live config singleton.
+        get_config().ssr_mode = reflex.constants.SsrMode.BOT_ONLY
 
         # 3. Register the /_ssr_data endpoint that was skipped during init.
         if self.app_instance is not None and self.app_instance._api is not None:
@@ -1190,7 +1191,7 @@ class AppHarnessSSR(AppHarnessProd):
         dependencies that were written to ``package.json`` by ``_compile()``
         *after* the initial package install (a sequencing nuance: in normal
         usage the package.json is correct from the start, but here the test
-        harness flipped ``runtime_ssr`` after the first ``_init``).
+        harness flipped ``ssr_mode`` after the first ``_init``).
         """
         with chdir(self.app_path):
             config = reflex.config.get_config()
@@ -1238,7 +1239,11 @@ class AppHarnessSSR(AppHarnessProd):
         self.frontend_process = reflex.utils.processes.new_process(
             [node, "ssr-serve.js"],
             cwd=web_dir,
-            env={"PORT": "0", "NO_COLOR": "1"},
+            env={
+                "PORT": "0",
+                "NO_COLOR": "1",
+                "SSR_MODE": get_config().ssr_mode.value,
+            },
             **FRONTEND_POPEN_ARGS,
         )
 

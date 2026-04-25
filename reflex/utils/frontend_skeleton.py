@@ -151,7 +151,7 @@ def copy_ssr_scripts():
     """Copy SSR-related scripts from the web template to the .web directory.
 
     Copies ssr-serve.js (production server) and generate-shell.mjs
-    (post-build static shell generator) when runtime_ssr is enabled.
+    (post-build static shell generator) when SSR is enabled.
     """
     import shutil
 
@@ -172,7 +172,7 @@ def _update_react_router_config(config: Config, prerender_routes: bool = False):
         "future": {
             "unstable_optimizeDeps": True,
         },
-        "ssr": config.runtime_ssr,
+        "ssr": config.ssr_mode != constants.SsrMode.OFF,
     }
 
     if prerender_routes:
@@ -184,13 +184,14 @@ def _update_react_router_config(config: Config, prerender_routes: bool = False):
 
 def _compile_package_json():
     config = get_config()
+    ssr_enabled = config.ssr_mode != constants.SsrMode.OFF
     prod_command = (
         constants.PackageJson.Commands.PROD_SSR
-        if config.runtime_ssr
+        if ssr_enabled
         else constants.PackageJson.Commands.get_prod_command(config.frontend_path)
     )
     deps = dict(constants.PackageJson.DEPENDENCIES)
-    if config.runtime_ssr:
+    if ssr_enabled:
         deps.update(constants.PackageJson.SSR_DEPENDENCIES)
     return templates.package_json_template(
         scripts={
