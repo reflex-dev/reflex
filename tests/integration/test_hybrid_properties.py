@@ -75,6 +75,15 @@ def HybridProperties():
             """
             return self.has_last_name
 
+        @rx.event
+        def update_last_name(self, value: str):
+            """Update the last_name field.
+
+            Args:
+                value: The new last name value.
+            """
+            self.last_name = value
+
     def index() -> rx.Component:
         return rx.center(
             rx.vstack(
@@ -98,7 +107,7 @@ def HybridProperties():
                 ),
                 rx.el.input(
                     value=State.last_name,
-                    on_change=State.setvar("last_name"),
+                    on_change=State.update_last_name,
                     id="set_last_name",
                 ),
             ),
