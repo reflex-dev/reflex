@@ -1,10 +1,17 @@
-"""Reflex Plugin System."""
+"""Re-export from reflex_base.plugins."""
 
-from ._screenshot import ScreenshotPlugin as _ScreenshotPlugin
-from .base import CommonContext, Plugin, PreCompileContext
-from .sitemap import SitemapPlugin
-from .tailwind_v3 import TailwindV3Plugin
-from .tailwind_v4 import TailwindV4Plugin
+from reflex_base.plugins import (
+    CommonContext,
+    Plugin,
+    PreCompileContext,
+    SitemapPlugin,
+    TailwindV3Plugin,
+    TailwindV4Plugin,
+    _ScreenshotPlugin,
+    sitemap,
+    tailwind_v3,
+    tailwind_v4,
+)
 
 __all__ = [
     "CommonContext",
@@ -14,4 +21,7 @@ __all__ = [
     "TailwindV3Plugin",
     "TailwindV4Plugin",
     "_ScreenshotPlugin",
+    "sitemap",
+    "tailwind_v3",
+    "tailwind_v4",
 ]

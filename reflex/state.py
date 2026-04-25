@@ -7,20 +7,14 @@ import builtins
 import contextlib
 import copy
 import dataclasses
-import datetime
 import functools
 import inspect
 import pickle
 import re
 import sys
 import time
-import typing
-import uuid
-import warnings
-from collections.abc import AsyncIterator, Callable, Iterator, Sequence
-from enum import Enum
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from hashlib import md5
-from importlib.util import find_spec
 from types import FunctionType
 from typing import (
     TYPE_CHECKING,
@@ -29,34 +23,21 @@ from typing import (
     ClassVar,
     ParamSpec,
     TypeVar,
-    cast,
     get_type_hints,
 )
 
-from rich.markup import escape
-from typing_extensions import Self
-
-import reflex.istate.dynamic
-from reflex import constants, event
-from reflex.constants.state import FIELD_MARKER
-from reflex.environment import PerformanceMode, environment
-from reflex.event import (
+from reflex_base import constants
+from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.environment import PerformanceMode, environment
+from reflex_base.event import (
     BACKGROUND_TASK_MARKER,
     EVENT_ACTIONS_MARKER,
     Event,
     EventHandler,
     EventSpec,
     call_script,
-    fix_events,
 )
-from reflex.istate import HANDLED_PICKLE_ERRORS, debug_failed_pickles
-from reflex.istate.data import RouterData
-from reflex.istate.proxy import ImmutableMutableProxy as ImmutableMutableProxy
-from reflex.istate.proxy import MutableProxy, StateProxy, is_mutable_type
-from reflex.istate.storage import ClientStorageBase
-from reflex.model import Model
-from reflex.utils import console, format, prerequisites, types
-from reflex.utils.exceptions import (
+from reflex_base.utils.exceptions import (
     ComputedVarShadowsBaseVarsError,
     ComputedVarShadowsStateVarError,
     DynamicComponentInvalidSignatureError,
@@ -70,12 +51,11 @@ from reflex.utils.exceptions import (
     StateTooLargeError,
     UnretrievableVarValueError,
 )
-from reflex.utils.exceptions import ImmutableStateError as ImmutableStateError
-from reflex.utils.exec import is_testing_env
-from reflex.utils.monitoring import is_pyleak_enabled, monitor_loopblocks
-from reflex.utils.types import _isinstance, is_union, value_inside_optional
-from reflex.vars import Field, VarData, field
-from reflex.vars.base import (
+from reflex_base.utils.exceptions import ImmutableStateError as ImmutableStateError
+from reflex_base.utils.serializers import serializer
+from reflex_base.utils.types import _isinstance
+from reflex_base.vars import Field, VarData, field
+from reflex_base.vars.base import (
     ComputedVar,
     DynamicRouteVar,
     EvenMoreBasicBaseState,
@@ -84,12 +64,25 @@ from reflex.vars.base import (
     dispatch,
     is_computed_var,
 )
+from rich.markup import escape
+from typing_extensions import Self
+
+import reflex.istate.dynamic
+from reflex import event
+from reflex.istate import HANDLED_PICKLE_ERRORS, debug_failed_pickles
+from reflex.istate.data import RouterData
+from reflex.istate.proxy import ImmutableMutableProxy as ImmutableMutableProxy
+from reflex.istate.proxy import MutableProxy, is_mutable_type
+from reflex.istate.storage import ClientStorageBase
+from reflex.utils import console, format, prerequisites, types
+from reflex.utils.exec import is_testing_env
 
 if TYPE_CHECKING:
-    from reflex.components.component import Component
+    from reflex_base.components.component import Component
 
 
-Delta = dict[str, Any]
+Delta = dict[str, dict[str, Any]]
+DeltaMapping = Mapping[str, Mapping[str, Any]]
 var = computed_var
 
 
@@ -180,8 +173,6 @@ def _split_substate_key(substate_key: str) -> tuple[str, str]:
 class EventHandlerSetVar(EventHandler):
     """A special event handler to wrap setvar functionality."""
 
-    state_cls: type[BaseState] = dataclasses.field(init=False)
-
     def __init__(self, state_cls: type[BaseState]):
         """Initialize the EventHandlerSetVar.
 
@@ -190,9 +181,8 @@ class EventHandlerSetVar(EventHandler):
         """
         super().__init__(
             fn=type(self).setvar,
-            state_full_name=state_cls.get_full_name(),
+            state=state_cls,
         )
-        object.__setattr__(self, "state_cls", state_cls)
 
     def __hash__(self):
         """Get the hash of the event handler.
@@ -204,7 +194,7 @@ class EventHandlerSetVar(EventHandler):
             tuple(self.event_actions.items()),
             self.fn,
             self.state_full_name,
-            self.state_cls,
+            self.state,
         ))
 
     def setvar(self, var_name: str, value: Any):
@@ -232,30 +222,18 @@ class EventHandlerSetVar(EventHandler):
             EventHandlerValueError: If the given Var name is not a str
             NotImplementedError: If the setter for the given Var is async
         """
-        from reflex.config import get_config
-        from reflex.utils.exceptions import EventHandlerValueError
-
-        config = get_config()
-        if config.state_auto_setters is None:
-            console.deprecate(
-                feature_name="state_auto_setters defaulting to True",
-                reason="The default value will be changed to False in a future release. Set state_auto_setters explicitly or define setters explicitly. "
-                f"Used {self.state_cls.__name__}.setvar without defining it.",
-                deprecation_version="0.8.9",
-                removal_version="0.9.0",
-                dedupe=True,
-            )
+        from reflex_base.utils.exceptions import EventHandlerValueError
 
         if args:
             if not isinstance(args[0], str):
                 msg = f"Var name must be passed as a string, got {args[0]!r}"
                 raise EventHandlerValueError(msg)
 
-            handler = getattr(self.state_cls, constants.SETTER_PREFIX + args[0], None)
+            handler = getattr(self.state, constants.SETTER_PREFIX + args[0], None)
 
             # Check that the requested Var setter exists on the State at compile time.
             if handler is None:
-                msg = f"Variable `{args[0]}` cannot be set on `{self.state_cls.get_full_name()}`"
+                msg = f"Variable `{args[0]}` cannot be set on `{self.state_full_name}`"
                 raise AttributeError(msg)
 
             if inspect.iscoroutinefunction(handler.fn):
@@ -326,15 +304,6 @@ def _override_base_method(fn: Callable[PARAMS, RETURN]) -> Callable[PARAMS, RETU
     return fn
 
 
-_deserializers = {
-    int: int,
-    float: float,
-    datetime.datetime: datetime.datetime.fromisoformat,
-    datetime.date: datetime.date.fromisoformat,
-    datetime.time: datetime.time.fromisoformat,
-    uuid.UUID: uuid.UUID,
-}
-
 all_base_state_classes: dict[str, None] = {}
 
 CLASS_VAR_NAMES = frozenset({
@@ -345,7 +314,6 @@ CLASS_VAR_NAMES = frozenset({
     "backend_vars",
     "inherited_backend_vars",
     "event_handlers",
-    "class_subclasses",
     "_var_dependencies",
     "_always_dirty_computed_vars",
     "_always_dirty_substates",
@@ -376,9 +344,6 @@ class BaseState(EvenMoreBasicBaseState):
 
     # The event handlers.
     event_handlers: ClassVar[builtins.dict[str, EventHandler]] = {}
-
-    # A set of subclassses of this class.
-    class_subclasses: ClassVar[set[type[BaseState]]] = set()
 
     # Mapping of var name to set of (state_full_name, var_name) that depend on it.
     _var_dependencies: ClassVar[builtins.dict[str, set[tuple[str, str]]]] = {}
@@ -445,7 +410,7 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             ReflexRuntimeError: If the state is instantiated directly by end user.
         """
-        from reflex.utils.exceptions import ReflexRuntimeError
+        from reflex_base.utils.exceptions import ReflexRuntimeError
 
         if not _reflex_internal_init and not is_testing_env():
             msg = (
@@ -467,8 +432,13 @@ class BaseState(EvenMoreBasicBaseState):
                     _reflex_internal_init=True,
                 )
 
-        # Create a fresh copy of the backend variables for this instance
-        self._backend_vars = copy.deepcopy(self.backend_vars)
+        # Create a fresh copy of only the non-inherited backend variables for this instance.
+        # Inherited backend vars are stored in the parent state, not in this instance.
+        self._backend_vars = {
+            k: copy.deepcopy(v)
+            for k, v in self.backend_vars.items()
+            if k not in self.inherited_backend_vars
+        }
 
     def __repr__(self) -> str:
         """Get the string representation of the state.
@@ -519,7 +489,8 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             StateValueError: If a substate class shadows another.
         """
-        from reflex.utils.exceptions import StateValueError
+        from reflex_base.registry import RegistrationContext
+        from reflex_base.utils.exceptions import StateValueError
 
         super().__init_subclass__(**kwargs)
 
@@ -539,9 +510,6 @@ class BaseState(EvenMoreBasicBaseState):
         # Computed vars should not shadow builtin state props.
         cls._check_overridden_basevars()
 
-        # Reset subclass tracking for this class.
-        cls.class_subclasses = set()
-
         # Reset dirty substate tracking for this class.
         cls._always_dirty_substates = set()
         cls._potentially_dirty_states = set()
@@ -553,15 +521,13 @@ class BaseState(EvenMoreBasicBaseState):
             cls.inherited_backend_vars = parent_state.backend_vars
 
             # Check if another substate class with the same name has already been defined.
-            if cls.get_name() in {c.get_name() for c in parent_state.class_subclasses}:
+            if cls.get_name() in {c.get_name() for c in parent_state.get_substates()}:
                 # This should not happen, since we have added module prefix to state names in #3214
                 msg = (
                     f"The substate class '{cls.get_name()}' has been defined multiple times. "
                     "Shadowing substate classes is not allowed."
                 )
                 raise StateValueError(msg)
-            # Track this new subclass in the parent state's subclasses set.
-            parent_state.class_subclasses.add(cls)
 
         # Get computed vars.
         computed_vars = cls._get_computed_vars()
@@ -645,6 +611,8 @@ class BaseState(EvenMoreBasicBaseState):
             cls.event_handlers[name] = handler
             setattr(cls, name, handler)
 
+        RegistrationContext.register_base_state(cls)
+
         # Initialize per-class var dependency tracking.
         cls._var_dependencies = {}
         cls._init_var_dependency_dicts()
@@ -724,7 +692,7 @@ class BaseState(EvenMoreBasicBaseState):
         console.warn(
             "The _evaluate method is experimental and may be removed in future versions."
         )
-        from reflex.components.component import Component
+        from reflex_base.components.component import Component
 
         of_type = of_type or Component
 
@@ -944,11 +912,11 @@ class BaseState(EvenMoreBasicBaseState):
     def get_parent_state(cls) -> type[BaseState] | None:
         """Get the parent state.
 
-        Raises:
-            ValueError: If more than one parent state is found.
-
         Returns:
             The parent state.
+
+        Raises:
+            ValueError: If more than one parent state is found.
         """
         parent_states = [
             base
@@ -985,7 +953,9 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             The substates of the state.
         """
-        return cls.class_subclasses
+        from reflex_base.registry import RegistrationContext
+
+        return RegistrationContext.get().get_substates(cls)
 
     @classmethod
     @functools.lru_cache
@@ -1084,8 +1054,8 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             VarTypeError: if the variable has an incorrect type
         """
-        from reflex.config import get_config
-        from reflex.utils.exceptions import VarTypeError
+        from reflex_base.config import get_config
+        from reflex_base.utils.exceptions import VarTypeError
 
         if not types.is_valid_var_type(prop._var_type):
             msg = (
@@ -1096,7 +1066,7 @@ class BaseState(EvenMoreBasicBaseState):
             )
             raise VarTypeError(msg)
         cls._set_var(name, prop)
-        if cls.is_user_defined() and get_config().state_auto_setters is not False:
+        if cls.is_user_defined() and get_config().state_auto_setters is True:
             cls._create_setter(name, prop)
         cls._set_default_value(name, prop)
 
@@ -1139,7 +1109,7 @@ class BaseState(EvenMoreBasicBaseState):
         cls.vars.update({name: var})
 
         # let substates know about the new variable
-        for substate_class in cls.class_subclasses:
+        for substate_class in cls.get_substates():
             substate_class.vars.setdefault(name, var)
 
         # Reinitialize dependency tracking dicts.
@@ -1168,12 +1138,17 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             The event handler.
         """
+        from reflex_base.registry import RegistrationContext
+
         # Check if function has stored event_actions from decorator
         event_actions = getattr(fn, EVENT_ACTIONS_MARKER, {})
 
-        return event_handler_cls(
-            fn=fn, state_full_name=cls.get_full_name(), event_actions=event_actions
-        )
+        handler = event_handler_cls(fn=fn, state=cls, event_actions=event_actions)
+        if cls.get_full_name() in all_base_state_classes:
+            # Register handlers created after the class was registered.
+            reg_ctx = RegistrationContext.get()
+            reg_ctx.register_event_handler(handler, states=(cls,))
+        return handler
 
     @classmethod
     def _create_setvar(cls):
@@ -1188,28 +1163,7 @@ class BaseState(EvenMoreBasicBaseState):
             name: The name of the var.
             prop: The var to create a setter for.
         """
-        from reflex.config import get_config
-
-        config = get_config()
         create_event_handler_kwargs = {}
-
-        if config.state_auto_setters is None:
-
-            class EventHandlerDeprecatedSetter(EventHandler):
-                def __call__(self, *args, **kwargs):
-                    console.deprecate(
-                        feature_name="state_auto_setters defaulting to True",
-                        reason="The default value will be changed to False in a future release. Set state_auto_setters explicitly or define setters explicitly. "
-                        f"Used {setter_name} in {cls.__name__} without defining it.",
-                        deprecation_version="0.8.9",
-                        removal_version="0.9.0",
-                        dedupe=True,
-                    )
-                    return super().__call__(*args, **kwargs)
-
-            create_event_handler_kwargs["event_handler_cls"] = (
-                EventHandlerDeprecatedSetter
-            )
 
         setter_name = Var._get_setter_name_for_name(name)
         if setter_name not in cls.__dict__:
@@ -1277,7 +1231,7 @@ class BaseState(EvenMoreBasicBaseState):
         Args:
             vars_to_add: names to Var instances to add to substates
         """
-        for substate_class in cls.class_subclasses:
+        for substate_class in cls.get_substates():
             for name, var in vars_to_add.items():
                 if types.is_backend_base_variable(name, cls):
                     substate_class.backend_vars.setdefault(name, var)
@@ -1296,6 +1250,15 @@ class BaseState(EvenMoreBasicBaseState):
         Args:
             args: a dict of args
         """
+        # Skip dynamic args that have already been registered by a previous route.
+        args = {
+            k: v
+            for k, v in args.items()
+            if not (
+                (computed_var := cls.computed_vars.get(k)) is not None
+                and isinstance(computed_var, DynamicRouteVar)
+            )
+        }
         if not args:
             return
 
@@ -1502,9 +1465,10 @@ class BaseState(EvenMoreBasicBaseState):
                 default = copy.deepcopy(field.default)
             setattr(self, prop_name, default)
 
-        # Reset the backend vars.
+        # Reset the backend vars that are not inherited from parent states.
         for prop_name, value in self.backend_vars.items():
-            setattr(self, prop_name, copy.deepcopy(value))
+            if prop_name not in self.inherited_backend_vars:
+                setattr(self, prop_name, copy.deepcopy(value))
 
         # Recursively reset the substates.
         for substate in self.substates.values():
@@ -1609,7 +1573,9 @@ class BaseState(EvenMoreBasicBaseState):
             RuntimeError: If redis is not used in this backend process.
             StateMismatchError: If the state instance is not of the expected type.
         """
+        from reflex.istate.manager import get_state_manager
         from reflex.istate.manager.redis import StateManagerRedis
+        from reflex.istate.manager.token import BaseStateToken
 
         # Then get the target state and all its substates.
         state_manager = get_state_manager()
@@ -1620,7 +1586,7 @@ class BaseState(EvenMoreBasicBaseState):
             )
             raise RuntimeError(msg)
         state_in_redis = await state_manager.get_state(
-            token=_substate_key(self.router.session.client_token, state_cls),
+            token=BaseStateToken(ident=self.router.session.client_token, cls=state_cls),
             top_level=False,
             for_state_instance=self,
         )
@@ -1710,296 +1676,6 @@ class BaseState(EvenMoreBasicBaseState):
             self._get_root_state().get_class_substate(var_data.state)
         )
         return getattr(other_state, var_data.field_name)
-
-    def _get_event_handler(self, event: Event | str) -> tuple[BaseState, EventHandler]:
-        """Get the event handler for the given event.
-
-        Args:
-            event: The event to get the handler for, or a dotted handler name string.
-
-
-        Returns:
-            The event handler.
-
-        Raises:
-            ValueError: If the event handler or substate is not found.
-        """
-        # Get the event handler.
-        name = event.name if isinstance(event, Event) else event
-        path = name.split(".")
-        path, name = path[:-1], path[-1]
-        substate = self.get_substate(path)
-        if not substate:
-            msg = "The value of state cannot be None when processing an event."
-            raise ValueError(msg)
-        handler = substate.event_handlers[name]
-
-        return substate, handler
-
-    async def _process(self, event: Event) -> AsyncIterator[StateUpdate]:
-        """Obtain event info and process event.
-
-        Args:
-            event: The event to process.
-
-        Yields:
-            The state update after processing the event.
-        """
-        # Get the event handler.
-        substate, handler = self._get_event_handler(event)
-
-        # For background tasks, proxy the state.
-        if handler.is_background:
-            substate = StateProxy(substate)
-
-        # Run the event generator and yield state updates.
-        async for update in self._process_event(
-            handler=handler,
-            state=substate,
-            payload=event.payload,
-        ):
-            yield update
-
-    def _check_valid(self, handler: EventHandler, events: Any) -> Any:
-        """Check if the events yielded are valid. They must be EventHandlers or EventSpecs.
-
-        Args:
-            handler: EventHandler.
-            events: The events to be checked.
-
-        Raises:
-            TypeError: If any of the events are not valid.
-
-        Returns:
-            The events as they are if valid.
-        """
-
-        def _is_valid_type(events: Any) -> bool:
-            return isinstance(events, (Event, EventHandler, EventSpec))
-
-        if events is None or _is_valid_type(events):
-            return events
-
-        if not (isinstance(events, Sequence) and not isinstance(events, (str, bytes))):
-            events = [events]
-
-        try:
-            if all(_is_valid_type(e) for e in events):
-                return events
-        except TypeError:
-            pass
-
-        coroutines = [e for e in events if inspect.iscoroutine(e)]
-
-        for coroutine in coroutines:
-            coroutine_name = coroutine.__qualname__
-            warnings.filterwarnings(
-                "ignore", message=f"coroutine '{coroutine_name}' was never awaited"
-            )
-
-        msg = (
-            f"Your handler {handler.fn.__qualname__} must only return/yield: None, Events or other EventHandlers referenced by their class (i.e. using `type(self)` or other class references)."
-            f" Returned events of types {', '.join(map(str, map(type, events)))!s}."
-        )
-        raise TypeError(msg)
-
-    async def _as_state_update(
-        self,
-        handler: EventHandler,
-        events: EventSpec | list[EventSpec] | None,
-        final: bool,
-    ) -> StateUpdate:
-        """Convert the events to a StateUpdate.
-
-        Fixes the events and checks for validity before converting.
-
-        Args:
-            handler: The handler where the events originated from.
-            events: The events to queue with the update.
-            final: Whether the handler is done processing.
-
-        Returns:
-            The valid StateUpdate containing the events and final flag.
-        """
-        # get the delta from the root of the state tree
-        state = self._get_root_state()
-
-        token = self.router.session.client_token
-
-        # Convert valid EventHandler and EventSpec into Event
-        fixed_events = fix_events(self._check_valid(handler, events), token)
-
-        try:
-            # Get the delta after processing the event.
-            delta = await state._get_resolved_delta()
-            state._clean()
-
-            return StateUpdate(
-                delta=delta,
-                events=fixed_events,
-                final=final if not handler.is_background else None,
-            )
-        except Exception as ex:
-            state._clean()
-
-            event_specs = (
-                prerequisites.get_and_validate_app().app.backend_exception_handler(ex)
-            )
-
-            if event_specs is None:
-                return StateUpdate()
-
-            event_specs_correct_type = cast(
-                list[EventSpec | EventHandler] | None,
-                [event_specs] if isinstance(event_specs, EventSpec) else event_specs,
-            )
-            fixed_events = fix_events(
-                event_specs_correct_type,
-                token,
-                router_data=state.router_data,
-            )
-            return StateUpdate(
-                events=fixed_events,
-                final=True,
-            )
-
-    async def _process_event(
-        self,
-        handler: EventHandler,
-        state: BaseState | StateProxy,
-        payload: builtins.dict,
-    ) -> AsyncIterator[StateUpdate]:
-        """Process event.
-
-        Args:
-            handler: EventHandler to process.
-            state: State to process the handler.
-            payload: The event payload.
-
-        Yields:
-            StateUpdate object
-
-        Raises:
-            ValueError: If a string value is received for an int or float type and cannot be converted.
-        """
-        from reflex.utils import telemetry
-
-        # Get the function to process the event.
-        if is_pyleak_enabled():
-            console.debug(f"Monitoring leaks for handler: {handler.fn.__qualname__}")
-            fn = functools.partial(monitor_loopblocks(handler.fn), state)
-        else:
-            fn = functools.partial(handler.fn, state)
-
-        try:
-            type_hints = typing.get_type_hints(handler.fn)
-        except Exception:
-            type_hints = {}
-
-        for arg, value in list(payload.items()):
-            hinted_args = type_hints.get(arg, Any)
-            if hinted_args is Any:
-                continue
-            if is_union(hinted_args):
-                if value is None:
-                    continue
-                hinted_args = value_inside_optional(hinted_args)
-            if (
-                isinstance(value, dict)
-                and isinstance(hinted_args, type)
-                and not types.is_generic_alias(hinted_args)  # py3.10
-            ):
-                if issubclass(hinted_args, Model):
-                    # Remove non-fields from the payload
-                    payload[arg] = hinted_args(**{
-                        key: value
-                        for key, value in value.items()
-                        if key in hinted_args.__fields__
-                    })
-                elif dataclasses.is_dataclass(hinted_args):
-                    payload[arg] = hinted_args(**value)
-                elif find_spec("pydantic"):
-                    from pydantic import BaseModel as BaseModelV2
-                    from pydantic.v1 import BaseModel as BaseModelV1
-
-                    if issubclass(hinted_args, BaseModelV1):
-                        payload[arg] = hinted_args.parse_obj(value)
-                    elif issubclass(hinted_args, BaseModelV2):
-                        payload[arg] = hinted_args.model_validate(value)
-            elif isinstance(value, list) and (hinted_args is set or hinted_args is set):
-                payload[arg] = set(value)
-            elif isinstance(value, list) and (
-                hinted_args is tuple or hinted_args is tuple
-            ):
-                payload[arg] = tuple(value)
-            elif isinstance(hinted_args, type) and issubclass(hinted_args, Enum):
-                try:
-                    payload[arg] = hinted_args(value)
-                except ValueError:
-                    msg = f"Received an invalid enum value ({value}) for {arg} of type {hinted_args}"
-                    raise ValueError(msg) from None
-            elif (
-                isinstance(value, str)
-                and (deserializer := _deserializers.get(hinted_args)) is not None
-            ):
-                try:
-                    payload[arg] = deserializer(value)
-                except ValueError:
-                    msg = f"Received a string value ({value}) for {arg} but expected a {hinted_args}"
-                    raise ValueError(msg) from None
-                else:
-                    console.warn(
-                        f"Received a string value ({value}) for {arg} but expected a {hinted_args}. A simple conversion was successful."
-                    )
-
-        # Wrap the function in a try/except block.
-        try:
-            # Handle async functions.
-            if inspect.iscoroutinefunction(fn.func):
-                events = await fn(**payload)
-
-            # Handle regular functions.
-            else:
-                events = fn(**payload)
-            # Handle async generators.
-            if inspect.isasyncgen(events):
-                async for event in events:
-                    yield await state._as_state_update(handler, event, final=False)
-                yield await state._as_state_update(handler, events=None, final=True)
-
-            # Handle regular generators.
-            elif inspect.isgenerator(events):
-                try:
-                    while True:
-                        yield await state._as_state_update(
-                            handler, next(events), final=False
-                        )
-                except StopIteration as si:
-                    # the "return" value of the generator is not available
-                    # in the loop, we must catch StopIteration to access it
-                    if si.value is not None:
-                        yield await state._as_state_update(
-                            handler, si.value, final=False
-                        )
-                yield await state._as_state_update(handler, events=None, final=True)
-
-            # Handle regular event chains.
-            else:
-                yield await state._as_state_update(handler, events, final=True)
-
-        # If an error occurs, throw a window alert.
-        except Exception as ex:
-            telemetry.send_error(ex, context="backend")
-
-            event_specs = (
-                prerequisites.get_and_validate_app().app.backend_exception_handler(ex)
-            )
-
-            yield await state._as_state_update(
-                handler,
-                event_specs,
-                final=True,
-            )
 
     def _mark_dirty_computed_vars(self) -> None:
         """Mark ComputedVars that need to be recalculated based on dirty_vars."""
@@ -2121,6 +1797,7 @@ class BaseState(EvenMoreBasicBaseState):
         """Update the _was_touched flag based on dirty_vars."""
         if self.dirty_vars and not self._was_touched:
             for var in self.dirty_vars:
+                # Mark touched if a base var or owned backend var (not inherited) changed.
                 if var in self.base_vars or var in self._backend_vars:
                     self._was_touched = True
                     break
@@ -2171,21 +1848,10 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             TypeError: If the key is not a string or MutableProxy.
         """
-        if isinstance(key, MutableProxy):
-            # Legacy behavior from v0.7.14: handle non-string keys with deprecation warning
-            from reflex.utils import console
-
-            console.deprecate(
-                feature_name="Non-string keys in get_value",
-                reason="Passing non-string keys to get_value is deprecated and will no longer be supported",
-                deprecation_version="0.8.0",
-                removal_version="0.9.0",
-            )
-
-            return key.__wrapped__
-
         if isinstance(key, str):
-            return getattr(self, key)
+            if isinstance(val := getattr(self, key), MutableProxy):
+                return val.__wrapped__
+            return val
 
         msg = f"Invalid key type: {type(key)}. Expected str."
         raise TypeError(msg)
@@ -2487,7 +2153,6 @@ class State(BaseState):
         Returns:
             The instance of state_cls associated with this state's client_token.
         """
-        state_instance = await super()._get_state_from_redis(state_cls)
         if (
             self._reflex_internal_links
             and (
@@ -2496,15 +2161,31 @@ class State(BaseState):
                 )
             )
             is not None
-            and (
-                internal_patch_linked_state := getattr(
-                    state_instance, "_internal_patch_linked_state", None
-                )
-            )
-            is not None
         ):
-            return await internal_patch_linked_state(linked_token)
-        return state_instance
+            from reflex.istate.shared import SharedStateBaseInternal
+
+            shared_base = await self.get_state(SharedStateBaseInternal)
+            return await shared_base._resolve_linked_state(state_cls, linked_token)  # type: ignore[return-value]
+        return await super()._get_state_from_redis(state_cls)
+
+    @event
+    async def hydrate(self) -> None:
+        """Send the full state to the frontend to synchronize it with the backend."""
+        from reflex_base.event.context import EventContext
+
+        # Clear client storage, to respect clearing cookies
+        self._reset_client_storage()
+
+        # Mark state as not hydrated (until on_loads are complete)
+        self.is_hydrated = False
+
+        # Get the initial state if needed.
+        ctx = EventContext.get()
+        if ctx.emit_delta_impl is not None:
+            await ctx.emit_delta(delta=await _resolve_delta(self.dict()))
+
+        # since a full dict was captured, clean any dirtiness
+        self._clean()
 
     @event
     def set_is_hydrated(self, value: bool) -> None:
@@ -2551,7 +2232,7 @@ def dynamic(func: Callable[[T], Component]):
     state_class: type[T] = values[0]
 
     def wrapper() -> Component:
-        from reflex.components.base.fragment import fragment
+        from reflex_components_core.base.fragment import fragment
 
         return fragment(state_class._evaluate(lambda state: func(state)))
 
@@ -2674,9 +2355,8 @@ class OnLoadInternalState(State):
             return None  # Fast path for navigation with no on_load events defined.
         self.is_hydrated = False
         return [
-            *fix_events(
-                cast(list[EventSpec | EventHandler], load_events),
-                self.router.session.client_token,
+            *Event.from_event_type(
+                load_events,
                 router_data=self.router_data,
             ),
             State.set_is_hydrated(True),
@@ -2802,21 +2482,38 @@ class StateUpdate:
     """A state update sent to the frontend."""
 
     # The state delta.
-    delta: Delta = dataclasses.field(default_factory=dict)
+    delta: DeltaMapping = dataclasses.field(default_factory=dict)
 
     # Events to be added to the event queue.
     events: list[Event] = dataclasses.field(default_factory=list)
 
-    # Whether this is the final state update for the event.
-    final: bool | None = True
+    # Deprecated: previously indicated whether the event processing is complete.
+    final: bool | None = dataclasses.field(default=None, repr=False)
 
-    def json(self) -> str:
-        """Convert the state update to a JSON string.
+    def __post_init__(self):
+        """Warn if the deprecated `final` attribute is supplied."""
+        if self.final is not None:
+            console.deprecate(
+                feature_name="StateUpdate.final",
+                reason="The final attribute is no longer used.",
+                deprecation_version="0.9.0",
+                removal_version="1.0",
+            )
 
-        Returns:
-            The state update as a JSON string.
-        """
-        return format.json_dumps(self)
+
+@serializer(to=dict)
+def serialize_state_update(update: StateUpdate) -> dict:
+    """Serialize a StateUpdate to a dictionary.
+
+    Args:
+        update: The StateUpdate to serialize.
+
+    Returns:
+        The serialized StateUpdate.
+    """
+    return {
+        k.name: v for k in dataclasses.fields(update) if (v := getattr(update, k.name))
+    }
 
 
 def code_uses_state_contexts(javascript_code: str) -> bool:
@@ -2842,6 +2539,8 @@ def reload_state_module(
         state: Recursive argument for the state class to reload.
 
     """
+    from reflex_base.registry import RegistrationContext
+
     # Reset the _app_ref of OnLoadInternalState to avoid stale references.
     if state is OnLoadInternalState:
         state._app_ref = None
@@ -2853,19 +2552,14 @@ def reload_state_module(
                 and module is not None
             ):
                 state._potentially_dirty_states.remove(pd_state)
-    for subclass in tuple(state.class_subclasses):
+    reg_ctx = RegistrationContext.get()
+    substates = reg_ctx.get_substates(state)
+    for subclass in tuple(substates):
         reload_state_module(module=module, state=subclass)
         if subclass.__module__ == module and module is not None:
             all_base_state_classes.pop(subclass.get_full_name(), None)
-            state.class_subclasses.remove(subclass)
+            substates.remove(subclass)
             state._always_dirty_substates.discard(subclass.get_name())
             state._var_dependencies = {}
             state._init_var_dependency_dicts()
     state.get_class_substate.cache_clear()
-
-
-from reflex.istate.manager import StateManager as StateManager  # noqa: E402
-from reflex.istate.manager import get_state_manager as get_state_manager  # noqa: E402
-from reflex.istate.manager import (  # noqa: E402
-    reset_disk_state_manager as reset_disk_state_manager,
-)

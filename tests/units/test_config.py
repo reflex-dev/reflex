@@ -4,11 +4,13 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+import reflex_base.config
 from pytest_mock import MockerFixture
+from reflex_base.constants import Endpoint, Env
+from reflex_base.plugins import Plugin
+from reflex_base.plugins.sitemap import SitemapPlugin
 
 import reflex as rx
-import reflex.config
-from reflex.constants import Endpoint, Env
 from reflex.environment import (
     EnvVar,
     env_var,
@@ -42,6 +44,7 @@ def test_set_app_name(base_config_values):
         ("REFLEX_FRONTEND_PORT", 3001),
         ("REFLEX_FRONTEND_PATH", "/test"),
         ("REFLEX_BACKEND_PORT", 8001),
+        ("REFLEX_BACKEND_PATH", "/api"),
         ("REFLEX_API_URL", "https://mybackend.com:8000"),
         ("REFLEX_DEPLOY_URL", "https://myfrontend.com"),
         ("REFLEX_BACKEND_HOST", "127.0.0.1"),
@@ -142,6 +145,30 @@ def test_update_from_env_cors(
             {"app_name": "test_app", "api_url": "http://example.com/api"},
             f"/api{Endpoint.EVENT}",
         ),
+        (
+            {
+                "app_name": "test_app",
+                "api_url": "http://example.com",
+                "backend_path": "/api",
+            },
+            f"/api{Endpoint.EVENT}",
+        ),
+        (
+            {
+                "app_name": "test_app",
+                "api_url": "http://example.com",
+                "backend_path": "api/",
+            },
+            f"/api{Endpoint.EVENT}",
+        ),
+        (
+            {
+                "app_name": "test_app",
+                "api_url": "http://example.com",
+                "backend_path": "/api/v1",
+            },
+            f"/api/v1{Endpoint.EVENT}",
+        ),
     ],
 )
 def test_event_namespace(mocker: MockerFixture, kwargs, expected):
@@ -153,11 +180,81 @@ def test_event_namespace(mocker: MockerFixture, kwargs, expected):
         expected: Expected namespace
     """
     conf = rx.Config(**kwargs)
-    mocker.patch("reflex.config.get_config", return_value=conf)
+    mocker.patch("reflex_base.config.get_config", return_value=conf)
 
-    config = reflex.config.get_config()
+    config = reflex_base.config.get_config()
     assert conf == config
     assert config.get_event_namespace() == expected
+
+
+@pytest.mark.parametrize(
+    ("backend_path", "path", "expected"),
+    [
+        ("", "/ping", "/ping"),
+        ("/api", "/ping", "/api/ping"),
+        ("api", "/ping", "/api/ping"),
+        ("/api/", "/ping", "/api/ping"),
+        ("/api", "", ""),
+        ("/api", "relative/path", "relative/path"),
+        ("/api/v1", "/ping", "/api/v1/ping"),
+        ("api/v1/", "/ping", "/api/v1/ping"),
+        ("/api/v1", "", ""),
+        ("/api/v1", "relative/path", "relative/path"),
+    ],
+)
+def test_prepend_backend_path(backend_path: str, path: str, expected: str):
+    """Test that prepend_backend_path normalizes and prefixes paths correctly.
+
+    Args:
+        backend_path: The configured backend_path.
+        path: The input path to prefix.
+        expected: The expected output.
+    """
+    config = rx.Config(app_name="test_app", backend_path=backend_path)
+    assert config.prepend_backend_path(path) == expected
+
+
+@pytest.mark.parametrize("backend_path", ["", "/api", "api/", "/api/v1"])
+@pytest.mark.parametrize("endpoint", list(Endpoint))
+def test_endpoint_get_url_with_backend_path(
+    mocker: MockerFixture, backend_path: str, endpoint: Endpoint
+):
+    """Endpoint.get_url() includes backend_path; WS protocol swap still works for EVENT.
+
+    Args:
+        mocker: The pytest mock object.
+        backend_path: The configured backend_path.
+        endpoint: The endpoint to generate a URL for.
+    """
+    conf = rx.Config(
+        app_name="test_app",
+        api_url="http://example.com",
+        backend_path=backend_path,
+    )
+    mocker.patch("reflex_base.config.get_config", return_value=conf)
+
+    url = endpoint.get_url()
+    prefix = f"/{backend_path.strip('/')}" if backend_path.strip("/") else ""
+    if endpoint is Endpoint.EVENT:
+        assert url == f"ws://example.com{prefix}{endpoint}"
+    else:
+        assert url == f"http://example.com{prefix}{endpoint}"
+
+
+def test_get_event_namespace_matches_mount_path(mocker: MockerFixture):
+    """Socket.IO namespace must equal the HTTP mount path for EVENT.
+
+    Args:
+        mocker: The pytest mock object.
+    """
+    conf = rx.Config(
+        app_name="test_app",
+        api_url="http://example.com",
+        backend_path="/api",
+    )
+    mocker.patch("reflex_base.config.get_config", return_value=conf)
+
+    assert conf.get_event_namespace() == conf.prepend_backend_path(str(Endpoint.EVENT))
 
 
 DEFAULT_CONFIG = rx.Config(app_name="a")
@@ -244,7 +341,7 @@ def test_replace_defaults(
         exp_config_values: The expected config values.
     """
     mock_os_env = os.environ.copy()
-    monkeypatch.setattr(reflex.config.os, "environ", mock_os_env)
+    monkeypatch.setattr(reflex_base.config.os, "environ", mock_os_env)  # pyright: ignore[reportPrivateImportUsage]
     mock_os_env.update({k: str(v) for k, v in env_vars.items()})
     c = rx.Config(app_name="a", **config_kwargs)
     c._set_persistent(**set_persistent_vars)
@@ -402,3 +499,61 @@ def test_env_file(
     )
     for key, value in exp_env_vars.items():
         assert os.environ.get(key) == value
+
+
+class TestDisablePlugins:
+    """Tests for the disable_plugins config option."""
+
+    def test_disable_with_plugin_class(self):
+        """Test disabling a plugin by passing the class (type)."""
+        config = rx.Config(app_name="test", disable_plugins=[SitemapPlugin])
+        assert not any(isinstance(p, SitemapPlugin) for p in config.plugins)
+
+    def test_disable_with_plugin_instance_backward_compat(self):
+        """Test disabling a plugin by passing an instance (deprecated)."""
+        config = rx.Config(app_name="test", disable_plugins=[SitemapPlugin()])  # pyright: ignore[reportArgumentType]
+        assert not any(isinstance(p, SitemapPlugin) for p in config.plugins)
+
+    def test_disable_with_string_backward_compat(self):
+        """Test disabling a plugin by passing a string (deprecated)."""
+        config = rx.Config(
+            app_name="test",
+            disable_plugins=["reflex.plugins.sitemap.SitemapPlugin"],  # pyright: ignore[reportArgumentType]
+        )
+        assert not any(isinstance(p, SitemapPlugin) for p in config.plugins)
+
+    def test_disable_plugins_normalized_to_classes(self):
+        """Test that disable_plugins entries are normalized to Plugin subclasses."""
+        config = rx.Config(app_name="test", disable_plugins=[SitemapPlugin])
+        assert all(
+            isinstance(dp, type) and issubclass(dp, Plugin)
+            for dp in config.disable_plugins
+        )
+
+    def test_disable_instance_normalized_to_class(self):
+        """Test that a Plugin instance in disable_plugins is normalized to its class."""
+        config = rx.Config(app_name="test", disable_plugins=[SitemapPlugin()])  # pyright: ignore[reportArgumentType]
+        assert config.disable_plugins == [SitemapPlugin]
+
+    def test_disable_string_normalized_to_class(self):
+        """Test that a string in disable_plugins is normalized to the class."""
+        config = rx.Config(
+            app_name="test",
+            disable_plugins=["reflex.plugins.sitemap.SitemapPlugin"],  # pyright: ignore[reportArgumentType]
+        )
+        assert config.disable_plugins == [SitemapPlugin]
+
+    def test_disable_and_plugins_conflict_warns(self):
+        """Test that a warning is issued when a plugin is both enabled and disabled."""
+        config = rx.Config(
+            app_name="test",
+            plugins=[SitemapPlugin()],
+            disable_plugins=[SitemapPlugin],
+        )
+        # Plugin should still be in plugins list (just warned)
+        assert any(isinstance(p, SitemapPlugin) for p in config.plugins)
+
+    def test_no_disable_adds_builtin(self):
+        """Test that builtin plugins are added when not disabled."""
+        config = rx.Config(app_name="test")
+        assert any(isinstance(p, SitemapPlugin) for p in config.plugins)

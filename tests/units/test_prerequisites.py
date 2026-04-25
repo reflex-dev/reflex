@@ -4,11 +4,11 @@ from pathlib import Path
 
 import pytest
 from click.testing import CliRunner
+from reflex_base.config import Config
+from reflex_base.utils.decorator import cached_procedure
 
-from reflex.config import Config
 from reflex.reflex import cli
 from reflex.testing import chdir
-from reflex.utils.decorator import cached_procedure
 from reflex.utils.frontend_skeleton import (
     _compile_vite_config,
     _update_react_router_config,
@@ -67,21 +67,21 @@ def test_update_react_router_config(config, export, expected_output):
                 app_name="test",
                 frontend_path="",
             ),
-            'assetsDir: "/assets".slice(1),',
+            'base: "/",',
         ),
         (
             Config(
                 app_name="test",
                 frontend_path="/test",
             ),
-            'assetsDir: "/test/assets".slice(1),',
+            'base: "/test/",',
         ),
         (
             Config(
                 app_name="test",
                 frontend_path="/test/",
             ),
-            'assetsDir: "/test/assets".slice(1),',
+            'base: "/test/",',
         ),
     ],
 )

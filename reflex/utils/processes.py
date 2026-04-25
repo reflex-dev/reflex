@@ -16,11 +16,11 @@ from pathlib import Path
 from typing import Any, Literal, overload
 
 import rich.markup
+from reflex_base import constants
+from reflex_base.config import get_config
+from reflex_base.environment import environment
 from rich.progress import Progress
 
-from reflex import constants
-from reflex.config import get_config
-from reflex.environment import environment
 from reflex.utils import console, path_ops, prerequisites
 from reflex.utils.registry import get_npm_registry
 
@@ -37,11 +37,11 @@ def kill(pid: int):
 def get_num_workers() -> int:
     """Get the number of backend worker processes.
 
-    Raises:
-        SystemExit: If unable to connect to Redis.
-
     Returns:
         The number of backend worker processes.
+
+    Raises:
+        SystemExit: If unable to connect to Redis.
     """
     if get_config().transport == "polling":
         return 1

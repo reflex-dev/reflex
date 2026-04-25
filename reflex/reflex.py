@@ -7,18 +7,17 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import click
+from reflex_base import constants
+from reflex_base.config import get_config
+from reflex_base.environment import environment
+from reflex_base.utils import console
 from reflex_cli.v2.deployments import hosting_cli
 
-from reflex import constants
-from reflex.config import get_config
 from reflex.custom_components.custom_components import custom_components_cli
-from reflex.environment import environment
-from reflex.utils import console
 
 if TYPE_CHECKING:
+    from reflex_base.constants.base import LITERAL_ENV
     from reflex_cli.constants.base import LogLevel as HostingLogLevel
-
-    from reflex.constants.base import LITERAL_ENV
 
 
 def set_loglevel(ctx: click.Context, self: click.Parameter, value: str | None):
@@ -90,19 +89,21 @@ def _init(
     # Initialize the .gitignore.
     frontend_skeleton.initialize_gitignore()
 
-    # Initialize the requirements.txt.
-    needs_user_manual_update = frontend_skeleton.initialize_requirements_txt()
-
     template_msg = f" using the {template} template" if template else ""
-    # Finish initializing the app.
-    console.success(
-        f"Initialized {app_name}{template_msg}."
-        + (
-            f" Make sure to add {constants.RequirementsTxt.DEFAULTS_STUB + constants.Reflex.VERSION} to your requirements.txt or pyproject.toml file."
-            if needs_user_manual_update
-            else ""
-        )
+    if Path(constants.PyprojectToml.FILE).exists():
+        needs_user_manual_update = False
+        next_steps = " Run `uv run reflex run` to start the app."
+    else:
+        needs_user_manual_update = frontend_skeleton.initialize_requirements_txt()
+        next_steps = " Install dependencies from `requirements.txt` with `uv pip install -r requirements.txt` (or your preferred installer) before running `uv run reflex run`."
+    manual_update = (
+        f" Make sure to add `{constants.RequirementsTxt.DEFAULTS_STUB + constants.Reflex.VERSION}` to your requirements.txt file."
+        if needs_user_manual_update
+        else ""
     )
+
+    # Finish initializing the app.
+    console.success(f"Initialized {app_name}{template_msg}.{manual_update}{next_steps}")
 
 
 @cli.command()
@@ -130,21 +131,148 @@ def init(
     _init(name, template, ai)
 
 
+def _compile_app(*, avoid_dirty_check: bool = True):
+    from reflex.utils import exec, prerequisites
+
+    app_task = prerequisites.compile_or_validate_app
+    args = (True,)
+    kwargs = {
+        "check_if_schema_up_to_date": True,
+        "prerender_routes": exec.should_prerender_routes(),
+    }
+
+    # Granian fails if the app is already imported.
+    if exec.should_use_granian() and avoid_dirty_check:
+        import concurrent.futures
+
+        with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
+            compile_future = executor.submit(app_task, *args, **kwargs)
+            return_result = compile_future.result()
+    else:
+        return_result = app_task(*args, **kwargs)
+
+    if not return_result:
+        raise SystemExit(1)
+
+
+def _run_dev(
+    running_mode: constants.RunningMode,
+    frontend_port: int | None,
+    backend_port: int | None,
+    backend_host: str,
+):
+    """Run the app in development mode."""
+    import atexit
+
+    from reflex.utils import build, exec, processes, telemetry
+
+    config = get_config()
+
+    if frontend_port:
+        config._set_persistent(frontend_port=frontend_port)
+    if backend_port:
+        config._set_persistent(backend_port=backend_port)
+
+    if running_mode.has_frontend():
+        _compile_app()
+
+    # Post a telemetry event.
+    telemetry.send("run-dev")
+
+    # Display custom message when there is a keyboard interrupt.
+    atexit.register(processes.atexit_handler)
+
+    # Run the frontend and backend together.
+    commands = []
+
+    # Run the frontend on a separate thread.
+    if running_mode.has_frontend():
+        build.setup_frontend(Path.cwd())
+        commands.append((
+            exec.run_frontend,
+            Path.cwd(),
+            frontend_port,
+            running_mode.has_backend(),
+        ))
+
+    # Start the frontend and backend.
+    with processes.run_concurrently_context(*commands):
+        # In dev mode, run the backend on the main thread.
+        if running_mode.has_backend() and backend_port:
+            exec.run_backend(
+                backend_host,
+                int(backend_port),
+                config.loglevel.subprocess_level(),
+                running_mode.has_frontend(),
+            )
+            # The windows uvicorn bug workaround
+            # https://github.com/reflex-dev/reflex/issues/2335
+            if constants.IS_WINDOWS and exec.frontend_process:
+                # Sends SIGTERM in windows
+                exec.kill(exec.frontend_process.pid)
+
+
+def _run_prod(running_mode: constants.RunningMode, port: int, host: str):
+    import atexit
+
+    from reflex.utils import build, exec, processes, telemetry
+
+    config = get_config()
+
+    config._set_persistent(frontend_port=port, backend_port=port)
+
+    if running_mode.has_frontend():
+        # Get the app module.
+        _compile_app(avoid_dirty_check=False)
+        build.setup_frontend_prod(Path.cwd())
+
+    _skip_compile()
+
+    # Post a telemetry event.
+    telemetry.send("run-prod")
+
+    # Display custom message when there is a keyboard interrupt.
+    atexit.register(processes.atexit_handler)
+
+    exec.notify_app_running()
+    exec.notify_frontend(
+        f"http://{host}:{port}",
+        backend_present=running_mode.has_backend(),
+    )
+    if running_mode.has_backend():
+        exec.run_backend_prod(
+            host, port, config.loglevel.subprocess_level(), running_mode.has_frontend()
+        )
+    else:
+        exec.run_frontend_prod(host, port)
+
+
 def _run(
+    *,
     env: constants.Env = constants.Env.DEV,
-    frontend: bool = True,
-    backend: bool = True,
+    running_mode: constants.RunningMode = constants.RunningMode.FULLSTACK,
     frontend_port: int | None = None,
     backend_port: int | None = None,
     backend_host: str | None = None,
-    single_port: bool = False,
 ):
     """Run the app in the given directory."""
-    import atexit
+    from reflex.istate.manager import reset_disk_state_manager
+    from reflex.utils import exec, prerequisites, processes
 
-    from reflex.state import reset_disk_state_manager
-    from reflex.utils import build, exec, prerequisites, processes, telemetry
-    from reflex.utils.exec import should_use_granian
+    if frontend_port and not running_mode.has_frontend():
+        console.error("Cannot specify --frontend-port when not running frontend.")
+        raise SystemExit(1)
+    if backend_port and not running_mode.has_backend():
+        console.error("Cannot specify --backend-port when not running backend.")
+        raise SystemExit(1)
+    if (
+        env == constants.Env.PROD
+        and frontend_port
+        and backend_port
+        and frontend_port != backend_port
+    ):
+        console.error("In production, frontend and backend must run on the same port.")
+        raise SystemExit(1)
 
     config = get_config()
 
@@ -156,47 +284,17 @@ def _run(
     # Show system info
     exec.output_system_info()
 
-    # If no --frontend-only and no --backend-only, then turn on frontend and backend both
-    frontend, backend = prerequisites.check_running_mode(frontend, backend)
-    if not frontend and backend:
+    if running_mode == constants.RunningMode.BACKEND_ONLY:
         _skip_compile()
 
     prerequisites.assert_in_reflex_dir()
 
     # Check that the app is initialized.
-    if frontend and prerequisites.needs_reinit():
+    if running_mode.has_frontend() and prerequisites.needs_reinit():
         _init(name=config.app_name)
 
     # Delete the states folder if it exists.
     reset_disk_state_manager()
-
-    # Find the next available open port if applicable.
-    if frontend:
-        auto_increment_frontend = not bool(frontend_port or config.frontend_port)
-        frontend_port = processes.handle_port(
-            "frontend",
-            (
-                frontend_port
-                or config.frontend_port
-                or constants.DefaultPorts.FRONTEND_PORT
-            ),
-            auto_increment=auto_increment_frontend,
-        )
-
-    if single_port:
-        backend_port = frontend_port
-    elif backend:
-        auto_increment_backend = not bool(backend_port or config.backend_port)
-
-        backend_port = processes.handle_port(
-            "backend",
-            (
-                backend_port
-                or config.backend_port
-                or constants.DefaultPorts.BACKEND_PORT
-            ),
-            auto_increment=auto_increment_backend,
-        )
 
     # Apply the new ports to the config.
     if frontend_port != config.frontend_port:
@@ -211,96 +309,57 @@ def _run(
 
     prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
 
-    # Get the app module.
-    app_task = prerequisites.compile_or_validate_app
-    args = (frontend,)
-    kwargs = {
-        "check_if_schema_up_to_date": True,
-        "prerender_routes": exec.should_prerender_routes(),
-    }
-
-    # Granian fails if the app is already imported.
-    if should_use_granian():
-        import concurrent.futures
-
-        compile_future = concurrent.futures.ProcessPoolExecutor(max_workers=1).submit(
-            app_task,
-            *args,
-            **kwargs,
-        )
-        return_result = compile_future.result()
-    else:
-        return_result = app_task(*args, **kwargs)
-
-    if not return_result:
-        raise SystemExit(1)
-
-    if env != constants.Env.PROD and env != constants.Env.DEV:
-        msg = f"Invalid env: {env}. Must be DEV or PROD."
-        raise ValueError(msg)
-
-    # Get the frontend and backend commands, based on the environment.
     if env == constants.Env.DEV:
-        setup_frontend, frontend_cmd, backend_cmd = (
-            build.setup_frontend,
-            exec.run_frontend,
-            exec.run_backend,
-        )
-    elif env == constants.Env.PROD:
-        setup_frontend, frontend_cmd, backend_cmd = (
-            build.setup_frontend_prod,
-            exec.run_frontend_prod,
-            exec.run_backend_prod,
-        )
+        # Find the next available open port if applicable.
+        if running_mode.has_frontend():
+            auto_increment_frontend = not bool(frontend_port or config.frontend_port)
+            frontend_port = processes.handle_port(
+                "frontend",
+                (
+                    frontend_port
+                    or config.frontend_port
+                    or constants.DefaultPorts.FRONTEND_PORT
+                ),
+                auto_increment=auto_increment_frontend,
+            )
 
-    # Post a telemetry event.
-    telemetry.send(f"run-{env.value}")
+        if running_mode.has_backend():
+            auto_increment_backend = not bool(backend_port or config.backend_port)
 
-    # Display custom message when there is a keyboard interrupt.
-    atexit.register(processes.atexit_handler)
+            backend_port = processes.handle_port(
+                "backend",
+                (
+                    backend_port
+                    or config.backend_port
+                    or constants.DefaultPorts.BACKEND_PORT
+                ),
+                auto_increment=auto_increment_backend,
+            )
 
-    # Run the frontend and backend together.
-    commands = []
-
-    # Run the frontend on a separate thread.
-    if frontend and not single_port:
-        setup_frontend(Path.cwd())
-        commands.append((frontend_cmd, Path.cwd(), frontend_port, backend))
-
-    # In prod mode, run the backend on a separate thread.
-    if backend and env == constants.Env.PROD:
-        commands.append((
-            backend_cmd,
-            backend_host,
-            backend_port,
-            config.loglevel.subprocess_level(),
-            frontend,
-        ))
-
-    if single_port:
-        setup_frontend(Path.cwd())
-        backend_function, *args = commands[0]
-        exec.notify_app_running()
-        exec.notify_frontend(
-            f"http://0.0.0.0:{get_config().frontend_port}", backend_present=True
-        )
-        backend_function(*args, mount_frontend_compiled_app=True)
+        _run_dev(running_mode, frontend_port, backend_port, backend_host)
     else:
-        # Start the frontend and backend.
-        with processes.run_concurrently_context(*commands):
-            # In dev mode, run the backend on the main thread.
-            if backend and backend_port and env == constants.Env.DEV:
-                backend_cmd(
-                    backend_host,
-                    int(backend_port),
-                    config.loglevel.subprocess_level(),
-                    frontend,
-                )
-                # The windows uvicorn bug workaround
-                # https://github.com/reflex-dev/reflex/issues/2335
-                if constants.IS_WINDOWS and exec.frontend_process:
-                    # Sends SIGTERM in windows
-                    exec.kill(exec.frontend_process.pid)
+        if running_mode == constants.RunningMode.BACKEND_ONLY:
+            requested_port = backend_port or config.backend_port
+            fallback_port = constants.DefaultPorts.BACKEND_PORT
+        elif running_mode == constants.RunningMode.FRONTEND_ONLY:
+            requested_port = frontend_port or config.frontend_port
+            fallback_port = constants.DefaultPorts.FRONTEND_PORT
+        else:
+            requested_port = (
+                frontend_port
+                or backend_port
+                or config.frontend_port
+                or config.backend_port
+            )
+            fallback_port = constants.DefaultPorts.FRONTEND_PORT
+
+        port = processes.handle_port(
+            service_name=running_mode.name.lower(),
+            port=requested_port or fallback_port,
+            auto_increment=requested_port is None,
+        )
+
+        _run_prod(running_mode, port, backend_host)
 
 
 @cli.command()
@@ -357,26 +416,26 @@ def run(
     single_port: bool,
 ):
     """Run the app in the current directory."""
+    from reflex.utils import prerequisites
+
     if frontend_only and backend_only:
         console.error("Cannot use both --frontend-only and --backend-only options.")
         raise SystemExit(1)
 
     if single_port:
-        if env != constants.Env.PROD.value:
+        if env != constants.Env.PROD:
             console.error("--single-port can only be used with --env=PROD.")
-            raise click.exceptions.Exit(1)
+            raise SystemExit(1)
         if frontend_only or backend_only:
             console.error(
-                "Cannot use --single-port with --frontend-only or --backend-only options."
+                "Cannot use --single-port with --frontend-only or --backend-only."
             )
-            raise click.exceptions.Exit(1)
-        if backend_port and frontend_port and backend_port != frontend_port:
+            raise SystemExit(1)
+        if frontend_port and backend_port and frontend_port != backend_port:
             console.error(
-                "When using --single-port, --backend-port and --frontend-port must be the same."
+                "Cannot specify different ports for frontend and backend when using --single-port."
             )
-            raise click.exceptions.Exit(1)
-    elif frontend_port and backend_port and frontend_port == backend_port:
-        single_port = True
+            raise SystemExit(1)
 
     config = get_config()
 
@@ -388,14 +447,14 @@ def run(
     environment.REFLEX_BACKEND_ONLY.set(backend_only)
     environment.REFLEX_FRONTEND_ONLY.set(frontend_only)
 
+    running_mode = prerequisites.check_running_mode(frontend_only, backend_only)
+
     _run(
-        constants.Env.DEV if env == constants.Env.DEV else constants.Env.PROD,
-        frontend_only,
-        backend_only,
-        frontend_port,
-        backend_port,
-        backend_host,
-        single_port,
+        env=constants.Env.DEV if env == constants.Env.DEV else constants.Env.PROD,
+        running_mode=running_mode,
+        frontend_port=frontend_port,
+        backend_port=backend_port,
+        backend_host=backend_host,
     )
 
 
@@ -505,21 +564,19 @@ def export(
 
     environment.REFLEX_COMPILE_CONTEXT.set(constants.CompileContext.EXPORT)
 
-    should_frontend_run, should_backend_run = prerequisites.check_running_mode(
-        frontend_only, backend_only
-    )
+    running_mode = prerequisites.check_running_mode(frontend_only, backend_only)
 
     config = get_config()
 
     prerequisites.assert_in_reflex_dir()
 
-    if should_frontend_run and prerequisites.needs_reinit():
+    if running_mode.has_frontend() and prerequisites.needs_reinit():
         _init(name=config.app_name)
 
     export_utils.export(
         zipping=zip,
-        frontend=should_frontend_run,
-        backend=should_backend_run,
+        frontend=running_mode.has_frontend(),
+        backend=running_mode.has_backend(),
         zip_dest_dir=zip_dest_dir,
         upload_db_file=upload_db_file,
         env=constants.Env.DEV if env == constants.Env.DEV else constants.Env.PROD,
@@ -630,9 +687,9 @@ def status():
         return
 
     # Run alembic check command and display output
-    import reflex.config
+    import reflex_base.config
 
-    config = reflex.config.get_config()
+    config = reflex_base.config.get_config()
     console.print(f"[bold]\\[{config.db_url}][/bold]")
 
     # Get migration history using Model method

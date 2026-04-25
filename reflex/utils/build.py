@@ -6,10 +6,10 @@ import os
 import zipfile
 from pathlib import Path, PosixPath
 
+from reflex_base import constants
+from reflex_base.config import get_config
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 
-from reflex import constants
-from reflex.config import get_config
 from reflex.utils import console, js_runtimes, path_ops, prerequisites, processes
 from reflex.utils.exec import is_in_app_harness
 
@@ -241,6 +241,7 @@ def build():
     config = get_config()
 
     if frontend_path := config.frontend_path.strip("/"):
+        # Create a subdirectory that matches the configured frontend_path.
         frontend_path = PosixPath(frontend_path)
         first_part = frontend_path.parts[0]
         for child in list((wdir / constants.Dirs.STATIC).iterdir()):

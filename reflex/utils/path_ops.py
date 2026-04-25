@@ -8,9 +8,9 @@ import shutil
 import stat
 from pathlib import Path
 
-from reflex.config import get_config
-from reflex.environment import environment
-from reflex.utils.format import orjson_dumps, orjson_loads
+from reflex_base.config import get_config
+from reflex_base.environment import environment
+from reflex_base.utils.format import orjson_dumps, orjson_loads
 
 # Shorthand for join.
 join = os.linesep.join
