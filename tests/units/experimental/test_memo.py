@@ -101,9 +101,8 @@ def test_component_returning_memo_with_children_and_rest():
     assert isinstance(definition, ExperimentalMemoComponentDefinition)
     assert any(str(prop) == "rest" for prop in definition.component.special_props)
 
-    _, code, _ = compiler.compile_memo_components(
-        (), tuple(EXPERIMENTAL_MEMOS.values())
-    )
+    files, _ = compiler.compile_memo_components((), tuple(EXPERIMENTAL_MEMOS.values()))
+    code = "\n".join(c for _, c in files)
     assert "export const MyCard = memo(({children, title:title" in code
     assert "...rest" in code
     assert "jsx(RadixThemesBox,{...rest}" in code
@@ -126,9 +125,8 @@ def test_component_returning_memo_accepts_component_var_result():
         "contents": "(showRxMemo ? firstRxMemo : secondRxMemo)"
     }
 
-    _, code, _ = compiler.compile_memo_components(
-        (), tuple(EXPERIMENTAL_MEMOS.values())
-    )
+    files, _ = compiler.compile_memo_components((), tuple(EXPERIMENTAL_MEMOS.values()))
+    code = "\n".join(c for _, c in files)
     assert "export const ConditionalSlot = memo(({show:showRxMemo" in code
     assert "(showRxMemo ? firstRxMemo : secondRxMemo)" in code
 
@@ -151,9 +149,8 @@ def test_var_returning_memo_with_rest_props():
     assert '["color"] : "red"' in str(merged)
     assert '["className"] : "primary"' in str(merged)
 
-    _, code, _ = compiler.compile_memo_components(
-        (), tuple(EXPERIMENTAL_MEMOS.values())
-    )
+    files, _ = compiler.compile_memo_components((), tuple(EXPERIMENTAL_MEMOS.values()))
+    code = "\n".join(c for _, c in files)
     assert (
         "export const merge_styles = (({base, ...overrides}) => ({...base, ...overrides}));"
         in code
@@ -185,9 +182,8 @@ def test_var_returning_memo_with_children_and_rest():
     assert '["children"]' in str(rendered)
     assert '["className"] : "slot"' in str(rendered)
 
-    _, code, _ = compiler.compile_memo_components(
-        (), tuple(EXPERIMENTAL_MEMOS.values())
-    )
+    files, _ = compiler.compile_memo_components((), tuple(EXPERIMENTAL_MEMOS.values()))
+    code = "\n".join(c for _, c in files)
     assert "export const label_slot = (({children, label, ...rest}) => label);" in code
 
 
@@ -356,10 +352,11 @@ def test_compile_memo_components_includes_experimental_functions_and_components(
     def my_card(children: rx.Var[rx.Component], *, title: rx.Var[str]) -> rx.Component:
         return rx.box(rx.heading(title), children)
 
-    _, code, _ = compiler.compile_memo_components(
+    files, _ = compiler.compile_memo_components(
         dict.fromkeys(CUSTOM_COMPONENTS.values()),
         tuple(EXPERIMENTAL_MEMOS.values()),
     )
+    code = "\n".join(c for _, c in files)
 
     assert "export const OldWrapper = memo(" in code
     assert "export const format_price =" in code
@@ -415,6 +412,29 @@ def test_compile_experimental_component_memo_does_not_mutate_definition(
     assert definition.component.style == Style()
 
 
+def test_component_returning_memo_is_transparent_for_child_validation():
+    """Experimental memo wrappers should not break `_valid_parents` checks."""
+
+    class ValidParent(Component):
+        tag = "ValidParent"
+        library = "valid-parent"
+
+    class RestrictedChild(Component):
+        tag = "RestrictedChild"
+        library = "restricted-child"
+        _valid_parents = ["ValidParent"]
+
+    @rx._x.memo
+    def transparent(children: rx.Var[rx.Component]) -> rx.Component:
+        return children  # type: ignore[return-value]
+
+    wrapped_child = transparent(RestrictedChild.create())
+    parent = ValidParent.create(wrapped_child)
+
+    assert isinstance(wrapped_child, ExperimentalMemoComponent)
+    assert parent.children == [wrapped_child]
+
+
 def test_compile_memo_components_includes_experimental_custom_code():
     """Experimental component memos should include custom code in compiled output."""
 
@@ -428,8 +448,7 @@ def test_compile_memo_components_includes_experimental_custom_code():
     def foo_component(label: rx.Var[str]) -> rx.Component:
         return FooComponent.create(label, rx.Var("foo"))
 
-    _, code, _ = compiler.compile_memo_components(
-        (), tuple(EXPERIMENTAL_MEMOS.values())
-    )
+    files, _ = compiler.compile_memo_components((), tuple(EXPERIMENTAL_MEMOS.values()))
+    code = "\n".join(c for _, c in files)
 
     assert "const foo = 'bar'" in code
