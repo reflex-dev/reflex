@@ -57,6 +57,24 @@ def HybridProperties():
             """
             return rx.cond(cls.last_name, "yes", "no")
 
+        @rx.var
+        def full_name_backend(self) -> str:
+            """Expose the backend value of the `full_name` hybrid property.
+
+            Returns:
+                str: The full name as evaluated by the backend property getter.
+            """
+            return self.full_name
+
+        @rx.var
+        def has_last_name_backend(self) -> str:
+            """Expose the backend value of the `has_last_name` hybrid property.
+
+            Returns:
+                str: The has_last_name value as evaluated by the backend property getter.
+            """
+            return self.has_last_name
+
     def index() -> rx.Component:
         return rx.center(
             rx.vstack(
@@ -69,7 +87,15 @@ def HybridProperties():
                     f"python_full_name: {State.python_full_name}", id="python_full_name"
                 ),
                 rx.text(f"full_name: {State.full_name}", id="full_name"),
+                rx.text(
+                    f"full_name_backend: {State.full_name_backend}",
+                    id="full_name_backend",
+                ),
                 rx.text(f"has_last_name: {State.has_last_name}", id="has_last_name"),
+                rx.text(
+                    f"has_last_name_backend: {State.has_last_name_backend}",
+                    id="has_last_name_backend",
+                ),
                 rx.el.input(
                     value=State.last_name,
                     on_change=State.setvar("last_name"),
@@ -142,8 +168,7 @@ def token(hybrid_properties: AppHarness, driver: WebDriver) -> str:
     return token
 
 
-@pytest.mark.asyncio
-async def test_hybrid_properties(
+def test_hybrid_properties(
     hybrid_properties: AppHarness,
     driver: WebDriver,
     token: str,
@@ -153,27 +178,25 @@ async def test_hybrid_properties(
     Args:
         hybrid_properties: harness for HybridProperties app.
         driver: WebDriver instance.
-        token: The token for the connected client.
+        token: The token for the connected client (used to wait for backend connection).
     """
     assert hybrid_properties.app_instance is not None
-
-    state_name = hybrid_properties.get_state_name("_state")
-    full_state_name = hybrid_properties.get_full_state_name(["_state"])
-    token = f"{token}_{full_state_name}"
-
-    state = (await hybrid_properties.get_state(token)).substates[state_name]
-    assert state is not None
-    assert state.full_name == "John Doe"  # pyright: ignore[reportAttributeAccessIssue]
-    assert state.has_last_name == "yes"  # pyright: ignore[reportAttributeAccessIssue]
+    assert token
 
     full_name = driver.find_element(By.ID, "full_name")
     assert full_name.text == "full_name: John Doe"
+
+    full_name_backend = driver.find_element(By.ID, "full_name_backend")
+    assert full_name_backend.text == "full_name_backend: John Doe"
 
     python_full_name = driver.find_element(By.ID, "python_full_name")
     assert "<property object at 0x" in python_full_name.text
 
     has_last_name = driver.find_element(By.ID, "has_last_name")
     assert has_last_name.text == "has_last_name: yes"
+
+    has_last_name_backend = driver.find_element(By.ID, "has_last_name_backend")
+    assert has_last_name_backend.text == "has_last_name_backend: yes"
 
     set_last_name = driver.find_element(By.ID, "set_last_name")
     # clear the input
@@ -186,10 +209,12 @@ async def test_hybrid_properties(
         )
         == "has_last_name: no"
     )
+    assert (
+        hybrid_properties.poll_for_content(
+            has_last_name_backend, exp_not_equal="has_last_name_backend: yes"
+        )
+        == "has_last_name_backend: no"
+    )
 
     assert full_name.text == "full_name: John"
-
-    state = (await hybrid_properties.get_state(token)).substates[state_name]
-    assert state is not None
-    assert state.full_name == "John "  # pyright: ignore[reportAttributeAccessIssue]
-    assert state.has_last_name == "no"  # pyright: ignore[reportAttributeAccessIssue]
+    assert full_name_backend.text == "full_name_backend: John "
