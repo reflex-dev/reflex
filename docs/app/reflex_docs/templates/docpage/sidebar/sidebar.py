@@ -117,7 +117,7 @@ def sidebar_leaf(
                     item.link == url,
                     sidebar_link(
                         rx.el.div(
-                            class_name="absolute left-0 top-1/2 -translate-y-1/2 w-full h-8 rounded-lg bg-m-slate-2 dark:bg-m-slate-10 z-[-1]",
+                            class_name="absolute left-0 top-1/2 -translate-y-1/2 w-full h-8 rounded-lg bg-m-slate-2 dark:bg-slate-3 z-[-1]",
                         ),
                         rx.flex(
                             rx.text(
@@ -328,7 +328,7 @@ def sidebar_category(name: str, url: str, icon: str, index: int):
                         "flex flex-row justify-start items-center gap-2.5 w-full text-sm text-secondary-11 hover:text-secondary-12 h-8",
                         rx.cond(
                             SidebarState.sidebar_index == index,
-                            "text-primary-10 dark:text-primary-9",
+                            "text-slate-12",
                             "",
                         ),
                     ),
@@ -338,7 +338,7 @@ def sidebar_category(name: str, url: str, icon: str, index: int):
             rx.cond(
                 SidebarState.sidebar_index == index,
                 rx.el.div(
-                    class_name="absolute left-0 top-0 w-full h-full bg-m-slate-2 dark:bg-m-slate-10 rounded-lg z-[-1]",
+                    class_name="absolute left-0 top-0 w-full h-full bg-m-slate-2 dark:bg-slate-3 rounded-lg z-[-1]",
                 ),
             ),
             rx.el.a(

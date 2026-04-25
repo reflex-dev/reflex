@@ -377,6 +377,7 @@ def _build_reflex_menu_item(path: str) -> rx.Component:
                 class_name=(
                     "flex size-8 items-center justify-center rounded-md "
                     "bg-gradient-to-br from-violet-9 to-violet-11 "
+                    "dark:from-violet-7 dark:to-violet-9 "
                     "shadow-[0_0_0_1px_var(--violet-7),0_2px_8px_-2px_var(--violet-a8)] shrink-0"
                 ),
             ),
@@ -408,6 +409,8 @@ def _build_reflex_menu_item(path: str) -> rx.Component:
             "no-underline w-full text-left block "
             "bg-gradient-to-br from-violet-2 to-slate-1 "
             "hover:from-violet-3 hover:to-violet-2 "
+            "dark:from-violet-a3 dark:to-slate-2 "
+            "dark:hover:from-violet-a4 dark:hover:to-slate-3 "
             "border-b border-slate-4 transition-colors cursor-pointer"
         ),
     )
@@ -548,7 +551,7 @@ def _copy_page_button(doc_content: str, path: str = "") -> rx.Component:
                             ),
                             class_name=(
                                 "flex flex-col min-w-[260px] py-1 "
-                                "bg-slate-1 border border-slate-5 rounded-lg shadow-lg "
+                                "bg-white dark:bg-slate-2 border border-slate-5 rounded-lg shadow-lg "
                                 "data-[state=open]:animate-in data-[state=open]:fade-in-0 "
                                 "data-[state=open]:zoom-in-95 data-[state=open]:slide-in-from-top-2"
                             ),
@@ -773,7 +776,7 @@ def docpage(
                         sidebar,
                         class_name=(
                             "w-[19.5rem] shrink-0 hidden lg:block z-10 border-r border-m-slate-4 dark:border-m-slate-10 sticky left-0 "
-                            "before:content-[''] before:absolute before:top-0 before:bottom-0 before:right-0 before:w-[100vw] before:bg-white-1 dark:before:bg-m-slate-11 before:-z-10 "
+                            "before:content-[''] before:absolute before:top-0 before:bottom-0 before:right-0 before:w-[100vw] before:bg-white-1 dark:before:bg-[#1a1b1d] before:-z-10 "
                             + rx.cond(
                                 HostingBannerState.is_banner_visible,
                                 " top-[113px] h-[calc(100vh-113px)]",
@@ -869,10 +872,6 @@ def docpage(
                                 ),
                                 rx.el.div(
                                     feedback_button_toc(),
-                                    copy_to_markdown(text=doc_content)
-                                    if doc_content
-                                    else None,
-                                    ask_ai_chat(),
                                     class_name="flex flex-col mt-1.5 justify-start",
                                 ),
                                 class_name="flex flex-col justify-start gap-y-4 overflow-y-auto sticky top-4",
