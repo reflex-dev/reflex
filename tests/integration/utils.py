@@ -46,7 +46,7 @@ def poll_for_navigation(
     """
     prev_url = page.url
     yield
-    AppHarness.expect(lambda: prev_url != page.url, timeout=timeout)
+    page.wait_for_url(lambda url: url != prev_url, timeout=timeout * 1000)
 
 
 def n_expected_events(exp_event_order: Sequence[str | set[str]]) -> int:
