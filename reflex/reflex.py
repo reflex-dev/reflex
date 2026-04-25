@@ -19,6 +19,8 @@ if TYPE_CHECKING:
     from reflex_base.constants.base import LITERAL_ENV
     from reflex_cli.constants.base import LogLevel as HostingLogLevel
 
+    from reflex.minify import MinifyConfig
+
 
 def set_loglevel(ctx: click.Context, self: click.Parameter, value: str | None):
     """Set the log level.
@@ -905,41 +907,55 @@ def minify():
     """Manage state and event name minification."""
 
 
+def _load_app_for_minify() -> None:
+    """Compile the app so dynamic states are registered.
+
+    ``ComponentState.create()`` and locally-defined states inside page
+    functions only register during page evaluation, so a plain ``get_app()``
+    would miss them.
+    """
+    from reflex.utils import prerequisites
+
+    prerequisites.get_compiled_app(dry_run=True)
+
+
+def _count_events(config: MinifyConfig) -> int:
+    """Sum the event handlers across every state in a minify config.
+
+    Args:
+        config: The minify configuration to count events in.
+
+    Returns:
+        The total number of event handlers across every state.
+    """
+    return sum(len(handlers) for handlers in config["events"].values())
+
+
 @minify.command(name="init")
 @loglevel_option
 def minify_init():
-    """Initialize minify.json with IDs for all states and events.
-
-    This command scans the codebase and generates a minify.json file
-    with unique IDs for all states and event handlers.
-    """
+    """Initialize minify.json with IDs for all states and events."""
     from reflex.minify import (
         MINIFY_JSON,
         _get_minify_json_path,
         generate_minify_config,
         save_minify_config,
     )
-    from reflex.utils import prerequisites
 
-    path = _get_minify_json_path()
-    if path.exists():
+    if _get_minify_json_path().exists():
         console.error(
             f"{MINIFY_JSON} already exists. Use 'reflex minify sync' to update "
             "or delete the file to reinitialize."
         )
         raise SystemExit(1)
 
-    # Load the user's app so every State subclass registers itself.
-    prerequisites.get_app()
-
-    # Generate the configuration over every registered state.
+    _load_app_for_minify()
     config = generate_minify_config()
     save_minify_config(config)
 
-    num_states = len(config["states"])
-    num_events = sum(len(handlers) for handlers in config["events"].values())
     console.log(
-        f"Created {MINIFY_JSON} with {num_states} states and {num_events} events."
+        f"Created {MINIFY_JSON} with {len(config['states'])} states "
+        f"and {_count_events(config)} events."
     )
 
 
@@ -967,39 +983,32 @@ def minify_sync(reassign_deleted: bool, prune: bool):
         save_minify_config,
         sync_minify_config,
     )
-    from reflex.utils import prerequisites
 
-    path = _get_minify_json_path()
-    if not path.exists():
+    if not _get_minify_json_path().exists():
         console.error(
             f"{MINIFY_JSON} does not exist. Use 'reflex minify init' to create it."
         )
         raise SystemExit(1)
 
-    # Load the user's app so every State subclass registers itself.
-    prerequisites.get_app()
+    _load_app_for_minify()
 
-    # Load existing config
     existing_config = _load_minify_config_uncached()
     if existing_config is None:
         console.error(f"Failed to load {MINIFY_JSON}.")
         raise SystemExit(1)
 
-    old_states = len(existing_config["states"])
-    old_events = sum(len(handlers) for handlers in existing_config["events"].values())
-
-    # Sync against every registered state.
     new_config = sync_minify_config(
         existing_config, reassign_deleted=reassign_deleted, prune=prune
     )
     save_minify_config(new_config)
 
-    new_states = len(new_config["states"])
-    new_events = sum(len(handlers) for handlers in new_config["events"].values())
-
     console.log(f"Updated {MINIFY_JSON}:")
-    console.log(f"  States: {old_states} -> {new_states}")
-    console.log(f"  Events: {old_events} -> {new_events}")
+    console.log(
+        f"  States: {len(existing_config['states'])} -> {len(new_config['states'])}"
+    )
+    console.log(
+        f"  Events: {_count_events(existing_config)} -> {_count_events(new_config)}"
+    )
 
 
 @minify.command(name="validate")
@@ -1015,25 +1024,20 @@ def minify_validate():
         _load_minify_config_uncached,
         validate_minify_config,
     )
-    from reflex.utils import prerequisites
 
-    path = _get_minify_json_path()
-    if not path.exists():
+    if not _get_minify_json_path().exists():
         console.error(
             f"{MINIFY_JSON} does not exist. Use 'reflex minify init' to create it."
         )
         raise SystemExit(1)
 
-    # Load the user's app to register all state classes
-    prerequisites.get_app()
+    _load_app_for_minify()
 
-    # Load existing config
     config = _load_minify_config_uncached()
     if config is None:
         console.error(f"Failed to load {MINIFY_JSON}.")
         raise SystemExit(1)
 
-    # Validate
     errors, warnings, missing = validate_minify_config(config)
 
     if errors:
@@ -1075,7 +1079,6 @@ def minify_list(output_json: bool):
         get_state_id,
     )
     from reflex.state import BaseState, State
-    from reflex.utils import prerequisites
 
     class EventHandlerData(TypedDict):
         """Type for event handler data in state tree."""
@@ -1092,10 +1095,9 @@ def minify_list(output_json: bool):
         event_handlers: list[EventHandlerData]
         substates: list[StateTreeData]
 
-    # Load the user's app to register all state classes
-    prerequisites.get_app()
+    _load_app_for_minify()
 
-    # CLI inspection always shows config contents regardless of env var settings
+    # CLI inspection shows config contents regardless of env var settings.
     minify_enabled = get_minify_config() is not None
 
     def build_state_tree(state_cls: type[BaseState]) -> StateTreeData:
@@ -1215,10 +1217,8 @@ def minify_lookup(output_json: bool, minified_path: str):
     """
     from reflex.minify import MINIFY_JSON, get_minify_config, get_state_full_path
     from reflex.state import BaseState, State
-    from reflex.utils import prerequisites
 
-    # Load the user's app to register all state classes
-    prerequisites.get_app()
+    _load_app_for_minify()
 
     config = get_minify_config()
     if config is None:

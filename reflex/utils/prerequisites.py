@@ -264,9 +264,15 @@ def get_compiled_app(
     Returns:
         The compiled app based on the default config.
     """
+    from reflex.minify import install_minify_resolver
+
     app, app_module = get_and_validate_app(
         reload=reload, check_if_schema_up_to_date=check_if_schema_up_to_date
     )
+    # Install the minify resolver between app import (static states already
+    # registered, will be re-keyed in one shot) and page evaluation (dynamic
+    # states pick up their minified names at registration time).
+    install_minify_resolver()
     app._compile(prerender_routes=prerender_routes, dry_run=dry_run, use_rich=use_rich)
     return app_module
 

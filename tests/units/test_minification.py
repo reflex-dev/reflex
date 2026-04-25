@@ -743,6 +743,98 @@ class TestDynamicHandlerMinification:
         # so the new name picks up the minified id without re-registering.
         assert _resolved_event_id(TestStateWithDynamicHandler, "dynamic_handler") == "d"
 
+    def test_component_state_picks_up_minified_name(
+        self, temp_minify_json, monkeypatch
+    ):
+        """``ComponentState.create()`` instances are real state classes too.
+
+        They register via ``__init_subclass__`` like any other state, so as
+        long as the minify resolver is installed before ``create()`` runs,
+        the resulting class gets the minified name from ``minify.json``.
+        """
+        import reflex as rx
+
+        monkeypatch.setenv(
+            environment.REFLEX_MINIFY_STATES.name, MinifyMode.ENABLED.value
+        )
+        monkeypatch.setenv(
+            environment.REFLEX_MINIFY_EVENTS.name, MinifyMode.ENABLED.value
+        )
+
+        # ComponentState.create() builds a new class via ``type(...)`` with
+        # ``__module__ = "reflex.istate.dynamic"`` and a ``_n<count>`` suffix,
+        # so the path under which the resolver will look it up is fully
+        # determined ahead of time.
+        instance_count = rx.ComponentState._per_component_state_instance_count + 1
+        instance_path = (
+            f"reflex.istate.dynamic.State.ComponentStateMinifyExample_n{instance_count}"
+        )
+
+        config: MinifyConfig = {
+            "version": SCHEMA_VERSION,
+            "states": {
+                "reflex.state.State": "a",
+                instance_path: "z",
+            },
+            "events": {
+                instance_path: {"increment": "i", "setvar": "s"},
+            },
+        }
+        save_minify_config(config)
+        clear_config_cache()
+
+        class ComponentStateMinifyExample(rx.ComponentState):
+            count: int = 0
+
+            @rx.event
+            def increment(self):
+                self.count += 1
+
+            @classmethod
+            def get_component(cls, **props):
+                return rx.fragment()
+
+        ComponentStateMinifyExample.create()
+        instance_cls = next(
+            cls
+            for cls in RegistrationContext.get().base_states.values()
+            if cls.__name__ == f"ComponentStateMinifyExample_n{instance_count}"
+        )
+
+        assert instance_cls.get_name() == "z"
+        assert _resolved_event_id(instance_cls, "increment") == "i"
+
+    def test_state_created_after_resolver_install_uses_minified_name(
+        self, temp_minify_json, monkeypatch
+    ):
+        """A state class created after the resolver is installed gets its
+        minified name at registration time — no later refresh needed.
+
+        This is the path exercised by ``ComponentState.create()`` and any
+        locally-defined state inside a page function: the class doesn't
+        exist when ``minify.json`` is loaded, so the resolver must be
+        consulted lazily on first lookup.
+        """
+        monkeypatch.setenv(
+            environment.REFLEX_MINIFY_STATES.name, MinifyMode.ENABLED.value
+        )
+        late_path = "tests.units.test_minification.State.LateBornState"
+        config: MinifyConfig = {
+            "version": SCHEMA_VERSION,
+            "states": {"reflex.state.State": "a", late_path: "lb"},
+            "events": {},
+        }
+        save_minify_config(config)
+        clear_config_cache()  # installs the MinifyNameResolver
+
+        class LateBornState(State):
+            pass
+
+        # Newly-registered class is keyed by its minified name in the registry.
+        ctx = RegistrationContext.get()
+        assert LateBornState.get_name() == "lb"
+        assert ctx.base_states.get("a.lb") is LateBornState
+
 
 class TestMinifyModeEnvVars:
     """Tests for REFLEX_MINIFY_STATES and REFLEX_MINIFY_EVENTS env vars."""
@@ -1011,9 +1103,11 @@ class TestMinifyLookupCLI:
         save_minify_config(config)
         clear_config_cache()
 
-        # Mock prerequisites.get_app to avoid needing a real app
+        # Stub the compiled-app loader; the test already populates the registry
         app_module_mock = mock.Mock()
-        monkeypatch.setattr(prerequisites, "get_app", lambda *a, **kw: app_module_mock)
+        monkeypatch.setattr(
+            prerequisites, "get_compiled_app", lambda *a, **kw: app_module_mock
+        )
 
         runner = CliRunner()
         result = runner.invoke(cli, ["minify", "lookup", "a.b.c"])
@@ -1033,9 +1127,11 @@ class TestMinifyLookupCLI:
         from reflex.reflex import cli
         from reflex.utils import prerequisites
 
-        # Mock prerequisites.get_app
+        # Stub the compiled-app loader
         app_module_mock = mock.Mock()
-        monkeypatch.setattr(prerequisites, "get_app", lambda *a, **kw: app_module_mock)
+        monkeypatch.setattr(
+            prerequisites, "get_compiled_app", lambda *a, **kw: app_module_mock
+        )
 
         # Don't create minify.json
         clear_config_cache()
@@ -1066,9 +1162,11 @@ class TestMinifyLookupCLI:
         save_minify_config(config)
         clear_config_cache()
 
-        # Mock prerequisites.get_app
+        # Stub the compiled-app loader
         app_module_mock = mock.Mock()
-        monkeypatch.setattr(prerequisites, "get_app", lambda *a, **kw: app_module_mock)
+        monkeypatch.setattr(
+            prerequisites, "get_compiled_app", lambda *a, **kw: app_module_mock
+        )
 
         runner = CliRunner()
         # Try to lookup a path that doesn't exist
@@ -1104,9 +1202,11 @@ class TestMinifyLookupCLI:
         save_minify_config(config)
         clear_config_cache()
 
-        # Mock prerequisites.get_app
+        # Stub the compiled-app loader
         app_module_mock = mock.Mock()
-        monkeypatch.setattr(prerequisites, "get_app", lambda *a, **kw: app_module_mock)
+        monkeypatch.setattr(
+            prerequisites, "get_compiled_app", lambda *a, **kw: app_module_mock
+        )
 
         runner = CliRunner()
         result = runner.invoke(cli, ["minify", "lookup", "--json", "a.b"])
