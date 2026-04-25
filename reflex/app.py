@@ -83,6 +83,7 @@ from reflex.compiler.compiler import (
     readable_name_from_component,
 )
 from reflex.experimental.memo import EXPERIMENTAL_MEMOS
+from reflex.istate.data import RouterData
 from reflex.istate.manager import StateManager, StateModificationContext
 from reflex.istate.manager.token import BaseStateToken
 from reflex.page import DECORATED_PAGES
@@ -93,7 +94,6 @@ from reflex.route import (
 )
 from reflex.state import (
     BaseState,
-    RouterData,
     State,
     StateUpdate,
     all_base_state_classes,
@@ -521,7 +521,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 ping_interval=environment.REFLEX_SOCKET_INTERVAL.get(),
                 ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get(),
                 json=SimpleNamespace(
-                    dumps=staticmethod(format.json_dumps),
+                    dumps=staticmethod(format.orjson_dumps_socket),
                     loads=staticmethod(format.orjson_loads),
                 ),
                 allow_upgrades=False,

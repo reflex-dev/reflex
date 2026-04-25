@@ -13,13 +13,8 @@ from reflex_base.utils import exceptions
 
 if TYPE_CHECKING:
     from reflex_base.components.component import ComponentStyle
-    from reflex_base.event import (
-        ArgsSpec,
-        EventChain,
-        EventHandler,
-        EventSpec,
-        EventType,
-    )
+    from reflex_base.event import EventChain, EventHandler, EventSpec, EventType
+    from reflex_base.utils.types import ArgsSpec
 
 WRAP_MAP = {
     "{": "}",
@@ -740,6 +735,43 @@ def orjson_loads(data: str | bytes) -> Any:
         return json.loads(data)
 
     return orjson.loads(data)
+
+
+# Shared with the JS-side reviver in state.js. orjson serializes non-finite
+# floats as null, so the socket emit path swaps them for sentinel strings
+# and the client revives them back to NaN/Infinity/-Infinity.
+NAN_SENTINEL = "__reflex_nan__"
+INF_SENTINEL = "__reflex_inf__"
+NEG_INF_SENTINEL = "__reflex_neg_inf__"
+_INF = float("inf")
+
+
+def _replace_non_finite_floats(obj: Any) -> Any:
+    if isinstance(obj, float):
+        if obj != obj:
+            return NAN_SENTINEL
+        if obj == _INF:
+            return INF_SENTINEL
+        if obj == -_INF:
+            return NEG_INF_SENTINEL
+        return obj
+    if isinstance(obj, dict):
+        return {k: _replace_non_finite_floats(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_replace_non_finite_floats(v) for v in obj]
+    return obj
+
+
+def orjson_dumps_socket(obj: Any) -> str:
+    """Serialize obj for socket emit, preserving non-finite floats via sentinels.
+
+    Args:
+        obj: The object to serialize.
+
+    Returns:
+        A JSON string with NaN/Infinity floats substituted for the JS reviver.
+    """
+    return orjson_dumps(_replace_non_finite_floats(obj))
 
 
 def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:
