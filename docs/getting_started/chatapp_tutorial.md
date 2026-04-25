@@ -12,13 +12,70 @@ if "OPENAI_API_KEY" not in os.environ:
     openai.api_key = "YOUR_OPENAI_KEY"
 ```
 
-# Interactive Tutorial: AI Chat App
+# AI Chat App
 
-This tutorial will walk you through building an AI chat app with Reflex. This app is fairly complex, but don't worry - we'll break it down into small steps.
+**~30 min hands-on** · Build a streaming AI chatbot in pure Python — UI, state, and OpenAI integration in one Reflex app.
 
-You can find the full source code for this app [here](https://github.com/reflex-dev/reflex-chat).
+You can find the full source code for this app on [GitHub](https://github.com/reflex-dev/reflex-chat).
 
-### What You'll Learn
+```python eval
+rx.box(
+    rx.vstack(
+        rx.vstack(
+            rx.box(
+                rx.text("What is Reflex?", style=style.question_style),
+                text_align="right",
+                width="100%",
+            ),
+            rx.box(
+                rx.text(
+                    "Reflex is a way to build full-stack web apps in pure Python — "
+                    "frontend, backend, and state all in one place.",
+                    style=style.answer_style,
+                ),
+                text_align="left",
+                width="100%",
+            ),
+            rx.box(
+                rx.text("Can I deploy it?", style=style.question_style),
+                text_align="right",
+                width="100%",
+            ),
+            rx.box(
+                rx.text(
+                    "Yes! A single `reflex deploy` ships it to production.",
+                    style=style.answer_style,
+                ),
+                text_align="left",
+                width="100%",
+            ),
+            spacing="0",
+            width="100%",
+        ),
+        rx.hstack(
+            rx.input(
+                placeholder="Ask a question",
+                style=style.input_style,
+                is_disabled=True,
+            ),
+            rx.button("Ask", style=style.button_style, is_disabled=True),
+            spacing="3",
+            padding_top="1.5em",
+            justify="center",
+            width="100%",
+        ),
+        align="stretch",
+        spacing="0",
+        width="100%",
+        padding="2.5em 4em",
+    ),
+    border=f"1px solid {rx.color('slate', 5)}",
+    border_radius="12px",
+    margin_y="1em",
+)
+```
+
+## What You'll Learn
 
 In this tutorial you'll learn how to:
 
@@ -33,52 +90,27 @@ In this tutorial you'll learn how to:
 # Video: Example of Setting up the Chat App
 ```
 
-We will start by creating a new project and setting up our development environment. First, create a new directory for your project and navigate to it.
+We will start by creating a new project and setting up our development environment. If you haven't installed [uv](https://docs.astral.sh/uv/) yet, see the [installation guide](/docs/getting_started/installation). Then create a new project directory and scaffold a Reflex app:
 
 ```bash
-~ $ mkdir chatapp
-~ $ cd chatapp
+mkdir chatapp
+cd chatapp
+uv init
+uv add reflex
+uv run reflex init
 ```
 
-Next, we will create a virtual environment for our project. This is optional, but recommended. In this example, we will use [venv](https://docs.python.org/3/library/venv.html) to create our virtual environment.
-
-```bash
-chatapp $ python3 -m venv venv
-$ source venv/bin/activate
-```
-
-Now, we will install Reflex and create a new project. This will create a new directory structure in our project directory.
-
-> **Note:** When prompted to select a template, choose option 0 for a blank project.
-
-```bash
-chatapp $ pip install reflex
-chatapp $ reflex init
-────────────────────────────────── Initializing chatapp ───────────────────────────────────
-Success: Initialized chatapp
-chatapp $ ls
-assets          chatapp         rxconfig.py     venv
-```
-
-```python eval
-rx.box(height="20px")
+```md alert info
+When prompted to select a template, choose option **0** for a blank project.
 ```
 
 You can run the template app to make sure everything is working.
 
 ```bash
-chatapp $ reflex run
-─────────────────────────────────── Starting Reflex App ───────────────────────────────────
-Compiling:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 1/1 0:00:00
-─────────────────────────────────────── App Running ───────────────────────────────────────
-App running at: http://localhost:3000
+uv run reflex run
 ```
 
-```python eval
-rx.box(height="20px")
-```
-
-You should see your app running at [http://localhost:3000]({"http://localhost:3000"}).
+You should see your app running at [http://localhost:3000](http://localhost:3000).
 
 Reflex also starts the backend server which handles all the state management and communication with the frontend. You can test the backend server is running by navigating to [http://localhost:8000/ping]({"http://localhost:8000/ping"}).
 
@@ -88,7 +120,7 @@ Now that we have our project set up, in the next section we will start building 
 
 Let's start with defining the frontend for our chat app. In Reflex, the frontend can be broken down into independent, reusable components. See the [components docs](/docs/components/props) for more information.
 
-### Display A Question And Answer
+### Display Q&A
 
 We will modify the `index` function in `chatapp/chatapp.py` file to return a component that displays a single question and answer.
 
@@ -551,28 +583,18 @@ In the next section, we will finish our chatbot by adding AI!
 
 We will use OpenAI's API to give our chatbot some intelligence.
 
-### Configure the OpenAI API Key
+### Configure OpenAI
 
-First, ensure you have an active OpenAI subscription.
-Next, install the latest openai package:
+First, ensure you have an active OpenAI subscription and install the latest `openai` package:
 
 ```bash
 pip install --upgrade openai
 ```
 
-Direct Configuration of API in Code
+Then export your API key so the app can read it at runtime:
 
-Update the state.py file to include your API key directly:
-
-```python
-# state.py
-import os
-from openai import AsyncOpenAI
-
-import reflex as rx
-
-# Initialize the OpenAI client
-client = AsyncOpenAI(api_key="YOUR_OPENAI_API_KEY")  # Replace with your actual API key
+```bash
+export OPENAI_API_KEY="sk-..."
 ```
 
 ### Using the API
@@ -643,23 +665,13 @@ Finally, we have our chatbot!
 
 ### Final Code
 
-This application is a simple, interactive chatbot built with Reflex that leverages OpenAI's API for intelligent responses. The chatbot features a clean interface with streaming responses for a natural conversation experience.
-
-Key Features
-
-1. Real-time streaming responses
-2. Clean, visually distinct chat bubbles for questions and answers
-3. Simple input interface with question field and submit button
-
-Project Structure
-
-Below is the full chatbot code with a commented title that corresponds to the filename.
+The finished project is split across three files — `chatapp.py` for UI and app setup, `state.py` for state and API integration, and `style.py` for styling:
 
 ```text
 chatapp/
-├── chatapp.py    # UI components and app setup
-├── state.py      # State management and API integration
-└── style.py      # Styling definitions
+├── chatapp.py
+├── state.py
+└── style.py
 ```
 
 The `chatapp.py` file:
