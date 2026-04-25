@@ -226,4 +226,6 @@ def test_hybrid_properties(
     )
 
     assert full_name.text == "full_name: John"
-    assert full_name_backend.text == "full_name_backend: John "
+    # Use textContent to preserve trailing whitespace (Selenium's .text strips it),
+    # since the backend f-string yields "John " (with trailing space) when last_name is empty.
+    assert full_name_backend.get_attribute("textContent") == "full_name_backend: John "
