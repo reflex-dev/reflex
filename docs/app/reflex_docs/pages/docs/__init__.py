@@ -236,7 +236,17 @@ def get_component_docgen(virtual_doc: str, actual_path: str, title: str):
 
 # Build doc_markdown_sources mapping
 for _virtual, _actual in all_docs.items():
-    if _virtual.endswith("-style.md") or _virtual.endswith("-ll.md"):
+    if _virtual.endswith("-style.md"):
+        continue
+    if _virtual.endswith("-ll.md"):
+        # Register low-level docs at /<path>-ll.md so the copy button can
+        # fetch them from the served URL.
+        _hl_virtual = _virtual.replace("-ll.md", ".md")
+        _hl_route = doc_route_from_path(_hl_virtual)
+        if not _check_whitelisted_path(_hl_route):
+            continue
+        _ll_route = _hl_route.rstrip("/") + "-ll"
+        doc_markdown_sources[_ll_route] = _actual
         continue
     _route = doc_route_from_path(_virtual)
     if not _check_whitelisted_path(_route):

@@ -426,7 +426,10 @@ def _copy_page_button(doc_content: str, path: str = "") -> rx.Component:
     copy_action = run_script(
         """
 ((function() {
-  const mdUrl = window.location.pathname.replace(/\\/$/, '') + '.md';
+  const cleanPath = window.location.pathname.replace(/\\/$/, '');
+  const mdUrl = cleanPath.endsWith('/low')
+    ? cleanPath.replace(/\\/low$/, '-ll.md')
+    : cleanPath + '.md';
   const animate = () => {
     document.querySelectorAll('[data-copy-icon]').forEach((icon) => {
       if (icon.dataset.animating === '1') return;
@@ -457,7 +460,14 @@ def _copy_page_button(doc_content: str, path: str = "") -> rx.Component:
   };
   animate();
   fetch(mdUrl)
-    .then((r) => (r.ok ? r.text() : Promise.reject(r.status)))
+    .then((r) => {
+      if (!r.ok) return Promise.reject(r.status);
+      const ct = r.headers.get('content-type') || '';
+      if (!ct.includes('markdown') && !ct.includes('text/plain')) {
+        return Promise.reject('not-markdown');
+      }
+      return r.text();
+    })
     .then((text) => {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         return navigator.clipboard.writeText(text).catch(() => {

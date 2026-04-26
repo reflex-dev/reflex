@@ -24,7 +24,7 @@ from reflex_docs.docgen_pipeline import (
     render_docgen_document,
     render_markdown,
 )
-from reflex_docs.templates.docpage import docdemobox, docpage, h1_comp, h2_comp, h3_comp
+from reflex_docs.templates.docpage import docpage, h1_comp, h2_comp
 
 
 def get_code_style(color: str):
@@ -338,9 +338,8 @@ def prop_docs(
     color = TYPE_COLORS.get(short_type_name, "gray")
 
     description = prop.description or ""
-    is_long_row = (
-        len(description) > 160
-        or (literal_values and len(literal_values) > 8 and prop.name not in common_types)
+    is_long_row = len(description) > 160 or (
+        literal_values and len(literal_values) > 8 and prop.name not in common_types
     )
 
     cell_content_class = (
@@ -370,7 +369,8 @@ def prop_docs(
                             [
                                 rx.code(
                                     f'"{v}"',
-                                    style=get_code_style(color),
+                                    color_scheme=color,
+                                    variant="soft",
                                     class_name="code-style leading-normal text-nowrap",
                                 )
                                 for v in literal_values
@@ -379,7 +379,8 @@ def prop_docs(
                             else [
                                 rx.code(
                                     type_name,
-                                    style=get_code_style(color),
+                                    color_scheme=color,
+                                    variant="soft",
                                     class_name="code-style leading-normal whitespace-normal break-words",
                                 )
                             ]
@@ -537,8 +538,7 @@ def generate_props(
                 ),
                 col_span=4,
                 class_name=(
-                    "!p-0 !border-t-0 "
-                    "[box-shadow:0_-1px_0_0_var(--gray-a4)_inset]"
+                    "!p-0 !border-t-0 [box-shadow:0_-1px_0_0_var(--gray-a4)_inset]"
                 ),
             ),
             class_name="api-toggle-row bg-slate-2",
@@ -613,9 +613,7 @@ def generate_props(
         def _is_bool_prop(p: PropDocumentation) -> bool:
             try:
                 inner = get_args(p.type)[0]
-                return (
-                    safe_issubclass(inner, bool) and p.name not in bool_excluded
-                )
+                return safe_issubclass(inner, bool) and p.name not in bool_excluded
             except Exception:
                 return False
 
@@ -630,7 +628,7 @@ def generate_props(
 
         def _render_static_line(line: str) -> rx.Component:
             if not line.strip():
-                return rx.el.div(" ", class_name=line_class)
+                return rx.el.div(class_name=line_class + " min-h-[1em]")
             children: list = []
             for m in token_re.finditer(line):
                 kw, s, b, n, ident, ws, other = m.groups()
@@ -680,7 +678,7 @@ def generate_props(
             src = preview_source.strip()
             m = re.match(r"^lambda\s+\*\*props\s*:\s*", src)
             if m:
-                src = src[m.end():]
+                src = src[m.end() :]
             src = textwrap.dedent(src).rstrip()
             for line in src.split("\n"):
                 if "**props" not in line:
@@ -689,7 +687,7 @@ def generate_props(
                 # Split the line around the **props token.
                 match = re.search(r"\*\*props\s*,?\s*", line)
                 before = line[: match.start()] if match else line
-                after = line[match.end():] if match else ""
+                after = line[match.end() :] if match else ""
                 base_indent = len(line) - len(line.lstrip())
                 inline = bool(before.strip())
                 # Compute prop-line indent: 4 deeper than the line's own
@@ -746,8 +744,7 @@ def generate_props(
                 class_name="flex-1 p-4 bg-slate-1 min-w-0 overflow-x-auto",
             ),
             class_name=(
-                "flex flex-row w-full rounded-xl border border-slate-4 "
-                "overflow-hidden"
+                "flex flex-row w-full rounded-xl border border-slate-4 overflow-hidden"
             ),
         )
     else:
@@ -795,7 +792,7 @@ def generate_props(
                         ),
                         rx.table.column_header_cell(
                             "type",
-                            class_name=table_header_class_name + " w-[28rem]",
+                            class_name=table_header_class_name + " w-[34rem]",
                         ),
                         rx.table.column_header_cell(
                             "default",
@@ -803,7 +800,7 @@ def generate_props(
                         ),
                         rx.table.column_header_cell(
                             "description",
-                            class_name=table_header_class_name,
+                            class_name=table_header_class_name + " w-[18rem]",
                         ),
                     ),
                     class_name="bg-slate-3",
@@ -952,8 +949,8 @@ def multi_docs(
         component_docs(component_tuple, previews)
         for component_tuple in component_list[1:]
     ]
-    fname = path.strip("/") + ".md"
-    ll_doc_exists = os.path.exists(fname.replace(".md", "-ll.md"))
+    ll_actual_path = actual_path.replace(".md", "-ll.md")
+    ll_doc_exists = os.path.exists(ll_actual_path)
 
     active_class_name = "font-small bg-slate-2 p-2 text-slate-11 rounded-xl shadow-large w-28 cursor-default border border-slate-4 text-center"
 
@@ -1024,10 +1021,9 @@ def multi_docs(
 
     @docpage(set_path=path + "low", t=title + " (Low Level)")
     def ll():
-        ll_actual = fname.replace(".md", "-ll.md")
         ll_virtual = virtual_path.replace(".md", "-ll.md")
-        toc = get_docgen_toc(ll_actual)
-        doc_content = Path(ll_actual).read_text(encoding="utf-8")
+        toc = get_docgen_toc(ll_actual_path)
+        doc_content = Path(ll_actual_path).read_text(encoding="utf-8")
         if component_list:
             toc.append((1, "API Reference"))
         for component_tuple in component_list[1:]:
@@ -1035,7 +1031,7 @@ def multi_docs(
         return (toc, doc_content), rx.box(
             links("ll", ll_doc_exists, path),
             render_docgen_document(
-                virtual_filepath=ll_virtual, actual_filepath=ll_actual
+                virtual_filepath=ll_virtual, actual_filepath=ll_actual_path
             ),
             h1_comp(text="API Reference"),
             rx.box(*components, class_name="flex flex-col"),
