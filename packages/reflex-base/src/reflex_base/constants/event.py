@@ -3,6 +3,9 @@
 from enum import Enum
 from types import SimpleNamespace
 
+# The name of the setvar event handler.
+SETVAR = "setvar"
+
 
 class Endpoint(Enum):
     """Endpoints for the reflex backend API."""

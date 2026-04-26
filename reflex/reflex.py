@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from importlib.util import find_spec
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal, overload
 
 import click
 from reflex_base import constants
@@ -18,6 +18,8 @@ from reflex.custom_components.custom_components import custom_components_cli
 if TYPE_CHECKING:
     from reflex_base.constants.base import LITERAL_ENV
     from reflex_cli.constants.base import LogLevel as HostingLogLevel
+
+    from reflex.minify import MinifyConfig
 
 
 def set_loglevel(ctx: click.Context, self: click.Parameter, value: str | None):
@@ -897,6 +899,363 @@ def rename(new_name: str):
 
     prerequisites.validate_app_name(new_name)
     rename_app(new_name, get_config().loglevel)
+
+
+# Minify command group
+@cli.group()
+def minify():
+    """Manage state and event name minification."""
+
+
+def _load_app_for_minify() -> None:
+    """Compile the user's app so dynamic states (e.g. ``ComponentState``) register."""
+    from reflex.utils import prerequisites
+
+    prerequisites.get_compiled_app(dry_run=True)
+
+
+def _count_events(config: MinifyConfig) -> int:
+    """Sum event handlers across every state in a minify config.
+
+    Args:
+        config: The minify configuration.
+
+    Returns:
+        Total handler count.
+    """
+    return sum(len(handlers) for handlers in config["events"].values())
+
+
+@overload
+def _open_minify_session(*, require_exists: Literal[True] = True) -> MinifyConfig: ...
+@overload
+def _open_minify_session(*, require_exists: Literal[False]) -> MinifyConfig | None: ...
+
+
+def _open_minify_session(*, require_exists: bool = True) -> MinifyConfig | None:
+    """Run the standard minify-CLI prelude.
+
+    Compiles the user's app (so dynamic states register) and loads
+    ``minify.json``. Exits the CLI with an error when the file is required
+    but missing, or when it exists but is malformed.
+
+    Args:
+        require_exists: When ``True`` (default), missing ``minify.json`` is
+            a fatal error. When ``False``, returns ``None`` instead.
+
+    Returns:
+        The parsed config, or ``None`` if ``require_exists`` is ``False`` and
+        the file is absent.
+    """
+    from reflex.minify import (
+        MINIFY_JSON,
+        _get_minify_json_path,
+        _load_minify_config_uncached,
+    )
+
+    exists = _get_minify_json_path().exists()
+    if require_exists and not exists:
+        console.error(
+            f"{MINIFY_JSON} does not exist. Use 'reflex minify init' to create it."
+        )
+        raise SystemExit(1)
+
+    _load_app_for_minify()
+
+    if not exists:
+        return None
+
+    config = _load_minify_config_uncached()
+    if config is None:
+        console.error(f"Failed to load {MINIFY_JSON}.")
+        raise SystemExit(1)
+    return config
+
+
+@minify.command(name="init")
+@loglevel_option
+def minify_init():
+    """Initialize minify.json with IDs for all states and events."""
+    from reflex.minify import (
+        MINIFY_JSON,
+        _get_minify_json_path,
+        generate_minify_config,
+        save_minify_config,
+    )
+
+    if _get_minify_json_path().exists():
+        console.error(
+            f"{MINIFY_JSON} already exists. Use 'reflex minify sync' to update "
+            "or delete the file to reinitialize."
+        )
+        raise SystemExit(1)
+
+    _load_app_for_minify()
+    config = generate_minify_config()
+    save_minify_config(config)
+
+    console.log(
+        f"Created {MINIFY_JSON} with {len(config['states'])} states "
+        f"and {_count_events(config)} events."
+    )
+
+
+@minify.command(name="sync")
+@loglevel_option
+@click.option(
+    "--reassign-deleted",
+    is_flag=True,
+    help="Reassign IDs that are no longer in use (potentially breaking for existing clients).",
+)
+@click.option(
+    "--prune",
+    is_flag=True,
+    help="Remove entries for states/events that no longer exist in code.",
+)
+def minify_sync(reassign_deleted: bool, prune: bool):
+    """Synchronize minify.json with the current codebase.
+
+    Adds new states and events, optionally removes orphaned entries.
+    """
+    from reflex.minify import MINIFY_JSON, save_minify_config, sync_minify_config
+
+    existing_config = _open_minify_session()
+    new_config = sync_minify_config(
+        existing_config, reassign_deleted=reassign_deleted, prune=prune
+    )
+    save_minify_config(new_config)
+
+    console.log(f"Updated {MINIFY_JSON}:")
+    console.log(
+        f"  States: {len(existing_config['states'])} -> {len(new_config['states'])}"
+    )
+    console.log(
+        f"  Events: {_count_events(existing_config)} -> {_count_events(new_config)}"
+    )
+
+
+@minify.command(name="validate")
+@loglevel_option
+def minify_validate():
+    """Validate minify.json against the current codebase.
+
+    Checks for duplicate IDs, missing entries, and orphaned entries.
+    """
+    from reflex.minify import MINIFY_JSON, validate_minify_config
+
+    config = _open_minify_session()
+    errors, warnings, missing = validate_minify_config(config)
+
+    if errors:
+        console.error("Errors found:")
+        for error in errors:
+            console.error(f"  - {error}")
+
+    if warnings:
+        console.warn("Warnings:")
+        for warning in warnings:
+            console.warn(f"  - {warning}")
+
+    if missing:
+        console.warn("Missing entries (in code but not in config):")
+        for entry in missing:
+            console.warn(f"  - {entry}")
+
+    if errors or missing:
+        raise SystemExit(1)
+    console.log(f"{MINIFY_JSON} is valid and up-to-date.")
+
+
+@minify.command(name="list")
+@loglevel_option
+@click.option(
+    "--json",
+    "output_json",
+    is_flag=True,
+    help="Output as JSON.",
+)
+def minify_list(output_json: bool):
+    """Print the state tree with IDs and minified names."""
+    from typing import TypedDict
+
+    from reflex.minify import get_state_full_path
+    from reflex.state import BaseState, State
+
+    class EventHandlerData(TypedDict):
+        """Type for event handler data in state tree."""
+
+        name: str
+        event_id: str | None  # The minified name (e.g., "a", "ba") or None
+
+    class StateTreeData(TypedDict):
+        """Type for state tree data."""
+
+        name: str
+        full_path: str
+        state_id: str | None  # The minified name (e.g., "a", "ba") or None
+        event_handlers: list[EventHandlerData]
+        substates: list[StateTreeData]
+
+    # CLI inspection shows config contents regardless of env var settings.
+    config = _open_minify_session(require_exists=False)
+    states_map = config["states"] if config else {}
+    events_map = config["events"] if config else {}
+
+    def build_state_tree(state_cls: type[BaseState]) -> StateTreeData:
+        """Recursively build state tree data.
+
+        Args:
+            state_cls: The state class to build the tree for.
+
+        Returns:
+            A dictionary containing the state tree data.
+        """
+        state_path = get_state_full_path(state_cls)
+        state_id = states_map.get(state_path)
+
+        handler_ids = events_map.get(state_path, {})
+        handlers: list[EventHandlerData] = [
+            {"name": handler_name, "event_id": handler_ids.get(handler_name)}
+            for handler_name in sorted(state_cls.event_handlers.keys())
+        ]
+
+        # Build substates recursively
+        substates = [
+            build_state_tree(substate)
+            for substate in sorted(state_cls.get_substates(), key=lambda s: s.__name__)
+        ]
+
+        return {
+            "name": state_cls.__name__,
+            "full_path": state_path,
+            "state_id": state_id,
+            "event_handlers": handlers,
+            "substates": substates,
+        }
+
+    def print_state_tree(
+        state_data: StateTreeData, prefix: str = "", is_last: bool = True
+    ):
+        """Print a state and its children as a tree.
+
+        Args:
+            state_data: The state data dictionary.
+            prefix: The prefix for indentation.
+            is_last: Whether this is the last item in the current level.
+        """
+        # state_id is now the minified name directly (e.g., "a", "ba")
+        state_id = state_data["state_id"]
+
+        # Print the state node
+        connector = "`-- " if is_last else "|-- "
+        if state_id is not None:
+            console.log(f'{prefix}{connector}{state_data["name"]} -> "{state_id}"')
+        else:
+            console.log(f"{prefix}{connector}{state_data['name']}")
+
+        # Calculate new prefix for children
+        child_prefix = prefix + ("    " if is_last else "|   ")
+
+        # Print event handlers
+        handlers = state_data["event_handlers"]
+        substates = state_data["substates"]
+        has_substates = len(substates) > 0
+
+        if handlers:
+            console.log(f"{child_prefix}|-- Event Handlers:")
+            handler_prefix = child_prefix + ("|   " if has_substates else "    ")
+            for i, handler in enumerate(handlers):
+                is_last_handler = i == len(handlers) - 1
+                h_connector = "`-- " if is_last_handler else "|-- "
+                # event_id is now the minified name directly
+                event_id = handler["event_id"]
+                if event_id is not None:
+                    console.log(
+                        f'{handler_prefix}{h_connector}{handler["name"]} -> "{event_id}"'
+                    )
+                else:
+                    console.log(f"{handler_prefix}{h_connector}{handler['name']}")
+
+        # Print substates recursively
+        for i, substate in enumerate(substates):
+            is_last_substate = i == len(substates) - 1
+            print_state_tree(substate, child_prefix, is_last_substate)
+
+    tree_data = build_state_tree(State)
+
+    if output_json:
+        import json
+
+        console.log(json.dumps(tree_data, indent=2))
+    else:
+        if config is not None:
+            console.log("State Tree (minify.json loaded)")
+        else:
+            console.log("State Tree (no minify.json)")
+        print_state_tree(tree_data)
+
+
+@minify.command(name="lookup")
+@loglevel_option
+@click.option(
+    "--json",
+    "output_json",
+    is_flag=True,
+    help="Output detailed info as JSON.",
+)
+@click.argument("minified_path")
+def minify_lookup(output_json: bool, minified_path: str):
+    """Lookup a state by its minified path (e.g., 'a.bU').
+
+    Walks the state tree from the root to resolve each segment.
+    """
+    from reflex.minify import collect_all_states, get_state_full_path
+    from reflex.state import State
+
+    config = _open_minify_session()
+
+    # Build lookup: full_path -> minified_id (None if no entry).
+    path_to_id = {
+        get_state_full_path(s): config["states"].get(get_state_full_path(s))
+        for s in collect_all_states(State)
+    }
+
+    parts = minified_path.split(".")
+    result_parts = []
+    current = State
+
+    for i, part in enumerate(parts):
+        # Find the state whose minified id matches ``part``: the root state
+        # for the first segment, otherwise a child of the previous match.
+        candidates = [current] if i == 0 else current.get_substates()
+        found = next(
+            (c for c in candidates if path_to_id.get(get_state_full_path(c)) == part),
+            None,
+        )
+        if found is None:
+            console.error(
+                f"No state found for minified segment '{part}' in path '{minified_path}'"
+            )
+            raise SystemExit(1)
+
+        state_path = get_state_full_path(found)
+        result_parts.append({
+            "minified": part,
+            "state_id": part,  # we just matched on it
+            "module": found.__module__,
+            "class": found.__name__,
+            "full_path": state_path,
+        })
+        current = found
+
+    if output_json:
+        import json
+
+        click.echo(json.dumps(result_parts, indent=2))
+    else:
+        # Simple output: module.ClassName for each part
+        for info in result_parts:
+            console.log(f"{info['module']}.{info['class']}")
 
 
 def _convert_reflex_loglevel_to_reflex_cli_loglevel(

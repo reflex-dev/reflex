@@ -16,7 +16,9 @@ import {
   initialState,
   onLoadInternalEvent,
   state_name,
-  exception_state_name,
+  handle_frontend_exception,
+  main_state_name,
+  update_vars_internal,
 } from "$/utils/context";
 import debounce from "$/utils/helpers/debounce";
 import throttle from "$/utils/helpers/throttle";
@@ -132,7 +134,7 @@ export const isStateful = () => {
   if (event_queue.length === 0) {
     return false;
   }
-  return event_queue.some((event) => event.name.startsWith("reflex___state"));
+  return event_queue.some((event) => event.name.startsWith(main_state_name));
 };
 
 /**
@@ -950,7 +952,7 @@ export const useEventLoop = (
 
     window.onerror = function (msg, url, lineNo, columnNo, error) {
       addEvents([
-        ReflexEvent(`${exception_state_name}.handle_frontend_exception`, {
+        ReflexEvent(handle_frontend_exception, {
           info: error.name + ": " + error.message + "\n" + error.stack,
           component_stack: "",
         }),
@@ -962,7 +964,7 @@ export const useEventLoop = (
     //https://github.com/mknichel/javascript-errors?tab=readme-ov-file#promise-rejection-events
     window.onunhandledrejection = function (event) {
       addEvents([
-        ReflexEvent(`${exception_state_name}.handle_frontend_exception`, {
+        ReflexEvent(handle_frontend_exception, {
           info:
             event.reason?.name +
             ": " +
@@ -1027,10 +1029,9 @@ export const useEventLoop = (
       if (storage_to_state_map[e.key]) {
         const vars = {};
         vars[storage_to_state_map[e.key]] = e.newValue;
-        const event = ReflexEvent(
-          `${state_name}.reflex___state____update_vars_internal_state.update_vars_internal`,
-          { vars: vars },
-        );
+        const event = ReflexEvent(update_vars_internal, {
+          vars: vars,
+        });
         addEvents([event], e);
       }
     };
@@ -1065,7 +1066,7 @@ export const useEventLoop = (
     }
 
     // Equivalent to routeChangeStart - runs when navigation begins
-    const main_state_dispatch = dispatch["reflex___state____state"];
+    const main_state_dispatch = dispatch[main_state_name];
     if (main_state_dispatch !== undefined) {
       main_state_dispatch({ is_hydrated_rx_state_: false });
     }

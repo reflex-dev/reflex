@@ -1952,7 +1952,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     prev_exp_val = ""
     for exp_index, exp_val in enumerate(exp_vals):
         on_load_internal = _event(
-            name=f"{OnLoadInternalState.get_full_name()}.{constants.CompileVars.ON_LOAD_INTERNAL.rpartition('.')[2]}",
+            name=f"{OnLoadInternalState.get_full_name()}.on_load_internal",
             val=exp_val,
         )
         exp_router = RouterData.from_router_data(on_load_internal.router_data)

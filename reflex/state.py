@@ -36,6 +36,7 @@ from reflex_base.event import (
     EventHandler,
     EventSpec,
     call_script,
+    typing_event,
 )
 from reflex_base.utils.exceptions import (
     ComputedVarShadowsBaseVarsError,
@@ -624,16 +625,20 @@ class BaseState(EvenMoreBasicBaseState):
         cls,
         name: str,
         fn: Callable,
-    ):
+    ) -> EventHandler:
         """Add an event handler dynamically to the state.
 
         Args:
             name: The name of the event handler.
             fn: The function to call when the event is triggered.
+
+        Returns:
+            The created EventHandler instance.
         """
         handler = cls._create_event_handler(fn)
         cls.event_handlers[name] = handler
         setattr(cls, name, handler)
+        return handler
 
     @staticmethod
     def _copy_fn(fn: Callable) -> Callable:
@@ -960,13 +965,21 @@ class BaseState(EvenMoreBasicBaseState):
     @classmethod
     @functools.lru_cache
     def get_name(cls) -> str:
-        """Get the name of the state.
+        """Get the user-visible name of the state.
+
+        Defers to the active :class:`~reflex_base.registry.NameResolver`
+        (e.g. ``minify.json`` rewrites), falling back to the built-in
+        snake-cased ``module___ClassName`` when no context is attached.
 
         Returns:
-            The name of the state.
+            The resolved name of the state.
         """
-        module = cls.__module__.replace(".", "___")
-        return format.to_snake_case(f"{module}___{cls.__name__}")
+        from reflex_base.registry import RegistrationContext
+
+        ctx = RegistrationContext.try_get()
+        if ctx is None:
+            return RegistrationContext.default_state_name(cls)
+        return ctx.get_state_name(cls)
 
     @classmethod
     @functools.lru_cache
@@ -984,11 +997,16 @@ class BaseState(EvenMoreBasicBaseState):
 
     @classmethod
     @functools.lru_cache
-    def get_class_substate(cls, path: Sequence[str] | str) -> type[BaseState]:
+    def get_class_substate(
+        cls, path: Sequence[str] | str, _skip_self: bool = True
+    ) -> type[BaseState]:
         """Get the class substate.
 
         Args:
             path: The path to the substate.
+            _skip_self: Internal recursion flag; leave at the default. Allows
+                ``"a.b.b"`` to resolve to a child that shares its parent's
+                minified name.
 
         Returns:
             The class substate.
@@ -1001,13 +1019,13 @@ class BaseState(EvenMoreBasicBaseState):
 
         if len(path) == 0:
             return cls
-        if path[0] == cls.get_name():
+        if _skip_self and path[0] == cls.get_name():
             if len(path) == 1:
                 return cls
             path = path[1:]
         for substate in cls.get_substates():
             if path[0] == substate.get_name():
-                return substate.get_class_substate(path[1:])
+                return substate.get_class_substate(path[1:], _skip_self=False)
         msg = f"Invalid path: {path}"
         raise ValueError(msg)
 
@@ -1153,7 +1171,9 @@ class BaseState(EvenMoreBasicBaseState):
     @classmethod
     def _create_setvar(cls):
         """Create the setvar method for the state."""
-        cls.setvar = cls.event_handlers["setvar"] = EventHandlerSetVar(state_cls=cls)
+        cls.setvar = cls.event_handlers[constants.event.SETVAR] = EventHandlerSetVar(
+            state_cls=cls
+        )
 
     @classmethod
     def _create_setter(cls, name: str, prop: Var):
@@ -1511,11 +1531,14 @@ class BaseState(EvenMoreBasicBaseState):
         for substate in self.substates.values():
             substate._reset_client_storage()
 
-    def get_substate(self, path: Sequence[str]) -> BaseState:
+    def get_substate(self, path: Sequence[str], _skip_self: bool = True) -> BaseState:
         """Get the substate.
 
         Args:
             path: The path to the substate.
+            _skip_self: Internal recursion flag; leave at the default. Allows
+                ``"a.b.b"`` to resolve to a child that shares its parent's
+                minified name.
 
         Returns:
             The substate.
@@ -1525,14 +1548,14 @@ class BaseState(EvenMoreBasicBaseState):
         """
         if len(path) == 0:
             return self
-        if path[0] == self.get_name():
+        if _skip_self and path[0] == self.get_name():
             if len(path) == 1:
                 return self
             path = path[1:]
         if path[0] not in self.substates:
             msg = f"Invalid path: {path}"
             raise ValueError(msg)
-        return self.substates[path[0]].get_substate(path[1:])
+        return self.substates[path[0]].get_substate(path[1:], _skip_self=False)
 
     @classmethod
     def _get_potentially_dirty_states(cls) -> set[type[BaseState]]:
@@ -2263,7 +2286,7 @@ class FrontendEventExceptionState(State):
         ),
     ]
 
-    @event
+    @typing_event
     def handle_frontend_exception(
         self, info: str, component_stack: str
     ) -> Iterator[EventSpec]:
@@ -2299,6 +2322,7 @@ class FrontendEventExceptionState(State):
 class UpdateVarsInternalState(State):
     """Substate for handling internal state var updates."""
 
+    @typing_event
     async def update_vars_internal(self, vars: dict[str, Any]) -> None:
         """Apply updates to fully qualified state vars.
 
@@ -2329,6 +2353,7 @@ class OnLoadInternalState(State):
     # Cannot properly annotate this as `App` due to circular import issues.
     _app_ref: ClassVar[Any] = None
 
+    @typing_event
     def on_load_internal(self) -> list[Event | EventSpec | event.EventCallback] | None:
         """Queue on_load handlers for the current page.
 
