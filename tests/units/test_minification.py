@@ -22,9 +22,8 @@ from reflex.minify import (
     get_minify_config,
     get_state_full_path,
     int_to_minified_name,
-    is_event_minify_enabled,
     is_minify_enabled,
-    is_state_minify_enabled,
+    is_mode_enabled,
     minified_name_to_int,
     save_minify_config,
     sync_minify_config,
@@ -131,6 +130,33 @@ def cli_runner(monkeypatch: pytest.MonkeyPatch) -> CliRunner:
 
     monkeypatch.setattr(prerequisites, "get_compiled_app", lambda *a, **kw: mock.Mock())
     return CliRunner()
+
+
+def _stub_resolver(
+    *,
+    state_name: str | None = None,
+    target: type[BaseState] = State,
+    handler_prefix: str | None = None,
+) -> NameResolver:
+    """Build a tiny one-off :class:`NameResolver` for tests.
+
+    Args:
+        state_name: Override returned for ``target`` (else ``None``).
+        target: Which state class the override scopes to.
+        handler_prefix: When set, prefixes every handler name.
+
+    Returns:
+        A resolver with the requested behavior.
+    """
+
+    class _Stub:
+        def resolve_state_name(self, state_cls):
+            return state_name if state_cls is target else None
+
+        def resolve_handler_name(self, state_cls, handler_name):
+            return f"{handler_prefix}{handler_name}" if handler_prefix else None
+
+    return _Stub()
 
 
 class TestIntToMinifiedName:
@@ -266,7 +292,7 @@ class TestMinifyConfig:
         clear_config_cache()
 
         with pytest.raises(ValueError, match=r"Unsupported.*version"):
-            is_state_minify_enabled()
+            is_mode_enabled("REFLEX_MINIFY_STATES")
 
     def test_missing_states_raises(self, temp_minify_json, monkeypatch):
         """Test that missing 'states' key raises ValueError."""
@@ -279,7 +305,7 @@ class TestMinifyConfig:
         clear_config_cache()
 
         with pytest.raises(ValueError, match="'states' must be"):
-            is_state_minify_enabled()
+            is_mode_enabled("REFLEX_MINIFY_STATES")
 
 
 class TestGenerateMinifyConfig:
@@ -488,47 +514,34 @@ class TestSyncMinifyConfig:
 class TestStateMinification:
     """Tests for state name minification with minify.json."""
 
-    def test_state_uses_full_name_without_config(self, temp_minify_json):
-        """Test that states use full names when no minify.json exists."""
-
-        class TestState(BaseState):
-            pass
-
-        # Should be the full name (snake_case module___class)
-        assert "test_state" in TestState.get_name().lower()
-
-    def test_state_uses_minified_name_with_config(self, temp_minify_json, monkeypatch):
-        """Test that states use minified names when minify.json exists and env var is enabled."""
-        _set_minify_modes(monkeypatch, states=MinifyMode.ENABLED)
-
-        class TestState(BaseState):
-            pass
-
-        _install_config(states={get_state_full_path(TestState): "f"})
-
-        assert TestState.get_name() == "f"
-
-    def test_state_uses_full_name_when_env_disabled(
-        self, temp_minify_json, monkeypatch
+    @pytest.mark.parametrize(
+        ("mode", "expect_minified"),
+        [(None, False), (MinifyMode.ENABLED, True), (MinifyMode.DISABLED, False)],
+    )
+    def test_state_name_resolution(
+        self, temp_minify_json, monkeypatch, mode, expect_minified
     ):
-        """Test that states use full names when env var is disabled even with minify.json."""
-        _set_minify_modes(monkeypatch, states=MinifyMode.DISABLED)
+        """Minified name only when env is ENABLED and config has the entry."""
+        if mode is not None:
+            _set_minify_modes(monkeypatch, states=mode)
 
         class TestState(BaseState):
             pass
 
-        _install_config(states={get_state_full_path(TestState): "f"})
+        if mode is not None:
+            _install_config(states={get_state_full_path(TestState): "f"})
 
         name = TestState.get_name()
-        assert name != "f"
-        assert "test_state" in name.lower()
+        assert (name == "f") is expect_minified
+        if not expect_minified:
+            assert "test_state" in name.lower()
 
 
 class TestEventMinification:
     """Tests for event handler name minification with minify.json."""
 
     def test_event_uses_full_name_without_config(self, temp_minify_json):
-        """Test that event handlers use full names when no minify.json exists."""
+        """No minify.json → handlers keep their Python names."""
         import reflex as rx
         from reflex.utils.format import get_event_handler_parts
 
@@ -537,66 +550,56 @@ class TestEventMinification:
             def my_handler(self):
                 pass
 
-        handler = TestState.event_handlers["my_handler"]
-        _, event_name = get_event_handler_parts(handler)
+        _, event_name = get_event_handler_parts(TestState.event_handlers["my_handler"])
         assert event_name == "my_handler"
 
     def test_event_uses_minified_name_with_config(self, temp_minify_json, monkeypatch):
-        """Test that event handlers use minified names when minify.json exists and env var is enabled."""
+        """Handler name follows the config when ``REFLEX_MINIFY_EVENTS`` is on."""
         import reflex as rx
         from reflex.utils.format import get_event_handler_parts
 
         _set_minify_modes(monkeypatch, events=MinifyMode.ENABLED)
-        # The config must exist before the class is defined: registration
-        # captures the resolved name once during __init_subclass__.
-        state_path = "tests.units.test_minification.State.TestStateWithMinifiedEvent"
+        state_path = "tests.units.test_minification.State.TestStateMinifiedEvent"
         _install_config(
             states={state_path: "b"},
             events={state_path: {"my_handler": "d"}},
             include_state_root=True,
         )
 
-        class TestStateWithMinifiedEvent(State):
+        class TestStateMinifiedEvent(State):
             @rx.event
             def my_handler(self):
                 pass
 
-        assert get_state_full_path(TestStateWithMinifiedEvent) == state_path
-        assert _resolved_event_id(TestStateWithMinifiedEvent, "my_handler") == "d"
-
-        handler = TestStateWithMinifiedEvent.event_handlers["my_handler"]
-        _, event_name = get_event_handler_parts(handler)
-        assert event_name == "d"
+        _, name = get_event_handler_parts(
+            TestStateMinifiedEvent.event_handlers["my_handler"]
+        )
+        assert name == "d"
 
     def test_event_uses_full_name_when_env_disabled(
         self, temp_minify_json, monkeypatch
     ):
-        """Test that event handlers use full names when env var is disabled even with minify.json."""
+        """``REFLEX_MINIFY_EVENTS=disabled`` keeps full handler names."""
         import reflex as rx
         from reflex.utils.format import get_event_handler_parts
 
         _set_minify_modes(monkeypatch, events=MinifyMode.DISABLED)
-        state_path = (
-            "tests.units.test_minification.State.TestStateWithMinifiedEventDisabled"
-        )
+        state_path = "tests.units.test_minification.State.TestStateMinifiedEventOff"
         _install_config(
             states={state_path: "b"},
             events={state_path: {"my_handler": "d"}},
             include_state_root=True,
         )
 
-        class TestStateWithMinifiedEventDisabled(State):
+        class TestStateMinifiedEventOff(State):
             @rx.event
             def my_handler(self):
                 pass
 
-        assert (
-            _resolved_event_id(TestStateWithMinifiedEventDisabled, "my_handler") is None
+        _, name = get_event_handler_parts(
+            TestStateMinifiedEventOff.event_handlers["my_handler"]
         )
-
-        handler = TestStateWithMinifiedEventDisabled.event_handlers["my_handler"]
-        _, event_name = get_event_handler_parts(handler)
-        assert event_name == "my_handler"
+        assert name == "my_handler"
 
 
 class TestDynamicHandlerMinification:
@@ -756,73 +759,34 @@ class TestDynamicHandlerMinification:
 class TestMinifyModeEnvVars:
     """Tests for REFLEX_MINIFY_STATES and REFLEX_MINIFY_EVENTS env vars."""
 
-    def test_state_minify_disabled_by_default(self, temp_minify_json):
-        """Test that state minification is disabled by default."""
-        _install_config(states={"test.module.MyState": "a"})
-        assert is_state_minify_enabled() is False
+    @pytest.mark.parametrize("var", ["REFLEX_MINIFY_STATES", "REFLEX_MINIFY_EVENTS"])
+    def test_disabled_by_default(self, temp_minify_json, var):
+        """Both modes default to disabled even with a config present."""
+        _install_config(states={"x": "a"}, events={"x": {"h": "a"}})
+        assert is_mode_enabled(var) is False
 
-    def test_event_minify_disabled_by_default(self, temp_minify_json):
-        """Test that event minification is disabled by default."""
-        _install_config(events={"test.module.MyState": {"handler": "a"}})
-        assert is_event_minify_enabled() is False
-
-    def test_state_minify_enabled_with_env_and_config(
-        self, temp_minify_json, monkeypatch
-    ):
-        """Test that state minification is enabled when env var is enabled and config exists."""
-        _set_minify_modes(monkeypatch, states=MinifyMode.ENABLED)
-        _install_config(states={"test.module.MyState": "a"})
-        assert is_state_minify_enabled() is True
-
-    def test_event_minify_enabled_with_env_and_config(
-        self, temp_minify_json, monkeypatch
-    ):
-        """Test that event minification is enabled when env var is enabled and config exists."""
-        _set_minify_modes(monkeypatch, events=MinifyMode.ENABLED)
-        _install_config(events={"test.module.MyState": {"handler": "a"}})
-        assert is_event_minify_enabled() is True
-
-    def test_state_minify_disabled_without_config(self, temp_minify_json, monkeypatch):
-        """Test that state minification is disabled when env var is enabled but no config exists."""
-        _set_minify_modes(monkeypatch, states=MinifyMode.ENABLED)
+    @pytest.mark.parametrize("var", ["REFLEX_MINIFY_STATES", "REFLEX_MINIFY_EVENTS"])
+    def test_enabled_requires_env_and_config(self, temp_minify_json, monkeypatch, var):
+        """Each mode flips True only when its env var is on AND a config exists."""
+        monkeypatch.setenv(getattr(environment, var).name, MinifyMode.ENABLED.value)
         clear_config_cache()
-        assert is_state_minify_enabled() is False
+        assert is_mode_enabled(var) is False  # env on, no config
+        _install_config(states={"x": "a"}, events={"x": {"h": "a"}})
+        assert is_mode_enabled(var) is True
 
-    def test_event_minify_disabled_without_config(self, temp_minify_json, monkeypatch):
-        """Test that event minification is disabled when env var is enabled but no config exists."""
-        _set_minify_modes(monkeypatch, events=MinifyMode.ENABLED)
-        clear_config_cache()
-        assert is_event_minify_enabled() is False
-
-    def test_independent_state_and_event_toggles(self, temp_minify_json, monkeypatch):
-        """Test that state and event minification can be toggled independently."""
+    def test_modes_toggle_independently(self, temp_minify_json, monkeypatch):
+        """States can be on while events stay off (or vice versa)."""
         _set_minify_modes(
             monkeypatch, states=MinifyMode.ENABLED, events=MinifyMode.DISABLED
         )
-        _install_config(
-            states={"test.module.MyState": "a"},
-            events={"test.module.MyState": {"handler": "a"}},
-        )
-        assert is_state_minify_enabled() is True
-        assert is_event_minify_enabled() is False
-        assert is_minify_enabled() is True
-
-    def test_is_minify_enabled_true_when_either_enabled(
-        self, temp_minify_json, monkeypatch
-    ):
-        """Test that is_minify_enabled returns True when either state or event is enabled."""
-        _set_minify_modes(
-            monkeypatch, states=MinifyMode.DISABLED, events=MinifyMode.ENABLED
-        )
-        _install_config(events={"test.module.MyState": {"handler": "a"}})
+        _install_config(states={"x": "a"}, events={"x": {"h": "a"}})
+        assert is_mode_enabled("REFLEX_MINIFY_STATES") is True
+        assert is_mode_enabled("REFLEX_MINIFY_EVENTS") is False
         assert is_minify_enabled() is True
 
     def test_is_minify_enabled_false_when_both_disabled(self, temp_minify_json):
-        """Test that is_minify_enabled returns False when both are disabled (default)."""
-        _install_config(
-            states={"test.module.MyState": "a"},
-            events={"test.module.MyState": {"handler": "a"}},
-        )
+        """Default (no env) → ``is_minify_enabled`` is False even with config."""
+        _install_config(states={"x": "a"}, events={"x": {"h": "a"}})
         assert is_minify_enabled() is False
 
 
@@ -1005,62 +969,25 @@ class TestNameResolverProtocol:
         ctx = RegistrationContext.get()
         assert ctx.get_handler_name(State, "some_handler") == "some_handler"
 
-    def test_set_name_resolver_propagates_through_get_name(self, monkeypatch):
-        """Installing a custom resolver swaps ``BaseState.get_name`` output.
-
-        The resolver overrides only ``State`` so other registered classes
-        retain their default names — without this scoping, every class would
-        collapse to one entry in the registry's name-keyed dicts.
-        """
-
-        class FixedStateNameResolver:
-            def resolve_state_name(self, state_cls):
-                return "fixed_name" if state_cls is State else None
-
-            def resolve_handler_name(self, state_cls, handler_name):
-                return None
-
-        with _temporary_resolver(FixedStateNameResolver()):
+    def test_set_name_resolver_propagates_through_get_name(self):
+        """A custom resolver swaps ``BaseState.get_name`` for the targeted class."""
+        with _temporary_resolver(_stub_resolver(state_name="fixed_name")):
             assert State.get_name() == "fixed_name"
 
     def test_set_name_resolver_propagates_through_format_event_handler(self):
-        """Installing a custom resolver swaps the formatted handler name."""
+        """A custom resolver swaps the formatted handler name."""
         from reflex.state import OnLoadInternalState
         from reflex.utils.format import format_event_handler
 
-        class HandlerPrefixResolver:
-            def resolve_state_name(self, state_cls):
-                return None
-
-            def resolve_handler_name(self, state_cls, handler_name):
-                return f"px_{handler_name}"
-
-        with _temporary_resolver(HandlerPrefixResolver()):
+        with _temporary_resolver(_stub_resolver(handler_prefix="px_")):
             formatted = format_event_handler(OnLoadInternalState.on_load_internal)  # pyright: ignore[reportArgumentType]
             assert formatted.endswith(".px_on_load_internal")
 
     def test_resolver_swap_clears_lru_caches(self):
-        """``set_name_resolver`` invalidates per-class name caches so that
-        ``get_full_name`` reflects the new resolver immediately.
-        """
-
-        class A:
-            def resolve_state_name(self, state_cls):
-                return "first" if state_cls is State else None
-
-            def resolve_handler_name(self, state_cls, handler_name):
-                return None
-
-        class B:
-            def resolve_state_name(self, state_cls):
-                return "second" if state_cls is State else None
-
-            def resolve_handler_name(self, state_cls, handler_name):
-                return None
-
-        with _temporary_resolver(A()) as ctx:
+        """``set_name_resolver`` invalidates per-class name caches immediately."""
+        with _temporary_resolver(_stub_resolver(state_name="first")) as ctx:
             assert State.get_full_name() == "first"
-            ctx.set_name_resolver(B())
+            ctx.set_name_resolver(_stub_resolver(state_name="second"))
             assert State.get_full_name() == "second"
 
     def test_chain_of_resolvers(self):
@@ -1086,14 +1013,8 @@ class TestNameResolverProtocol:
                         return v
                 return None
 
-        class FirstOnly:
-            def resolve_state_name(self, state_cls):
-                return "from_first" if state_cls is State else None
-
-            def resolve_handler_name(self, state_cls, handler_name):
-                return None
-
-        with _temporary_resolver(Chain(FirstOnly(), DefaultNameResolver())):
+        chain = Chain(_stub_resolver(state_name="from_first"), DefaultNameResolver())
+        with _temporary_resolver(chain):
             assert State.get_name() == "from_first"
 
 

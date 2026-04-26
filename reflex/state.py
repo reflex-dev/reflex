@@ -36,6 +36,7 @@ from reflex_base.event import (
     EventHandler,
     EventSpec,
     call_script,
+    typing_event,
 )
 from reflex_base.utils.exceptions import (
     ComputedVarShadowsBaseVarsError,
@@ -2268,12 +2269,6 @@ LAST_RELOADED_KEY = "reflex_last_reloaded_on_error"
 class FrontendEventExceptionState(State):
     """Substate for handling frontend exceptions."""
 
-    # ``__init_subclass__`` replaces the method below with an ``EventHandler``
-    # instance on the class. Splitting via ``TYPE_CHECKING`` lets callers
-    # (e.g. ``format_event_handler``) see the post-rewrite type.
-    if TYPE_CHECKING:
-        handle_frontend_exception: EventHandler
-
     # If the frontend error message contains any of these strings, automatically reload the page.
     auto_reload_on_errors: ClassVar[list[re.Pattern]] = [
         re.compile(  # Chrome/Edge
@@ -2291,68 +2286,62 @@ class FrontendEventExceptionState(State):
         ),
     ]
 
-    if not TYPE_CHECKING:
+    @typing_event
+    def handle_frontend_exception(
+        self, info: str, component_stack: str
+    ) -> Iterator[EventSpec]:
+        """Handle frontend exceptions.
 
-        @event
-        def handle_frontend_exception(
-            self, info: str, component_stack: str
-        ) -> Iterator[EventSpec]:
-            """Handle frontend exceptions.
+        If a frontend exception handler is provided, it will be called.
+        Otherwise, the default frontend exception handler will be called.
 
-            If a frontend exception handler is provided, it will be called.
-            Otherwise, the default frontend exception handler will be called.
+        Args:
+            info: The exception information.
+            component_stack: The stack trace of the component where the exception occurred.
 
-            Args:
-                info: The exception information.
-                component_stack: The stack trace of the component where the exception occurred.
-
-            Yields:
-                Optional auto-reload event for certain errors outside cooldown period.
-            """
-            # Handle automatic reload for certain errors.
-            if type(self).auto_reload_on_errors and any(
-                error.search(info) for error in type(self).auto_reload_on_errors
-            ):
-                yield call_script(
-                    f"const last_reload = parseInt(window.sessionStorage.getItem('{LAST_RELOADED_KEY}')) || 0;"
-                    f"if (Date.now() - last_reload > {environment.REFLEX_AUTO_RELOAD_COOLDOWN_TIME_MS.get()})"
-                    "{"
-                    f"window.sessionStorage.setItem('{LAST_RELOADED_KEY}', Date.now().toString());"
-                    "window.location.reload();"
-                    "}"
-                )
-            prerequisites.get_and_validate_app().app.frontend_exception_handler(
-                Exception(info)
+        Yields:
+            Optional auto-reload event for certain errors outside cooldown period.
+        """
+        # Handle automatic reload for certain errors.
+        if type(self).auto_reload_on_errors and any(
+            error.search(info) for error in type(self).auto_reload_on_errors
+        ):
+            yield call_script(
+                f"const last_reload = parseInt(window.sessionStorage.getItem('{LAST_RELOADED_KEY}')) || 0;"
+                f"if (Date.now() - last_reload > {environment.REFLEX_AUTO_RELOAD_COOLDOWN_TIME_MS.get()})"
+                "{"
+                f"window.sessionStorage.setItem('{LAST_RELOADED_KEY}', Date.now().toString());"
+                "window.location.reload();"
+                "}"
             )
+        prerequisites.get_and_validate_app().app.frontend_exception_handler(
+            Exception(info)
+        )
 
 
 class UpdateVarsInternalState(State):
     """Substate for handling internal state var updates."""
 
-    # See ``FrontendEventExceptionState`` for why this is split.
-    if TYPE_CHECKING:
-        update_vars_internal: EventHandler
-    else:
+    @typing_event
+    async def update_vars_internal(self, vars: dict[str, Any]) -> None:
+        """Apply updates to fully qualified state vars.
 
-        async def update_vars_internal(self, vars: dict[str, Any]) -> None:
-            """Apply updates to fully qualified state vars.
+        The keys in `vars` should be in the form of `{state.get_full_name()}.{var_name}`,
+        and each value will be set on the appropriate substate instance.
 
-            The keys in `vars` should be in the form of `{state.get_full_name()}.{var_name}`,
-            and each value will be set on the appropriate substate instance.
+        This function is primarily used to apply cookie and local storage
+        updates from the frontend to the appropriate substate.
 
-            This function is primarily used to apply cookie and local storage
-            updates from the frontend to the appropriate substate.
-
-            Args:
-                vars: The fully qualified vars and values to update.
-            """
-            for var, value in vars.items():
-                state_name, _, var_name = var.rpartition(".")
-                var_name = var_name.removesuffix(FIELD_MARKER)
-                var_state_cls = State.get_class_substate(state_name)
-                if var_state_cls._is_client_storage(var_name):
-                    var_state = await self.get_state(var_state_cls)
-                    setattr(var_state, var_name, value)
+        Args:
+            vars: The fully qualified vars and values to update.
+        """
+        for var, value in vars.items():
+            state_name, _, var_name = var.rpartition(".")
+            var_name = var_name.removesuffix(FIELD_MARKER)
+            var_state_cls = State.get_class_substate(state_name)
+            if var_state_cls._is_client_storage(var_name):
+                var_state = await self.get_state(var_state_cls)
+                setattr(var_state, var_name, value)
 
 
 class OnLoadInternalState(State):
@@ -2361,47 +2350,42 @@ class OnLoadInternalState(State):
     This is a separate substate to avoid deserializing the entire state tree for every page navigation.
     """
 
-    # See ``FrontendEventExceptionState`` for why this is split.
-    if TYPE_CHECKING:
-        on_load_internal: EventHandler
-
     # Cannot properly annotate this as `App` due to circular import issues.
     _app_ref: ClassVar[Any] = None
 
-    if not TYPE_CHECKING:
+    @typing_event
+    def on_load_internal(self) -> list[Event | EventSpec | event.EventCallback] | None:
+        """Queue on_load handlers for the current page.
 
-        def on_load_internal(
-            self,
-        ) -> list[Event | EventSpec | event.EventCallback] | None:
-            """Queue on_load handlers for the current page.
+        Returns:
+            The list of events to queue for on load handling.
 
-            Returns:
-                The list of events to queue for on load handling.
+        Raises:
+            TypeError: If the app reference is not of type App.
+        """
+        from reflex.app import App
 
-            Raises:
-                TypeError: If the app reference is not of type App.
-            """
-            from reflex.app import App
-
-            app = type(self)._app_ref or prerequisites.get_and_validate_app().app
-            if not isinstance(app, App):
-                msg = f"Expected app to be of type {App.__name__}, got {type(app).__name__}."
-                raise TypeError(msg)
-            # Cache the app reference for subsequent calls.
-            if type(self)._app_ref is None:
-                type(self)._app_ref = app
-            load_events = app.get_load_events(self.router.url.path)
-            if not load_events:
-                self.is_hydrated = True
-                return None  # Fast path for navigation with no on_load events defined.
-            self.is_hydrated = False
-            return [
-                *Event.from_event_type(
-                    load_events,
-                    router_data=self.router_data,
-                ),
-                State.set_is_hydrated(True),
-            ]
+        app = type(self)._app_ref or prerequisites.get_and_validate_app().app
+        if not isinstance(app, App):
+            msg = (
+                f"Expected app to be of type {App.__name__}, got {type(app).__name__}."
+            )
+            raise TypeError(msg)
+        # Cache the app reference for subsequent calls.
+        if type(self)._app_ref is None:
+            type(self)._app_ref = app
+        load_events = app.get_load_events(self.router.url.path)
+        if not load_events:
+            self.is_hydrated = True
+            return None  # Fast path for navigation with no on_load events defined.
+        self.is_hydrated = False
+        return [
+            *Event.from_event_type(
+                load_events,
+                router_data=self.router_data,
+            ),
+            State.set_is_hydrated(True),
+        ]
 
 
 class ComponentState(State, mixin=True):

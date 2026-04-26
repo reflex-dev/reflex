@@ -470,6 +470,26 @@ class EventHandler(EventActionsMixin):
         )
 
 
+if TYPE_CHECKING:
+
+    def typing_event(fn: Callable[..., Any]) -> EventHandler:
+        """Mark ``fn`` so pyright sees it as the ``EventHandler`` that
+        ``BaseState.__init_subclass__`` will rewrite it into. No-op at runtime.
+
+        Args:
+            fn: The method to mark.
+
+        Returns:
+            ``fn`` typed as :class:`EventHandler`.
+        """
+        ...
+
+else:
+
+    def typing_event(fn: Callable[..., Any]) -> Callable[..., Any]:  # noqa: D103
+        return fn
+
+
 @dataclasses.dataclass(
     init=True,
     frozen=True,
@@ -2833,6 +2853,7 @@ class EventNamespace:
 
 event = EventNamespace
 event.event = event  # pyright: ignore[reportAttributeAccessIssue]
+event.typing_event = staticmethod(typing_event)  # pyright: ignore[reportAttributeAccessIssue]
 _this = sys.modules[__name__]
 event.__path__ = _this.__path__  # pyright: ignore[reportAttributeAccessIssue]
 event.__spec__ = _this.__spec__  # pyright: ignore[reportAttributeAccessIssue]

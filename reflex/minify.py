@@ -108,18 +108,8 @@ def get_minify_config() -> MinifyConfig | None:
     return _load_minify_config_uncached()
 
 
-def is_minify_enabled() -> bool:
-    """Whether either state or event minification is enabled.
-
-    Returns:
-        ``True`` if either ``REFLEX_MINIFY_STATES`` or ``REFLEX_MINIFY_EVENTS``
-        is on and a config exists.
-    """
-    return is_state_minify_enabled() or is_event_minify_enabled()
-
-
 @functools.cache
-def _is_mode_enabled(env_var_name: str) -> bool:
+def is_mode_enabled(env_var_name: str) -> bool:
     """Whether the given ``REFLEX_MINIFY_*`` env var is on and a config exists.
 
     Args:
@@ -135,22 +125,16 @@ def _is_mode_enabled(env_var_name: str) -> bool:
     return env_var.get() == MinifyMode.ENABLED and get_minify_config() is not None
 
 
-def is_state_minify_enabled() -> bool:
-    """Whether state-id minification is enabled.
+def is_minify_enabled() -> bool:
+    """Whether either state or event minification is enabled.
 
     Returns:
-        ``True`` if ``REFLEX_MINIFY_STATES=enabled`` and ``minify.json`` exists.
+        ``True`` when ``REFLEX_MINIFY_STATES`` or ``REFLEX_MINIFY_EVENTS`` is
+        on and ``minify.json`` exists.
     """
-    return _is_mode_enabled("REFLEX_MINIFY_STATES")
-
-
-def is_event_minify_enabled() -> bool:
-    """Whether event-id minification is enabled.
-
-    Returns:
-        ``True`` if ``REFLEX_MINIFY_EVENTS=enabled`` and ``minify.json`` exists.
-    """
-    return _is_mode_enabled("REFLEX_MINIFY_EVENTS")
+    return is_mode_enabled("REFLEX_MINIFY_STATES") or is_mode_enabled(
+        "REFLEX_MINIFY_EVENTS"
+    )
 
 
 def save_minify_config(config: MinifyConfig) -> None:
@@ -316,7 +300,7 @@ def clear_config_cache() -> None:
     ``REFLEX_MINIFY_*`` env vars at runtime.
     """
     get_minify_config.cache_clear()
-    _is_mode_enabled.cache_clear()
+    is_mode_enabled.cache_clear()
     install_minify_resolver()
 
 
