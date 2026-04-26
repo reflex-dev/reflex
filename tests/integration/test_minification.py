@@ -156,18 +156,16 @@ def minify_enabled_app(
     app_module = "minify_enabled.minify_enabled"
     root_state_path = f"{app_module}.State.RootState"
     sub_state_path = f"{app_module}.State.RootState.SubState"
+    # Framework-internal :class:`State` is intentionally absent — the resolver
+    # never minifies it (its Vars are baked at framework-import time, before
+    # any user code can install a resolver).
     minify_config = {
         "version": 1,
         "states": {
-            # Base State needs an ID too since it's in the hierarchy
-            "reflex.state.State": "a",
-            # RootState extends State, so path is module.State.RootState
             root_state_path: "k",  # int_to_minified_name(10) = 'k'
-            # SubState extends RootState, so path is module.State.RootState.SubState
             sub_state_path: "l",  # int_to_minified_name(11) = 'l'
         },
         "events": {
-            # Events are now nested under their state path
             root_state_path: {
                 "increment": "f",  # int_to_minified_name(5) = 'f'
             },

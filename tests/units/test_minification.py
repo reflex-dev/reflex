@@ -813,9 +813,13 @@ class TestDynamicHandlerMinification:
             environment.REFLEX_MINIFY_STATES.name, MinifyMode.ENABLED.value
         )
         late_path = "tests.units.test_minification.State.LateBornState"
+        # NOTE: framework-internal states like ``reflex.state.State`` are never
+        # minified (their Var hooks are baked at framework-import time, well
+        # before any user resolver can run). The minified id only applies to
+        # the user-defined state class.
         config: MinifyConfig = {
             "version": SCHEMA_VERSION,
-            "states": {"reflex.state.State": "a", late_path: "lb"},
+            "states": {late_path: "lb"},
             "events": {},
         }
         save_minify_config(config)
@@ -827,7 +831,8 @@ class TestDynamicHandlerMinification:
         # Newly-registered class is keyed by its minified name in the registry.
         ctx = RegistrationContext.get()
         assert LateBornState.get_name() == "lb"
-        assert ctx.base_states.get("a.lb") is LateBornState
+        # State stays un-minified, so the parent prefix is its default snake form.
+        assert ctx.base_states.get(f"{State.get_full_name()}.lb") is LateBornState
 
 
 class TestMinifyModeEnvVars:
@@ -989,10 +994,11 @@ class TestMinifiedNameCollision:
         parent_path = get_state_full_path(ParentClassSubstateCollision)
         child_path = get_state_full_path(ChildClassSubstateCollision)
 
+        # Framework-internal :class:`State` is never minified, so we only map
+        # the user-defined classes.
         config: MinifyConfig = {
             "version": SCHEMA_VERSION,
             "states": {
-                "reflex.state.State": "a",
                 parent_path: "b",
                 child_path: "b",  # Same minified name as parent
             },
@@ -1007,11 +1013,12 @@ class TestMinifiedNameCollision:
         assert ParentClassSubstateCollision.get_name() == "b"
         assert ChildClassSubstateCollision.get_name() == "b"
 
-        # Full path should be a.b.b
-        assert ChildClassSubstateCollision.get_full_name() == "a.b.b"
+        # Full path is ``State.b.b`` (State stays un-minified).
+        state_prefix = State.get_full_name()
+        assert ChildClassSubstateCollision.get_full_name() == f"{state_prefix}.b.b"
 
-        # get_class_substate should resolve a.b.b to the child, not the parent.
-        resolved = State.get_class_substate("a.b.b")
+        # get_class_substate should resolve <state>.b.b to the child, not parent.
+        resolved = State.get_class_substate(f"{state_prefix}.b.b")
         assert resolved is ChildClassSubstateCollision
 
     def test_get_substate_with_parent_child_name_collision(
@@ -1040,10 +1047,10 @@ class TestMinifiedNameCollision:
         parent_path = get_state_full_path(ParentInstanceSubstateCollision)
         child_path = get_state_full_path(ChildInstanceSubstateCollision)
 
+        # Framework-internal :class:`State` is never minified.
         config: MinifyConfig = {
             "version": SCHEMA_VERSION,
             "states": {
-                "reflex.state.State": "a",
                 parent_path: "b",
                 child_path: "b",  # Same minified name as parent
             },
@@ -1057,8 +1064,8 @@ class TestMinifiedNameCollision:
         # Create a state instance tree
         root = State(_reflex_internal_init=True)  # type: ignore[call-arg]
 
-        # Instance get_substate should resolve a.b.b to ChildInstanceSubstateCollision
-        resolved = root.get_substate(["a", "b", "b"])
+        # Instance get_substate should resolve <state>.b.b to the collision child.
+        resolved = root.get_substate([State.get_name(), "b", "b"])
         assert type(resolved) is ChildInstanceSubstateCollision
 
 
@@ -1391,33 +1398,47 @@ class TestMinifyNameResolver:
 
     def test_state_lookup_caches(self):
         """Resolved state names are memoized after the first lookup."""
+
+        # Use a non-framework state — :func:`MinifyNameResolver` deliberately
+        # never minifies classes whose module starts with ``reflex.`` because
+        # their ``Var`` hooks are baked at framework-import time.
+        class UserStateResolverCacheTest(State):
+            pass
+
         config: MinifyConfig = {
             "version": SCHEMA_VERSION,
-            "states": {get_state_full_path(State): "rs"},
+            "states": {get_state_full_path(UserStateResolverCacheTest): "rs"},
             "events": {},
         }
         resolver = MinifyNameResolver(
             config=config, states_enabled=True, events_enabled=False
         )
-        assert resolver.resolve_state_name(State) == "rs"
+        assert resolver.resolve_state_name(UserStateResolverCacheTest) == "rs"
         # second call hits the cache
-        assert State in resolver._state_cache
-        assert resolver.resolve_state_name(State) == "rs"
+        assert UserStateResolverCacheTest in resolver._state_cache
+        assert resolver.resolve_state_name(UserStateResolverCacheTest) == "rs"
 
     def test_event_lookup_caches(self):
         """Resolved handler names are memoized per state class."""
+
+        # Use a non-framework state — see above.
+        class UserStateEventCacheTest(State):
+            pass
+
         config: MinifyConfig = {
             "version": SCHEMA_VERSION,
             "states": {},
-            "events": {get_state_full_path(State): {"foo": "f", "bar": "b"}},
+            "events": {
+                get_state_full_path(UserStateEventCacheTest): {"foo": "f", "bar": "b"}
+            },
         }
         resolver = MinifyNameResolver(
             config=config, states_enabled=False, events_enabled=True
         )
-        assert resolver.resolve_handler_name(State, "foo") == "f"
-        assert resolver.resolve_handler_name(State, "bar") == "b"
-        assert resolver.resolve_handler_name(State, "missing") is None
-        assert State in resolver._event_cache
+        assert resolver.resolve_handler_name(UserStateEventCacheTest, "foo") == "f"
+        assert resolver.resolve_handler_name(UserStateEventCacheTest, "bar") == "b"
+        assert resolver.resolve_handler_name(UserStateEventCacheTest, "missing") is None
+        assert UserStateEventCacheTest in resolver._event_cache
 
     def test_from_disk_handles_malformed_config(self, temp_minify_json):
         """``from_disk`` returns a usable resolver even when minify.json is bad."""

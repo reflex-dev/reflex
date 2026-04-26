@@ -182,6 +182,7 @@ def get_app(reload: bool = False) -> ModuleType:
     Raises:
         Exception: If an error occurs while getting the app module.
     """
+    from reflex.minify import ensure_minify_resolver_for_active_context
     from reflex.utils import telemetry
 
     try:
@@ -193,6 +194,15 @@ def get_app(reload: bool = False) -> ModuleType:
 
         module = config.module
         sys.path.insert(0, getcwd())  # noqa: PTH109
+        # Install the minify resolver into the current context before the
+        # user's module is imported so user-defined state classes register
+        # with their minified names from the start (``VarData.from_state``
+        # captures ``state.get_full_name()`` at class-definition time, so the
+        # resolver must be in place by then). One-shot per context — won't
+        # re-read ``minify.json`` on subsequent ``get_app`` calls (which can
+        # happen at runtime from a different cwd, e.g. the framework's
+        # ``OnLoadInternalState.on_load_internal`` fallback).
+        ensure_minify_resolver_for_active_context()
         app = (
             __import__(module, fromlist=(constants.CompileVars.APP,))
             if not config.app_module
@@ -264,14 +274,10 @@ def get_compiled_app(
     Returns:
         The compiled app based on the default config.
     """
-    from reflex.minify import install_minify_resolver
-
     app, app_module = get_and_validate_app(
         reload=reload, check_if_schema_up_to_date=check_if_schema_up_to_date
     )
-    # After app import (static states registered, re-keyed in one shot) and
-    # before page eval (dynamic states pick up minified names on registration).
-    install_minify_resolver()
+    # ``_compile`` installs the minify resolver itself before evaluating pages.
     app._compile(prerender_routes=prerender_routes, dry_run=dry_run, use_rich=use_rich)
     return app_module
 
