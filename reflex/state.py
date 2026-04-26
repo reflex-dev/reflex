@@ -494,7 +494,6 @@ class BaseState(EvenMoreBasicBaseState):
 
         super().__init_subclass__(**kwargs)
 
-        # Mixin states are not initialized
         if cls._mixin:
             return
 
@@ -1004,11 +1003,9 @@ class BaseState(EvenMoreBasicBaseState):
 
         Args:
             path: The path to the substate.
-            _skip_self: Internal recursion flag — leave at the default. Only
-                the root call strips a leading segment that matches
-                ``cls.get_name()``; recursion passes ``False`` so a child
-                that shares a minified name with its parent (``"a.b.b"``)
-                still resolves to the child.
+            _skip_self: Internal recursion flag; leave at the default. Allows
+                ``"a.b.b"`` to resolve to a child that shares its parent's
+                minified name.
 
         Returns:
             The class substate.
@@ -1538,11 +1535,9 @@ class BaseState(EvenMoreBasicBaseState):
 
         Args:
             path: The path to the substate.
-            _skip_self: Internal recursion flag — leave at the default. Only
-                the root call strips a leading segment that matches
-                ``self.get_name()``; recursion passes ``False`` so a child
-                that shares a minified name with its parent (``"a.b.b"``)
-                still resolves to the child.
+            _skip_self: Internal recursion flag; leave at the default. Allows
+                ``"a.b.b"`` to resolve to a child that shares its parent's
+                minified name.
 
         Returns:
             The substate.
@@ -2334,9 +2329,7 @@ class FrontendEventExceptionState(State):
 class UpdateVarsInternalState(State):
     """Substate for handling internal state var updates."""
 
-    # ``__init_subclass__`` replaces the method below with an ``EventHandler``
-    # instance on the class. Splitting via ``TYPE_CHECKING`` lets callers
-    # (e.g. ``format_event_handler``) see the post-rewrite type.
+    # See ``FrontendEventExceptionState`` for why this is split.
     if TYPE_CHECKING:
         update_vars_internal: EventHandler
     else:
@@ -2368,9 +2361,7 @@ class OnLoadInternalState(State):
     This is a separate substate to avoid deserializing the entire state tree for every page navigation.
     """
 
-    # ``__init_subclass__`` replaces the method below with an ``EventHandler``
-    # instance on the class. Splitting via ``TYPE_CHECKING`` lets callers
-    # (e.g. ``format_event_handler``) see the post-rewrite type.
+    # See ``FrontendEventExceptionState`` for why this is split.
     if TYPE_CHECKING:
         on_load_internal: EventHandler
 

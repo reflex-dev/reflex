@@ -35,22 +35,18 @@ class MinifyConfig(TypedDict):
 
 
 def _get_minify_json_path() -> Path:
-    """Get the path to the minify.json file.
-
-    Returns:
-        Path to minify.json in the current working directory.
-    """
+    """Return the path to ``minify.json`` in the current working directory."""
     return Path.cwd() / MINIFY_JSON
 
 
 def _load_minify_config_uncached() -> MinifyConfig | None:
-    """Load minify configuration from minify.json.
+    """Load and validate ``minify.json`` from disk.
 
     Returns:
-        The parsed configuration, or None if file doesn't exist.
+        The parsed config, or ``None`` if the file is absent.
 
     Raises:
-        ValueError: If the file exists but has an invalid format.
+        ValueError: If the file exists but is malformed.
     """
     path = _get_minify_json_path()
     if not path.exists():
@@ -196,13 +192,9 @@ class MinifyNameResolver:
 
     @classmethod
     def from_disk(cls) -> MinifyNameResolver:
-        """Build a resolver from the current ``minify.json`` and env vars.
+        """Build a resolver from ``minify.json`` (uncached) and env vars.
 
-        Bypasses the lru_cache on :func:`get_minify_config` so the snapshot
-        reflects the cwd at install time. A malformed config becomes
-        ``config=None`` (graceful degradation — the app still runs without
-        minification) and a warning is logged once per install so the user
-        notices.
+        Malformed configs degrade gracefully to ``config=None`` with a warning.
 
         Returns:
             A configured resolver.
@@ -224,7 +216,7 @@ class MinifyNameResolver:
         )
 
     def _is_minify_allowed(self, state_cls: type[BaseState], enabled: bool) -> bool:
-        """Whether minification applies to ``state_cls`` for the given mode.
+        """Whether ``state_cls`` is eligible for minification under the given mode.
 
         Args:
             state_cls: The state class being resolved.
@@ -289,10 +281,9 @@ def _is_framework_state(state_cls: type[BaseState]) -> bool:
 def install_minify_resolver() -> None:
     """Install a fresh :class:`MinifyNameResolver` into the active context.
 
-    Must run before any state class is registered:
-    :func:`reflex_base.vars.base.VarData.from_state` captures the state's
-    full name at Var-creation time, so a later install would leave dangling
-    references in the generated frontend.
+    Must run before any state class registers — :func:`VarData.from_state`
+    captures the state's full name at Var-creation time, so a later install
+    leaves dangling references in the generated frontend.
     """
     from reflex_base.registry import RegistrationContext
 
@@ -301,22 +292,20 @@ def install_minify_resolver() -> None:
 
 
 def ensure_minify_resolver_for_active_context() -> None:
-    """Install a :class:`MinifyNameResolver` for the active context if needed.
+    """Install a :class:`MinifyNameResolver` if one isn't already in place.
 
-    Idempotent in the steady state — safe to wire into hot paths
-    (e.g. :func:`reflex.utils.prerequisites.get_app`, which can be re-entered
-    at runtime from a different cwd than the one that loaded the config).
-    Re-installs only when something on disk could have changed: a config
-    appearing where there wasn't one, or a non-minify resolver in the slot.
+    Idempotent — safe to wire into hot paths like
+    :func:`reflex.utils.prerequisites.get_app`. Re-installs only when on-disk
+    state could have changed (config appearing, or non-minify resolver).
     """
     from reflex_base.registry import RegistrationContext
 
     ctx = RegistrationContext.ensure_context()
     if isinstance(ctx.name_resolver, MinifyNameResolver):
         if ctx.name_resolver.config is not None:
-            return  # already loaded with a config — no work to do
+            return
         if not _get_minify_json_path().exists():
-            return  # no config and none on disk; nothing changed
+            return
     ctx.set_name_resolver(MinifyNameResolver.from_disk())
 
 
