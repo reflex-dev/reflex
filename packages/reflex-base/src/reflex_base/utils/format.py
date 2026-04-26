@@ -762,19 +762,25 @@ def _replace_non_finite_floats(obj: Any) -> Any:
     return obj
 
 
-def orjson_dumps_socket(obj: Any) -> str:
+def orjson_dumps_socket(obj: Any, **kwargs: Any) -> str:
     """Serialize obj for socket emit, preserving non-finite floats via sentinels.
 
     Routes custom types through ``serializers.serialize`` (matching the
     stdlib ``json_dumps`` behavior) and substitutes sentinel strings for
     NaN/Infinity floats so the JS reviver in state.js can restore them.
 
+    Accepts and ignores ``**kwargs`` so the callable is compatible with
+    socket.io's encoder, which calls ``dumps(data, separators=(',', ':'))``.
+    orjson's output is already minified.
+
     Args:
         obj: The object to serialize.
+        kwargs: Ignored (compat with socket.io's encoder signature).
 
     Returns:
         A JSON string ready for socket emit.
     """
+    del kwargs  # orjson output is minified; socket.io's separators arg is moot.
     from reflex_base.utils import serializers
 
     try:
