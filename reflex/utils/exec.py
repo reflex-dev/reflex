@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
-import json
 import os
 import platform
 import re
@@ -21,6 +20,7 @@ from reflex_base.constants.base import LogLevel
 from reflex_base.environment import environment
 from reflex_base.utils import console
 from reflex_base.utils.decorator import once
+from reflex_base.utils.format import orjson_dumps, orjson_loads
 
 from reflex.utils import path_ops
 from reflex.utils.misc import get_module_path
@@ -39,11 +39,10 @@ def get_package_json_and_hash(package_json_path: Path) -> tuple[PackageJson, str
     Returns:
         A tuple containing the content of package.json as a dictionary and its SHA-256 hash.
     """
-    with package_json_path.open("r") as file:
-        json_data = json.load(file)
+    json_data = orjson_loads(package_json_path.read_bytes())
 
     # Calculate the hash
-    json_string = json.dumps(json_data, sort_keys=True)
+    json_string = orjson_dumps(json_data, sort_keys=True)
     hash_object = hashlib.sha256(json_string.encode())
     return (json_data, hash_object.hexdigest())
 

@@ -1,6 +1,5 @@
 // State management for Reflex web apps.
 import io from "socket.io-client";
-import JSON5 from "json5";
 import env from "$/env.json";
 import reflexEnvironment from "$/reflex.json";
 import Cookies from "universal-cookie";
@@ -436,6 +435,31 @@ const resolveSocket = (socket) => {
   return socket?.current ?? socket;
 };
 
+// Non-finite floats have no JSON literal, so the Python socket emit path
+// substitutes sentinel strings via reflex_base.utils.format and the reviver
+// below restores them after JSON.parse. The fallback rewriter handles bare
+// Infinity/-Infinity/NaN tokens emitted by stdlib json.dumps (kept for
+// defense-in-depth; orjson never emits bare tokens).
+const NAN_SENTINEL = "__reflex_nan__";
+const INF_SENTINEL = "__reflex_inf__";
+const NEG_INF_SENTINEL = "__reflex_neg_inf__";
+const NON_FINITE_FLOAT_RE = /"(?:[^"\\]|\\.)*"|-?\bInfinity\b|\bNaN\b/g;
+const NON_FINITE_REPLACEMENTS = {
+  Infinity: `"${INF_SENTINEL}"`,
+  "-Infinity": `"${NEG_INF_SENTINEL}"`,
+  NaN: `"${NAN_SENTINEL}"`,
+};
+const rewriteBareNonFiniteFloats = (str) =>
+  str.replace(NON_FINITE_FLOAT_RE, (match) =>
+    match[0] === '"' ? match : NON_FINITE_REPLACEMENTS[match],
+  );
+const reviveNonFiniteFloats = (_k, v) => {
+  if (v === NAN_SENTINEL) return NaN;
+  if (v === INF_SENTINEL) return Infinity;
+  if (v === NEG_INF_SENTINEL) return -Infinity;
+  return v;
+};
+
 /**
  * Queue events to be processed and trigger processing of queue.
  * @param events Array of events to queue.
@@ -541,9 +565,16 @@ export const connect = async (
   socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
   socket.current.io.decoder.tryParse = (str) => {
     try {
-      return JSON5.parse(str);
+      return JSON.parse(str, reviveNonFiniteFloats);
     } catch (e) {
-      return false;
+      try {
+        return JSON.parse(
+          rewriteBareNonFiniteFloats(str),
+          reviveNonFiniteFloats,
+        );
+      } catch (e2) {
+        return false;
+      }
     }
   };
   // Set up a reconnect helper function

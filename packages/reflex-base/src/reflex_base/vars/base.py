@@ -8,7 +8,6 @@ import dataclasses
 import datetime
 import functools
 import inspect
-import json
 import re
 import string
 import uuid
@@ -1177,7 +1176,9 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         if isinstance(self, LiteralVar):
             return self._var_value
         try:
-            return json.loads(str(self))
+            from reflex_base.utils.format import orjson_loads
+
+            return orjson_loads(str(self))
         except ValueError:
             return str(self)
 

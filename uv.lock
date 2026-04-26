@@ -3459,6 +3459,9 @@ db = [
     { name = "pydantic" },
     { name = "sqlmodel" },
 ]
+orjson = [
+    { name = "orjson" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -3472,6 +3475,7 @@ dev = [
     { name = "libsass" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "numpy", version = "2.4.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "orjson" },
     { name = "pandas", version = "2.3.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "pandas", version = "3.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "pillow" },
@@ -3509,6 +3513,7 @@ requires-dist = [
     { name = "click", specifier = ">=8.2" },
     { name = "granian", extras = ["reload"], specifier = ">=2.5.5" },
     { name = "httpx", specifier = ">=0.23.3,<1.0" },
+    { name = "orjson", marker = "extra == 'orjson'", specifier = ">=3.10,<4.0" },
     { name = "packaging", specifier = ">=24.2,<27" },
     { name = "psutil", marker = "sys_platform == 'win32'", specifier = ">=7.0.0,<8.0" },
     { name = "pydantic", marker = "extra == 'db'", specifier = ">=2.12.0,<3.0" },
@@ -3535,7 +3540,7 @@ requires-dist = [
     { name = "typing-extensions", specifier = ">=4.13.0" },
     { name = "wrapt", specifier = ">=1.17.0,<3.0" },
 ]
-provides-extras = ["db"]
+provides-extras = ["db", "orjson"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -3548,6 +3553,7 @@ dev = [
     { name = "hatchling" },
     { name = "libsass" },
     { name = "numpy" },
+    { name = "orjson" },
     { name = "pandas" },
     { name = "pillow" },
     { name = "playwright" },
