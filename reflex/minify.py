@@ -226,15 +226,12 @@ class MinifyNameResolver:
     def from_disk(cls) -> MinifyNameResolver:
         """Build a resolver from the current ``minify.json`` and env vars.
 
-        Reads the file directly (bypassing the lru_cache on
-        :func:`get_minify_config`) so the snapshot reflects the cwd at install
-        time rather than whatever cwd the cache happened to be warmed under.
-        Per-class lookups are still memoized inside the returned resolver.
+        Bypasses the lru_cache on :func:`get_minify_config` so the snapshot
+        reflects the cwd at install time. Malformed configs become
+        ``config=None`` — the validate CLI surfaces them separately.
 
         Returns:
-            A configured resolver — may resolve nothing if minify is disabled
-            or the config is absent/malformed (the validate CLI surfaces
-            errors separately via :func:`_load_minify_config_uncached`).
+            A configured resolver.
         """
         from reflex.environment import MinifyMode, environment
 
@@ -271,14 +268,10 @@ class MinifyNameResolver:
         return per_state.get(handler_name)
 
 
-#: Modules that define framework-owned :class:`BaseState` subclasses whose
-#: :class:`Var` hooks are baked at framework-import time, before any user
-#: resolver can be installed. Honoring a minified mapping for them would
-#: leave dangling references in the generated frontend.
-#:
-#: Modules under ``reflex.istate.dynamic`` are intentionally *not* listed —
-#: that's where ``ComponentState.create()`` and ``_handle_local_def`` relocate
-#: user-defined classes, which remain minifiable.
+#: Modules whose ``BaseState`` subclasses can never be minified — their
+#: :class:`Var` hooks are baked at framework-import time before any user
+#: resolver can run. ``reflex.istate.dynamic`` is *not* listed: that's where
+#: ``ComponentState.create()`` puts user-owned dynamic classes.
 _FRAMEWORK_STATE_MODULES: frozenset[str] = frozenset({
     "reflex.state",
     "reflex.istate.shared",
@@ -302,12 +295,10 @@ def _is_framework_state(state_cls: type[BaseState]) -> bool:
 def install_minify_resolver() -> None:
     """Install a fresh :class:`MinifyNameResolver` into the active context.
 
-    Uses :meth:`~reflex_base.registry.RegistrationContext.ensure_context` so
-    the resolver can be installed *before* any state class is registered —
-    that's important because :func:`reflex_base.vars.base.VarData.from_state`
-    captures ``state.get_full_name()`` at Var-creation time. If the resolver
-    is installed afterwards the captured strings stay un-minified and won't
-    match the registry, breaking the generated frontend.
+    Must run before any state class is registered:
+    :func:`reflex_base.vars.base.VarData.from_state` captures the state's
+    full name at Var-creation time, so a later install would leave dangling
+    references in the generated frontend.
     """
     from reflex_base.registry import RegistrationContext
 
@@ -318,16 +309,10 @@ def install_minify_resolver() -> None:
 def ensure_minify_resolver_for_active_context() -> None:
     """Install a :class:`MinifyNameResolver` for the active context if needed.
 
-    Re-installs only when a config-less resolver is currently active —
-    typically because an earlier install ran from a cwd where ``minify.json``
-    didn't exist yet (e.g. a test fixture that called
-    :func:`clear_config_cache` before chdir-ing into the app root). Once a
-    resolver with a loaded config is in place, subsequent calls are no-ops,
-    so wiring this into hot paths (e.g.
-    :func:`reflex.utils.prerequisites.get_app`, which can be re-entered from
-    runtime fallbacks like
-    :meth:`~reflex.state.OnLoadInternalState.on_load_internal`) won't re-read
-    ``minify.json`` from a possibly-wrong cwd.
+    Idempotent once a config-loaded resolver is in place — safe to wire into
+    hot paths (e.g. :func:`reflex.utils.prerequisites.get_app`, which can be
+    re-entered at runtime from a different cwd than the one that loaded the
+    config). Re-installs only if the current resolver has ``config=None``.
     """
     from reflex_base.registry import RegistrationContext
 

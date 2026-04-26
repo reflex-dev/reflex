@@ -813,10 +813,6 @@ class TestDynamicHandlerMinification:
             environment.REFLEX_MINIFY_STATES.name, MinifyMode.ENABLED.value
         )
         late_path = "tests.units.test_minification.State.LateBornState"
-        # NOTE: framework-internal states like ``reflex.state.State`` are never
-        # minified (their Var hooks are baked at framework-import time, well
-        # before any user resolver can run). The minified id only applies to
-        # the user-defined state class.
         config: MinifyConfig = {
             "version": SCHEMA_VERSION,
             "states": {late_path: "lb"},
@@ -994,8 +990,6 @@ class TestMinifiedNameCollision:
         parent_path = get_state_full_path(ParentClassSubstateCollision)
         child_path = get_state_full_path(ChildClassSubstateCollision)
 
-        # Framework-internal :class:`State` is never minified, so we only map
-        # the user-defined classes.
         config: MinifyConfig = {
             "version": SCHEMA_VERSION,
             "states": {
@@ -1047,7 +1041,6 @@ class TestMinifiedNameCollision:
         parent_path = get_state_full_path(ParentInstanceSubstateCollision)
         child_path = get_state_full_path(ChildInstanceSubstateCollision)
 
-        # Framework-internal :class:`State` is never minified.
         config: MinifyConfig = {
             "version": SCHEMA_VERSION,
             "states": {
@@ -1399,9 +1392,7 @@ class TestMinifyNameResolver:
     def test_state_lookup_caches(self):
         """Resolved state names are memoized after the first lookup."""
 
-        # Use a non-framework state — :func:`MinifyNameResolver` deliberately
-        # never minifies classes whose module starts with ``reflex.`` because
-        # their ``Var`` hooks are baked at framework-import time.
+        # Non-framework state — see :func:`_is_framework_state`.
         class UserStateResolverCacheTest(State):
             pass
 
@@ -1421,7 +1412,6 @@ class TestMinifyNameResolver:
     def test_event_lookup_caches(self):
         """Resolved handler names are memoized per state class."""
 
-        # Use a non-framework state — see above.
         class UserStateEventCacheTest(State):
             pass
 

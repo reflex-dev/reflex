@@ -156,9 +156,8 @@ def minify_enabled_app(
     app_module = "minify_enabled.minify_enabled"
     root_state_path = f"{app_module}.State.RootState"
     sub_state_path = f"{app_module}.State.RootState.SubState"
-    # Framework-internal :class:`State` is intentionally absent — the resolver
-    # never minifies it (its Vars are baked at framework-import time, before
-    # any user code can install a resolver).
+    # Framework state classes (e.g. ``reflex.state.State``) are deliberately
+    # absent — the resolver never minifies them.
     minify_config = {
         "version": 1,
         "states": {

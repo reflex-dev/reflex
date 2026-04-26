@@ -194,14 +194,8 @@ def get_app(reload: bool = False) -> ModuleType:
 
         module = config.module
         sys.path.insert(0, getcwd())  # noqa: PTH109
-        # Install the minify resolver into the current context before the
-        # user's module is imported so user-defined state classes register
-        # with their minified names from the start (``VarData.from_state``
-        # captures ``state.get_full_name()`` at class-definition time, so the
-        # resolver must be in place by then). One-shot per context — won't
-        # re-read ``minify.json`` on subsequent ``get_app`` calls (which can
-        # happen at runtime from a different cwd, e.g. the framework's
-        # ``OnLoadInternalState.on_load_internal`` fallback).
+        # Resolver must be active before the user module imports — see
+        # ``ensure_minify_resolver_for_active_context`` for why.
         ensure_minify_resolver_for_active_context()
         app = (
             __import__(module, fromlist=(constants.CompileVars.APP,))
@@ -277,7 +271,6 @@ def get_compiled_app(
     app, app_module = get_and_validate_app(
         reload=reload, check_if_schema_up_to_date=check_if_schema_up_to_date
     )
-    # ``_compile`` installs the minify resolver itself before evaluating pages.
     app._compile(prerender_routes=prerender_routes, dry_run=dry_run, use_rich=use_rich)
     return app_module
 
