@@ -241,11 +241,17 @@ def docpage_footer(path: str):
             rx.box(
                 link_pill(
                     "Raise an issue",
-                    href=f"https://github.com/reflex-dev/reflex-web/issues/new?title=Issue with reflex.dev documentation&amp;body=Path: {path}",
+                    href=(
+                        "https://github.com/reflex-dev/reflex/issues/new"
+                        "?template=documentation.md"
+                        "&labels=documentation"
+                        f"&title=Issue with reflex.dev{path}"
+                        f"&body=Path: {path}%0A%0A"
+                    ),
                 ),
                 link_pill(
                     "Edit this page",
-                    f"https://github.com/reflex-dev/reflex-web/tree/main{path}.md",
+                    f"https://github.com/reflex-dev/reflex/blob/main/docs{path}.md",
                 ),
                 class_name="lg:flex hidden flex-row items-center gap-2 w-auto",
             ),
