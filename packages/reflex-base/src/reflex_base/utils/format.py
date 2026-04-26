@@ -765,13 +765,38 @@ def _replace_non_finite_floats(obj: Any) -> Any:
 def orjson_dumps_socket(obj: Any) -> str:
     """Serialize obj for socket emit, preserving non-finite floats via sentinels.
 
+    Routes custom types through ``serializers.serialize`` (matching the
+    stdlib ``json_dumps`` behavior) and substitutes sentinel strings for
+    NaN/Infinity floats so the JS reviver in state.js can restore them.
+
     Args:
         obj: The object to serialize.
 
     Returns:
-        A JSON string with NaN/Infinity floats substituted for the JS reviver.
+        A JSON string ready for socket emit.
     """
-    return orjson_dumps(_replace_non_finite_floats(obj))
+    from reflex_base.utils import serializers
+
+    try:
+        import orjson  # pyright: ignore[reportMissingImports]
+    except ImportError:
+        return json_dumps(_replace_non_finite_floats(obj))
+
+    def _default(o: Any) -> Any:
+        return _replace_non_finite_floats(serializers.serialize(o))
+
+    try:
+        return orjson.dumps(
+            _replace_non_finite_floats(obj),
+            default=_default,
+            option=(
+                orjson.OPT_NON_STR_KEYS
+                | orjson.OPT_PASSTHROUGH_SUBCLASS
+                | orjson.OPT_PASSTHROUGH_DATACLASS
+            ),
+        ).decode()
+    except TypeError:
+        return json_dumps(_replace_non_finite_floats(obj))
 
 
 def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:
