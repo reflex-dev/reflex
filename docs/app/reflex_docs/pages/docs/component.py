@@ -2,6 +2,7 @@
 
 import hashlib
 import os
+import re
 import textwrap
 from pathlib import Path
 from types import UnionType
@@ -23,7 +24,7 @@ from reflex_docs.docgen_pipeline import (
     render_docgen_document,
     render_markdown,
 )
-from reflex_docs.templates.docpage import docdemobox, docpage, h1_comp, h2_comp
+from reflex_docs.templates.docpage import docpage, h1_comp, h2_comp
 
 
 def get_code_style(color: str):
@@ -79,6 +80,40 @@ EXCLUDED_COMPONENTS = [
 ]
 
 
+_PILL_BTN_CLASS = (
+    "font-small cursor-pointer rounded-md px-2.5 py-1 text-slate-11 "
+    "border border-slate-5 bg-slate-1 hover:bg-slate-3 transition-colors"
+)
+_PILL_BTN_ACTIVE_CLASS = (
+    "font-small cursor-pointer rounded-md px-2.5 py-1 text-slate-12 "
+    "border border-slate-8 bg-slate-4"
+)
+
+
+def _pill_button(label: str, active, on_click) -> rx.Component:
+    return rx.el.button(
+        label,
+        type="button",
+        on_click=on_click,
+        class_name=rx.cond(active, _PILL_BTN_ACTIVE_CLASS, _PILL_BTN_CLASS),
+    )
+
+
+def _pill_row(values, var, setter) -> rx.Component:
+    return rx.box(
+        *[_pill_button(v, var == v, setter(v)) for v in values],
+        class_name="flex flex-wrap gap-1.5",
+    )
+
+
+def _bool_pills(var, setter) -> rx.Component:
+    return rx.box(
+        _pill_button("false", ~var, setter(False)),
+        _pill_button("true", var, setter(True)),
+        class_name="flex flex-wrap gap-1.5",
+    )
+
+
 def render_select(prop: PropDocumentation, component: type[Component], prop_dict: dict):
     if (
         not safe_issubclass(component, (RadixThemesComponent, RadixPrimitiveComponent))
@@ -104,10 +139,7 @@ def render_select(prop: PropDocumentation, component: type[Component], prop_dict
             PropDocsState._create_setter(name, var)
             setter = getattr(PropDocsState, f"set_{name}")
             prop_dict[prop.name] = var
-            return rx.checkbox(
-                var,
-                on_change=setter,
-            )
+            return _bool_pills(var, setter)
     except TypeError:
         pass
 
@@ -137,17 +169,7 @@ def render_select(prop: PropDocumentation, component: type[Component], prop_dict
             PropDocsState._create_setter(name, var)
             setter = getattr(PropDocsState, f"set_{name}")
             prop_dict[prop.name] = var
-            return rx.select.root(
-                rx.select.trigger(class_name="w-32 font-small text-slate-11"),
-                rx.select.content(
-                    rx.select.group(*[
-                        rx.select.item(item, value=item, class_name="font-small")
-                        for item in literal_values
-                    ])
-                ),
-                value=var,
-                on_change=setter,
-            )
+            return _pill_row(literal_values, var, setter)
     # Get the first non-empty option.
     non_empty_args = [a for a in type_.__args__ if str(a) != ""]
     option = non_empty_args[0] if non_empty_args else type_.__args__[0]
@@ -199,27 +221,8 @@ def render_select(prop: PropDocumentation, component: type[Component], prop_dict
                 ),
             ),
         )
-    return rx.select.root(
-        rx.select.trigger(class_name="font-small w-32 text-slate-11"),
-        rx.select.content(
-            rx.select.group(*[
-                rx.select.item(
-                    item,
-                    value=item,
-                    class_name="font-small",
-                    _hover=(
-                        {"background": f"var(--{item}-9)"}
-                        if prop.name == "color_scheme"
-                        else None
-                    ),
-                )
-                for item in list(map(str, type_.__args__))
-                if item != ""
-            ]),
-        ),
-        value=var,
-        on_change=setter,
-    )
+    literal_values = [str(a) for a in type_.__args__ if str(a) != ""]
+    return _pill_row(literal_values, var, setter)
 
 
 def hovercard(trigger: rx.Component, content: rx.Component) -> rx.Component:
@@ -262,10 +265,8 @@ def safe_issubclass(cls, class_or_tuple):
 
 def prop_docs(
     prop: PropDocumentation,
-    prop_dict: dict,
     component: type[Component],
-    is_interactive: bool,
-) -> list[rx.Component]:
+) -> tuple[list[rx.Component], bool]:
     """Generate the docs for a prop."""
     # Get the type of the prop.
     type_ = prop.type
@@ -335,59 +336,58 @@ def prop_docs(
     default_value = prop.default_value if prop.default_value is not None else "-"
     # Get the color of the prop.
     color = TYPE_COLORS.get(short_type_name, "gray")
+
+    description = prop.description or ""
+    is_long_row = len(description) > 160 or (
+        literal_values and len(literal_values) > 8 and prop.name not in common_types
+    )
+
+    cell_content_class = (
+        (
+            "cell-content max-h-[6.5em] overflow-hidden "
+            "[mask-image:linear-gradient(to_bottom,black_85%,transparent)] "
+            "[-webkit-mask-image:linear-gradient(to_bottom,black_85%,transparent)]"
+        )
+        if is_long_row
+        else "cell-content"
+    )
+
     # Return the docs for the prop.
     return [
         rx.table.cell(
             rx.box(
                 rx.code(prop.name, class_name="code-style text-nowrap leading-normal"),
-                hovercard(
-                    rx.icon(
-                        tag="info",
-                        size=15,
-                        class_name="!text-slate-9 shrink-0",
-                    ),
-                    rx.text(prop.description, class_name="font-small text-slate-11"),
-                ),
-                class_name="flex flex-row items-center gap-2",
+                class_name=cell_content_class,
             ),
-            class_name="justify-start pl-4",
+            class_name="justify-start pl-4 align-top py-3",
         ),
         rx.table.cell(
             rx.box(
-                rx.cond(
-                    (len(literal_values) > 0) & (prop.name not in common_types),
-                    rx.code(
-                        (
-                            " | ".join(
-                                [f'"{v}"' for v in literal_values[:max_prop_values]]
-                                + ["..."]
-                            )
-                            if len(literal_values) > max_prop_values
-                            else type_name
+                rx.box(
+                    rx.box(
+                        *(
+                            [
+                                rx.code(
+                                    f'"{v}"',
+                                    color_scheme=color,
+                                    variant="soft",
+                                    class_name="code-style leading-normal text-nowrap",
+                                )
+                                for v in literal_values
+                            ]
+                            if literal_values and prop.name not in common_types
+                            else [
+                                rx.code(
+                                    type_name,
+                                    color_scheme=color,
+                                    variant="soft",
+                                    class_name="code-style leading-normal whitespace-normal break-words",
+                                )
+                            ]
                         ),
-                        style=get_code_style(color),
-                        class_name="code-style text-nowrap leading-normal",
+                        class_name="flex flex-wrap gap-1",
                     ),
-                    rx.code(
-                        type_name,
-                        style=get_code_style(color),
-                        class_name="code-style text-nowrap leading-normal",
-                    ),
-                ),
-                rx.cond(
-                    len(literal_values) > max_prop_values
-                    and prop.name not in common_types,
-                    hovercard(
-                        rx.icon(
-                            tag="circle-ellipsis",
-                            size=15,
-                            class_name="!text-slate-9 shrink-0",
-                        ),
-                        rx.text(
-                            " | ".join([f'"{v}"' for v in literal_values]),
-                            class_name="font-small text-slate-11",
-                        ),
-                    ),
+                    class_name=cell_content_class,
                 ),
                 rx.cond(
                     (origin == Union)
@@ -410,9 +410,9 @@ def prop_docs(
                     (prop.name == "color_scheme") | (prop.name == "accent_color"),
                     color_scheme_hovercard(literal_values),
                 ),
-                class_name="flex flex-row items-center gap-2",
+                class_name="flex flex-row items-start gap-2",
             ),
-            class_name="justify-start pl-4",
+            class_name="justify-start pl-4 align-top py-3",
         ),
         rx.table.cell(
             rx.box(
@@ -427,23 +427,28 @@ def prop_docs(
                     ),
                     class_name="code-style leading-normal text-nowrap",
                 ),
-                class_name="flex",
+                class_name=cell_content_class,
             ),
-            class_name="justify-start pl-4",
+            class_name="justify-start pl-4 align-top py-3",
         ),
         rx.table.cell(
-            render_select(prop, component, prop_dict),
-            class_name="justify-start pl-4",
-        )
-        if is_interactive
-        else rx.fragment(),
-    ]
+            rx.box(
+                rx.text(
+                    description,
+                    class_name="font-small text-slate-11 whitespace-normal leading-snug break-words",
+                ),
+                class_name=cell_content_class,
+            ),
+            class_name="justify-start pl-4 align-top py-3 w-full",
+        ),
+    ], is_long_row
 
 
 def generate_props(
     props: tuple[PropDocumentation, ...],
     component: type[Component],
     previews: dict[str, str],
+    display_name: str | None = None,
 ) -> rx.Component:
     prop_list = list(props)
     if len(prop_list) == 0:
@@ -474,16 +479,95 @@ def generate_props(
     ]:
         is_interactive = False
 
-    body = rx.table.body(
-        *[
-            rx.table.row(
-                *prop_docs(prop, prop_dict, component, is_interactive), align="center"
-            )
-            for prop in prop_list
-            if not prop.name.startswith("on_")  # ignore event trigger props
-        ],
-        class_name="bg-slate-2",
+    styling_props = {
+        "variant",
+        "size",
+        "color_scheme",
+        "radius",
+        "high_contrast",
+        "loading",
+        "disabled",
+        "weight",
+        "align",
+        "justify",
+        "direction",
+        "orientation",
+    }
+
+    interactive_controls: list[tuple[PropDocumentation, rx.Component]] = []
+    if is_interactive:
+        for prop in prop_list:
+            if prop.name.startswith("on_"):
+                continue
+            if prop.name not in styling_props:
+                continue
+            control = render_select(prop, component, prop_dict)
+            if not isinstance(control, Fragment):
+                interactive_controls.append((prop, control))
+
+    def _toggle_row() -> rx.Component:
+        return rx.el.tr(
+            rx.el.td(
+                rx.el.details(
+                    rx.el.summary(
+                        rx.el.span(
+                            "Show more",
+                            rx.icon(
+                                "chevron-down",
+                                size=12,
+                                class_name="inline-block align-[-2px] ml-1",
+                            ),
+                            class_name="group-open/details:hidden",
+                        ),
+                        rx.el.span(
+                            "Show less",
+                            rx.icon(
+                                "chevron-up",
+                                size=12,
+                                class_name="inline-block align-[-2px] ml-1",
+                            ),
+                            class_name="hidden group-open/details:inline",
+                        ),
+                        class_name=(
+                            "block list-none cursor-pointer text-center text-xs "
+                            "font-medium text-slate-11 hover:text-slate-12 py-2 "
+                            "[&::-webkit-details-marker]:hidden [&::marker]:hidden"
+                        ),
+                    ),
+                    class_name="group/details",
+                ),
+                col_span=4,
+                class_name=(
+                    "!p-0 !border-t-0 [box-shadow:0_-1px_0_0_var(--gray-a4)_inset]"
+                ),
+            ),
+            class_name="api-toggle-row bg-slate-2",
+        )
+
+    data_row_class = (
+        "[&:has(+_tr.api-toggle-row_details[open])_.cell-content]:!max-h-none "
+        "[&:has(+_tr.api-toggle-row_details[open])_.cell-content]:!overflow-visible "
+        "[&:has(+_tr.api-toggle-row_details[open])_.cell-content]:![mask-image:none] "
+        "[&:has(+_tr.api-toggle-row_details[open])_.cell-content]:![-webkit-mask-image:none] "
+        "[&>td]:!shadow-none"
     )
+
+    rows: list[rx.Component] = []
+    for prop in prop_list:
+        if prop.name.startswith("on_"):  # ignore event trigger props
+            continue
+        cells, is_long_row = prop_docs(prop, component)
+        rows.append(
+            rx.table.row(
+                *cells,
+                align="center",
+                class_name=data_row_class if is_long_row else "",
+            )
+        )
+        if is_long_row:
+            rows.append(_toggle_row())
+
+    body = rx.table.body(*rows, class_name="bg-slate-2")
 
     comp: rx.Component
     try:
@@ -507,12 +591,191 @@ def generate_props(
         print(f"Failed to create component {component.__name__}, error: {e}")
         comp = rx.fragment()
 
-    interactive_component = (
-        docdemobox(comp) if not isinstance(comp, Fragment) else "",
-    )
+    if not isinstance(comp, Fragment) and interactive_controls:
+        component_call = display_name or f"rx.{component.__name__.lower()}"
+        highlighted = {
+            "variant",
+            "size",
+            "color_scheme",
+            "radius",
+            "high_contrast",
+            "loading",
+            "disabled",
+        }
+        bool_excluded = {
+            "open",
+            "checked",
+            "as_child",
+            "default_open",
+            "default_checked",
+        }
+
+        def _is_bool_prop(p: PropDocumentation) -> bool:
+            try:
+                inner = get_args(p.type)[0]
+                return safe_issubclass(inner, bool) and p.name not in bool_excluded
+            except Exception:
+                return False
+
+        line_class = "font-mono text-sm whitespace-pre"
+        kw_class = "text-violet-11"
+        str_class = "text-orange-11"
+        bool_class = "text-blue-11"
+        prop_name_class = "text-slate-12"
+        token_re = re.compile(
+            r'(rx\.[\w.]+)|("[^"]*")|(\b(?:True|False|None)\b)|(\b\d+(?:\.\d+)?\b)|(\w+)|(\s+)|(.)'
+        )
+
+        def _render_static_line(line: str) -> rx.Component:
+            if not line.strip():
+                return rx.el.div(class_name=line_class + " min-h-[1em]")
+            children: list = []
+            for m in token_re.finditer(line):
+                kw, s, b, n, ident, ws, other = m.groups()
+                if kw is not None:
+                    children.append(rx.el.span(kw, class_name=kw_class))
+                elif s is not None:
+                    children.append(rx.el.span(s, class_name=str_class))
+                elif b is not None:
+                    children.append(rx.el.span(b, class_name=bool_class))
+                elif n is not None:
+                    children.append(rx.el.span(n, class_name=bool_class))
+                elif ident is not None:
+                    children.append(ident)
+                elif ws is not None:
+                    children.append(ws)
+                else:
+                    children.append(other)
+            return rx.el.div(*children, class_name=line_class)
+
+        def _py_bool(var):
+            return rx.cond(var, "True", "False")
+
+        def _render_dynamic_prop(indent: str, p, var) -> rx.Component:
+            if _is_bool_prop(p):
+                return rx.el.div(
+                    indent,
+                    rx.el.span(p.name, class_name=prop_name_class),
+                    "=",
+                    rx.el.span(_py_bool(var), class_name=bool_class),
+                    ",",
+                    class_name=line_class,
+                )
+            return rx.el.div(
+                indent,
+                rx.el.span(p.name, class_name=prop_name_class),
+                "=",
+                rx.el.span('"', var, '"', class_name=str_class),
+                ",",
+                class_name=line_class,
+            )
+
+        preview_source = previews.get(component.__name__, "")
+        code_children: list[rx.Component] = []
+        used_preview = False
+
+        if preview_source:
+            src = preview_source.strip()
+            m = re.match(r"^lambda\s+\*\*props\s*:\s*", src)
+            if m:
+                src = src[m.end() :]
+            src = textwrap.dedent(src).rstrip()
+            for line in src.split("\n"):
+                if "**props" not in line:
+                    code_children.append(_render_static_line(line))
+                    continue
+                # Split the line around the **props token.
+                match = re.search(r"\*\*props\s*,?\s*", line)
+                before = line[: match.start()] if match else line
+                after = line[match.end() :] if match else ""
+                base_indent = len(line) - len(line.lstrip())
+                inline = bool(before.strip())
+                # Compute prop-line indent: 4 deeper than the line's own
+                # indent when the **props was inline; otherwise reuse the
+                # line's indent (multi-line preview format).
+                prop_indent = " " * (base_indent + 4 if inline else base_indent)
+                if inline:
+                    trimmed_before = before.rstrip()
+                    if not trimmed_before.endswith(","):
+                        trimmed_before += ","
+                    code_children.append(_render_static_line(trimmed_before))
+                for p, _ in interactive_controls:
+                    if p.name not in highlighted:
+                        continue
+                    var = prop_dict.get(p.name)
+                    if var is None:
+                        continue
+                    code_children.append(_render_dynamic_prop(prop_indent, p, var))
+                trimmed_after = after.lstrip(", \t")
+                if inline and trimmed_after.strip():
+                    closing_indent = " " * base_indent
+                    code_children.append(
+                        _render_static_line(closing_indent + trimmed_after)
+                    )
+            used_preview = True
+
+        if not used_preview:
+            code_children.append(
+                rx.el.div(
+                    rx.el.span(component_call, class_name=kw_class),
+                    "(",
+                    class_name=line_class,
+                )
+            )
+            for p, _ in interactive_controls:
+                if p.name not in highlighted:
+                    continue
+                var = prop_dict.get(p.name)
+                if var is None:
+                    continue
+                code_children.append(_render_dynamic_prop("    ", p, var))
+            code_children.append(rx.el.div(")", class_name=line_class))
+
+        interactive_component = rx.box(
+            rx.box(
+                comp,
+                class_name=(
+                    "flex flex-col items-center justify-center p-6 flex-1 "
+                    "bg-slate-2 border-r border-slate-4 min-w-0"
+                ),
+            ),
+            rx.box(
+                *code_children,
+                class_name="flex-1 p-4 bg-slate-1 min-w-0 overflow-x-auto",
+            ),
+            class_name=(
+                "flex flex-row w-full rounded-xl border border-slate-4 overflow-hidden"
+            ),
+        )
+    else:
+        interactive_component = rx.fragment()
+
+    controls_panel: rx.Component = rx.fragment()
+    if interactive_controls:
+        controls_panel = rx.box(
+            *[
+                rx.box(
+                    rx.code(
+                        prop.name,
+                        class_name="code-style text-nowrap leading-normal text-slate-11",
+                    ),
+                    control,
+                    class_name="grid grid-cols-[8rem_1fr] gap-4 items-start",
+                )
+                for prop, control in interactive_controls
+            ],
+            class_name="flex flex-col gap-3 border border-slate-4 rounded-md p-4 bg-slate-2 mb-4 w-full",
+        )
+
     return rx.vstack(
         interactive_component,
-        rx.scroll_area(
+        controls_panel,
+        rx.heading(
+            "Props",
+            as_="h3",
+            class_name="font-large text-slate-12 mt-4 mb-2 text-left self-start",
+        ),
+        rx.box(
             rx.table.root(
                 rx.el.style(
                     """
@@ -524,32 +787,30 @@ def generate_props(
                 rx.table.header(
                     rx.table.row(
                         rx.table.column_header_cell(
-                            "Prop",
-                            class_name=table_header_class_name,
+                            "prop",
+                            class_name=table_header_class_name + " w-[9rem]",
                         ),
                         rx.table.column_header_cell(
-                            "Type | Values",
-                            class_name=table_header_class_name,
+                            "type",
+                            class_name=table_header_class_name + " w-[34rem]",
                         ),
                         rx.table.column_header_cell(
-                            "Default",
-                            class_name=table_header_class_name,
+                            "default",
+                            class_name=table_header_class_name + " w-[4rem]",
                         ),
                         rx.table.column_header_cell(
-                            "Interactive",
-                            class_name=table_header_class_name,
-                        )
-                        if is_interactive
-                        else rx.fragment(),
+                            "description",
+                            class_name=table_header_class_name + " w-[18rem]",
+                        ),
                     ),
                     class_name="bg-slate-3",
                 ),
                 body,
                 variant="surface",
                 size="1",
-                class_name="px-0 w-full border border-slate-4",
+                class_name="px-0 border border-slate-4 w-full",
             ),
-            class_name="max-h-96 mb-4",
+            class_name="mb-4 w-full overflow-hidden",
         ),
     )
 
@@ -650,9 +911,6 @@ def component_docs(
     """Generates documentation for a given component."""
     component = component_tuple[0]
     doc = generate_documentation(component)
-    props = generate_props(doc.props, component, previews)
-    triggers = generate_event_triggers(doc.event_handlers)
-    children = generate_valid_children(component)
 
     # Map for component display name overrides (e.g., for Python reserved keywords)
     component_display_name_map = {
@@ -662,6 +920,10 @@ def component_docs(
     comp_display_name = component_display_name_map.get(
         component_tuple[1], component_tuple[1]
     )
+
+    props = generate_props(doc.props, component, previews, comp_display_name)
+    triggers = generate_event_triggers(doc.event_handlers)
+    children = generate_valid_children(component)
 
     return rx.box(
         h2_comp(text=comp_display_name),
@@ -687,8 +949,8 @@ def multi_docs(
         component_docs(component_tuple, previews)
         for component_tuple in component_list[1:]
     ]
-    fname = path.strip("/") + ".md"
-    ll_doc_exists = os.path.exists(fname.replace(".md", "-ll.md"))
+    ll_actual_path = actual_path.replace(".md", "-ll.md")
+    ll_doc_exists = os.path.exists(ll_actual_path)
 
     active_class_name = "font-small bg-slate-2 p-2 text-slate-11 rounded-xl shadow-large w-28 cursor-default border border-slate-4 text-center"
 
@@ -759,10 +1021,9 @@ def multi_docs(
 
     @docpage(set_path=path + "low", t=title + " (Low Level)")
     def ll():
-        ll_actual = fname.replace(".md", "-ll.md")
         ll_virtual = virtual_path.replace(".md", "-ll.md")
-        toc = get_docgen_toc(ll_actual)
-        doc_content = Path(ll_actual).read_text(encoding="utf-8")
+        toc = get_docgen_toc(ll_actual_path)
+        doc_content = Path(ll_actual_path).read_text(encoding="utf-8")
         if component_list:
             toc.append((1, "API Reference"))
         for component_tuple in component_list[1:]:
@@ -770,7 +1031,7 @@ def multi_docs(
         return (toc, doc_content), rx.box(
             links("ll", ll_doc_exists, path),
             render_docgen_document(
-                virtual_filepath=ll_virtual, actual_filepath=ll_actual
+                virtual_filepath=ll_virtual, actual_filepath=ll_actual_path
             ),
             h1_comp(text="API Reference"),
             rx.box(*components, class_name="flex flex-col"),
