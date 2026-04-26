@@ -747,6 +747,9 @@ _INF = float("inf")
 
 
 def _replace_non_finite_floats(obj: Any) -> Any:
+    # Copy-on-write: only allocate a new container if a child actually
+    # changed. ``is`` works as a "did we replace this" check because
+    # unchanged values are returned as the same object.
     if isinstance(obj, float):
         if obj != obj:
             return NAN_SENTINEL
@@ -756,9 +759,23 @@ def _replace_non_finite_floats(obj: Any) -> Any:
             return NEG_INF_SENTINEL
         return obj
     if isinstance(obj, dict):
-        return {k: _replace_non_finite_floats(v) for k, v in obj.items()}
+        new = None
+        for k, v in obj.items():
+            v2 = _replace_non_finite_floats(v)
+            if v2 is not v:
+                if new is None:
+                    new = dict(obj)
+                new[k] = v2
+        return new if new is not None else obj
     if isinstance(obj, (list, tuple)):
-        return [_replace_non_finite_floats(v) for v in obj]
+        new = None
+        for i, v in enumerate(obj):
+            v2 = _replace_non_finite_floats(v)
+            if v2 is not v:
+                if new is None:
+                    new = list(obj)
+                new[i] = v2
+        return new if new is not None else obj
     return obj
 
 
@@ -799,6 +816,10 @@ def orjson_dumps_socket(obj: Any, **kwargs: Any) -> str:
                 orjson.OPT_NON_STR_KEYS
                 | orjson.OPT_PASSTHROUGH_SUBCLASS
                 | orjson.OPT_PASSTHROUGH_DATACLASS
+                # Route datetimes through default= so they get the same
+                # space-separated format that ``serializers.serialize_datetime``
+                # produces; orjson's native output uses an ISO 'T' separator.
+                | orjson.OPT_PASSTHROUGH_DATETIME
             ),
         ).decode()
     except TypeError:
