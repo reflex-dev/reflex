@@ -6,7 +6,6 @@ import inspect
 import json
 import os
 import re
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from reflex_base import constants
@@ -440,9 +439,7 @@ def format_props(*single_props, **key_value_props) -> list[str]:
     ] + [(f"...{LiteralVar.create(prop)!s}") for prop in single_props]
 
 
-def get_event_handler_parts(
-    handler: EventHandler | Callable[..., Any],
-) -> tuple[str, str]:
+def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
     """Get the (state, function) name pair for an event handler.
 
     Both names pass through the active
@@ -454,16 +451,8 @@ def get_event_handler_parts(
 
     Returns:
         ``(state_full_name, handler_name)`` — both resolved.
-
-    Raises:
-        TypeError: If the handler is not an EventHandler.
     """
-    from reflex_base.event import EventHandler
     from reflex_base.registry import RegistrationContext
-
-    if not isinstance(handler, EventHandler):
-        msg = f"Expected EventHandler, got {type(handler)}"
-        raise TypeError(msg)
 
     name = handler.fn.__qualname__
     if handler.state is None:
@@ -477,7 +466,7 @@ def get_event_handler_parts(
     return (state_full_name, ctx.get_handler_name(handler.state, func_name))
 
 
-def format_event_handler(handler: EventHandler | Callable[..., Any]) -> str:
+def format_event_handler(handler: EventHandler) -> str:
     """Format an event handler.
 
     Args:

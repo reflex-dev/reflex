@@ -199,17 +199,23 @@ class MinifyNameResolver:
         """Build a resolver from the current ``minify.json`` and env vars.
 
         Bypasses the lru_cache on :func:`get_minify_config` so the snapshot
-        reflects the cwd at install time. Malformed configs become
-        ``config=None`` — the validate CLI surfaces them separately.
+        reflects the cwd at install time. A malformed config becomes
+        ``config=None`` (graceful degradation — the app still runs without
+        minification) and a warning is logged once per install so the user
+        notices.
 
         Returns:
             A configured resolver.
         """
         from reflex.environment import MinifyMode, environment
+        from reflex.utils import console
 
         try:
             config = _load_minify_config_uncached()
-        except ValueError:
+        except ValueError as e:
+            console.warn(
+                f"{MINIFY_JSON} could not be loaded: {e}; minification disabled."
+            )
             config = None
         return cls(
             config=config,
@@ -297,16 +303,20 @@ def install_minify_resolver() -> None:
 def ensure_minify_resolver_for_active_context() -> None:
     """Install a :class:`MinifyNameResolver` for the active context if needed.
 
-    Idempotent once a config-loaded resolver is in place — safe to wire into
-    hot paths (e.g. :func:`reflex.utils.prerequisites.get_app`, which can be
-    re-entered at runtime from a different cwd than the one that loaded the
-    config). Re-installs only if the current resolver has ``config=None``.
+    Idempotent in the steady state — safe to wire into hot paths
+    (e.g. :func:`reflex.utils.prerequisites.get_app`, which can be re-entered
+    at runtime from a different cwd than the one that loaded the config).
+    Re-installs only when something on disk could have changed: a config
+    appearing where there wasn't one, or a non-minify resolver in the slot.
     """
     from reflex_base.registry import RegistrationContext
 
     ctx = RegistrationContext.ensure_context()
-    if isinstance(ctx.name_resolver, MinifyNameResolver) and ctx.name_resolver.config:
-        return
+    if isinstance(ctx.name_resolver, MinifyNameResolver):
+        if ctx.name_resolver.config is not None:
+            return  # already loaded with a config — no work to do
+        if not _get_minify_json_path().exists():
+            return  # no config and none on disk; nothing changed
     ctx.set_name_resolver(MinifyNameResolver.from_disk())
 
 
@@ -493,8 +503,8 @@ def _assign_next_ids(
 ) -> dict[str, str]:
     """Assign minified ids to ``new_keys`` while skipping ``existing_ids``.
 
-    Mutates ``existing_ids`` so callers can chain assignments against the same
-    pool. Keys are sorted for deterministic output.
+    Keys are sorted for deterministic output. ``existing_ids`` is read-only —
+    a working copy is taken internally.
 
     Args:
         new_keys: Keys needing new ids.
@@ -505,13 +515,14 @@ def _assign_next_ids(
     Returns:
         Mapping from key to its newly-assigned minified id.
     """
-    next_id = 0 if reassign_deleted else max(existing_ids, default=-1) + 1
+    pool = set(existing_ids)
+    next_id = 0 if reassign_deleted else max(pool, default=-1) + 1
     out: dict[str, str] = {}
     for key in sorted(new_keys):
-        while next_id in existing_ids:
+        while next_id in pool:
             next_id += 1
         out[key] = int_to_minified_name(next_id)
-        existing_ids.add(next_id)
+        pool.add(next_id)
         next_id += 1
     return out
 
@@ -673,7 +684,7 @@ def sync_minify_config(
 
     # Assign new state IDs (unique among siblings of the same parent class).
     for parent_cls, children in parent_cls_to_new_children.items():
-        existing_ids = parent_cls_to_existing_ids.get(parent_cls, set()).copy()
+        existing_ids = parent_cls_to_existing_ids.get(parent_cls, set())
         new_states.update(_assign_next_ids(children, existing_ids, reassign_deleted))
 
     # Assign new event IDs (unique within each state).

@@ -281,7 +281,6 @@ def context_template(
         UpdateVarsInternalState,
     )
 
-    # Compute dynamic state names that respect minification settings
     main_state_name = State.get_name()
     on_load_internal = format_event_handler(OnLoadInternalState.on_load_internal)
     update_vars_internal = format_event_handler(
