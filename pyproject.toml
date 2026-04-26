@@ -86,6 +86,7 @@ dev = [
   "hatchling",
   "libsass",
   "numpy",
+  "orjson",
   "pandas",
   "pillow",
   "playwright",
@@ -114,7 +115,6 @@ dev = [
   "toml",
   "typer",
   "uvicorn",
-  "orjson >=3.10,<4.0",
 ]
 
 

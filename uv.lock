@@ -3553,7 +3553,7 @@ dev = [
     { name = "hatchling" },
     { name = "libsass" },
     { name = "numpy" },
-    { name = "orjson", specifier = ">=3.10,<4.0" },
+    { name = "orjson" },
     { name = "pandas" },
     { name = "pillow" },
     { name = "playwright" },
