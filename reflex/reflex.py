@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from importlib.util import find_spec
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal, overload
 
 import click
 from reflex_base import constants
@@ -926,13 +926,44 @@ def _count_events(config: MinifyConfig) -> int:
     return sum(len(handlers) for handlers in config["events"].values())
 
 
-def _load_existing_minify_config() -> MinifyConfig:
-    """Load ``minify.json`` or exit the CLI with an error.
+@overload
+def _open_minify_session(*, require_exists: Literal[True] = True) -> MinifyConfig: ...
+@overload
+def _open_minify_session(*, require_exists: Literal[False]) -> MinifyConfig | None: ...
+
+
+def _open_minify_session(*, require_exists: bool = True) -> MinifyConfig | None:
+    """Run the standard minify-CLI prelude.
+
+    Compiles the user's app (so dynamic states register) and loads
+    ``minify.json``. Exits the CLI with an error when the file is required
+    but missing, or when it exists but is malformed.
+
+    Args:
+        require_exists: When ``True`` (default), missing ``minify.json`` is
+            a fatal error. When ``False``, returns ``None`` instead.
 
     Returns:
-        The parsed minify configuration.
+        The parsed config, or ``None`` if ``require_exists`` is ``False`` and
+        the file is absent.
     """
-    from reflex.minify import MINIFY_JSON, _load_minify_config_uncached
+    from reflex.minify import (
+        MINIFY_JSON,
+        _get_minify_json_path,
+        _load_minify_config_uncached,
+    )
+
+    exists = _get_minify_json_path().exists()
+    if require_exists and not exists:
+        console.error(
+            f"{MINIFY_JSON} does not exist. Use 'reflex minify init' to create it."
+        )
+        raise SystemExit(1)
+
+    _load_app_for_minify()
+
+    if not exists:
+        return None
 
     config = _load_minify_config_uncached()
     if config is None:
@@ -986,22 +1017,9 @@ def minify_sync(reassign_deleted: bool, prune: bool):
 
     Adds new states and events, optionally removes orphaned entries.
     """
-    from reflex.minify import (
-        MINIFY_JSON,
-        _get_minify_json_path,
-        save_minify_config,
-        sync_minify_config,
-    )
+    from reflex.minify import MINIFY_JSON, save_minify_config, sync_minify_config
 
-    if not _get_minify_json_path().exists():
-        console.error(
-            f"{MINIFY_JSON} does not exist. Use 'reflex minify init' to create it."
-        )
-        raise SystemExit(1)
-
-    _load_app_for_minify()
-    existing_config = _load_existing_minify_config()
-
+    existing_config = _open_minify_session()
     new_config = sync_minify_config(
         existing_config, reassign_deleted=reassign_deleted, prune=prune
     )
@@ -1023,17 +1041,9 @@ def minify_validate():
 
     Checks for duplicate IDs, missing entries, and orphaned entries.
     """
-    from reflex.minify import MINIFY_JSON, _get_minify_json_path, validate_minify_config
+    from reflex.minify import MINIFY_JSON, validate_minify_config
 
-    if not _get_minify_json_path().exists():
-        console.error(
-            f"{MINIFY_JSON} does not exist. Use 'reflex minify init' to create it."
-        )
-        raise SystemExit(1)
-
-    _load_app_for_minify()
-    config = _load_existing_minify_config()
-
+    config = _open_minify_session()
     errors, warnings, missing = validate_minify_config(config)
 
     if errors:
@@ -1068,12 +1078,7 @@ def minify_list(output_json: bool):
     """Print the state tree with IDs and minified names."""
     from typing import TypedDict
 
-    from reflex.minify import (
-        get_event_id,
-        get_minify_config,
-        get_state_full_path,
-        get_state_id,
-    )
+    from reflex.minify import get_state_full_path
     from reflex.state import BaseState, State
 
     class EventHandlerData(TypedDict):
@@ -1091,10 +1096,10 @@ def minify_list(output_json: bool):
         event_handlers: list[EventHandlerData]
         substates: list[StateTreeData]
 
-    _load_app_for_minify()
-
     # CLI inspection shows config contents regardless of env var settings.
-    minify_enabled = get_minify_config() is not None
+    config = _open_minify_session(require_exists=False)
+    states_map = config["states"] if config else {}
+    events_map = config["events"] if config else {}
 
     def build_state_tree(state_cls: type[BaseState]) -> StateTreeData:
         """Recursively build state tree data.
@@ -1106,20 +1111,13 @@ def minify_list(output_json: bool):
             A dictionary containing the state tree data.
         """
         state_path = get_state_full_path(state_cls)
-        # state_id is now the minified name directly (a string like "a", "ba")
-        state_id = get_state_id(state_path) if minify_enabled else None
+        state_id = states_map.get(state_path)
 
-        # Build event handlers list
-        handlers = []
-        for handler_name in sorted(state_cls.event_handlers.keys()):
-            # event_id is now the minified name directly (a string like "a", "ba")
-            event_id = (
-                get_event_id(state_path, handler_name) if minify_enabled else None
-            )
-            handlers.append({
-                "name": handler_name,
-                "event_id": event_id,
-            })
+        handler_ids = events_map.get(state_path, {})
+        handlers: list[EventHandlerData] = [
+            {"name": handler_name, "event_id": handler_ids.get(handler_name)}
+            for handler_name in sorted(state_cls.event_handlers.keys())
+        ]
 
         # Build substates recursively
         substates = [
@@ -1190,7 +1188,7 @@ def minify_list(output_json: bool):
 
         console.log(json.dumps(tree_data, indent=2))
     else:
-        if minify_enabled:
+        if config is not None:
             console.log("State Tree (minify.json loaded)")
         else:
             console.log("State Tree (no minify.json)")
@@ -1211,17 +1209,10 @@ def minify_lookup(output_json: bool, minified_path: str):
 
     Walks the state tree from the root to resolve each segment.
     """
-    from reflex.minify import MINIFY_JSON, get_minify_config, get_state_full_path
+    from reflex.minify import get_state_full_path
     from reflex.state import BaseState, State
 
-    _load_app_for_minify()
-
-    config = get_minify_config()
-    if config is None:
-        console.error(
-            f"{MINIFY_JSON} not found. Run 'reflex minify init' to create it."
-        )
-        raise SystemExit(1)
+    config = _open_minify_session()
 
     def collect_states(
         state_cls: type[BaseState],

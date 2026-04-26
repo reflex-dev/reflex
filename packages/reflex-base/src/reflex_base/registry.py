@@ -9,7 +9,8 @@ resolver via :meth:`RegistrationContext.set_name_resolver`.
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, Protocol, runtime_checkable
+from collections.abc import Callable, Iterable
+from typing import TYPE_CHECKING, Protocol, TypeVar, runtime_checkable
 
 from typing_extensions import Self
 
@@ -20,6 +21,37 @@ if TYPE_CHECKING:
     from reflex.state import BaseState
     from reflex_base.components.component import StatefulComponent
     from reflex_base.event import EventHandler
+
+_T = TypeVar("_T")
+
+
+def _rekey(
+    items: Iterable[_T], key_fn: Callable[[_T], str], kind: str
+) -> dict[str, _T]:
+    """Build a name-keyed dict, warning on collisions.
+
+    Args:
+        items: Source items to re-key.
+        key_fn: Computes the new key for each item.
+        kind: Human-readable noun for the collision warning (e.g. ``"state class"``).
+
+    Returns:
+        A new dict mapping resolved key to item; later items overwrite earlier.
+    """
+    from reflex.utils import console
+
+    out: dict[str, _T] = {}
+    for item in items:
+        key = key_fn(item)
+        existing = out.get(key)
+        if existing is not None and existing is not item:
+            console.warn(
+                f"Two {kind}s resolve to the same full name {key!r}: "
+                f"{existing!r} and {item!r}. The first one will be unreachable "
+                "in the registry. Check minify.json for duplicate ids."
+            )
+        out[key] = item
+    return out
 
 
 @runtime_checkable
@@ -287,39 +319,21 @@ class RegistrationContext(BaseContext):
         intact. A console warning is emitted on full-name collisions —
         usually a sign of duplicate ids in ``minify.json``.
         """
-        from reflex.utils import console
         from reflex.utils.format import format_event_handler
 
-        all_classes = list(self.base_states.values())
-        new_base_states: dict[str, type[BaseState]] = {}
+        new_base_states = _rekey(
+            self.base_states.values(), lambda c: c.get_full_name(), "state class"
+        )
         new_substates: dict[str, set[type[BaseState]]] = {}
-        for cls in all_classes:
-            full_name = cls.get_full_name()
-            existing = new_base_states.get(full_name)
-            if existing is not None and existing is not cls:
-                console.warn(
-                    f"Two state classes resolve to the same full name "
-                    f"{full_name!r}: {existing!r} and {cls!r}. The first one "
-                    "will be unreachable in the registry. Check minify.json "
-                    "for duplicate ids."
-                )
-            new_base_states[full_name] = cls
+        for cls in new_base_states.values():
             parent = cls.get_parent_state()
             if parent is not None:
                 new_substates.setdefault(parent.get_full_name(), set()).add(cls)
-
-        all_handlers = list(self.event_handlers.values())
-        new_handlers: dict[str, RegisteredEventHandler] = {}
-        for reg in all_handlers:
-            full_name = format_event_handler(reg.handler)
-            existing_handler = new_handlers.get(full_name)
-            if existing_handler is not None and existing_handler is not reg:
-                console.warn(
-                    f"Two event handlers resolve to the same full name "
-                    f"{full_name!r}. The first one will be unreachable in "
-                    "the registry. Check minify.json for duplicate ids."
-                )
-            new_handlers[full_name] = reg
+        new_handlers = _rekey(
+            self.event_handlers.values(),
+            lambda r: format_event_handler(r.handler),
+            "event handler",
+        )
 
         self.base_states.clear()
         self.base_states.update(new_base_states)

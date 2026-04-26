@@ -15,9 +15,8 @@ from reflex.minify import (
     MinifyNameResolver,
     clear_config_cache,
     generate_minify_config,
-    get_event_id,
+    get_minify_config,
     get_state_full_path,
-    get_state_id,
     int_to_minified_name,
     is_event_minify_enabled,
     is_minify_enabled,
@@ -149,8 +148,7 @@ class TestMinifyConfig:
     def test_no_config_returns_none(self, temp_minify_json):
         """Test that missing minify.json returns None."""
         assert is_minify_enabled() is False
-        assert get_state_id("any.path") is None
-        assert get_event_id("any.path", "handler") is None
+        assert get_minify_config() is None
 
     def test_save_and_load_config(self, temp_minify_json, monkeypatch):
         """Test saving and loading a config."""
@@ -171,8 +169,10 @@ class TestMinifyConfig:
         clear_config_cache()
 
         assert is_minify_enabled() is True
-        assert get_state_id("test.module.MyState") == "a"
-        assert get_event_id("test.module.MyState", "handler") == "a"
+        loaded = get_minify_config()
+        assert loaded is not None
+        assert loaded["states"]["test.module.MyState"] == "a"
+        assert loaded["events"]["test.module.MyState"]["handler"] == "a"
 
     def test_invalid_version_raises(self, temp_minify_json, monkeypatch):
         """Test that invalid version raises ValueError."""
@@ -1134,7 +1134,7 @@ class TestMinifyLookupCLI:
         result = runner.invoke(cli, ["minify", "lookup", "a.b"])
 
         assert result.exit_code == 1
-        assert "minify.json not found" in result.output
+        assert "minify.json does not exist" in result.output
 
     def test_lookup_fails_for_invalid_path(self, temp_minify_json, monkeypatch):
         """Test that lookup fails for non-existent minified path."""

@@ -12,6 +12,7 @@ from __future__ import annotations
 import dataclasses
 import functools
 import json
+from collections.abc import Iterable
 from pathlib import Path
 from typing import TYPE_CHECKING, TypedDict
 
@@ -122,67 +123,38 @@ def is_minify_enabled() -> bool:
 
 
 @functools.cache
+def _is_mode_enabled(env_var_name: str) -> bool:
+    """Whether the given ``REFLEX_MINIFY_*`` env var is on and a config exists.
+
+    Args:
+        env_var_name: The env-var attribute name on
+            :class:`~reflex.environment.EnvironmentVariables`.
+
+    Returns:
+        ``True`` if the env var is ``ENABLED`` and ``minify.json`` exists.
+    """
+    from reflex.environment import MinifyMode, environment
+
+    env_var = getattr(environment, env_var_name)
+    return env_var.get() == MinifyMode.ENABLED and get_minify_config() is not None
+
+
 def is_state_minify_enabled() -> bool:
     """Whether state-id minification is enabled.
 
     Returns:
         ``True`` if ``REFLEX_MINIFY_STATES=enabled`` and ``minify.json`` exists.
     """
-    from reflex.environment import MinifyMode, environment
-
-    return (
-        environment.REFLEX_MINIFY_STATES.get() == MinifyMode.ENABLED
-        and get_minify_config() is not None
-    )
+    return _is_mode_enabled("REFLEX_MINIFY_STATES")
 
 
-@functools.cache
 def is_event_minify_enabled() -> bool:
     """Whether event-id minification is enabled.
 
     Returns:
         ``True`` if ``REFLEX_MINIFY_EVENTS=enabled`` and ``minify.json`` exists.
     """
-    from reflex.environment import MinifyMode, environment
-
-    return (
-        environment.REFLEX_MINIFY_EVENTS.get() == MinifyMode.ENABLED
-        and get_minify_config() is not None
-    )
-
-
-def get_state_id(state_full_path: str) -> str | None:
-    """Look up the minified id for a state path.
-
-    Args:
-        state_full_path: e.g. ``"myapp.state.AppState.UserState"``.
-
-    Returns:
-        The minified id, or ``None`` if not configured.
-    """
-    config = get_minify_config()
-    if config is None:
-        return None
-    return config["states"].get(state_full_path)
-
-
-def get_event_id(state_full_path: str, handler_name: str) -> str | None:
-    """Look up the minified id for an event handler.
-
-    Args:
-        state_full_path: The full path to the state.
-        handler_name: The handler's original name.
-
-    Returns:
-        The minified id, or ``None`` if not configured.
-    """
-    config = get_minify_config()
-    if config is None:
-        return None
-    state_events = config["events"].get(state_full_path)
-    if state_events is None:
-        return None
-    return state_events.get(handler_name)
+    return _is_mode_enabled("REFLEX_MINIFY_EVENTS")
 
 
 def save_minify_config(config: MinifyConfig) -> None:
@@ -245,8 +217,22 @@ class MinifyNameResolver:
             events_enabled=environment.REFLEX_MINIFY_EVENTS.get() == MinifyMode.ENABLED,
         )
 
+    def _is_minify_allowed(self, state_cls: type[BaseState], enabled: bool) -> bool:
+        """Whether minification applies to ``state_cls`` for the given mode.
+
+        Args:
+            state_cls: The state class being resolved.
+            enabled: Whether the relevant ``REFLEX_MINIFY_*`` env var is on.
+
+        Returns:
+            ``True`` when the env var is on and ``state_cls`` is user-defined.
+        """
+        return enabled and not _is_framework_state(state_cls)
+
     def resolve_state_name(self, state_cls: type[BaseState]) -> str | None:  # noqa: D102
-        if not (self.states_enabled and self.config) or _is_framework_state(state_cls):
+        if self.config is None or not self._is_minify_allowed(
+            state_cls, self.states_enabled
+        ):
             return None
         cached = self._state_cache.get(state_cls)
         if cached is not None:
@@ -259,7 +245,9 @@ class MinifyNameResolver:
     def resolve_handler_name(  # noqa: D102
         self, state_cls: type[BaseState], handler_name: str
     ) -> str | None:
-        if not (self.events_enabled and self.config) or _is_framework_state(state_cls):
+        if self.config is None or not self._is_minify_allowed(
+            state_cls, self.events_enabled
+        ):
             return None
         per_state = self._event_cache.get(state_cls)
         if per_state is None:
@@ -329,8 +317,7 @@ def clear_config_cache() -> None:
     ``REFLEX_MINIFY_*`` env vars at runtime.
     """
     get_minify_config.cache_clear()
-    is_state_minify_enabled.cache_clear()
-    is_event_minify_enabled.cache_clear()
+    _is_mode_enabled.cache_clear()
     install_minify_resolver()
 
 
@@ -484,6 +471,51 @@ def generate_minify_config(
     )
 
 
+def _find_duplicate_ids(items: Iterable[tuple[str, str]]) -> dict[str, list[str]]:
+    """Group ``(label, minified_id)`` pairs by id, keeping only collisions.
+
+    Args:
+        items: Pairs of ``(label, minified_id)``.
+
+    Returns:
+        Mapping from minified id to the labels sharing it (always ``len >= 2``).
+    """
+    by_id: dict[str, list[str]] = {}
+    for label, mid in items:
+        by_id.setdefault(mid, []).append(label)
+    return {mid: labels for mid, labels in by_id.items() if len(labels) > 1}
+
+
+def _assign_next_ids(
+    new_keys: Iterable[str],
+    existing_ids: set[int],
+    reassign_deleted: bool,
+) -> dict[str, str]:
+    """Assign minified ids to ``new_keys`` while skipping ``existing_ids``.
+
+    Mutates ``existing_ids`` so callers can chain assignments against the same
+    pool. Keys are sorted for deterministic output.
+
+    Args:
+        new_keys: Keys needing new ids.
+        existing_ids: Already-used integer ids in the same scope.
+        reassign_deleted: When ``True``, scan from 0 (filling gaps);
+            otherwise start past the current max.
+
+    Returns:
+        Mapping from key to its newly-assigned minified id.
+    """
+    next_id = 0 if reassign_deleted else max(existing_ids, default=-1) + 1
+    out: dict[str, str] = {}
+    for key in sorted(new_keys):
+        while next_id in existing_ids:
+            next_id += 1
+        out[key] = int_to_minified_name(next_id)
+        existing_ids.add(next_id)
+        next_id += 1
+    return out
+
+
 def validate_minify_config(
     config: MinifyConfig,
     root_state: type[BaseState] | None = None,
@@ -506,40 +538,27 @@ def validate_minify_config(
 
     all_states = collect_all_states(root_state)
 
-    # Check for duplicate state IDs among siblings.
-    # Group by actual parent class (not string-split path) since children of
-    # the same parent can be defined in different modules.
+    # Group sibling states by their actual parent class (not by string-split
+    # path) since children of the same parent can live in different modules.
     path_to_cls = {get_state_full_path(s): s for s in all_states}
-    parent_cls_to_state_ids: dict[type[BaseState] | None, dict[str, list[str]]] = {}
+    parent_to_pairs: dict[type[BaseState] | None, list[tuple[str, str]]] = {}
     for state_path, minified_name in config["states"].items():
         state_cls = path_to_cls.get(state_path)
-        parent_cls = state_cls.get_parent_state() if state_cls else None
-        parent_cls_to_state_ids.setdefault(parent_cls, {}).setdefault(
-            minified_name, []
-        ).append(state_path)
+        parent = state_cls.get_parent_state() if state_cls else None
+        parent_to_pairs.setdefault(parent, []).append((state_path, minified_name))
 
-    for parent_cls, id_to_states in parent_cls_to_state_ids.items():
-        for minified_name, state_paths in id_to_states.items():
-            if len(state_paths) > 1:
-                parent_name = parent_cls.__name__ if parent_cls else "root"
-                errors.append(
-                    f"Duplicate state_id='{minified_name}' under '{parent_name}': "
-                    f"{state_paths}"
-                )
+    for parent, pairs in parent_to_pairs.items():
+        parent_name = parent.__name__ if parent else "root"
+        errors.extend(
+            f"Duplicate state_id='{mid}' under '{parent_name}': {paths}"
+            for mid, paths in _find_duplicate_ids(pairs).items()
+        )
 
-    # Check for duplicate event IDs within same state
     for state_path, state_events in config["events"].items():
-        id_to_handlers: dict[str, list[str]] = {}
-        for handler_name, minified_name in state_events.items():
-            if minified_name not in id_to_handlers:
-                id_to_handlers[minified_name] = []
-            id_to_handlers[minified_name].append(handler_name)
-
-        for minified_name, handler_names in id_to_handlers.items():
-            if len(handler_names) > 1:
-                errors.append(
-                    f"Duplicate event_id='{minified_name}' in '{state_path}': {handler_names}"
-                )
+        errors.extend(
+            f"Duplicate event_id='{mid}' in '{state_path}': {handlers}"
+            for mid, handlers in _find_duplicate_ids(state_events.items()).items()
+        )
 
     # Check for missing states (in code but not in config)
     code_state_paths = {get_state_full_path(s) for s in all_states}
@@ -652,39 +671,21 @@ def sync_minify_config(
             parent = state_cls.get_parent_state()
             parent_cls_to_new_children.setdefault(parent, []).append(state_path)
 
-    # Assign new state IDs (unique among siblings of the same parent class)
+    # Assign new state IDs (unique among siblings of the same parent class).
     for parent_cls, children in parent_cls_to_new_children.items():
         existing_ids = parent_cls_to_existing_ids.get(parent_cls, set()).copy()
+        new_states.update(_assign_next_ids(children, existing_ids, reassign_deleted))
 
-        # Assign IDs starting from max + 1 (or 0 if reassign_deleted and gaps exist)
-        next_id = 0 if reassign_deleted else (max(existing_ids, default=-1) + 1)
-
-        for state_path in sorted(children):
-            while next_id in existing_ids:
-                next_id += 1
-            new_states[state_path] = int_to_minified_name(next_id)
-            existing_ids.add(next_id)
-            next_id += 1
-
-    # Find events that need IDs assigned
+    # Assign new event IDs (unique within each state).
     for state_cls in all_states:
         state_path = get_state_full_path(state_cls)
         state_events = new_events.get(state_path, {})
         new_handlers = [h for h in state_cls.event_handlers if h not in state_events]
-
         if new_handlers:
-            # Get existing IDs for this state's events
             existing_ids = {minified_name_to_int(eid) for eid in state_events.values()}
-
-            next_id = 0 if reassign_deleted else (max(existing_ids, default=-1) + 1)
-
-            for handler_name in sorted(new_handlers):
-                while next_id in existing_ids:
-                    next_id += 1
-                state_events[handler_name] = int_to_minified_name(next_id)
-                existing_ids.add(next_id)
-                next_id += 1
-
+            state_events.update(
+                _assign_next_ids(new_handlers, existing_ids, reassign_deleted)
+            )
             new_events[state_path] = state_events
 
     return MinifyConfig(
