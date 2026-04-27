@@ -4420,12 +4420,20 @@ async def test_get_var_value_async_computed_var(
         async def doubled(self) -> int:
             return self.base * 2
 
+    class Substate(StateWithAsyncCV):
+        """A substate to test get_var_value across states."""
+
     state_manager = attached_mock_event_context.state_manager
     state = await state_manager.get_state(
         BaseStateToken(ident=token, cls=StateWithAsyncCV)
     )
 
+    # Fast path
     assert await state.get_var_value(StateWithAsyncCV.doubled) == 10
+
+    # Slow path
+    substate = await state.get_state(Substate)
+    assert await substate.get_var_value(StateWithAsyncCV.doubled) == 10
 
 
 @pytest.mark.asyncio
