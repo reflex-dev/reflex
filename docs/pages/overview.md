@@ -1,5 +1,7 @@
 ```python exec
 import reflex as rx
+
+from reflex_docs.pages.docs import api_reference, library, pages, utility_methods
 ```
 
 # Pages
@@ -69,7 +71,7 @@ You can directly import the module or import another module that imports the dec
 
 ### Links
 
-[Links](/docs/library/typography/link) are accessible elements used primarily for navigation. Use the `href` prop to specify the location for the link to navigate to.
+[Links]({library.typography.link.path}) are accessible elements used primarily for navigation. Use the `href` prop to specify the location for the link to navigate to.
 
 ```python demo
 rx.link("Reflex Home Page.", href="https://reflex.dev/")
@@ -78,7 +80,7 @@ rx.link("Reflex Home Page.", href="https://reflex.dev/")
 You can also provide local links to other pages in your project without writing the full url.
 
 ```python demo
-rx.link("Example", href="/docs/library")
+rx.link("Example", href=library.path)
 ```
 
 To open the link in a new tab, set the `is_external` prop to `True`.
@@ -87,7 +89,7 @@ To open the link in a new tab, set the `is_external` prop to `True`.
 rx.link("Open in new tab", href="https://reflex.dev/", is_external=True)
 ```
 
-Check out the [link docs](/docs/library/typography/link) to learn more.
+Check out the [link docs]({library.typography.link.path}) to learn more.
 
 ```md video https://youtube.com/embed/ITOZkzjtjUA?start=4083&end=4423
 # Video: Link-based Navigation
@@ -102,9 +104,7 @@ Redirect the user to a new path within the application using `rx.redirect()`.
 
 ```python demo
 rx.vstack(
-    rx.button(
-        "open in tab", on_click=rx.redirect("/docs/api-reference/special_events")
-    ),
+    rx.button("open in tab", on_click=rx.redirect(api_reference.special_events.path)),
     rx.button(
         "open in new tab",
         on_click=rx.redirect("https://github.com/reflex-dev/reflex/", is_external=True),
@@ -209,7 +209,7 @@ You can add page metadata such as:
 
 ## Getting the Current Page
 
-You can access the current page from the `router` attribute in any state. See the [router docs](/docs/utility_methods/router_attributes) for all available attributes.
+You can access the current page from the `router` attribute in any state. See the [router docs]({utility_methods.router_attributes.path}) for all available attributes.
 
 ```python
 class State(rx.State):
@@ -220,7 +220,7 @@ class State(rx.State):
 ```
 
 The `router.page.path` attribute allows you to obtain the path of the current page from the router data,
-for [dynamic pages](/docs/pages/dynamic_routing) this will contain the slug rather than the actual value used to load the page.
+for [dynamic pages]({pages.dynamic_routing.path}) this will contain the slug rather than the actual value used to load the page.
 
 To get the actual URL displayed in the browser, use `router.page.raw_path`. This
 will contain all query parameters and dynamic path segments.

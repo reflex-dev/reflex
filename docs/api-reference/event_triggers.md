@@ -2,6 +2,8 @@
 from datetime import datetime
 
 import reflex as rx
+
+from reflex_docs.pages.docs import events
 ```
 
 # Event Triggers
@@ -73,7 +75,7 @@ def protected_page():
     return rx.text("Protected content")
 ```
 
-For more details on page load events, see the [page load events documentation](/docs/events/page_load_events).
+For more details on page load events, see the [page load events documentation]({events.page_load_events.path}).
 
 # Event Reference
 

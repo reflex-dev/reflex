@@ -1,5 +1,7 @@
 ```python exec
 import reflex as rx
+
+from reflex_docs.pages.docs import api_reference, assets, library
 ```
 
 # Files
@@ -115,7 +117,7 @@ rx.table.root(
 )
 ```
 
-For more information about assets, see the [Assets Overview](/docs/assets/overview/).
+For more information about assets, see the [Assets Overview]({assets.overview.path}).
 
 ## Download
 
@@ -174,7 +176,7 @@ def download_random_data_button():
 
 The `data` arg accepts `str` or `bytes` data, a `data:` URI, `PIL.Image`, or any state Var. If the Var is not already a string, it will be converted to a string using `JSON.stringify`. This allows complex state structures to be offered as JSON downloads.
 
-Reference page for `rx.download` [here](/docs/api-reference/special_events#rx.download).
+Reference page for `rx.download` [here]({api_reference.special_events.path}#rx.download).
 
 ## Upload
 
@@ -192,4 +194,4 @@ def index():
     )
 ```
 
-For detailed information, see the reference page of the component [here](/docs/library/forms/upload).
+For detailed information, see the reference page of the component [here]({library.forms.upload.path}).

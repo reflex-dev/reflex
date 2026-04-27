@@ -2,6 +2,8 @@
 import asyncio
 from typing import Any
 import reflex as rx
+
+from reflex_docs.pages.docs import library, wrapping_react
 ```
 
 # Browser Javascript
@@ -23,7 +25,7 @@ Prefer to use the Python API whenever possible and file an issue if you need add
 
 There are four ways to execute custom Javascript code into your Reflex app:
 
-- `rx.script` - Injects the script via `next/script` for efficient loading of inline and external Javascript code. Described further in the [component library](/docs/library/other/script).
+- `rx.script` - Injects the script via `next/script` for efficient loading of inline and external Javascript code. Described further in the [component library]({library.other.script.path}).
   - These components can be directly included in the body of a page, or they may
     be passed to `rx.App(head_components=[rx.script(...)])` to be included in
     the `<Head>` tag of all pages.
@@ -34,7 +36,7 @@ These previous two methods can work in tandem to load external scripts and then
 call functions defined within them in response to user events.
 
 The following two methods are geared towards wrapping components and are
-described with examples in the [Wrapping React](/docs/wrapping-react/overview)
+described with examples in the [Wrapping React]({wrapping_react.overview.path})
 section.
 
 - `_get_hooks` and `_get_custom_code` in an `rx.Component` subclass

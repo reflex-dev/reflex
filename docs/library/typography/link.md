@@ -5,6 +5,8 @@ components:
 
 ```python exec
 import reflex as rx
+
+from reflex_docs.pages.docs import api_reference, library
 ```
 
 # Link
@@ -20,7 +22,7 @@ You can also provide local links to other pages in your project without writing 
 ```python demo
 rx.link(
     "Example",
-    href="/docs/library",
+    href=library.path,
 )
 ```
 
@@ -39,13 +41,13 @@ rx.box("Example", id="example")
 To reference an anchor, you can use the `href` prop of the `link` component. The `href` should be in the format of the page you want to link to followed by a # and the id of the anchor.
 
 ```python demo
-rx.link("Example", href="/docs/library/typography/link#example")
+rx.link("Example", href=f"{library.typography.link.path}#example")
 ```
 
 ```md alert info
 # Redirecting the user using State
 
-It is also possible to redirect the user to a new path within the application, using `rx.redirect()`. Check out the docs [here](/docs/api-reference/special_events).
+It is also possible to redirect the user to a new path within the application, using `rx.redirect()`. Check out the docs [here]({api_reference.special_events.path}).
 ```
 
 # Style

@@ -1,5 +1,15 @@
 ```python exec
 import reflex as rx
+
+from reflex_docs.pages.docs import (
+    advanced_onboarding,
+    getting_started,
+    library,
+    pages,
+    styling,
+    vars,
+    wrapping_react,
+)
 ```
 
 # Introduction
@@ -81,7 +91,7 @@ def tabs():
         ),
         rx.tabs.content(
             rx.markdown(
-                """Each page is a Python function returning a Reflex component. Add as many as you want and link between them — see [Routing](/docs/pages/overview) for details.
+                """Each page is a Python function returning a Reflex component. Add as many as you want and link between them — see [Routing]({pages.overview.path}) for details.
                 """,
             ),
             value="tab3",
@@ -212,7 +222,7 @@ class State(rx.State):
     count: int = 0
 ```
 
-State holds the app's mutable data. Variables declared here are called **[vars](/docs/vars/base_vars)**. Our counter has one: `count`, starting at `0`.
+State holds the app's mutable data. Variables declared here are called **[vars]({vars.base_vars.path})**. Our counter has one: `count`, starting at `0`.
 
 ### Event Handlers
 
@@ -249,7 +259,7 @@ def index():
     )
 ```
 
-The UI is built from components (`rx.hstack`, `rx.button`, `rx.heading`) that can be nested and styled with CSS or [Tailwind](/docs/styling/tailwind). Reflex ships with [50+ built-in components](/docs/library), and you can [wrap any React component](/docs/wrapping-react/overview).
+The UI is built from components (`rx.hstack`, `rx.button`, `rx.heading`) that can be nested and styled with CSS or [Tailwind]({styling.tailwind.path}). Reflex ships with [50+ built-in components]({library.path}), and you can [wrap any React component]({wrapping_react.overview.path}).
 
 Components reference state vars (`rx.heading(State.count, …)`) and reactively re-render when state changes. Event triggers (`on_click=State.decrement`) wire UI to handlers.
 
@@ -277,9 +287,9 @@ Create the app and register the page at the base route.
 ```md alert info
 # Keep learning →
 
-- [Dashboard tutorial](/docs/getting_started/dashboard_tutorial) — build a real data app.
-- [Chatapp tutorial](/docs/getting_started/chatapp_tutorial) — wire up streaming AI responses.
-- [How Reflex works](/docs/advanced_onboarding/how-reflex-works) — what happens under the hood.
+- [Dashboard tutorial]({getting_started.dashboard_tutorial.path}) — build a real data app.
+- [Chatapp tutorial]({getting_started.chatapp_tutorial.path}) — wire up streaming AI responses.
+- [How Reflex works]({advanced_onboarding.how_reflex_works.path}) — what happens under the hood.
 ```
 
 ```md alert info
@@ -289,4 +299,4 @@ Create the app and register the page at the base route.
 - [Reflex Cloud](https://reflex.dev/docs/hosting/deploy-quick-start/) — one-command deploy.
 ```
 
-Browse our [open-source templates](/docs/getting_started/open_source_templates), or press `Cmd+K` / `Ctrl+K` to search the docs.
+Browse our [open-source templates]({getting_started.open_source_templates.path}), or press `Cmd+K` / `Ctrl+K` to search the docs.

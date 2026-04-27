@@ -1,5 +1,7 @@
 ```python exec
 import reflex as rx
+
+from reflex_docs.pages.docs import hosting
 ```
 
 ## Overview 
@@ -18,7 +20,7 @@ Each additional collaborator is considered a `seat` and is charged on a flat mon
 
 Reflex Cloud is billed on a per second basis so you only pay for when your app is being used by your end users. When your app is idle, you are not charged. 
 
-For more information on compute pricing, please see the [compute](/docs/hosting/compute/) page.
+For more information on compute pricing, please see the [compute]({hosting.compute.path}) page.
 
 ## Manage Billing
 

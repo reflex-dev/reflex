@@ -10,6 +10,15 @@ from docs.getting_started.chat_tutorial_utils import ChatappState
 # If it's in environment, no need to hardcode (openai SDK will pick it up)
 if "OPENAI_API_KEY" not in os.environ:
     openai.api_key = "YOUR_OPENAI_KEY"
+
+from reflex_docs.pages.docs import (
+    components,
+    events,
+    getting_started,
+    library,
+    state,
+    styling,
+)
 ```
 
 # AI Chat App
@@ -90,7 +99,7 @@ In this tutorial you'll learn how to:
 # Video: Example of Setting up the Chat App
 ```
 
-We will start by creating a new project and setting up our development environment. If you haven't installed [uv](https://docs.astral.sh/uv/) yet, see the [installation guide](/docs/getting_started/installation). Then create a new project directory and scaffold a Reflex app:
+We will start by creating a new project and setting up our development environment. If you haven't installed [uv](https://docs.astral.sh/uv/) yet, see the [installation guide]({getting_started.installation.path}). Then create a new project directory and scaffold a Reflex app:
 
 ```bash
 mkdir chatapp
@@ -118,7 +127,7 @@ Now that we have our project set up, in the next section we will start building 
 
 ## Basic Frontend
 
-Let's start with defining the frontend for our chat app. In Reflex, the frontend can be broken down into independent, reusable components. See the [components docs](/docs/components/props) for more information.
+Let's start with defining the frontend for our chat app. In Reflex, the frontend can be broken down into independent, reusable components. See the [components docs]({components.props.path}) for more information.
 
 ### Display Q&A
 
@@ -167,7 +176,7 @@ app.add_page(index)
 
 Components can be nested inside each other to create complex layouts. Here we create a parent container that contains two boxes for the question and answer.
 
-We also add some basic styling to the components. Components take in keyword arguments, called [props](/docs/components/props), that modify the appearance and functionality of the component. We use the `text_align` prop to align the text to the left and right.
+We also add some basic styling to the components. Components take in keyword arguments, called [props]({components.props.path}), that modify the appearance and functionality of the component. We use the `text_align` prop to align the text to the left and right.
 
 ### Reusing Components
 
@@ -232,7 +241,7 @@ def index() -> rx.Component:
 
 ### Chat Input
 
-Now we want a way for the user to input a question. For this, we will use the [input](/docs/library/forms/input) component to have the user add text and a [button](/docs/library/forms/button) component to submit the question.
+Now we want a way for the user to input a question. For this, we will use the [input]({library.forms.input.path}) component to have the user add text and a [button]({library.forms.button.path}) component to submit the question.
 
 ```python exec
 def action_bar() -> rx.Component:
@@ -266,7 +275,7 @@ def index() -> rx.Component:
 
 ### Styling
 
-Let's add some styling to the app. More information on styling can be found in the [styling docs](/docs/styling/overview). To keep our code clean, we will move the styling to a separate file `chatapp/style.py`.
+Let's add some styling to the app. More information on styling can be found in the [styling docs]({styling.overview.path}). To keep our code clean, we will move the styling to a separate file `chatapp/style.py`.
 
 ```python
 # style.py
@@ -391,7 +400,7 @@ The app is looking good, but it's not very useful yet! In the next section, we w
 
 ## State
 
-Now let’s make the chat app interactive by adding state. The state is where we define all the variables that can change in the app and all the functions that can modify them. You can learn more about state in the [state docs](/docs/state/overview).
+Now let’s make the chat app interactive by adding state. The state is where we define all the variables that can change in the app and all the functions that can modify them. You can learn more about state in the [state docs]({state.overview.path}).
 
 ### Defining State
 
@@ -478,9 +487,9 @@ def action_bar() -> rx.Component:
     )
 ```
 
-Normal Python `for` loops don't work for iterating over state vars because these values can change and aren't known at compile time. Instead, we use the [foreach](/docs/library/dynamic-rendering/foreach) component to iterate over the chat history.
+Normal Python `for` loops don't work for iterating over state vars because these values can change and aren't known at compile time. Instead, we use the [foreach]({library.dynamic_rendering.foreach.path}) component to iterate over the chat history.
 
-We also bind the input's `on_change` event to the `set_question` event handler, which will update the `question` state var while the user types in the input. We bind the button's `on_click` event to the `answer` event handler, which will process the question and add the answer to the chat history. The `set_question` event handler is a built-in implicitly defined event handler. Every base var has one. Learn more in the [events docs](/docs/events/setters) under the Setters section.
+We also bind the input's `on_change` event to the `set_question` event handler, which will update the `question` state var while the user types in the input. We bind the button's `on_click` event to the `answer` event handler, which will process the question and add the answer to the chat history. The `set_question` event handler is a built-in implicitly defined event handler. Every base var has one. Learn more in the [events docs]({events.setters.path}) under the Setters section.
 
 ### Clearing the Input
 
@@ -532,7 +541,7 @@ def answer(self):
 
 ### Streaming Text
 
-Normally state updates are sent to the frontend when an event handler returns. However, we want to stream the text from the chatbot as it is generated. We can do this by yielding from the event handler. See the [yield events docs](/docs/events/yield_events) for more info.
+Normally state updates are sent to the frontend when an event handler returns. However, we want to stream the text from the chatbot as it is generated. We can do this by yielding from the event handler. See the [yield events docs]({events.yield_events.path}) for more info.
 
 ```python exec
 def action_bar3() -> rx.Component:

@@ -1,3 +1,7 @@
+
+```python exec
+from reflex_docs.pages.docs import getting_started
+```
 # Installation
 
 ~3 minutes · Requires Python 3.10+.
@@ -108,5 +112,5 @@ uv run reflex run --loglevel debug
 ```md alert info
 # Next: Build your first app →
 
-Reflex is installed. The [Introduction](/docs/getting-started/introduction) walks through a working counter app in pure Python — the shortest path from "it runs" to "I understand it."
+Reflex is installed. The [Introduction]({getting_started.introduction.path}) walks through a working counter app in pure Python — the shortest path from "it runs" to "I understand it."
 ```

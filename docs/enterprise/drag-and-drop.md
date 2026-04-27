@@ -5,6 +5,8 @@ title: Drag and Drop
 ```python exec
 import reflex as rx
 import reflex_enterprise as rxe
+
+from reflex_docs.pages.docs import enterprise
 ```
 
 # Drag and Drop
@@ -577,4 +579,4 @@ def app():
 
 ---
 
-[← Back to main documentation](/docs/enterprise/overview/)
+[← Back to main documentation]({enterprise.overview.path})

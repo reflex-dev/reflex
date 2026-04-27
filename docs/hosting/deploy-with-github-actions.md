@@ -50,6 +50,8 @@ github_actions_configs = [
         "default": "3.12",
     },
 ]
+
+from reflex_docs.pages.docs import hosting
 ```
 
 # Deploy with Github Actions
@@ -99,7 +101,7 @@ Store your Reflex authentication token securely in your repository's secrets:
 2. Navigate to Settings > Secrets and variables > Actions > New repository secret.
 3. Create new secrets for `REFLEX_AUTH_TOKEN` and `REFLEX_PROJECT_ID`. 
 
-(Create a `REFLEX_AUTH_TOKEN` in the tokens tab of your UI, check out these [docs](/docs/hosting/tokens/#tokens). 
+(Create a `REFLEX_AUTH_TOKEN` in the tokens tab of your UI, check out these [docs]({hosting.tokens.path}#tokens). 
 
 The `REFLEX_PROJECT_ID` can be found in the UI when you click on the How to deploy button on the top right when inside a project and copy the ID after the `--project` flag.)
 

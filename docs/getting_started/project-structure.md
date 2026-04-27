@@ -5,6 +5,8 @@
 
 ```python exec
 app_name = "hello"
+
+from reflex_docs.pages.docs import advanced_onboarding
 ```
 
 Let's create a new app called `{app_name}`
@@ -83,4 +85,4 @@ config = rx.Config(
 )
 ```
 
-We will discuss project structure and configuration in more detail in the [advanced project structure](/docs/advanced_onboarding/code_structure) documentation.
+We will discuss project structure and configuration in more detail in the [advanced project structure]({advanced_onboarding.code_structure.path}) documentation.

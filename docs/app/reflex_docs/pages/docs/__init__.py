@@ -299,5 +299,10 @@ for _virtual, _actual in sorted(all_docs.items()):
         get_component_docgen(_virtual, _actual, doc_title_from_path(_virtual)),
     )
 
+# Top-level pages get shadowed by the subpage SimpleNamespace below; copy
+# their .path across so markdown can reference {library.path} etc.
+docs_ns.library.path = library.path  # type: ignore[attr-defined]
+docs_ns.custom_components.path = custom_components.path  # type: ignore[attr-defined]
+
 for name, ns in docs_ns.__dict__.items():
     globals()[name] = ns

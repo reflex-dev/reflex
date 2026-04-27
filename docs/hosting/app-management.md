@@ -1,5 +1,7 @@
 ```python exec
 import reflex as rx
+
+from reflex_docs.pages.docs import hosting
 ```
 
 # App
@@ -52,4 +54,4 @@ Here there is a `Delete app` button. Pressing this button will delete the app an
 
 Clicking on the `Settings` tab in the Cloud UI on the app page also allows a user to change the `app name`, change the `app description` and check the `app id`.
 
-The other app settings also allows users to edit and add secrets (environment variables) to the app. For more information on secrets, see the [Secrets (Environment Variables)](/docs/hosting/secrets-environment-vars/) page.
+The other app settings also allows users to edit and add secrets (environment variables) to the app. For more information on secrets, see the [Secrets (Environment Variables)]({hosting.secrets_environment_vars.path}) page.

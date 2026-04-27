@@ -2,13 +2,15 @@
 
 ```python exec
 import reflex as rx
+
+from reflex_docs.pages.docs import custom_components
 ```
 
 Reflex users create many components of their own: ready to use high level components, or nicely wrapped React components. With **Custom Components**, the community can easily share these components now.
 
 Release **0.4.3** introduces a series of `reflex component` commands that help developers wrap react components, test, and publish them as python packages. As shown in the image below, there are already a few custom components published on PyPI, such as `reflex-spline`, `reflex-webcam`.
 
-Check out the custom components gallery [here](/docs/custom-components/overview).
+Check out the custom components gallery [here]({custom_components.overview.path}).
 
 ```python eval
 rx.center(
@@ -23,7 +25,7 @@ rx.center(
 
 ## Prerequisites for Publishing
 
-In order to publish a Python package, an account is required with a python package index, for example, PyPI. The documentation to create accounts and generate API tokens can be found on their websites. For a quick reference, check out our [Prerequisites for Publishing](/docs/custom-components/prerequisites-for-publishing) page.
+In order to publish a Python package, an account is required with a python package index, for example, PyPI. The documentation to create accounts and generate API tokens can be found on their websites. For a quick reference, check out our [Prerequisites for Publishing]({custom_components.prerequisites_for_publishing.path}) page.
 
 ## Steps to Publishing
 

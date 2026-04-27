@@ -5,6 +5,8 @@ components:
 
 ```python exec
 import reflex as rx
+
+from reflex_docs.pages.docs import library
 ```
 
 # Composed Chart
@@ -12,7 +14,7 @@ import reflex as rx
 A `composed_chart` is a higher-level component chart that is composed of multiple charts, where other charts are the children of the `composed_chart`. The charts are placed on top of each other in the order they are provided in the `composed_chart` function.
 
 ```md alert info
-# To learn more about individual charts, checkout: **[area_chart](/docs/library/graphing/charts/areachart)**, **[line_chart](/docs/library/graphing/charts/linechart)**, or **[bar_chart](/docs/library/graphing/charts/barchart)**.
+# To learn more about individual charts, checkout: **[area_chart]({library.graphing.charts.areachart.path})**, **[line_chart]({library.graphing.charts.linechart.path})**, or **[bar_chart]({library.graphing.charts.barchart.path})**.
 ```
 
 ```python demo graphing

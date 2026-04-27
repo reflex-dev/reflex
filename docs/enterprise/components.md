@@ -5,63 +5,65 @@ title: Enterprise Components
 ```python exec
 import reflex as rx
 
+from reflex_docs.pages.docs import enterprise
+
 
 def enterprise_component_grid():
     sections = [
         {
             "title": "AG Grid",
             "description": "Advanced data grid with sorting, filtering, editing, and pagination",
-            "link": "/docs/enterprise/ag-grid/",
+            "link": enterprise.ag_grid.index.path,
             "components": [
-                ("Overview", "/docs/enterprise/ag-grid/"),
-                ("Column Definitions", "/docs/enterprise/ag-grid/column-defs/"),
-                ("Aligned Grids", "/docs/enterprise/ag-grid/aligned-grids/"),
-                ("Model Wrapper", "/docs/enterprise/ag-grid/model-wrapper/"),
-                ("Pivot Mode", "/docs/enterprise/ag-grid/pivot-mode/"),
-                ("Theme", "/docs/enterprise/ag-grid/theme/"),
-                ("Value Transformers", "/docs/enterprise/ag-grid/value-transformers/"),
+                ("Overview", enterprise.ag_grid.index.path),
+                ("Column Definitions", enterprise.ag_grid.column_defs.path),
+                ("Aligned Grids", enterprise.ag_grid.aligned_grids.path),
+                ("Model Wrapper", enterprise.ag_grid.model_wrapper.path),
+                ("Pivot Mode", enterprise.ag_grid.pivot_mode.path),
+                ("Theme", enterprise.ag_grid.theme.path),
+                ("Value Transformers", enterprise.ag_grid.value_transformers.path),
             ],
         },
         {
             "title": "AG Chart",
             "description": "Interactive charts and data visualization",
-            "link": "/docs/enterprise/ag-chart/",
+            "link": enterprise.ag_chart.path,
             "components": [
-                ("Overview", "/docs/enterprise/ag-chart/"),
+                ("Overview", enterprise.ag_chart.path),
             ],
         },
         {
             "title": "Interactive Components",
             "description": "Drag-and-drop and mapping functionality",
-            "link": "/docs/enterprise/drag-and-drop/",
+            "link": enterprise.drag_and_drop.path,
             "components": [
-                ("Drag and Drop", "/docs/enterprise/drag-and-drop/"),
-                ("Mapping", "/docs/enterprise/map/"),
+                ("Drag and Drop", enterprise.drag_and_drop.path),
+                ("Mapping", enterprise.map.index.path),
             ],
         },
         {
             "title": "Mantine",
             "description": "Rich UI components from Mantine library",
-            "link": "/docs/enterprise/mantine/",
+            "link": enterprise.mantine.index.path,
             "components": [
-                ("Overview", "/docs/enterprise/mantine/"),
-                ("Autocomplete", "/docs/enterprise/mantine/autocomplete/"),
-                ("Collapse", "/docs/enterprise/mantine/collapse/"),
-                ("Combobox", "/docs/enterprise/mantine/combobox/"),
-                ("JSON Input", "/docs/enterprise/mantine/json-input/"),
-                ("Loading Overlay", "/docs/enterprise/mantine/loading-overlay/"),
-                ("Multi Select", "/docs/enterprise/mantine/multi-select/"),
-                ("Number Formatter", "/docs/enterprise/mantine/number-formatter/"),
-                ("Pill", "/docs/enterprise/mantine/pill/"),
-                ("Ring Progress", "/docs/enterprise/mantine/ring-progress/"),
+                ("Overview", enterprise.mantine.index.path),
+                ("Autocomplete", enterprise.mantine.autocomplete.path),
+                ("Collapse", enterprise.mantine.collapse.path),
+                ("Combobox", enterprise.mantine.combobox.path),
+                ("JSON Input", enterprise.mantine.json_input.path),
+                ("Loading Overlay", enterprise.mantine.loading_overlay.path),
+                ("Multi Select", enterprise.mantine.multi_select.path),
+                ("Number Formatter", enterprise.mantine.number_formatter.path),
+                ("Pill", enterprise.mantine.pill.path),
+                ("Ring Progress", enterprise.mantine.ring_progress.path),
                 (
                     "Semi Circle Progress",
-                    "/docs/enterprise/mantine/semi-circle-progress/",
+                    enterprise.mantine.semi_circle_progress.path,
                 ),
-                ("Spoiler", "/docs/enterprise/mantine/spoiler/"),
-                ("Tags Input", "/docs/enterprise/mantine/tags-input/"),
-                ("Timeline", "/docs/enterprise/mantine/timeline/"),
-                ("Tree", "/docs/enterprise/mantine/tree/"),
+                ("Spoiler", enterprise.mantine.spoiler.path),
+                ("Tags Input", enterprise.mantine.tags_input.path),
+                ("Timeline", enterprise.mantine.timeline.path),
+                ("Tree", enterprise.mantine.tree.path),
             ],
         },
     ]

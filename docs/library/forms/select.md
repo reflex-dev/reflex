@@ -70,6 +70,8 @@ SelectItem: |
 ```python exec
 import random
 import reflex as rx
+
+from reflex_docs.pages.docs import library
 ```
 
 # Select
@@ -181,7 +183,7 @@ def select_form_example():
 
 ### Using Select within a Drawer component
 
-If using within a [Drawer](/docs/library/overlay/drawer) component, set the `position` prop to `"popper"` to ensure the select menu is displayed correctly.
+If using within a [Drawer]({library.overlay.drawer.path}) component, set the `position` prop to `"popper"` to ensure the select menu is displayed correctly.
 
 ```python demo
 rx.drawer.root(

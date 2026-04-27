@@ -7,6 +7,8 @@ title: Reflex Enterprise
 ```python exec
 import reflex as rx
 
+from reflex_docs.pages.docs import enterprise
+
 try:
     import reflex_enterprise as rxe
     from reflex_enterprise.components.ag_grid.resource import RendererParams
@@ -21,7 +23,7 @@ The full [End-User License Agreement (EULA)](https://raw.githubusercontent.com/r
 
 ```md alert info
 # Despite being an enterprise package, free users can use the components from this package. A badge "Built with Reflex" will be shown in the bottom right corner of the app.
-For more information on the badge, visit [Built with Reflex](/docs/enterprise/built-with-reflex/).
+For more information on the badge, visit [Built with Reflex]({enterprise.built_with_reflex.path}).
 ```
 
 ## Installation
@@ -49,14 +51,14 @@ categories_data = [
                 "description": "Toggle the 'Built with Reflex' badge in your app",
                 "cloud_tier": "Enterprise",
                 "self_hosted_tier": "Enterprise",
-                "link": "/docs/enterprise/built-with-reflex",
+                "link": enterprise.built_with_reflex.path,
             },
             {
                 "feature": "use_single_port",
                 "description": "Enable single-port deployment by proxying backend to frontend",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/single-port-proxy",
+                "link": enterprise.single_port_proxy.path,
             },
         ],
     },
@@ -70,14 +72,14 @@ categories_data = [
                 "description": "Advanced data grid with enterprise features (sorting, filtering, grouping)",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/ag-grid",
+                "link": enterprise.ag_grid.index.path,
             },
             {
                 "feature": "AGCharts",
                 "description": "Interactive charts and data visualization components",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/ag-chart",
+                "link": enterprise.ag_chart.path,
             },
         ],
     },
@@ -91,14 +93,14 @@ categories_data = [
                 "description": "Drag and drop functionality for interactive UI elements",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/drag-and-drop",
+                "link": enterprise.drag_and_drop.path,
             },
             {
                 "feature": "Mapping",
                 "description": "Interactive maps with markers, layers, and controls",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/map",
+                "link": enterprise.map.index.path,
             },
         ],
     },
@@ -112,98 +114,98 @@ categories_data = [
                 "description": "Auto-completing text input with dropdown suggestions",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/mantine/autocomplete",
+                "link": enterprise.mantine.autocomplete.path,
             },
             {
                 "feature": "Combobox",
                 "description": "Searchable dropdown with custom options and filtering",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/mantine/combobox",
+                "link": enterprise.mantine.combobox.path,
             },
             {
                 "feature": "Multi Select",
                 "description": "Multi-selection dropdown with tags and search",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/mantine/multi-select",
+                "link": enterprise.mantine.multi_select.path,
             },
             {
                 "feature": "Tags Input",
                 "description": "Input field for creating and managing tags",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/mantine/tags-input",
+                "link": enterprise.mantine.tags_input.path,
             },
             {
                 "feature": "Json Input",
                 "description": "JSON editor with syntax highlighting and validation",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/mantine/json-input",
+                "link": enterprise.mantine.json_input.path,
             },
             {
                 "feature": "Pill",
                 "description": "Small rounded elements for tags, badges, and labels",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/mantine/pill",
+                "link": enterprise.mantine.pill.path,
             },
             {
                 "feature": "Tree",
                 "description": "Hierarchical tree view with expandable nodes",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/mantine/tree",
+                "link": enterprise.mantine.tree.path,
             },
             {
                 "feature": "Timeline",
                 "description": "Timeline component for displaying chronological events",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/mantine/timeline",
+                "link": enterprise.mantine.timeline.path,
             },
             {
                 "feature": "Number Formatter",
                 "description": "Format and display numbers with customizable formatting",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/mantine/number-formatter",
+                "link": enterprise.mantine.number_formatter.path,
             },
             {
                 "feature": "Ring Progress",
                 "description": "Circular progress indicator with customizable styling",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/mantine/ring-progress",
+                "link": enterprise.mantine.ring_progress.path,
             },
             {
                 "feature": "Semi Circle Progress",
                 "description": "Semi-circular progress indicator for dashboards",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/mantine/semi-circle-progress",
+                "link": enterprise.mantine.semi_circle_progress.path,
             },
             {
                 "feature": "Loading Overlay",
                 "description": "Loading overlay with spinner for async operations",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/mantine/loading-overlay",
+                "link": enterprise.mantine.loading_overlay.path,
             },
             {
                 "feature": "Spoiler",
                 "description": "Collapsible content container with show/hide toggle",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/mantine/spoiler",
+                "link": enterprise.mantine.spoiler.path,
             },
             {
                 "feature": "Collapse",
                 "description": "Animated collapsible content with smooth transitions",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/mantine/collapse",
+                "link": enterprise.mantine.collapse.path,
             },
         ],
     },

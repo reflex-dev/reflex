@@ -1,12 +1,14 @@
 ```python exec
 import reflex as rx
+
+from reflex_docs.pages.docs import getting_started, library, vars
 ```
 
 # Rendering Iterables
 
-Recall again from the [basics](/docs/getting_started/basics) that we cannot use Python `for` loops when referencing state vars in Reflex. Instead, use the `rx.foreach` component to render components from a collection of data.
+Recall again from the [basics]({getting_started.basics.path}) that we cannot use Python `for` loops when referencing state vars in Reflex. Instead, use the `rx.foreach` component to render components from a collection of data.
 
-For dynamic content that should automatically scroll to show the newest items, consider using the [auto scroll](/docs/library/dynamic-rendering/auto_scroll) component together with `rx.foreach`.
+For dynamic content that should automatically scroll to show the newest items, consider using the [auto scroll]({library.dynamic_rendering.auto_scroll.path}) component together with `rx.foreach`.
 
 ```python demo exec
 class IterState(rx.State):
@@ -231,7 +233,7 @@ def projects_example() -> rx.Component:
     return rx.box(rx.foreach(NestedStateFE.projects, project_item))
 ```
 
-If you want an example where not all of the values in the dict are the same type then check out the example on [var operations using foreach](/docs/vars/var-operations).
+If you want an example where not all of the values in the dict are the same type then check out the example on [var operations using foreach]({vars.var_operations.path}).
 
 Here is a further example of how to use `foreach` with a nested data structure.
 

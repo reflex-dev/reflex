@@ -33,9 +33,11 @@ data: list[list[Any]] = [
     ["E", 5, True],
     ["F", 6, False],
 ]
+
+from reflex_docs.pages.docs import library
 ```
 
-This component is introduced as an alternative to the [datatable](/docs/library/tables-and-data-grids/data_table) to support editing the displayed data.
+This component is introduced as an alternative to the [datatable]({library.tables_and_data_grids.data_table.path}) to support editing the displayed data.
 
 ## Columns
 

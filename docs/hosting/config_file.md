@@ -1,5 +1,7 @@
 ```python exec
 import reflex as rx
+
+from reflex_docs.pages.docs import hosting
 ```
 
 ## What is reflex cloud config?
@@ -86,14 +88,14 @@ rx.table.root(
                 "object",
                 "sjc: 1",
                 "Region deployment mapping",
-                "/docs/hosting/regions",
+                hosting.regions.path,
             ),
             (
                 "vmtype",
                 "string",
                 "c1m1",
                 "Virtual machine specifications",
-                "/docs/hosting/machine-types",
+                hosting.machine_types.path,
             ),
             ("hostname", "string", "null", "Custom subdomain", None),
             (
@@ -101,7 +103,7 @@ rx.table.root(
                 "string",
                 ".env",
                 "Environment variables file path",
-                "/docs/hosting/secrets-environment-vars",
+                hosting.secrets_environment_vars.path,
             ),
             ("project", "uuid", "null", "Project uuid", None),
             ("projectname", "string", "null", "Project name", None),

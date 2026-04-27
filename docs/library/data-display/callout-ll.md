@@ -7,6 +7,8 @@ components:
 
 ```python exec
 import reflex as rx
+
+from reflex_docs.pages.docs import library
 ```
 
 # Callout
@@ -24,7 +26,7 @@ rx.callout.root(
 
 The `callout` component is made up of a `callout.root`, which groups `callout.icon` and `callout.text` parts. This component is based on the `div` element and supports common margin props.
 
-The `callout.icon` provides width and height for the `icon` associated with the `callout`. This component is based on the `div` element. See the [**icon** component for all icons that are available.](/docs/library/data-display/icon/)
+The `callout.icon` provides width and height for the `icon` associated with the `callout`. This component is based on the `div` element. See the [**icon** component for all icons that are available.]({library.data_display.icon.path})
 
 The `callout.text` renders the callout text. This component is based on the `p` element.
 

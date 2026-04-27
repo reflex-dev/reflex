@@ -1,5 +1,7 @@
 ```python exec
 import reflex as rx
+
+from reflex_docs.pages.docs import library, state, styling
 ```
 
 # Props
@@ -19,7 +21,7 @@ rx.image(
 )
 ```
 
-Check the docs for the component you are using to see what props are available and how they affect the component (see the `rx.image` [reference](/docs/library/media/image#api-reference) page for example).
+Check the docs for the component you are using to see what props are available and how they affect the component (see the `rx.image` [reference]({library.media.image.path}#api-reference) page for example).
 
 ## Common Props
 
@@ -54,15 +56,15 @@ rx.button(
 )
 ```
 
-See the [styling docs](/docs/styling/overview) to learn more about customizing the appearance of your app.
+See the [styling docs]({styling.overview.path}) to learn more about customizing the appearance of your app.
 
 ## Binding Props to State
 
 ```md alert warning
-# Optional: Learn all about [State](/docs/state/overview) first.
+# Optional: Learn all about [State]({state.overview.path}) first.
 ```
 
-Reflex apps define [State](/docs/state/overview) classes that hold variables that can change over time.
+Reflex apps define [State]({state.overview.path}) classes that hold variables that can change over time.
 
 State may be modified in response to things like user input like clicking a button, or in response to events like loading a page.
 

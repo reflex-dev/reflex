@@ -18,6 +18,8 @@ CalloutRoot: |
 
 ```python exec
 import reflex as rx
+
+from reflex_docs.pages.docs import library
 ```
 
 # Callout
@@ -31,7 +33,7 @@ rx.callout(
 )
 ```
 
-The `icon` prop allows an icon to be passed to the `callout` component. See the [**icon** component for all icons that are available.](/docs/library/data-display/icon)
+The `icon` prop allows an icon to be passed to the `callout` component. See the [**icon** component for all icons that are available.]({library.data_display.icon.path})
 
 ## As alert
 

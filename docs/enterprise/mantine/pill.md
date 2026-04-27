@@ -5,6 +5,9 @@ title: Pill
 ```python exec
 import reflex as rx
 import reflex_enterprise as rxe
+
+from reflex_site_shared.components.blocks.collapsible import collapsible_box
+from reflex_docs.pages.docs import enterprise
 ```
 
 # Pill
@@ -52,7 +55,7 @@ def pill_group_page():
 By itself it does not include any logic, it only renders given children.
 
 ```md alert info
-# For a fully functional out-of-the-box component, consider using [`rxe.mantine.tags_input`](/docs/enterprise/mantine/tags-input/) instead.
+# For a fully functional out-of-the-box component, consider using [`rxe.mantine.tags_input`]({enterprise.mantine.tags_input.path}) instead.
 ```
 
 ## Example

@@ -1,3 +1,7 @@
+
+```python exec
+from reflex_docs.pages.docs import custom_components, events, styling, wrapping_react
+```
 # How Reflex Works
 
 We'll use the following basic app that displays Github profile images as an example to explain the different parts of the architecture.
@@ -114,15 +118,15 @@ Many of our core components are based on [Radix](https://radix-ui.com/), a popul
 
 We chose React because it is a popular library with a huge ecosystem. Our goal isn't to recreate the web ecosystem, but to make it accessible to Python developers.
 
-This also lets our users bring their own components if we don't have a component they need. Users can [wrap their own React components](/docs/wrapping-react/overview) and then [publish them](/docs/custom-components/overview) for others to use. Over time we will build out our [third party component ecosystem](/docs/custom-components/overview) so that users can easily find and use components that others have built.
+This also lets our users bring their own components if we don't have a component they need. Users can [wrap their own React components]({wrapping_react.overview.path}) and then [publish them]({custom_components.overview.path}) for others to use. Over time we will build out our [third party component ecosystem]({custom_components.overview.path}) so that users can easily find and use components that others have built.
 
 ### Styling
 
 We wanted to make sure Reflex apps look good out of the box, while still giving developers full control over the appearance of their app.
 
-We have a core [theming system](/docs/styling/theming) that lets you set high level styling options such as dark mode and accent color throughout your app to give it a unified look and feel.
+We have a core [theming system]({styling.theming.path}) that lets you set high level styling options such as dark mode and accent color throughout your app to give it a unified look and feel.
 
-Beyond this, Reflex components can be styled using the full power of CSS. We leverage the [Emotion](https://emotion.sh/docs/introduction) library to allow "CSS-in-Python" styling, so you can pass any CSS prop as a keyword argument to a component. This includes [responsive props](/docs/styling/responsive) by passing a list of values.
+Beyond this, Reflex components can be styled using the full power of CSS. We leverage the [Emotion](https://emotion.sh/docs/introduction) library to allow "CSS-in-Python" styling, so you can pass any CSS prop as a keyword argument to a component. This includes [responsive props]({styling.responsive.path}) by passing a list of values.
 
 ## Backend
 
@@ -197,7 +201,7 @@ On the frontend, we maintain an event queue of all pending events.
 When an event is triggered, it is added to the queue. We have a `processing` flag to make sure only one event is processed at a time. This ensures that the state is always consistent and there aren't any race conditions with two event handlers modifying the state at the same time.
 
 ```md alert info
-# There are exceptions to this, such as [background events](/docs/events/background_events) which allow you to run events in the background without blocking the UI.
+# There are exceptions to this, such as [background events]({events.background_events.path}) which allow you to run events in the background without blocking the UI.
 ```
 
 Once the event is ready to be processed, it is sent to the backend through a WebSocket connection.
@@ -225,7 +229,7 @@ In our example, the `set_profile` event handler is run on the user's state. This
 
 ### State Updates
 
-Every time an event handler returns (or [yields](/docs/events/yield_events)), we save the state in the state manager and send the **state updates** to the frontend to update the UI.
+Every time an event handler returns (or [yields]({events.yield_events.path})), we save the state in the state manager and send the **state updates** to the frontend to update the UI.
 
 To maintain performance as your state grows, internally Reflex keeps track of vars that were updated during the event handler (**dirty vars**). When the event handler is done processing, we find all the dirty vars and create a state update to send to the frontend.
 

@@ -1,6 +1,8 @@
 ```python exec
 import reflex as rx
 from typing import Any
+
+from reflex_docs.pages.docs import custom_components
 ```
 
 # Wrapping React
@@ -9,7 +11,7 @@ One of Reflex's most powerful features is the ability to wrap React components a
 
 If you want a specific component for your app but Reflex doesn't provide it, there's a good chance it's available as a React component. Search for it on [npm](https://www.npmjs.com/), and if it's there, you can use it in your Reflex app. You can also create your own local React components and wrap them in Reflex.
 
-Once you wrap your component, you [publish it](/docs/custom-components/overview) to the Reflex library so that others can use it.
+Once you wrap your component, you [publish it]({custom_components.overview.path}) to the Reflex library so that others can use it.
 
 ## Simple Example
 

@@ -1,5 +1,6 @@
 """Pipeline for rendering reflex-shipped docs via reflex_docgen.markdown."""
 
+import re
 import sys
 import types
 from pathlib import Path
@@ -145,35 +146,38 @@ def _exec_code(content: str, env: dict, filename: str) -> None:
 # Span → rx.Component helpers
 # ---------------------------------------------------------------------------
 
+_BRACE_RE = re.compile(r"\{([^{}]+)\}")
 
-def _render_spans(spans: tuple[Span, ...]) -> list[rx.Component | str]:
-    """Convert a sequence of spans into a list of Reflex children."""
-    out: list[rx.Component | str] = []
-    for span in spans:
-        match span:
-            case TextSpan(text=text):
-                out.append(text)
-            case BoldSpan(children=children):
-                out.append(rx.el.strong(*_render_spans(children)))
-            case ItalicSpan(children=children):
-                out.append(rx.el.em(*_render_spans(children)))
-            case StrikethroughSpan(children=children):
-                inner = "".join(
-                    c if isinstance(c, str) else "" for c in _render_spans(children)
-                )
-                out.append(rx.text("~" + inner + "~", as_="span"))
-            case CodeSpan(code=code):
-                out.append(code_comp(text=code))
-            case LinkSpan(children=children, target=target):
-                inner = "".join(
-                    c if isinstance(c, str) else "" for c in _render_spans(children)
-                )
-                out.append(doclink2(text=inner, href=target))
-            case ImageSpan(src=src):
-                out.append(img_comp_xd(src=src))
-            case LineBreakSpan(soft=soft):
-                out.append("\n" if soft else rx.el.br())
-    return out
+
+def _resolve_link_target(target: str, env: dict) -> str:
+    """Resolve ``{expr}`` substrings in a markdown link href against *env*.
+
+    Supports composition like ``{enterprise.overview.path}#section``. Targets
+    without braces are returned stripped but otherwise untouched.
+
+    Args:
+        target: Raw href from the markdown source.
+        env: Doc exec environment (the transformer's accumulated namespace).
+
+    Returns:
+        Resolved href.
+
+    Raises:
+        TypeError: If a ``{expr}`` resolves to something other than ``str``.
+    """
+
+    def _sub(match: re.Match[str]) -> str:
+        expr = match.group(1).strip()
+        value = eval(expr, {"__builtins__": {}}, env)
+        if not isinstance(value, str):
+            msg = (
+                f"Link {target!r}: expr {match.group(0)!r} must resolve to str, "
+                f"got {type(value).__name__}"
+            )
+            raise TypeError(msg)
+        return value
+
+    return _BRACE_RE.sub(_sub, target.strip())
 
 
 def _spans_to_plaintext(spans: tuple[Span, ...]) -> str:
@@ -233,6 +237,42 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
 
         return rx.fragment(*children)
 
+    def _render_spans(self, spans: tuple[Span, ...]) -> list[rx.Component | str]:
+        """Convert a sequence of spans into a list of Reflex children.
+
+        Link hrefs are resolved against ``self.env`` so markdown can reference
+        Python paths like ``[…]({enterprise.overview.path})``.
+        """
+        out: list[rx.Component | str] = []
+        for span in spans:
+            match span:
+                case TextSpan(text=text):
+                    out.append(text)
+                case BoldSpan(children=children):
+                    out.append(rx.el.strong(*self._render_spans(children)))
+                case ItalicSpan(children=children):
+                    out.append(rx.el.em(*self._render_spans(children)))
+                case StrikethroughSpan(children=children):
+                    inner = "".join(
+                        c if isinstance(c, str) else ""
+                        for c in self._render_spans(children)
+                    )
+                    out.append(rx.text("~" + inner + "~", as_="span"))
+                case CodeSpan(code=code):
+                    out.append(code_comp(text=code))
+                case LinkSpan(children=children, target=target):
+                    inner = "".join(
+                        c if isinstance(c, str) else ""
+                        for c in self._render_spans(children)
+                    )
+                    href = _resolve_link_target(target, self.env)
+                    out.append(doclink2(text=inner, href=href))
+                case ImageSpan(src=src):
+                    out.append(img_comp_xd(src=src))
+                case LineBreakSpan(soft=soft):
+                    out.append("\n" if soft else rx.el.br())
+        return out
+
     # ------------------------------------------------------------------
     # Blocks
     # ------------------------------------------------------------------
@@ -253,7 +293,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
                 return h4_comp_xd(text=text)
 
     def text_block(self, block: TextBlock) -> rx.Component:
-        children = _render_spans(block.children)
+        children = self._render_spans(block.children)
         if len(children) == 1 and isinstance(children[0], str):
             return text_comp(text=children[0])
         return rx.text(
@@ -310,13 +350,12 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             return rx.list.ordered(*items, class_name="mb-6")
         return rx.list.unordered(*items, class_name="mb-6")
 
-    @staticmethod
-    def _list_item_from_spans(spans: tuple[Span, ...]) -> rx.Component:
+    def _list_item_from_spans(self, spans: tuple[Span, ...]) -> rx.Component:
         """Render a list item, preserving inline code/links when present."""
         if all(isinstance(s, TextSpan) for s in spans):
             return list_comp(text=_spans_to_plaintext(spans))
         return rx.list_item(
-            *_render_spans(spans),
+            *self._render_spans(spans),
             class_name="font-[475] text-secondary-11 mb-4",
         )
 
@@ -342,7 +381,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
     def table(self, block: TableBlock) -> rx.Component:
         header_cells = [
             rx.table.column_header_cell(
-                *_render_spans(cell.children),
+                *self._render_spans(cell.children),
                 class_name="font-small text-slate-12 font-bold",
             )
             for cell in block.header.cells
@@ -351,7 +390,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
         for row in block.rows:
             cells = [
                 rx.table.cell(
-                    *_render_spans(cell.children),
+                    *self._render_spans(cell.children),
                     class_name="font-small text-slate-11",
                 )
                 for cell in row.cells
@@ -371,7 +410,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
         return rx.table.row(*cells)
 
     def transform_table_cell(self, cell: TableCell) -> rx.Component:
-        return rx.table.cell(*_render_spans(cell.children))
+        return rx.table.cell(*self._render_spans(cell.children))
 
     def thematic_break(self, block: ThematicBreakBlock) -> rx.Component:
         return rx.separator(class_name="my-6")
@@ -398,7 +437,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
 
     def link(self, span: LinkSpan) -> rx.Component:
         inner = _spans_to_plaintext(span.children)
-        return doclink2(text=inner, href=span.target)
+        return doclink2(text=inner, href=_resolve_link_target(span.target, self.env))
 
     def image(self, span: ImageSpan) -> rx.Component:
         return img_comp_xd(src=span.src)
@@ -546,7 +585,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
 
         def title_comp() -> rx.Component:
             return rx.box(
-                *_render_spans(title_spans),
+                *self._render_spans(title_spans),
                 class_name="font-[475]",
                 color=f"{rx.color(color, 11)}",
             )
@@ -583,7 +622,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             spans: list[rx.Component | str] = []
             for child in children:
                 if isinstance(child, TextBlock):
-                    spans.extend(_render_spans(child.children))
+                    spans.extend(self._render_spans(child.children))
                 else:
                     spans.append(self.transform_block(child))
             trigger.append(
@@ -642,7 +681,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
         role = ""
         for child in block.children:
             if isinstance(child, TextBlock):
-                quote_parts.extend(_render_spans(child.children))
+                quote_parts.extend(self._render_spans(child.children))
             elif isinstance(child, ListBlock):
                 for item in child.items:
                     for sub in item.children:

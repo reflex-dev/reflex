@@ -5,6 +5,8 @@ components:
 
 ```python exec
 import reflex as rx
+
+from reflex_docs.pages.docs import library
 ```
 
 # Image
@@ -59,5 +61,5 @@ A cv2 image must be converted to a PIL image to be passed directly to `rx.image`
 ```md alert info
 # How to let your user upload an image
 
-To let a user upload an image to your app check out the [upload docs](/docs/library/forms/upload).
+To let a user upload an image to your app check out the [upload docs]({library.forms.upload.path}).
 ```

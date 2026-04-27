@@ -2,6 +2,8 @@
 
 ```python exec
 import reflex as rx
+
+from reflex_docs.pages.docs import hosting
 ```
 
 So far, we have been running our apps locally on our own machines.
@@ -64,7 +66,7 @@ The command is by default interactive. It asks you a few questions for informati
 
 That’s it! You should receive some feedback on the progress of your deployment and in a few minutes your app should be up. 🎉
 
-For detailed information about the deploy command and its options, see the [Deploy API Reference](/docs/hosting/deploy-quick-start/) and the [CLI Reference](https://reflex.dev/docs/api-reference/cli/).
+For detailed information about the deploy command and its options, see the [Deploy API Reference]({hosting.deploy_quick_start.path}) and the [CLI Reference](https://reflex.dev/docs/api-reference/cli/).
 
 
 ```md alert info
@@ -76,7 +78,7 @@ If you go back to the Cloud UI you should be able to see your deployed app and o
 
 ```md alert info
 # Setup a Cloud Config File
-To create a `config.yml` file for your app to set your app configuration check out the [Cloud Config Docs](/docs/hosting/config-file/).
+To create a `config.yml` file for your app to set your app configuration check out the [Cloud Config Docs]({hosting.config_file.path}).
 ```
 
 ```md alert info

@@ -1,4 +1,8 @@
 
+```python exec
+from reflex_docs.pages.docs import api_reference
+```
+
 # Configuration
 
 Reflex apps can be configured using a configuration file, environment variables, and command line arguments.
@@ -42,7 +46,7 @@ Finally, you can override the configuration file and environment variables by pa
 uv run reflex run --frontend-port 3001
 ```
 
-See the [CLI reference](/docs/api-reference/cli) for all the arguments available.
+See the [CLI reference]({api_reference.cli.path}) for all the arguments available.
 
 ## Customizable App Data Directory
 
