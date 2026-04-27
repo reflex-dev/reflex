@@ -44,7 +44,7 @@ def poll_for_navigation(
     Yields:
         None
     """
-    prev_url = page.url
+    prev_url = page.evaluate("window.location.href")
     yield
     page.wait_for_url(lambda url: url != prev_url, timeout=timeout * 1000)
 

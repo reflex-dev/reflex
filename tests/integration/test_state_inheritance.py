@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Generator
 
 import pytest
-from playwright.sync_api import Dialog, Page, expect
+from playwright.sync_api import Page, expect
 
 from reflex.testing import AppHarness
 
@@ -15,15 +15,25 @@ from . import utils
 def raises_alert(page: Page, element: str) -> None:
     """Click an element and check that an alert is raised.
 
+    Capture ``window.alert`` calls in JS so sequential clicks reliably record
+    each alert without blocking on Playwright's dialog event plumbing.
+
     Args:
         page: Playwright page.
         element: The element to click.
     """
-    with page.expect_event("dialog") as dialog_info:
-        page.locator(f"#{element}").click()
-    dialog: Dialog = dialog_info.value
-    assert dialog.message == "clicked"
-    dialog.accept()
+    page.evaluate(
+        "window.__alerts = window.__alerts || [];"
+        "window.alert = (msg) => { window.__alerts.push(msg); };"
+    )
+    prev_count = page.evaluate("window.__alerts.length")
+    page.locator(f"#{element}").click()
+    AppHarness.expect(
+        lambda: page.evaluate("window.__alerts.length") > prev_count,
+        timeout=5.0,
+    )
+    last_msg = page.evaluate("window.__alerts[window.__alerts.length - 1]")
+    assert last_msg == "clicked"
 
 
 def StateInheritance():

@@ -207,7 +207,7 @@ def delete_all_cookies(page: Page) -> Generator[None, None, None]:
 
 
 def cookie_info_map(page: Page) -> dict[str, dict]:
-    """Get a map of cookie names to cookie info.
+    """Get a map of cookie names to cookie info for cookies visible on the current page.
 
     Args:
         page: Playwright page instance.
@@ -217,7 +217,7 @@ def cookie_info_map(page: Page) -> dict[str, dict]:
     """
     return {
         cookie_info.get("name", ""): dict(cookie_info)
-        for cookie_info in page.context.cookies()
+        for cookie_info in page.context.cookies(page.url)
     }
 
 

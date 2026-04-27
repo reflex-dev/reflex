@@ -2,31 +2,13 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from typing import cast
+from unittest.mock import Mock
 
 import pytest
+from playwright.sync_api import Page
 
 from tests.integration import utils
-
-
-class _FakePage:
-    """Minimal page stub for testing poll_for_navigation."""
-
-    def __init__(self) -> None:
-        """Initialize fake page state."""
-        self.url = "http://localhost:3000/"
-        self.wait_calls: list[tuple[Callable[[str], bool], float]] = []
-
-    def wait_for_url(self, predicate: Callable[[str], bool], timeout: float) -> None:
-        """Record wait_for_url calls and validate the URL-change predicate.
-
-        Args:
-            predicate: URL-matcher callback passed by poll_for_navigation.
-            timeout: Timeout in milliseconds.
-        """
-        self.wait_calls.append((predicate, timeout))
-        assert not predicate("http://localhost:3000/")
-        assert predicate("http://localhost:3000/next")
 
 
 def test_poll_for_navigation_uses_playwright_wait_for_url(
@@ -40,11 +22,20 @@ def test_poll_for_navigation_uses_playwright_wait_for_url(
 
     monkeypatch.setattr(utils.AppHarness, "expect", _unexpected_expect)
 
-    page = _FakePage()
+    page_mock = Mock(spec=Page)
+    page_mock.evaluate.return_value = "http://localhost:3000/"
+    page = cast(Page, page_mock)
+
     with utils.poll_for_navigation(page, timeout=2.5):
         # The helper snapshots the current URL before yielding.
         pass
 
-    assert len(page.wait_calls) == 1
-    _, timeout_ms = page.wait_calls[0]
+    page_mock.evaluate.assert_called_once_with("window.location.href")
+    page_mock.wait_for_url.assert_called_once()
+
+    predicate = page_mock.wait_for_url.call_args.args[0]
+    timeout_ms = page_mock.wait_for_url.call_args.kwargs["timeout"]
+    assert callable(predicate)
+    assert not predicate("http://localhost:3000/")
+    assert predicate("http://localhost:3000/next")
     assert timeout_ms == pytest.approx(2500.0)

@@ -17,7 +17,7 @@ import reflex as rx
 
 class State(rx.State):
     var0: int = 0
-    {var_part}
+{var_part}
 
     def increment_var0(self):
         self.var0 += 1

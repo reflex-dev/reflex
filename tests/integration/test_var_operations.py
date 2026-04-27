@@ -1,5 +1,6 @@
 """Integration tests for var operations."""
 
+import re
 from collections.abc import Generator
 
 import pytest
@@ -131,7 +132,7 @@ def VarOperations():
             ),
             rx.text(
                 (VarOperationState.int_var1 | VarOperationState.int_var2).to_string(),
-                id="int_or_int",
+                id="int_or_int_str",
             ),
             rx.text(
                 (VarOperationState.int_var1 == VarOperationState.int_var2).to_string(),
@@ -1008,10 +1009,23 @@ def test_var_operations(page: Page, var_operations: AppHarness):
     ]
 
     for tag, expected in tests:
-        expect(page.locator(f"#{tag}")).to_have_text(
-            expected,
-            timeout=15_000,
-        )
+        if "\n" in expected:
+            # Block-level children (e.g. <p>) produce visible newlines only in
+            # rendered inner_text, not in the raw text_content used by
+            # to_have_text. Collapse consecutive blank lines from <p>/<div>
+            # margins before comparing.
+            AppHarness.expect(
+                lambda tag=tag, exp=expected: (
+                    re.sub(r"\n+", "\n", page.locator(f"#{tag}").inner_text().strip())
+                    == exp
+                ),
+                timeout=15.0,
+            )
+        else:
+            expect(page.locator(f"#{tag}")).to_have_text(
+                expected,
+                timeout=15_000,
+            )
 
     # Highlight component with var query (does not plumb ID)
     expect(page.locator("mark")).to_have_text("second")

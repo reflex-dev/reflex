@@ -191,10 +191,10 @@ def test_submit(page: Page, form_submit: AppHarness):
     name_input = by_name_or_id("name_input")
     name_input.fill("foo")
 
-    checkbox_input = page.locator("button[role='checkbox']")
+    checkbox_input = page.locator("button[role='checkbox']").first
     checkbox_input.click()
 
-    switch_input = page.locator("button[role='switch']")
+    switch_input = page.locator("button[role='switch']").first
     switch_input.click()
 
     radio_buttons = page.locator("button[role='radio']").all()

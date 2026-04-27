@@ -9,7 +9,6 @@ from playwright.sync_api import Page, expect
 
 from reflex.testing import AppHarness
 
-from . import utils
 from .utils import SessionStorage
 
 
@@ -412,7 +411,6 @@ def test_call_script(
     assert call_script.frontend_url is not None
     page.goto(call_script.frontend_url)
 
-    utils.poll_for_token(page)
     assert_token(page)
 
     reset_button = page.locator("#reset")
@@ -481,7 +479,6 @@ def test_call_script_w_var(
     assert call_script.frontend_url is not None
     page.goto(call_script.frontend_url)
 
-    utils.poll_for_token(page)
     assert_token(page)
 
     last_result = page.locator("#last_result")

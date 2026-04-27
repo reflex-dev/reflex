@@ -430,10 +430,10 @@ def test_upload_file_multiple(tmp_path, upload_file: AppHarness, page: Page):
     time.sleep(0.2)
 
     # check that the selected files are displayed
-    selected_files = page.locator("#selected_files")
-    assert [
-        Path(name).name for name in (selected_files.text_content() or "").split("\n")
-    ] == [Path(name).name for name in exp_files]
+    selected_files = page.locator("#selected_files p")
+    assert [Path(name).name for name in selected_files.all_text_contents()] == [
+        Path(name).name for name in exp_files
+    ]
 
     # do the upload
     upload_button.click()
@@ -480,10 +480,10 @@ def test_clear_files(tmp_path, upload_file: AppHarness, page: Page, secondary: b
     time.sleep(0.2)
 
     # check that the selected files are displayed
-    selected_files = page.locator(f"#selected_files{suffix}")
-    assert [
-        Path(name).name for name in (selected_files.text_content() or "").split("\n")
-    ] == [Path(name).name for name in exp_files]
+    selected_files = page.locator(f"#selected_files{suffix} p")
+    assert [Path(name).name for name in selected_files.all_text_contents()] == [
+        Path(name).name for name in exp_files
+    ]
 
     page.locator(f"#clear_button{suffix}").click()
 
@@ -555,7 +555,7 @@ def test_upload_chunk_file(tmp_path, upload_file: AppHarness, page: Page):
 
     upload_box = page.locator("input[type='file']").nth(4)
     upload_button = page.locator("#upload_button_streaming")
-    selected_files = page.locator("#selected_files_streaming")
+    selected_files = page.locator("#selected_files_streaming p")
     chunk_records_display = page.locator("#stream_chunk_records")
     completed_files_display = page.locator("#stream_completed_files")
 
@@ -573,9 +573,9 @@ def test_upload_chunk_file(tmp_path, upload_file: AppHarness, page: Page):
 
     time.sleep(0.2)
 
-    assert [
-        Path(name).name for name in (selected_files.text_content() or "").split("\n")
-    ] == [Path(name).name for name in exp_files]
+    assert [Path(name).name for name in selected_files.all_text_contents()] == [
+        Path(name).name for name in exp_files
+    ]
 
     upload_button.click()
 
@@ -786,8 +786,11 @@ def test_uploaded_file_security_headers(
 
     # Navigate to the uploaded HTML file. Content-Disposition: attachment means
     # the browser triggers a download rather than rendering the HTML.
+    # page.goto() raises "Download is starting" when the response is an
+    # attachment, so trigger the navigation in JS and let expect_download
+    # capture the file.
     with page.expect_download() as download_info:
-        page.goto(upload_url)
+        page.evaluate(f"window.location.href = {json.dumps(upload_url)}")
     download = download_info.value
 
     download_dir = tmp_path / "downloads"

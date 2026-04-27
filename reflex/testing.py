@@ -51,6 +51,7 @@ from reflex.utils.token_manager import TokenManager
 # The timeout (minutes) to check for the port.
 DEFAULT_TIMEOUT = 15
 POLL_INTERVAL = 0.25
+FRONTEND_STARTUP_TIMEOUT = 60
 FRONTEND_POPEN_ARGS = {}
 T = TypeVar("T")
 TimeoutType = int | float | None
@@ -341,7 +342,9 @@ class AppHarness:
                 "Creating backend in a new thread..."
             )  # for pytest diagnosis
             self.backend_thread = threading.Thread(
-                target=_run_backend, args=(contextvars.copy_context(),)
+                target=_run_backend,
+                args=(contextvars.copy_context(),),
+                name=f"reflex-backend-{self.app_name}",
             )
         self.backend_thread.start()
         print("Backend started.")  # for pytest diagnosis #noqa: T201
@@ -375,20 +378,7 @@ class AppHarness:
         if self.frontend_process is None or self.frontend_process.stdout is None:
             msg = "Frontend process has no stdout."
             raise RuntimeError(msg)
-        while self.frontend_url is None:
-            line = self.frontend_process.stdout.readline()
-            if not line:
-                break
-            print(line)  # for pytest diagnosis #noqa: T201
-            m = re.search(reflex.constants.ReactRouter.FRONTEND_LISTENING_REGEX, line)
-            if m is not None:
-                self.frontend_url = m.group(1)
-                config = get_config()
-                config.deploy_url = self.frontend_url
-                break
-        if self.frontend_url is None:
-            msg = "Frontend did not start"
-            raise RuntimeError(msg)
+        frontend_ready = threading.Event()
 
         def consume_frontend_output():
             while True:
@@ -399,12 +389,38 @@ class AppHarness:
                 # catch I/O operation on closed file.
                 except ValueError as e:
                     console.error(str(e))
+                    frontend_ready.set()
                     break
                 if not line:
+                    frontend_ready.set()
                     break
+                print(line)  # for pytest diagnosis #noqa: T201
+                m = re.search(
+                    reflex.constants.ReactRouter.FRONTEND_LISTENING_REGEX,
+                    line,
+                )
+                if m is not None and self.frontend_url is None:
+                    self.frontend_url = m.group(1)
+                    config = get_config()
+                    config.deploy_url = self.frontend_url
+                    frontend_ready.set()
 
-        self.frontend_output_thread = threading.Thread(target=consume_frontend_output)
+        self.frontend_output_thread = threading.Thread(
+            target=consume_frontend_output,
+            name=f"reflex-frontend-{self.app_name}",
+        )
         self.frontend_output_thread.start()
+
+        if not frontend_ready.wait(timeout=FRONTEND_STARTUP_TIMEOUT):
+            msg = f"Frontend did not start within {FRONTEND_STARTUP_TIMEOUT} seconds."
+            raise RuntimeError(msg)
+        if self.frontend_url is None:
+            return_code = self.frontend_process.poll()
+            if return_code is not None:
+                msg = f"Frontend did not start (exit code: {return_code})."
+            else:
+                msg = "Frontend did not start."
+            raise RuntimeError(msg)
 
     def start(self) -> Self:
         """Start the backend in a new thread and dev frontend as a separate process.
@@ -413,9 +429,14 @@ class AppHarness:
             self
         """
         self._initialize_app()
-        self._start_backend()
-        self._start_frontend()
-        self._wait_frontend()
+        try:
+            self._start_backend()
+            self._start_frontend()
+            self._wait_frontend()
+        except Exception:
+            with contextlib.suppress(Exception):
+                self.stop()
+            raise
         return self
 
     @staticmethod
@@ -474,11 +495,23 @@ class AppHarness:
                 with contextlib.suppress(psutil.NoSuchProcess):
                     child.kill()
             # wait for main process to exit
-            self.frontend_process.communicate()
+            try:
+                self.frontend_process.communicate(timeout=10)
+            except subprocess.TimeoutExpired:
+                self.frontend_process.kill()
+                self.frontend_process.communicate()
         if self.backend_thread is not None:
-            self.backend_thread.join()
+            self.backend_thread.join(timeout=30)
+            if self.backend_thread.is_alive():
+                console.warn(
+                    f"Backend thread {self.backend_thread.name!r} did not stop cleanly."
+                )
         if self.frontend_output_thread is not None:
-            self.frontend_output_thread.join()
+            self.frontend_output_thread.join(timeout=10)
+            if self.frontend_output_thread.is_alive():
+                console.warn(
+                    f"Frontend output thread {self.frontend_output_thread.name!r} did not stop cleanly."
+                )
 
     def __exit__(self, *excinfo) -> None:
         """Contextmanager protocol for `stop()`.
@@ -782,7 +815,10 @@ class AppHarnessProd(AppHarness):
 
         print("Frontend starting...")  # for pytest diagnosis #noqa: T201
 
-        self.frontend_thread = threading.Thread(target=self._run_frontend)
+        self.frontend_thread = threading.Thread(
+            target=self._run_frontend,
+            name=f"reflex-frontend-{self.app_name}",
+        )
         self.frontend_thread.start()
 
     def _wait_frontend(self):
@@ -814,7 +850,9 @@ class AppHarnessProd(AppHarness):
             "Creating backend in a new thread..."
         )
         self.backend_thread = threading.Thread(
-            target=_run_backend, args=(contextvars.copy_context(),)
+            target=_run_backend,
+            args=(contextvars.copy_context(),),
+            name=f"reflex-backend-{self.app_name}",
         )
         self.backend_thread.start()
         print("Backend started.")  # for pytest diagnosis #noqa: T201
@@ -831,4 +869,8 @@ class AppHarnessProd(AppHarness):
         if self.frontend_server is not None:
             self.frontend_server.shutdown()
         if self.frontend_thread is not None:
-            self.frontend_thread.join()
+            self.frontend_thread.join(timeout=15)
+            if self.frontend_thread.is_alive():
+                console.warn(
+                    f"Frontend thread {self.frontend_thread.name!r} did not stop cleanly."
+                )

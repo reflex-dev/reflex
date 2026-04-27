@@ -41,7 +41,6 @@ def MemoryExpirationApp():
 @pytest.fixture(scope="module")
 def memory_expiration_app(
     app_harness_env: type[AppHarness],
-    monkeypatch: pytest.MonkeyPatch,
     tmp_path_factory: pytest.TempPathFactory,
 ) -> Generator[AppHarness, None, None]:
     """Start a memory-backed app with a short expiration window.
@@ -49,19 +48,21 @@ def memory_expiration_app(
     Yields:
         A running app harness configured to use StateManagerMemory.
     """
-    monkeypatch.setenv("REFLEX_STATE_MANAGER_MODE", "memory")
-    # Memory expiration reuses the shared token_expiration config field.
-    monkeypatch.setenv("REFLEX_REDIS_TOKEN_EXPIRATION", "1")
+    with pytest.MonkeyPatch.context() as monkeypatch:
+        monkeypatch.setenv("REFLEX_STATE_MANAGER_MODE", "memory")
+        # Memory expiration reuses the shared token_expiration config field.
+        monkeypatch.setenv("REFLEX_REDIS_TOKEN_EXPIRATION", "1")
 
-    with app_harness_env.create(
-        root=tmp_path_factory.mktemp("memory_expiration_app"),
-        app_name=f"memory_expiration_{app_harness_env.__name__.lower()}",
-        app_source=MemoryExpirationApp,
-    ) as harness:
-        assert isinstance(
-            getattr(harness.app_instance, "state_manager", None), StateManagerMemory
-        )
-        yield harness
+        with app_harness_env.create(
+            root=tmp_path_factory.mktemp("memory_expiration_app"),
+            app_name=f"memory_expiration_{app_harness_env.__name__.lower()}",
+            app_source=MemoryExpirationApp,
+        ) as harness:
+            assert isinstance(
+                getattr(harness.app_instance, "state_manager", None),
+                StateManagerMemory,
+            )
+            yield harness
 
 
 def test_memory_state_manager_expires_state_end_to_end(

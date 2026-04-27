@@ -98,8 +98,8 @@ def test_fully_controlled_input(fully_controlled_input: AppHarness, page: Page):
     # ensure defaults are set correctly
     expect(page.locator("#default_input")).to_have_value("default")
     expect(page.locator("#plain_default_input")).to_have_value("default plain")
-    expect(page.locator("#default_checkbox")).to_have_value("on")
-    expect(page.locator("#plain_default_checkbox")).to_have_value("on")
+    expect(page.locator("#default_checkbox")).to_be_checked()
+    expect(page.locator("#plain_default_checkbox")).to_be_checked()
 
     # find the input and wait for it to have the initial state value
     debounce_input = page.locator("#debounce_input_input")
