@@ -3,6 +3,7 @@
 from typing import TYPE_CHECKING, Union
 
 from reflex_base import constants
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import imports
 from reflex_base.utils.exceptions import DynamicComponentMissingLibraryError
 from reflex_base.utils.format import format_library_name
@@ -35,8 +36,6 @@ def bundle_library(component: Union["Component", str]):
     Raises:
         DynamicComponentMissingLibraryError: Raised when a dynamic component is missing a library.
     """
-    from reflex_base.registry import RegistrationContext
-
     bundled = RegistrationContext.ensure_context().bundled_libraries
     if isinstance(component, str):
         bundled.append(component)
@@ -66,7 +65,6 @@ def load_dynamic_serializer():
         from reflex_components_core.base.bare import Bare
 
         from reflex.compiler import compiler, templates, utils
-        from reflex_base.registry import RegistrationContext
 
         libs_in_window = RegistrationContext.ensure_context().bundled_libraries
 

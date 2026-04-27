@@ -7,6 +7,7 @@ from typing import TypeVar
 
 from reflex_base.constants import ROUTER_DATA
 from reflex_base.event import Event, get_hydrate_event
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import console
 from reflex_base.utils.exceptions import ReflexRuntimeError
 from typing_extensions import Self
@@ -49,9 +50,9 @@ def _do_update_other_tokens(
     Returns:
         The list of asyncio tasks created to perform the updates.
     """
-    from reflex.utils.prerequisites import get_app
-
-    app = get_app().app
+    if (app := RegistrationContext.get().app) is None:
+        msg = "No App is registered with the active RegistrationContext."
+        raise RuntimeError(msg)
 
     async def _update_client(token: str):
         async with app.modify_state(
@@ -61,9 +62,11 @@ def _do_update_other_tokens(
             pass
 
     tasks = []
+    if (event_namespace := app.event_namespace) is None:
+        return tasks
     for affected_token in affected_tokens:
         # Don't send updates for disconnected clients.
-        if affected_token not in app.event_namespace._token_manager.token_to_socket:
+        if affected_token not in event_namespace._token_manager.token_to_socket:
             continue
         # TODO: remove disconnected clients after some time.
         t = asyncio.create_task(_update_client(affected_token))

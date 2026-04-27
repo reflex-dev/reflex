@@ -27,6 +27,7 @@ from reflex_base.environment import env_var as env_var
 from reflex_base.environment import environment as environment
 from reflex_base.plugins import Plugin
 from reflex_base.plugins.sitemap import SitemapPlugin
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import console
 from reflex_base.utils.exceptions import ConfigError
 
@@ -696,8 +697,6 @@ def get_config() -> Config:
     Returns:
         The app config.
     """
-    from reflex_base.registry import RegistrationContext
-
     ctx = RegistrationContext.ensure_context()
     config = ctx.config
     if config is None:
@@ -715,8 +714,6 @@ def reload_config() -> Config:
     Returns:
         The freshly loaded app config.
     """
-    from reflex_base.registry import RegistrationContext
-
     ctx = RegistrationContext.ensure_context()
     config = _load_config()
     ctx._set_config(config)

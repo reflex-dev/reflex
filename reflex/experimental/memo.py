@@ -12,6 +12,7 @@ from reflex_base import constants
 from reflex_base.components.component import Component
 from reflex_base.constants.compiler import SpecialAttributes
 from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import format
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import safe_issubclass
@@ -181,8 +182,6 @@ def _register_memo_definition(definition: ExperimentalMemoDefinition) -> None:
     Raises:
         ValueError: If another memo already compiles to the same exported name.
     """
-    from reflex_base.registry import RegistrationContext
-
     memos = RegistrationContext.ensure_context().memo_definitions
     key = _memo_registry_key(definition)
     if (existing := memos.get(key)) is not None and (
@@ -353,8 +352,6 @@ def _validate_var_return_expr(return_expr: Var, func_name: str) -> None:
             "`@rx._x.memo` instead."
         )
         raise TypeError(msg)
-
-    from reflex_base.registry import RegistrationContext
 
     bundled = RegistrationContext.ensure_context().bundled_libraries
     for lib in dict(var_data.imports):

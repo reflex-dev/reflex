@@ -401,9 +401,7 @@ def test_experimental_component_memo_get_imports():
     assert "inner" in imports
 
 
-def test_compile_experimental_component_memo_does_not_mutate_definition(
-    monkeypatch: pytest.MonkeyPatch,
-):
+def test_compile_experimental_component_memo_does_not_mutate_definition():
     """Experimental component memo compilation should not mutate stored components."""
 
     @rx._x.memo
@@ -414,13 +412,11 @@ def test_compile_experimental_component_memo_does_not_mutate_definition(
     assert isinstance(definition, ExperimentalMemoComponentDefinition)
     assert definition.component.style == Style()
 
-    monkeypatch.setattr(
-        "reflex.utils.prerequisites.get_and_validate_app",
-        lambda: SimpleNamespace(
-            app=SimpleNamespace(
-                style={type(definition.component): Style({"color": "red"})}
-            )
-        ),
+    ctx = RegistrationContext.ensure_context()
+    object.__setattr__(
+        ctx,
+        "_app",
+        SimpleNamespace(style={type(definition.component): Style({"color": "red"})}),
     )
 
     render, _ = compiler_utils.compile_experimental_component_memo(definition)

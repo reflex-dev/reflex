@@ -5,6 +5,8 @@ from __future__ import annotations
 import sys
 from typing import TYPE_CHECKING
 
+from reflex_base.registry import RegistrationContext
+
 if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import Any
@@ -42,7 +44,6 @@ def page(
     Returns:
         The decorated function.
     """
-    from reflex_base.registry import RegistrationContext
 
     def decorator(render_fn: Callable):
         kwargs: dict[str, Any] = {}

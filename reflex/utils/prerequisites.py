@@ -22,6 +22,7 @@ from reflex_base import constants
 from reflex_base.config import Config, get_config
 from reflex_base.constants.base import RunningMode
 from reflex_base.environment import environment
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils.decorator import once
 
 from reflex import model
@@ -199,8 +200,6 @@ def get_app(reload: bool = False) -> ModuleType:
             else config.app_module
         )
         if reload:
-            from reflex_base.registry import RegistrationContext
-
             from reflex.state import reload_state_module
 
             # Reset rx.State subclasses to avoid conflict when reloading.

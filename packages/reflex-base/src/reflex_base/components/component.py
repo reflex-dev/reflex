@@ -49,6 +49,7 @@ from reflex_base.event import (
     run_script,
     unwrap_var_annotation,
 )
+from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style, format_as_emotion
 from reflex_base.utils import console, format, imports, types
 from reflex_base.utils.imports import ImportDict, ImportVar, ParsedImportDict
@@ -2207,12 +2208,11 @@ class CustomComponent(Component):
         """
         component = self.component_fn(*self.get_prop_vars())
 
-        try:
-            from reflex.utils.prerequisites import get_and_validate_app
-
-            style = get_and_validate_app().app.style
-        except Exception:
-            style = {}
+        style = (
+            app.style
+            if (app := RegistrationContext.ensure_context().app) is not None
+            else {}
+        )
 
         component._add_style_recursive(style)
         return component
@@ -2250,8 +2250,6 @@ def _register_custom_component(
     Raises:
         TypeError: If the tag name cannot be determined.
     """
-    from reflex_base.registry import RegistrationContext
-
     dummy_props = {
         prop: (
             Var(
@@ -2426,8 +2424,6 @@ class StatefulComponent(BaseComponent):
             The stateful component or None if the component should not be memoized.
         """
         from reflex_components_core.core.foreach import Foreach
-
-        from reflex_base.registry import RegistrationContext
 
         if component._memoization_mode.disposition == MemoizationDisposition.NEVER:
             # Never memoize this component.
