@@ -39,69 +39,17 @@ See our [architecture page](https://reflex.dev/blog/2024-03-21-reflex-architectu
 
 ## ⚙️ Installation
 
-**Important:** We strongly recommend using a virtual environment to ensure the `reflex` command is available in your PATH.
-
-## 🥳 Create your first app
-
-### 1. Create the project directory
-
-Replace `my_app_name` with your project name:
-
-```bash
-mkdir my_app_name
-cd my_app_name
-```
-
-### 2. Install uv
-
 Reflex recommends [uv](https://docs.astral.sh/uv/) for managing your project environment and dependencies.
-See the [uv installation docs](https://docs.astral.sh/uv/getting-started/installation/) for your platform.
+
+Open a terminal and run (requires Python 3.10+):
 
 ```bash
-# macOS/Linux
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Windows (PowerShell)
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+$ uv add reflex
+$ uv run reflex init
+$ uv run reflex run
 ```
 
-### 3. Initialize the Python project
-
-```bash
-uv init
-```
-
-### 4. Add Reflex
-
-Reflex requires Python 3.10+:
-
-```bash
-uv add reflex
-```
-
-### 5. Initialize the project
-
-This command initializes a template app in your new directory:
-
-```bash
-uv run reflex init
-```
-
-### 6. Run the app
-
-You can run this app in development mode:
-
-```bash
-uv run reflex run
-```
-
-You should see your app running at http://localhost:3000.
-
-Now you can modify the source code in `my_app_name/my_app_name.py`. Reflex has fast refreshes so you can see your changes instantly when you save your code.
-
-### Troubleshooting
-
-If the `reflex` command is not on your PATH, run it through uv instead: `uv run reflex init` and `uv run reflex run`
+Your app is now running at http://localhost:3000.
 
 ## 🫧 Example App
 
@@ -140,9 +88,9 @@ class State(rx.State):
         self.processing, self.complete = True, False
         yield
         response = openai_client.images.generate(
-            prompt=self.prompt, n=1, size="1024x1024"
+            model="gpt-image-2-2026-04-21", prompt=self.prompt, n=1, size="1024x1024"
         )
-        self.image_url = response.data[0].url
+        self.image_url = f"data:image/png;base64,{response.data[0].b64_json}"
         self.processing, self.complete = False, True
 
 
@@ -227,8 +175,8 @@ def get_image(self):
 
     self.processing, self.complete = True, False
     yield
-    response = openai_client.images.generate(prompt=self.prompt, n=1, size="1024x1024")
-    self.image_url = response.data[0].url
+    response = openai_client.images.generate(model="gpt-image-2-2026-04-21", prompt=self.prompt, n=1, size="1024x1024")
+    self.image_url = f"data:image/png;base64,{response.data[0].b64_json}"
     self.processing, self.complete = False, True
 ```
 
@@ -281,12 +229,3 @@ We welcome contributions of any size! Below are some good ways to get started in
 
 We are actively looking for contributors, no matter your skill level or experience. To contribute check out [CONTRIBUTING.md](https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md)
 
-## All Thanks To Our Contributors:
-
-<a href="https://github.com/reflex-dev/reflex/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=reflex-dev/reflex" />
-</a>
-
-## License
-
-Reflex is open-source and licensed under the [Apache License 2.0](https://raw.githubusercontent.com/reflex-dev/reflex/main/LICENSE).
