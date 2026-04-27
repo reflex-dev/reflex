@@ -9,6 +9,7 @@ from types import UnionType
 from typing import Literal, Union, _GenericAlias, get_args, get_origin
 
 import reflex as rx
+import reflex_components_internal as ui
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
@@ -81,12 +82,12 @@ EXCLUDED_COMPONENTS = [
 
 
 _PILL_BTN_CLASS = (
-    "font-small cursor-pointer rounded-md px-2.5 py-1 text-slate-11 "
-    "border border-slate-5 bg-slate-1 hover:bg-slate-3 transition-colors"
+    "text-sm font-medium cursor-pointer rounded-md px-2.5 py-1 text-secondary-11 "
+    "border border-secondary-5 bg-secondary-1 hover:bg-secondary-3 transition-colors"
 )
 _PILL_BTN_ACTIVE_CLASS = (
-    "font-small cursor-pointer rounded-md px-2.5 py-1 text-slate-12 "
-    "border border-slate-8 bg-slate-4"
+    "text-sm font-medium cursor-pointer rounded-md px-2.5 py-1 text-secondary-12 "
+    "border border-secondary-8 bg-secondary-4"
 )
 
 
@@ -197,7 +198,7 @@ def render_select(prop: PropDocumentation, component: type[Component], prop_dict
                 ),
             ),
             rx.popover.content(
-                rx.grid(
+                rx.box(
                     *[
                         rx.box(
                             rx.icon(
@@ -209,16 +210,18 @@ def render_select(prop: PropDocumentation, component: type[Component], prop_dict
                             bg=f"var(--{color}-9)",
                             on_click=PropDocsState.setvar(f"{name}", color),
                             border=rx.cond(
-                                var == color, "2px solid var(--gray-12)", ""
+                                var == color,
+                                "2px solid var(--gray-12)",
+                                "2px solid transparent",
                             ),
-                            class_name="relative shrink-0 rounded-md size-8 cursor-pointer",
+                            class_name="relative shrink-0 rounded-md size-8 cursor-pointer box-border",
                         )
                         for color in list(map(str, type_.__args__))
                         if color != ""
                     ],
-                    columns="6",
-                    spacing="3",
+                    class_name="grid grid-cols-[repeat(6,2rem)] gap-3",
                 ),
+                class_name="w-fit",
             ),
         )
     literal_values = [str(a) for a in type_.__args__ if str(a) != ""]
@@ -459,7 +462,8 @@ def generate_props(
         )
 
     table_header_class_name = (
-        "font-small text-slate-12 text-normal w-auto justify-start pl-4 font-bold"
+        "text-xs text-secondary-11 w-auto justify-start pl-4 font-semibold "
+        "uppercase tracking-wider"
     )
 
     prop_dict = {}
@@ -764,7 +768,7 @@ def generate_props(
                 )
                 for prop, control in interactive_controls
             ],
-            class_name="flex flex-col gap-3 border border-slate-4 rounded-md p-4 bg-slate-2 mb-4 w-full",
+            class_name="flex flex-col gap-3 border border-secondary-4 rounded-md p-4 bg-secondary-2 mb-4 w-full",
         )
 
     return rx.vstack(
@@ -788,22 +792,22 @@ def generate_props(
                     rx.table.row(
                         rx.table.column_header_cell(
                             "prop",
-                            class_name=table_header_class_name + " w-[9rem]",
+                            class_name=ui.cn(table_header_class_name, "w-[9rem]"),
                         ),
                         rx.table.column_header_cell(
                             "type",
-                            class_name=table_header_class_name + " w-[34rem]",
+                            class_name=ui.cn(table_header_class_name, "w-[34rem]"),
                         ),
                         rx.table.column_header_cell(
                             "default",
-                            class_name=table_header_class_name + " w-[4rem]",
+                            class_name=ui.cn(table_header_class_name, "w-[4rem]"),
                         ),
                         rx.table.column_header_cell(
                             "description",
-                            class_name=table_header_class_name + " w-[18rem]",
+                            class_name=ui.cn(table_header_class_name, "w-[18rem]"),
                         ),
                     ),
-                    class_name="bg-slate-3",
+                    class_name="bg-secondary-3",
                 ),
                 body,
                 variant="surface",

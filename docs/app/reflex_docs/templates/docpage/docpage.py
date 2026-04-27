@@ -792,7 +792,7 @@ def docpage(
                         sidebar,
                         class_name=(
                             "w-[19.5rem] shrink-0 hidden lg:block z-10 border-r border-m-slate-4 dark:border-m-slate-10 sticky left-0 "
-                            "before:content-[''] before:absolute before:top-0 before:bottom-0 before:right-0 before:w-[100vw] before:bg-white-1 dark:before:bg-[#1a1b1d] before:-z-10 "
+                            "before:content-[''] before:absolute before:top-0 before:bottom-0 before:right-0 before:w-[100vw] before:bg-white-1 dark:before:bg-secondary-2 before:-z-10 "
                             + rx.cond(
                                 HostingBannerState.is_banner_visible,
                                 " top-[113px] h-[calc(100vh-113px)]",
