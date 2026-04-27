@@ -79,7 +79,7 @@
   "packages/reflex-components-radix/src/reflex_components_radix/themes/components/radio_cards.pyi": "d84b16ac16083a534199fd23659aaa06",
   "packages/reflex-components-radix/src/reflex_components_radix/themes/components/radio_group.pyi": "51fda6313f1ce86d5b1ffdfd68ae8b74",
   "packages/reflex-components-radix/src/reflex_components_radix/themes/components/scroll_area.pyi": "bba40e5eae75314157378c9e8b0eea73",
-  "packages/reflex-components-radix/src/reflex_components_radix/themes/components/segmented_control.pyi": "bf9f751a701137bfedc254657d4c5be4",
+  "packages/reflex-components-radix/src/reflex_components_radix/themes/components/segmented_control.pyi": "44770b1f5eb91502bfef3aadd209d0b8",
   "packages/reflex-components-radix/src/reflex_components_radix/themes/components/select.pyi": "605479e11d19dd7730c90125b198c9b6",
   "packages/reflex-components-radix/src/reflex_components_radix/themes/components/separator.pyi": "519781d33b99c675a12014d400e54d08",
   "packages/reflex-components-radix/src/reflex_components_radix/themes/components/skeleton.pyi": "f4848f7d89abb4c78f6db52c624cdabf",
