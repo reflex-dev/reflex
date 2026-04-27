@@ -1,9 +1,10 @@
 from typing import Any, cast
 
 import pytest
-from reflex_base.event import EventChain, EventHandler, EventSpec
+from reflex_base.event import EventChain, EventHandler, EventSpec, parse_args_spec
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_components_core.core.upload import (
+    GhostUpload,
     StyledUpload,
     Upload,
     UploadNamespace,
@@ -74,6 +75,14 @@ def test_get_upload_url():
 
 def test__on_drop_spec():
     assert isinstance(_on_drop_spec(LiteralVar.create([])), tuple)
+
+
+@pytest.mark.parametrize("component", [Upload, GhostUpload])
+def test_on_drop_rejected_uses_file_rejection_payload_spec(component):
+    rejected_spec = component.get_event_triggers()["on_drop_rejected"]
+    placeholders, _ = parse_args_spec(rejected_spec)
+
+    assert placeholders[0]._var_type == list[dict[str, Any]]
 
 
 def test_upload_files_chunk_requires_background():

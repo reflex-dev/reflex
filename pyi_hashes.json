@@ -20,7 +20,7 @@
   "packages/reflex-components-core/src/reflex_components_core/core/helmet.pyi": "7fd81a99bde5b0ff94bb52523597fd5c",
   "packages/reflex-components-core/src/reflex_components_core/core/html.pyi": "753d6ae315369530dad450ed643f5be6",
   "packages/reflex-components-core/src/reflex_components_core/core/sticky.pyi": "ba60a7d9cba75b27a1133bd63a9fbd59",
-  "packages/reflex-components-core/src/reflex_components_core/core/upload.pyi": "17775edb94cc804686ae4cd873584810",
+  "packages/reflex-components-core/src/reflex_components_core/core/upload.pyi": "48bccd1cf1cedaf24503e7dbd2c0b02b",
   "packages/reflex-components-core/src/reflex_components_core/core/window_events.pyi": "cab827931770be082cd1598a9908abbc",
   "packages/reflex-components-core/src/reflex_components_core/datadisplay/__init__.pyi": "c96fed4da42a13576d64f84e3c7cb25c",
   "packages/reflex-components-core/src/reflex_components_core/el/__init__.pyi": "f09129ddefb57ab4c7769c86dc9a3153",
