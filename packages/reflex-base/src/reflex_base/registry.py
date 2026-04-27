@@ -66,7 +66,7 @@ class RegistrationContext(BaseContext):
         default_factory=dict,
         repr=False,
     )
-    config: Config | None = dataclasses.field(default=None, repr=False)
+    _config: Config | None = dataclasses.field(default=None, repr=False)
     decorated_pages: list[tuple[Callable, dict[str, Any]]] = dataclasses.field(
         default_factory=list,
         repr=False,
@@ -86,13 +86,34 @@ class RegistrationContext(BaseContext):
     _app: App | None = dataclasses.field(default=None, repr=False)
 
     @property
-    def app(self) -> App | None:
+    def app(self) -> App:
         """Get the App instance associated with this context.
 
         Returns:
-            The App instance, or None if no app has been registered.
+            The App instance.
+
+        Raises:
+            ReflexRuntimeError: If no App has been registered with this context.
         """
+        if self._app is None:
+            msg = "No App is registered with the active RegistrationContext."
+            raise ReflexRuntimeError(msg)
         return self._app
+
+    @property
+    def config(self) -> Config:
+        """Get the Config associated with this context.
+
+        Returns:
+            The Config instance.
+
+        Raises:
+            ReflexRuntimeError: If no Config has been loaded for this context.
+        """
+        if self._config is None:
+            msg = "No Config has been loaded for the active RegistrationContext."
+            raise ReflexRuntimeError(msg)
+        return self._config
 
     def _set_app(self, app: App) -> None:
         """Associate an App instance with this context.
@@ -115,14 +136,15 @@ class RegistrationContext(BaseContext):
         object.__setattr__(self, "_app", app)
 
     def fork(self) -> Self:
-        """Create a copy of this context with `_app` reset to None.
+        """Create a copy of this context with `_app` and `_config` reset to None.
 
         Existing registrations (event handlers, base states, decorated pages, etc.)
         are shallow-copied so the fork can evolve independently while preserving
-        already-registered classes.
+        already-registered classes. The next call to `get_config()` on the fork
+        will reload `rxconfig.py` from disk.
 
         Returns:
-            A new RegistrationContext with the same registrations but no app.
+            A new RegistrationContext with the same registrations but no app or config.
         """
         return type(self)(
             event_handlers=dict(self.event_handlers),
@@ -131,7 +153,6 @@ class RegistrationContext(BaseContext):
                 k: set(v) for k, v in self.base_state_substates.items()
             },
             tag_to_stateful_component=dict(self.tag_to_stateful_component),
-            config=self.config,
             decorated_pages=list(self.decorated_pages),
             custom_components=dict(self.custom_components),
             memo_definitions=dict(self.memo_definitions),
@@ -144,7 +165,7 @@ class RegistrationContext(BaseContext):
         Args:
             config: The config to associate with this context.
         """
-        object.__setattr__(self, "config", config)
+        object.__setattr__(self, "_config", config)
 
     @classmethod
     def ensure_context(cls) -> Self:

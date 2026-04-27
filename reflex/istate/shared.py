@@ -50,9 +50,7 @@ def _do_update_other_tokens(
     Returns:
         The list of asyncio tasks created to perform the updates.
     """
-    if (app := RegistrationContext.get().app) is None:
-        msg = "No App is registered with the active RegistrationContext."
-        raise RuntimeError(msg)
+    app = RegistrationContext.get().app
 
     async def _update_client(token: str):
         async with app.modify_state(

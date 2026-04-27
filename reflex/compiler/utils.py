@@ -376,7 +376,7 @@ def _apply_component_style_for_compile(component: Component) -> Component:
     """
     style = (
         app.style
-        if (app := RegistrationContext.ensure_context().app) is not None
+        if (app := RegistrationContext.ensure_context()._app) is not None
         else {}
     )
 

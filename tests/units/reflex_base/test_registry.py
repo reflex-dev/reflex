@@ -139,12 +139,14 @@ def test_forked_context_is_independent(
 
 
 def test_clean_context_has_no_config(clean_registration_context: RegistrationContext):
-    """A fresh RegistrationContext starts with config=None.
+    """A fresh RegistrationContext has no cached config and raises on access.
 
     Args:
         clean_registration_context: A fresh, empty registration context.
     """
-    assert clean_registration_context.config is None
+    assert clean_registration_context._config is None
+    with pytest.raises(ReflexRuntimeError, match="No Config"):
+        clean_registration_context.config
 
 
 def _write_rxconfig(path, app_name: str) -> None:
@@ -169,7 +171,7 @@ def test_get_config_caches_on_context(
     """
     _write_rxconfig(tmp_path, "ctx_app")
     with chdir(tmp_path):
-        assert clean_registration_context.config is None
+        assert clean_registration_context._config is None
         first = get_config()
         assert first is clean_registration_context.config
         assert first.app_name == "ctx_app"
@@ -307,7 +309,9 @@ def test_app_registers_on_instantiation(
     """
     import reflex as rx
 
-    assert clean_registration_context.app is None
+    assert clean_registration_context._app is None
+    with pytest.raises(ReflexRuntimeError, match="No App"):
+        clean_registration_context.app
     app = rx.App()
     assert clean_registration_context.app is app
     assert clean_registration_context._app is app
@@ -353,7 +357,7 @@ def test_fork_clears_app_and_preserves_registrations(
 
     forked = clean_registration_context.fork()
     assert forked is not clean_registration_context
-    assert forked.app is None
+    assert forked._app is None
     assert forked.event_handlers == clean_registration_context.event_handlers
     assert forked.event_handlers is not clean_registration_context.event_handlers
     assert forked.base_states == clean_registration_context.base_states

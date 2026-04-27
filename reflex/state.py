@@ -2287,8 +2287,7 @@ class FrontendEventExceptionState(State):
                 "window.location.reload();"
                 "}"
             )
-        if (app := RegistrationContext.get().app) is not None:
-            app.frontend_exception_handler(Exception(info))
+        RegistrationContext.get().app.frontend_exception_handler(Exception(info))
 
 
 class UpdateVarsInternalState(State):
@@ -2326,14 +2325,10 @@ class OnLoadInternalState(State):
 
         Returns:
             The list of events to queue for on load handling.
-
-        Raises:
-            RuntimeError: If no App is registered with the active RegistrationContext.
         """
-        if (app := RegistrationContext.get().app) is None:
-            msg = "No App is registered with the active RegistrationContext."
-            raise RuntimeError(msg)
-        load_events = app.get_load_events(self.router.url.path)
+        load_events = RegistrationContext.get().app.get_load_events(
+            self.router.url.path
+        )
         if not load_events:
             self.is_hydrated = True
             return None  # Fast path for navigation with no on_load events defined.

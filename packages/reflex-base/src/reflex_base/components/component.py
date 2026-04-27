@@ -2210,7 +2210,7 @@ class CustomComponent(Component):
 
         style = (
             app.style
-            if (app := RegistrationContext.ensure_context().app) is not None
+            if (app := RegistrationContext.ensure_context()._app) is not None
             else {}
         )
 

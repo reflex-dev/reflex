@@ -71,9 +71,7 @@ def LifespanApp(
     @asynccontextmanager
     async def assert_register_blocked_during_lifespan(app):
         """Negative test: registering a task after lifespan has started must raise."""
-        if (reflex_app := RegistrationContext.get().app) is None:
-            msg = "No App is registered with the active RegistrationContext."
-            raise RuntimeError(msg)
+        reflex_app = RegistrationContext.get().app
         task = asyncio.create_task(raw_asyncio_task_coro(), name="raw_asyncio_task")
         try:
             reflex_app.register_lifespan_task(task)
@@ -115,9 +113,7 @@ def LifespanApp(
             pass
 
     async def modify_state_task():
-        if (reflex_app := RegistrationContext.get().app) is None:
-            msg = "No App is registered with the active RegistrationContext."
-            raise RuntimeError(msg)
+        reflex_app = RegistrationContext.get().app
         try:
             while True:
                 for token in list(connected_tokens):

@@ -698,11 +698,9 @@ def get_config() -> Config:
         The app config.
     """
     ctx = RegistrationContext.ensure_context()
-    config = ctx.config
-    if config is None:
-        config = _load_config()
-        ctx._set_config(config)
-    return config
+    if ctx._config is None:
+        ctx._set_config(_load_config())
+    return ctx.config
 
 
 def reload_config() -> Config:
