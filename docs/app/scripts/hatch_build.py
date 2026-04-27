@@ -1,4 +1,4 @@
-"""Custom build hook to bundle the parent docs/ tree into the wheel."""
+"""Custom build hook to bundle markdown docs from the parent docs/ tree into the wheel."""
 
 import pathlib
 from typing import Any
@@ -10,12 +10,12 @@ _SKIP_TOP_LEVEL = {"app", "scripts", "__pycache__"}
 
 
 class BundleDocsHook(BuildHookInterface):
-    """Force-include the parent docs/ tree into the wheel as bundled package data."""
+    """Force-include markdown files from the parent docs/ tree into the wheel as bundled package data."""
 
     PLUGIN_NAME = "custom"
 
     def initialize(self, version: str, build_data: dict[str, Any]) -> None:
-        """Register every file in the parent docs/ tree as a force-include into the build target.
+        """Register every markdown file in the parent docs/ tree as a force-include into the build target.
 
         Args:
             version: The version being built.
@@ -33,7 +33,12 @@ class BundleDocsHook(BuildHookInterface):
 
         docs_root = app_root.parent
         force_include = build_data.setdefault("force_include", {})
-        for child in docs_root.iterdir():
-            if child.name.startswith(".") or child.name in _SKIP_TOP_LEVEL:
+        for top in docs_root.iterdir():
+            if top.name.startswith(".") or top.name in _SKIP_TOP_LEVEL:
                 continue
-            force_include[str(child)] = f"{_BUNDLE_PREFIX}/{child.name}"
+            md_files = (
+                [top] if top.is_file() and top.suffix == ".md" else top.rglob("*.md")
+            )
+            for md in md_files:
+                rel = md.relative_to(docs_root).as_posix()
+                force_include[str(md)] = f"{_BUNDLE_PREFIX}/{rel}"
