@@ -13,7 +13,7 @@ import pickle
 import re
 import sys
 import time
-from collections.abc import Callable, Coroutine, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from hashlib import md5
 from types import FunctionType
 from typing import (
