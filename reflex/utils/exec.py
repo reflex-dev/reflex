@@ -13,7 +13,6 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any, NamedTuple, TypedDict
-from urllib.parse import urljoin
 
 from reflex_base import constants
 from reflex_base.config import get_config
@@ -221,9 +220,6 @@ def run_process_and_launch_url(
                 if match:
                     if first_run:
                         url = match.group(1)
-                        if get_config().frontend_path != "":
-                            url = urljoin(url, get_config().frontend_path)
-
                         notify_frontend(url, backend_present)
                         if backend_present:
                             notify_backend()
