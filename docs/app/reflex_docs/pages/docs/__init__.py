@@ -89,15 +89,14 @@ def get_previews_from_frontmatter(filepath: str) -> dict[str, str]:
 # ---------------------------------------------------------------------------
 # Discover all docs — single pipeline via reflex_docgen
 # ---------------------------------------------------------------------------
-_package_root = Path(__file__).resolve().parent.parent.parent  # …/reflex_docs/
-_app_root = _package_root.parent  # …/app/
-_docs_dir = _app_root.parent  # …/docs/
-_pkg_dir = _docs_dir / "package"  # sibling docs/package/ (reflex-docs-bundle)
+_app_root = Path(__file__).resolve().parent.parent.parent.parent  # …/app/
+_docs_dir = _app_root.parent  # …/docs/ (parent of app/)
+_pkg_root = _docs_dir / "package"  # …/package/ (reflex-docs-bundle)
 
 all_docs: dict[str, str] = {}  # virtual_path → actual_path
 for _md_file in sorted(_docs_dir.rglob("*.md")):
-    # Skip anything under app/ or package/ — those are Python packages, not source markdown.
-    if _md_file.is_relative_to(_app_root) or _md_file.is_relative_to(_pkg_dir):
+    # Skip anything inside the app/ or package/ subdirectories.
+    if _md_file.is_relative_to(_app_root) or _md_file.is_relative_to(_pkg_root):
         continue
     _virtual = "docs/" + str(_md_file.relative_to(_docs_dir)).replace("\\", "/")
     all_docs[_virtual] = str(_md_file)
