@@ -1676,7 +1676,7 @@ class BaseState(EvenMoreBasicBaseState):
             self._get_root_state().get_class_substate(var_data.state)
         )
         value = getattr(other_state, var_data.field_name)
-        if isinstance(value, Coroutine):
+        if inspect.isawaitable(value):
             return await value
         return value
 
