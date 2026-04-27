@@ -9,7 +9,7 @@ import functools
 import inspect
 import time
 from collections.abc import Callable, Coroutine
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeVar, overload
 
 from reflex_base.utils import console
 from reflex_base.utils.exceptions import InvalidLifespanTaskTypeError
@@ -19,6 +19,8 @@ from .mixin import AppMixin
 
 if TYPE_CHECKING:
     from typing_extensions import deprecated
+
+_LifespanTaskT = TypeVar("_LifespanTaskT", bound="Callable | asyncio.Task")
 
 
 def _get_task_name(task: asyncio.Task | Callable) -> str:
@@ -137,17 +139,43 @@ class LifespanMixin(AppMixin):
         else:
             await state_manager.close()
 
-    def register_lifespan_task(self, task: Callable | asyncio.Task, **task_kwargs):
+    @overload
+    def register_lifespan_task(
+        self, task: _LifespanTaskT, **task_kwargs
+    ) -> _LifespanTaskT: ...
+
+    @overload
+    def register_lifespan_task(
+        self, task: None = None, **task_kwargs
+    ) -> Callable[[_LifespanTaskT], _LifespanTaskT]: ...
+
+    def register_lifespan_task(
+        self,
+        task: Callable | asyncio.Task | None = None,
+        **task_kwargs,
+    ):
         """Register a task to run during the lifespan of the app.
 
+        Supports three call shapes:
+            - `app.register_lifespan_task(fn, **kwargs)` — direct call.
+            - `@app.register_lifespan_task` — bare decorator.
+            - `@app.register_lifespan_task(**kwargs)` — parameterized decorator.
+
         Args:
-            task: The task to register.
+            task: The task to register, or None to return a decorator.
             **task_kwargs: The kwargs of the task.
+
+        Returns:
+            The original task when called with a task, or a decorator when
+            called without one.
 
         Raises:
             InvalidLifespanTaskTypeError: If the task is a generator function.
             RuntimeError: If lifespan tasks are already running.
         """
+        if task is None:
+            return functools.partial(self.register_lifespan_task, **task_kwargs)
+
         if self._lifespan_tasks_started:
             msg = (
                 f"Cannot register lifespan task {_get_task_name(task)!r} after "
@@ -159,9 +187,13 @@ class LifespanMixin(AppMixin):
             raise InvalidLifespanTaskTypeError(msg)
 
         task_name = _get_task_name(task)
+        registered_task = task
         if task_kwargs:
-            original_task = task
-            task = functools.partial(task, **task_kwargs)  # pyright: ignore [reportArgumentType]
-            functools.update_wrapper(task, original_task)  # pyright: ignore [reportArgumentType]
-        self._lifespan_tasks[task] = None
+            if isinstance(task, asyncio.Task):
+                msg = f"Task {task_name!r} of type asyncio.Task cannot be registered with kwargs."
+                raise InvalidLifespanTaskTypeError(msg)
+            registered_task = functools.partial(task, **task_kwargs)
+            functools.update_wrapper(registered_task, task)
+        self._lifespan_tasks[registered_task] = None
         console.debug(f"Registered lifespan task: {task_name}")
+        return task
