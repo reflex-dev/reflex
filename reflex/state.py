@@ -13,7 +13,7 @@ import pickle
 import re
 import sys
 import time
-from collections.abc import Callable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Coroutine, Iterator, Mapping, Sequence
 from hashlib import md5
 from types import FunctionType
 from typing import (
@@ -1675,7 +1675,10 @@ class BaseState(EvenMoreBasicBaseState):
         other_state = await self.get_state(
             self._get_root_state().get_class_substate(var_data.state)
         )
-        return getattr(other_state, var_data.field_name)
+        value = getattr(other_state, var_data.field_name)
+        if isinstance(value, Coroutine):
+            return await value
+        return value
 
     def _mark_dirty_computed_vars(self) -> None:
         """Mark ComputedVars that need to be recalculated based on dirty_vars."""
