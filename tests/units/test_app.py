@@ -2262,7 +2262,8 @@ def test_app_state_determination():
     a1 = App()
     assert a1._state is not None
 
-    a2 = App(enable_state=False)
+    with RegistrationContext.get().fork():
+        a2 = App(enable_state=False)
     assert a2._state is None
 
 

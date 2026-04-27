@@ -8,11 +8,12 @@ from typing import TYPE_CHECKING, Any
 from typing_extensions import Self
 
 from reflex_base.context.base import BaseContext
-from reflex_base.utils.exceptions import StateValueError
+from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from reflex.app import App
     from reflex.state import BaseState
     from reflex_base.components.component import StatefulComponent
     from reflex_base.config import Config
@@ -82,6 +83,60 @@ class RegistrationContext(BaseContext):
         default_factory=_default_bundled_libraries,
         repr=False,
     )
+    _app: App | None = dataclasses.field(default=None, repr=False)
+
+    @property
+    def app(self) -> App | None:
+        """Get the App instance associated with this context.
+
+        Returns:
+            The App instance, or None if no app has been registered.
+        """
+        return self._app
+
+    def _set_app(self, app: App) -> None:
+        """Associate an App instance with this context.
+
+        Args:
+            app: The App instance to register.
+
+        Raises:
+            ReflexRuntimeError: If an App is already registered with this context.
+        """
+        if self._app is not None:
+            msg = (
+                "A RegistrationContext can only be associated with a single App "
+                "instance. To create another App, call `.fork()` on the current "
+                "RegistrationContext to obtain a fresh context that preserves "
+                "existing registrations, or instantiate a new RegistrationContext "
+                "and set it as the current context before instantiating the new App."
+            )
+            raise ReflexRuntimeError(msg)
+        object.__setattr__(self, "_app", app)
+
+    def fork(self) -> Self:
+        """Create a copy of this context with `_app` reset to None.
+
+        Existing registrations (event handlers, base states, decorated pages, etc.)
+        are shallow-copied so the fork can evolve independently while preserving
+        already-registered classes.
+
+        Returns:
+            A new RegistrationContext with the same registrations but no app.
+        """
+        return type(self)(
+            event_handlers=dict(self.event_handlers),
+            base_states=dict(self.base_states),
+            base_state_substates={
+                k: set(v) for k, v in self.base_state_substates.items()
+            },
+            tag_to_stateful_component=dict(self.tag_to_stateful_component),
+            config=self.config,
+            decorated_pages=list(self.decorated_pages),
+            custom_components=dict(self.custom_components),
+            memo_definitions=dict(self.memo_definitions),
+            bundled_libraries=list(self.bundled_libraries),
+        )
 
     def _set_config(self, config: Config) -> None:
         """Set the config for this context.

@@ -452,6 +452,8 @@ class App(MiddlewareMixin, LifespanMixin):
             msg = "rx.BaseState cannot be subclassed directly. Use rx.State instead"
             raise ValueError(msg)
 
+        self._registration_context._set_app(self)
+
         reload_config()
 
         if "breakpoints" in self.style:

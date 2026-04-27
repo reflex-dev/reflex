@@ -4,7 +4,6 @@ import platform
 import traceback
 import uuid
 from collections.abc import AsyncGenerator, Generator, Mapping
-from copy import deepcopy
 from typing import Any
 from unittest import mock
 
@@ -26,6 +25,23 @@ from reflex.utils import prerequisites
 from tests.units.mock_redis import mock_redis
 
 from .states.upload import SubUploadState, UploadState
+
+
+@pytest.fixture(autouse=True)
+def _isolate_app_in_context() -> Generator[None, None, None]:
+    """Reset the App slot on the active RegistrationContext between tests.
+
+    A RegistrationContext can only host one App instance, but unit tests
+    repeatedly instantiate `rx.App`, so we clear `_app` around each test
+    while keeping other registrations shared (matching prior behavior).
+
+    Yields:
+        None.
+    """
+    ctx = RegistrationContext.ensure_context()
+    object.__setattr__(ctx, "_app", None)
+    yield
+    object.__setattr__(ctx, "_app", None)
 
 
 @pytest.fixture
@@ -469,7 +485,7 @@ def forked_registration_context() -> Generator[RegistrationContext, None, None]:
     Yields:
         The forked RegistrationContext.
     """
-    with deepcopy(RegistrationContext.get()) as ctx:
+    with RegistrationContext.get().fork() as ctx:
         yield ctx
 
 

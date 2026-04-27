@@ -21,7 +21,6 @@ import threading
 import time
 import types
 from collections.abc import Callable, Coroutine, Sequence
-from copy import deepcopy
 from http.server import SimpleHTTPRequestHandler
 from importlib.util import find_spec
 from pathlib import Path
@@ -272,7 +271,7 @@ class AppHarness:
                 AppHarness._base_registration_context = (
                     RegistrationContext.ensure_context()
                 )
-            new_registration_context = deepcopy(AppHarness._base_registration_context)
+            new_registration_context = AppHarness._base_registration_context.fork()
             self._registry_token = RegistrationContext.set(new_registration_context)
             # ensure config and app are reloaded when testing different app
             config = reload_config()

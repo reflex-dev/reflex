@@ -5,7 +5,7 @@ from textwrap import dedent
 import pytest
 from reflex_base.config import Config, get_config, reload_config
 from reflex_base.registry import RegisteredEventHandler, RegistrationContext
-from reflex_base.utils.exceptions import StateValueError
+from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
 
 from reflex.testing import chdir
 
@@ -295,6 +295,88 @@ def test_memo_definitions_isolated_between_contexts():
 
     with RegistrationContext() as ctx_b:
         assert ctx_b.memo_definitions == {}
+
+
+def test_app_registers_on_instantiation(
+    clean_registration_context: RegistrationContext,
+):
+    """Instantiating an rx.App stores it on the active RegistrationContext.
+
+    Args:
+        clean_registration_context: A fresh, empty registration context.
+    """
+    import reflex as rx
+
+    assert clean_registration_context.app is None
+    app = rx.App()
+    assert clean_registration_context.app is app
+    assert clean_registration_context._app is app
+
+
+def test_second_app_in_same_context_raises(
+    clean_registration_context: RegistrationContext,
+):
+    """A second rx.App() in the same context raises ReflexRuntimeError.
+
+    Args:
+        clean_registration_context: A fresh, empty registration context.
+    """
+    import reflex as rx
+
+    rx.App()
+    with pytest.raises(ReflexRuntimeError, match=r"\.fork\(\)"):
+        rx.App()
+
+
+def test_fork_clears_app_and_preserves_registrations(
+    clean_registration_context: RegistrationContext,
+):
+    """fork() returns a new context with _app=None but the same registrations.
+
+    Args:
+        clean_registration_context: A fresh, empty registration context.
+    """
+    import reflex as rx
+    from reflex.event import EventHandler
+    from reflex.state import BaseState
+
+    class ForkState(BaseState):
+        x: int = 0
+
+    async def _fn():
+        pass
+
+    handler = EventHandler(fn=_fn)
+    RegistrationContext.register_event_handler(handler)
+    app = rx.App()
+    assert clean_registration_context.app is app
+
+    forked = clean_registration_context.fork()
+    assert forked is not clean_registration_context
+    assert forked.app is None
+    assert forked.event_handlers == clean_registration_context.event_handlers
+    assert forked.event_handlers is not clean_registration_context.event_handlers
+    assert forked.base_states == clean_registration_context.base_states
+    assert forked.base_states is not clean_registration_context.base_states
+
+
+def test_fork_allows_new_app(clean_registration_context: RegistrationContext):
+    """A forked context permits a new App to be instantiated.
+
+    Args:
+        clean_registration_context: A fresh, empty registration context.
+    """
+    import reflex as rx
+
+    rx.App()
+    forked = clean_registration_context.fork()
+    token = RegistrationContext.set(forked)
+    try:
+        new_app = rx.App()
+    finally:
+        RegistrationContext.reset(token)
+    assert forked.app is new_app
+    assert clean_registration_context.app is not new_app
 
 
 def test_bundled_libraries_isolated_between_contexts():
