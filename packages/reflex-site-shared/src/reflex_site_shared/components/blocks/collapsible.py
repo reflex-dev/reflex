@@ -13,12 +13,17 @@ def collapsible_box(
     color: ColorType,
     *,
     item_border_radius: str = "12px",
+    background_shade: int = 3,
+    background_override: str | None = None,
+    border_override: str | None = None,
 ) -> rx.Component:
     """Collapsible accordion wrapper shared by alert and video directives.
 
     Returns:
         The component.
     """
+    bg = background_override or f"{rx.color(color, background_shade)}"
+    border_color = border_override or f"{rx.color(color, 4)}"
     return rx.box(
         rx.accordion.root(
             rx.accordion.item(
@@ -44,7 +49,7 @@ def collapsible_box(
                 body,
                 border_radius=item_border_radius,
                 padding=["16px", "24px"],
-                background_color=f"{rx.color(color, 3)}",
+                background_color=bg,
                 border="none",
             ),
             background="transparent !important",
@@ -53,9 +58,9 @@ def collapsible_box(
             collapsible=True,
             width="100%",
         ),
-        border=f"1px solid {rx.color(color, 4)}",
+        border=f"1px solid {border_color}",
         border_radius="12px",
-        background_color=f"{rx.color(color, 3)} !important",
+        background_color=f"{bg} !important",
         width="100%",
         margin_bottom="16px",
         margin_top="16px",

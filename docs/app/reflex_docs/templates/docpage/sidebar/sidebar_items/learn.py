@@ -10,8 +10,8 @@ def get_sidebar_items_learn():
         create_item(
             "Getting Started",
             children=[
-                getting_started.introduction,
                 getting_started.installation,
+                getting_started.introduction,
                 getting_started.basics,
                 getting_started.project_structure,
                 getting_started.dashboard_tutorial,

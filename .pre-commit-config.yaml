@@ -4,7 +4,7 @@ repos:
   hooks:
   - id: ruff-format
     name: ruff-format
-    entry: ruff format --preview
+    entry: ruff format
     language: system
     types_or: [python, markdown]
     require_serial: true

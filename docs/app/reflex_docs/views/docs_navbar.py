@@ -1,12 +1,36 @@
 import reflex as rx
 import reflex_components_internal as ui
 from reflex_components_internal.blocks.demo_form import demo_form_dialog
+from reflex_site_shared.components.icons import get_icon
 from reflex_site_shared.components.marketing_button import button
-from reflex_site_shared.constants import REFLEX_ASSETS_CDN, REFLEX_URL
+from reflex_site_shared.constants import (
+    GITHUB_STARS,
+    GITHUB_URL,
+    REFLEX_ASSETS_CDN,
+    REFLEX_URL,
+)
 
 from reflex_docs.components.docpage.navbar.buttons.sidebar import navbar_sidebar_button
 from reflex_docs.pages.docs import ai_builder, getting_started, hosting
 from reflex_docs.views.search import search_bar
+
+
+def github_button() -> rx.Component:
+    label = f"View Reflex on GitHub - {GITHUB_STARS // 1000}K stars"
+    return rx.el.a(
+        button(
+            get_icon(icon="github_navbar", class_name="shrink-0"),
+            f"{GITHUB_STARS // 1000}K",
+            custom_attrs={"aria-label": label},
+            size="sm",
+            variant="ghost",
+            native_button=False,
+        ),
+        href=GITHUB_URL,
+        target="_blank",
+        rel="noopener noreferrer",
+        custom_attrs={"aria-label": label},
+    )
 
 
 def logo() -> rx.Component:
@@ -71,7 +95,7 @@ def menu_item(text: str, href: str, active_str: str = "") -> rx.Component:
             href=href,
         ),
         class_name=ui.cn(
-            "xl:flex hidden h-full items-center justify-center",
+            "md:flex hidden h-full items-center justify-center",
             rx.cond(active, active_cn, ""),
         ),
         custom_attrs={"role": "menuitem"},
@@ -91,6 +115,12 @@ def navigation_menu() -> rx.Component:
             custom_attrs={"role": "menubar"},
         ),
         ui.navigation_menu.list(
+            ui.navigation_menu.item(
+                github_button(),
+                unstyled=True,
+                class_name="md:flex hidden",
+                custom_attrs={"role": "menuitem"},
+            ),
             ui.navigation_menu.item(
                 search_bar(),
                 unstyled=True,
@@ -112,7 +142,7 @@ def navigation_menu() -> rx.Component:
             ),
             ui.navigation_menu.item(
                 navbar_sidebar_button(),
-                class_name="xl:hidden flex",
+                class_name="md:hidden flex",
                 unstyled=True,
                 custom_attrs={"role": "menuitem"},
             ),

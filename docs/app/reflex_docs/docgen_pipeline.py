@@ -516,12 +516,18 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
         """Render a ``md alert`` directive."""
         status = block.args[0] if block.args else "info"
         colors: dict[str, ColorType] = {
-            "info": "accent",
+            "info": "slate",
             "success": "grass",
             "warning": "amber",
             "error": "red",
         }
-        color: ColorType = colors.get(status, "blue")
+        color: ColorType = colors.get(status, "slate")
+        background_shade = 2 if status == "info" else 3
+        # For "info" alerts, use the neutral custom slate scale (--c-slate-*)
+        # so the card matches the codeblock styling instead of the blue-tinted
+        # default --slate-* scale that rx.color() produces.
+        bg_override = "var(--c-slate-2)" if status == "info" else None
+        border_override = "var(--c-slate-4)" if status == "info" else None
 
         # First child may be a heading used as the alert title.
         children = block.children
@@ -560,7 +566,14 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
                 padding="0px",
                 margin_top="16px",
             )
-            return collapsible_box(trigger, body, color)
+            return collapsible_box(
+                trigger,
+                body,
+                color,
+                background_shade=background_shade,
+                background_override=bg_override,
+                border_override=border_override,
+            )
 
         # Title only, or text-only (no heading) — simple non-collapsible box.
         if title_spans:
@@ -588,8 +601,8 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
                 spacing="1",
                 padding=["16px", "24px"],
             ),
-            border=f"1px solid {rx.color(color, 4)}",
-            background_color=f"{rx.color(color, 3)}",
+            border=f"1px solid {border_override or rx.color(color, 4)}",
+            background_color=f"{bg_override or rx.color(color, background_shade)}",
             border_radius="12px",
             margin_bottom="16px",
             margin_top="16px",
@@ -666,15 +679,19 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
                 rx.tabs.trigger(
                     title,
                     value=value,
-                    class_name="tab-style font-base font-semibold text-[1.25rem]",
+                    class_name="pill-tab",
                 )
             )
             contents.append(
-                rx.tabs.content(self._render_children(body_blocks), value=value),
+                rx.tabs.content(
+                    self._render_children(body_blocks),
+                    value=value,
+                    class_name="pt-6",
+                ),
             )
 
         return rx.tabs.root(
-            rx.tabs.list(*triggers, class_name="mt-4"),
+            rx.tabs.list(*triggers, class_name="pill-tab-list mt-2"),
             *contents,
             default_value="tab1",
         )
@@ -702,29 +719,43 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
 
     def _render_section(self, block: DirectiveBlock) -> rx.Component:
         """Render a ``md section`` directive."""
-        from reflex_site_shared.styles.colors import c_color
-
         sections = self._split_children_by_heading(block.children)
-        return rx.box(
-            rx.vstack(
+        return rx.el.div(
+            rx.el.div(
                 *[
-                    rx.fragment(
-                        rx.text(
-                            rx.text.span(header, font_weight="bold"),
-                            width="100%",
+                    rx.el.div(
+                        rx.el.div(
+                            header,
+                            style={
+                                "fontWeight": "600",
+                                "color": "var(--c-slate-12)",
+                                "fontSize": "1rem",
+                                "lineHeight": "1.5",
+                            },
                         ),
-                        rx.box(self._render_children(body), width="100%"),
+                        rx.el.div(
+                            self._render_children(body),
+                            style={"width": "100%"},
+                        ),
+                        style={
+                            "display": "flex",
+                            "flexDirection": "column",
+                            "gap": "0.25rem",
+                            "width": "100%",
+                        },
                     )
                     for header, body in sections
                 ],
-                text_align="left",
-                margin_y="1em",
-                width="100%",
+                style={
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "gap": "1.25rem",
+                    "width": "100%",
+                    "paddingLeft": "1.5rem",
+                    "borderLeft": "1.5px solid var(--c-slate-4)",
+                },
             ),
-            border_left=f"1.5px {c_color('slate', 4)} solid",
-            padding_left="1em",
-            width="100%",
-            align_items="center",
+            style={"width": "100%", "margin": "1.5rem 0"},
         )
 
 
