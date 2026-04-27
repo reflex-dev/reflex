@@ -33,7 +33,7 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   outline:
     "shadow-[0_-1px_0_0_rgba(0,0,0,0.08)_inset,0_0_0_1px_rgba(0,0,0,0.08)_inset,0_1px_2px_0_rgba(0,0,0,0.02),0_1px_4px_0_rgba(0,0,0,0.02)] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.16)_inset] bg-white dark:bg-m-slate-10 hover:bg-m-slate-2 dark:hover:bg-m-slate-9 text-m-slate-12 dark:text-m-slate-3",
   ghost:
-    "text-m-slate-12 dark:text-m-slate-3 hover:text-primary-10 dark:hover:text-primary-9",
+    "text-secondary-12 hover:text-primary-10",
 };
 
 const SIZE_CLASSES: Record<ButtonSize, string> = {

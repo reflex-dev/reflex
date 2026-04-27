@@ -170,7 +170,7 @@ def feedback_button_toc() -> rx.Component:
             size="sm",
             type="button",
             on_click=FeedbackState.set_score(1),
-            class_name="justify-start pl-0 text-m-slate-7 dark:text-m-slate-6",
+            class_name="justify-start pl-0 text-secondary-11 hover:text-primary-10",
         ),
         content=feedback_content(),
     )
@@ -191,7 +191,7 @@ def copy_to_markdown(text: str) -> rx.Component:
         type="button",
         size="sm",
         variant="ghost",
-        class_name="justify-start pl-0 text-m-slate-7 dark:text-m-slate-6",
+        class_name="justify-start pl-0 text-secondary-11 hover:text-primary-10",
         on_click=[
             rx.call_function(copied.set_value(True)),
             rx.set_clipboard(text),
@@ -207,7 +207,7 @@ def ask_ai_chat() -> rx.Component:
             "Ask AI about this page",
             size="sm",
             variant="ghost",
-            class_name="justify-start pl-0 text-m-slate-7 dark:text-m-slate-6",
+            class_name="justify-start pl-0 text-secondary-11 hover:text-primary-10",
             native_button=False,
         ),
         to="/ai-builder/integrations/mcp-overview/",
@@ -219,7 +219,7 @@ def link_pill(text: str, href: str) -> rx.Component:
         text,
         href=href,
         underline="none",
-        class_name="lg:flex hidden flex-row justify-center items-center gap-2 lg:border-slate-5 bg-slate-3 lg:bg-slate-1 hover:bg-slate-3 shadow-none lg:shadow-large px-3 py-0.5 lg:border lg:border-solid border-none rounded-lg lg:rounded-full w-auto font-small font-small text-slate-9 !hover:text-slate-11 hover:!text-slate-9 truncate whitespace-nowrap transition-bg transition-color cursor-pointer",
+        class_name="lg:flex hidden flex-row justify-center items-center gap-2 lg:border-secondary-5 bg-secondary-3 lg:bg-secondary-1 hover:bg-secondary-3 shadow-none lg:shadow-large px-3 py-0.5 lg:border lg:border-solid border-none rounded-lg lg:rounded-full w-auto font-small font-small text-secondary-11 !hover:text-secondary-12 hover:!text-secondary-11 truncate whitespace-nowrap transition-bg transition-color cursor-pointer",
     )
 
 
@@ -589,7 +589,7 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
         breadcrumbs.append(
             rx.el.a(
                 to_title_case(to_snake_case(segment), sep=" "),
-                class_name="min-h-8 flex items-center text-sm font-[525] text-secondary-12 dark:last:text-secondary-11 hover:text-primary-11"
+                class_name="min-h-8 flex items-center text-sm font-[525] text-secondary-12 last:text-secondary-11 hover:text-primary-11"
                 + (" truncate" if i == len(segments) - 1 else ""),
                 underline="none",
                 href=current_path,
@@ -601,13 +601,13 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
             breadcrumbs.append(
                 ui.icon(
                     "ArrowRight01Icon",
-                    class_name="lg:flex hidden dark:text-m-slate-6 text-m-slate-7 size-4",
+                    class_name="lg:flex hidden text-secondary-11 size-4",
                 ),
             )
             breadcrumbs.append(
                 rx.text(
                     "/",
-                    class_name="font-sm dark:text-m-slate-6 text-m-slate-7 lg:hidden flex",
+                    class_name="font-sm text-secondary-11 lg:hidden flex",
                 )
             )
     from reflex_site_shared.views.hosting_banner import HostingBannerState
