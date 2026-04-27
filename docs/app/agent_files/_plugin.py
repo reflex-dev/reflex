@@ -9,11 +9,13 @@ from typing_extensions import Unpack
 def generate_markdown_files() -> tuple[tuple[Path, str | bytes], ...]:
     from reflex_docs.pages.docs import doc_markdown_sources
 
-    return tuple([
-        (PosixPath(route.strip("/") + ".md"), resolved.read_bytes())
-        for route, source_path in doc_markdown_sources.items()
-        if (resolved := Path(source_path)).is_file()
-    ])
+    return tuple(
+        [
+            (PosixPath(route.strip("/") + ".md"), resolved.read_bytes())
+            for route, source_path in doc_markdown_sources.items()
+            if (resolved := Path(source_path)).is_file()
+        ]
+    )
 
 
 def generate_llms_txt(

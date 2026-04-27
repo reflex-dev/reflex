@@ -5,7 +5,7 @@ import os
 import textwrap
 from pathlib import Path
 from types import UnionType
-from typing import Literal, Union, _GenericAlias, get_args, get_origin
+from typing import Any, Literal, Union, _GenericAlias, get_args, get_origin
 
 import reflex as rx
 from reflex.components.base.fragment import Fragment
@@ -17,6 +17,7 @@ from reflex_docgen import (
     PropDocumentation,
     generate_documentation,
 )
+from reflex_docgen.markdown import RelatedLinks, SEOFrontmatter, parse_document
 
 from reflex_docs.docgen_pipeline import (
     get_docgen_toc,
@@ -24,6 +25,108 @@ from reflex_docs.docgen_pipeline import (
     render_markdown,
 )
 from reflex_docs.templates.docpage import docdemobox, docpage, h1_comp, h2_comp
+from reflex_docs.templates.docpage.docpage import _schema_to_jsonld
+
+
+def get_seo_from_frontmatter(filepath: str) -> SEOFrontmatter | None:
+    """Read the ``seo`` frontmatter block from a doc.
+
+    Args:
+        filepath: Absolute path to the markdown file.
+
+    Returns:
+        The parsed ``SEOFrontmatter`` or ``None`` if absent.
+    """
+    source = Path(filepath).read_text(encoding="utf-8")
+    doc = parse_document(source)
+    return doc.frontmatter.seo if doc.frontmatter is not None else None
+
+
+def get_related_from_frontmatter(filepath: str) -> RelatedLinks | None:
+    """Read the ``related`` frontmatter block from a doc.
+
+    Args:
+        filepath: Absolute path to the markdown file.
+
+    Returns:
+        The parsed ``RelatedLinks`` or ``None`` if absent.
+    """
+    source = Path(filepath).read_text(encoding="utf-8")
+    doc = parse_document(source)
+    return doc.frontmatter.related if doc.frontmatter is not None else None
+
+
+def seo_kwargs(
+    seo: SEOFrontmatter | None, page_title: str, path: str
+) -> dict[str, Any]:
+    """Translate an ``SEOFrontmatter`` into kwargs for the ``docpage`` decorator.
+
+    Args:
+        seo: Parsed SEO block from the doc's frontmatter.
+        page_title: The rendered page title, used as a fallback headline.
+        path: The page's canonical path.
+
+    Returns:
+        Keyword arguments ready to splat into ``docpage(...)``.
+    """
+    if seo is None:
+        return {}
+    kwargs: dict[str, Any] = {}
+    if seo.title:
+        kwargs["page_title"] = seo.title
+    if seo.description:
+        kwargs["meta_description"] = seo.description
+    if seo.schema is not None:
+        kwargs["structured_data"] = _schema_to_jsonld(seo.schema, page_title, path)
+    return kwargs
+
+
+def related_links_footer(related: RelatedLinks | None) -> rx.Component:
+    """Render the ``Related Components`` / ``Related Concepts`` footer block.
+
+    Args:
+        related: Parsed related-links block, or ``None`` for no footer.
+
+    Returns:
+        A styled block of keyword-anchored internal links, or an empty
+        fragment when ``related`` is ``None`` or empty.
+    """
+    if related is None or (not related.components and not related.concepts):
+        return rx.fragment()
+
+    def render_group(heading: str, links: tuple) -> rx.Component:
+        if not links:
+            return rx.fragment()
+        return rx.box(
+            rx.heading(heading, as_="h3", class_name="font-large text-slate-12 mb-2"),
+            rx.el.ul(
+                *[
+                    rx.el.li(
+                        rx.link(
+                            link.text,
+                            href=link.href,
+                            class_name="font-smbold text-violet-11",
+                            underline="none",
+                        ),
+                        rx.text(
+                            f" — {link.description}" if link.description else "",
+                            class_name="font-small text-slate-11 inline",
+                        ),
+                        class_name="py-1",
+                    )
+                    for link in links
+                ],
+                class_name="flex flex-col gap-1 list-none pl-0",
+            ),
+            class_name="flex flex-col gap-2 mb-6",
+        )
+
+    return rx.box(
+        rx.divider(class_name="mt-8 mb-6"),
+        render_group("Related Components", related.components),
+        render_group("Related Concepts", related.concepts),
+        class_name="flex flex-col w-full",
+    )
 
 
 def get_code_style(color: str):
@@ -140,10 +243,12 @@ def render_select(prop: PropDocumentation, component: type[Component], prop_dict
             return rx.select.root(
                 rx.select.trigger(class_name="w-32 font-small text-slate-11"),
                 rx.select.content(
-                    rx.select.group(*[
-                        rx.select.item(item, value=item, class_name="font-small")
-                        for item in literal_values
-                    ])
+                    rx.select.group(
+                        *[
+                            rx.select.item(item, value=item, class_name="font-small")
+                            for item in literal_values
+                        ]
+                    )
                 ),
                 value=var,
                 on_change=setter,
@@ -202,20 +307,22 @@ def render_select(prop: PropDocumentation, component: type[Component], prop_dict
     return rx.select.root(
         rx.select.trigger(class_name="font-small w-32 text-slate-11"),
         rx.select.content(
-            rx.select.group(*[
-                rx.select.item(
-                    item,
-                    value=item,
-                    class_name="font-small",
-                    _hover=(
-                        {"background": f"var(--{item}-9)"}
-                        if prop.name == "color_scheme"
-                        else None
-                    ),
-                )
-                for item in list(map(str, type_.__args__))
-                if item != ""
-            ]),
+            rx.select.group(
+                *[
+                    rx.select.item(
+                        item,
+                        value=item,
+                        class_name="font-small",
+                        _hover=(
+                            {"background": f"var(--{item}-9)"}
+                            if prop.name == "color_scheme"
+                            else None
+                        ),
+                    )
+                    for item in list(map(str, type_.__args__))
+                    if item != ""
+                ]
+            ),
         ),
         value=var,
         on_change=setter,
@@ -331,26 +438,17 @@ def prop_docs(
         type_name = type_.__name__
         short_type_name = type_name
 
-    # Get the default value.
-    default_value = prop.default_value if prop.default_value is not None else "-"
     # Get the color of the prop.
     color = TYPE_COLORS.get(short_type_name, "gray")
+    description_text = prop.description or ""
     # Return the docs for the prop.
     return [
         rx.table.cell(
             rx.box(
                 rx.code(prop.name, class_name="code-style text-nowrap leading-normal"),
-                hovercard(
-                    rx.icon(
-                        tag="info",
-                        size=15,
-                        class_name="!text-slate-9 shrink-0",
-                    ),
-                    rx.text(prop.description, class_name="font-small text-slate-11"),
-                ),
                 class_name="flex flex-row items-center gap-2",
             ),
-            class_name="justify-start pl-4",
+            class_name="justify-start pl-4 align-top",
         ),
         rx.table.cell(
             rx.box(
@@ -415,21 +513,11 @@ def prop_docs(
             class_name="justify-start pl-4",
         ),
         rx.table.cell(
-            rx.box(
-                rx.code(
-                    default_value,
-                    style=get_code_style(
-                        "red"
-                        if default_value == "False"
-                        else "green"
-                        if default_value == "True"
-                        else "gray"
-                    ),
-                    class_name="code-style leading-normal text-nowrap",
-                ),
-                class_name="flex",
+            rx.text(
+                description_text,
+                class_name="font-small text-slate-11 leading-normal whitespace-normal",
             ),
-            class_name="justify-start pl-4",
+            class_name="justify-start pl-4 align-top py-2 w-1/2 min-w-[24rem]",
         ),
         rx.table.cell(
             render_select(prop, component, prop_dict),
@@ -532,8 +620,9 @@ def generate_props(
                             class_name=table_header_class_name,
                         ),
                         rx.table.column_header_cell(
-                            "Default",
-                            class_name=table_header_class_name,
+                            "Description",
+                            class_name=table_header_class_name
+                            + " w-1/2 min-w-[24rem]",
                         ),
                         rx.table.column_header_cell(
                             "Interactive",
@@ -690,6 +779,10 @@ def multi_docs(
     fname = path.strip("/") + ".md"
     ll_doc_exists = os.path.exists(fname.replace(".md", "-ll.md"))
 
+    seo = get_seo_from_frontmatter(actual_path)
+    related = get_related_from_frontmatter(actual_path)
+    seo_extras = seo_kwargs(seo, title, path)
+
     active_class_name = "font-small bg-slate-2 p-2 text-slate-11 rounded-xl shadow-large w-28 cursor-default border border-slate-4 text-center"
 
     non_active_class_name = "font-small w-28 transition-color hover:text-slate-11 text-slate-9 p-2 text-center"
@@ -738,7 +831,7 @@ def multi_docs(
                 )
         return rx.fragment()
 
-    @docpage(set_path=path, t=title)
+    @docpage(set_path=path, t=title, **seo_extras)
     def out():
         toc = get_docgen_toc(actual_path)
         doc_content = Path(actual_path).read_text(encoding="utf-8")
@@ -754,6 +847,7 @@ def multi_docs(
             ),
             h1_comp(text="API Reference"),
             rx.box(*components, class_name="flex flex-col"),
+            related_links_footer(related),
             class_name="flex flex-col w-full",
         )
 
