@@ -121,7 +121,7 @@ uv run reflex run
 
 You should see your app running at [http://localhost:3000](http://localhost:3000).
 
-Reflex also starts the backend server which handles all the state management and communication with the frontend. You can test the backend server is running by navigating to [http://localhost:8000/ping]({"http://localhost:8000/ping"}).
+Reflex also starts the backend server which handles all the state management and communication with the frontend. You can test the backend server is running by navigating to [http://localhost:8000/ping](http://localhost:8000/ping).
 
 Now that we have our project set up, in the next section we will start building our app!
 

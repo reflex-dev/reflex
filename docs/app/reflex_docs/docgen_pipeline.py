@@ -150,10 +150,11 @@ _BRACE_RE = re.compile(r"\{([^{}]+)\}")
 
 
 def _resolve_link_target(target: str, env: dict) -> str:
-    """Resolve ``{expr}`` substrings in a markdown link href against *env*.
+    """Resolve ``{a.b.c}`` dotted-path substrings in a markdown link href.
 
-    Supports composition like ``{enterprise.overview.path}#section``. Targets
-    without braces are returned stripped but otherwise untouched.
+    Supports composition like ``{enterprise.overview.path}#section``. The
+    head name is looked up in *env*; subsequent segments are ``getattr``
+    walks. No ``eval`` — only attribute access is permitted.
 
     Args:
         target: Raw href from the markdown source.
@@ -163,15 +164,23 @@ def _resolve_link_target(target: str, env: dict) -> str:
         Resolved href.
 
     Raises:
-        TypeError: If a ``{expr}`` resolves to something other than ``str``.
+        ValueError: If a brace expression cannot be resolved against *env*.
+        TypeError: If a brace expression resolves to a non-string.
     """
 
     def _sub(match: re.Match[str]) -> str:
         expr = match.group(1).strip()
-        value = eval(expr, {"__builtins__": {}}, env)
+        parts = expr.split(".")
+        try:
+            value = env[parts[0]]
+            for part in parts[1:]:
+                value = getattr(value, part)
+        except (KeyError, AttributeError) as e:
+            msg = f"Link {target!r}: cannot resolve {match.group(0)!r} ({e})"
+            raise ValueError(msg) from e
         if not isinstance(value, str):
             msg = (
-                f"Link {target!r}: expr {match.group(0)!r} must resolve to str, "
+                f"Link {target!r}: {match.group(0)!r} must resolve to str, "
                 f"got {type(value).__name__}"
             )
             raise TypeError(msg)
