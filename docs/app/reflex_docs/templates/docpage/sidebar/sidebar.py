@@ -117,14 +117,14 @@ def sidebar_leaf(
                     item.link == url,
                     sidebar_link(
                         rx.el.div(
-                            class_name="absolute left-0 top-1/2 -translate-y-1/2 w-full h-8 rounded-lg bg-m-slate-2 dark:bg-m-slate-10 z-[-1]",
+                            class_name="absolute left-0 top-1/2 -translate-y-1/2 w-full h-8 rounded-lg bg-secondary-2 dark:bg-secondary-3 z-[-1]",
                         ),
                         rx.flex(
                             rx.text(
                                 item.names,
                                 class_name="text-sm text-primary-10 font-[525] transition-color pl-4",
                             ),
-                            class_name="border-l-[1.5px] border-primary-10 relative ml-[2.5rem] max-w-[14rem] h-8 flex items-center",
+                            class_name="border-l-[1.5px] border-primary-9 relative ml-[2.5rem] max-w-[14rem] h-8 flex items-center",
                         ),
                         href=item.link,
                         class_name="w-full relative",
@@ -135,7 +135,7 @@ def sidebar_leaf(
                                 item.names,
                                 class_name="text-sm text-secondary-11 hover:text-secondary-12 transition-color w-full font-[525]",
                             ),
-                            class_name="border-l-[1.5px] border-m-slate-4 dark:border-m-slate-9 hover:border-m-slate-8 dark:hover:border-m-slate-5 pl-4 h-8 flex items-center",
+                            class_name="border-l-[1.5px] border-secondary-4 hover:border-secondary-12 pl-4 h-8 flex items-center",
                         ),
                         href=item.link,
                         class_name="w-full ml-[2.5rem]",
@@ -206,14 +206,14 @@ def sidebar_item_comp(
                         "ArrowDown01Icon",
                         class_name="size-4 group-data-[state=open]:rotate-180 transition-transform",
                     ),
-                    class_name="!px-0 flex items-center !bg-transparent !hover:bg-transparent !py-1 !pr-0 w-full !text-m-slate-7 hover:!text-m-slate-11 dark:hover:!text-m-slate-5 dark:!text-m-slate-6 transition-color group xl:max-w-[14rem]",
+                    class_name="!px-0 flex items-center !bg-transparent !hover:bg-transparent !py-1 !pr-0 w-full !text-secondary-11 hover:!text-secondary-12 transition-color group xl:max-w-[14rem]",
                 ),
                 class_name="justify-start !ml-[2.5rem]",
             ),
             rx.accordion.content(
                 rx.accordion.root(
                     rx.accordion.item(
-                        class_name="absolute left-[2.5rem] size-full !shadow-[1.5px_0_0_0_var(--m-slate-4)_inset] dark:!shadow-[1.5px_0_0_0_var(--m-slate-9)_inset] z-[-1] pointer-events-none !rounded-none",
+                        class_name="absolute left-[2.5rem] size-full !shadow-[1.5px_0_0_0_var(--secondary-4)_inset] z-[-1] pointer-events-none !rounded-none",
                     ),
                     *[
                         sidebar_item_comp(
@@ -328,7 +328,7 @@ def sidebar_category(name: str, url: str, icon: str, index: int):
                         "flex flex-row justify-start items-center gap-2.5 w-full text-sm text-secondary-11 hover:text-secondary-12 h-8",
                         rx.cond(
                             SidebarState.sidebar_index == index,
-                            "text-primary-10 dark:text-primary-9",
+                            "text-primary-10 hover:text-primary-10",
                             "",
                         ),
                     ),
@@ -338,7 +338,7 @@ def sidebar_category(name: str, url: str, icon: str, index: int):
             rx.cond(
                 SidebarState.sidebar_index == index,
                 rx.el.div(
-                    class_name="absolute left-0 top-0 w-full h-full bg-m-slate-2 dark:bg-m-slate-10 rounded-lg z-[-1]",
+                    class_name="absolute left-0 top-0 w-full h-full bg-secondary-2 dark:bg-secondary-3 rounded-lg z-[-1]",
                 ),
             ),
             rx.el.a(
@@ -369,11 +369,11 @@ def create_sidebar_section(
         rx.link(
             rx.el.h2(
                 section_title,
-                class_name="font-mono text-m-slate-12 dark:text-m-slate-3 hover:text-primary-10 dark:hover:text-primary-9 uppercase text-[0.8125rem] leading-6 font-medium",
+                class_name="font-mono text-secondary-12 hover:text-primary-11 uppercase text-[0.8125rem] leading-6 font-medium",
             ),
             underline="none",
             href=section_url,
-            class_name="h-8 mb-2 flex items-center justify-start ml-[2.5rem]",
+            class_name="h-8 mb-4 flex items-center justify-start ml-[2.5rem]",
         ),
         rx.accordion.root(
             *[

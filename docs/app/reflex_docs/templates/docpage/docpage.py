@@ -589,7 +589,7 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
         breadcrumbs.append(
             rx.el.a(
                 to_title_case(to_snake_case(segment), sep=" "),
-                class_name="min-h-8 flex items-center text-sm font-[525] text-m-slate-12 dark:text-m-slate-3 last:text-m-slate-7 dark:last:text-m-slate-6 hover:text-primary-10 dark:hover:text-primary-9"
+                class_name="min-h-8 flex items-center text-sm font-[525] text-secondary-12 dark:last:text-secondary-11 hover:text-primary-11"
                 + (" truncate" if i == len(segments) - 1 else ""),
                 underline="none",
                 href=current_path,
@@ -771,14 +771,14 @@ def docpage(
                 rx.el.main(
                     rx.box(
                         sidebar,
-                        class_name=(
-                            "w-[19.5rem] shrink-0 hidden lg:block z-10 border-r border-m-slate-4 dark:border-m-slate-10 sticky left-0 "
-                            "before:content-[''] before:absolute before:top-0 before:bottom-0 before:right-0 before:w-[100vw] before:bg-white-1 dark:before:bg-m-slate-11 before:-z-10 "
-                            + rx.cond(
+                        class_name=ui.cn(
+                            "w-[19.5rem] shrink-0 hidden lg:block z-10 border-r border-secondary-4 sticky left-0 "
+                            "before:content-[''] before:absolute before:top-0 before:bottom-0 before:right-0 before:w-[100vw] before:bg-white-1 before:-z-10",
+                            rx.cond(
                                 HostingBannerState.is_banner_visible,
-                                " top-[113px] h-[calc(100vh-113px)]",
-                                " top-[77px] h-[calc(100vh-77px)]",
-                            )
+                                "top-[113px] h-[calc(100vh-113px)]",
+                                "top-[77px] h-[calc(100vh-77px)]",
+                            ),
                         ),
                     ),
                     rx.box(
@@ -788,13 +788,13 @@ def docpage(
                                 nav_sidebar=nav_sidebar,
                                 doc_content=doc_content,
                             ),
-                            class_name=(
-                                "px-0 pt-0 mb-[2rem]"
-                                + rx.cond(
+                            class_name=ui.cn(
+                                "px-0 pt-0 mb-[2rem]",
+                                rx.cond(
                                     HostingBannerState.is_banner_visible,
-                                    " mt-[90px]",
+                                    "mt-[90px]",
                                     "",
-                                )
+                                ),
                             ),
                         ),
                         rx.box(
@@ -818,10 +818,10 @@ def docpage(
                                     rx.icon(
                                         "align-left",
                                         size=14,
-                                        class_name="dark:text-m-slate-3 text-m-slate-12",
+                                        class_name="text-secondary-12",
                                     ),
                                     "On This Page",
-                                    class_name="text-sm h-8 flex items-center gap-1.5 justify-start font-[525] dark:text-m-slate-3 text-m-slate-12",
+                                    class_name="text-sm h-8 flex items-center gap-1.5 justify-start font-[525] text-secondary-12",
                                 ),
                                 rx.el.ul(
                                     *[
@@ -829,7 +829,7 @@ def docpage(
                                             rx.el.li(
                                                 rx.el.a(
                                                     text,
-                                                    class_name="text-sm font-[525] text-m-slate-7 dark:text-m-slate-6 pl-4 py-1 block hover:text-m-slate-9 dark:hover:text-m-slate-5 transition-colors truncate",
+                                                    class_name="text-sm font-[525] text-secondary-11 pl-4 py-1 block hover:text-secondary-12 transition-colors truncate",
                                                     href=path
                                                     + "#"
                                                     + text.lower().replace(" ", "-"),
@@ -840,7 +840,7 @@ def docpage(
                                                 rx.el.li(
                                                     rx.el.a(
                                                         text,
-                                                        class_name="text-sm font-[525] text-m-slate-7 dark:text-m-slate-6 pl-4 py-1 block hover:text-m-slate-9 dark:hover:text-m-slate-5 transition-colors truncate",
+                                                        class_name="text-sm font-[525] text-secondary-11 pl-4 py-1 block hover:text-secondary-12 transition-colors truncate",
                                                         href=path
                                                         + "#"
                                                         + text.lower().replace(
@@ -852,7 +852,7 @@ def docpage(
                                                 else rx.el.li(
                                                     rx.el.a(
                                                         text,
-                                                        class_name="text-sm font-[525] text-m-slate-7 dark:text-m-slate-6 pl-8 py-1 block hover:text-m-slate-9 dark:hover:text-m-slate-5 transition-colors truncate",
+                                                        class_name="text-sm font-[525] text-secondary-11 pl-8 py-1 block hover:text-secondary-12 transition-colors truncate",
                                                         href=path
                                                         + "#"
                                                         + text.lower().replace(
@@ -865,7 +865,7 @@ def docpage(
                                         for level, text in toc
                                     ],
                                     id="toc-navigation",
-                                    class_name="flex flex-col gap-y-1 list-none shadow-[1.5px_0_0_0_var(--m-slate-4)_inset] dark:shadow-[1.5px_0_0_0_var(--m-slate-9)_inset] max-h-[80vh]",
+                                    class_name="flex flex-col gap-y-1 list-none shadow-[1.5px_0_0_0_var(--secondary-4)_inset] max-h-[80vh]",
                                 ),
                                 rx.el.div(
                                     feedback_button_toc(),
@@ -896,7 +896,7 @@ def docpage(
                     ),
                     class_name="flex justify-center mx-auto mt-0 max-w-[108rem] h-full min-h-screen w-full",
                 ),
-                class_name="flex flex-col justify-center bg-m-slate-1 dark:bg-m-slate-12 w-full relative",
+                class_name="flex flex-col justify-center bg-secondary-1 w-full relative",
                 on_mount=rx.call_script(right_sidebar_item_highlight()),
             )
 
