@@ -23,46 +23,46 @@ class SelectRoot(RadixThemesComponent):
     tag = "Select.Root"
 
     size: Var[Responsive[Literal["1", "2", "3"]]] = field(
-        doc='The size of the select: "1" | "2" | "3"'
+        doc='The size of the select trigger. Default is "2". Use "1" for dense forms or tables, "3" for prominent calls-to-action.'
     )
 
     default_value: Var[str] = field(
-        doc="The value of the select when initially rendered. Use when you do not need to control the state of the select."
+        doc="The initial value of the select when the component first renders. Use this for uncontrolled selects where you don't need to track changes in state. Should match one of the values in the options list."
     )
 
     value: Var[str] = field(
-        doc="The controlled value of the select. Should be used in conjunction with on_change."
+        doc="The controlled value of the select. When provided, the component becomes controlled and must be updated via an on_change handler. For uncontrolled usage where you just need an initial value, use default_value instead."
     )
 
     default_open: Var[bool] = field(
-        doc="The open state of the select when it is initially rendered. Use when you do not need to control its open state."
+        doc="Whether the dropdown menu is initially open (uncontrolled). Most apps don't need to set this — the dropdown opens on user interaction automatically."
     )
 
     open: Var[bool] = field(
-        doc="The controlled open state of the select. Must be used in conjunction with on_open_change."
+        doc="Whether the dropdown menu is currently open (controlled). Must be used in conjunction with on_open_change. Most apps don't need to set this — the dropdown opens on user interaction automatically."
     )
 
     name: Var[str] = field(
-        doc="The name of the select control when submitting the form."
+        doc="The name used to identify this field when the select is submitted as part of a form. If omitted, the select's value will not be included in form data."
     )
 
     disabled: Var[bool] = field(
-        doc="When True, prevents the user from interacting with select."
+        doc="When True, the user cannot interact with the select. Default is False. To disable individual options, use the low-level API and set disabled on specific items."
     )
 
     required: Var[bool] = field(
-        doc="When True, indicates that the user must select a value before the owning form can be submitted."
+        doc="When True and used within a form, the form cannot be submitted until the user selects a value. Default is False."
     )
 
     # Props to rename
     _rename_props = {"onChange": "onValueChange"}
 
     on_change: EventHandler[passthrough_event_spec(str)] = field(
-        doc="Fired when the value of the select changes."
+        doc="Event handler called when the user selects a different option. Receives the new value as a string."
     )
 
     on_open_change: EventHandler[passthrough_event_spec(bool)] = field(
-        doc="Fired when the select is opened or closed."
+        doc="Event handler called when the dropdown opens or closes. Receives a boolean indicating the open state."
     )
 
 
@@ -72,14 +72,20 @@ class SelectTrigger(RadixThemesComponent):
     tag = "Select.Trigger"
 
     variant: Var[Literal["classic", "surface", "soft", "ghost"]] = field(
-        doc="Variant of the select trigger"
+        doc='Visual style of the select trigger. Options are "classic" (bordered), "surface" (filled), "soft" (subtle elevation), or "ghost" (minimal chrome).'
     )
 
-    color_scheme: Var[LiteralAccentColor] = field(doc="The color of the select trigger")
+    color_scheme: Var[LiteralAccentColor] = field(
+        doc="Override the default accent color of the select trigger. Accepts any Reflex color token."
+    )
 
-    radius: Var[LiteralRadius] = field(doc="The radius of the select trigger")
+    radius: Var[LiteralRadius] = field(
+        doc='Border radius of the select trigger. Inherits from theme by default. Accepts "none", "small", "medium", "large", or "full".'
+    )
 
-    placeholder: Var[str] = field(doc="The placeholder of the select trigger")
+    placeholder: Var[str] = field(
+        doc="Text displayed when no option is selected. If value or default_value is set, the placeholder is hidden."
+    )
 
     _valid_parents: ClassVar[list[str]] = ["SelectRoot"]
 
@@ -102,7 +108,7 @@ class SelectContent(RadixThemesComponent):
     )
 
     position: Var[Literal["item-aligned", "popper"]] = field(
-        doc="The positioning mode to use, item-aligned is the default and behaves similarly to a native MacOS menu by positioning content relative to the active item. popper positions content in the same way as our other primitives, for example Popover or DropdownMenu."
+        doc='Controls how the dropdown menu positions relative to the trigger. Default is "item-aligned" (behaves like a native macOS menu by positioning content relative to the active item). Use "popper" when placing a select inside a Drawer, Dialog, or other portal-based container.'
     )
 
     side: Var[Literal["top", "right", "bottom", "left"]] = field(
@@ -148,10 +154,12 @@ class SelectItem(RadixThemesComponent):
     tag = "Select.Item"
 
     value: Var[str] = field(
-        doc="The value given as data when submitting a form with a name."
+        doc="The value submitted with form data when this item is selected. Must be unique within the select."
     )
 
-    disabled: Var[bool] = field(doc="Whether the select item is disabled")
+    disabled: Var[bool] = field(
+        doc="When True, this specific item cannot be selected. The item is still visible but appears muted and is skipped by keyboard navigation."
+    )
 
     _valid_parents: ClassVar[list[str]] = ["SelectGroup", "SelectContent"]
 
@@ -173,28 +181,40 @@ class SelectSeparator(RadixThemesComponent):
 class HighLevelSelect(SelectRoot):
     """High level wrapper for the Select component."""
 
-    items: Var[Sequence[str]] = field(doc="The items of the select.")
+    items: Var[Sequence[str]] = field(
+        doc="The list of option strings to display. Each string becomes one selectable item in the dropdown."
+    )
 
-    placeholder: Var[str] = field(doc="The placeholder of the select.")
+    placeholder: Var[str] = field(
+        doc="Text displayed when no option is selected. If value or default_value is set, the placeholder is hidden."
+    )
 
-    label: Var[str] = field(doc="The label of the select.")
+    label: Var[str] = field(
+        doc="An optional group heading rendered inside the dropdown above the items. Purely visual — does not affect form submission."
+    )
 
-    color_scheme: Var[LiteralAccentColor] = field(doc="The color of the select.")
+    color_scheme: Var[LiteralAccentColor] = field(
+        doc="Override the default accent color. Accepts any Reflex color token."
+    )
 
     high_contrast: Var[bool] = field(
-        doc="Whether to render the select with higher contrast color against background."
+        doc="When True, the select content renders with higher contrast against the background."
     )
 
     variant: Var[Literal["classic", "surface", "soft", "ghost"]] = field(
-        doc="The variant of the select."
+        doc='Visual style of the select. Options are "classic" (bordered), "surface" (filled), "soft" (subtle elevation), or "ghost" (minimal chrome).'
     )
 
-    radius: Var[LiteralRadius] = field(doc="The radius of the select.")
+    radius: Var[LiteralRadius] = field(
+        doc='Border radius. Inherits from theme by default. Accepts "none", "small", "medium", "large", or "full".'
+    )
 
-    width: Var[str] = field(doc="The width of the select.")
+    width: Var[str] = field(
+        doc="Explicit CSS width for the select trigger (e.g. '200px', '100%'). Inherits from parent layout by default."
+    )
 
     position: Var[Literal["item-aligned", "popper"]] = field(
-        doc='The positioning mode to use. Default is "item-aligned".'
+        doc='Controls how the dropdown menu positions relative to the trigger. Default is "item-aligned". Use "popper" when placing a select inside a Drawer, Dialog, or other portal-based container.'
     )
 
     @classmethod
