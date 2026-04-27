@@ -65,7 +65,7 @@ app = rxe.App()
 ```
 
 ```md alert warning
-# The backend serves the API on the Reflex backend port (default `http://localhost:8000` in dev, or the `deploy_url` in production). If you're running in single-port mode, the API is reachable on the frontend port (e.g. `http://localhost:3000`).
+# The backend serves the API on the Reflex backend port (default `http://localhost:8000` in dev, or the `deploy_url` in production). If you're running production with `--single-port`, the API is instead reachable on the frontend port (default `http://localhost:3000`).
 ```
 
 ## Authentication
@@ -358,7 +358,7 @@ defaults, on-load references), most LLM agents with HTTP tool access can
 drive a Reflex app end-to-end without any extra glue code. Give them the
 spec URL and a natural-language task:
 
-> Use the API exposed at `http://localhost:3000/_reflex/events/openapi.yaml` to drive the application.
+> Use the API exposed at `http://localhost:8000/_reflex/events/openapi.yaml` to drive the application.
 >
 > Create a new ticket assigned to Masen for investigating RegistrationContext issues in reflex CI.
 
@@ -372,11 +372,11 @@ A well-equipped agent will:
 
 Other prompts that work well with the tickets demo:
 
-> Using the Reflex API at `http://localhost:3000`, seed the database, then close every ticket currently assigned to `bob`.
+> Using the Reflex API at `http://localhost:8000`, seed the database, then close every ticket currently assigned to `bob`.
 
-> Via `http://localhost:3000/_reflex/events/openapi.yaml`, page through every ticket and summarize which assignees have the largest open backlog.
+> Via `http://localhost:8000/_reflex/events/openapi.yaml`, page through every ticket and summarize which assignees have the largest open backlog.
 
-> Using the Reflex API at `http://localhost:3000`, create three high-priority tickets for the following issues, then show me the resulting state: <list of issues>
+> Using the Reflex API at `http://localhost:8000`, create three high-priority tickets for the following issues, then show me the resulting state: <list of issues>
 
 ```md alert info
 # For agents that can't follow `api-catalog` automatically, point them directly at `/_reflex/events/openapi.yaml`. A single URL is enough context for most tool-using models to take it from there.
