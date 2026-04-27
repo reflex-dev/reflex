@@ -182,47 +182,39 @@ def render_select(prop: PropDocumentation, component: type[Component], prop_dict
     prop_dict[prop.name] = var
 
     if prop.name == "color_scheme":
-        return rx.popover.root(
-            rx.popover.trigger(
-                rx.box(
-                    rx.button(
-                        rx.text(var, class_name="font-small"),
-                        # Match the select.trigger svg icon
-                        rx.html(
-                            """<svg width="9" height="9" viewBox="0 0 9 9" fill="currentcolor" xmlns="http://www.w3.org/2000/svg" class="rt-SelectIcon" aria-hidden="true"><path d="M0.135232 3.15803C0.324102 2.95657 0.640521 2.94637 0.841971 3.13523L4.5 6.56464L8.158 3.13523C8.3595 2.94637 8.6759 2.95657 8.8648 3.15803C9.0536 3.35949 9.0434 3.67591 8.842 3.86477L4.84197 7.6148C4.64964 7.7951 4.35036 7.7951 4.15803 7.6148L0.158031 3.86477C-0.0434285 3.67591 -0.0536285 3.35949 0.135232 3.15803Z"></path></svg>"""
+        return ui.popover(
+            trigger=rx.button(
+                rx.text(var, class_name="text-sm font-medium"),
+                ui.icon("ArrowDown01Icon"),
+                color_scheme=var,
+                variant="surface",
+                class_name="w-32 justify-between cursor-pointer",
+            ),
+            content=rx.box(
+                *[
+                    rx.box(
+                        rx.icon(
+                            "check",
+                            size=15,
+                            display=rx.cond(var == color, "block", "none"),
+                            class_name="text-gray-12 absolute top-1/2 left-1/2 translate-x-[-50%] translate-y-[-50%]",
                         ),
-                        color_scheme=var,
-                        variant="surface",
-                        class_name="w-32 justify-between",
-                    ),
-                ),
+                        bg=f"var(--{color}-9)",
+                        on_click=PropDocsState.setvar(f"{name}", color),
+                        border=rx.cond(
+                            var == color,
+                            "2px solid var(--gray-12)",
+                            "2px solid transparent",
+                        ),
+                        class_name="relative shrink-0 rounded-md size-8 cursor-pointer box-border",
+                    )
+                    for color in list(map(str, type_.__args__))
+                    if color != ""
+                ],
+                class_name="grid grid-cols-[repeat(6,2rem)] gap-3 p-3",
             ),
-            rx.popover.content(
-                rx.box(
-                    *[
-                        rx.box(
-                            rx.icon(
-                                "check",
-                                size=15,
-                                display=rx.cond(var == color, "block", "none"),
-                                class_name="text-gray-12 absolute top-1/2 left-1/2 translate-x-[-50%] translate-y-[-50%]",
-                            ),
-                            bg=f"var(--{color}-9)",
-                            on_click=PropDocsState.setvar(f"{name}", color),
-                            border=rx.cond(
-                                var == color,
-                                "2px solid var(--gray-12)",
-                                "2px solid transparent",
-                            ),
-                            class_name="relative shrink-0 rounded-md size-8 cursor-pointer box-border",
-                        )
-                        for color in list(map(str, type_.__args__))
-                        if color != ""
-                    ],
-                    class_name="grid grid-cols-[repeat(6,2rem)] gap-3",
-                ),
-                class_name="w-fit",
-            ),
+            align="start",
+            class_name="w-fit",
         )
     literal_values = [str(a) for a in type_.__args__ if str(a) != ""]
     return _pill_row(literal_values, var, setter)
@@ -462,8 +454,7 @@ def generate_props(
         )
 
     table_header_class_name = (
-        "text-xs text-secondary-11 w-auto justify-start pl-4 font-semibold "
-        "uppercase tracking-wider"
+        "text-xs text-secondary-11 w-auto justify-start pl-4 font-semibold capitalize"
     )
 
     prop_dict = {}
@@ -768,7 +759,7 @@ def generate_props(
                 )
                 for prop, control in interactive_controls
             ],
-            class_name="flex flex-col gap-3 border border-secondary-4 rounded-md p-4 bg-secondary-2 mb-4 w-full",
+            class_name="flex flex-col gap-3 border border-secondary-4 rounded-md p-4 bg-secondary-1 mb-4 w-full",
         )
 
     return rx.vstack(
@@ -807,7 +798,7 @@ def generate_props(
                             class_name=ui.cn(table_header_class_name, "w-[18rem]"),
                         ),
                     ),
-                    class_name="bg-secondary-3",
+                    class_name="bg-secondary-2",
                 ),
                 body,
                 variant="surface",
