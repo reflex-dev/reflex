@@ -4397,6 +4397,46 @@ async def test_get_var_value(
 
 
 @pytest.mark.asyncio
+async def test_get_var_value_async_computed_var(
+    token: str, attached_mock_event_context: EventContext
+):
+    """Test that get_var_value awaits async computed vars and returns their value.
+
+    Regression test for https://github.com/reflex-dev/reflex/pull/6391: previously
+    get_var_value returned the un-awaited coroutine for async computed vars rather
+    than the underlying value.
+
+    Args:
+        token: A token.
+        attached_mock_event_context: An event context that will be attached to the app's state manager.
+    """
+
+    class StateWithAsyncCV(BaseState):
+        """A state with an async computed var."""
+
+        base: int = 5
+
+        @rx.var(cache=True)
+        async def doubled(self) -> int:
+            return self.base * 2
+
+    class Substate(StateWithAsyncCV):
+        """A substate to test get_var_value across states."""
+
+    state_manager = attached_mock_event_context.state_manager
+    state = await state_manager.get_state(
+        BaseStateToken(ident=token, cls=StateWithAsyncCV)
+    )
+
+    # Fast path
+    assert await state.get_var_value(StateWithAsyncCV.doubled) == 10
+
+    # Slow path
+    substate = await state.get_state(Substate)
+    assert await substate.get_var_value(StateWithAsyncCV.doubled) == 10
+
+
+@pytest.mark.asyncio
 async def test_async_computed_var_get_state(
     token: str, attached_mock_event_context: EventContext
 ):
