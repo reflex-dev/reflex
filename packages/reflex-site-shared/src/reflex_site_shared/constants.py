@@ -21,6 +21,7 @@ FORUM_URL = "https://forum.reflex.dev"
 TWITTER_URL = "https://twitter.com/getreflex"
 DISCORD_URL = "https://discord.gg/T5WSbC2YtQ"
 ROADMAP_URL = "https://github.com/reflex-dev/reflex/issues/2727"
+STATUS_WEB_URL = "https://status.reflex.dev"
 
 REFLEX_URL = "https://reflex.dev/"
 REFLEX_DOMAIN_URL = "https://reflex.dev/"
@@ -36,3 +37,9 @@ REFLEX_DEV_WEB_GENERAL_FORM_FEEDBACK_WEBHOOK_URL: str = os.environ.get(
 RECENT_BLOGS_API_URL: str = os.environ.get(
     "RECENT_BLOGS_API_URL", "https://reflex.dev/api/v1/recent-blogs"
 )
+
+
+CHECKLY_API_BASE_URL: str = "https://api.checklyhq.com/v1"
+CHECKLY_ACCOUNT_ID = os.environ.get("CHECKLY_ACCOUNT_ID", "")
+CHECKLY_API_KEY = os.environ.get("CHECKLY_API_KEY", "")
+CHECKLY_CHECK_GROUP_ID = os.environ.get("CHECKLY_CHECK_GROUP_ID", "")

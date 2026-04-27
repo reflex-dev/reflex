@@ -11,7 +11,8 @@ on:
         description: "Release action"
         required: true
         type: choice
-        default: new-prerelease-patch
+        # default is continued-prerelease to prevent accidental releases.
+        default: continued-prerelease
         options:
           - new-prerelease-patch
           - new-prerelease-minor
@@ -22,10 +23,6 @@ on:
           - release-patch
           - release-minor
           - release-major
-      reflex:
-        description: "reflex"
-        type: boolean
-        default: false
       hatch_reflex_pyi:
         description: "hatch-reflex-pyi"
         type: boolean
@@ -104,7 +101,6 @@ jobs:
       - uses: actions/checkout@v6
       - id: detect
         env:
-          reflex: ${{ inputs.reflex }}
           hatch_reflex_pyi: ${{ inputs.hatch_reflex_pyi }}
           reflex_base: ${{ inputs.reflex_base }}
           reflex_components_code: ${{ inputs.reflex_components_code }}

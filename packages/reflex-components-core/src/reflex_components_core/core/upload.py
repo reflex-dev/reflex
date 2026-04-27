@@ -177,6 +177,7 @@ _on_drop_args_spec = (
     _on_drop_spec,
     passthrough_event_spec(UploadChunkIterator),
 )
+_on_drop_rejected_spec = passthrough_event_spec(list[dict[str, Any]])
 _UPLOAD_FILES_CLIENT_HANDLER = "uploadFiles"
 
 
@@ -220,7 +221,7 @@ class GhostUpload(Fragment):
     # Fired when files are dropped.
     on_drop: EventHandler[_on_drop_args_spec]
 
-    on_drop_rejected: EventHandler[_on_drop_spec] = field(
+    on_drop_rejected: EventHandler[_on_drop_rejected_spec] = field(
         doc="Fired when dropped files do not meet the specified criteria."
     )
 
@@ -264,7 +265,7 @@ class Upload(MemoizationLeaf):
     # Fired when files are dropped.
     on_drop: EventHandler[_on_drop_args_spec]
 
-    on_drop_rejected: EventHandler[_on_drop_spec] = field(
+    on_drop_rejected: EventHandler[_on_drop_rejected_spec] = field(
         doc="Fired when dropped files do not meet the specified criteria."
     )
 

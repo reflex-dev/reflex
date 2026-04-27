@@ -90,6 +90,9 @@ lint.ignore = [
 lint.pydocstyle.convention = "google"
 lint.allowed-confusables = ['’']
 
+[tool.ruff.format]
+preview = true
+
 [tool.codespell]
 skip = "data/*"
 
