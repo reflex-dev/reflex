@@ -205,7 +205,9 @@ def get_app(reload: bool = False) -> ModuleType:
             # Reset rx.State subclasses to avoid conflict when reloading.
             reload_state_module(module=module)
 
-            RegistrationContext.ensure_context().decorated_pages.clear()
+            reg_ctx = RegistrationContext.ensure_context()
+            reg_ctx.decorated_pages.clear()
+            object.__setattr__(reg_ctx, "_app", None)
 
             # Reload the app module.
             importlib.reload(app)
