@@ -13,8 +13,6 @@ elif [[ "$TAG" =~ ^(.+)-v([0-9].*)$ ]]; then
   VERSION="${BASH_REMATCH[2]}"
   if [ -d "packages/$PACKAGE" ]; then
     BUILD_DIR="packages/$PACKAGE"
-  elif [ "$PACKAGE" = "reflex-docs-app" ]; then
-    BUILD_DIR="docs/app"
   else
     echo "Error: no build directory known for package '$PACKAGE'"
     exit 1

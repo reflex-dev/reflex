@@ -15,9 +15,6 @@ for pkg in reflex-components-internal reflex-site-shared; do
     PACKAGES+=("\"$pkg\"")
   fi
 done
-if git diff --name-only HEAD~1 HEAD -- "docs/" | grep -q .; then
-  PACKAGES+=("\"reflex-docs-app\"")
-fi
 
 JOINED=$(IFS=,; echo "${PACKAGES[*]:-}")
 echo "packages=[$JOINED]" >> "$GITHUB_OUTPUT"

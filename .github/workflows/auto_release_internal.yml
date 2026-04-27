@@ -6,7 +6,6 @@ on:
     paths:
       - "packages/reflex-components-internal/**"
       - "packages/reflex-site-shared/**"
-      - "docs/**"
       - ".github/workflows/auto_release_internal.yml"
   workflow_dispatch:
     inputs:
@@ -17,7 +16,6 @@ on:
         options:
           - reflex-components-internal
           - reflex-site-shared
-          - reflex-docs-app
 
 permissions:
   contents: write

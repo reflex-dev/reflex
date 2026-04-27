@@ -12,47 +12,43 @@ This means we can support any Python primitive types, as well as lists, dicts, a
 
 ## Defining a Type
 
-In this example, we will create a custom var type for storing translations using a dataclass.
+In this example, we will create a custom var type for storing a transformed piece of text using a dataclass.
 
 Once defined, we can use it as a state var, and reference it from within a component.
 
 ```python demo exec
-import googletrans
 import dataclasses
-from typing import TypedDict
 
 
 @dataclasses.dataclass
-class Translation:
+class TextEntry:
     original_text: str
-    translated_text: str
+    upper_text: str
 
 
-class TranslationState(rx.State):
-    input_text: str = "Hola Mundo"
-    current_translation: Translation = Translation(original_text="", translated_text="")
+class TextEntryState(rx.State):
+    input_text: str = "hello world"
+    current_entry: TextEntry = TextEntry(original_text="", upper_text="")
 
     # Explicitly define the setter method
     def set_input_text(self, value: str):
         self.input_text = value
 
     @rx.event
-    def translate(self):
-        self.current_translation.original_text = self.input_text
-        self.current_translation.translated_text = (
-            googletrans.Translator().translate(self.input_text, dest="en").text
-        )
+    def transform(self):
+        self.current_entry.original_text = self.input_text
+        self.current_entry.upper_text = self.input_text.upper()
 
 
-def translation_example():
+def text_entry_example():
     return rx.vstack(
         rx.input(
-            on_blur=TranslationState.set_input_text,
-            default_value=TranslationState.input_text,
-            placeholder="Text to translate...",
+            on_blur=TextEntryState.set_input_text,
+            default_value=TextEntryState.input_text,
+            placeholder="Text to transform...",
         ),
-        rx.button("Translate", on_click=TranslationState.translate),
-        rx.text(TranslationState.current_translation.translated_text),
+        rx.button("Transform", on_click=TextEntryState.transform),
+        rx.text(TextEntryState.current_entry.upper_text),
     )
 ```
 
@@ -66,9 +62,9 @@ You can also use TypedDict for defining custom var types:
 from typing import TypedDict
 
 
-class Translation(TypedDict):
+class TextEntry(TypedDict):
     original_text: str
-    translated_text: str
+    upper_text: str
 ```
 
 ### Using Pydantic Models
@@ -79,9 +75,9 @@ Pydantic models are another option for complex data structures:
 from pydantic import BaseModel
 
 
-class Translation(BaseModel):
+class TextEntry(BaseModel):
     original_text: str
-    translated_text: str
+    upper_text: str
 ```
 
 For complex data structures, dataclasses are recommended as they provide a clean, type-safe way to define custom var types with good IDE support.
