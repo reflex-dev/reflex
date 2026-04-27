@@ -2,6 +2,8 @@
 title: Event Handler API
 ---
 
+_New in reflex-enterprise v0.7.1._
+
 # Event Handler API Plugin
 
 `rxe.EventHandlerAPIPlugin` exposes every registered event handler on your
