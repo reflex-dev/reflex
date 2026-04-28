@@ -106,7 +106,7 @@ uv run reflex run --loglevel debug
 ```
 
 ```md alert info
-# Next: Build your first app →
+# Next: Build your first app
 
 Reflex is installed. The [Introduction](/docs/getting-started/introduction) walks through a working counter app in pure Python — the shortest path from "it runs" to "I understand it."
 ```

@@ -275,7 +275,7 @@ Create the app and register the page at the base route.
 🎉 You've built a fully interactive web app in pure Python.
 
 ```md alert info
-# Keep learning →
+# Keep learning
 
 - [Dashboard tutorial](/docs/getting_started/dashboard_tutorial) — build a real data app.
 - [Chatapp tutorial](/docs/getting_started/chatapp_tutorial) — wire up streaming AI responses.
@@ -283,7 +283,7 @@ Create the app and register the page at the base route.
 ```
 
 ```md alert info
-# Ship faster with AI →
+# Ship faster with AI
 
 - [Reflex Build](https://build.reflex.dev/) — generate a full app from a prompt.
 - [Reflex Cloud](https://reflex.dev/docs/hosting/deploy-quick-start/) — one-command deploy.
