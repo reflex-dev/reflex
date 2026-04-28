@@ -52,7 +52,7 @@ class SidebarState(rx.State):
             "/docs/ai/integrations/skills",
             "/ai/integrations/skills",
         )):
-            return 2
+            return 1
         if route.startswith(("/docs/ai/integrations/mcp", "/ai/integrations/mcp")):
             return 1
         if route.startswith(("/docs/ai/", "/ai/")):

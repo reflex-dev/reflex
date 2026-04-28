@@ -456,16 +456,10 @@ def sidebar_comp(
                         0,
                     ),
                     sidebar_category(
-                        "MCP",
+                        "MCP/Skills",
                         ai_builder_pages.integrations.mcp_overview.path,
                         "plug",
                         1,
-                    ),
-                    sidebar_category(
-                        "Skills",
-                        ai_builder_pages.integrations.skills.path,
-                        "sparkles",
-                        2,
                     ),
                     # sidebar_category(
                     #     "Integrations",
@@ -570,12 +564,6 @@ def sidebar_comp(
                                 mcp_index,
                                 url,
                             ),
-                            class_name="flex flex-col items-start gap-8  w-full list-none list-style-none",
-                        ),
-                    ),
-                    (
-                        2,
-                        rx.el.ul(
                             create_sidebar_section(
                                 "Skills",
                                 ai_builder_pages.integrations.skills.path,
