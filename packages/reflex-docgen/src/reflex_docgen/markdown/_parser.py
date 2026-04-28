@@ -23,6 +23,10 @@ from reflex_docgen.markdown._types import (
     ListBlock,
     ListItem,
     QuoteBlock,
+    RelatedLink,
+    RelatedLinks,
+    SEOFrontmatter,
+    SEOSchema,
     Span,
     StrikethroughSpan,
     TableBlock,
@@ -40,7 +44,100 @@ _FRONTMATTER_RE = re.compile(r"\A---\n(.*?\n)---\n", re.DOTALL)
 
 
 #: Known frontmatter keys that are not component preview lambdas.
-_KNOWN_KEYS = frozenset({"components", "only_low_level", "title"})
+_KNOWN_KEYS = frozenset({"components", "only_low_level", "title", "seo", "related"})
+
+
+def _opt_str(value: object) -> str | None:
+    return str(value) if value is not None else None
+
+
+def _parse_related_link(raw: object) -> RelatedLink | None:
+    """Parse a single entry of the ``related.components`` / ``related.concepts`` list.
+
+    Args:
+        raw: A dict ``{text, href, description?}`` or a string ``"[text](href)"``.
+
+    Returns:
+        A parsed ``RelatedLink`` or ``None`` if malformed.
+    """
+    if isinstance(raw, dict):
+        text = raw.get("text")
+        href = raw.get("href")
+        if not isinstance(text, str) or not isinstance(href, str):
+            return None
+        desc = raw.get("description")
+        return RelatedLink(
+            text=text,
+            href=href,
+            description=str(desc) if desc is not None else None,
+        )
+    if isinstance(raw, str):
+        m = re.fullmatch(r"\s*\[([^\]]+)\]\(([^)]+)\)\s*(?:—\s*(.*))?", raw)
+        if m is None:
+            return None
+        text, href, desc = m.group(1), m.group(2), m.group(3)
+        return RelatedLink(
+            text=text.strip(),
+            href=href.strip(),
+            description=desc.strip() if desc else None,
+        )
+    return None
+
+
+def _parse_seo(raw: object) -> SEOFrontmatter | None:
+    """Parse the ``seo:`` frontmatter block.
+
+    Args:
+        raw: The raw YAML value under the ``seo`` key.
+
+    Returns:
+        A parsed ``SEOFrontmatter`` or ``None`` if missing or malformed.
+    """
+    if not isinstance(raw, dict):
+        return None
+    schema_raw = raw.get("schema")
+    schema: SEOSchema | None = None
+    if isinstance(schema_raw, dict):
+        schema = SEOSchema(
+            type=str(schema_raw.get("type", "TechArticle")),
+            headline=_opt_str(schema_raw.get("headline")),
+            description=_opt_str(schema_raw.get("description")),
+            author_name=str(schema_raw.get("author_name", "Reflex")),
+            date_published=_opt_str(schema_raw.get("date_published")),
+            date_modified=_opt_str(schema_raw.get("date_modified")),
+            proficiency_level=_opt_str(schema_raw.get("proficiency_level")),
+        )
+    return SEOFrontmatter(
+        title=_opt_str(raw.get("title")),
+        description=_opt_str(raw.get("description")),
+        schema=schema,
+    )
+
+
+def _parse_related(raw: object) -> RelatedLinks | None:
+    """Parse the ``related:`` frontmatter block.
+
+    Args:
+        raw: The raw YAML value under the ``related`` key.
+
+    Returns:
+        A parsed ``RelatedLinks`` or ``None`` if missing, malformed, or empty.
+    """
+    if not isinstance(raw, dict):
+        return None
+    components: list[RelatedLink] = []
+    concepts: list[RelatedLink] = []
+    for link in raw.get("components", []) or []:
+        parsed = _parse_related_link(link)
+        if parsed is not None:
+            components.append(parsed)
+    for link in raw.get("concepts", []) or []:
+        parsed = _parse_related_link(link)
+        if parsed is not None:
+            concepts.append(parsed)
+    if not components and not concepts:
+        return None
+    return RelatedLinks(components=tuple(components), concepts=tuple(concepts))
 
 
 def _extract_frontmatter(source: str) -> tuple[FrontMatter | None, str]:
@@ -85,12 +182,17 @@ def _extract_frontmatter(source: str) -> tuple[FrontMatter | None, str]:
         if key not in _KNOWN_KEYS and isinstance(value, str):
             previews.append(ComponentPreview(name=key, source=value.strip()))
 
+    seo = _parse_seo(data.get("seo"))
+    related = _parse_related(data.get("related"))
+
     return (
         FrontMatter(
             components=components,
             only_low_level=only_low_level,
             title=title,
             component_previews=tuple(previews),
+            seo=seo,
+            related=related,
         ),
         source[m.end() :],
     )

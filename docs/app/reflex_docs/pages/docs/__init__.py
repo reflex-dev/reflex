@@ -11,7 +11,13 @@ from reflex_pyplot import pyplot as pyplot
 from reflex_site_shared.route import Route
 
 from reflex_docs.docgen_pipeline import get_docgen_toc, render_docgen_document
-from reflex_docs.pages.docs.component import multi_docs
+from reflex_docs.pages.docs.component import (
+    get_related_from_frontmatter,
+    get_seo_from_frontmatter,
+    multi_docs,
+    related_links_footer,
+    seo_kwargs,
+)
 from reflex_docs.pages.library_previews import components_previews_pages
 from reflex_docs.templates.docpage import docpage
 from reflex_docs.whitelist import _check_whitelisted_path
@@ -183,13 +189,21 @@ def resolve_doc_route(doc: str, title: str) -> ResolvedDoc | None:
     return ResolvedDoc(route=route, display_title=display_title, category=category)
 
 
-def make_docpage(route: str, title: str, doc_virtual: str, render_fn):
-    """Wrap a render function as a docpage, setting module metadata."""
+def make_docpage(route: str, title: str, doc_virtual: str, render_fn, **docpage_kwargs):
+    """Wrap a render function as a docpage, setting module metadata.
+
+    Args:
+        route: The site route for this page.
+        title: The page title.
+        doc_virtual: The virtual path used for module metadata.
+        render_fn: The function that returns the page component.
+        **docpage_kwargs: Extra keyword args forwarded to ``docpage`` (SEO, etc.).
+    """
     doc_path = Path(doc_virtual)
     render_fn.__module__ = ".".join(doc_path.parts[:-1])
     render_fn.__name__ = doc_path.stem
     render_fn.__qualname__ = doc_path.stem
-    return docpage(set_path=route, t=title)(render_fn)
+    return docpage(set_path=route, t=title, **docpage_kwargs)(render_fn)
 
 
 def handle_library_doc(
@@ -224,15 +238,27 @@ def get_component_docgen(virtual_doc: str, actual_path: str, title: str):
     if virtual_doc.startswith("docs/library"):
         return handle_library_doc(virtual_doc, actual_path, title, resolved)
 
-    def comp(_actual=actual_path, _virtual=virtual_doc):
+    seo = get_seo_from_frontmatter(actual_path)
+    related = get_related_from_frontmatter(actual_path)
+    seo_extras = seo_kwargs(seo, resolved.display_title, resolved.route)
+
+    def comp(_actual=actual_path, _virtual=virtual_doc, _related=related):
         toc = get_docgen_toc(_actual)
         doc_content = Path(_actual).read_text(encoding="utf-8")
         rendered = render_docgen_document(
             virtual_filepath=_virtual, actual_filepath=_actual
         )
-        return ((toc, doc_content), rendered)
+        footer = related_links_footer(_related)
+        body = (
+            rx.box(rendered, footer, class_name="flex flex-col w-full")
+            if _related is not None
+            else rendered
+        )
+        return ((toc, doc_content), body)
 
-    return make_docpage(resolved.route, resolved.display_title, virtual_doc, comp)
+    return make_docpage(
+        resolved.route, resolved.display_title, virtual_doc, comp, **seo_extras
+    )
 
 
 # Build doc_markdown_sources mapping

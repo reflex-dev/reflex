@@ -18,6 +18,10 @@ from reflex_docgen.markdown._types import LinkSpan as LinkSpan
 from reflex_docgen.markdown._types import ListBlock as ListBlock
 from reflex_docgen.markdown._types import ListItem as ListItem
 from reflex_docgen.markdown._types import QuoteBlock as QuoteBlock
+from reflex_docgen.markdown._types import RelatedLink as RelatedLink
+from reflex_docgen.markdown._types import RelatedLinks as RelatedLinks
+from reflex_docgen.markdown._types import SEOFrontmatter as SEOFrontmatter
+from reflex_docgen.markdown._types import SEOSchema as SEOSchema
 from reflex_docgen.markdown._types import Span as Span
 from reflex_docgen.markdown._types import StrikethroughSpan as StrikethroughSpan
 from reflex_docgen.markdown._types import TableBlock as TableBlock
@@ -44,6 +48,10 @@ __all__ = [
     "ListBlock",
     "ListItem",
     "QuoteBlock",
+    "RelatedLink",
+    "RelatedLinks",
+    "SEOFrontmatter",
+    "SEOSchema",
     "Span",
     "StrikethroughSpan",
     "TableBlock",

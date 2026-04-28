@@ -1,8 +1,9 @@
 """Template for documentation pages."""
 
 import functools
+import json
 from datetime import datetime
-from typing import Callable
+from typing import Any, Callable
 
 import reflex as rx
 import reflex_components_internal as ui
@@ -639,12 +640,61 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
     )
 
 
+def _structured_data_script(data: dict[str, Any]) -> rx.Component:
+    """Emit a JSON-LD ``<script>`` tag for the given schema.org payload.
+
+    Reflex hoists ``<script>`` tags into the document head at build time, so this
+    works for any docpage that wants to attach structured data.
+
+    Args:
+        data: A schema.org-shaped dict (already normalised with @context/@type).
+
+    Returns:
+        A script element with JSON-LD type.
+    """
+    return rx.el.script(
+        json.dumps(data, separators=(",", ":")),
+        type="application/ld+json",
+    )
+
+
+def _schema_to_jsonld(schema: Any, page_title: str, path: str) -> dict[str, Any]:
+    """Convert a ``SEOSchema`` dataclass into a JSON-LD dict.
+
+    Args:
+        schema: A reflex_docgen ``SEOSchema`` instance.
+        page_title: Fallback headline when ``schema.headline`` is unset.
+        path: The canonical URL path for this page.
+
+    Returns:
+        A schema.org JSON-LD payload.
+    """
+    payload: dict[str, Any] = {
+        "@context": "https://schema.org",
+        "@type": schema.type,
+        "headline": schema.headline or page_title,
+        "author": {"@type": "Organization", "name": schema.author_name},
+        "url": f"https://reflex.dev{path}",
+    }
+    if schema.description:
+        payload["description"] = schema.description
+    if schema.date_published:
+        payload["datePublished"] = schema.date_published
+    if schema.date_modified:
+        payload["dateModified"] = schema.date_modified
+    if schema.proficiency_level:
+        payload["proficiencyLevel"] = schema.proficiency_level
+    return payload
+
+
 def docpage(
     set_path: str | None = None,
     t: str | None = None,
     right_sidebar: bool = True,
     page_title: str | None = None,
     pseudo_right_bar: bool = False,
+    meta_description: str | None = None,
+    structured_data: dict[str, Any] | None = None,
 ):
     """A template that most pages on the reflex.dev site should use.
 
@@ -656,6 +706,8 @@ def docpage(
         right_sidebar: Whether to show the right sidebar.
         page_title: The full title to set for the page. If None, defaults to `{title} · Reflex Docs`.
         pseudo_right_bar: Whether to show a pseudo right sidebar (empty space).
+        meta_description: Optional ``<meta name="description">`` content.
+        structured_data: Optional JSON-LD payload emitted as ``<script type="application/ld+json">``.
 
     Returns:
         A wrapper function that returns the full webpage.
@@ -761,7 +813,15 @@ def docpage(
                     toc, comp = first, second
 
             show_right_sidebar = right_sidebar and len(toc) >= 2
+            head_extras = []
+            if meta_description:
+                head_extras.append(
+                    rx.el.meta(name="description", content=meta_description)
+                )
+            if structured_data:
+                head_extras.append(_structured_data_script(structured_data))
             return rx.box(
+                *head_extras,
                 docs_navbar(),
                 rx.el.main(
                     rx.box(
@@ -907,11 +967,13 @@ def docpage(
             return Route(
                 path=path,
                 title=page_title,
+                description=meta_description,
                 component=wrapper,
             )
         return Route(
             path=path,
             title=f"{title} · Reflex Docs" if category is None else title,
+            description=meta_description,
             component=wrapper,
         )
 

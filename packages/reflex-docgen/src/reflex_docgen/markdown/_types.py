@@ -133,6 +133,66 @@ class ComponentPreview:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class SEOSchema:
+    """JSON-LD structured data for a doc page.
+
+    Mirrors the subset of schema.org fields most useful for technical docs.
+    All fields are optional so pages can opt in gradually.
+    """
+
+    type: str = "TechArticle"
+    headline: str | None = None
+    description: str | None = None
+    author_name: str = "Reflex"
+    date_published: str | None = None
+    date_modified: str | None = None
+    proficiency_level: str | None = None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class SEOFrontmatter:
+    """SEO metadata for a doc page.
+
+    Attributes:
+        title: ``<title>`` tag content. Overrides the default ``"{title} · Reflex Docs"``.
+        description: ``<meta name="description">`` value.
+        schema: Optional JSON-LD structured data.
+    """
+
+    title: str | None = None
+    description: str | None = None
+    schema: SEOSchema | None = None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class RelatedLink:
+    """A single link in a ``related`` frontmatter block.
+
+    Attributes:
+        text: Visible anchor text — use the keyword, not "click here".
+        href: Target URL (internal or external).
+        description: Optional short description shown after the link.
+    """
+
+    text: str
+    href: str
+    description: str | None = None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class RelatedLinks:
+    """Structured related-links footer content.
+
+    Attributes:
+        components: Links to sibling components.
+        concepts: Links to conceptual docs (state, events, etc.).
+    """
+
+    components: tuple[RelatedLink, ...] = ()
+    concepts: tuple[RelatedLink, ...] = ()
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class FrontMatter:
     """YAML frontmatter extracted from a markdown document.
 
@@ -141,12 +201,16 @@ class FrontMatter:
         only_low_level: Whether to show only low-level component variants.
         title: An optional page title.
         component_previews: Preview lambdas keyed by component class name.
+        seo: Optional SEO metadata (``<title>``, meta description, JSON-LD).
+        related: Optional related-links block rendered as a page footer.
     """
 
     components: tuple[str, ...]
     only_low_level: bool
     title: str | None
     component_previews: tuple[ComponentPreview, ...]
+    seo: SEOFrontmatter | None = None
+    related: RelatedLinks | None = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
