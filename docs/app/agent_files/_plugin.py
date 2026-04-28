@@ -23,6 +23,15 @@ SKILLS_DOC_PATHS = {
     "ai/integrations/skills.md",
 }
 
+LLMS_FULL_INTRO = """\
+# Reflex Documentation
+Source: {docs_home_url}
+
+This file stitches together the full Reflex documentation as Markdown for AI agents and LLM indexing.
+
+For a navigable index with links to individual docs pages, see [llms.txt]({llms_txt_url}).
+"""
+
 
 @dataclass(frozen=True)
 class MarkdownFileEntry:
@@ -87,6 +96,44 @@ def _llms_url_for_path(url_path: Path) -> str:
     return (
         f"{base_url}/{url_path.as_posix()}" if base_url else f"/{url_path.as_posix()}"
     )
+
+
+def _docs_home_url() -> str:
+    """Return the public URL for the docs home."""
+    from reflex_base.config import get_config
+
+    config = get_config()
+    deploy_url = config.deploy_url.removesuffix("/") if config.deploy_url else ""
+    frontend_path = (config.frontend_path or "").strip("/")
+    if deploy_url and frontend_path:
+        return f"{deploy_url}/{frontend_path}/"
+    if deploy_url:
+        return f"{deploy_url}/"
+    if frontend_path:
+        return f"/{frontend_path}/"
+    return "/"
+
+
+def _strip_first_heading(source: str) -> str:
+    """Remove the first top-level markdown heading from a page body."""
+    lines = source.strip().splitlines()
+    in_frontmatter = bool(lines) and lines[0].strip() == "---"
+    in_code_block = False
+
+    for index, line in enumerate(lines):
+        stripped = line.strip()
+        if in_frontmatter:
+            if stripped == "---" and index > 0:
+                in_frontmatter = False
+            continue
+        if stripped.startswith("```"):
+            in_code_block = not in_code_block
+            continue
+        if in_code_block:
+            continue
+        if stripped.startswith("# "):
+            return "\n".join([*lines[:index], *lines[index + 1 :]]).strip()
+    return source.strip()
 
 
 def _include_in_llms_txt(markdown_file: MarkdownFileEntry) -> bool:
@@ -208,13 +255,41 @@ def generate_llms_txt(
     return (Path("llms.txt"), "\n".join(lines).rstrip() + "\n")
 
 
+def generate_llms_full_txt(
+    markdown_files: Sequence[MarkdownFileEntry],
+) -> tuple[Path, str]:
+    """Generate an llms-full.txt by stitching all docs markdown together."""
+    lines = [
+        LLMS_FULL_INTRO.format(
+            docs_home_url=_docs_home_url(),
+            llms_txt_url=_llms_url_for_path(Path("llms.txt")),
+        ).strip(),
+        "",
+    ]
+    for entry in markdown_files:
+        source = _strip_first_heading(entry.source_path.read_text(encoding="utf-8"))
+        lines.extend([
+            f"# {entry.title}",
+            f"Source: {_llms_url_for_path(entry.url_path)}",
+            "",
+            source,
+            "",
+        ])
+
+    return (Path("llms-full.txt"), "\n".join(lines).rstrip() + "\n")
+
+
 def generate_agent_files() -> tuple[tuple[Path, str | bytes], ...]:
     markdown_file_entries = generate_markdown_file_entries()
     markdown_files = tuple(
         (entry.url_path, entry.source_path.read_bytes())
         for entry in markdown_file_entries
     )
-    return (*markdown_files, generate_llms_txt(markdown_file_entries))
+    return (
+        *markdown_files,
+        generate_llms_txt(markdown_file_entries),
+        generate_llms_full_txt(markdown_file_entries),
+    )
 
 
 class AgentFilesPlugin(Plugin):

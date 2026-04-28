@@ -3,7 +3,11 @@
 from pathlib import Path
 from types import SimpleNamespace
 
-from agent_files._plugin import MarkdownFileEntry, generate_llms_txt
+from agent_files._plugin import (
+    MarkdownFileEntry,
+    generate_llms_full_txt,
+    generate_llms_txt,
+)
 
 
 def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
@@ -116,3 +120,57 @@ def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
     assert content.index("### AI Onboarding") < content.index("### MCP")
     assert content.index("### MCP") < content.index("### Skills")
     assert content.index("mcp-overview.md") < content.index("mcp-installation.md")
+
+
+def test_generate_llms_full_txt_stitches_markdown_docs(monkeypatch, tmp_path):
+    """llms-full.txt contains full Markdown page bodies with source URLs."""
+    monkeypatch.setattr(
+        "reflex_base.config.get_config",
+        lambda: SimpleNamespace(
+            deploy_url="https://reflex.dev",
+            frontend_path="/docs",
+        ),
+    )
+    introduction = tmp_path / "introduction.md"
+    introduction.write_text(
+        "# Introduction\n\nBuild full-stack apps in Python.\n",
+        encoding="utf-8",
+    )
+    props = tmp_path / "props.md"
+    props.write_text(
+        "# Props\n\nUse props to configure components.\n",
+        encoding="utf-8",
+    )
+
+    path, content = generate_llms_full_txt([
+        MarkdownFileEntry(
+            url_path=Path("getting-started/introduction.md"),
+            source_path=introduction,
+            title="Introduction",
+            section="Getting Started",
+        ),
+        MarkdownFileEntry(
+            url_path=Path("components/props.md"),
+            source_path=props,
+            title="Props",
+            section="Components",
+        ),
+    ])
+
+    assert path == Path("llms-full.txt")
+    assert content.startswith(
+        "# Reflex Documentation\n"
+        "Source: https://reflex.dev/docs/\n\n"
+        "This file stitches together the full Reflex documentation as Markdown"
+    )
+    assert "[llms.txt](https://reflex.dev/docs/llms.txt)" in content
+    assert (
+        "# Introduction\n"
+        "Source: https://reflex.dev/docs/getting-started/introduction.md\n\n"
+        "Build full-stack apps in Python."
+    ) in content
+    assert (
+        "# Props\n"
+        "Source: https://reflex.dev/docs/components/props.md\n\n"
+        "Use props to configure components."
+    ) in content
