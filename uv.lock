@@ -31,6 +31,7 @@ members = [
     "reflex-components-sonner",
     "reflex-docgen",
     "reflex-docs-app",
+    "reflex-docs-bundle",
     "reflex-hosting-cli",
     "reflex-integrations-docs",
     "reflex-site-shared",
@@ -1139,16 +1140,6 @@ wheels = [
 ]
 
 [[package]]
-name = "googletrans-py"
-version = "4.0.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "h2" },
-    { name = "httpx" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/50/e5/37d8bd1d6f186b642b29f3c7761eb162c54e2bbd3cfc0182dc2fb6c1327f/googletrans-py-4.0.0.tar.gz", hash = "sha256:487963819ced88f1f81d848786e2d3e02544833d161cc5edb178a1f74bde6d98", size = 12980, upload-time = "2022-04-13T14:48:07.745Z" }
-
-[[package]]
 name = "granian"
 version = "2.7.3"
 source = { registry = "https://pypi.org/simple" }
@@ -1327,19 +1318,6 @@ wheels = [
 ]
 
 [[package]]
-name = "h2"
-version = "4.3.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "hpack" },
-    { name = "hyperframe" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/1d/17/afa56379f94ad0fe8defd37d6eb3f89a25404ffc71d4d848893d270325fc/h2-4.3.0.tar.gz", hash = "sha256:6c59efe4323fa18b47a632221a1888bd7fde6249819beda254aeca909f221bf1", size = 2152026, upload-time = "2025-08-23T18:12:19.778Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/69/b2/119f6e6dcbd96f9069ce9a2665e0146588dc9f88f29549711853645e736a/h2-4.3.0-py3-none-any.whl", hash = "sha256:c438f029a25f7945c69e0ccf0fb951dc3f73a5f6412981daee861431b70e2bdd", size = 61779, upload-time = "2025-08-23T18:12:17.779Z" },
-]
-
-[[package]]
 name = "hatch-reflex-pyi"
 source = { editable = "packages/hatch-reflex-pyi" }
 dependencies = [
@@ -1363,15 +1341,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/cf/9c/b4cfe330cd4f49cff17fd771154730555fa4123beb7f292cf0098b4e6c20/hatchling-1.29.0.tar.gz", hash = "sha256:793c31816d952cee405b83488ce001c719f325d9cda69f1fc4cd750527640ea6", size = 55656, upload-time = "2026-02-23T19:42:06.539Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d3/8a/44032265776062a89171285ede55a0bdaadc8ac00f27f0512a71a9e3e1c8/hatchling-1.29.0-py3-none-any.whl", hash = "sha256:50af9343281f34785fab12da82e445ed987a6efb34fd8c2fc0f6e6630dbcc1b0", size = 76356, upload-time = "2026-02-23T19:42:05.197Z" },
-]
-
-[[package]]
-name = "hpack"
-version = "4.1.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/2c/48/71de9ed269fdae9c8057e5a4c0aa7402e8bb16f2c6e90b3aa53327b113f8/hpack-4.1.0.tar.gz", hash = "sha256:ec5eca154f7056aa06f196a557655c5b009b382873ac8d1e66e79e87535f1dca", size = 51276, upload-time = "2025-01-22T21:44:58.347Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/07/c6/80c95b1b2b94682a72cbdbfb85b81ae2daffa4291fbfa1b1464502ede10d/hpack-4.1.0-py3-none-any.whl", hash = "sha256:157ac792668d995c657d93111f46b4535ed114f0c9c8d672271bbec7eae1b496", size = 34357, upload-time = "2025-01-22T21:44:56.92Z" },
 ]
 
 [[package]]
@@ -1400,15 +1369,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/b1/df/48c586a5fe32a0f01324ee087459e112ebb7224f646c0b5023f5e79e9956/httpx-0.28.1.tar.gz", hash = "sha256:75e98c5f16b0f35b567856f597f06ff2270a374470a5c2392242528e3e3e42fc", size = 141406, upload-time = "2024-12-06T15:37:23.222Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/2a/39/e50c7c3a983047577ee07d2a9e53faf5a69493943ec3f6a384bdc792deb2/httpx-0.28.1-py3-none-any.whl", hash = "sha256:d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad", size = 73517, upload-time = "2024-12-06T15:37:21.509Z" },
-]
-
-[[package]]
-name = "hyperframe"
-version = "6.1.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/02/e7/94f8232d4a74cc99514c13a9f995811485a6903d48e5d952771ef6322e30/hyperframe-6.1.0.tar.gz", hash = "sha256:f630908a00854a7adeabd6382b43923a4c4cd4b821fcb527e6ab9e15382a3b08", size = 26566, upload-time = "2025-01-22T21:41:49.302Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/48/30/47d0bf6072f7252e6521f3447ccfa40b421b6824517f82854703d0f5a98b/hyperframe-6.1.0-py3-none-any.whl", hash = "sha256:b03380493a519fce58ea5af42e4a42317bf9bd425596f7a0835ffce80f1a42e5", size = 13007, upload-time = "2025-01-22T21:41:47.295Z" },
 ]
 
 [[package]]
@@ -3802,13 +3762,11 @@ requires-dist = [
 
 [[package]]
 name = "reflex-docs-app"
-version = "0.0.1"
-source = { virtual = "docs/app" }
+source = { editable = "docs/app" }
 dependencies = [
     { name = "alembic" },
     { name = "email-validator" },
     { name = "fastapi" },
-    { name = "googletrans-py" },
     { name = "openai" },
     { name = "orjson" },
     { name = "pandas", version = "2.3.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -3828,7 +3786,6 @@ dependencies = [
     { name = "ruff-format" },
     { name = "sqlalchemy" },
     { name = "sqlmodel" },
-    { name = "typesense" },
 ]
 
 [package.dev-dependencies]
@@ -3846,7 +3803,6 @@ requires-dist = [
     { name = "alembic" },
     { name = "email-validator" },
     { name = "fastapi" },
-    { name = "googletrans-py" },
     { name = "openai" },
     { name = "orjson" },
     { name = "pandas" },
@@ -3865,7 +3821,6 @@ requires-dist = [
     { name = "ruff-format" },
     { name = "sqlalchemy" },
     { name = "sqlmodel" },
-    { name = "typesense" },
 ]
 
 [package.metadata.requires-dev]
@@ -3877,6 +3832,10 @@ dev = [
     { name = "ruff" },
     { name = "uvicorn" },
 ]
+
+[[package]]
+name = "reflex-docs-bundle"
+source = { editable = "docs/package" }
 
 [[package]]
 name = "reflex-enterprise"
@@ -4534,19 +4493,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/83/b8/9ebb531b6c2d377af08ac6746a5df3425b21853a5d2260876919b58a2a4a/typer-0.24.2.tar.gz", hash = "sha256:ec070dcfca1408e85ee203c6365001e818c3b7fffe686fd07ff2d68095ca0480", size = 119849, upload-time = "2026-04-22T17:45:34.413Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/39/d1/9484b497e0a0410b901c12b8251c3e746e1e863f7d28419ffe06f7892fda/typer-0.24.2-py3-none-any.whl", hash = "sha256:b618bc3d721f9a8d30f3e05565be26416d06e9bcc29d49bc491dc26aba674fa8", size = 55977, upload-time = "2026-04-22T17:45:33.055Z" },
-]
-
-[[package]]
-name = "typesense"
-version = "2.0.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "httpx" },
-    { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/69/92/ca06da7ad7e771804fe21fdcfbc99d24079bedb9ab0ceaedac7ea1001263/typesense-2.0.0.tar.gz", hash = "sha256:9a306e328bf0c0030679c154730ec142efbf07fd0c33845b3efae10291e983e7", size = 79292, upload-time = "2026-02-16T16:37:56.647Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/b6/a5/a392604f3eeed45d3d72f8f10b45a80082a826338609e62187d9e3614001/typesense-2.0.0-py3-none-any.whl", hash = "sha256:7eecc672e4049f7b5777e1cf1e7900d2d1ae2d28a670eda6545b568d1cde1700", size = 140736, upload-time = "2026-02-16T16:37:55.256Z" },
 ]
 
 [[package]]

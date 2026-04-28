@@ -91,11 +91,12 @@ def get_previews_from_frontmatter(filepath: str) -> dict[str, str]:
 # ---------------------------------------------------------------------------
 _app_root = Path(__file__).resolve().parent.parent.parent.parent  # …/app/
 _docs_dir = _app_root.parent  # …/docs/ (parent of app/)
+_pkg_root = _docs_dir / "package"  # …/package/ (reflex-docs-bundle)
 
 all_docs: dict[str, str] = {}  # virtual_path → actual_path
 for _md_file in sorted(_docs_dir.rglob("*.md")):
-    # Skip anything inside the app/ subdirectory.
-    if _md_file.is_relative_to(_app_root):
+    # Skip anything inside the app/ or package/ subdirectories.
+    if _md_file.is_relative_to(_app_root) or _md_file.is_relative_to(_pkg_root):
         continue
     _virtual = "docs/" + str(_md_file.relative_to(_docs_dir)).replace("\\", "/")
     all_docs[_virtual] = str(_md_file)
