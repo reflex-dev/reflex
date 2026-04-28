@@ -41,24 +41,27 @@ See our [architecture page](https://reflex.dev/blog/2024-03-21-reflex-architectu
 
 Reflex recommends [uv](https://docs.astral.sh/uv/) for managing your project environment and dependencies.
 
-Open a terminal and run (requires Python 3.10+):
+Open a terminal and run (requires Python 3.10+). Replace `my_app_name` with your project name:
 
 ```bash
-$ uv add reflex
-$ uv run reflex init
-$ uv run reflex run
+mkdir my_app_name
+cd my_app_name
+uv init
+uv add reflex
+uv run reflex init
+uv run reflex run
 ```
 
 Your app is now running at http://localhost:3000.
 
 ## 🫧 Example App
 
-Let's go over an example: creating an image generation UI around [DALL·E](https://platform.openai.com/docs/guides/images/image-generation?context=node). For simplicity, we just call the [OpenAI API](https://platform.openai.com/docs/api-reference/authentication), but you could replace this with an ML model run locally.
+Let's go over an example: creating an image generation UI around [GPT Image](https://platform.openai.com/docs/guides/image-generation). For simplicity, we just call the [OpenAI API](https://platform.openai.com/docs/api-reference/authentication), but you could replace this with an ML model run locally.
 
 &nbsp;
 
 <div align="center">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/dalle.gif" alt="A frontend wrapper for DALL·E, shown in the process of generating an image." width="550" />
+<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/dalle.gif" alt="A frontend wrapper for OpenAI image generation, shown in the process of generating an image." width="550" />
 </div>
 
 &nbsp;
@@ -88,7 +91,7 @@ class State(rx.State):
         self.processing, self.complete = True, False
         yield
         response = openai_client.images.generate(
-            model="gpt-image-2-2026-04-21", prompt=self.prompt, n=1, size="1024x1024"
+            model="gpt-image-1.5", prompt=self.prompt, n=1, size="1024x1024"
         )
         self.image_url = f"data:image/png;base64,{response.data[0].b64_json}"
         self.processing, self.complete = False, True
@@ -97,7 +100,7 @@ class State(rx.State):
 def index():
     return rx.center(
         rx.vstack(
-            rx.heading("DALL-E", font_size="1.5em"),
+            rx.heading("Image Generation", font_size="1.5em"),
             rx.input(
                 placeholder="Enter a prompt..",
                 on_blur=State.set_prompt,
@@ -122,13 +125,13 @@ def index():
 
 # Add state and page to the app.
 app = rx.App()
-app.add_page(index, title="Reflex:DALL-E")
+app.add_page(index, title="Reflex:Image Generation")
 ```
 
 ## Let's break this down.
 
 <div align="center">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/dalle_colored_code_example.png" alt="Explaining the differences between backend and frontend parts of the DALL-E app." width="900" />
+<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/dalle_colored_code_example.png" alt="Explaining the differences between backend and frontend parts of the image generation app." width="900" />
 </div>
 
 ### **Reflex UI**
@@ -175,14 +178,16 @@ def get_image(self):
 
     self.processing, self.complete = True, False
     yield
-    response = openai_client.images.generate(model="gpt-image-2-2026-04-21", prompt=self.prompt, n=1, size="1024x1024")
+    response = openai_client.images.generate(
+        model="gpt-image-1.5", prompt=self.prompt, n=1, size="1024x1024"
+    )
     self.image_url = f"data:image/png;base64,{response.data[0].b64_json}"
     self.processing, self.complete = False, True
 ```
 
 Within the state, we define functions called event handlers that change the state vars. Event handlers are the way that we can modify the state in Reflex. They can be called in response to user actions, such as clicking a button or typing in a text box. These actions are called events.
 
-Our DALL·E app has an event handler, `get_image` which gets this image from the OpenAI API. Using `yield` in the middle of an event handler will cause the UI to update. Otherwise the UI will update at the end of the event handler.
+Our image generation app has an event handler, `get_image` which gets this image from the OpenAI API. Using `yield` in the middle of an event handler will cause the UI to update. Otherwise the UI will update at the end of the event handler.
 
 ### **Routing**
 
@@ -195,7 +200,7 @@ app = rx.App()
 We add a page from the root of the app to the index component. We also add a title that will show up in the page preview/browser tab.
 
 ```python
-app.add_page(index, title="DALL-E")
+app.add_page(index, title="Image Generation")
 ```
 
 You can create a multi-page app by adding more pages.
@@ -228,4 +233,3 @@ We welcome contributions of any size! Below are some good ways to get started in
 - **GitHub Issues**: [Issues](https://github.com/reflex-dev/reflex/issues) are an excellent way to report bugs. Additionally, you can try and solve an existing issue and submit a PR.
 
 We are actively looking for contributors, no matter your skill level or experience. To contribute check out [CONTRIBUTING.md](https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md)
-
