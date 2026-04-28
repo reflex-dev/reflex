@@ -453,20 +453,21 @@ def _copy_page_button(doc_content: str, path: str = "") -> rx.Component:
     });
   };
   animate();
+  if (navigator.clipboard && typeof ClipboardItem !== 'undefined' && navigator.clipboard.write) {
+    const blobPromise = fetch(mdUrl).then((r) => {
+      if (!r.ok) throw new Error(r.status);
+      return r.text().then((t) => new Blob([t], { type: 'text/plain' }));
+    });
+    navigator.clipboard
+      .write([new ClipboardItem({ 'text/plain': blobPromise })])
+      .catch((err) => console.error('Copy page failed:', err));
+    return;
+  }
   fetch(mdUrl)
     .then((r) => (r.ok ? r.text() : Promise.reject(r.status)))
     .then((text) => {
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        return navigator.clipboard.writeText(text).catch(() => {
-          const ta = document.createElement('textarea');
-          ta.value = text;
-          ta.style.position = 'fixed';
-          ta.style.opacity = '0';
-          document.body.appendChild(ta);
-          ta.select();
-          try { document.execCommand('copy'); } catch (e) {}
-          document.body.removeChild(ta);
-        });
+        return navigator.clipboard.writeText(text);
       }
       const ta = document.createElement('textarea');
       ta.value = text;
@@ -522,12 +523,6 @@ def _copy_page_button(doc_content: str, path: str = "") -> rx.Component:
                                 title="Copy page",
                                 description="Copy page as Markdown for LLMs",
                                 on_click=copy_action,
-                            ),
-                            _copy_page_menu_item(
-                                icon=ui.icon("File01Icon", size=16),
-                                title="llms-full.txt",
-                                description="View all docs as Markdown for LLMs",
-                                href="/docs/llms-full.txt",
                             ),
                             rx.el.div(class_name="h-px bg-slate-4 my-1 mx-2"),
                             _copy_page_menu_item(

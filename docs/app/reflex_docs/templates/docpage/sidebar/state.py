@@ -57,6 +57,8 @@ class SidebarState(rx.State):
                 return 2
             elif "enterprise" in route:
                 return 3
+            elif "/mcp-" in route:
+                return 1
             else:
                 return 0
         if "hosting" in route:
