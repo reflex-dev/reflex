@@ -48,6 +48,18 @@ def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
             section="AI Builder",
         ),
         MarkdownFileEntry(
+            url_path=Path("ai-builder/integrations/mcp-overview.md"),
+            source_path=Path("docs/ai_builder/integrations/mcp_overview.md"),
+            title="Overview",
+            section="MCP",
+        ),
+        MarkdownFileEntry(
+            url_path=Path("ai-builder/integrations/mcp-installation.md"),
+            source_path=Path("docs/ai_builder/integrations/mcp_installation.md"),
+            title="Installation",
+            section="MCP",
+        ),
+        MarkdownFileEntry(
             url_path=Path("ai-builder/features/ide.md"),
             source_path=Path("docs/ai_builder/features/ide.md"),
             title="Reflex Build IDE",
@@ -72,3 +84,12 @@ def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
     )
     assert "Resend Integration" not in content
     assert "Reflex Build IDE" not in content
+    assert "### MCP\n\n" in content
+    assert (
+        "- [Overview](https://reflex.dev/docs/ai-builder/integrations/mcp-overview.md)"
+        in content
+    )
+    assert (
+        "- [Installation](https://reflex.dev/docs/ai-builder/integrations/mcp-installation.md)"
+        in content
+    )

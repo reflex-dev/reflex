@@ -8,6 +8,11 @@ from reflex.constants import Dirs
 from reflex_base.plugins import CommonContext, Plugin
 from typing_extensions import Unpack
 
+MCP_DOC_PATHS = {
+    "ai-builder/integrations/mcp-installation.md",
+    "ai-builder/integrations/mcp-overview.md",
+}
+
 
 @dataclass(frozen=True)
 class MarkdownFileEntry:
@@ -77,7 +82,19 @@ def _llms_url_for_path(url_path: Path) -> str:
 def _include_in_llms_txt(markdown_file: MarkdownFileEntry) -> bool:
     """Return whether a markdown file should appear in llms.txt."""
     path = markdown_file.url_path.as_posix()
-    return not path.startswith("ai-builder/") or path.startswith("ai-builder/overview/")
+    return (
+        path in MCP_DOC_PATHS
+        or not path.startswith("ai-builder/")
+        or path.startswith("ai-builder/overview/")
+    )
+
+
+def _section_for_path(url_path: Path) -> str:
+    """Return the llms.txt section for a generated markdown asset."""
+    path = url_path.as_posix()
+    if path in MCP_DOC_PATHS:
+        return "MCP"
+    return _format_title(path.split("/", maxsplit=1)[0])
 
 
 def generate_markdown_file_entries() -> tuple[MarkdownFileEntry, ...]:
@@ -99,7 +116,7 @@ def generate_markdown_file_entries() -> tuple[MarkdownFileEntry, ...]:
                 _extract_markdown_title(resolved.read_text(encoding="utf-8"))
                 or _format_title(doc_title_from_path(virtual_path)),
             ),
-            section=_format_title(route.strip("/").split("/", maxsplit=1)[0]),
+            section=_section_for_path(Path(route.strip("/") + ".md")),
         )
         for virtual_path, source_path in sorted(all_docs.items())
         if not virtual_path.endswith(("-style.md", "-ll.md"))
