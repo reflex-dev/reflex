@@ -65,7 +65,7 @@ def logo() -> rx.Component:
 
 
 def menu_item(text: str, href: str, active_str: str = "") -> rx.Component:
-    router_path = rx.State.router.page.path
+    router_path = rx.State.router.page.raw_path
     active_cn = "shadow-[inset_0_-1px_0_0_var(--primary-10)] [&_button]:text-primary-10 [&_div]:text-primary-10"
 
     # For paths starting with "/" (like Start), use exact match
@@ -73,11 +73,21 @@ def menu_item(text: str, href: str, active_str: str = "") -> rx.Component:
     # For other segments (like "ai"), use contains
     if active_str.startswith("/"):
         if active_str == "/":
-            active = (router_path == "/") | (router_path == "/index")
+            active = (
+                (router_path == "/")
+                | (router_path == "/index")
+                | (router_path == "/docs")
+                | (router_path == "/docs/")
+            )
         else:
             active = router_path == active_str
     elif active_str == "framework":
-        is_overview = (router_path == "/") | (router_path == "/index")
+        is_overview = (
+            (router_path == "/")
+            | (router_path == "/index")
+            | (router_path == "/docs")
+            | (router_path == "/docs/")
+        )
         is_ai_builder = router_path.startswith("/ai/") | router_path.startswith(
             "/docs/ai/"
         )
@@ -110,7 +120,11 @@ def navigation_menu() -> rx.Component:
     return ui.navigation_menu.root(
         ui.navigation_menu.list(
             menu_item("Overview", "/", "/"),
-            menu_item("Build with AI", ai_builder.overview.best_practices.path, "ai"),
+            menu_item(
+                "Build with AI",
+                ai_builder.overview.what_is_reflex_build.path,
+                "ai",
+            ),
             menu_item("Framework", getting_started.introduction.path, "framework"),
             menu_item("Cloud", hosting.deploy_quick_start.path, "hosting"),
             class_name="flex flex-row items-center gap-2 m-0 h-full list-none",

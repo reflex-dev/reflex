@@ -243,25 +243,20 @@ def calculate_index(sidebar_items, url: str) -> list[int]:
     sidebar_items = (
         sidebar_items if isinstance(sidebar_items, list) else [sidebar_items]
     )
-    index_list = []
 
     if not url:
-        return index_list
+        return []
 
     url = url.rstrip("/") + "/"
-    for item in sidebar_items:
-        item.link = item.link.rstrip("/") + "/"
-    sub = 0
     for i, item in enumerate(sidebar_items):
-        if not item.children:
-            sub += 1
-        if item.link == url:
-            return [i - sub]
+        item_link = item.link.rstrip("/") + "/" if item.link else ""
+        if item_link == url:
+            return [i]
         index = calculate_index(item.children, url)
         if index:
-            return [i - sub, *index]
+            return [i, *index]
 
-    return index_list
+    return []
 
 
 def append_to_items(items, flat_items):
@@ -434,7 +429,7 @@ def sidebar_comp(
     from reflex_docs.pages.docs.library import library
     from reflex_docs.pages.docs.recipes_overview import overview
 
-    _path = rx.State.router.page.path
+    _path = rx.State.router.page.raw_path
     _is_docs_hosting = _path.startswith("/docs/hosting/") | _path.startswith(
         "/hosting/"
     )
@@ -458,7 +453,7 @@ def sidebar_comp(
                 rx.el.ul(
                     sidebar_category(
                         "AI Builder",
-                        ai_builder_pages.overview.best_practices.path,
+                        ai_builder_pages.overview.what_is_reflex_build.path,
                         "bot",
                         0,
                     ),
@@ -546,7 +541,7 @@ def sidebar_comp(
                         rx.el.ul(
                             create_sidebar_section(
                                 "Overview",
-                                ai_builder_pages.overview.best_practices.path,
+                                ai_builder_pages.overview.what_is_reflex_build.path,
                                 ai_builder_overview_items,
                                 ai_builder_overview_index,
                                 url,
