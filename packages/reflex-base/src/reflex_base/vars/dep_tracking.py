@@ -146,6 +146,30 @@ class DependencyTracker:
             raise UntrackedLocalVarError(msg) from ke
         return local_value
 
+    @staticmethod
+    def _get_defining_state_class(
+        target_state: type[BaseState], attr_name: str
+    ) -> type[BaseState]:
+        """Resolve the state class that actually defines an inherited attribute.
+
+        Args:
+            target_state: The state class where the attribute was accessed.
+            attr_name: The accessed attribute name.
+
+        Returns:
+            The state class that defines the attribute.
+        """
+        defining_state = target_state
+        while attr_name in {
+            *defining_state.inherited_vars,
+            *defining_state.inherited_backend_vars,
+        }:
+            parent_state = defining_state.get_parent_state()
+            if parent_state is None:
+                break
+            defining_state = parent_state
+        return defining_state
+
     def load_attr_or_method(self, instruction: dis.Instruction) -> None:
         """Handle loading an attribute or method from the object on top of the stack.
 
@@ -185,6 +209,7 @@ class DependencyTracker:
         except VarValueError:
             # If the target state is not a BaseState, we cannot track dependencies on it.
             return
+        target_state = self._get_defining_state_class(target_state, instruction.argval)
         try:
             ref_obj = getattr(target_state, instruction.argval)
         except AttributeError:

@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import sys
+
+import pytest
+
 import reflex as rx
 from reflex.state import State
 
@@ -131,6 +135,28 @@ def test_cross_state_dependencies():
     assert deps == expected_deps
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 11), reason="Requires Python 3.11+ for positions"
+)
+def test_cross_state_get_var_value_dependencies():
+    """Track dependencies when get_var_value reads a var from another state."""
+
+    class StateWithCrossVarValueDeps(State):
+        @rx.var
+        async def cross_state_var_value(self) -> int:
+            return await self.get_var_value(OtherIntegrationState.value)  # pyright: ignore[reportArgumentType]
+
+    computed = StateWithCrossVarValueDeps.computed_vars["cross_state_var_value"]
+    deps = computed._deps(objclass=StateWithCrossVarValueDeps)
+
+    expected_deps = {OtherIntegrationState.get_full_name(): {"value"}}
+    assert deps == expected_deps
+    assert (
+        StateWithCrossVarValueDeps.get_full_name(),
+        "cross_state_var_value",
+    ) in OtherIntegrationState._var_dependencies["value"]
+
+
 def test_nested_function_in_computed_var():
     """Test that nested functions within computed vars track dependencies."""
 
@@ -244,3 +270,78 @@ def test_error_handling_in_dependency_tracking():
 
     expected_deps = {StateWithError.get_full_name(): {"value"}}
     assert deps == expected_deps
+
+
+def test_computed_var_dependency_on_inherited_mixin_computed_vars():
+    """Track inherited mixin computed var deps for both async and sync vars."""
+
+    class AuthMixin(State, mixin=True):
+        @rx.var
+        async def userinfo(self) -> dict[str, str]:
+            return {"sub": "user-1"}
+
+        @rx.var
+        def user_id(self) -> str:
+            return "user-1"
+
+    class AuthState(AuthMixin, State):
+        pass
+
+    class AuthSubstate(AuthState):
+        @rx.var
+        async def is_authenticated(self) -> bool:
+            return bool(await self.userinfo)
+
+        @rx.var
+        def has_user_id(self) -> bool:
+            return bool(self.user_id)
+
+    async_computed = AuthSubstate.computed_vars["is_authenticated"]
+    async_deps = async_computed._deps(objclass=AuthSubstate)
+    sync_computed = AuthSubstate.computed_vars["has_user_id"]
+    sync_deps = sync_computed._deps(objclass=AuthSubstate)
+
+    assert async_deps == {AuthState.get_full_name(): {"userinfo"}}
+    assert sync_deps == {AuthState.get_full_name(): {"user_id"}}
+    assert AuthState._var_dependencies["userinfo"] == {
+        (AuthSubstate.get_full_name(), "is_authenticated")
+    }
+    assert AuthState._var_dependencies["user_id"] == {
+        (AuthSubstate.get_full_name(), "has_user_id")
+    }
+
+
+def test_computed_var_dependency_on_inherited_concrete_computed_vars():
+    """Track inherited concrete parent computed var deps for async and sync vars."""
+
+    class AuthParentState(State):
+        @rx.var
+        async def userinfo(self) -> dict[str, str]:
+            return {"sub": "user-1"}
+
+        @rx.var
+        def user_id(self) -> str:
+            return "user-1"
+
+    class AuthSubstate(AuthParentState):
+        @rx.var
+        async def is_authenticated(self) -> bool:
+            return bool(await self.userinfo)
+
+        @rx.var
+        def has_user_id(self) -> bool:
+            return bool(self.user_id)
+
+    async_computed = AuthSubstate.computed_vars["is_authenticated"]
+    async_deps = async_computed._deps(objclass=AuthSubstate)
+    sync_computed = AuthSubstate.computed_vars["has_user_id"]
+    sync_deps = sync_computed._deps(objclass=AuthSubstate)
+
+    assert async_deps == {AuthParentState.get_full_name(): {"userinfo"}}
+    assert sync_deps == {AuthParentState.get_full_name(): {"user_id"}}
+    assert AuthParentState._var_dependencies["userinfo"] == {
+        (AuthSubstate.get_full_name(), "is_authenticated")
+    }
+    assert AuthParentState._var_dependencies["user_id"] == {
+        (AuthSubstate.get_full_name(), "has_user_id")
+    }
