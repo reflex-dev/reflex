@@ -23,6 +23,14 @@ SKILLS_DOC_PATHS = {
     "ai/integrations/skills.md",
 }
 
+LLMS_TXT_INTRO = """\
+# Reflex Documentation
+
+> Reflex is a Python framework for building full-stack web apps. Use this index to find agent-readable Markdown docs, or see [llms-full.txt]({llms_full_txt_url}) for the complete docs in one file.
+
+## Docs
+"""
+
 LLMS_FULL_INTRO = """\
 # Reflex Documentation
 Source: {docs_home_url}
@@ -242,7 +250,12 @@ def generate_llms_txt(
             continue
         sections.setdefault(markdown_file.section, []).append(markdown_file)
 
-    lines = ["# Reflex", "", "## Docs", ""]
+    lines = [
+        LLMS_TXT_INTRO.format(
+            llms_full_txt_url=_llms_url_for_path(Path("llms-full.txt")),
+        ).strip(),
+        "",
+    ]
     for section in _ordered_sections(sections):
         entries = _ordered_entries(section, sections[section])
         lines.extend([f"### {section}", ""])

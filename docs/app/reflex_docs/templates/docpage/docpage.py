@@ -350,6 +350,8 @@ def _copy_page_menu_item(
 
 
 DOCS_PROD_BASE = "https://reflex.dev/docs"
+LLMS_TXT_PATH = "/llms.txt"
+LLMS_FULL_TXT_PATH = "/llms-full.txt"
 
 
 def _build_prefill_url(base_url: str, path: str, action: str) -> str:
@@ -523,6 +525,12 @@ def _copy_page_button(doc_content: str, path: str = "") -> rx.Component:
                                 title="Copy page",
                                 description="Copy page as Markdown for LLMs",
                                 on_click=copy_action,
+                            ),
+                            _copy_page_menu_item(
+                                icon=ui.icon("DocumentValidationIcon", size=16),
+                                title="llms-full.txt",
+                                description="View all docs as Markdown for LLMs",
+                                href=LLMS_FULL_TXT_PATH,
                             ),
                             rx.el.div(class_name="h-px bg-secondary-4"),
                             _copy_page_menu_item(
@@ -759,6 +767,12 @@ def docpage(
             return rx.box(
                 docs_navbar(),
                 rx.el.main(
+                    rx.el.blockquote(
+                        rx.el.span("For the complete documentation index, see "),
+                        rx.el.a("llms.txt", href=LLMS_TXT_PATH),
+                        rx.el.span("."),
+                        class_name="sr-only",
+                    ),
                     rx.box(
                         sidebar,
                         class_name=(

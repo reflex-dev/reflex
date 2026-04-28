@@ -84,7 +84,14 @@ def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
     ])
 
     assert path == Path("llms.txt")
-    assert content.startswith("# Reflex\n\n## Docs\n\n")
+    assert content.startswith(
+        "# Reflex Documentation\n\n"
+        "> Reflex is a Python framework for building full-stack web apps. "
+        "Use this index to find agent-readable Markdown docs, or see "
+        "[llms-full.txt](https://reflex.dev/docs/llms-full.txt) for the "
+        "complete docs in one file.\n\n"
+        "## Docs\n\n"
+    )
     assert "### Components\n\n" in content
     assert "- [Props](https://reflex.dev/docs/components/props.md)" in content
     assert (
