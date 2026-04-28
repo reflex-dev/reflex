@@ -4,15 +4,18 @@
 import reflex as rx
 
 
-def _resource_card(title: str, body: str, href: str, action: str) -> rx.Component:
+def _resource_card(
+    title: str, body: str, href: str, action: str, target: str = "_self"
+) -> rx.Component:
     return rx.el.a(
         rx.el.div(
-            rx.el.h3(title, class_name="text-base font-semibold text-slate-12"),
-            rx.el.p(body, class_name="text-sm leading-6 text-slate-10"),
-            rx.el.div(action, class_name="text-sm font-semibold text-violet-10"),
-            class_name="flex h-full flex-col gap-2 rounded-lg border border-slate-4 bg-slate-1 p-4 transition-colors hover:bg-slate-2",
+            rx.el.h3(title, class_name="text-base font-semibold text-secondary-12"),
+            rx.el.p(body, class_name="text-sm leading-6 text-secondary-11"),
+            rx.el.div(action, class_name="text-sm font-semibold text-primary-10"),
+            class_name="flex h-full flex-col gap-2 rounded-lg border border-secondary-a4 bg-white-1 p-4 transition-colors hover:bg-secondary-2 shadow-xs",
         ),
         href=href,
+        target=target,
         class_name="no-underline",
     )
 
@@ -24,6 +27,7 @@ def onboarding_resources() -> rx.Component:
             "Give your agent current Reflex documentation as Markdown, llms.txt, or structured MCP context.",
             "/llms.txt",
             "Open llms.txt",
+            target="_blank",
         ),
         _resource_card(
             "MCP",
