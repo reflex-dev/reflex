@@ -20,6 +20,7 @@ def get_integration_path() -> list:
         "mcp_installation",
         "mcp_overview",
         "overview",
+        "skills",
         "snowflake",
     ]  # without .md extension
 

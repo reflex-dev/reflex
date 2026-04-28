@@ -159,6 +159,20 @@ def get_sidebar_items_mcp():
     ]
 
 
+def get_sidebar_items_skills():
+    from reflex_docs.pages.docs import ai_builder
+
+    return [
+        create_item(
+            "Skills",
+            children=[
+                ai_builder.integrations.skills,
+            ],
+        ),
+    ]
+
+
 ai_builder_overview_items = get_sidebar_items_ai_builder_overview()
 ai_builder_integrations = get_ai_builder_integrations()
 mcp_items = get_sidebar_items_mcp()
+skills_items = get_sidebar_items_skills()

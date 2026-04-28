@@ -60,6 +60,12 @@ def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
             section="MCP",
         ),
         MarkdownFileEntry(
+            url_path=Path("ai/integrations/skills.md"),
+            source_path=Path("docs/ai_builder/integrations/skills.md"),
+            title="Skills",
+            section="Skills",
+        ),
+        MarkdownFileEntry(
             url_path=Path("ai/features/ide.md"),
             source_path=Path("docs/ai_builder/features/ide.md"),
             title="Reflex Build IDE",
@@ -93,5 +99,8 @@ def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
         "- [Installation](https://reflex.dev/docs/ai/integrations/mcp-installation.md)"
         in content
     )
+    assert "### Skills\n\n" in content
+    assert "- [Skills](https://reflex.dev/docs/ai/integrations/skills.md)" in content
     assert content.index("### AI Builder") < content.index("### MCP")
+    assert content.index("### MCP") < content.index("### Skills")
     assert content.index("mcp-overview.md") < content.index("mcp-installation.md")

@@ -37,5 +37,7 @@ def test_ai_builder_routes_use_ai_prefix(routes_fixture):
 
     assert "/ai/overview/best-practices/" in paths
     assert "/ai/integrations/mcp-overview/" in paths
+    assert "/ai/integrations/skills/" in paths
     assert "/ai-builder/overview/best-practices/" not in paths
     assert "/ai-builder/integrations/mcp-overview/" not in paths
+    assert "/ai-builder/integrations/skills/" not in paths

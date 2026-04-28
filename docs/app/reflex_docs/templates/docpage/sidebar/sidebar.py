@@ -12,6 +12,7 @@ from .sidebar_items.ai import (
     ai_builder_integrations,
     ai_builder_overview_items,
     mcp_items,
+    skills_items,
 )
 from .sidebar_items.component_lib import component_lib, graphing_libs
 from .sidebar_items.enterprise import (
@@ -280,6 +281,8 @@ append_to_items(
     + recipes
     + ai_builder_overview_items
     + ai_builder_integrations
+    + mcp_items
+    + skills_items
     + api_reference
     + enterprise_items,
     flat_items,
@@ -408,6 +411,7 @@ def sidebar_comp(
     enterprise_usage_index: list[int],
     enterprise_component_index: list[int],
     mcp_index: list[int],
+    skills_index: list[int],
     #
     cli_ref_index: list[int],
     ai_builder_overview_index: list[int],
@@ -456,6 +460,12 @@ def sidebar_comp(
                         ai_builder_pages.integrations.mcp_overview.path,
                         "plug",
                         1,
+                    ),
+                    sidebar_category(
+                        "Skills",
+                        ai_builder_pages.integrations.skills.path,
+                        "sparkles",
+                        2,
                     ),
                     # sidebar_category(
                     #     "Integrations",
@@ -558,6 +568,19 @@ def sidebar_comp(
                                 ai_builder_pages.integrations.mcp_overview.path,
                                 mcp_items,
                                 mcp_index,
+                                url,
+                            ),
+                            class_name="flex flex-col items-start gap-8  w-full list-none list-style-none",
+                        ),
+                    ),
+                    (
+                        2,
+                        rx.el.ul(
+                            create_sidebar_section(
+                                "Skills",
+                                ai_builder_pages.integrations.skills.path,
+                                skills_items,
+                                skills_index,
                                 url,
                             ),
                             class_name="flex flex-col items-start gap-8  w-full list-none list-style-none",
@@ -719,6 +742,7 @@ def sidebar(url=None, width: str = "100%") -> rx.Component:
     ai_builder_overview_index = calculate_index(ai_builder_overview_items, url)
     ai_builder_integrations_index = calculate_index(ai_builder_integrations, url)
     mcp_index = calculate_index(mcp_items, url)
+    skills_index = calculate_index(skills_items, url)
 
     return rx.box(
         sidebar_comp(
@@ -737,6 +761,7 @@ def sidebar(url=None, width: str = "100%") -> rx.Component:
             ai_builder_integrations_index=ai_builder_integrations_index,
             cli_ref_index=cli_ref_index,
             mcp_index=mcp_index,
+            skills_index=skills_index,
             width=width,
         ),
         on_mount=rx.call_script(Scrollable_SideBar),

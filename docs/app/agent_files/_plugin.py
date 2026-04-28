@@ -16,6 +16,9 @@ MCP_DOC_ORDER = {
     "ai/integrations/mcp-overview.md": 0,
     "ai/integrations/mcp-installation.md": 1,
 }
+SKILLS_DOC_PATHS = {
+    "ai/integrations/skills.md",
+}
 
 
 @dataclass(frozen=True)
@@ -88,6 +91,7 @@ def _include_in_llms_txt(markdown_file: MarkdownFileEntry) -> bool:
     path = markdown_file.url_path.as_posix()
     return (
         path in MCP_DOC_PATHS
+        or path in SKILLS_DOC_PATHS
         or not path.startswith("ai/")
         or path.startswith("ai/overview/")
     )
@@ -98,6 +102,8 @@ def _section_for_path(url_path: Path) -> str:
     path = url_path.as_posix()
     if path in MCP_DOC_PATHS:
         return "MCP"
+    if path in SKILLS_DOC_PATHS:
+        return "Skills"
     if path.startswith("ai/"):
         return "AI Builder"
     return _format_title(path.split("/", maxsplit=1)[0])
@@ -111,6 +117,12 @@ def _ordered_sections(
     if "AI Builder" in sections and "MCP" in sections:
         ordered_sections.remove("MCP")
         ordered_sections.insert(ordered_sections.index("AI Builder") + 1, "MCP")
+    if "MCP" in sections and "Skills" in sections:
+        ordered_sections.remove("Skills")
+        ordered_sections.insert(ordered_sections.index("MCP") + 1, "Skills")
+    elif "AI Builder" in sections and "Skills" in sections:
+        ordered_sections.remove("Skills")
+        ordered_sections.insert(ordered_sections.index("AI Builder") + 1, "Skills")
     return ordered_sections
 
 
