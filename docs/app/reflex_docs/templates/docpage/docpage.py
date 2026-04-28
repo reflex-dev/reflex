@@ -39,7 +39,7 @@ class FeedbackState(rx.State):
 def footer_link(text: str, href: str):
     return rx.link(
         text,
-        class_name="font-small text-slate-9 hover:!text-slate-11 transition-color",
+        class_name="font-small text-secondary-9 hover:!text-secondary-11 transition-color",
         href=href,
         underline="none",
     )
@@ -49,7 +49,7 @@ def footer_link_flex(heading: str, links):
     return rx.box(
         rx.el.h4(
             heading,
-            class_name="font-semibold text-slate-12 text-sm tracking-[-0.01313rem]",
+            class_name="font-semibold text-secondary-12 text-sm tracking-[-0.01313rem]",
         ),
         *links,
         class_name="flex flex-col gap-4",
@@ -311,15 +311,15 @@ def _copy_page_menu_item(
     row = rx.el.div(
         rx.el.div(
             icon,
-            class_name="flex size-8 items-center justify-center rounded-md border border-slate-5 bg-slate-2 text-slate-11 shrink-0",
+            class_name="flex size-8 items-center justify-center rounded-md border border-slate-5 bg-secondary-2 text-secondary-11 shrink-0",
         ),
         rx.el.div(
             rx.el.div(
-                rx.el.span(title, class_name="text-sm font-medium text-slate-12"),
+                rx.el.span(title, class_name="text-sm font-medium text-secondary-12"),
                 ui.icon(
                     "ArrowUpRight01Icon",
                     size=12,
-                    class_name="!text-slate-9",
+                    class_name="text-secondary-9",
                 )
                 if href
                 else rx.fragment(),
@@ -327,11 +327,11 @@ def _copy_page_menu_item(
             ),
             rx.el.span(
                 description,
-                class_name="text-xs text-slate-10",
+                class_name="text-xs text-secondary-10",
             ),
             class_name="flex flex-col items-start gap-0.5",
         ),
-        class_name="flex items-start gap-3 px-3 py-2 w-full hover:bg-slate-3 transition-colors cursor-pointer",
+        class_name="flex items-start gap-3 px-3 py-2 w-full hover:bg-secondary-3 transition-colors cursor-pointer",
     )
     if href:
         return rx.el.a(
@@ -372,43 +372,43 @@ def _build_reflex_menu_item(path: str) -> rx.Component:
                 ui.icon(
                     "AiMagicIcon",
                     size=16,
-                    class_name="!text-white",
+                    class_name="text-primary-contrast",
                 ),
                 class_name=(
                     "flex size-8 items-center justify-center rounded-md "
-                    "bg-gradient-to-br from-violet-9 to-violet-11 "
-                    "shadow-[0_0_0_1px_var(--violet-7),0_2px_8px_-2px_var(--violet-a8)] shrink-0"
+                    "bg-gradient-to-br from-primary-9 to-primary-11 "
+                    "shadow-[0_0_0_1px_var(--primary-7),0_2px_8px_-2px_var(--primary-a8)] shrink-0"
                 ),
             ),
             rx.el.div(
                 rx.el.div(
                     rx.el.span(
                         "Build this with AI",
-                        class_name="text-sm font-semibold text-slate-12",
+                        class_name="text-sm font-semibold text-secondary-12",
                     ),
                     ui.icon(
                         "ArrowUpRight01Icon",
                         size=12,
-                        class_name="!text-violet-11",
+                        class_name="!text-primary-11",
                     ),
                     class_name="flex items-center gap-1",
                 ),
                 rx.el.span(
                     "Open in Reflex Build",
-                    class_name="text-xs text-slate-10",
+                    class_name="text-xs text-secondary-10",
                 ),
                 class_name="flex flex-col items-start gap-0.5",
             ),
-            class_name="flex items-start gap-3 px-3 py-2.5 w-full",
+            class_name="flex items-start gap-3 px-3 py-3 w-full",
         ),
         href=href,
         target="_blank",
         rel="noopener noreferrer",
         class_name=(
             "no-underline w-full text-left block "
-            "bg-gradient-to-br from-violet-2 to-slate-1 "
-            "hover:from-violet-3 hover:to-violet-2 "
-            "border-b border-slate-4 transition-colors cursor-pointer"
+            "bg-gradient-to-br from-primary-2 to-secondary-1 "
+            "hover:from-primary-3 hover:to-primary-2 "
+            "border-b border-secondary-4 transition-colors cursor-pointer"
         ),
     )
 
@@ -494,8 +494,8 @@ def _copy_page_button(doc_content: str, path: str = "") -> rx.Component:
             on_click=copy_action,
             class_name=(
                 "flex items-center justify-center px-2.5 h-8 "
-                "border border-slate-5 border-r-0 rounded-l-md text-slate-11 "
-                "hover:text-slate-12 hover:bg-slate-3 active:scale-[0.96] "
+                "border border-secondary-5 border-r-0 rounded-l-md text-secondary-11 "
+                "hover:text-secondary-12 hover:bg-secondary-3 active:scale-[0.96] "
                 "transition-all cursor-pointer"
             ),
         ),
@@ -507,8 +507,8 @@ def _copy_page_button(doc_content: str, path: str = "") -> rx.Component:
                     aria_label="Copy page options",
                     class_name=(
                         "flex items-center justify-center px-1.5 h-8 "
-                        "border border-slate-5 rounded-r-md text-slate-11 "
-                        "hover:text-slate-12 hover:bg-slate-3 active:scale-[0.96] "
+                        "border border-secondary-5 rounded-r-md text-secondary-11 "
+                        "hover:text-secondary-12 hover:bg-secondary-3 active:scale-[0.96] "
                         "transition-all cursor-pointer"
                     ),
                 ),
@@ -516,7 +516,7 @@ def _copy_page_button(doc_content: str, path: str = "") -> rx.Component:
             ui.popover.portal(
                 ui.popover.positioner(
                     ui.popover.popup(
-                        render_=rx.el.div(
+                        rx.el.div(
                             _build_reflex_menu_item(path=path),
                             _copy_page_menu_item(
                                 icon=ui.icon("Copy01Icon", size=16),
@@ -524,7 +524,7 @@ def _copy_page_button(doc_content: str, path: str = "") -> rx.Component:
                                 description="Copy page as Markdown for LLMs",
                                 on_click=copy_action,
                             ),
-                            rx.el.div(class_name="h-px bg-slate-4 my-1 mx-2"),
+                            rx.el.div(class_name="h-px bg-secondary-4"),
                             _copy_page_menu_item(
                                 icon=ui.icon("MessageProgrammingIcon", size=16),
                                 title="Open in ChatGPT",
@@ -541,17 +541,12 @@ def _copy_page_button(doc_content: str, path: str = "") -> rx.Component:
                                     "https://claude.ai/new?q=", path
                                 ),
                             ),
-                            class_name=(
-                                "flex flex-col min-w-[260px] py-1 "
-                                "bg-slate-1 border border-slate-5 rounded-lg shadow-lg "
-                                "data-[state=open]:animate-in data-[state=open]:fade-in-0 "
-                                "data-[state=open]:zoom-in-95 data-[state=open]:slide-in-from-top-2"
-                            ),
+                            class_name="flex flex-col min-w-[260px]",
                         ),
+                        class_name="p-0 overflow-hidden",
                     ),
-                    side="bottom",
                     align="end",
-                    side_offset=6,
+                    align_offset=-4,
                 ),
             ),
         ),
