@@ -427,9 +427,7 @@ def sidebar_comp(
     _is_docs_hosting = _path.startswith("/docs/hosting/") | _path.startswith(
         "/hosting/"
     )
-    _is_docs_ai_builder = _path.startswith("/docs/ai-builder/") | _path.startswith(
-        "/ai-builder/"
-    )
+    _is_docs_ai_builder = _path.startswith("/docs/ai/") | _path.startswith("/ai/")
 
     return rx.box(  # pyright: ignore [reportCallIssue]
         # Handle sidebar categories for docs/cloud first

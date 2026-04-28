@@ -36,31 +36,31 @@ def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
             section="State",
         ),
         MarkdownFileEntry(
-            url_path=Path("ai-builder/overview/best-practices.md"),
+            url_path=Path("ai/overview/best-practices.md"),
             source_path=Path("docs/ai_builder/overview/best_practices.md"),
             title="Reflex Build: Best Practices",
             section="AI Builder",
         ),
         MarkdownFileEntry(
-            url_path=Path("ai-builder/integrations/resend.md"),
+            url_path=Path("ai/integrations/resend.md"),
             source_path=Path("docs/ai_builder/integrations/resend.md"),
             title="Resend Integration",
             section="AI Builder",
         ),
         MarkdownFileEntry(
-            url_path=Path("ai-builder/integrations/mcp-overview.md"),
+            url_path=Path("ai/integrations/mcp-overview.md"),
             source_path=Path("docs/ai_builder/integrations/mcp_overview.md"),
             title="Overview",
             section="MCP",
         ),
         MarkdownFileEntry(
-            url_path=Path("ai-builder/integrations/mcp-installation.md"),
+            url_path=Path("ai/integrations/mcp-installation.md"),
             source_path=Path("docs/ai_builder/integrations/mcp_installation.md"),
             title="Installation",
             section="MCP",
         ),
         MarkdownFileEntry(
-            url_path=Path("ai-builder/features/ide.md"),
+            url_path=Path("ai/features/ide.md"),
             source_path=Path("docs/ai_builder/features/ide.md"),
             title="Reflex Build IDE",
             section="AI Builder",
@@ -79,18 +79,18 @@ def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
     assert "- [State Overview](https://reflex.dev/docs/state/overview.md)" in content
     assert "### AI Builder\n\n" in content
     assert (
-        "- [Reflex Build: Best Practices](https://reflex.dev/docs/ai-builder/overview/best-practices.md)"
+        "- [Reflex Build: Best Practices](https://reflex.dev/docs/ai/overview/best-practices.md)"
         in content
     )
     assert "Resend Integration" not in content
     assert "Reflex Build IDE" not in content
     assert "### MCP\n\n" in content
     assert (
-        "- [Overview](https://reflex.dev/docs/ai-builder/integrations/mcp-overview.md)"
+        "- [Overview](https://reflex.dev/docs/ai/integrations/mcp-overview.md)"
         in content
     )
     assert (
-        "- [Installation](https://reflex.dev/docs/ai-builder/integrations/mcp-installation.md)"
+        "- [Installation](https://reflex.dev/docs/ai/integrations/mcp-installation.md)"
         in content
     )
     assert content.index("### AI Builder") < content.index("### MCP")

@@ -92,8 +92,12 @@ for route in routes:
         # Call add_page with the dynamically constructed arguments
         app.add_page(**page_args)
 
-# Add redirects
-redirects = []
+# Add redirects.
+redirects = [
+    (route.path.replace("/ai/", "/ai-builder/", 1), route.path)
+    for route in routes
+    if route.path.startswith("/ai/")
+]
 
 
 def _redirect_page():

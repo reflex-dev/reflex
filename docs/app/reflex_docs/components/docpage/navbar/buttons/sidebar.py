@@ -62,7 +62,8 @@ def drawer_item(text: str, url: str, active_str: str = "") -> rx.Component:
             ~router_path.contains("hosting")
             & ~router_path.contains("library")
             & ~router_path.contains("gallery")
-            & ~router_path.contains("ai-builder"),
+            & ~router_path.startswith("/ai/")
+            & ~router_path.startswith("/docs/ai/"),
         )
     if active_str == "":
         active = False

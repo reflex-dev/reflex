@@ -210,7 +210,7 @@ def ask_ai_chat() -> rx.Component:
             class_name="justify-start pl-0 text-m-slate-7 dark:text-m-slate-6",
             native_button=False,
         ),
-        to="/ai-builder/integrations/mcp-overview/",
+        to="/ai/integrations/mcp-overview/",
     )
 
 

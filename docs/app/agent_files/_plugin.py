@@ -9,12 +9,12 @@ from reflex_base.plugins import CommonContext, Plugin
 from typing_extensions import Unpack
 
 MCP_DOC_PATHS = {
-    "ai-builder/integrations/mcp-installation.md",
-    "ai-builder/integrations/mcp-overview.md",
+    "ai/integrations/mcp-installation.md",
+    "ai/integrations/mcp-overview.md",
 }
 MCP_DOC_ORDER = {
-    "ai-builder/integrations/mcp-overview.md": 0,
-    "ai-builder/integrations/mcp-installation.md": 1,
+    "ai/integrations/mcp-overview.md": 0,
+    "ai/integrations/mcp-installation.md": 1,
 }
 
 
@@ -88,8 +88,8 @@ def _include_in_llms_txt(markdown_file: MarkdownFileEntry) -> bool:
     path = markdown_file.url_path.as_posix()
     return (
         path in MCP_DOC_PATHS
-        or not path.startswith("ai-builder/")
-        or path.startswith("ai-builder/overview/")
+        or not path.startswith("ai/")
+        or path.startswith("ai/overview/")
     )
 
 
@@ -98,6 +98,8 @@ def _section_for_path(url_path: Path) -> str:
     path = url_path.as_posix()
     if path in MCP_DOC_PATHS:
         return "MCP"
+    if path.startswith("ai/"):
+        return "AI Builder"
     return _format_title(path.split("/", maxsplit=1)[0])
 
 

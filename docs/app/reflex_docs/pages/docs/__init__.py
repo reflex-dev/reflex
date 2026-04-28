@@ -161,6 +161,8 @@ def doc_route_from_path(doc: str) -> str:
     """
     doc = doc.replace("\\", "/")
     doc = doc.removeprefix("docs/")
+    if doc.startswith("ai_builder/"):
+        doc = "ai/" + doc.removeprefix("ai_builder/")
     route = rx.utils.format.to_kebab_case(f"/{doc.replace('.md', '/')}")
     if route.endswith("/index/"):
         route = route[:-7] + "/"
