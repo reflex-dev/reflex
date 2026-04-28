@@ -1,46 +1,150 @@
+import re
+from collections import OrderedDict
 from collections.abc import Sequence
-from pathlib import Path, PosixPath
+from dataclasses import dataclass
+from pathlib import Path
 
 from reflex.constants import Dirs
 from reflex_base.plugins import CommonContext, Plugin
 from typing_extensions import Unpack
 
 
-def generate_markdown_files() -> tuple[tuple[Path, str | bytes], ...]:
-    from reflex_docs.pages.docs import doc_markdown_sources
+@dataclass(frozen=True)
+class MarkdownFileEntry:
+    """A generated markdown file and its llms.txt metadata."""
+
+    url_path: Path
+    source_path: Path
+    title: str
+    section: str
+
+
+def _format_title(value: str) -> str:
+    """Format a route or file segment as a title."""
+    words = re.split(r"[-_\s]+", value)
+    acronyms = {
+        "ag": "AG",
+        "ai": "AI",
+        "api": "API",
+        "cli": "CLI",
+        "css": "CSS",
+        "html": "HTML",
+        "ide": "IDE",
+        "mcp": "MCP",
+        "ui": "UI",
+        "url": "URL",
+        "urls": "URLs",
+    }
+    return " ".join(acronyms.get(word.lower(), word.capitalize()) for word in words)
+
+
+def _extract_markdown_title(source: str) -> str | None:
+    """Extract the first top-level heading from markdown source."""
+    in_frontmatter = source.startswith("---\n")
+    in_code_block = False
+
+    for line in source.splitlines():
+        stripped = line.strip()
+        if in_frontmatter:
+            if stripped == "---":
+                in_frontmatter = False
+            continue
+        if stripped.startswith("```"):
+            in_code_block = not in_code_block
+            continue
+        if in_code_block:
+            continue
+        if stripped.startswith("# "):
+            return stripped.removeprefix("# ").strip()
+    return None
+
+
+def _llms_url_for_path(url_path: Path) -> str:
+    """Return the public URL for a generated markdown asset."""
+    from reflex_base.config import get_config
+
+    config = get_config()
+    deploy_url = config.deploy_url.removesuffix("/") if config.deploy_url else ""
+    frontend_path = (config.frontend_path or "").strip("/")
+    base_url = deploy_url
+    if frontend_path:
+        base_url = f"{base_url}/{frontend_path}" if base_url else f"/{frontend_path}"
+    return (
+        f"{base_url}/{url_path.as_posix()}" if base_url else f"/{url_path.as_posix()}"
+    )
+
+
+def _include_in_llms_txt(markdown_file: MarkdownFileEntry) -> bool:
+    """Return whether a markdown file should appear in llms.txt."""
+    path = markdown_file.url_path.as_posix()
+    return not path.startswith("ai-builder/") or path.startswith("ai-builder/overview/")
+
+
+def generate_markdown_file_entries() -> tuple[MarkdownFileEntry, ...]:
+    """Generate the markdown files exposed to agents and llms.txt."""
+    from reflex_docs.pages.docs import (
+        all_docs,
+        doc_route_from_path,
+        doc_title_from_path,
+        manual_titles,
+    )
+    from reflex_docs.whitelist import _check_whitelisted_path
 
     return tuple([
-        (PosixPath(route.strip("/") + ".md"), resolved.read_bytes())
-        for route, source_path in doc_markdown_sources.items()
+        MarkdownFileEntry(
+            url_path=Path(route.strip("/") + ".md"),
+            source_path=resolved,
+            title=manual_titles.get(
+                virtual_path,
+                _extract_markdown_title(resolved.read_text(encoding="utf-8"))
+                or _format_title(doc_title_from_path(virtual_path)),
+            ),
+            section=_format_title(route.strip("/").split("/", maxsplit=1)[0]),
+        )
+        for virtual_path, source_path in sorted(all_docs.items())
+        if not virtual_path.endswith(("-style.md", "-ll.md"))
+        if _check_whitelisted_path(route := doc_route_from_path(virtual_path))
         if (resolved := Path(source_path)).is_file()
     ])
 
 
-def generate_llms_txt(
-    markdown_files: Sequence[tuple[Path, str | bytes]],
-) -> tuple[Path, str]:
-    from reflex_base.config import get_config
-
-    config = get_config()
-
-    if deploy_url := config.deploy_url:
-        deploy_url = config.deploy_url.removesuffix("/")
-    else:
-        deploy_url = ""
-
-    return (
-        Path("docs") / "llms.txt",
-        "# Reflex\n\n"
-        + "## Docs\n\n"
-        + "\n".join(
-            f"- [{deploy_url}/{url}]({deploy_url}/{url})" for url, _ in markdown_files
-        ),
+def generate_markdown_files() -> tuple[tuple[Path, str | bytes], ...]:
+    """Generate markdown asset contents for agent-friendly docs pages."""
+    return tuple(
+        (entry.url_path, entry.source_path.read_bytes())
+        for entry in generate_markdown_file_entries()
     )
 
 
+def generate_llms_txt(
+    markdown_files: Sequence[MarkdownFileEntry],
+) -> tuple[Path, str]:
+    """Generate an llms.txt index grouped by docs section."""
+    sections: OrderedDict[str, list[MarkdownFileEntry]] = OrderedDict()
+    for markdown_file in markdown_files:
+        if not _include_in_llms_txt(markdown_file):
+            continue
+        sections.setdefault(markdown_file.section, []).append(markdown_file)
+
+    lines = ["# Reflex", "", "## Docs", ""]
+    for section, entries in sections.items():
+        lines.extend([f"### {section}", ""])
+        lines.extend(
+            f"- [{entry.title}]({_llms_url_for_path(entry.url_path)})"
+            for entry in entries
+        )
+        lines.append("")
+
+    return (Path("llms.txt"), "\n".join(lines).rstrip() + "\n")
+
+
 def generate_agent_files() -> tuple[tuple[Path, str | bytes], ...]:
-    markdown_files = generate_markdown_files()
-    return (*markdown_files, generate_llms_txt(markdown_files))
+    markdown_file_entries = generate_markdown_file_entries()
+    markdown_files = tuple(
+        (entry.url_path, entry.source_path.read_bytes())
+        for entry in markdown_file_entries
+    )
+    return (*markdown_files, generate_llms_txt(markdown_file_entries))
 
 
 class AgentFilesPlugin(Plugin):
