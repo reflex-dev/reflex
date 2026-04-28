@@ -2,41 +2,88 @@
 
 ```python exec
 import reflex as rx
+
+
+def _summary_card(kicker: str, title: str, body: str) -> rx.Component:
+    return rx.el.div(
+        rx.el.div(kicker, class_name="text-xs font-semibold uppercase text-violet-9"),
+        rx.el.h3(title, class_name="text-base font-semibold text-slate-12"),
+        rx.el.p(body, class_name="text-sm leading-6 text-slate-10"),
+        class_name="flex flex-col gap-2 rounded-lg border border-slate-4 bg-slate-1 p-4",
+    )
+
+
+def skills_summary_cards() -> rx.Component:
+    return rx.el.div(
+        _summary_card(
+            "Docs",
+            "Current Reflex guidance",
+            "Point agents to the right Reflex docs for state, vars, components, routing, styling, deployment, and more.",
+        ),
+        _summary_card(
+            "Setup",
+            "Python environment workflow",
+            "Teach agents how to create a virtual environment, install Reflex, and initialize a new project safely.",
+        ),
+        _summary_card(
+            "Runtime",
+            "Process management",
+            "Give agents a repeatable way to compile, run, restart, and debug Reflex apps without guessing at processes.",
+        ),
+        _summary_card(
+            "Context",
+            "Pairs well with MCP",
+            "Use skills for durable local instructions and MCP for structured lookup of current docs and component data.",
+        ),
+        class_name="grid grid-cols-1 gap-3 md:grid-cols-2 my-6",
+    )
 ```
 
-Reflex Agent Skills give AI coding assistants up-to-date guidance for building Reflex applications. They package Reflex-specific knowledge, setup steps, and process-management workflows into reusable skill files that agents can load when the conversation or codebase calls for them.
+Reflex Agent Skills give AI coding assistants up-to-date guidance for building Reflex applications. They package Reflex-specific knowledge, setup steps, and process-management workflows into reusable `SKILL.md` files that agents can load when the conversation or codebase calls for them.
 
 The skills are maintained in the [reflex-dev/agent-skills](https://github.com/reflex-dev/agent-skills) repository and are designed for agents that support the Agent Skills standard, including Claude Code, Cursor, OpenCode, OpenAI Codex, and Pi.
 
-## Why Use Skills
+```python eval
+skills_summary_cards()
+```
 
-AI assistants can be very helpful when building Reflex apps, but their built-in training data may be stale or too general. Reflex Agent Skills help by giving the assistant project-specific instructions about:
+## When to Use Skills
 
-- How Reflex apps are structured.
-- Which docs to consult for core concepts such as state, vars, events, components, routing, styling, database usage, API routes, authentication, and deployment.
-- How to set up a Python environment for a new Reflex project.
-- How to compile, run, reload, and debug Reflex app processes safely.
+Use Reflex Agent Skills when you want an AI assistant to follow Reflex-specific workflows instead of relying only on general training data. They are especially useful when an assistant needs to:
 
-Skills are loaded contextually by the agent. For example, when an assistant sees a Python file importing `reflex as rx`, it can load the Reflex docs skill. When you ask it to start a new app, it can load the Python environment setup skill before running project commands.
+- Build or edit a Reflex app.
+- Set up a new Python environment.
+- Decide which Reflex docs apply to the task.
+- Compile, run, restart, or debug a local Reflex server.
+- Keep generated code aligned with current Reflex patterns.
+
+Skills load contextually. For example, when an assistant sees a Python file importing `reflex as rx`, it can load the Reflex docs skill. When you ask it to start a new app, it can load the Python environment setup skill before running project commands.
 
 ## Skills vs MCP
 
-Skills and MCP solve related but different problems.
+Skills and MCP solve related but different problems. For the best experience, use both.
 
-Skills are local instruction packs. They tell the agent how to work with Reflex, which workflows to follow, and which references matter for common development tasks.
+```md definition
+# Skills
 
-MCP provides structured runtime access to Reflex documentation and component information through a hosted server. It is useful when the agent or editor can call MCP tools directly while working.
+Local instruction packs that tell the agent how to work with Reflex, which workflows to follow, and which references matter for common development tasks.
 
-For the best experience, use both:
+# MCP
 
-- Use Skills for durable local guidance and repeatable workflows.
-- Use MCP for structured documentation lookup and richer tool-assisted context.
+Structured runtime access to Reflex documentation and component information through a hosted server. Use it when an agent or editor can call MCP tools directly.
+```
+
+```md alert info
+# Use Skills for durable local guidance. Use MCP for structured documentation lookup and richer tool-assisted context.
+```
 
 ## Installation
 
-The Reflex skills repository can be installed in several ways depending on your assistant.
+Choose the install path that matches your assistant.
 
-### Claude Code
+`````md tabs
+
+## Claude Code
 
 Install the plugin from the Claude Code plugin marketplace:
 
@@ -45,7 +92,10 @@ Install the plugin from the Claude Code plugin marketplace:
 /plugin install reflex@reflex-agent-skills
 ```
 
-### Cursor
+Restart or refresh Claude Code after installation if the skills do not appear immediately.
+
+
+## Cursor
 
 Install from the Cursor Marketplace, or add the repository manually from:
 
@@ -53,9 +103,10 @@ Install from the Cursor Marketplace, or add the repository manually from:
 reflex-dev/agent-skills
 ```
 
-In Cursor, you can add it through **Settings > Rules > Add Rule > Remote Rule (Github)**.
+In Cursor, add it through **Settings > Rules > Add Rule > Remote Rule (GitHub)**.
 
-### npx skills
+
+## CLI
 
 If your environment supports the `skills` CLI, install the package with:
 
@@ -63,15 +114,18 @@ If your environment supports the `skills` CLI, install the package with:
 npx skills add reflex-dev/agent-skills
 ```
 
-### Clone or Copy
+Use the CLI's update command later to keep the skill pack current.
 
-You can also clone the repository and copy the skill folders into your assistant's skills directory:
+
+## Manual
+
+Clone the repository:
 
 ```bash
 git clone https://github.com/reflex-dev/agent-skills.git
 ```
 
-Then copy the folders from `skills/` into the appropriate location:
+Then copy the folders inside `skills/` into the appropriate location:
 
 | Agent | Skill Directory |
 | --- | --- |
@@ -81,15 +135,21 @@ Then copy the folders from `skills/` into the appropriate location:
 | OpenAI Codex | `~/.codex/skills/` |
 | Pi | `~/.pi/agent/skills/` |
 
+Copy the skill folders themselves, not the parent `skills/` directory.
+
+`````
+
 ## Included Skills
 
 The Reflex skill pack includes three core skills.
 
-### reflex-docs
+`````md tabs
+
+## Docs
 
 The `reflex-docs` skill gives the assistant a Reflex-specific reference map and a summary of the framework's core concepts.
 
-Use this skill when the assistant is:
+### Use this skill when the assistant is:
 
 - Building full-stack Python web apps with Reflex.
 - Writing files that import `reflex` or use the `rx` namespace.
@@ -97,41 +157,28 @@ Use this skill when the assistant is:
 - Managing state, vars, computed vars, or event handlers.
 - Working with routing, styling, database models, assets, authentication, client storage, API routes, custom components, or wrapped React components.
 
-The skill points the agent to the official Reflex docs for topics such as:
+### It points the assistant to docs for:
 
-- Getting started.
-- Components.
-- State and vars.
-- Events.
-- Pages and routing.
-- Styling.
-- Database.
-- Assets.
-- Authentication.
-- Client storage.
-- API routes.
-- API reference.
-- Custom components.
-- Wrapping React.
-- Component library.
-- Recipes.
+- Core app structure: getting started, components, state and vars, events, pages, and routing.
+- UI and styling: styling, assets, the component library, and recipes.
+- Backend features: database models, authentication, client storage, API routes, and API reference.
+- Advanced integrations: custom components and wrapped React components.
 
 It also reminds the assistant to prefer current Reflex documentation over pre-trained knowledge when there is a conflict.
 
-### setup-python-env
+
+## Setup
 
 The `setup-python-env` skill guides the assistant through setting up a Python environment for a Reflex app.
 
-Use this skill when:
+### Use this skill when:
 
 - Starting a new Reflex project.
 - Setting up a development environment.
 - There is no `.venv` directory.
 - Reflex imports fail because dependencies are missing.
 
-The workflow checks for an existing `.venv`, prefers `uv` when available, falls back to `python3 -m venv`, verifies Python 3.10 or newer, upgrades `pip` when using the fallback path, and installs Reflex if it is not already installed.
-
-For a new app, the expected flow is:
+### Preferred workflow:
 
 ```bash
 uv venv .venv
@@ -140,7 +187,7 @@ uv add reflex
 reflex init
 ```
 
-If `uv` is not available, the skill uses:
+If `uv` is not available, the skill falls back to:
 
 ```bash
 python3 -m venv .venv
@@ -150,41 +197,48 @@ pip install reflex
 reflex init
 ```
 
-### reflex-process-management
+The workflow checks for an existing `.venv`, verifies Python 3.10 or newer, and installs Reflex only when needed.
+
+
+## Process
 
 The `reflex-process-management` skill teaches the assistant how to compile, run, reload, and debug Reflex apps.
 
-Use this skill when:
+### Use this skill when:
 
 - Testing that a Reflex app compiles.
 - Starting a local Reflex server.
 - Restarting a server after code changes.
 - Reading logs to diagnose app errors.
 
-The skill recommends validating changes with:
+### Validation command:
 
 ```bash
 reflex compile --dry
 ```
 
-When the user asks the assistant to run a Reflex app, the skill starts the app in production mode and captures logs:
+### Run command:
 
 ```bash
 reflex run --env prod --single-port 2>&1 | tee reflex.log
 ```
 
-Production mode does not hot reload. To apply code changes, the assistant should stop the listening process for the app port and restart the server. The skill specifically uses `lsof` with `-sTCP:LISTEN` so the assistant targets the server process instead of browser connections:
+Production mode does not hot reload. To apply code changes, the assistant should stop the listening process for the app port and restart the server:
 
 ```bash
 lsof -i :<port> -sTCP:LISTEN -t
 kill -INT $(lsof -i :<port> -sTCP:LISTEN -t)
 ```
 
-If the server does not stop cleanly, the assistant can escalate to `SIGTERM` and then restart the app.
+Using `-sTCP:LISTEN` helps the assistant target the server process instead of browser connections.
+
+`````
 
 ## Recommended Workflow
 
-### Starting a New Reflex Project
+`````md tabs
+
+## New App
 
 1. Install Reflex Agent Skills in your assistant.
 2. Ask the assistant to create or initialize a Reflex app.
@@ -193,19 +247,23 @@ If the server does not stop cleanly, the assistant can escalate to `SIGTERM` and
 5. As the app is built, the assistant should use `reflex-docs` for current framework guidance.
 6. Before handing the app back, the assistant should use `reflex-process-management` to compile or run the project.
 
-### Working on an Existing App
+
+## Existing
 
 1. Open your Reflex project in an agent-enabled editor.
 2. Ask for the feature, bug fix, or refactor you want.
 3. The assistant should load `reflex-docs` when it sees Reflex code.
 4. For local verification, the assistant should compile the app with `reflex compile --dry` or run it with the process-management workflow.
 
-### Debugging a Running App
+
+## Debugging
 
 1. Ask the assistant to inspect the error.
 2. The assistant should read `reflex.log` if the app was started through the process-management workflow.
 3. The assistant should identify the failing import, component, event handler, route, or state update.
 4. After applying a fix, the assistant should restart the app if it is running in production mode.
+
+`````
 
 ## Keeping Skills Updated
 
@@ -222,7 +280,9 @@ Then copy the updated skill folders back into your assistant's skills directory 
 
 ## Troubleshooting
 
-### The Assistant Does Not Load the Skills
+`````md tabs
+
+## Loading
 
 Check that:
 
@@ -231,11 +291,13 @@ Check that:
 - Each skill folder contains a `SKILL.md` file.
 - The assistant was restarted or refreshed after installation if required.
 
-### The Assistant Gives Outdated Reflex Advice
+
+## Outdated Advice
 
 Ask the assistant to use the Reflex docs skill, or pair the skill pack with the Reflex MCP integration for structured access to current docs and component information.
 
-### Reflex Commands Fail
+
+## Commands
 
 Ask the assistant to follow the `setup-python-env` skill again and verify:
 
@@ -244,9 +306,12 @@ Ask the assistant to follow the `setup-python-env` skill again and verify:
 - Reflex is installed in the active environment.
 - The command is being run from the project root.
 
-### A Running App Does Not Reflect Code Changes
+
+## App Updates
 
 If the app was started with `--env prod`, it will not hot reload. Restart the server with the `reflex-process-management` workflow.
+
+`````
 
 ## Contributing
 
