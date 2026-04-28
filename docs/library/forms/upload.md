@@ -151,7 +151,7 @@ def upload_component():
 Below is an example of how to allow multiple file uploads (in this case images).
 
 ```python demo box
-rx.image(src="https://web.reflex-assets.dev/other/upload.gif")
+rx.image(src="https://web.reflex-assets.dev/other/upload.webp")
 ```
 
 ```python

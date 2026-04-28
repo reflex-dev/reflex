@@ -78,6 +78,9 @@ EXCLUDED_COMPONENTS = [
     "DrawerPortal",
     "DrawerContent",
     "DrawerClose",
+    "Container",
+    "Spacer",
+    "Skeleton",
 ]
 
 
@@ -135,7 +138,8 @@ def render_select(prop: PropDocumentation, component: type[Component], prop_dict
             "default_checked",
         ]:
             name = get_id(f"{component.__qualname__}_{prop.name}")
-            PropDocsState.add_var(name, bool, False)
+            default = prop.name == "loading" and component.__name__ == "Spinner"
+            PropDocsState.add_var(name, bool, default)
             var = getattr(PropDocsState, name)
             PropDocsState._create_setter(name, var)
             setter = getattr(PropDocsState, f"set_{name}")
@@ -144,14 +148,16 @@ def render_select(prop: PropDocumentation, component: type[Component], prop_dict
     except TypeError:
         pass
 
-    if not isinstance(type_, _GenericAlias) or (
-        type_.__origin__ not in (Literal, Union)
+    type_origin = get_origin(type_)
+    if not isinstance(type_, (_GenericAlias, UnionType)) or (
+        type_origin not in (Literal, Union, UnionType)
     ):
         return rx.fragment()
     # For the Union[Literal, Breakpoints] type
-    if type_.__origin__ is Union:
+    if type_origin in (Union, UnionType):
         if not all(
-            arg.__name__ in ["Literal", "Breakpoints"] for arg in type_.__args__
+            getattr(arg, "__name__", "") in ["Literal", "Breakpoints"]
+            for arg in type_.__args__
         ):
             return rx.fragment()
         else:
@@ -460,18 +466,10 @@ def generate_props(
     prop_dict = {}
 
     is_interactive = True
-    if not issubclass(
-        component, (RadixThemesComponent, RadixPrimitiveComponent)
-    ) or component.__name__ in [
-        "Theme",
-        "ThemePanel",
-        "DrawerRoot",
-        "DrawerTrigger",
-        "DrawerOverlay",
-        "DrawerPortal",
-        "DrawerContent",
-        "DrawerClose",
-    ]:
+    if (
+        not issubclass(component, (RadixThemesComponent, RadixPrimitiveComponent))
+        or component.__name__ in EXCLUDED_COMPONENTS
+    ):
         is_interactive = False
 
     styling_props = {
@@ -489,12 +487,26 @@ def generate_props(
         "orientation",
     }
 
+    # Props that a specific component visually ignores (e.g. CSS overrides
+    # or deprecated HTML attributes), so we hide them from the interactive
+    # controls to avoid confusion.
+    per_component_skip = {
+        "Center": {"align", "justify"},
+        "TableRoot": {"align"},
+        "TableCell": {"align"},
+        "TableRowHeaderCell": {"align"},
+        "TableColumnHeaderCell": {"align"},
+        "AccordionRoot": {"orientation"},
+        "SegmentedControlRoot": {"color_scheme"},
+    }
+    skip_props = per_component_skip.get(component.__name__, set())
+
     interactive_controls: list[tuple[PropDocumentation, rx.Component]] = []
     if is_interactive:
         for prop in prop_list:
             if prop.name.startswith("on_"):
                 continue
-            if prop.name not in styling_props:
+            if prop.name not in styling_props or prop.name in skip_props:
                 continue
             control = render_select(prop, component, prop_dict)
             if not isinstance(control, Fragment):
@@ -574,7 +586,7 @@ def generate_props(
 
         else:
             try:
-                comp = rx.vstack(component.create("Test", **prop_dict))
+                comp = rx.vstack(component.create("Preview", **prop_dict))
             except Exception:
                 comp = rx.fragment()
             if "data" in component.__name__.lower():
@@ -596,6 +608,11 @@ def generate_props(
             "high_contrast",
             "loading",
             "disabled",
+            "weight",
+            "align",
+            "justify",
+            "direction",
+            "orientation",
         }
         bool_excluded = {
             "open",
@@ -1000,17 +1017,24 @@ def multi_docs(
         toc = get_docgen_toc(actual_path)
         doc_content = Path(actual_path).read_text(encoding="utf-8")
         # Append API Reference headings for the component list
-        if component_list:
+        if components:
             toc.append((1, "API Reference"))
         for component_tuple in component_list[1:]:
             toc.append((2, component_tuple[1]))
+        api_ref_section = (
+            [
+                h1_comp(text="API Reference"),
+                rx.box(*components, class_name="flex flex-col"),
+            ]
+            if components
+            else []
+        )
         return (toc, doc_content), rx.box(
             links("hl", ll_doc_exists, path),
             render_docgen_document(
                 virtual_filepath=virtual_path, actual_filepath=actual_path
             ),
-            h1_comp(text="API Reference"),
-            rx.box(*components, class_name="flex flex-col"),
+            *api_ref_section,
             class_name="flex flex-col w-full",
         )
 
@@ -1019,17 +1043,24 @@ def multi_docs(
         ll_virtual = virtual_path.replace(".md", "-ll.md")
         toc = get_docgen_toc(ll_actual_path)
         doc_content = Path(ll_actual_path).read_text(encoding="utf-8")
-        if component_list:
+        if components:
             toc.append((1, "API Reference"))
         for component_tuple in component_list[1:]:
             toc.append((2, component_tuple[1]))
+        api_ref_section = (
+            [
+                h1_comp(text="API Reference"),
+                rx.box(*components, class_name="flex flex-col"),
+            ]
+            if components
+            else []
+        )
         return (toc, doc_content), rx.box(
             links("ll", ll_doc_exists, path),
             render_docgen_document(
                 virtual_filepath=ll_virtual, actual_filepath=ll_actual_path
             ),
-            h1_comp(text="API Reference"),
-            rx.box(*components, class_name="flex flex-col"),
+            *api_ref_section,
             class_name="flex flex-col w-full",
         )
 
