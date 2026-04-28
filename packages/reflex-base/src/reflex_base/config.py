@@ -676,12 +676,15 @@ def _load_config() -> Config:
         try:
             return _get_config()
         except Exception:
+            # If the module import fails, try to import with the original sys.path.
             sys.path.extend(orig_sys_path)
             return _get_config()
         finally:
+            # Find any entries added to sys.path by rxconfig.py itself.
             extra_paths = [
                 p for p in sys.path if p not in orig_sys_path and p != str(Path.cwd())
             ]
+            # Restore the original sys.path.
             sys.path.clear()
             sys.path.extend(extra_paths)
             sys.path.extend(orig_sys_path)
