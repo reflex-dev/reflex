@@ -54,6 +54,12 @@ def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
             section="MCP",
         ),
         MarkdownFileEntry(
+            url_path=Path("ai/integrations/ai-onboarding.md"),
+            source_path=Path("docs/ai_builder/integrations/ai_onboarding.md"),
+            title="AI Onboarding",
+            section="AI Onboarding",
+        ),
+        MarkdownFileEntry(
             url_path=Path("ai/integrations/mcp-installation.md"),
             source_path=Path("docs/ai_builder/integrations/mcp_installation.md"),
             title="Installation",
@@ -90,6 +96,11 @@ def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
     )
     assert "Resend Integration" not in content
     assert "Reflex Build IDE" not in content
+    assert "### AI Onboarding\n\n" in content
+    assert (
+        "- [AI Onboarding](https://reflex.dev/docs/ai/integrations/ai-onboarding.md)"
+        in content
+    )
     assert "### MCP\n\n" in content
     assert (
         "- [Overview](https://reflex.dev/docs/ai/integrations/mcp-overview.md)"
@@ -101,6 +112,7 @@ def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
     )
     assert "### Skills\n\n" in content
     assert "- [Skills](https://reflex.dev/docs/ai/integrations/skills.md)" in content
-    assert content.index("### AI Builder") < content.index("### MCP")
+    assert content.index("### AI Builder") < content.index("### AI Onboarding")
+    assert content.index("### AI Onboarding") < content.index("### MCP")
     assert content.index("### MCP") < content.index("### Skills")
     assert content.index("mcp-overview.md") < content.index("mcp-installation.md")

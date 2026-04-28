@@ -11,6 +11,7 @@ from reflex_docs.templates.docpage.state import NavbarState
 from .sidebar_items.ai import (
     ai_builder_integrations,
     ai_builder_overview_items,
+    ai_onboarding_items,
     mcp_items,
     skills_items,
 )
@@ -281,6 +282,7 @@ append_to_items(
     + recipes
     + ai_builder_overview_items
     + ai_builder_integrations
+    + ai_onboarding_items
     + mcp_items
     + skills_items
     + api_reference
@@ -363,6 +365,7 @@ def create_sidebar_section(
     items: list[SideBarItem],
     index: rx.Var[list[str]] | list[str],
     url: rx.Var[str] | str,
+    connected_line: bool = False,
 ) -> rx.Component:
     # Check if the section has any nested sections (Like the Other Libraries Section)
     nested = any(len(child.children) > 0 for item in items for child in item.children)
@@ -391,7 +394,10 @@ def create_sidebar_section(
             type="multiple",
             collapsible=True,
             default_value=index[:1].foreach(lambda x: "index" + x.to_string()),
-            class_name="ml-0 pl-0 w-full !bg-transparent !shadow-none rounded-[0px] flex flex-col gap-1",
+            class_name=ui.cn(
+                "ml-0 pl-0 w-full !bg-transparent !shadow-none rounded-[0px] flex flex-col",
+                "gap-0" if connected_line else "gap-1",
+            ),
         ),
         class_name="flex flex-col items-start ml-0 w-full",
     )
@@ -410,6 +416,7 @@ def sidebar_comp(
     recipes_index: list[int],
     enterprise_usage_index: list[int],
     enterprise_component_index: list[int],
+    ai_onboarding_index: list[int],
     mcp_index: list[int],
     skills_index: list[int],
     #
@@ -457,7 +464,7 @@ def sidebar_comp(
                     ),
                     sidebar_category(
                         "MCP/Skills",
-                        ai_builder_pages.integrations.mcp_overview.path,
+                        ai_builder_pages.integrations.ai_onboarding.path,
                         "plug",
                         1,
                     ),
@@ -558,11 +565,19 @@ def sidebar_comp(
                         1,
                         rx.el.ul(
                             create_sidebar_section(
-                                "MCP Integration",
+                                "Overview",
+                                ai_builder_pages.integrations.ai_onboarding.path,
+                                ai_onboarding_items,
+                                ai_onboarding_index,
+                                url,
+                            ),
+                            create_sidebar_section(
+                                "MCP",
                                 ai_builder_pages.integrations.mcp_overview.path,
                                 mcp_items,
                                 mcp_index,
                                 url,
+                                connected_line=True,
                             ),
                             create_sidebar_section(
                                 "Skills",
@@ -570,6 +585,7 @@ def sidebar_comp(
                                 skills_items,
                                 skills_index,
                                 url,
+                                connected_line=True,
                             ),
                             class_name="flex flex-col items-start gap-8  w-full list-none list-style-none",
                         ),
@@ -729,6 +745,7 @@ def sidebar(url=None, width: str = "100%") -> rx.Component:
     cli_ref_index = calculate_index(cli_ref, url)
     ai_builder_overview_index = calculate_index(ai_builder_overview_items, url)
     ai_builder_integrations_index = calculate_index(ai_builder_integrations, url)
+    ai_onboarding_index = calculate_index(ai_onboarding_items, url)
     mcp_index = calculate_index(mcp_items, url)
     skills_index = calculate_index(skills_items, url)
 
@@ -745,6 +762,7 @@ def sidebar(url=None, width: str = "100%") -> rx.Component:
             recipes_index=recipes_index,
             enterprise_usage_index=enterprise_usage_index,
             enterprise_component_index=enterprise_component_index,
+            ai_onboarding_index=ai_onboarding_index,
             ai_builder_overview_index=ai_builder_overview_index,
             ai_builder_integrations_index=ai_builder_integrations_index,
             cli_ref_index=cli_ref_index,

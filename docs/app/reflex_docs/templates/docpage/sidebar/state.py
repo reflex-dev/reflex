@@ -49,6 +49,11 @@ class SidebarState(rx.State):
     def sidebar_index(self) -> int:
         route = self.router.url.path
         if route.startswith((
+            "/docs/ai/integrations/ai-onboarding",
+            "/ai/integrations/ai-onboarding",
+        )):
+            return 1
+        if route.startswith((
             "/docs/ai/integrations/skills",
             "/ai/integrations/skills",
         )):

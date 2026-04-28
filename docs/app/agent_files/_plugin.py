@@ -12,6 +12,9 @@ MCP_DOC_PATHS = {
     "ai/integrations/mcp-installation.md",
     "ai/integrations/mcp-overview.md",
 }
+AI_ONBOARDING_DOC_PATHS = {
+    "ai/integrations/ai-onboarding.md",
+}
 MCP_DOC_ORDER = {
     "ai/integrations/mcp-overview.md": 0,
     "ai/integrations/mcp-installation.md": 1,
@@ -91,6 +94,7 @@ def _include_in_llms_txt(markdown_file: MarkdownFileEntry) -> bool:
     path = markdown_file.url_path.as_posix()
     return (
         path in MCP_DOC_PATHS
+        or path in AI_ONBOARDING_DOC_PATHS
         or path in SKILLS_DOC_PATHS
         or not path.startswith("ai/")
         or path.startswith("ai/overview/")
@@ -100,6 +104,8 @@ def _include_in_llms_txt(markdown_file: MarkdownFileEntry) -> bool:
 def _section_for_path(url_path: Path) -> str:
     """Return the llms.txt section for a generated markdown asset."""
     path = url_path.as_posix()
+    if path in AI_ONBOARDING_DOC_PATHS:
+        return "AI Onboarding"
     if path in MCP_DOC_PATHS:
         return "MCP"
     if path in SKILLS_DOC_PATHS:
@@ -117,6 +123,11 @@ def _ordered_sections(
     if "AI Builder" in sections and "MCP" in sections:
         ordered_sections.remove("MCP")
         ordered_sections.insert(ordered_sections.index("AI Builder") + 1, "MCP")
+    if "AI Builder" in sections and "AI Onboarding" in sections:
+        ordered_sections.remove("AI Onboarding")
+        ordered_sections.insert(
+            ordered_sections.index("AI Builder") + 1, "AI Onboarding"
+        )
     if "MCP" in sections and "Skills" in sections:
         ordered_sections.remove("Skills")
         ordered_sections.insert(ordered_sections.index("MCP") + 1, "Skills")
