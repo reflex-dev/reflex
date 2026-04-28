@@ -12,6 +12,10 @@ MCP_DOC_PATHS = {
     "ai-builder/integrations/mcp-installation.md",
     "ai-builder/integrations/mcp-overview.md",
 }
+MCP_DOC_ORDER = {
+    "ai-builder/integrations/mcp-overview.md": 0,
+    "ai-builder/integrations/mcp-installation.md": 1,
+}
 
 
 @dataclass(frozen=True)
@@ -97,6 +101,29 @@ def _section_for_path(url_path: Path) -> str:
     return _format_title(path.split("/", maxsplit=1)[0])
 
 
+def _ordered_sections(
+    sections: OrderedDict[str, list[MarkdownFileEntry]],
+) -> list[str]:
+    """Return sections in display order."""
+    ordered_sections = list(sections)
+    if "AI Builder" in sections and "MCP" in sections:
+        ordered_sections.remove("MCP")
+        ordered_sections.insert(ordered_sections.index("AI Builder") + 1, "MCP")
+    return ordered_sections
+
+
+def _ordered_entries(
+    section: str, entries: list[MarkdownFileEntry]
+) -> list[MarkdownFileEntry]:
+    """Return entries in display order within a section."""
+    if section == "MCP":
+        return sorted(
+            entries,
+            key=lambda entry: MCP_DOC_ORDER[entry.url_path.as_posix()],
+        )
+    return entries
+
+
 def generate_markdown_file_entries() -> tuple[MarkdownFileEntry, ...]:
     """Generate the markdown files exposed to agents and llms.txt."""
     from reflex_docs.pages.docs import (
@@ -144,7 +171,8 @@ def generate_llms_txt(
         sections.setdefault(markdown_file.section, []).append(markdown_file)
 
     lines = ["# Reflex", "", "## Docs", ""]
-    for section, entries in sections.items():
+    for section in _ordered_sections(sections):
+        entries = _ordered_entries(section, sections[section])
         lines.extend([f"### {section}", ""])
         lines.extend(
             f"- [{entry.title}]({_llms_url_for_path(entry.url_path)})"

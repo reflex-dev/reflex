@@ -93,3 +93,5 @@ def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
         "- [Installation](https://reflex.dev/docs/ai-builder/integrations/mcp-installation.md)"
         in content
     )
+    assert content.index("### AI Builder") < content.index("### MCP")
+    assert content.index("mcp-overview.md") < content.index("mcp-installation.md")
