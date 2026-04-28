@@ -58,6 +58,7 @@ We also have a var `color` which is the current color of the color picker.
 Since this component has interaction we must specify any event triggers that the component takes. The color picker has a single trigger `on_change` to specify when the color changes. This trigger takes in a single argument `color` which is the new color.
 
 ```python exec
+from reflex.experimental.client_state import ClientStateVar
 from reflex.components.component import NoSSRComponent
 
 
@@ -70,7 +71,7 @@ class ColorPicker(NoSSRComponent):
 
 color_picker = ColorPicker.create
 
-ColorPickerState = rx._x.client_state(default="#db114b", var_name="color")
+ColorPickerState = ClientStateVar.create(default="#db114b", var_name="color")
 ```
 
 ```python eval

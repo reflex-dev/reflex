@@ -119,11 +119,11 @@ tabs()
 
 ```python demo box
 rx.box(
-    rx._x.code_block(
+    rx.code_block(
         """import reflex as rx """,
         class_name="code-block !bg-transparent !border-none",
     ),
-    rx._x.code_block(
+    rx.code_block(
         """class State(rx.State):
     count: int = 0
 
@@ -146,7 +146,7 @@ rx.box(
         ),
         class_name="code-block",
     ),
-    rx._x.code_block(
+    rx.code_block(
         """def index():
     return rx.hstack(
         rx.button(
@@ -174,7 +174,7 @@ rx.box(
         ),
         class_name="code-block",
     ),
-    rx._x.code_block(
+    rx.code_block(
         """app = rx.App()
 app.add_page(index)""",
         background=rx.cond(
