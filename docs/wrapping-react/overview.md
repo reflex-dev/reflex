@@ -124,7 +124,7 @@ There are some libraries on npm that are not do not expose React components and 
 A library like [spline](https://www.npmjs.com/package/@splinetool/runtime) below is going to be difficult to wrap with Reflex because it does not expose a React component.
 
 ```javascript
-import \{ Application } from '@splinetool/runtime';
+import { Application } from '@splinetool/runtime';
 
 // make sure you have a canvas in the body
 const canvas = document.getElementById('canvas3d');

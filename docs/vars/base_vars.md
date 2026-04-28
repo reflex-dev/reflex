@@ -67,7 +67,7 @@ def ticker_example():
     return rx.center(
         rx.vstack(
             rx.heading(TickerState.ticker, size="3"),
-            rx.text(f"Current Price: \{TickerState.price}", font_size="md"),
+            rx.text(f"Current Price: {TickerState.price}", font_size="md"),
             rx.text("Change: 4%", color="green"),
         ),
     )

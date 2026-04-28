@@ -3,15 +3,11 @@
 
 ## Directory Structure
 
-```python exec
-app_name = "hello"
-```
-
-Let's create a new app called `{app_name}`
+Let's create a new app called `hello`
 
 ```bash
-mkdir {app_name}
-cd {app_name}
+mkdir hello
+cd hello
 uv init
 uv add reflex
 uv run reflex init
@@ -20,13 +16,13 @@ uv run reflex init
 This will create a directory structure like this:
 
 ```bash
-{app_name}
+hello
 ├── .venv
 ├── .web
 ├── assets
-├── {app_name}
+├── hello
 │   ├── __init__.py
-│   └── {app_name}.py
+│   └── hello.py
 ├── .gitignore
 ├── .python-version
 ├── pyproject.toml
@@ -62,7 +58,7 @@ rx.image(src="https://web.reflex-assets.dev/other/image.png")
 
 Initializing your project creates a directory with the same name as your app. This is where you will write your app's logic.
 
-Reflex generates a default app within the `{app_name}/{app_name}.py` file. You can modify this file to customize your app.
+Reflex generates a default app within the `hello/hello.py` file. You can modify this file to customize your app.
 
 ## Python Project Files
 
@@ -79,7 +75,7 @@ import reflex as rx
 
 
 config = rx.Config(
-    app_name="{app_name}",
+    app_name="hello",
 )
 ```
 

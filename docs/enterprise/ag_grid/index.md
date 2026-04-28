@@ -45,9 +45,9 @@ The format of the data passed to the `row_data` prop is a list of dictionaries. 
 
 ```python
 [
-   \{"direction": "N", "strength": "0-1", "frequency": 0.5\},
-   \{"direction": "NNE", "strength": "0-1", "frequency": 0.6\},
-   \{"direction": "NE", "strength": "0-1", "frequency": 0.5\},
+    {"direction": "N", "strength": "0-1", "frequency": 0.5},
+    {"direction": "NNE", "strength": "0-1", "frequency": 0.6},
+    {"direction": "NE", "strength": "0-1", "frequency": 0.5},
 ]
 ```
 
@@ -257,6 +257,7 @@ import reflex as rx
 import reflex_enterprise as rxe
 import pandas as pd
 
+
 class AGGridEditingState(rx.State):
     data: list[dict] = []
     _data_df: pd.DataFrame
@@ -270,14 +271,29 @@ class AGGridEditingState(rx.State):
     def cell_value_changed(self, row, col_field, new_value):
         self._data_df.at[row, col_field] = new_value
         self.data = self._data_df.to_dict("records")
-        yield rx.toast(f"Cell value changed, Row: {row}, Column: {col_field}, New Value: {new_value}")
+        yield rx.toast(
+            f"Cell value changed, Row: {row}, Column: {col_field}, New Value: {new_value}"
+        )
 
 
 column_defs = [
-    \{"field": "country"\},
-    \{"field": "pop", "headerName": "Population", "editable": True, "cellEditor": rxe.ag_grid.editors.number\},
-    \{"field": "continent", "editable": True, "cellEditor": rxe.ag_grid.editors.select, "cellEditorParams": \{"values": ['Asia', 'Europe', 'Africa', 'Americas', 'Oceania']\}\},
+    {"field": "country"},
+    {
+        "field": "pop",
+        "headerName": "Population",
+        "editable": True,
+        "cellEditor": rxe.ag_grid.editors.number,
+    },
+    {
+        "field": "continent",
+        "editable": True,
+        "cellEditor": rxe.ag_grid.editors.select,
+        "cellEditorParams": {
+            "values": ["Asia", "Europe", "Africa", "Americas", "Oceania"]
+        },
+    },
 ]
+
 
 def ag_grid_simple_editing():
     return rxe.ag_grid(
@@ -336,6 +352,7 @@ import reflex as rx
 import reflex_enterprise as rxe
 import pandas as pd
 
+
 class AGGridState2(rx.State):
     data: list[dict] = []
 
@@ -344,11 +361,13 @@ class AGGridState2(rx.State):
         _df = pd.read_csv("data/gapminder2007.csv")
         self.data = _df.to_dict("records")
 
+
 column_defs = [
-    \{"field": "country"\},
-    \{"field": "pop", "headerName": "Population"\},
-    \{"field": "continent"\},
+    {"field": "country"},
+    {"field": "pop", "headerName": "Population"},
+    {"field": "continent"},
 ]
+
 
 def ag_grid_state_2():
     return rxe.ag_grid(
@@ -370,8 +389,10 @@ import reflex as rx
 import reflex_enterprise as rxe
 import pandas as pd
 
+
 class AgGridState(rx.State):
     """The app state."""
+
     all_columns: list = []
 
     two_columns: list = []
@@ -381,15 +402,15 @@ class AgGridState(rx.State):
     @rx.event
     def init_columns(self):
         self.all_columns = [
-            \{"field": "country"\},
-            \{"field": "pop"\},
-            \{"field": "continent"\},
-            \{"field": "lifeExp"\},
-            \{"field": "gdpPercap"\},
+            {"field": "country"},
+            {"field": "pop"},
+            {"field": "continent"},
+            {"field": "lifeExp"},
+            {"field": "gdpPercap"},
         ]
         self.two_columns = [
-            \{"field": "country"\},
-            \{"field": "pop"\},
+            {"field": "country"},
+            {"field": "pop"},
         ]
         self.column_defs = self.all_columns
 
@@ -436,6 +457,7 @@ import reflex_enterprise as rxe
 import pandas as pd
 from sqlmodel import select
 
+
 class Country(rx.Model, table=True):
     country: str
     population: int
@@ -443,7 +465,6 @@ class Country(rx.Model, table=True):
 
 
 class AGGridDatabaseState(rx.State):
-
     countries: list[Country]
 
     # Insert data from a csv loaded dataframe to the database (Do this on the page load)
@@ -453,9 +474,9 @@ class AGGridDatabaseState(rx.State):
         with rx.session() as session:
             for _, row in data.iterrows():
                 db_record = Country(
-                    country=row['country'],
-                    population=row['pop'],
-                    continent=row['continent'],
+                    country=row["country"],
+                    population=row["pop"],
+                    continent=row["continent"],
                 )
                 session.add(db_record)
             session.commit()
@@ -476,14 +497,29 @@ class AGGridDatabaseState(rx.State):
             country = Country(**self.countries[row])
             session.merge(country)
             session.commit()
-        yield rx.toast(f"Cell value changed, Row: \{row}, Column: \{col_field}, New Value: \{new_value}")
+        yield rx.toast(
+            f"Cell value changed, Row: {row}, Column: {col_field}, New Value: {new_value}"
+        )
 
 
 column_defs = [
-    \{"field": "country"\},
-    \{"field": "population", "headerName": "Population", "editable": True, "cellEditor": rxe.ag_grid.editors.number\},
-    \{"field": "continent", "editable": True, "cellEditor": rxe.ag_grid.editors.select, "cellEditorParams": \{"values": ['Asia', 'Europe', 'Africa', 'Americas', 'Oceania']\}\},
+    {"field": "country"},
+    {
+        "field": "population",
+        "headerName": "Population",
+        "editable": True,
+        "cellEditor": rxe.ag_grid.editors.number,
+    },
+    {
+        "field": "continent",
+        "editable": True,
+        "cellEditor": rxe.ag_grid.editors.select,
+        "cellEditorParams": {
+            "values": ["Asia", "Europe", "Africa", "Americas", "Oceania"]
+        },
+    },
 ]
+
 
 def index():
     return rxe.ag_grid(
@@ -494,6 +530,7 @@ def index():
         width="100%",
         height="40vh",
     )
+
 
 # Add state and page to the app.
 app = rx.App()
@@ -657,9 +694,9 @@ df = pd.read_csv(
 )
 
 column_defs = [
-    \{"field": "country", "checkboxSelection": True\},
-    \{"field": "pop"\},
-    \{"field": "continent"\},
+    {"field": "country", "checkboxSelection": True},
+    {"field": "pop"},
+    {"field": "continent"},
 ]
 
 def ag_grid_api_argument():

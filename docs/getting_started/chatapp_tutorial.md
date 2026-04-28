@@ -112,7 +112,7 @@ uv run reflex run
 
 You should see your app running at [http://localhost:3000](http://localhost:3000).
 
-Reflex also starts the backend server which handles all the state management and communication with the frontend. You can test the backend server is running by navigating to [http://localhost:8000/ping]({"http://localhost:8000/ping"}).
+Reflex also starts the backend server which handles all the state management and communication with the frontend. You can test the backend server is running by navigating to [http://localhost:8000/ping](http://localhost:8000/ping).
 
 Now that we have our project set up, in the next section we will start building our app!
 
@@ -627,6 +627,7 @@ import os
 
 from openai import AsyncOpenAI
 
+
 @rx.event
 async def answer(self):
     # Our chatbot has some brains now!
@@ -634,9 +635,7 @@ async def answer(self):
 
     session = await client.chat.completions.create(
         model="gpt-4o-mini",
-        messages=[
-            \{"role": "user", "content": self.question}
-        ],
+        messages=[{"role": "user", "content": self.question}],
         stop=None,
         temperature=0.7,
         stream=True,
@@ -736,6 +735,7 @@ import os
 from openai import AsyncOpenAI
 import reflex as rx
 
+
 class State(rx.State):
     question: str
     chat_history: list[tuple[str, str]] = []
@@ -746,9 +746,7 @@ class State(rx.State):
         # Start streaming completion from OpenAI
         session = await client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[
-                \{"role": "user", "content": self.question}
-            ],
+            messages=[{"role": "user", "content": self.question}],
             temperature=0.7,
             stream=True,
         )

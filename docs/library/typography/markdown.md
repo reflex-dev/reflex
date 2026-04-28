@@ -33,7 +33,7 @@ rx.markdown("Pythagorean theorem: $a^2 + b^2 = c^2$.")
 
 ## Syntax Highlighting
 
-You can render code blocks with syntax highlighting using the \`\`\`\{language} syntax:
+You can render code blocks with syntax highlighting using the \`\`\`{language} syntax:
 
 ````python demo
 rx.markdown(

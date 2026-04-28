@@ -168,34 +168,6 @@ This component will be available at `/nested/page`.
 
 ## Page Metadata
 
-```python exec
-import reflex as rx
-
-meta_data = """
-@rx.page(
-    title='My Beautiful App',
-    description='A beautiful app built with Reflex',
-    image='https://web.reflex-assets.dev/other/logo.jpg',
-    meta=meta,
-)
-def index():
-    return rx.text('A Beautiful App')
-
-@rx.page(title='About Page')
-def about():
-    return rx.text('About Page')
-
-
-meta = [
-    {'name': 'theme_color', 'content': '#FFFFFF'},
-    {'char_set': 'UTF-8'},
-    {'property': 'og:url', 'content': 'url'},
-]
-
-app = rx.App()
-"""
-```
-
 You can add page metadata such as:
 
 - The title to be shown in the browser tab
@@ -204,7 +176,28 @@ You can add page metadata such as:
 - Any additional metadata
 
 ```python
-{meta_data}
+@rx.page(
+    title="My Beautiful App",
+    description="A beautiful app built with Reflex",
+    image="https://web.reflex-assets.dev/other/logo.jpg",
+    meta=meta,
+)
+def index():
+    return rx.text("A Beautiful App")
+
+
+@rx.page(title="About Page")
+def about():
+    return rx.text("About Page")
+
+
+meta = [
+    {"name": "theme_color", "content": "#FFFFFF"},
+    {"char_set": "UTF-8"},
+    {"property": "og:url", "content": "url"},
+]
+
+app = rx.App()
 ```
 
 ## Getting the Current Page
