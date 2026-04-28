@@ -127,7 +127,6 @@ def more_posts(current_post: dict) -> rx.Component:
                 ),
                 underline="none",
                 href="/docs/getting-started/open-source-templates/",
-                target="_blank",
             ),
             class_name="flex flex-row items-center justify-between gap-4",
         ),
