@@ -550,7 +550,7 @@ def generate_dynamic_api_reference_files() -> tuple[tuple[Path, str], ...]:
             module, *extra_modules = module
             for extra_module in extra_modules:
                 extra_fields.extend(generate_class_documentation(extra_module).fields)
-        slug = re.sub(r"(?<!^)(?=[A-Z])", "-", module.__name__).lower()
+        slug = module.__name__.lower()
         files.append(
             generate_class_api_reference_markdown(
                 url_path=Path(f"api-reference/{slug}.md"),

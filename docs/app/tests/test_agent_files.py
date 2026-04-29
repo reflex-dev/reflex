@@ -179,17 +179,18 @@ def test_generate_dynamic_api_reference_files(monkeypatch):
     assert "`reflex_base.vars.base.Var`" in files[Path("api-reference/var.md")]
     assert Path("api-reference/var-system.md") not in files
 
-    # CamelCase class names produce kebab-case slugs and human-readable titles.
-    assert Path("api-reference/event-handler.md") in files
-    assert files[Path("api-reference/event-handler.md")].startswith(
+    # Dynamic API markdown files match the existing lowercase page routes.
+    assert Path("api-reference/eventhandler.md") in files
+    assert files[Path("api-reference/eventhandler.md")].startswith(
         "> For AI agents: the complete documentation index is at "
         "[llms.txt](https://reflex.dev/docs/llms.txt). Markdown versions are "
         "available by appending `.md` or sending `Accept: text/markdown`.\n\n"
-        "# Event Handler\n\n"
+        "# Eventhandler\n\n"
     )
-    assert Path("api-reference/component-state.md") in files
-    assert Path("api-reference/state-manager.md") in files
-    assert Path("api-reference/import-var.md") in files
+    assert Path("api-reference/event-handler.md") not in files
+    assert Path("api-reference/componentstate.md") in files
+    assert Path("api-reference/statemanager.md") in files
+    assert Path("api-reference/importvar.md") in files
 
     env_vars = files[Path("api-reference/environment-variables.md")]
     assert env_vars.startswith(
@@ -205,7 +206,7 @@ def test_generate_dynamic_api_reference_files(monkeypatch):
     assert "### API Reference" in llms_txt
     assert "[Var](https://reflex.dev/docs/api-reference/var.md)" in llms_txt
     assert (
-        "[Event Handler](https://reflex.dev/docs/api-reference/event-handler.md)"
+        "[Eventhandler](https://reflex.dev/docs/api-reference/eventhandler.md)"
         in llms_txt
     )
 
@@ -248,14 +249,14 @@ def test_generate_llms_full_txt_stitches_markdown_docs(monkeypatch, tmp_path):
         [
             (
                 MarkdownIndexEntry(
-                    url_path=Path("api-reference/event-handler.md"),
-                    title="Event Handler",
+                    url_path=Path("api-reference/eventhandler.md"),
+                    title="Eventhandler",
                     section="API Reference",
                 ),
                 "> For AI agents: the complete documentation index is at "
                 "[llms.txt](https://reflex.dev/docs/llms.txt). Markdown versions are "
                 "available by appending `.md` or sending `Accept: text/markdown`.\n\n"
-                "# Event Handler\n\n"
+                "# Eventhandler\n\n"
                 "`reflex_base.event.EventHandler`\n",
             )
         ],
@@ -279,8 +280,8 @@ def test_generate_llms_full_txt_stitches_markdown_docs(monkeypatch, tmp_path):
         "Use props to configure components."
     ) in content
     assert (
-        "# Event Handler\n"
-        "Source: https://reflex.dev/docs/api-reference/event-handler.md\n\n"
+        "# Eventhandler\n"
+        "Source: https://reflex.dev/docs/api-reference/eventhandler.md\n\n"
         "`reflex_base.event.EventHandler`"
     ) in content
     assert "For AI agents: the complete documentation index" not in content
