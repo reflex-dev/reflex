@@ -44,7 +44,6 @@ from .config import (
     PyprojectToml,
     RequirementsTxt,
 )
-from .custom_components import CustomComponents
 from .event import Endpoint, EventTriggers, SocketEvent
 from .installer import Bun, Node, PackageJson
 from .route import (
@@ -85,7 +84,6 @@ __all__ = [
     "CompileVars",
     "ComponentName",
     "Config",
-    "CustomComponents",
     "DefaultPage",
     "DefaultPorts",
     "Dirs",

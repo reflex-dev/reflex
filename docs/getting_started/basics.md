@@ -57,7 +57,7 @@ def my_div():
     )
 ```
 
-If you need a component not provided by Reflex, you can check the [3rd party ecosystem](/docs/custom-components) or [wrap your own React component](/docs/wrapping-react/library-and-tags).
+If you need a component not provided by Reflex, you can [wrap your own React component](/docs/wrapping-react/library-and-tags).
 
 ## Customizing and styling components
 

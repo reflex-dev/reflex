@@ -114,7 +114,7 @@ Many of our core components are based on [Radix](https://radix-ui.com/), a popul
 
 We chose React because it is a popular library with a huge ecosystem. Our goal isn't to recreate the web ecosystem, but to make it accessible to Python developers.
 
-This also lets our users bring their own components if we don't have a component they need. Users can [wrap their own React components](/docs/wrapping-react/overview) and then [publish them](/docs/custom-components/overview) for others to use. Over time we will build out our [third party component ecosystem](/docs/custom-components/overview) so that users can easily find and use components that others have built.
+This also lets our users bring their own components if we don't have a component they need. Users can [wrap their own React components](/docs/wrapping-react/overview) for use in their apps.
 
 ### Styling
 
