@@ -1,8 +1,11 @@
 import re
+import textwrap
 from collections import OrderedDict
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from types import SimpleNamespace, UnionType
+from typing import Any, Literal, Union, get_args, get_origin
 
 from reflex.constants import Dirs
 from reflex_base.plugins import CommonContext, Plugin
@@ -45,6 +48,14 @@ MARKDOWN_DIRECTIVE = (
     "[llms.txt]({llms_txt_url}). Markdown versions are available by appending "
     "`.md` or sending `Accept: text/markdown`."
 )
+PUBLIC_LLMS_TXT_URL = "https://reflex.dev/docs/llms.txt"
+PUBLIC_EVENT_TRIGGERS_URL = "https://reflex.dev/docs/api-reference/event-triggers/"
+MARKDOWN_TABLE_COLUMN_WIDTHS = {
+    2: (32, 80),
+    3: (24, 36, 72),
+    4: (22, 38, 11, 64),
+}
+MARKDOWN_TABLE_DEFAULT_COLUMN_WIDTH = 36
 
 
 @dataclass(frozen=True)
@@ -283,9 +294,7 @@ def _markdown_directive() -> str:
     Returns:
         The markdown blockquote directive.
     """
-    return MARKDOWN_DIRECTIVE.format(
-        llms_txt_url=_llms_url_for_path(Path("llms.txt"))
-    ).strip()
+    return MARKDOWN_DIRECTIVE.format(llms_txt_url=PUBLIC_LLMS_TXT_URL).strip()
 
 
 def generate_markdown_file_content(entry: MarkdownFileEntry) -> str:
@@ -298,7 +307,160 @@ def generate_markdown_file_content(entry: MarkdownFileEntry) -> str:
         The generated markdown content.
     """
     source = entry.source_path.read_text(encoding="utf-8").lstrip()
-    return f"{_markdown_directive()}\n\n{source}"
+    component_reference = _component_api_reference_markdown(entry.source_path)
+    body = source.rstrip()
+    if component_reference:
+        body = f"{body}\n\n{component_reference}"
+    return f"{_markdown_directive()}\n\n{body.rstrip()}\n"
+
+
+def _literal_display(value: Any) -> str:
+    """Return a readable display value for a Literal option."""
+    return f'"{value}"' if isinstance(value, str) else repr(value)
+
+
+def _type_name(type_: Any) -> str:
+    """Return a readable name for a type."""
+    if type_ is None:
+        return "None"
+    name = getattr(type_, "__name__", None)
+    if name:
+        return name
+    return str(type_).replace("typing.", "")
+
+
+def _component_prop_type_display(type_: Any) -> str:
+    """Return a markdown-friendly display type for a component prop."""
+    import reflex as rx
+
+    origin = get_origin(type_)
+    try:
+        if issubclass(origin, rx.Var):
+            type_ = get_args(type_)[0]
+            origin = get_origin(type_)
+    except TypeError:
+        pass
+
+    args = get_args(type_)
+    if origin is Literal:
+        literal_values = [arg for arg in args if str(arg) != ""]
+        displayed_values = [_literal_display(arg) for arg in literal_values[:4]]
+        if len(literal_values) > 4:
+            displayed_values.append("...")
+        return f"Literal[{', '.join(displayed_values)}]"
+    if origin in (Union, UnionType):
+        displays = []
+        for arg in args:
+            display = _component_prop_type_display(arg)
+            if display and display not in displays:
+                displays.append(display)
+        return ", ".join(displays)
+    if origin is not None and args:
+        return f"{_type_name(origin)}[{', '.join(_component_prop_type_display(arg) for arg in args)}]"
+    return _type_name(type_)
+
+
+def _component_prop_description_display(description: str | None) -> str:
+    """Return a markdown-friendly display description for a component prop."""
+    return (description or "").replace(" | ", ", ")
+
+
+def _component_from_frontmatter_ref(component_ref: str):
+    """Resolve a component reference from a docs frontmatter component entry."""
+    import reflex as rx
+    from reflex_components_core.core.cond import Cond
+    from reflex_pyplot import pyplot as pyplot
+
+    component = (
+        Cond
+        if component_ref == "rx.cond"
+        else eval(component_ref, {"rx": rx, "pyplot": pyplot})
+    )
+    if isinstance(component, type):
+        return component
+    if hasattr(component, "__self__"):
+        return component.__self__
+    if isinstance(component, SimpleNamespace) and hasattr(component, "__call__"):  # noqa: B004
+        return component.__call__.__self__
+    msg = f"Invalid component: {component}"
+    raise ValueError(msg)
+
+
+def _component_refs_from_source(source_path: Path) -> tuple[tuple[type, str], ...]:
+    """Return component classes and display refs from a markdown source file."""
+    from reflex_docgen.markdown import parse_document
+
+    source = source_path.read_text(encoding="utf-8")
+    doc = parse_document(source)
+    if doc.frontmatter is None:
+        return ()
+    component_refs = getattr(doc.frontmatter, "components", ()) or ()
+    return tuple(
+        (_component_from_frontmatter_ref(component_ref), component_ref)
+        for component_ref in component_refs
+    )
+
+
+def _component_api_reference_markdown(source_path: Path) -> str:
+    """Generate the component API reference section for a markdown docs page."""
+    from reflex_docgen import generate_documentation
+
+    components = _component_refs_from_source(source_path)
+    if not components:
+        return ""
+
+    lines = ["## API Reference", ""]
+    component_display_name_map = {
+        "rx.el.Del": "rx.el.del",
+    }
+    for component, component_ref in components:
+        doc = generate_documentation(component)
+        display_name = component_display_name_map.get(component_ref, component_ref)
+        lines.extend([f"### {display_name}", ""])
+        if doc.description:
+            lines.extend([doc.description.strip(), ""])
+
+        props_table = _markdown_table(
+            ["Prop", "Type", "Default", "Description"],
+            [
+                (
+                    f"`{prop.name}`",
+                    _component_prop_type_display(prop.type),
+                    f"`{prop.default_value}`"
+                    if prop.default_value is not None
+                    else "-",
+                    _component_prop_description_display(prop.description),
+                )
+                for prop in doc.props
+                if not prop.name.startswith("on_")
+            ],
+        )
+        if props_table:
+            lines.extend(["#### Props", "", *props_table, ""])
+
+        custom_event_handlers = [
+            handler for handler in doc.event_handlers if not handler.is_inherited
+        ]
+        event_table = _markdown_table(
+            ["Event Trigger", "Description"],
+            [
+                (
+                    f"`{handler.name}`",
+                    handler.description or "",
+                )
+                for handler in custom_event_handlers
+            ],
+        )
+        lines.extend([
+            "#### Event Triggers",
+            "",
+            f"Base event triggers: {PUBLIC_EVENT_TRIGGERS_URL}",
+            "",
+        ])
+        if event_table:
+            lines.extend(["Component-specific event triggers:", "", *event_table, ""])
+
+    return "\n".join(lines).rstrip()
 
 
 def _escape_table_cell(value: str) -> str:
@@ -325,13 +487,56 @@ def _markdown_table(headers: Sequence[str], rows: Sequence[Sequence[str]]) -> li
     """
     if not rows:
         return []
+    escaped_headers = [_escape_table_cell(header) for header in headers]
+    escaped_rows = [[_escape_table_cell(cell) for cell in row] for row in rows]
+    configured_widths = MARKDOWN_TABLE_COLUMN_WIDTHS.get(
+        len(escaped_headers),
+        (MARKDOWN_TABLE_DEFAULT_COLUMN_WIDTH,) * len(escaped_headers),
+    )
+    widths = [
+        max(
+            3,
+            len(escaped_headers[index]),
+            configured_widths[index],
+        )
+        for index in range(len(escaped_headers))
+    ]
+
+    def table_row(cells: Sequence[str]) -> str:
+        return (
+            "| "
+            + " | ".join(cell.ljust(widths[index]) for index, cell in enumerate(cells))
+            + " |"
+        )
+
+    def wrapped_cell(cell: str, width: int) -> list[str]:
+        normalized_cell = re.sub(r"\s+", " ", cell).strip()
+        if not normalized_cell:
+            return [""]
+        return textwrap.wrap(
+            normalized_cell,
+            width=width,
+            break_long_words=True,
+            break_on_hyphens=False,
+        ) or [""]
+
+    def wrapped_rows(row: Sequence[str]) -> list[str]:
+        cells = [
+            wrapped_cell(cell, width) for cell, width in zip(row, widths, strict=True)
+        ]
+        row_height = max(len(cell) for cell in cells)
+        return [
+            table_row([
+                cell_lines[line_index] if line_index < len(cell_lines) else ""
+                for cell_lines in cells
+            ])
+            for line_index in range(row_height)
+        ]
+
     return [
-        "| " + " | ".join(headers) + " |",
-        "| " + " | ".join("---" for _ in headers) + " |",
-        *[
-            "| " + " | ".join(_escape_table_cell(cell) for cell in row) + " |"
-            for row in rows
-        ],
+        table_row(escaped_headers),
+        "| " + " | ".join("-" * width for width in widths) + " |",
+        *[line for row in escaped_rows for line in wrapped_rows(row)],
     ]
 
 
@@ -633,7 +838,9 @@ def generate_llms_full_txt(
         "",
     ]
     for entry in markdown_files:
-        source = _strip_first_heading(entry.source_path.read_text(encoding="utf-8"))
+        source = _strip_first_heading(
+            _strip_markdown_directive(generate_markdown_file_content(entry))
+        )
         lines.extend([
             f"# {entry.title}",
             f"Source: {_llms_url_for_path(entry.url_path)}",
