@@ -87,12 +87,23 @@ EXCLUDED_COMPONENTS = [
 
 
 _PILL_BTN_CLASS = (
-    "text-sm font-medium cursor-pointer rounded-md px-2.5 py-1 text-secondary-11 "
-    "border border-secondary-5 bg-secondary-1 hover:bg-secondary-3 transition-colors"
+    "inline-flex h-7 cursor-pointer items-center justify-center rounded-md "
+    "border border-slate-5 bg-slate-1 px-2.5 text-sm font-medium text-slate-11 "
+    "transition-colors hover:border-slate-6 hover:bg-slate-2 hover:text-slate-12 "
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-7"
 )
 _PILL_BTN_ACTIVE_CLASS = (
-    "text-sm font-medium cursor-pointer rounded-md px-2.5 py-1 text-secondary-12 "
-    "border border-secondary-8 bg-secondary-4"
+    "inline-flex h-7 cursor-pointer items-center justify-center rounded-md "
+    "border border-slate-8 bg-slate-3 px-2.5 text-sm font-medium text-slate-12 "
+    "shadow-[inset_0_0_0_1px_var(--c-slate-6)] transition-colors "
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-7"
+)
+_PROPS_TABLE_CELL_CLASS = "min-w-0 px-4 py-3 align-top"
+_PROPS_TABLE_HEADER_CLASS = "px-4 py-3 text-left text-xs font-semibold text-slate-10"
+_PROPS_TABLE_COMPACT_CELL_CLASS = (
+    "cell-content max-h-[4.25rem] overflow-hidden "
+    "[mask-image:linear-gradient(to_bottom,black_82%,transparent)] "
+    "[-webkit-mask-image:linear-gradient(to_bottom,black_82%,transparent)]"
 )
 
 
@@ -106,14 +117,14 @@ def _pill_button(label: str, active, on_click) -> rx.Component:
 
 
 def _pill_row(values, var, setter) -> rx.Component:
-    return rx.box(
+    return rx.el.div(
         *[_pill_button(v, var == v, setter(v)) for v in values],
         class_name="flex flex-wrap gap-1.5",
     )
 
 
 def _bool_pills(var, setter) -> rx.Component:
-    return rx.box(
+    return rx.el.div(
         _pill_button("false", ~var, setter(False)),
         _pill_button("true", var, setter(True)),
         class_name="flex flex-wrap gap-1.5",
@@ -191,12 +202,17 @@ def render_select(prop: PropDocumentation, component: type[Component], prop_dict
 
     if prop.name == "color_scheme":
         return ui.popover(
-            trigger=rx.button(
-                rx.text(var, class_name="text-sm font-medium"),
+            trigger=rx.el.button(
+                rx.el.span(var, class_name="text-sm font-medium"),
                 ui.icon("ArrowDown01Icon"),
-                color_scheme=var,
-                variant="surface",
-                class_name="w-32 justify-between cursor-pointer",
+                type="button",
+                class_name=(
+                    "inline-flex h-8 w-32 cursor-pointer items-center justify-between "
+                    "rounded-md border border-slate-5 bg-slate-1 px-2.5 text-slate-11 "
+                    "transition-colors hover:border-slate-6 hover:bg-slate-2 "
+                    "hover:text-slate-12 focus-visible:outline-none "
+                    "focus-visible:ring-2 focus-visible:ring-slate-7"
+                ),
             ),
             content=rx.box(
                 *[
@@ -239,26 +255,6 @@ def hovercard(trigger: rx.Component, content: rx.Component) -> rx.Component:
     )
 
 
-def color_scheme_hovercard(literal_values: list[str]) -> rx.Component:
-    return hovercard(
-        rx.icon(tag="palette", size=15, class_name="!text-slate-9 shrink-0"),
-        rx.grid(
-            *[
-                rx.tooltip(
-                    rx.box(
-                        bg=f"var(--{color}-9)", class_name="rounded-md size-8 shrink-0"
-                    ),
-                    content=color,
-                    delay_duration=0,
-                )
-                for color in literal_values
-            ],
-            columns="6",
-            spacing="3",
-        ),
-    )
-
-
 def safe_issubclass(cls, class_or_tuple):
     try:
         return issubclass(cls, class_or_tuple)
@@ -269,7 +265,7 @@ def safe_issubclass(cls, class_or_tuple):
 def prop_docs(
     prop: PropDocumentation,
     component: type[Component],
-) -> tuple[list[rx.Component], bool]:
+) -> tuple[list[rx.Component], bool, str | None, rx.Var | None]:
     """Generate the docs for a prop."""
     # Get the type of the prop.
     type_ = prop.type
@@ -345,106 +341,128 @@ def prop_docs(
         literal_values and len(literal_values) > 8 and prop.name not in common_types
     )
 
+    expanded_name = None
+    expanded = None
+    if is_long_row:
+        expanded_name = get_id(f"{component.__qualname__}_{prop.name}_expanded")
+        PropDocsState.add_var(expanded_name, bool, False)
+        expanded = getattr(PropDocsState, expanded_name)
+        PropDocsState._create_setter(expanded_name, expanded)
+
     cell_content_class = (
-        (
-            "cell-content max-h-[6.5em] overflow-hidden "
-            "[mask-image:linear-gradient(to_bottom,black_85%,transparent)] "
-            "[-webkit-mask-image:linear-gradient(to_bottom,black_85%,transparent)]"
-        )
-        if is_long_row
+        rx.cond(expanded, "cell-content", _PROPS_TABLE_COMPACT_CELL_CLASS)
+        if expanded is not None
         else "cell-content"
     )
 
     # Return the docs for the prop.
-    return [
-        rx.table.cell(
-            rx.box(
-                rx.code(prop.name, class_name="code-style text-nowrap leading-normal"),
-                class_name=cell_content_class,
-            ),
-            class_name="justify-start pl-4 align-top py-3",
-        ),
-        rx.table.cell(
-            rx.box(
+    return (
+        [
+            rx.el.td(
                 rx.box(
-                    rx.box(
-                        *(
-                            [
-                                rx.code(
-                                    f'"{v}"',
-                                    color_scheme=color,
-                                    variant="soft",
-                                    class_name="code-style leading-normal text-nowrap",
-                                )
-                                for v in literal_values
-                            ]
-                            if literal_values and prop.name not in common_types
-                            else [
-                                rx.code(
-                                    type_name,
-                                    color_scheme=color,
-                                    variant="soft",
-                                    class_name="code-style leading-normal whitespace-normal break-words",
-                                )
-                            ]
+                    rx.el.div(
+                        rx.code(
+                            prop.name,
+                            class_name="code-style text-nowrap leading-normal",
                         ),
-                        class_name="flex flex-wrap gap-1",
+                        rx.icon(
+                            "chevron-down",
+                            size=14,
+                            class_name=rx.cond(
+                                expanded,
+                                "row-expand-icon mt-0.5 shrink-0 rotate-180 text-slate-9 opacity-100 transition-[opacity,transform]",
+                                "row-expand-icon mt-0.5 shrink-0 text-slate-9 opacity-0 transition-[opacity,transform] group-hover:opacity-100",
+                            ),
+                        )
+                        if expanded is not None
+                        else rx.fragment(),
+                        class_name="flex items-start gap-1.5",
                     ),
                     class_name=cell_content_class,
                 ),
-                rx.cond(
-                    (origin == Union)
-                    & (
-                        "Breakpoints" in all_types
-                    ),  # Display that the type is Union with Breakpoints
-                    hovercard(
-                        rx.icon(
-                            tag="info",
-                            size=15,
-                            class_name="!text-slate-9 shrink-0",
+                class_name=ui.cn(_PROPS_TABLE_CELL_CLASS, "w-[20%]"),
+            ),
+            rx.el.td(
+                rx.box(
+                    rx.box(
+                        rx.box(
+                            *(
+                                [
+                                    rx.code(
+                                        f'"{v}"',
+                                        color_scheme=color,
+                                        variant="soft",
+                                        class_name="code-style leading-normal text-nowrap",
+                                    )
+                                    for v in literal_values
+                                ]
+                                if literal_values and prop.name not in common_types
+                                else [
+                                    rx.code(
+                                        type_name,
+                                        color_scheme=color,
+                                        variant="soft",
+                                        class_name="code-style leading-normal whitespace-normal break-words",
+                                    )
+                                ]
+                            ),
+                            class_name="flex flex-wrap gap-1",
                         ),
-                        rx.text(
-                            f"Union[{', '.join(all_types)}]",
-                            class_name="font-small text-slate-11",
+                        class_name=cell_content_class,
+                    ),
+                    rx.cond(
+                        (origin == Union)
+                        & (
+                            "Breakpoints" in all_types
+                        ),  # Display that the type is Union with Breakpoints
+                        hovercard(
+                            rx.icon(
+                                tag="info",
+                                size=15,
+                                class_name="!text-slate-9 shrink-0",
+                            ),
+                            rx.text(
+                                f"Union[{', '.join(all_types)}]",
+                                class_name="font-small text-slate-11",
+                            ),
                         ),
                     ),
+                    class_name="flex flex-row items-start gap-2",
                 ),
-                rx.cond(
-                    (prop.name == "color_scheme") | (prop.name == "accent_color"),
-                    color_scheme_hovercard(literal_values),
-                ),
-                class_name="flex flex-row items-start gap-2",
+                class_name=ui.cn(_PROPS_TABLE_CELL_CLASS, "w-[34%]"),
             ),
-            class_name="justify-start pl-4 align-top py-3",
-        ),
-        rx.table.cell(
-            rx.box(
-                rx.code(
-                    default_value,
-                    style=get_code_style(
-                        "red"
-                        if default_value == "False"
-                        else "green"
-                        if default_value == "True"
-                        else "gray"
+            rx.el.td(
+                rx.box(
+                    rx.code(
+                        default_value,
+                        style=get_code_style(
+                            "red"
+                            if default_value == "False"
+                            else "green"
+                            if default_value == "True"
+                            else "gray"
+                        ),
+                        class_name="code-style leading-normal text-nowrap",
                     ),
-                    class_name="code-style leading-normal text-nowrap",
+                    class_name=cell_content_class,
                 ),
-                class_name=cell_content_class,
+                class_name=ui.cn(_PROPS_TABLE_CELL_CLASS, "w-[12%]"),
             ),
-            class_name="justify-start pl-4 align-top py-3",
-        ),
-        rx.table.cell(
-            rx.box(
-                rx.text(
-                    description,
-                    class_name="font-small text-slate-11 whitespace-normal leading-snug break-words",
+            rx.el.td(
+                rx.box(
+                    rx.text(
+                        description,
+                        class_name="font-small text-slate-11 whitespace-normal leading-snug break-words",
+                    ),
+                    class_name=cell_content_class,
                 ),
-                class_name=cell_content_class,
+                class_name=ui.cn(_PROPS_TABLE_CELL_CLASS, "w-[34%]"),
             ),
-            class_name="justify-start pl-4 align-top py-3 w-full",
-        ),
-    ], is_long_row
+        ],
+        is_long_row,
+        expanded_name,
+        expanded,
+    )
 
 
 def generate_props(
@@ -460,10 +478,6 @@ def generate_props(
             rx.text("No component specific props", class_name="text-slate-9 font-base"),
             class_name="flex flex-col overflow-x-auto justify-start py-2 w-full",
         )
-
-    table_header_class_name = (
-        "text-xs text-secondary-11 w-auto justify-start pl-4 font-semibold capitalize"
-    )
 
     prop_dict = {}
 
@@ -514,69 +528,27 @@ def generate_props(
             if not isinstance(control, Fragment):
                 interactive_controls.append((prop, control))
 
-    def _toggle_row() -> rx.Component:
-        return rx.el.tr(
-            rx.el.td(
-                rx.el.details(
-                    rx.el.summary(
-                        rx.el.span(
-                            "Show more",
-                            rx.icon(
-                                "chevron-down",
-                                size=12,
-                                class_name="inline-block align-[-2px] ml-1",
-                            ),
-                            class_name="group-open/details:hidden",
-                        ),
-                        rx.el.span(
-                            "Show less",
-                            rx.icon(
-                                "chevron-up",
-                                size=12,
-                                class_name="inline-block align-[-2px] ml-1",
-                            ),
-                            class_name="hidden group-open/details:inline",
-                        ),
-                        class_name=(
-                            "block list-none cursor-pointer text-center text-xs "
-                            "font-medium text-slate-11 hover:text-slate-12 py-2 "
-                            "[&::-webkit-details-marker]:hidden [&::marker]:hidden"
-                        ),
-                    ),
-                    class_name="group/details",
-                ),
-                col_span=4,
-                class_name=(
-                    "!p-0 !border-t-0 [box-shadow:0_-1px_0_0_var(--gray-a4)_inset]"
-                ),
-            ),
-            class_name="api-toggle-row bg-slate-2",
-        )
-
-    data_row_class = (
-        "[&:has(+_tr.api-toggle-row_details[open])_.cell-content]:!max-h-none "
-        "[&:has(+_tr.api-toggle-row_details[open])_.cell-content]:!overflow-visible "
-        "[&:has(+_tr.api-toggle-row_details[open])_.cell-content]:![mask-image:none] "
-        "[&:has(+_tr.api-toggle-row_details[open])_.cell-content]:![-webkit-mask-image:none] "
-        "[&>td]:!shadow-none"
-    )
-
     rows: list[rx.Component] = []
     for prop in prop_list:
         if prop.name.startswith("on_"):  # ignore event trigger props
             continue
-        cells, is_long_row = prop_docs(prop, component)
+        cells, is_long_row, expanded_name, expanded = prop_docs(prop, component)
+        row_props = {
+            "class_name": ui.cn(
+                "border-b border-slate-4 last:border-b-0 transition-colors hover:bg-slate-2",
+                "group cursor-pointer" if is_long_row else "",
+            )
+        }
+        if is_long_row and expanded_name is not None and expanded is not None:
+            row_props["on_click"] = PropDocsState.setvar(expanded_name, ~expanded)
         rows.append(
-            rx.table.row(
+            rx.el.tr(
                 *cells,
-                align="center",
-                class_name=data_row_class if is_long_row else "",
+                **row_props,
             )
         )
-        if is_long_row:
-            rows.append(_toggle_row())
 
-    body = rx.table.body(*rows, class_name="bg-slate-2")
+    body = rx.el.tbody(*rows, class_name="bg-slate-1")
 
     comp: rx.Component
     try:
@@ -745,8 +717,8 @@ def generate_props(
                 code_children.append(_render_dynamic_prop("    ", p, var))
             code_children.append(rx.el.div(")", class_name=line_class))
 
-        interactive_component = rx.box(
-            rx.box(
+        interactive_component = rx.el.div(
+            rx.el.div(
                 comp,
                 class_name=(
                     "flex flex-col items-center justify-center p-6 flex-1 "
@@ -754,7 +726,7 @@ def generate_props(
                     "border-slate-4 min-w-0"
                 ),
             ),
-            rx.box(
+            rx.el.div(
                 *code_children,
                 class_name="flex-1 p-4 bg-slate-1 min-w-0 overflow-x-auto",
             ),
@@ -768,19 +740,26 @@ def generate_props(
 
     controls_panel: rx.Component = rx.fragment()
     if not isinstance(comp, Fragment) and interactive_controls:
-        controls_panel = rx.box(
+        controls_panel = rx.el.div(
             *[
-                rx.box(
+                rx.el.div(
                     rx.code(
                         prop.name,
                         class_name="code-style text-nowrap leading-normal text-slate-11",
                     ),
                     control,
-                    class_name="grid grid-cols-[8rem_1fr] gap-4 items-start",
+                    class_name=(
+                        "grid grid-cols-[8rem_minmax(0,1fr)] items-start gap-4 "
+                        "border-b border-slate-4 px-4 py-3 transition-colors "
+                        "last:border-b-0 hover:bg-slate-2"
+                    ),
                 )
                 for prop, control in interactive_controls
             ],
-            class_name="flex flex-col gap-3 border border-secondary-4 rounded-md p-4 bg-secondary-1 mb-4 w-full",
+            class_name=(
+                "mb-4 w-full min-w-0 overflow-hidden rounded-xl border "
+                "border-slate-4 bg-slate-1 shadow-small"
+            ),
         )
 
     return rx.vstack(
@@ -792,41 +771,32 @@ def generate_props(
             class_name="font-large text-slate-12 mt-4 mb-2 text-left self-start",
         ),
         rx.box(
-            rx.table.root(
-                rx.el.style(
-                    """
-                    .rt-TableRoot:where(.rt-variant-surface) :where(.rt-TableRootTable) :where(.rt-TableHeader) {
-                    --table-row-background-color: "transparent"
-                    }
-                    """
-                ),
-                rx.table.header(
-                    rx.table.row(
-                        rx.table.column_header_cell(
-                            "prop",
-                            class_name=ui.cn(table_header_class_name, "w-[9rem]"),
+            rx.el.table(
+                rx.el.thead(
+                    rx.el.tr(
+                        rx.el.th(
+                            "Prop",
+                            class_name=ui.cn(_PROPS_TABLE_HEADER_CLASS, "w-[20%]"),
                         ),
-                        rx.table.column_header_cell(
-                            "type",
-                            class_name=ui.cn(table_header_class_name, "w-[34rem]"),
+                        rx.el.th(
+                            "Type",
+                            class_name=ui.cn(_PROPS_TABLE_HEADER_CLASS, "w-[34%]"),
                         ),
-                        rx.table.column_header_cell(
-                            "default",
-                            class_name=ui.cn(table_header_class_name, "w-[4rem]"),
+                        rx.el.th(
+                            "Default",
+                            class_name=ui.cn(_PROPS_TABLE_HEADER_CLASS, "w-[12%]"),
                         ),
-                        rx.table.column_header_cell(
-                            "description",
-                            class_name=ui.cn(table_header_class_name, "w-[18rem]"),
+                        rx.el.th(
+                            "Description",
+                            class_name=ui.cn(_PROPS_TABLE_HEADER_CLASS, "w-[34%]"),
                         ),
                     ),
-                    class_name="bg-secondary-2",
+                    class_name="border-b border-slate-4 bg-slate-2",
                 ),
                 body,
-                variant="surface",
-                size="1",
-                class_name="px-0 border border-slate-4 w-full",
+                class_name="w-full table-fixed border-collapse text-left",
             ),
-            class_name="mb-4 w-full overflow-hidden",
+            class_name="mb-4 w-full min-w-0 overflow-hidden rounded-xl border border-slate-4 bg-slate-1 shadow-small",
         ),
     )
 
