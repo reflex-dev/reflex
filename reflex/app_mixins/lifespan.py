@@ -102,9 +102,7 @@ class LifespanMixin(AppMixin):
                         if "app" in signature.parameters:
                             task = functools.partial(task, app=self)
                         if "starlette_app" in signature.parameters:
-                            task = functools.partial(
-                                task, starlette_app=starlette_app
-                            )
+                            task = functools.partial(task, starlette_app=starlette_app)
                         t_ = task()
                         if isinstance(t_, contextlib._AsyncGeneratorContextManager):
                             await stack.enter_async_context(t_)
