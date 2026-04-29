@@ -65,7 +65,9 @@ def get_category_children(category, category_list, prefix=""):
             link=get_component_link(category, c, prefix=prefix),
         )
         category_item_children.append(item)
-    return SideBarItem(names=get_display_name(category), children=category_item_children)
+    return SideBarItem(
+        names=get_display_name(category), children=category_item_children
+    )
 
 
 def get_sidebar_items_component_lib():
@@ -90,15 +92,13 @@ def get_sidebar_items_html():
     html_children = [
         SideBarItem(names="Overview", link="/library/html/"),
     ]
-    html_children.extend(
-        [
-            SideBarItem(
-                names=get_display_name(component[0]),
-                link=get_component_link("Html", component),
-            )
-            for component in sort_html_components(component_list.get("Html", []))
-        ]
-    )
+    html_children.extend([
+        SideBarItem(
+            names=get_display_name(component[0]),
+            link=get_component_link("Html", component),
+        )
+        for component in sort_html_components(component_list.get("Html", []))
+    ])
     return [SideBarItem(names="HTML", children=html_children)]
 
 
