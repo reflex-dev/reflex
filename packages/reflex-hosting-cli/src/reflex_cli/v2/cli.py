@@ -386,6 +386,7 @@ def deploy(
             console.error(
                 """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.0.1"`."""
             )
+            raise click.exceptions.Exit(1) from None
 
     # Compile the app in production mode: backend first then frontend.
     temporary_dir = tempfile.TemporaryDirectory()
