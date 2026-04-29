@@ -201,14 +201,16 @@ def test_generate_markdown_file_content_appends_component_props_table(
     assert "Type" in props_rows[0]
     assert "Default" in props_rows[0]
     assert "Description" in props_rows[0]
-    assert len({len(row) for row in props_rows}) == 1
-    assert max(len(row) for row in props_rows) <= 150
+    assert props_rows[1] == "| --- | --- | --- | --- |"
     assert "Literal[...]" not in props_table
     assert "\\|" not in props_table
-    assert any(row.startswith("| `variant`") for row in props_rows)
-    assert '"classic", "solid", "soft",' in props_table
-    assert '"surface", "outline", "ghost"' in props_table
-    assert any(row.split("|")[1].strip() == "" for row in props_rows[2:])
+    variant_rows = [row for row in props_rows if row.startswith("| `variant`")]
+    assert len(variant_rows) == 1
+    assert (
+        'Literal["classic", "solid", "soft", "surface", "outline", "ghost"]'
+        in variant_rows[0]
+    )
+    assert not any(row.split("|")[1].strip() == "" for row in props_rows[2:])
 
 
 def test_generate_dynamic_api_reference_files(monkeypatch):

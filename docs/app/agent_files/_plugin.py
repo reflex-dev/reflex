@@ -1,5 +1,4 @@
 import re
-import textwrap
 from collections import OrderedDict
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -50,12 +49,6 @@ MARKDOWN_DIRECTIVE = (
 )
 PUBLIC_LLMS_TXT_URL = "https://reflex.dev/docs/llms.txt"
 PUBLIC_EVENT_TRIGGERS_URL = "https://reflex.dev/docs/api-reference/event-triggers/"
-MARKDOWN_TABLE_COLUMN_WIDTHS = {
-    2: (32, 80),
-    3: (24, 36, 72),
-    4: (22, 38, 11, 64),
-}
-MARKDOWN_TABLE_DEFAULT_COLUMN_WIDTH = 36
 
 
 @dataclass(frozen=True)
@@ -486,54 +479,11 @@ def _markdown_table(headers: Sequence[str], rows: Sequence[Sequence[str]]) -> li
         return []
     escaped_headers = [_escape_table_cell(header) for header in headers]
     escaped_rows = [[_escape_table_cell(cell) for cell in row] for row in rows]
-    configured_widths = MARKDOWN_TABLE_COLUMN_WIDTHS.get(
-        len(escaped_headers),
-        (MARKDOWN_TABLE_DEFAULT_COLUMN_WIDTH,) * len(escaped_headers),
-    )
-    widths = [
-        max(
-            3,
-            len(escaped_headers[index]),
-            configured_widths[index],
-        )
-        for index in range(len(escaped_headers))
-    ]
-
-    def table_row(cells: Sequence[str]) -> str:
-        return (
-            "| "
-            + " | ".join(cell.ljust(widths[index]) for index, cell in enumerate(cells))
-            + " |"
-        )
-
-    def wrapped_cell(cell: str, width: int) -> list[str]:
-        normalized_cell = re.sub(r"\s+", " ", cell).strip()
-        if not normalized_cell:
-            return [""]
-        return textwrap.wrap(
-            normalized_cell,
-            width=width,
-            break_long_words=True,
-            break_on_hyphens=False,
-        ) or [""]
-
-    def wrapped_rows(row: Sequence[str]) -> list[str]:
-        cells = [
-            wrapped_cell(cell, width) for cell, width in zip(row, widths, strict=True)
-        ]
-        row_height = max(len(cell) for cell in cells)
-        return [
-            table_row([
-                cell_lines[line_index] if line_index < len(cell_lines) else ""
-                for cell_lines in cells
-            ])
-            for line_index in range(row_height)
-        ]
 
     return [
-        table_row(escaped_headers),
-        "| " + " | ".join("-" * width for width in widths) + " |",
-        *[line for row in escaped_rows for line in wrapped_rows(row)],
+        "| " + " | ".join(escaped_headers) + " |",
+        "| " + " | ".join("---" for _ in escaped_headers) + " |",
+        *["| " + " | ".join(row) + " |" for row in escaped_rows],
     ]
 
 
