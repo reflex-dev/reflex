@@ -79,4 +79,4 @@ config = rx.Config(
 )
 ```
 
-We will discuss project structure and configuration in more detail in the [advanced project structure](/docs/advanced_onboarding/code_structure) documentation.
+We will discuss project structure and configuration in more detail in the [advanced project structure](/docs/advanced-onboarding/code-structure) documentation.

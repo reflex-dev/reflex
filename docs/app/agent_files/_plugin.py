@@ -40,6 +40,12 @@ This file stitches together the full Reflex documentation as Markdown for AI age
 For a navigable index with links to individual docs pages, see [llms.txt]({llms_txt_url}).
 """
 
+MARKDOWN_DIRECTIVE = (
+    "> For AI agents: the complete documentation index is at "
+    "[llms.txt]({llms_txt_url}). Markdown versions are available by appending "
+    "`.md` or sending `Accept: text/markdown`."
+)
+
 
 @dataclass(frozen=True)
 class MarkdownFileEntry:
@@ -47,6 +53,15 @@ class MarkdownFileEntry:
 
     url_path: Path
     source_path: Path
+    title: str
+    section: str
+
+
+@dataclass(frozen=True)
+class MarkdownIndexEntry:
+    """An llms.txt entry for generated markdown content."""
+
+    url_path: Path
     title: str
     section: str
 
@@ -144,8 +159,30 @@ def _strip_first_heading(source: str) -> str:
     return source.strip()
 
 
-def _include_in_llms_txt(markdown_file: MarkdownFileEntry) -> bool:
-    """Return whether a markdown file should appear in llms.txt."""
+def _strip_markdown_directive(source: str) -> str:
+    """Remove the generated agent discovery directive from markdown content.
+
+    Args:
+        source: The markdown content.
+
+    Returns:
+        The markdown content without the generated directive.
+    """
+    directive = _markdown_directive()
+    if source.startswith(directive):
+        return source.removeprefix(directive).lstrip()
+    return source
+
+
+def _include_index_entry_in_llms_txt(markdown_file: MarkdownIndexEntry) -> bool:
+    """Return whether an index entry should appear in llms.txt.
+
+    Args:
+        markdown_file: The markdown index entry.
+
+    Returns:
+        Whether the entry should be included in llms.txt.
+    """
     path = markdown_file.url_path.as_posix()
     return (
         path in MCP_DOC_PATHS
@@ -171,7 +208,7 @@ def _section_for_path(url_path: Path) -> str:
 
 
 def _ordered_sections(
-    sections: OrderedDict[str, list[MarkdownFileEntry]],
+    sections: OrderedDict[str, list[MarkdownIndexEntry]],
 ) -> list[str]:
     """Return sections in display order."""
     ordered_sections = list(sections)
@@ -193,8 +230,8 @@ def _ordered_sections(
 
 
 def _ordered_entries(
-    section: str, entries: list[MarkdownFileEntry]
-) -> list[MarkdownFileEntry]:
+    section: str, entries: list[MarkdownIndexEntry]
+) -> list[MarkdownIndexEntry]:
     """Return entries in display order within a section."""
     if section == "MCP":
         return sorted(
@@ -232,21 +269,328 @@ def generate_markdown_file_entries() -> tuple[MarkdownFileEntry, ...]:
     ])
 
 
-def generate_markdown_files() -> tuple[tuple[Path, str | bytes], ...]:
+def generate_markdown_files() -> tuple[tuple[Path, str], ...]:
     """Generate markdown asset contents for agent-friendly docs pages."""
     return tuple(
-        (entry.url_path, entry.source_path.read_bytes())
+        (entry.url_path, generate_markdown_file_content(entry))
         for entry in generate_markdown_file_entries()
     )
 
 
+def _markdown_directive() -> str:
+    """Return the standard agent discovery directive for generated markdown.
+
+    Returns:
+        The markdown blockquote directive.
+    """
+    return MARKDOWN_DIRECTIVE.format(
+        llms_txt_url=_llms_url_for_path(Path("llms.txt"))
+    ).strip()
+
+
+def generate_markdown_file_content(entry: MarkdownFileEntry) -> str:
+    """Generate a markdown asset body with the agent discovery directive.
+
+    Args:
+        entry: The markdown file metadata and source path.
+
+    Returns:
+        The generated markdown content.
+    """
+    source = entry.source_path.read_text(encoding="utf-8").lstrip()
+    return f"{_markdown_directive()}\n\n{source}"
+
+
+def _escape_table_cell(value: str) -> str:
+    """Escape content for a markdown table cell.
+
+    Args:
+        value: The cell content.
+
+    Returns:
+        The escaped cell content.
+    """
+    return value.replace("\n", " ").replace("|", "\\|")
+
+
+def _markdown_table(headers: Sequence[str], rows: Sequence[Sequence[str]]) -> list[str]:
+    """Return a markdown table.
+
+    Args:
+        headers: The table headers.
+        rows: The table rows.
+
+    Returns:
+        The markdown table lines.
+    """
+    if not rows:
+        return []
+    return [
+        "| " + " | ".join(headers) + " |",
+        "| " + " | ".join("---" for _ in headers) + " |",
+        *[
+            "| " + " | ".join(_escape_table_cell(cell) for cell in row) + " |"
+            for row in rows
+        ],
+    ]
+
+
+def generate_api_reference_markdown_content(
+    *,
+    title: str,
+    class_name: str,
+    description: str | None,
+    class_fields: Sequence[tuple[str, str, str]],
+    fields: Sequence[tuple[str, str, str]],
+    methods: Sequence[tuple[str, str]],
+) -> str:
+    """Generate markdown content for a dynamic API reference page.
+
+    Args:
+        title: The page title.
+        class_name: The documented class name.
+        description: The class description.
+        class_fields: The class field rows as name, type, description.
+        fields: The field rows as name, type, description.
+        methods: The method rows as signature, description.
+
+    Returns:
+        The generated markdown content.
+    """
+    lines = [
+        _markdown_directive(),
+        "",
+        f"# {title}",
+        "",
+        f"`{class_name}`",
+        "",
+    ]
+    if description:
+        lines.extend([description, ""])
+    for heading, field_rows in (
+        ("Class Fields", class_fields),
+        ("Fields", fields),
+    ):
+        table = _markdown_table(
+            ["Prop", "Description"],
+            [
+                (
+                    f"`{name}: {type_display}`",
+                    field_description,
+                )
+                for name, type_display, field_description in field_rows
+            ],
+        )
+        if table:
+            lines.extend([f"## {heading}", "", *table, ""])
+
+    method_table = _markdown_table(
+        ["Signature", "Description"],
+        [
+            (
+                f"`{signature}`",
+                method_description,
+            )
+            for signature, method_description in methods
+        ],
+    )
+    if method_table:
+        lines.extend(["## Methods", "", *method_table, ""])
+
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def generate_class_api_reference_markdown(
+    *,
+    url_path: Path,
+    title: str,
+    cls: type,
+    extra_fields: Sequence[object] = (),
+) -> tuple[Path, str]:
+    """Generate a dynamic class API reference markdown asset.
+
+    Args:
+        url_path: The public markdown asset path.
+        title: The page title.
+        cls: The class to document.
+        extra_fields: Extra docgen fields to include.
+
+    Returns:
+        The public path and generated markdown content.
+    """
+    from reflex_docgen import FieldDocumentation, generate_class_documentation
+
+    doc = generate_class_documentation(cls)
+    fields = (
+        *doc.fields,
+        *(field for field in extra_fields if isinstance(field, FieldDocumentation)),
+    )
+    return (
+        url_path,
+        generate_api_reference_markdown_content(
+            title=title,
+            class_name=doc.name,
+            description=doc.description,
+            class_fields=tuple(
+                (field.name, field.type_display, field.description or "")
+                for field in doc.class_fields
+            ),
+            fields=tuple(
+                (field.name, field.type_display, field.description or "")
+                for field in fields
+            ),
+            methods=tuple(
+                (method.name + method.signature, method.description or "")
+                for method in doc.methods
+            ),
+        ),
+    )
+
+
+def generate_environment_variables_markdown() -> tuple[Path, str]:
+    """Generate the dynamic environment variables markdown asset.
+
+    Returns:
+        The public path and generated markdown content.
+    """
+    import inspect
+
+    from reflex.config import EnvironmentVariables
+
+    env_vars = [
+        (name, var)
+        for name, var in inspect.getmembers(EnvironmentVariables)
+        if not name.startswith("_")
+        if hasattr(var, "name")
+        if not getattr(var, "internal", False)
+    ]
+    env_vars.sort(key=lambda item: item[0])
+    source_code = inspect.getsource(EnvironmentVariables)
+    source_lines = source_code.splitlines()
+
+    def env_var_docstring(name: str) -> str:
+        """Return comments documenting an environment variable."""
+        for index, line in enumerate(source_lines):
+            if f"{name}:" not in line or "EnvVar" not in line:
+                continue
+            comments = []
+            comment_index = index - 1
+            while comment_index >= 0 and source_lines[comment_index].strip().startswith(
+                "#"
+            ):
+                comments.insert(0, source_lines[comment_index].strip()[1:].strip())
+                comment_index -= 1
+            return "\n".join(comments)
+        return ""
+
+    table = _markdown_table(
+        ["Name", "Type", "Default", "Description"],
+        [
+            (
+                f"`{var.name}`",
+                f"`{getattr(var.type_, '__name__', str(var.type_))}`",
+                f"`{var.default}`",
+                env_var_docstring(name),
+            )
+            for name, var in env_vars
+        ],
+    )
+    lines = [
+        _markdown_directive(),
+        "",
+        "# Environment Variables",
+        "",
+        "`reflex.config.EnvironmentVariables`",
+        "",
+        "Reflex provides a number of environment variables that can be used to configure the behavior of your application.",
+        "These environment variables can be set in your shell environment or in a `.env` file.",
+        "",
+        "This page documents all available environment variables in Reflex.",
+        "",
+        "## Environment Variables",
+        "",
+        *table,
+        "",
+    ]
+    return (
+        Path("api-reference/environment-variables.md"),
+        "\n".join(lines).rstrip() + "\n",
+    )
+
+
+def generate_dynamic_api_reference_files() -> tuple[tuple[Path, str], ...]:
+    """Generate markdown assets for dynamic API reference pages.
+
+    Returns:
+        The generated dynamic API reference markdown assets.
+    """
+    import reflex as rx
+    from reflex.istate.manager import StateManager
+    from reflex.utils.imports import ImportVar
+    from reflex_docgen import generate_class_documentation
+
+    modules = [
+        rx.App,
+        rx.Component,
+        rx.ComponentState,
+        (rx.Config, rx.config.BaseConfig),
+        rx.event.Event,
+        rx.event.EventHandler,
+        rx.event.EventSpec,
+        rx.Model,
+        StateManager,
+        rx.State,
+        ImportVar,
+        rx.Var,
+    ]
+    files = []
+    for module in modules:
+        extra_fields: list[object] = []
+        if isinstance(module, tuple):
+            module, *extra_modules = module
+            for extra_module in extra_modules:
+                extra_fields.extend(generate_class_documentation(extra_module).fields)
+        slug = module.__name__.lower()
+        files.append(
+            generate_class_api_reference_markdown(
+                url_path=Path(f"api-reference/{slug}.md"),
+                title=_format_title(slug),
+                cls=module,
+                extra_fields=tuple(extra_fields),
+            )
+        )
+    files.append(generate_environment_variables_markdown())
+    return tuple(files)
+
+
+def dynamic_api_reference_index_entries(
+    files: Sequence[tuple[Path, str]],
+) -> tuple[MarkdownIndexEntry, ...]:
+    """Return llms.txt entries for dynamic API reference markdown assets.
+
+    Args:
+        files: The generated dynamic API reference markdown assets.
+
+    Returns:
+        The dynamic API reference index entries.
+    """
+    return tuple(
+        MarkdownIndexEntry(
+            url_path=path,
+            title=_format_title(path.stem),
+            section="API Reference",
+        )
+        for path, _content in files
+    )
+
+
 def generate_llms_txt(
-    markdown_files: Sequence[MarkdownFileEntry],
+    markdown_files: Sequence[MarkdownIndexEntry],
 ) -> tuple[Path, str]:
     """Generate an llms.txt index grouped by docs section."""
-    sections: OrderedDict[str, list[MarkdownFileEntry]] = OrderedDict()
+    sections: OrderedDict[str, list[MarkdownIndexEntry]] = OrderedDict()
     for markdown_file in markdown_files:
-        if not _include_in_llms_txt(markdown_file):
+        if not _include_index_entry_in_llms_txt(markdown_file):
             continue
         sections.setdefault(markdown_file.section, []).append(markdown_file)
 
@@ -270,8 +614,17 @@ def generate_llms_txt(
 
 def generate_llms_full_txt(
     markdown_files: Sequence[MarkdownFileEntry],
+    dynamic_markdown_files: Sequence[tuple[MarkdownIndexEntry, str]] = (),
 ) -> tuple[Path, str]:
-    """Generate an llms-full.txt by stitching all docs markdown together."""
+    """Generate an llms-full.txt by stitching all docs markdown together.
+
+    Args:
+        markdown_files: Static markdown docs to stitch together.
+        dynamic_markdown_files: Generated markdown docs to stitch together.
+
+    Returns:
+        The llms-full.txt path and content.
+    """
     lines = [
         LLMS_FULL_INTRO.format(
             docs_home_url=_docs_home_url(),
@@ -289,19 +642,55 @@ def generate_llms_full_txt(
             "",
         ])
 
+    for entry, content in dynamic_markdown_files:
+        source = _strip_first_heading(_strip_markdown_directive(content))
+        lines.extend([
+            f"# {entry.title}",
+            f"Source: {_llms_url_for_path(entry.url_path)}",
+            "",
+            source,
+            "",
+        ])
+
     return (Path("llms-full.txt"), "\n".join(lines).rstrip() + "\n")
 
 
 def generate_agent_files() -> tuple[tuple[Path, str | bytes], ...]:
     markdown_file_entries = generate_markdown_file_entries()
+    markdown_index_entries = tuple(
+        MarkdownIndexEntry(
+            url_path=entry.url_path,
+            title=entry.title,
+            section=entry.section,
+        )
+        for entry in markdown_file_entries
+    )
+    dynamic_api_reference_files = generate_dynamic_api_reference_files()
+    dynamic_api_reference_entries = dynamic_api_reference_index_entries(
+        dynamic_api_reference_files
+    )
     markdown_files = tuple(
-        (entry.url_path, entry.source_path.read_bytes())
+        (entry.url_path, generate_markdown_file_content(entry))
         for entry in markdown_file_entries
     )
     return (
         *markdown_files,
-        generate_llms_txt(markdown_file_entries),
-        generate_llms_full_txt(markdown_file_entries),
+        *dynamic_api_reference_files,
+        generate_llms_txt((
+            *markdown_index_entries,
+            *dynamic_api_reference_entries,
+        )),
+        generate_llms_full_txt(
+            markdown_file_entries,
+            tuple(
+                (entry, content)
+                for entry, (_path, content) in zip(
+                    dynamic_api_reference_entries,
+                    dynamic_api_reference_files,
+                    strict=True,
+                )
+            ),
+        ),
     )
 
 

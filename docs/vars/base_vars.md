@@ -42,7 +42,7 @@ In this example `ticker` and `price` are base vars in the app, which can be modi
 ```md alert warning
 # Vars must be JSON serializable.
 
-Vars are used to communicate between the frontend and backend. They must be primitive Python types, Plotly figures, Pandas dataframes, or [a custom defined type](/docs/vars/custom_vars).
+Vars are used to communicate between the frontend and backend. They must be primitive Python types, Plotly figures, Pandas dataframes, or [a custom defined type](/docs/vars/custom-vars).
 ```
 
 ## Accessing state variables on different pages

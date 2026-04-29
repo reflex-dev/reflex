@@ -207,7 +207,7 @@ class State(rx.State):
     count: int = 0
 ```
 
-State holds the app's mutable data. Variables declared here are called **[vars](/docs/vars/base_vars)**. Our counter has one: `count`, starting at `0`.
+State holds the app's mutable data. Variables declared here are called **[vars](/docs/vars/base-vars)**. Our counter has one: `count`, starting at `0`.
 
 ### Event Handlers
 
