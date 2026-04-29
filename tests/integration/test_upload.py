@@ -398,11 +398,17 @@ def driver(upload_file: AppHarness):
 
 
 @pytest.fixture
-def simulate_slow_network(driver: WebDriver) -> None:
+def simulate_slow_network(driver: WebDriver) -> Generator[None, None, None]:
     """Throttle network speed to 1 Mbps / 200ms latency to reduce race condition window.
+
+    Restores unthrottled conditions on teardown so the throttle cannot bleed
+    into other tests if the driver scope is ever widened.
 
     Args:
         driver: WebDriver instance
+
+    Yields:
+        None while the throttle is active.
     """
     driver.execute_cdp_cmd("Network.enable", {})
     driver.execute_cdp_cmd(
@@ -412,6 +418,16 @@ def simulate_slow_network(driver: WebDriver) -> None:
             "downloadThroughput": 1024 * 1024 / 8,  # 1 Mbps
             "uploadThroughput": 1024 * 1024 / 8,  # 1 Mbps
             "latency": 200,  # 200ms
+        },
+    )
+    yield
+    driver.execute_cdp_cmd(
+        "Network.emulateNetworkConditions",
+        {
+            "offline": False,
+            "downloadThroughput": -1,
+            "uploadThroughput": -1,
+            "latency": 0,
         },
     )
 
@@ -520,6 +536,19 @@ def poll_for_token(driver: WebDriver, upload_file: AppHarness) -> str:
 
 
 def get_upload_box(driver: WebDriver, upload_root_id: str | None = None) -> WebElement:
+    """Find the file input belonging to a specific rx.upload.root, by its id.
+
+    When ``upload_root_id`` is None, returns the first ``input[type=file]``
+    on the page (the default upload form, which has no id).
+
+    Args:
+        driver: WebDriver instance.
+        upload_root_id: id of the ``rx.upload.root`` whose file input to return,
+            or None for the default (first) upload form.
+
+    Returns:
+        The matching file input WebElement.
+    """
     if upload_root_id is not None:
         return driver.find_element(
             By.XPATH, f"//*[@id='{upload_root_id}']//input[@type='file']"
