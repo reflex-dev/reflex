@@ -81,6 +81,8 @@ EXCLUDED_COMPONENTS = [
     "Container",
     "Spacer",
     "Skeleton",
+    "Section",
+    "Tooltip",
 ]
 
 
@@ -765,7 +767,7 @@ def generate_props(
         interactive_component = rx.fragment()
 
     controls_panel: rx.Component = rx.fragment()
-    if interactive_controls:
+    if not isinstance(comp, Fragment) and interactive_controls:
         controls_panel = rx.box(
             *[
                 rx.box(

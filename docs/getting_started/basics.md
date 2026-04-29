@@ -48,7 +48,7 @@ def my_container():
     )
 ```
 
-You can also use any base HTML element through the [rx.el](/docs/library/other/html) namespace. This allows you to use standard HTML elements directly in your Reflex app when you need more control or when a specific component isn't available in the Reflex component library.
+You can also use any base HTML element through the [rx.el](/docs/library/html/) namespace. This allows you to use standard HTML elements directly in your Reflex app when you need more control or when a specific component isn't available in the Reflex component library.
 
 ```python demo exec
 def my_div():

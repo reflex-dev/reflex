@@ -19,7 +19,6 @@ from reflex_site_shared.components.icons import get_icon
 from reflex_site_shared.components.marketing_button import button as marketing_button
 from reflex_site_shared.components.server_status import server_status
 from reflex_site_shared.route import Route, get_path
-from reflex_site_shared.styles.colors import c_color
 from reflex_site_shared.utils.docpage import right_sidebar_item_highlight
 from reflex_site_shared.views.footer import dark_mode_toggle
 
@@ -56,28 +55,51 @@ def footer_link_flex(heading: str, links):
     )
 
 
-def thumb_card(score: int, icon: str) -> rx.Component:
+def thumb_card(score: int, icon: str, label: str) -> rx.Component:
     return rx.el.button(
         ui.icon(
             icon,
-            color=rx.cond(
-                FeedbackState.score == score, c_color("slate", 11), c_color("slate", 9)
-            ),
             size=16,
         ),
-        background_color=rx.cond(
-            FeedbackState.score == score, c_color("slate", 3), c_color("white", 1)
-        ),
+        label,
+        type="button",
         on_click=FeedbackState.set_score(score),
-        class_name="transition-bg hover:bg-slate-3 shadow-medium border border-slate-4 rounded-lg items-center justify-center cursor-pointer p-2 size-9 flex",
+        class_name=rx.cond(
+            FeedbackState.score == score,
+            "flex h-9 items-center justify-center gap-2 rounded-md border border-violet-6 bg-violet-3 px-3 text-sm font-medium text-violet-11 transition-colors",
+            "flex h-9 items-center justify-center gap-2 rounded-md border border-slate-5 bg-slate-1 px-3 text-sm font-medium text-slate-9 transition-colors hover:bg-slate-3 hover:text-slate-11",
+        ),
     )
 
 
 def thumbs_cards() -> rx.Component:
     return rx.hstack(
-        thumb_card(1, "ThumbsUpIcon"),
-        thumb_card(0, "ThumbsDownIcon"),
+        thumb_card(1, "ThumbsUpIcon", "Helpful"),
+        thumb_card(0, "ThumbsDownIcon", "Not helpful"),
         gap="8px",
+        wrap="wrap",
+    )
+
+
+def feedback_choice_button(label: str, icon: str, score: int, class_name: str):
+    active = FeedbackState.score == score
+    return rx.el.button(
+        ui.icon(icon),
+        label,
+        type="button",
+        class_name=rx.cond(
+            active,
+            ui.cn(
+                "border-violet-6 bg-violet-3 text-violet-11 shadow-none",
+                class_name,
+            ),
+            ui.cn(
+                "border-slate-5 bg-slate-1 text-slate-9 shadow-large hover:bg-slate-3 hover:text-slate-11",
+                class_name,
+            ),
+        ),
+        aria_label=label,
+        on_click=FeedbackState.set_score(score),
     )
 
 
@@ -122,31 +144,21 @@ def feedback_content() -> rx.Component:
 
 
 def feedback_button() -> rx.Component:
-    thumb_cn = " flex flex-row items-center justify-center gap-2 text-slate-9 whitespace-nowrap border border-slate-5 bg-slate-1 shadow-large cursor-pointer transition-bg hover:bg-slate-3 font-small"
+    thumb_cn = "w-full gap-2 px-3 py-0.5 flex flex-row items-center justify-center whitespace-nowrap border cursor-pointer transition-colors font-small"
     return ui.popover.root(
         ui.popover.trigger(
             render_=rx.el.div(
-                rx.el.button(
-                    ui.icon("ThumbsUpIcon"),
+                feedback_choice_button(
                     "Yes",
-                    type="button",
-                    class_name=ui.cn(
-                        "w-full gap-2 border-r-0 px-3 py-0.5 rounded-[20px_0_0_20px]",
-                        thumb_cn,
-                    ),
-                    aria_label="Yes",
-                    on_click=FeedbackState.set_score(1),
+                    "ThumbsUpIcon",
+                    1,
+                    ui.cn("rounded-[20px_0_0_20px] border-r-0", thumb_cn),
                 ),
-                rx.el.button(
-                    ui.icon("ThumbsDownIcon"),
+                feedback_choice_button(
                     "No",
-                    type="button",
-                    class_name=ui.cn(
-                        "w-full gap-2 border-r-0 px-3 py-0.5 rounded-[0_20px_20px_0]",
-                        thumb_cn,
-                    ),
-                    aria_label="No",
-                    on_click=FeedbackState.set_score(0),
+                    "ThumbsDownIcon",
+                    0,
+                    ui.cn("rounded-[0_20px_20px_0]", thumb_cn),
                 ),
                 class_name="w-full lg:w-auto items-center flex flex-row",
             ),

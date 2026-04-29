@@ -5,24 +5,72 @@ from reflex_site_shared.constants import REFLEX_ASSETS_CDN
 from reflex_docs.templates.docpage import docpage, h1_comp, text_comp_2
 
 
+def get_display_name(name: str) -> str:
+    normalized = to_snake_case(name)
+    if normalized == "html":
+        return "HTML"
+    if normalized == "svg":
+        return "SVG"
+    return to_title_case(normalized, sep=" ")
+
+
+HTML_COMPONENT_ORDER = {
+    "html": 0,
+    "text": 1,
+    "layout": 2,
+    "forms": 3,
+    "media": 4,
+    "tables": 5,
+    "svg": 6,
+}
+
+HTML_CARD_PREVIEWS = {
+    "html": ("layout", "box"),
+    "text": ("typography", "text"),
+    "layout": ("layout", "grid"),
+    "forms": ("forms", "input"),
+    "media": ("media", "image"),
+    "tables": ("tables-and-data-grids", "table"),
+    "svg": ("data-display", "icon"),
+}
+
+
+def get_components_for_category(category: str, components: list) -> list:
+    if to_snake_case(category) != "html":
+        return components
+    return sorted(
+        components,
+        key=lambda component: HTML_COMPONENT_ORDER.get(
+            to_snake_case(component[0]), len(HTML_COMPONENT_ORDER)
+        ),
+    )
+
+
+def get_preview_asset(name: str, section: str) -> tuple[str, str]:
+    if to_snake_case(section) == "html":
+        return HTML_CARD_PREVIEWS.get(to_snake_case(name), ("layout", "box"))
+    return section.lower(), name.lower()
+
+
 def component_card(name: str, link: str, section: str) -> rx.Component:
+    preview_section, preview_name = get_preview_asset(name, section)
     return rx.link(
         rx.box(
             rx.image(
-                src=f"{REFLEX_ASSETS_CDN}components_previews/{section.lower()}/light/{name.lower()}.svg",
+                src=f"{REFLEX_ASSETS_CDN}components_previews/{preview_section}/light/{preview_name}.svg",
                 loading="lazy",
                 alt=f"Image preview of {name}",
                 class_name="object-contain object-center h-full w-full dark:hidden",
             ),
             rx.image(
-                src=f"{REFLEX_ASSETS_CDN}components_previews/{section.lower()}/dark/{name.lower()}.svg",
+                src=f"{REFLEX_ASSETS_CDN}components_previews/{preview_section}/dark/{preview_name}.svg",
                 loading="lazy",
                 alt=f"Image preview of {name}",
                 class_name="object-contain object-center h-full w-full dark:block hidden",
             ),
             rx.box(
                 rx.text(
-                    to_title_case(to_snake_case(name), sep=" "),
+                    get_display_name(name),
                     class_name="truncate font-base text-slate-12",
                 ),
                 rx.icon("chevron-right", size=14, class_name="!text-slate-9"),
@@ -65,7 +113,7 @@ def create_previews(
         component_list = get_component_list(type)
         return rx.box(
             rx.box(
-                h1_comp(text=to_title_case(to_snake_case(component_category), sep=" ")),
+                h1_comp(text=get_display_name(component_category)),
                 text_comp_2(
                     text=description,
                 ),
@@ -82,7 +130,9 @@ def create_previews(
                         ),
                         section=component_category,
                     )
-                    for component in component_list[component_category]
+                    for component in get_components_for_category(
+                        component_category, component_list[component_category]
+                    )
                 ],
                 class_name="gap-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3",
             ),
@@ -120,7 +170,7 @@ core_components_dict = {
     },
     "html": {
         "path": "html",
-        "description": "Components that help with dynamic rendering, such as conditional rendering and dynamic components. These are useful for creating responsive and interactive user interfaces.",
+        "description": "Low-level HTML elements exposed through the rx.el namespace. These are useful when you need native browser elements with direct styling control.",
         "component_category": "Html",
     },
     "layout": {

@@ -4,6 +4,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import reflex as rx
+from reflex_components_core.core.cond import Cond
 from reflex_docgen.markdown import parse_document
 
 # External Components
@@ -22,6 +23,10 @@ from .cloud_cliref import pages as cloud_cliref_pages
 from .custom_components import custom_components
 from .library import library
 from .recipes_overview import overview
+
+SPECIAL_COMPONENT_DOCS = {
+    "rx.cond": Cond,
+}
 
 
 def to_title_case(text: str) -> str:
@@ -65,6 +70,9 @@ def get_components_from_frontmatter(filepath: str) -> list:
         return []
     components = []
     for comp_str in doc.frontmatter.components:
+        if component := SPECIAL_COMPONENT_DOCS.get(comp_str):
+            components.append((component, comp_str))
+            continue
         component = eval(comp_str)
         if isinstance(component, type):
             components.append((component, comp_str))

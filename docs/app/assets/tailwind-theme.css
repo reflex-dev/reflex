@@ -1766,6 +1766,13 @@
         font-family: var(--font-jetbrains) !important;
     }
 
+    .code-block.counter-code-block {
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+    }
+
     .code-block>* {
         background: transparent !important;
         font-family: var(--font-jetbrains) !important;
