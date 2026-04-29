@@ -163,7 +163,7 @@ def ai_builder_section() -> rx.Component:
                         src=f"{REFLEX_ASSETS_CDN}docs/{rx.color_mode_cond('light', 'dark')}/getting_started.svg",
                         class_name="w-full h-auto pb-8",
                     ),
-                    href=ai_builder_pages.overview.best_practices.path,
+                    href=ai_builder_pages.overview.what_is_reflex_build.path,
                 ),
                 card(
                     title="Integrations",

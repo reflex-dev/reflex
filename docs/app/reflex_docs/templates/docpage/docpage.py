@@ -22,6 +22,14 @@ from reflex_site_shared.route import Route, get_path
 from reflex_site_shared.utils.docpage import right_sidebar_item_highlight
 from reflex_site_shared.views.footer import dark_mode_toggle
 
+ACRONYMS = {"ai": "AI", "api": "API", "cli": "CLI", "ide": "IDE", "mcp": "MCP"}
+
+
+def format_title_with_acronyms(text: str) -> str:
+    """Format title-cased text while preserving known acronyms."""
+    title = to_title_case(to_snake_case(text), sep=" ")
+    return " ".join(ACRONYMS.get(word.lower(), word) for word in title.split(" "))
+
 
 class FeedbackState(rx.State):
     """Minimal stub for feedback buttons (full implementation removed)."""
@@ -625,7 +633,7 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
         # Add the breadcrumb item to the list
         breadcrumbs.append(
             rx.el.a(
-                to_title_case(to_snake_case(segment), sep=" "),
+                format_title_with_acronyms(segment),
                 class_name="min-h-8 flex items-center text-sm font-[525] text-m-slate-12 dark:text-m-slate-3 last:text-m-slate-7 dark:last:text-m-slate-6 hover:text-primary-10 dark:hover:text-primary-9"
                 + (" truncate" if i == len(segments) - 1 else ""),
                 underline="none",

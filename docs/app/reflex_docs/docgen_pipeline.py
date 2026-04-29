@@ -335,8 +335,11 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
     def quote(self, block: QuoteBlock) -> rx.Component:
         children = [self.transform_block(b) for b in block.children]
         return rx.box(
-            *children,
-            class_name="border-l-[3px] border-slate-4 pl-6 mt-2 mb-6",
+            rx.box(
+                *children,
+                padding_left="2rem",
+            ),
+            class_name="border-l-[3px] border-slate-4 mt-2 mb-6",
         )
 
     def table(self, block: TableBlock) -> rx.Component:
@@ -654,18 +657,22 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
                                 role = text.split(":", 1)[1].strip()
 
         return rx.box(
-            rx.text(
-                '"',
-                *quote_parts,
-                '"',
-                class_name="text-slate-11 font-base italic",
-            ),
             rx.box(
-                rx.text(name, class_name="text-slate-11 font-base"),
-                rx.text(role, class_name="text-slate-10 font-base"),
-                class_name="flex flex-col gap-0.5",
+                rx.text(
+                    '"',
+                    *quote_parts,
+                    '"',
+                    class_name="text-slate-11 font-base italic",
+                ),
+                rx.box(
+                    rx.text(name, class_name="text-slate-11 font-base"),
+                    rx.text(role, class_name="text-slate-10 font-base"),
+                    class_name="flex flex-col gap-0.5",
+                ),
+                padding_left="2rem",
+                class_name="flex flex-col gap-4",
             ),
-            class_name="flex flex-col gap-4 border-l-[3px] border-slate-4 pl-6 mt-2 mb-6",
+            class_name="flex flex-col gap-4 border-l-[3px] border-slate-4 mt-2 mb-6",
         )
 
     def _render_tabs(self, block: DirectiveBlock) -> rx.Component:

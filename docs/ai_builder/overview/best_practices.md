@@ -1,6 +1,6 @@
 # Reflex Build: Best Practices
 
-> A comprehensive guide to working effectively with AI Builder. This guide outlines how to get the most reliable and efficient results when working with the AI Builder inside Reflex Build. The key to success is clarity, structure, and iteration.
+A comprehensive guide to working effectively with AI Builder. This guide outlines how to get the most reliable and efficient results when working with the AI Builder inside Reflex Build. The key to success is clarity, structure, and iteration.
 
 ---
 
