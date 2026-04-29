@@ -1,9 +1,10 @@
 """Integration tests for rx._x.memo."""
 
+import re
 from collections.abc import Generator
 
 import pytest
-from selenium.webdriver.common.by import By
+from playwright.sync_api import Page, expect
 
 from reflex.testing import AppHarness
 
@@ -80,61 +81,52 @@ def ExperimentalMemoApp():
     app.add_page(index)
 
 
-@pytest.fixture
-def experimental_memo_app(tmp_path) -> Generator[AppHarness, None, None]:
+@pytest.fixture(scope="module")
+def experimental_memo_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start ExperimentalMemoApp app at tmp_path via AppHarness.
 
     Args:
-        tmp_path: pytest tmp_path fixture.
+        tmp_path_factory: pytest tmp_path_factory fixture.
 
     Yields:
         Running AppHarness instance.
     """
     with AppHarness.create(
-        root=tmp_path,
+        root=tmp_path_factory.mktemp("experimental_memo_app"),
         app_source=ExperimentalMemoApp,
     ) as harness:
         yield harness
 
 
-def test_experimental_memo_app(experimental_memo_app: AppHarness):
+def test_experimental_memo_app(experimental_memo_app: AppHarness, page: Page):
     """Render experimental memos and assert on their frontend behavior.
 
     Args:
         experimental_memo_app: Harness for ExperimentalMemoApp.
+        page: Playwright Page fixture.
     """
     assert experimental_memo_app.app_instance is not None, "app is not running"
-    driver = experimental_memo_app.frontend()
+    assert experimental_memo_app.frontend_url is not None
+    page.goto(experimental_memo_app.frontend_url)
 
-    memo_custom_code_stack = AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "experimental-memo-custom-code")
-    )
-    assert (
-        experimental_memo_app.poll_for_content(memo_custom_code_stack, exp_not_equal="")
-        == "foobarbarbar"
-    )
-    assert memo_custom_code_stack.text == "foobarbarbar"
+    memo_custom_code_stack = page.locator("#experimental-memo-custom-code")
+    expect(memo_custom_code_stack).to_have_text("foobarbarbar")
 
-    formatted_price = driver.find_element(By.ID, "formatted-price")
-    assert (
-        experimental_memo_app.poll_for_content(formatted_price, exp_not_equal="")
-        == "USD: $125"
-    )
+    formatted_price = page.locator("#formatted-price")
+    expect(formatted_price).to_have_text("USD: $125")
 
-    summary_card = driver.find_element(By.ID, "summary-card")
-    assert "forwarded-summary-card" in (summary_card.get_attribute("class") or "")
-    assert driver.find_element(By.ID, "summary-title").text == "Current Price"
-    assert (
-        driver.find_element(By.ID, "summary-child").text
-        == "Children are passed positionally."
+    summary_card = page.locator("#summary-card")
+    expect(summary_card).to_have_class(
+        re.compile(r"(^|\s)forwarded-summary-card(\s|$)")
+    )
+    expect(page.locator("#summary-title")).to_have_text("Current Price")
+    expect(page.locator("#summary-child")).to_have_text(
+        "Children are passed positionally."
     )
 
-    summary_value = driver.find_element(By.ID, "summary-value")
-    assert (
-        experimental_memo_app.poll_for_content(summary_value, exp_not_equal="")
-        == "USD: $125"
-    )
+    summary_value = page.locator("#summary-value")
+    expect(summary_value).to_have_text("USD: $125")
 
-    driver.find_element(By.ID, "increment-price").click()
-    assert experimental_memo_app.poll_for_content(formatted_price) == "USD: $130"
-    assert experimental_memo_app.poll_for_content(summary_value) == "USD: $130"
+    page.locator("#increment-price").click()
+    expect(formatted_price).to_have_text("USD: $130")
+    expect(summary_value).to_have_text("USD: $130")

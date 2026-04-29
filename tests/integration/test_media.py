@@ -3,9 +3,11 @@
 from collections.abc import Generator
 
 import pytest
-from selenium.webdriver.common.by import By
+from playwright.sync_api import Locator, Page
 
 from reflex.testing import AppHarness
+
+from . import utils
 
 
 def MediaApp():
@@ -90,113 +92,111 @@ def MediaApp():
 
 
 def check_image_loaded(
-    driver, img, expected_width: int = 200, expected_height: int = 200
+    page: Page, img: Locator, expected_width: int = 200, expected_height: int = 200
 ) -> bool:
     """Check whether an image element has fully loaded with expected dimensions.
 
     Args:
-        driver: WebDriver instance.
-        img: The image WebElement.
+        page: Playwright page.
+        img: Locator for the image element.
         expected_width: Expected natural width.
         expected_height: Expected natural height.
 
     Returns:
         True if the image is complete and matches the expected dimensions.
     """
-    return driver.execute_script(
-        "return arguments[0].complete "
-        '&& typeof arguments[0].naturalWidth != "undefined" '
-        "&& arguments[0].naturalWidth === arguments[1] "
-        '&& typeof arguments[0].naturalHeight != "undefined" '
-        "&& arguments[0].naturalHeight === arguments[2]",
-        img,
-        expected_width,
-        expected_height,
+    return img.evaluate(
+        """(el, [w, h]) => (
+            el.complete
+            && typeof el.naturalWidth != 'undefined'
+            && el.naturalWidth === w
+            && typeof el.naturalHeight != 'undefined'
+            && el.naturalHeight === h
+        )""",
+        [expected_width, expected_height],
     )
 
 
-@pytest.fixture
-def media_app(tmp_path, monkeypatch) -> Generator[AppHarness, None, None]:
+@pytest.fixture(scope="module")
+def media_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start MediaApp app at tmp_path via AppHarness.
 
     Args:
-        tmp_path: pytest tmp_path fixture
-        monkeypatch: pytest monkeypatch fixture
+        tmp_path_factory: pytest tmp_path_factory fixture
 
     Yields:
         running AppHarness instance
     """
-    monkeypatch.setenv("REFLEX_UPLOADED_FILES_DIR", str(tmp_path / "uploads"))
+    tmp_path = tmp_path_factory.mktemp("media_app")
+    with pytest.MonkeyPatch.context() as monkeypatch:
+        monkeypatch.setenv("REFLEX_UPLOADED_FILES_DIR", str(tmp_path / "uploads"))
 
-    with AppHarness.create(
-        root=tmp_path,
-        app_source=MediaApp,
-    ) as harness:
-        yield harness
+        with AppHarness.create(
+            root=tmp_path,
+            app_source=MediaApp,
+        ) as harness:
+            yield harness
 
 
-def test_media_app(media_app: AppHarness):
+def test_media_app(media_app: AppHarness, page: Page):
     """Display images, ensure the data uri mime type is correct and images load.
 
     Args:
         media_app: harness for MediaApp app
+        page: Playwright page.
     """
-    assert media_app.app_instance is not None, "app is not running"
-    driver = media_app.frontend()
+    assert media_app.frontend_url is not None
+    page.goto(media_app.frontend_url)
 
     # wait for the backend connection to send the token
-    token_input = AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "token")
-    )
-    token = media_app.poll_for_value(token_input)
-    assert token
+    utils.poll_for_token(page)
 
     # check out the images
-    default_img = driver.find_element(By.ID, "default")
-    bmp_img = driver.find_element(By.ID, "bmp")
-    jpg_img = driver.find_element(By.ID, "jpg")
-    png_img = driver.find_element(By.ID, "png")
-    gif_img = driver.find_element(By.ID, "gif")
-    webp_img = driver.find_element(By.ID, "webp")
-    from_url_img = driver.find_element(By.ID, "from_url")
-    uploaded_img = driver.find_element(By.ID, "uploaded")
+    default_img = page.locator("#default")
+    bmp_img = page.locator("#bmp")
+    jpg_img = page.locator("#jpg")
+    png_img = page.locator("#png")
+    gif_img = page.locator("#gif")
+    webp_img = page.locator("#webp")
+    from_url_img = page.locator("#from_url")
+    uploaded_img = page.locator("#uploaded")
 
     default_img_src = default_img.get_attribute("src")
     assert default_img_src is not None
     assert default_img_src.startswith("data:image/png;base64")
-    assert check_image_loaded(driver, default_img)
+    assert check_image_loaded(page, default_img)
 
     bmp_img_src = bmp_img.get_attribute("src")
     assert bmp_img_src is not None
     assert bmp_img_src.startswith("data:image/bmp;base64")
-    assert check_image_loaded(driver, bmp_img)
+    assert check_image_loaded(page, bmp_img)
 
     jpg_img_src = jpg_img.get_attribute("src")
     assert jpg_img_src is not None
     assert jpg_img_src.startswith("data:image/jpeg;base64")
-    assert check_image_loaded(driver, jpg_img)
+    assert check_image_loaded(page, jpg_img)
 
     png_img_src = png_img.get_attribute("src")
     assert png_img_src is not None
     assert png_img_src.startswith("data:image/png;base64")
-    assert check_image_loaded(driver, png_img)
+    assert check_image_loaded(page, png_img)
 
     gif_img_src = gif_img.get_attribute("src")
     assert gif_img_src is not None
     assert gif_img_src.startswith("data:image/gif;base64")
-    assert check_image_loaded(driver, gif_img)
+    assert check_image_loaded(page, gif_img)
 
     webp_img_src = webp_img.get_attribute("src")
     assert webp_img_src is not None
     assert webp_img_src.startswith("data:image/webp;base64")
-    assert check_image_loaded(driver, webp_img)
+    assert check_image_loaded(page, webp_img)
 
     from_url_img_src = from_url_img.get_attribute("src")
     assert from_url_img_src is not None
     assert from_url_img_src.startswith("data:image/jpeg;base64")
-    assert check_image_loaded(driver, from_url_img, expected_height=300)
+    assert check_image_loaded(page, from_url_img, expected_height=300)
 
     uploaded_img_src = uploaded_img.get_attribute("src")
     assert uploaded_img_src is not None
     assert "generated.png" in uploaded_img_src
-    assert check_image_loaded(driver, uploaded_img, 150, 150)
+    assert check_image_loaded(page, uploaded_img, 150, 150)

@@ -1,20 +1,17 @@
 """Test case for displaying the connection banner when the websocket drops."""
 
-import asyncio
 import contextlib
 import pickle
-from collections.abc import AsyncGenerator, Generator, Iterator
+from collections.abc import Generator, Iterator
 
 import pytest
-import pytest_asyncio
-from redis.asyncio import Redis
+from playwright.sync_api import Page, expect
+from redis import Redis
 from reflex_base import constants
-from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.common.by import By
 
 from reflex.environment import environment
 from reflex.istate.manager.redis import StateManagerRedis
-from reflex.testing import AppHarness, WebDriver
+from reflex.testing import AppHarness
 from reflex.utils.token_manager import RedisTokenManager, SocketRecord
 
 from .utils import SessionStorage
@@ -54,6 +51,7 @@ def ConnectionBanner():
 
 
 @pytest.fixture(
+    scope="module",
     params=[constants.CompileContext.RUN, constants.CompileContext.DEPLOY],
     ids=["compile_context_run", "compile_context_deploy"],
 )
@@ -69,15 +67,15 @@ def simulate_compile_context(request) -> constants.CompileContext:
     return request.param
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def connection_banner(
-    tmp_path,
+    tmp_path_factory: pytest.TempPathFactory,
     simulate_compile_context: constants.CompileContext,
 ) -> Generator[AppHarness, None, None]:
     """Start ConnectionBanner app at tmp_path via AppHarness.
 
     Args:
-        tmp_path: pytest tmp_path fixture
+        tmp_path_factory: pytest tmp_path_factory fixture
         simulate_compile_context: Which context to run the app with.
 
     Yields:
@@ -85,145 +83,126 @@ def connection_banner(
     """
     environment.REFLEX_COMPILE_CONTEXT.set(simulate_compile_context)
 
+    app_name = (
+        "connection_banner_reflex_cloud"
+        if simulate_compile_context == constants.CompileContext.DEPLOY
+        else "connection_banner"
+    )
     with AppHarness.create(
-        root=tmp_path,
+        root=tmp_path_factory.mktemp(app_name),
         app_source=ConnectionBanner,
-        app_name=(
-            "connection_banner_reflex_cloud"
-            if simulate_compile_context == constants.CompileContext.DEPLOY
-            else "connection_banner"
-        ),
+        app_name=app_name,
     ) as harness:
         yield harness
 
 
 @contextlib.contextmanager
-def browser_offline(driver: WebDriver) -> Iterator[None]:
-    """Context manager that takes the browser offline via CDP and restores it on exit.
+def browser_offline(page: Page) -> Iterator[None]:
+    """Context manager that takes the browser offline and restores it on exit.
 
     Args:
-        driver: Selenium WebDriver instance (must support execute_cdp_cmd).
+        page: Playwright page whose context will be toggled offline.
 
     Yields:
         None
     """
-    driver.execute_cdp_cmd("Network.enable", {})
-    driver.execute_cdp_cmd(
-        "Network.emulateNetworkConditions",
-        {
-            "offline": True,
-            "downloadThroughput": -1,
-            "uploadThroughput": -1,
-            "latency": 0,
-        },
-    )
+    page.context.set_offline(True)
     try:
         yield
     finally:
-        driver.execute_cdp_cmd(
-            "Network.emulateNetworkConditions",
-            {
-                "offline": False,
-                "downloadThroughput": -1,
-                "uploadThroughput": -1,
-                "latency": 0,
-            },
-        )
+        page.context.set_offline(False)
 
 
-CONNECTION_ERROR_XPATH = "//*[ contains(text(), 'Cannot connect to server') ]"
+CONNECTION_ERROR_XPATH = "xpath=//*[ contains(text(), 'Cannot connect to server') ]"
 
 
-def has_error_modal(driver: WebDriver) -> bool:
+def has_error_modal(page: Page) -> bool:
     """Check if the connection error modal is displayed.
 
     Args:
-        driver: Selenium webdriver instance.
+        page: Playwright page to query.
 
     Returns:
         True if the modal is displayed, False otherwise.
     """
-    try:
-        driver.find_element(By.XPATH, CONNECTION_ERROR_XPATH)
-    except NoSuchElementException:
-        return False
-    else:
-        return True
+    return page.locator(CONNECTION_ERROR_XPATH).count() > 0
 
 
-def has_cloud_banner(driver: WebDriver) -> bool:
+def has_cloud_banner(page: Page) -> bool:
     """Check if the cloud banner is displayed.
 
     Args:
-        driver: Selenium webdriver instance.
+        page: Playwright page to query.
 
     Returns:
         True if the banner is displayed, False otherwise.
     """
-    try:
-        driver.find_element(By.XPATH, "//*[ contains(text(), 'This app is paused') ]")
-    except NoSuchElementException:
-        return False
-    else:
-        return True
+    return (
+        page.locator("xpath=//*[ contains(text(), 'This app is paused') ]").count() > 0
+    )
 
 
-def _assert_token(connection_banner, driver) -> str:
+def _assert_token(connection_banner: AppHarness, page: Page) -> str:
     """Poll for backend to be up.
 
     Args:
         connection_banner: AppHarness instance.
-        driver: Selenium webdriver instance.
+        page: Playwright page.
 
     Returns:
         The token if found, raises an assertion error otherwise.
     """
-    ss = SessionStorage(driver)
+    ss = SessionStorage(page)
     assert connection_banner._poll_for(lambda: ss.get("token") is not None), (
         "token not found"
     )
-    return ss.get("token")
+    token = ss.get("token")
+    assert token is not None
+    return token
 
 
-@pytest_asyncio.fixture
-async def redis(
+@pytest.fixture
+def redis(
     connection_banner: AppHarness,
-) -> AsyncGenerator[Redis | None]:
-    """Get the Redis instance from the StateManagerRedis used in the connection_banner test.
+) -> Generator[Redis | None]:
+    """Get a synchronous Redis client when the app is using the Redis state manager.
 
     Args:
         connection_banner: AppHarness instance.
 
     Yields:
-        A Redis instance or None if the StateManager is not Redis.
+        A sync Redis client, or None if the StateManager is not Redis.
     """
-    from reflex.utils.prerequisites import get_redis
+    from reflex.utils.prerequisites import get_redis_sync
 
     redis = None
     if (app := connection_banner.app_instance) is not None and isinstance(
         app.state_manager, StateManagerRedis
     ):
-        redis = get_redis()
+        redis = get_redis_sync()
     yield redis
     if redis is not None:
-        with contextlib.suppress(Exception, asyncio.CancelledError):
-            await redis.aclose()
+        with contextlib.suppress(Exception):
+            redis.close()
 
 
-@pytest.mark.asyncio
-async def test_connection_banner(connection_banner: AppHarness, redis: Redis | None):
+def test_connection_banner(
+    connection_banner: AppHarness, redis: Redis | None, page: Page
+):
     """Test that the connection banner is displayed when the websocket drops.
 
     Args:
         connection_banner: AppHarness instance.
         redis: Redis instance used by the app, or None if not using Redis.
+        page: Playwright page.
     """
     assert connection_banner.app_instance is not None
     assert connection_banner.backend is not None
-    driver = connection_banner.frontend()
+    assert connection_banner.frontend_url is not None
+    page.goto(connection_banner.frontend_url)
 
-    token = _assert_token(connection_banner, driver)
-    AppHarness.expect(lambda: not has_error_modal(driver))
+    token = _assert_token(connection_banner, page)
+    AppHarness.expect(lambda: not has_error_modal(page))
 
     # Check that the token association was established.
     app_token_manager = connection_banner.token_manager()
@@ -231,24 +210,24 @@ async def test_connection_banner(connection_banner: AppHarness, redis: Redis | N
     sid_before = app_token_manager.token_to_sid[token]
     if redis is not None:
         assert isinstance(app_token_manager, RedisTokenManager)
-        assert await redis.get(app_token_manager._get_redis_key(token)) == pickle.dumps(
+        assert redis.get(app_token_manager._get_redis_key(token)) == pickle.dumps(
             SocketRecord(instance_id=app_token_manager.instance_id, sid=sid_before)
         )
 
-    delay_button = driver.find_element(By.ID, "delay")
-    increment_button = driver.find_element(By.ID, "increment")
-    counter_element = driver.find_element(By.ID, "counter")
+    delay_button = page.locator("#delay")
+    increment_button = page.locator("#increment")
+    counter_element = page.locator("#counter")
 
     # Increment the counter
     increment_button.click()
-    assert connection_banner.poll_for_value(counter_element, exp_not_equal="0") == "1"
+    expect(counter_element).to_have_value("1")
 
     # Start a long event before blocking the network, to mark event_processing=true
     delay_button.click()
 
-    with browser_offline(driver):
+    with browser_offline(page):
         # Error modal should now be displayed
-        AppHarness.expect(lambda: has_error_modal(driver))
+        AppHarness.expect(lambda: has_error_modal(page))
 
         # The token association should be removed once the websocket closes on the server.
         assert connection_banner._poll_for(
@@ -256,16 +235,14 @@ async def test_connection_banner(connection_banner: AppHarness, redis: Redis | N
         )
         if redis is not None:
             assert isinstance(app_token_manager, RedisTokenManager)
-            assert await redis.get(app_token_manager._get_redis_key(token)) is None
+            assert redis.get(app_token_manager._get_redis_key(token)) is None
 
         # Increment the counter while disconnected
         increment_button.click()
-        assert (
-            connection_banner.poll_for_value(counter_element, exp_not_equal="0") == "1"
-        )
+        expect(counter_element).to_have_value("1")
 
     # Banner should be gone now (network restored on context manager exit)
-    AppHarness.expect(lambda: not has_error_modal(driver))
+    AppHarness.expect(lambda: not has_error_modal(page))
 
     # After reconnecting, the token association should be re-established.
     app_token_manager = connection_banner.token_manager()
@@ -274,41 +251,57 @@ async def test_connection_banner(connection_banner: AppHarness, redis: Redis | N
     assert sid_before != sid_after
     if redis is not None:
         assert isinstance(app_token_manager, RedisTokenManager)
-        assert await redis.get(app_token_manager._get_redis_key(token)) == pickle.dumps(
+        assert redis.get(app_token_manager._get_redis_key(token)) == pickle.dumps(
             SocketRecord(instance_id=app_token_manager.instance_id, sid=sid_after)
         )
 
     # Count should have incremented after coming back up
-    assert connection_banner.poll_for_value(counter_element, exp_not_equal="1") == "2"
+    expect(counter_element).to_have_value("2")
 
 
 def test_cloud_banner(
-    connection_banner: AppHarness, simulate_compile_context: constants.CompileContext
+    connection_banner: AppHarness,
+    simulate_compile_context: constants.CompileContext,
+    page: Page,
 ):
     """Test that the connection banner is displayed when the websocket drops.
 
     Args:
         connection_banner: AppHarness instance.
         simulate_compile_context: Which context to set for the app.
+        page: Playwright page.
     """
     assert connection_banner.app_instance is not None
     assert connection_banner.backend is not None
-    driver = connection_banner.frontend()
+    assert connection_banner.frontend_url is not None
+    page.goto(connection_banner.frontend_url)
 
-    driver.add_cookie({"name": "backend-enabled", "value": "truly"})
-    driver.refresh()
-    _assert_token(connection_banner, driver)
-    AppHarness.expect(lambda: not has_cloud_banner(driver))
+    page.context.add_cookies([
+        {
+            "name": "backend-enabled",
+            "value": "truly",
+            "url": connection_banner.frontend_url,
+        }
+    ])
+    page.reload()
+    _assert_token(connection_banner, page)
+    AppHarness.expect(lambda: not has_cloud_banner(page))
 
-    driver.add_cookie({"name": "backend-enabled", "value": "false"})
-    driver.refresh()
+    page.context.add_cookies([
+        {
+            "name": "backend-enabled",
+            "value": "false",
+            "url": connection_banner.frontend_url,
+        }
+    ])
+    page.reload()
     if simulate_compile_context == constants.CompileContext.DEPLOY:
-        AppHarness.expect(lambda: has_cloud_banner(driver))
+        AppHarness.expect(lambda: has_cloud_banner(page))
     else:
-        _assert_token(connection_banner, driver)
-        AppHarness.expect(lambda: not has_cloud_banner(driver))
+        _assert_token(connection_banner, page)
+        AppHarness.expect(lambda: not has_cloud_banner(page))
 
-    driver.delete_cookie("backend-enabled")
-    driver.refresh()
-    _assert_token(connection_banner, driver)
-    AppHarness.expect(lambda: not has_cloud_banner(driver))
+    page.context.clear_cookies(name="backend-enabled")
+    page.reload()
+    _assert_token(connection_banner, page)
+    AppHarness.expect(lambda: not has_cloud_banner(page))

@@ -1,6 +1,7 @@
 """Unit tests for the included testing tools."""
 
 import sys
+import threading
 from types import ModuleType, SimpleNamespace
 from unittest import mock
 
@@ -140,3 +141,38 @@ def test_app_harness_initialize_reloads_existing_imported_app(
     harness._initialize_app()
 
     harness_mocks.get_and_validate_app.assert_called_once_with(reload=True)
+
+
+def test_wait_frontend_times_out_when_stdout_read_blocks(tmp_path, monkeypatch):
+    """Ensure frontend startup wait cannot hang forever on a blocking readline.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+        monkeypatch: pytest monkeypatch fixture
+    """
+
+    class BlockingStdout:
+        def __init__(self):
+            self._release = threading.Event()
+
+        def readline(self):
+            self._release.wait()
+            return ""
+
+        def release(self):
+            self._release.set()
+
+    stdout = BlockingStdout()
+    process = mock.Mock(stdout=stdout)
+    process.poll.return_value = None
+
+    harness = AppHarness.create(root=tmp_path / "hang_app", app_name="hang_app")
+    harness.frontend_process = process
+    monkeypatch.setattr(reflex_testing, "FRONTEND_STARTUP_TIMEOUT", 0.05)
+
+    with pytest.raises(RuntimeError, match="Frontend did not start within"):
+        harness._wait_frontend()
+
+    stdout.release()
+    assert harness.frontend_output_thread is not None
+    harness.frontend_output_thread.join(timeout=1)

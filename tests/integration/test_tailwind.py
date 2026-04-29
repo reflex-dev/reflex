@@ -1,10 +1,9 @@
 """Test case for disabling tailwind in the config."""
 
 import functools
-from collections.abc import Generator
 
 import pytest
-from selenium.webdriver.common.by import By
+from playwright.sync_api import Page, expect
 
 from reflex.testing import AppHarness
 
@@ -78,37 +77,68 @@ def tailwind_version(request) -> int:
     return request.param
 
 
+@pytest.fixture(scope="module")
+def _tailwind_app_factory(tmp_path_factory):
+    """Factory fixture that creates AppHarness instances keyed by tailwind version.
+
+    Args:
+        tmp_path_factory: pytest tmp_path_factory fixture.
+
+    Yields:
+        A callable taking a tailwind_version and returning an AppHarness.
+    """
+    harnesses: dict[int, AppHarness] = {}
+    contexts = []
+
+    def _get(version: int) -> AppHarness:
+        if version in harnesses:
+            return harnesses[version]
+        ctx = AppHarness.create(
+            root=tmp_path_factory.mktemp(
+                "tailwind_" + ("disabled" if version == 0 else str(version))
+            ),
+            app_source=functools.partial(TailwindApp, tailwind_version=version),
+            app_name="tailwind_" + ("disabled" if version == 0 else str(version)),
+        )
+        harness = ctx.__enter__()
+        contexts.append(ctx)
+        harnesses[version] = harness
+        return harness
+
+    try:
+        yield _get
+    finally:
+        for ctx in contexts:
+            ctx.__exit__(None, None, None)
+
+
 @pytest.fixture
-def tailwind_app(tmp_path, tailwind_version) -> Generator[AppHarness, None, None]:
+def tailwind_app(_tailwind_app_factory, tailwind_version) -> AppHarness:
     """Start TailwindApp app at tmp_path via AppHarness with tailwind disabled via config.
 
     Args:
-        tmp_path: pytest tmp_path fixture
+        _tailwind_app_factory: factory returning per-version harnesses.
         tailwind_version: Whether tailwind is disabled for the app.
 
-    Yields:
+    Returns:
         running AppHarness instance
     """
-    with AppHarness.create(
-        root=tmp_path,
-        app_source=functools.partial(TailwindApp, tailwind_version=tailwind_version),
-        app_name="tailwind_"
-        + ("disabled" if tailwind_version == 0 else str(tailwind_version)),
-    ) as harness:
-        yield harness
+    return _tailwind_app_factory(tailwind_version)
 
 
-def test_tailwind_app(tailwind_app: AppHarness, tailwind_version: bool):
+def test_tailwind_app(tailwind_app: AppHarness, tailwind_version: int, page: Page):
     """Test that the app can compile without tailwind.
 
     Args:
         tailwind_app: AppHarness instance.
         tailwind_version: Tailwind version to use. If 0, tailwind is disabled.
+        page: Playwright Page fixture.
     """
     assert tailwind_app.app_instance is not None
     assert tailwind_app.backend is not None
+    assert tailwind_app.frontend_url is not None
 
-    driver = tailwind_app.frontend()
+    page.goto(tailwind_app.frontend_url)
 
     # Assert the app is stateless.
     with pytest.raises(ValueError) as errctx:
@@ -116,26 +146,30 @@ def test_tailwind_app(tailwind_app: AppHarness, tailwind_version: bool):
     errctx.match("The state manager has not been initialized.")
 
     # Assert content is visible (and not some error)
-    content = AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "p-content")
-    )
-    paragraphs = content.find_elements(By.TAG_NAME, "p")
-    assert len(paragraphs) == 3
-    for p in paragraphs:
-        assert tailwind_app.poll_for_content(p, exp_not_equal="") == PARAGRAPH_TEXT
-        assert p.value_of_css_property("font-family") == "monospace"
+    content = page.locator("#p-content")
+    expect(content).to_be_visible()
+    paragraphs = content.locator("p")
+    expect(paragraphs).to_have_count(3)
+    for i in range(3):
+        p = paragraphs.nth(i)
+        expect(p).to_have_text(PARAGRAPH_TEXT)
+        font_family = p.evaluate("el => getComputedStyle(el).fontFamily")
+        assert font_family == "monospace"
+        color = p.evaluate("el => getComputedStyle(el).color")
         if not tailwind_version:
             # expect default color, not "text-red-500" from tailwind utility class
-            assert p.value_of_css_property("color") not in TEXT_RED_500_COLOR_v3
+            assert color not in TEXT_RED_500_COLOR_v3
         elif tailwind_version == 3:
             # expect "text-red-500" from tailwind utility class
-            assert p.value_of_css_property("color") in TEXT_RED_500_COLOR_v3
+            assert color in TEXT_RED_500_COLOR_v3
         elif tailwind_version == 4:
             # expect "text-red-500" from tailwind utility class
-            assert p.value_of_css_property("color") in TEXT_RED_500_COLOR_v4
+            assert color in TEXT_RED_500_COLOR_v4
 
     # Assert external stylesheet is applying rules
-    external = driver.find_elements(By.CLASS_NAME, "external")
-    assert len(external) == 1
-    for ext_div in external:
-        assert ext_div.value_of_css_property("color") == "rgba(0, 0, 255, 0.5)"
+    external = page.locator(".external")
+    expect(external).to_have_count(1)
+    for i in range(external.count()):
+        ext_div = external.nth(i)
+        ext_color = ext_div.evaluate("el => getComputedStyle(el).color")
+        assert ext_color == "rgba(0, 0, 255, 0.5)"

@@ -2,18 +2,16 @@
 
 from __future__ import annotations
 
-import asyncio
 import time
 from collections.abc import Generator
 
 import pytest
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.wait import WebDriverWait
+from playwright.sync_api import Page, expect
 
-from reflex.testing import AppHarness, WebDriver
+from reflex.testing import AppHarness
 from tests.integration.utils import poll_assert_event_order
+
+from . import utils
 
 
 def TestEventAction():
@@ -205,47 +203,6 @@ def event_action(tmp_path_factory) -> Generator[AppHarness, None, None]:
         yield harness
 
 
-@pytest.fixture
-def driver(event_action: AppHarness) -> Generator[WebDriver, None, None]:
-    """Get an instance of the browser open to the event_action app.
-
-    Args:
-        event_action: harness for TestEventAction app
-
-    Yields:
-        WebDriver instance.
-    """
-    assert event_action.app_instance is not None, "app is not running"
-    driver = event_action.frontend()
-    try:
-        yield driver
-    finally:
-        driver.quit()
-
-
-@pytest.fixture
-def token(event_action: AppHarness, driver: WebDriver) -> str:
-    """Get the token associated with backend state.
-
-    Args:
-        event_action: harness for TestEventAction app.
-        driver: WebDriver instance.
-
-    Returns:
-        The token visible in the driver browser.
-    """
-    assert event_action.app_instance is not None
-    token_input = AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "token")
-    )
-
-    # wait for the backend connection to send the token
-    token = event_action.poll_for_value(token_input)
-    assert token is not None
-
-    return token
-
-
 @pytest.mark.parametrize(
     ("element_id", "exp_order"),
     [
@@ -270,53 +227,59 @@ def token(event_action: AppHarness, driver: WebDriver) -> str:
         ),
     ],
 )
-@pytest.mark.usefixtures("token")
-@pytest.mark.asyncio
-async def test_event_actions(
-    driver: WebDriver,
+def test_event_actions(
+    event_action: AppHarness,
+    page: Page,
     element_id: str,
     exp_order: list[str],
 ):
     """Click links and buttons and assert on fired events.
 
     Args:
-        driver: WebDriver instance.
+        event_action: harness for TestEventAction app.
+        page: Playwright page.
         element_id: The id of the element to click.
         exp_order: The expected order of events.
     """
-    el = driver.find_element(By.ID, element_id)
-    assert el
+    assert event_action.frontend_url is not None
+    page.goto(event_action.frontend_url)
+    utils.poll_for_token(page)
 
-    prev_url = driver.current_url
+    el = page.locator(f"#{element_id}")
+    expect(el).to_have_count(1)
+
+    prev_url = page.url
 
     el.click()
     if "on_click:outer" not in exp_order:
         # really make sure the outer event is not fired
-        await asyncio.sleep(0.5)
-    poll_assert_event_order(driver, exp_order)
+        time.sleep(0.5)
+    poll_assert_event_order(page, exp_order)
 
     if element_id.startswith("link") and "prevent-default" not in element_id:
-        assert driver.current_url != prev_url
+        assert page.url != prev_url
     else:
-        assert driver.current_url == prev_url
+        assert page.url == prev_url
 
 
 def test_event_actions_throttle_debounce(
     event_action: AppHarness,
-    driver: WebDriver,
-    token: str,
+    page: Page,
 ):
     """Click buttons with debounce and throttle and assert on fired events.
 
     Args:
         event_action: harness for TestEventAction app.
-        driver: WebDriver instance.
-        token: The client_token associated with the driver browser.
+        page: Playwright page.
     """
-    btn_throttle = driver.find_element(By.ID, "btn-throttle")
-    assert btn_throttle
-    btn_debounce = driver.find_element(By.ID, "btn-debounce")
-    assert btn_debounce
+    assert event_action.frontend_url is not None
+    page.goto(event_action.frontend_url)
+    utils.poll_for_token(page)
+
+    btn_throttle = page.locator("#btn-throttle")
+    expect(btn_throttle).to_have_count(1)
+    btn_debounce = page.locator("#btn-debounce")
+    expect(btn_debounce).to_have_count(1)
 
     exp_events = 10
     throttle_duration = exp_events * 0.2  # 200ms throttle
@@ -325,17 +288,17 @@ def test_event_actions_throttle_debounce(
         btn_throttle.click()
         btn_debounce.click()
 
+    order_locator = page.locator('//*[@id="event_order"]/p')
+
     # Wait until the debounce event shows up
     def _debounce_received():
-        order = driver.find_elements(By.XPATH, '//*[@id="event_order"]/p')
-        return len(order) and order[-1].text == "on_click_debounce"
+        items = order_locator.all()
+        return len(items) and (items[-1].text_content() or "") == "on_click_debounce"
 
     AppHarness._poll_for(_debounce_received)
 
     # This test is inherently racy, so ensure the `on_click_throttle` event is fired approximately the expected number of times.
-    final_event_order = [
-        elem.text for elem in driver.find_elements(By.XPATH, '//*[@id="event_order"]/p')
-    ]
+    final_event_order = [(elem.text_content() or "") for elem in order_locator.all()]
     n_on_click_throttle_received = final_event_order.count("on_click_throttle")
     print(
         f"Expected ~{exp_events} on_click_throttle events, received {n_on_click_throttle_received}"
@@ -346,25 +309,31 @@ def test_event_actions_throttle_debounce(
     ]
 
 
-@pytest.mark.usefixtures("token")
 def test_event_actions_dialog_form_in_form(
-    driver: WebDriver,
+    event_action: AppHarness,
+    page: Page,
 ):
     """Click links and buttons and assert on fired events.
 
     Args:
-        driver: WebDriver instance.
+        event_action: harness for TestEventAction app.
+        page: Playwright page.
     """
+    assert event_action.frontend_url is not None
+    page.goto(event_action.frontend_url)
+    utils.poll_for_token(page)
+
     open_dialog_id = "btn-dialog"
     submit_button_id = "btn-submit"
-    wait = WebDriverWait(driver, 10)
 
-    driver.find_element(By.ID, open_dialog_id).click()
-    el = wait.until(EC.element_to_be_clickable((By.ID, submit_button_id)))
-    el.click()  # pyright: ignore[reportAttributeAccessIssue]
-    el.send_keys(Keys.ESCAPE)  # pyright: ignore[reportAttributeAccessIssue]
+    page.locator(f"#{open_dialog_id}").click()
+    submit_btn = page.locator(f"#{submit_button_id}")
+    expect(submit_btn).to_be_enabled(timeout=10_000)
+    submit_btn.click()
+    submit_btn.press("Escape")
 
-    btn_no_events = wait.until(EC.element_to_be_clickable((By.ID, "btn-no-events")))
-    btn_no_events.location_once_scrolled_into_view
+    btn_no_events = page.locator("#btn-no-events")
+    expect(btn_no_events).to_be_enabled(timeout=10_000)
+    btn_no_events.scroll_into_view_if_needed()
     btn_no_events.click()
-    poll_assert_event_order(driver, ["on_submit", "on_click:outer"])
+    poll_assert_event_order(page, ["on_submit", "on_click:outer"])

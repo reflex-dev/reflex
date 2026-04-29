@@ -3,10 +3,12 @@
 from collections.abc import Generator
 
 import pytest
+from playwright.sync_api import Page, expect
 from reflex_components_lucide.icon import LUCIDE_ICON_LIST
-from selenium.webdriver.common.by import By
 
-from reflex.testing import AppHarness, WebDriver
+from reflex.testing import AppHarness
+
+from . import utils
 
 
 def Icons():
@@ -66,40 +68,19 @@ def icons(
         yield harness
 
 
-@pytest.fixture
-def driver(icons: AppHarness):
-    """Get an instance of the browser open to the dynamic components app.
-
-    Args:
-        icons: AppHarness for the dynamic components
-
-    Yields:
-        WebDriver instance.
-    """
-    driver = icons.frontend()
-    try:
-        token_input = AppHarness.poll_for_or_raise_timeout(
-            lambda: driver.find_element(By.ID, "token")
-        )
-        # wait for the backend connection to send the token
-        token = icons.poll_for_value(token_input)
-        assert token is not None
-
-        yield driver
-    finally:
-        driver.quit()
-
-
-def test_icons(driver: WebDriver, icons: AppHarness):
+def test_icons(icons: AppHarness, page: Page):
     """Test that the var operations produce the right results.
 
     Args:
-        driver: selenium WebDriver open to the app
         icons: AppHarness for the dynamic components
+        page: Playwright Page fixture
     """
+    assert icons.frontend_url is not None
+    page.goto(icons.frontend_url)
+
+    # wait for the backend connection to send the token
+    token = utils.poll_for_token(page)
+    assert token is not None
+
     for icon_name in [*LUCIDE_ICON_LIST, "dynamic_icon"]:
-        AppHarness.expect(
-            lambda icon_name=icon_name: driver.find_element(
-                By.ID, icon_name
-            ).find_element(By.TAG_NAME, "svg")
-        )
+        expect(page.locator(f"#{icon_name}").locator("svg")).to_have_count(1)

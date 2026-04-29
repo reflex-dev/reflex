@@ -3,7 +3,7 @@
 from collections.abc import Generator
 
 import pytest
-from selenium.webdriver.common.by import By
+from playwright.sync_api import Page, expect
 
 from reflex.testing import AppHarness
 
@@ -149,86 +149,87 @@ def ComponentStateApp():
         )
 
 
-@pytest.fixture
-def component_state_app(tmp_path) -> Generator[AppHarness, None, None]:
+@pytest.fixture(scope="module")
+def component_state_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start ComponentStateApp app at tmp_path via AppHarness.
 
     Args:
-        tmp_path: pytest tmp_path fixture
+        tmp_path_factory: pytest tmp_path_factory fixture
 
     Yields:
         running AppHarness instance
     """
     with AppHarness.create(
-        root=tmp_path,
+        root=tmp_path_factory.mktemp("component_state_app"),
         app_source=ComponentStateApp,
     ) as harness:
         yield harness
 
 
-def test_component_state_app(component_state_app: AppHarness):
+def test_component_state_app(component_state_app: AppHarness, page: Page):
     """Increment counters independently.
 
     Args:
         component_state_app: harness for ComponentStateApp app
+        page: Playwright page.
     """
-    assert component_state_app.app_instance is not None, "app is not running"
-    driver = component_state_app.frontend()
+    assert component_state_app.frontend_url is not None
+    page.goto(component_state_app.frontend_url)
 
-    ss = utils.SessionStorage(driver)
+    ss = utils.SessionStorage(page)
     assert AppHarness._poll_for(lambda: ss.get("token") is not None), "token not found"
 
-    count_a = driver.find_element(By.ID, "count-a")
-    count_b = driver.find_element(By.ID, "count-b")
-    button_a = driver.find_element(By.ID, "button-a")
-    button_b = driver.find_element(By.ID, "button-b")
-    button_inc_a = driver.find_element(By.ID, "inc-a")
+    count_a = page.locator("#count-a")
+    count_b = page.locator("#count-b")
+    button_a = page.locator("#button-a")
+    button_b = page.locator("#button-b")
+    button_inc_a = page.locator("#inc-a")
 
     # Check that backend vars in mixins are okay
-    driver.find_element(By.ID, "a-assert-be-none").click()
-    driver.find_element(By.ID, "a-assert-be-int").click()
-    driver.find_element(By.ID, "a-assert-be-str").click()
+    page.locator("#a-assert-be-none").click()
+    page.locator("#a-assert-be-int").click()
+    page.locator("#a-assert-be-str").click()
 
-    assert count_a.text == "0"
-
-    button_a.click()
-    assert component_state_app.poll_for_content(count_a, exp_not_equal="0") == "1"
+    expect(count_a).to_have_text("0")
 
     button_a.click()
-    assert component_state_app.poll_for_content(count_a, exp_not_equal="1") == "2"
+    expect(count_a).to_have_text("1")
+
+    button_a.click()
+    expect(count_a).to_have_text("2")
 
     button_inc_a.click()
-    assert component_state_app.poll_for_content(count_a, exp_not_equal="2") == "3"
+    expect(count_a).to_have_text("3")
 
-    driver.find_element(By.ID, "a-assert-be-value").send_keys("3")
-    driver.find_element(By.ID, "a-assert-be").click()
-    driver.find_element(By.ID, "b-assert-be-none").click()
+    page.locator("#a-assert-be-value").fill("3")
+    page.locator("#a-assert-be").click()
+    page.locator("#b-assert-be-none").click()
 
-    assert count_b.text == "0"
-
-    button_b.click()
-    assert component_state_app.poll_for_content(count_b, exp_not_equal="0") == "1"
+    expect(count_b).to_have_text("0")
 
     button_b.click()
-    assert component_state_app.poll_for_content(count_b, exp_not_equal="1") == "2"
+    expect(count_b).to_have_text("1")
 
-    driver.find_element(By.ID, "b-assert-be-value").send_keys("2")
-    driver.find_element(By.ID, "b-assert-be").click()
+    button_b.click()
+    expect(count_b).to_have_text("2")
+
+    page.locator("#b-assert-be-value").fill("2")
+    page.locator("#b-assert-be").click()
 
     # Check locally-defined substate style
-    count_c = driver.find_element(By.ID, "count-c")
-    count_d = driver.find_element(By.ID, "count-d")
-    button_c = driver.find_element(By.ID, "button-c")
-    button_d = driver.find_element(By.ID, "button-d")
+    count_c = page.locator("#count-c")
+    count_d = page.locator("#count-d")
+    button_c = page.locator("#button-c")
+    button_d = page.locator("#button-d")
 
-    assert component_state_app.poll_for_content(count_c, exp_not_equal="") == "0"
-    assert component_state_app.poll_for_content(count_d, exp_not_equal="") == "0"
+    expect(count_c).to_have_text("0")
+    expect(count_d).to_have_text("0")
     button_c.click()
-    assert component_state_app.poll_for_content(count_c, exp_not_equal="0") == "1"
-    assert component_state_app.poll_for_content(count_d, exp_not_equal="") == "0"
+    expect(count_c).to_have_text("1")
+    expect(count_d).to_have_text("0")
     button_c.click()
-    assert component_state_app.poll_for_content(count_c, exp_not_equal="1") == "2"
-    assert component_state_app.poll_for_content(count_d, exp_not_equal="") == "0"
+    expect(count_c).to_have_text("2")
+    expect(count_d).to_have_text("0")
     button_d.click()
-    assert component_state_app.poll_for_content(count_c, exp_not_equal="1") == "2"
-    assert component_state_app.poll_for_content(count_d, exp_not_equal="0") == "1"
+    expect(count_c).to_have_text("2")
+    expect(count_d).to_have_text("1")

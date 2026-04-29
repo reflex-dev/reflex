@@ -29,8 +29,7 @@ uv run pre-commit run --all-files                                # all pre-commi
 reflex/                 # main framework package (app, state, compiler, components, utils, istate)
 packages/               # workspace sub-packages (reflex-base, reflex-components-*, reflex-docgen, reflex-components-internal)
 tests/units/            # unit tests, mirrors source tree
-tests/integration/      # Selenium integration tests (run in dev+prod modes)
-  tests_playwright/     # Playwright integration tests (preferred for new tests)
+tests/integration/      # Playwright integration tests (run in dev+prod modes via app_harness_env)
 tests/benchmarks/       # performance benchmarks
 docs/                   # documentation site (separate workspace member)
 ```
@@ -53,13 +52,21 @@ docs/                   # documentation site (separate workspace member)
 - Test functions at module level, not wrapped in classes.
 - **Unit tests:** `tests/units/`, run with `uv run pytest tests/units`.
   - unit tests should primarily cover a single module, and should be named accordingly, including subdirectories (e.g. `tests/units/istate/test_manager.py` for `reflex/istate/manager.py`). For subpackages, also include the corresponding path below `src/` (e.g. `tests/units/reflex_base/event/test_context.py` for `packages/reflex-base/src/reflex_base/event/context.py`).
-- **Integration tests:** prefer Playwright (`tests/integration/tests_playwright/`). Integration tests are slow — extend existing test apps rather than creating new ones for trivial functionality. Multiple test cases sharing one app is fine.
+- **Integration tests:** `tests/integration/`, all written with **sync Playwright** (`from playwright.sync_api import Page, expect`). Selenium is no longer supported for `AppHarness`-based tests. Integration tests are slow — extend existing test apps rather than creating new ones for trivial functionality. Multiple test cases sharing one app is fine.
 
 ### Integration test patterns
 
-Apps as factory functions, run via `AppHarness`:
+Apps as factory functions, run via `AppHarness`. Tests use the pytest-playwright `page` fixture and navigate to `harness.frontend_url`. Utilities in `tests/integration/utils.py` (token polling, navigation, event ordering, LocalStorage/SessionStorage).
 
 ```python
+from collections.abc import Generator
+
+import pytest
+from playwright.sync_api import Page, expect
+
+from reflex.testing import AppHarness
+
+
 def SomeApp():
     import reflex as rx
 
@@ -67,7 +74,7 @@ def SomeApp():
         value: str = ""
 
     def index():
-        return rx.box(rx.text(State.value))
+        return rx.box(rx.text(State.value, id="value"))
 
     app = rx.App()
     app.add_page(index)
@@ -79,9 +86,17 @@ def some_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
         root=tmp_path_factory.mktemp("some_app"), app_source=SomeApp
     ) as harness:
         yield harness
+
+
+def test_value(some_app: AppHarness, page: Page):
+    assert some_app.frontend_url is not None
+    page.goto(some_app.frontend_url)
+    expect(page.locator("#value")).to_have_text("")
 ```
 
-Playwright tests use the `page` fixture and navigate to `harness.frontend_url`. Utilities in `tests/integration/utils.py` (polling, event ordering, storage).
+**Fixture scope:** every `AppHarness`-returning fixture must be `scope="module"` so the app server actually shuts down after the module's tests finish. The `page` fixture is function-scoped (new Playwright page per test).
+
+**Dev+prod parametrization:** for tests that should exercise both development and production builds, take the shared `app_harness_env` fixture from `tests/integration/conftest.py` and call `app_harness_env.create(...)` instead of `AppHarness.create(...)`.
 
 ## .pyi stubs
 

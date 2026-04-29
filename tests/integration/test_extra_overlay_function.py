@@ -3,9 +3,11 @@
 from collections.abc import Generator
 
 import pytest
-from selenium.webdriver.common.by import By
+from playwright.sync_api import Page, expect
 
-from reflex.testing import AppHarness, WebDriver
+from reflex.testing import AppHarness
+
+from . import utils
 
 
 def ExtraOverlay():
@@ -48,42 +50,24 @@ def extra_overlay(tmp_path_factory) -> Generator[AppHarness, None, None]:
         yield harness
 
 
-@pytest.fixture
-def driver(extra_overlay: AppHarness):
-    """Get an instance of the browser open to the extra overlay app.
-
-    Args:
-        extra_overlay: harness for the ExtraOverlay app.
-
-    Yields:
-        WebDriver instance.
-    """
-    driver = extra_overlay.frontend()
-    try:
-        token_input = AppHarness.poll_for_or_raise_timeout(
-            lambda: driver.find_element(By.ID, "token")
-        )
-        # wait for the backend connection to send the token
-        token = extra_overlay.poll_for_value(token_input)
-        assert token is not None
-
-        yield driver
-    finally:
-        driver.quit()
-
-
-def test_extra_overlay(driver: WebDriver, extra_overlay: AppHarness):
+def test_extra_overlay(extra_overlay: AppHarness, page: Page):
     """Test the ExtraOverlay app.
 
     Args:
-        driver: WebDriver instance.
         extra_overlay: harness for the ExtraOverlay app.
+        page: Playwright Page fixture.
     """
-    # Check that the text is displayed.
-    text = driver.find_element(By.XPATH, "//*[contains(text(), 'Hello World')]")
-    assert text
-    assert text.text == "Hello World"
+    assert extra_overlay.frontend_url is not None
+    page.goto(extra_overlay.frontend_url)
 
-    button = driver.find_element(By.TAG_NAME, "button")
-    assert button
-    assert not button.text
+    # wait for the backend connection to send the token
+    token = utils.poll_for_token(page)
+    assert token is not None
+
+    # Check that the text is displayed.
+    text = page.locator("xpath=//*[contains(text(), 'Hello World')]").first
+    expect(text).to_have_text("Hello World")
+
+    button = page.locator("button").first
+    expect(button).to_be_visible()
+    expect(button).to_have_text("")

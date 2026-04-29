@@ -3,9 +3,11 @@
 from collections.abc import Generator
 
 import pytest
-from selenium.webdriver.common.by import By
+from playwright.sync_api import Page, expect
 
-from reflex.testing import DEFAULT_TIMEOUT, AppHarness, WebDriver
+from reflex.testing import AppHarness
+
+from . import utils
 
 
 def BackgroundTask():
@@ -238,81 +240,42 @@ def background_task(
         yield harness
 
 
-@pytest.fixture
-def driver(background_task: AppHarness) -> Generator[WebDriver, None, None]:
-    """Get an instance of the browser open to the background_task app.
-
-    Args:
-        background_task: harness for BackgroundTask app
-
-    Yields:
-        WebDriver instance.
-    """
-    assert background_task.app_instance is not None, "app is not running"
-    driver = background_task.frontend()
-    try:
-        yield driver
-    finally:
-        driver.quit()
-
-
-@pytest.fixture
-def token(background_task: AppHarness, driver: WebDriver) -> str:
-    """Get a function that returns the active token.
-
-    Args:
-        background_task: harness for BackgroundTask app.
-        driver: WebDriver instance.
-
-    Returns:
-        The token for the connected client
-    """
-    assert background_task.app_instance is not None
-
-    token_input = AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "token")
-    )
-
-    # wait for the backend connection to send the token
-    token = background_task.poll_for_value(token_input, timeout=DEFAULT_TIMEOUT * 2)
-    assert token is not None
-
-    return token
-
-
 def test_background_task(
     background_task: AppHarness,
-    driver: WebDriver,
-    token: str,
+    page: Page,
 ):
     """Test that background tasks work as expected.
 
     Args:
         background_task: harness for BackgroundTask app.
-        driver: WebDriver instance.
-        token: The token for the connected client.
+        page: Playwright Page instance.
     """
     assert background_task.app_instance is not None
+    assert background_task.frontend_url is not None
+    page.goto(background_task.frontend_url)
+
+    token = utils.poll_for_token(page)
+    assert token is not None
 
     # get a reference to all buttons
-    delayed_increment_button = driver.find_element(By.ID, "delayed-increment")
-    yield_increment_button = driver.find_element(By.ID, "yield-increment")
-    increment_button = driver.find_element(By.ID, "increment")
-    blocking_pause_button = driver.find_element(By.ID, "blocking-pause")
-    non_blocking_pause_button = driver.find_element(By.ID, "non-blocking-pause")
-    racy_increment_button = driver.find_element(By.ID, "racy-increment")
-    driver.find_element(By.ID, "reset")
+    delayed_increment_button = page.locator("#delayed-increment")
+    yield_increment_button = page.locator("#yield-increment")
+    increment_button = page.locator("#increment")
+    blocking_pause_button = page.locator("#blocking-pause")
+    non_blocking_pause_button = page.locator("#non-blocking-pause")
+    racy_increment_button = page.locator("#racy-increment")
+    page.locator("#reset")
 
     # get a reference to the counter
-    counter = driver.find_element(By.ID, "counter")
-    counter_async_cv = driver.find_element(By.ID, "counter-async-cv")
+    counter = page.locator("#counter")
+    counter_async_cv = page.locator("#counter-async-cv")
 
     # get a reference to the iterations input
-    iterations_input = driver.find_element(By.ID, "iterations")
+    iterations_input = page.locator("#iterations")
 
     # kick off background tasks
-    iterations_input.clear()
-    iterations_input.send_keys("50")
+    iterations_input.fill("")
+    iterations_input.fill("50")
     delayed_increment_button.click()
     blocking_pause_button.click()
     delayed_increment_button.click()
@@ -331,8 +294,8 @@ def test_background_task(
         increment_button.click()
     yield_increment_button.click()
     blocking_pause_button.click()
-    AppHarness.expect(lambda: counter.text == "620", timeout=40)
-    AppHarness.expect(lambda: counter_async_cv.text == "620", timeout=40)
+    expect(counter).to_have_text("620", timeout=40_000)
+    expect(counter_async_cv).to_have_text("620", timeout=40_000)
     # all tasks should have exited and cleaned up
     AppHarness.expect(
         lambda: not background_task.app_instance.event_processor._tasks  # pyright: ignore [reportOptionalMemberAccess]
@@ -341,87 +304,94 @@ def test_background_task(
 
 def test_nested_async_with_self(
     background_task: AppHarness,
-    driver: WebDriver,
-    token: str,
+    page: Page,
 ):
     """Test that nested async with self in the same coroutine raises Exception.
 
     Args:
         background_task: harness for BackgroundTask app.
-        driver: WebDriver instance.
-        token: The token for the connected client.
+        page: Playwright Page instance.
     """
     assert background_task.app_instance is not None
+    assert background_task.frontend_url is not None
+    page.goto(background_task.frontend_url)
+
+    token = utils.poll_for_token(page)
+    assert token is not None
 
     # get a reference to all buttons
-    nested_async_with_self_button = driver.find_element(By.ID, "nested-async-with-self")
-    increment_button = driver.find_element(By.ID, "increment")
+    nested_async_with_self_button = page.locator("#nested-async-with-self")
+    increment_button = page.locator("#increment")
 
     # get a reference to the counter
-    counter = driver.find_element(By.ID, "counter")
-    AppHarness.expect(lambda: counter.text == "0", timeout=5)
+    counter = page.locator("#counter")
+    expect(counter).to_have_text("0", timeout=5000)
 
     nested_async_with_self_button.click()
-    AppHarness.expect(lambda: counter.text == "1", timeout=5)
+    expect(counter).to_have_text("1", timeout=5000)
 
     increment_button.click()
-    AppHarness.expect(lambda: counter.text == "2", timeout=5)
+    expect(counter).to_have_text("2", timeout=5000)
 
 
 def test_get_state(
     background_task: AppHarness,
-    driver: WebDriver,
-    token: str,
+    page: Page,
 ):
     """Test that get_state returns a state bound to the correct StateProxy.
 
     Args:
         background_task: harness for BackgroundTask app.
-        driver: WebDriver instance.
-        token: The token for the connected client.
+        page: Playwright Page instance.
     """
     assert background_task.app_instance is not None
+    assert background_task.frontend_url is not None
+    page.goto(background_task.frontend_url)
+
+    token = utils.poll_for_token(page)
+    assert token is not None
 
     # get a reference to all buttons
-    other_state_button = driver.find_element(By.ID, "increment-from-other-state")
-    increment_button = driver.find_element(By.ID, "increment")
+    other_state_button = page.locator("#increment-from-other-state")
+    increment_button = page.locator("#increment")
 
     # get a reference to the counter
-    counter = driver.find_element(By.ID, "counter")
-    AppHarness.expect(lambda: counter.text == "0", timeout=5)
+    counter = page.locator("#counter")
+    expect(counter).to_have_text("0", timeout=5000)
 
     other_state_button.click()
-    AppHarness.expect(lambda: counter.text == "12", timeout=5)
+    expect(counter).to_have_text("12", timeout=5000)
 
     increment_button.click()
-    AppHarness.expect(lambda: counter.text == "13", timeout=5)
+    expect(counter).to_have_text("13", timeout=5000)
 
 
 def test_yield_in_async_with_self(
     background_task: AppHarness,
-    driver: WebDriver,
-    token: str,
+    page: Page,
 ):
     """Test that yielding inside async with self does not disable mutability.
 
     Args:
         background_task: harness for BackgroundTask app.
-        driver: WebDriver instance.
-        token: The token for the connected client.
+        page: Playwright Page instance.
     """
     assert background_task.app_instance is not None
+    assert background_task.frontend_url is not None
+    page.goto(background_task.frontend_url)
+
+    token = utils.poll_for_token(page)
+    assert token is not None
 
     # get a reference to all buttons
-    yield_in_async_with_self_button = driver.find_element(
-        By.ID, "yield-in-async-with-self"
-    )
+    yield_in_async_with_self_button = page.locator("#yield-in-async-with-self")
 
     # get a reference to the counter
-    counter = driver.find_element(By.ID, "counter")
-    AppHarness.expect(lambda: counter.text == "0", timeout=5)
+    counter = page.locator("#counter")
+    expect(counter).to_have_text("0", timeout=5000)
 
     yield_in_async_with_self_button.click()
-    AppHarness.expect(lambda: counter.text == "2", timeout=5)
+    expect(counter).to_have_text("2", timeout=5000)
 
 
 @pytest.mark.parametrize(
@@ -432,57 +402,64 @@ def test_yield_in_async_with_self(
 )
 def test_disconnect_reconnect(
     background_task: AppHarness,
-    driver: WebDriver,
-    token: str,
+    page: Page,
     button_id: str,
 ):
     """Test that disconnecting and reconnecting works as expected.
 
     Args:
         background_task: harness for BackgroundTask app.
-        driver: WebDriver instance.
-        token: The token for the connected client.
+        page: Playwright Page instance.
         button_id: The ID of the button to click.
     """
-    counter = driver.find_element(By.ID, "counter")
-    button = driver.find_element(By.ID, button_id)
-    increment_button = driver.find_element(By.ID, "increment")
-    sid_input = driver.find_element(By.ID, "sid")
-    sid = background_task.poll_for_value(sid_input, timeout=5)
+    assert background_task.frontend_url is not None
+    page.goto(background_task.frontend_url)
+
+    token = utils.poll_for_token(page)
+    assert token is not None
+
+    counter = page.locator("#counter")
+    button = page.locator(f"#{button_id}")
+    increment_button = page.locator("#increment")
+    sid_input = page.locator("#sid")
+    expect(sid_input).not_to_have_value("", timeout=5000)
+    sid = sid_input.input_value()
     assert sid is not None
 
-    AppHarness.expect(lambda: counter.text == "0", timeout=5)
+    expect(counter).to_have_text("0", timeout=5000)
     button.click()
-    AppHarness.expect(lambda: counter.text == "1", timeout=5)
+    expect(counter).to_have_text("1", timeout=5000)
     increment_button.click()
     # should get a new sid after the reconnect
-    assert (
-        background_task.poll_for_value(sid_input, timeout=5, exp_not_equal=sid) != sid
-    )
+    expect(sid_input).not_to_have_value(sid, timeout=5000)
+    assert sid_input.input_value() != sid
     # Final update should come through on the new websocket connection
-    AppHarness.expect(lambda: counter.text == "3", timeout=5)
+    expect(counter).to_have_text("3", timeout=5000)
 
 
 def test_fast_yielding(
     background_task: AppHarness,
-    driver: WebDriver,
-    token: str,
+    page: Page,
 ) -> None:
     """Test that fast yielding works as expected.
 
     Args:
         background_task: harness for BackgroundTask app.
-        driver: WebDriver instance.
-        token: The token for the connected client.
+        page: Playwright Page instance.
     """
     assert background_task.app_instance is not None
+    assert background_task.frontend_url is not None
+    page.goto(background_task.frontend_url)
+
+    token = utils.poll_for_token(page)
+    assert token is not None
 
     # get a reference to all buttons
-    fast_yielding_button = driver.find_element(By.ID, "fast-yielding")
+    fast_yielding_button = page.locator("#fast-yielding")
 
     # get a reference to the counter
-    counter = driver.find_element(By.ID, "counter")
-    assert background_task._poll_for(lambda: counter.text == "0", timeout=5)
+    counter = page.locator("#counter")
+    expect(counter).to_have_text("0", timeout=5000)
 
     fast_yielding_button.click()
-    assert background_task._poll_for(lambda: counter.text == "1000", timeout=50)
+    expect(counter).to_have_text("1000", timeout=50_000)

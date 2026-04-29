@@ -2,16 +2,17 @@
 
 from __future__ import annotations
 
-import asyncio
 import json
+import time
 from collections.abc import Generator
 from urllib.parse import urlsplit
 
 import pytest
-from selenium.webdriver.common.by import By
+from playwright.sync_api import Page, expect
 
-from reflex.testing import AppHarness, WebDriver
+from reflex.testing import AppHarness
 
+from . import utils
 from .utils import poll_assert_event_order, poll_for_navigation
 
 
@@ -179,87 +180,39 @@ def dynamic_route(
         yield harness
 
 
-@pytest.fixture
-def driver(dynamic_route: AppHarness) -> Generator[WebDriver, None, None]:
-    """Get an instance of the browser open to the dynamic_route app.
-
-    Args:
-        dynamic_route: harness for DynamicRoute app
-
-    Yields:
-        WebDriver instance.
-    """
-    assert dynamic_route.app_instance is not None, "app is not running"
-    driver = dynamic_route.frontend()
-    # TODO: drop after flakiness is resolved
-    driver.implicitly_wait(30)
-    try:
-        yield driver
-    finally:
-        driver.quit()
-
-
-@pytest.fixture
-def token(dynamic_route: AppHarness, driver: WebDriver) -> str:
-    """Get the token associated with backend state.
-
-    Args:
-        dynamic_route: harness for DynamicRoute app.
-        driver: WebDriver instance.
-
-    Returns:
-        The token visible in the driver browser.
-    """
-    assert dynamic_route.app_instance is not None
-    token_input = AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "token")
-    )
-
-    # wait for the backend connection to send the token
-    token = dynamic_route.poll_for_value(token_input)
-    assert token is not None
-
-    return token
-
-
 def test_on_load_navigate(
     dynamic_route: AppHarness,
-    driver: WebDriver,
-    token: str,
+    page: Page,
 ):
     """Click links to navigate between dynamic pages with on_load event.
 
     Args:
         dynamic_route: harness for DynamicRoute app.
-        driver: WebDriver instance.
-        token: The token visible in the driver browser.
+        page: Playwright page.
     """
     assert dynamic_route.app_instance is not None
-    link = driver.find_element(By.ID, "link_page_next")
-    assert link
+    assert dynamic_route.frontend_url is not None
+    page.goto(dynamic_route.frontend_url)
+    utils.poll_for_token(page)
+
+    link = page.locator("#link_page_next")
+    expect(link).to_have_count(1)
 
     exp_order = [f"/page/[page_id]-{ix}" for ix in range(10)]
+    page_id_input = page.locator("#page_id")
+    raw_path_input = page.locator("#raw_path")
     # click the link a few times
     for ix in range(10):
         # wait for navigation, then assert on url
-        with poll_for_navigation(driver):
+        with poll_for_navigation(page):
             link.click()
-        assert urlsplit(driver.current_url).path == f"/page/{ix}"
+        assert urlsplit(page.url).path == f"/page/{ix}"
 
-        link = AppHarness.poll_for_or_raise_timeout(
-            lambda: driver.find_element(By.ID, "link_page_next")
-        )
-        page_id_input = driver.find_element(By.ID, "page_id")
-        raw_path_input = driver.find_element(By.ID, "raw_path")
-
-        assert link
-        assert page_id_input
-
-        assert dynamic_route.poll_for_value(
-            page_id_input, exp_not_equal=str(ix - 1)
-        ) == str(ix)
-        assert dynamic_route.poll_for_value(raw_path_input) == f"/page/{ix}"
-    poll_assert_event_order(driver, exp_order)
+        expect(link).to_have_count(1)
+        expect(page_id_input).not_to_have_value(str(ix - 1))
+        assert page_id_input.input_value() == str(ix)
+        expect(raw_path_input).to_have_value(f"/page/{ix}")
+    poll_assert_event_order(page, exp_order)
 
     frontend_url = dynamic_route.frontend_url
     assert frontend_url
@@ -267,118 +220,115 @@ def test_on_load_navigate(
 
     # manually load the next page to trigger client side routing in prod mode
     exp_order += ["/page/[page_id]-10"]
-    with poll_for_navigation(driver):
-        driver.get(f"{frontend_url}/page/10")
-    poll_assert_event_order(driver, exp_order)
+    with poll_for_navigation(page):
+        page.goto(f"{frontend_url}/page/10")
+    poll_assert_event_order(page, exp_order)
 
     # make sure internal nav still hydrates after redirect
     exp_order += ["/page/[page_id]-11"]
-    link = driver.find_element(By.ID, "link_page_next")
-    with poll_for_navigation(driver):
-        link.click()
-    poll_assert_event_order(driver, exp_order)
+    with poll_for_navigation(page):
+        page.locator("#link_page_next").click()
+    poll_assert_event_order(page, exp_order)
 
     # load same page with a query param and make sure it passes through
     exp_order += ["/page/[page_id]-11"]
-    with poll_for_navigation(driver):
-        driver.get(f"{driver.current_url}?foo=bar")
-    poll_assert_event_order(driver, exp_order)
-    params_json = driver.find_element(By.ID, "params")
-    params = json.loads(params_json.text)
+    with poll_for_navigation(page):
+        page.goto(f"{page.url}?foo=bar")
+    poll_assert_event_order(page, exp_order)
+    params_text = page.locator("#params").text_content() or ""
+    params = json.loads(params_text)
     assert params == {"foo": "bar", "page_id": "11"}
 
     # hit a 404 and ensure we still hydrate
     exp_order += ["/404-no page id"]
-    with poll_for_navigation(driver):
-        driver.get(f"{frontend_url}/missing")
+    with poll_for_navigation(page):
+        page.goto(f"{frontend_url}/missing")
 
     # browser nav should still trigger hydration
     exp_order += ["/page/[page_id]-11"]
-    with poll_for_navigation(driver):
-        driver.back()
-    poll_assert_event_order(driver, exp_order)
+    with poll_for_navigation(page):
+        page.go_back()
+    poll_assert_event_order(page, exp_order)
 
     # next/link to a 404 and ensure we still hydrate
     exp_order += ["/404-no page id"]
-    link = driver.find_element(By.ID, "link_missing")
-    with poll_for_navigation(driver):
-        link.click()
+    with poll_for_navigation(page):
+        page.locator("#link_missing").click()
 
     # hit a page that redirects back to dynamic page
     exp_order += ["on_load_redir-{'foo': 'bar', 'page_id': '0'}", "/page/[page_id]-0"]
-    with poll_for_navigation(driver):
-        driver.get(f"{frontend_url}/redirect-page/0/?foo=bar")
-    poll_assert_event_order(driver, exp_order)
+    with poll_for_navigation(page):
+        page.goto(f"{frontend_url}/redirect-page/0/?foo=bar")
+    poll_assert_event_order(page, exp_order)
     # should have redirected back to page 0
-    assert urlsplit(driver.current_url).path.removesuffix("/") == "/page/0"
+    assert urlsplit(page.url).path.removesuffix("/") == "/page/0"
 
     # hit a static route that would also match the dynamic route
     exp_order += ["on-load-static"]
-    with poll_for_navigation(driver):
-        driver.get(f"{frontend_url}/page/static")
-    poll_assert_event_order(driver, exp_order)
+    with poll_for_navigation(page):
+        page.goto(f"{frontend_url}/page/static")
+    poll_assert_event_order(page, exp_order)
 
 
 def test_on_load_navigate_non_dynamic(
     dynamic_route: AppHarness,
-    driver: WebDriver,
+    page: Page,
 ):
     """Click links to navigate between static pages with on_load event.
 
     Args:
         dynamic_route: harness for DynamicRoute app.
-        driver: WebDriver instance.
+        page: Playwright page.
     """
     assert dynamic_route.app_instance is not None
-    link = driver.find_element(By.ID, "link_page_x")
-    assert link
+    assert dynamic_route.frontend_url is not None
+    page.goto(dynamic_route.frontend_url)
+    utils.poll_for_token(page)
 
-    with poll_for_navigation(driver):
+    link = page.locator("#link_page_x")
+    expect(link).to_have_count(1)
+
+    with poll_for_navigation(page):
         link.click()
-    assert urlsplit(driver.current_url).path.removesuffix("/") == "/static/x"
-    poll_assert_event_order(driver, ["/static/x-no page id"])
+    assert urlsplit(page.url).path.removesuffix("/") == "/static/x"
+    poll_assert_event_order(page, ["/static/x-no page id"])
 
     # go back to the index and navigate back to the static route
-    link = driver.find_element(By.ID, "link_index")
-    with poll_for_navigation(driver):
-        link.click()
-    assert urlsplit(driver.current_url).path.removesuffix("/") == ""
+    with poll_for_navigation(page):
+        page.locator("#link_index").click()
+    assert urlsplit(page.url).path.removesuffix("/") == ""
 
-    link = driver.find_element(By.ID, "link_page_x")
-    with poll_for_navigation(driver):
-        link.click()
-    assert urlsplit(driver.current_url).path.removesuffix("/") == "/static/x"
-    poll_assert_event_order(driver, ["/static/x-no page id", "/static/x-no page id"])
+    with poll_for_navigation(page):
+        page.locator("#link_page_x").click()
+    assert urlsplit(page.url).path.removesuffix("/") == "/static/x"
+    poll_assert_event_order(page, ["/static/x-no page id", "/static/x-no page id"])
 
     for _ in range(3):
-        link = driver.find_element(By.ID, "link_page_x")
-        link.click()
-        assert urlsplit(driver.current_url).path.removesuffix("/") == "/static/x"
-    poll_assert_event_order(driver, ["/static/x-no page id"] * 5)
+        page.locator("#link_page_x").click()
+        assert urlsplit(page.url).path.removesuffix("/") == "/static/x"
+    poll_assert_event_order(page, ["/static/x-no page id"] * 5)
 
 
-@pytest.mark.asyncio
-async def test_render_dynamic_arg(
+def test_render_dynamic_arg(
     dynamic_route: AppHarness,
-    driver: WebDriver,
-    token: str,
+    page: Page,
 ):
     """Assert that dynamic arg var is rendered correctly in different contexts.
 
     Args:
         dynamic_route: harness for DynamicRoute app.
-        driver: WebDriver instance.
-        token: The token visible in the driver browser.
+        page: Playwright page.
     """
     assert dynamic_route.app_instance is not None
     frontend_url = dynamic_route.frontend_url
-    assert frontend_url
+    assert frontend_url is not None
 
-    with poll_for_navigation(driver):
-        driver.get(f"{frontend_url.removesuffix('/')}/arg/0")
+    with poll_for_navigation(page):
+        page.goto(f"{frontend_url.removesuffix('/')}/arg/0")
+    utils.poll_for_token(page)
 
     # TODO: drop after flakiness is resolved
-    await asyncio.sleep(3)
+    time.sleep(3)
 
     def assert_content(expected: str, expect_not: str):
         ids = [
@@ -391,29 +341,21 @@ async def test_render_dynamic_arg(
             "argsubstate-cached_arg_str",
         ]
         for id in ids:
-            el = driver.find_element(By.ID, id)
-            assert el
-            assert (
-                dynamic_route.poll_for_content(el, timeout=30, exp_not_equal=expect_not)
-                == expected
-            )
+            loc = page.locator(f"#{id}")
+            expect(loc).to_have_count(1)
+            expect(loc).not_to_have_text(expect_not, timeout=30_000)
+            expect(loc).to_have_text(expected, timeout=30_000)
 
     assert_content("0", "")
-    next_page_link = driver.find_element(By.ID, "next-page")
-    assert next_page_link
-    with poll_for_navigation(driver):
+    next_page_link = page.locator("#next-page")
+    expect(next_page_link).to_have_count(1)
+    with poll_for_navigation(page):
         next_page_link.click()
-    assert (
-        driver.current_url.removesuffix("/")
-        == f"{frontend_url.removesuffix('/')}/arg/1"
-    )
+    assert page.url.removesuffix("/") == f"{frontend_url.removesuffix('/')}/arg/1"
     assert_content("1", "0")
-    next_page_link = driver.find_element(By.ID, "next-page")
-    assert next_page_link
-    with poll_for_navigation(driver):
+    next_page_link = page.locator("#next-page")
+    expect(next_page_link).to_have_count(1)
+    with poll_for_navigation(page):
         next_page_link.click()
-    assert (
-        driver.current_url.removesuffix("/")
-        == f"{frontend_url.removesuffix('/')}/arg/2"
-    )
+    assert page.url.removesuffix("/") == f"{frontend_url.removesuffix('/')}/arg/2"
     assert_content("2", "1")

@@ -20,12 +20,12 @@ import textwrap
 import threading
 import time
 import types
-from collections.abc import Callable, Coroutine, Sequence
+from collections.abc import Callable, Coroutine
 from copy import deepcopy
 from http.server import SimpleHTTPRequestHandler
 from importlib.util import find_spec
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeVar
+from typing import Any, ClassVar, Literal, TypeVar
 
 import uvicorn
 from reflex_base.components.component import CUSTOM_COMPONENTS, CustomComponent
@@ -48,21 +48,10 @@ from reflex.utils import console, js_runtimes
 from reflex.utils.export import export
 from reflex.utils.token_manager import TokenManager
 
-try:
-    from selenium import webdriver
-    from selenium.webdriver.remote.webdriver import WebDriver
-
-    if TYPE_CHECKING:
-        from selenium.webdriver.common.options import ArgOptions
-        from selenium.webdriver.remote.webelement import WebElement
-
-    has_selenium = True
-except ImportError:
-    has_selenium = False
-
 # The timeout (minutes) to check for the port.
 DEFAULT_TIMEOUT = 15
 POLL_INTERVAL = 0.25
+FRONTEND_STARTUP_TIMEOUT = 60
 FRONTEND_POPEN_ARGS = {}
 T = TypeVar("T")
 TimeoutType = int | float | None
@@ -118,7 +107,6 @@ class AppHarness:
     frontend_output_thread: threading.Thread | None = None
     backend_thread: threading.Thread | None = None
     backend: uvicorn.Server | None = None
-    _frontends: list[WebDriver] = dataclasses.field(default_factory=list)
     _registry_token: contextvars.Token[RegistrationContext] | None = None
     _base_registration_context: ClassVar[RegistrationContext] | None = None
 
@@ -354,7 +342,9 @@ class AppHarness:
                 "Creating backend in a new thread..."
             )  # for pytest diagnosis
             self.backend_thread = threading.Thread(
-                target=_run_backend, args=(contextvars.copy_context(),)
+                target=_run_backend,
+                args=(contextvars.copy_context(),),
+                name=f"reflex-backend-{self.app_name}",
             )
         self.backend_thread.start()
         print("Backend started.")  # for pytest diagnosis #noqa: T201
@@ -388,20 +378,7 @@ class AppHarness:
         if self.frontend_process is None or self.frontend_process.stdout is None:
             msg = "Frontend process has no stdout."
             raise RuntimeError(msg)
-        while self.frontend_url is None:
-            line = self.frontend_process.stdout.readline()
-            if not line:
-                break
-            print(line)  # for pytest diagnosis #noqa: T201
-            m = re.search(reflex.constants.ReactRouter.FRONTEND_LISTENING_REGEX, line)
-            if m is not None:
-                self.frontend_url = m.group(1)
-                config = get_config()
-                config.deploy_url = self.frontend_url
-                break
-        if self.frontend_url is None:
-            msg = "Frontend did not start"
-            raise RuntimeError(msg)
+        frontend_ready = threading.Event()
 
         def consume_frontend_output():
             while True:
@@ -412,12 +389,38 @@ class AppHarness:
                 # catch I/O operation on closed file.
                 except ValueError as e:
                     console.error(str(e))
+                    frontend_ready.set()
                     break
                 if not line:
+                    frontend_ready.set()
                     break
+                print(line)  # for pytest diagnosis #noqa: T201
+                m = re.search(
+                    reflex.constants.ReactRouter.FRONTEND_LISTENING_REGEX,
+                    line,
+                )
+                if m is not None and self.frontend_url is None:
+                    self.frontend_url = m.group(1)
+                    config = get_config()
+                    config.deploy_url = self.frontend_url
+                    frontend_ready.set()
 
-        self.frontend_output_thread = threading.Thread(target=consume_frontend_output)
+        self.frontend_output_thread = threading.Thread(
+            target=consume_frontend_output,
+            name=f"reflex-frontend-{self.app_name}",
+        )
         self.frontend_output_thread.start()
+
+        if not frontend_ready.wait(timeout=FRONTEND_STARTUP_TIMEOUT):
+            msg = f"Frontend did not start within {FRONTEND_STARTUP_TIMEOUT} seconds."
+            raise RuntimeError(msg)
+        if self.frontend_url is None:
+            return_code = self.frontend_process.poll()
+            if return_code is not None:
+                msg = f"Frontend did not start (exit code: {return_code})."
+            else:
+                msg = "Frontend did not start."
+            raise RuntimeError(msg)
 
     def start(self) -> Self:
         """Start the backend in a new thread and dev frontend as a separate process.
@@ -426,9 +429,14 @@ class AppHarness:
             self
         """
         self._initialize_app()
-        self._start_backend()
-        self._start_frontend()
-        self._wait_frontend()
+        try:
+            self._start_backend()
+            self._start_frontend()
+            self._wait_frontend()
+        except Exception:
+            with contextlib.suppress(Exception):
+                self.stop()
+            raise
         return self
 
     @staticmethod
@@ -460,10 +468,6 @@ class AppHarness:
         """Stop the frontend and backend servers."""
         import psutil
 
-        # Quit browsers first to avoid any lingering events being sent during shutdown.
-        for driver in self._frontends:
-            driver.quit()
-
         self._reload_state_module()
         if self._registry_token is not None:
             RegistrationContext.reset(self._registry_token)
@@ -491,11 +495,23 @@ class AppHarness:
                 with contextlib.suppress(psutil.NoSuchProcess):
                     child.kill()
             # wait for main process to exit
-            self.frontend_process.communicate()
+            try:
+                self.frontend_process.communicate(timeout=10)
+            except subprocess.TimeoutExpired:
+                self.frontend_process.kill()
+                self.frontend_process.communicate()
         if self.backend_thread is not None:
-            self.backend_thread.join()
+            self.backend_thread.join(timeout=30)
+            if self.backend_thread.is_alive():
+                console.warn(
+                    f"Backend thread {self.backend_thread.name!r} did not stop cleanly."
+                )
         if self.frontend_output_thread is not None:
-            self.frontend_output_thread.join()
+            self.frontend_output_thread.join(timeout=10)
+            if self.frontend_output_thread.is_alive():
+                console.warn(
+                    f"Frontend output thread {self.frontend_output_thread.name!r} did not stop cleanly."
+                )
 
     def __exit__(self, *excinfo) -> None:
         """Contextmanager protocol for `stop()`.
@@ -597,88 +613,6 @@ class AppHarness:
             raise TimeoutError(msg)
         return backend.servers[0].sockets[0]
 
-    def frontend(
-        self,
-        driver_clz: type[WebDriver] | None = None,
-        driver_kwargs: dict[str, Any] | None = None,
-        driver_options: ArgOptions | None = None,
-        driver_option_args: list[str] | None = None,
-        driver_option_capabilities: dict[str, Any] | None = None,
-    ) -> WebDriver:
-        """Get a selenium webdriver instance pointed at the app.
-
-        Args:
-            driver_clz: webdriver.Chrome (default), webdriver.Firefox, webdriver.Safari,
-                webdriver.Edge, etc
-            driver_kwargs: additional keyword arguments to pass to the webdriver constructor
-            driver_options: selenium ArgOptions instance to pass to the webdriver constructor
-            driver_option_args: additional arguments for the webdriver options
-            driver_option_capabilities: additional capabilities for the webdriver options
-
-        Returns:
-            Instance of the given webdriver navigated to the frontend url of the app.
-
-        Raises:
-            RuntimeError: when selenium is not importable or frontend is not running
-        """
-        if not has_selenium:
-            msg = (
-                "Frontend functionality requires `selenium` to be installed, "
-                "and it could not be imported."
-            )
-            raise RuntimeError(msg)
-        if self.frontend_url is None:
-            msg = "Frontend is not running."
-            raise RuntimeError(msg)
-        want_headless = False
-        if environment.APP_HARNESS_HEADLESS.get():
-            want_headless = True
-        if driver_clz is None:
-            requested_driver = environment.APP_HARNESS_DRIVER.get()
-            driver_clz = getattr(webdriver, requested_driver)  # pyright: ignore [reportPossiblyUnboundVariable]
-            if driver_options is None:
-                driver_options = getattr(webdriver, f"{requested_driver}Options")()  # pyright: ignore [reportPossiblyUnboundVariable]
-        if driver_clz is webdriver.Chrome:  # pyright: ignore [reportPossiblyUnboundVariable]
-            if driver_options is None:
-                from selenium.webdriver.chrome.options import Options
-
-                driver_options = Options()  # pyright: ignore [reportPossiblyUnboundVariable]
-            driver_options.add_argument("--class=AppHarness")
-            if want_headless:
-                driver_options.add_argument("--headless=new")
-        elif driver_clz is webdriver.Firefox:  # pyright: ignore [reportPossiblyUnboundVariable]
-            if driver_options is None:
-                from selenium.webdriver.firefox.options import Options
-
-                driver_options = Options()  # pyright: ignore [reportPossiblyUnboundVariable]
-            if want_headless:
-                driver_options.add_argument("-headless")
-        elif driver_clz is webdriver.Edge:  # pyright: ignore [reportPossiblyUnboundVariable]
-            if driver_options is None:
-                from selenium.webdriver.edge.options import Options
-
-                driver_options = Options()  # pyright: ignore [reportPossiblyUnboundVariable]
-            if want_headless:
-                driver_options.add_argument("headless")
-        if driver_options is None:
-            msg = f"Could not determine options for {driver_clz}"
-            raise RuntimeError(msg)
-        if args := environment.APP_HARNESS_DRIVER_ARGS.get():
-            for arg in args.split(","):
-                driver_options.add_argument(arg)
-        if driver_option_args is not None:
-            for arg in driver_option_args:
-                driver_options.add_argument(arg)
-        if driver_option_capabilities is not None:
-            for key, value in driver_option_capabilities.items():
-                driver_options.set_capability(key, value)
-        if driver_kwargs is None:
-            driver_kwargs = {}
-        driver = driver_clz(options=driver_options, **driver_kwargs)  # pyright: ignore [reportOptionalCall, reportArgumentType]
-        driver.get(self.frontend_url)
-        self._frontends.append(driver)
-        return driver
-
     def token_manager(self) -> TokenManager:
         """Get the token manager for the app instance.
 
@@ -691,63 +625,6 @@ class AppHarness:
         app_token_manager = app_event_namespace._token_manager
         assert app_token_manager is not None
         return app_token_manager
-
-    def poll_for_content(
-        self,
-        element: WebElement,
-        timeout: TimeoutType = None,
-        exp_not_equal: str = "",
-    ) -> str:
-        """Poll element.text for change.
-
-        Args:
-            element: selenium webdriver element to check
-            timeout: how long to poll element.text
-            exp_not_equal: exit the polling loop when the element text does not match
-
-        Returns:
-            The element text when the polling loop exited
-
-        Raises:
-            TimeoutError: when the timeout expires before text changes
-        """
-        if not self._poll_for(
-            target=lambda: element.text != exp_not_equal,
-            timeout=timeout,
-        ):
-            msg = f"{element} content remains {exp_not_equal!r} while polling."
-            raise TimeoutError(msg)
-        return element.text
-
-    def poll_for_value(
-        self,
-        element: WebElement,
-        timeout: TimeoutType = None,
-        exp_not_equal: str | Sequence[str] = "",
-    ) -> str | None:
-        """Poll element.get_attribute("value") for change.
-
-        Args:
-            element: selenium webdriver element to check
-            timeout: how long to poll element value attribute
-            exp_not_equal: exit the polling loop when the value does not match
-
-        Returns:
-            The element value when the polling loop exited
-
-        Raises:
-            TimeoutError: when the timeout expires before value changes
-        """
-        exp_not_equal = (
-            (exp_not_equal,) if isinstance(exp_not_equal, str) else exp_not_equal
-        )
-        if not self._poll_for(
-            target=lambda: element.get_attribute("value") not in exp_not_equal,
-            timeout=timeout,
-        ):
-            msg = f"{element} content remains {exp_not_equal!r} while polling."
-            raise TimeoutError(msg)
-        return element.get_attribute("value")
 
     @staticmethod
     def poll_for_or_raise_timeout(
@@ -938,7 +815,10 @@ class AppHarnessProd(AppHarness):
 
         print("Frontend starting...")  # for pytest diagnosis #noqa: T201
 
-        self.frontend_thread = threading.Thread(target=self._run_frontend)
+        self.frontend_thread = threading.Thread(
+            target=self._run_frontend,
+            name=f"reflex-frontend-{self.app_name}",
+        )
         self.frontend_thread.start()
 
     def _wait_frontend(self):
@@ -970,7 +850,9 @@ class AppHarnessProd(AppHarness):
             "Creating backend in a new thread..."
         )
         self.backend_thread = threading.Thread(
-            target=_run_backend, args=(contextvars.copy_context(),)
+            target=_run_backend,
+            args=(contextvars.copy_context(),),
+            name=f"reflex-backend-{self.app_name}",
         )
         self.backend_thread.start()
         print("Backend started.")  # for pytest diagnosis #noqa: T201
@@ -987,4 +869,8 @@ class AppHarnessProd(AppHarness):
         if self.frontend_server is not None:
             self.frontend_server.shutdown()
         if self.frontend_thread is not None:
-            self.frontend_thread.join()
+            self.frontend_thread.join(timeout=15)
+            if self.frontend_thread.is_alive():
+                console.warn(
+                    f"Frontend thread {self.frontend_thread.name!r} did not stop cleanly."
+                )

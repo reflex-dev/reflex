@@ -5,8 +5,9 @@ from __future__ import annotations
 from collections.abc import Generator
 
 import pytest
+from playwright.sync_api import Page
 
-from reflex.testing import AppHarness, WebDriver
+from reflex.testing import AppHarness
 
 
 def SharedStateApp():
@@ -24,7 +25,7 @@ def SharedStateApp():
     app.add_page(index)
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def shared_state(
     tmp_path_factory,
 ) -> Generator[AppHarness, None, None]:
@@ -44,34 +45,17 @@ def shared_state(
         yield harness
 
 
-@pytest.fixture
-def driver(shared_state: AppHarness) -> Generator[WebDriver, None, None]:
-    """Get an instance of the browser open to the shared_state app.
-
-    Args:
-        shared_state: harness for SharedStateApp
-
-    Yields:
-        WebDriver instance.
-
-    """
-    assert shared_state.app_instance is not None, "app is not running"
-    driver = shared_state.frontend()
-    try:
-        yield driver
-    finally:
-        driver.quit()
-
-
 def test_shared_state(
     shared_state: AppHarness,
-    driver: WebDriver,
+    page: Page,
 ):
     """Test that 2 AppHarness instances can share a state (f.e. from a library).
 
     Args:
         shared_state: harness for SharedStateApp.
-        driver: WebDriver instance.
+        page: Playwright page instance.
 
     """
     assert shared_state.app_instance is not None
+    assert shared_state.frontend_url is not None
+    page.goto(shared_state.frontend_url)
