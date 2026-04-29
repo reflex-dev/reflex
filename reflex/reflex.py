@@ -13,8 +13,6 @@ from reflex_base.environment import environment
 from reflex_base.utils import console
 from reflex_cli.v2.deployments import hosting_cli
 
-from reflex.custom_components.custom_components import custom_components_cli
-
 if TYPE_CHECKING:
     from reflex_base.constants.base import LITERAL_ENV
     from reflex_cli.constants.base import LogLevel as HostingLogLevel
@@ -938,7 +936,6 @@ else:
 cli.add_command(hosting_cli_command, name="cloud")
 cli.add_command(db_cli, name="db")
 cli.add_command(script_cli, name="script")
-cli.add_command(custom_components_cli, name="component")
 
 if __name__ == "__main__":
     cli()

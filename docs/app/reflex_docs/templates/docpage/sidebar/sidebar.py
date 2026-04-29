@@ -433,7 +433,6 @@ def sidebar_comp(
     from reflex_docs.pages.docs import enterprise, getting_started, state, ui
     from reflex_docs.pages.docs import hosting as hosting_page
     from reflex_docs.pages.docs.apiref import pages
-    from reflex_docs.pages.docs.custom_components import custom_components
     from reflex_docs.pages.docs.library import library
     from reflex_docs.pages.docs.recipes_overview import overview
 
@@ -666,26 +665,6 @@ def sidebar_comp(
                                 html_lib,
                                 html_lib_index,
                                 url,
-                            ),
-                            rx.link(  # pyright: ignore [reportCallIssue]
-                                rx.box(  # pyright: ignore [reportCallIssue]
-                                    rx.box(  # pyright: ignore [reportCallIssue]
-                                        rx.icon("atom", size=16),  # pyright: ignore [reportCallIssue]
-                                        rx.el.h5(
-                                            "Custom Components",
-                                            class_name="font-smbold text-[0.875rem] text-slate-12 leading-5 tracking-[-0.01313rem] transition-color",
-                                        ),
-                                        class_name="flex flex-row items-center gap-3 text-slate-12",
-                                    ),
-                                    rx.text(  # pyright: ignore [reportCallIssue]
-                                        "See what components people have made with Reflex!",
-                                        class_name="font-small text-slate-9",
-                                    ),
-                                    class_name="flex flex-col gap-2 border-slate-5 bg-slate-1 hover:bg-slate-3 shadow-large px-3.5 py-2 border rounded-xl transition-bg",
-                                ),
-                                underline="none",
-                                href=custom_components.path,
-                                class_name="w-fit lg:ml-[2.5rem]",
                             ),
                             class_name="flex flex-col items-start gap-8  w-full list-none list-style-none",
                         ),
