@@ -498,20 +498,19 @@ async def poll_for_stopped_progress(
         TimeoutError: If progress dictionaries keep updating beyond the maximum iterations.
     """
     remaining_stable_iterations = stable_iterations
-    last_progress_dicts = get_progress_dicts()
-    last_n_progress_dicts = len(last_progress_dicts)
+    last_progress_dicts_content = [p.text for p in get_progress_dicts()]
     for _ in range(iterations):
         await asyncio.sleep(delay)
-        last_progress_dicts = get_progress_dicts()
-        if (n_progress_dicts := len(last_progress_dicts)) == last_n_progress_dicts:
-            # Count remains stable, decrement remaining_stable_iterations
+        progress_dicts_content = [p.text for p in get_progress_dicts()]
+        if progress_dicts_content == last_progress_dicts_content:
+            # Content remains stable, decrement remaining_stable_iterations
             remaining_stable_iterations -= 1
             if remaining_stable_iterations <= 0:
-                return [json.loads(p.text) for p in last_progress_dicts]
+                return [json.loads(t) for t in last_progress_dicts_content]
         else:
-            # Number of progress dicts changed, we must start over counting stable iterations.
+            # Progress dicts content changed, we must start over counting stable iterations.
             remaining_stable_iterations = stable_iterations
-            last_n_progress_dicts = n_progress_dicts
+            last_progress_dicts_content = progress_dicts_content
     msg = f"Progress dictionaries kept updating after {iterations} iterations ({iterations * delay} seconds)."
     raise TimeoutError(msg)
 
