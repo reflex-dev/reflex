@@ -423,7 +423,6 @@ def sidebar_comp(
     cli_ref_index: list[int],
     ai_builder_overview_index: list[int],
     ai_builder_integrations_index: list[int],
-    tutorials_index: list[int],
     width: str = "100%",
 ):
     from reflex_docs.pages.docs import ai_builder as ai_builder_pages
