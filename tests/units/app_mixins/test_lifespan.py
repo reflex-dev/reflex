@@ -91,7 +91,11 @@ async def test_lifespan_task_starlette_app_param_receives_starlette_instance():
     starlette_app = Starlette()
 
     def lifespan_task(starlette_app):
-        """Record the Starlette app argument injected by the lifespan runner."""
+        """Record the Starlette app argument injected by the lifespan runner.
+
+        Args:
+            starlette_app: Starlette app object injected by the lifespan runner.
+        """
         received["starlette_app"] = starlette_app
 
     app.register_lifespan_task(lifespan_task)
@@ -114,7 +118,12 @@ async def test_lifespan_task_both_app_and_starlette_app_params_are_injected():
     starlette_app = Starlette()
 
     def lifespan_task(app, starlette_app):
-        """Record both injected app objects from the lifespan runner."""
+        """Record both injected app objects from the lifespan runner.
+
+        Args:
+            app: Reflex app object injected by the lifespan runner.
+            starlette_app: Starlette app object injected by the lifespan runner.
+        """
         received["app"] = app
         received["starlette_app"] = starlette_app
 
