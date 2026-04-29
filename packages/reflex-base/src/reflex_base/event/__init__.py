@@ -17,6 +17,7 @@ from typing import (
     NoReturn,
     Protocol,
     TypeVar,
+    Union,
     get_args,
     get_origin,
     get_type_hints,
@@ -2072,7 +2073,7 @@ def call_event_fn(
                 f'if (typeof {event_like_name} === "function") {{'
                 f"return {event_like_name}(...args);"
                 "}"
-                f"return {CompileVars.ADD_EVENTS}([{event_like_name}], args, ({{  }}));"
+                f"return {CompileVars.ADD_EVENTS}([{event_like_name}], args, ({{}}));"
                 "}"
             ),
             _var_type=Callable,
@@ -2099,6 +2100,7 @@ def call_event_fn(
         if (
             isinstance(e, Var)
             and not isinstance(e, (EventVar, FunctionVar))
+            and get_origin(e._var_type) in (Union, types.UnionType)
             and typehint_issubclass(e._var_type, EventSpec | Callable)
         ):
             e = _dispatch_mixed_event_var(e)

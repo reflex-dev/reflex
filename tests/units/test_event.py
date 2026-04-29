@@ -17,6 +17,7 @@ from reflex_base.event import (
     fix_events,
 )
 from reflex_base.utils import format
+from reflex_base.utils.exceptions import EventHandlerValueError
 from reflex_base.vars.base import Field, LiteralVar, Var, VarData, field
 
 import reflex as rx
@@ -850,6 +851,19 @@ def test_event_chain_create_lambda_allows_conditional_mixed_function_and_event()
     assert isinstance(chain, EventChain)
     assert "Timeout reached!" in rendered
     assert "addEvents(" in rendered
+
+
+def test_event_chain_create_lambda_rejects_non_union_callable_var():
+    """Plain callable Vars should remain invalid event-lambda return values."""
+
+    def return_plain_callable_var(_v: Var[Any]) -> Any:
+        return Var(_js_expr="notAnEventLikeCallable", _var_type=Callable)
+
+    with pytest.raises(EventHandlerValueError, match="Invalid event chain"):
+        EventChain.create(
+            cast(LambdaEventCallback[Any], return_plain_callable_var),
+            args_spec=lambda e: [e],
+        )
 
 
 def test_event_chain_create_wraps_plain_function_var_kwargs():
