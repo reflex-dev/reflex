@@ -212,7 +212,7 @@ class State(rx.State):
     count: int = 0
 ```
 
-State holds the app's mutable data. Variables declared here are called **[vars](/docs/vars/base_vars)**. Our counter has one: `count`, starting at `0`.
+State holds the app's mutable data. Variables declared here are called **[vars](/docs/vars/base-vars)**. Our counter has one: `count`, starting at `0`.
 
 ### Event Handlers
 
@@ -277,9 +277,9 @@ Create the app and register the page at the base route.
 ```md alert info
 # Keep learning
 
-- [Dashboard tutorial](/docs/getting_started/dashboard_tutorial) — build a real data app.
-- [Chatapp tutorial](/docs/getting_started/chatapp_tutorial) — wire up streaming AI responses.
-- [How Reflex works](/docs/advanced_onboarding/how-reflex-works) — what happens under the hood.
+- [Dashboard tutorial](/docs/getting-started/dashboard-tutorial) — build a real data app.
+- [Chatapp tutorial](/docs/getting-started/chatapp-tutorial) — wire up streaming AI responses.
+- [How Reflex works](/docs/advanced-onboarding/how-reflex-works) — what happens under the hood.
 ```
 
 ```md alert info
@@ -289,4 +289,4 @@ Create the app and register the page at the base route.
 - [Reflex Cloud](https://reflex.dev/docs/hosting/deploy-quick-start/) — one-command deploy.
 ```
 
-Browse our [open-source templates](/docs/getting_started/open_source_templates), or press `Cmd+K` / `Ctrl+K` to search the docs.
+Browse our [open-source templates](/docs/getting-started/open-source-templates), or press `Cmd+K` / `Ctrl+K` to search the docs.

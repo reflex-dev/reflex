@@ -90,7 +90,7 @@ In this tutorial you'll learn how to:
 # Video: Example of Setting up the Chat App
 ```
 
-We will start by creating a new project and setting up our development environment. If you haven't installed [uv](https://docs.astral.sh/uv/) yet, see the [installation guide](/docs/getting_started/installation). Then create a new project directory and scaffold a Reflex app:
+We will start by creating a new project and setting up our development environment. If you haven't installed [uv](https://docs.astral.sh/uv/) yet, see the [installation guide](/docs/getting-started/installation). Then create a new project directory and scaffold a Reflex app:
 
 ```bash
 mkdir chatapp
@@ -532,7 +532,7 @@ def answer(self):
 
 ### Streaming Text
 
-Normally state updates are sent to the frontend when an event handler returns. However, we want to stream the text from the chatbot as it is generated. We can do this by yielding from the event handler. See the [yield events docs](/docs/events/yield_events) for more info.
+Normally state updates are sent to the frontend when an event handler returns. However, we want to stream the text from the chatbot as it is generated. We can do this by yielding from the event handler. See the [yield events docs](/docs/events/yield-events) for more info.
 
 ```python exec
 def action_bar3() -> rx.Component:

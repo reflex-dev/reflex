@@ -16,7 +16,7 @@ If you're using the AI Builder, you can also use the built-in [Authentication In
 
 ## Guidance for Implementing Authentication
 
-- Store sensitive user tokens and information in [backend-only vars](/docs/vars/base_vars#backend-only-vars).
+- Store sensitive user tokens and information in [backend-only vars](/docs/vars/base-vars#backend-only-vars).
 - Validate user session and permissions for each event handler that performs an authenticated action and all computed vars or loader events that access private data.
 - All content that is statically rendered in the frontend (for example, data hardcoded or loaded at compile time in the UI) will be publicly available, even if the page redirects to a login or uses `rx.cond` to hide content.
 - Only data that originates from state can be truly private and protected.

@@ -73,7 +73,7 @@ def protected_page():
     return rx.text("Protected content")
 ```
 
-For more details on page load events, see the [page load events documentation](/docs/events/page_load_events).
+For more details on page load events, see the [page load events documentation](/docs/events/page-load-events).
 
 # Event Reference
 

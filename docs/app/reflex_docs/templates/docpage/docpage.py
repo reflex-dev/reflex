@@ -350,7 +350,6 @@ def _copy_page_menu_item(
 
 
 DOCS_PROD_BASE = "https://reflex.dev/docs"
-LLMS_TXT_PATH = "/llms.txt"
 LLMS_FULL_TXT_PATH = "/llms-full.txt"
 
 
@@ -767,12 +766,6 @@ def docpage(
             return rx.box(
                 docs_navbar(),
                 rx.el.main(
-                    rx.el.blockquote(
-                        rx.el.span("For the complete documentation index, see "),
-                        rx.el.a("llms.txt", href=LLMS_TXT_PATH),
-                        rx.el.span("."),
-                        class_name="sr-only",
-                    ),
                     rx.box(
                         sidebar,
                         class_name=(
