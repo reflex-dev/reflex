@@ -2251,13 +2251,11 @@ def test_get_frontend_packages_maps_subpath_imports_to_installable_package_names
     )
 
     app = App(theme=None)
-    app._get_frontend_packages(
-        {
-            "react-map-gl/maplibre": {ImportVar(tag="Map")},
-            "@scope/pkg/subpath": {ImportVar(tag="Widget")},
-            "react": {ImportVar(tag="useEffect")},
-        }
-    )
+    app._get_frontend_packages({
+        "react-map-gl/maplibre": {ImportVar(tag="Map")},
+        "@scope/pkg/subpath": {ImportVar(tag="Widget")},
+        "react": {ImportVar(tag="useEffect")},
+    })
 
     install_set, _ = install_frontend_packages.call_args.args
     assert "react-map-gl" in install_set
@@ -2277,9 +2275,9 @@ def test_get_frontend_packages_keeps_https_imports_unchanged(
     )
 
     app = App(theme=None)
-    app._get_frontend_packages(
-        {"https://cdn.skypack.dev/some-lib": {ImportVar(tag="SomeTag")}}
-    )
+    app._get_frontend_packages({
+        "https://cdn.skypack.dev/some-lib": {ImportVar(tag="SomeTag")}
+    })
 
     install_set, _ = install_frontend_packages.call_args.args
     assert "https://cdn.skypack.dev/some-lib" in install_set
@@ -2297,12 +2295,10 @@ def test_get_frontend_packages_maps_versioned_subpath_imports_to_pinned_base(
     )
 
     app = App(theme=None)
-    app._get_frontend_packages(
-        {
-            "react-map-gl@1.0.0/maplibre": {ImportVar(tag="Map")},
-            "@scope/pkg@2.0.0/subpath": {ImportVar(tag="Widget")},
-        }
-    )
+    app._get_frontend_packages({
+        "react-map-gl@1.0.0/maplibre": {ImportVar(tag="Map")},
+        "@scope/pkg@2.0.0/subpath": {ImportVar(tag="Widget")},
+    })
 
     install_set, _ = install_frontend_packages.call_args.args
     assert "react-map-gl@1.0.0" in install_set
