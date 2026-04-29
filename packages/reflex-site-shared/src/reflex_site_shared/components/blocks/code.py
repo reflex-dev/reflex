@@ -1,5 +1,7 @@
 """Code block components for documentation pages."""
 
+from reflex_components_code.shiki_code_block import code_block as shiki_code_block
+
 import reflex as rx
 import reflex_site_shared.styles.fonts as fonts
 from reflex_site_shared import styles
@@ -16,7 +18,7 @@ def _plain_code_block(code: str, language: str):
         The component.
     """
     return rx.box(
-        rx._x.code_block(
+        shiki_code_block(
             code,
             language=language,
             class_name="code-block",
@@ -88,7 +90,7 @@ def code_block_dark(code: str, language: str):
         The component.
     """
     return rx.box(
-        rx._x.code_block(
+        shiki_code_block(
             code,
             language=language,
             class_name="code-block",
@@ -132,7 +134,7 @@ def doccmdoutput(
         The styled command and its example output.
     """
     return rx.vstack(
-        rx._x.code_block(
+        shiki_code_block(
             command,
             can_copy=True,
             border_radius=styles.DOC_BORDER_RADIUS,
@@ -148,7 +150,7 @@ def doccmdoutput(
             font_family="JetBrains Mono",
             width="100%",
         ),
-        rx._x.code_block(
+        shiki_code_block(
             output,
             can_copy=False,
             border_radius="12px",

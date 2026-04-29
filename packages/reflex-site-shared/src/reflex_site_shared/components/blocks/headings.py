@@ -112,7 +112,7 @@ class HeadingLink(rx.link.__self__):
             The component.
         """
         id_ = cls.slugify(text)
-        href = rx.State.router.page.full_path + "#" + id_
+        href = rx.State.router.url + "#" + id_
         scroll_margin = rx.cond(
             HostingBannerState.is_banner_visible,
             "scroll-mt-[113px]",

@@ -32,50 +32,24 @@ jobs:
 
       - name: Parse release tag
         id: parse
-        run: |
-          TAG="${{ github.event.release.tag_name || inputs.tag }}"
-          # Tag format: v1.2.3 for reflex, reflex-lucide-v0.1.0 for sub-packages
-          if [[ "$TAG" =~ ^v([0-9].*)$ ]]; then
-            echo "package=reflex" >> "$GITHUB_OUTPUT"
-            echo "build_dir=." >> "$GITHUB_OUTPUT"
-            echo "version=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
-          elif [[ "$TAG" =~ ^(.+)-v([0-9].*)$ ]]; then
-            PACKAGE="${BASH_REMATCH[1]}"
-            if [ ! -d "packages/$PACKAGE" ]; then
-              echo "Error: packages/$PACKAGE does not exist"
-              exit 1
-            fi
-            echo "package=$PACKAGE" >> "$GITHUB_OUTPUT"
-            echo "build_dir=packages/$PACKAGE" >> "$GITHUB_OUTPUT"
-            echo "version=${BASH_REMATCH[2]}" >> "$GITHUB_OUTPUT"
-          else
-            echo "Error: Tag '$TAG' does not match expected format (v* or <package>-v*)"
-            exit 1
-          fi
+        env:
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: bash .github/scripts/publish/parse_tag.sh
 
       - name: Pin reflex-base to exact version
         if: steps.parse.outputs.package == 'reflex'
-        run: |
-          VERSION="${{ steps.parse.outputs.version }}"
-          if ! grep -q '"reflex-base >= ' pyproject.toml; then
-            echo "Error: expected 'reflex-base >= ...' dependency in pyproject.toml"
-            exit 1
-          fi
-          sed -i 's|"reflex-base >= [^"]*"|"reflex-base == '"$VERSION"'"|' pyproject.toml
-          grep '"reflex-base' pyproject.toml
+        env:
+          VERSION: ${{ steps.parse.outputs.version }}
+        run: bash .github/scripts/publish/pin_reflex_base.sh
 
       - name: Build
         run: uv build --directory "${{ steps.parse.outputs.build_dir }}"
 
       - name: Verify .pyi files in wheel
         if: steps.parse.outputs.package == 'reflex'
-        run: |
-          if unzip -l ${{ steps.parse.outputs.build_dir }}/dist/*.whl | grep '\.pyi$'; then
-            echo "✓ .pyi files found in distribution"
-          else
-            echo "Error: No .pyi files found in wheel"
-            exit 1
-          fi
+        env:
+          BUILD_DIR: ${{ steps.parse.outputs.build_dir }}
+        run: bash .github/scripts/publish/verify_pyi.sh
 
       - name: Publish
         run: uv publish dist/*

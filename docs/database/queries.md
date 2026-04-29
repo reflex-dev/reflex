@@ -173,16 +173,14 @@ import reflex as rx
 
 
 class State(rx.State):
-
     @rx.event
     def insert_user_raw(self, username, email):
         with rx.session() as session:
             session.execute(
                 sqlalchemy.text(
-                    "INSERT INTO user (username, email) "
-                    "VALUES (:username, :email)"
+                    "INSERT INTO user (username, email) VALUES (:username, :email)"
                 ),
-                \{"username": username, "email": email},
+                {"username": username, "email": email},
             )
             session.commit()
 

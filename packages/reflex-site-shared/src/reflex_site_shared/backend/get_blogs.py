@@ -26,7 +26,7 @@ class RecentBlogsState(rx.State):
     posts: rx.Field[list[BlogPostDict]] = rx.field(default_factory=list)
     _fetched: bool = False
 
-    @rx.event(background=True, temporal=True)
+    @rx.event(background=True)
     async def fetch_recent_blogs(self):
         """Fetch recent blogs."""
         if self._fetched:

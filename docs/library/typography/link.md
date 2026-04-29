@@ -45,7 +45,7 @@ rx.link("Example", href="/docs/library/typography/link#example")
 ```md alert info
 # Redirecting the user using State
 
-It is also possible to redirect the user to a new path within the application, using `rx.redirect()`. Check out the docs [here](/docs/api-reference/special_events).
+It is also possible to redirect the user to a new path within the application, using `rx.redirect()`. Check out the docs [here](/docs/api-reference/special-events).
 ```
 
 # Style

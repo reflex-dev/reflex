@@ -13,13 +13,14 @@ def get_integration_path() -> list:
     from integrations_docs import DOCS_DIR
 
     base_dir = str(DOCS_DIR)
-    web_path_prefix = "/ai-builder/integrations"
+    web_path_prefix = "/ai/integrations"
     result = []
 
     exclude_files = [
         "mcp_installation",
         "mcp_overview",
         "overview",
+        "skills",
         "snowflake",
     ]  # without .md extension
 

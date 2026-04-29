@@ -103,7 +103,7 @@ Redirect the user to a new path within the application using `rx.redirect()`.
 ```python demo
 rx.vstack(
     rx.button(
-        "open in tab", on_click=rx.redirect("/docs/api-reference/special_events")
+        "open in tab", on_click=rx.redirect("/docs/api-reference/special-events")
     ),
     rx.button(
         "open in new tab",
@@ -168,34 +168,6 @@ This component will be available at `/nested/page`.
 
 ## Page Metadata
 
-```python exec
-import reflex as rx
-
-meta_data = """
-@rx.page(
-    title='My Beautiful App',
-    description='A beautiful app built with Reflex',
-    image='https://web.reflex-assets.dev/other/logo.jpg',
-    meta=meta,
-)
-def index():
-    return rx.text('A Beautiful App')
-
-@rx.page(title='About Page')
-def about():
-    return rx.text('About Page')
-
-
-meta = [
-    {'name': 'theme_color', 'content': '#FFFFFF'},
-    {'char_set': 'UTF-8'},
-    {'property': 'og:url', 'content': 'url'},
-]
-
-app = rx.App()
-"""
-```
-
 You can add page metadata such as:
 
 - The title to be shown in the browser tab
@@ -204,12 +176,33 @@ You can add page metadata such as:
 - Any additional metadata
 
 ```python
-{meta_data}
+@rx.page(
+    title="My Beautiful App",
+    description="A beautiful app built with Reflex",
+    image="https://web.reflex-assets.dev/other/logo.jpg",
+    meta=meta,
+)
+def index():
+    return rx.text("A Beautiful App")
+
+
+@rx.page(title="About Page")
+def about():
+    return rx.text("About Page")
+
+
+meta = [
+    {"name": "theme_color", "content": "#FFFFFF"},
+    {"char_set": "UTF-8"},
+    {"property": "og:url", "content": "url"},
+]
+
+app = rx.App()
 ```
 
 ## Getting the Current Page
 
-You can access the current page from the `router` attribute in any state. See the [router docs](/docs/utility_methods/router_attributes) for all available attributes.
+You can access the current page from the `router` attribute in any state. See the [router docs](/docs/utility-methods/router-attributes) for all available attributes.
 
 ```python
 class State(rx.State):
@@ -220,7 +213,7 @@ class State(rx.State):
 ```
 
 The `router.page.path` attribute allows you to obtain the path of the current page from the router data,
-for [dynamic pages](/docs/pages/dynamic_routing) this will contain the slug rather than the actual value used to load the page.
+for [dynamic pages](/docs/pages/dynamic-routing) this will contain the slug rather than the actual value used to load the page.
 
 To get the actual URL displayed in the browser, use `router.page.raw_path`. This
 will contain all query parameters and dynamic path segments.
