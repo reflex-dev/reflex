@@ -166,27 +166,27 @@ def test_generate_markdown_file_content_appends_component_props_table(
             frontend_path="/docs",
         ),
     )
-    source = tmp_path / "badge.md"
+    source = tmp_path / "button.md"
     source.write_text(
         "---\n"
         "components:\n"
-        "  - rx.badge\n"
+        "  - rx.button\n"
         "---\n\n"
-        "# Badge\n\n"
-        "Badges are used to highlight status.\n",
+        "# Button\n\n"
+        "Buttons trigger actions.\n",
         encoding="utf-8",
     )
 
     content = generate_markdown_file_content(
         MarkdownFileEntry(
-            url_path=Path("library/data-display/badge.md"),
+            url_path=Path("library/forms/button.md"),
             source_path=source,
-            title="Badge",
+            title="Button",
             section="Library",
         )
     )
 
-    assert "## API Reference\n\n### rx.badge" in content
+    assert "## API Reference\n\n### rx.button" in content
     assert "#### Props" in content
     assert "#### Event Triggers" in content
     assert (
@@ -203,8 +203,11 @@ def test_generate_markdown_file_content_appends_component_props_table(
     assert "Description" in props_rows[0]
     assert len({len(row) for row in props_rows}) == 1
     assert max(len(row) for row in props_rows) <= 150
+    assert "Literal[...]" not in props_table
     assert "\\|" not in props_table
     assert any(row.startswith("| `variant`") for row in props_rows)
+    assert '"classic", "solid", "soft",' in props_table
+    assert '"surface", "outline", "ghost"' in props_table
     assert any(row.split("|")[1].strip() == "" for row in props_rows[2:])
 
 

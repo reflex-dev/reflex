@@ -344,10 +344,7 @@ def _component_prop_type_display(type_: Any) -> str:
     args = get_args(type_)
     if origin is Literal:
         literal_values = [arg for arg in args if str(arg) != ""]
-        displayed_values = [_literal_display(arg) for arg in literal_values[:4]]
-        if len(literal_values) > 4:
-            displayed_values.append("...")
-        return f"Literal[{', '.join(displayed_values)}]"
+        return f"Literal[{', '.join(_literal_display(arg) for arg in literal_values)}]"
     if origin in (Union, UnionType):
         displays = []
         for arg in args:
