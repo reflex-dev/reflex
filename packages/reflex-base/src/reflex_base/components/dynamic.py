@@ -3,6 +3,7 @@
 from typing import TYPE_CHECKING, Union
 
 from reflex_base import constants
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import imports
 from reflex_base.utils.exceptions import DynamicComponentMissingLibraryError
 from reflex_base.utils.format import format_library_name
@@ -26,16 +27,6 @@ def get_cdn_url(lib: str) -> str:
     return f"https://cdn.jsdelivr.net/npm/{lib}" + "/+esm"
 
 
-bundled_libraries = [
-    "react",
-    "@radix-ui/themes",
-    "@emotion/react",
-    f"$/{constants.Dirs.UTILS}/context",
-    f"$/{constants.Dirs.UTILS}/state",
-    f"$/{constants.Dirs.UTILS}/components",
-]
-
-
 def bundle_library(component: Union["Component", str]):
     """Bundle a library with the component.
 
@@ -45,13 +36,14 @@ def bundle_library(component: Union["Component", str]):
     Raises:
         DynamicComponentMissingLibraryError: Raised when a dynamic component is missing a library.
     """
+    bundled = RegistrationContext.ensure_context().bundled_libraries
     if isinstance(component, str):
-        bundled_libraries.append(component)
+        bundled.append(component)
         return
     if component.library is None:
         msg = "Component must have a library to bundle."
         raise DynamicComponentMissingLibraryError(msg)
-    bundled_libraries.append(format_library_name(component.library))
+    bundled.append(format_library_name(component.library))
 
 
 def load_dynamic_serializer():
@@ -74,6 +66,8 @@ def load_dynamic_serializer():
 
         from reflex.compiler import compiler, templates, utils
 
+        libs_in_window = RegistrationContext.ensure_context().bundled_libraries
+
         component = Bare.create(Var.create(component))
 
         rendered_components = {}
@@ -92,8 +86,6 @@ def load_dynamic_serializer():
                 export=True,
             )
         ] = None
-
-        libs_in_window = bundled_libraries
 
         component_imports = component._get_all_imports()
         compiler._apply_common_imports(component_imports)

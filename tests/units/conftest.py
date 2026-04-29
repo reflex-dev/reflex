@@ -4,20 +4,17 @@ import platform
 import traceback
 import uuid
 from collections.abc import AsyncGenerator, Generator, Mapping
-from copy import deepcopy
 from typing import Any
 from unittest import mock
 
 import pytest
 import pytest_asyncio
-from reflex_base.components.component import CUSTOM_COMPONENTS
 from reflex_base.event import Event, EventSpec
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
 from reflex_base.registry import RegistrationContext
 
 from reflex.app import App
-from reflex.experimental.memo import EXPERIMENTAL_MEMOS
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
@@ -28,6 +25,23 @@ from reflex.utils import prerequisites
 from tests.units.mock_redis import mock_redis
 
 from .states.upload import SubUploadState, UploadState
+
+
+@pytest.fixture(autouse=True)
+def _isolate_app_in_context() -> Generator[None, None, None]:
+    """Reset the App slot on the active RegistrationContext between tests.
+
+    A RegistrationContext can only host one App instance, but unit tests
+    repeatedly instantiate `rx.App`, so we clear `_app` around each test
+    while keeping other registrations shared (matching prior behavior).
+
+    Yields:
+        None.
+    """
+    ctx = RegistrationContext.ensure_context()
+    object.__setattr__(ctx, "_app", None)
+    yield
+    object.__setattr__(ctx, "_app", None)
 
 
 @pytest.fixture
@@ -471,7 +485,7 @@ def forked_registration_context() -> Generator[RegistrationContext, None, None]:
     Yields:
         The forked RegistrationContext.
     """
-    with deepcopy(RegistrationContext.get()) as ctx:
+    with RegistrationContext.get().fork() as ctx:
         yield ctx
 
 
@@ -487,21 +501,3 @@ def clean_registration_context() -> Generator[RegistrationContext, None, None]:
     """
     with RegistrationContext() as ctx:
         yield ctx
-
-
-@pytest.fixture
-def preserve_memo_registries():
-    """Save and restore global memo registries around a test.
-
-    Yields:
-        None
-    """
-    custom_components = dict(CUSTOM_COMPONENTS)
-    experimental_memos = dict(EXPERIMENTAL_MEMOS)
-    try:
-        yield
-    finally:
-        CUSTOM_COMPONENTS.clear()
-        CUSTOM_COMPONENTS.update(custom_components)
-        EXPERIMENTAL_MEMOS.clear()
-        EXPERIMENTAL_MEMOS.update(experimental_memos)

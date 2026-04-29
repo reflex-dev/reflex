@@ -49,6 +49,7 @@ from reflex_base.event import (
     run_script,
     unwrap_var_annotation,
 )
+from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style, format_as_emotion
 from reflex_base.utils import console, format, imports, types
 from reflex_base.utils.imports import ImportDict, ImportVar, ParsedImportDict
@@ -2207,12 +2208,11 @@ class CustomComponent(Component):
         """
         component = self.component_fn(*self.get_prop_vars())
 
-        try:
-            from reflex.utils.prerequisites import get_and_validate_app
-
-            style = get_and_validate_app().app.style
-        except Exception:
-            style = {}
+        style = (
+            app.style
+            if (app := RegistrationContext.ensure_context()._app) is not None
+            else {}
+        )
 
         component._add_style_recursive(style)
         return component
@@ -2234,9 +2234,6 @@ class CustomComponent(Component):
             return {}
         ignore_ids.add(id(component))
         return self.get_component()._get_all_app_wrap_components(ignore_ids=ignore_ids)
-
-
-CUSTOM_COMPONENTS: dict[str, CustomComponent] = {}
 
 
 def _register_custom_component(
@@ -2273,7 +2270,9 @@ def _register_custom_component(
     if dummy_component.tag is None:
         msg = f"Could not determine the tag name for {component_fn!r}"
         raise TypeError(msg)
-    CUSTOM_COMPONENTS[dummy_component.tag] = dummy_component
+    RegistrationContext.ensure_context().custom_components[dummy_component.tag] = (
+        dummy_component
+    )
     return dummy_component
 
 
@@ -2425,8 +2424,6 @@ class StatefulComponent(BaseComponent):
             The stateful component or None if the component should not be memoized.
         """
         from reflex_components_core.core.foreach import Foreach
-
-        from reflex_base.registry import RegistrationContext
 
         if component._memoization_mode.disposition == MemoizationDisposition.NEVER:
             # Never memoize this component.

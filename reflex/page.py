@@ -3,16 +3,15 @@
 from __future__ import annotations
 
 import sys
-from collections import defaultdict
 from typing import TYPE_CHECKING
+
+from reflex_base.registry import RegistrationContext
 
 if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import Any
 
     from reflex_base.event import EventType
-
-DECORATED_PAGES: dict[str, list[tuple[Callable, dict[str, Any]]]] = defaultdict(list)
 
 
 def page(
@@ -45,7 +44,6 @@ def page(
     Returns:
         The decorated function.
     """
-    from reflex_base.config import get_config
 
     def decorator(render_fn: Callable):
         kwargs: dict[str, Any] = {}
@@ -64,7 +62,7 @@ def page(
         if on_load:
             kwargs["on_load"] = on_load
 
-        DECORATED_PAGES[get_config().app_name].append((render_fn, kwargs))
+        RegistrationContext.ensure_context().decorated_pages.append((render_fn, kwargs))
 
         return render_fn
 
@@ -73,8 +71,6 @@ def page(
 
 class PageNamespace:
     """A namespace for page names."""
-
-    DECORATED_PAGES = DECORATED_PAGES
 
     def __new__(
         cls,

@@ -27,6 +27,7 @@ from reflex_base.environment import env_var as env_var
 from reflex_base.environment import environment as environment
 from reflex_base.plugins import Plugin
 from reflex_base.plugins.sitemap import SitemapPlugin
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import console
 from reflex_base.utils.exceptions import ConfigError
 
@@ -639,7 +640,7 @@ class Config(BaseConfig):
 
 
 def _get_config() -> Config:
-    """Get the app config.
+    """Import rxconfig.py fresh and return its config object.
 
     Returns:
         The app config.
@@ -651,37 +652,28 @@ def _get_config() -> Config:
         # we need this condition to ensure that a ModuleNotFound error is not thrown when
         # running unit/integration tests or during `reflex init`.
         return Config(app_name="", _skip_plugins_checks=True)
+    # Never cache rxconfig — each load goes to disk so different
+    # RegistrationContexts can hold independent Config instances.
+    sys.modules.pop(constants.Config.MODULE, None)
     rxconfig = importlib.import_module(constants.Config.MODULE)
     return rxconfig.config
 
 
-# Protect sys.path from concurrent modification
-_config_lock = threading.RLock()
+# Protect sys.path from concurrent modification during config loading.
+_load_config_lock = threading.RLock()
 
 
-def get_config(reload: bool = False) -> Config:
-    """Get the app config.
-
-    Args:
-        reload: Re-import the rxconfig module from disk
+def _load_config() -> Config:
+    """Load the config from rxconfig.py with cwd on sys.path.
 
     Returns:
         The app config.
     """
-    cached_rxconfig = sys.modules.get(constants.Config.MODULE, None)
-    if cached_rxconfig is not None:
-        if reload:
-            # Remove any cached module when `reload` is requested.
-            del sys.modules[constants.Config.MODULE]
-        else:
-            return cached_rxconfig.config
-
-    with _config_lock:
+    with _load_config_lock:
         orig_sys_path = sys.path.copy()
         sys.path.clear()
         sys.path.append(str(Path.cwd()))
         try:
-            # Try to import the module with only the current directory in the path.
             return _get_config()
         except Exception:
             # If the module import fails, try to import with the original sys.path.
@@ -696,3 +688,34 @@ def get_config(reload: bool = False) -> Config:
             sys.path.clear()
             sys.path.extend(extra_paths)
             sys.path.extend(orig_sys_path)
+
+
+def get_config() -> Config:
+    """Get the app config from the current RegistrationContext.
+
+    The config is loaded from rxconfig.py once per RegistrationContext and
+    cached on the context thereafter. If no context is currently attached,
+    one is created and attached automatically.
+
+    Returns:
+        The app config.
+    """
+    ctx = RegistrationContext.ensure_context()
+    if ctx._config is None:
+        ctx._set_config(_load_config())
+    return ctx.config
+
+
+def reload_config() -> Config:
+    """Force a fresh load of the config into the current RegistrationContext.
+
+    Clears any cached config on the current context and reloads rxconfig.py
+    from disk.
+
+    Returns:
+        The freshly loaded app config.
+    """
+    ctx = RegistrationContext.ensure_context()
+    config = _load_config()
+    ctx._set_config(config)
+    return config

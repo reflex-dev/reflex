@@ -28,6 +28,7 @@ from typing_extensions import Self, TypeAliasType, TypedDict, TypeVarTuple, Unpa
 from reflex_base import constants
 from reflex_base.components.field import BaseField
 from reflex_base.constants.compiler import CompileVars, Hooks, Imports
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import format
 from reflex_base.utils.decorator import once
 from reflex_base.utils.exceptions import (
@@ -81,8 +82,6 @@ class Event:
     @property
     def state_cls(self) -> "type[BaseState]":
         """The state class for the event."""
-        from reflex_base.registry import RegistrationContext
-
         substate_name = self.name.rpartition(".")[0]
         return RegistrationContext.get().base_states[substate_name]
 

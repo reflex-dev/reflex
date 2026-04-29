@@ -4,7 +4,6 @@ from typing import Any, ClassVar
 
 import pytest
 from reflex_base.components.component import (
-    CUSTOM_COMPONENTS,
     Component,
     CustomComponent,
     StatefulComponent,
@@ -21,6 +20,7 @@ from reflex_base.event import (
     parse_args_spec,
     passthrough_event_spec,
 )
+from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
 from reflex_base.utils.exceptions import (
     ChildrenTypeError,
@@ -874,7 +874,7 @@ def test_create_custom_component(my_component):
     component = rx.memo(my_component)(prop1="test", prop2=1)
     assert component.tag == "MyComponent"
     assert set(component.get_props()) == {"prop1", "prop2"}
-    assert component.tag in CUSTOM_COMPONENTS
+    assert component.tag in RegistrationContext.get().custom_components
 
 
 def test_custom_component_hash(my_component):

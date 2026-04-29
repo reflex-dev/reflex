@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, BinaryIO, cast
 
 from python_multipart.multipart import MultipartParser, parse_options_header
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import exceptions
 from reflex_base.utils.format import json_dumps
 from reflex_base.utils.streaming_response import DisconnectAwareStreamingResponse
@@ -661,7 +662,6 @@ def upload(app: App):
             resolve_upload_chunk_handler_param,
             resolve_upload_handler_param,
         )
-        from reflex_base.registry import RegistrationContext
 
         token, handler_name = _require_upload_headers(request)
         registered_event_handler = RegistrationContext.get().event_handlers[

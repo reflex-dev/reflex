@@ -37,6 +37,7 @@ from reflex_base.event import (
     EventSpec,
     call_script,
 )
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import (
     ComputedVarShadowsBaseVarsError,
     ComputedVarShadowsStateVarError,
@@ -74,7 +75,7 @@ from reflex.istate.data import RouterData
 from reflex.istate.proxy import ImmutableMutableProxy as ImmutableMutableProxy
 from reflex.istate.proxy import MutableProxy, is_mutable_type
 from reflex.istate.storage import ClientStorageBase
-from reflex.utils import console, format, prerequisites, types
+from reflex.utils import console, format, types
 from reflex.utils.exec import is_testing_env
 
 if TYPE_CHECKING:
@@ -521,7 +522,6 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             StateValueError: If a substate class shadows another.
         """
-        from reflex_base.registry import RegistrationContext
         from reflex_base.utils.exceptions import StateValueError
 
         super().__init_subclass__(**kwargs)
@@ -1037,8 +1037,6 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             The substates of the state.
         """
-        from reflex_base.registry import RegistrationContext
-
         return RegistrationContext.get().get_substates(cls)
 
     @classmethod
@@ -1222,8 +1220,6 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             The event handler.
         """
-        from reflex_base.registry import RegistrationContext
-
         # Check if function has stored event_actions from decorator
         event_actions = getattr(fn, EVENT_ACTIONS_MARKER, {})
 
@@ -2375,9 +2371,7 @@ class FrontendEventExceptionState(State):
                 "window.location.reload();"
                 "}"
             )
-        prerequisites.get_and_validate_app().app.frontend_exception_handler(
-            Exception(info)
-        )
+        RegistrationContext.get().app.frontend_exception_handler(Exception(info))
 
 
 class UpdateVarsInternalState(State):
@@ -2410,30 +2404,15 @@ class OnLoadInternalState(State):
     This is a separate substate to avoid deserializing the entire state tree for every page navigation.
     """
 
-    # Cannot properly annotate this as `App` due to circular import issues.
-    _app_ref: ClassVar[Any] = None
-
     def on_load_internal(self) -> list[Event | EventSpec | event.EventCallback] | None:
         """Queue on_load handlers for the current page.
 
         Returns:
             The list of events to queue for on load handling.
-
-        Raises:
-            TypeError: If the app reference is not of type App.
         """
-        from reflex.app import App
-
-        app = type(self)._app_ref or prerequisites.get_and_validate_app().app
-        if not isinstance(app, App):
-            msg = (
-                f"Expected app to be of type {App.__name__}, got {type(app).__name__}."
-            )
-            raise TypeError(msg)
-        # Cache the app reference for subsequent calls.
-        if type(self)._app_ref is None:
-            type(self)._app_ref = app
-        load_events = app.get_load_events(self.router.url.path)
+        load_events = RegistrationContext.get().app.get_load_events(
+            self.router.url.path
+        )
         if not load_events:
             self.is_hydrated = True
             return None  # Fast path for navigation with no on_load events defined.
@@ -2623,11 +2602,6 @@ def reload_state_module(
         state: Recursive argument for the state class to reload.
 
     """
-    from reflex_base.registry import RegistrationContext
-
-    # Reset the _app_ref of OnLoadInternalState to avoid stale references.
-    if state is OnLoadInternalState:
-        state._app_ref = None
     # Clean out all potentially dirty states of reloaded modules.
     for pd_state in tuple(state._potentially_dirty_states):
         with contextlib.suppress(ValueError):

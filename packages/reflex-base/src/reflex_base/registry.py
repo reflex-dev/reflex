@@ -3,17 +3,39 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import Self
 
 from reflex_base.context.base import BaseContext
-from reflex_base.utils.exceptions import StateValueError
+from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from reflex.app import App
     from reflex.state import BaseState
     from reflex_base.components.component import StatefulComponent
+    from reflex_base.config import Config
     from reflex_base.event import EventHandler
+
+
+def _default_bundled_libraries() -> list[str]:
+    """Return the initial set of bundled libraries for a new context.
+
+    Returns:
+        The default list of libraries bundled into every app build.
+    """
+    from reflex_base import constants
+
+    return [
+        "react",
+        "@radix-ui/themes",
+        "@emotion/react",
+        f"$/{constants.Dirs.UTILS}/context",
+        f"$/{constants.Dirs.UTILS}/state",
+        f"$/{constants.Dirs.UTILS}/components",
+    ]
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
@@ -44,6 +66,106 @@ class RegistrationContext(BaseContext):
         default_factory=dict,
         repr=False,
     )
+    _config: Config | None = dataclasses.field(default=None, repr=False)
+    decorated_pages: list[tuple[Callable, dict[str, Any]]] = dataclasses.field(
+        default_factory=list,
+        repr=False,
+    )
+    custom_components: dict[str, Any] = dataclasses.field(
+        default_factory=dict,
+        repr=False,
+    )
+    memo_definitions: dict[str, Any] = dataclasses.field(
+        default_factory=dict,
+        repr=False,
+    )
+    bundled_libraries: list[str] = dataclasses.field(
+        default_factory=_default_bundled_libraries,
+        repr=False,
+    )
+    _app: App | None = dataclasses.field(default=None, repr=False)
+
+    @property
+    def app(self) -> App:
+        """Get the App instance associated with this context.
+
+        Returns:
+            The App instance.
+
+        Raises:
+            ReflexRuntimeError: If no App has been registered with this context.
+        """
+        if self._app is None:
+            msg = "No App is registered with the active RegistrationContext."
+            raise ReflexRuntimeError(msg)
+        return self._app
+
+    @property
+    def config(self) -> Config:
+        """Get the Config associated with this context.
+
+        Returns:
+            The Config instance.
+
+        Raises:
+            ReflexRuntimeError: If no Config has been loaded for this context.
+        """
+        if self._config is None:
+            msg = "No Config has been loaded for the active RegistrationContext."
+            raise ReflexRuntimeError(msg)
+        return self._config
+
+    def _set_app(self, app: App) -> None:
+        """Associate an App instance with this context.
+
+        Args:
+            app: The App instance to register.
+
+        Raises:
+            ReflexRuntimeError: If an App is already registered with this context.
+        """
+        if self._app is not None:
+            msg = (
+                "A RegistrationContext can only be associated with a single App "
+                "instance. To create another App, call `.fork()` on the current "
+                "RegistrationContext to obtain a fresh context that preserves "
+                "existing registrations, or instantiate a new RegistrationContext "
+                "and set it as the current context before instantiating the new App."
+            )
+            raise ReflexRuntimeError(msg)
+        object.__setattr__(self, "_app", app)
+
+    def fork(self) -> Self:
+        """Create a copy of this context with `_app` and `_config` reset to None.
+
+        Existing registrations (event handlers, base states, decorated pages, etc.)
+        are shallow-copied so the fork can evolve independently while preserving
+        already-registered classes. The next call to `get_config()` on the fork
+        will reload `rxconfig.py` from disk.
+
+        Returns:
+            A new RegistrationContext with the same registrations but no app or config.
+        """
+        return type(self)(
+            event_handlers=dict(self.event_handlers),
+            base_states=dict(self.base_states),
+            base_state_substates={
+                k: set(v) for k, v in self.base_state_substates.items()
+            },
+            tag_to_stateful_component=dict(self.tag_to_stateful_component),
+            decorated_pages=list(self.decorated_pages),
+            custom_components=dict(self.custom_components),
+            memo_definitions=dict(self.memo_definitions),
+            bundled_libraries=list(self.bundled_libraries),
+        )
+
+    def _set_config(self, config: Config) -> None:
+        """Set the config for this context.
+
+        Args:
+            config: The config to associate with this context.
+        """
+        object.__setattr__(self, "_config", config)
 
     @classmethod
     def ensure_context(cls) -> Self:

@@ -16,6 +16,7 @@ from urllib.parse import urlparse
 from reflex_base import constants
 from reflex_base.components.component import Component, ComponentStyle, CustomComponent
 from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER, FIELD_MARKER
+from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
 from reflex_base.utils import format, imports
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
@@ -373,12 +374,11 @@ def _apply_component_style_for_compile(component: Component) -> Component:
     Returns:
         The styled component tree.
     """
-    try:
-        from reflex.utils.prerequisites import get_and_validate_app
-
-        style = get_and_validate_app().app.style
-    except Exception:
-        style = {}
+    style = (
+        app.style
+        if (app := RegistrationContext.ensure_context()._app) is not None
+        else {}
+    )
 
     component._add_style_recursive(style)
     return component

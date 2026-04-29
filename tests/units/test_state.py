@@ -3186,7 +3186,6 @@ async def test_preprocess(
         mock_base_state_event_processor: The event processor.
         emitted_deltas: List to capture emitted deltas.
     """
-    OnLoadInternalState._app_ref = None
     app = app_module_mock.app = App(_state=State)
     app._state_manager = mock_root_event_context.state_manager
 
@@ -3250,7 +3249,6 @@ async def test_preprocess_multiple_load_events(
         mock_base_state_event_processor: The event processor.
         emitted_deltas: List to capture emitted deltas.
     """
-    OnLoadInternalState._app_ref = None
     app = app_module_mock.app = App(_state=State)
     app._state_manager = mock_root_event_context.state_manager
 
@@ -3701,7 +3699,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
 
         state_manager = StateManagerRedis(redis=mock_redis())
         assert state_manager.lock_expiration == expected_values[0]  # pyright: ignore [reportAttributeAccessIssue]
@@ -3737,7 +3735,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
 
         with pytest.raises(InvalidLockWarningThresholdError):
             StateManagerRedis(redis=mock_redis())
@@ -3762,7 +3760,7 @@ config = rx.Config(
     monkeypatch.setenv("REFLEX_REDIS_URL", "redis://localhost:6379")
 
     with chdir(proj_root):
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
         monkeypatch.setattr(prerequisites, "get_redis", mock_redis)
         state_manager = StateManager.create()
         assert isinstance(state_manager, StateManagerMemory)
@@ -3786,7 +3784,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
         from reflex.state import State
 
         class TestState(State):
@@ -3813,7 +3811,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
         from reflex.state import State
 
         class TestState(State):
