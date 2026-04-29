@@ -272,16 +272,16 @@ Create the app and register the page at the base route.
 ```md alert info
 # Keep learning
 
-- [Dashboard tutorial](/docs/getting_started/dashboard_tutorial) — build a real data app.
-- [Chatapp tutorial](/docs/getting_started/chatapp_tutorial) — wire up streaming AI responses.
-- [How Reflex works](/docs/advanced_onboarding/how-reflex-works) — what happens under the hood.
+- [Dashboard tutorial](/docs/getting-started/dashboard-tutorial/) — build a real data app.
+- [Chatapp tutorial](/docs/getting-started/chatapp-tutorial/) — wire up streaming AI responses.
+- [How Reflex works](/docs/advanced-onboarding/how-reflex-works/) — what happens under the hood.
 ```
 
 ```md alert info
 # Ship faster with AI
 
 - [Reflex Build](https://build.reflex.dev/) — generate a full app from a prompt.
-- [Reflex Cloud](https://reflex.dev/docs/hosting/deploy-quick-start/) — one-command deploy.
+- [Reflex Cloud](/docs/hosting/deploy-quick-start/) — one-command deploy.
 ```
 
-Browse our [open-source templates](/docs/getting_started/open_source_templates), or press `Cmd+K` / `Ctrl+K` to search the docs.
+Browse our [open-source templates](/docs/getting-started/open-source-templates/), or press `Cmd+K` / `Ctrl+K` to search the docs.
