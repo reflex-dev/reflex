@@ -269,7 +269,7 @@ def generate_markdown_file_entries() -> tuple[MarkdownFileEntry, ...]:
     ])
 
 
-def generate_markdown_files() -> tuple[tuple[Path, str | bytes], ...]:
+def generate_markdown_files() -> tuple[tuple[Path, str], ...]:
     """Generate markdown asset contents for agent-friendly docs pages."""
     return tuple(
         (entry.url_path, generate_markdown_file_content(entry))
