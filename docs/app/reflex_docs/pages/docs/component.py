@@ -748,7 +748,8 @@ def generate_props(
                 comp,
                 class_name=(
                     "flex flex-col items-center justify-center p-6 flex-1 "
-                    "bg-slate-2 border-r border-slate-4 min-w-0"
+                    "bg-slate-2 border-b lg:border-b-0 lg:border-r "
+                    "border-slate-4 min-w-0"
                 ),
             ),
             rx.box(
@@ -756,7 +757,8 @@ def generate_props(
                 class_name="flex-1 p-4 bg-slate-1 min-w-0 overflow-x-auto",
             ),
             class_name=(
-                "flex flex-row w-full rounded-xl border border-slate-4 overflow-hidden"
+                "flex flex-col lg:flex-row w-full rounded-xl border "
+                "border-slate-4 overflow-hidden"
             ),
         )
     else:

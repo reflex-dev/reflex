@@ -117,14 +117,11 @@ Here is the full code for this example:
 tabs()
 ```
 
-```python demo box
-rx.box(
-    rx.code_block(
-        """import reflex as rx """,
-        class_name="code-block !bg-transparent !border-none",
-    ),
-    rx.code_block(
-        """class State(rx.State):
+```python
+import reflex as rx
+
+
+class State(rx.State):
     count: int = 0
 
     @rx.event
@@ -133,21 +130,10 @@ rx.box(
 
     @rx.event
     def decrement(self):
-        self.count -= 1""",
-        background=rx.cond(
-            IntroTabsState.value == "tab2",
-            "var(--c-slate-3) !important",
-            "transparent",
-        ),
-        border=rx.cond(
-            IntroTabsState.value == "tab2",
-            "1px solid var(--c-slate-5)",
-            "none !important",
-        ),
-        class_name="code-block",
-    ),
-    rx.code_block(
-        """def index():
+        self.count -= 1
+
+
+def index():
     return rx.hstack(
         rx.button(
             "Decrement",
@@ -161,36 +147,11 @@ rx.box(
             on_click=State.increment,
         ),
         spacing="4",
-    )""",
-        border=rx.cond(
-            IntroTabsState.value == "tab1",
-            "1px solid var(--c-slate-5)",
-            "none !important",
-        ),
-        background=rx.cond(
-            IntroTabsState.value == "tab1",
-            "var(--c-slate-3) !important",
-            "transparent",
-        ),
-        class_name="code-block",
-    ),
-    rx.code_block(
-        """app = rx.App()
-app.add_page(index)""",
-        background=rx.cond(
-            IntroTabsState.value == "tab3",
-            "var(--c-slate-3) !important",
-            "transparent",
-        ),
-        border=rx.cond(
-            IntroTabsState.value == "tab3",
-            "1px solid var(--c-slate-5)",
-            "none !important",
-        ),
-        class_name="code-block",
-    ),
-    class_name="w-full flex flex-col",
-)
+    )
+
+
+app = rx.App()
+app.add_page(index)
 ```
 
 ## The Structure of a Reflex App
