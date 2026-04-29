@@ -99,13 +99,13 @@ Under the hood, these components compile down to React components. For example, 
 
 ```jsx
 <HStack>
-    <Link href=\{GithubState.url}>
-        <Avatar src=\{GithubState.profile_image}/>
+    <Link href={GithubState.url}>
+        <Avatar src={GithubState.profile_image}/>
     </Link>
     <Input
         placeholder="Your Github username"
         // This would actually be a websocket call to the backend.
-        onBlur=\{GithubState.set_profile}
+        onBlur={GithubState.set_profile}
     >
 </HStack>
 ```
@@ -140,7 +140,7 @@ class GithubState(rx.State):
     def set_profile(self, username: str):
         if username == "":
             return
-        github_data = requests.get(f"https://api.github.com/users/\{username}").json()
+        github_data = requests.get(f"https://api.github.com/users/{username}").json()
         self.url = github_data["url"]
         self.profile_image = github_data["avatar_url"]
 ```
@@ -216,7 +216,7 @@ Once we have the user's state, the next step is to run the event handler with th
 def set_profile(self, username: str):
     if username == "":
         return
-    github_data = requests.get(f"https://api.github.com/users/\{username}").json()
+    github_data = requests.get(f"https://api.github.com/users/{username}").json()
     self.url = github_data["url"]
     self.profile_image = github_data["avatar_url"]
 ```

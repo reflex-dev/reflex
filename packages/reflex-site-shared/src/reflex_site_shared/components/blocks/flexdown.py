@@ -2,6 +2,7 @@
 
 # pyright: reportAttributeAccessIssue=false
 from reflex_base.constants.colors import ColorType
+from reflex_components_code.shiki_code_block import code_block as shiki_code_block
 
 import reflex as rx
 from reflex_site_shared.components.blocks.code import (
@@ -139,12 +140,12 @@ def markdown_codeblock(value: str, **props: object) -> rx.Component:
     Returns:
         The component.
     """
-    return rx._x.code_block(value, **props)
+    return shiki_code_block(value, **props)
 
 
 def markdown_with_shiki(*args, **kwargs):
     """Wrapper for the markdown component with a customized component map.
-    Uses the experimental Shiki-based code block (rx._x.code_block)
+    Uses the Shiki-based code block
     instead of the default CodeBlock component for code blocks.
 
     Note: This wrapper should be removed once the default codeblock

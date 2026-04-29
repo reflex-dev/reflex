@@ -119,11 +119,11 @@ tabs()
 
 ```python demo box
 rx.box(
-    rx._x.code_block(
+    rx.code_block(
         """import reflex as rx """,
         class_name="code-block !bg-transparent !border-none",
     ),
-    rx._x.code_block(
+    rx.code_block(
         """class State(rx.State):
     count: int = 0
 
@@ -146,7 +146,7 @@ rx.box(
         ),
         class_name="code-block",
     ),
-    rx._x.code_block(
+    rx.code_block(
         """def index():
     return rx.hstack(
         rx.button(
@@ -174,7 +174,7 @@ rx.box(
         ),
         class_name="code-block",
     ),
-    rx._x.code_block(
+    rx.code_block(
         """app = rx.App()
 app.add_page(index)""",
         background=rx.cond(
@@ -275,7 +275,7 @@ Create the app and register the page at the base route.
 🎉 You've built a fully interactive web app in pure Python.
 
 ```md alert info
-# Keep learning →
+# Keep learning
 
 - [Dashboard tutorial](/docs/getting_started/dashboard_tutorial) — build a real data app.
 - [Chatapp tutorial](/docs/getting_started/chatapp_tutorial) — wire up streaming AI responses.
@@ -283,7 +283,7 @@ Create the app and register the page at the base route.
 ```
 
 ```md alert info
-# Ship faster with AI →
+# Ship faster with AI
 
 - [Reflex Build](https://build.reflex.dev/) — generate a full app from a prompt.
 - [Reflex Cloud](https://reflex.dev/docs/hosting/deploy-quick-start/) — one-command deploy.

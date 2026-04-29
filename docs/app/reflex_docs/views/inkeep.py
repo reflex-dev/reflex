@@ -67,7 +67,7 @@ const escalationParams = {
 const searchBarProps = {
   baseSettings: {
     apiKey: '5805add2b45961017ac79c9d388aa34f5db49eb652e228e0',
-    customIcons: {search: {custom: "/icons/search.svg"}},
+    customIcons: {search: {custom: "/docs/icons/search.svg"}},
     organizationDisplayName: 'Reflex',
     primaryBrandColor: '#6E56CF',
     transformSource: (source) => {

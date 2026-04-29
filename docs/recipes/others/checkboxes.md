@@ -17,8 +17,7 @@ Additionally, the limit that prevent the user from checking more boxes than allo
 
 ```python
 class CBoxeState(rx.State):
-
-    choices: dict[str, bool] = \{k: False for k in ["Choice A", "Choice B", "Choice C"]}
+    choices: dict[str, bool] = {k: False for k in ["Choice A", "Choice B", "Choice C"]}
     _check_limit = 2
 
     def check_choice(self, value, index):
@@ -33,20 +32,21 @@ class CBoxeState(rx.State):
         choices = [l for l, v in self.choices.items() if v]
         return " / ".join(choices) if choices else "None"
 
+
 import reflex as rx
 
 
 def render_checkboxes(values, limit, handler):
     return rx.vstack(
-            rx.foreach(
-                values,
-                lambda choice: rx.checkbox(
-                    choice[0],
-                    checked=choice[1],
-                    disabled=~choice[1] & limit,
-                    on_change=lambda val: handler(val, choice[0]),
-                ),
-            )
+        rx.foreach(
+            values,
+            lambda choice: rx.checkbox(
+                choice[0],
+                checked=choice[1],
+                disabled=~choice[1] & limit,
+                on_change=lambda val: handler(val, choice[0]),
+            ),
+        )
     )
 
 

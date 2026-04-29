@@ -401,7 +401,7 @@ app.add_page(index, route="/")
 You've got the core pieces — components, state, events, compile-time vs. runtime. Time to build.
 
 ```md alert info
-# Build something real →
+# Build something real
 
 - [Dashboard tutorial](/docs/getting_started/dashboard_tutorial) — a data app with tables, forms, and state.
 - [Chatapp tutorial](/docs/getting_started/chatapp_tutorial) — streaming AI responses end-to-end.
@@ -409,7 +409,7 @@ You've got the core pieces — components, state, events, compile-time vs. runti
 ```
 
 ```md alert info
-# Go deeper →
+# Go deeper
 
 - [Vars](/docs/vars/base_vars) and [var operations](/docs/vars/var-operations) — the full API.
 - [Events](/docs/events/events_overview) and [pages](/docs/pages/overview) — routing, triggers, handlers.

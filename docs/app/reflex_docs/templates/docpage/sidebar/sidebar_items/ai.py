@@ -1,3 +1,4 @@
+from ..state import SideBarItem
 from .item import create_item
 
 
@@ -145,20 +146,45 @@ def get_ai_builder_integrations():
     ]
 
 
+def get_sidebar_items_ai_onboarding():
+    from reflex_docs.pages.docs import ai_builder
+
+    return [
+        SideBarItem(
+            names="AI Onboarding",
+            link=ai_builder.integrations.ai_onboarding.path,
+        ),
+    ]
+
+
 def get_sidebar_items_mcp():
     from reflex_docs.pages.docs import ai_builder
 
     return [
-        create_item(
-            "MCP Integration",
-            children=[
-                ai_builder.integrations.mcp_overview,
-                ai_builder.integrations.mcp_installation,
-            ],
+        SideBarItem(
+            names="Overview",
+            link=ai_builder.integrations.mcp_overview.path,
+        ),
+        SideBarItem(
+            names="Installation",
+            link=ai_builder.integrations.mcp_installation.path,
+        ),
+    ]
+
+
+def get_sidebar_items_skills():
+    from reflex_docs.pages.docs import ai_builder
+
+    return [
+        SideBarItem(
+            names="Overview",
+            link=ai_builder.integrations.skills.path,
         ),
     ]
 
 
 ai_builder_overview_items = get_sidebar_items_ai_builder_overview()
 ai_builder_integrations = get_ai_builder_integrations()
+ai_onboarding_items = get_sidebar_items_ai_onboarding()
 mcp_items = get_sidebar_items_mcp()
+skills_items = get_sidebar_items_skills()

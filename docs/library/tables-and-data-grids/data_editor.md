@@ -349,7 +349,7 @@ class DataEditorState_HP(rx.State):
         yield self.get_clicked_data(pos)
 
     def get_clicked_data(self, pos) -> str:
-        self.clicked_data = f"Cell clicked: \{pos}"
+        self.clicked_data = f"Cell clicked: {pos}"
 ```
 
 ```python
