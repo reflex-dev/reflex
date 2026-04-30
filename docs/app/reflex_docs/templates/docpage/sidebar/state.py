@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+
 @dataclass(kw_only=True)
 class SideBarBase:
     """Base class for the Side bar."""

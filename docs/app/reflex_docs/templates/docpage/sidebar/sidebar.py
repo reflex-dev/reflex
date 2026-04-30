@@ -248,6 +248,7 @@ def sidebar_icon(name):
         else rx.fragment()
     )
 
+
 def calculate_index(sidebar_items, url: str) -> list[int]:
     sidebar_items = (
         sidebar_items if isinstance(sidebar_items, list) else [sidebar_items]
@@ -447,13 +448,11 @@ def sidebar_comp(
     path = normalize_url(url)
     is_docs_hosting = path.startswith("/hosting/")
     is_docs_ai_builder = path.startswith("/ai/")
-    is_ai_mcp_or_skills = path.startswith(
-        (
-            "/ai/integrations/ai-onboarding/",
-            "/ai/integrations/skills/",
-            "/ai/integrations/mcp",
-        )
-    )
+    is_ai_mcp_or_skills = path.startswith((
+        "/ai/integrations/ai-onboarding/",
+        "/ai/integrations/skills/",
+        "/ai/integrations/mcp",
+    ))
 
     ai_category = 1 if is_ai_mcp_or_skills else 0
     docs_category = 0
@@ -709,7 +708,9 @@ def sidebar(url=None, width: str = "100%") -> rx.Component:
     api_reference_index = calculate_index(api_reference, normalized_url)
     recipes_index = calculate_index(recipes, normalized_url)
     enterprise_usage_index = calculate_index(enterprise_usage_items, normalized_url)
-    enterprise_component_index = calculate_index(enterprise_component_items, normalized_url)
+    enterprise_component_index = calculate_index(
+        enterprise_component_items, normalized_url
+    )
 
     cli_ref_index = calculate_index(cli_ref, normalized_url)
     ai_builder_overview_index = calculate_index(
