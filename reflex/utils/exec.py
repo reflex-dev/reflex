@@ -618,7 +618,6 @@ def run_backend_prod(
         loglevel: The log level.
         mount_frontend_compiled_app: Whether to mount the compiled frontend app with the backend.
     """
-
     environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.set(mount_frontend_compiled_app)
 
     if should_use_granian():
