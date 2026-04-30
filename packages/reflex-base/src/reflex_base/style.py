@@ -319,20 +319,13 @@ _CSS_COLOR_KEYWORDS = frozenset({
     "yellowgreen",
 })
 
-_CSS_URL_COLOR_KEYS = frozenset({
+_SVG_PAINT_KEYS = frozenset({
     "fill",
     "stroke",
 })
-
-_CSS_NONE_COLOR_KEYS = frozenset({
-    "fill",
-    "stroke",
-})
-
-_CSS_CONTEXT_PAINT_KEYS = frozenset({
-    "fill",
-    "stroke",
-})
+_CSS_URL_COLOR_KEYS = _SVG_PAINT_KEYS
+_CSS_NONE_COLOR_KEYS = _SVG_PAINT_KEYS
+_CSS_CONTEXT_PAINT_KEYS = _SVG_PAINT_KEYS
 
 
 def _is_color_style_key(style_key: str) -> bool:
@@ -386,6 +379,8 @@ def _is_valid_css_color_value(style_key: str, style_value: str) -> bool:
     if lower.startswith("url(") and lower.endswith(")"):
         return format.to_snake_case(style_key) in _CSS_URL_COLOR_KEYS
 
+    # Intentional trade-off: check for well-known color-function prefixes
+    # without implementing full CSS function parsing.
     return lower.endswith(")") and any(
         lower.startswith(prefix)
         for prefix in _CSS_COLOR_FUNCTION_PREFIXES + _CSS_COLOR_VALUE_PREFIXES

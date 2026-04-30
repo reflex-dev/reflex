@@ -495,12 +495,22 @@ async def _upload_buffered_file(
         msg = "Upload event was not created."
         raise RuntimeError(msg)
 
+    disconnect_seen = False
+
+    def _mark_disconnected() -> None:
+        nonlocal disconnect_seen
+        disconnect_seen = True
+
     async def _ndjson_updates():
         """Process the upload event, generating ndjson updates.
 
         Yields:
             Each state update as newline-delimited JSON.
         """
+        # Let the disconnect watcher run before we enqueue the upload handler.
+        await asyncio.sleep(0)
+        if disconnect_seen:
+            return
         # Enqueue the task on the main event loop, but emit deltas to the local queue.
         async for delta in app.event_processor.enqueue_stream_delta(token, event):
             yield json_dumps(StateUpdate(delta=delta)) + "\n"
@@ -509,6 +519,7 @@ async def _upload_buffered_file(
         _ndjson_updates(),
         media_type="application/x-ndjson",
         on_finish=_close_form_data,
+        on_disconnect=_mark_disconnected,
     )
 
 

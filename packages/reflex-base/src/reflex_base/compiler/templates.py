@@ -13,7 +13,7 @@ from reflex_base.vars.base import VarData
 
 if TYPE_CHECKING:
     from reflex.compiler.utils import _ImportDict
-    from reflex_base.components.component import Component, StatefulComponent
+    from reflex_base.components.component import Component
 
 
 def _sort_hooks(
@@ -348,7 +348,12 @@ import {{ jsx }} from "@emotion/react";
 export const initialState = {"{}" if not initial_state else json_dumps(initial_state)}
 
 export const defaultColorMode = {default_color_mode}
-export const ColorModeContext = createContext(null);
+export const ColorModeContext = createContext({{
+  colorMode: defaultColorMode,
+  resolvedColorMode: defaultColorMode === "dark" ? "dark" : "light",
+  toggleColorMode: () => {{}},
+  setColorMode: () => {{}},
+}});
 export const UploadFilesContext = createContext(null);
 export const DispatchContext = createContext(null);
 export const StateContexts = {{{state_contexts_str}}};
@@ -417,7 +422,7 @@ export function StateProvider({{ children }}) {{
 }}"""
 
 
-def component_template(component: Component | StatefulComponent):
+def component_template(component: Component):
     """Template to render a component tag.
 
     Args:
@@ -618,24 +623,23 @@ export default defineConfig((config) => ({{
 }}));"""
 
 
-def stateful_component_template(
-    tag_name: str, memo_trigger_hooks: list[str], component: Component, export: bool
-):
-    """Template for stateful component.
+def dynamic_component_template(
+    tag_name: str, component: Component, export: bool
+) -> str:
+    """Template for a dynamic SSR component function declaration.
 
     Args:
         tag_name: The tag name for the component.
-        memo_trigger_hooks: The memo trigger hooks for the component.
         component: The component to render.
         export: Whether to export the component.
 
     Returns:
-        Rendered stateful component code as string.
+        Rendered dynamic component code as string.
     """
     all_hooks = component._get_all_hooks()
     return f"""
 {"export " if export else ""}function {tag_name} () {{
-  {_render_hooks(all_hooks, memo_trigger_hooks)}
+  {_render_hooks(all_hooks)}
   return (
     {_RenderUtils.render(component.render())}
   )
@@ -643,15 +647,17 @@ def stateful_component_template(
 """
 
 
-def stateful_components_template(imports: list[_ImportDict], memoized_code: str) -> str:
-    """Template for stateful components.
+def dynamic_components_module_template(
+    imports: list[_ImportDict], memoized_code: str
+) -> str:
+    """Template for a dynamic-SSR components module.
 
     Args:
         imports: List of import statements.
-        memoized_code: Memoized code for stateful components.
+        memoized_code: Code for the module body.
 
     Returns:
-        Rendered stateful components code as string.
+        Rendered module code as string.
     """
     imports_str = "\n".join([_RenderUtils.get_import(imp) for imp in imports])
     return f"{imports_str}\n{memoized_code}"
@@ -707,6 +713,83 @@ export const {component["name"]} = memo(({component["signature"]}) => {{
 {functions_code}
 
 {components_code}"""
+
+
+def memo_single_component_template(
+    imports: list[_ImportDict],
+    component: dict[str, Any],
+    dynamic_imports: Iterable[str],
+    custom_codes: Iterable[str],
+) -> str:
+    """Template for a single memoized component in its own module.
+
+    Args:
+        imports: List of import statements for this memo only.
+        component: The single component definition to render.
+        dynamic_imports: Dynamic import statements scoped to this memo.
+        custom_codes: Custom code snippets scoped to this memo.
+
+    Returns:
+        The rendered standalone memo module code.
+    """
+    imports_str = "\n".join([_RenderUtils.get_import(imp) for imp in imports])
+    dynamic_imports_str = "\n".join(dynamic_imports)
+    custom_code_str = "\n".join(custom_codes)
+
+    component_code = f"""
+export const {component["name"]} = memo(({component["signature"]}) => {{
+    {_render_hooks(component.get("hooks", {}))}
+    return(
+        {_RenderUtils.render(component["render"])}
+    )
+}});
+"""
+
+    return f"""
+{imports_str}
+
+{dynamic_imports_str}
+
+{custom_code_str}
+
+{component_code}"""
+
+
+def memo_single_function_template(
+    imports: list[_ImportDict],
+    function: dict[str, Any],
+) -> str:
+    """Template for a single function memo in its own module.
+
+    Args:
+        imports: List of import statements for this memo only.
+        function: The single function memo definition.
+
+    Returns:
+        The rendered standalone function memo module code.
+    """
+    imports_str = "\n".join([_RenderUtils.get_import(imp) for imp in imports])
+    return f"""
+{imports_str}
+
+export const {function["name"]} = {function["function"]};
+"""
+
+
+def memo_index_template(reexports: Iterable[tuple[str, str]]) -> str:
+    """Template for the memo index module that re-exports every memo file.
+
+    Args:
+        reexports: Iterable of ``(export_name, relative_module_specifier)``.
+
+    Returns:
+        The rendered index module code.
+    """
+    lines = [
+        f'export {{ {export_name} }} from "{specifier}";'
+        for export_name, specifier in reexports
+    ]
+    return "\n".join(lines) + "\n"
 
 
 def styles_template(stylesheets: list[str]) -> str:
