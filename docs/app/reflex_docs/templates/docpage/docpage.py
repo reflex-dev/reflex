@@ -607,11 +607,11 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
         docs_sidebar_drawer,
     )
 
-    # Split the path into segments, removing 'docs' and capitalizing each segment
+    # Split the path into segments and capitalize each segment.
     segments = [
         segment.capitalize()
         for segment in path.split("/")
-        if segment and segment != "docs"
+        if segment
     ]
 
     # Initialize an empty list to store the breadcrumbs and their separators
