@@ -533,6 +533,7 @@ def test_invalid_literal_color_style_value_raises_error():
 def test_valid_literal_color_style_values_are_accepted():
     """Test that common valid literal CSS color values are accepted."""
     Style({"color": "rebeccapurple"})
+    Style({"color": "gray.600"})
     Style({"background_color": "rgb(34 12 64 / 0.6)"})
     Style({"border_color": "var(--accent-9) !important"})
     Style({"fill": "url(#gradient-id)"})

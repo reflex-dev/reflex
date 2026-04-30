@@ -141,6 +141,10 @@ _CSS_COLOR_VALUE_PREFIXES = (
 _CSS_COLOR_HEX_REGEX = re.compile(
     r"^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$"
 )
+_REFLEX_COLOR_TOKEN_REGEX = re.compile(
+    r"^[a-z][a-z0-9_-]*\.[a-z0-9_-]+$",
+    flags=re.IGNORECASE,
+)
 
 _CSS_COLOR_KEYWORDS = frozenset({
     "accentcolor",
@@ -374,6 +378,8 @@ def _is_valid_css_color_value(style_key: str, style_value: str) -> bool:
     if lower in _CSS_COLOR_KEYWORDS:
         return True
     if _CSS_COLOR_HEX_REGEX.fullmatch(lower):
+        return True
+    if _REFLEX_COLOR_TOKEN_REGEX.fullmatch(lower):
         return True
 
     if lower.startswith("url(") and lower.endswith(")"):

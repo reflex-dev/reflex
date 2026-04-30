@@ -65,6 +65,34 @@ if TYPE_CHECKING:
     import reflex.state
 
 FIELD_TYPE = TypeVar("FIELD_TYPE")
+_COLOR_VALIDATION_PROP_KEYS = frozenset({"fill", "stroke"})
+
+
+def _is_color_validation_candidate_prop(prop_name: str) -> bool:
+    """Check whether a prop name may carry color values.
+
+    Args:
+        prop_name: The component prop name.
+
+    Returns:
+        Whether color validation should be considered for this prop.
+    """
+    prop_name = prop_name.lower()
+    return "color" in prop_name or prop_name in _COLOR_VALIDATION_PROP_KEYS
+
+
+def _typehint_includes_color(type_hint: Any) -> bool:
+    """Check whether a type hint contains the Reflex Color type.
+
+    Args:
+        type_hint: The type hint to inspect.
+
+    Returns:
+        Whether the type hint contains Color.
+    """
+    if type_hint is Color:
+        return True
+    return any(_typehint_includes_color(arg) for arg in typing.get_args(type_hint))
 
 
 class ComponentField(BaseField[FIELD_TYPE]):
@@ -924,6 +952,14 @@ class Component(BaseComponent, ABC):
             else:
                 continue
 
+            if key in component_specific_triggers:
+                kwargs["event_triggers"][key] = EventChain.create(
+                    value=value,
+                    args_spec=component_specific_triggers[key],
+                    key=key,
+                )
+                continue
+
             # Check whether the key is a component prop.
             if is_var:
                 field_type = types.get_field_type(type(self), key)
@@ -931,8 +967,10 @@ class Component(BaseComponent, ABC):
                 expected_var_type = (
                     expected_var_type_args[0] if expected_var_type_args else field_type
                 )
-                if isinstance(value, str) and types.typehint_issubclass(
-                    Color, expected_var_type
+                if (
+                    isinstance(value, str)
+                    and _is_color_validation_candidate_prop(key)
+                    and _typehint_includes_color(expected_var_type)
                 ):
                     validate_literal_css_color_value(key, value)
                 try:
@@ -959,13 +997,6 @@ class Component(BaseComponent, ABC):
                         f"Invalid var passed for prop {type(self).__name__}.{key}, expected type {expected_type}, got value {value_name} of type {passed_type}."
                         + additional_info
                     )
-            # Check if the key is an event trigger.
-            if key in component_specific_triggers:
-                kwargs["event_triggers"][key] = EventChain.create(
-                    value=value,
-                    args_spec=component_specific_triggers[key],
-                    key=key,
-                )
 
         # Remove any keys that were added as events.
         for key in kwargs["event_triggers"]:
