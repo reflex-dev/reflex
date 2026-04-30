@@ -27,49 +27,38 @@ The Reflex MCP server uses OAuth 2.1 protocol for secure authentication. You'll 
 Add the Reflex MCP server to Claude Code by running:
 
 ```bash
-claude mcp add --transport http reflex https://mcp.reflex.dev/mcp
+claude mcp add --transport http reflex https://build.reflex.dev/mcp
 ```
 
 Then authenticate by running the `/mcp` command inside Claude Code and following the login steps in your browser. Authentication tokens are stored securely and refreshed automatically. See the [Claude Code MCP documentation](https://code.claude.com/docs/en/mcp) for more details.
 
 ### Claude Desktop
 
-Add the Reflex MCP server to your Claude Desktop configuration by editing your configuration file:
-
-```json
-{
-  "mcpServers": {
-    "reflex": {
-      "command": "npx",
-      "args": ["-y", "mcp-remote", "https://mcp.reflex.dev/mcp"]
-    }
-  }
-}
-```
+Claude Desktop pulls remote MCP servers from your Claude account's connectors. Go to [claude.ai](https://claude.ai) → **Settings** → **Connectors** → **Add custom connector**, enter `https://build.reflex.dev/mcp` as the URL, and complete the OAuth login. The connector will then be available in Claude Desktop after you sign in. See the [custom connectors guide](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp) for details and plan availability.
 
 ### Windsurf/Cascade
 
-Create a `.vscode/mcp.json` file in your project root:
+Edit (or create) `~/.codeium/windsurf/mcp_config.json` and add the Reflex server:
 
 ```json
 {
   "mcpServers": {
     "reflex": {
-      "serverType": "http",
-      "url": "https://mcp.reflex.dev/mcp"
+      "serverUrl": "https://build.reflex.dev/mcp"
     }
   }
 }
 ```
 
+After saving, open Cascade and click the refresh icon in the MCP toolbar to load the new server. See the [Windsurf MCP documentation](https://docs.windsurf.com/windsurf/cascade/mcp) for more details.
+
 ### Codex
 
-Add this configuration to your `~/.codex/config.toml` file:
+Add this to your `~/.codex/config.toml` file:
 
 ```toml
 [mcp_servers.reflex]
-command = "npx"
-args = ["-y", "mcp-remote", "https://mcp.reflex.dev/mcp"]
+url = "https://build.reflex.dev/mcp"
 ```
 
-Note: Codex requires MCP servers to communicate over stdio. The `mcp-remote` package bridges the connection to the HTTP-based Reflex MCP server.
+See the [Codex MCP documentation](https://developers.openai.com/codex/mcp) for additional options such as `bearer_token_env_var` and `http_headers`.
