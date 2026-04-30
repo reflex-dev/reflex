@@ -90,6 +90,10 @@ class Plotly(NoSSRComponent):
 
     config: Var[dict] = field(doc="The config of the graph.")
 
+    locale: Var[str] = field(
+        doc="The locale code used for Plotly formatting and modebar labels."
+    )
+
     use_resize_handler: Var[bool] = field(
         default=LiteralVar.create(True),
         doc="If true, the graph will resize when the window is resized.",
@@ -175,7 +179,7 @@ class Plotly(NoSSRComponent):
         doc="Fired when a hovered element is no longer hovered."
     )
 
-    def add_imports(self) -> dict[str, str]:
+    def add_imports(self) -> ImportDict:
         """Add imports for the plotly component.
 
         Returns:
@@ -183,7 +187,12 @@ class Plotly(NoSSRComponent):
         """
         return {
             # For merging plotly data/layout/templates.
-            "mergician@v2.0.2": "mergician"
+            "mergician@v2.0.2": "mergician",
+            # For locale dictionaries injected into plot config.locales.
+            "plotly.js-locales@3.5.0": ImportVar(
+                tag="plotlyLocales",
+                is_default=True,
+            ),
         }
 
     def add_custom_code(self) -> list[str]:
@@ -223,6 +232,43 @@ const extractPoints = (points) => {
     })
 }
 """,
+            """
+const _rxResolvePlotlyLocaleData = (plotlyLocales, locale) => {
+    if (locale === undefined || locale === null) return null;
+    const localeString = String(locale).trim();
+    if (localeString === "") return null;
+
+    const normalizedLocale = localeString.toLowerCase().replace(/_/g, "-");
+    const localesObject = plotlyLocales?.default ?? plotlyLocales;
+    if (!localesObject || typeof localesObject !== "object") return null;
+
+    return (
+        localesObject[normalizedLocale] ??
+        localesObject[normalizedLocale.split("-")[0]] ??
+        null
+    );
+}
+
+const _rxGetPlotlyLocaleConfig = (config, locale, plotlyLocales) => {
+    const localeData = _rxResolvePlotlyLocaleData(plotlyLocales, locale);
+    if (!localeData) {
+        if (locale === undefined || locale === null || String(locale).trim() === "") {
+            return config;
+        }
+        return { ...config, locale: String(locale) };
+    }
+
+    const localeName = localeData?.name ?? String(locale);
+    return {
+        ...config,
+        locale: localeName,
+        locales: {
+            ...(config?.locales ?? {}),
+            [localeName]: localeData,
+        },
+    };
+}
+""",
         ]
 
     @classmethod
@@ -251,7 +297,7 @@ const extractPoints = (points) => {
 
     def _exclude_props(self) -> set[str]:
         # These props are handled specially in the _render function
-        return {"data", "layout", "template"}
+        return {"data", "layout", "template", "locale"}
 
     def _render(self):
         tag = super()._render()
@@ -284,6 +330,16 @@ const extractPoints = (points) => {
                     # Spread the figure dict over props, nothing to merge.
                     Var(_js_expr=str(figure)),
                 ]
+            )
+        if self.locale is not None:
+            config = self.config if self.config is not None else LiteralVar.create({})
+            tag = tag.set(
+                props={
+                    **tag.props,
+                    "config": Var(
+                        _js_expr=f"_rxGetPlotlyLocaleConfig({config!s},{self.locale!s},plotlyLocales)"
+                    ),
+                },
             )
         return tag
 
