@@ -100,6 +100,11 @@ class UserInfoTotal(TypedDict, total=True):
     email: str
 
 
+def test_typehint_issubclass_with_typeddict_union_returns_false() -> None:
+    """TypedDict unions should return False instead of raising TypeError."""
+    assert types.typehint_issubclass(int, str | UserInfo) is False
+
+
 @pytest.mark.parametrize(
     ("value", "cls", "expected"),
     [

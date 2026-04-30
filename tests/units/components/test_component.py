@@ -627,9 +627,7 @@ def test_invalid_typed_color_prop_raises_error():
 
     with pytest.raises(
         ValueError,
-        match=(
-            "Invalid value 'not-a-color' for CSS color property 'stop_color'"
-        ),
+        match=("Invalid value 'not-a-color' for CSS color property 'stop_color'"),
     ):
         TypedColorPropComponent.create(stop_color="not-a-color")
 

@@ -525,9 +525,7 @@ def test_invalid_literal_color_style_value_raises_error():
     """Test that invalid literal CSS color values raise a helpful error."""
     with pytest.raises(
         ValueError,
-        match=(
-            "Invalid value 'not-a-color' for CSS color property 'color'"
-        ),
+        match=("Invalid value 'not-a-color' for CSS color property 'color'"),
     ):
         Style({"color": "not-a-color"})
 

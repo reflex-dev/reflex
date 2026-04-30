@@ -993,7 +993,7 @@ def typehint_issubclass(
 
     if provided_type_origin is None and accepted_type_origin is None:
         # In this case, we are dealing with a non-generic type, so we can use issubclass
-        return issubclass(possible_subclass, possible_superclass)
+        return safe_issubclass(possible_subclass, possible_superclass)
 
     if treat_literals_as_union_of_types and is_literal(possible_superclass):
         args = get_args(possible_superclass)

@@ -929,13 +929,10 @@ class Component(BaseComponent, ABC):
                 field_type = types.get_field_type(type(self), key)
                 expected_var_type_args = typing.get_args(field_type)
                 expected_var_type = (
-                    expected_var_type_args[0]
-                    if expected_var_type_args
-                    else field_type
+                    expected_var_type_args[0] if expected_var_type_args else field_type
                 )
-                if (
-                    isinstance(value, str)
-                    and types.typehint_issubclass(Color, expected_var_type)
+                if isinstance(value, str) and types.typehint_issubclass(
+                    Color, expected_var_type
                 ):
                     validate_literal_css_color_value(key, value)
                 try:
