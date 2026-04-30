@@ -691,7 +691,7 @@ def sidebar_comp(
                 "background_color": "transparent",
             },
         },
-        class_name="flex flex-col pb-24 gap-8 items-start h-full pt-8 pr-4 scroll-p-4 overflow-y-scroll hidden-scrollbar w-full 3xl:pl-0 pl-6",
+        class_name="flex flex-col pb-24 gap-8 items-start h-full pt-8 pr-4 scroll-p-4 overflow-y-scroll overflow-x-hidden hidden-scrollbar w-full 3xl:pl-0 pl-6",
     )
 
 
