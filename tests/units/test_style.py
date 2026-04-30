@@ -519,3 +519,23 @@ def test_component_as_css_value_raises_error():
         rx.el.div(
             style={"_hover": {"content": rx.text("hover")}},
         )
+
+
+def test_invalid_literal_color_style_value_raises_error():
+    """Test that invalid literal CSS color values raise a helpful error."""
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Invalid value 'not-a-color' for CSS color property 'color'"
+        ),
+    ):
+        Style({"color": "not-a-color"})
+
+
+def test_valid_literal_color_style_values_are_accepted():
+    """Test that common valid literal CSS color values are accepted."""
+    Style({"color": "rebeccapurple"})
+    Style({"background_color": "rgb(34 12 64 / 0.6)"})
+    Style({"border_color": "var(--accent-9) !important"})
+    Style({"fill": "url(#gradient-id)"})
+    Style({"stroke": "context-stroke"})

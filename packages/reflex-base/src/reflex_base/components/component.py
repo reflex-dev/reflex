@@ -35,6 +35,7 @@ from reflex_base.constants import (
     MemoizationMode,
     PageNames,
 )
+from reflex_base.constants.colors import Color
 from reflex_base.constants.compiler import SpecialAttributes
 from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER
 from reflex_base.event import (
@@ -49,7 +50,7 @@ from reflex_base.event import (
     run_script,
     unwrap_var_annotation,
 )
-from reflex_base.style import Style, format_as_emotion
+from reflex_base.style import Style, format_as_emotion, validate_literal_css_color_value
 from reflex_base.utils import console, format, imports, types
 from reflex_base.utils.imports import ImportDict, ImportVar, ParsedImportDict
 from reflex_base.vars import VarData
@@ -885,18 +886,28 @@ class Component(BaseComponent, ABC):
 
             # Check whether the key is a component prop.
             if is_var:
+                field_type = types.get_field_type(type(self), key)
+                expected_var_type_args = typing.get_args(field_type)
+                expected_var_type = (
+                    expected_var_type_args[0]
+                    if expected_var_type_args
+                    else field_type
+                )
+                if (
+                    isinstance(value, str)
+                    and types.typehint_issubclass(Color, expected_var_type)
+                ):
+                    validate_literal_css_color_value(key, value)
                 try:
                     kwargs[key] = LiteralVar.create(value)
 
                     # Get the passed type and the var type.
                     passed_type = kwargs[key]._var_type
-                    expected_type = typing.get_args(
-                        types.get_field_type(type(self), key)
-                    )[0]
+                    expected_type = expected_var_type
                 except TypeError:
                     # If it is not a valid var, check the base types.
                     passed_type = type(value)
-                    expected_type = types.get_field_type(type(self), key)
+                    expected_type = field_type
 
                 if not satisfies_type_hint(value, expected_type):
                     value_name = value._js_expr if isinstance(value, Var) else value

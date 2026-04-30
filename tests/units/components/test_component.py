@@ -624,6 +624,21 @@ def test_invalid_prop_type(component1, text: str, number: int):
         component1.create(text=text, number=number)
 
 
+def test_invalid_typed_color_prop_raises_error():
+    """Test that invalid literal color values are rejected on typed color props."""
+
+    class TypedColorPropComponent(Component):
+        stop_color: Var[str | rx.Color]
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Invalid value 'not-a-color' for CSS color property 'stop_color'"
+        ),
+    ):
+        TypedColorPropComponent.create(stop_color="not-a-color")
+
+
 def test_var_props(component1, test_state: type[TestState]):
     """Test that we can set a Var prop.
 

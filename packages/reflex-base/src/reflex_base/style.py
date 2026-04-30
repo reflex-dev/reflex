@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping
 from typing import Any, Literal
 
@@ -93,6 +94,326 @@ STYLE_PROP_SHORTHAND_MAPPING = {
     "fontFamily": ("fontFamily", "--default-font-family"),
 }
 
+_COLOR_STYLE_KEYS = frozenset({
+    "accent_color",
+    "background_color",
+    "border_bottom_color",
+    "border_color",
+    "border_left_color",
+    "border_right_color",
+    "border_top_color",
+    "caret_color",
+    "color",
+    "column_rule_color",
+    "fill",
+    "flood_color",
+    "lighting_color",
+    "outline_color",
+    "stop_color",
+    "stroke",
+    "text_decoration_color",
+    "text_emphasis_color",
+})
+
+_CSS_COLOR_FUNCTION_PREFIXES = (
+    "color(",
+    "color-contrast(",
+    "color-mix(",
+    "contrast-color(",
+    "device-cmyk(",
+    "hsl(",
+    "hsla(",
+    "hwb(",
+    "lab(",
+    "lch(",
+    "light-dark(",
+    "oklab(",
+    "oklch(",
+    "rgb(",
+    "rgba(",
+)
+
+_CSS_COLOR_VALUE_PREFIXES = (
+    "env(",
+    "var(",
+)
+
+_CSS_COLOR_HEX_REGEX = re.compile(
+    r"^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$"
+)
+
+_CSS_COLOR_KEYWORDS = frozenset({
+    "accentcolor",
+    "accentcolortext",
+    "activetext",
+    "aliceblue",
+    "antiquewhite",
+    "aqua",
+    "aquamarine",
+    "azure",
+    "beige",
+    "bisque",
+    "black",
+    "blanchedalmond",
+    "blue",
+    "blueviolet",
+    "brown",
+    "burlywood",
+    "buttonborder",
+    "buttonface",
+    "buttontext",
+    "cadetblue",
+    "canvas",
+    "canvastext",
+    "chartreuse",
+    "chocolate",
+    "coral",
+    "cornflowerblue",
+    "cornsilk",
+    "crimson",
+    "currentcolor",
+    "cyan",
+    "darkblue",
+    "darkcyan",
+    "darkgoldenrod",
+    "darkgray",
+    "darkgreen",
+    "darkgrey",
+    "darkkhaki",
+    "darkmagenta",
+    "darkolivegreen",
+    "darkorange",
+    "darkorchid",
+    "darkred",
+    "darksalmon",
+    "darkseagreen",
+    "darkslateblue",
+    "darkslategray",
+    "darkslategrey",
+    "darkturquoise",
+    "darkviolet",
+    "deeppink",
+    "deepskyblue",
+    "dimgray",
+    "dimgrey",
+    "dodgerblue",
+    "field",
+    "fieldtext",
+    "firebrick",
+    "floralwhite",
+    "forestgreen",
+    "fuchsia",
+    "gainsboro",
+    "ghostwhite",
+    "gold",
+    "goldenrod",
+    "gray",
+    "graytext",
+    "green",
+    "greenyellow",
+    "grey",
+    "highlight",
+    "highlighttext",
+    "honeydew",
+    "hotpink",
+    "indianred",
+    "indigo",
+    "inherit",
+    "initial",
+    "ivory",
+    "khaki",
+    "lavender",
+    "lavenderblush",
+    "lawngreen",
+    "lemonchiffon",
+    "lightblue",
+    "lightcoral",
+    "lightcyan",
+    "lightgoldenrodyellow",
+    "lightgray",
+    "lightgreen",
+    "lightgrey",
+    "lightpink",
+    "lightsalmon",
+    "lightseagreen",
+    "lightskyblue",
+    "lightslategray",
+    "lightslategrey",
+    "lightsteelblue",
+    "lightyellow",
+    "lime",
+    "limegreen",
+    "linen",
+    "linktext",
+    "magenta",
+    "maroon",
+    "mark",
+    "marktext",
+    "mediumaquamarine",
+    "mediumblue",
+    "mediumorchid",
+    "mediumpurple",
+    "mediumseagreen",
+    "mediumslateblue",
+    "mediumspringgreen",
+    "mediumturquoise",
+    "mediumvioletred",
+    "midnightblue",
+    "mintcream",
+    "mistyrose",
+    "moccasin",
+    "navajowhite",
+    "navy",
+    "oldlace",
+    "olive",
+    "olivedrab",
+    "orange",
+    "orangered",
+    "orchid",
+    "palegoldenrod",
+    "palegreen",
+    "paleturquoise",
+    "palevioletred",
+    "papayawhip",
+    "peachpuff",
+    "peru",
+    "pink",
+    "plum",
+    "powderblue",
+    "purple",
+    "rebeccapurple",
+    "red",
+    "revert",
+    "revert-layer",
+    "rosybrown",
+    "royalblue",
+    "saddlebrown",
+    "salmon",
+    "sandybrown",
+    "seagreen",
+    "seashell",
+    "selecteditem",
+    "selecteditemtext",
+    "sienna",
+    "silver",
+    "skyblue",
+    "slateblue",
+    "slategray",
+    "slategrey",
+    "snow",
+    "springgreen",
+    "steelblue",
+    "tan",
+    "teal",
+    "thistle",
+    "tomato",
+    "transparent",
+    "turquoise",
+    "unset",
+    "violet",
+    "visitedtext",
+    "wheat",
+    "white",
+    "whitesmoke",
+    "yellow",
+    "yellowgreen",
+})
+
+_CSS_URL_COLOR_KEYS = frozenset({
+    "fill",
+    "stroke",
+})
+
+_CSS_NONE_COLOR_KEYS = frozenset({
+    "fill",
+    "stroke",
+})
+
+_CSS_CONTEXT_PAINT_KEYS = frozenset({
+    "fill",
+    "stroke",
+})
+
+
+def _is_color_style_key(style_key: str) -> bool:
+    """Check whether a style key expects a single CSS color value.
+
+    Args:
+        style_key: The normalized style key.
+
+    Returns:
+        Whether the style key expects a CSS color value.
+    """
+    if style_key.startswith(("--", "&", "@", ":", "_")):
+        return False
+    return format.to_snake_case(style_key) in _COLOR_STYLE_KEYS
+
+
+def _is_valid_css_color_value(style_key: str, style_value: str) -> bool:
+    """Check whether a literal string is a valid CSS color value.
+
+    Args:
+        style_key: The normalized style key being validated.
+        style_value: The style value to validate.
+
+    Returns:
+        Whether the value is accepted as a CSS color.
+    """
+    if constants.REFLEX_VAR_OPENING_TAG in style_value:
+        return True
+
+    normalized = style_value.strip()
+    if not normalized:
+        return False
+
+    lower = normalized.lower()
+    if lower.endswith("!important"):
+        lower = lower[: -len("!important")].rstrip()
+        if not lower:
+            return False
+
+    if lower == "none":
+        return format.to_snake_case(style_key) in _CSS_NONE_COLOR_KEYS
+
+    if lower in ("context-fill", "context-stroke"):
+        return format.to_snake_case(style_key) in _CSS_CONTEXT_PAINT_KEYS
+
+    if lower in _CSS_COLOR_KEYWORDS:
+        return True
+    if _CSS_COLOR_HEX_REGEX.fullmatch(lower):
+        return True
+
+    if lower.startswith("url(") and lower.endswith(")"):
+        return format.to_snake_case(style_key) in _CSS_URL_COLOR_KEYS
+
+    return lower.endswith(")") and any(
+        lower.startswith(prefix)
+        for prefix in _CSS_COLOR_FUNCTION_PREFIXES + _CSS_COLOR_VALUE_PREFIXES
+    )
+
+
+def validate_literal_css_color_value(style_key: str, style_value: str) -> None:
+    """Validate a literal string value for color-style keys.
+
+    Args:
+        style_key: The style key being assigned.
+        style_value: The literal string value.
+
+    Raises:
+        ValueError: If the value is not a recognized CSS color.
+    """
+    if _is_color_style_key(style_key) and not _is_valid_css_color_value(
+        style_key, style_value
+    ):
+        msg = (
+            f"Invalid value {style_value!r} for CSS color property {style_key!r}. "
+            "Expected a hex color, a CSS color function (for example rgb(), hsl(), "
+            "hwb(), lab(), oklch(), color(), or color-mix()), a CSS variable "
+            "(var(--...)), or a named CSS color. See "
+            "https://developer.mozilla.org/en-US/docs/Web/CSS/named-color."
+        )
+        raise ValueError(msg)
+
 
 def media_query(breakpoint_expr: str):
     """Create a media query selector.
@@ -108,11 +429,13 @@ def media_query(breakpoint_expr: str):
 
 def convert_item(
     style_item: int | str | Var,
+    style_keys: tuple[str, ...] = (),
 ) -> tuple[str | Var, VarData | None]:
     """Format a single value in a style dictionary.
 
     Args:
         style_item: The style item to format.
+        style_keys: Candidate normalized style keys that use this value.
 
     Returns:
         The formatted style item and any associated VarData.
@@ -132,6 +455,10 @@ def convert_item(
     if isinstance(style_item, Var):
         return style_item, style_item._get_all_var_data()
 
+    if isinstance(style_item, str):
+        for style_key in style_keys:
+            validate_literal_css_color_value(style_key, style_item)
+
     # Otherwise, convert to Var to collapse VarData encoded in f-string.
     new_var = LiteralVar.create(style_item)
     var_data = new_var._get_all_var_data() if new_var is not None else None
@@ -140,11 +467,13 @@ def convert_item(
 
 def convert_list(
     responsive_list: list[str | dict | Var],
+    style_keys: tuple[str, ...] = (),
 ) -> tuple[list[str | dict[str, Var | list | dict]], VarData | None]:
     """Format a responsive value list.
 
     Args:
         responsive_list: The raw responsive value list (one value per breakpoint).
+        style_keys: Candidate normalized style keys that use this value list.
 
     Returns:
         The recursively converted responsive value list and any associated VarData.
@@ -156,7 +485,7 @@ def convert_list(
             # Recursively format nested style dictionaries.
             item, item_var_data = convert(responsive_item)
         else:
-            item, item_var_data = convert_item(responsive_item)
+            item, item_var_data = convert_item(responsive_item, style_keys)
         converted_value.append(item)
         item_var_datas.append(item_var_data)
     return converted_value, VarData.merge(*item_var_datas)
@@ -208,10 +537,10 @@ def convert(
             update_out_dict(return_val, keys)
         elif isinstance(value, list):
             # Responsive value is a list of dict or value
-            return_val, new_var_data = convert_list(value)
+            return_val, new_var_data = convert_list(value, keys)
             update_out_dict(return_val, keys)
         else:
-            return_val, new_var_data = convert_item(value)
+            return_val, new_var_data = convert_item(value, keys)
             update_out_dict(return_val, keys)
         # Combine all the collected VarData instances.
         var_data = VarData.merge(var_data, new_var_data)
