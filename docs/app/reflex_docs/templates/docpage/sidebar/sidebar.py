@@ -106,6 +106,17 @@ def sidebar_link(*children, **props):
     )
 
 
+def sidebar_leaf_guide(is_active: bool) -> rx.Component:
+    """Render the active sidebar leaf guide segment."""
+    return (
+        rx.el.div(
+            class_name="absolute left-0 -top-1 -bottom-1 w-px bg-primary-10 pointer-events-none",
+        )
+        if is_active
+        else rx.fragment()
+    )
+
+
 def sidebar_leaf(
     item_index: str,
     item: SideBarItem,
@@ -151,6 +162,7 @@ def sidebar_leaf(
         sidebar_link(
             *active_background,
             rx.flex(
+                sidebar_leaf_guide(is_active),
                 rx.text(
                     item.names,
                     class_name=(
@@ -160,9 +172,9 @@ def sidebar_leaf(
                     ),
                 ),
                 class_name=(
-                    f"border-l-[1.5px] border-primary-10 relative {guide_margin_class} max-w-[14rem] h-8 flex items-center"
+                    f"relative {guide_margin_class} max-w-[14rem] h-8 flex items-center"
                     if is_active
-                    else "border-l-[1.5px] border-m-slate-4 dark:border-m-slate-9 hover:border-m-slate-8 dark:hover:border-m-slate-5 pl-4 h-8 flex items-center"
+                    else "relative pl-4 h-8 flex items-center"
                 ),
             ),
             href=item.link,
@@ -216,7 +228,7 @@ def sidebar_item_comp(
             ),
             rx.el.ul(
                 rx.el.li(
-                    class_name=f"m-0 p-0 absolute {child_guide_left_class} size-full !shadow-[1.5px_0_0_0_var(--m-slate-4)_inset] dark:!shadow-[1.5px_0_0_0_var(--m-slate-9)_inset] z-[-1] pointer-events-none !rounded-none list-none",
+                    class_name=f"m-0 p-0 absolute {child_guide_left_class} top-0 bottom-0 w-px bg-m-slate-4 dark:bg-m-slate-9 z-[-1] pointer-events-none !rounded-none list-none",
                 ),
                 *[
                     sidebar_item_comp(
