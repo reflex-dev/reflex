@@ -834,6 +834,95 @@ def test_reset(test_state: TestState, child_state: ChildState):
     }
 
 
+def test_reset_does_not_reset_inherited_backend_vars(
+    test_state: TestState, child_state: ChildState
+):
+    """Test that reset() does not reset backend vars from parent states.
+
+    This is a regression test for the issue where calling reset() on a child state
+    would also reset backend vars that are inherited from the parent state, which
+    breaks SharedState linkage when an unrelated state calls reset().
+
+    Args:
+        test_state: A state with backend vars.
+        child_state: A child state inheriting from test_state.
+    """
+    # Set a backend var on the parent state to a non-default value
+    original_backend_value = 42
+    test_state._backend = original_backend_value
+
+    # Verify it's been changed
+    assert test_state._backend == original_backend_value
+
+    # Reset only the child state
+    child_state.reset()
+
+    # The parent state's backend vars should NOT be reset
+    # (they should retain their modified value)
+    assert test_state._backend == original_backend_value
+
+    # Now verify that resetting the parent state DOES reset its own backend vars
+    test_state.reset()
+    assert test_state._backend == 0  # Reset to default
+
+
+def test_backend_vars_does_not_include_inherited(
+    test_state: TestState, child_state: ChildState
+):
+    """Test that _backend_vars only contains non-inherited backend vars.
+
+    This ensures that each state instance only copies backend vars it owns,
+    not those inherited from parent states (which remain in the parent).
+
+    Args:
+        test_state: A state with backend vars.
+        child_state: A child state inheriting from test_state.
+    """
+    # ChildState inherits _backend from TestState
+    assert "_backend" in TestState.backend_vars
+    assert "_backend" in ChildState.backend_vars  # Present in the combined dict
+    assert "_backend" in ChildState.inherited_backend_vars  # But marked as inherited
+
+    # The child state instance's _backend_vars should NOT contain _backend
+    # (it's inherited, so it's stored only in the parent instance)
+    assert "_backend" not in child_state._backend_vars
+
+    # But the parent instance's _backend_vars should contain it
+    assert "_backend" in test_state._backend_vars
+
+
+def test_setting_inherited_backend_var_does_not_mark_child_touched(
+    test_state: TestState, child_state: ChildState
+):
+    """Test that setting a parent's backend var through a child doesn't mark child as touched.
+
+    When a backend var from a parent state is modified through a child state instance,
+    only the parent should be marked as touched, not the child.
+
+    Args:
+        test_state: A state with backend vars.
+        child_state: A child state inheriting from test_state.
+    """
+    # Initially neither should be touched
+    assert not test_state._was_touched
+    assert not child_state._was_touched
+
+    # Modify an inherited backend var through the child
+    # (This routes through __setattr__ to the parent)
+    child_state._backend = 99
+
+    # Call _get_was_touched to update the flags based on dirty_vars
+    parent_touched = test_state._get_was_touched()
+    child_touched = child_state._get_was_touched()
+
+    # The parent should be marked as touched (the var belongs to it)
+    assert parent_touched
+
+    # But the child should NOT be marked as touched
+    # (the var doesn't belong to the child, it belongs to the parent)
+    assert not child_touched
+
+
 @pytest.mark.asyncio
 async def test_process_event_simple(
     token: str,
@@ -4566,3 +4655,107 @@ async def test_rebind_mutable_proxy(
         assert state.data["a"] == [2, 3]
         # Object identity persists across serialization, so data["b"] is also mutated.
         assert state.data["b"] == [2, 3]
+
+
+def test_override_base_method_skips_event_handler_wrapping():
+    """A method marked with __override_base_method__ should not be wrapped as an EventHandler."""
+    from reflex.state import _override_base_method
+
+    class OverrideState(rx.State):
+        @_override_base_method
+        def custom_override(self) -> int:
+            return 42
+
+    # The marked method must remain a plain function, not an EventHandler.
+    assert not isinstance(OverrideState.__dict__["custom_override"], EventHandler)
+    assert "custom_override" not in OverrideState.event_handlers
+    assert OverrideState().custom_override() == 42
+
+
+def test_descriptor_attribute_not_in_backend_vars():
+    """A custom descriptor on a state should appear in vars/base_vars but not backend_vars."""
+
+    class _IntDescriptor:
+        def __init__(self):
+            self._values: dict[int, int] = {}
+
+        def __set_name__(self, owner, name):
+            self._name = name
+
+        def __get__(self, instance, owner):
+            if instance is None:
+                return self
+            return self._values.get(id(instance), 0)
+
+        def __set__(self, instance, value):
+            self._values[id(instance)] = value
+
+    class DescriptorState(rx.State):
+        _desc_value: int = _IntDescriptor()  # pyright: ignore[reportAssignmentType]
+
+        @rx.var
+        def doubled(self) -> int:
+            return self._desc_value * 2
+
+    # The descriptor should not be tracked as a backend var or a base var
+    # (only pydantic-backed public fields go into base_vars).
+    assert "_desc_value" not in DescriptorState.backend_vars
+    assert "_desc_value" not in DescriptorState.base_vars
+    # But it should be visible in vars for dependency tracking.
+    assert "_desc_value" in DescriptorState.vars
+    # Descriptor remains the class-level attribute (not overwritten by a Var).
+    assert isinstance(DescriptorState.__dict__["_desc_value"], _IntDescriptor)
+
+    # A computed var depending on the descriptor must register the dependency.
+    deps = DescriptorState._var_dependencies.get("_desc_value", set())
+    assert (DescriptorState.get_full_name(), "doubled") in deps
+
+
+def test_descriptor_overrides_inherited_descriptor():
+    """A child state defining a descriptor with the same name as a parent overrides it."""
+
+    class _Sentinel:
+        def __init__(self, label: str):
+            self.label = label
+            self._values: dict[int, int] = {}
+
+        def __get__(self, instance, owner):
+            if instance is None:
+                return self
+            return self._values.get(id(instance), 0)
+
+        def __set__(self, instance, value):
+            self._values[id(instance)] = value
+
+    parent_descriptor = _Sentinel("parent")
+    child_descriptor = _Sentinel("child")
+
+    class ParentDescState(rx.State):
+        _shared: int = parent_descriptor  # pyright: ignore[reportAssignmentType]
+
+        @rx.var
+        def parent_view(self) -> int:
+            return self._shared
+
+    class ChildDescState(ParentDescState):
+        _shared: int = child_descriptor  # pyright: ignore[reportAssignmentType]
+
+        @rx.var
+        def child_view(self) -> int:
+            return self._shared * 10
+
+    # The child class's descriptor wins on the class itself.
+    assert ChildDescState.__dict__["_shared"] is child_descriptor
+    # The override drops the inherited entry so dependency tracking attaches
+    # to the child class rather than the parent.
+    assert "_shared" not in ChildDescState.inherited_vars
+    assert "_shared" not in ChildDescState.inherited_backend_vars
+    assert "_shared" not in ChildDescState.backend_vars
+    # The child's Var (not the parent's) is what shows up in vars.
+    child_var = ChildDescState.vars["_shared"]
+    assert child_var is not ParentDescState.vars["_shared"]
+    # Child's computed var depends on child's _shared, parent's stays at parent.
+    child_deps = ChildDescState._var_dependencies.get("_shared", set())
+    parent_deps = ParentDescState._var_dependencies.get("_shared", set())
+    assert (ChildDescState.get_full_name(), "child_view") in child_deps
+    assert (ParentDescState.get_full_name(), "parent_view") in parent_deps

@@ -5,13 +5,22 @@ from __future__ import annotations
 import dataclasses
 import inspect
 from collections.abc import Callable
+from copy import copy
 from functools import cache, update_wrapper
 from typing import Any, get_args, get_origin, get_type_hints
 
 from reflex_base import constants
 from reflex_base.components.component import Component
 from reflex_base.components.dynamic import bundled_libraries
-from reflex_base.constants.compiler import SpecialAttributes
+from reflex_base.components.memoize_helpers import (
+    MemoizationStrategy,
+    get_memoization_strategy,
+)
+from reflex_base.constants.compiler import (
+    MemoizationDisposition,
+    MemoizationMode,
+    SpecialAttributes,
+)
 from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER
 from reflex_base.utils import format
 from reflex_base.utils.imports import ImportVar
@@ -69,12 +78,33 @@ class ExperimentalMemoComponentDefinition(ExperimentalMemoDefinition):
 
     export_name: str
     component: Component
+    # For passthrough wrappers built by the auto-memoize plugin: the
+    # ``Bare``-wrapped ``{children}`` placeholder used when rendering the memo
+    # body. The ``component`` keeps its ORIGINAL children so compile-time
+    # walkers (``Form._get_form_refs`` etc.) can introspect the subtree; the
+    # compiler swaps to this placeholder only for the JSX render and for
+    # imports collection, so descendants emit their refs/imports/hooks in the
+    # page scope rather than being duplicated inside the memo body.
+    passthrough_hole_child: Component | None = None
 
 
 class ExperimentalMemoComponent(Component):
     """A rendered instance of an experimental memo component."""
 
     library = f"$/{constants.Dirs.COMPONENTS_PATH}"
+    _memoization_mode = MemoizationMode(disposition=MemoizationDisposition.NEVER)
+
+    def _validate_component_children(self, children: list[Component]) -> None:
+        """Skip direct parent/child validation for memo wrapper instances.
+
+        Experimental memos wrap an underlying compiled component definition.
+        The runtime wrapper should not interpose on `_valid_parents` checks for
+        the authored subtree because the wrapper itself is not the semantic
+        parent in the user-authored component tree.
+
+        Args:
+            children: The children of the component (ignored).
+        """
 
     def _post_init(self, **kwargs):
         """Initialize the experimental memo component.
@@ -119,22 +149,45 @@ class ExperimentalMemoComponent(Component):
 @cache
 def _get_experimental_memo_component_class(
     export_name: str,
+    wrapped_component_type: type[Component] = Component,
 ) -> type[ExperimentalMemoComponent]:
     """Get the component subclass for an experimental memo export.
 
+    Class-level metadata that the compiler reads via ``type(comp)._get_*()``
+    (notably ``_get_app_wrap_components``, which carries providers like
+    ``UploadFilesProvider`` that must reach the app root) is inherited from
+    ``wrapped_component_type`` so the wrapper is a transparent substitute for
+    the original in the compile tree.
+
     Args:
         export_name: The exported React component name.
+        wrapped_component_type: The class of the component being memoized.
+            Defaults to ``Component`` for memos that don't wrap a user
+            component (e.g. function memos, raw passthroughs).
 
     Returns:
         A cached component subclass with the tag set at class definition time.
     """
+    attrs: dict[str, Any] = {
+        "__module__": __name__,
+        "tag": export_name,
+        # Point each memo at its own per-file module so pages import directly
+        # from ``$/utils/components/<name>`` rather than through the index.
+        # Per-file import paths give Vite distinct module boundaries per
+        # memo, enabling actual code-split by page.
+        "library": f"$/{constants.Dirs.COMPONENTS_PATH}/{export_name}",
+    }
+    if (
+        wrapped_component_type._get_app_wrap_components
+        is not Component._get_app_wrap_components
+    ):
+        attrs["_get_app_wrap_components"] = staticmethod(
+            wrapped_component_type._get_app_wrap_components
+        )
     return type(
         f"ExperimentalMemoComponent_{export_name}",
         (ExperimentalMemoComponent,),
-        {
-            "__module__": __name__,
-            "tag": export_name,
-        },
+        attrs,
     )
 
 
@@ -300,7 +353,9 @@ def _imported_function_var(name: str, return_type: Any) -> FunctionVar:
         name,
         _var_type=ReflexCallable[Any, return_type],
         _var_data=VarData(
-            imports={f"$/{constants.Dirs.COMPONENTS_PATH}": [ImportVar(tag=name)]}
+            imports={
+                f"$/{constants.Dirs.COMPONENTS_PATH}/{name}": [ImportVar(tag=name)]
+            }
         ),
     )
 
@@ -319,7 +374,7 @@ def _component_import_var(name: str) -> Var:
         _var_type=type[Component],
         _var_data=VarData(
             imports={
-                f"$/{constants.Dirs.COMPONENTS_PATH}": [ImportVar(tag=name)],
+                f"$/{constants.Dirs.COMPONENTS_PATH}/{name}": [ImportVar(tag=name)],
                 "@emotion/react": [ImportVar(tag="jsx")],
             }
         ),
@@ -906,7 +961,9 @@ class _ExperimentalMemoComponentWrapper:
             raise TypeError(msg)
 
         # Build the component props passed into the memo wrapper.
-        return _get_experimental_memo_component_class(definition.export_name)._create(
+        return _get_experimental_memo_component_class(
+            definition.export_name, type(definition.component)
+        )._create(
             children=list(children),
             memo_definition=definition,
             **explicit_values,
@@ -950,6 +1007,67 @@ def _create_component_wrapper(
     return _ExperimentalMemoComponentWrapper(definition)
 
 
+def create_passthrough_component_memo(
+    export_name: str,
+    component: Component,
+) -> tuple[
+    Callable[..., ExperimentalMemoComponent],
+    ExperimentalMemoComponentDefinition,
+]:
+    """Create an unregistered ``@rx._x.memo``-style passthrough component memo.
+
+    This is used by compiler auto-memoization so generated wrappers compile
+    through the experimental memo pipeline instead of emitting ad-hoc page-local
+    ``React.memo`` declarations.
+
+    Args:
+        export_name: The exported memo component name.
+        component: The component to wrap.
+
+    Returns:
+        The callable memo wrapper and its component definition.
+    """
+    # Snapshot-boundary components (see ``is_snapshot_boundary``) own their
+    # subtree — the ``.children`` slot is internal machinery from the
+    # subclass's ``.create`` (e.g. the dropzone Div built inside
+    # ``Upload.create``), not a user content hole. The memoize plugin wraps
+    # the boundary with no structural children on the page side, so the memo
+    # body renders the full snapshot rather than a ``{children}``-holed
+    # template.
+    render_snapshot = (
+        get_memoization_strategy(component) is MemoizationStrategy.SNAPSHOT
+    )
+
+    captured_hole_child: list[Component] = []
+
+    def passthrough(children: Var[Component]) -> Component:
+        new_component = copy(component)
+        if render_snapshot:
+            return new_component
+        # Keep ``new_component.children`` as the ORIGINAL children so
+        # compile-time walkers that introspect the subtree (e.g. Form's
+        # ``_get_form_refs``) see the real descendants. The ``{children}``
+        # hole lives on the definition and the compiler swaps it in only for
+        # JSX render / imports collection.
+        captured_hole_child.append(Bare.create(children))
+        return new_component
+
+    passthrough.__name__ = format.to_snake_case(export_name)
+    passthrough.__qualname__ = passthrough.__name__
+    passthrough.__module__ = __name__
+
+    definition = _create_component_definition(passthrough, Component)
+    replacements: dict[str, Any] = {}
+    if definition.export_name != export_name:
+        replacements["export_name"] = export_name
+    if captured_hole_child:
+        replacements["passthrough_hole_child"] = captured_hole_child[0]
+    if replacements:
+        definition = dataclasses.replace(definition, **replacements)
+
+    return _create_component_wrapper(definition), definition
+
+
 def memo(fn: Callable[..., Any]) -> Callable[..., Any]:
     """Create an experimental memo from a function.
 
@@ -986,3 +1104,14 @@ def memo(fn: Callable[..., Any]) -> Callable[..., Any]:
         f"got `{return_annotation}`."
     )
     raise TypeError(msg)
+
+
+__all__ = [
+    "EXPERIMENTAL_MEMOS",
+    "ExperimentalMemoComponent",
+    "ExperimentalMemoComponentDefinition",
+    "ExperimentalMemoDefinition",
+    "ExperimentalMemoFunctionDefinition",
+    "create_passthrough_component_memo",
+    "memo",
+]

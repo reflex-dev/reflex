@@ -11,8 +11,8 @@ dependencies = [
     "email-validator",
     "httpx",
     "pyyaml",
-    "reflex-components-internal",
-    "reflex",
+    "reflex-components-internal >= 0.9.0",
+    "reflex >= 0.9.0",
     "ruff-format",
 ]
 

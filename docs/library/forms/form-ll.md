@@ -143,7 +143,7 @@ In this example, the `rx.input` has an attribute `type="email"` and the `form.me
 ## Form Anatomy
 
 ```python eval
-rx._x.code_block(
+rx.code_block(
     """form.root(
     form.field(
         form.label(...),

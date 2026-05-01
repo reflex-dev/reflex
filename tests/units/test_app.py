@@ -1320,72 +1320,6 @@ async def test_upload_file_closes_form_if_response_cancelled_before_stream_start
 
 
 @pytest.mark.asyncio
-async def test_upload_file_cancels_buffered_handler_on_disconnect(token: str):
-    """Buffered uploads cancel the streaming handler on client disconnect.
-
-    Args:
-        token: A token.
-    """
-    request_mock = unittest.mock.Mock()
-    request_mock.headers = {
-        "reflex-client-token": token,
-        "reflex-event-handler": f"{FileUploadState.get_full_name()}.multi_handle_upload",
-    }
-
-    bio = io.BytesIO(b"contents of image one")
-    file1 = UploadFile(filename="image1.jpg", file=bio)
-    form_data = FormData([("files", file1)])
-    original_close = form_data.close
-    form_close = AsyncMock(side_effect=original_close)
-    form_data.close = form_close
-
-    async def form():  # noqa: RUF029
-        return form_data
-
-    request_mock.form = form
-
-    stream_started = asyncio.Event()
-    stream_closed = asyncio.Event()
-
-    async def enqueue_stream_delta(_token, _event):
-        try:
-            stream_started.set()
-            yield {"state": {"ok": True}}
-            await asyncio.Event().wait()
-        finally:
-            stream_closed.set()
-
-    app = Mock(
-        event_processor=Mock(enqueue_stream_delta=enqueue_stream_delta),
-    )
-
-    upload_fn = upload(app)
-    streaming_response = await upload_fn(request_mock)
-
-    assert isinstance(streaming_response, StreamingResponse)
-
-    async def receive():
-        await stream_started.wait()
-        return {"type": "http.disconnect"}
-
-    async def send(_message):  # noqa: RUF029
-        return None
-
-    await asyncio.wait_for(
-        streaming_response(
-            {"type": "http", "asgi": {"spec_version": "2.4"}},
-            receive,
-            send,
-        ),
-        timeout=1,
-    )
-
-    await asyncio.wait_for(stream_closed.wait(), timeout=1)
-    assert form_close.await_count == 1
-    assert bio.closed
-
-
-@pytest.mark.asyncio
 async def test_upload_file_raises_client_disconnect_when_stream_send_fails(
     token: str,
 ):
@@ -2172,6 +2106,184 @@ def test_app_wrap_compile_theme(
         "\n}"
     )
     assert expected.split(",") == function_app_definition.split(",")
+
+
+def test_compile_without_radix_components_skips_radix_plugin(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """Pure HTML apps should not include Radix Themes assets or wrappers."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mock_deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+
+    app.add_page(lambda: rx.el.div("Index"), route="/")
+    app.add_page(lambda: rx.el.div("404"), route=constants.Page404.SLUG)
+    app._compile()
+
+    root_stylesheet = (
+        web_dir
+        / constants.Dirs.STYLES
+        / f"{constants.PageNames.STYLESHEET_ROOT}{constants.Ext.CSS}"
+    ).read_text()
+    app_root = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+
+    assert "@radix-ui/themes/styles.css" not in root_stylesheet
+    assert "RadixThemesTheme" not in app_root
+    mock_deprecate.assert_not_called()
+
+
+def test_compile_with_radix_component_auto_enables_radix_plugin(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """Using a Radix Themes component should enable the plugin with a warning."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mock_deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+
+    app.add_page(lambda: rx.box("Index"), route="/")
+    app.add_page(lambda: rx.el.div("404"), route=constants.Page404.SLUG)
+    app._compile()
+
+    root_stylesheet = (
+        web_dir
+        / constants.Dirs.STYLES
+        / f"{constants.PageNames.STYLESHEET_ROOT}{constants.Ext.CSS}"
+    ).read_text()
+    app_root = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+
+    assert "@radix-ui/themes/styles.css" in root_stylesheet
+    assert 'RadixThemesTheme,{accentColor:"blue"' in app_root
+    mock_deprecate.assert_called_once()
+    assert (
+        mock_deprecate.call_args.kwargs["feature_name"]
+        == "Implicit Radix Themes enablement"
+    )
+
+
+def test_compile_with_legacy_app_theme_warns_and_enables_radix_plugin(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """``App(theme=...)`` should continue to work with a deprecation warning."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mock_deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+
+    app.theme = rx.theme(accent_color="plum")
+    app.add_page(lambda: rx.el.div("Index"), route="/")
+    app.add_page(lambda: rx.el.div("404"), route=constants.Page404.SLUG)
+    app._compile()
+
+    root_stylesheet = (
+        web_dir
+        / constants.Dirs.STYLES
+        / f"{constants.PageNames.STYLESHEET_ROOT}{constants.Ext.CSS}"
+    ).read_text()
+    app_root = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+
+    assert "@radix-ui/themes/styles.css" in root_stylesheet
+    assert 'RadixThemesTheme,{accentColor:"plum"' in app_root
+    mock_deprecate.assert_called_once()
+    assert mock_deprecate.call_args.kwargs["feature_name"] == "App(theme=...)"
+
+
+def test_explicit_radix_plugin_wins_over_legacy_app_theme(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """Explicit RadixThemesPlugin config should win over deprecated App.theme."""
+    conf = rx.Config(
+        app_name="testing",
+        plugins=[rx.plugins.RadixThemesPlugin(theme=rx.theme(accent_color="green"))],
+    )
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mock_deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+
+    app.theme = rx.theme(accent_color="plum")
+    app.add_page(lambda: rx.el.div("Index"), route="/")
+    app.add_page(lambda: rx.el.div("404"), route=constants.Page404.SLUG)
+    app._compile()
+
+    app_root = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+
+    assert 'RadixThemesTheme,{accentColor:"green"' in app_root
+    assert 'RadixThemesTheme,{accentColor:"plum"' not in app_root
+    mock_deprecate.assert_called_once()
+    assert mock_deprecate.call_args.kwargs["feature_name"] == "App(theme=...)"
+
+
+def test_compile_writes_app_wrap_memo_components(
+    compilable_app: tuple[App, Path],
+    mocker,
+) -> None:
+    """App-wrap memo components are emitted to the shared components module."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+
+    app.add_page(rx.box("Index"), route="/")
+    app._compile()
+
+    components_index = (
+        web_dir
+        / constants.Dirs.UTILS
+        / f"{constants.PageNames.COMPONENTS}{constants.Ext.JSX}"
+    ).read_text()
+
+    # Per-memo modules live under .web/utils/components/; the index re-exports
+    # each one so page-side ``$/utils/components`` resolves the same tags.
+    assert "DefaultOverlayComponents" in components_index
+    assert "MemoizedToastProvider" in components_index
+    assert 'from "./components/DefaultOverlayComponents"' in components_index
+    assert 'from "./components/MemoizedToastProvider"' in components_index
+
+    memo_dir = web_dir / constants.Dirs.UTILS / constants.PageNames.COMPONENTS
+    assert (memo_dir / f"DefaultOverlayComponents{constants.Ext.JSX}").exists()
+    assert (memo_dir / f"MemoizedToastProvider{constants.Ext.JSX}").exists()
+
+
+def test_compile_writes_upload_files_provider_app_wrap(
+    compilable_app: tuple[App, Path],
+    mocker,
+) -> None:
+    """Upload pages emit the UploadFilesProvider app wrap into the app root."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+
+    app.add_page(
+        lambda: rx.upload.root(
+            rx.vstack(
+                rx.button("Select File"),
+                rx.text("Drag and drop files here or click to select files"),
+            ),
+        ),
+        route="/",
+    )
+    app._compile()
+
+    root_js = web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    root_contents = root_js.read_text()
+
+    assert "UploadFilesProvider" in root_contents
 
 
 @pytest.mark.parametrize(

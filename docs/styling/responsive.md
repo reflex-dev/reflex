@@ -173,7 +173,7 @@ rx.table.root(
 You can customize them using the style property.
 
 ```python
-app = rx.App(style=\{"breakpoints": ["520px", "768px", "1024px", "1280px", "1640px"]\})
+app = rx.App(style={"breakpoints": ["520px", "768px", "1024px", "1280px", "1640px"]})
 ```
 
 ## Showing Components Based on Display

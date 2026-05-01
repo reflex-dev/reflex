@@ -1,53 +1,50 @@
 fail_fast: true
 repos:
-- hooks:
-  - args:
-    - reflex
-    - tests
-    - docs/app
-    - packages
-    id: ruff-format
-  - args:
-    - --fix
-    - --exit-non-zero-on-fix
-    exclude: ^integration/benchmarks/
-    id: ruff-check
-  repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.15.6
-- hooks:
-  - additional_dependencies:
-    - tomli
-    args:
-    - reflex
-    id: codespell
-  repo: https://github.com/codespell-project/codespell
-  rev: v2.4.1
-- hooks:
-  - always_run: true
+- repo: local
+  hooks:
+  - id: ruff-format
+    name: ruff-format
+    entry: ruff format
+    language: system
+    types_or: [python, markdown]
+    require_serial: true
+  - id: ruff-check
+    name: ruff-check
+    entry: ruff check
+    language: system
+    args: [--fix, --exit-non-zero-on-fix]
+    types_or: [python, pyi]
+    require_serial: true
+- repo: local
+  hooks:
+  - id: codespell
+    name: codespell
+    entry: codespell
+    language: system
+    types: [text]
+    require_serial: true
+- repo: local
+  hooks:
+  - id: update-pyi-files
+    name: update-pyi-files
     description: Update pyi files as needed
     entry: python3 scripts/make_pyi.py
-    id: update-pyi-files
     language: system
-    name: update-pyi-files
+    always_run: true
     require_serial: true
-  repo: local
-- hooks:
-  - args:
-    - reflex
-    - tests
-    id: pyright
+- repo: local
+  hooks:
+  - id: pyright
+    name: pyright
+    entry: pyright
     language: system
-  repo: https://github.com/RobertCraigie/pyright-python
-  rev: v1.1.408
-- hooks:
-  - additional_dependencies:
-    - '@biomejs/biome@2.4.8'
-    args:
-    - --indent-width
-    - '2'
-    - --indent-style
-    - space
+    types: [python]
+    require_serial: true
+- repo: https://github.com/biomejs/pre-commit
+  rev: 19865851e014cbe6138e295365f95ca51bf953f8 # v0.6.1
+  hooks:
+  - id: biome-format
+    additional_dependencies: ['@biomejs/biome@2.4.8']
+    args: [--indent-width, '2', --indent-style, space]
     exclude: (\.css$|docs/app/)
-    id: biome-format
-  repo: https://github.com/biomejs/pre-commit
-  rev: v0.6.1
+    require_serial: true

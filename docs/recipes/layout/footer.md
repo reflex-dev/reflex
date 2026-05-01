@@ -41,16 +41,16 @@ def footer_items_2() -> rx.Component:
     )
 
 
-def social_link(icon: str, href: str) -> rx.Component:
-    return rx.link(rx.icon(icon), href=href)
+def social_link(label: str, href: str) -> rx.Component:
+    return rx.link(rx.text(label, weight="bold"), href=href)
 
 
 def socials() -> rx.Component:
     return rx.flex(
-        social_link("instagram", "/#"),
-        social_link("twitter", "/#"),
-        social_link("facebook", "/#"),
-        social_link("linkedin", "/#"),
+        social_link("IG", "/#"),
+        social_link("X", "/#"),
+        social_link("f", "/#"),
+        social_link("in", "/#"),
         spacing="3",
         justify="end",
         width="100%",
@@ -143,16 +143,16 @@ def footer_items_2() -> rx.Component:
     )
 
 
-def social_link(icon: str, href: str) -> rx.Component:
-    return rx.link(rx.icon(icon), href=href)
+def social_link(label: str, href: str) -> rx.Component:
+    return rx.link(rx.text(label, weight="bold"), href=href)
 
 
 def socials() -> rx.Component:
     return rx.flex(
-        social_link("instagram", "/#"),
-        social_link("twitter", "/#"),
-        social_link("facebook", "/#"),
-        social_link("linkedin", "/#"),
+        social_link("IG", "/#"),
+        social_link("X", "/#"),
+        social_link("f", "/#"),
+        social_link("in", "/#"),
         spacing="3",
         justify_content=["center", "center", "end"],
         width="100%",
@@ -268,16 +268,16 @@ def footer_items_3() -> rx.Component:
     )
 
 
-def social_link(icon: str, href: str) -> rx.Component:
-    return rx.link(rx.icon(icon), href=href)
+def social_link(label: str, href: str) -> rx.Component:
+    return rx.link(rx.text(label, weight="bold"), href=href)
 
 
 def socials() -> rx.Component:
     return rx.flex(
-        social_link("instagram", "/#"),
-        social_link("twitter", "/#"),
-        social_link("facebook", "/#"),
-        social_link("linkedin", "/#"),
+        social_link("IG", "/#"),
+        social_link("X", "/#"),
+        social_link("f", "/#"),
+        social_link("in", "/#"),
         spacing="3",
         justify_content=["center", "center", "end"],
         width="100%",

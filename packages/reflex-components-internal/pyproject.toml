@@ -7,7 +7,9 @@ readme = "README.md"
 authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 requires-python = ">=3.10"
-dependencies = ["reflex"]
+dependencies = [
+    "reflex >= 0.9.0",
+]
 
 [tool.hatch.version]
 source = "uv-dynamic-versioning"

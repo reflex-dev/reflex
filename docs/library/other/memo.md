@@ -171,3 +171,17 @@ Avoid using `rx.memo` for:
 
 - Simple components where the memoization overhead might exceed the performance gain
 - Components that almost always receive different props on re-render
+
+## API Reference
+
+### `rx.memo`
+
+```python
+rx.memo(component_fn)
+```
+
+Decorates a function that returns a Reflex component so it can be reused as a memoized component. The function arguments must be type annotated, and memoized components should be called with keyword arguments.
+
+| Argument | Type | Description |
+| --- | --- | --- |
+| `component_fn` | `Callable[..., rx.Component]` | Function that returns the component to memoize. |

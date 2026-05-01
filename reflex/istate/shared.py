@@ -98,7 +98,7 @@ async def _patch_state(
     try:
         if full_delta:
             linked_state.dirty_vars.update(linked_state.base_vars)
-            linked_state.dirty_vars.update(linked_state.backend_vars)
+            linked_state.dirty_vars.update(linked_state._backend_vars)
             linked_state.dirty_vars.update(linked_state.computed_vars)
             linked_state._mark_dirty()
         # Apply the updates into the existing state tree for rehydrate.
@@ -118,6 +118,7 @@ class SharedStateBaseInternal(State):
 
     _exit_stack: contextlib.AsyncExitStack | None = None
     _held_locks: dict[str, dict[type[BaseState], BaseState]] | None = None
+    _held_locks_lock: asyncio.Lock = asyncio.Lock()
 
     def __getstate__(self):
         """Override redis serialization to remove temporary fields.
@@ -129,6 +130,7 @@ class SharedStateBaseInternal(State):
         s.pop("_previous_dirty_vars", None)
         s.pop("_exit_stack", None)
         s.pop("_held_locks", None)
+        s.pop("_held_locks_lock", None)
         return s
 
     @_override_base_method
@@ -154,6 +156,7 @@ class SharedStateBaseInternal(State):
         self.dirty_vars.discard("_previous_dirty_vars")
         self.dirty_vars.discard("_exit_stack")
         self.dirty_vars.discard("_held_locks")
+        self.dirty_vars.discard("_held_locks_lock")
         # Only mark dirty if there are still dirty vars, or any substate is dirty
         if self.dirty_vars or any(
             substate.dirty_vars for substate in self.substates.values()
@@ -305,27 +308,31 @@ class SharedStateBaseInternal(State):
             msg = "Cannot link shared state outside of _modify_linked_states context."
             raise ReflexRuntimeError(msg)
 
+        linked_root_state = None
+
         # Get the newly linked state and update pointers/delta for subsequent events.
         if token not in self._held_locks:
-            linked_root_state = await self._exit_stack.enter_async_context(
-                get_state_manager().modify_state(
-                    BaseStateToken(ident=token, cls=type(self))
-                )
-            )
-            # Set client_token on the linked root so that subsequent get_state
-            # calls when directly modifying a linked token will load the
-            # associated instance.
-            if linked_root_state.router.session.client_token != token:
-                import dataclasses as dc
+            async with self._held_locks_lock:
+                if token not in self._held_locks:
+                    linked_root_state = await self._exit_stack.enter_async_context(
+                        get_state_manager().modify_state(
+                            BaseStateToken(ident=token, cls=type(self))
+                        )
+                    )
+                    self._held_locks.setdefault(token, {})
+                    # Set client_token on the linked root so that subsequent get_state
+                    # calls when directly modifying a linked token will load the
+                    # associated instance.
+                    if linked_root_state.router.session.client_token != token:
+                        import dataclasses as dc
 
-                linked_root_state.router = dc.replace(
-                    linked_root_state.router,
-                    session=dc.replace(
-                        linked_root_state.router.session, client_token=token
-                    ),
-                )
-            self._held_locks.setdefault(token, {})
-        else:
+                        linked_root_state.router = dc.replace(
+                            linked_root_state.router,
+                            session=dc.replace(
+                                linked_root_state.router.session, client_token=token
+                            ),
+                        )
+        if linked_root_state is None:
             linked_root_state = await get_state_manager().get_state(
                 BaseStateToken(ident=token, cls=type(self))
             )

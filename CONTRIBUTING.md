@@ -1,7 +1,5 @@
 # Reflex Contributing Guidelines
 
-For an extensive guide on the different ways to contribute to Reflex see our [Contributing Guide on Notion](https://www.notion.so/reflex-dev/2107ab2bc166497db951b8d742748284?v=f0eaff78fa984b5ab15d204af58907d7).
-
 ## Running a Local Build of Reflex
 
 Here is a quick guide on how to run Reflex repo locally so you can start contributing to the project.
@@ -103,6 +101,33 @@ We welcome AI-assisted contributions, but they must meet the same quality bar as
 - Resolve or dismiss irrelevant bot feedback with a brief explanation.
 - All added/changed lines MUST have unit or integration test coverage with _real_ assertions. No untested code, no bogus test code.
 - PRs with merge conflicts or failing tests will not be reviewed or merged. The maintainers do not spend time on PRs that are not in a ready state. If you need attention on a PR that is not ready, mention the maintainers in a comment.
+
+## 📝 Contributing to the Docs
+
+The Reflex documentation lives in this repo under [`docs/`](https://github.com/reflex-dev/reflex/tree/main/docs). All doc pages are plain Markdown files in [`docs/`](https://github.com/reflex-dev/reflex/tree/main/docs), and the docs site itself (a Reflex app that renders them) lives in [`docs/app/`](https://github.com/reflex-dev/reflex/tree/main/docs/app). If you're fixing a typo, clarifying an explanation, or adding a new page, you can do it all in this repo by editing the relevant `.md` file.
+
+**1. Run the docs site locally:**
+
+```bash
+cd docs/app
+uv sync
+uv run reflex run
+```
+
+Then open [http://localhost:3000/docs/](http://localhost:3000/docs/). The dev server picks up changes to the `.md` files in `docs/` so you can preview edits live.
+
+**2. Speed up dev builds with the page whitelist (optional):**
+
+By default the dev server compiles every page, which can be slow. To only compile the pages you're working on, edit `docs/app/reflex_docs/whitelist.py` and add paths to `WHITELISTED_PAGES`:
+
+```python
+WHITELISTED_PAGES = [
+    "/getting-started/introduction",
+    "/components/props",
+]
+```
+
+Paths must start with `/`, have no trailing slash, and are prefix-matched. An empty list builds everything. Restart the dev server after editing.
 
 ## Editing Templates
 
