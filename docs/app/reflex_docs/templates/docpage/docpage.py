@@ -608,11 +608,7 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
     )
 
     # Split the path into segments and capitalize each segment.
-    segments = [
-        segment.capitalize()
-        for segment in path.split("/")
-        if segment
-    ]
+    segments = [segment.capitalize() for segment in path.split("/") if segment]
 
     # Initialize an empty list to store the breadcrumbs and their separators
     breadcrumbs = []
