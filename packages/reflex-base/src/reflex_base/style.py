@@ -330,6 +330,13 @@ _SVG_PAINT_KEYS = frozenset({
 _CSS_URL_COLOR_KEYS = _SVG_PAINT_KEYS
 _CSS_NONE_COLOR_KEYS = _SVG_PAINT_KEYS
 _CSS_CONTEXT_PAINT_KEYS = _SVG_PAINT_KEYS
+_CSS_COMPOSITE_COLOR_KEYS = frozenset({
+    "border_color",
+    "border_top_color",
+    "border_right_color",
+    "border_bottom_color",
+    "border_left_color",
+})
 
 
 def _is_color_style_key(style_key: str) -> bool:
@@ -370,7 +377,9 @@ def _is_valid_css_color_value(style_key: str, style_value: str) -> bool:
             return False
 
     if lower == "none":
-        return format.to_snake_case(style_key) in _CSS_NONE_COLOR_KEYS
+        # Compatibility: existing apps and docs frequently use "none" with color-like
+        # props such as backgroundColor.
+        return True
 
     if lower in ("context-fill", "context-stroke"):
         return format.to_snake_case(style_key) in _CSS_CONTEXT_PAINT_KEYS
@@ -384,6 +393,15 @@ def _is_valid_css_color_value(style_key: str, style_value: str) -> bool:
 
     if lower.startswith("url(") and lower.endswith(")"):
         return format.to_snake_case(style_key) in _CSS_URL_COLOR_KEYS
+
+    snake_style_key = format.to_snake_case(style_key)
+    if (
+        snake_style_key in _CSS_COMPOSITE_COLOR_KEYS
+        and any(ch.isspace() for ch in lower)
+        and "var(" in lower
+    ):
+        # Allow legacy shorthand-like border strings, e.g. "1px solid var(--grass-1)".
+        return True
 
     # Intentional trade-off: check for well-known color-function prefixes
     # without implementing full CSS function parsing.
