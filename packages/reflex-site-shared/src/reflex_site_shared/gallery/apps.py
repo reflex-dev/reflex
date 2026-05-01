@@ -117,7 +117,7 @@ def more_posts(current_post: dict) -> rx.Component:
     return rx.el.section(
         rx.box(
             rx.el.h2("More Templates", class_name="font-large text-slate-12"),
-            rx.link(
+            rx.el.elements.a(
                 rx.box(
                     rx.text(
                         "View All", class_name="font-small text-slate-9 text-nowrap"
@@ -174,7 +174,7 @@ def page(document: MarkdownDocument, is_reflex_template: bool) -> rx.Component:
     )
 
     back_route_origin = (
-        "/docs/getting-started/open-source-templates/"
+        "/getting-started/open-source-templates/"
         if not is_reflex_template
         else "/templates/"
     )
@@ -279,9 +279,7 @@ gallery_apps_routes = []
 for (_path, source_folder), document in gallery_apps_data.items():
     is_reflex_template = source_folder.startswith("reflex_build_templates")
     base_url = (
-        "templates/"
-        if is_reflex_template
-        else "docs/getting-started/open-source-templates/"
+        "templates/" if is_reflex_template else "getting-started/open-source-templates/"
     )
     slug = re.sub(r"[\s_]+", "-", document.metadata["title"]).lower()
     route = f"/{base_url}{slug}"

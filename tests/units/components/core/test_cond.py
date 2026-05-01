@@ -123,6 +123,19 @@ def test_cond_no_else():
         cond(True, "hello")  # pyright: ignore [reportArgumentType]
 
 
+def test_cond_render_missing_false_child_defaults_to_fragment() -> None:
+    """Test Cond renders missing false branch as empty Fragment."""
+    comp = Cond._create(
+        cond=LiteralVar.create(True).bool(),
+        children=[Fragment.create(Text.create("hello"))],
+    )
+
+    rendered = comp.render()
+
+    assert rendered["true_value"] == Fragment.create(Text.create("hello")).render()
+    assert rendered["false_value"] == Fragment.create().render()
+
+
 def test_cond_computed_var():
     """Test if cond works with computed vars."""
 

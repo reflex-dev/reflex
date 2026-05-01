@@ -23,7 +23,7 @@ any necessary clean up.
 
 ```python
 async def long_running_task(foo, bar):
-    print(f"Starting \{foo} \{bar} task")
+    print(f"Starting {foo} {bar} task")
     some_api = SomeApi(foo)
     try:
         while True:
@@ -74,7 +74,7 @@ def fake_answer_to_everything_ml_model(x: float):
     return x * 42
 
 
-ml_models = \{}
+ml_models = {}
 
 
 @asynccontextmanager
@@ -84,6 +84,7 @@ async def setup_model(app):
     yield
     # Clean up the ML models and release the resources
     ml_models.clear()
+
 
 ...
 

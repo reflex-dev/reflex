@@ -1,7 +1,5 @@
 # Reflex Contributing Guidelines
 
-For an extensive guide on the different ways to contribute to Reflex see our [Contributing Guide on Notion](https://www.notion.so/reflex-dev/2107ab2bc166497db951b8d742748284?v=f0eaff78fa984b5ab15d204af58907d7).
-
 ## Running a Local Build of Reflex
 
 Here is a quick guide on how to run Reflex repo locally so you can start contributing to the project.

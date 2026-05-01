@@ -21,9 +21,10 @@ RadioGroupItem: |
   lambda **props: rx.radio_group.root(
       rx.radio_group.item(value="1", **props),
       rx.radio_group.item(value="2", **props),
-      rx.radio_group.item(value="3",),
-      rx.radio_group.item(value="4",),
-      rx.radio_group.item(value="5",),
+      rx.radio_group.item(value="3", **props),
+      rx.radio_group.item(value="4", **props),
+      rx.radio_group.item(value="5", **props),
+      default_value="1",
   )
 ---
 

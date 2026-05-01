@@ -90,7 +90,7 @@ In this tutorial you'll learn how to:
 # Video: Example of Setting up the Chat App
 ```
 
-We will start by creating a new project and setting up our development environment. If you haven't installed [uv](https://docs.astral.sh/uv/) yet, see the [installation guide](/docs/getting_started/installation). Then create a new project directory and scaffold a Reflex app:
+We will start by creating a new project and setting up our development environment. If you haven't installed [uv](https://docs.astral.sh/uv/) yet, see the [installation guide](/docs/getting-started/installation). Then create a new project directory and scaffold a Reflex app:
 
 ```bash
 mkdir chatapp
@@ -112,7 +112,7 @@ uv run reflex run
 
 You should see your app running at [http://localhost:3000](http://localhost:3000).
 
-Reflex also starts the backend server which handles all the state management and communication with the frontend. You can test the backend server is running by navigating to [http://localhost:8000/ping]({"http://localhost:8000/ping"}).
+Reflex also starts the backend server which handles all the state management and communication with the frontend. You can test the backend server is running by navigating to [http://localhost:8000/ping](http://localhost:8000/ping).
 
 Now that we have our project set up, in the next section we will start building our app!
 
@@ -532,7 +532,7 @@ def answer(self):
 
 ### Streaming Text
 
-Normally state updates are sent to the frontend when an event handler returns. However, we want to stream the text from the chatbot as it is generated. We can do this by yielding from the event handler. See the [yield events docs](/docs/events/yield_events) for more info.
+Normally state updates are sent to the frontend when an event handler returns. However, we want to stream the text from the chatbot as it is generated. We can do this by yielding from the event handler. See the [yield events docs](/docs/events/yield-events) for more info.
 
 ```python exec
 def action_bar3() -> rx.Component:
@@ -627,6 +627,7 @@ import os
 
 from openai import AsyncOpenAI
 
+
 @rx.event
 async def answer(self):
     # Our chatbot has some brains now!
@@ -634,9 +635,7 @@ async def answer(self):
 
     session = await client.chat.completions.create(
         model="gpt-4o-mini",
-        messages=[
-            \{"role": "user", "content": self.question}
-        ],
+        messages=[{"role": "user", "content": self.question}],
         stop=None,
         temperature=0.7,
         stream=True,
@@ -736,6 +735,7 @@ import os
 from openai import AsyncOpenAI
 import reflex as rx
 
+
 class State(rx.State):
     question: str
     chat_history: list[tuple[str, str]] = []
@@ -746,9 +746,7 @@ class State(rx.State):
         # Start streaming completion from OpenAI
         session = await client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[
-                \{"role": "user", "content": self.question}
-            ],
+            messages=[{"role": "user", "content": self.question}],
             temperature=0.7,
             stream=True,
         )

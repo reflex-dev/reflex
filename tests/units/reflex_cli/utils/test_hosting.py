@@ -7,6 +7,8 @@ import click
 import pytest
 from pytest_mock import MockerFixture, MockFixture
 from reflex_cli.utils.hosting import (
+    ScaleParams,
+    ScaleType,
     authenticated_token,
     delete_token_from_config,
     get_authenticated_client,
@@ -164,3 +166,14 @@ def test_authenticate_with_env_token_in_non_interactive_mode(mocker: MockerFixtu
 
     assert result == mock_authenticated_client
     mock_get_auth_client.assert_called_once_with(None)
+
+
+def test_scale_params_as_json_is_pure_when_type_is_unspecified():
+    """ScaleParams.as_json should not mutate type when defaulting scale type."""
+    scale_params = ScaleParams(vm_type="shared-1x")
+
+    first = scale_params.as_json()
+    second = scale_params.as_json()
+
+    assert scale_params.type is None
+    assert first == second == {"type": ScaleType.REGION.value, "regions": {}}

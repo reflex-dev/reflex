@@ -237,7 +237,7 @@ def platform_content() -> rx.Component:
                     "framework_pixel.svg",
                     "Reflex Framework",
                     "Iterate on full-stack apps in pure Python. No JavaScript required.",
-                    "/docs/getting-started/introduction/",
+                    "/open-source/",
                 ),
                 platform_item(
                     "cloud_pixel.svg",

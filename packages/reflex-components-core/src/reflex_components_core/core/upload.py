@@ -10,9 +10,9 @@ from reflex_base.components.component import (
     Component,
     ComponentNamespace,
     MemoizationLeaf,
-    StatefulComponent,
     field,
 )
+from reflex_base.components.memoize_helpers import get_memoized_event_triggers
 from reflex_base.constants import Dirs
 from reflex_base.constants.compiler import Hooks, Imports
 from reflex_base.environment import environment
@@ -177,6 +177,7 @@ _on_drop_args_spec = (
     _on_drop_spec,
     passthrough_event_spec(UploadChunkIterator),
 )
+_on_drop_rejected_spec = passthrough_event_spec(list[dict[str, Any]])
 _UPLOAD_FILES_CLIENT_HANDLER = "uploadFiles"
 
 
@@ -220,7 +221,7 @@ class GhostUpload(Fragment):
     # Fired when files are dropped.
     on_drop: EventHandler[_on_drop_args_spec]
 
-    on_drop_rejected: EventHandler[_on_drop_spec] = field(
+    on_drop_rejected: EventHandler[_on_drop_rejected_spec] = field(
         doc="Fired when dropped files do not meet the specified criteria."
     )
 
@@ -264,7 +265,7 @@ class Upload(MemoizationLeaf):
     # Fired when files are dropped.
     on_drop: EventHandler[_on_drop_args_spec]
 
-    on_drop_rejected: EventHandler[_on_drop_spec] = field(
+    on_drop_rejected: EventHandler[_on_drop_rejected_spec] = field(
         doc="Fired when dropped files do not meet the specified criteria."
     )
 
@@ -357,16 +358,13 @@ class Upload(MemoizationLeaf):
                 ),
             )
 
-        event_triggers = StatefulComponent._get_memoized_event_triggers(
+        event_triggers = get_memoized_event_triggers(
             GhostUpload.create(
                 on_drop=upload_props["on_drop"],
                 on_drop_rejected=upload_props["on_drop_rejected"],
             )
         )
-        callback_hooks = []
-        for trigger_name, (event_var, callback_str) in event_triggers.items():
-            upload_props[trigger_name] = event_var
-            callback_hooks.append(callback_str)
+        upload_props.update(event_triggers)
 
         upload_props = {
             format.to_camel_case(key): value for key, value in upload_props.items()
@@ -391,7 +389,6 @@ class Upload(MemoizationLeaf):
             use_dropzone_arguments._get_all_var_data(),
             VarData(
                 hooks={
-                    **dict.fromkeys(callback_hooks, None),
                     f"{left_side} = {right_side};": None,
                 },
                 imports={
