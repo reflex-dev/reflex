@@ -9,7 +9,7 @@ import reflex as rx
 ```python eval
 rx.el.div(
     rx.video(
-        url="https://www.youtube.com/embed/UAj9vUweQ5g",
+        src="https://www.youtube.com/embed/UAj9vUweQ5g",
         width="100%",
         height="400px",
     ),

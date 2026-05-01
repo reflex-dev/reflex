@@ -1699,14 +1699,6 @@
         /* padding: 0rem 0.125rem 0rem 0.125rem; */
     }
 
-    /* Override Radix Code (rt-Code) accent coloring so inline code matches slate theme */
-    code.rt-Code,
-    code.rt-Code.rt-variant-soft,
-    .rt-Code.rt-variant-soft {
-        color: var(--c-slate-11) !important;
-        background-color: var(--c-slate-3) !important;
-    }
-
     .code-error-style {
         font-family: var(--font-jetbrains);
         font-size: 0.835rem;
@@ -1774,6 +1766,13 @@
         font-family: var(--font-jetbrains) !important;
     }
 
+    .code-block.counter-code-block {
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+    }
+
     .code-block>* {
         background: transparent !important;
         font-family: var(--font-jetbrains) !important;
@@ -1812,7 +1811,7 @@
     }
 
     .code-block button,
-    .code-block > button {
+    .code-block>button {
         border: none !important;
         border-width: 0 !important;
         background: transparent !important;
@@ -1832,19 +1831,19 @@
     }
 
     .code-block button::after,
-    .code-block > button::after {
+    .code-block>button::after {
         content: "Copy";
     }
 
     .code-block:hover button,
-    .code-block:hover > button,
+    .code-block:hover>button,
     .code-block button:focus-visible {
         opacity: 1 !important;
         pointer-events: auto;
     }
 
     .code-block button:hover,
-    .code-block > button:hover {
+    .code-block>button:hover {
         background: var(--c-slate-3) !important;
         background-color: var(--c-slate-3) !important;
     }
@@ -2130,6 +2129,16 @@
 
     .hidden-scrollbar::-webkit-scrollbar-thumb {
         background-color: transparent;
+    }
+
+    .hidden-scrollbar::-webkit-scrollbar-track,
+    .hidden-scrollbar::-webkit-scrollbar-corner,
+    .hidden-scrollbar::-webkit-scrollbar-button {
+        background-color: transparent;
+    }
+
+    .hidden-scrollbar {
+        scrollbar-color: transparent transparent;
     }
 
     /* Hide scrollbar for Chrome, Safari and Opera */

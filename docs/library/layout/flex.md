@@ -1,6 +1,20 @@
 ---
 components:
   - rx.flex
+
+Flex: |
+  lambda **props: rx.flex(
+      rx.card("Card 1", size="2", width="5rem"),
+      rx.card("Card 2", size="2", width="5rem"),
+      rx.card("Card 3", size="2", width="5rem"),
+      gap="0.75rem",
+      width="100%",
+      min_height="10rem",
+      border="1px dashed var(--gray-7)",
+      border_radius="0.5rem",
+      padding="0.75rem",
+      **props,
+  )
 ---
 
 ```python exec

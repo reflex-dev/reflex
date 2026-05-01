@@ -1,12 +1,11 @@
 [project]
 name = "reflex-docs-app"
-version = "0.0.1"
+dynamic = ["version"]
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "email-validator",
     "fastapi",
-    "googletrans-py",
     "openai",
     "orjson",
     "pandas",
@@ -26,7 +25,6 @@ dependencies = [
     "ruff-format",
     "sqlalchemy",
     "sqlmodel",
-    "typesense",
 ]
 
 [dependency-groups]
@@ -39,8 +37,19 @@ dev = [
     "uvicorn",
 ]
 
-[tool.setuptools.packages.find]
-where = ["reflex_docs"]
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+pattern-prefix = "reflex-docs-app-"
+fallback-version = "0.0.0dev0"
+
+[tool.hatch.build.targets.wheel]
+packages = ["reflex_docs"]
 
 [tool.ruff]
 target-version = "py311"

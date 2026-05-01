@@ -25,66 +25,60 @@ def format_fields(
     fields: tuple[FieldDocumentation, ...],
 ) -> rx.Component:
     return (
-        rx.scroll_area(
-            rx.table.root(
-                rx.table.header(
-                    rx.table.row(*[
-                        rx.table.column_header_cell(
-                            header, class_name=table_header_class_name
-                        )
-                        for header in headers
-                    ])
-                ),
-                rx.table.body(
-                    *[
-                        rx.table.row(
-                            rx.table.cell(
-                                format_field(field),
-                            ),
-                            rx.table.cell(
-                                render_markdown(field.description or ""),
-                                class_name="font-small text-slate-11",
-                            ),
-                        )
-                        for field in fields
-                    ],
-                ),
-            ),
-            max_height="35em",
-        ),
-    )
-
-
-def format_methods(methods: tuple[MethodDocumentation, ...]) -> rx.Component:
-    return rx.scroll_area(
         rx.table.root(
             rx.table.header(
-                rx.table.row(
-                    rx.table.column_header_cell("Signature"),
-                    rx.table.column_header_cell("Description"),
-                )
+                rx.table.row(*[
+                    rx.table.column_header_cell(
+                        header, class_name=table_header_class_name
+                    )
+                    for header in headers
+                ])
             ),
             rx.table.body(
                 *[
                     rx.table.row(
                         rx.table.cell(
-                            rx.code(
-                                method.name + method.signature,
-                                class_name="code-style",
-                            ),
-                            white_space="normal",
+                            format_field(field),
                         ),
                         rx.table.cell(
-                            method.description or "",
-                            white_space="normal",
-                            class_name="font-small text-slate-11 text-nowrap",
+                            render_markdown(field.description or ""),
+                            class_name="font-small text-slate-11",
                         ),
                     )
-                    for method in methods
+                    for field in fields
                 ],
             ),
         ),
-        max_height="35em",
+    )
+
+
+def format_methods(methods: tuple[MethodDocumentation, ...]) -> rx.Component:
+    return rx.table.root(
+        rx.table.header(
+            rx.table.row(
+                rx.table.column_header_cell("Signature"),
+                rx.table.column_header_cell("Description"),
+            )
+        ),
+        rx.table.body(
+            *[
+                rx.table.row(
+                    rx.table.cell(
+                        rx.code(
+                            method.name + method.signature,
+                            class_name="code-style",
+                        ),
+                        white_space="normal",
+                    ),
+                    rx.table.cell(
+                        method.description or "",
+                        white_space="normal",
+                        class_name="font-small text-slate-11 text-nowrap",
+                    ),
+                )
+                for method in methods
+            ],
+        ),
     )
 
 

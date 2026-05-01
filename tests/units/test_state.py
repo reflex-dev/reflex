@@ -4646,3 +4646,107 @@ async def test_rebind_mutable_proxy(
         assert state.data["a"] == [2, 3]
         # Object identity persists across serialization, so data["b"] is also mutated.
         assert state.data["b"] == [2, 3]
+
+
+def test_override_base_method_skips_event_handler_wrapping():
+    """A method marked with __override_base_method__ should not be wrapped as an EventHandler."""
+    from reflex.state import _override_base_method
+
+    class OverrideState(rx.State):
+        @_override_base_method
+        def custom_override(self) -> int:
+            return 42
+
+    # The marked method must remain a plain function, not an EventHandler.
+    assert not isinstance(OverrideState.__dict__["custom_override"], EventHandler)
+    assert "custom_override" not in OverrideState.event_handlers
+    assert OverrideState().custom_override() == 42
+
+
+def test_descriptor_attribute_not_in_backend_vars():
+    """A custom descriptor on a state should appear in vars/base_vars but not backend_vars."""
+
+    class _IntDescriptor:
+        def __init__(self):
+            self._values: dict[int, int] = {}
+
+        def __set_name__(self, owner, name):
+            self._name = name
+
+        def __get__(self, instance, owner):
+            if instance is None:
+                return self
+            return self._values.get(id(instance), 0)
+
+        def __set__(self, instance, value):
+            self._values[id(instance)] = value
+
+    class DescriptorState(rx.State):
+        _desc_value: int = _IntDescriptor()  # pyright: ignore[reportAssignmentType]
+
+        @rx.var
+        def doubled(self) -> int:
+            return self._desc_value * 2
+
+    # The descriptor should not be tracked as a backend var or a base var
+    # (only pydantic-backed public fields go into base_vars).
+    assert "_desc_value" not in DescriptorState.backend_vars
+    assert "_desc_value" not in DescriptorState.base_vars
+    # But it should be visible in vars for dependency tracking.
+    assert "_desc_value" in DescriptorState.vars
+    # Descriptor remains the class-level attribute (not overwritten by a Var).
+    assert isinstance(DescriptorState.__dict__["_desc_value"], _IntDescriptor)
+
+    # A computed var depending on the descriptor must register the dependency.
+    deps = DescriptorState._var_dependencies.get("_desc_value", set())
+    assert (DescriptorState.get_full_name(), "doubled") in deps
+
+
+def test_descriptor_overrides_inherited_descriptor():
+    """A child state defining a descriptor with the same name as a parent overrides it."""
+
+    class _Sentinel:
+        def __init__(self, label: str):
+            self.label = label
+            self._values: dict[int, int] = {}
+
+        def __get__(self, instance, owner):
+            if instance is None:
+                return self
+            return self._values.get(id(instance), 0)
+
+        def __set__(self, instance, value):
+            self._values[id(instance)] = value
+
+    parent_descriptor = _Sentinel("parent")
+    child_descriptor = _Sentinel("child")
+
+    class ParentDescState(rx.State):
+        _shared: int = parent_descriptor  # pyright: ignore[reportAssignmentType]
+
+        @rx.var
+        def parent_view(self) -> int:
+            return self._shared
+
+    class ChildDescState(ParentDescState):
+        _shared: int = child_descriptor  # pyright: ignore[reportAssignmentType]
+
+        @rx.var
+        def child_view(self) -> int:
+            return self._shared * 10
+
+    # The child class's descriptor wins on the class itself.
+    assert ChildDescState.__dict__["_shared"] is child_descriptor
+    # The override drops the inherited entry so dependency tracking attaches
+    # to the child class rather than the parent.
+    assert "_shared" not in ChildDescState.inherited_vars
+    assert "_shared" not in ChildDescState.inherited_backend_vars
+    assert "_shared" not in ChildDescState.backend_vars
+    # The child's Var (not the parent's) is what shows up in vars.
+    child_var = ChildDescState.vars["_shared"]
+    assert child_var is not ParentDescState.vars["_shared"]
+    # Child's computed var depends on child's _shared, parent's stays at parent.
+    child_deps = ChildDescState._var_dependencies.get("_shared", set())
+    parent_deps = ParentDescState._var_dependencies.get("_shared", set())
+    assert (ChildDescState.get_full_name(), "child_view") in child_deps
+    assert (ParentDescState.get_full_name(), "parent_view") in parent_deps

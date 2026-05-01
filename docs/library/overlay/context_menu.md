@@ -15,7 +15,11 @@ only_low_level:
 ContextMenuRoot: |
   lambda **props: rx.context_menu.root(
           rx.context_menu.trigger(
-              rx.text("Context Menu (right click)")
+              rx.button(
+                  "Context Menu (right click)",
+                  color_scheme=props.get("color_scheme"),
+                  variant=props.get("variant"),
+              ),
           ),
           rx.context_menu.content(
               rx.context_menu.item("Copy", shortcut="⌘ C"),
@@ -36,8 +40,12 @@ ContextMenuRoot: |
 ContextMenuTrigger: |
   lambda **props: rx.context_menu.root(
           rx.context_menu.trigger(
-              rx.text("Context Menu (right click)"),
-              **props
+              rx.button(
+                  "Context Menu (right click)",
+                  color_scheme=props.get("color_scheme"),
+                  variant=props.get("variant"),
+              ),
+              **props,
           ),
           rx.context_menu.content(
               rx.context_menu.item("Copy", shortcut="⌘ C"),
@@ -57,7 +65,11 @@ ContextMenuTrigger: |
 ContextMenuContent: |
   lambda **props: rx.context_menu.root(
           rx.context_menu.trigger(
-              rx.text("Context Menu (right click)")
+              rx.button(
+                  "Context Menu (right click)",
+                  color_scheme=props.get("color_scheme"),
+                  variant=props.get("variant"),
+              ),
           ),
           rx.context_menu.content(
               rx.context_menu.item("Copy", shortcut="⌘ C"),
@@ -78,7 +90,11 @@ ContextMenuContent: |
 ContextMenuSub: |
   lambda **props: rx.context_menu.root(
           rx.context_menu.trigger(
-              rx.text("Context Menu (right click)")
+              rx.button(
+                  "Context Menu (right click)",
+                  color_scheme=props.get("color_scheme"),
+                  variant=props.get("variant"),
+              ),
           ),
           rx.context_menu.content(
               rx.context_menu.item("Copy", shortcut="⌘ C"),
@@ -99,7 +115,11 @@ ContextMenuSub: |
 ContextMenuSubTrigger: |
   lambda **props: rx.context_menu.root(
           rx.context_menu.trigger(
-              rx.text("Context Menu (right click)")
+              rx.button(
+                  "Context Menu (right click)",
+                  color_scheme=props.get("color_scheme"),
+                  variant=props.get("variant"),
+              ),
           ),
           rx.context_menu.content(
               rx.context_menu.item("Copy", shortcut="⌘ C"),
@@ -119,7 +139,11 @@ ContextMenuSubTrigger: |
 ContextMenuSubContent: |
   lambda **props: rx.context_menu.root(
           rx.context_menu.trigger(
-              rx.text("Context Menu (right click)")
+              rx.button(
+                  "Context Menu (right click)",
+                  color_scheme=props.get("color_scheme"),
+                  variant=props.get("variant"),
+              ),
           ),
           rx.context_menu.content(
               rx.context_menu.item("Copy", shortcut="⌘ C"),
@@ -140,7 +164,11 @@ ContextMenuSubContent: |
 ContextMenuItem: |
   lambda **props: rx.context_menu.root(
           rx.context_menu.trigger(
-              rx.text("Context Menu (right click)")
+              rx.button(
+                  "Context Menu (right click)",
+                  color_scheme=props.get("color_scheme"),
+                  variant=props.get("variant"),
+              ),
           ),
           rx.context_menu.content(
               rx.context_menu.item("Copy", shortcut="⌘ C", **props),

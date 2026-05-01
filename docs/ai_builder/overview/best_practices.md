@@ -174,7 +174,7 @@ This enables a hybrid workflow: generate your app and make major changes in the 
 - **No local installation** — Hosted MCP server requires no additional Python packages
 - **Secure authentication** — OAuth 2.1 integration with your Reflex account
 
-For complete setup instructions for Claude Desktop, Windsurf, Codex, and other MCP clients, visit our [MCP integration](https://reflex.dev/docs/ai-builder/integrations/mcp-installation/) documentation.
+For complete setup instructions for Claude Desktop, Windsurf, Codex, and other MCP clients, visit our [MCP integration](https://reflex.dev/docs/ai/integrations/mcp-installation/) documentation.
 
 ---
 

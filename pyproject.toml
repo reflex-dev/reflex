@@ -248,6 +248,7 @@ lint.flake8-bugbear.extend-immutable-calls = [
 "tests/units/reflex_cli/**/*.py" = ["DOC201", "PT006", "RUF052"]
 "*/.templates/apps/blank/code/*" = ["INP001"]
 "*/blank.py" = ["I001"]
+"docs/package/scripts/*.py" = ["INP001"]
 
 [tool.pytest.ini_options]
 filterwarnings = "ignore:fields may not start with an underscore:RuntimeWarning"
@@ -342,4 +343,4 @@ reflex-integrations-docs.workspace = true
 reflex.workspace = true
 
 [tool.uv.workspace]
-members = ["packages/*", "docs/app"]
+members = ["packages/*", "docs/app", "docs/package"]

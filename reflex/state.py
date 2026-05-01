@@ -304,6 +304,38 @@ def _override_base_method(fn: Callable[PARAMS, RETURN]) -> Callable[PARAMS, RETU
     return fn
 
 
+def _is_user_descriptor(value: Any) -> bool:
+    """Whether a class attribute is a user-defined descriptor.
+
+    Excludes framework-recognized callables and var types so user-defined
+    descriptors (with __get__/__set__) are surfaced for computed-var dependency
+    tracking without being shadowed by backend-var storage.
+
+    Args:
+        value: The class attribute value to check.
+
+    Returns:
+        True if the value is a custom descriptor.
+    """
+    if not hasattr(type(value), "__get__"):
+        return False
+    if isinstance(
+        value,
+        (
+            FunctionType,
+            classmethod,
+            staticmethod,
+            property,
+            functools.cached_property,
+            EventHandler,
+            Var,
+            Field,
+        ),
+    ):
+        return False
+    return not is_computed_var(value)
+
+
 all_base_state_classes: dict[str, None] = {}
 
 CLASS_VAR_NAMES = frozenset({
@@ -529,6 +561,28 @@ class BaseState(EvenMoreBasicBaseState):
                 )
                 raise StateValueError(msg)
 
+        # A descriptor defined directly on this class overrides any same-named
+        # entry inherited from a parent state. Drop those names from the
+        # inherited maps so backend var assembly, dependency tracking, and the
+        # __setattr__ routing all resolve to the descriptor on this class.
+        hints = cls._get_type_hints()
+        own_descriptor_names = {
+            name
+            for name, value in cls.__dict__.items()
+            if name in hints and _is_user_descriptor(value)
+        }
+        if own_descriptor_names:
+            cls.inherited_vars = {
+                k: v
+                for k, v in cls.inherited_vars.items()
+                if k not in own_descriptor_names
+            }
+            cls.inherited_backend_vars = {
+                k: v
+                for k, v in cls.inherited_backend_vars.items()
+                if k not in own_descriptor_names
+            }
+
         # Get computed vars.
         computed_vars = cls._get_computed_vars()
         cls._check_overridden_computed_vars()
@@ -559,11 +613,40 @@ class BaseState(EvenMoreBasicBaseState):
             for name, f in cls.get_fields().items()
             if name not in cls.get_skip_vars() and f.is_var and not name.startswith("_")
         }
+        # Surface user-defined descriptors as vars so computed vars can declare
+        # dependencies on them. Descriptors on this class always win over
+        # inherited or mixin-provided entries with the same name; mixin entries
+        # are skipped if already recorded.
+        descriptor_vars: dict[str, Var] = {}
+        for source_cls in (*cls._mixins(), cls):
+            is_self = source_cls is cls
+            for dname, dvalue in source_cls.__dict__.items():
+                if (
+                    dname not in hints
+                    or dname in cls.base_vars
+                    or not _is_user_descriptor(dvalue)
+                ):
+                    continue
+                if not is_self and (
+                    dname in descriptor_vars
+                    or dname in cls.inherited_vars
+                    or dname in cls.inherited_backend_vars
+                ):
+                    continue
+                descriptor_vars[dname] = dispatch(
+                    field_name=format.format_state_name(cls.get_full_name())
+                    + "."
+                    + dname
+                    + FIELD_MARKER,
+                    var_data=VarData.from_state(cls, dname),
+                    result_var_type=hints[dname],
+                )
         cls.computed_vars = {
             name: v._replace(merge_var_data=VarData.from_state(cls))
             for name, v in computed_vars
         }
         cls.vars = {
+            **descriptor_vars,
             **cls.inherited_vars,
             **cls.base_vars,
             **cls.computed_vars,
@@ -675,6 +758,7 @@ class BaseState(EvenMoreBasicBaseState):
             not name.startswith("_")
             and isinstance(value, Callable)
             and not isinstance(value, EventHandler)
+            and not getattr(value, "__override_base_method__", False)
             and hasattr(value, "__code__")
         )
 
