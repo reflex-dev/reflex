@@ -49,6 +49,7 @@ dependencies = [
     "reflex-components-recharts",
     "reflex-components-sonner",
     "reflex-hosting-cli",
+    "reflex-integrations-docs",
     "reflex",
     "ruff-format",
     "ruff",
