@@ -10,7 +10,6 @@ GITHUB_URL = "https://github.com/reflex-dev/reflex"
 JOBS_BOARD_URL = "https://www.ycombinator.com/companies/reflex/jobs"
 REFLEX_ASSETS_CDN = "https://web.reflex-assets.dev/"
 SCREENSHOT_BUCKET = "https://pub-c14a5dcf674640a6b73fded32bad72ca.r2.dev/"
-INTEGRATIONS_IMAGES_URL = "https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/logos/"
 REFLEX_BUILD_URL = os.getenv("REFLEX_BUILD_URL", "https://build.reflex.dev/")
 PIP_URL = "https://pypi.org/project/reflex"
 GITHUB_URL = "https://github.com/reflex-dev/reflex"
