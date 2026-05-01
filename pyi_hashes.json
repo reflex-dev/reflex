@@ -1,5 +1,5 @@
 {
-  "packages/reflex-components-code/src/reflex_components_code/code.pyi": "a879ccd253e901964a7ab7ea7154f904",
+  "packages/reflex-components-code/src/reflex_components_code/code.pyi": "6ef91a4a4976e66b2761539e16d4f28e",
   "packages/reflex-components-code/src/reflex_components_code/shiki_code_block.pyi": "d3e0c33fdc34f5c154ac387d550c0d29",
   "packages/reflex-components-core/src/reflex_components_core/__init__.pyi": "82b29d23f2490161d42fd21021bd39c3",
   "packages/reflex-components-core/src/reflex_components_core/base/__init__.pyi": "7009187aaaf191814d031e5462c48318",
