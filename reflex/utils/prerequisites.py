@@ -320,7 +320,7 @@ def _can_colorize() -> bool:
         try:
             import nt
 
-            if not nt._supports_virtual_terminal():
+            if not nt._supports_virtual_terminal():  # pyright: ignore[reportAttributeAccessIssue]
                 return False
         except (ImportError, AttributeError):
             return False
