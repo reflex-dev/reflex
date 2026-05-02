@@ -348,6 +348,9 @@ class Config(BaseConfig):
         for key, env_value in env_kwargs.items():
             setattr(self, key, env_value)
 
+        # Normalize route prefixes to ensure they start with a slash.
+        self._normalize_paths()
+
         # Normalize disable_plugins: convert strings and Plugin subclasses to instances.
         self._normalize_disable_plugins()
 
@@ -417,6 +420,14 @@ class Config(BaseConfig):
                     f"reflex.Config.disable_plugins should contain Plugin subclasses, but got {entry!r}.",
                 )
         self.disable_plugins = normalized
+
+    def _normalize_paths(self):
+        """Ensure frontend and backend paths start with a slash if provided."""
+        if self.frontend_path and not self.frontend_path.startswith("/"):
+            self.frontend_path = f"/{self.frontend_path}"
+
+        if self.backend_path and not self.backend_path.startswith("/"):
+            self.backend_path = f"/{self.backend_path}"
 
     def _add_builtin_plugins(self):
         """Add the builtin plugins to the config."""
