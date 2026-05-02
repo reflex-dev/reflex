@@ -215,7 +215,13 @@ def FrontendPathApp():
 @pytest.fixture(
     scope="module",
     params=["", "/prefix", "/prefix/nested", "noslash", "noslash/nested"],
-    ids=["no-prefix", "single-level", "two-level", "noslash-single-level", "noslash-two-level"],
+    ids=[
+        "no-prefix",
+        "single-level",
+        "two-level",
+        "noslash-single-level",
+        "noslash-two-level",
+    ],
 )
 def frontend_path(request: pytest.FixtureRequest) -> str:
     """Parametrise over no-prefix and various prefix depths.
