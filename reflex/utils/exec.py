@@ -159,6 +159,29 @@ def notify_frontend(url: str, backend_present: bool):
     )
 
 
+def _apply_frontend_path(base_url: str, frontend_path: str) -> str:
+    """Apply ``frontend_path`` to a base URL emitted by the frontend dev server.
+
+    ``urljoin`` treats a relative path differently from an absolute one, so
+    a ``frontend_path`` configured without a leading slash (e.g. ``"app"``)
+    used to produce duplicated path segments like
+    ``http://localhost:3001/app/app/`` (issue #6360). Normalizing the
+    configured path to ``/path/`` form before joining makes the behavior
+    consistent regardless of how the user wrote it.
+
+    Args:
+        base_url: The base URL printed by the frontend dev server.
+        frontend_path: The configured ``Config.frontend_path``.
+
+    Returns:
+        The URL with the frontend path correctly applied.
+    """
+    if not frontend_path:
+        return base_url
+    normalized = "/" + frontend_path.strip("/") + "/"
+    return urljoin(base_url, normalized)
+
+
 def notify_backend(host: str | None = None):
     """Output a string notifying where the backend is running.
 
@@ -226,9 +249,9 @@ def run_process_and_launch_url(
                 match = re.search(constants.ReactRouter.FRONTEND_LISTENING_REGEX, line)
                 if match:
                     if first_run:
-                        url = match.group(1)
-                        if get_config().frontend_path != "":
-                            url = urljoin(url, get_config().frontend_path)
+                        url = _apply_frontend_path(
+                            match.group(1), get_config().frontend_path
+                        )
 
                         notify_frontend(url, backend_present)
                         if backend_present:
