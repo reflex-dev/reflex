@@ -1008,7 +1008,6 @@ def _create_component_wrapper(
 
 
 def create_passthrough_component_memo(
-    export_name: str,
     component: Component,
 ) -> tuple[
     Callable[..., ExperimentalMemoComponent],
@@ -1020,8 +1019,13 @@ def create_passthrough_component_memo(
     through the experimental memo pipeline instead of emitting ad-hoc page-local
     ``React.memo`` declarations.
 
+    The exported memo name is derived from ``component._compute_memo_tag()``
+    after the ``{children}`` hole has been substituted into the wrapped
+    component's children (passthrough mode), so two call-sites differing only
+    in their children — whose generated memo bodies are identical — collapse
+    to one wrapper.
+
     Args:
-        export_name: The exported memo component name.
         component: The component to wrap.
 
     Returns:
@@ -1044,22 +1048,38 @@ def create_passthrough_component_memo(
         new_component = copy(component)
         if render_snapshot:
             return new_component
-        # Keep ``new_component.children`` as the ORIGINAL children so
-        # compile-time walkers that introspect the subtree (e.g. Form's
-        # ``_get_form_refs``) see the real descendants. The ``{children}``
-        # hole lives on the definition and the compiler swaps it in only for
-        # JSX render / imports collection.
-        captured_hole_child.append(Bare.create(children))
+        hole_bare = Bare.create(children)
+        captured_hole_child.append(hole_bare)
+        # Substitute the ``{children}`` hole for the original descendants so
+        # the memo body's hash and JSX both reflect the placeholder, not the
+        # specific children at any given call site. Original descendants stay
+        # reachable on the page-level wrapper via the plugin's
+        # ``_get_all_refs`` delegation back to the source component.
+        new_component.children = [hole_bare]
         return new_component
 
-    passthrough.__name__ = format.to_snake_case(export_name)
+    # Evaluate once to compute the tag from the rendered memo body shape.
+    # ``_create_component_definition`` will evaluate again internally; the
+    # second pass overwrites ``captured_hole_child`` but the captured value
+    # is identical.
+    params = _analyze_params(passthrough, for_component=True)
+    preview = _normalize_component_return(_evaluate_memo_function(passthrough, params))
+    if preview is None:
+        msg = (
+            "`create_passthrough_component_memo` requires a component that "
+            "normalizes to `rx.Component`."
+        )
+        raise TypeError(msg)
+    tag = preview._compute_memo_tag()
+
+    passthrough.__name__ = format.to_snake_case(tag)
     passthrough.__qualname__ = passthrough.__name__
     passthrough.__module__ = __name__
 
     definition = _create_component_definition(passthrough, Component)
     replacements: dict[str, Any] = {}
-    if definition.export_name != export_name:
-        replacements["export_name"] = export_name
+    if definition.export_name != tag:
+        replacements["export_name"] = tag
     if captured_hole_child:
         replacements["passthrough_hole_child"] = captured_hole_child[0]
     if replacements:

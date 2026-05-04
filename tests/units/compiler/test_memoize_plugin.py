@@ -192,6 +192,50 @@ def test_memoize_wrapper_deduped_across_repeated_subtrees() -> None:
     ) == 1
 
 
+def test_memoize_wrappers_distinct_for_different_on_mount() -> None:
+    """Two components differing only in ``on_mount`` must NOT dedupe.
+
+    ``on_mount`` is excluded from ``_render``'s props, so its handler does not
+    appear in ``component.render()``. The memo wrapper body, however, includes
+    a ``useEffect`` lifecycle hook whose body invokes the ``on_mount`` handler
+    — two distinct handlers produce two distinct memo bodies and must compile
+    to two distinct memo wrappers. Hashing only ``render()`` lets them collide
+    on a single tag, silently dropping one handler's logic.
+    """
+    ctx, _page_ctx = _compile_single_page(
+        lambda: Fragment.create(
+            Plain.create(on_mount=rx.console_log("a")),
+            Plain.create(on_mount=rx.console_log("b")),
+        )
+    )
+    assert len(ctx.memoize_wrappers) == 2, (
+        "Components with different on_mount handlers must produce distinct "
+        f"memo wrappers, got: {list(ctx.memoize_wrappers)}"
+    )
+
+
+def test_memoize_wrappers_dedupe_passthrough_with_different_children() -> None:
+    """Passthrough memos with identical props but different children must dedupe.
+
+    Passthrough memo bodies render a ``{children}`` placeholder rather than
+    the captured child JSX — the actual children flow through at the page-side
+    call site. Two components with identical props but different children
+    therefore generate identical memo body code and must share one wrapper
+    tag. Hashing the rendered children into the tag splits them needlessly,
+    bloating the generated component module with duplicate definitions.
+    """
+    ctx, _page_ctx = _compile_single_page(
+        lambda: Fragment.create(
+            WithProp.create("apple", label=STATE_VAR),
+            WithProp.create("banana", label=STATE_VAR),
+        )
+    )
+    assert len(ctx.memoize_wrappers) == 1, (
+        "Passthrough memos differing only in children must collapse to one "
+        f"wrapper, got: {list(ctx.memoize_wrappers)}"
+    )
+
+
 @pytest.mark.parametrize(
     ("special_form", "body_marker"),
     [
@@ -305,9 +349,7 @@ def test_common_memoization_snapshot_helper_classifies_snapshot_cases() -> None:
 
 def test_generated_memo_component_is_not_itself_memoized() -> None:
     """The generated memo component instance itself is skipped by the heuristic."""
-    wrapper_factory, _definition = create_passthrough_component_memo(
-        "MyTag", Fragment.create()
-    )
+    wrapper_factory, _definition = create_passthrough_component_memo(Fragment.create())
     wrapper = wrapper_factory(Plain.create())
     assert isinstance(wrapper, ExperimentalMemoComponent)
     assert not _should_memoize(wrapper)
@@ -338,14 +380,16 @@ def test_event_trigger_memoization_not_emit_usecallback_in_page_hooks() -> None:
 
 def test_generated_memo_component_renders_as_its_exported_tag() -> None:
     """The generated experimental memo component renders as its exported tag."""
-    wrapper_factory, definition = create_passthrough_component_memo(
-        "MyWrapper_abc", Fragment.create()
-    )
+    wrapper_factory, definition = create_passthrough_component_memo(Fragment.create())
     wrapper = wrapper_factory(Plain.create())
     assert isinstance(wrapper, ExperimentalMemoComponent)
-    assert wrapper.tag == "MyWrapper_abc"
-    assert definition.export_name == "MyWrapper_abc"
-    assert wrapper.render()["name"] == "MyWrapper_abc"
+    tag = definition.export_name
+    assert tag.startswith("Fragment_"), (
+        f"Expected the wrapped class qualname to be encoded in the tag prefix; "
+        f"got {tag!r}"
+    )
+    assert wrapper.tag == tag
+    assert wrapper.render()["name"] == tag
 
 
 def test_passthrough_memo_definitions_are_not_shared_globally(monkeypatch) -> None:
@@ -359,18 +403,14 @@ def test_passthrough_memo_definitions_are_not_shared_globally(monkeypatch) -> No
     first_component = Plain.create(STATE_VAR)
     second_component = Plain.create(STATE_VAR)
 
-    monkeypatch.setattr(memoize_plugin, "_compute_memo_tag", lambda comp: tag)
     monkeypatch.setattr(
         memoize_plugin,
         "fix_event_triggers_for_memo",
         lambda comp, page_context: comp,
     )
 
-    def fake_create_passthrough_component_memo(
-        export_name: str,
-        component: Component,
-    ):
-        definition = SimpleNamespace(export_name=export_name, component=component)
+    def fake_create_passthrough_component_memo(component: Component):
+        definition = SimpleNamespace(export_name=tag, component=component)
         return (lambda definition=definition: definition), definition
 
     monkeypatch.setattr(
