@@ -87,6 +87,13 @@ def test_check_ignores_fragment_for_sitemap_lookup(docs_tree):
     assert check(md_root, sitemap) == []
 
 
+def test_check_allows_underscores_in_fragment(docs_tree):
+    """Heading anchors like `#python_code` legitimately contain underscores."""
+    md_root, sitemap = docs_tree
+    (md_root / "page.md").write_text("[x](/docs/getting-started/basics#python_code)\n")
+    assert check(md_root, sitemap) == []
+
+
 def test_check_ignores_query_for_sitemap_lookup(docs_tree):
     md_root, sitemap = docs_tree
     (md_root / "page.md").write_text("[q](/docs/library/disclosure?x=1)\n")

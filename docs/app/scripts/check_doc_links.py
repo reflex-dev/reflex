@@ -88,8 +88,9 @@ def check(md_root: Path, sitemap_path: Path) -> list[str]:
 
     for md_file, line_no, raw in iter_md_links(md_root):
         location = f"{md_file}:{line_no}"
+        path_only = raw.split("#", 1)[0].split("?", 1)[0]
 
-        if "_" in raw:
+        if "_" in path_only:
             errors.append(
                 f"{location}: link contains an underscore (use hyphens): {raw!r}"
             )
