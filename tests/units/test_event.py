@@ -17,7 +17,7 @@ from reflex_base.event import (
     fix_events,
 )
 from reflex_base.utils import format
-from reflex_base.vars.base import Field, LiteralVar, Var, VarData, field
+from reflex_base.vars.base import Field, LiteralVar, Var, field
 
 import reflex as rx
 from reflex.state import BaseState
@@ -500,10 +500,20 @@ def test_event_var_data():
     )._get_all_var_data()
     assert chain_var_data is not None
 
-    assert chain_var_data == VarData(
-        imports=Imports.EVENTS,
-        hooks={Hooks.EVENTS: None},
-    )
+    # Imports include EVENTS, the events hook is registered, and the state
+    # context providers ride along as app_wraps so the compiler can mount
+    # them in the app root. Compare structurally — the providers themselves
+    # are fresh instances per call, so identity-based VarData equality won't
+    # match exact-instance comparison here.
+    assert dict(chain_var_data.imports) == {
+        k: tuple(v) for k, v in Imports.EVENTS.items()
+    }
+    assert chain_var_data.hooks == (Hooks.EVENTS,)
+    assert sorted(p for p, _ in chain_var_data.app_wraps) == [90, 100]
+    assert {wrapper.tag for _, wrapper in chain_var_data.app_wraps} == {
+        "StateProvider",
+        "EventLoopProvider",
+    }
 
 
 def test_event_chain_statement_block_preserves_nested_var_data():

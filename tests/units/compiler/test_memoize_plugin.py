@@ -71,6 +71,19 @@ class LeafComponent(Component):
     _memoization_mode = MemoizationMode(recursive=False)
 
 
+class SnapshotWithSlot(Component):
+    tag = "SnapshotWithSlot"
+    library = "snapshot-with-slot-lib"
+    _memoization_mode = MemoizationMode(recursive=False)
+
+    slot: Component | None = field(default=None)
+
+
+class MemoAppWrapProvider(Component):
+    tag = "MemoAppWrapProvider"
+    library = "memo-app-wrap-provider-lib"
+
+
 class SpecialFormMemoState(BaseState):
     items: list[str] = ["a"]
     flag: bool = True
@@ -190,6 +203,40 @@ def test_memoize_wrapper_deduped_across_repeated_subtrees() -> None:
     assert (page_ctx.output_code or "").count(
         f'import {{{wrapper_tag}}} from "$/utils/components/{wrapper_tag}"'
     ) == 1
+
+
+def test_passthrough_memo_collects_var_app_wraps_from_replaced_component() -> None:
+    """Var app_wraps on passthrough-memoized components survive replacement."""
+    provider = MemoAppWrapProvider.create()
+    stateful_var_with_wrap = LiteralVar.create("needs-wrap")._replace(
+        merge_var_data=VarData(
+            hooks={"useNeedsWrap": None},
+            app_wraps=((70, provider),),
+        )
+    )
+
+    _ctx, page_ctx = _compile_single_page(
+        lambda: WithProp.create(label=stateful_var_with_wrap)
+    )
+
+    assert (70, "MemoAppWrapProvider") in page_ctx.app_wrap_components
+
+
+def test_snapshot_memo_collects_var_app_wraps_from_prop_components() -> None:
+    """Snapshot memo boundaries collect app_wraps buried in prop components."""
+    provider = MemoAppWrapProvider.create()
+    var_with_wrap = LiteralVar.create("needs-wrap")._replace(
+        merge_var_data=VarData(app_wraps=((70, provider),))
+    )
+
+    _ctx, page_ctx = _compile_single_page(
+        lambda: SnapshotWithSlot.create(
+            STATE_VAR,
+            slot=WithProp.create(label=var_with_wrap),
+        )
+    )
+
+    assert (70, "MemoAppWrapProvider") in page_ctx.app_wrap_components
 
 
 @pytest.mark.parametrize(

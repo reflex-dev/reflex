@@ -39,6 +39,10 @@ from reflex_base.plugins import ComponentAndChildren, PageContext
 from reflex_base.plugins.base import Plugin
 from reflex_base.utils import format
 
+from reflex.compiler.plugins.builtin import (
+    collect_var_app_wraps_for_component,
+    collect_var_app_wraps_in_subtree,
+)
 from reflex.experimental.memo import create_passthrough_component_memo
 
 
@@ -297,7 +301,15 @@ class MemoizeStatefulPlugin(Plugin):
             page_context,
             compile_context,
         )
-        return None if wrapper is None else (wrapper, ())
+        if wrapper is not None:
+            # Snapshot-boundary descendants are sealed from the page walker, so
+            # ``DefaultCollectorPlugin._collect_var_app_wraps`` never sees Vars
+            # buried inside the boundary. Surface their app_wraps now (before
+            # sealing) so providers declared via ``VarData.app_wraps`` still
+            # reach the page-level app_wrap registry.
+            collect_var_app_wraps_in_subtree(page_context.app_wrap_components, comp)
+            return (wrapper, ())
+        return None
 
     def leave_component(
         self,
@@ -349,6 +361,16 @@ class MemoizeStatefulPlugin(Plugin):
 
         if not _should_memoize(comp):
             return None
+
+        # The collector plugin runs at HookOrder.POST — *after* this plugin
+        # rewrites ``comp`` into its wrapper — so the wrapper (which holds no
+        # Vars of its own) is what the collector sees for the current node.
+        # Surface ``comp``'s own Var-declared app_wraps before returning the
+        # wrapper. Descendants have already been visited by the collector, so
+        # this only needs to look at the current node — not its subtree.
+        page_context.app_wrap_components.update(
+            collect_var_app_wraps_for_component(page_context.app_wrap_components, comp)
+        )
 
         return self._build_wrapper(comp, page_context, compile_context)
 

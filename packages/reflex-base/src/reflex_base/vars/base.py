@@ -141,6 +141,12 @@ class VarData:
     # Components that are part of this var
     components: tuple[BaseComponent, ...] = dataclasses.field(default_factory=tuple)
 
+    # App-level wrapper components this var requires when used (priority, component).
+    # Higher priority wraps further out, matching Component._get_app_wrap_components semantics.
+    app_wraps: tuple[tuple[int, BaseComponent], ...] = dataclasses.field(
+        default_factory=tuple
+    )
+
     def __init__(
         self,
         state: str = "",
@@ -150,6 +156,7 @@ class VarData:
         deps: list[Var] | None = None,
         position: Hooks.HookPosition | None = None,
         components: Iterable[BaseComponent] | None = None,
+        app_wraps: Iterable[tuple[int, BaseComponent]] | None = None,
     ):
         """Initialize the var data.
 
@@ -161,6 +168,7 @@ class VarData:
             deps: Dependencies of the var for useCallback.
             position: Position of the hook in the component.
             components: Components that are part of this var.
+            app_wraps: App-level wrapper components this var requires when used.
         """
         if isinstance(hooks, str):
             hooks = [hooks]
@@ -176,6 +184,7 @@ class VarData:
         object.__setattr__(self, "deps", tuple(deps or []))
         object.__setattr__(self, "position", position or None)
         object.__setattr__(self, "components", tuple(components or []))
+        object.__setattr__(self, "app_wraps", tuple(app_wraps or []))
 
         if hooks and any(hooks.values()):
             # Merge our dependencies first, so they can be referenced.
@@ -188,6 +197,7 @@ class VarData:
                 object.__setattr__(self, "deps", merged_var_data.deps)
                 object.__setattr__(self, "position", merged_var_data.position)
                 object.__setattr__(self, "components", merged_var_data.components)
+                object.__setattr__(self, "app_wraps", merged_var_data.app_wraps)
 
     def old_school_imports(self) -> ImportDict:
         """Return the imports as a mutable dict.
@@ -259,6 +269,16 @@ class VarData:
             component for var_data in all_var_datas for component in var_data.components
         )
 
+        app_wraps_seen: set[tuple[int, str]] = set()
+        app_wraps_list: list[tuple[int, BaseComponent]] = []
+        for var_data in all_var_datas:
+            for priority, wrapper in var_data.app_wraps:
+                key = (priority, wrapper.tag or type(wrapper).__name__)
+                if key in app_wraps_seen:
+                    continue
+                app_wraps_seen.add(key)
+                app_wraps_list.append((priority, wrapper))
+
         return VarData(
             state=state,
             field_name=field_name,
@@ -267,6 +287,7 @@ class VarData:
             deps=deps,
             position=position,
             components=components,
+            app_wraps=tuple(app_wraps_list),
         )
 
     def __bool__(self) -> bool:
@@ -283,7 +304,58 @@ class VarData:
             or self.deps
             or self.position
             or self.components
+            or self.app_wraps
         )
+
+    def _identity_key(self) -> tuple:
+        """Return a hashable key for ``__eq__`` and ``__hash__``.
+
+        ``components`` and ``app_wraps`` hold ``BaseComponent`` instances whose
+        ``__eq__`` override drops the default hash. Use component identity for
+        embedded components because they can contribute hooks/imports, and use
+        the compiler's app-wrap registry key for wrappers so fresh provider
+        instances with the same role still compare equal.
+
+        Returns:
+            A hashable tuple uniquely identifying this VarData.
+        """
+        return (
+            self.state,
+            self.field_name,
+            self.imports,
+            self.hooks,
+            self.deps,
+            self.position,
+            tuple(id(component) for component in self.components),
+            tuple(
+                (
+                    priority,
+                    component.tag or type(component).__name__,
+                )
+                for priority, component in self.app_wraps
+            ),
+        )
+
+    def __eq__(self, other: object) -> bool:
+        """Compare two VarData by render-time identity.
+
+        Args:
+            other: The value to compare against.
+
+        Returns:
+            True if ``other`` is a VarData with matching render-time fields.
+        """
+        if not isinstance(other, VarData):
+            return NotImplemented
+        return self._identity_key() == other._identity_key()
+
+    def __hash__(self) -> int:
+        """Hash consistent with ``__eq__``.
+
+        Returns:
+            A hash over render-time fields and hashable component metadata.
+        """
+        return hash(self._identity_key())
 
     @classmethod
     def from_state(cls, state: type[BaseState] | str, field_name: str = "") -> VarData:
@@ -296,6 +368,11 @@ class VarData:
         Returns:
             The var with the set state.
         """
+        # Lazy imports: state_context imports VarData from this module.
+        from reflex_base.components.state_context import (
+            EventLoopContextProvider,
+            StateContextProvider,
+        )
         from reflex_base.utils import format
 
         state_name = state if isinstance(state, str) else state.get_full_name()
@@ -311,6 +388,17 @@ class VarData:
                 f"$/{constants.Dirs.CONTEXTS_PATH}": [ImportVar(tag="StateContexts")],
                 "react": [ImportVar(tag="useContext")],
             },
+            app_wraps=(
+                # Higher priority wraps further out. ``StateProvider`` must
+                # enclose ``EventLoopProvider`` because the latter reads
+                # ``DispatchContext`` (provided by StateProvider) at its top.
+                # Both must enclose the chain's other wraps so the hooks
+                # AppWrap hosts (e.g. ``useContext(EventLoopContext)``) see
+                # them as React-tree ancestors. The compiler dedupes by
+                # ``(priority, tag)`` so fresh per-call instances are fine.
+                (100, StateContextProvider.create()),
+                (90, EventLoopContextProvider.create()),
+            ),
         )
 
 
@@ -362,7 +450,7 @@ def can_use_in_object_var(cls: GenericType) -> bool:
         Whether the class can be used in an ObjectVar.
     """
     if types.is_union(cls):
-        return all(can_use_in_object_var(t) for t in types.get_args(cls))
+        return all(can_use_in_object_var(t) for t in get_args(cls))
     return (
         isinstance(cls, type)
         and not safe_issubclass(cls, Var)

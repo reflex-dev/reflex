@@ -1879,14 +1879,20 @@ class Component(BaseComponent, ABC):
     def _get_events_hooks(self) -> dict[str, VarData | None]:
         """Get the hooks required by events referenced in this component.
 
+        The ``Hooks.EVENTS`` hook reads ``EventLoopContext``; declaring the
+        state/event-loop providers in its VarData pulls them into the app
+        root for every event-triggering component, independent of whether
+        the app uses ``rx.State`` directly.
+
         Returns:
             The hooks for the events.
         """
-        return (
-            {Hooks.EVENTS: VarData(position=Hooks.HookPosition.INTERNAL)}
-            if self.event_triggers
-            else {}
-        )
+        if not self.event_triggers:
+            return {}
+        # Lazy import: ``state_context`` imports ``Component`` from this module.
+        from reflex_base.components.state_context import get_events_hooks_var_data
+
+        return {Hooks.EVENTS: get_events_hooks_var_data()}
 
     def _get_hooks_internal(self) -> dict[str, VarData | None]:
         """Get the React hooks for this component managed by the framework.

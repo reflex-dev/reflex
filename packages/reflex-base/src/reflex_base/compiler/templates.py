@@ -200,7 +200,7 @@ def app_root_template(
     return f"""
 {imports_str}
 {dynamic_imports_str}
-import {{ EventLoopProvider, StateProvider, defaultColorMode }} from "$/utils/context";
+import {{ defaultColorMode }} from "$/utils/context";
 import {{ ThemeProvider }} from '$/utils/react-theme';
 import {{ Layout as AppLayout }} from './_document';
 import {{ Outlet }} from 'react-router';
@@ -208,9 +208,12 @@ import {{ Outlet }} from 'react-router';
 
 {custom_code_str}
 
+// AppWrap is the innermost element of the python app-wrap chain (rendered
+// in Layout), so providers in the chain are React-tree ancestors of the
+// hooks hoisted here.
 function AppWrap({{children}}) {{
 {_render_hooks(hooks)}
-return ({_RenderUtils.render(render)})
+return (children);
 }}
 
 
@@ -225,11 +228,7 @@ export function Layout({{children}}) {{
 
   return jsx(AppLayout, {{}},
     jsx(ThemeProvider, {{defaultTheme: defaultColorMode, attribute: "class"}},
-      jsx(StateProvider, {{}},
-        jsx(EventLoopProvider, {{}},
-          jsx(AppWrap, {{}}, children)
-        )
-      )
+      {_RenderUtils.render(render)}
     )
   );
 }}

@@ -1055,14 +1055,14 @@ class FileUpload:
         """
         from reflex_components_core.core.upload import (
             DEFAULT_UPLOAD_ID,
-            upload_files_context_var_data,
+            get_upload_files_context_var_data,
         )
 
         upload_id = self.upload_id if self.upload_id is not None else DEFAULT_UPLOAD_ID
         upload_files_var = Var(
             _js_expr="filesById",
             _var_type=dict[str, Any],
-            _var_data=VarData.merge(upload_files_context_var_data),
+            _var_data=VarData.merge(get_upload_files_context_var_data()),
         ).to(ObjectVar)[LiteralVar.create(upload_id)]
         spec_args = [
             (
@@ -2335,11 +2335,14 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
             arg_def_expr = Var(_js_expr="args")
 
         if value.invocation is None:
+            # Lazy import: state_context → component → event (this module).
+            from reflex_base.components.state_context import get_events_hooks_var_data
+
             invocation = FunctionStringVar.create(
                 CompileVars.ADD_EVENTS,
                 _var_data=VarData(
                     imports=Imports.EVENTS,
-                    hooks={Hooks.EVENTS: None},
+                    hooks={Hooks.EVENTS: get_events_hooks_var_data()},
                 ),
             )
         else:
@@ -2380,11 +2383,16 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
                 _js_expr=f"{{{''.join(f'{statement};' for statement in statements)}}}",
             )
             if value.event_actions:
+                # Lazy import: state_context → component → event (this module).
+                from reflex_base.components.state_context import (
+                    get_events_hooks_var_data,
+                )
+
                 apply_event_actions = FunctionStringVar.create(
                     CompileVars.APPLY_EVENT_ACTIONS,
                     _var_data=VarData(
                         imports=Imports.EVENTS,
-                        hooks={Hooks.EVENTS: None},
+                        hooks={Hooks.EVENTS: get_events_hooks_var_data()},
                     ),
                 )
                 return_expr = apply_event_actions.call(
