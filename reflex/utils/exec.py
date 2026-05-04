@@ -178,7 +178,10 @@ def _apply_frontend_path(base_url: str, frontend_path: str) -> str:
     """
     if not frontend_path:
         return base_url
-    normalized = "/" + frontend_path.strip("/") + "/"
+    stripped = frontend_path.strip("/")
+    if not stripped:
+        return base_url
+    normalized = "/" + stripped + "/"
     return urljoin(base_url, normalized)
 
 

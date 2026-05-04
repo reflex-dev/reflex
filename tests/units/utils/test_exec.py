@@ -12,6 +12,10 @@ from reflex.utils.exec import _apply_frontend_path
     [
         # Empty frontend_path is a no-op.
         ("http://localhost:3001/", "", "http://localhost:3001/"),
+        # Root path "/" must also be a no-op (would otherwise produce "//", a
+        # protocol-relative reference that strips the host).
+        ("http://localhost:3001/", "/", "http://localhost:3001/"),
+        ("http://localhost:3001/", "//", "http://localhost:3001/"),
         # Vite has not yet baked the path into the URL (e.g. prod listening line).
         ("http://localhost:3001/", "/app", "http://localhost:3001/app/"),
         ("http://localhost:3001/", "app", "http://localhost:3001/app/"),
