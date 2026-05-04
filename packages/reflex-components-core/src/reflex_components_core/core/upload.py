@@ -13,9 +13,9 @@ from reflex_base.components.component import (
     field,
 )
 from reflex_base.components.memoize_helpers import get_memoized_event_triggers
-from reflex_base.components.state_context import get_events_hooks_var_data
+from reflex_base.components.state_context import get_event_app_wraps
 from reflex_base.constants import Dirs
-from reflex_base.constants.compiler import Hooks, Imports
+from reflex_base.constants.compiler import Imports
 from reflex_base.environment import environment
 from reflex_base.event import (
     CallableEventSpec,
@@ -399,7 +399,7 @@ class Upload(MemoizationLeaf):
         var_data = VarData.merge(
             VarData(
                 imports=Imports.EVENTS,
-                hooks={Hooks.EVENTS: get_events_hooks_var_data()},
+                app_wraps=get_event_app_wraps(),
             ),
             use_dropzone_arguments._get_all_var_data(),
             VarData(

@@ -1879,20 +1879,15 @@ class Component(BaseComponent, ABC):
     def _get_events_hooks(self) -> dict[str, VarData | None]:
         """Get the hooks required by events referenced in this component.
 
-        The ``Hooks.EVENTS`` hook reads ``EventLoopContext``; declaring the
-        state/event-loop providers in its VarData pulls them into the app
-        root for every event-triggering component, independent of whether
-        the app uses ``rx.State`` directly.
+        ``addEvents`` is reached via the module-level import in
+        ``Imports.EVENTS``, so no in-scope hook is needed for events.
+        State/event-loop providers ride along on the event invocation's
+        ``VarData.app_wraps`` and via :meth:`_get_event_app_wraps`.
 
         Returns:
-            The hooks for the events.
+            An empty dict.
         """
-        if not self.event_triggers:
-            return {}
-        # Lazy import: ``state_context`` imports ``Component`` from this module.
-        from reflex_base.components.state_context import get_events_hooks_var_data
-
-        return {Hooks.EVENTS: get_events_hooks_var_data()}
+        return {}
 
     def _get_hooks_internal(self) -> dict[str, VarData | None]:
         """Get the React hooks for this component managed by the framework.
@@ -2046,6 +2041,30 @@ class Component(BaseComponent, ABC):
             The app wrap components.
         """
         return {}
+
+    def _get_event_app_wraps(self) -> dict[tuple[int, str], Component]:
+        """Return state/event-loop providers required by event triggers.
+
+        Kept separate from :meth:`_get_app_wrap_components` so subclass
+        overrides of that method don't inadvertently strip these out —
+        the providers must be in the React tree for ``StateContexts``,
+        ``EventLoopContext``, and the websocket plumbing to stay alive
+        even though ``addEvents`` itself is reached via module-level
+        import rather than a hook closure.
+
+        Returns:
+            The state/event-loop provider entries (empty if no event
+            triggers are bound).
+        """
+        if not self.event_triggers:
+            return {}
+        # Lazy import: state_context imports from this module.
+        from reflex_base.components.state_context import get_event_app_wraps
+
+        return {
+            (priority, provider.tag or type(provider).__name__): provider
+            for priority, provider in get_event_app_wraps()
+        }
 
     def _get_all_app_wrap_components(
         self, *, ignore_ids: set[int] | None = None

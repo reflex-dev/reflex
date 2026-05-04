@@ -3,18 +3,17 @@
 from reflex_base.components.component import Component
 from reflex_base.vars.base import Var
 
+from reflex_components_core.base.fragment import Fragment
 
-class AppWrap(Component):
-    """Innermost element of the app-wrap chain.
 
-    Renders as ``<AppWrap>{children}</AppWrap>`` — the locally-defined JS
-    function in ``app_root_template`` that hosts all hooks aggregated from
-    the python chain and returns its children. Library is ``None`` because
-    the JS function is defined in the same file the component renders into.
+class AppWrap(Fragment):
+    """Innermost (priority 0) element of the python app-wrap chain.
+
+    Renders as ``jsx(Fragment, {}, children)`` — the chain ends here, with
+    the route ``children`` JS variable flowing through. Same-priority
+    siblings (e.g. ``StickyBadge``) get appended via the chain reducer and
+    sit alongside ``children`` inside this Fragment.
     """
-
-    library = None
-    tag = "AppWrap"
 
     @classmethod
     def create(cls) -> Component:

@@ -127,20 +127,34 @@ class CompileContext(str, Enum):
 class Imports(SimpleNamespace):
     """Common sets of import vars."""
 
+    # ``addEvents`` is a module-level callable populated by
+    # ``EventLoopProvider``; importing it sidesteps the lexical-scope
+    # constraint a ``useContext(EventLoopContext)`` hoist would impose.
     EVENTS = {
-        "react": [ImportVar(tag="useContext")],
-        f"$/{Dirs.CONTEXTS_PATH}": [ImportVar(tag="EventLoopContext")],
+        f"$/{Dirs.CONTEXTS_PATH}": [ImportVar(tag=CompileVars.ADD_EVENTS)],
         f"$/{Dirs.STATE_PATH}": [
             ImportVar(tag=CompileVars.TO_EVENT),
             ImportVar(tag=CompileVars.APPLY_EVENT_ACTIONS),
         ],
     }
 
+    # ``connectErrors`` is reactive — it drives connection-banner
+    # re-renders — so its consumers still go through ``useContext``.
+    CONNECT_ERRORS = {
+        "react": [ImportVar(tag="useContext")],
+        f"$/{Dirs.CONTEXTS_PATH}": [ImportVar(tag="EventLoopContext")],
+    }
+
 
 class Hooks(SimpleNamespace):
     """Common sets of hook declarations."""
 
+    # Kept for legacy callers that still key off this string; the
+    # compiler no longer auto-hoists it.
     EVENTS = f"const [{CompileVars.ADD_EVENTS}, {CompileVars.CONNECT_ERROR}] = useContext(EventLoopContext);"
+    CONNECT_ERRORS = (
+        f"const {CompileVars.CONNECT_ERROR} = useContext(EventLoopContext)[1];"
+    )
 
     class HookPosition(enum.Enum):
         """The position of the hook in the component."""

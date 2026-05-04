@@ -57,10 +57,12 @@ def collect_var_app_wraps_for_component(
 ) -> dict[tuple[int, str], Component]:
     """Return Var-declared app_wraps newly contributed by ``component``.
 
-    Scans the component's Vars (props/style/event-trigger args) and the
+    Scans the component's Vars (props/style/event-trigger args), the
     VarData attached to its framework-managed internal hooks (e.g.
-    ``Hooks.EVENTS``), so providers required by the hooks themselves — not
-    just by referenced Vars — surface to the page-level registry.
+    ``Hooks.EVENTS``), and any state/event-loop providers it requires
+    via :meth:`Component._get_event_app_wraps` — so the providers needed
+    for ``addEvents`` dispatch surface even when the page walker only
+    sees a memoization wrapper for the original event-triggering node.
 
     Entries already in ``page_app_wrap_components`` are skipped, leaving the
     caller to decide how to merge the result and whether to recurse into
@@ -89,13 +91,17 @@ def collect_var_app_wraps_for_component(
         _ingest_var_data_app_wraps(
             wraps_by_key, page_app_wrap_components, hook_var_data
         )
+    for key, wrapper in component._get_event_app_wraps().items():
+        if key in page_app_wrap_components or key in wraps_by_key:
+            continue
+        wraps_by_key[key] = wrapper
     return wraps_by_key
 
 
 def _ingest_var_data_app_wraps(
     wraps_by_key: dict[tuple[int, str], Component],
     existing: dict[tuple[int, str], Component],
-    var_data: Any,
+    var_data: VarData,
 ) -> None:
     """Insert app_wraps carried or implied by ``var_data``."""
     if var_data.app_wraps:
@@ -303,7 +309,7 @@ class DefaultCollectorPlugin(Plugin):
             if (
                 type(comp)._get_app_wrap_components
                 is not Component._get_app_wrap_components
-            ):
+            ) or comp.event_triggers:
                 self._collect_app_wrap_components(
                     page_context.app_wrap_components,
                     comp,
@@ -382,11 +388,15 @@ class DefaultCollectorPlugin(Plugin):
                 collect_component_hooks(hooks, comp)
 
                 app_wrap_method = type(comp)._get_app_wrap_components
-                if (
+                has_subclass_override = (
                     app_wrap_method is not base_get_app_wrap_components
+                )
+                if (
+                    has_subclass_override
                     and app_wrap_method not in seen_app_wrap_methods
-                ):
-                    seen_app_wrap_methods.add(app_wrap_method)
+                ) or comp.event_triggers:
+                    if has_subclass_override:
+                        seen_app_wrap_methods.add(app_wrap_method)
                     collect_app_wrap_components(app_wrap_components, comp)
 
             collect_var_app_wraps(app_wrap_components, comp)
@@ -446,6 +456,12 @@ class DefaultCollectorPlugin(Plugin):
     ) -> None:
         """Collect app-wrap components for a structural-tree component."""
         direct_wrappers = component._get_app_wrap_components()
+        # Event-trigger providers ride alongside subclass-declared wraps so
+        # subclass overrides of ``_get_app_wrap_components`` (e.g. radix
+        # color-mode) don't strip them. ``setdefault`` preserves a wrap a
+        # subclass already declared at the same key.
+        for key, wrapper in component._get_event_app_wraps().items():
+            direct_wrappers.setdefault(key, wrapper)
         if not direct_wrappers:
             return
 

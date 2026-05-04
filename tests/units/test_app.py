@@ -43,18 +43,13 @@ from reflex.app import App, ComponentCallable, upload
 from reflex.compiler.compiler import _compile_app, _resolve_app_wrap_components
 from reflex.compiler.plugins import default_page_plugins
 from reflex.environment import environment
+from reflex.istate.data import RouterData
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
 from reflex.model import Model
-from reflex.state import (
-    BaseState,
-    OnLoadInternalState,
-    RouterData,
-    State,
-    reload_state_module,
-)
+from reflex.state import BaseState, OnLoadInternalState, State, reload_state_module
 
 from .conftest import chdir
 from .states import GenState
@@ -2136,25 +2131,20 @@ def test_app_wrap_compile_theme(
     app_js_contents = (
         web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
     ).read_text()
-    # AppWrap is now just hooks + ``return (children)`` — the python app-wrap
-    # chain is rendered by Layout and wraps AppWrap externally.
+    # AppWrap renders the entire chain in its body. ``addEvents`` is now a
+    # module-level callable (see ``$/utils/context``) so no
+    # ``useContext(EventLoopContext)`` hoist is needed; the events hook
+    # block is empty. State/event-loop providers ride along as the highest
+    # collected app wraps, ahead of ErrorBoundary etc.
     function_app_definition = app_js_contents[
         app_js_contents.index("function AppWrap") : app_js_contents.index(
             "export function Layout"
         )
     ].strip()
-    assert function_app_definition == (
-        "function AppWrap({children}) {\n"
-        "const [addEvents, connectErrors] = useContext(EventLoopContext);\n\n\n\n"
-        "return (children);\n}"
-    )
-
-    layout_definition = app_js_contents[
-        app_js_contents.index("export function Layout") :
-    ].strip()
-
-    expected_chain = (
-        ("jsx(StrictMode,{}," if react_strict_mode else "")
+    expected = (
+        "function AppWrap({children}) {\n\n\n\n\n"
+        "return ("
+        + ("jsx(StrictMode,{}," if react_strict_mode else "")
         + "jsx(StateProvider,{},"
         + "jsx(EventLoopProvider,{},"
         + "jsx(ErrorBoundary,{"
@@ -2167,12 +2157,13 @@ def test_app_wrap_compile_theme(
         + "jsx(RadixThemesTheme,{accentColor:\"plum\",css:{...theme.styles.global[':root'], ...theme.styles.global.body}},"
         + "jsx(Fragment,{},"
         + "jsx(DefaultOverlayComponents,{},),"
-        + "jsx(AppWrap,{},"
+        + "jsx(Fragment,{},"
         + "children"
-        "))))))))" + (")" if react_strict_mode else "")
+        + "))))))))"
+        + (")" if react_strict_mode else "")
+        + ")\n}"
     )
-    # Layout's body now contains the chain wrapping AppWrap.
-    assert expected_chain in layout_definition
+    assert expected.split(",") == function_app_definition.split(",")
 
 
 def test_compile_without_radix_components_skips_radix_plugin(
@@ -2354,11 +2345,13 @@ def test_compile_writes_upload_files_provider_app_wrap(
 
 
 def test_app_wrap_event_hook_requires_state_providers(mocker: MockerFixture) -> None:
-    """App-root hooks from default app-wrap prop components need providers.
+    """App-root chain components with event triggers pull state/event providers.
 
-    The default error boundary's fallback render contains a copy button, which
-    contributes the event-loop hook through a component-valued prop. If that
-    hook is emitted at AppWrap scope, the provider chain must be present too.
+    The default error boundary's fallback render contains a Copy button.
+    The button has an ``on_click`` handler, so the page collector pulls
+    ``StateProvider`` and ``EventLoopProvider`` into the app root via the
+    event-trigger app-wrap path. ``addEvents`` itself reaches its call
+    sites through the module-level import — no ``useContext`` hoist.
     """
     conf = rx.Config(app_name="testing")
     mocker.patch("reflex_base.config._get_config", return_value=conf)
@@ -2366,7 +2359,7 @@ def test_app_wrap_event_hook_requires_state_providers(mocker: MockerFixture) -> 
 
     root_contents = compile_app_root_from_page_wraps(app, {})
 
-    assert EVENT_LOOP_CONTEXT_HOOK in root_contents
+    assert EVENT_LOOP_CONTEXT_HOOK not in root_contents
     assert "jsx(StateProvider" in root_contents
     assert "jsx(EventLoopProvider" in root_contents
 
@@ -2554,25 +2547,18 @@ def test_app_wrap_priority(
     app_js_contents = (
         web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
     ).read_text()
-    # AppWrap is now just hooks + ``return (children)``. The chain — including
-    # priority-ordered wrappers — is rendered by Layout, wrapping AppWrap.
+    # AppWrap renders the priority-ordered chain inside its body.
+    # ``addEvents`` is reached via module-level import so the events hook
+    # block is empty.
     function_app_definition = app_js_contents[
         app_js_contents.index("function AppWrap") : app_js_contents.index(
             "export function Layout"
         )
     ].strip()
-    assert function_app_definition == (
-        "function AppWrap({children}) {\n"
-        "const [addEvents, connectErrors] = useContext(EventLoopContext);\n\n\n\n"
-        "return (children);\n}"
-    )
-
-    layout_definition = app_js_contents[
-        app_js_contents.index("export function Layout") :
-    ].strip()
-
-    expected_chain = (
-        ("jsx(StrictMode,{}," if react_strict_mode else "")
+    expected = (
+        "function AppWrap({children}) {\n\n\n\n\n"
+        "return ("
+        + ("jsx(StrictMode,{}," if react_strict_mode else "")
         + "jsx(StateProvider,{},"
         + "jsx(RadixThemesBox,{},"
         + "jsx(EventLoopProvider,{},"
@@ -2587,12 +2573,13 @@ def test_app_wrap_priority(
         + "jsx(Fragment2,{},"
         + "jsx(Fragment,{},"
         + "jsx(DefaultOverlayComponents,{},),"
-        + "jsx(AppWrap,{},"
+        + "jsx(Fragment,{},"
         + "children"
         + "))))))))))"
         + (")" if react_strict_mode else "")
+        + ")\n}"
     )
-    assert expected_chain in layout_definition
+    assert expected.split(",") == function_app_definition.split(",")
 
 
 def test_app_state_determination():

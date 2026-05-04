@@ -500,15 +500,16 @@ def test_event_var_data():
     )._get_all_var_data()
     assert chain_var_data is not None
 
-    # Imports include EVENTS, the events hook is registered, and the state
-    # context providers ride along as app_wraps so the compiler can mount
-    # them in the app root. Compare structurally — the providers themselves
-    # are fresh instances per call, so identity-based VarData equality won't
-    # match exact-instance comparison here.
+    # Imports include EVENTS (which now imports module-level ``addEvents``)
+    # and the state/event-loop providers ride along as app_wraps so the
+    # compiler can mount them in the app root. ``addEvents`` reaches its
+    # call sites through the import, not a hoisted hook, so ``hooks`` is
+    # empty here. Compare structurally — providers are fresh instances per
+    # call, so identity-based VarData equality wouldn't match.
     assert dict(chain_var_data.imports) == {
         k: tuple(v) for k, v in Imports.EVENTS.items()
     }
-    assert chain_var_data.hooks == (Hooks.EVENTS,)
+    assert chain_var_data.hooks == ()
     assert sorted(p for p, _ in chain_var_data.app_wraps) == [90, 100]
     assert {wrapper.tag for _, wrapper in chain_var_data.app_wraps} == {
         "StateProvider",
@@ -539,7 +540,11 @@ def test_event_chain_statement_block_preserves_nested_var_data():
     assert chain_var_data.state == x_var_data.state
     assert chain_var_data.field_name == x_var_data.field_name
     assert x_var_data.hooks[0] in chain_var_data.hooks
-    assert Hooks.EVENTS in chain_var_data.hooks
+    # ``addEvents`` is reached via module-level import, so the events hook
+    # is no longer hoisted on event-chain VarData. State/event-loop providers
+    # ride on ``app_wraps`` to surface in the app root when needed.
+    assert Hooks.EVENTS not in chain_var_data.hooks
+    assert sorted(p for p, _ in chain_var_data.app_wraps) == [90, 100]
 
 
 def test_event_bound_method() -> None:

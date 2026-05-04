@@ -140,6 +140,12 @@ def _component_subtree_is_reactive(
             return True
     if component._get_hooks() is not None or component._get_added_hooks():
         return True
+    # ``addEvents`` no longer hoists a hook here (it's reached via the
+    # module-level import in ``Imports.EVENTS``), so a no-arg
+    # ``on_click=State.ping`` only shows up as ``event_triggers`` — without
+    # this check the boundary skips memoization and the callback leaks.
+    if component.event_triggers:
+        return True
     for var in component._get_vars(include_children=False):
         var_data = var._get_all_var_data()
         if var_data is None:

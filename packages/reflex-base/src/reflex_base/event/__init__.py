@@ -2336,13 +2336,13 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
 
         if value.invocation is None:
             # Lazy import: state_context → component → event (this module).
-            from reflex_base.components.state_context import get_events_hooks_var_data
+            from reflex_base.components.state_context import get_event_app_wraps
 
             invocation = FunctionStringVar.create(
                 CompileVars.ADD_EVENTS,
                 _var_data=VarData(
                     imports=Imports.EVENTS,
-                    hooks={Hooks.EVENTS: get_events_hooks_var_data()},
+                    app_wraps=get_event_app_wraps(),
                 ),
             )
         else:
@@ -2384,15 +2384,13 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
             )
             if value.event_actions:
                 # Lazy import: state_context → component → event (this module).
-                from reflex_base.components.state_context import (
-                    get_events_hooks_var_data,
-                )
+                from reflex_base.components.state_context import get_event_app_wraps
 
                 apply_event_actions = FunctionStringVar.create(
                     CompileVars.APPLY_EVENT_ACTIONS,
                     _var_data=VarData(
                         imports=Imports.EVENTS,
-                        hooks={Hooks.EVENTS: get_events_hooks_var_data()},
+                        app_wraps=get_event_app_wraps(),
                     ),
                 )
                 return_expr = apply_event_actions.call(

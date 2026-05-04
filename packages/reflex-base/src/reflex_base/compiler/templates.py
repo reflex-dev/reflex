@@ -208,12 +208,9 @@ import {{ Outlet }} from 'react-router';
 
 {custom_code_str}
 
-// AppWrap is the innermost element of the python app-wrap chain (rendered
-// in Layout), so providers in the chain are React-tree ancestors of the
-// hooks hoisted here.
 function AppWrap({{children}}) {{
 {_render_hooks(hooks)}
-return (children);
+return ({_RenderUtils.render(render)})
 }}
 
 
@@ -228,7 +225,7 @@ export function Layout({{children}}) {{
 
   return jsx(AppLayout, {{}},
     jsx(ThemeProvider, {{defaultTheme: defaultColorMode, attribute: "class"}},
-      {_RenderUtils.render(render)}
+      jsx(AppWrap, {{}}, children)
     )
   );
 }}
@@ -363,6 +360,24 @@ export const clientStorage = {"{}" if client_storage is None else json.dumps(cli
 
 export const isDevMode = {json.dumps(is_dev_mode)};
 
+// Module-level event dispatchers populated by ``EventLoopProvider`` on each
+// render. Components reach addEvents/connectErrors via this import instead of
+// hoisting ``useContext(EventLoopContext)`` so JSX literals (e.g.
+// ``ErrorBoundary.onError``) constructed in any JS scope can dispatch events
+// without depending on lexical hook hoisting.
+let _addEventsImpl = (events, args, event_actions) => {{
+  console.warn("addEvents called before EventLoopProvider mounted", events);
+}};
+let _connectErrorsImpl = [];
+
+export function addEvents(events, args, event_actions) {{
+  return _addEventsImpl(events, args, event_actions);
+}}
+
+export function getConnectErrors() {{
+  return _connectErrorsImpl;
+}}
+
 export function UploadFilesProvider({{ children }}) {{
   const [filesById, setFilesById] = useState({{}})
   refs["__clear_selected_files"] = (id) => setFilesById(filesById => {{
@@ -393,14 +408,19 @@ export function ClientSide(component) {{
 
 export function EventLoopProvider({{ children }}) {{
   const dispatch = useContext(DispatchContext)
-  const [addEvents, connectErrors] = useEventLoop(
+  const [addEventsLocal, connectErrors] = useEventLoop(
     dispatch,
     initialEvents,
     clientStorage,
   )
+  // Populate the module-level dispatchers so JSX literals constructed
+  // outside the React-tree path (e.g. ``ErrorBoundary.onError``) can call
+  // ``addEvents`` without needing the events hook hoisted in their scope.
+  _addEventsImpl = addEventsLocal;
+  _connectErrorsImpl = connectErrors;
   return createElement(
     EventLoopContext.Provider,
-    {{ value: [addEvents, connectErrors] }},
+    {{ value: [addEventsLocal, connectErrors] }},
     children
   );
 }}

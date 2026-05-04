@@ -29,23 +29,31 @@ class EventLoopContextProvider(Component):
     tag = "EventLoopProvider"
 
 
-def get_events_hooks_var_data() -> VarData:
-    """Build the VarData attached to ``Hooks.EVENTS`` for event triggers.
+def get_event_app_wraps() -> tuple[tuple[int, Component], ...]:
+    """Return state/event-loop providers required when events are dispatched.
 
-    Higher priority wraps further out, so ``StateProvider`` (100) encloses
-    ``EventLoopProvider`` (90) — the latter reads ``DispatchContext`` from
-    the former. The returned providers are fresh per call: the compiler's
-    ``app_wrap_components`` registry already dedupes by ``(priority, tag)``,
-    and caching the instances burned us via ``copy.deepcopy`` carrying
-    ``_cached_render_result`` from a prior compile run forward into the next.
+    ``StateProvider`` (100) wraps further out than ``EventLoopProvider``
+    (90) because the latter reads ``DispatchContext`` from the former.
+    Providers are constructed fresh per call — module-level caching
+    breaks because ``copy.deepcopy`` (used when assembling the app-root
+    chain) carries ``_cached_render_result`` across compile runs.
+
+    Returns:
+        ``(priority, provider)`` entries deduped by the compiler.
+    """
+    return (
+        (100, StateContextProvider.create()),
+        (90, EventLoopContextProvider.create()),
+    )
+
+
+def get_events_hooks_var_data() -> VarData:
+    """Build the VarData advertising the state/event-loop app wraps.
 
     Returns:
         A new VarData carrying both providers as app_wraps.
     """
     return VarData(
         position=Hooks.HookPosition.INTERNAL,
-        app_wraps=(
-            (100, StateContextProvider.create()),
-            (90, EventLoopContextProvider.create()),
-        ),
+        app_wraps=get_event_app_wraps(),
     )
