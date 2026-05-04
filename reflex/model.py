@@ -341,7 +341,8 @@ if find_spec("sqlalchemy") and find_spec("alembic"):
         Returns:
             False - Indicating that the default rendering should be used.
         """
-        autogen_context.imports.add("import sqlmodel")
+        if find_spec("sqlmodel"):
+            autogen_context.imports.add("import sqlmodel")
         return False
 
     def alembic_init():
@@ -467,7 +468,7 @@ if find_spec("sqlalchemy") and find_spec("alembic"):
             env.run_migrations()
 
     def migrate(autogenerate: bool = False) -> bool | None:
-        """Execute alembic migrations for all sqlmodel Model classes.
+        """Execute alembic migrations for all model classes.
 
         If alembic is not installed or has not been initialized for the project,
         then no action is performed.
@@ -559,7 +560,7 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
     def _warn_about_model_deprecation():
         console.deprecate(
             feature_name="reflex.Model",
-            reason="",
+            reason="Directly use database ORM layer, like sqlalchemy or SQLModel",
             deprecation_version="0.9.2",
             removal_version="1.0.0",
         )
