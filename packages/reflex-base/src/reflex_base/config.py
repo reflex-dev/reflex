@@ -404,8 +404,8 @@ class Config(BaseConfig):
                     normalized.append(entry())
                 except TypeError as exc:
                     msg = (
-                        f"reflex.Config.plugins entry {entry.__name__!r} is a Plugin "
-                        f"class that requires constructor arguments; pass an instance "
+                        f"reflex.Config.plugins entry {entry.__name__!r} could not be "
+                        f"instantiated and may require arguments; pass an instance "
                         f"instead, e.g. plugins=[{entry.__name__}(...)]."
                     )
                     raise ConfigError(msg) from exc
