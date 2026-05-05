@@ -1056,6 +1056,14 @@ def create_passthrough_component_memo(
         # reachable on the page-level wrapper via the plugin's
         # ``_get_all_refs`` delegation back to the source component.
         new_component.children = [hole_bare]
+        # Compile-time walkers that need the real subtree (notably
+        # ``Form._get_form_refs`` collecting id-based input refs into the
+        # generated ``handleSubmit`` JS) call ``self._get_all_refs()`` while
+        # the memo body's hooks are computed. With the hole substituted in,
+        # that walk would return nothing and the form handler would emit an
+        # empty ``field_ref_mapping``. Delegate ref collection back to the
+        # source component so descendants behind the hole remain visible.
+        object.__setattr__(new_component, "_get_all_refs", component._get_all_refs)
         return new_component
 
     # Evaluate once to compute the tag from the rendered memo body shape.
