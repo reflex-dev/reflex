@@ -141,6 +141,9 @@ class VarData:
     # Components that are part of this var
     components: tuple[BaseComponent, ...] = dataclasses.field(default_factory=tuple)
 
+    # Module-level JS snippets this var contributes to the page (top-of-file helpers/constants)
+    module_code: tuple[str, ...] = dataclasses.field(default_factory=tuple)
+
     def __init__(
         self,
         state: str = "",
@@ -150,6 +153,7 @@ class VarData:
         deps: list[Var] | None = None,
         position: Hooks.HookPosition | None = None,
         components: Iterable[BaseComponent] | None = None,
+        module_code: Iterable[str] | None = None,
     ):
         """Initialize the var data.
 
@@ -161,6 +165,7 @@ class VarData:
             deps: Dependencies of the var for useCallback.
             position: Position of the hook in the component.
             components: Components that are part of this var.
+            module_code: Module-level JS snippets this var contributes to the page.
         """
         if isinstance(hooks, str):
             hooks = [hooks]
@@ -176,6 +181,7 @@ class VarData:
         object.__setattr__(self, "deps", tuple(deps or []))
         object.__setattr__(self, "position", position or None)
         object.__setattr__(self, "components", tuple(components or []))
+        object.__setattr__(self, "module_code", tuple(module_code or []))
 
         if hooks and any(hooks.values()):
             # Merge our dependencies first, so they can be referenced.
@@ -188,6 +194,7 @@ class VarData:
                 object.__setattr__(self, "deps", merged_var_data.deps)
                 object.__setattr__(self, "position", merged_var_data.position)
                 object.__setattr__(self, "components", merged_var_data.components)
+                object.__setattr__(self, "module_code", merged_var_data.module_code)
 
     def old_school_imports(self) -> ImportDict:
         """Return the imports as a mutable dict.
@@ -259,6 +266,14 @@ class VarData:
             component for var_data in all_var_datas for component in var_data.components
         )
 
+        module_code = tuple(
+            dict.fromkeys(
+                snippet
+                for var_data in all_var_datas
+                for snippet in var_data.module_code
+            )
+        )
+
         return VarData(
             state=state,
             field_name=field_name,
@@ -267,6 +282,7 @@ class VarData:
             deps=deps,
             position=position,
             components=components,
+            module_code=module_code,
         )
 
     def __bool__(self) -> bool:
@@ -283,6 +299,7 @@ class VarData:
             or self.deps
             or self.position
             or self.components
+            or self.module_code
         )
 
     @classmethod

@@ -571,6 +571,25 @@ def test_get_custom_code(component1: Component, component2: Component):
     }
 
 
+def test_get_all_custom_code_includes_var_module_code(component1: Component):
+    """Var-level module_code rides into the legacy _get_all_custom_code path.
+
+    This is the entry point used by the memo compile pipeline (see
+    ``compile_experimental_component_memo``); without it, snippets carried by
+    Vars on a memoized stateful component are silently dropped from the memo
+    file, and the helper is a runtime ReferenceError.
+    """
+    from reflex.vars.base import Var, VarData
+
+    var_with_module_code = Var(
+        _js_expr="my_helper()",
+        _var_type=str,
+        _var_data=VarData(module_code=("const my_helper = () => 1;",)),
+    )
+    c = component1.create(id=var_with_module_code)
+    assert "const my_helper = () => 1;" in c._get_all_custom_code()
+
+
 def test_get_props(component1, component2):
     """Test that the props are set correctly.
 

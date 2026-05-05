@@ -1642,6 +1642,30 @@ class Component(BaseComponent, ABC):
         """
         return None
 
+    def _iter_var_module_code(self) -> Iterator[str]:
+        """Yield module_code carried by Vars and hook-VarData on this component.
+
+        Per-component only — does not recurse into children or prop subtrees.
+        Callers that need a subtree walk (e.g. :meth:`_get_all_custom_code`)
+        recurse externally.
+
+        Yields:
+            module_code snippets contributed by this component's Vars.
+        """
+        for var in self._get_vars():
+            var_data = var._get_all_var_data()
+            if var_data is None:
+                continue
+            yield from var_data.module_code
+        for hook_var_data in self._get_hooks_internal().values():
+            if hook_var_data is None:
+                continue
+            yield from hook_var_data.module_code
+        for hook_var_data in self._get_added_hooks().values():
+            if hook_var_data is None:
+                continue
+            yield from hook_var_data.module_code
+
     def _get_all_custom_code(self) -> dict[str, None]:
         """Get custom code for the component and its children.
 
@@ -1663,6 +1687,9 @@ class Component(BaseComponent, ABC):
         for clz in self._iter_parent_classes_with_method("add_custom_code"):
             for item in clz.add_custom_code(self):
                 code[item] = None
+
+        for snippet in self._iter_var_module_code():
+            code.setdefault(snippet, None)
 
         # Add the custom code for the children.
         for child in self.children:

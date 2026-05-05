@@ -1909,6 +1909,29 @@ def test_var_data_with_hooks_value():
     assert var_data == VarData(hooks=["whott", "whot", "what"])
 
 
+def test_var_data_module_code_default_and_truthiness():
+    assert VarData().module_code == ()
+    assert not bool(VarData())
+    assert bool(VarData(module_code=("const A = 1;",)))
+
+
+def test_var_data_module_code_merge_dedupes_preserving_order():
+    merged = VarData.merge(
+        VarData(module_code=("a;",)),
+        VarData(module_code=("b;",)),
+        VarData(module_code=("a;",)),
+    )
+    assert merged is not None
+    assert merged.module_code == ("a;", "b;")
+
+
+def test_var_data_module_code_propagates_through_nested_hook_var_data():
+    var_data = VarData(
+        hooks={"useThing": VarData(module_code=("const helper = 1;",))},
+    )
+    assert var_data.module_code == ("const helper = 1;",)
+
+
 def test_str_var_in_components(mocker: MockerFixture):
     class StateWithVar(rx.State):
         field: int = 1

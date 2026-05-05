@@ -788,6 +788,20 @@ def test_default_collector_collects_nested_prop_tree_custom_code_without_recursi
     assert "const childCustomCode = 1;" in page_ctx.module_code
 
 
+def test_default_collector_collects_var_module_code() -> None:
+    var_with_module_code = LiteralVar.create("v")._replace(
+        merge_var_data=VarData(module_code=("const fromVar = 42;",))
+    )
+    component = ChildComponent.create(id=var_with_module_code)
+
+    page_ctx = collect_page_context(
+        component,
+        plugins=(DefaultCollectorPlugin(),),
+    )
+
+    assert "const fromVar = 42;" in page_ctx.module_code
+
+
 def test_default_page_plugins_are_minimal_and_ordered() -> None:
     from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
 

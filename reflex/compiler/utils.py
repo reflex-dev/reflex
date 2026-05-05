@@ -544,6 +544,8 @@ def _root_only_custom_code(component: Component) -> dict[str, None]:
     for clz in component._iter_parent_classes_with_method("add_custom_code"):
         for item in clz.add_custom_code(component):
             code[item] = None
+    for snippet in component._iter_var_module_code():
+        code.setdefault(snippet, None)
     return code
 
 

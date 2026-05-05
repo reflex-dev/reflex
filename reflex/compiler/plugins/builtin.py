@@ -191,6 +191,7 @@ class DefaultCollectorPlugin(Plugin):
             self._extend_imports(page_context.frontend_imports, imports)
 
         self._collect_component_custom_code(page_context.module_code, comp)
+        self._collect_var_module_code(page_context.module_code, comp)
 
         if not in_prop_tree:
             self._collect_component_hooks(page_context.hooks, comp)
@@ -252,6 +253,7 @@ class DefaultCollectorPlugin(Plugin):
         extend_imports = self._extend_imports
         collect_component_hooks = self._collect_component_hooks
         collect_component_custom_code = self._collect_component_custom_code
+        collect_var_module_code = self._collect_var_module_code
         collect_app_wrap_components = self._collect_app_wrap_components
         base_get_app_wrap_components = Component._get_app_wrap_components
         seen_app_wrap_methods: set[object] = set()
@@ -269,6 +271,7 @@ class DefaultCollectorPlugin(Plugin):
                 extend_imports(frontend_imports, imports_for_component)
 
             collect_component_custom_code(module_code, comp)
+            collect_var_module_code(module_code, comp)
 
             if not in_prop_tree:
                 collect_component_hooks(hooks, comp)
@@ -328,6 +331,20 @@ class DefaultCollectorPlugin(Plugin):
         for clz in component._iter_parent_classes_with_method("add_custom_code"):
             for item in clz.add_custom_code(component):
                 module_code[item] = None
+
+    @staticmethod
+    def _collect_var_module_code(
+        module_code: dict[str, None],
+        component: Component,
+    ) -> None:
+        """Collect module_code from VarData attached to this component's Vars.
+
+        Per-component contract — the walker re-enters each prop subtree with
+        ``in_prop_tree=True`` so this helper does not recurse, mirroring
+        :meth:`_collect_component_custom_code`.
+        """
+        for snippet in component._iter_var_module_code():
+            module_code.setdefault(snippet, None)
 
     def _collect_app_wrap_components(
         self,
