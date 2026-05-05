@@ -208,12 +208,6 @@ import {{ Outlet }} from 'react-router';
 
 {custom_code_str}
 
-function AppWrap({{children}}) {{
-{_render_hooks(hooks)}
-return ({_RenderUtils.render(render)})
-}}
-
-
 function ReflexProviders({{children}}) {{
   useEffect(() => {{
     // Make contexts and state objects available globally for dynamic eval'd components
@@ -230,6 +224,12 @@ function ReflexProviders({{children}}) {{
       )
     )
   );
+}}
+
+
+function AppWrap({{children}}) {{
+{_render_hooks(hooks)}
+return ({_RenderUtils.render(render)})
 }}
 
 export function Layout({{children}}) {{
