@@ -386,7 +386,9 @@ class MemoizeStatefulPlugin(Plugin):
         wrapper_factory, definition = create_passthrough_component_memo(
             tag, comp, source_module=page_context.source_module
         )
-        compile_context.auto_memo_components[tag] = definition
+        compile_context.auto_memo_components[
+            definition.export_name, definition.source_module
+        ] = definition
 
         wrapper = wrapper_factory()
         # The wrapper has no structural children at the page level, but parents
