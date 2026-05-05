@@ -915,15 +915,17 @@ def _write_memo_manifest(web_dir: Path, relative_paths: set[str]) -> None:
     fd, tmp_name = tempfile.mkstemp(
         prefix=".memo-manifest.", suffix=".json.tmp", dir=str(web_dir)
     )
+    # Close the raw fd immediately and reopen the file by path. Wrapping the
+    # fd via os.fdopen() would leak it if the wrap itself raised.
+    os.close(fd)
     tmp_path = Path(tmp_name)
     try:
-        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        with tmp_path.open("w", encoding="utf-8") as fh:
             json.dump(sorted(relative_paths), fh)
         tmp_path.replace(manifest_path)
     except Exception:
         # Best-effort cleanup; manifest write is recoverable on the next run.
-        if tmp_path.exists():
-            tmp_path.unlink()
+        tmp_path.unlink(missing_ok=True)
         raise
 
 

@@ -7,6 +7,7 @@ use them at decoration time. This module exists so callers in the top-level
 
 from reflex_base.utils.memo_paths import (
     capture_source_module,
+    library_specifier_for,
     mirrored_jsx_path,
     mirrored_library_specifier,
     module_to_mirrored_segments,
@@ -15,6 +16,7 @@ from reflex_base.utils.memo_paths import (
 
 __all__ = [
     "capture_source_module",
+    "library_specifier_for",
     "mirrored_jsx_path",
     "mirrored_library_specifier",
     "module_to_mirrored_segments",

@@ -14,9 +14,9 @@ that mirrors its Python source module, instead of bundling everything into
 
 from __future__ import annotations
 
-import functools
 import importlib.util
 import inspect
+import sys
 from collections.abc import Callable
 from pathlib import Path
 
@@ -134,7 +134,6 @@ def _segment_is_safe(segment: str) -> bool:
     return not any(ch in segment for ch in ("/", "\\", ":", "\0"))
 
 
-@functools.cache
 def module_to_mirrored_segments(module_name: str | None) -> tuple[str, ...] | None:
     """Translate a dotted module name to a tuple of mirrored path segments.
 
@@ -156,11 +155,22 @@ def module_to_mirrored_segments(module_name: str | None) -> tuple[str, ...] | No
     segments = module_name.split(".")
     if not all(_segment_is_safe(seg) for seg in segments):
         return None
-    try:
-        spec = importlib.util.find_spec(module_name)
-    except (ImportError, ValueError):
-        spec = None
-    if spec is not None and spec.origin and spec.origin.endswith("__init__.py"):
+    # Prefer the live module's __file__ over a fresh find_spec lookup. A user
+    # can switch a module to a package (or back) between hot-reload compiles,
+    # and importlib re-binds __file__ when that happens — a cached find_spec
+    # result wouldn't.
+    origin: str | None = None
+    module = sys.modules.get(module_name)
+    if module is not None:
+        origin = getattr(module, "__file__", None)
+    if origin is None:
+        try:
+            spec = importlib.util.find_spec(module_name)
+        except (ImportError, ValueError):
+            spec = None
+        if spec is not None:
+            origin = spec.origin
+    if origin and origin.endswith("__init__.py"):
         return (*segments, "index")
     return tuple(segments)
 
