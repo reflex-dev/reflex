@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
@@ -405,10 +406,12 @@ def test_compile_memo_components_groups_by_source_module():
         dict.fromkeys(CUSTOM_COMPONENTS.values()),
         tuple(EXPERIMENTAL_MEMOS.values()),
     )
-    expected_path_fragment = "/" + "/".join(mirrored_segments) + ".jsx"
+    expected_suffix = (Path(*mirrored_segments).with_suffix(".jsx")).as_posix()
 
     grouped_files = [
-        (path, code) for path, code in files if path.endswith(expected_path_fragment)
+        (path, code)
+        for path, code in files
+        if Path(path).as_posix().endswith("/" + expected_suffix)
     ]
     assert len(grouped_files) == 1
     code = grouped_files[0][1]
@@ -433,7 +436,7 @@ def test_compile_memo_components_falls_back_when_no_source_module():
     )
 
     files, _ = compiler.compile_memo_components((), (legacy_definition,))
-    paths = [path for path, _ in files]
+    paths = [Path(path).as_posix() for path, _ in files]
     assert any(path.endswith("utils/components/LegacyMemo.jsx") for path in paths)
 
 

@@ -501,6 +501,10 @@ def _compile_memo_components(
     for segments, group in groups.items():
         merged_imports = utils.merge_imports(framework_imports, group.imports)
         _apply_common_imports(merged_imports)
+        # Strip self-imports — when memos in this group reference each other,
+        # their compiled imports point at this group's own mirrored specifier.
+        # Importing from the same file would shadow the module's own exports.
+        merged_imports.pop(memo_paths.mirrored_library_specifier(segments), None)
         code = templates.memo_components_template(
             imports=utils.compile_imports(merged_imports),
             components=group.components,
