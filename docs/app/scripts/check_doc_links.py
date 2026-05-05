@@ -1,12 +1,16 @@
 """Validate /docs/* markdown links against the generated sitemap.xml.
 
-For every .md file under the docs tree, find markdown links of the form
-`[text](/docs/...)` and verify:
+For every .md file under the docs tree, parse it with reflex-docgen's
+markdown parser and verify every `[text](/docs/...)` link:
 
 1. The URL path contains no underscores (URLs use hyphens).
 2. After stripping the `/docs` prefix, the path exists in sitemap.xml.
 
-Run after building the frontend so .web/public/sitemap.xml is present, e.g.:
+Using the real markdown AST means links inside fenced code blocks are
+correctly ignored, reference-style and multi-line links are caught, and
+escapes/edge cases are handled the same way the docs site renders them.
+
+Run after building the frontend so .web/public/sitemap.xml is present:
 
     cd docs/app
     uv run reflex export --frontend-only --no-zip
@@ -16,13 +20,29 @@ Run after building the frontend so .web/public/sitemap.xml is present, e.g.:
 from __future__ import annotations
 
 import argparse
-import re
 import sys
 import xml.etree.ElementTree as ET
+from collections.abc import Iterator
 from pathlib import Path
 from urllib.parse import urlparse
 
-LINK_RE = re.compile(r"\]\(\s*(/docs(?=[/)#?\s])[^)]*?)(?:\s+\"[^\"]*\")?\s*\)")
+from reflex_docgen.markdown import (
+    Block,
+    BoldSpan,
+    DirectiveBlock,
+    HeadingBlock,
+    ImageSpan,
+    ItalicSpan,
+    LinkSpan,
+    ListBlock,
+    QuoteBlock,
+    Span,
+    StrikethroughSpan,
+    TableBlock,
+    TextBlock,
+    parse_document,
+)
+
 SITEMAP_NS = {"sm": "https://www.sitemaps.org/schemas/sitemap/0.9"}
 SKIP_DIRS = {".web", "node_modules", "__pycache__", ".git", ".venv", "dist", "build"}
 
@@ -55,7 +75,7 @@ def load_sitemap_paths(sitemap_path: Path) -> set[str]:
     return paths
 
 
-def iter_md_files(md_root: Path):
+def iter_md_files(md_root: Path) -> Iterator[Path]:
     """Yield .md files under md_root, skipping build/vendor directories."""
     for path in md_root.rglob("*.md"):
         if any(part in SKIP_DIRS for part in path.relative_to(md_root).parts):
@@ -63,20 +83,56 @@ def iter_md_files(md_root: Path):
         yield path
 
 
-def iter_md_links(md_root: Path):
-    """Yield (file, line_no, raw_url) for every /docs/* markdown link."""
-    for md_file in iter_md_files(md_root):
-        try:
-            text = md_file.read_text(encoding="utf-8")
-        except OSError:
-            continue
-        for line_no, line in enumerate(text.splitlines(), start=1):
-            for match in LINK_RE.finditer(line):
-                yield md_file, line_no, match.group(1)
+def _walk_spans(spans: tuple[Span, ...]) -> Iterator[LinkSpan]:
+    """Recursively yield every LinkSpan inside a span tree."""
+    for span in spans:
+        if isinstance(span, LinkSpan):
+            yield span
+            yield from _walk_spans(span.children)
+        elif isinstance(span, (BoldSpan, ItalicSpan, StrikethroughSpan, ImageSpan)):
+            yield from _walk_spans(span.children)
+
+
+def _walk_blocks(blocks: tuple[Block, ...]) -> Iterator[LinkSpan]:
+    """Recursively yield every LinkSpan in a block tree, skipping CodeBlock."""
+    for block in blocks:
+        if isinstance(block, (HeadingBlock, TextBlock)):
+            yield from _walk_spans(block.children)
+        elif isinstance(block, ListBlock):
+            for item in block.items:
+                yield from _walk_blocks(item.children)
+        elif isinstance(block, (QuoteBlock, DirectiveBlock)):
+            yield from _walk_blocks(block.children)
+        elif isinstance(block, TableBlock):
+            for row in (block.header, *block.rows):
+                for cell in row.cells:
+                    yield from _walk_spans(cell.children)
+
+
+def _line_for(text: str, target: str, cursor: int) -> tuple[int, int]:
+    """Locate the next occurrence of `](target)` after cursor.
+
+    Returns ``(line_number, new_cursor)``. If the link is reference-style
+    (no `](target)` in source), falls back to scanning for `]: target`.
+    Returns ``line_number == 0`` if the target can't be located.
+    """
+    needle = "](" + target
+    pos = text.find(needle, cursor)
+    if pos == -1:
+        # Reference-style links resolve to the same target but live in
+        # a `[label]: target` definition further down the file.
+        pos = text.find("]: " + target, cursor)
+    if pos == -1:
+        return 0, cursor
+    return text.count("\n", 0, pos) + 1, pos + len(needle)
 
 
 def check(md_root: Path, sitemap_path: Path) -> list[str]:
-    """Return a list of human-readable error strings."""
+    """Return a list of human-readable error strings.
+
+    Prints a per-link trail and a summary so CI logs make it obvious which
+    files were scanned and which links were validated.
+    """
     if not sitemap_path.is_file():
         return [
             f"sitemap.xml not found at {sitemap_path}. "
@@ -93,22 +149,42 @@ def check(md_root: Path, sitemap_path: Path) -> list[str]:
 
     errors: list[str] = []
     links_checked = 0
-    for md_file, line_no, raw in iter_md_links(md_root):
-        links_checked += 1
-        location = f"{md_file}:{line_no}"
-        path_only = raw.split("#", 1)[0].split("?", 1)[0]
-        sitemap_key = _strip_docs_prefix(_normalize(raw))
-        ok = sitemap_key in valid_paths and "_" not in path_only
-        print(f"  [{'OK  ' if ok else 'FAIL'}] {location} -> {raw}")
+    for md_file in md_files:
+        try:
+            text = md_file.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        try:
+            doc = parse_document(text)
+        except Exception as exc:
+            errors.append(f"{md_file}: failed to parse markdown ({exc})")
+            continue
 
-        if "_" in path_only:
-            errors.append(
-                f"{location}: link contains an underscore (use hyphens): {raw!r}"
-            )
-        if sitemap_key not in valid_paths:
-            errors.append(
-                f"{location}: {raw!r} -> {sitemap_key!r} not found in sitemap"
-            )
+        cursor = 0
+        for link in _walk_blocks(doc.blocks):
+            target = link.target
+            if not (target == "/docs" or target.startswith("/docs/")):
+                continue
+
+            line_no, cursor = _line_for(text, target, cursor)
+            location = f"{md_file}:{line_no}" if line_no else str(md_file)
+            links_checked += 1
+
+            path_only = _normalize(target)
+            sitemap_key = _strip_docs_prefix(path_only)
+            has_underscore = "_" in path_only
+            in_sitemap = sitemap_key in valid_paths
+            status = "OK" if (in_sitemap and not has_underscore) else "FAIL"
+            print(f"  [{status:<4}] {location} -> {target}")
+
+            if has_underscore:
+                errors.append(
+                    f"{location}: link contains an underscore (use hyphens): {target!r}"
+                )
+            if not in_sitemap:
+                errors.append(
+                    f"{location}: {target!r} -> {sitemap_key!r} not found in sitemap"
+                )
 
     print(f"Checked {links_checked} /docs link(s) across {len(md_files)} file(s).")
     return errors
