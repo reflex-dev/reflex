@@ -8,7 +8,8 @@ from types import SimpleNamespace
 from typing import Any, cast
 
 import pytest
-from reflex_base.components.component import Component, field
+from reflex_base.components.component import Component
+from reflex_base.components.component import field as component_field
 from reflex_base.components.memoize_helpers import (
     MemoizationStrategy,
     get_memoization_strategy,
@@ -16,10 +17,11 @@ from reflex_base.components.memoize_helpers import (
 from reflex_base.constants.compiler import MemoizationDisposition, MemoizationMode
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 from reflex_base.vars import VarData
-from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.base import Field, LiteralVar, Var, field
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.base.link import RawLink, ScriptTag
+from reflex_components_core.core.foreach import Foreach
 from reflex_components_core.el.elements.forms import BaseInput, Textarea
 from reflex_components_core.el.elements.inline import Br, Wbr
 from reflex_components_core.el.elements.media import (
@@ -37,6 +39,7 @@ from reflex_components_core.el.elements.metadata import Base, Link, Meta, StyleE
 from reflex_components_core.el.elements.scripts import Noscript, Script
 from reflex_components_core.el.elements.tables import Col
 from reflex_components_core.el.elements.typography import Hr
+from reflex_components_radix.themes.layout.box import Box
 
 import reflex as rx
 import reflex.compiler.plugins.memoize as memoize_plugin
@@ -44,6 +47,7 @@ from reflex.compiler.plugins import DefaultCollectorPlugin, default_page_plugins
 from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin, _should_memoize
 from reflex.experimental.memo import (
     ExperimentalMemoComponent,
+    ExperimentalMemoComponentDefinition,
     create_passthrough_component_memo,
 )
 from reflex.state import BaseState
@@ -62,7 +66,7 @@ class WithProp(Component):
     tag = "WithProp"
     library = "with-prop-lib"
 
-    label: Var[str] = field(default=LiteralVar.create(""))
+    label: Var[str] = component_field(default=LiteralVar.create(""))
 
 
 class LeafComponent(Component):
@@ -72,9 +76,9 @@ class LeafComponent(Component):
 
 
 class SpecialFormMemoState(BaseState):
-    items: list[str] = ["a"]
-    flag: bool = True
-    value: str = "a"
+    items: Field[list[str]] = field(default_factory=lambda: ["a"])
+    flag: Field[bool] = field(default=True)
+    value: Field[str] = field(default="a")
 
 
 @dataclasses.dataclass(slots=True)
@@ -249,6 +253,57 @@ def test_special_form_memo_wrappers_render_structural_body(
     assert state_wiring not in page_output
     assert body_marker in memo_code
     assert body_marker not in page_output
+
+
+def test_foreach_parent_does_not_absorb_sibling_into_snapshot() -> None:
+    """Foreach owns its own snapshot while the parent stays passthrough.
+
+    Regression for the foreach-parent memoization fix: a parent component
+    holding a Foreach used to be promoted to SNAPSHOT, absorbing any sibling
+    reactive content into the same wide memo body. The parent should now render
+    on the page side, with Foreach and any reactive sibling each getting their
+    own independent wrapper.
+    """
+    ctx, _page_ctx = _compile_single_page(
+        lambda: rx.box(
+            Bare.create(SpecialFormMemoState.items.length()),
+            rx.foreach(
+                SpecialFormMemoState.items,
+                lambda item: rx.text(item),
+            ),
+        )
+    )
+
+    wrapped_definitions = [
+        definition
+        for definition in ctx.auto_memo_components.values()
+        if isinstance(definition, ExperimentalMemoComponentDefinition)
+    ]
+    wrapped_types = {type(definition.component) for definition in wrapped_definitions}
+
+    assert len(wrapped_definitions) == 2
+    assert Box not in wrapped_types
+
+    foreach_definition = next(
+        definition
+        for definition in wrapped_definitions
+        if isinstance(definition.component, Foreach)
+    )
+    assert (
+        get_memoization_strategy(foreach_definition.component)
+        is MemoizationStrategy.SNAPSHOT
+    )
+
+    bare_definition = next(
+        definition
+        for definition in wrapped_definitions
+        if isinstance(definition.component, Bare)
+    )
+    assert (
+        get_memoization_strategy(bare_definition.component)
+        is MemoizationStrategy.PASSTHROUGH
+    )
+    assert bare_definition is not foreach_definition
 
 
 def test_common_memoization_snapshot_helper_classifies_snapshot_cases() -> None:
