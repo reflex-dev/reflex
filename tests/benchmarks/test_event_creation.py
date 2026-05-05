@@ -94,11 +94,7 @@ def event_input(
         "lambda_event_spec": lambda: increment_spec,
         "lambda_event_handler": lambda: increment_handler,
     }
-    try:
-        return inputs[request.param]
-    except KeyError as e:
-        msg = f"Unknown event_input param: {request.param}"
-        raise ValueError(msg) from e
+    return inputs[request.param]
 
 
 def test_from_event_type(event_input: Any, benchmark: BenchmarkFixture):
