@@ -69,11 +69,12 @@ Reflex evolves quickly. If you used `curl` to download the template, re-run the 
 curl -fsSL https://raw.githubusercontent.com/reflex-dev/agent-skills/main/AGENTS.md -o AGENTS.md
 ```
 
-If you cloned the [reflex-dev/agent-skills](https://github.com/reflex-dev/agent-skills) repository, pull the latest changes and copy the file again:
+If you cloned the [reflex-dev/agent-skills](https://github.com/reflex-dev/agent-skills) repository, pull the latest changes and copy the file back into your project:
 
 ```bash
 cd agent-skills
 git pull
+cp AGENTS.md /path/to/your/reflex-project/AGENTS.md
 ```
 
 ## Combining With Skills and MCP
