@@ -2609,6 +2609,177 @@ async def test_background_task_no_chain():
         await bts.bad_chain2()
 
 
+class YieldFromBackgroundState(BaseState):
+    """A state used to verify the type of `self` in a yielded event handler."""
+
+    counter: int = 0
+    follow_up_self_type: str = ""
+    follow_up_was_proxy: bool = True
+    dict_field: dict[str, int] = {"a": 1}
+
+    @rx.event(background=True)
+    async def trigger(self):
+        """A background handler that yields a non-background handler.
+
+        Yields:
+            A reference to the non-background follow_up handler.
+        """
+        # Sanity check: the background handler itself receives a StateProxy.
+        assert isinstance(self, StateProxy)
+        yield YieldFromBackgroundState.follow_up()
+
+    @rx.event(background=True)
+    async def trigger_inside_lock(self):
+        """A background handler that yields a non-background handler from inside `async with self`.
+
+        Yields:
+            A reference to the non-background follow_up handler.
+        """
+        assert isinstance(self, StateProxy)
+        async with self:
+            # Inside the lock, `self` is still a StateProxy (now mutable).
+            assert isinstance(self, StateProxy)
+            self.counter += 1
+            yield YieldFromBackgroundState.follow_up()
+
+    @rx.event(background=True)
+    async def trigger_with_arg(self):
+        """A background handler that yields a non-background handler with a state mutable as arg.
+
+        Yields:
+            A reference to the non-background follow_up_with_arg handler,
+            passing `self.dict_field` (a state-owned mutable) as the argument.
+        """
+        # Access the mutable through the StateProxy (returns ImmutableMutableProxy)
+        # and pass it as an argument to the yielded non-background handler.
+        yield YieldFromBackgroundState.follow_up_with_arg(self.dict_field)
+
+    @rx.event
+    def follow_up(self):
+        """A non-background handler invoked via yield from a background handler.
+
+        Writes to state directly (no `async with self`); this only works if
+        `self` is the real state, not a StateProxy.
+        """
+        # Record what we observed *before* mutating, in case the write fails.
+        self.follow_up_was_proxy = isinstance(self, StateProxy)
+        self.follow_up_self_type = type(self).__name__
+        # If `self` were a StateProxy outside an `async with self` block, this
+        # would raise ImmutableStateError.
+        self.counter += 1
+
+    @rx.event
+    def follow_up_with_arg(self, arg: dict[str, int]):
+        """A non-background handler that mutates an argument passed to it.
+
+        Args:
+            arg: A dict argument that the handler will mutate.
+        """
+        # Mutating the arg should succeed: it must NOT be an
+        # ImmutableMutableProxy bound to the (now-immutable) trigger StateProxy.
+        arg["b"] = 2
+        # Persist a copy onto the (real) state so the test can verify what was seen.
+        self.dict_field = dict(arg)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("trigger_handler", "expected_counter"),
+    [
+        ("trigger", 1),
+        ("trigger_inside_lock", 2),
+    ],
+)
+async def test_yielded_non_background_event_receives_real_state(
+    mock_app: rx.App,
+    token: str,
+    mock_base_state_event_processor: BaseStateEventProcessor,
+    state_manager: StateManager,
+    trigger_handler: str,
+    expected_counter: int,
+):
+    """A non-background event yielded by a background event must run on the real state.
+
+    The yielded handler must NOT receive a StateProxy and must be able to
+    modify state directly without `async with self`. This holds whether the
+    yield happens outside or inside the background handler's `async with self`.
+
+    Args:
+        mock_app: An app that will be returned by `get_app()`.
+        token: A token.
+        mock_base_state_event_processor: The event processor.
+        state_manager: A state manager instance.
+        trigger_handler: The name of the background handler to invoke.
+        expected_counter: The expected counter value after both handlers run.
+    """
+    async with mock_base_state_event_processor as processor:
+        future = await processor.enqueue(
+            token,
+            Event(
+                name=f"{YieldFromBackgroundState.get_full_name()}.{trigger_handler}",
+                payload={},
+            ),
+        )
+        # Wait for the trigger and its yielded follow_up to fully complete.
+        await future.wait_all()
+
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await state_manager.close()
+
+    state = await state_manager.get_state(
+        BaseStateToken(ident=token, cls=YieldFromBackgroundState)
+    )
+    assert isinstance(state, YieldFromBackgroundState)
+    # Direct mutation by the yielded handler succeeded and was persisted.
+    assert state.counter == expected_counter
+    # The yielded handler did not receive a StateProxy.
+    assert state.follow_up_was_proxy is False
+    assert state.follow_up_self_type == YieldFromBackgroundState.__name__
+
+
+@pytest.mark.asyncio
+async def test_yielded_event_arg_from_background_state_is_mutable(
+    mock_app: rx.App,
+    token: str,
+    mock_base_state_event_processor: BaseStateEventProcessor,
+    state_manager: StateManager,
+):
+    """A mutable arg passed by a background event must be mutable in the yielded handler.
+
+    Regression: when a background handler yields ``Handler(self.some_dict)``,
+    ``self.some_dict`` is an ``ImmutableMutableProxy`` tied to the trigger's
+    ``StateProxy``. Once the trigger releases the lock, that proxy refuses
+    writes -- so the yielded non-background handler can't mutate the arg it
+    was given. The arg must be unwrapped (or otherwise made mutable) before
+    being delivered to the yielded handler.
+
+    Args:
+        mock_app: An app that will be returned by `get_app()`.
+        token: A token.
+        mock_base_state_event_processor: The event processor.
+        state_manager: A state manager instance.
+    """
+    async with mock_base_state_event_processor as processor:
+        future = await processor.enqueue(
+            token,
+            Event(
+                name=f"{YieldFromBackgroundState.get_full_name()}.trigger_with_arg",
+                payload={},
+            ),
+        )
+        await future.wait_all()
+
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await state_manager.close()
+
+    state = await state_manager.get_state(
+        BaseStateToken(ident=token, cls=YieldFromBackgroundState)
+    )
+    assert isinstance(state, YieldFromBackgroundState)
+    # The yielded handler successfully mutated the dict it was passed.
+    assert state.dict_field == {"a": 1, "b": 2}
+
+
 def test_mutable_list(mutable_state: MutableTestState):
     """Test that mutable lists are tracked correctly.
 
