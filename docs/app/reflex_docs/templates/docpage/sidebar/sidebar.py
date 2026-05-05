@@ -463,6 +463,7 @@ def sidebar_comp(
     is_ai_mcp_or_skills = path.startswith((
         "/ai/integrations/ai-onboarding/",
         "/ai/integrations/skills/",
+        "/ai/integrations/agents-md/",
         "/ai/integrations/mcp",
     ))
 
