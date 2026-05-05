@@ -254,6 +254,7 @@ def test_special_form_memo_wrappers_render_structural_body(
 def test_common_memoization_snapshot_helper_classifies_snapshot_cases() -> None:
     """The shared memoization strategy classifies structural render forms."""
     from reflex_components_core.core.cond import Cond
+    from reflex_components_core.core.foreach import Foreach
     from reflex_components_core.core.match import Match
     from reflex_components_core.el.elements.forms import Form, Input
 
@@ -280,7 +281,13 @@ def test_common_memoization_snapshot_helper_classifies_snapshot_cases() -> None:
         ),
     )
 
-    assert get_memoization_strategy(foreach_parent) is MemoizationStrategy.SNAPSHOT
+    # A parent with a structural-memoization child (Foreach) is itself
+    # PASSTHROUGH — the snapshotting is owned by the structural child, which
+    # captures its whole subtree.
+    assert get_memoization_strategy(foreach_parent) is MemoizationStrategy.PASSTHROUGH
+    foreach_child = foreach_parent.children[0]
+    assert isinstance(foreach_child, Foreach)
+    assert get_memoization_strategy(foreach_child) is MemoizationStrategy.SNAPSHOT
     assert get_memoization_strategy(cond_fragment) is MemoizationStrategy.PASSTHROUGH
     # Cond and Match now use passthrough so branch JSX renders on the page side
     # and the memo body just selects via children[i] indexing.

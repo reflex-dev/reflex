@@ -30,6 +30,7 @@ from reflex_base.components.component import (
 )
 from reflex_base.components.memoize_helpers import (
     MemoizationStrategy,
+    _is_structural_memoization_child,
     fix_event_triggers_for_memo,
     get_memoization_strategy,
     is_snapshot_boundary,
@@ -188,8 +189,16 @@ def _should_memoize(component: Component) -> bool:
                 ):
                     return True
     # Cond and Match render conditional branch JSX from their own props rather
-    # than from a tag, so they have no `tag` but still must be considered.
-    if component.tag is None and not isinstance(component, (Cond, Match)):
+    # than from a tag; structural memoization children (e.g. ``Foreach``)
+    # render via their own structural form. All have no ``tag`` but still
+    # must be considered for memoization — the structural-child case in
+    # particular owns its whole subtree as a snapshot, so if it does not
+    # wrap here, its descendants leak to the page module.
+    if (
+        component.tag is None
+        and not isinstance(component, (Cond, Match))
+        and not _is_structural_memoization_child(component)
+    ):
         return False
     if component._memoization_mode.disposition == MemoizationDisposition.ALWAYS:
         return True

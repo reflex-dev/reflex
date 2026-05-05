@@ -214,26 +214,6 @@ def _is_structural_memoization_child(component: Component) -> bool:
     return bool(isinstance(component, Foreach))
 
 
-def _has_memoization_snapshot_child(component: Component) -> bool:
-    """Whether ``component`` has a structural child that needs a memo snapshot.
-
-    Component-valued ``Foreach`` is a structural form, not an ordinary user
-    child. It must render its body in the memo module instead of flowing
-    through as a normal ``children`` payload.
-
-    Args:
-        component: The component whose direct children should be inspected.
-
-    Returns:
-        True when a direct child requires the parent memo wrapper to render a
-        captured snapshot.
-    """
-    return any(
-        isinstance(child, Component) and _is_structural_memoization_child(child)
-        for child in component.children
-    )
-
-
 def passthrough_children_var(
     children: list[BaseComponent],
 ) -> ArrayVar[list[BaseComponent]] | None:
@@ -275,11 +255,7 @@ def get_memoization_strategy(component: Component) -> MemoizationStrategy:
     Returns:
         The strategy to use when generating a memo wrapper.
     """
-    if (
-        is_snapshot_boundary(component)
-        or _is_structural_memoization_child(component)
-        or _has_memoization_snapshot_child(component)
-    ):
+    if is_snapshot_boundary(component) or _is_structural_memoization_child(component):
         return MemoizationStrategy.SNAPSHOT
 
     return MemoizationStrategy.PASSTHROUGH
