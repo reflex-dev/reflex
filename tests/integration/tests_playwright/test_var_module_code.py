@@ -141,6 +141,6 @@ def test_var_module_code_via_hook_var_data(
         page: Playwright page.
     """
     assert var_module_code_app.frontend_url is not None
-    page.goto(var_module_code_app.frontend_url + "hook")
+    page.goto(var_module_code_app.frontend_url.removesuffix("/") + "/hook")
 
     expect(page.locator("#counter")).to_have_text("count=0")
