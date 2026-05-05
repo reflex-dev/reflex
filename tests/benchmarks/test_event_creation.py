@@ -104,7 +104,7 @@ def event_input(
 def test_from_event_type(event_input: Any, benchmark: BenchmarkFixture):
     """Benchmark ``Event.from_event_type`` for each supported input shape.
 
-    Covers existing Event, EventSpec (called EventHandler), EventHandler,
+    Covers existing Event, EventSpec (from calling EventHandler), EventHandler,
     and lambdas returning each of those — the common shapes encountered
     when normalizing user-returned event values.
 
