@@ -337,7 +337,7 @@ def demo_form(id_prefix: str = "", **props) -> rx.Component:
             select_field(
                 "What are you interested in?",
                 "interested_in",
-                ["AI builder", "MCP", "On-Prem", "Hosting"],
+                ["AI builder", "MCP", "On-Prem", "App Management"],
                 required=True,
             ),
             select_field(
