@@ -121,7 +121,7 @@ def test_var_module_code_multiple_distinct_helpers(
         page: Playwright page.
     """
     assert var_module_code_app.frontend_url is not None
-    page.goto(var_module_code_app.frontend_url + "multi")
+    page.goto(var_module_code_app.frontend_url.removesuffix("/") + "/multi")
 
     expect(page.locator("#greeting")).to_have_text("Hello, World!")
     expect(page.locator("#pi")).to_have_text("3.14")
