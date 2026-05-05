@@ -334,13 +334,19 @@ def demo_form(id_prefix: str = "", **props) -> rx.Component:
                 ],
                 required=True,
             ),
+            select_field(
+                "What are you interested in?",
+                "interested_in",
+                ["AI builder", "MCP", "On-Prem", "Hosting"],
+                required=True,
+            ),
+            select_field(
+                "How technical are you?",
+                "technical_level",
+                ["Non-technical", "Neutral", "Technical"],
+                True,
+            ),
             class_name="grid grid-cols-1 md:grid-cols-2 gap-4",
-        ),
-        select_field(
-            "How technical are you?",
-            "technical_level",
-            ["Non-technical", "Neutral", "Technical"],
-            True,
         ),
         rx.cond(
             demo_form_error_message.value,
