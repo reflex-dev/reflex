@@ -1,6 +1,5 @@
 """This module provides utility functions to initialize the frontend skeleton."""
 
-import functools
 import json
 import random
 from pathlib import Path
@@ -183,7 +182,6 @@ def initialize_web_directory():
     init_reflex_json(project_hash=project_hash)
 
 
-@functools.cache
 def _entry_client_template(embed: bool) -> str:
     name = constants.Embed.ENTRY_EMBED_TEMPLATE if embed else constants.Embed.ENTRY_PATH
     return (constants.Templates.Dirs.WEB_TEMPLATE / name).read_text()

@@ -45,8 +45,13 @@ const event_queue = [];
 // Mirrors the data router's location so applyEvent can populate router_data
 // with the in-widget URL. In embed mode the host page's window.location is
 // unrelated to the Reflex route, so the backend's on_load and dynamic-route
-// matching rely on this ref instead. Set by useEventLoop once mounted.
-const locationRef = { current: null };
+// matching rely on this ref instead. Updated by useEventLoop once mounted;
+// pre-seeded in embed mode with the memory router's initial path (see
+// initialEntries in entry.client.embed.js) so events dispatched before the
+// first effect commit don't briefly fall back to the host page's URL.
+const locationRef = {
+  current: env.MOUNT_TARGET ? { pathname: "/", search: "", hash: "" } : null,
+};
 
 /**
  * Generate a UUID (Used for session tokens).
