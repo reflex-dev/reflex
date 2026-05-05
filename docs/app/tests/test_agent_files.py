@@ -362,9 +362,7 @@ def test_generate_agent_files_emits_trailing_slash_variants():
     files = dict(generate_agent_files())
 
     markdown_paths = [
-        path
-        for path in files
-        if path.suffix == ".md" and path.name != ".md" and path.parts[0] != "llms.txt"
+        path for path in files if path.suffix == ".md" and path.name != ".md"
     ]
     assert markdown_paths, "expected at least one markdown asset"
 
