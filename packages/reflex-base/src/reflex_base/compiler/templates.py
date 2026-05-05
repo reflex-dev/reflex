@@ -214,7 +214,7 @@ return ({_RenderUtils.render(render)})
 }}
 
 
-export function Layout({{children}}) {{
+function ReflexProviders({{children}}) {{
   useEffect(() => {{
     // Make contexts and state objects available globally for dynamic eval'd components
     let windowImports = {{
@@ -223,15 +223,24 @@ export function Layout({{children}}) {{
     window["__reflex"] = windowImports;
   }}, []);
 
-  return jsx(AppLayout, {{}},
-    jsx(ThemeProvider, {{defaultTheme: defaultColorMode, attribute: "class"}},
-      jsx(StateProvider, {{}},
-        jsx(EventLoopProvider, {{}},
-          jsx(AppWrap, {{}}, children)
-        )
+  return jsx(ThemeProvider, {{defaultTheme: defaultColorMode, attribute: "class"}},
+    jsx(StateProvider, {{}},
+      jsx(EventLoopProvider, {{}},
+        jsx(AppWrap, {{}}, children)
       )
     )
   );
+}}
+
+export function Layout({{children}}) {{
+  return jsx(AppLayout, {{}}, jsx(ReflexProviders, {{}}, children));
+}}
+
+// Used by entry.client.js when mount_target is configured: skips the document
+// shell (which renders react-router's <Meta>/<Scripts>/<Links> and requires a
+// framework router context) but keeps the runtime providers.
+export function EmbedLayout({{children}}) {{
+  return jsx(ReflexProviders, {{}}, children);
 }}
 
 export default function App() {{

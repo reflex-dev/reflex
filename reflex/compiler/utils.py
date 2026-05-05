@@ -738,6 +738,20 @@ def get_page_path(path: str) -> str:
     )
 
 
+def get_page_import_specifier(path: str) -> str:
+    """Get the ``$``-aliased module specifier for the given page.
+
+    Args:
+        path: The path of the page.
+
+    Returns:
+        The import specifier (e.g. ``"$/pages/routes/users.$id._index"``).
+    """
+    return (
+        f"$/{constants.Dirs.PAGES}/{constants.Dirs.ROUTES}/{_path_to_file_stem(path)}"
+    )
+
+
 def get_theme_path() -> str:
     """Get the path of the base theme style.
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import zipfile
 from pathlib import Path, PosixPath
@@ -16,12 +17,14 @@ from reflex.utils.exec import is_in_app_harness
 
 def set_env_json():
     """Write the upload url to a REFLEX_JSON."""
+    config = get_config()
     path_ops.update_json_file(
         str(prerequisites.get_web_dir() / constants.Dirs.ENV_JSON),
         {
             **{endpoint.name: endpoint.get_url() for endpoint in constants.Endpoint},
-            "TRANSPORT": get_config().transport,
+            "TRANSPORT": config.transport,
             "TEST_MODE": is_in_app_harness(),
+            "MOUNT_TARGET": config.mount_target,
         },
     )
 
@@ -187,6 +190,40 @@ def _duplicate_index_html_to_parent_directory(directory: Path):
             _duplicate_index_html_to_parent_directory(child)
 
 
+def _emit_stable_entry_bootloader(static_dir: Path) -> None:
+    """In embed mode, emit a stable ``Embed.ENTRY_PATH`` shim for host pages.
+
+    The Vite build emits the entry chunk with a content hash
+    (``assets/entry.client-<hash>.js``), so a host page can't reference a
+    stable URL directly. When ``mount_target`` is set, write a one-line
+    re-export shim at ``Embed.ENTRY_PATH`` so the same ``<script src>`` works
+    against both dev (Vite serves the source file at the same URL) and prod
+    (this shim points at the hashed asset).
+
+    Args:
+        static_dir: The Vite build output directory (``.web/build/client``).
+
+    Raises:
+        RuntimeError: If the entry chunk can't be located or is ambiguous.
+    """
+    if not get_config().mount_target:
+        return
+    matches = list((static_dir / "assets").glob("entry.client-*.js"))
+    if len(matches) != 1:
+        msg = (
+            f"Expected exactly one Vite entry chunk under {static_dir / 'assets'}, "
+            f"found {len(matches)}: {[m.name for m in matches]}. "
+            "The embed bootloader cannot be emitted; the host page's "
+            f"<script src='/{constants.Embed.ENTRY_PATH}'> will 404."
+        )
+        raise RuntimeError(msg)
+    base = (get_config().embed_origin or "").rstrip("/")
+    hashed_url = f"{base}/assets/{matches[0].name}"
+    shim_path = static_dir / constants.Embed.ENTRY_PATH
+    shim_path.parent.mkdir(parents=True, exist_ok=True)
+    shim_path.write_text(f"import {json.dumps(hashed_url)};\n")
+
+
 def build():
     """Build the app for deployment.
 
@@ -227,6 +264,7 @@ def build():
         )
         raise SystemExit(1)
     _duplicate_index_html_to_parent_directory(wdir / constants.Dirs.STATIC)
+    _emit_stable_entry_bootloader(wdir / constants.Dirs.STATIC)
 
     spa_fallback = wdir / constants.Dirs.STATIC / constants.ReactRouter.SPA_FALLBACK
     if not spa_fallback.exists():

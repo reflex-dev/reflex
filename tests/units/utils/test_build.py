@@ -1,0 +1,45 @@
+"""Tests for reflex.utils.build."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from pytest_mock import MockerFixture
+
+from reflex.utils import build
+
+
+def _patch_env_json(mocker: MockerFixture, tmp_path: Path, mount_target: str | None):
+    web_dir = tmp_path / ".web"
+    web_dir.mkdir()
+    mocker.patch("reflex.utils.build.prerequisites.get_web_dir", return_value=web_dir)
+    config = mocker.Mock()
+    config.transport = "websocket"
+    config.mount_target = mount_target
+    mocker.patch("reflex.utils.build.get_config", return_value=config)
+    mocker.patch("reflex.utils.build.is_in_app_harness", return_value=False)
+    return web_dir
+
+
+def test_set_env_json_includes_mount_target(tmp_path: Path, mocker: MockerFixture):
+    """MOUNT_TARGET appears in env.json when configured."""
+    web_dir = _patch_env_json(mocker, tmp_path, "#reflex-root")
+
+    build.set_env_json()
+
+    env = json.loads((web_dir / "env.json").read_text())
+    assert env["MOUNT_TARGET"] == "#reflex-root"
+    assert env["TRANSPORT"] == "websocket"
+
+
+def test_set_env_json_mount_target_null_when_unset(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """MOUNT_TARGET is null in env.json when not configured."""
+    web_dir = _patch_env_json(mocker, tmp_path, None)
+
+    build.set_env_json()
+
+    env = json.loads((web_dir / "env.json").read_text())
+    assert env["MOUNT_TARGET"] is None
