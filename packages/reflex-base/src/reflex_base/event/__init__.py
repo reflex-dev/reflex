@@ -169,7 +169,6 @@ _IMMUTABLE_PAYLOAD_TYPES = (
     float,
     bool,
     bytes,
-    tuple,
     frozenset,
     type(None),
 )
