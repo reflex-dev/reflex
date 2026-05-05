@@ -84,25 +84,33 @@ def check(md_root: Path, sitemap_path: Path) -> list[str]:
         ]
 
     valid_paths = load_sitemap_paths(sitemap_path)
-    errors: list[str] = []
+    print(f"Loaded {len(valid_paths)} URLs from sitemap {sitemap_path}")
 
+    md_files = list(iter_md_files(md_root))
+    if not md_files:
+        return [f"No .md files found under {md_root}. Check --md-root."]
+    print(f"Scanning {len(md_files)} markdown file(s) under {md_root}")
+
+    errors: list[str] = []
+    links_checked = 0
     for md_file, line_no, raw in iter_md_links(md_root):
+        links_checked += 1
         location = f"{md_file}:{line_no}"
         path_only = raw.split("#", 1)[0].split("?", 1)[0]
+        sitemap_key = _strip_docs_prefix(_normalize(raw))
+        ok = sitemap_key in valid_paths and "_" not in path_only
+        print(f"  [{'OK  ' if ok else 'FAIL'}] {location} -> {raw}")
 
         if "_" in path_only:
             errors.append(
                 f"{location}: link contains an underscore (use hyphens): {raw!r}"
             )
-
-        # Compare in /docs-stripped form so the check works whether the
-        # sitemap entries include the /docs prefix or not.
-        sitemap_key = _strip_docs_prefix(_normalize(raw))
         if sitemap_key not in valid_paths:
             errors.append(
                 f"{location}: {raw!r} -> {sitemap_key!r} not found in sitemap"
             )
 
+    print(f"Checked {links_checked} /docs link(s) across {len(md_files)} file(s).")
     return errors
 
 

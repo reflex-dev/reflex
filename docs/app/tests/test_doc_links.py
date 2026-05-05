@@ -109,6 +109,7 @@ def test_check_ignores_docs_prefix_lookalikes(docs_tree):
 
 def test_check_skips_build_dirs(docs_tree):
     md_root, sitemap = docs_tree
+    (md_root / "page.md").write_text("[ok](/docs/getting-started/basics)\n")
     skipped = md_root / "node_modules" / "vendor"
     skipped.mkdir(parents=True)
     (skipped / "README.md").write_text("[bad](/docs/no-such-page)\n")
@@ -119,6 +120,14 @@ def test_check_returns_helpful_message_when_sitemap_missing(tmp_path):
     errors = check(tmp_path, tmp_path / "missing.xml")
     assert len(errors) == 1
     assert "sitemap.xml not found" in errors[0]
+
+
+def test_check_errors_when_md_root_has_no_markdown(docs_tree):
+    """If the docs tree is empty, fail loudly instead of silently passing."""
+    md_root, sitemap = docs_tree
+    errors = check(md_root, sitemap)
+    assert len(errors) == 1
+    assert "No .md files found" in errors[0]
 
 
 def test_check_works_when_sitemap_has_docs_prefix(tmp_path: Path):
