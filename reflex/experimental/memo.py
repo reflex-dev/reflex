@@ -22,7 +22,7 @@ from reflex_base.constants.compiler import (
     SpecialAttributes,
 )
 from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER
-from reflex_base.utils import format
+from reflex_base.utils import format, memo_paths
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import safe_issubclass
 from reflex_base.vars import VarData
@@ -62,6 +62,7 @@ class ExperimentalMemoDefinition:
     fn: Callable[..., Any]
     python_name: str
     params: tuple[MemoParam, ...]
+    source_module: str | None = dataclasses.field(default=None, kw_only=True)
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -150,6 +151,7 @@ class ExperimentalMemoComponent(Component):
 def _get_experimental_memo_component_class(
     export_name: str,
     wrapped_component_type: type[Component] = Component,
+    source_module: str | None = None,
 ) -> type[ExperimentalMemoComponent]:
     """Get the component subclass for an experimental memo export.
 
@@ -164,18 +166,23 @@ def _get_experimental_memo_component_class(
         wrapped_component_type: The class of the component being memoized.
             Defaults to ``Component`` for memos that don't wrap a user
             component (e.g. function memos, raw passthroughs).
+        source_module: The user-app Python module that defined this memo.
+            When set, the wrapper imports from a path mirroring that module
+            instead of the legacy per-name path under ``utils/components``.
 
     Returns:
         A cached component subclass with the tag set at class definition time.
     """
+    # Per-file fallback gives Vite distinct module boundaries per memo, enabling
+    # actual code-split by page when no source module is available.
+    library = (
+        memo_paths.library_specifier_for(source_module)
+        or f"$/{constants.Dirs.COMPONENTS_PATH}/{export_name}"
+    )
     attrs: dict[str, Any] = {
         "__module__": __name__,
         "tag": export_name,
-        # Point each memo at its own per-file module so pages import directly
-        # from ``$/utils/components/<name>`` rather than through the index.
-        # Per-file import paths give Vite distinct module boundaries per
-        # memo, enabling actual code-split by page.
-        "library": f"$/{constants.Dirs.COMPONENTS_PATH}/{export_name}",
+        "library": library,
     }
     if (
         wrapped_component_type._get_app_wrap_components
@@ -339,24 +346,29 @@ def _get_rest_param(params: tuple[MemoParam, ...]) -> MemoParam | None:
     return next((param for param in params if param.is_rest), None)
 
 
-def _imported_function_var(name: str, return_type: Any) -> FunctionVar:
+def _imported_function_var(
+    name: str, return_type: Any, source_module: str | None = None
+) -> FunctionVar:
     """Create the imported FunctionVar for an experimental memo.
 
     Args:
         name: The exported function name.
         return_type: The return type of the function.
+        source_module: The user-app Python module that defined the memo. When
+            set, the import resolves to the mirrored module file instead of
+            the legacy per-name path.
 
     Returns:
         The imported FunctionVar.
     """
+    library = (
+        memo_paths.library_specifier_for(source_module)
+        or f"$/{constants.Dirs.COMPONENTS_PATH}/{name}"
+    )
     return FunctionStringVar.create(
         name,
         _var_type=ReflexCallable[Any, return_type],
-        _var_data=VarData(
-            imports={
-                f"$/{constants.Dirs.COMPONENTS_PATH}/{name}": [ImportVar(tag=name)]
-            }
-        ),
+        _var_data=VarData(imports={library: [ImportVar(tag=name)]}),
     )
 
 
@@ -637,12 +649,14 @@ def _analyze_params(
 def _create_function_definition(
     fn: Callable[..., Any],
     return_annotation: Any,
+    source_module: str | None = None,
 ) -> ExperimentalMemoFunctionDefinition:
     """Create a definition for a var-returning memo.
 
     Args:
         fn: The function to analyze.
         return_annotation: The return annotation.
+        source_module: The user-app Python module that defined the memo.
 
     Returns:
         The function memo definition.
@@ -677,9 +691,12 @@ def _create_function_definition(
         fn=fn,
         python_name=fn.__name__,
         params=params,
+        source_module=source_module,
         function=function,
         imported_var=_imported_function_var(
-            fn.__name__, _annotation_inner_type(return_annotation)
+            fn.__name__,
+            _annotation_inner_type(return_annotation),
+            source_module=source_module,
         ),
     )
 
@@ -687,12 +704,14 @@ def _create_function_definition(
 def _create_component_definition(
     fn: Callable[..., Any],
     return_annotation: Any,
+    source_module: str | None = None,
 ) -> ExperimentalMemoComponentDefinition:
     """Create a definition for a component-returning memo.
 
     Args:
         fn: The function to analyze.
         return_annotation: The return annotation.
+        source_module: The user-app Python module that defined the memo.
 
     Returns:
         The component memo definition.
@@ -713,6 +732,7 @@ def _create_component_definition(
         fn=fn,
         python_name=fn.__name__,
         params=params,
+        source_module=source_module,
         export_name=format.to_title_case(fn.__name__),
         component=_lift_rest_props(component),
     )
@@ -962,7 +982,9 @@ class _ExperimentalMemoComponentWrapper:
 
         # Build the component props passed into the memo wrapper.
         return _get_experimental_memo_component_class(
-            definition.export_name, type(definition.component)
+            definition.export_name,
+            type(definition.component),
+            definition.source_module,
         )._create(
             children=list(children),
             memo_definition=definition,
@@ -1010,6 +1032,7 @@ def _create_component_wrapper(
 def create_passthrough_component_memo(
     export_name: str,
     component: Component,
+    source_module: str | None = None,
 ) -> tuple[
     Callable[..., ExperimentalMemoComponent],
     ExperimentalMemoComponentDefinition,
@@ -1023,6 +1046,8 @@ def create_passthrough_component_memo(
     Args:
         export_name: The exported memo component name.
         component: The component to wrap.
+        source_module: The user-app Python module that triggered creation of
+            this memo (typically the page that contained the wrapped subtree).
 
     Returns:
         The callable memo wrapper and its component definition.
@@ -1056,7 +1081,7 @@ def create_passthrough_component_memo(
     passthrough.__qualname__ = passthrough.__name__
     passthrough.__module__ = __name__
 
-    definition = _create_component_definition(passthrough, Component)
+    definition = _create_component_definition(passthrough, Component, source_module)
     replacements: dict[str, Any] = {}
     if definition.export_name != export_name:
         replacements["export_name"] = export_name
@@ -1089,13 +1114,15 @@ def memo(fn: Callable[..., Any]) -> Callable[..., Any]:
         )
         raise TypeError(msg)
 
+    source_module = memo_paths.capture_source_module(fn)
+
     if _is_component_annotation(return_annotation):
-        definition = _create_component_definition(fn, return_annotation)
+        definition = _create_component_definition(fn, return_annotation, source_module)
         _register_memo_definition(definition)
         return _create_component_wrapper(definition)
 
     if _is_var_annotation(return_annotation):
-        definition = _create_function_definition(fn, return_annotation)
+        definition = _create_function_definition(fn, return_annotation, source_module)
         _register_memo_definition(definition)
         return _create_function_wrapper(definition)
 

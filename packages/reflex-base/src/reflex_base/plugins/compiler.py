@@ -689,6 +689,7 @@ class PageContext(BaseContext):
     frontend_imports: ParsedImportDict = dataclasses.field(default_factory=dict)
     output_path: str | None = None
     output_code: str | None = None
+    source_module: str | None = None
     # Stack of ``id(component)`` for components whose subtree is
     # memoize-suppressed. Populated by ``MemoizeStatefulPlugin`` when it
     # encounters a ``MemoizationLeaf``-style snapshot boundary and popped on

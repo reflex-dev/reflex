@@ -883,6 +883,30 @@ def test_custom_component_hash(my_component):
     assert {component1, component2} == {component1}
 
 
+def test_custom_component_captures_source_module(my_component):
+    """The user module that defined the component is captured on the instance.
+
+    Args:
+        my_component: A test custom component.
+    """
+    component = rx.memo(my_component)(prop1="test", prop2=1)
+    assert component._source_module == my_component.__module__
+    assert component.library == "$/" + my_component.__module__.replace(".", "/")
+
+
+def test_custom_component_as_var_uses_mirrored_specifier(my_component):
+    """The wrapper's _as_var imports from the mirrored library specifier.
+
+    Args:
+        my_component: A test custom component.
+    """
+    wrapper = rx.memo(my_component)
+    var_data = wrapper._as_var()._var_data  # pyright: ignore [reportFunctionMemberAccess]
+    expected_specifier = "$/" + my_component.__module__.replace(".", "/")
+    libraries = {lib for lib, _ in var_data.imports}
+    assert expected_specifier in libraries
+
+
 def test_custom_component_wrapper():
     """Test that the wrapper of a custom component is correct."""
 
@@ -1791,8 +1815,10 @@ def test_custom_component_get_imports():
     # The imports are only resolved during compilation.
     _, imports_outer = compile_custom_component(outer_comp)
     assert "inner" not in imports_outer
-    assert "$/utils/components" in imports_outer
-    assert imports_outer["$/utils/components"] == [ImportVar(tag="Wrapper")]
+    # Memos defined in this module land at the mirrored library specifier.
+    expected_specifier = "$/" + __name__.replace(".", "/")
+    assert expected_specifier in imports_outer
+    assert imports_outer[expected_specifier] == [ImportVar(tag="Wrapper")]
 
 
 def test_custom_component_declare_event_handlers_in_fields():

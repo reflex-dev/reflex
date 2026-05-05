@@ -389,6 +389,54 @@ def test_compile_memo_components_includes_experimental_functions_and_components(
     assert "export const MyCard = memo(" in code
 
 
+def test_compile_memo_components_groups_by_source_module():
+    """Memos sharing a source module are concatenated into one mirrored file."""
+    mirrored_segments = __name__.split(".")
+
+    @rx.memo
+    def grouped_first(title: rx.Var[str]) -> rx.Component:
+        return rx.text(title)
+
+    @rx.memo
+    def grouped_second(title: rx.Var[str]) -> rx.Component:
+        return rx.heading(title)
+
+    files, _ = compiler.compile_memo_components(
+        dict.fromkeys(CUSTOM_COMPONENTS.values()),
+        tuple(EXPERIMENTAL_MEMOS.values()),
+    )
+    expected_path_fragment = "/" + "/".join(mirrored_segments) + ".jsx"
+
+    grouped_files = [
+        (path, code) for path, code in files if path.endswith(expected_path_fragment)
+    ]
+    assert len(grouped_files) == 1
+    code = grouped_files[0][1]
+    assert "export const GroupedFirst = memo(" in code
+    assert "export const GroupedSecond = memo(" in code
+    # The merged module must carry imports its memos use, not just the
+    # framework-level ones added by the compiler.
+    assert "RadixThemesText" in code
+    assert "RadixThemesHeading" in code
+
+
+def test_compile_memo_components_falls_back_when_no_source_module():
+    """Memos with no source module continue to populate the legacy index."""
+    legacy_definition = ExperimentalMemoComponentDefinition(
+        fn=lambda: None,
+        python_name="legacy_memo",
+        params=(),
+        source_module=None,
+        export_name="LegacyMemo",
+        component=rx.fragment(),
+        passthrough_hole_child=None,
+    )
+
+    files, _ = compiler.compile_memo_components((), (legacy_definition,))
+    paths = [path for path, _ in files]
+    assert any(path.endswith("utils/components/LegacyMemo.jsx") for path in paths)
+
+
 def test_compile_memo_components_extends_imports_without_remerging(
     monkeypatch: pytest.MonkeyPatch,
 ):
@@ -402,6 +450,7 @@ def test_compile_memo_components_extends_imports_without_remerging(
             fn=noop,
             python_name=f"memo_{idx}",
             params=(),
+            source_module=None,
             export_name=f"Memo{idx}",
             component=rx.fragment(),
             passthrough_hole_child=None,

@@ -41,7 +41,7 @@ from reflex_base.event import (
     unwrap_var_annotation,
 )
 from reflex_base.style import Style, format_as_emotion
-from reflex_base.utils import console, format, imports, types
+from reflex_base.utils import console, format, imports, memo_paths, types
 from reflex_base.utils.imports import ImportDict, ImportVar, ParsedImportDict
 from reflex_base.vars import VarData
 from reflex_base.vars.base import (
@@ -2092,6 +2092,11 @@ class CustomComponent(Component):
         doc="The props of the component.", default_factory=dict
     )
 
+    _source_module: str | None = field(
+        doc="The user-app Python module that defined this memo, used to mirror its compiled JSX path.",
+        default=None,
+    )
+
     def _post_init(self, **kwargs):
         """Initialize the custom component.
 
@@ -2155,6 +2160,9 @@ class CustomComponent(Component):
 
         # Set the tag to the name of the function.
         self.tag = format.to_title_case(self.component_fn.__name__)
+
+        if specifier := memo_paths.library_specifier_for(self._source_module):
+            self.library = specifier
 
         for key, value in props.items():
             # Skip kwargs that are not props.
@@ -2304,11 +2312,15 @@ CUSTOM_COMPONENTS: dict[str, CustomComponent] = {}
 
 def _register_custom_component(
     component_fn: Callable[..., Component],
+    source_module: str | None = None,
 ):
     """Register a custom component to be compiled.
 
     Args:
         component_fn: The function that creates the component.
+        source_module: The user-app Python module that defined the component,
+            used to mirror its compiled JSX path. ``None`` falls back to the
+            legacy ``utils/components`` location.
 
     Returns:
         The custom component.
@@ -2331,6 +2343,7 @@ def _register_custom_component(
     dummy_component = CustomComponent._create(
         children=[],
         component_fn=component_fn,
+        _source_module=source_module,
         **dummy_props,
     )
     if dummy_component.tag is None:
@@ -2351,18 +2364,26 @@ def custom_component(
     Returns:
         The decorated function.
     """
+    source_module = memo_paths.capture_source_module(component_fn)
 
     @wraps(component_fn)
     def wrapper(*children, **props) -> CustomComponent:
         # Remove the children from the props.
         props.pop("children", None)
         return CustomComponent._create(
-            children=list(children), component_fn=component_fn, **props
+            children=list(children),
+            component_fn=component_fn,
+            _source_module=source_module,
+            **props,
         )
 
     # Register this component so it can be compiled.
-    dummy_component = _register_custom_component(component_fn)
+    dummy_component = _register_custom_component(component_fn, source_module)
     if tag := dummy_component.tag:
+        import_specifier = (
+            memo_paths.library_specifier_for(source_module)
+            or f"$/{constants.Dirs.UTILS}/components"
+        )
         object.__setattr__(
             wrapper,
             "_as_var",
@@ -2371,7 +2392,7 @@ def custom_component(
                 _var_type=type[Component],
                 _var_data=VarData(
                     imports={
-                        f"$/{constants.Dirs.UTILS}/components": [ImportVar(tag=tag)],
+                        import_specifier: [ImportVar(tag=tag)],
                         "@emotion/react": [
                             ImportVar(tag="jsx"),
                         ],

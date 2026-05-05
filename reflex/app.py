@@ -42,7 +42,7 @@ from reflex_base.event import (
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
 from reflex_base.registry import RegistrationContext
-from reflex_base.utils import console
+from reflex_base.utils import console, memo_paths
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
 from reflex_components_core.base.error_boundary import ErrorBoundary
@@ -238,6 +238,7 @@ class UnevaluatedPage:
     on_load: EventType[()] | None = None
     meta: Sequence[Mapping[str, Any] | Component] = ()
     context: Mapping[str, Any] = dataclasses.field(default_factory=dict)
+    _source_module: str | None = None
 
     def merged_with(self, other: UnevaluatedPage) -> UnevaluatedPage:
         """Merge the other page into this one.
@@ -256,6 +257,9 @@ class UnevaluatedPage:
             else other.description,
             on_load=self.on_load if self.on_load is not None else other.on_load,
             context=self.context if self.context is not None else other.context,
+            _source_module=self._source_module
+            if self._source_module is not None
+            else other._source_module,
         )
 
 
@@ -864,6 +868,13 @@ class App(MiddlewareMixin, LifespanMixin):
         # Check if the route given is valid
         verify_route_validity(route)
 
+        if isinstance(component, Callable):
+            source_module = memo_paths.capture_source_module(component)
+        else:
+            # The user passed a pre-built Component instance — fall back to
+            # walking the call stack from add_page's caller.
+            source_module = memo_paths.resolve_user_module_from_frame(skip=1)
+
         unevaluated_page = UnevaluatedPage(
             component=component,
             route=route,
@@ -873,6 +884,7 @@ class App(MiddlewareMixin, LifespanMixin):
             on_load=on_load,
             meta=meta,
             context=context or {},
+            _source_module=source_module,
         )
 
         if route in self._unevaluated_pages:

@@ -383,7 +383,9 @@ class MemoizeStatefulPlugin(Plugin):
         compile_context.memoize_wrappers[tag] = None
         # Passthrough memo definitions capture app-specific event/state vars, so
         # they must be rebuilt for each compile instead of shared globally.
-        wrapper_factory, definition = create_passthrough_component_memo(tag, comp)
+        wrapper_factory, definition = create_passthrough_component_memo(
+            tag, comp, source_module=page_context.source_module
+        )
         compile_context.auto_memo_components[tag] = definition
 
         wrapper = wrapper_factory()
