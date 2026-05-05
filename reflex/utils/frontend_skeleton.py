@@ -184,17 +184,22 @@ def initialize_web_directory():
 
 
 @functools.cache
-def _entry_client_template() -> str:
-    return (
-        constants.Templates.Dirs.WEB_TEMPLATE / constants.Embed.ENTRY_PATH
-    ).read_text()
+def _entry_client_template(embed: bool) -> str:
+    name = constants.Embed.ENTRY_EMBED_TEMPLATE if embed else constants.Embed.ENTRY_PATH
+    return (constants.Templates.Dirs.WEB_TEMPLATE / name).read_text()
 
 
 def update_entry_client():
-    """Refresh .web/app/entry.client.js from the bundled template on each compile."""
+    """Refresh ``.web/app/entry.client.js`` from the bundled template on each compile.
+
+    When ``mount_target`` is unset, the original framework-mode entry is
+    written so the produced bundle is byte-identical to the non-embed default;
+    when set, the embed-aware variant is swapped in. Toggling the config
+    between compiles flips back to the right file without a re-init.
+    """
     write_file(
         get_web_dir() / constants.Embed.ENTRY_PATH,
-        _entry_client_template(),
+        _entry_client_template(embed=bool(get_config().mount_target)),
     )
 
 
