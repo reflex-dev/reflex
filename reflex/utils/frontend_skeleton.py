@@ -7,6 +7,7 @@ from pathlib import Path
 from reflex_base import constants
 from reflex_base.config import Config, get_config
 from reflex_base.environment import environment
+from reflex_base.plugins.embed import get_embed_plugin
 
 from reflex.compiler import templates
 from reflex.compiler.utils import write_file
@@ -182,22 +183,20 @@ def initialize_web_directory():
     init_reflex_json(project_hash=project_hash)
 
 
-def _entry_client_template(embed: bool) -> str:
-    name = constants.Embed.ENTRY_EMBED_TEMPLATE if embed else constants.Embed.ENTRY_PATH
-    return (constants.Templates.Dirs.WEB_TEMPLATE / name).read_text()
-
-
 def update_entry_client():
-    """Refresh ``.web/app/entry.client.js`` from the bundled template on each compile.
+    """Write ``.web/app/entry.client.js`` from the framework-mode template.
 
-    When ``mount_target`` is unset, the original framework-mode entry is
-    written so the produced bundle is byte-identical to the non-embed default;
-    when set, the embed-aware variant is swapped in. Toggling the config
-    between compiles flips back to the right file without a re-init.
+    Skipped when ``EmbedPlugin`` is registered — the plugin emits the
+    embed-aware variant via its own save task and overwriting it here would
+    just be redone on the same compile.
     """
+    if get_embed_plugin() is not None:
+        return
     write_file(
         get_web_dir() / constants.Embed.ENTRY_PATH,
-        _entry_client_template(embed=bool(get_config().mount_target)),
+        (
+            constants.Templates.Dirs.WEB_TEMPLATE / constants.Embed.ENTRY_PATH
+        ).read_text(),
     )
 
 
@@ -248,12 +247,12 @@ def initialize_package_json():
 
 
 def _compile_vite_config(config: Config):
-    # base must have exactly one trailing slash. When embed_origin is set,
-    # prepend the absolute origin so cross-origin host pages resolve assets
-    # against the bundle's server instead of their own document.baseURI.
     base = config.prepend_frontend_path("/")
-    if config.embed_origin:
-        base = config.embed_origin.rstrip("/") + base
+    embed_plugin = get_embed_plugin()
+    if embed_plugin and embed_plugin.embed_origin:
+        # Cross-origin hosts must resolve assets against the bundle's server
+        # rather than their own document.baseURI.
+        base = embed_plugin.embed_origin.rstrip("/") + base
     return templates.vite_config_template(
         base=base,
         hmr=environment.VITE_HMR.get(),

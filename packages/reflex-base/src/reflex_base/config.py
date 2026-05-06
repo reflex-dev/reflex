@@ -181,8 +181,6 @@ class BaseConfig:
         plugins: List of plugins to use in the app.
         disable_plugins: List of plugin types to disable in the app.
         transport: The transport method for client-server communication.
-        mount_target: CSS selector to mount the app into a host-page element instead of taking over the document.
-        embed_origin: Absolute origin URL where the embed bundle is served. Set when the host page is on a different origin than the bundle.
     """
 
     app_name: str
@@ -194,10 +192,6 @@ class BaseConfig:
     frontend_port: int | None = None
 
     frontend_path: str = ""
-
-    mount_target: str | None = None
-
-    embed_origin: str | None = None
 
     backend_port: int | None = None
 

@@ -1162,11 +1162,6 @@ def compile_app(
         if page_ctx.output_path is not None and page_ctx.output_code is not None
     ]
 
-    if config.mount_target:
-        compile_results.append(
-            compile_embed_manifest(compile_ctx.compiled_pages.keys())
-        )
-
     # Reinitialize vite config in case runtime options have changed.
     compile_results.append((
         constants.ReactRouter.VITE_CONFIG_FILE,

@@ -1,0 +1,247 @@
+"""Plugin that compiles a Reflex app for embedding into a host page.
+
+When this plugin is registered in ``rx.Config.plugins``, the compiler swaps the
+framework-mode entry for an embed-aware variant that mounts the app into a
+host-page DOM element (selected by ``mount_target``) instead of taking over the
+document. A route manifest is emitted alongside so the embed entry can lazy-
+load page modules through a memory router.
+"""
+
+from __future__ import annotations
+
+import html
+import json
+import os
+import re
+from collections.abc import Sequence
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
+
+from reflex_base import constants
+
+from .base import Plugin as PluginBase
+
+if TYPE_CHECKING:
+    from reflex.app import UnevaluatedPage
+
+
+_DEV_HOST_FALLBACK_ID = "reflex-dev-root"
+_SELECTOR_TOKEN = re.compile(
+    r"(?P<kind>[#.])(?P<value>[A-Za-z_][\w-]*)"
+    r"|\[(?P<attr>[A-Za-z_][\w-]*)(?:=(?P<quote>[\"']?)(?P<attr_value>[^\"'\]]*)(?P=quote))?\]"
+)
+
+
+def _embed_entry_task() -> tuple[str, str]:
+    template = (
+        constants.Templates.Dirs.WEB_TEMPLATE / constants.Embed.ENTRY_EMBED_TEMPLATE
+    )
+    return constants.Embed.ENTRY_PATH, template.read_text()
+
+
+def _embed_manifest_task(
+    unevaluated_pages: Sequence[UnevaluatedPage],
+) -> tuple[str, str]:
+    from reflex.compiler.compiler import compile_embed_manifest
+
+    return compile_embed_manifest(page.route for page in unevaluated_pages)
+
+
+def _mount_attrs_for_selector(selector: str) -> tuple[dict[str, str], bool]:
+    """Translate a CSS selector into HTML attributes for the host wrapper.
+
+    Args:
+        selector: The ``mount_target`` selector configured on the plugin.
+
+    Returns:
+        ``(attrs, ok)`` where ``attrs`` is a mapping of attribute names to
+        values for the wrapper element and ``ok`` indicates whether the parsed
+        attributes are guaranteed to satisfy the selector.
+    """
+    attrs: dict[str, str] = {}
+    classes: list[str] = []
+    consumed = 0
+    for match in _SELECTOR_TOKEN.finditer(selector):
+        if match.start() != consumed:
+            break
+        consumed = match.end()
+        kind = match.group("kind")
+        if kind == "#":
+            attrs["id"] = match.group("value")
+        elif kind == ".":
+            classes.append(match.group("value"))
+        else:
+            attrs[match.group("attr")] = match.group("attr_value") or ""
+    if classes:
+        attrs["class"] = " ".join(classes)
+    ok = consumed == len(selector) and bool(attrs)
+    if not ok:
+        attrs = {"id": _DEV_HOST_FALLBACK_ID}
+    return attrs, ok
+
+
+def _format_attrs(attrs: dict[str, str]) -> str:
+    parts: list[str] = []
+    for name, value in attrs.items():
+        if value == "":
+            parts.append(name)
+        else:
+            parts.append(f'{name}="{html.escape(value, quote=True)}"')
+    return (" " + " ".join(parts)) if parts else ""
+
+
+def _render_dev_host_html(mount_target: str) -> str:
+    from reflex_base.utils import console
+
+    attrs, ok = _mount_attrs_for_selector(mount_target)
+    if not ok:
+        console.warn(
+            f"EmbedPlugin: dev_preview cannot synthesize an element for "
+            f"selector {mount_target!r}; using id={_DEV_HOST_FALLBACK_ID!r} "
+            "instead. Open a hand-written host page if your selector matches "
+            "something more complex."
+        )
+    return (
+        "<!doctype html>\n"
+        '<html lang="en">\n'
+        "<head>\n"
+        '<meta charset="utf-8" />\n'
+        '<meta name="viewport" content="width=device-width, initial-scale=1" />\n'
+        "<title>Reflex embed dev preview</title>\n"
+        "</head>\n"
+        "<body>\n"
+        f"<div{_format_attrs(attrs)}></div>\n"
+        f'<script type="module" src="/{constants.Embed.ENTRY_PATH}"></script>\n'
+        "</body>\n"
+        "</html>\n"
+    )
+
+
+_VITE_DEV_PREVIEW_PLUGIN_DEF = """
+function reflexEmbedDevPreview(html) {
+  return {
+    name: "reflex-embed-dev-preview",
+    enforce: "pre",
+    apply: "serve",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = (req.url || "").split("?")[0];
+        if (url === "/" || url === "/index.html") {
+          res.setHeader("Content-Type", "text/html; charset=utf-8");
+          res.end(html);
+          return;
+        }
+        next();
+      });
+    }
+  };
+}
+"""
+
+
+def _inject_vite_dev_preview(mount_target: str):
+    """Build a modify task that registers the dev-preview Vite middleware.
+
+    Args:
+        mount_target: The selector used to synthesize the host wrapper element.
+
+    Returns:
+        A function suitable for ``add_modify_task`` that injects the plugin
+        definition into ``vite.config.js`` and prepends it to the plugins array.
+    """
+    html_literal = json.dumps(_render_dev_host_html(mount_target))
+    define_anchor = "export default defineConfig"
+    plugins_anchor = "alwaysUseReactDomServerNode(),"
+
+    def modify(content: str) -> str:
+        if "reflexEmbedDevPreview" in content:
+            return content
+        if define_anchor not in content or plugins_anchor not in content:
+            msg = (
+                "EmbedPlugin dev_preview cannot patch vite.config.js: expected "
+                f"anchors {define_anchor!r} and {plugins_anchor!r} were not "
+                "found. The Vite config template may have changed upstream."
+            )
+            raise RuntimeError(msg)
+        return content.replace(
+            define_anchor,
+            _VITE_DEV_PREVIEW_PLUGIN_DEF + "\nexport default defineConfig",
+            1,
+        ).replace(
+            plugins_anchor,
+            f"reflexEmbedDevPreview({html_literal}),\n    {plugins_anchor}",
+            1,
+        )
+
+    return modify
+
+
+@dataclass
+class EmbedPlugin(PluginBase):
+    """Compile the app to mount into a host-page element instead of the document.
+
+    When ``mount_target`` is omitted, the value is read from the
+    ``REFLEX_MOUNT_TARGET`` environment variable so the plugin remains usable
+    when registered through ``REFLEX_PLUGINS`` (which instantiates plugins
+    with no constructor args). Same fallback for ``embed_origin`` /
+    ``REFLEX_EMBED_ORIGIN``.
+
+    When ``dev_preview`` is ``True``, a dev-only Vite middleware serves a
+    minimal host wrapper at ``http://localhost:3000/`` so the embedded app
+    can be previewed without a separately served host page. Off by default so
+    the bundle root stays predictable for production embeds.
+    """
+
+    mount_target: str | None = field(
+        default_factory=lambda: os.getenv("REFLEX_MOUNT_TARGET")
+    )
+    embed_origin: str | None = field(
+        default_factory=lambda: os.getenv("REFLEX_EMBED_ORIGIN")
+    )
+    dev_preview: bool = False
+
+    def __post_init__(self):
+        """Validate that a mount target is configured.
+
+        Raises:
+            ValueError: If neither the constructor arg nor
+                ``REFLEX_MOUNT_TARGET`` provides a value.
+        """
+        if not self.mount_target:
+            msg = (
+                "EmbedPlugin requires a mount_target (constructor arg or "
+                "REFLEX_MOUNT_TARGET environment variable)."
+            )
+            raise ValueError(msg)
+
+    def pre_compile(self, **context):
+        """Register save tasks for the embed entry and the route manifest.
+
+        Args:
+            context: The pre-compile plugin context.
+        """
+        context["add_save_task"](_embed_entry_task)
+        context["add_save_task"](_embed_manifest_task, context["unevaluated_pages"])
+        if self.dev_preview:
+            assert self.mount_target is not None
+            context["add_modify_task"](
+                constants.ReactRouter.VITE_CONFIG_FILE,
+                _inject_vite_dev_preview(self.mount_target),
+            )
+
+
+def get_embed_plugin() -> EmbedPlugin | None:
+    """Return the EmbedPlugin instance from the active config, if any.
+
+    Returns:
+        The first ``EmbedPlugin`` registered in ``config.plugins``, or ``None``.
+    """
+    from reflex_base.config import get_config
+
+    return next(
+        (p for p in get_config().plugins if isinstance(p, EmbedPlugin)),
+        None,
+    )
+
+
+Plugin = EmbedPlugin

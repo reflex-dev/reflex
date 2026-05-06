@@ -23,6 +23,9 @@ from reflex.utils.prerequisites import get_web_dir
 def MountTargetApp():
     import reflex as rx
 
+    config = rx.config.get_config()
+    config.plugins = [rx.plugins.EmbedPlugin(mount_target="#reflex-root")]
+
     class S(rx.State):
         n: int = 0
         last_loaded_path: str = ""
@@ -82,14 +85,12 @@ def mount_target_app(
     Yields:
         Running harness.
     """
-    with pytest.MonkeyPatch.context() as mp:
-        mp.setenv("REFLEX_MOUNT_TARGET", "#reflex-root")
-        with AppHarnessProd.create(
-            root=tmp_path_factory.mktemp("mount_target_app"),
-            app_source=MountTargetApp,
-        ) as harness:
-            assert harness.app_instance is not None, "app is not running"
-            yield harness
+    with AppHarnessProd.create(
+        root=tmp_path_factory.mktemp("mount_target_app"),
+        app_source=MountTargetApp,
+    ) as harness:
+        assert harness.app_instance is not None, "app is not running"
+        yield harness
 
 
 def _static_dir(harness: AppHarnessProd) -> Path:

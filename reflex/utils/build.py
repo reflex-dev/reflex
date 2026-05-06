@@ -9,6 +9,7 @@ from pathlib import Path, PosixPath
 
 from reflex_base import constants
 from reflex_base.config import get_config
+from reflex_base.plugins.embed import get_embed_plugin
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 
 from reflex.utils import console, js_runtimes, path_ops, prerequisites, processes
@@ -18,13 +19,14 @@ from reflex.utils.exec import is_in_app_harness
 def set_env_json():
     """Write the upload url to a REFLEX_JSON."""
     config = get_config()
+    embed_plugin = get_embed_plugin()
     path_ops.update_json_file(
         str(prerequisites.get_web_dir() / constants.Dirs.ENV_JSON),
         {
             **{endpoint.name: endpoint.get_url() for endpoint in constants.Endpoint},
             "TRANSPORT": config.transport,
             "TEST_MODE": is_in_app_harness(),
-            "MOUNT_TARGET": config.mount_target,
+            "MOUNT_TARGET": embed_plugin.mount_target if embed_plugin else None,
         },
     )
 
@@ -195,7 +197,7 @@ def _emit_stable_entry_bootloader(static_dir: Path) -> None:
 
     The Vite build emits the entry chunk with a content hash
     (``assets/entry.client-<hash>.js``), so a host page can't reference a
-    stable URL directly. When ``mount_target`` is set, write a one-line
+    stable URL directly. When ``EmbedPlugin`` is registered, write a one-line
     re-export shim at ``Embed.ENTRY_PATH`` so the same ``<script src>`` works
     against both dev (Vite serves the source file at the same URL) and prod
     (this shim points at the hashed asset).
@@ -206,7 +208,8 @@ def _emit_stable_entry_bootloader(static_dir: Path) -> None:
     Raises:
         RuntimeError: If the entry chunk can't be located or is ambiguous.
     """
-    if not get_config().mount_target:
+    embed_plugin = get_embed_plugin()
+    if embed_plugin is None:
         return
     matches = list((static_dir / "assets").glob("entry.client-*.js"))
     if len(matches) != 1:
@@ -217,7 +220,7 @@ def _emit_stable_entry_bootloader(static_dir: Path) -> None:
             f"<script src='/{constants.Embed.ENTRY_PATH}'> will 404."
         )
         raise RuntimeError(msg)
-    base = (get_config().embed_origin or "").rstrip("/")
+    base = (embed_plugin.embed_origin or "").rstrip("/")
     hashed_url = f"{base}/assets/{matches[0].name}"
     shim_path = static_dir / constants.Embed.ENTRY_PATH
     shim_path.parent.mkdir(parents=True, exist_ok=True)
