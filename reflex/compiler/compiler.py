@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import sys
 from collections.abc import Callable, Iterable, Sequence
 from inspect import getmodule
@@ -10,33 +11,51 @@ from typing import TYPE_CHECKING, Any
 
 from reflex_base import constants
 from reflex_base.components.component import (
+    CUSTOM_COMPONENTS,
     BaseComponent,
     Component,
     ComponentStyle,
     CustomComponent,
-    StatefulComponent,
+    evaluate_style_namespaces,
 )
 from reflex_base.config import get_config
 from reflex_base.constants.compiler import PageNames, ResetStylesheet
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
+from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
 from reflex_base.style import SYSTEM_COLOR_MODE
 from reflex_base.utils.exceptions import ReflexError
 from reflex_base.utils.format import to_title_case
-from reflex_base.utils.imports import ImportVar, ParsedImportDict
+from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import LiteralVar, Var
+from reflex_components_core.base.app_wrap import AppWrap
 from reflex_components_core.base.fragment import Fragment
+from reflex_components_radix.plugin import RadixThemesPlugin
+from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 
 from reflex.compiler import templates, utils
+from reflex.compiler.plugins import default_page_plugins
 from reflex.experimental.memo import (
+    EXPERIMENTAL_MEMOS,
     ExperimentalMemoComponentDefinition,
     ExperimentalMemoDefinition,
     ExperimentalMemoFunctionDefinition,
 )
-from reflex.state import BaseState
-from reflex.utils import console, path_ops
-from reflex.utils.exec import is_prod_mode
+from reflex.state import BaseState, code_uses_state_contexts
+from reflex.utils import console, frontend_skeleton, path_ops, prerequisites
+from reflex.utils.exec import get_compile_context, is_prod_mode
 from reflex.utils.prerequisites import get_web_dir
+
+RADIX_THEMES_STYLESHEET = "@radix-ui/themes/styles.css"
+
+
+def _set_progress_total(
+    progress: Progress | console.PoorProgress,
+    task: Any,
+    total: int,
+) -> None:
+    """Update a task total for either rich or fallback progress bars."""
+    progress.update(task, total=total)
 
 
 def _apply_common_imports(
@@ -46,6 +65,36 @@ def _apply_common_imports(
     imports.setdefault("react", []).extend(
         [ImportVar("Fragment"), ImportVar("useEffect")],
     )
+
+
+def _extend_imports_in_place(
+    target: dict[str, list[ImportVar]],
+    import_dict: dict[str, Any] | tuple[tuple[str, Any], ...],
+) -> None:
+    """Append imports to an existing parsed import dict.
+
+    Args:
+        target: The import dictionary to update.
+        import_dict: The imports to append.
+    """
+    for lib, fields in (
+        import_dict if isinstance(import_dict, tuple) else import_dict.items()
+    ):
+        lib = (
+            "$" + lib
+            if lib.startswith(("/utils/", "/components/", "/styles/", "/public/"))
+            else lib
+        )
+        target_fields = target.setdefault(lib, [])
+        if isinstance(fields, (list, tuple, set)):
+            target_fields.extend(
+                ImportVar(field) if isinstance(field, str) else field
+                for field in fields
+            )
+        else:
+            target_fields.append(
+                ImportVar(fields) if isinstance(fields, str) else fields
+            )
 
 
 def _compile_document_root(root: Component) -> str:
@@ -175,20 +224,23 @@ def _compile_page(component: BaseComponent) -> str:
 
 
 def compile_root_stylesheet(
-    stylesheets: list[str], reset_style: bool = True
+    stylesheets: list[str],
+    reset_style: bool = True,
+    plugins: Sequence[Plugin] | None = None,
 ) -> tuple[str, str]:
     """Compile the root stylesheet.
 
     Args:
         stylesheets: The stylesheets to include in the root stylesheet.
         reset_style: Whether to include CSS reset for margin and padding.
+        plugins: The effective plugins for the active compile.
 
     Returns:
         The path and code of the compiled root stylesheet.
     """
     output_path = utils.get_root_stylesheet_path()
 
-    code = _compile_root_stylesheet(stylesheets, reset_style)
+    code = _compile_root_stylesheet(stylesheets, reset_style, plugins)
 
     return output_path, code
 
@@ -228,15 +280,17 @@ def _validate_stylesheet(stylesheet_full_path: Path, assets_app_path: Path) -> N
         raise ValueError(msg)
 
 
-RADIX_THEMES_STYLESHEET = "@radix-ui/themes/styles.css"
-
-
-def _compile_root_stylesheet(stylesheets: list[str], reset_style: bool = True) -> str:
+def _compile_root_stylesheet(
+    stylesheets: list[str],
+    reset_style: bool = True,
+    plugins: Sequence[Plugin] | None = None,
+) -> str:
     """Compile the root stylesheet.
 
     Args:
         stylesheets: The stylesheets to include in the root stylesheet.
         reset_style: Whether to include CSS reset for margin and padding.
+        plugins: The effective plugins for the active compile.
 
     Returns:
         The compiled root stylesheet.
@@ -252,14 +306,10 @@ def _compile_root_stylesheet(stylesheets: list[str], reset_style: bool = True) -
         # Reference the vendored style reset file (automatically copied from .templates/web)
         sheets.append(f"./{ResetStylesheet.FILENAME}")
 
-    sheets.extend(
-        [RADIX_THEMES_STYLESHEET]
-        + [
-            sheet
-            for plugin in get_config().plugins
-            for sheet in plugin.get_stylesheet_paths()
-        ]
-    )
+    active_plugins = get_config().plugins if plugins is None else plugins
+    sheets.extend([
+        sheet for plugin in active_plugins for sheet in plugin.get_stylesheet_paths()
+    ])
 
     failed_to_import_sass = False
     assets_app_path = Path.cwd() / constants.Dirs.APP_ASSETS
@@ -331,7 +381,7 @@ def _compile_root_stylesheet(stylesheets: list[str], reset_style: bool = True) -
     return templates.styles_template(stylesheets=sheets)
 
 
-def _compile_component(component: Component | StatefulComponent) -> str:
+def _compile_component(component: Component) -> str:
     """Compile a single component.
 
     Args:
@@ -346,149 +396,152 @@ def _compile_component(component: Component | StatefulComponent) -> str:
 def _compile_memo_components(
     components: Iterable[CustomComponent],
     experimental_memos: Iterable[ExperimentalMemoDefinition] = (),
-) -> tuple[str, dict[str, list[ImportVar]]]:
-    """Compile the components.
+) -> tuple[list[tuple[str, str]], dict[str, list[ImportVar]]]:
+    """Compile each memo/custom-component as its own module plus an index.
+
+    Each memo lands in ``.web/<components>/<name>.jsx`` with only the imports
+    it actually uses. Experimental memo wrappers declare their ``library`` as
+    that per-memo file path so page-side imports resolve directly to the
+    individual module.
+
+    The ``$/utils/components`` index only re-exports the legacy
+    ``@rx.memo`` custom components, which are the ones app-level code
+    (``root.jsx``) imports by name. Keeping experimental memos out of the
+    index is what lets root's ``import * as utils_components`` avoid
+    transitively dragging every page-specific memo into the always-loaded
+    chunk — the tree-shaking win of per-memo files relies on that.
 
     Args:
         components: The components to compile.
         experimental_memos: The experimental memos to compile.
 
     Returns:
-        The compiled components.
+        A list of ``(path, code)`` pairs to write — one per memo plus one
+        index — and the aggregated imports across all memo modules.
     """
-    imports: dict[str, list[ImportVar]] = {}
-    component_renders = []
-    function_renders = []
+    per_memo_files: list[tuple[str, str]] = []
+    # Only legacy custom components go through the index: they are the ones
+    # root.jsx/custom code imports by name from ``$/utils/components``.
+    # Experimental memos declare their library per-file (see
+    # ``_get_experimental_memo_component_class``) so pages import them
+    # directly and the index stays small.
+    index_entries: list[tuple[str, str]] = []
+    aggregate_imports: dict[str, list[ImportVar]] = {}
 
-    # Compile each component.
+    base_dir = utils.get_memo_components_dir()
+
     for component in components:
         component_render, component_imports = utils.compile_custom_component(component)
-        component_renders.append(component_render)
-        imports = utils.merge_imports(imports, component_imports)
+        name = component_render["name"]
+        code, file_imports = _compile_single_memo_component(
+            component_render, component_imports
+        )
+        path = _memo_component_file_path(base_dir, name)
+        specifier = _memo_component_index_specifier(name)
+        per_memo_files.append((path, code))
+        index_entries.append((name, specifier))
+        _extend_imports_in_place(aggregate_imports, file_imports)
 
     for memo in experimental_memos:
         if isinstance(memo, ExperimentalMemoComponentDefinition):
             memo_render, memo_imports = utils.compile_experimental_component_memo(memo)
-            component_renders.append(memo_render)
-            imports = utils.merge_imports(imports, memo_imports)
+            name = memo_render["name"]
+            code, file_imports = _compile_single_memo_component(
+                memo_render, memo_imports
+            )
+            path = _memo_component_file_path(base_dir, name)
+            per_memo_files.append((path, code))
+            _extend_imports_in_place(aggregate_imports, file_imports)
         elif isinstance(memo, ExperimentalMemoFunctionDefinition):
             memo_render, memo_imports = utils.compile_experimental_function_memo(memo)
-            function_renders.append(memo_render)
-            imports = utils.merge_imports(imports, memo_imports)
+            name = memo_render["name"]
+            code, file_imports = _compile_single_memo_function(
+                memo_render, memo_imports
+            )
+            path = _memo_component_file_path(base_dir, name)
+            per_memo_files.append((path, code))
+            _extend_imports_in_place(aggregate_imports, file_imports)
 
-    if component_renders:
-        imports = utils.merge_imports(
-            {
-                "react": [ImportVar(tag="memo")],
-                f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
-            },
-            imports,
-        )
-        _apply_common_imports(imports)
-
-    dynamic_imports = {
-        comp_import: None
-        for comp_render in component_renders
-        if "dynamic_imports" in comp_render
-        for comp_import in comp_render["dynamic_imports"]
-    }
-
-    custom_codes = {
-        comp_custom_code: None
-        for comp_render in component_renders
-        for comp_custom_code in comp_render.get("custom_code", [])
-    }
-
-    # Compile the components page.
-    return (
-        templates.memo_components_template(
-            imports=utils.compile_imports(imports),
-            components=component_renders,
-            functions=function_renders,
-            dynamic_imports=sorted(dynamic_imports),
-            custom_codes=custom_codes,
-        ),
-        imports,
-    )
+    index_path = utils.get_components_path()
+    index_code = templates.memo_index_template(index_entries)
+    return [(index_path, index_code), *per_memo_files], aggregate_imports
 
 
-def _get_shared_components_recursive(
-    component: BaseComponent,
-    rendered_components: dict[str, None],
-    all_import_dicts: list[ParsedImportDict],
-):
-    """Get the shared components for a component and its children.
-
-    A shared component is a StatefulComponent that appears in 2 or more
-    pages and is a candidate for writing to a common file and importing
-    into each page where it is used.
+def _compile_single_memo_component(
+    component_render: dict,
+    component_imports: dict[str, list[ImportVar]],
+) -> tuple[str, dict[str, list[ImportVar]]]:
+    """Render one memoized component as a standalone module.
 
     Args:
-        component: The component to collect shared StatefulComponents for.
-        rendered_components: A dict to store the rendered shared components in.
-        all_import_dicts: A list to store the imports of all shared components in.
-    """
-    for child in component.children:
-        # Depth-first traversal.
-        _get_shared_components_recursive(child, rendered_components, all_import_dicts)
-
-    # When the component is referenced by more than one page, render it
-    # to be included in the STATEFUL_COMPONENTS module.
-    # Skip this step in dev mode, thereby avoiding potential hot reload errors for larger apps
-    if isinstance(component, StatefulComponent) and component.references > 1:
-        # Reset this flag to render the actual component.
-        component.rendered_as_shared = False
-
-        # Include dynamic imports in the shared component.
-        if dynamic_imports := component._get_all_dynamic_imports():
-            rendered_components.update(dict.fromkeys(dynamic_imports))
-
-        # Include custom code in the shared component.
-        rendered_components.update(component._get_all_custom_code(export=True))
-
-        # Include all imports in the shared component.
-        all_import_dicts.append(component._get_all_imports())
-
-        # Indicate that this component now imports from the shared file.
-        component.rendered_as_shared = True
-
-
-def _compile_stateful_components(
-    page_components: list[BaseComponent],
-) -> str:
-    """Walk the page components and extract shared stateful components.
-
-    Any StatefulComponent that is shared by more than one page will be rendered
-    to a separate module and marked rendered_as_shared so subsequent
-    renderings will import the component from the shared module instead of
-    directly including the code for it.
-
-    Args:
-        page_components: The Components or StatefulComponents to compile.
+        component_render: The component's render dict.
+        component_imports: The component's imports before common/common-memo
+            additions.
 
     Returns:
-        The rendered stateful components code.
+        The file contents and the full import dict used to compile it.
     """
-    all_import_dicts = []
-    rendered_components = {}
-
-    for page_component in page_components:
-        _get_shared_components_recursive(
-            page_component, rendered_components, all_import_dicts
-        )
-
-    # Don't import from the file that we're about to create.
-    all_imports = utils.merge_imports(*all_import_dicts)
-    all_imports.pop(
-        f"$/{constants.Dirs.UTILS}/{constants.PageNames.STATEFUL_COMPONENTS}", None
+    imports = utils.merge_imports(
+        {
+            "react": [ImportVar(tag="memo")],
+            f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
+        },
+        component_imports,
     )
-    if rendered_components:
-        _apply_common_imports(all_imports)
-
-    return templates.stateful_components_template(
-        imports=utils.compile_imports(all_imports),
-        memoized_code="\n".join(rendered_components),
+    _apply_common_imports(imports)
+    code = templates.memo_single_component_template(
+        imports=utils.compile_imports(imports),
+        component=component_render,
+        dynamic_imports=sorted(component_render.get("dynamic_imports", []) or []),
+        custom_codes=component_render.get("custom_code", []) or [],
     )
+    return code, imports
+
+
+def _compile_single_memo_function(
+    function_render: dict,
+    function_imports: dict[str, list[ImportVar]],
+) -> tuple[str, dict[str, list[ImportVar]]]:
+    """Render one function memo as a standalone module.
+
+    Args:
+        function_render: The function's render dict.
+        function_imports: The function's imports.
+
+    Returns:
+        The file contents and the full import dict used to compile it.
+    """
+    imports = utils.merge_imports({}, function_imports)
+    code = templates.memo_single_function_template(
+        imports=utils.compile_imports(imports),
+        function=function_render,
+    )
+    return code, imports
+
+
+def _memo_component_file_path(base_dir: str, name: str) -> str:
+    """Return the on-disk path for a per-memo module.
+
+    Args:
+        base_dir: The directory that holds per-memo files.
+        name: The memo's export name.
+
+    Returns:
+        The absolute path for the memo's ``.jsx`` file.
+    """
+    return str(Path(base_dir) / f"{name}{constants.Ext.JSX}")
+
+
+def _memo_component_index_specifier(name: str) -> str:
+    """Return the module specifier the index uses to re-export a memo.
+
+    Args:
+        name: The memo's export name.
+
+    Returns:
+        A relative specifier resolvable from the memo index module.
+    """
+    return f"./{constants.PageNames.COMPONENTS}/{name}"
 
 
 def compile_document_root(
@@ -521,7 +574,7 @@ def compile_document_root(
     return output_path, code
 
 
-def compile_app(app_root: Component) -> tuple[str, str]:
+def compile_app_root(app_root: Component) -> tuple[str, str]:
     """Compile the app root.
 
     Args:
@@ -596,55 +649,49 @@ def compile_page(path: str, component: BaseComponent) -> tuple[str, str]:
     return output_path, code
 
 
+def compile_page_from_context(page_ctx: PageContext) -> tuple[str, str]:
+    """Compile a single page from a collected page context.
+
+    Args:
+        page_ctx: The collected page context to render.
+
+    Returns:
+        The path and code of the compiled page.
+    """
+    output_path = utils.get_page_path(page_ctx.route)
+    imports = {
+        lib: list(fields)
+        for lib, fields in (
+            page_ctx.frontend_imports or page_ctx.merged_imports(collapse=True)
+        ).items()
+    }
+    _apply_common_imports(imports)
+
+    code = templates.page_template(
+        imports=utils.compile_imports(imports),
+        dynamic_imports=sorted(page_ctx.dynamic_imports),
+        custom_codes=page_ctx.custom_code_dict(),
+        hooks=page_ctx.hooks,
+        render=page_ctx.root_component.render(),
+    )
+    return output_path, code
+
+
 def compile_memo_components(
     components: Iterable[CustomComponent],
     experimental_memos: Iterable[ExperimentalMemoDefinition] = (),
-) -> tuple[str, str, dict[str, list[ImportVar]]]:
-    """Compile the custom components.
+) -> tuple[list[tuple[str, str]], dict[str, list[ImportVar]]]:
+    """Compile the custom components into one module per memo plus an index.
 
     Args:
         components: The custom components to compile.
         experimental_memos: The experimental memos to compile.
 
     Returns:
-        The path and code of the compiled components.
+        A list of ``(path, code)`` pairs (one per memo module and one index)
+        alongside the aggregated imports across all memo modules.
     """
-    # Get the path for the output file.
-    output_path = utils.get_components_path()
-
-    # Compile the components.
-    code, imports = _compile_memo_components(components, experimental_memos)
-    return output_path, code, imports
-
-
-def compile_stateful_components(
-    pages: Iterable[Component],
-    progress_function: Callable[[], None],
-) -> tuple[str, str, list[BaseComponent]]:
-    """Separately compile components that depend on State vars.
-
-    StatefulComponents are compiled as their own component functions with their own
-    useContext declarations, which allows page components to be stateless and avoid
-    re-rendering along with parts of the page that actually depend on state.
-
-    Args:
-        pages: The pages to extract stateful components from.
-        progress_function: A function to call to indicate progress, called once per page.
-
-    Returns:
-        The path and code of the compiled stateful components.
-    """
-    output_path = utils.get_stateful_components_path()
-
-    page_components = []
-    for page in pages:
-        # Compile the stateful components
-        page_component = StatefulComponent.compile_from(page) or page
-        progress_function()
-        page_components.append(page_component)
-
-    code = _compile_stateful_components(page_components) if is_prod_mode() else ""
-    return output_path, code, page_components
+    return _compile_memo_components(components, experimental_memos)
 
 
 def purge_web_pages_dir():
@@ -661,7 +708,7 @@ def purge_web_pages_dir():
 
 
 if TYPE_CHECKING:
-    from reflex.app import ComponentCallable, UnevaluatedPage
+    from reflex.app import App, ComponentCallable, UnevaluatedPage
 
 
 def _into_component_once(
@@ -871,82 +918,362 @@ def compile_unevaluated_page(
         return component
 
 
-class ExecutorSafeFunctions:
-    """Helper class to allow parallelisation of parts of the compilation process.
+def _resolve_app_wrap_components(
+    app: App,
+    page_app_wrap_components: dict[tuple[int, str], Component],
+) -> dict[tuple[int, str], Component]:
+    """Build the full app-wrap registry for compilation.
 
-    This class (and its class attributes) are available at global scope.
+    Args:
+        app: The app being compiled.
+        page_app_wrap_components: App-wrap components collected from pages.
 
-    In a multiprocessing context (like when using a ProcessPoolExecutor), the content of this
-    global class is logically replicated to any FORKED process.
-
-    How it works:
-    * Before the child process is forked, ensure that we stash any input data required by any future
-      function call in the child process.
-    * After the child process is forked, the child process will have a copy of the global class, which
-      includes the previously stashed input data.
-    * Any task submitted to the child process simply needs a way to communicate which input data the
-      requested function call requires.
-
-    Why do we need this? Passing input data directly to child process often not possible because the input data is not picklable.
-    The mechanic described here removes the need to pickle the input data at all.
-
-    Limitations:
-    * This can never support returning unpicklable OUTPUT data.
-    * Any object mutations done by the child process will not propagate back to the parent process (fork goes one way!).
-
+    Returns:
+        The merged app-wrap component registry.
     """
+    config = get_config()
 
-    COMPONENTS: dict[str, BaseComponent] = {}
-    UNCOMPILED_PAGES: dict[str, UnevaluatedPage] = {}
+    app_wrappers: dict[tuple[int, str], Component] = {
+        (0, "AppWrap"): AppWrap.create(),
+    }
+    app_wrappers.update(page_app_wrap_components)
 
-    @classmethod
-    def compile_page(cls, route: str) -> tuple[str, str]:
-        """Compile a page.
+    if config.react_strict_mode:
+        from reflex_components_core.base.strict_mode import StrictMode
 
-        Args:
-            route: The route of the page to compile.
+        app_wrappers[200, "StrictMode"] = StrictMode.create()
 
-        Returns:
-            The path and code of the compiled page.
-        """
-        return compile_page(route, cls.COMPONENTS[route])
+    if (toaster := app.toaster) is not None:
+        from reflex_base.components.component import memo
 
-    @classmethod
-    def compile_unevaluated_page(
-        cls,
-        route: str,
-        style: ComponentStyle,
-        theme: Component | None,
-    ) -> tuple[str, Component, tuple[str, str]]:
-        """Compile an unevaluated page.
+        @memo
+        def memoized_toast_provider():
+            return toaster
 
-        Args:
-            route: The route of the page to compile.
-            style: The style of the page.
-            theme: The theme of the page.
+        app_wrappers[44, "ToasterProvider"] = Fragment.create(memoized_toast_provider())
 
-        Returns:
-            The route, compiled component, and compiled page.
-        """
-        component = compile_unevaluated_page(
-            route, cls.UNCOMPILED_PAGES[route], style, theme
+    for wrap_mapping in (app.app_wraps, app.extra_app_wraps):
+        for key, app_wrap in wrap_mapping.items():
+            component = app_wrap(app._state is not None)
+            if component is not None:
+                app_wrappers[key] = component
+
+    return app_wrappers
+
+
+def _resolve_radix_themes_plugin(
+    app: App,
+    plugins: Sequence[Plugin],
+) -> tuple[tuple[Plugin, ...], RadixThemesPlugin]:
+    """Resolve the effective Radix Themes plugin for the active compile.
+
+    Returns:
+        The compiler plugin chain and the effective Radix Themes plugin.
+    """
+    explicit_plugin = next(
+        (plugin for plugin in plugins if isinstance(plugin, RadixThemesPlugin)),
+        None,
+    )
+    if explicit_plugin is not None:
+        radix_plugin = explicit_plugin
+        plugin_chain = tuple(plugins)
+    else:
+        radix_plugin = RadixThemesPlugin.create_implicit()
+        plugin_chain = (*plugins, radix_plugin)
+
+    if app.theme is not None:
+        radix_plugin.apply_app_theme(app.theme)
+
+    return plugin_chain, radix_plugin
+
+
+def compile_app(
+    app: App,
+    *,
+    prerender_routes: bool = False,
+    dry_run: bool = False,
+    use_rich: bool = True,
+) -> None:
+    """Compile an app using the compiler plugin pipeline."""
+    from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
+    from reflex_base.utils.exceptions import ReflexRuntimeError
+
+    app._apply_decorated_pages()
+    app._pages = {}
+
+    should_compile = app._should_compile()
+    backend_dir = prerequisites.get_backend_dir()
+    if not dry_run and not should_compile and backend_dir.exists():
+        stateful_pages_marker = backend_dir / constants.Dirs.STATEFUL_PAGES
+        if stateful_pages_marker.exists():
+            with stateful_pages_marker.open("r") as file:
+                stateful_pages = json.load(file)
+            for route in stateful_pages:
+                console.debug(f"BE Evaluating stateful page: {route}")
+                app._compile_page(route, save_page=False)
+        app._add_optional_endpoints()
+        return
+
+    if constants.Page404.SLUG not in app._unevaluated_pages:
+        app.add_page(route=constants.Page404.SLUG)
+
+    app.style = evaluate_style_namespaces(app.style)
+    config = get_config()
+
+    if not should_compile and not dry_run:
+        with console.timing("Evaluate Pages (Backend)"):
+            for route in app._unevaluated_pages:
+                console.debug(f"Evaluating page: {route}")
+                app._compile_page(route, save_page=False)
+
+        app._write_stateful_pages_marker()
+        app._add_optional_endpoints()
+        return
+
+    progress = (
+        Progress(
+            *Progress.get_default_columns()[:-1],
+            MofNCompleteColumn(),
+            TimeElapsedColumn(),
         )
-        return route, component, compile_page(route, component)
+        if use_rich
+        else console.PoorProgress()
+    )
+    fixed_steps = 7
+    compiler_plugins, radix_themes_plugin = _resolve_radix_themes_plugin(
+        app,
+        config.plugins,
+    )
+    reset_bundled_libraries()
+    for plugin in compiler_plugins:
+        for dependency in plugin.get_frontend_dependencies():
+            bundle_library(dependency)
+    base_total = (len(app._unevaluated_pages) * 2) + fixed_steps + len(config.plugins)
+    progress.start()
+    task = progress.add_task("Compiling:", total=base_total)
+    compile_ctx = CompileContext(
+        app=app,
+        pages=list(app._unevaluated_pages.values()),
+        hooks=CompilerHooks(
+            plugins=default_page_plugins(style=app.style, plugins=compiler_plugins)
+        ),
+    )
 
-    @classmethod
-    def compile_theme(cls, style: ComponentStyle | None) -> tuple[str, str]:
-        """Compile the theme.
+    with console.timing("Compile pages"), compile_ctx:
+        compile_ctx.compile(
+            evaluate_progress=lambda: progress.advance(task),
+            render_progress=lambda: progress.advance(task),
+        )
 
-        Args:
-            style: The style to compile.
+    for route, page_ctx in compile_ctx.compiled_pages.items():
+        app._check_routes_conflict(route)
+        if not isinstance(page_ctx.root_component, Component):
+            msg = (
+                f"Compiled page {route!r} root must be a Component before it can "
+                "be registered on the app."
+            )
+            raise TypeError(msg)
+        app._pages[route] = page_ctx.root_component
 
-        Returns:
-            The path and code of the compiled theme.
+    app._stateful_pages.update(compile_ctx.stateful_routes)
+    app._write_stateful_pages_marker()
+    app._add_optional_endpoints()
+    app._validate_var_dependencies()
 
-        Raises:
-            ValueError: If the style is not set.
-        """
-        if style is None:
-            msg = "STYLE should be set"
-            raise ValueError(msg)
-        return compile_theme(style)
+    if config.show_built_with_reflex is None:
+        if (
+            get_compile_context() == constants.CompileContext.DEPLOY
+            and prerequisites.get_user_tier() in ["pro", "team", "enterprise"]
+        ):
+            config.show_built_with_reflex = False
+        else:
+            config.show_built_with_reflex = True
+
+    if is_prod_mode() and config.show_built_with_reflex:
+        app._setup_sticky_badge()
+
+    progress.advance(task)
+
+    compile_results = [
+        (page_ctx.output_path, page_ctx.output_code)
+        for page_ctx in compile_ctx.compiled_pages.values()
+        if page_ctx.output_path is not None and page_ctx.output_code is not None
+    ]
+
+    # Reinitialize vite config in case runtime options have changed.
+    compile_results.append((
+        constants.ReactRouter.VITE_CONFIG_FILE,
+        frontend_skeleton._compile_vite_config(config),
+    ))
+
+    all_imports = compile_ctx.all_imports
+
+    if app._state is None and any(
+        code_uses_state_contexts(page_ctx.output_code or "")
+        for page_ctx in compile_ctx.compiled_pages.values()
+    ):
+        msg = (
+            "To access rx.State in frontend components, at least one "
+            "subclass of rx.State must be defined in the app."
+        )
+        raise ReflexRuntimeError(msg)
+    progress.advance(task)
+
+    app_wrappers = _resolve_app_wrap_components(app, compile_ctx.app_wrap_components)
+    app_root = app._app_root(app_wrappers)
+    all_imports = utils.merge_imports(all_imports, app_root._get_all_imports())
+
+    memo_component_files, memo_components_imports = compile_memo_components(
+        dict.fromkeys(CUSTOM_COMPONENTS.values()),
+        (
+            *tuple(EXPERIMENTAL_MEMOS.values()),
+            *tuple(compile_ctx.auto_memo_components.values()),
+        ),
+    )
+    compile_results.extend(memo_component_files)
+    all_imports = utils.merge_imports(all_imports, memo_components_imports)
+    progress.advance(task)
+
+    compile_results.append(
+        compile_document_root(
+            app.head_components,
+            html_lang=app.html_lang,
+            html_custom_attrs=(
+                {"suppressHydrationWarning": True, **app.html_custom_attrs}
+                if app.html_custom_attrs
+                else {"suppressHydrationWarning": True}
+            ),
+        )
+    )
+    progress.advance(task)
+
+    assets_src = Path.cwd() / constants.Dirs.APP_ASSETS
+    if assets_src.is_dir() and not dry_run:
+        with console.timing("Copy assets"):
+            path_ops.update_directory_tree(
+                src=assets_src,
+                dest=Path.cwd() / prerequisites.get_web_dir() / constants.Dirs.PUBLIC,
+            )
+
+    save_tasks: list[
+        tuple[
+            Callable[..., list[tuple[str, str]] | tuple[str, str] | None],
+            tuple[Any, ...],
+            dict[str, Any],
+        ]
+    ] = []
+    modify_files_tasks: list[tuple[str, str, Callable[[str], str]]] = []
+
+    def add_save_task(
+        task_fn: Callable[..., list[tuple[str, str]] | tuple[str, str] | None],
+        /,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
+        save_tasks.append((task_fn, args, kwargs))
+
+    for plugin in config.plugins:
+        plugin.pre_compile(
+            add_save_task=add_save_task,
+            add_modify_task=lambda *args, plugin=plugin: modify_files_tasks.append((
+                plugin.__class__.__module__ + plugin.__class__.__name__,
+                *args,
+            )),
+            radix_themes_plugin=radix_themes_plugin,
+            unevaluated_pages=list(app._unevaluated_pages.values()),
+        )
+
+    if save_tasks:
+        _set_progress_total(progress, task, base_total + len(save_tasks))
+
+    progress.advance(task, advance=len(config.plugins))
+
+    compile_results.append(
+        compile_root_stylesheet(
+            app.stylesheets,
+            app.reset_style,
+            plugins=compiler_plugins,
+        )
+    )
+    progress.advance(task)
+
+    compile_results.append(compile_theme(app.style))
+    progress.advance(task)
+
+    for task_fn, args, kwargs in save_tasks:
+        result = task_fn(*args, **kwargs)
+        if result is None:
+            progress.advance(task)
+            continue
+        if isinstance(result, list):
+            compile_results.extend(result)
+        else:
+            compile_results.append(result)
+        progress.advance(task)
+
+    compile_results.append(
+        compile_contexts(app._state, radix_themes_plugin.get_theme())
+    )
+    progress.advance(task)
+
+    compile_results.append(compile_app_root(app_root))
+    progress.advance(task)
+
+    progress.stop()
+
+    if dry_run:
+        return
+
+    with console.timing("Install Frontend Packages"):
+        app._get_frontend_packages(all_imports)
+
+    frontend_skeleton.update_react_router_config(
+        prerender_routes=prerender_routes,
+    )
+
+    if is_prod_mode():
+        purge_web_pages_dir()
+    else:
+        keep_files = [Path(output_path) for output_path, _ in compile_results]
+        for page_file in Path(
+            prerequisites.get_web_dir() / constants.Dirs.PAGES / constants.Dirs.ROUTES
+        ).rglob("*"):
+            if page_file.is_file() and page_file not in keep_files:
+                page_file.unlink()
+
+    output_mapping: dict[Path, str] = {}
+    for output_path, code in compile_results:
+        path = utils.resolve_path_of_web_dir(output_path)
+        if path in output_mapping:
+            console.warn(
+                f"Path {path} has two different outputs. The first one will be used."
+            )
+        else:
+            output_mapping[path] = code
+
+    for plugin in config.plugins:
+        for static_file_path, content in plugin.get_static_assets():
+            path = utils.resolve_path_of_web_dir(static_file_path)
+            if path in output_mapping:
+                console.warn(
+                    f"Plugin {plugin.__class__.__name__} is trying to write to {path} but it already exists. The plugin file will be ignored."
+                )
+            else:
+                output_mapping[path] = (
+                    content.decode("utf-8") if isinstance(content, bytes) else content
+                )
+
+    for plugin_name, file_path, modify_fn in modify_files_tasks:
+        path = utils.resolve_path_of_web_dir(file_path)
+        file_content = output_mapping.get(path)
+        if file_content is None:
+            if path.exists():
+                file_content = path.read_text()
+            else:
+                msg = f"Plugin {plugin_name} is trying to modify {path} but it does not exist."
+                raise FileNotFoundError(msg)
+        output_mapping[path] = modify_fn(file_content)
+
+    with console.timing("Write to Disk"):
+        for output_path, code in output_mapping.items():
+            utils.write_file(output_path, code)

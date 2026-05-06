@@ -5,6 +5,37 @@ from reflex_site_shared.components.icons import get_icon
 from reflex_docs.templates.docpage import docpage, h1_comp, text_comp_2
 
 
+def get_display_name(name: str) -> str:
+    normalized = to_snake_case(name)
+    if normalized == "html":
+        return "HTML"
+    if normalized == "svg":
+        return "SVG"
+    return to_title_case(normalized, sep=" ")
+
+
+HTML_COMPONENT_ORDER = {
+    "html": 0,
+    "text": 1,
+    "layout": 2,
+    "forms": 3,
+    "media": 4,
+    "tables": 5,
+    "svg": 6,
+}
+
+
+def get_components_for_category(category: str, components: list) -> list:
+    if to_snake_case(category) != "html":
+        return components
+    return sorted(
+        components,
+        key=lambda component: HTML_COMPONENT_ORDER.get(
+            to_snake_case(component[0]), len(HTML_COMPONENT_ORDER)
+        ),
+    )
+
+
 def component_grid():
     from reflex_docs.pages.docs import component_list, graphing_components
     from reflex_docs.templates.docpage.sidebar.sidebar_items import get_component_link
@@ -17,7 +48,7 @@ def component_grid():
             rx.box(
                 rx.link(
                     rx.el.h1(
-                        to_title_case(to_snake_case(category), sep=" "),
+                        get_display_name(category),
                         class_name="font-large text-slate-12",
                     ),
                     get_icon("new_tab", class_name="text-slate-11 [&>svg]:size-4"),
@@ -28,7 +59,7 @@ def component_grid():
                 rx.box(
                     *[
                         rx.link(
-                            to_title_case(to_snake_case(c[0]), sep=" "),
+                            get_display_name(c[0]),
                             href=get_component_link(
                                 category=category,
                                 clist=c,
@@ -36,7 +67,9 @@ def component_grid():
                             ),
                             class_name="font-small text-slate-11 hover:!text-violet-9 transition-color w-fit",
                         )
-                        for c in components[category]
+                        for c in get_components_for_category(
+                            category, components[category]
+                        )
                     ],
                     class_name="flex flex-col gap-2.5 px-4 py-2 border-t border-slate-5",
                 ),

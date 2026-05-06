@@ -12,7 +12,6 @@ from reflex_base import constants
 from reflex_base.environment import (
     EnvironmentVariables,
     EnvVar,
-    ExecutorType,
     ExistingPath,
     PerformanceMode,
     SequenceOptions,
@@ -406,47 +405,6 @@ class TestEnvVarDescriptor:
         assert isinstance(env_var_instance, EnvVar)
         assert env_var_instance.name == "__INTERNAL_VAR"
         assert env_var_instance.default == "default"
-
-
-class TestExecutorType:
-    """Test the ExecutorType enum and related functionality."""
-
-    def test_executor_type_values(self):
-        """Test ExecutorType enum values."""
-        assert ExecutorType.THREAD.value == "thread"
-        assert ExecutorType.PROCESS.value == "process"
-        assert ExecutorType.MAIN_THREAD.value == "main_thread"
-
-    def test_get_executor_main_thread_mode(self):
-        """Test executor selection in main thread mode."""
-        with (
-            patch.object(
-                environment.REFLEX_COMPILE_EXECUTOR,
-                "get",
-                return_value=ExecutorType.MAIN_THREAD,
-            ),
-            patch.object(
-                environment.REFLEX_COMPILE_PROCESSES, "get", return_value=None
-            ),
-            patch.object(environment.REFLEX_COMPILE_THREADS, "get", return_value=None),
-        ):
-            executor = ExecutorType.get_executor_from_environment()
-
-            # Test the main thread executor functionality
-            with executor:
-                future = executor.submit(lambda x: x * 2, 5)
-                assert future.result() == 10
-
-    def test_get_executor_returns_executor(self):
-        """Test that get_executor_from_environment returns an executor."""
-        # Test with default values - should return some kind of executor
-        executor = ExecutorType.get_executor_from_environment()
-        assert executor is not None
-
-        # Test that we can use it as a context manager
-        with executor:
-            future = executor.submit(lambda: "test")
-            assert future.result() == "test"
 
 
 class TestUtilityFunctions:

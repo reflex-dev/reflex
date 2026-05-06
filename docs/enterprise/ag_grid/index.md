@@ -629,6 +629,7 @@ It is also possible to use the AG Grid API directly with the event trigger (`on_
 ```python
 rx.button("Select all", on_click=rxe.ag_grid.api(id="ag_grid_basic_row_selection").select_all()),
 ```
+```
 
 ### More examples
 
@@ -640,9 +641,7 @@ import reflex as rx
 import reflex_enterprise as rxe
 import pandas as pd
 
-df = pd.read_csv(
-    "data/gapminder2007.csv"
-)
+df = pd.read_csv("data/gapminder2007.csv")
 
 column_defs = [
     {"field": "country", "checkboxSelection": True},
@@ -650,10 +649,11 @@ column_defs = [
     {"field": "continent"},
 ]
 
+
 def ag_grid_api_simple2():
     my_api = rxe.ag_grid.api(id="ag_grid_export_and_resize")
     return rx.vstack(
-            rxe.ag_grid(
+        rxe.ag_grid(
             id="ag_grid_export_and_resize",
             row_data=df.to_dict("records"),
             column_defs=column_defs,
@@ -685,19 +685,20 @@ import reflex as rx
 import reflex_enterprise as rxe
 import pandas as pd
 
+
 class AGGridStateAPI(rx.State):
     def handle_get_data(self, data: str):
         yield rx.toast(f"Got CSV data: {data}")
 
-df = pd.read_csv(
-    "data/gapminder2007.csv"
-)
+
+df = pd.read_csv("data/gapminder2007.csv")
 
 column_defs = [
     {"field": "country", "checkboxSelection": True},
     {"field": "pop"},
     {"field": "continent"},
 ]
+
 
 def ag_grid_api_argument():
     my_api = rxe.ag_grid.api(id="ag_grid_get_data_as_csv")
@@ -709,7 +710,10 @@ def ag_grid_api_argument():
             width="100%",
             height="40vh",
         ),
-        rx.button("Get CSV data on backend", on_click=my_api.get_data_as_csv(callback=AGGridStateAPI.handle_get_data)),
+        rx.button(
+            "Get CSV data on backend",
+            on_click=my_api.get_data_as_csv(callback=AGGridStateAPI.handle_get_data),
+        ),
         spacing="4",
         width="100%",
     )

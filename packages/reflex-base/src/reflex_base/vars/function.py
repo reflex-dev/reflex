@@ -385,11 +385,10 @@ class DestructuredArg:
         Returns:
             The destructured argument in JavaScript.
         """
-        return format.wrap(
-            ", ".join(self.fields) + (f", ...{self.rest}" if self.rest else ""),
-            "{",
-            "}",
-        )
+        inner = ", ".join(self.fields)
+        if self.rest:
+            inner = f"{inner}, ...{self.rest}" if inner else f"...{self.rest}"
+        return format.wrap(inner, "{", "}")
 
 
 @dataclasses.dataclass(

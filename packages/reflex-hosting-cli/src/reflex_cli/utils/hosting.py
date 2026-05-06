@@ -216,16 +216,15 @@ class ScaleParams:
             dict: The object as a dictionary.
 
         """
-        if self.type is None:
-            self.type = ScaleType.REGION
+        effective_type = self.type or ScaleType.REGION
         return (
             {
-                "type": str(self.type.value),
+                "type": str(effective_type.value),
                 "size": self.vm_type,
             }
-            if self.type == ScaleType.SIZE
+            if effective_type == ScaleType.SIZE
             else {
-                "type": str(self.type.value),
+                "type": str(effective_type.value),
                 "regions": {
                     region["name"]: region["number_of_machines"]
                     for region in self.regions

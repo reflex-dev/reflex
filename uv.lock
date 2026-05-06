@@ -3885,6 +3885,7 @@ dependencies = [
     { name = "pyyaml" },
     { name = "reflex" },
     { name = "reflex-components-internal" },
+    { name = "reflex-integrations-docs" },
     { name = "ruff-format" },
 ]
 
@@ -3895,6 +3896,7 @@ requires-dist = [
     { name = "pyyaml" },
     { name = "reflex", editable = "." },
     { name = "reflex-components-internal", editable = "packages/reflex-components-internal" },
+    { name = "reflex-integrations-docs", editable = "packages/integrations-docs" },
     { name = "ruff-format" },
 ]
 

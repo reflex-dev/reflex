@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, TypeVar, overload
 
 from reflex_base.components.component import BaseComponent, Component, field
+from reflex_base.components.memoize_helpers import passthrough_children_var
 from reflex_base.components.tags import CondTag, Tag
 from reflex_base.constants import Dirs
 from reflex_base.style import LIGHT_COLOR_MODE, resolved_color_mode
@@ -14,6 +15,7 @@ from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.number import ternary_operation
 
+from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
 
 _IS_TRUE_IMPORT: ImportDict = {
@@ -25,6 +27,28 @@ class Cond(Component):
     """Render one of two components based on a condition."""
 
     cond: Var[Any] = field(doc="The cond to determine which component to render.")
+
+    def _get_cond_children(self) -> tuple[BaseComponent, BaseComponent]:
+        """Get true and false branch components with safe defaults.
+
+        When rendering inside an auto-memo passthrough body, ``self.children``
+        is collapsed to a single ``Bare`` holding the placeholder ``children``
+        Var. The branches are reconstructed as indexed accesses
+        (``children[0]`` / ``children[1]``) so the page-side renders the real
+        branch JSX and the memo body just selects which one to mount.
+
+        Returns:
+            A tuple containing true and false branch components.
+        """
+        children_var = passthrough_children_var(self.children)
+        if children_var is not None:
+            return (
+                Bare.create(children_var[0]),
+                Bare.create(children_var[1]),
+            )
+        true_child = self.children[0] if self.children else Fragment.create()
+        false_child = self.children[1] if len(self.children) > 1 else Fragment.create()
+        return true_child, false_child
 
     @classmethod
     def create(
@@ -60,10 +84,11 @@ class Cond(Component):
         )
 
     def _render(self) -> Tag:
+        true_child, false_child = self._get_cond_children()
         return CondTag(
             cond_state=str(self.cond),
-            true_value=self.children[0].render(),
-            false_value=self.children[1].render(),
+            true_value=true_child.render(),
+            false_value=false_child.render(),
         )
 
     def render(self) -> dict:
@@ -72,10 +97,11 @@ class Cond(Component):
         Returns:
             The dictionary for template of component.
         """
+        true_child, false_child = self._get_cond_children()
         return {
             "cond_state": str(self.cond),
-            "true_value": self.children[0].render(),
-            "false_value": self.children[1].render(),
+            "true_value": true_child.render(),
+            "false_value": false_child.render(),
         }
 
     def add_imports(self) -> ImportDict:

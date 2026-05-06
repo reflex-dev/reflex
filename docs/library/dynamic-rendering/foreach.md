@@ -1,3 +1,8 @@
+---
+components:
+  - rx.foreach
+---
+
 ```python exec
 import reflex as rx
 ```

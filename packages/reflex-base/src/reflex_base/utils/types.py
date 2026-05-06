@@ -845,7 +845,7 @@ def is_backend_base_variable(name: str, cls: type[BaseState]) -> bool:
     if name in cls.inherited_backend_vars:
         return False
 
-    from reflex_base.vars.base import is_computed_var
+    from reflex_base.vars.base import Field, Var, is_computed_var
 
     if name in cls.__dict__:
         value = cls.__dict__[name]
@@ -862,6 +862,12 @@ def is_backend_base_variable(name: str, cls: type[BaseState]) -> bool:
                 cached_property,
             ),
         ) or is_computed_var(value):
+            return False
+
+        # Custom descriptors should be invoked via their __get__/__set__
+        # rather than shadowed by backend var storage. Field/Var define
+        # __get__ for type-checking but are not user descriptors.
+        if hasattr(type(value), "__get__") and not isinstance(value, (Field, Var)):
             return False
 
     return True

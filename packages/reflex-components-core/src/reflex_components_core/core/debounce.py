@@ -7,6 +7,7 @@ from typing import Any
 from reflex_base.components.component import Component, field
 from reflex_base.constants import EventTriggers
 from reflex_base.event import EventHandler, no_args_event_spec
+from reflex_base.utils import format
 from reflex_base.vars import VarData
 from reflex_base.vars.base import Var
 
@@ -106,7 +107,15 @@ class DebounceInput(Component):
         }
         props.setdefault("custom_attrs", {}).update(other_props, **child.custom_attrs)
 
-        # Carry base Component props.
+        # Carry base Component props. Drop any keys from child.style that
+        # collide with DebounceInput's own props — Reflex routes unknown child
+        # kwargs (e.g. ``debounce_timeout`` passed through ``rx.input``) into
+        # ``style``.
+        debounce_input_prop_names = {
+            format.to_camel_case(prop) for prop in cls.get_props()
+        }
+        for colliding_key in [k for k in child.style if k in debounce_input_prop_names]:
+            child.style.pop(colliding_key)
         props.setdefault("style", {}).update(child.style)
         if child.class_name is not None:
             props["class_name"] = f"{props.get('class_name', '')} {child.class_name}"

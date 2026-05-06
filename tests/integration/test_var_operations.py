@@ -31,6 +31,7 @@ def VarOperations():
         int_var1: rx.Field[int] = rx.field(10)
         int_var2: rx.Field[int] = rx.field(5)
         int_var3: rx.Field[int] = rx.field(7)
+        match_selector: rx.Field[int] = rx.field(2)
         float_var1: rx.Field[float] = rx.field(10.5)
         float_var2: rx.Field[float] = rx.field(5.5)
         long_float: rx.Field[float] = rx.field(13212312312.1231231)
@@ -660,6 +661,17 @@ def VarOperations():
                 ),
                 id="foreach_in_match",
             ),
+            # stateful component branches in a match
+            rx.box(
+                rx.match(
+                    VarOperationState.match_selector,
+                    (0, rx.text(VarOperationState.int_var1 + 1)),
+                    (1, rx.text(VarOperationState.int_var2 + 2)),
+                    (2, rx.text(VarOperationState.str_var1.upper())),
+                    rx.text(VarOperationState.list3.length()),
+                ),
+                id="stateful_match_three_cases",
+            ),
             # Literal range var in a foreach
             rx.box(rx.foreach(range(42, 80, 27), rx.text.span), id="range_in_foreach1"),
             rx.box(rx.foreach(range(42, 80, 3), rx.text.span), id="range_in_foreach2"),
@@ -993,6 +1005,8 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("obj_length", "3"),
         # foreach in a match
         ("foreach_in_match", "first\nsecond\nthird"),
+        # stateful branch components in a match
+        ("stateful_match_three_cases", "FIRST"),
         # literal range in a foreach
         ("range_in_foreach1", "4269"),
         ("range_in_foreach2", "42454851545760636669727578"),

@@ -4,9 +4,9 @@ import reflex as rx
 
 # Rendering Iterables
 
-Recall again from the [basics](/docs/getting_started/basics) that we cannot use Python `for` loops when referencing state vars in Reflex. Instead, use the `rx.foreach` component to render components from a collection of data.
+Recall again from the [basics](/docs/getting-started/basics) that we cannot use Python `for` loops when referencing state vars in Reflex. Instead, use the `rx.foreach` component to render components from a collection of data.
 
-For dynamic content that should automatically scroll to show the newest items, consider using the [auto scroll](/docs/library/dynamic-rendering/auto_scroll) component together with `rx.foreach`.
+For dynamic content that should automatically scroll to show the newest items, consider using the [auto scroll](/docs/library/dynamic-rendering/auto-scroll) component together with `rx.foreach`.
 
 ```python demo exec
 class IterState(rx.State):

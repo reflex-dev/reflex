@@ -29,7 +29,7 @@ from reflex_base.vars.number import ternary_operation
 
 from reflex_components_core.el.element import Element
 
-from .base import BaseHTML
+from .base import BaseHTML, RawTextBaseHTML, VoidBaseHTML
 
 
 def _handle_submit_js_template(
@@ -305,7 +305,7 @@ HTMLInputTypeAttribute = Literal[
 ]
 
 
-class BaseInput(BaseHTML):
+class BaseInput(VoidBaseHTML):
     """A base class for input elements."""
 
     tag = "input"
@@ -652,7 +652,7 @@ const enterKeySubmitOnKeyDown = (e, is_enabled) => {
 """
 
 
-class Textarea(BaseHTML):
+class Textarea(RawTextBaseHTML):
     """Display the textarea element."""
 
     tag = "textarea"
