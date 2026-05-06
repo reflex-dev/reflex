@@ -466,8 +466,15 @@ def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
     return (state_full_name, ctx.get_handler_name(handler.state, func_name))
 
 
+_FORMATTED_NAME_CACHE_ATTR = "_formatted_name"
+
+
 def format_event_handler(handler: EventHandler) -> str:
     """Format an event handler.
+
+    Cached on the handler instance under ``_formatted_name`` to skip the
+    registry/resolver dispatch on every event. The cache is invalidated by
+    :meth:`reflex_base.registry.RegistrationContext.set_name_resolver`.
 
     Args:
         handler: The event handler to format.
@@ -475,10 +482,13 @@ def format_event_handler(handler: EventHandler) -> str:
     Returns:
         The formatted function.
     """
+    cached = handler.__dict__.get(_FORMATTED_NAME_CACHE_ATTR)
+    if cached is not None:
+        return cached
     state, name = get_event_handler_parts(handler)
-    if state == "":
-        return name
-    return f"{state}.{name}"
+    full = name if state == "" else f"{state}.{name}"
+    object.__setattr__(handler, _FORMATTED_NAME_CACHE_ATTR, full)
+    return full
 
 
 def format_event(event_spec: EventSpec) -> str:
