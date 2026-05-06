@@ -30,3 +30,16 @@ def test_unique_routes(routes_fixture):
     assert len(duplicates) == 0, f"Duplicate routes found: {duplicates}"
 
     print(f"Test passed. All {len(paths)} routes are unique.")
+
+
+def test_ai_builder_routes_use_ai_prefix(routes_fixture):
+    paths = {route.path for route in routes_fixture if route.path}
+
+    assert "/ai/overview/best-practices/" in paths
+    assert "/ai/integrations/ai-onboarding/" in paths
+    assert "/ai/integrations/mcp-overview/" in paths
+    assert "/ai/integrations/skills/" in paths
+    assert "/ai-builder/overview/best-practices/" not in paths
+    assert "/ai-builder/integrations/ai-onboarding/" not in paths
+    assert "/ai-builder/integrations/mcp-overview/" not in paths
+    assert "/ai-builder/integrations/skills/" not in paths

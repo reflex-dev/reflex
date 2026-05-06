@@ -2,6 +2,22 @@
 components:
   - rx.segmented_control.root
   - rx.segmented_control.item
+
+SegmentedControlRoot: |
+  lambda **props: rx.segmented_control.root(
+      rx.segmented_control.item("Inbox", value="inbox"),
+      rx.segmented_control.item("Drafts", value="drafts"),
+      rx.segmented_control.item("Sent", value="sent"),
+      default_value="inbox",
+      **props,
+  )
+
+SegmentedControlItem: |
+  lambda **props: rx.segmented_control.root(
+      rx.segmented_control.item("Inbox", value="inbox", **props),
+      rx.segmented_control.item("Drafts", value="drafts"),
+      default_value="inbox",
+  )
 ---
 
 ```python exec

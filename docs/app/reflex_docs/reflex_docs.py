@@ -17,6 +17,21 @@ from reflex_docs.whitelist import _check_whitelisted_path
 # This number discovered by trial and error on Windows 11 w/ Node 18, any
 # higher and the prod build fails with EMFILE error.
 WINDOWS_MAX_ROUTES = int(os.environ.get("REFLEX_WEB_WINDOWS_MAX_ROUTES", "100"))
+LLMS_TXT_PATH = "/llms.txt"
+
+
+def _llms_txt_directive() -> rx.Component:
+    """Return the agent-facing docs index directive."""
+    return rx.el.blockquote(
+        rx.el.span("For AI agents: the complete documentation index is at "),
+        rx.el.a("llms.txt", href=LLMS_TXT_PATH),
+        rx.el.span(
+            ". Markdown versions are available by appending .md or sending "
+            "Accept: text/markdown."
+        ),
+        class_name="sr-only",
+    )
+
 
 # Create the app.
 app = rxe.App(
@@ -24,6 +39,7 @@ app = rxe.App(
     stylesheets=styles.STYLESHEETS,
     app_wraps={},
     theme=rx.theme(
+        _llms_txt_directive(),
         has_background=True,
         radius="large",
         accent_color="violet",
@@ -92,8 +108,12 @@ for route in routes:
         # Call add_page with the dynamically constructed arguments
         app.add_page(**page_args)
 
-# Add redirects
-redirects = []
+# Add redirects.
+redirects = [
+    (route.path.replace("/ai/", "/ai-builder/", 1), route.path)
+    for route in routes
+    if route.path.startswith("/ai/")
+]
 
 
 def _redirect_page():

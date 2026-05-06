@@ -151,7 +151,7 @@ class Customer(rx.Model, table=True):
 
 A semantic table for presenting tabular data.
 
-If you just want to [represent static data](/docs/library/tables-and-data-grids/data_table) then the [`rx.data_table`](/docs/library/tables-and-data-grids/data_table) might be a better fit for your use case as it comes with in-built pagination, search and sorting.
+If you just want to [represent static data](/docs/library/tables-and-data-grids/data-table) then the [`rx.data_table`](/docs/library/tables-and-data-grids/data-table) might be a better fit for your use case as it comes with in-built pagination, search and sorting.
 
 ## Basic Example
 
@@ -193,7 +193,7 @@ rx.table.root(
 
 Many times there is a need for the data we represent in our table to be dynamic. Dynamic data must be in `State`. Later we will show an example of how to access data from a database and how to load data from a source file.
 
-In this example there is a `people` data structure in `State` that is [iterated through using `rx.foreach`](/docs/components/rendering_iterables).
+In this example there is a `people` data structure in `State` that is [iterated through using `rx.foreach`](/docs/components/rendering-iterables).
 
 ```python demo exec
 class TableForEachState(rx.State):

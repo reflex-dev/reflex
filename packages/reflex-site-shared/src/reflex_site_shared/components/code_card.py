@@ -134,7 +134,7 @@ def gallery_app_card(app: dict[str, str]) -> rx.Component:
     slug = re.sub(r"[\s_]+", "-", app["title"]).lower()
     return rx.flex(
         rx.box(
-            rx.link(
+            rx.el.elements.a(
                 rx.image(
                     src=app["image"],
                     loading="lazy",

@@ -5,8 +5,9 @@ import re
 import reflex_components_internal as ui
 
 import reflex as rx
-from reflex_site_shared.constants import INTEGRATIONS_IMAGES_URL, REFLEX_ASSETS_CDN
+from reflex_site_shared.constants import REFLEX_ASSETS_CDN
 from reflex_site_shared.gallery.r_svg_loader import r_svg_loader
+from reflex_site_shared.integrations import get_integration_logo_url
 from reflex_site_shared.utils.md import MarkdownDocument, get_md_files
 
 REFLEX_BUILD_TEMPLATES_PATH = "reflex_build_templates/"
@@ -93,12 +94,11 @@ def integration_image(integration: str, class_name: str = ""):
     Returns:
         The component.
     """
-    integration_logo = integration.replace(" ", "_").lower()
     return ui.avatar.root(
         ui.avatar.image(
             src=rx.color_mode_cond(
-                f"{INTEGRATIONS_IMAGES_URL}light/{integration_logo}.svg",
-                f"{INTEGRATIONS_IMAGES_URL}dark/{integration_logo}.svg",
+                get_integration_logo_url(integration, "light"),
+                get_integration_logo_url(integration, "dark"),
             ),
             unstyled=True,
             class_name="size-full",
