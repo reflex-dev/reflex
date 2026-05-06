@@ -2565,7 +2565,8 @@ def render_dict_to_var(tag: dict[str, Any] | Component | str) -> Var:
 
     if "iterable" in tag:
         function_return = LiteralArrayVar.create([
-            render_dict_to_var(child.render()) for child in tag["children"]  # ty:ignore[invalid-argument-type, not-iterable]
+            render_dict_to_var(child.render())
+            for child in tag["children"]  # ty:ignore[invalid-argument-type, not-iterable]
         ])
 
         func = ArgsFunctionOperation.create(
