@@ -1548,7 +1548,7 @@ def test_cached_var_depends_on_event_handler(use_partial: bool):
             return counter
 
     if use_partial:
-        HandlerState.handler = functools.partial(HandlerState.handler.fn)  # ty:ignore[invalid-assignment, unresolved-attribute]
+        HandlerState.handler = functools.partial(HandlerState.handler.fn)  # ty:ignore[unresolved-attribute]
         assert isinstance(HandlerState.handler, functools.partial)
     else:
         assert isinstance(HandlerState.handler, EventHandler)
