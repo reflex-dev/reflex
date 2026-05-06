@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-import reflex as rx
-
 
 @dataclass(kw_only=True)
 class SideBarBase:
@@ -36,45 +34,3 @@ class SideBarSection(SideBarBase):
     """A section in the sidebar."""
 
     ...
-
-
-class SidebarState(rx.State):
-    _sidebar_index: int = -1
-
-    @rx.event(temporal=True)
-    def set_sidebar_index(self, num) -> int:
-        self._sidebar_index = num
-
-    @rx.var(initial_value=-1)
-    def sidebar_index(self) -> int:
-        route = self.router.url.path
-        if route.startswith((
-            "/docs/ai/integrations/ai-onboarding",
-            "/ai/integrations/ai-onboarding",
-        )):
-            return 1
-        if route.startswith((
-            "/docs/ai/integrations/skills",
-            "/ai/integrations/skills",
-        )):
-            return 1
-        if route.startswith(("/docs/ai/integrations/mcp", "/ai/integrations/mcp")):
-            return 1
-        if route.startswith(("/docs/ai/", "/ai/")):
-            return 0
-        if self._sidebar_index < 0:
-            if "library" in route:
-                return 1
-            elif "hosting" in route:
-                return 0
-            elif "api-reference" in route:
-                return 2
-            elif "enterprise" in route:
-                return 3
-            elif "/mcp-" in route:
-                return 1
-            else:
-                return 0
-        if "hosting" in route:
-            return 0
-        return self._sidebar_index

@@ -16,7 +16,7 @@ app = rx.App(
 
 ## Local Stylesheets
 
-You can also add local stylesheets. Just put the stylesheet under [`assets/`](/docs/assets/upload_and_download_files) and pass the path to the stylesheet to `rx.App`:
+You can also add local stylesheets. Just put the stylesheet under [`assets/`](/docs/assets/upload-and-download-files) and pass the path to the stylesheet to `rx.App`:
 
 ```python
 app = rx.App(

@@ -19,7 +19,6 @@ from reflex_base.utils.exceptions import StateValueError
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
-    from reflex_base.components.component import StatefulComponent
     from reflex_base.event import EventHandler
 
 _T = TypeVar("_T")
@@ -109,10 +108,6 @@ class RegistrationContext(BaseContext):
         repr=False,
     )
     base_state_substates: dict[str, set[type[BaseState]]] = dataclasses.field(
-        default_factory=dict,
-        repr=False,
-    )
-    tag_to_stateful_component: dict[str, StatefulComponent] = dataclasses.field(
         default_factory=dict,
         repr=False,
     )

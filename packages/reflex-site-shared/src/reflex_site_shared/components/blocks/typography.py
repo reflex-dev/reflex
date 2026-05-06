@@ -110,12 +110,11 @@ def doclink(text: str, href: str, **props) -> rx.Component:
     Returns:
         The styled link.
     """
-    return rx.link(
+    return rx.el.elements.a(
         text,
-        underline="always",
         href=href,
         **props,
-        class_name="!text-m-slate-12 dark:!text-m-slate-3 !decoration-m-slate-12 dark:!decoration-m-slate-3",
+        class_name="text-m-slate-12 dark:text-m-slate-3 decoration-m-slate-12 dark:decoration-m-slate-3 underline",
     )
 
 
@@ -130,10 +129,9 @@ def doclink2(text: str, **props) -> rx.Component:
     Returns:
         The styled link.
     """
-    return rx.link(
+    return rx.el.elements.a(
         text,
-        underline="always",
         **props,
         style=fonts.base,
-        class_name="!text-m-slate-12 dark:!text-m-slate-3 !decoration-m-slate-12 dark:!decoration-m-slate-3",
+        class_name="text-m-slate-12 dark:text-m-slate-3 decoration-m-slate-12 dark:decoration-m-slate-3 underline",
     )

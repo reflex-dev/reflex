@@ -134,7 +134,7 @@ class LifespanMixin(AppMixin):
         # Flush any pending writes from the state manager.
         try:
             state_manager = self.state_manager  # pyright: ignore[reportAttributeAccessIssue]
-        except AttributeError:
+        except (AttributeError, ValueError):
             pass
         else:
             await state_manager.close()
