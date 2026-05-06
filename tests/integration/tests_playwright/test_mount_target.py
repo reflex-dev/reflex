@@ -23,9 +23,6 @@ from reflex.utils.prerequisites import get_web_dir
 def MountTargetApp():
     import reflex as rx
 
-    config = rx.config.get_config()
-    config.plugins = [rx.plugins.EmbedPlugin(mount_target="#reflex-root")]
-
     class S(rx.State):
         n: int = 0
         last_loaded_path: str = ""
@@ -71,6 +68,11 @@ def MountTargetApp():
 
     app = rx.App()
     app.add_page(index)
+
+    # Set plugins after rx.App() because App.__post_init__ reloads the config
+    # from rxconfig.py and would wipe any earlier mutation.
+    config = rx.config.get_config()
+    config.plugins = [rx.plugins.EmbedPlugin(mount_target="#reflex-root")]
 
 
 @pytest.fixture(scope="module")
