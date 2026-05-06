@@ -112,33 +112,16 @@ def _extract_markdown_title(source: str) -> str | None:
 
 def _llms_url_for_path(url_path: Path) -> str:
     """Return the public URL for a generated markdown asset."""
-    from reflex_base.config import get_config
+    from reflex_site_shared.utils.url import public_url
 
-    config = get_config()
-    deploy_url = config.deploy_url.removesuffix("/") if config.deploy_url else ""
-    frontend_path = (config.frontend_path or "").strip("/")
-    base_url = deploy_url
-    if frontend_path:
-        base_url = f"{base_url}/{frontend_path}" if base_url else f"/{frontend_path}"
-    return (
-        f"{base_url}/{url_path.as_posix()}" if base_url else f"/{url_path.as_posix()}"
-    )
+    return public_url(f"/{url_path.as_posix()}")
 
 
 def _docs_home_url() -> str:
     """Return the public URL for the docs home."""
-    from reflex_base.config import get_config
+    from reflex_site_shared.utils.url import public_url
 
-    config = get_config()
-    deploy_url = config.deploy_url.removesuffix("/") if config.deploy_url else ""
-    frontend_path = (config.frontend_path or "").strip("/")
-    if deploy_url and frontend_path:
-        return f"{deploy_url}/{frontend_path}/"
-    if deploy_url:
-        return f"{deploy_url}/"
-    if frontend_path:
-        return f"/{frontend_path}/"
-    return "/"
+    return public_url("/")
 
 
 def _strip_first_heading(source: str) -> str:

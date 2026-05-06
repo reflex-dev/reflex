@@ -687,6 +687,8 @@ def docpage(
     right_sidebar: bool = True,
     page_title: str | None = None,
     pseudo_right_bar: bool = False,
+    description: str | None = None,
+    image: str | None = None,
 ):
     """A template that most pages on the reflex.dev site should use.
 
@@ -698,6 +700,8 @@ def docpage(
         right_sidebar: Whether to show the right sidebar.
         page_title: The full title to set for the page. If None, defaults to `{title} · Reflex Docs`.
         pseudo_right_bar: Whether to show a pseudo right sidebar (empty space).
+        description: SEO meta description for the page.
+        image: Social-preview image (relative path or absolute URL).
 
     Returns:
         A wrapper function that returns the full webpage.
@@ -941,15 +945,14 @@ def docpage(
             if len(components) > 2
             else None
         )
-        if page_title:
-            return Route(
-                path=path,
-                title=page_title,
-                component=wrapper,
-            )
+        resolved_title = page_title or (
+            f"{title} · Reflex Docs" if category is None else title
+        )
         return Route(
             path=path,
-            title=f"{title} · Reflex Docs" if category is None else title,
+            title=resolved_title,
+            description=description,
+            image=image,
             component=wrapper,
         )
 
