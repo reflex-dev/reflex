@@ -55,6 +55,28 @@ class IntroTabsState(rx.State):
         self.value = val
 
 
+def counter_code_section(code: str, tab: str) -> rx.Component:
+    active = IntroTabsState.value == tab
+    return rx.box(
+        rx.code_block(
+            code,
+            class_name="code-block counter-code-block",
+        ),
+        background=rx.cond(active, "var(--c-violet-3)", "transparent"),
+        border_left=rx.cond(
+            active,
+            "3px solid var(--c-violet-9)",
+            "3px solid transparent",
+        ),
+        padding="0.875rem 1.5rem",
+        class_name="w-full transition-colors",
+    )
+
+
+def counter_code_gap() -> rx.Component:
+    return rx.box(height="0.875rem", flex_shrink="0")
+
+
 def tabs():
     return rx.tabs.root(
         rx.tabs.list(
@@ -117,13 +139,11 @@ Here is the full code for this example:
 tabs()
 ```
 
-```python demo box
+```python eval
 rx.box(
-    rx.code_block(
-        """import reflex as rx """,
-        class_name="code-block !bg-transparent !border-none",
-    ),
-    rx.code_block(
+    counter_code_section("""import reflex as rx """, ""),
+    counter_code_gap(),
+    counter_code_section(
         """class State(rx.State):
     count: int = 0
 
@@ -134,19 +154,10 @@ rx.box(
     @rx.event
     def decrement(self):
         self.count -= 1""",
-        background=rx.cond(
-            IntroTabsState.value == "tab2",
-            "var(--c-slate-3) !important",
-            "transparent",
-        ),
-        border=rx.cond(
-            IntroTabsState.value == "tab2",
-            "1px solid var(--c-slate-5)",
-            "none !important",
-        ),
-        class_name="code-block",
+        "tab2",
     ),
-    rx.code_block(
+    counter_code_gap(),
+    counter_code_section(
         """def index():
     return rx.hstack(
         rx.button(
@@ -162,34 +173,18 @@ rx.box(
         ),
         spacing="4",
     )""",
-        border=rx.cond(
-            IntroTabsState.value == "tab1",
-            "1px solid var(--c-slate-5)",
-            "none !important",
-        ),
-        background=rx.cond(
-            IntroTabsState.value == "tab1",
-            "var(--c-slate-3) !important",
-            "transparent",
-        ),
-        class_name="code-block",
+        "tab1",
     ),
-    rx.code_block(
+    counter_code_gap(),
+    counter_code_section(
         """app = rx.App()
 app.add_page(index)""",
-        background=rx.cond(
-            IntroTabsState.value == "tab3",
-            "var(--c-slate-3) !important",
-            "transparent",
-        ),
-        border=rx.cond(
-            IntroTabsState.value == "tab3",
-            "1px solid var(--c-slate-5)",
-            "none !important",
-        ),
-        class_name="code-block",
+        "tab3",
     ),
-    class_name="w-full flex flex-col",
+    class_name=(
+        "w-full flex flex-col overflow-hidden rounded-xl border "
+        "border-slate-4 bg-slate-2 py-1"
+    ),
 )
 ```
 
@@ -212,7 +207,7 @@ class State(rx.State):
     count: int = 0
 ```
 
-State holds the app's mutable data. Variables declared here are called **[vars](/docs/vars/base_vars)**. Our counter has one: `count`, starting at `0`.
+State holds the app's mutable data. Variables declared here are called **[vars](/docs/vars/base-vars)**. Our counter has one: `count`, starting at `0`.
 
 ### Event Handlers
 
@@ -277,16 +272,16 @@ Create the app and register the page at the base route.
 ```md alert info
 # Keep learning
 
-- [Dashboard tutorial](/docs/getting_started/dashboard_tutorial) — build a real data app.
-- [Chatapp tutorial](/docs/getting_started/chatapp_tutorial) — wire up streaming AI responses.
-- [How Reflex works](/docs/advanced_onboarding/how-reflex-works) — what happens under the hood.
+- [Dashboard tutorial](/docs/getting-started/dashboard-tutorial/) — build a real data app.
+- [Chatapp tutorial](/docs/getting-started/chatapp-tutorial/) — wire up streaming AI responses.
+- [How Reflex works](/docs/advanced-onboarding/how-reflex-works/) — what happens under the hood.
 ```
 
 ```md alert info
 # Ship faster with AI
 
 - [Reflex Build](https://build.reflex.dev/) — generate a full app from a prompt.
-- [Reflex Cloud](https://reflex.dev/docs/hosting/deploy-quick-start/) — one-command deploy.
+- [Reflex Cloud](/docs/hosting/deploy-quick-start/) — one-command deploy.
 ```
 
-Browse our [open-source templates](/docs/getting_started/open_source_templates), or press `Cmd+K` / `Ctrl+K` to search the docs.
+Browse our [open-source templates](/docs/getting-started/open-source-templates/), or press `Cmd+K` / `Ctrl+K` to search the docs.

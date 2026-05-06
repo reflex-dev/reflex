@@ -3,10 +3,10 @@
 from reflex_base.components.component import field
 from reflex_base.vars.base import Var
 
-from reflex_components_core.el.elements.base import BaseHTML
+from reflex_components_core.el.elements.base import RawTextBaseHTML, VoidBaseHTML
 
 
-class RawLink(BaseHTML):
+class RawLink(VoidBaseHTML):
     """A component that displays the title of the current page."""
 
     tag = "link"
@@ -16,7 +16,7 @@ class RawLink(BaseHTML):
     rel: Var[str] = field(doc="The type of link.")
 
 
-class ScriptTag(BaseHTML):
+class ScriptTag(RawTextBaseHTML):
     """A script tag with the specified type and source."""
 
     tag = "script"

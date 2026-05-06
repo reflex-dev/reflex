@@ -4,6 +4,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import reflex as rx
+from reflex_components_core.core.cond import Cond
 from reflex_docgen.markdown import parse_document
 
 # External Components
@@ -22,6 +23,10 @@ from .cloud_cliref import pages as cloud_cliref_pages
 from .custom_components import custom_components
 from .library import library
 from .recipes_overview import overview
+
+SPECIAL_COMPONENT_DOCS = {
+    "rx.cond": Cond,
+}
 
 
 def to_title_case(text: str) -> str:
@@ -65,6 +70,9 @@ def get_components_from_frontmatter(filepath: str) -> list:
         return []
     components = []
     for comp_str in doc.frontmatter.components:
+        if component := SPECIAL_COMPONENT_DOCS.get(comp_str):
+            components.append((component, comp_str))
+            continue
         component = eval(comp_str)
         if isinstance(component, type):
             components.append((component, comp_str))
@@ -239,7 +247,17 @@ def get_component_docgen(virtual_doc: str, actual_path: str, title: str):
 
 # Build doc_markdown_sources mapping
 for _virtual, _actual in all_docs.items():
-    if _virtual.endswith("-style.md") or _virtual.endswith("-ll.md"):
+    if _virtual.endswith("-style.md"):
+        continue
+    if _virtual.endswith("-ll.md"):
+        # Register low-level docs at /<path>-ll.md so the copy button can
+        # fetch them from the served URL.
+        _hl_virtual = _virtual.replace("-ll.md", ".md")
+        _hl_route = doc_route_from_path(_hl_virtual)
+        if not _check_whitelisted_path(_hl_route):
+            continue
+        _ll_route = _hl_route.rstrip("/") + "-ll"
+        doc_markdown_sources[_ll_route] = _actual
         continue
     _route = doc_route_from_path(_virtual)
     if not _check_whitelisted_path(_route):

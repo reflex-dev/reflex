@@ -19,7 +19,6 @@ from reflex_site_shared.components.icons import get_icon
 from reflex_site_shared.components.marketing_button import button as marketing_button
 from reflex_site_shared.components.server_status import server_status
 from reflex_site_shared.route import Route, get_path
-from reflex_site_shared.styles.colors import c_color
 from reflex_site_shared.utils.docpage import right_sidebar_item_highlight
 from reflex_site_shared.views.footer import dark_mode_toggle
 
@@ -56,28 +55,51 @@ def footer_link_flex(heading: str, links):
     )
 
 
-def thumb_card(score: int, icon: str) -> rx.Component:
+def thumb_card(score: int, icon: str, label: str) -> rx.Component:
     return rx.el.button(
         ui.icon(
             icon,
-            color=rx.cond(
-                FeedbackState.score == score, c_color("slate", 11), c_color("slate", 9)
-            ),
             size=16,
         ),
-        background_color=rx.cond(
-            FeedbackState.score == score, c_color("slate", 3), c_color("white", 1)
-        ),
+        label,
+        type="button",
         on_click=FeedbackState.set_score(score),
-        class_name="transition-bg hover:bg-slate-3 shadow-medium border border-slate-4 rounded-lg items-center justify-center cursor-pointer p-2 size-9 flex",
+        class_name=rx.cond(
+            FeedbackState.score == score,
+            "flex h-9 items-center justify-center gap-2 rounded-md border border-violet-6 bg-violet-3 px-3 text-sm font-medium text-violet-11 transition-colors",
+            "flex h-9 items-center justify-center gap-2 rounded-md border border-slate-5 bg-slate-1 px-3 text-sm font-medium text-slate-9 transition-colors hover:bg-slate-3 hover:text-slate-11",
+        ),
     )
 
 
 def thumbs_cards() -> rx.Component:
     return rx.hstack(
-        thumb_card(1, "ThumbsUpIcon"),
-        thumb_card(0, "ThumbsDownIcon"),
+        thumb_card(1, "ThumbsUpIcon", "Helpful"),
+        thumb_card(0, "ThumbsDownIcon", "Not helpful"),
         gap="8px",
+        wrap="wrap",
+    )
+
+
+def feedback_choice_button(label: str, icon: str, score: int, class_name: str):
+    active = FeedbackState.score == score
+    return rx.el.button(
+        ui.icon(icon),
+        label,
+        type="button",
+        class_name=rx.cond(
+            active,
+            ui.cn(
+                "border-violet-6 bg-violet-3 text-violet-11 shadow-none",
+                class_name,
+            ),
+            ui.cn(
+                "border-slate-5 bg-slate-1 text-slate-9 shadow-large hover:bg-slate-3 hover:text-slate-11",
+                class_name,
+            ),
+        ),
+        aria_label=label,
+        on_click=FeedbackState.set_score(score),
     )
 
 
@@ -122,31 +144,21 @@ def feedback_content() -> rx.Component:
 
 
 def feedback_button() -> rx.Component:
-    thumb_cn = " flex flex-row items-center justify-center gap-2 text-slate-9 whitespace-nowrap border border-slate-5 bg-slate-1 shadow-large cursor-pointer transition-bg hover:bg-slate-3 font-small"
+    thumb_cn = "w-full gap-2 px-3 py-0.5 flex flex-row items-center justify-center whitespace-nowrap border cursor-pointer transition-colors font-small"
     return ui.popover.root(
         ui.popover.trigger(
             render_=rx.el.div(
-                rx.el.button(
-                    ui.icon("ThumbsUpIcon"),
+                feedback_choice_button(
                     "Yes",
-                    type="button",
-                    class_name=ui.cn(
-                        "w-full gap-2 border-r-0 px-3 py-0.5 rounded-[20px_0_0_20px]",
-                        thumb_cn,
-                    ),
-                    aria_label="Yes",
-                    on_click=FeedbackState.set_score(1),
+                    "ThumbsUpIcon",
+                    1,
+                    ui.cn("rounded-[20px_0_0_20px] border-r-0", thumb_cn),
                 ),
-                rx.el.button(
-                    ui.icon("ThumbsDownIcon"),
+                feedback_choice_button(
                     "No",
-                    type="button",
-                    class_name=ui.cn(
-                        "w-full gap-2 border-r-0 px-3 py-0.5 rounded-[0_20px_20px_0]",
-                        thumb_cn,
-                    ),
-                    aria_label="No",
-                    on_click=FeedbackState.set_score(0),
+                    "ThumbsDownIcon",
+                    0,
+                    ui.cn("rounded-[0_20px_20px_0]", thumb_cn),
                 ),
                 class_name="w-full lg:w-auto items-center flex flex-row",
             ),
@@ -241,11 +253,17 @@ def docpage_footer(path: str):
             rx.box(
                 link_pill(
                     "Raise an issue",
-                    href=f"https://github.com/reflex-dev/reflex-web/issues/new?title=Issue with reflex.dev documentation&amp;body=Path: {path}",
+                    href=(
+                        "https://github.com/reflex-dev/reflex/issues/new"
+                        "?template=documentation.md"
+                        "&labels=documentation"
+                        f"&title=Issue with reflex.dev{path}"
+                        f"&body=Path: {path}%0A%0A"
+                    ),
                 ),
                 link_pill(
                     "Edit this page",
-                    f"https://github.com/reflex-dev/reflex-web/tree/main{path}.md",
+                    f"https://github.com/reflex-dev/reflex/blob/main/docs{path}.md",
                 ),
                 class_name="lg:flex hidden flex-row items-center gap-2 w-auto",
             ),
@@ -350,6 +368,7 @@ def _copy_page_menu_item(
 
 
 DOCS_PROD_BASE = "https://reflex.dev/docs"
+LLMS_FULL_TXT_PATH = "/llms-full.txt"
 
 
 def _build_prefill_url(base_url: str, path: str, action: str) -> str:
@@ -377,6 +396,7 @@ def _build_reflex_menu_item(path: str) -> rx.Component:
                 class_name=(
                     "flex size-8 items-center justify-center rounded-md "
                     "bg-gradient-to-br from-primary-9 to-primary-11 "
+                    "dark:from-primary-7 dark:to-primary-9 "
                     "shadow-[0_0_0_1px_var(--primary-7),0_2px_8px_-2px_var(--primary-a8)] shrink-0"
                 ),
             ),
@@ -408,6 +428,8 @@ def _build_reflex_menu_item(path: str) -> rx.Component:
             "no-underline w-full text-left block "
             "bg-gradient-to-br from-primary-2 to-secondary-1 "
             "hover:from-primary-3 hover:to-primary-2 "
+            "dark:from-primary-a3 dark:to-secondary-2 "
+            "dark:hover:from-primary-a4 dark:hover:to-secondary-3 "
             "border-b border-secondary-4 transition-colors cursor-pointer"
         ),
     )
@@ -423,7 +445,10 @@ def _copy_page_button(doc_content: str, path: str = "") -> rx.Component:
     copy_action = run_script(
         """
 ((function() {
-  const mdUrl = window.location.pathname.replace(/\\/$/, '') + '.md';
+  const cleanPath = window.location.pathname.replace(/\\/$/, '');
+  const mdUrl = cleanPath.endsWith('/low')
+    ? cleanPath.replace(/\\/low$/, '-ll.md')
+    : cleanPath + '.md';
   const animate = () => {
     document.querySelectorAll('[data-copy-icon]').forEach((icon) => {
       if (icon.dataset.animating === '1') return;
@@ -456,6 +481,10 @@ def _copy_page_button(doc_content: str, path: str = "") -> rx.Component:
   if (navigator.clipboard && typeof ClipboardItem !== 'undefined' && navigator.clipboard.write) {
     const blobPromise = fetch(mdUrl).then((r) => {
       if (!r.ok) throw new Error(r.status);
+      const ct = r.headers.get('content-type') || '';
+      if (!ct.includes('markdown') && !ct.includes('text/plain')) {
+        throw new Error('not-markdown');
+      }
       return r.text().then((t) => new Blob([t], { type: 'text/plain' }));
     });
     navigator.clipboard
@@ -464,7 +493,14 @@ def _copy_page_button(doc_content: str, path: str = "") -> rx.Component:
     return;
   }
   fetch(mdUrl)
-    .then((r) => (r.ok ? r.text() : Promise.reject(r.status)))
+    .then((r) => {
+      if (!r.ok) return Promise.reject(r.status);
+      const ct = r.headers.get('content-type') || '';
+      if (!ct.includes('markdown') && !ct.includes('text/plain')) {
+        return Promise.reject('not-markdown');
+      }
+      return r.text();
+    })
     .then((text) => {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         return navigator.clipboard.writeText(text);
@@ -524,6 +560,12 @@ def _copy_page_button(doc_content: str, path: str = "") -> rx.Component:
                                 description="Copy page as Markdown for LLMs",
                                 on_click=copy_action,
                             ),
+                            _copy_page_menu_item(
+                                icon=ui.icon("DocumentValidationIcon", size=16),
+                                title="llms-full.txt",
+                                description="View all docs as Markdown for LLMs",
+                                href=LLMS_FULL_TXT_PATH,
+                            ),
                             rx.el.div(class_name="h-px bg-secondary-4"),
                             _copy_page_menu_item(
                                 icon=ui.icon("MessageProgrammingIcon", size=16),
@@ -541,7 +583,12 @@ def _copy_page_button(doc_content: str, path: str = "") -> rx.Component:
                                     "https://claude.ai/new?q=", path
                                 ),
                             ),
-                            class_name="flex flex-col min-w-[260px]",
+                            class_name=(
+                                "flex flex-col min-w-[260px] "
+                                "bg-white dark:bg-secondary-2 border border-secondary-5 rounded-lg shadow-lg "
+                                "data-[state=open]:animate-in data-[state=open]:fade-in-0 "
+                                "data-[state=open]:zoom-in-95 data-[state=open]:slide-in-from-top-2"
+                            ),
                         ),
                         class_name="p-0 overflow-hidden",
                     ),
@@ -763,7 +810,7 @@ def docpage(
                         sidebar,
                         class_name=(
                             "w-[19.5rem] shrink-0 hidden lg:block z-10 border-r border-m-slate-4 dark:border-m-slate-10 sticky left-0 "
-                            "before:content-[''] before:absolute before:top-0 before:bottom-0 before:right-0 before:w-[100vw] before:bg-white-1 dark:before:bg-m-slate-11 before:-z-10 "
+                            "before:content-[''] before:absolute before:top-0 before:bottom-0 before:right-0 before:w-[100vw] before:bg-white-1 dark:before:bg-secondary-2 before:-z-10 "
                             + rx.cond(
                                 HostingBannerState.is_banner_visible,
                                 " top-[113px] h-[calc(100vh-113px)]",
@@ -859,10 +906,6 @@ def docpage(
                                 ),
                                 rx.el.div(
                                     feedback_button_toc(),
-                                    copy_to_markdown(text=doc_content)
-                                    if doc_content
-                                    else None,
-                                    ask_ai_chat(),
                                     class_name="flex flex-col mt-1.5 justify-start",
                                 ),
                                 class_name="flex flex-col justify-start gap-y-4 overflow-y-auto sticky top-4",
