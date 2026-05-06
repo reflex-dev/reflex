@@ -452,7 +452,7 @@ def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
     Returns:
         ``(state_full_name, handler_name)`` — both resolved.
     """
-    from reflex_base.registry import RegistrationContext
+    from reflex_base.registry import DefaultNameResolver, RegistrationContext
 
     name = handler.fn.__qualname__
     if handler.state is None:
@@ -461,7 +461,7 @@ def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
     state_full_name = handler.state.get_full_name()
     func_name = name.rpartition(".")[2]
     ctx = RegistrationContext.try_get()
-    if ctx is None:
+    if ctx is None or type(ctx.name_resolver) is DefaultNameResolver:
         return (state_full_name, func_name)
     return (state_full_name, ctx.get_handler_name(handler.state, func_name))
 
