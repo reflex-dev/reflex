@@ -1246,10 +1246,9 @@ def compile_app(
         path = utils.resolve_path_of_web_dir(output_path)
         if path in output_mapping:
             console.warn(
-                f"Path {path} has two different outputs. The first one will be used."
+                f"Path {path} has two different outputs. The last one will be used."
             )
-        else:
-            output_mapping[path] = code
+        output_mapping[path] = code
 
     for plugin in config.plugins:
         for static_file_path, content in plugin.get_static_assets():
