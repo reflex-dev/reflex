@@ -1,9 +1,8 @@
 from typing import Any, Literal, TypedDict
 
 import pytest
-
-from reflex.utils import types
-from reflex.vars.base import Var
+from reflex_base.utils import types
+from reflex_base.vars.base import Var
 
 
 @pytest.mark.parametrize(
@@ -45,7 +44,7 @@ def test_validate_literal_error_msg(params, allowed_value_str, value_str):
 def test_issubclass(
     cls: types.GenericType, cls_check: types.GenericType, expected: bool
 ) -> None:
-    assert types._issubclass(cls, cls_check) == expected
+    assert types.typehint_issubclass(cls, cls_check) == expected
 
 
 class CustomDict(dict[str, str]):

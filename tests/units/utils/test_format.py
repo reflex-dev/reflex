@@ -6,21 +6,21 @@ from typing import Any
 
 import plotly.graph_objects as go
 import pytest
-
-from reflex.components.tags.tag import Tag
-from reflex.constants.state import FIELD_MARKER
-from reflex.event import (
+from reflex_base.components.tags.tag import Tag
+from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.event import (
     EventChain,
     EventHandler,
     EventSpec,
     JavascriptInputEvent,
     no_args_event_spec,
 )
-from reflex.style import Style
-from reflex.utils import format
-from reflex.utils.serializers import serialize_figure
-from reflex.vars.base import LiteralVar, Var
-from reflex.vars.object import ObjectVar
+from reflex_base.style import Style
+from reflex_base.utils import format
+from reflex_base.utils.serializers import serialize_figure
+from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.function import FunctionStringVar
+from reflex_base.vars.object import ObjectVar
 
 pytest.importorskip("pydantic")
 
@@ -39,6 +39,107 @@ from tests.units.test_state import (
 
 def mock_event(arg):
     pass
+
+
+def mock_event_two(arg):
+    pass
+
+
+def make_timeout_logger():
+    return FunctionStringVar.create(
+        "(...args) => { setTimeout(() => console.log('Timeout reached!', args), 1000); }"
+    ).to(EventChain)
+
+
+def test_format_prop_event_chain_pure_eventspec_grouped():
+    """Pure EventSpec chains should preserve order with separate addEvents calls."""
+    chain = EventChain(
+        events=[
+            EventSpec(handler=EventHandler(fn=mock_event)),
+            EventSpec(handler=EventHandler(fn=mock_event_two)),
+        ],
+        args_spec=lambda e: [e],
+    )
+
+    assert format.format_prop(LiteralVar.create(chain)) == (
+        '((_e) => {(addEvents([(ReflexEvent("mock_event", ({  }), ({  })))], '
+        '[_e], ({  })));(addEvents([(ReflexEvent("mock_event_two", ({  }), '
+        "({  })))], [_e], ({  })));})"
+    )
+
+
+def test_format_prop_event_chain_pure_function_var():
+    """Pure FunctionVar chains should render as direct frontend calls."""
+    log_after_timeout = make_timeout_logger()
+    chain = EventChain(
+        events=[log_after_timeout],
+        args_spec=lambda e: [e],
+    )
+
+    assert format.format_prop(LiteralVar.create(chain)) == (
+        "((_e) => (((...args) => { setTimeout(() => console.log('Timeout reached!', "
+        "args), 1000); })(_e)))"
+    )
+
+
+def test_format_prop_event_chain_mixed_queue_and_function():
+    """Mixed chains should alternate addEvents and direct calls in order."""
+    log_after_timeout = make_timeout_logger()
+    chain = EventChain(
+        events=[
+            EventSpec(handler=EventHandler(fn=mock_event)),
+            log_after_timeout,
+            EventSpec(handler=EventHandler(fn=mock_event_two)),
+        ],
+        args_spec=lambda e: [e],
+    )
+
+    assert format.format_prop(LiteralVar.create(chain)) == (
+        '((_e) => {(addEvents([(ReflexEvent("mock_event", ({  }), ({  })))], '
+        "[_e], ({  })));(((...args) => { setTimeout(() => console.log('Timeout reached!', "
+        'args), 1000); })(_e));(addEvents([(ReflexEvent("mock_event_two", '
+        "({  }), ({  })))], [_e], ({  })));})"
+    )
+
+
+def test_format_prop_event_chain_mixed_with_event_actions():
+    """Mixed chains should preserve DOM event actions on the wrapper callback."""
+    log_after_timeout = make_timeout_logger()
+    chain = EventChain(
+        events=[
+            EventSpec(handler=EventHandler(fn=mock_event)),
+            log_after_timeout,
+        ],
+        args_spec=lambda e: [e],
+        event_actions={"preventDefault": True, "stopPropagation": True},
+    )
+
+    assert format.format_prop(LiteralVar.create(chain)) == (
+        '((_e) => (applyEventActions((() => {(addEvents([(ReflexEvent("mock_event", '
+        "({  }), ({  })))], [_e], ({  })));(((...args) => { setTimeout(() => "
+        "console.log('Timeout reached!', args), 1000); })(_e));}), ({ "
+        '["preventDefault"] : true, ["stopPropagation"] : true }), _e)))'
+    )
+
+
+def test_format_prop_event_chain_mixed_with_queueable_event_actions():
+    """Mixed chains should forward non-DOM event actions to queued backend groups."""
+    log_after_timeout = make_timeout_logger()
+    chain = EventChain(
+        events=[
+            EventSpec(handler=EventHandler(fn=mock_event)),
+            log_after_timeout,
+        ],
+        args_spec=lambda e: [e],
+        event_actions={"preventDefault": True, "throttle": 250},
+    )
+
+    assert format.format_prop(LiteralVar.create(chain)) == (
+        '((_e) => (applyEventActions((() => {(addEvents([(ReflexEvent("mock_event", '
+        "({  }), ({  })))], [_e], ({  })));(((...args) => { setTimeout(() => "
+        "console.log('Timeout reached!', args), 1000); })(_e));}), ({ "
+        '["preventDefault"] : true, ["throttle"] : 250 }), _e)))'
+    )
 
 
 @pytest.mark.parametrize(
@@ -409,7 +510,7 @@ def test_format_match(
                 args_spec=no_args_event_spec,
                 event_actions={"stopPropagation": True},
             ),
-            '((...args) => (addEvents([(ReflexEvent("mock_event", ({  }), ({  })))], args, ({ ["stopPropagation"] : true }))))',
+            '((...args) => (applyEventActions((() => {(addEvents([(ReflexEvent("mock_event", ({  }), ({  })))], args, ({  })));}), ({ ["stopPropagation"] : true }), ...args)))',
         ),
         (
             EventChain(
@@ -429,7 +530,7 @@ def test_format_match(
                 args_spec=no_args_event_spec,
                 event_actions={"preventDefault": True},
             ),
-            '((...args) => (addEvents([(ReflexEvent("mock_event", ({  }), ({  })))], args, ({ ["preventDefault"] : true }))))',
+            '((...args) => (applyEventActions((() => {(addEvents([(ReflexEvent("mock_event", ({  }), ({  })))], args, ({  })));}), ({ ["preventDefault"] : true }), ...args)))',
         ),
         ({"a": "red", "b": "blue"}, '({ ["a"] : "red", ["b"] : "blue" })'),
         (Var(_js_expr="var", _var_type=int).guess_type(), "var"),

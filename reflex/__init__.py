@@ -86,10 +86,10 @@ from __future__ import annotations
 
 import sys
 
-from reflex.utils import lazy_loader
+from reflex_base.utils import lazy_loader
 
 if sys.version_info < (3, 11):
-    from reflex.utils import console
+    from reflex_base.utils import console
 
     console.warn(
         "Reflex support for Python 3.10 is deprecated and will be removed in a future release. Please upgrade to Python 3.11 or higher for continued support."
@@ -97,146 +97,29 @@ if sys.version_info < (3, 11):
     del console
 del sys
 
-RADIX_THEMES_MAPPING: dict = {
-    "components.radix.themes.base": ["color_mode", "theme", "theme_panel"],
-    "components.radix.themes.color_mode": ["color_mode"],
-}
-RADIX_THEMES_COMPONENTS_MAPPING: dict = {
-    **{
-        f"components.radix.themes.components.{mod}": [mod]
-        for mod in [
-            "alert_dialog",
-            "aspect_ratio",
-            "avatar",
-            "badge",
-            "button",
-            "callout",
-            "card",
-            "checkbox",
-            "context_menu",
-            "data_list",
-            "dialog",
-            "hover_card",
-            "icon_button",
-            "input",
-            "inset",
-            "popover",
-            "scroll_area",
-            "select",
-            "skeleton",
-            "slider",
-            "spinner",
-            "switch",
-            "table",
-            "tabs",
-            "text_area",
-            "tooltip",
-            "segmented_control",
-            "radio_cards",
-            "checkbox_cards",
-            "checkbox_group",
-        ]
-    },
-    "components.radix.themes.components.text_field": ["text_field", "input"],
-    "components.radix.themes.components.radio_group": ["radio", "radio_group"],
-    "components.radix.themes.components.dropdown_menu": ["menu", "dropdown_menu"],
-    "components.radix.themes.components.separator": ["divider", "separator"],
-    "components.radix.themes.components.progress": ["progress"],
-}
+from reflex_components_radix.mappings import RADIX_MAPPING  # noqa: E402
 
-RADIX_THEMES_LAYOUT_MAPPING: dict = {
-    "components.radix.themes.layout.box": [
-        "box",
-    ],
-    "components.radix.themes.layout.center": [
-        "center",
-    ],
-    "components.radix.themes.layout.container": [
-        "container",
-    ],
-    "components.radix.themes.layout.flex": [
-        "flex",
-    ],
-    "components.radix.themes.layout.grid": [
-        "grid",
-    ],
-    "components.radix.themes.layout.section": [
-        "section",
-    ],
-    "components.radix.themes.layout.spacer": [
-        "spacer",
-    ],
-    "components.radix.themes.layout.stack": [
-        "stack",
-        "hstack",
-        "vstack",
-    ],
-    "components.radix.themes.layout.list": [
-        ("list_ns", "list"),
-        "list_item",
-        "ordered_list",
-        "unordered_list",
-    ],
-}
-
-RADIX_THEMES_TYPOGRAPHY_MAPPING: dict = {
-    "components.radix.themes.typography.blockquote": [
-        "blockquote",
-    ],
-    "components.radix.themes.typography.code": [
-        "code",
-    ],
-    "components.radix.themes.typography.heading": [
-        "heading",
-    ],
-    "components.radix.themes.typography.link": [
-        "link",
-    ],
-    "components.radix.themes.typography.text": [
-        "text",
-    ],
-}
-
-RADIX_PRIMITIVES_MAPPING: dict = {
-    "components.radix.primitives.accordion": [
-        "accordion",
-    ],
-    "components.radix.primitives.drawer": [
-        "drawer",
-    ],
-    "components.radix.primitives.form": [
-        "form",
-    ],
-    "components.radix.primitives.progress": [
-        "progress",
-    ],
-}
-
-RADIX_PRIMITIVES_SHORTCUT_MAPPING: dict = {
-    k: v for k, v in RADIX_PRIMITIVES_MAPPING.items() if "progress" not in k
-}
-
-COMPONENTS_CORE_MAPPING: dict = {
-    "components.core.banner": [
+_COMPONENTS_CORE_MAPPING: lazy_loader.SubmodAttrsType = {
+    "reflex_components_core.core.banner": [
         "connection_banner",
         "connection_modal",
     ],
-    "components.core.cond": ["cond", "color_mode_cond"],
-    "components.core.foreach": ["foreach"],
-    "components.core.debounce": ["debounce_input"],
-    "components.core.html": ["html"],
-    "components.core.match": ["match"],
-    "components.core.clipboard": ["clipboard"],
-    "components.core.colors": ["color"],
-    "components.core.breakpoints": ["breakpoints"],
-    "components.core.responsive": [
+    "reflex_components_core.core.cond": ["cond", "color_mode_cond"],
+    "reflex_components_core.core.foreach": ["foreach"],
+    "reflex_components_core.core.debounce": ["debounce_input"],
+    "reflex_components_core.core.html": ["html"],
+    "reflex_components_core.core.match": ["match"],
+    "reflex_components_core.core.clipboard": ["clipboard"],
+    "reflex_components_core.core.colors": ["color"],
+    "reflex_components_core.core.breakpoints": ["breakpoints"],
+    "reflex_components_core.core.responsive": [
         "desktop_only",
         "mobile_and_tablet",
         "mobile_only",
         "tablet_and_desktop",
         "tablet_only",
     ],
-    "components.core.upload": [
+    "reflex_components_core.core.upload": [
         "cancel_upload",
         "clear_selected_files",
         "get_upload_dir",
@@ -244,59 +127,67 @@ COMPONENTS_CORE_MAPPING: dict = {
         "selected_files",
         "upload",
     ],
-    "components.core.auto_scroll": ["auto_scroll"],
-    "components.core.window_events": ["window_event_listener"],
+    "reflex_components_core.core.auto_scroll": ["auto_scroll"],
+    "reflex_components_core.core.window_events": ["window_event_listener"],
 }
 
-COMPONENTS_BASE_MAPPING: dict = {
-    "components.base.fragment": ["fragment", "Fragment"],
-    "components.base.script": ["script", "Script"],
+_COMPONENTS_BASE_MAPPING: lazy_loader.SubmodAttrsType = {
+    "reflex_components_core.base.fragment": ["fragment", "Fragment"],
+    "reflex_components_core.base.script": ["script", "Script"],
 }
 
-RADIX_MAPPING: dict = {
-    **RADIX_THEMES_MAPPING,
-    **RADIX_THEMES_COMPONENTS_MAPPING,
-    **RADIX_THEMES_TYPOGRAPHY_MAPPING,
-    **RADIX_THEMES_LAYOUT_MAPPING,
-    **RADIX_PRIMITIVES_SHORTCUT_MAPPING,
-}
-
-_MAPPING: dict = {
-    "experimental": ["_x"],
-    "admin": ["AdminDash"],
-    "app": ["App", "UploadFile"],
-    "assets": ["asset"],
-    "base": ["Base"],
-    "components.component": [
+_ALL_COMPONENTS_MAPPING: lazy_loader.SubmodAttrsType = {
+    "reflex_base.components.component": [
         "Component",
         "NoSSRComponent",
         "memo",
         "ComponentNamespace",
     ],
-    "components.el.elements.media": ["image"],
-    "components.lucide": ["icon"],
-    **COMPONENTS_BASE_MAPPING,
-    "components": ["el", "radix", "lucide", "recharts"],
-    "components.markdown": ["markdown"],
+    "reflex_components_core.el.elements.media": ["image"],
+    "reflex_components_lucide": ["icon"],
+    **_COMPONENTS_BASE_MAPPING,
+    "reflex_components_core": ["el"],
+    "reflex_components_markdown.markdown": ["markdown"],
     **RADIX_MAPPING,
-    "components.plotly": ["plotly"],
-    "components.react_player": ["audio", "video"],
-    **COMPONENTS_CORE_MAPPING,
-    "components.datadisplay.code": [
+    "reflex_components_plotly": ["plotly"],
+    "reflex_components_react_player": ["audio", "video"],
+    **_COMPONENTS_CORE_MAPPING,
+    "reflex_components_code.code": [
         "code_block",
     ],
-    "components.datadisplay.dataeditor": [
+    "reflex_components_dataeditor.dataeditor": [
         "data_editor",
         "data_editor_theme",
     ],
-    "components.sonner.toast": ["toast"],
-    "components.props": ["PropsBase"],
-    "components.datadisplay.logo": ["logo"],
-    "components.gridjs": ["data_table"],
-    "components.moment": ["MomentDelta", "moment"],
+    "reflex_components_sonner.toast": ["toast"],
+    "reflex_base.components.props": ["PropsBase"],
+    "reflex_components_core.datadisplay.logo": ["logo"],
+    "reflex_components_gridjs": ["data_table"],
+    "reflex_components_moment": ["MomentDelta", "moment"],
+}
+
+_COMPONENT_NAME_TO_PATH: dict[str, str] = {
+    lazy_loader.comp_alias(comp): lazy_loader.comp_path(path, comp)
+    for path, comps in _ALL_COMPONENTS_MAPPING.items()
+    for comp in comps
+} | {
+    "radix": "reflex_components_radix",
+    "lucide": "reflex_components_lucide",
+    "recharts": "reflex_components_recharts",
+}
+
+_MAPPING: lazy_loader.SubmodAttrsType = {
+    "experimental": ["_x"],
+    "admin": ["AdminDash"],
+    "app": ["App", "UploadFile"],
+    "assets": ["asset"],
     "config": ["Config", "DBConfig"],
     "constants": ["Env"],
     "constants.colors": ["Color"],
+    "_upload": [
+        "UploadChunk",
+        "UploadChunkIterator",
+    ],
     "event": [
         "event",
         "EventChain",
@@ -320,6 +211,7 @@ _MAPPING: dict = {
         "set_value",
         "stop_propagation",
         "upload_files",
+        "upload_files_chunk",
         "window_alert",
     ],
     "istate.storage": [
@@ -327,6 +219,7 @@ _MAPPING: dict = {
         "LocalStorage",
         "SessionStorage",
     ],
+    "istate.manager.token": ["StateToken", "BaseStateToken"],
     "middleware": ["middleware", "Middleware"],
     "model": ["asession", "session", "Model", "ModelRegistry"],
     "page": ["page"],
@@ -342,7 +235,7 @@ _MAPPING: dict = {
     "utils.imports": ["ImportDict", "ImportVar"],
     "utils.misc": ["run_in_thread"],
     "utils.serializers": ["serializer"],
-    "vars": ["Var", "field", "Field"],
+    "vars": ["Var", "field", "Field", "RestProp"],
 }
 
 _SUBMODULES: set[str] = {
@@ -351,6 +244,7 @@ _SUBMODULES: set[str] = {
     "style",
     "admin",
     "base",
+    "constants",
     "model",
     "testing",
     "utils",
@@ -359,11 +253,13 @@ _SUBMODULES: set[str] = {
     "compiler",
     "plugins",
 }
-_SUBMOD_ATTRS: dict = _MAPPING
+_SUBMOD_ATTRS: lazy_loader.SubmodAttrsType = _MAPPING
+_EXTRA_MAPPINGS: dict[str, str] = _COMPONENT_NAME_TO_PATH
 getattr, __dir__, __all__ = lazy_loader.attach(
     __name__,
     submodules=_SUBMODULES,
     submod_attrs=_SUBMOD_ATTRS,
+    **_EXTRA_MAPPINGS,
 )
 
 

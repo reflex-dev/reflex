@@ -18,12 +18,14 @@ from types import ModuleType
 from typing import NamedTuple
 
 from packaging import version
+from reflex_base import constants
+from reflex_base.config import Config, get_config
+from reflex_base.constants.base import RunningMode
+from reflex_base.environment import environment
+from reflex_base.utils.decorator import once
 
-from reflex import constants, model
-from reflex.config import Config, get_config
-from reflex.environment import environment
+from reflex import model
 from reflex.utils import console, net, path_ops
-from reflex.utils.decorator import once
 from reflex.utils.misc import get_module_path
 
 if typing.TYPE_CHECKING:
@@ -318,7 +320,7 @@ def _can_colorize() -> bool:
         try:
             import nt
 
-            if not nt._supports_virtual_terminal():
+            if not nt._supports_virtual_terminal():  # pyright: ignore[reportAttributeAccessIssue]
                 return False
         except (ImportError, AttributeError):
             return False
@@ -498,7 +500,7 @@ def get_project_hash(raise_on_fail: bool = False) -> int | None:
     return data.get("project_hash")
 
 
-def check_running_mode(frontend: bool, backend: bool) -> tuple[bool, bool]:
+def check_running_mode(frontend: bool, backend: bool) -> RunningMode:
     """Check if the app is running in frontend or backend mode.
 
     Args:
@@ -509,8 +511,12 @@ def check_running_mode(frontend: bool, backend: bool) -> tuple[bool, bool]:
         The running modes.
     """
     if not frontend and not backend:
-        return True, True
-    return frontend, backend
+        return RunningMode.FULLSTACK
+    if frontend and not backend:
+        return RunningMode.FRONTEND_ONLY
+    if not frontend and backend:
+        return RunningMode.BACKEND_ONLY
+    return RunningMode.FULLSTACK
 
 
 def assert_in_reflex_dir():
@@ -658,11 +664,11 @@ def check_schema_up_to_date():
     """Check if the sqlmodel metadata matches the current database schema."""
     if get_config().db_url is None or not environment.ALEMBIC_CONFIG.get().exists():
         return
-    with model.Model.get_db_engine().connect() as connection:
+    with model.get_engine().connect() as connection:
         from alembic.util.exc import CommandError
 
         try:
-            if model.Model.alembic_autogenerate(
+            if model.alembic_autogenerate(
                 connection=connection,
                 write_migration_scripts=False,
             ):

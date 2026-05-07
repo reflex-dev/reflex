@@ -8,21 +8,16 @@ from typing import cast
 import pytest
 from pandas import DataFrame
 from pytest_mock import MockerFixture
-
-import reflex as rx
-from reflex.base import Base
-from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
-from reflex.constants.state import FIELD_MARKER
-from reflex.environment import PerformanceMode
-from reflex.state import BaseState
-from reflex.utils.exceptions import (
+from reflex_base.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
+from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.utils.exceptions import (
     PrimitiveUnserializableToJSONError,
     UntypedComputedVarError,
 )
-from reflex.utils.imports import ImportVar
-from reflex.utils.types import get_default_value_for_type
-from reflex.vars import VarData
-from reflex.vars.base import (
+from reflex_base.utils.imports import ImportVar
+from reflex_base.utils.types import get_default_value_for_type
+from reflex_base.vars import VarData
+from reflex_base.vars.base import (
     ComputedVar,
     LiteralVar,
     Var,
@@ -30,19 +25,28 @@ from reflex.vars.base import (
     var_operation,
     var_operation_return,
 )
-from reflex.vars.function import (
+from reflex_base.vars.function import (
     ArgsFunctionOperation,
     DestructuredArg,
     FunctionStringVar,
 )
-from reflex.vars.number import LiteralBooleanVar, LiteralNumberVar, NumberVar
-from reflex.vars.object import LiteralObjectVar, ObjectVar
-from reflex.vars.sequence import (
+from reflex_base.vars.number import LiteralBooleanVar, LiteralNumberVar, NumberVar
+from reflex_base.vars.object import LiteralObjectVar, ObjectVar
+from reflex_base.vars.sequence import (
     ArrayVar,
     ConcatVarOperation,
     LiteralArrayVar,
     LiteralStringVar,
 )
+
+import reflex as rx
+from reflex.environment import PerformanceMode
+from reflex.state import BaseState
+
+pytest.importorskip("pydantic")
+
+
+from pydantic import BaseModel as Base
 
 test_vars = [
     Var(_js_expr="prop1", _var_type=int),
@@ -392,14 +396,14 @@ def test_list_tuple_contains(var, expected):
     assert str(var.contains(other_var)) == f"{expected}.includes(other)"
 
 
-class Foo(rx.Base):
+class Foo(Base):
     """Foo class."""
 
     bar: int
     baz: str
 
 
-class Bar(rx.Base):
+class Bar(Base):
     """Bar class."""
 
     bar: str
@@ -951,6 +955,20 @@ def test_function_var():
     )
     assert str(explicit_return_func.call(1, 2)) == "(((a, b) => {return a + b})(1, 2))"
 
+    unwrapped_arrow_func = FunctionStringVar.create(
+        "(...args) => { const f = x => x + 1; return f(args); }"
+    )
+    assert (
+        str(unwrapped_arrow_func.call(1))
+        == "(((...args) => { const f = x => x + 1; return f(args); })(1))"
+    )
+
+    nested_arrow_expr = FunctionStringVar.create("factory(() => 1)")
+    assert str(nested_arrow_expr.call()) == "(factory(() => 1)())"
+
+    string_arrow_expr = FunctionStringVar.create('factory("=>")')
+    assert str(string_arrow_expr.call()) == '(factory("=>")())'
+
 
 def test_var_operation():
     @var_operation
@@ -1163,7 +1181,7 @@ def nested_base():
         baz: int
 
     parent_obj = LiteralObjectVar.create(
-        Foo(bar=Boo(foo="bar", bar=5), baz=5).dict(), Foo
+        Foo(bar=Boo(foo="bar", bar=5), baz=5).model_dump(), Foo
     )
 
     assert (
@@ -1896,7 +1914,7 @@ def test_str_var_in_components(mocker: MockerFixture):
         field: int = 1
 
     mocker.patch(
-        "reflex.components.base.bare.get_performance_mode",
+        "reflex_components_core.base.bare.get_performance_mode",
         return_value=PerformanceMode.RAISE,
     )
 
@@ -1906,7 +1924,7 @@ def test_str_var_in_components(mocker: MockerFixture):
         )
 
     mocker.patch(
-        "reflex.components.base.bare.get_performance_mode",
+        "reflex_components_core.base.bare.get_performance_mode",
         return_value=PerformanceMode.OFF,
     )
 

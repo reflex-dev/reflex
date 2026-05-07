@@ -1,9 +1,9 @@
 from collections.abc import Mapping, Sequence
 
 import pytest
+from reflex_base.vars.base import computed_var, figure_out_type
 
 from reflex.state import State
-from reflex.vars.base import computed_var, figure_out_type
 
 
 class CustomDict(dict[str, str]):

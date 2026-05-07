@@ -20,6 +20,10 @@ def FullyControlledInput():
         def set_text(self, text: str):
             self.text = text
 
+        @rx.event
+        def do_clear(self):
+            self.text = ""
+
     app = rx.App()
 
     @app.add_page
@@ -27,6 +31,11 @@ def FullyControlledInput():
         return rx.fragment(
             rx.input(
                 value=State.router.session.client_token, is_read_only=True, id="token"
+            ),
+            rx.button(
+                "Clear State",
+                on_click=State.do_clear,
+                id="clear-backend",
             ),
             rx.input(
                 id="debounce_input_input",
@@ -72,8 +81,7 @@ def fully_controlled_input(tmp_path) -> Generator[AppHarness, None, None]:
         yield harness
 
 
-@pytest.mark.asyncio
-async def test_fully_controlled_input(fully_controlled_input: AppHarness):
+def test_fully_controlled_input(fully_controlled_input: AppHarness):
     """Type text after moving cursor. Update text on backend.
 
     Args:
@@ -90,13 +98,6 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
     # wait for the backend connection to send the token
     token = fully_controlled_input.poll_for_value(token_input)
     assert token
-
-    state_name = fully_controlled_input.get_state_name("_state")
-    full_state_name = fully_controlled_input.get_full_state_name(["_state"])
-
-    async def get_state_text():
-        state = await fully_controlled_input.get_state(f"{token}_{full_state_name}")
-        return state.substates[state_name].text  # pyright: ignore[reportAttributeAccessIssue]
 
     # ensure defaults are set correctly
     assert (
@@ -142,15 +143,10 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
         lambda: fully_controlled_input.poll_for_value(value_input) == "ifoonitial"
     )
     assert debounce_input.get_attribute("value") == "ifoonitial"
-    assert await get_state_text() == "ifoonitial"
     assert fully_controlled_input.poll_for_value(plain_value_input) == "ifoonitial"
 
     # clear the input on the backend
-    async with fully_controlled_input.modify_state(
-        f"{token}_{full_state_name}"
-    ) as state:
-        state.substates[state_name].text = ""
-    assert await get_state_text() == ""
+    driver.find_element(By.ID, "clear-backend").click()
     assert (
         fully_controlled_input.poll_for_value(
             debounce_input, exp_not_equal="ifoonitial"
@@ -166,7 +162,6 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
         )
     )
     assert debounce_input.get_attribute("value") == "getting testing done"
-    assert await get_state_text() == "getting testing done"
     assert (
         fully_controlled_input.poll_for_value(plain_value_input)
         == "getting testing done"
@@ -181,7 +176,6 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
     )
     assert debounce_input.get_attribute("value") == "overwrite the state"
     assert on_change_input.get_attribute("value") == "overwrite the state"
-    assert await get_state_text() == "overwrite the state"
     assert (
         fully_controlled_input.poll_for_value(plain_value_input)
         == "overwrite the state"

@@ -1,0 +1,88 @@
+name: unit-tests
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.id }}
+  cancel-in-progress: true
+
+env:
+  OPENAI_API_KEY: dummy
+  TELEMETRY_ENABLED: false
+  REFLEX_DEP: "git+https://github.com/reflex-dev/reflex@main"
+  PYTHONUNBUFFERED: 1
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+    inputs:
+      reflex_dep:
+        description: "Reflex dependency (full specifier)"
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  unit-tests:
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.11", "3.12"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          activate-environment: true
+
+      - name: Install the project with latest reflex from main
+        run: |
+          uv sync --all-extras --dev \
+            --upgrade-package reflex \
+            --upgrade-package reflex-core \
+            --upgrade-package reflex-docgen \
+            --upgrade-package reflex-components-code \
+            --upgrade-package reflex-components-core \
+            --upgrade-package reflex-components-dataeditor \
+            --upgrade-package reflex-components-gridjs \
+            --upgrade-package reflex-components-lucide \
+            --upgrade-package reflex-components-markdown \
+            --upgrade-package reflex-components-moment \
+            --upgrade-package reflex-components-plotly \
+            --upgrade-package reflex-components-radix \
+            --upgrade-package reflex-components-react-player \
+            --upgrade-package reflex-components-recharts \
+            --upgrade-package reflex-components-sonner
+
+      - name: Install custom reflex version (if specified)
+        if: github.event.inputs.reflex_dep
+        run: uv pip install '${{ github.event.inputs.reflex_dep }}'
+
+      - name: Install Playwright
+        run: uv run playwright install --with-deps
+
+      - name: Initialize reflex
+        run: reflex init
+
+      - name: Run unit tests
+        run: pytest tests
+
+      - name: Upload test failure videos
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-videos-${{ matrix.os }}-${{ matrix.python-version }}
+          path: test-videos/
+          if-no-files-found: ignore

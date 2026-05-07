@@ -10,9 +10,9 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import Any
 
-    from reflex.event import EventType
+    from reflex_base.event import EventType
 
-DECORATED_PAGES: dict[str, list] = defaultdict(list)
+DECORATED_PAGES: dict[str, list[tuple[Callable, dict[str, Any]]]] = defaultdict(list)
 
 
 def page(
@@ -45,10 +45,10 @@ def page(
     Returns:
         The decorated function.
     """
-    from reflex.config import get_config
+    from reflex_base.config import get_config
 
     def decorator(render_fn: Callable):
-        kwargs = {}
+        kwargs: dict[str, Any] = {}
         if route:
             kwargs["route"] = route
         if title:

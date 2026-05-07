@@ -1,12 +1,12 @@
 import pytest
-
-from reflex.components.component import Component, memo
-from reflex.components.datadisplay.code import CodeBlock
-from reflex.components.datadisplay.shiki_code_block import ShikiHighLevelCodeBlock
-from reflex.components.markdown.markdown import Markdown, MarkdownComponentMap
-from reflex.components.radix.themes.layout.box import Box
-from reflex.components.radix.themes.typography.heading import Heading
-from reflex.vars.base import Var
+from reflex_base.components.component import Component, memo
+from reflex_base.vars.base import Var
+from reflex_components_code.code import CodeBlock
+from reflex_components_code.shiki_code_block import ShikiHighLevelCodeBlock
+from reflex_components_core.core.markdown_component_map import MarkdownComponentMap
+from reflex_components_markdown.markdown import Markdown
+from reflex_components_radix.themes.layout.box import Box
+from reflex_components_radix.themes.typography.heading import Heading
 
 
 class CustomMarkdownComponent(Component, MarkdownComponentMap):

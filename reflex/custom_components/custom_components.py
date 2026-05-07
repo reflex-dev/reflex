@@ -12,9 +12,9 @@ from pathlib import Path
 from typing import Any
 
 import click
+from reflex_base import constants
+from reflex_base.constants import CustomComponents
 
-from reflex import constants
-from reflex.constants import CustomComponents
 from reflex.utils import console, frontend_skeleton
 
 
@@ -102,7 +102,7 @@ import reflex as rx
 # This is because they they may not be compatible with Server-Side Rendering (SSR).
 # To handle this in Reflex, all you need to do is subclass `NoSSRComponent` instead.
 # For example:
-# from reflex.components.component import NoSSRComponent
+# from reflex_base.components.component import NoSSRComponent
 # class {component_class_name}(NoSSRComponent):
 #     pass
 
@@ -328,7 +328,8 @@ def _populate_demo_app(name_variants: NameVariants):
     Args:
         name_variants: the tuple including various names such as package name, class name needed for the project.
     """
-    from reflex import constants
+    from reflex_base import constants
+
     from reflex.reflex import _init
 
     demo_app_dir = Path(name_variants.demo_app_dir)
@@ -358,11 +359,11 @@ def _populate_demo_app(name_variants: NameVariants):
 def _get_default_library_name_parts() -> list[str]:
     """Get the default library name. Based on the current directory name, remove any non-alphanumeric characters.
 
-    Raises:
-        SystemExit: If the current directory name is not suitable for python projects, and we cannot find a valid library name based off it.
-
     Returns:
         The parts of default library name.
+
+    Raises:
+        SystemExit: If the current directory name is not suitable for python projects, and we cannot find a valid library name based off it.
     """
     current_dir_name = Path.cwd().name
 
@@ -407,11 +408,11 @@ def _validate_library_name(library_name: str | None) -> NameVariants:
     Args:
         library_name: The name of the library if picked otherwise None.
 
-    Raises:
-        SystemExit: If the library name is not suitable for python projects.
-
     Returns:
         A tuple containing the various names such as package name, class name, etc., needed for the project.
+
+    Raises:
+        SystemExit: If the library name is not suitable for python projects.
     """
     if library_name is not None and not re.match(
         r"^[a-zA-Z-]+[a-zA-Z0-9-]*$", library_name
@@ -612,7 +613,7 @@ def _run_commands_in_subprocess(cmds: list[str]) -> bool:
 
 def _make_pyi_files():
     """Create pyi files for the custom component."""
-    from reflex.utils.pyi_generator import PyiGenerator
+    from reflex_base.utils.pyi_generator import PyiGenerator
 
     for top_level_dir in Path.cwd().iterdir():
         if not top_level_dir.is_dir() or top_level_dir.name.startswith("."):

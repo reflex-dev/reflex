@@ -1,5 +1,9 @@
 <div align="center">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex.svg" alt="Reflex Logo" width="300px">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_light.svg">
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_dark.svg">
+  <img alt="Reflex Logo" src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex.svg" width="300px">
+</picture>
 
 <hr>
 
@@ -13,10 +17,6 @@
 [![Twitter](https://img.shields.io/twitter/follow/getreflex)](https://x.com/getreflex)
 
 </div>
-
----
-
-[English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md) | [हिंदी](https://github.com/reflex-dev/reflex/blob/main/docs/in/README.md) | [Português (Brasil)](https://github.com/reflex-dev/reflex/blob/main/docs/pt/pt_br/README.md) | [Italiano](https://github.com/reflex-dev/reflex/blob/main/docs/it/README.md) | [Español](https://github.com/reflex-dev/reflex/blob/main/docs/es/README.md) | [한국어](https://github.com/reflex-dev/reflex/blob/main/docs/kr/README.md) | [日本語](https://github.com/reflex-dev/reflex/blob/main/docs/ja/README.md) | [Deutsch](https://github.com/reflex-dev/reflex/blob/main/docs/de/README.md) | [Persian (پارسی)](https://github.com/reflex-dev/reflex/blob/main/docs/pe/README.md) | [Tiếng Việt](https://github.com/reflex-dev/reflex/blob/main/docs/vi/README.md)
 
 ---
 
@@ -52,42 +52,47 @@ mkdir my_app_name
 cd my_app_name
 ```
 
-### 2. Set up a virtual environment
+### 2. Install uv
 
-Create and activate virtual environment
-
-```bash
-# On Windows:
-python -m venv .venv
-.venv\Scripts\activate
-
-# On macOS/Linux:
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-### 3. Install Reflex
-
-Reflex is available as a pip package (Requires Python 3.10+):
+Reflex recommends [uv](https://docs.astral.sh/uv/) for managing your project environment and dependencies.
+See the [uv installation docs](https://docs.astral.sh/uv/getting-started/installation/) for your platform.
 
 ```bash
-pip install reflex
+# macOS/Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows (PowerShell)
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
-### 4. Initialize the project
+### 3. Initialize the Python project
+
+```bash
+uv init
+```
+
+### 4. Add Reflex
+
+Reflex requires Python 3.10+:
+
+```bash
+uv add reflex
+```
+
+### 5. Initialize the project
 
 This command initializes a template app in your new directory:
 
 ```bash
-reflex init
+uv run reflex init
 ```
 
-### 5. Run the app
+### 6. Run the app
 
 You can run this app in development mode:
 
 ```bash
-reflex run
+uv run reflex run
 ```
 
 You should see your app running at http://localhost:3000.
@@ -96,7 +101,7 @@ Now you can modify the source code in `my_app_name/my_app_name.py`. Reflex has f
 
 ### Troubleshooting
 
-If you installed Reflex without a virtual environment and the `reflex` command is not found, you can run commands using: `python3 -m reflex init` and `python3 -m reflex run`
+If the `reflex` command is not on your PATH, run it through uv instead: `uv run reflex init` and `uv run reflex run`
 
 ## 🫧 Example App
 
@@ -154,7 +159,7 @@ def index():
                 "Generate Image",
                 on_click=State.get_image,
                 width="25em",
-                loading=State.processing
+                loading=State.processing,
             ),
             rx.cond(
                 State.complete,
@@ -165,6 +170,7 @@ def index():
         width="100%",
         height="100vh",
     )
+
 
 # Add state and page to the app.
 app = rx.App()
@@ -183,9 +189,7 @@ Let's start with the UI.
 
 ```python
 def index():
-    return rx.center(
-        ...
-    )
+    return rx.center(...)
 ```
 
 This `index` function defines the frontend of the app.
@@ -202,11 +206,11 @@ Reflex represents your UI as a function of your state.
 ```python
 class State(rx.State):
     """The app state."""
+
     prompt = ""
     image_url = ""
     processing = False
     complete = False
-
 ```
 
 The state defines all the variables (called vars) in an app that can change and the functions that change them.
@@ -223,9 +227,7 @@ def get_image(self):
 
     self.processing, self.complete = True, False
     yield
-    response = openai_client.images.generate(
-        prompt=self.prompt, n=1, size="1024x1024"
-    )
+    response = openai_client.images.generate(prompt=self.prompt, n=1, size="1024x1024")
     self.image_url = response.data[0].url
     self.processing, self.complete = False, True
 ```

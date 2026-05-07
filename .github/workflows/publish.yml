@@ -1,7 +1,15 @@
 name: Publish to PyPI
 
+run-name: Publish ${{ github.event.release.tag_name || inputs.tag }}
+
 on:
+  release:
+    types: [published]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v1.2.3 or reflex-lucide-v0.1.0)"
+        required: true
 
 jobs:
   publish:
@@ -14,21 +22,34 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+          fetch-tags: true
+          fetch-depth: 0
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
 
+      - name: Parse release tag
+        id: parse
+        env:
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: bash .github/scripts/publish/parse_tag.sh
+
+      - name: Pin reflex-base to exact version
+        if: steps.parse.outputs.package == 'reflex'
+        env:
+          VERSION: ${{ steps.parse.outputs.version }}
+        run: bash .github/scripts/publish/pin_reflex_base.sh
+
       - name: Build
-        run: uv build
+        run: uv build --directory "${{ steps.parse.outputs.build_dir }}"
 
       - name: Verify .pyi files in wheel
-        run: |
-          if unzip -l dist/*.whl | grep '\.pyi$'; then
-            echo "✓ .pyi files found in distribution"
-          else
-            echo "Error: No .pyi files found in wheel"
-            exit 1
-          fi
+        if: steps.parse.outputs.package == 'reflex'
+        env:
+          BUILD_DIR: ${{ steps.parse.outputs.build_dir }}
+        run: bash .github/scripts/publish/verify_pyi.sh
 
       - name: Publish
-        run: uv publish
+        run: uv publish dist/*

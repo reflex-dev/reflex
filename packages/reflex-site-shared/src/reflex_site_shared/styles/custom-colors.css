@@ -1,0 +1,182 @@
+/* Custom colors */
+
+.light,
+.light-theme {
+  /* Slate */
+  --c-slate-1: #fcfcfd;
+  --c-slate-2: #f9f9fb;
+  --c-slate-3: #f0f0f3;
+  --c-slate-4: #e8e8ec;
+  --c-slate-5: #e0e1e6;
+  --c-slate-6: #d9d9e0;
+  --c-slate-7: #cdced6;
+  --c-slate-8: #b9bbc6;
+  --c-slate-9: #8b8d98;
+  --c-slate-10: #80838d;
+  --c-slate-11: #60646c;
+  --c-slate-12: #1c2024;
+  --slate-1: #fbfcfe;
+  --slate-2: #f7fafd;
+  --slate-3: #edf1f6;
+  --slate-4: #e4e9f1;
+  --slate-5: #dbe1eb;
+  --slate-6: #d3dae6;
+  --slate-7: #c7d0de;
+  --slate-8: #b1bdcf;
+  --slate-9: #838fa1;
+  --slate-10: #798495;
+  --slate-11: #5c6573;
+  --slate-12: #1b212a;
+  --slate-a1: #0040c004;
+  --slate-a2: #0040c008;
+  --slate-a3: #00398e12;
+  --slate-a4: #0037801c;
+  --slate-a5: #00327924;
+  --slate-a6: #002e772d;
+  --slate-a7: #002d7039;
+  --slate-a8: #0028634e;
+  --slate-a9: #00193c7c;
+  --slate-a10: #00153686;
+  --slate-a11: #001027a4;
+  --slate-a12: #000711e5;
+  /* Violet */
+  --c-violet-1: #fdfcfe;
+  --c-violet-2: #fafbff;
+  --c-violet-3: #f4f0fe;
+  --c-violet-4: #ebe4ff;
+  --c-violet-5: #e1d9ff;
+  --c-violet-6: #d4cafe;
+  --c-violet-7: #c2b5f5;
+  --c-violet-8: #aa99ec;
+  --c-violet-9: #6e56cf;
+  --c-violet-10: #654dc4;
+  --c-violet-11: #6550b9;
+  --c-violet-12: #2f265f;
+  /* Jade */
+  --c-jade-8: #56ba9f;
+  --c-jade-8-a: rgba(86, 186, 159, 0.16);
+  /* Red */
+  --c-red-9: #e5484d;
+  --c-red-10: #dc3e42;
+  /* White */
+  --c-white-1: #ffffff;
+  --glow: #ebe4ff;
+  --wave-line-1: #d4cafe;
+  --wave-line-2: #ebe4ff;
+  /* Marketing Colors */
+  --m-slate-1: #fcfcfd;
+  --m-slate-2: #f6f7f9;
+  --m-slate-3: #eeeff2;
+  --m-slate-4: #e5e8eb;
+  --m-slate-5: #cacdd4;
+  --m-slate-6: #979faa;
+  --m-slate-7: #67707e;
+  --m-slate-8: #3c434e;
+  --m-slate-9: #2a3037;
+  --m-slate-10: #21252b;
+  --m-slate-11: #1d2025;
+  --m-slate-12: #151618;
+  --m-slate-13: #1c2024;
+  --m-slate-14: #1a1b1d;
+  --m-slate-15: #151618;
+  --m-violet-1: #fdfcfe;
+  --m-violet-2: #faf8ff;
+  --m-violet-3: #f4f0fe;
+  --m-violet-4: #ebe4ff;
+  --m-violet-5: #e1d9ff;
+  --m-violet-6: #d4cafe;
+  --m-violet-7: #c2b5f5;
+  --m-violet-8: #aa99ec;
+  --m-violet-9: #6e56cf;
+  --m-violet-10: #654dc4;
+  --m-violet-11: #6550b9;
+  --m-violet-12: #2f265f;
+}
+
+.dark,
+.dark-theme {
+  /* Slate */
+  --slate-1: #141619;
+  --slate-2: #1b1d20;
+  --slate-3: #22252a;
+  --slate-4: #282b31;
+  --slate-5: #2e3238;
+  --slate-6: #353a42;
+  --slate-7: #414852;
+  --slate-8: #58616f;
+  --slate-9: #656e7d;
+  --slate-10: #737c8a;
+  --slate-11: #adb4bf;
+  --slate-12: #eceef1;
+  /* #151618 */
+  --c-slate-2: #1a1b1d;
+  /* #1A1B1D */
+  --c-slate-3: #222326;
+  /* #222326 */
+  --c-slate-4: #27282b;
+  /* #27282B */
+  --c-slate-5: #303236;
+  /* #303236 */
+  --c-slate-6: #4b4d53;
+  /* #4B4D53 */
+  --c-slate-7: #5e5f69;
+  /* #5E5F69 */
+  --c-slate-8: #6e7287;
+  /* #6E7287 */
+  --c-slate-9: #9a9cac;
+  /* #9A9CAC */
+  --c-slate-10: #d9d9e0;
+  /* #D9D9E0 */
+  --c-slate-11: #e0e1e6;
+  /* #E0E1E6 */
+  --c-slate-12: #fcfcfd;
+  /* #FCFCFD */
+  /* Violet */
+  --c-violet-1: #16112c;
+  --c-violet-2: #140e2b;
+  --c-violet-3: #261958;
+  --c-violet-4: #2f1c78;
+  --c-violet-5: #352088;
+  --c-violet-6: #4329ac;
+  --c-violet-7: #5638d3;
+  --c-violet-8: #5f43d0;
+  --c-violet-9: #baa7ff;
+  --c-violet-10: #d6c8fb;
+  --c-violet-11: #ede8fe;
+  --c-violet-12: #faf5fe;
+  /* Jade */
+  --c-jade-8: #56ba9f;
+  --c-jade-8-a: rgba(86, 186, 159, 0.16);
+  /* Red */
+  --c-red-9: #e5484d;
+  --c-red-10: #dc3e42;
+  /* White */
+  --c-white-1: #1b1d20;
+  --glow: #261958;
+  --wave-line-1: #2f1c78;
+  --wave-line-2: #261958;
+  --m-slate-1: #fcfcfd;
+  --m-slate-2: #f6f7f9;
+  --m-slate-3: #eeeff2;
+  --m-slate-4: #e5e8eb;
+  --m-slate-5: #cacdd4;
+  --m-slate-6: #979faa;
+  --m-slate-7: #67707e;
+  --m-slate-8: #3c434e;
+  --m-slate-9: #2a3037;
+  --m-slate-10: #21252b;
+  --m-slate-11: #1d2025;
+  --m-slate-12: #151618;
+  --m-violet-1: #fdfcfe;
+  --m-violet-2: #faf8ff;
+  --m-violet-3: #f4f0fe;
+  --m-violet-4: #ebe4ff;
+  --m-violet-5: #e1d9ff;
+  --m-violet-6: #d4cafe;
+  --m-violet-7: #c2b5f5;
+  --m-violet-8: #aa99ec;
+  --m-violet-9: #6e56cf;
+  --m-violet-10: #654dc4;
+  --m-violet-11: #6550b9;
+  --m-violet-12: #2f265f;
+}

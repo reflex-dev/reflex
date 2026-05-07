@@ -1,0 +1,71 @@
+name: Auto-release internal packages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/reflex-components-internal/**"
+      - "packages/reflex-site-shared/**"
+      - ".github/workflows/auto_release_internal.yml"
+  workflow_dispatch:
+    inputs:
+      package:
+        description: "Package to release"
+        required: true
+        type: choice
+        options:
+          - reflex-components-internal
+          - reflex-site-shared
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.detect.outputs.packages }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+      - id: detect
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_PACKAGE: ${{ inputs.package }}
+        run: bash .github/scripts/auto_release_internal/detect.sh
+
+  release:
+    needs: detect
+    if: needs.detect.outputs.packages != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package: ${{ fromJson(needs.detect.outputs.packages) }}
+      fail-fast: false
+    concurrency:
+      group: release-${{ matrix.package }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+      - name: Compute next version
+        id: version
+        env:
+          PKG: ${{ matrix.package }}
+        run: bash .github/scripts/auto_release_internal/compute_version.sh
+      - name: Create GitHub release (not marked latest)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+          PKG: ${{ matrix.package }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: bash .github/scripts/auto_release_internal/create_release.sh
+      - name: Trigger publish workflow
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: bash .github/scripts/auto_release_internal/trigger_publish.sh

@@ -4,15 +4,19 @@ from pathlib import Path
 
 import pytest
 from pytest_mock import MockerFixture
+from reflex_base import constants
+from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
+from reflex_base.constants.compiler import PageNames
+from reflex_base.utils.imports import ImportVar, ParsedImportDict
+from reflex_base.vars.base import Var
+from reflex_base.vars.sequence import LiteralStringVar
+from reflex_components_core.base import document
+from reflex_components_core.base.document import Links, Scripts
+from reflex_components_core.el.elements.metadata import Head, Link, Meta
+from reflex_components_core.el.elements.other import Html
 
-from reflex import constants
+import reflex as rx
 from reflex.compiler import compiler, utils
-from reflex.components.base import document
-from reflex.components.el.elements.metadata import Link
-from reflex.constants.compiler import PageNames
-from reflex.utils.imports import ImportVar, ParsedImportDict
-from reflex.vars.base import Var
-from reflex.vars.sequence import LiteralStringVar
 
 
 @pytest.mark.parametrize(
@@ -162,7 +166,6 @@ def test_compile_stylesheets(tmp_path: Path, mocker: MockerFixture):
         (
             "@layer __reflex_base;\n"
             "@import url('./__reflex_style_reset.css');\n"
-            "@import url('@radix-ui/themes/styles.css');\n"
             "@import url('https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple');\n"
             "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css');\n"
             "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css');\n"
@@ -226,7 +229,6 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker: MockerFixture):
         (
             "@layer __reflex_base;\n"
             "@import url('./__reflex_style_reset.css');\n"
-            "@import url('@radix-ui/themes/styles.css');\n"
             "@import url('./style.css');\n"
             f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}');\n"
             f"@import url('./{Path('preprocess') / Path('styles_b.css')!s}');"
@@ -248,7 +250,6 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker: MockerFixture):
         (
             "@layer __reflex_base;\n"
             "@import url('./__reflex_style_reset.css');\n"
-            "@import url('@radix-ui/themes/styles.css');\n"
             "@import url('./style.css');\n"
             f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}');\n"
             f"@import url('./{Path('preprocess') / Path('styles_b.css')!s}');"
@@ -295,7 +296,7 @@ def test_compile_stylesheets_exclude_tailwind(tmp_path, mocker: MockerFixture):
 
     assert compiler.compile_root_stylesheet(stylesheets) == (
         str(Path(".web") / "styles" / (PageNames.STYLESHEET_ROOT + ".css")),
-        "@layer __reflex_base;\n@import url('./__reflex_style_reset.css');\n@import url('@radix-ui/themes/styles.css');\n@import url('./style.css');",
+        "@layer __reflex_base;\n@import url('./__reflex_style_reset.css');\n@import url('./style.css');",
     )
 
 
@@ -334,8 +335,73 @@ def test_compile_stylesheets_no_reset(tmp_path: Path, mocker: MockerFixture):
             / "styles"
             / (PageNames.STYLESHEET_ROOT + ".css")
         ),
-        "@layer __reflex_base;\n@import url('@radix-ui/themes/styles.css');\n@import url('./style.css');",
+        "@layer __reflex_base;\n@import url('./style.css');",
     )
+
+
+def test_compile_stylesheets_includes_radix_plugin(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """Explicit RadixThemesPlugin should add the Radix stylesheet import."""
+    project = tmp_path / "test_project"
+    project.mkdir()
+
+    assets_dir = project / "assets"
+    assets_dir.mkdir()
+    (assets_dir / "style.css").write_text(".root { color: red; }")
+
+    config = mocker.Mock()
+    config.plugins = [rx.plugins.RadixThemesPlugin()]
+    mocker.patch("reflex.compiler.compiler.get_config", return_value=config)
+    mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
+    mocker.patch(
+        "reflex.compiler.compiler.get_web_dir",
+        return_value=project / constants.Dirs.WEB,
+    )
+    mocker.patch(
+        "reflex.compiler.utils.get_web_dir", return_value=project / constants.Dirs.WEB
+    )
+
+    assert compiler.compile_root_stylesheet(["/style.css"]) == (
+        str(
+            project
+            / constants.Dirs.WEB
+            / "styles"
+            / (PageNames.STYLESHEET_ROOT + ".css")
+        ),
+        "@layer __reflex_base;\n@import url('./__reflex_style_reset.css');\n@import url('@radix-ui/themes/styles.css');\n@import url('./style.css');",
+    )
+
+
+def test_compile_app_root_omits_radix_window_library_by_default():
+    """Apps without Radix should not import it in the app root."""
+    reset_bundled_libraries()
+
+    _, code = compiler.compile_app_root(rx.el.div("hello"))
+
+    assert "@radix-ui/themes" not in code
+
+
+def test_compile_app_root_includes_radix_window_library_when_bundled():
+    """Bundled Radix libraries should be exposed to window.__reflex."""
+    reset_bundled_libraries()
+    try:
+        bundle_library("@radix-ui/themes@3.3.0")
+
+        _, code = compiler.compile_app_root(rx.el.div("hello"))
+
+        assert 'import * as radix_ui_themes from "@radix-ui/themes";' in code
+        assert '"@radix-ui/themes": radix_ui_themes' in code
+    finally:
+        reset_bundled_libraries()
+
+
+def test_compile_contexts_has_default_color_mode_context():
+    """ColorModeContext should have a safe fallback value without Radix."""
+    _, code = compiler.compile_contexts(None, None)
+
+    assert "createContext({" in code
+    assert 'resolvedColorMode: defaultColorMode === "dark" ? "dark" : "light"' in code
 
 
 def test_compile_nonexistent_stylesheet(tmp_path, mocker: MockerFixture):
@@ -364,39 +430,39 @@ def test_create_document_root():
     # Test with no components.
     root = utils.create_document_root()
     root.render()
-    assert isinstance(root, utils.Html)
-    assert isinstance(root.children[0], utils.Head)
+    assert isinstance(root, Html)
+    assert isinstance(root.children[0], Head)
     # Default language.
     lang = root.lang  # pyright: ignore [reportAttributeAccessIssue]
     assert isinstance(lang, LiteralStringVar)
     assert lang.equals(Var.create("en"))
     # No children in head.
     assert len(root.children[0].children) == 6
-    assert isinstance(root.children[0].children[1], utils.Meta)
+    assert isinstance(root.children[0].children[1], Meta)
     char_set = root.children[0].children[1].char_set  # pyright: ignore [reportAttributeAccessIssue]
     assert isinstance(char_set, LiteralStringVar)
     assert char_set.equals(Var.create("utf-8"))
-    assert isinstance(root.children[0].children[2], utils.Meta)
+    assert isinstance(root.children[0].children[2], Meta)
     name = root.children[0].children[2].name  # pyright: ignore [reportAttributeAccessIssue]
     assert isinstance(name, LiteralStringVar)
     assert name.equals(Var.create("viewport"))
     assert isinstance(root.children[0].children[3], document.Meta)
     assert isinstance(root.children[0].children[4], Link)
-    assert isinstance(root.children[0].children[5], document.Links)
+    assert isinstance(root.children[0].children[5], Links)
 
 
 def test_create_document_root_with_scripts():
     # Test with components.
     comps = [
-        utils.Scripts.create(src="foo.js"),
-        utils.Scripts.create(src="bar.js"),
+        Scripts.create(src="foo.js"),
+        Scripts.create(src="bar.js"),
     ]
     root = utils.create_document_root(
         head_components=comps,
         html_lang="rx",
         html_custom_attrs={"project": "reflex"},
     )
-    assert isinstance(root, utils.Html)
+    assert isinstance(root, Html)
     assert len(root.children[0].children) == 8
     names = [c.tag for c in root.children[0].children]
     assert names == [
@@ -419,12 +485,12 @@ def test_create_document_root_with_scripts():
 def test_create_document_root_with_meta_char_set():
     # Test with components.
     comps = [
-        utils.Meta.create(char_set="cp1252"),
+        Meta.create(char_set="cp1252"),
     ]
     root = utils.create_document_root(
         head_components=comps,
     )
-    assert isinstance(root, utils.Html)
+    assert isinstance(root, Html)
     assert len(root.children[0].children) == 6
     names = [c.tag for c in root.children[0].children]
     assert names == ["script", "meta", "meta", "Meta", "link", "Links"]
@@ -434,13 +500,13 @@ def test_create_document_root_with_meta_char_set():
 def test_create_document_root_with_meta_viewport():
     # Test with components.
     comps = [
-        utils.Meta.create(http_equiv="refresh", content="5"),
-        utils.Meta.create(name="viewport", content="foo"),
+        Meta.create(http_equiv="refresh", content="5"),
+        Meta.create(name="viewport", content="foo"),
     ]
     root = utils.create_document_root(
         head_components=comps,
     )
-    assert isinstance(root, utils.Html)
+    assert isinstance(root, Html)
     assert len(root.children[0].children) == 7
     names = [c.tag for c in root.children[0].children]
     assert names == ["script", "meta", "meta", "meta", "Meta", "link", "Links"]

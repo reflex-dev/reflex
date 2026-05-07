@@ -5,14 +5,30 @@ import subprocess
 import sys
 from pathlib import Path
 
-from reflex.utils.pyi_generator import PyiGenerator, _relative_to_pwd
+from reflex_base.utils.pyi_generator import PyiGenerator, _relative_to_pwd
 
 logger = logging.getLogger("pyi_generator")
 
 LAST_RUN_COMMIT_SHA_FILE = Path(".pyi_generator_last_run").resolve()
 GENERATOR_FILE = Path(__file__).resolve()
 GENERATOR_DIFF_FILE = Path(".pyi_generator_diff").resolve()
-DEFAULT_TARGETS = ["reflex/components", "reflex/experimental", "reflex/__init__.py"]
+DEFAULT_TARGETS = [
+    "reflex/components",
+    "reflex/experimental",
+    "reflex/__init__.py",
+    "packages/reflex-components-code/src/reflex_components_code",
+    "packages/reflex-components-core/src/reflex_components_core",
+    "packages/reflex-components-dataeditor/src/reflex_components_dataeditor",
+    "packages/reflex-components-gridjs/src/reflex_components_gridjs",
+    "packages/reflex-components-lucide/src/reflex_components_lucide",
+    "packages/reflex-components-markdown/src/reflex_components_markdown",
+    "packages/reflex-components-moment/src/reflex_components_moment",
+    "packages/reflex-components-plotly/src/reflex_components_plotly",
+    "packages/reflex-components-radix/src/reflex_components_radix",
+    "packages/reflex-components-react-player/src/reflex_components_react_player",
+    "packages/reflex-components-recharts/src/reflex_components_recharts",
+    "packages/reflex-components-sonner/src/reflex_components_sonner",
+]
 
 
 def _git_diff(args: list[str]) -> str:

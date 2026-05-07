@@ -5,8 +5,8 @@ from __future__ import annotations
 import re
 from collections.abc import Callable
 
-from reflex import constants
-from reflex.config import get_config
+from reflex_base import constants
+from reflex_base.config import get_config
 
 
 def verify_route_validity(route: str) -> None:

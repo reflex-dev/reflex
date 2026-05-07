@@ -8,12 +8,10 @@ from typing import Annotated
 from unittest.mock import patch
 
 import pytest
-
-from reflex import constants
-from reflex.environment import (
+from reflex_base import constants
+from reflex_base.environment import (
     EnvironmentVariables,
     EnvVar,
-    ExecutorType,
     ExistingPath,
     PerformanceMode,
     SequenceOptions,
@@ -33,8 +31,8 @@ from reflex.environment import (
     interpret_plugin_class_env,
     interpret_plugin_env,
 )
-from reflex.plugins import Plugin
-from reflex.utils.exceptions import EnvironmentVarValueError
+from reflex_base.plugins import Plugin
+from reflex_base.utils.exceptions import EnvironmentVarValueError
 
 
 class TestPlugin(Plugin):
@@ -409,47 +407,6 @@ class TestEnvVarDescriptor:
         assert env_var_instance.default == "default"
 
 
-class TestExecutorType:
-    """Test the ExecutorType enum and related functionality."""
-
-    def test_executor_type_values(self):
-        """Test ExecutorType enum values."""
-        assert ExecutorType.THREAD.value == "thread"
-        assert ExecutorType.PROCESS.value == "process"
-        assert ExecutorType.MAIN_THREAD.value == "main_thread"
-
-    def test_get_executor_main_thread_mode(self):
-        """Test executor selection in main thread mode."""
-        with (
-            patch.object(
-                environment.REFLEX_COMPILE_EXECUTOR,
-                "get",
-                return_value=ExecutorType.MAIN_THREAD,
-            ),
-            patch.object(
-                environment.REFLEX_COMPILE_PROCESSES, "get", return_value=None
-            ),
-            patch.object(environment.REFLEX_COMPILE_THREADS, "get", return_value=None),
-        ):
-            executor = ExecutorType.get_executor_from_environment()
-
-            # Test the main thread executor functionality
-            with executor:
-                future = executor.submit(lambda x: x * 2, 5)
-                assert future.result() == 10
-
-    def test_get_executor_returns_executor(self):
-        """Test that get_executor_from_environment returns an executor."""
-        # Test with default values - should return some kind of executor
-        executor = ExecutorType.get_executor_from_environment()
-        assert executor is not None
-
-        # Test that we can use it as a context manager
-        with executor:
-            future = executor.submit(lambda: "test")
-            assert future.result() == "test"
-
-
 class TestUtilityFunctions:
     """Test utility functions."""
 
@@ -510,7 +467,7 @@ class TestUtilityFunctions:
         result = _paths_from_environment()
         assert result == []
 
-    @patch("reflex.environment.load_dotenv")
+    @patch("reflex_base.environment.load_dotenv")
     def test_load_dotenv_from_files_with_dotenv(self, mock_load_dotenv):
         """Test _load_dotenv_from_files when dotenv is available.
 
@@ -529,8 +486,8 @@ class TestUtilityFunctions:
             mock_load_dotenv.assert_any_call(file1, override=True)
             mock_load_dotenv.assert_any_call(file2, override=True)
 
-    @patch("reflex.environment.load_dotenv", None)
-    @patch("reflex.utils.console")
+    @patch("reflex_base.environment.load_dotenv", None)
+    @patch("reflex_base.utils.console")
     def test_load_dotenv_from_files_without_dotenv(self, mock_console):
         """Test _load_dotenv_from_files when dotenv is not available.
 
@@ -549,7 +506,7 @@ class TestUtilityFunctions:
         # Should not raise any errors
         _load_dotenv_from_files([])
 
-    @patch("reflex.environment.load_dotenv")
+    @patch("reflex_base.environment.load_dotenv")
     def test_load_dotenv_from_files_nonexistent_file(self, mock_load_dotenv):
         """Test _load_dotenv_from_files with non-existent file.
 

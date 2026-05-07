@@ -9,6 +9,10 @@ import pytest
 from selenium.webdriver.common.by import By
 
 from reflex.testing import AppHarness, WebDriver
+from tests.integration.utils import (
+    poll_assert_event_order,
+    poll_assert_relative_event_order,
+)
 
 MANY_EVENTS = 50
 
@@ -146,14 +150,20 @@ def EventChain():
 
     app = rx.App()
 
-    token_input = rx.input(
-        value=State.router.session.client_token, is_read_only=True, id="token"
+    common_elements = rx.vstack(
+        rx.input(
+            value=State.router.session.client_token, is_read_only=True, id="token"
+        ),
+        rx.vstack(
+            rx.foreach(State.event_order, lambda x: rx.text(x)), id="event_order"
+        ),
+        rx.input(value=State.is_hydrated, is_read_only=True, id="is_hydrated"),
     )
 
     @app.add_page
     def index():
         return rx.fragment(
-            token_input,
+            common_elements,
             rx.input(value=State.interim_value, is_read_only=True, id="interim_value"),
             rx.button(
                 "Return Event",
@@ -225,13 +235,13 @@ def EventChain():
     def on_load_return_chain():
         return rx.fragment(
             rx.text("return"),
-            token_input,
+            common_elements,
         )
 
     def on_load_yield_chain():
         return rx.fragment(
             rx.text("yield"),
-            token_input,
+            common_elements,
         )
 
     def on_mount_return_chain():
@@ -241,7 +251,7 @@ def EventChain():
                 on_mount=State.on_load_return_chain,
                 on_unmount=lambda: State.event_arg("unmount"),
             ),
-            token_input,
+            common_elements,
             rx.button("Unmount", on_click=rx.redirect("/"), id="unmount"),
         )
 
@@ -255,7 +265,7 @@ def EventChain():
                 ],
                 on_unmount=State.event_no_args,
             ),
-            token_input,
+            common_elements,
             rx.button("Unmount", on_click=rx.redirect("/"), id="unmount"),
         )
 
@@ -315,6 +325,7 @@ def event_chain_strict(tmp_path_factory) -> Generator[AppHarness, None, None]:
     with AppHarness.create(
         root=tmp_path_factory.mktemp("event_chain_strict"),
         app_source=EventChain,
+        app_name="event_chain_strict",
     ) as harness:
         yield harness
 
@@ -440,8 +451,7 @@ def assert_token(event_chain: AppHarness, driver: WebDriver) -> str:
         ),
     ],
 )
-@pytest.mark.asyncio
-async def test_event_chain_click(
+def test_event_chain_click(
     event_chain: AppHarness,
     driver: WebDriver,
     button_id: str,
@@ -455,19 +465,11 @@ async def test_event_chain_click(
         button_id: the ID of the button to click
         exp_event_order: the expected events recorded in the State
     """
-    token = assert_token(event_chain, driver)
-    state_name = event_chain.get_state_name("_state")
+    assert_token(event_chain, driver)
     btn = driver.find_element(By.ID, button_id)
     btn.click()
 
-    async def _has_all_events():
-        return len(
-            (await event_chain.get_state(token)).substates[state_name].event_order  # pyright: ignore[reportAttributeAccessIssue]
-        ) == len(exp_event_order)
-
-    await AppHarness._poll_for_async(_has_all_events)
-    event_order = (await event_chain.get_state(token)).substates[state_name].event_order  # pyright: ignore[reportAttributeAccessIssue]
-    assert event_order == exp_event_order
+    poll_assert_event_order(driver, exp_event_order)
 
 
 @pytest.mark.parametrize(
@@ -493,8 +495,7 @@ async def test_event_chain_click(
         ),
     ],
 )
-@pytest.mark.asyncio
-async def test_event_chain_on_load(
+def test_event_chain_on_load(
     event_chain: AppHarness,
     driver: WebDriver,
     uri: str,
@@ -510,52 +511,67 @@ async def test_event_chain_on_load(
     """
     assert event_chain.frontend_url is not None
     driver.get(event_chain.frontend_url.removesuffix("/") + uri)
-    token = assert_token(event_chain, driver)
-    state_name = event_chain.get_state_name("_state")
+    assert_token(event_chain, driver)
 
-    async def _has_all_events():
-        return len(
-            (await event_chain.get_state(token)).substates[state_name].event_order  # pyright: ignore[reportAttributeAccessIssue]
-        ) == len(exp_event_order)
-
-    await AppHarness._poll_for_async(_has_all_events)
-    backend_state = (await event_chain.get_state(token)).substates[state_name]
-    assert backend_state.event_order == exp_event_order  # pyright: ignore[reportAttributeAccessIssue]
-    assert backend_state.is_hydrated is True  # pyright: ignore[reportAttributeAccessIssue]
+    poll_assert_event_order(driver, exp_event_order)
+    assert (
+        event_chain.poll_for_value(
+            driver.find_element(By.ID, "is_hydrated"), exp_not_equal="false"
+        )
+        == "true"
+    )
 
 
 @pytest.mark.parametrize(
-    ("uri", "exp_event_order"),
+    ("uri", "expected_counts", "ordering_rules"),
     [
         (
             "/on-mount-return-chain",
+            {
+                "on_load_return_chain": 1,
+                "event_arg:1": 1,
+                "event_arg:2": 1,
+                "event_arg:3": 1,
+                "event_arg:unmount": 1,
+            },
             [
-                "on_load_return_chain",
-                "event_arg:1",
-                "event_arg:2",
-                "event_arg:3",
-                "event_arg:unmount",
+                # on_load before chain and unmount
+                (("on_load_return_chain", 0), ("event_arg:1", 0)),
+                (("on_load_return_chain", 0), ("event_arg:unmount", 0)),
+                # Chain in order
+                (("event_arg:1", 0), ("event_arg:2", 0)),
+                (("event_arg:2", 0), ("event_arg:3", 0)),
             ],
         ),
         (
             "/on-mount-yield-chain",
+            {
+                "on_load_yield_chain": 1,
+                "event_arg:4": 1,
+                "event_arg:5": 1,
+                "event_arg:6": 1,
+                "event_arg:mount": 1,
+                "event_no_args": 1,
+            },
             [
-                "on_load_yield_chain",
-                "event_arg:mount",
-                "event_arg:4",
-                "event_arg:5",
-                "event_arg:6",
-                "event_no_args",
+                # on_load before chain and mount
+                (("on_load_yield_chain", 0), ("event_arg:4", 0)),
+                (("on_load_yield_chain", 0), ("event_arg:mount", 0)),
+                # Chain in order
+                (("event_arg:4", 0), ("event_arg:5", 0)),
+                (("event_arg:5", 0), ("event_arg:6", 0)),
+                # mount before event_no_args
+                (("event_arg:mount", 0), ("event_no_args", 0)),
             ],
         ),
     ],
 )
-@pytest.mark.asyncio
-async def test_event_chain_on_mount(
+def test_event_chain_on_mount(
     event_chain: AppHarness,
     driver: WebDriver,
     uri: str,
-    exp_event_order: list[str],
+    expected_counts: dict[str, int],
+    ordering_rules: list,
 ):
     """Load the URI, assert that the events are handled in the correct order.
 
@@ -568,7 +584,8 @@ async def test_event_chain_on_mount(
         event_chain: AppHarness for the event_chain app
         driver: selenium WebDriver open to the app
         uri: the page to load
-        exp_event_order: the expected events recorded in the State
+        expected_counts: mapping of event name to expected occurrence count
+        ordering_rules: relative ordering constraints between event occurrences
     """
     assert event_chain.frontend_url is not None
     driver.get(event_chain.frontend_url.removesuffix("/") + uri)
@@ -576,63 +593,80 @@ async def test_event_chain_on_mount(
     unmount_button = AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "unmount")
     )
-    token = assert_token(event_chain, driver)
-    state_name = event_chain.get_state_name("_state")
+    assert_token(event_chain, driver)
     unmount_button.click()
 
-    async def _has_all_events():
-        return len(
-            (await event_chain.get_state(token)).substates[state_name].event_order  # pyright: ignore[reportAttributeAccessIssue]
-        ) == len(exp_event_order)
-
-    await AppHarness._poll_for_async(_has_all_events)
-    event_order = (await event_chain.get_state(token)).substates[state_name].event_order  # pyright: ignore[reportAttributeAccessIssue]
-    assert list(event_order) == exp_event_order
+    poll_assert_relative_event_order(driver, expected_counts, ordering_rules)
 
 
 @pytest.mark.parametrize(
-    ("uri", "exp_event_order"),
+    ("uri", "expected_counts", "ordering_rules"),
     [
         (
             "/on-mount-return-chain",
+            {
+                "on_load_return_chain": 2,
+                "event_arg:1": 2,
+                "event_arg:2": 2,
+                "event_arg:3": 2,
+                "event_arg:unmount": 2,
+            },
             [
-                "on_load_return_chain",
-                "event_arg:unmount",
-                "on_load_return_chain",
-                "event_arg:1",
-                "event_arg:2",
-                "event_arg:3",
-                "event_arg:1",
-                "event_arg:2",
-                "event_arg:3",
-                "event_arg:unmount",
+                # First on_load before first chain and first unmount
+                (("on_load_return_chain", 0), ("event_arg:1", 0)),
+                (("on_load_return_chain", 0), ("event_arg:unmount", 0)),
+                # First chain in order
+                (("event_arg:1", 0), ("event_arg:2", 0)),
+                (("event_arg:2", 0), ("event_arg:3", 0)),
+                # First unmount before second on_load
+                (("event_arg:unmount", 0), ("on_load_return_chain", 1)),
+                # Second on_load before second chain and second unmount
+                (("on_load_return_chain", 1), ("event_arg:1", 1)),
+                (("on_load_return_chain", 1), ("event_arg:unmount", 1)),
+                # Second chain in order
+                (("event_arg:1", 1), ("event_arg:2", 1)),
+                (("event_arg:2", 1), ("event_arg:3", 1)),
             ],
         ),
         (
             "/on-mount-yield-chain",
+            {
+                "on_load_yield_chain": 2,
+                "event_arg:4": 2,
+                "event_arg:5": 2,
+                "event_arg:6": 2,
+                "event_arg:mount": 2,
+                "event_no_args": 2,
+            },
             [
-                "on_load_yield_chain",
-                "event_arg:mount",
-                "event_no_args",
-                "on_load_yield_chain",
-                "event_arg:mount",
-                "event_arg:4",
-                "event_arg:5",
-                "event_arg:6",
-                "event_arg:4",
-                "event_arg:5",
-                "event_arg:6",
-                "event_no_args",
+                # First on_load before first chain and first mount
+                (("on_load_yield_chain", 0), ("event_arg:4", 0)),
+                (("on_load_yield_chain", 0), ("event_arg:mount", 0)),
+                # First chain in order
+                (("event_arg:4", 0), ("event_arg:5", 0)),
+                (("event_arg:5", 0), ("event_arg:6", 0)),
+                # First mount before first event_no_args
+                (("event_arg:mount", 0), ("event_no_args", 0)),
+                # First event_no_args before second on_load
+                (("event_no_args", 0), ("on_load_yield_chain", 1)),
+                # Second on_load before second chain and second mount
+                (("on_load_yield_chain", 1), ("event_arg:4", 1)),
+                (("on_load_yield_chain", 1), ("event_arg:mount", 1)),
+                # Second chain in order
+                (("event_arg:4", 1), ("event_arg:5", 1)),
+                (("event_arg:5", 1), ("event_arg:6", 1)),
+                # Second mount before second event_no_args
+                (("event_arg:mount", 1), ("event_no_args", 1)),
             ],
         ),
     ],
 )
-@pytest.mark.asyncio
-async def test_event_chain_on_mount_strict(
+def test_event_chain_on_mount_strict(
     event_chain_strict: AppHarness,
     driver_strict: WebDriver,
     uri: str,
-    exp_event_order: list[str],
+    expected_counts: dict[str, int],
+    ordering_rules: list,
 ):
     """Run the test_event_chain_on_mount test with strict mode enabled.
 
@@ -640,13 +674,15 @@ async def test_event_chain_on_mount_strict(
         event_chain_strict: AppHarness for the event_chain app with strict mode enabled
         driver_strict: selenium WebDriver open to the app with strict mode enabled
         uri: the page to load
-        exp_event_order: the expected events recorded in the State
+        expected_counts: mapping of event name to expected occurrence count
+        ordering_rules: relative ordering constraints between event occurrences
     """
-    await test_event_chain_on_mount(
+    test_event_chain_on_mount(
         event_chain=event_chain_strict,
         driver=driver_strict,
         uri=uri,
-        exp_event_order=exp_event_order,
+        expected_counts=expected_counts,
+        ordering_rules=ordering_rules,
     )
 
 

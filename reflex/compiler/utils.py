@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import concurrent.futures
+import copy
 import operator
 import traceback
 from collections.abc import Mapping, Sequence
@@ -12,22 +13,29 @@ from pathlib import Path
 from typing import Any, TypedDict
 from urllib.parse import urlparse
 
-from reflex import constants
-from reflex.components.base import Description, Image, Scripts
-from reflex.components.base.document import Links, ScrollRestoration
-from reflex.components.base.document import Meta as ReactMeta
-from reflex.components.component import Component, ComponentStyle, CustomComponent
-from reflex.components.el.elements.metadata import Head, Link, Meta, Title
-from reflex.components.el.elements.other import Html
-from reflex.components.el.elements.sectioning import Body
-from reflex.constants.state import FIELD_MARKER
+from reflex_base import constants
+from reflex_base.components.component import Component, ComponentStyle, CustomComponent
+from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER, FIELD_MARKER
+from reflex_base.style import Style
+from reflex_base.utils import format, imports
+from reflex_base.utils.imports import ImportVar, ParsedImportDict
+from reflex_base.vars.base import Field, Var, VarData
+from reflex_base.vars.function import DestructuredArg
+from reflex_components_core.base import Description, Image, Scripts
+from reflex_components_core.base.document import Links, ScrollRestoration
+from reflex_components_core.base.document import Meta as ReactMeta
+from reflex_components_core.el.elements.metadata import Head, Link, Meta, Title
+from reflex_components_core.el.elements.other import Html
+from reflex_components_core.el.elements.sectioning import Body
+
+from reflex.experimental.memo import (
+    ExperimentalMemoComponentDefinition,
+    ExperimentalMemoFunctionDefinition,
+)
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.state import BaseState, _resolve_delta
-from reflex.style import Style
-from reflex.utils import format, imports, path_ops
-from reflex.utils.imports import ImportVar, ParsedImportDict
+from reflex.utils import path_ops
 from reflex.utils.prerequisites import get_web_dir
-from reflex.vars.base import Field, Var, VarData
 
 # To re-export this function.
 merge_imports = imports.merge_imports
@@ -39,13 +47,13 @@ def compile_import_statement(fields: list[ImportVar]) -> tuple[str, list[str]]:
     Args:
         fields: The set of fields to import from the library.
 
-    Raises:
-        ValueError: If there is more than one default import.
-
     Returns:
         The libraries for default and rest.
         default: default library. When install "import def from library".
         rest: rest of libraries. When install "import {rest1, rest2} from library"
+
+    Raises:
+        ValueError: If there is more than one default import.
     """
     # ignore the ImportVar fields with render=False during compilation
     fields_set = {field for field in fields if field.render}
@@ -105,11 +113,11 @@ def compile_imports(import_dict: ParsedImportDict) -> list[_ImportDict]:
     Args:
         import_dict: The import dict to compile.
 
-    Raises:
-        ValueError: If an import in the dict is invalid.
-
     Returns:
         The list of import dict.
+
+    Raises:
+        ValueError: If an import in the dict is invalid.
     """
     collapsed_import_dict: ParsedImportDict = imports.collapse_imports(import_dict)
     validate_imports(collapsed_import_dict)
@@ -328,11 +336,15 @@ def compile_custom_component(
     render = component.get_component()
 
     # Get the imports.
-    imports: ParsedImportDict = {
-        lib: fields
-        for lib, fields in render._get_all_imports().items()
-        if lib != component.library
-    }
+    imports: ParsedImportDict = {}
+    for lib, fields in render._get_all_imports().items():
+        if lib != component.library:
+            imports[lib] = fields
+            continue
+
+        filtered_fields = [field for field in fields if field.tag != component.tag]
+        if filtered_fields:
+            imports[lib] = filtered_fields
 
     imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
 
@@ -344,10 +356,237 @@ def compile_custom_component(
         {
             "name": component.tag,
             "props": props,
+            "signature": DestructuredArg(
+                fields=tuple(f"{prop}:{prop}{CAMEL_CASE_MEMO_MARKER}" for prop in props)
+            ).to_javascript(),
             "render": render.render(),
             "hooks": render._get_all_hooks(),
             "custom_code": render._get_all_custom_code(),
             "dynamic_imports": render._get_all_dynamic_imports(),
+        },
+        imports,
+    )
+
+
+def _apply_component_style_for_compile(component: Component) -> Component:
+    """Apply the app style to a compiled component tree.
+
+    Args:
+        component: The component tree.
+
+    Returns:
+        The styled component tree.
+    """
+    component._add_style_recursive(_app_style())
+    return component
+
+
+def _apply_root_style(component: Component) -> None:
+    """Merge app-level style into ``component.style`` without recursing.
+
+    Used for passthrough memo bodies where descendants render (and are styled)
+    in the page scope — only the root's style needs merging here.
+
+    Args:
+        component: The root component to style in place.
+    """
+    if type(component)._add_style != Component._add_style:
+        msg = "Do not override _add_style directly. Use add_style instead."
+        raise UserWarning(msg)
+    style = _app_style()
+    new_style = component._add_style()
+    style_vars = [new_style._var_data]
+    component_style = component._get_component_style(style)
+    if component_style:
+        new_style.update(component_style)
+        style_vars.append(component_style._var_data)
+    new_style.update(component.style)
+    style_vars.append(component.style._var_data)
+    new_style._var_data = VarData.merge(*style_vars)
+    component.style = new_style
+
+
+def _app_style() -> ComponentStyle | Style:
+    """Return the active app-level component style map, or an empty one.
+
+    Returns:
+        The app-level style map.
+    """
+    try:
+        from reflex.utils.prerequisites import get_and_validate_app
+
+        return get_and_validate_app().app.style
+    except Exception:
+        return {}
+
+
+def compile_experimental_component_memo(
+    definition: ExperimentalMemoComponentDefinition,
+) -> tuple[dict, ParsedImportDict]:
+    """Compile an experimental memo component.
+
+    Args:
+        definition: The component memo definition.
+
+    Returns:
+        A tuple of the compiled component definition and its imports.
+    """
+    hole_child = definition.passthrough_hole_child
+    if hole_child is not None:
+        # Passthrough memo: shallow-copy the root only — ``render.children``
+        # still aliases the user-authored descendants so root-level walkers
+        # (e.g. ``Form._get_form_refs``) can introspect the real subtree, but
+        # we skip the O(n) deepcopy + recursive style pass. Descendants are
+        # rendered AND styled in the page scope, not here, so only the root
+        # needs app-level style merged.
+        render = copy.copy(definition.component)
+        _apply_root_style(render)
+
+        hooks = _root_only_hooks(render)
+        custom_code = _root_only_custom_code(render)
+        dynamic_imports = _root_only_dynamic_imports(render)
+        # Strings returned by the root's ``add_hooks`` can reference symbols
+        # (``refs``, ``StateContexts``, etc.) that normally reach this module
+        # through descendants' ``_get_hooks_imports`` / ``_get_imports``. JS
+        # imports are side-effect-free and dedup cleanly, so pulling the
+        # whole subtree's imports here is safe even when some go unused.
+        # ``_get_all_imports`` is read-only on the descendants, so the shallow
+        # aliasing above is fine.
+        all_imports = render._get_all_imports()
+
+        # Swap children for JSX render: the memo body template emits a
+        # ``{children}`` hole in place of the real descendants.
+        render.children = [hole_child]
+        rendered = render.render()
+    else:
+        render = _apply_component_style_for_compile(copy.deepcopy(definition.component))
+        rendered = render.render()
+        hooks = render._get_all_hooks()
+        custom_code = render._get_all_custom_code()
+        dynamic_imports = render._get_all_dynamic_imports()
+        all_imports = render._get_all_imports()
+
+    # Each experimental memo now lives in ``web/utils/components/<name>.jsx``,
+    # so importing the ``$/utils/components`` index from this file is only
+    # circular when ``<name>`` itself appears in that index — i.e. a legacy
+    # ``@rx.memo`` wrapper file. For auto-memo wrappers around legacy custom
+    # components, the index import is legitimate and must be preserved.
+    self_module = f"$/{constants.Dirs.COMPONENTS_PATH}/{definition.export_name}"
+    imports: ParsedImportDict = {
+        lib: fields for lib, fields in all_imports.items() if lib != self_module
+    }
+
+    imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
+
+    signature_fields = [
+        f"{param.js_prop_name}:{param.placeholder_name}"
+        for param in definition.params
+        if not param.is_children and not param.is_rest
+    ]
+
+    if any(param.is_children for param in definition.params):
+        signature_fields.insert(0, "children")
+
+    rest_param = next((param for param in definition.params if param.is_rest), None)
+
+    return (
+        {
+            "kind": "component",
+            "name": definition.export_name,
+            "signature": DestructuredArg(
+                fields=tuple(signature_fields),
+                rest=rest_param.placeholder_name if rest_param is not None else None,
+            ).to_javascript(),
+            "render": rendered,
+            "hooks": hooks,
+            "custom_code": custom_code,
+            "dynamic_imports": dynamic_imports,
+        },
+        imports,
+    )
+
+
+def _root_only_hooks(component: Component) -> dict[str, VarData | None]:
+    """Return hooks contributed by ``component`` itself, not its subtree.
+
+    Used by the passthrough memo compile path where descendants render in the
+    page scope — only the wrapper's own hooks (internal + ``add_hooks`` +
+    explicit ``_get_hooks``) belong in the memo body.
+
+    Args:
+        component: The root component whose own hooks to collect.
+
+    Returns:
+        The root-level hook map, keyed by hook source string.
+    """
+    code: dict[str, VarData | None] = {}
+    code.update(component._get_hooks_internal())
+    explicit = component._get_hooks()
+    if explicit is not None:
+        code[explicit] = None
+    code.update(component._get_added_hooks())
+    return code
+
+
+def _root_only_custom_code(component: Component) -> dict[str, None]:
+    """Return custom code contributed by ``component`` itself, not its subtree.
+
+    Args:
+        component: The root component whose own custom code to collect.
+
+    Returns:
+        The root-level custom code snippets.
+    """
+    code: dict[str, None] = {}
+    own = component._get_custom_code()
+    if own is not None:
+        code[own] = None
+    for clz in component._iter_parent_classes_with_method("add_custom_code"):
+        for item in clz.add_custom_code(component):
+            code[item] = None
+    return code
+
+
+def _root_only_dynamic_imports(component: Component) -> set[str]:
+    """Return dynamic imports contributed by ``component`` itself.
+
+    Args:
+        component: The root component whose own dynamic imports to collect.
+
+    Returns:
+        The root-level dynamic imports.
+    """
+    own = component._get_dynamic_imports()
+    return {own} if own else set()
+
+
+def compile_experimental_function_memo(
+    definition: ExperimentalMemoFunctionDefinition,
+) -> tuple[dict, ParsedImportDict]:
+    """Compile an experimental memo function.
+
+    Args:
+        definition: The function memo definition.
+
+    Returns:
+        A tuple of the compiled function definition and its imports.
+    """
+    imports: ParsedImportDict = {}
+    if var_data := definition.function._get_all_var_data():
+        # Per-file memo modules live at ``$/utils/components/<name>``; strip
+        # only a self-import to this function memo's own module.
+        self_module = f"$/{constants.Dirs.COMPONENTS_PATH}/{definition.python_name}"
+        imports = {
+            lib: list(fields)
+            for lib, fields in dict(var_data.imports).items()
+            if lib != self_module
+        }
+
+    return (
+        {
+            "kind": "function",
+            "name": definition.python_name,
+            "function": str(definition.function),
         },
         imports,
     )
@@ -547,16 +786,15 @@ def get_components_path() -> str:
     )
 
 
-def get_stateful_components_path() -> str:
-    """Get the path of the compiled stateful components.
+def get_memo_components_dir() -> str:
+    """Get the directory that holds per-memo module files.
 
     Returns:
-        The path of the compiled stateful components.
+        The directory used for per-memo ``.jsx`` modules re-exported by the
+        top-level components index.
     """
     return str(
-        get_web_dir()
-        / constants.Dirs.UTILS
-        / (constants.PageNames.STATEFUL_COMPONENTS + constants.Ext.JSX)
+        get_web_dir() / constants.Dirs.UTILS / constants.PageNames.COMPONENTS,
     )
 
 
