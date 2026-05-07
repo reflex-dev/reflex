@@ -664,11 +664,11 @@ def check_schema_up_to_date():
     """Check if the sqlmodel metadata matches the current database schema."""
     if get_config().db_url is None or not environment.ALEMBIC_CONFIG.get().exists():
         return
-    with model.Model.get_db_engine().connect() as connection:
+    with model.get_engine().connect() as connection:
         from alembic.util.exc import CommandError
 
         try:
-            if model.Model.alembic_autogenerate(
+            if model.alembic_autogenerate(
                 connection=connection,
                 write_migration_scripts=False,
             ):

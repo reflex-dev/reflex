@@ -9,6 +9,7 @@ from pytest_mock import MockerFixture
 from reflex_base.constants import Endpoint, Env
 from reflex_base.plugins import Plugin
 from reflex_base.plugins.sitemap import SitemapPlugin
+from reflex_base.utils.exceptions import ConfigError
 
 import reflex as rx
 from reflex.environment import (
@@ -557,3 +558,36 @@ class TestDisablePlugins:
         """Test that builtin plugins are added when not disabled."""
         config = rx.Config(app_name="test")
         assert any(isinstance(p, SitemapPlugin) for p in config.plugins)
+
+
+def test_plugins_instance_passthrough():
+    """A Plugin instance is kept as-is (issue #6440)."""
+    instance = SitemapPlugin()
+    config = rx.Config(app_name="test", plugins=[instance])
+    assert instance in config.plugins
+
+
+def test_plugins_class_auto_instantiated():
+    """A Plugin subclass is auto-instantiated rather than raising deep in the compiler (issue #6440)."""
+    config = rx.Config(app_name="test", plugins=[SitemapPlugin])  # pyright: ignore[reportArgumentType]
+    instances = [p for p in config.plugins if isinstance(p, SitemapPlugin)]
+    assert len(instances) == 1
+    # And it must be an instance, not the class itself.
+    assert not isinstance(instances[0], type)
+
+
+def test_plugins_invalid_value_raises_config_error():
+    """A non-Plugin value raises ConfigError naming the entry, not a deep TypeError (issue #6440)."""
+    with pytest.raises(ConfigError, match=r"reflex\.Config\.plugins"):
+        rx.Config(app_name="test", plugins=["not-a-plugin"])  # pyright: ignore[reportArgumentType]
+
+
+def test_plugins_class_requiring_args_raises_config_error():
+    """A Plugin subclass that needs constructor args raises a clear ConfigError (issue #6440)."""
+
+    class NeedsArgs(Plugin):
+        def __init__(self, required):
+            self.required = required
+
+    with pytest.raises(ConfigError, match="NeedsArgs"):
+        rx.Config(app_name="test", plugins=[NeedsArgs])  # pyright: ignore[reportArgumentType]

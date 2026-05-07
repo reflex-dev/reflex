@@ -1010,7 +1010,7 @@ class App(MiddlewareMixin, LifespanMixin):
             from starlette_admin.contrib.sqla.admin import Admin
             from starlette_admin.contrib.sqla.view import ModelView
 
-            from reflex.model import Model
+            from reflex.model import get_engine
         except ImportError:
             return
 
@@ -1023,7 +1023,7 @@ class App(MiddlewareMixin, LifespanMixin):
         if admin_dash and admin_dash.models:
             # Build the admin dashboard
             admin = admin_dash.admin or Admin(
-                engine=Model.get_db_engine(),
+                engine=get_engine(),
                 title="Reflex Admin Dashboard",
                 logo_url="https://reflex.dev/Reflex.svg",
             )
