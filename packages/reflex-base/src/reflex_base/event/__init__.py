@@ -54,6 +54,7 @@ from reflex_base.vars.function import (
     FunctionVar,
     VarOperationCall,
 )
+from reflex_base.vars.number import ternary_operation
 from reflex_base.vars.object import ObjectVar
 
 if TYPE_CHECKING:
@@ -2065,25 +2066,43 @@ def call_event_fn(
             A FunctionVar that dispatches runtime values as frontend calls or
             backend addEvents queueing.
         """
-        event_like_name = "__event_or_fn"
-        return Var(
-            _js_expr=(
-                "(...args) => {"
-                f"const {event_like_name} = {event_like_var!s};"
-                f'if (typeof {event_like_name} === "function") {{'
-                f"return {event_like_name}(...args);"
-                "}"
-                f"return {CompileVars.ADD_EVENTS}([{event_like_name}], args, ({{}}));"
-                "}"
+        alias_name = "__event_or_fn"
+        alias_var = Var(_js_expr=alias_name)
+        rest_args = Var(_js_expr="args")
+        spread_args = Var(_js_expr="...args")
+
+        is_function = Var(
+            _js_expr=f'typeof {alias_name} === "function"',
+            _var_type=bool,
+        )
+        add_events = FunctionStringVar.create(
+            CompileVars.ADD_EVENTS,
+            _var_data=VarData(
+                imports=Imports.EVENTS,
+                hooks={Hooks.EVENTS: None},
             ),
-            _var_type=Callable,
+        )
+        dispatch_expr = ternary_operation(
+            is_function,
+            alias_var.to(FunctionVar).call(spread_args),
+            add_events.call(
+                LiteralVar.create([alias_var]),
+                rest_args,
+                _EMPTY_EVENT_ACTIONS,
+            ),
+        )
+        body = Var(
+            _js_expr=f"const {alias_name} = {event_like_var!s}; return {dispatch_expr!s};",
             _var_data=VarData.merge(
                 event_like_var._get_all_var_data(),
-                VarData(
-                    imports=Imports.EVENTS,
-                    hooks={Hooks.EVENTS: None},
-                ),
+                dispatch_expr._get_all_var_data(),
             ),
+        )
+        return ArgsFunctionOperation.create(
+            args_names=(),
+            return_expr=body,
+            rest="args",
+            explicit_return=True,
         ).to(FunctionVar)
 
     # Convert any event specs to event specs.
