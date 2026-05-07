@@ -1,6 +1,9 @@
 import shutil
 import tempfile
+from collections.abc import Callable, Generator
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Protocol
 
 import pytest
 from click.testing import CliRunner
@@ -40,6 +43,79 @@ def _patch_frontend_package_manager(
         js_runtimes.processes,
         "run_process_with_fallbacks",
         run_package_manager,
+    )
+
+
+class _InstallFn(Protocol):
+    def __call__(self, packages: set[str] | None = ...) -> None: ...
+
+
+@dataclass
+class InstallPackagesEnv:
+    """Test environment for install_frontend_packages tests."""
+
+    tmp_path: Path
+    web_dir: Path
+    root_lock: Path
+    web_lock: Path
+    config: Config
+    patch_pm: Callable[[list[str], Callable], None]
+    install: _InstallFn
+
+
+@pytest.fixture
+def install_packages_env(
+    tmp_path, monkeypatch
+) -> Generator[InstallPackagesEnv, None, None]:
+    """Isolated environment for install_frontend_packages tests.
+
+    Creates the web dir, patches get_web_dir, chdirs into tmp_path, and
+    exposes the bun lock paths, a Config, a package-manager patch helper,
+    and a runner that invokes install_frontend_packages.
+
+    Yields:
+        An InstallPackagesEnv with paths, config, and patch_pm/install helpers.
+    """
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    _patch_web_dir(monkeypatch, web_dir)
+    config = Config(app_name="test")
+
+    def patch_pm(package_managers: list[str], run_package_manager: Callable) -> None:
+        _patch_frontend_package_manager(
+            monkeypatch, package_managers, run_package_manager
+        )
+
+    def install(packages: set[str] | None = None) -> None:
+        js_runtimes.install_frontend_packages(packages or set(), config)
+
+    env = InstallPackagesEnv(
+        tmp_path=tmp_path,
+        web_dir=web_dir,
+        root_lock=tmp_path / constants.Bun.LOCKFILE_PATH,
+        web_lock=web_dir / constants.Bun.LOCKFILE_PATH,
+        config=config,
+        patch_pm=patch_pm,
+        install=install,
+    )
+    with chdir(tmp_path):
+        yield env
+
+
+@pytest.fixture
+def _stub_skeleton_initializers(monkeypatch):
+    """Stub the frontend_skeleton initialize_* helpers to no-ops."""
+    for name in (
+        "initialize_package_json",
+        "initialize_bun_config",
+        "initialize_npmrc",
+        "update_react_router_config",
+        "initialize_vite_config",
+    ):
+        monkeypatch.setattr(frontend_skeleton, name, lambda: None)
+    monkeypatch.setattr(frontend_skeleton, "get_project_hash", lambda: None)
+    monkeypatch.setattr(
+        frontend_skeleton, "init_reflex_json", lambda project_hash: None
     )
 
 
@@ -114,30 +190,17 @@ def test_initialise_vite_config(config, expected_output):
     assert expected_output in output
 
 
+@pytest.mark.usefixtures("_stub_skeleton_initializers")
 def test_initialize_web_directory_restores_root_bun_lock(tmp_path, monkeypatch):
     template_dir = tmp_path / "template"
     template_dir.mkdir()
     (template_dir / ".gitignore").write_text(".web\n")
-    root_bun_lock_path = tmp_path / constants.Bun.LOCKFILE_PATH
-    root_bun_lock_path.write_text("root-lock")
-    web_dir = tmp_path / constants.Dirs.WEB
+    monkeypatch.setattr(
+        frontend_skeleton.constants.Templates.Dirs, "WEB_TEMPLATE", template_dir
+    )
 
-    monkeypatch.setattr(
-        frontend_skeleton.constants.Templates.Dirs,
-        "WEB_TEMPLATE",
-        template_dir,
-    )
-    monkeypatch.setattr(frontend_skeleton, "get_project_hash", lambda: None)
-    monkeypatch.setattr(frontend_skeleton, "initialize_package_json", lambda: None)
-    monkeypatch.setattr(frontend_skeleton, "initialize_bun_config", lambda: None)
-    monkeypatch.setattr(frontend_skeleton, "initialize_npmrc", lambda: None)
-    monkeypatch.setattr(frontend_skeleton, "update_react_router_config", lambda: None)
-    monkeypatch.setattr(frontend_skeleton, "initialize_vite_config", lambda: None)
-    monkeypatch.setattr(
-        frontend_skeleton,
-        "init_reflex_json",
-        lambda project_hash: None,
-    )
+    web_dir = tmp_path / constants.Dirs.WEB
+    (tmp_path / constants.Bun.LOCKFILE_PATH).write_text("root-lock")
     _patch_web_dir(monkeypatch, web_dir)
 
     with chdir(tmp_path):
@@ -146,54 +209,43 @@ def test_initialize_web_directory_restores_root_bun_lock(tmp_path, monkeypatch):
     assert (web_dir / constants.Bun.LOCKFILE_PATH).read_text() == "root-lock"
 
 
-def test_install_frontend_packages_syncs_root_bun_lock(tmp_path, monkeypatch):
-    web_dir = tmp_path / constants.Dirs.WEB
-    web_dir.mkdir()
-    root_bun_lock_path = tmp_path / constants.Bun.LOCKFILE_PATH
-    web_bun_lock_path = web_dir / constants.Bun.LOCKFILE_PATH
-    root_bun_lock_path.write_text("root-lock")
+def test_install_frontend_packages_syncs_root_bun_lock(
+    install_packages_env: InstallPackagesEnv,
+):
+    env = install_packages_env
+    env.root_lock.write_text("root-lock")
     seen_web_lock_contents: list[str] = []
 
     def run_package_manager(args, **kwargs):
-        seen_web_lock_contents.append(web_bun_lock_path.read_text())
-        web_bun_lock_path.write_text("updated-lock")
+        seen_web_lock_contents.append(env.web_lock.read_text())
+        env.web_lock.write_text("updated-lock")
 
-    _patch_web_dir(monkeypatch, web_dir)
-    _patch_frontend_package_manager(monkeypatch, ["bun"], run_package_manager)
-
-    with chdir(tmp_path):
-        js_runtimes.install_frontend_packages(set(), Config(app_name="test"))
+    env.patch_pm(["bun"], run_package_manager)
+    env.install()
 
     assert seen_web_lock_contents == ["root-lock"]
-    assert root_bun_lock_path.read_text() == "updated-lock"
+    assert env.root_lock.read_text() == "updated-lock"
 
 
-def test_install_frontend_packages_creates_root_bun_lock(tmp_path, monkeypatch):
-    web_dir = tmp_path / constants.Dirs.WEB
-    web_dir.mkdir()
-    root_bun_lock_path = tmp_path / constants.Bun.LOCKFILE_PATH
-    web_bun_lock_path = web_dir / constants.Bun.LOCKFILE_PATH
+def test_install_frontend_packages_creates_root_bun_lock(
+    install_packages_env: InstallPackagesEnv,
+):
+    env = install_packages_env
 
     def run_package_manager(args, **kwargs):
-        web_bun_lock_path.write_text("generated-lock")
+        env.web_lock.write_text("generated-lock")
 
-    _patch_web_dir(monkeypatch, web_dir)
-    _patch_frontend_package_manager(monkeypatch, ["bun"], run_package_manager)
+    env.patch_pm(["bun"], run_package_manager)
+    env.install()
 
-    with chdir(tmp_path):
-        js_runtimes.install_frontend_packages(set(), Config(app_name="test"))
-
-    assert root_bun_lock_path.read_text() == "generated-lock"
+    assert env.root_lock.read_text() == "generated-lock"
 
 
 def test_install_frontend_packages_does_not_persist_partial_bun_lock(
-    tmp_path, monkeypatch
+    install_packages_env: InstallPackagesEnv,
 ):
-    web_dir = tmp_path / constants.Dirs.WEB
-    web_dir.mkdir()
-    root_bun_lock_path = tmp_path / constants.Bun.LOCKFILE_PATH
-    web_bun_lock_path = web_dir / constants.Bun.LOCKFILE_PATH
-    root_bun_lock_path.write_text("root-lock")
+    env = install_packages_env
+    env.root_lock.write_text("root-lock")
     call_count = 0
     error_message = "package installation failed"
 
@@ -201,106 +253,86 @@ def test_install_frontend_packages_does_not_persist_partial_bun_lock(
         nonlocal call_count
         call_count += 1
         if call_count == 1:
-            assert web_bun_lock_path.read_text() == "root-lock"
-            web_bun_lock_path.write_text("partial-lock")
+            assert env.web_lock.read_text() == "root-lock"
+            env.web_lock.write_text("partial-lock")
             return
         raise RuntimeError(error_message)
 
-    _patch_web_dir(monkeypatch, web_dir)
-    _patch_frontend_package_manager(monkeypatch, ["bun"], run_package_manager)
+    env.patch_pm(["bun"], run_package_manager)
 
-    with chdir(tmp_path), pytest.raises(RuntimeError, match=error_message):
-        js_runtimes.install_frontend_packages(
-            {"custom-package"},
-            Config(app_name="test"),
-        )
+    with pytest.raises(RuntimeError, match=error_message):
+        env.install({"custom-package"})
 
-    assert root_bun_lock_path.read_text() == "root-lock"
+    assert env.root_lock.read_text() == "root-lock"
 
 
-def test_install_frontend_packages_cache_respects_root_bun_lock(tmp_path, monkeypatch):
-    web_dir = tmp_path / constants.Dirs.WEB
-    web_dir.mkdir()
-    root_bun_lock_path = tmp_path / constants.Bun.LOCKFILE_PATH
-    web_bun_lock_path = web_dir / constants.Bun.LOCKFILE_PATH
-    root_bun_lock_path.write_text("lock-v1")
+def test_install_frontend_packages_cache_respects_root_bun_lock(
+    install_packages_env: InstallPackagesEnv,
+):
+    env = install_packages_env
+    env.root_lock.write_text("lock-v1")
     call_count = 0
 
     def run_package_manager(args, **kwargs):
         nonlocal call_count
         call_count += 1
-        if root_bun_lock_path.exists():
-            web_bun_lock_path.write_text(root_bun_lock_path.read_text())
+        if env.root_lock.exists():
+            env.web_lock.write_text(env.root_lock.read_text())
         else:
-            web_bun_lock_path.write_text("lock-regenerated")
+            env.web_lock.write_text("lock-regenerated")
 
-    _patch_web_dir(monkeypatch, web_dir)
-    _patch_frontend_package_manager(monkeypatch, ["bun"], run_package_manager)
+    env.patch_pm(["bun"], run_package_manager)
 
-    with chdir(tmp_path):
-        config = Config(app_name="test")
-        js_runtimes.install_frontend_packages(set(), config)
-        js_runtimes.install_frontend_packages(set(), config)
-        root_bun_lock_path.write_text("lock-v2")
-        js_runtimes.install_frontend_packages(set(), config)
-        root_bun_lock_path.unlink()
-        js_runtimes.install_frontend_packages(set(), config)
+    env.install()
+    env.install()
+    env.root_lock.write_text("lock-v2")
+    env.install()
+    env.root_lock.unlink()
+    env.install()
 
     assert call_count == 3
 
 
 def test_install_frontend_packages_npm_does_not_create_bogus_bun_lock(
-    tmp_path, monkeypatch
+    install_packages_env: InstallPackagesEnv,
 ):
-    web_dir = tmp_path / constants.Dirs.WEB
-    web_dir.mkdir()
-    root_bun_lock_path = tmp_path / constants.Bun.LOCKFILE_PATH
-    web_bun_lock_path = web_dir / constants.Bun.LOCKFILE_PATH
-    web_bun_lock_path.write_text("stale-lock")
+    env = install_packages_env
+    env.web_lock.write_text("stale-lock")
     call_count = 0
 
     def run_package_manager(args, **kwargs):
         nonlocal call_count
         call_count += 1
-        assert not web_bun_lock_path.exists()
+        assert not env.web_lock.exists()
 
-    _patch_web_dir(monkeypatch, web_dir)
-    _patch_frontend_package_manager(monkeypatch, ["npm"], run_package_manager)
-
-    with chdir(tmp_path):
-        js_runtimes.install_frontend_packages(set(), Config(app_name="test"))
+    env.patch_pm(["npm"], run_package_manager)
+    env.install()
 
     assert call_count == 1
-    assert not root_bun_lock_path.exists()
-    assert not web_bun_lock_path.exists()
+    assert not env.root_lock.exists()
+    assert not env.web_lock.exists()
 
 
 def test_install_frontend_packages_cache_hit_refreshes_web_bun_lock(
-    tmp_path, monkeypatch
+    install_packages_env: InstallPackagesEnv,
 ):
-    web_dir = tmp_path / constants.Dirs.WEB
-    web_dir.mkdir()
-    root_bun_lock_path = tmp_path / constants.Bun.LOCKFILE_PATH
-    web_bun_lock_path = web_dir / constants.Bun.LOCKFILE_PATH
-    root_bun_lock_path.write_text("root-lock")
+    env = install_packages_env
+    env.root_lock.write_text("root-lock")
     call_count = 0
 
     def run_package_manager(args, **kwargs):
         nonlocal call_count
         call_count += 1
-        web_bun_lock_path.write_text("root-lock")
+        env.web_lock.write_text("root-lock")
 
-    _patch_web_dir(monkeypatch, web_dir)
-    _patch_frontend_package_manager(monkeypatch, ["bun"], run_package_manager)
+    env.patch_pm(["bun"], run_package_manager)
 
-    with chdir(tmp_path):
-        config = Config(app_name="test")
-        js_runtimes.install_frontend_packages(set(), config)
-        web_bun_lock_path.unlink()
-        js_runtimes.install_frontend_packages(set(), config)
+    env.install()
+    env.web_lock.unlink()
+    env.install()
 
     assert call_count == 1
-    assert web_bun_lock_path.read_text() == "root-lock"
+    assert env.web_lock.read_text() == "root-lock"
 
 
 def test_cached_procedure():
