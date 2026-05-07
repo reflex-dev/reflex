@@ -198,23 +198,6 @@ jobs:
 
           [tool.uv.sources]
           reflex = { path = "..", editable = true }
-          reflex-base = { path = "../packages/reflex-base", editable = true }
-          reflex-components-code = { path = "../packages/reflex-components-code", editable = true }
-          reflex-components-core = { path = "../packages/reflex-components-core", editable = true }
-          reflex-components-dataeditor = { path = "../packages/reflex-components-dataeditor", editable = true }
-          reflex-components-gridjs = { path = "../packages/reflex-components-gridjs", editable = true }
-          reflex-components-internal = { path = "../packages/reflex-components-internal", editable = true }
-          reflex-components-lucide = { path = "../packages/reflex-components-lucide", editable = true }
-          reflex-components-markdown = { path = "../packages/reflex-components-markdown", editable = true }
-          reflex-components-moment = { path = "../packages/reflex-components-moment", editable = true }
-          reflex-components-plotly = { path = "../packages/reflex-components-plotly", editable = true }
-          reflex-components-radix = { path = "../packages/reflex-components-radix", editable = true }
-          reflex-components-react-player = { path = "../packages/reflex-components-react-player", editable = true }
-          reflex-components-recharts = { path = "../packages/reflex-components-recharts", editable = true }
-          reflex-components-sonner = { path = "../packages/reflex-components-sonner", editable = true }
-          reflex-docgen = { path = "../packages/reflex-docgen", editable = true }
-          reflex-hosting-cli = { path = "../packages/reflex-hosting-cli", editable = true }
-          hatch-reflex-pyi = { path = "../packages/hatch-reflex-pyi", editable = true }
           EOF
       - name: Install rx-shout dependencies
         # Re-locks because pyproject.toml changed; --prerelease=allow matches
