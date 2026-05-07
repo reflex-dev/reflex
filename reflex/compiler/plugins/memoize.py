@@ -314,8 +314,7 @@ class MemoizeStatefulPlugin(Plugin):
                 children, comp.children, strict=True
             )
         ):
-            comp = page_context.own(comp)
-            comp.children = list(children)
+            comp = comp.copy_with(children=tuple(children))
 
         strategy = get_memoization_strategy(comp)
         if strategy is MemoizationStrategy.SNAPSHOT:

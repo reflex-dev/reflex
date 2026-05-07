@@ -534,9 +534,10 @@ def _lift_rest_props(component: Component) -> Component:
 
         rewritten_children.append(child)
 
-    component.children = rewritten_children
-    component.special_props = special_props
-    return component
+    return component.copy_with(
+        children=tuple(rewritten_children),
+        special_props=special_props,
+    )
 
 
 def _analyze_params(
@@ -1045,9 +1046,8 @@ def create_passthrough_component_memo(
     captured_hole_child: list[Component] = []
 
     def passthrough(children: Var[Component]) -> Component:
-        new_component = copy(component)
         if render_snapshot:
-            return new_component
+            return copy(component)
         hole_bare = Bare.create(children)
         captured_hole_child.append(hole_bare)
         # Substitute the ``{children}`` hole for the original descendants so
@@ -1055,7 +1055,7 @@ def create_passthrough_component_memo(
         # specific children at any given call site. Original descendants stay
         # reachable on the page-level wrapper via the plugin's
         # ``_get_all_refs`` delegation back to the source component.
-        new_component.children = [hole_bare]
+        new_component = component.copy_with(children=(hole_bare,))
         # Compile-time walkers that need the real subtree (notably
         # ``Form._get_form_refs`` collecting id-based input refs into the
         # generated ``handleSubmit`` JS) call ``self._get_all_refs()`` while

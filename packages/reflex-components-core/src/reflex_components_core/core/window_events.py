@@ -99,12 +99,17 @@ class WindowEventListener(Fragment):
 
         real_component = cast("WindowEventListener", super().create(**props))
         memo_event_triggers = get_memoized_event_triggers(real_component)
-        if memo_event_triggers:
-            real_component.event_triggers = {
-                **real_component.event_triggers,
-                **memo_event_triggers,
-            }
-        return real_component
+        if not memo_event_triggers:
+            return real_component
+        return cast(
+            "WindowEventListener",
+            real_component.copy_with(
+                event_triggers={
+                    **real_component.event_triggers,
+                    **memo_event_triggers,
+                }
+            ),
+        )
 
     def _exclude_props(self) -> list[str]:
         """Exclude event handler props from being passed to Fragment.

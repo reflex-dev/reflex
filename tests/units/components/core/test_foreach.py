@@ -283,7 +283,7 @@ def test_foreach_component_styles():
             display_color,
         )
     )
-    component._add_style_recursive({box: {"color": "red"}})
+    component = component._add_style_recursive({box: {"color": "red"}})
     assert 'css:({ ["color"] : "red" })' in str(component)
 
 

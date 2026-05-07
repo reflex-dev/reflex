@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-import copy
 import dataclasses
 import inspect
 from collections.abc import Callable, Sequence
 from contextvars import ContextVar, Token
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, ClassVar, Protocol, TypeAlias, TypeVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol, TypeAlias, cast
 
 from typing_extensions import Self
 
@@ -30,9 +29,6 @@ else:
             Component | tuple[Component, ...] | str,
         ]
     )
-
-
-_BaseComponentT = TypeVar("_BaseComponentT", bound=BaseComponent)
 
 
 class PageDefinition(Protocol):
@@ -374,8 +370,7 @@ class CompilerHooks:
                     updated_children = list(children[:index])
                 updated_children.append(compiled_child)
             if updated_children is not None:
-                current_comp = page_context.own(current_comp)
-                current_comp.children = updated_children
+                current_comp = current_comp.copy_with(children=tuple(updated_children))
 
             if isinstance(current_comp, Component):
                 for prop_component in current_comp._get_components_in_props():
@@ -437,8 +432,7 @@ class CompilerHooks:
                     updated_children = list(children[:index])
                 updated_children.append(compiled_child)
             if updated_children is not None:
-                current_comp = page_context.own(current_comp)
-                current_comp.children = updated_children
+                current_comp = current_comp.copy_with(children=tuple(updated_children))
 
             if isinstance(current_comp, Component):
                 for prop_component in current_comp._get_components_in_props():
@@ -549,8 +543,9 @@ class CompilerHooks:
             if len(compiled_children) != len(current) or any(
                 a is not b for a, b in zip(compiled_children, current, strict=True)
             ):
-                compiled_component = page_context.own(compiled_component)
-                compiled_component.children = list(compiled_children)
+                compiled_component = compiled_component.copy_with(
+                    children=tuple(compiled_children)
+                )
             return compiled_component
 
         return visit(
@@ -695,38 +690,6 @@ class PageContext(BaseContext):
     # the matching ``leave_component``. Non-empty iff we are inside such a
     # subtree.
     memoize_suppressor_stack: list[int] = dataclasses.field(default_factory=list)
-    # Maps both the user-owned original's ``id()`` and the clone's ``id()`` to
-    # the page-local clone. Lets the walker and plugins rebind children, style,
-    # or event_triggers on a page-local copy without mutating a user-owned
-    # instance that may be referenced from another route.
-    _owned: dict[int, BaseComponent] = dataclasses.field(default_factory=dict)
-    # Strong references to originals keyed by ``id()`` above. Without these,
-    # an original that is only reachable through ``_owned``'s int key can be
-    # garbage collected, and Python may recycle its ``id()`` for a fresh
-    # component, causing ``own()`` to hand back the wrong clone.
-    _owned_refs: list[BaseComponent] = dataclasses.field(default_factory=list)
-
-    def own(self, comp: _BaseComponentT) -> _BaseComponentT:
-        """Return a page-local copy of ``comp``, cloning on first encounter.
-
-        Repeated calls with the same original return the same clone, so
-        mutations from several plugins accumulate on one instance.
-
-        Args:
-            comp: The component the caller is about to mutate.
-
-        Returns:
-            A component the caller may freely mutate without touching any
-            user-owned instance.
-        """
-        existing = self._owned.get(id(comp))
-        if existing is not None:
-            return cast("_BaseComponentT", existing)
-        new = copy.copy(comp)
-        self._owned[id(comp)] = new
-        self._owned[id(new)] = new
-        self._owned_refs.append(comp)
-        return new
 
     def merged_imports(self, *, collapse: bool = False) -> ParsedImportDict:
         """Return the imports accumulated for this page.

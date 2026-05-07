@@ -54,7 +54,7 @@ class DefaultPagePlugin(Plugin):
             if (description := getattr(page, "description", None)) is not None:
                 meta_args["description"] = description
 
-            utils.add_meta(component, **meta_args)
+            component = utils.add_meta(component, **meta_args)
         except Exception as err:
             if hasattr(err, "add_note"):
                 err.add_note(f"Happened while evaluating page {page.route!r}")
@@ -74,41 +74,21 @@ class ApplyStylePlugin(Plugin):
     style: ComponentStyle | None = None
 
     @staticmethod
-    def _apply_style(
-        comp: Component, style: ComponentStyle, page_context: PageContext
-    ) -> Component | None:
+    def _apply_style(comp: Component, style: ComponentStyle) -> Component | None:
         """Apply app-level styles to a single component.
 
         Args:
             comp: The component to style.
             style: The app-level component style map.
-            page_context: The active page context, used to obtain a page-local
-                clone before rewriting ``style``.
 
         Returns:
-            A page-local clone with the merged style, or ``None`` when the
-            component has no type-level or app-level style to apply.
+            A new frozen component carrying the merged style, or ``None``
+            when the component has no type-level or app-level style to apply.
         """
-        if type(comp)._add_style != Component._add_style:
-            msg = "Do not override _add_style directly. Use add_style instead."
-            raise UserWarning(msg)
-
-        new_style = comp._add_style()
-        component_style = comp._get_component_style(style)
-        if not new_style and not component_style:
+        new_style = utils.merge_component_style(comp, style)
+        if new_style is None:
             return None
-
-        style_vars = [new_style._var_data]
-        if component_style:
-            new_style.update(component_style)
-            style_vars.append(component_style._var_data)
-        new_style.update(comp.style)
-        style_vars.append(comp.style._var_data)
-        new_style._var_data = VarData.merge(*style_vars)
-
-        owned = page_context.own(comp)
-        owned.style = new_style
-        return owned
+        return comp.copy_with(style=new_style)
 
     def enter_component(
         self,
@@ -122,11 +102,11 @@ class ApplyStylePlugin(Plugin):
         """Apply the non-recursive portion of ``_add_style_recursive``.
 
         Returns:
-            A page-local clone carrying the merged style, or ``None`` when no
-            style change applies to this component.
+            A new frozen component carrying the merged style, or ``None`` when
+            no style change applies to this component.
         """
         if self.style is not None and isinstance(comp, Component) and not in_prop_tree:
-            return self._apply_style(comp, self.style, page_context)
+            return self._apply_style(comp, self.style)
         return None
 
     def _compiler_bind_enter_component(
@@ -158,7 +138,7 @@ class ApplyStylePlugin(Plugin):
         ) -> BaseComponent | None:
             if not isinstance(comp, Component) or in_prop_tree:
                 return None
-            return apply_style(comp, style, page_context)
+            return apply_style(comp, style)
 
         return enter_component
 

@@ -154,27 +154,27 @@ def fix_event_triggers_for_memo(
     """Return a component whose event triggers reference memoized ``useCallback``s.
 
     Replaces each (non-lifecycle) event-trigger value with a ``Var`` naming a
-    memoized ``useCallback`` wrapper. The original is never mutated — a
-    page-local clone is taken via ``page_context.own`` on first write.
+    memoized ``useCallback`` wrapper. The original is never mutated — a frozen
+    copy with the rewritten triggers is returned via ``copy_with``.
 
     Args:
         component: The component whose event triggers to memoize.
-        page_context: The active page context, used to obtain a page-local
-            clone before rewriting ``event_triggers``.
+        page_context: The active page context (unused; retained for API
+            compatibility with downstream callers).
 
     Returns:
-        Either ``component`` (when nothing needed rewriting) or a page-local
-        clone with the rewritten ``event_triggers``.
+        Either ``component`` (when nothing needed rewriting) or a new frozen
+        copy with the rewritten ``event_triggers``.
     """
     memo_event_triggers = tuple(get_memoized_event_triggers(component).items())
     if not memo_event_triggers:
         return component
-    owned = page_context.own(component)
-    owned.event_triggers = {
-        **component.event_triggers,
-        **dict(memo_event_triggers),
-    }
-    return owned
+    return component.copy_with(
+        event_triggers={
+            **component.event_triggers,
+            **dict(memo_event_triggers),
+        }
+    )
 
 
 def is_snapshot_boundary(component: Component) -> bool:

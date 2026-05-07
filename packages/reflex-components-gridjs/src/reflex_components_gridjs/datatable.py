@@ -106,23 +106,29 @@ class DataTable(Gridjs):
         return {"": "gridjs/dist/theme/mermaid.css"}
 
     def _render(self) -> Tag:
-        if isinstance(self.data, Var) and types.is_dataframe(self.data._var_type):
-            self.columns = self.data._replace(
-                _js_expr=f"{self.data._js_expr}.columns",
+        columns: Any = self.columns
+        data: Any = self.data
+        if isinstance(data, Var) and types.is_dataframe(data._var_type):
+            columns = data._replace(
+                _js_expr=f"{data._js_expr}.columns",
                 _var_type=list[Any],
             )
-            self.data = self.data._replace(
-                _js_expr=f"{self.data._js_expr}.data",
+            data = data._replace(
+                _js_expr=f"{data._js_expr}.data",
                 _var_type=list[list[Any]],
             )
-        if types.is_dataframe(type(self.data)):
+        if types.is_dataframe(type(data)):
             # If given a pandas df break up the data and columns
-            data = serialize(self.data)
-            if not isinstance(data, dict):
+            serialized = serialize(data)
+            if not isinstance(serialized, dict):
                 msg = "Serialized dataframe should be a dict."
                 raise ValueError(msg)
-            self.columns = LiteralVar.create(data["columns"])
-            self.data = LiteralVar.create(data["data"])
+            columns = LiteralVar.create(serialized["columns"])
+            data = LiteralVar.create(serialized["data"])
 
-        # Render the table.
-        return super()._render()
+        props = {
+            attr.removesuffix("_"): getattr(self, attr) for attr in self.get_props()
+        }
+        props["columns"] = columns
+        props["data"] = data
+        return super()._render(props=props)

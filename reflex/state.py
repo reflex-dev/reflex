@@ -2561,8 +2561,7 @@ class ComponentState(State, mixin=True):
         setattr(reflex.istate.dynamic, state_cls_name, component_state)
         component = component_state.get_component(*children, **props)
         component = into_component(component)
-        component.State = component_state
-        return component
+        return component.copy_with(State=component_state)
 
 
 @dataclasses.dataclass(

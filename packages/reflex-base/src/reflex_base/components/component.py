@@ -18,7 +18,7 @@ from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, ClassVar, TypeVar, cast, get_args, get_origin
 
 from rich.markup import escape
-from typing_extensions import dataclass_transform
+from typing_extensions import Self, dataclass_transform
 
 from reflex_base import constants
 from reflex_base.breakpoints import Breakpoints
@@ -266,9 +266,20 @@ class BaseComponent(metaclass=BaseComponentMeta):
     This is something that can be rendered as a Component via the Reflex compiler.
     """
 
-    children: list[BaseComponent] = field(
+    _frozen: ClassVar[bool] = False
+
+    # Render-path caches; allowed to be written even on frozen instances.
+    _CACHE_ATTRS: ClassVar[frozenset[str]] = frozenset({
+        "_cached_render_result",
+        "_vars_cache",
+        "_imports_cache",
+        "_hooks_internal_cache",
+        "_get_component_prop_property",
+    })
+
+    children: tuple[BaseComponent, ...] = field(
         doc="The children nested within the component.",
-        default_factory=list,
+        default_factory=tuple,
         is_javascript_property=False,
     )
 
@@ -293,24 +304,73 @@ class BaseComponent(metaclass=BaseComponentMeta):
         Args:
             **kwargs: The kwargs to pass to the component.
         """
+        if "children" in kwargs:
+            kwargs["children"] = tuple(kwargs["children"])
         for key, value in kwargs.items():
             setattr(self, key, value)
         for name, value in self.get_fields().items():
             if name not in kwargs:
                 setattr(self, name, value.default_value())
 
+    def __setattr__(self, key: str, value: Any) -> None:
+        """Block writes to frozen components, except for cache attributes.
+
+        Args:
+            key: The attribute name.
+            value: The attribute value.
+
+        Raises:
+            AttributeError: If the component is frozen and the attribute is not a cache.
+        """
+        if self.__dict__.get("_frozen", False) and key not in type(self)._CACHE_ATTRS:
+            msg = (
+                f"Cannot set {key!r} on frozen {type(self).__name__}; "
+                "use copy_with() to create a modified copy."
+            )
+            raise AttributeError(msg)
+        super().__setattr__(key, value)
+
+    def _freeze(self) -> None:
+        """Mark this component as frozen.
+
+        Subsequent attribute writes outside the cache allowlist will raise.
+        """
+        object.__setattr__(self, "_frozen", True)
+
+    def copy_with(self, **updates: Any) -> Self:
+        """Return a frozen shallow copy with updated fields.
+
+        Bypasses ``__setattr__`` for speed and to skip the freeze guard.
+        Render-path caches are dropped because they may depend on the fields
+        being replaced.
+
+        Args:
+            **updates: Field values to override on the copy.
+
+        Returns:
+            A new frozen instance with the requested updates applied.
+        """
+        new = self.__class__.__new__(self.__class__)
+        d = vars(new)
+        d.update(vars(self))
+        for cache_attr in type(self)._CACHE_ATTRS:
+            d.pop(cache_attr, None)
+        if "children" in updates:
+            updates["children"] = tuple(updates["children"])
+        d.update(updates)
+        d["_frozen"] = True
+        return new
+
     def set(self, **kwargs):
-        """Set the component props.
+        """Set the component props, returning a new frozen instance.
 
         Args:
             **kwargs: The kwargs to set.
 
         Returns:
-            The component with the updated props.
+            A new component with the updated props.
         """
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-        return self
+        return self.copy_with(**kwargs)
 
     def __copy__(self) -> BaseComponent:
         """Return a shallow copy suitable for compile-time mutation.
@@ -327,13 +387,7 @@ class BaseComponent(metaclass=BaseComponentMeta):
         new = self.__class__.__new__(self.__class__)
         new_dict = vars(new)
         new_dict.update(vars(self))
-        for attr in (
-            "_cached_render_result",
-            "_vars_cache",
-            "_imports_cache",
-            "_hooks_internal_cache",
-            "_get_component_prop_property",
-        ):
+        for attr in type(self)._CACHE_ATTRS:
             new_dict.pop(attr, None)
         return new
 
@@ -1223,9 +1277,11 @@ class Component(BaseComponent, ABC):
         Returns:
             The component.
         """
+        children_tuple = tuple(children)
         comp = cls.__new__(cls)
-        super(Component, comp).__init__(id=props.get("id"), children=list(children))
-        comp._post_init(children=list(children), **props)
+        super(Component, comp).__init__(id=props.get("id"), children=children_tuple)
+        comp._post_init(children=children_tuple, **props)
+        comp._freeze()
         return comp
 
     @classmethod
@@ -1241,10 +1297,12 @@ class Component(BaseComponent, ABC):
         Returns:
             The component.
         """
+        children_tuple = tuple(children)
         comp = cls.__new__(cls)
-        super(Component, comp).__init__(id=props.get("id"), children=list(children))
+        super(Component, comp).__init__(id=props.get("id"), children=children_tuple)
         for prop, value in props.items():
             setattr(comp, prop, value)
+        comp._freeze()
         return comp
 
     def add_style(self) -> dict[str, Any] | None:
@@ -1311,40 +1369,47 @@ class Component(BaseComponent, ABC):
             theme: The theme to apply. (for retro-compatibility with deprecated _apply_theme API)
 
         Returns:
-            The component with the additional style.
+            A component with the additional style; ``self`` if nothing changed.
 
         Raises:
             UserWarning: If `_add_style` has been overridden.
         """
-        # 1. Default style from `_add_style`/`add_style`.
         if type(self)._add_style != Component._add_style:
             msg = "Do not override _add_style directly. Use add_style instead."
             raise UserWarning(msg)
-        new_style = self._add_style()
-        style_vars = [new_style._var_data]
 
-        # 2. User-defined style from `App.style`.
+        style_addition = self._add_style()
         component_style = self._get_component_style(style)
-        if component_style:
-            new_style.update(component_style)
-            style_vars.append(component_style._var_data)
+        has_style_change = bool(style_addition) or bool(component_style)
 
-        # 4. style dict and css props passed to the component instance.
-        new_style.update(self.style)
-        style_vars.append(self.style._var_data)
-
-        new_style._var_data = VarData.merge(*style_vars)
-
-        # Assign the new style
-        self.style = new_style
-
-        # Recursively add style to the children.
-        for child in self.children:
-            # Skip non-Component children.
+        new_children: list | None = None
+        for i, child in enumerate(self.children):
             if not isinstance(child, Component):
                 continue
-            child._add_style_recursive(style, theme)
-        return self
+            updated = child._add_style_recursive(style, theme)
+            if updated is child:
+                continue
+            if new_children is None:
+                new_children = list(self.children)
+            new_children[i] = updated
+
+        if not has_style_change and new_children is None:
+            return self
+
+        updates: dict[str, Any] = {}
+        if has_style_change:
+            new_style = style_addition
+            style_vars = [new_style._var_data]
+            if component_style:
+                new_style.update(component_style)
+                style_vars.append(component_style._var_data)
+            new_style.update(self.style)
+            style_vars.append(self.style._var_data)
+            new_style._var_data = VarData.merge(*style_vars)
+            updates["style"] = new_style
+        if new_children is not None:
+            updates["children"] = tuple(new_children)
+        return self.copy_with(**updates)
 
     def _get_style(self) -> dict:
         """Get the style for the component.
@@ -2342,8 +2407,7 @@ class CustomComponent(Component):
         except Exception:
             style = {}
 
-        component._add_style_recursive(style)
-        return component
+        return component._add_style_recursive(style)
 
     def _get_all_app_wrap_components(
         self, *, ignore_ids: set[int] | None = None

@@ -2,7 +2,7 @@
 
 import dataclasses
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from reflex_base.components.component import (
@@ -712,9 +712,10 @@ def test_base_context_subclasses_initialize_distinct_context_vars() -> None:
 
 def test_apply_style_plugin_matches_legacy_style_behavior() -> None:
     component = create_component_tree()
-    legacy_component = create_component_tree()
-
-    legacy_component._add_style_recursive(page_style())
+    legacy_component: RootComponent = cast(
+        "RootComponent",
+        create_component_tree()._add_style_recursive(page_style()),
+    )
 
     original_style_snapshot = normalize_style(component)
     original_child_style_snapshot = normalize_style(component.children[0])

@@ -377,33 +377,59 @@ def _apply_component_style_for_compile(component: Component) -> Component:
     Returns:
         The styled component tree.
     """
-    component._add_style_recursive(_app_style())
-    return component
+    return component._add_style_recursive(_app_style())
 
 
-def _apply_root_style(component: Component) -> None:
-    """Merge app-level style into ``component.style`` without recursing.
-
-    Used for passthrough memo bodies where descendants render (and are styled)
-    in the page scope — only the root's style needs merging here.
+def merge_component_style(
+    component: Component, app_style: ComponentStyle | Style
+) -> Style | None:
+    """Compute the final style for a single component given app-level style.
 
     Args:
-        component: The root component to style in place.
+        component: The component to style.
+        app_style: The app-level component style map.
+
+    Returns:
+        The merged style, or ``None`` when no type-level or app-level style
+        applies (and the caller can leave ``component.style`` untouched).
+
+    Raises:
+        UserWarning: If ``_add_style`` has been overridden.
     """
     if type(component)._add_style != Component._add_style:
         msg = "Do not override _add_style directly. Use add_style instead."
         raise UserWarning(msg)
-    style = _app_style()
-    new_style = component._add_style()
+    style_addition = component._add_style()
+    component_style = component._get_component_style(app_style)
+    if not style_addition and not component_style:
+        return None
+    new_style = style_addition
     style_vars = [new_style._var_data]
-    component_style = component._get_component_style(style)
     if component_style:
         new_style.update(component_style)
         style_vars.append(component_style._var_data)
     new_style.update(component.style)
     style_vars.append(component.style._var_data)
     new_style._var_data = VarData.merge(*style_vars)
-    component.style = new_style
+    return new_style
+
+
+def _apply_root_style(component: Component) -> Component:
+    """Merge app-level style into ``component.style`` without recursing.
+
+    Used for passthrough memo bodies where descendants render (and are styled)
+    in the page scope — only the root's style needs merging here.
+
+    Args:
+        component: The root component to style.
+
+    Returns:
+        A component with the root style applied; the same instance if nothing changed.
+    """
+    new_style = merge_component_style(component, _app_style())
+    if new_style is None:
+        return component
+    return component.copy_with(style=new_style)
 
 
 def _app_style() -> ComponentStyle | Style:
@@ -433,30 +459,26 @@ def compile_experimental_component_memo(
     """
     hole_child = definition.passthrough_hole_child
     if hole_child is not None:
-        # Passthrough memo: shallow-copy the root only — ``render.children``
-        # still aliases the user-authored descendants so root-level walkers
-        # (e.g. ``Form._get_form_refs``) can introspect the real subtree, but
-        # we skip the O(n) deepcopy + recursive style pass. Descendants are
-        # rendered AND styled in the page scope, not here, so only the root
-        # needs app-level style merged.
-        render = copy.copy(definition.component)
-        _apply_root_style(render)
+        # Passthrough memo: descendants render (and are styled) in the page
+        # scope, so only the root needs app-level style merged. The original
+        # subtree is left alone — frozen components are immutable, so the
+        # root walkers (``Form._get_form_refs`` etc.) read off the original
+        # children before we swap in the JSX hole.
+        styled_root = _apply_root_style(definition.component)
 
-        hooks = _root_only_hooks(render)
-        custom_code = _root_only_custom_code(render)
-        dynamic_imports = _root_only_dynamic_imports(render)
+        hooks = _root_only_hooks(styled_root)
+        custom_code = _root_only_custom_code(styled_root)
+        dynamic_imports = _root_only_dynamic_imports(styled_root)
         # Strings returned by the root's ``add_hooks`` can reference symbols
         # (``refs``, ``StateContexts``, etc.) that normally reach this module
         # through descendants' ``_get_hooks_imports`` / ``_get_imports``. JS
         # imports are side-effect-free and dedup cleanly, so pulling the
         # whole subtree's imports here is safe even when some go unused.
-        # ``_get_all_imports`` is read-only on the descendants, so the shallow
-        # aliasing above is fine.
-        all_imports = render._get_all_imports()
+        all_imports = styled_root._get_all_imports()
 
         # Swap children for JSX render: the memo body template emits a
         # ``{children}`` hole in place of the real descendants.
-        render.children = [hole_child]
+        render = styled_root.copy_with(children=(hole_child,))
         rendered = render.render()
     else:
         render = _apply_component_style_for_compile(copy.deepcopy(definition.component))
@@ -821,15 +843,12 @@ def add_meta(
         item if isinstance(item, Component) else Meta.create(**item) for item in meta
     ]
 
-    children: list[Any] = [Title.create(title)]
+    extras: list[Any] = [Title.create(title)]
     if description:
-        children.append(Description.create(content=description))
-    children.append(Image.create(content=image))
+        extras.append(Description.create(content=description))
+    extras.append(Image.create(content=image))
 
-    page.children.extend(children)
-    page.children.extend(meta_tags)
-
-    return page
+    return page.copy_with(children=(*page.children, *extras, *meta_tags))
 
 
 def resolve_path_of_web_dir(path: str | Path) -> Path:

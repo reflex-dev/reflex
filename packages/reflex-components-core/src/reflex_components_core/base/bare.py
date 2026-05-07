@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 from collections.abc import Iterator, Sequence
 from typing import Any
 
@@ -13,7 +14,7 @@ from reflex_base.utils import console
 from reflex_base.utils.decorator import once
 from reflex_base.utils.imports import ParsedImportDict
 from reflex_base.vars import BooleanVar, ObjectVar, Var
-from reflex_base.vars.base import GLOBAL_CACHE, VarData
+from reflex_base.vars.base import VarData
 from reflex_base.vars.sequence import LiteralStringVar
 
 
@@ -215,22 +216,44 @@ class Bare(Component):
             theme: The theme to add.
 
         Returns:
-            The component with the style added.
+            A component with the style added; ``self`` if nothing changed.
         """
         new_self = super()._add_style_recursive(style, theme)
 
-        are_components_touched = False
+        if not isinstance(self.contents, Var):
+            return new_self
+        var_data = self.contents._var_data
+        if not var_data or not var_data.components:
+            return new_self
 
-        if isinstance(self.contents, Var):
-            for component in _components_from_var(self.contents):
-                if isinstance(component, Component):
-                    component._add_style_recursive(style, theme)
-                    are_components_touched = True
+        rebuilt: list | None = None
+        for i, embedded in enumerate(var_data.components):
+            if not isinstance(embedded, Component):
+                continue
+            updated = embedded._add_style_recursive(style, theme)
+            if updated is embedded:
+                continue
+            if rebuilt is None:
+                rebuilt = list(var_data.components)
+            rebuilt[i] = updated
 
-        if are_components_touched:
-            GLOBAL_CACHE.clear()
+        if rebuilt is None:
+            return new_self
 
-        return new_self
+        new_var_data = VarData(
+            state=var_data.state,
+            field_name=var_data.field_name,
+            imports=var_data.old_school_imports(),
+            hooks=dict.fromkeys(var_data.hooks),
+            deps=list(var_data.deps),
+            position=var_data.position,
+            components=tuple(rebuilt),
+        )
+        new_contents = dataclasses.replace(
+            self.contents,
+            _var_data=new_var_data,
+        )
+        return new_self.copy_with(contents=new_contents)
 
     def _get_vars(
         self, include_children: bool = False, ignore_ids: set[int] | None = None
