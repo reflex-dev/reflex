@@ -952,7 +952,7 @@ class Component(BaseComponent, ABC):
         # Most components have no events; allocating up-front is pure waste.
         existing_triggers = kwargs.get("event_triggers")
         event_triggers: dict[str, Any] | None = (
-            dict(existing_triggers) if existing_triggers else None
+            dict(existing_triggers) if existing_triggers is not None else None
         )
         event_keys: list[str] = []
 
@@ -970,8 +970,8 @@ class Component(BaseComponent, ABC):
                 continue
 
             if key in props:
-                field = fields.get(key)
-                if field is None or field.type_origin is not Var:
+                field_def = fields.get(key)
+                if field_def is None or field_def.type_origin is not Var:
                     continue
                 try:
                     kwargs[key] = LiteralVar.create(value)
