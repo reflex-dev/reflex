@@ -26,6 +26,60 @@ GCP_MANIFEST_ENDPOINT = "/api/v1/cli/gcp-cloud-run-manifest"
 
 DOCKERFILE_NAME = "Dockerfile"
 
+# Environment variables passed to the deploy script.
+ENV_GCP_PROJECT = "GCP_PROJECT"
+ENV_GCP_REGION = "GCP_REGION"
+ENV_SERVICE_NAME = "SERVICE_NAME"
+ENV_AR_REPO = "AR_REPO"
+ENV_VERSION = "VERSION"
+
+# Manifest response field names from flexgen.
+FIELD_DOCKERFILE = "dockerfile"
+FIELD_DEPLOY_COMMAND = "deploy_command"
+
+# Allowlist of host environment variables forwarded to the deploy script.
+# We deliberately exclude things like AWS_*/GITHUB_TOKEN/SSH agent sockets so a
+# compromised or tampered manifest cannot exfiltrate unrelated credentials.
+DEPLOY_ENV_ALLOWLIST = frozenset({
+    "PATH",
+    "HOME",
+    "USER",
+    "LOGNAME",
+    "SHELL",
+    "TERM",
+    "LANG",
+    "LC_ALL",
+    "LC_CTYPE",
+    "TMPDIR",
+    "TEMP",
+    "TMP",
+    "XDG_CONFIG_HOME",
+    # gcloud configuration
+    "CLOUDSDK_CONFIG",
+    "CLOUDSDK_ACTIVE_CONFIG_NAME",
+    "CLOUDSDK_CORE_PROJECT",
+    "CLOUDSDK_CORE_ACCOUNT",
+    "CLOUDSDK_AUTH_ACCESS_TOKEN_FILE",
+    "GOOGLE_APPLICATION_CREDENTIALS",
+    # docker configuration
+    "DOCKER_HOST",
+    "DOCKER_TLS_VERIFY",
+    "DOCKER_CERT_PATH",
+    "DOCKER_CONFIG",
+    "DOCKER_BUILDKIT",
+    # corporate proxy / TLS trust
+    "HTTP_PROXY",
+    "HTTPS_PROXY",
+    "NO_PROXY",
+    "http_proxy",
+    "https_proxy",
+    "no_proxy",
+    "SSL_CERT_FILE",
+    "SSL_CERT_DIR",
+    "REQUESTS_CA_BUNDLE",
+    "CURL_CA_BUNDLE",
+})
+
 
 @click.group()
 def gcp_cli():
@@ -79,6 +133,12 @@ def gcp_cli():
 )
 @click.option("--token", help="The Reflex authentication token.")
 @click.option(
+    "--interactive/--no-interactive",
+    is_flag=True,
+    default=True,
+    help="Whether to prompt before overwriting the Dockerfile and running the script.",
+)
+@click.option(
     "--dry-run",
     is_flag=True,
     default=False,
@@ -99,6 +159,7 @@ def gcp_deploy(
     source_dir: str,
     overwrite_dockerfile: bool,
     token: str | None,
+    interactive: bool,
     dry_run: bool,
     loglevel: str,
 ):
@@ -112,7 +173,7 @@ def gcp_deploy(
     console.set_log_level(loglevel)
 
     authenticated_client = hosting.get_authenticated_client(
-        token=token, interactive=True
+        token=token, interactive=interactive
     )
 
     bash_path = shutil.which("bash")
@@ -154,11 +215,11 @@ def gcp_deploy(
 
     version_value = version_tag or datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
     deploy_env = {
-        "GCP_PROJECT": gcp_project,
-        "GCP_REGION": region,
-        "SERVICE_NAME": service_name,
-        "AR_REPO": ar_repo,
-        "VERSION": version_value,
+        ENV_GCP_PROJECT: gcp_project,
+        ENV_GCP_REGION: region,
+        ENV_SERVICE_NAME: service_name,
+        ENV_AR_REPO: ar_repo,
+        ENV_VERSION: version_value,
     }
 
     console.info("Received deploy manifest from flexgen.")
@@ -172,6 +233,10 @@ def gcp_deploy(
     console.print("─" * 60)
     console.print(deploy_script)
     console.print("─" * 60)
+    console.info(
+        f"The script runs with a restricted env (only {len(DEPLOY_ENV_ALLOWLIST)} "
+        "allowlisted host variables forwarded plus the deploy variables above)."
+    )
 
     if dry_run:
         console.print("")
@@ -182,13 +247,20 @@ def gcp_deploy(
         console.info("Dry run — nothing written or executed.")
         return
 
-    if not _write_dockerfile(dockerfile_path, dockerfile, overwrite_dockerfile):
+    if not _write_dockerfile(
+        dockerfile_path, dockerfile, overwrite_dockerfile, interactive
+    ):
         raise click.exceptions.Exit(1)
 
-    answer = console.ask("Run the deploy script now?", choices=["y", "n"], default="y")
-    if answer != "y":
-        console.warn("Aborted by user. The Dockerfile has been written for later use.")
-        raise click.exceptions.Exit(1)
+    if interactive:
+        answer = console.ask(
+            "Run the deploy script now?", choices=["y", "n"], default="y"
+        )
+        if answer != "y":
+            console.warn(
+                "Aborted by user. The Dockerfile has been written for later use."
+            )
+            raise click.exceptions.Exit(1)
 
     exit_code = _run_deploy_script(
         bash_path=bash_path,
@@ -284,31 +356,44 @@ def _request_manifest(token: str) -> tuple[str, str]:
         console.error("Flexgen returned an unexpected response shape.")
         raise click.exceptions.Exit(1)
 
-    dockerfile = body.get("dockerfile")
-    deploy_command = body.get("deploy_command")
+    dockerfile = body.get(FIELD_DOCKERFILE)
+    deploy_command = body.get(FIELD_DEPLOY_COMMAND)
     if not isinstance(dockerfile, str) or not dockerfile.strip():
-        console.error("Flexgen response is missing a non-empty 'dockerfile' field.")
+        console.error(
+            f"Flexgen response is missing a non-empty {FIELD_DOCKERFILE!r} field."
+        )
         raise click.exceptions.Exit(1)
     if not isinstance(deploy_command, str) or not deploy_command.strip():
-        console.error("Flexgen response is missing a non-empty 'deploy_command' field.")
+        console.error(
+            f"Flexgen response is missing a non-empty {FIELD_DEPLOY_COMMAND!r} field."
+        )
         raise click.exceptions.Exit(1)
 
     return dockerfile, deploy_command
 
 
-def _write_dockerfile(path: Path, contents: str, overwrite: bool) -> bool:
-    """Write the Dockerfile to disk, prompting before overwriting.
+def _write_dockerfile(
+    path: Path, contents: str, overwrite: bool, interactive: bool
+) -> bool:
+    """Write the Dockerfile to disk, prompting before overwriting in interactive mode.
 
     Args:
         path: Where to write the Dockerfile.
         contents: The Dockerfile body.
         overwrite: If True, overwrite without prompting.
+        interactive: If False, never prompt; require `overwrite` when the file exists.
 
     Returns:
         True on success, False if the user declined to overwrite or write failed.
 
     """
     if path.exists() and not overwrite:
+        if not interactive:
+            console.error(
+                f"{path} already exists. Pass --overwrite-dockerfile to replace it "
+                "in non-interactive mode."
+            )
+            return False
         answer = console.ask(
             f"{path} already exists. Overwrite?", choices=["y", "n"], default="n"
         )
@@ -335,17 +420,25 @@ def _run_deploy_script(
 ) -> int:
     """Run the bash deploy script, streaming output to the user's terminal.
 
+    The script's environment is restricted to ``DEPLOY_ENV_ALLOWLIST`` (plus the
+    explicit ``env_overrides``) so unrelated host secrets like ``AWS_*`` or
+    ``GITHUB_TOKEN`` cannot be exfiltrated by a tampered or compromised manifest.
+
     Args:
         bash_path: Resolved path to the bash executable.
         script: The bash script body received from flexgen.
         cwd: Working directory to run the script in.
-        env_overrides: Environment variables to layer on top of the parent env.
+        env_overrides: Environment variables required by the deploy script.
 
     Returns:
         The exit code of the bash process.
 
     """
-    env = os.environ.copy()
+    env = {
+        name: value
+        for name, value in os.environ.items()
+        if name in DEPLOY_ENV_ALLOWLIST
+    }
     env.update(env_overrides)
     try:
         result = subprocess.run(

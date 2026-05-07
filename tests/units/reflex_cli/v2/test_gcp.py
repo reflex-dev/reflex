@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from unittest import mock
 
@@ -292,6 +293,117 @@ def test_gcp_deploy_default_version_is_timestamp(mocker: MockFixture, tmp_path: 
     assert len(version) == 15
     assert version[8] == "-"
     assert version.replace("-", "").isdigit()
+
+
+def test_gcp_deploy_no_interactive_skips_run_prompt(
+    mocker: MockFixture, tmp_path: Path
+):
+    run_mock = _patch_environment(mocker)
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "gcp",
+            "deploy",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--no-interactive",
+            "--token",
+            "fake-token",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert (tmp_path / "Dockerfile").read_text() == DOCKERFILE
+    assert run_mock.call_count == 1
+
+
+def test_gcp_deploy_no_interactive_refuses_to_overwrite_without_flag(
+    mocker: MockFixture, tmp_path: Path
+):
+    run_mock = _patch_environment(mocker)
+    _mock_manifest_response(mocker)
+    existing = tmp_path / "Dockerfile"
+    existing.write_text("FROM existing\n")
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "gcp",
+            "deploy",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--no-interactive",
+            "--token",
+            "fake-token",
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert "--overwrite-dockerfile" in result.output
+    assert existing.read_text() == "FROM existing\n"
+    assert run_mock.call_count == 0
+
+
+def test_gcp_deploy_env_is_restricted_to_allowlist(mocker: MockFixture, tmp_path: Path):
+    """Verify the script env excludes host secrets and only includes allowlisted vars."""
+    from reflex_cli.v2 import gcp as gcp_module
+
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_authenticated_client",
+        return_value=hosting.AuthenticatedClient(token="fake-token", validated_data={}),
+    )
+    mocker.patch(
+        "reflex_cli.v2.gcp.shutil.which", side_effect=lambda n: f"/usr/bin/{n}"
+    )
+    mocker.patch(
+        "reflex_cli.v2.gcp._get_active_gcp_account", return_value="u@example.com"
+    )
+    _mock_manifest_response(mocker)
+
+    captured: dict[str, dict[str, str]] = {}
+
+    def fake_run(*args, **kwargs):
+        captured["env"] = kwargs["env"]
+        return mock.MagicMock(returncode=0)
+
+    mocker.patch("reflex_cli.v2.gcp.subprocess.run", side_effect=fake_run)
+    mocker.patch.dict(
+        os.environ,
+        {
+            "PATH": "/usr/bin",
+            "HOME": "/home/test",
+            "AWS_SECRET_ACCESS_KEY": "should-not-leak",
+            "GITHUB_TOKEN": "also-secret",
+            "DOCKER_HOST": "unix:///var/run/docker.sock",
+            "MY_RANDOM_VAR": "should-not-leak",
+        },
+        clear=True,
+    )
+
+    result = runner.invoke(
+        hosting_cli,
+        ["gcp", "deploy", "--gcp-project", "p", "--source", str(tmp_path)],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    env = captured["env"]
+    # Allowlisted host vars are forwarded.
+    assert env["PATH"] == "/usr/bin"
+    assert env["HOME"] == "/home/test"
+    assert env["DOCKER_HOST"] == "unix:///var/run/docker.sock"
+    # Deploy overrides are present.
+    assert env[gcp_module.ENV_GCP_PROJECT] == "p"
+    # Host secrets are NOT forwarded.
+    assert "AWS_SECRET_ACCESS_KEY" not in env
+    assert "GITHUB_TOKEN" not in env
+    assert "MY_RANDOM_VAR" not in env
 
 
 @pytest.fixture(autouse=True)
