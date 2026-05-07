@@ -1,4 +1,4 @@
-"""Tests for reflex.utils.exec."""
+"""Tests for reflex.utils.frontend."""
 
 from __future__ import annotations
 
@@ -10,7 +10,9 @@ from starlette.applications import Starlette
 from starlette.routing import Mount
 from starlette.testclient import TestClient
 
-from reflex.utils.exec import ReflexStaticFiles, _load_routes_manifest
+from reflex.route import get_router
+from reflex.utils import prerequisites
+from reflex.utils.frontend import ReflexStaticFiles, _load_routes_manifest
 
 
 @pytest.fixture
@@ -132,8 +134,6 @@ def test_frontend_path_prefix_normalizes_for_resolver(static_dir: Path):
     static-files subclass just needs to feed the post-mount path through
     cleanly.
     """
-    from reflex.route import get_router
-
     # Routes are stored without leading slashes (see format.format_route).
     resolver = get_router(["index", "blog/[slug]"])
     app = Starlette(
@@ -154,8 +154,6 @@ def test_frontend_path_prefix_normalizes_for_resolver(static_dir: Path):
 
 def test_load_routes_manifest_round_trip(tmp_path: Path, monkeypatch):
     """Manifest written at compile time is read back by the standalone server."""
-    from reflex.utils import prerequisites
-
     monkeypatch.setattr(prerequisites, "get_web_dir", lambda: tmp_path)
     manifest = tmp_path / "routes_manifest.json"
     manifest.write_text(json.dumps(["index", "blog/[slug]"]))
@@ -167,15 +165,11 @@ def test_load_routes_manifest_round_trip(tmp_path: Path, monkeypatch):
 
 
 def test_load_routes_manifest_missing_returns_none(tmp_path: Path, monkeypatch):
-    from reflex.utils import prerequisites
-
     monkeypatch.setattr(prerequisites, "get_web_dir", lambda: tmp_path)
     assert _load_routes_manifest() is None
 
 
 def test_load_routes_manifest_invalid_returns_none(tmp_path: Path, monkeypatch):
-    from reflex.utils import prerequisites
-
     monkeypatch.setattr(prerequisites, "get_web_dir", lambda: tmp_path)
     (tmp_path / "routes_manifest.json").write_text("not valid json{")
     assert _load_routes_manifest() is None

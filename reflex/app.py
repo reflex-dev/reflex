@@ -679,7 +679,7 @@ class App(MiddlewareMixin, LifespanMixin):
         asgi_app = self._api
 
         if environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.get():
-            from reflex.utils.exec import get_frontend_mount
+            from reflex.utils.frontend import get_frontend_mount
 
             asgi_app.routes.append(get_frontend_mount(route_resolver=self.router))
 
