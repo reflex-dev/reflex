@@ -306,11 +306,13 @@ class BaseComponent(metaclass=BaseComponentMeta):
         """
         if "children" in kwargs:
             kwargs["children"] = tuple(kwargs["children"])
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+        # Bypass ``__setattr__``'s freeze guard: a brand-new instance can't be
+        # frozen, so the per-attribute check is pure overhead during init.
+        d = vars(self)
+        d.update(kwargs)
         for name, value in self.get_fields().items():
             if name not in kwargs:
-                setattr(self, name, value.default_value())
+                d[name] = value.default_value()
 
     def __setattr__(self, key: str, value: Any) -> None:
         """Block writes to frozen components, except for cache attributes.
@@ -946,76 +948,70 @@ class Component(BaseComponent, ABC):
         component_specific_triggers = self.get_event_triggers()
         props = self.get_props()
 
-        # Add any events triggers.
-        if "event_triggers" not in kwargs:
-            kwargs["event_triggers"] = {}
-        kwargs["event_triggers"] = kwargs["event_triggers"].copy()
+        # Lazily allocate the event_triggers dict only when a trigger is found.
+        # Most components have no events; allocating up-front is pure waste.
+        existing_triggers = kwargs.get("event_triggers")
+        event_triggers: dict[str, Any] | None = (
+            dict(existing_triggers) if existing_triggers else None
+        )
+        event_keys: list[str] = []
 
         # Iterate through the kwargs and set the props.
         for key, value in kwargs.items():
-            if (
-                key.startswith("on_")
-                and key not in component_specific_triggers
-                and key not in props
-            ):
-                valid_triggers = sorted(component_specific_triggers.keys())
-                msg = (
-                    f"The {(comp_name := type(self).__name__)} does not take in an `{key}` event trigger. "
-                    f"Valid triggers for {comp_name}: {valid_triggers}. "
-                    f"If {comp_name} is a third party component make sure to add `{key}` to the component's event triggers. "
-                    f"visit https://reflex.dev/docs/wrapping-react/guide/#event-triggers for more info."
-                )
-                raise ValueError(msg)
             if key in component_specific_triggers:
-                # Event triggers are bound to event chains.
-                is_var = False
-            elif key in props:
-                # Set the field type.
-                is_var = (
-                    field.type_origin is Var if (field := fields.get(key)) else False
+                if event_triggers is None:
+                    event_triggers = {}
+                event_triggers[key] = EventChain.create(
+                    value=value,
+                    args_spec=component_specific_triggers[key],
+                    key=key,
                 )
-            else:
+                event_keys.append(key)
                 continue
 
-            # Check whether the key is a component prop.
-            if is_var:
+            if key in props:
+                field = fields.get(key)
+                if field is None or field.type_origin is not Var:
+                    continue
                 try:
                     kwargs[key] = LiteralVar.create(value)
-
-                    # Get the passed type and the var type.
                     passed_type = kwargs[key]._var_type
                     expected_type = typing.get_args(
                         types.get_field_type(type(self), key)
                     )[0]
                 except TypeError:
-                    # If it is not a valid var, check the base types.
                     passed_type = type(value)
                     expected_type = types.get_field_type(type(self), key)
 
                 if not satisfies_type_hint(value, expected_type):
                     value_name = value._js_expr if isinstance(value, Var) else value
-
                     additional_info = (
                         " You can call `.bool()` on the value to convert it to a boolean."
                         if expected_type is bool and isinstance(value, Var)
                         else ""
                     )
-
                     raise TypeError(
                         f"Invalid var passed for prop {type(self).__name__}.{key}, expected type {expected_type}, got value {value_name} of type {passed_type}."
                         + additional_info
                     )
-            # Check if the key is an event trigger.
-            if key in component_specific_triggers:
-                kwargs["event_triggers"][key] = EventChain.create(
-                    value=value,
-                    args_spec=component_specific_triggers[key],
-                    key=key,
-                )
+                continue
 
-        # Remove any keys that were added as events.
-        for key in kwargs["event_triggers"]:
-            kwargs.pop(key, None)
+            if key.startswith("on_"):
+                valid_triggers = sorted(component_specific_triggers.keys())
+                comp_name = type(self).__name__
+                msg = (
+                    f"The {comp_name} does not take in an `{key}` event trigger. "
+                    f"Valid triggers for {comp_name}: {valid_triggers}. "
+                    f"If {comp_name} is a third party component make sure to add `{key}` to the component's event triggers. "
+                    f"visit https://reflex.dev/docs/wrapping-react/guide/#event-triggers for more info."
+                )
+                raise ValueError(msg)
+
+        # Promote any registered event triggers; drop the raw on_* keys.
+        if event_triggers is not None:
+            kwargs["event_triggers"] = event_triggers
+            for key in event_keys:
+                kwargs.pop(key, None)
 
         # Place data_ and aria_ attributes into custom_attrs
         special_attributes = [
@@ -1086,9 +1082,9 @@ class Component(BaseComponent, ABC):
         ):
             msg = f"Invalid class_name passed for prop {type(self).__name__}.class_name, expected type str, got value {class_name._js_expr} of type {class_name._var_type}."
             raise TypeError(msg)
-        # Construct the component.
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+        # Construct the component. Bypass ``__setattr__``'s freeze guard: the
+        # instance is freshly created and not yet frozen.
+        vars(self).update(kwargs)
 
     @classmethod
     def get_event_triggers(cls) -> dict[str, types.ArgsSpec | Sequence[types.ArgsSpec]]:
@@ -1300,8 +1296,8 @@ class Component(BaseComponent, ABC):
         children_tuple = tuple(children)
         comp = cls.__new__(cls)
         super(Component, comp).__init__(id=props.get("id"), children=children_tuple)
-        for prop, value in props.items():
-            setattr(comp, prop, value)
+        # Bypass ``__setattr__``'s freeze guard: ``comp`` is not yet frozen.
+        vars(comp).update(props)
         comp._freeze()
         return comp
 
@@ -1533,18 +1529,17 @@ class Component(BaseComponent, ABC):
             children: The children of the component.
 
         """
+        if (
+            not self._invalid_children
+            and not self._valid_children
+            and all(child._valid_parents == [] for child in children)
+        ):
+            return
+
         from reflex_components_core.base.fragment import Fragment
         from reflex_components_core.core.cond import Cond
         from reflex_components_core.core.foreach import Foreach
         from reflex_components_core.core.match import Match
-
-        no_valid_parents_defined = all(child._valid_parents == [] for child in children)
-        if (
-            not self._invalid_children
-            and not self._valid_children
-            and no_valid_parents_defined
-        ):
-            return
 
         comp_name = type(self).__name__
         allowed_components = [
