@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -9,7 +10,7 @@ from starlette.applications import Starlette
 from starlette.routing import Mount
 from starlette.testclient import TestClient
 
-from reflex.utils.exec import ReflexStaticFiles
+from reflex.utils.exec import ReflexStaticFiles, _load_routes_manifest
 
 
 @pytest.fixture
@@ -122,3 +123,59 @@ def test_resolver_receives_leading_slash_path(static_dir: Path):
     client.get("/some/nested/path")
     assert seen
     assert seen[0] == "/some/nested/path"
+
+
+def test_frontend_path_prefix_normalizes_for_resolver(static_dir: Path):
+    """When mounted under a prefix, the resolver receives the post-mount path.
+
+    `route.get_router` itself strips the configured `frontend_path`, so the
+    static-files subclass just needs to feed the post-mount path through
+    cleanly.
+    """
+    from reflex.route import get_router
+
+    # Routes are stored without leading slashes (see format.format_route).
+    resolver = get_router(["index", "blog/[slug]"])
+    app = Starlette(
+        routes=[
+            Mount(
+                "/app",
+                app=ReflexStaticFiles(
+                    directory=static_dir, html=True, route_resolver=resolver
+                ),
+                name="frontend",
+            )
+        ]
+    )
+    client = TestClient(app)
+    assert client.get("/app/blog/hello").status_code == 200
+    assert client.get("/app/no-such-route").status_code == 404
+
+
+def test_load_routes_manifest_round_trip(tmp_path: Path, monkeypatch):
+    """Manifest written at compile time is read back by the standalone server."""
+    from reflex.utils import prerequisites
+
+    monkeypatch.setattr(prerequisites, "get_web_dir", lambda: tmp_path)
+    manifest = tmp_path / "routes_manifest.json"
+    manifest.write_text(json.dumps(["index", "blog/[slug]"]))
+
+    resolver = _load_routes_manifest()
+    assert resolver is not None
+    assert resolver("/blog/anything") == "blog/[slug]"
+    assert resolver("/no-such-route") is None
+
+
+def test_load_routes_manifest_missing_returns_none(tmp_path: Path, monkeypatch):
+    from reflex.utils import prerequisites
+
+    monkeypatch.setattr(prerequisites, "get_web_dir", lambda: tmp_path)
+    assert _load_routes_manifest() is None
+
+
+def test_load_routes_manifest_invalid_returns_none(tmp_path: Path, monkeypatch):
+    from reflex.utils import prerequisites
+
+    monkeypatch.setattr(prerequisites, "get_web_dir", lambda: tmp_path)
+    (tmp_path / "routes_manifest.json").write_text("not valid json{")
+    assert _load_routes_manifest() is None

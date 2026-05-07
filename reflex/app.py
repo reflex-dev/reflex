@@ -1196,6 +1196,20 @@ class App(MiddlewareMixin, LifespanMixin):
             with stateful_pages_marker.open("w") as f:
                 json.dump(list(self._stateful_pages), f)
 
+    def _write_routes_manifest(self):
+        """Write all defined route patterns so the frontend mount can resolve them.
+
+        The standalone frontend prod server has no `App` instance and
+        therefore can't pass `app.router` directly; reading this manifest
+        from disk lets it return correct HTTP status codes for dynamic
+        routes vs. true 404s.
+        """
+        manifest_path = prerequisites.get_web_dir() / constants.Dirs.ROUTES_MANIFEST
+        manifest_path.parent.mkdir(parents=True, exist_ok=True)
+        routes = list(dict.fromkeys([*self._unevaluated_pages, *self._pages]))
+        with manifest_path.open("w") as f:
+            json.dump(routes, f)
+
     def add_all_routes_endpoint(self):
         """Add an endpoint to the app that returns all the routes."""
         if not self._api:
