@@ -1255,12 +1255,11 @@ def compile_app(
             path = utils.resolve_path_of_web_dir(static_file_path)
             if path in output_mapping:
                 console.warn(
-                    f"Plugin {plugin.__class__.__name__} is trying to write to {path} but it already exists. The plugin file will be ignored."
+                    f"Plugin {plugin.__class__.__name__} is overwriting existing files at {path}."
                 )
-            else:
-                output_mapping[path] = (
-                    content.decode("utf-8") if isinstance(content, bytes) else content
-                )
+            output_mapping[path] = (
+                content.decode("utf-8") if isinstance(content, bytes) else content
+            )
 
     for plugin_name, file_path, modify_fn in modify_files_tasks:
         path = utils.resolve_path_of_web_dir(file_path)
