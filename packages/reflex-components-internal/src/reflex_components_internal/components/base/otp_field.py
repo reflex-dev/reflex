@@ -156,7 +156,8 @@ class HighLevelOTPField(OTPFieldRoot):
 
         Renders a Root with `length` Input slots when no children are
         provided. Pass children explicitly to customize layout (e.g. inserting
-        a Separator between groups of inputs).
+        a Separator between groups of inputs); `length` is still required and
+        forwarded to the underlying Root.
 
         Args:
             *children: Optional children to include in place of the default inputs.
@@ -164,15 +165,29 @@ class HighLevelOTPField(OTPFieldRoot):
 
         Returns:
             The OTP field component.
+
+        Raises:
+            ValueError: If `length` is missing when children are supplied, or
+                if `length` is not a positive integer when children are
+                auto-generated.
+            TypeError: If `length` is not an integer when children are
+                auto-generated (a Var can only be used with explicit children).
         """
-        if not children:
-            length = props.get("length", 6)
-            if not isinstance(length, int):
+        if children:
+            if "length" not in props:
+                msg = "OTP field `length` is required when passing children explicitly."
+                raise ValueError(msg)
+        else:
+            length = props.setdefault("length", 6)
+            if not isinstance(length, int) or isinstance(length, bool):
                 msg = (
                     "OTP field high-level wrapper requires a static integer `length`."
                     " Pass children explicitly for dynamic lengths."
                 )
                 raise TypeError(msg)
+            if length <= 0:
+                msg = "OTP field `length` must be a positive integer."
+                raise ValueError(msg)
             children = tuple(OTPFieldInput.create() for _ in range(length))
 
         return OTPFieldRoot.create(*children, **props)
