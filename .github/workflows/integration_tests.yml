@@ -187,7 +187,7 @@ jobs:
         run: uv run reflex init --template https://github.com/masenf/rx_shout
         working-directory: ./rx-shout-from-template
       - name: Override reflex sources to local checkout
-	# Force reflex install editable from this repo instead of PyPI.
+        # Force reflex install editable from this repo instead of PyPI.
         working-directory: ./rx-shout-from-template
         run: |
           cat >> pyproject.toml <<'EOF'
