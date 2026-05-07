@@ -36,4 +36,6 @@ def test_compile_state_resolves_async_computed_vars_without_event_loop():
 async def test_compile_state_resolves_async_computed_vars_with_running_event_loop():
     compiled = compile_state(CompileStateState)
     values = _get_state_values(compiled, CompileStateState)
+    assert values[f"a{FIELD_MARKER}"] == 1
+    assert values[f"b{FIELD_MARKER}"] == 2
     assert values[f"async_value{FIELD_MARKER}"] == "resolved"
