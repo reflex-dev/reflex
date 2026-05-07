@@ -220,13 +220,11 @@ jobs:
         # Re-locks because pyproject.toml changed; --prerelease=allow matches
         # the template's own lock options (rx_shout depends on reflex pre-releases).
         working-directory: ./rx-shout-from-template
-        run: uv sync --prerelease=allow
+        run: uv sync --prerelease=allow && uv pip install psutil
       - name: Run App and Check for errors
         run: |
           # Check that npm is home
           npm -v
-          # Needed for integration.sh
-          uv --project ./rx-shout-from-template pip install psutil
           uv run --project ./rx-shout-from-template --no-sync bash scripts/integration.sh ./rx-shout-from-template prod
 
   reflex-docs-macos:
