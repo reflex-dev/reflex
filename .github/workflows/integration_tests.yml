@@ -224,8 +224,9 @@ jobs:
       - name: Run App and Check for errors
         run: |
           # Check that npm is home
-          uv pip install psutil  # needed for integration.sh
           npm -v
+          # Needed for integration.sh
+          uv --project ./rx-shout-from-template pip install psutil
           uv run --project ./rx-shout-from-template --no-sync bash scripts/integration.sh ./rx-shout-from-template prod
 
   reflex-docs-macos:
