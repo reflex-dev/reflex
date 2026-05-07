@@ -681,7 +681,7 @@ class App(MiddlewareMixin, LifespanMixin):
         if environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.get():
             from reflex.utils.exec import get_frontend_mount
 
-            asgi_app.routes.append(get_frontend_mount())
+            asgi_app.routes.append(get_frontend_mount(route_resolver=self.router))
 
         if self.api_transformer is not None:
             api_transformers: Sequence[Starlette | Callable[[ASGIApp], ASGIApp]] = (
