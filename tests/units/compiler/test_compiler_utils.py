@@ -11,11 +11,18 @@ from reflex.vars.base import computed_var
 
 
 class CompileStateState(State):
+    """State fixture exercising async computed vars during compile_state."""
+
     a: int = 1
     b: int = 2
 
     @computed_var
     async def async_value(self) -> str:
+        """Return a resolved value after yielding to the event loop.
+
+        Returns:
+            The resolved string value.
+        """
         await asyncio.sleep(0)
         return "resolved"
 
@@ -34,6 +41,8 @@ def test_compile_state_resolves_async_computed_vars_without_event_loop():
 
 @pytest.mark.asyncio
 async def test_compile_state_resolves_async_computed_vars_with_running_event_loop():
+    assert asyncio.get_running_loop() is not None
+    await asyncio.sleep(0)
     compiled = compile_state(CompileStateState)
     values = _get_state_values(compiled, CompileStateState)
     assert values[f"a{FIELD_MARKER}"] == 1
