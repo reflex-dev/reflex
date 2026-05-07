@@ -160,6 +160,32 @@ def test_var_returning_memo_with_rest_props():
         merge_styles(base=base, overrides={"color": "red"})
 
 
+def test_component_returning_memo_with_only_rest():
+    """Component-returning memos with only RestProp should emit valid JSX (#6443)."""
+
+    @rx._x.memo
+    def hover_trigger(rest: rx.RestProp) -> rx.Component:
+        return rx.text("hover me", rest)
+
+    files, _ = compiler.compile_memo_components((), tuple(EXPERIMENTAL_MEMOS.values()))
+    code = "\n".join(c for _, c in files)
+    assert "memo(({...rest})" in code
+    assert "({," not in code
+
+
+def test_var_returning_memo_with_only_rest():
+    """Var-returning memos with only RestProp should emit valid JS (#6443)."""
+
+    @rx._x.memo
+    def merge_only(overrides: rx.RestProp) -> rx.Var[Any]:
+        return overrides
+
+    files, _ = compiler.compile_memo_components((), tuple(EXPERIMENTAL_MEMOS.values()))
+    code = "\n".join(c for _, c in files)
+    assert "(({...overrides}) => overrides)" in code
+    assert "({," not in code
+
+
 def test_var_returning_memo_with_children_and_rest():
     """Var-returning memos should accept positional children plus keyword props."""
 
@@ -397,7 +423,7 @@ def test_compile_memo_components_extends_imports_without_remerging(
             {"shared-lib": [ImportVar(tag=component_render["name"])]},
         )
 
-    real_merge_imports = compiler.utils.merge_imports
+    real_merge_imports = compiler_utils.merge_imports
 
     def reject_growing_merge(*imports):
         if len(imports) == 2 and imports[0]:
@@ -406,7 +432,7 @@ def test_compile_memo_components_extends_imports_without_remerging(
         return real_merge_imports(*imports)
 
     monkeypatch.setattr(
-        compiler.utils,
+        compiler_utils,
         "compile_experimental_component_memo",
         fake_compile_experimental_component_memo,
     )
@@ -415,7 +441,7 @@ def test_compile_memo_components_extends_imports_without_remerging(
         "_compile_single_memo_component",
         fake_compile_single_memo_component,
     )
-    monkeypatch.setattr(compiler.utils, "merge_imports", reject_growing_merge)
+    monkeypatch.setattr(compiler_utils, "merge_imports", reject_growing_merge)
 
     files, aggregate_imports = compiler.compile_memo_components((), memos)
 
