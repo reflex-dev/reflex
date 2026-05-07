@@ -75,6 +75,18 @@ class LeafComponent(Component):
     _memoization_mode = MemoizationMode(recursive=False)
 
 
+class ChildrenViaProp(Component):
+    """Stub mirroring ``CodeBlock`` — injects its content as ``children`` prop."""
+
+    tag = "ChildrenViaProp"
+    library = "children-via-prop-lib"
+
+    code: Var[str] = component_field(default=LiteralVar.create(""))
+
+    def _render(self):
+        return super()._render().remove_props("code").add_props(children=self.code)
+
+
 class SpecialFormMemoState(BaseState):
     items: Field[list[str]] = field(default_factory=lambda: ["a"])
     flag: Field[bool] = field(default=True)
@@ -415,6 +427,23 @@ def test_generated_memo_component_is_not_itself_memoized() -> None:
     wrapper = wrapper_factory(Plain.create())
     assert isinstance(wrapper, ExperimentalMemoComponent)
     assert not _should_memoize(wrapper)
+
+
+def test_passthrough_memo_skips_hole_for_childless_component() -> None:
+    """Childless components own their JSX output, so the wrapper must not
+    inject a ``{children}`` hole.
+
+    Regression: components like ``CodeBlock`` set ``children`` on their own
+    rendered Tag via ``_render``. Substituting a ``Bare({children})`` hole
+    would emit ``jsx(Inner, {children: "..."}, hole)``, and at call time the
+    undefined hole arg overwrites ``props.children`` under Emotion's jsx
+    semantics — causing every reactive ``rx.code_block`` to render an empty
+    ``<code>`` element.
+    """
+    component = ChildrenViaProp.create(code=STATE_VAR)
+    assert not component.children
+    _wrapper_factory, definition = create_passthrough_component_memo(component)
+    assert definition.passthrough_hole_child is None
 
 
 def test_event_trigger_memoization_not_emit_usecallback_in_page_hooks() -> None:
