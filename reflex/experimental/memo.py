@@ -1048,6 +1048,14 @@ def create_passthrough_component_memo(
         new_component = copy(component)
         if render_snapshot:
             return new_component
+        # Components with no original structural children own their own JSX
+        # output (e.g. ``CodeBlock`` injects ``code`` as the ``children`` prop
+        # in ``_render``). Substituting a ``{children}`` hole here would emit
+        # ``jsx(Inner, {children: "..."}, hole)``, and an undefined hole at
+        # call time clobbers the prop. Skip the substitution so the wrapper's
+        # ``children`` parameter is present in the signature but unused.
+        if not component.children:
+            return new_component
         hole_bare = Bare.create(children)
         captured_hole_child.append(hole_bare)
         # Substitute the ``{children}`` hole for the original descendants so
