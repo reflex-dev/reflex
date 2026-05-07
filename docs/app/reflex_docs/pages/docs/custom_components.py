@@ -3,10 +3,10 @@ import os
 
 import httpx
 import reflex as rx
-from reflex_ui_shared.components.icons import get_icon
-from reflex_ui_shared.styles.colors import c_color
-from reflex_ui_shared.styles.fonts import base
-from reflex_ui_shared.styles.shadows import shadows
+from reflex_site_shared.components.icons import get_icon
+from reflex_site_shared.styles.colors import c_color
+from reflex_site_shared.styles.fonts import base
+from reflex_site_shared.styles.shadows import shadows
 
 from reflex_docs.templates.docpage import docpage, h1_comp, text_comp_2
 
@@ -403,7 +403,7 @@ def create_pagination():
     )
 
 
-@docpage(right_sidebar=False)
+@docpage(set_path="/custom-components/", right_sidebar=False)
 def custom_components() -> rx.Component:
     return rx.box(
         rx.box(

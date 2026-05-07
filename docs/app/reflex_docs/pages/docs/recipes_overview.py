@@ -5,7 +5,7 @@ from reflex_docs.templates.docpage import docpage, h1_comp, h2_comp, text_comp_2
 
 def get_component_link(category, clist) -> str:
     file_name_without_extension = clist.split("/")[-1].split(".")[0].replace("_", "-")
-    return f"/docs/recipes/{category}/{file_name_without_extension}"
+    return f"/recipes/{category}/{file_name_without_extension}"
 
 
 def format_titles(path):
@@ -95,7 +95,7 @@ def card_section():
     )
 
 
-@docpage(set_path="/docs/recipes", right_sidebar=False)
+@docpage(set_path="/recipes", right_sidebar=False)
 def overview():
     return rx.box(
         h1_comp(text="Recipes"),

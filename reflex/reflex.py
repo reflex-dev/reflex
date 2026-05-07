@@ -296,11 +296,13 @@ def _run(
     # Delete the states folder if it exists.
     reset_disk_state_manager()
 
-    # Apply the new ports to the config.
+    # Apply the new ports and host to the config.
     if frontend_port != config.frontend_port:
         config._set_persistent(frontend_port=frontend_port)
     if backend_port != config.backend_port:
         config._set_persistent(backend_port=backend_port)
+    if backend_host != config.backend_host:
+        config._set_persistent(backend_host=backend_host)
 
     # Reload the config to make sure the env vars are persistent.
     get_config(reload=True)
@@ -338,14 +340,25 @@ def _run(
 
         _run_dev(running_mode, frontend_port, backend_port, backend_host)
     else:
-        port = (
-            frontend_port or backend_port or config.frontend_port or config.backend_port
-        )
+        if running_mode == constants.RunningMode.BACKEND_ONLY:
+            requested_port = backend_port or config.backend_port
+            fallback_port = constants.DefaultPorts.BACKEND_PORT
+        elif running_mode == constants.RunningMode.FRONTEND_ONLY:
+            requested_port = frontend_port or config.frontend_port
+            fallback_port = constants.DefaultPorts.FRONTEND_PORT
+        else:
+            requested_port = (
+                frontend_port
+                or backend_port
+                or config.frontend_port
+                or config.backend_port
+            )
+            fallback_port = constants.DefaultPorts.FRONTEND_PORT
 
         port = processes.handle_port(
             service_name=running_mode.name.lower(),
-            port=(port or constants.DefaultPorts.FRONTEND_PORT),
-            auto_increment=port is None,
+            port=requested_port or fallback_port,
+            auto_increment=requested_port is None,
         )
 
         _run_prod(running_mode, port, backend_host)
@@ -645,8 +658,8 @@ def db_init():
     # Initialize the database.
     _skip_compile()
     prerequisites.get_compiled_app()
-    model.Model.alembic_init()
-    model.Model.migrate(autogenerate=True)
+    model.alembic_init()
+    model.migrate(autogenerate=True)
 
 
 @db_cli.command()
@@ -658,14 +671,14 @@ def migrate():
     prerequisites.get_app()
     if not prerequisites.check_db_initialized():
         return
-    model.Model.migrate()
+    model.migrate()
     prerequisites.check_schema_up_to_date()
 
 
 @db_cli.command()
 def status():
     """Check the status of the database schema."""
-    from reflex.model import Model, format_revision
+    from reflex.model import format_revision, get_migration_history
     from reflex.utils import prerequisites
 
     prerequisites.get_app()
@@ -682,7 +695,7 @@ def status():
     console.print(f"[bold]\\[{config.db_url}][/bold]")
 
     # Get migration history using Model method
-    current_rev, revisions = Model.get_migration_history()
+    current_rev, revisions = get_migration_history()
     if current_rev is None and not revisions:
         return
 
@@ -712,9 +725,9 @@ def makemigrations(message: str | None):
     prerequisites.get_compiled_app()
     if not prerequisites.check_db_initialized():
         return
-    with model.Model.get_db_engine().connect() as connection:
+    with model.get_engine().connect() as connection:
         try:
-            model.Model.alembic_autogenerate(connection=connection, message=message)
+            model.alembic_autogenerate(connection=connection, message=message)
         except CommandError as command_error:
             if "Target database is not up to date." not in str(command_error):
                 raise

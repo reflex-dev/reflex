@@ -14,7 +14,7 @@ from reflex_base.utils import console, format, types
 from reflex_base.utils.imports import ImportDict, ImportVar
 from reflex_base.utils.serializers import serializer
 from reflex_base.vars import get_unique_variable_name
-from reflex_base.vars.base import Var
+from reflex_base.vars.base import Var, VarData
 from reflex_base.vars.function import FunctionStringVar
 from reflex_base.vars.sequence import ArrayVar
 
@@ -182,7 +182,7 @@ class DataEditor(NoSSRComponent):
     is_default = True
     library: str | None = "@glideapps/glide-data-grid@6.0.3"
     lib_dependencies: list[str] = [
-        "lodash@4.17.23",
+        "lodash@4.18.1",
         "react-responsive-carousel@3.2.23",
     ]
 
@@ -395,6 +395,9 @@ class DataEditor(NoSSRComponent):
         doc="Fired when the search close button is clicked."
     )
 
+    # Custom cell renderers
+    custom_renderers: Var[Any]
+
     def add_imports(self) -> ImportDict:
         """Add imports for the component.
 
@@ -489,11 +492,12 @@ class DataEditor(NoSSRComponent):
         return ["\n".join(code)]
 
     @classmethod
-    def create(cls, *children, **props) -> Component:
+    def create(cls, *children, extended_cell_types: bool = False, **props) -> Component:
         """Create the DataEditor component.
 
         Args:
             *children: The children of the data editor.
+            extended_cell_types: Whether to enable extended cell types.
             **props: The props of the data editor.
 
         Returns:
@@ -549,6 +553,18 @@ class DataEditor(NoSSRComponent):
             props["grid_selection"] = FunctionStringVar.create(
                 "reconstructGridSelection"
             ).call(grid_selection)
+
+        if extended_cell_types:
+            props["custom_renderers"] = Var(
+                "allCells",
+                _var_data=VarData(
+                    imports={
+                        "@glideapps/glide-data-grid-cells@6.0.3": ImportVar(
+                            tag="allCells", is_default=False
+                        )
+                    }
+                ),
+            )
 
         grid = super().create(*children, **props)
         return Div.create(

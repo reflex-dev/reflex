@@ -7,8 +7,8 @@ from reflex_base.components.component import (
     CUSTOM_COMPONENTS,
     Component,
     CustomComponent,
-    StatefulComponent,
     custom_component,
+    field,
 )
 from reflex_base.constants import EventTriggers
 from reflex_base.constants.state import FIELD_MARKER
@@ -520,6 +520,27 @@ def test_get_imports(component1, component2):
         "react-redux": [ImportVar(tag="connect")],
         "react": [ImportVar(tag="Component")],
     }
+
+
+def test_get_imports_includes_components_in_props():
+    """Test that component-valued props contribute their imports."""
+
+    class PropComponent(Component):
+        tag = "PropComponent"
+        library = "prop-lib"
+
+    class ParentComponent(Component):
+        tag = "ParentComponent"
+        library = "parent-lib"
+
+        slot: Component | None = field(default=None)
+
+    imports_ = ParentComponent.create(slot=PropComponent.create())._get_all_imports()
+
+    assert imports_ == parse_imports({
+        "parent-lib": ["ParentComponent"],
+        "prop-lib": ["PropComponent"],
+    })
 
 
 def test_get_custom_code(component1: Component, component2: Component):
@@ -1165,47 +1186,6 @@ def test_format_component(component, rendered):
     assert str(component) == rendered
 
 
-def test_stateful_component(test_state: type[TestState]):
-    """Test that a stateful component is created correctly.
-
-    Args:
-        test_state: A test state.
-    """
-    text_component = rx.text(test_state.num)
-    stateful_component = StatefulComponent.compile_from(text_component)
-    assert isinstance(stateful_component, StatefulComponent)
-    assert stateful_component.tag is not None
-    assert stateful_component.tag.startswith("Text_")
-    assert stateful_component.references == 1
-    sc2 = StatefulComponent.compile_from(rx.text(test_state.num))
-    assert isinstance(sc2, StatefulComponent)
-    assert stateful_component.references == 2
-    assert sc2.references == 2
-
-
-def test_stateful_component_memoize_event_trigger(test_state: type[TestState]):
-    """Test that a stateful component is created correctly with events.
-
-    Args:
-        test_state: A test state.
-    """
-    button_component = rx.button("Click me", on_blur=test_state.do_something)
-    stateful_component = StatefulComponent.compile_from(button_component)
-    assert isinstance(stateful_component, StatefulComponent)
-
-    # No event trigger? No StatefulComponent
-    assert not isinstance(
-        StatefulComponent.compile_from(rx.button("Click me")), StatefulComponent
-    )
-
-
-def test_stateful_banner():
-    """Test that a stateful component is created correctly with events."""
-    connection_modal_component = rx.connection_modal()
-    stateful_component = StatefulComponent.compile_from(connection_modal_component)
-    assert isinstance(stateful_component, StatefulComponent)
-
-
 TEST_VAR = LiteralVar.create("p")._replace(
     merge_var_data=VarData(
         hooks={"useTest": None},
@@ -1783,17 +1763,13 @@ def test_custom_component_get_imports():
         tag = "Inner"
         library = "inner"
 
-    class Other(Component):
-        tag = "Other"
-        library = "other"
-
     @rx.memo
     def wrapper():
         return Inner.create()
 
     @rx.memo
-    def outer(c: Component):
-        return Other.create(c)
+    def outer():
+        return wrapper()
 
     custom_comp = wrapper()
 
@@ -1807,16 +1783,16 @@ def test_custom_component_get_imports():
     assert "inner" in imports_inner
     assert "outer" not in imports_inner
 
-    outer_comp = outer(c=wrapper())
+    outer_comp = outer()
 
-    # Libraries are not imported directly, but are imported by the custom component.
+    # Nested custom components are only imported during compilation.
     assert "inner" not in outer_comp._get_all_imports()
-    assert "other" not in outer_comp._get_all_imports()
 
     # The imports are only resolved during compilation.
     _, imports_outer = compile_custom_component(outer_comp)
     assert "inner" not in imports_outer
-    assert "other" in imports_outer
+    assert "$/utils/components" in imports_outer
+    assert imports_outer["$/utils/components"] == [ImportVar(tag="Wrapper")]
 
 
 def test_custom_component_declare_event_handlers_in_fields():

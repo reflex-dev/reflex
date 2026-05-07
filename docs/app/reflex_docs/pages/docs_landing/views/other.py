@@ -1,5 +1,5 @@
 import reflex as rx
-from reflex_ui_shared.constants import CONTRIBUTING_URL
+from reflex_site_shared.constants import CONTRIBUTING_URL
 
 from reflex_docs.pages.docs.custom_components import custom_components
 from reflex_docs.pages.docs_landing.views.link_item import faded_borders, link_item

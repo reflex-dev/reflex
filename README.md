@@ -20,10 +20,6 @@
 
 ---
 
-[English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md) | [हिंदी](https://github.com/reflex-dev/reflex/blob/main/docs/in/README.md) | [Português (Brasil)](https://github.com/reflex-dev/reflex/blob/main/docs/pt/pt_br/README.md) | [Italiano](https://github.com/reflex-dev/reflex/blob/main/docs/it/README.md) | [Español](https://github.com/reflex-dev/reflex/blob/main/docs/es/README.md) | [한국어](https://github.com/reflex-dev/reflex/blob/main/docs/kr/README.md) | [日本語](https://github.com/reflex-dev/reflex/blob/main/docs/ja/README.md) | [Deutsch](https://github.com/reflex-dev/reflex/blob/main/docs/de/README.md) | [Persian (پارسی)](https://github.com/reflex-dev/reflex/blob/main/docs/pe/README.md) | [Tiếng Việt](https://github.com/reflex-dev/reflex/blob/main/docs/vi/README.md)
-
----
-
 > [!NOTE]
 > 🚀 **Try [Reflex Build](https://build.reflex.dev/)** – our AI-powered app builder that generates full-stack Reflex applications in seconds.
 
@@ -163,7 +159,7 @@ def index():
                 "Generate Image",
                 on_click=State.get_image,
                 width="25em",
-                loading=State.processing
+                loading=State.processing,
             ),
             rx.cond(
                 State.complete,
@@ -174,6 +170,7 @@ def index():
         width="100%",
         height="100vh",
     )
+
 
 # Add state and page to the app.
 app = rx.App()
@@ -192,9 +189,7 @@ Let's start with the UI.
 
 ```python
 def index():
-    return rx.center(
-        ...
-    )
+    return rx.center(...)
 ```
 
 This `index` function defines the frontend of the app.
@@ -211,11 +206,11 @@ Reflex represents your UI as a function of your state.
 ```python
 class State(rx.State):
     """The app state."""
+
     prompt = ""
     image_url = ""
     processing = False
     complete = False
-
 ```
 
 The state defines all the variables (called vars) in an app that can change and the functions that change them.
@@ -232,9 +227,7 @@ def get_image(self):
 
     self.processing, self.complete = True, False
     yield
-    response = openai_client.images.generate(
-        prompt=self.prompt, n=1, size="1024x1024"
-    )
+    response = openai_client.images.generate(prompt=self.prompt, n=1, size="1024x1024")
     self.image_url = response.data[0].url
     self.processing, self.complete = False, True
 ```

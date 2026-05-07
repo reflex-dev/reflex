@@ -6,7 +6,6 @@ import pytest
 from click.testing import CliRunner
 from reflex_base import constants
 from reflex_base.config import Config
-from reflex_base.constants.installer import PackageJson
 from reflex_base.utils.decorator import cached_procedure
 
 from reflex.reflex import cli
@@ -92,45 +91,27 @@ def test_update_react_router_config(config, export, expected_output):
                 app_name="test",
                 frontend_path="",
             ),
-            'assetsDir: "/assets".slice(1),',
+            'base: "/",',
         ),
         (
             Config(
                 app_name="test",
                 frontend_path="/test",
             ),
-            'assetsDir: "/test/assets".slice(1),',
+            'base: "/test/",',
         ),
         (
             Config(
                 app_name="test",
                 frontend_path="/test/",
             ),
-            'assetsDir: "/test/assets".slice(1),',
+            'base: "/test/",',
         ),
     ],
 )
 def test_initialise_vite_config(config, expected_output):
     output = _compile_vite_config(config)
     assert expected_output in output
-
-
-@pytest.mark.parametrize(
-    ("frontend_path", "expected_command"),
-    [
-        ("", "sirv ./build/client --single 404.html --host"),
-        ("/", "sirv ./build/client --single 404.html --host"),
-        ("/app", "sirv ./build/client --single app/404.html --host"),
-        ("/app/", "sirv ./build/client --single app/404.html --host"),
-        ("app", "sirv ./build/client --single app/404.html --host"),
-        (
-            "/deep/nested/path",
-            "sirv ./build/client --single deep/nested/path/404.html --host",
-        ),
-    ],
-)
-def test_get_prod_command(frontend_path, expected_command):
-    assert PackageJson.Commands.get_prod_command(frontend_path) == expected_command
 
 
 def test_initialize_web_directory_restores_root_bun_lock(tmp_path, monkeypatch):

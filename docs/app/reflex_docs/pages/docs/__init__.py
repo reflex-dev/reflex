@@ -4,11 +4,12 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import reflex as rx
+from reflex_components_core.core.cond import Cond
 from reflex_docgen.markdown import parse_document
 
 # External Components
 from reflex_pyplot import pyplot as pyplot
-from reflex_ui_shared.route import Route
+from reflex_site_shared.route import Route
 
 from reflex_docs.docgen_pipeline import get_docgen_toc, render_docgen_document
 from reflex_docs.pages.docs.component import multi_docs
@@ -22,6 +23,10 @@ from .cloud_cliref import pages as cloud_cliref_pages
 from .custom_components import custom_components
 from .library import library
 from .recipes_overview import overview
+
+SPECIAL_COMPONENT_DOCS = {
+    "rx.cond": Cond,
+}
 
 
 def to_title_case(text: str) -> str:
@@ -65,6 +70,9 @@ def get_components_from_frontmatter(filepath: str) -> list:
         return []
     components = []
     for comp_str in doc.frontmatter.components:
+        if component := SPECIAL_COMPONENT_DOCS.get(comp_str):
+            components.append((component, comp_str))
+            continue
         component = eval(comp_str)
         if isinstance(component, type):
             components.append((component, comp_str))
@@ -91,11 +99,12 @@ def get_previews_from_frontmatter(filepath: str) -> dict[str, str]:
 # ---------------------------------------------------------------------------
 _app_root = Path(__file__).resolve().parent.parent.parent.parent  # …/app/
 _docs_dir = _app_root.parent  # …/docs/ (parent of app/)
+_pkg_root = _docs_dir / "package"  # …/package/ (reflex-docs-bundle)
 
 all_docs: dict[str, str] = {}  # virtual_path → actual_path
 for _md_file in sorted(_docs_dir.rglob("*.md")):
-    # Skip anything inside the app/ subdirectory.
-    if _md_file.is_relative_to(_app_root):
+    # Skip anything inside the app/ or package/ subdirectories.
+    if _md_file.is_relative_to(_app_root) or _md_file.is_relative_to(_pkg_root):
         continue
     _virtual = "docs/" + str(_md_file.relative_to(_docs_dir)).replace("\\", "/")
     all_docs[_virtual] = str(_md_file)
@@ -152,7 +161,16 @@ def doc_title_from_path(doc: str) -> str:
 
 
 def doc_route_from_path(doc: str) -> str:
-    """Compute the URL route from a doc path."""
+    """Compute the URL route from a doc path.
+
+    Virtual paths are rooted at ``docs/`` (the content directory). The site is
+    already served under ``frontend_path`` (e.g. ``/docs``), so the public path
+    must not repeat that segment (``/docs/docs/...``).
+    """
+    doc = doc.replace("\\", "/")
+    doc = doc.removeprefix("docs/")
+    if doc.startswith("ai_builder/"):
+        doc = "ai/" + doc.removeprefix("ai_builder/")
     route = rx.utils.format.to_kebab_case(f"/{doc.replace('.md', '/')}")
     if route.endswith("/index/"):
         route = route[:-7] + "/"
@@ -229,7 +247,17 @@ def get_component_docgen(virtual_doc: str, actual_path: str, title: str):
 
 # Build doc_markdown_sources mapping
 for _virtual, _actual in all_docs.items():
-    if _virtual.endswith("-style.md") or _virtual.endswith("-ll.md"):
+    if _virtual.endswith("-style.md"):
+        continue
+    if _virtual.endswith("-ll.md"):
+        # Register low-level docs at /<path>-ll.md so the copy button can
+        # fetch them from the served URL.
+        _hl_virtual = _virtual.replace("-ll.md", ".md")
+        _hl_route = doc_route_from_path(_hl_virtual)
+        if not _check_whitelisted_path(_hl_route):
+            continue
+        _ll_route = _hl_route.rstrip("/") + "-ll"
+        doc_markdown_sources[_ll_route] = _actual
         continue
     _route = doc_route_from_path(_virtual)
     if not _check_whitelisted_path(_route):

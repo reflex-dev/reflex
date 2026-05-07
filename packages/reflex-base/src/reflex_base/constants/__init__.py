@@ -114,6 +114,7 @@ __all__ = [
     "RouteArgType",
     "RouteRegex",
     "RouteVar",
+    "RunningMode",
     "SocketEvent",
     "StateManagerMode",
     "Templates",

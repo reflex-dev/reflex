@@ -2,14 +2,16 @@
 name = "reflex-components-code"
 dynamic = ["version"]
 description = "Reflex code display components."
+license.text = "Apache-2.0"
 readme = "README.md"
 authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 requires-python = ">=3.10"
 dependencies = [
-    "reflex-components-core",
-    "reflex-components-lucide",
-    "reflex-components-radix",
+    "reflex-base >= 0.9.0",
+    "reflex-components-core >= 0.9.0",
+    "reflex-components-lucide >= 0.9.0",
+    "reflex-components-radix >= 0.9.0",
 ]
 
 [tool.hatch.version]
