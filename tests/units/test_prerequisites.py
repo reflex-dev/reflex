@@ -598,6 +598,74 @@ def test_install_frontend_packages_keeps_framework_deps_during_remove(
     assert "vite" not in remove_call
 
 
+def test_install_frontend_packages_persists_npm_lock(
+    install_packages_env: InstallPackagesEnv,
+):
+    env = install_packages_env
+    web_npm_lock = env.web_dir / constants.Node.LOCKFILE_PATH
+    root_npm_lock = (
+        env.tmp_path / constants.Bun.ROOT_LOCKFILE_DIR / constants.Node.LOCKFILE_PATH
+    )
+
+    def run_package_manager(args, **kwargs):
+        web_npm_lock.write_text("npm-lock-content")
+
+    env.patch_pm(["npm"], run_package_manager)
+    env.install()
+
+    assert root_npm_lock.read_text() == "npm-lock-content"
+
+
+def test_install_frontend_packages_restores_npm_lock(
+    install_packages_env: InstallPackagesEnv,
+):
+    env = install_packages_env
+    root_npm_lock = (
+        env.tmp_path / constants.Bun.ROOT_LOCKFILE_DIR / constants.Node.LOCKFILE_PATH
+    )
+    root_npm_lock.write_text("persisted-npm-lock")
+    web_npm_lock = env.web_dir / constants.Node.LOCKFILE_PATH
+    seen_contents: list[str] = []
+
+    def run_package_manager(args, **kwargs):
+        seen_contents.append(web_npm_lock.read_text())
+
+    env.patch_pm(["npm"], run_package_manager)
+    env.install()
+
+    assert seen_contents
+    assert seen_contents[0] == "persisted-npm-lock"
+
+
+def test_install_frontend_packages_npm_lock_change_invalidates_cache(
+    install_packages_env: InstallPackagesEnv,
+):
+    env = install_packages_env
+    root_npm_lock = (
+        env.tmp_path / constants.Bun.ROOT_LOCKFILE_DIR / constants.Node.LOCKFILE_PATH
+    )
+    root_npm_lock.write_text("npm-lock-v1")
+    web_npm_lock = env.web_dir / constants.Node.LOCKFILE_PATH
+    call_count = 0
+
+    def run_package_manager(args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        if root_npm_lock.exists():
+            web_npm_lock.write_text(root_npm_lock.read_text())
+
+    env.patch_pm(["npm"], run_package_manager)
+
+    env.install()
+    first_run_calls = call_count
+    env.install()
+    assert call_count == first_run_calls  # cache hit, no extra calls
+
+    root_npm_lock.write_text("npm-lock-v2")
+    env.install()
+    assert call_count > first_run_calls  # cache invalidated, install ran again
+
+
 def test_extract_package_name():
     assert js_runtimes._extract_package_name("react") == "react"
     assert js_runtimes._extract_package_name("react@1.2.3") == "react"

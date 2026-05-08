@@ -148,34 +148,44 @@ def initialize_requirements_txt(
     return False
 
 
-def get_root_bun_lock_path() -> Path:
-    """Get the canonical bun lock path in the app root.
-
-    The lockfile is stored inside a dedicated directory under the app root so
-    it cannot collide with a user-managed bun project that lives at the same
-    level as the Reflex project. This assumes the current working directory
-    is the Reflex app root.
-
-    Returns:
-        The canonical bun lock path in the app root.
-    """
-    return Path.cwd() / constants.Bun.ROOT_LOCKFILE_DIR / constants.Bun.LOCKFILE_PATH
+#: Lockfiles persisted under ``reflex.lock/`` and mirrored into ``.web``.
+#: Both bun and npm flows are covered so projects can be (re)built with
+#: either package manager without losing pinned versions.
+LOCKFILE_NAMES: tuple[str, ...] = (
+    constants.Bun.LOCKFILE_PATH,
+    constants.Node.LOCKFILE_PATH,
+)
 
 
-def get_web_bun_lock_path() -> Path:
-    """Get the mirrored bun lock path in the .web directory.
+def get_root_lockfile_path(filename: str) -> Path:
+    """Get a persisted lockfile path under the app root's reflex.lock dir.
+
+    Args:
+        filename: The lockfile basename (e.g. ``bun.lock``, ``package-lock.json``).
 
     Returns:
-        The mirrored bun lock path in the .web directory.
+        The lockfile path inside ``<cwd>/reflex.lock/``.
     """
-    return get_web_dir() / constants.Bun.LOCKFILE_PATH
+    return Path.cwd() / constants.Bun.ROOT_LOCKFILE_DIR / filename
+
+
+def get_web_lockfile_path(filename: str) -> Path:
+    """Get the mirrored lockfile path inside ``.web``.
+
+    Args:
+        filename: The lockfile basename.
+
+    Returns:
+        The lockfile path inside the ``.web`` directory.
+    """
+    return get_web_dir() / filename
 
 
 def get_root_package_json_path() -> Path:
     """Get the persisted package.json path in the app root.
 
-    Stored alongside ``bun.lock`` inside the dedicated lockfile directory so
-    resolved dependency pins survive a fresh ``reflex init``.
+    Stored alongside the lockfiles inside ``reflex.lock/`` so resolved
+    dependency pins survive a fresh ``reflex init``.
 
     Returns:
         The persisted package.json path in the app root.
@@ -192,34 +202,81 @@ def get_web_package_json_path() -> Path:
     return get_web_dir() / constants.PackageJson.PATH
 
 
-def sync_root_bun_lock_to_web():
-    """Mirror the canonical root bun.lock into .web.
+def _copy_if_exists(src: Path, dest: Path) -> bool:
+    """Copy ``src`` to ``dest`` (creating ``dest`` parents as needed).
 
-    If the root lockfile is absent, remove any stale mirrored copy from .web.
+    Args:
+        src: The source file. If absent, ``dest`` is removed when present.
+        dest: The destination file.
+
+    Returns:
+        True if ``dest``'s effective contents changed (created from absence,
+        overwritten with different bytes, or removed because ``src`` is gone).
     """
-    root_bun_lock_path = get_root_bun_lock_path()
-    web_bun_lock_path = get_web_bun_lock_path()
+    if not src.exists():
+        if dest.exists():
+            console.debug(f"Removing stale {dest}")
+            path_ops.rm(dest)
+            return True
+        return False
 
-    if not root_bun_lock_path.exists():
-        if web_bun_lock_path.exists():
-            console.debug(f"Removing stale {web_bun_lock_path}")
-            path_ops.rm(web_bun_lock_path)
+    if dest.exists() and dest.read_bytes() == src.read_bytes():
+        return False
+
+    changed = dest.exists()
+    path_ops.mkdir(dest.parent)
+    console.debug(f"Copying {src} to {dest}")
+    path_ops.cp(src, dest)
+    return changed
+
+
+def sync_root_lockfile_to_web(filename: str) -> bool:
+    """Mirror a single persisted lockfile into ``.web``.
+
+    Args:
+        filename: The lockfile basename.
+
+    Returns:
+        True if ``.web``'s copy was meaningfully changed (overwritten with
+        different bytes or removed because the root copy is gone). Initial
+        creation does not count as a meaningful change since no install
+        cache could exist yet.
+    """
+    return _copy_if_exists(
+        get_root_lockfile_path(filename), get_web_lockfile_path(filename)
+    )
+
+
+def sync_root_lockfiles_to_web() -> bool:
+    """Mirror every persisted lockfile into ``.web``.
+
+    Returns:
+        True if any ``.web`` lockfile was meaningfully changed.
+    """
+    # Materialize results so every lockfile is synced
+    changed = [sync_root_lockfile_to_web(name) for name in LOCKFILE_NAMES]
+    return any(changed)
+
+
+def sync_web_lockfile_to_root(filename: str):
+    """Persist a single ``.web`` lockfile back to the app root.
+
+    Args:
+        filename: The lockfile basename.
+    """
+    web = get_web_lockfile_path(filename)
+    if not web.exists():
         return
+    root = get_root_lockfile_path(filename)
+    path_ops.mkdir(root.parent)
+    console.debug(f"Copying {web} to {root}")
+    path_ops.cp(web, root)
 
-    console.debug(f"Copying {root_bun_lock_path} to {web_bun_lock_path}")
-    path_ops.cp(root_bun_lock_path, web_bun_lock_path)
 
-
-def sync_web_bun_lock_to_root():
-    """Persist the mirrored .web bun.lock back to the app root."""
-    web_bun_lock_path = get_web_bun_lock_path()
-    if not web_bun_lock_path.exists():
-        return
-
-    root_bun_lock_path = get_root_bun_lock_path()
-    path_ops.mkdir(root_bun_lock_path.parent)
-    console.debug(f"Copying {web_bun_lock_path} to {root_bun_lock_path}")
-    path_ops.cp(web_bun_lock_path, root_bun_lock_path)
+def sync_web_lockfiles_to_root():
+    """Persist every ``.web`` lockfile back to the app root."""
+    for name in LOCKFILE_NAMES:
+        sync_web_lockfile_to_root(name)
 
 
 def sync_web_package_json_to_root():
@@ -268,8 +325,8 @@ def initialize_web_directory():
     console.debug(f"Copying {constants.Templates.Dirs.WEB_TEMPLATE} to {get_web_dir()}")
     path_ops.copy_tree(constants.Templates.Dirs.WEB_TEMPLATE, str(get_web_dir()))
 
-    console.debug("Restoring the bun lock file.")
-    sync_root_bun_lock_to_web()
+    console.debug("Restoring lockfiles.")
+    sync_root_lockfiles_to_web()
 
     console.debug("Initializing the web directory.")
     initialize_package_json()

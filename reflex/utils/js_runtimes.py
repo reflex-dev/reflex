@@ -363,25 +363,10 @@ def _frontend_packages_cache_path() -> Path:
     return get_web_dir() / "reflex.install_frontend_packages.cached"
 
 
-def _sync_root_bun_lock_for_frontend_install():
-    """Sync the canonical bun.lock into .web and invalidate the install cache when needed."""
-    root_bun_lock_path = frontend_skeleton.get_root_bun_lock_path()
-    web_bun_lock_path = frontend_skeleton.get_web_bun_lock_path()
-    cache_file = _frontend_packages_cache_path()
-
-    if not root_bun_lock_path.exists():
-        if web_bun_lock_path.exists():
-            frontend_skeleton.sync_root_bun_lock_to_web()
-            if cache_file.exists():
-                path_ops.rm(cache_file)
-        return
-
-    if not web_bun_lock_path.exists():
-        frontend_skeleton.sync_root_bun_lock_to_web()
-        return
-
-    if web_bun_lock_path.read_bytes() != root_bun_lock_path.read_bytes():
-        frontend_skeleton.sync_root_bun_lock_to_web()
+def _sync_root_lockfiles_for_frontend_install():
+    """Sync persisted lockfiles into .web and invalidate the install cache when needed."""
+    if frontend_skeleton.sync_root_lockfiles_to_web():
+        cache_file = _frontend_packages_cache_path()
         if cache_file.exists():
             path_ops.rm(cache_file)
 
@@ -649,7 +634,7 @@ def install_frontend_packages(packages: set[str], config: Config):
     install_package_managers = tuple(
         get_nodejs_compatible_package_managers(raise_on_none=True)
     )
-    _sync_root_bun_lock_for_frontend_install()
+    _sync_root_lockfiles_for_frontend_install()
     _install_frontend_packages(set(packages), config, install_package_managers)
-    frontend_skeleton.sync_web_bun_lock_to_root()
+    frontend_skeleton.sync_web_lockfiles_to_root()
     frontend_skeleton.sync_web_package_json_to_root()

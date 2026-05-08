@@ -63,6 +63,7 @@ class Bun(SimpleNamespace):
     DEFAULT_CONFIG = """
 [install]
 registry = "{registry}"
+frozenLockfile = true
 """
 
 
@@ -75,6 +76,9 @@ class Node(SimpleNamespace):
 
     # Path of the node config file.
     CONFIG_PATH = ".npmrc"
+
+    # Path of the npm lockfile.
+    LOCKFILE_PATH = "package-lock.json"
 
     DEFAULT_CONFIG = """
 registry={registry}
