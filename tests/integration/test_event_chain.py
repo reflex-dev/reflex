@@ -155,9 +155,9 @@ def EventChain():
 
     # Frontend FunctionVar branch: writes a label into a DOM data-attribute.
     mark_dom_fn = rx.vars.FunctionStringVar.create(
-        "((label) => (...args) => { "
-        "const el = document.getElementById('mixed_cond_marker'); "
-        "if (el) { el.setAttribute('data-value', label); } "
+        "((label) => { "
+        "const el = document.getElementById('mixed_cond_marker');"
+        "if (el) { el.setAttribute('data-value', label); }"
         "})"
     ).to(rx.EventChain)
 
@@ -249,7 +249,7 @@ def EventChain():
                 id="cond_input",
             ),
             rx.box(
-                "",
+                State.cond_input,
                 id="mixed_cond_marker",
                 custom_attrs={"data-value": ""},
             ),
@@ -770,7 +770,7 @@ def test_mixed_cond_event_lambda(event_chain: AppHarness, driver: WebDriver):
 
     # Switch to the FunctionVar branch and click again.
     cond_input.send_keys("fn")
-    assert event_chain.poll_for_value(cond_input, exp_not_equal="") == "fn"
+    assert event_chain.poll_for_content(marker, exp_not_equal="") == "fn"
     btn.click()
     AppHarness._poll_for(lambda: marker.get_attribute("data-value") == "fn_branch")
     assert marker.get_attribute("data-value") == "fn_branch"
