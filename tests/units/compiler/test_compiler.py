@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 from pytest_mock import MockerFixture
 from reflex_base import constants
+from reflex_base.compiler.utils import compile_import_statement, compile_imports
 from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
 from reflex_base.constants.compiler import PageNames
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
@@ -53,7 +54,7 @@ def test_compile_import_statement(
         test_default: The expected output of default library.
         test_rest: The expected output rest libraries.
     """
-    default, rest = utils.compile_import_statement(fields)
+    default, rest = compile_import_statement(fields)
     assert default == test_default
     assert sorted(rest) == test_rest
 
@@ -111,7 +112,7 @@ def test_compile_imports(import_dict: ParsedImportDict, test_dicts: list[dict]):
         import_dict: The import dictionary.
         test_dicts: The expected output.
     """
-    imports = utils.compile_imports(import_dict)
+    imports = compile_imports(import_dict)
     for one_import_dict, test_dict in zip(imports, test_dicts, strict=True):
         assert one_import_dict["lib"] == test_dict["lib"]
         assert one_import_dict["default"] == test_dict["default"]

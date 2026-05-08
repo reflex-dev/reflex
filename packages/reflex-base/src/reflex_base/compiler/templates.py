@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import re
 from collections.abc import Iterable, Mapping
 from string import Template
 from typing import TYPE_CHECKING, Any, Final, Literal
 
-from reflex.compiler.utils import compile_imports
 from reflex_base import constants
+from reflex_base.compiler.utils import compile_imports
 from reflex_base.constants import Hooks
 from reflex_base.constants.vite import ViteConfigDict
 from reflex_base.utils.format import format_state_name, json_dumps
@@ -17,8 +18,9 @@ from reflex_base.utils.imports import ImportVar, parse_imports
 from reflex_base.vars.base import Var, VarData
 
 if TYPE_CHECKING:
-    from reflex.compiler.utils import _ImportDict
     from reflex_base.components.component import Component
+
+    from .utils import ImportDict
 
 
 def _sort_hooks(
@@ -111,7 +113,7 @@ class _RenderUtils:
 }})()"""
 
     @staticmethod
-    def get_import(module: _ImportDict) -> str:
+    def get_import(module: ImportDict) -> str:
         default_import = module["default"]
         rest_imports = module["rest"]
 
@@ -187,6 +189,7 @@ function fullReload() {
         experimental_hmr: bool,
         hmr: bool,
         force_full_reload: bool,
+        allowed_hosts: bool | list[str],
     ) -> None:
         """Initialize the Vite Config Renderer."""
         self.imports = {
@@ -259,6 +262,8 @@ function fullReload() {
         }
         if force_full_reload:
             self.default_config["plugins"].append(Var("fullReload()"))
+        if allowed_hosts is not False:
+            self.default_config["server"]["allowedHosts"] = allowed_hosts
 
     def _deep_merge(
         self, mergee: ViteConfigDict | dict, merger: ViteConfigDict
@@ -339,6 +344,7 @@ function fullReload() {
             The `vite.config.js` file content.
         """
         if vite_config:
+            vite_config = copy.deepcopy(vite_config)
             if imports := vite_config.pop("imports", None):
                 self.imports.update(imports)
 
@@ -381,7 +387,7 @@ config = rx.Config(
 )"""
 
 
-def document_root_template(*, imports: list[_ImportDict], document: dict[str, Any]):
+def document_root_template(*, imports: list[ImportDict], document: dict[str, Any]):
     """Template for the document root.
 
     Args:
@@ -403,7 +409,7 @@ export function Layout({{children}}) {{
 
 def app_root_template(
     *,
-    imports: list[_ImportDict],
+    imports: list[ImportDict],
     custom_codes: Iterable[str],
     hooks: dict[str, VarData | None],
     window_libraries: list[tuple[str, str]],
@@ -675,7 +681,7 @@ def component_template(component: Component):
 
 
 def page_template(
-    imports: Iterable[_ImportDict],
+    imports: Iterable[ImportDict],
     dynamic_imports: Iterable[str],
     custom_codes: Iterable[str],
     hooks: dict[str, VarData | None],
@@ -747,6 +753,7 @@ def vite_config_template(
     experimental_hmr: bool,
     sourcemap: bool | Literal["inline", "hidden"],
     vite_config: ViteConfigDict | None,
+    allowed_hosts: bool | list[str] = False,
 ):
     """Template for vite.config.js.
 
@@ -757,6 +764,7 @@ def vite_config_template(
         experimental_hmr: Whether to enable experimental HMR features.
         sourcemap: The sourcemap configuration.
         vite_config: The user's optionally defined Vite config.
+        allowed_hosts: Allow all hosts (True), specific hosts (list of strings), or only localhost (False).
 
     Returns:
         Rendered vite.config.js content as string.
@@ -767,6 +775,7 @@ def vite_config_template(
         force_full_reload=force_full_reload,
         experimental_hmr=experimental_hmr,
         sourcemap=sourcemap,
+        allowed_hosts=allowed_hosts,
     ).render(vite_config=vite_config)
 
 
@@ -795,7 +804,7 @@ def dynamic_component_template(
 
 
 def dynamic_components_module_template(
-    imports: list[_ImportDict], memoized_code: str
+    imports: list[ImportDict], memoized_code: str
 ) -> str:
     """Template for a dynamic-SSR components module.
 
@@ -811,7 +820,7 @@ def dynamic_components_module_template(
 
 
 def memo_components_template(
-    imports: list[_ImportDict],
+    imports: list[ImportDict],
     components: list[dict[str, Any]],
     functions: list[dict[str, Any]],
     dynamic_imports: Iterable[str],
@@ -863,7 +872,7 @@ export const {component["name"]} = memo(({component["signature"]}) => {{
 
 
 def memo_single_component_template(
-    imports: list[_ImportDict],
+    imports: list[ImportDict],
     component: dict[str, Any],
     dynamic_imports: Iterable[str],
     custom_codes: Iterable[str],
@@ -903,7 +912,7 @@ export const {component["name"]} = memo(({component["signature"]}) => {{
 
 
 def memo_single_function_template(
-    imports: list[_ImportDict],
+    imports: list[ImportDict],
     function: dict[str, Any],
 ) -> str:
     """Template for a single function memo in its own module.

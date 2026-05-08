@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from reflex_base import constants
+from reflex_base.compiler.utils import compile_imports
 from reflex_base.components.component import (
     CUSTOM_COMPONENTS,
     BaseComponent,
@@ -109,7 +110,7 @@ def _compile_document_root(root: Component) -> str:
     document_root_imports = root._get_all_imports()
     _apply_common_imports(document_root_imports)
     return templates.document_root_template(
-        imports=utils.compile_imports(document_root_imports),
+        imports=compile_imports(document_root_imports),
         document=root.render(),
     )
 
@@ -149,7 +150,7 @@ def _compile_app(app_root: Component) -> str:
     _apply_common_imports(app_root_imports)
 
     return templates.app_root_template(
-        imports=utils.compile_imports(app_root_imports),
+        imports=compile_imports(app_root_imports),
         custom_codes=app_root._get_all_custom_code(),
         hooks=app_root._get_all_hooks(),
         window_libraries=window_libraries_deduped,
@@ -211,7 +212,7 @@ def _compile_page(component: BaseComponent) -> str:
     """
     imports = component._get_all_imports()
     _apply_common_imports(imports)
-    imports = utils.compile_imports(imports)
+    imports = compile_imports(imports)
 
     # Compile the code to render the component.
     return templates.page_template(
@@ -490,7 +491,7 @@ def _compile_single_memo_component(
     )
     _apply_common_imports(imports)
     code = templates.memo_single_component_template(
-        imports=utils.compile_imports(imports),
+        imports=compile_imports(imports),
         component=component_render,
         dynamic_imports=sorted(component_render.get("dynamic_imports", []) or []),
         custom_codes=component_render.get("custom_code", []) or [],
@@ -513,7 +514,7 @@ def _compile_single_memo_function(
     """
     imports = utils.merge_imports({}, function_imports)
     code = templates.memo_single_function_template(
-        imports=utils.compile_imports(imports),
+        imports=compile_imports(imports),
         function=function_render,
     )
     return code, imports
@@ -668,7 +669,7 @@ def compile_page_from_context(page_ctx: PageContext) -> tuple[str, str]:
     _apply_common_imports(imports)
 
     code = templates.page_template(
-        imports=utils.compile_imports(imports),
+        imports=compile_imports(imports),
         dynamic_imports=sorted(page_ctx.dynamic_imports),
         custom_codes=page_ctx.custom_code_dict(),
         hooks=page_ctx.hooks,

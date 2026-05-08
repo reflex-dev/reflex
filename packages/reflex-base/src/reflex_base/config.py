@@ -221,6 +221,8 @@ class BaseConfig:
         SequenceOptions(delimiter=","),
     ] = dataclasses.field(default=("*",))
 
+    vite_allowed_hosts: bool | list[str] = False
+
     vite_config: ViteConfigDict | None = None
 
     react_strict_mode: bool = True
@@ -371,6 +373,14 @@ class Config(BaseConfig):
                 feature_name="state_auto_setters",
                 reason=reason,
                 deprecation_version="0.9.0",
+                removal_version="1.0",
+            )
+
+        if "vite_allowed_hosts" in kwargs and kwargs["vite_allowed_hosts"] is not False:
+            console.deprecate(
+                feature_name="vite_allowed_hosts",
+                reason="Use vite_config={'server': {'allowedHosts': ...}} instead.",
+                deprecation_version="0.9.3",
                 removal_version="1.0",
             )
 

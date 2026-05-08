@@ -158,7 +158,7 @@ class Server(TypedDict, total=False):
     """
 
     host: str | bool | Var
-    allowedHosts: list[str] | Literal[True] | Var
+    allowedHosts: list[str] | bool | Var
     port: int | Var
     strictPort: bool | Var
     https: HTTPSOptions

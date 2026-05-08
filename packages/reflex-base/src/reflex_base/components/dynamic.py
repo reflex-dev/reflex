@@ -3,6 +3,7 @@
 from typing import TYPE_CHECKING, Union
 
 from reflex_base import constants
+from reflex_base.compiler.utils import compile_imports
 from reflex_base.utils import imports
 from reflex_base.utils.exceptions import DynamicComponentMissingLibraryError
 from reflex_base.utils.format import format_library_name
@@ -78,7 +79,7 @@ def load_dynamic_serializer():
         # Causes a circular import, so we import here.
         from reflex_components_core.base.bare import Bare
 
-        from reflex.compiler import compiler, templates, utils
+        from reflex.compiler import compiler, templates
 
         component = Bare.create(Var.create(component))
 
@@ -116,7 +117,7 @@ def load_dynamic_serializer():
                 imports[lib] = names
 
         module_code_lines = templates.dynamic_components_module_template(
-            imports=utils.compile_imports(imports),
+            imports=compile_imports(imports),
             memoized_code="\n".join(rendered_components),
         ).splitlines()
 
