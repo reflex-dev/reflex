@@ -1,6 +1,7 @@
 """Workflow stage visuals (animated arrows) used in marketing mega-menus."""
 
 from typing import Literal
+from urllib.parse import quote
 
 import reflex_components_internal as ui
 
@@ -18,30 +19,33 @@ _ARROW_VARIANTS: dict[ArrowSize, tuple[int, int]] = {
 _ARROW_SWEEP_GROUPS = 4
 
 
-def _arrow_paths(count: int, quote: str = '"') -> str:
+def _arrow_paths(count: int) -> str:
     return "".join(
-        f"<path d={quote}M{3 + i * 5} 1L{7 + i * 5} 5L{3 + i * 5} 9{quote} "
-        f"stroke={quote}currentColor{quote} stroke-linecap={quote}round{quote} "
-        f"stroke-linejoin={quote}round{quote}/>"
+        f'<path d="M{3 + i * 5} 1L{7 + i * 5} 5L{3 + i * 5} 9" '
+        f'stroke="currentColor" stroke-linecap="round" '
+        f'stroke-linejoin="round"/>'
         for i in range(count)
     )
 
 
-def _arrow_row_svg_html(count: int, width: int) -> str:
+def _arrow_row_svg(count: int, width: int, *, inline_style: bool = False) -> str:
+    style_attr = ' style="display:block;height:100%;width:auto"' if inline_style else ""
     return (
         f'<svg width="{width}" height="10" viewBox="0 0 {width} 10" '
-        f'fill="none" xmlns="http://www.w3.org/2000/svg" '
-        f'style="display:block;height:100%;width:auto">{_arrow_paths(count)}</svg>'
+        f'fill="none" xmlns="http://www.w3.org/2000/svg"{style_attr}>'
+        f"{_arrow_paths(count)}</svg>"
     )
+
+
+def _arrow_row_svg_html(count: int, width: int) -> str:
+    return _arrow_row_svg(count, width, inline_style=True)
 
 
 def _arrow_mask_data_url(count: int, width: int) -> str:
-    return (
-        f'url("data:image/svg+xml;utf8,'
-        f"<svg xmlns=%22http://www.w3.org/2000/svg%22 "
-        f"width=%22{width}%22 height=%2210%22 viewBox=%220 0 {width} 10%22 "
-        f'fill=%22none%22>{_arrow_paths(count, quote="%22")}</svg>")'
-    )
+    # Percent-encode the SVG body so Firefox/Safari accept the data URL
+    # in mask-image; raw `<`, `>`, and spaces are not reliably parsed.
+    encoded = quote(_arrow_row_svg(count, width), safe="")
+    return f'url("data:image/svg+xml,{encoded}")'
 
 
 def workflow_stage_image(
@@ -87,6 +91,7 @@ def workflow_stage_image(
             "relative flex h-[10px] w-auto shrink-0 items-center justify-start overflow-hidden max-lg:hidden",
             wrapper_class_name,
         ),
+        custom_attrs={"aria-hidden": "true"},
     )
 
 

@@ -55,6 +55,40 @@ def footer_link_flex(heading: str, links):
     )
 
 
+def social_menu_item(icon: str, url: str, name: str) -> rx.Component:
+    return rx.el.elements.a(
+        marketing_button(
+            get_icon(icon, class_name="shrink-0"),
+            variant="ghost",
+            size="icon-sm",
+            class_name="text-m-slate-7 dark:text-m-slate-6",
+            native_button=False,
+        ),
+        href=url,
+        custom_attrs={"aria-label": "Social link for " + name},
+        target="_blank",
+    )
+
+
+def menu_socials() -> rx.Component:
+    from reflex_site_shared.constants import (
+        DISCORD_URL,
+        FORUM_URL,
+        GITHUB_URL,
+        LINKEDIN_URL,
+        TWITTER_URL,
+    )
+
+    return rx.box(
+        social_menu_item("twitter_footer", TWITTER_URL, "Twitter"),
+        social_menu_item("github_navbar", GITHUB_URL, "Github"),
+        social_menu_item("discord_navbar", DISCORD_URL, "Discord"),
+        social_menu_item("linkedin_footer", LINKEDIN_URL, "LinkedIn"),
+        social_menu_item("forum_footer", FORUM_URL, "Forum"),
+        class_name="flex flex-row items-center gap-2",
+    )
+
+
 def thumb_card(score: int, icon: str, label: str) -> rx.Component:
     return rx.el.button(
         ui.icon(
@@ -238,7 +272,6 @@ def link_pill(text: str, href: str) -> rx.Component:
 @rx.memo
 def docpage_footer(path: str):
     from reflex_site_shared.constants import FORUM_URL, ROADMAP_URL
-    from reflex_site_shared.views.footer import menu_socials
 
     return rx.el.footer(
         rx.box(
