@@ -254,7 +254,7 @@ def test_install_frontend_packages_creates_root_bun_lock(
         env.web_lock.write_text("generated-lock")
 
     env.patch_pm(["bun"], run_package_manager)
-    env.install()
+    env.install({"some-pkg@1.0.0"})
 
     assert env.root_lock.read_text() == "generated-lock"
 
@@ -289,11 +289,13 @@ def test_install_frontend_packages_cache_respects_root_bun_lock(
 ):
     env = install_packages_env
     env.root_lock.write_text("lock-v1")
-    call_count = 0
+    install_runs = 0
 
     def run_package_manager(args, **kwargs):
-        nonlocal call_count
-        call_count += 1
+        nonlocal install_runs
+        # Count distinct cached-procedure invocations by detecting `install`.
+        if "install" in args and "add" not in args and "remove" not in args:
+            install_runs += 1
         if env.root_lock.exists():
             env.web_lock.write_text(env.root_lock.read_text())
         else:
@@ -308,7 +310,10 @@ def test_install_frontend_packages_cache_respects_root_bun_lock(
     env.root_lock.unlink()
     env.install()
 
-    assert call_count == 3
+    # 4 install() calls minus one cache hit = 3 actual runs. The final run
+    # sees no root lock so the web copy is removed before the run; the
+    # initial `bun install` is then skipped, leaving 2 install invocations.
+    assert install_runs == 2
 
 
 def test_install_frontend_packages_npm_does_not_create_bogus_bun_lock(
@@ -324,9 +329,9 @@ def test_install_frontend_packages_npm_does_not_create_bogus_bun_lock(
         assert not env.web_lock.exists()
 
     env.patch_pm(["npm"], run_package_manager)
-    env.install()
+    env.install({"some-pkg@1.0.0"})
 
-    assert call_count == 1
+    assert call_count >= 1
     assert not env.root_lock.exists()
     assert not env.web_lock.exists()
 
@@ -455,7 +460,7 @@ def test_install_frontend_packages_persists_package_json_to_root(
         env.web_package_json.write_text('{"name": "reflex", "dependencies": {}}')
 
     env.patch_pm(["bun"], run_package_manager)
-    env.install()
+    env.install({"some-pkg@1.0.0"})
 
     assert env.root_package_json.read_text() == (
         '{"name": "reflex", "dependencies": {}}'
@@ -598,6 +603,35 @@ def test_install_frontend_packages_keeps_framework_deps_during_remove(
     assert "vite" not in remove_call
 
 
+def test_install_frontend_packages_skips_initial_install_on_fresh_project(
+    install_packages_env: InstallPackagesEnv,
+):
+    """No lockfile yet → skip ``bun install`` (would fail under frozenLockfile)."""
+    env = install_packages_env
+    calls = _record_calls(env)
+
+    env.install({"some-pkg@1.0.0"})
+
+    install_calls = [c for c in calls if "install" in c and "add" not in c]
+    assert install_calls == []
+    add_calls = [c for c in calls if "add" in c]
+    assert len(add_calls) == 1
+
+
+def test_install_frontend_packages_runs_initial_install_when_lockfile_present(
+    install_packages_env: InstallPackagesEnv,
+):
+    """Lockfile recovered → initial ``bun install`` runs to honor pins."""
+    env = install_packages_env
+    env.root_lock.write_text("persisted-lock")
+    calls = _record_calls(env)
+
+    env.install({"some-pkg@1.0.0"})
+
+    install_calls = [c for c in calls if "install" in c and "add" not in c]
+    assert len(install_calls) == 1
+
+
 def test_install_frontend_packages_persists_npm_lock(
     install_packages_env: InstallPackagesEnv,
 ):
@@ -611,7 +645,7 @@ def test_install_frontend_packages_persists_npm_lock(
         web_npm_lock.write_text("npm-lock-content")
 
     env.patch_pm(["npm"], run_package_manager)
-    env.install()
+    env.install({"some-pkg@1.0.0"})
 
     assert root_npm_lock.read_text() == "npm-lock-content"
 

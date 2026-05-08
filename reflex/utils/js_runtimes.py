@@ -569,12 +569,18 @@ def _install_frontend_packages(
             show_status_message="Removing unused frontend packages",
         )
 
-    # Install whatever was recovered into package.json from reflex.lock so
-    # the lockfile is honored before any further mutation.
-    run_package_manager(
-        [primary_package_manager, "install", "--legacy-peer-deps"],
-        show_status_message="Installing base frontend packages",
-    )
+    # Install against the recovered lockfile so its pins are honored
+    # before any further mutation. Skip on brand-new projects where no
+    # lockfile exists yet — ``frozenLockfile`` would error, and the
+    # subsequent ``bun add`` calls will generate a fresh lockfile.
+    if any(
+        frontend_skeleton.get_web_lockfile_path(name).exists()
+        for name in frontend_skeleton.LOCKFILE_NAMES
+    ):
+        run_package_manager(
+            [primary_package_manager, "install", "--legacy-peer-deps"],
+            show_status_message="Installing base frontend packages",
+        )
 
     pinned_packages, unpinned_packages = _split_by_version_specifier(packages)
     pinned_dev_deps, unpinned_dev_deps = _split_by_version_specifier(development_deps)
