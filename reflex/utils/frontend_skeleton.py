@@ -151,12 +151,15 @@ def initialize_requirements_txt(
 def get_root_bun_lock_path() -> Path:
     """Get the canonical bun lock path in the app root.
 
-    This assumes the current working directory is the Reflex app root.
+    The lockfile is stored inside a dedicated directory under the app root so
+    it cannot collide with a user-managed bun project that lives at the same
+    level as the Reflex project. This assumes the current working directory
+    is the Reflex app root.
 
     Returns:
         The canonical bun lock path in the app root.
     """
-    return Path.cwd() / constants.Bun.LOCKFILE_PATH
+    return Path.cwd() / constants.Bun.ROOT_LOCKFILE_DIR / constants.Bun.LOCKFILE_PATH
 
 
 def get_web_bun_lock_path() -> Path:
@@ -193,6 +196,7 @@ def sync_web_bun_lock_to_root():
         return
 
     root_bun_lock_path = get_root_bun_lock_path()
+    path_ops.mkdir(root_bun_lock_path.parent)
     console.debug(f"Copying {web_bun_lock_path} to {root_bun_lock_path}")
     path_ops.cp(web_bun_lock_path, root_bun_lock_path)
 

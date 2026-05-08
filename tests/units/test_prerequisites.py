@@ -89,10 +89,12 @@ def install_packages_env(
     def install(packages: set[str] | None = None) -> None:
         js_runtimes.install_frontend_packages(packages or set(), config)
 
+    root_lock = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR / constants.Bun.LOCKFILE_PATH
+    root_lock.parent.mkdir(parents=True, exist_ok=True)
     env = InstallPackagesEnv(
         tmp_path=tmp_path,
         web_dir=web_dir,
-        root_lock=tmp_path / constants.Bun.LOCKFILE_PATH,
+        root_lock=root_lock,
         web_lock=web_dir / constants.Bun.LOCKFILE_PATH,
         config=config,
         patch_pm=patch_pm,
@@ -200,7 +202,9 @@ def test_initialize_web_directory_restores_root_bun_lock(tmp_path, monkeypatch):
     )
 
     web_dir = tmp_path / constants.Dirs.WEB
-    (tmp_path / constants.Bun.LOCKFILE_PATH).write_text("root-lock")
+    root_lock = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR / constants.Bun.LOCKFILE_PATH
+    root_lock.parent.mkdir(parents=True, exist_ok=True)
+    root_lock.write_text("root-lock")
     _patch_web_dir(monkeypatch, web_dir)
 
     with chdir(tmp_path):
