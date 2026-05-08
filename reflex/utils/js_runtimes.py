@@ -443,6 +443,60 @@ def _stale_packages_in_web_package_json(needed_names: Iterable[str]) -> set[str]
     return current - set(needed_names)
 
 
+def _run_initial_install(primary_package_manager: str, env: dict) -> None:
+    """Run the initial frozen-lockfile install with a friendly recovery hint.
+
+    bun reports ``error: lockfile had changes, but lockfile is frozen`` when
+    the persisted lockfile cannot satisfy the recovered package.json. When
+    that happens, point the user at ``reflex.lock/package.json`` so they can
+    delete it and let Reflex regenerate the dep set from scratch on the
+    next run.
+
+    Args:
+        primary_package_manager: Path to the package manager executable.
+        env: Extra environment variables for the subprocess.
+
+    Raises:
+        SystemExit: If the install fails. The exit message tells the user
+            how to recover from a frozen-lockfile mismatch when applicable.
+    """
+    args = processes.get_command_with_loglevel([
+        primary_package_manager,
+        "install",
+        "--legacy-peer-deps",
+        "--frozen-lockfile",
+    ])
+    process = processes.new_process(
+        args,
+        cwd=get_web_dir(),
+        shell=constants.IS_WINDOWS,
+        env=env,
+    )
+    logs = processes.show_status(
+        "Installing base frontend packages",
+        process,
+        suppress_errors=True,
+    )
+    if process.returncode == 0:
+        return
+
+    if any("lockfile had changes, but lockfile is frozen" in line for line in logs):
+        root_dir = Path.cwd() / constants.Bun.ROOT_LOCKFILE_DIR
+        console.error(
+            "The persisted lockfile is out of sync with the recovered "
+            f"package.json. Delete the [bold]{root_dir}[/bold] directory "
+            "and rerun so Reflex regenerates it from scratch."
+        )
+        raise SystemExit(1)
+
+    # Replay captured logs so the user can diagnose other failures (mirrors
+    # show_status's default error path, which we suppressed above).
+    for line in logs:
+        console.error(line, end="")
+    console.error("\nRun with [bold]--loglevel debug[/bold] for the full log.")
+    raise SystemExit(1)
+
+
 def _has_version_specifier(package_spec: str) -> bool:
     """Check whether a package spec already includes a version specifier.
 
@@ -607,15 +661,7 @@ def _install_frontend_packages(
         frontend_skeleton.get_web_lockfile_path(name).exists()
         for name in frontend_skeleton.LOCKFILE_NAMES
     ):
-        run_package_manager(
-            [
-                primary_package_manager,
-                "install",
-                "--legacy-peer-deps",
-                "--frozen-lockfile",
-            ],
-            show_status_message="Installing base frontend packages",
-        )
+        _run_initial_install(primary_package_manager, env)
 
     pinned_packages, unpinned_packages = _split_by_version_specifier(packages)
     pinned_dev_deps, unpinned_dev_deps = _split_by_version_specifier(development_deps)

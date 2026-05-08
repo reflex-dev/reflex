@@ -46,6 +46,21 @@ def _patch_frontend_package_manager(
         run_package_manager,
     )
 
+    # Forward the initial-install helper through the same stub so tests can
+    # inspect the install args without mocking subprocess primitives.
+    def _stub_initial_install(primary_pm, env):
+        run_package_manager(
+            [
+                primary_pm,
+                "install",
+                "--legacy-peer-deps",
+                "--frozen-lockfile",
+            ],
+            show_status_message="Installing base frontend packages",
+        )
+
+    monkeypatch.setattr(js_runtimes, "_run_initial_install", _stub_initial_install)
+
 
 class _InstallFn(Protocol):
     def __call__(self, packages: set[str] | None = ...) -> None: ...
@@ -765,6 +780,66 @@ def test_install_frontend_packages_does_not_fall_back(
 
     with pytest.raises(RuntimeError, match=error_message):
         env.install({"some-pkg@1.0.0"})
+
+
+@pytest.mark.usefixtures("install_packages_env")
+def test_run_initial_install_frozen_lockfile_error_helpful_message(monkeypatch, capsys):
+    """A frozen-lockfile mismatch surfaces a 'delete reflex.lock/package.json' hint."""
+
+    class _FakeProcess:
+        returncode = 1
+
+    monkeypatch.setattr(
+        js_runtimes.processes,
+        "new_process",
+        lambda *args, **kwargs: _FakeProcess(),
+    )
+    monkeypatch.setattr(
+        js_runtimes.processes,
+        "show_status",
+        lambda message, process, suppress_errors=False: [
+            "error: lockfile had changes, but lockfile is frozen\n",
+        ],
+    )
+
+    with pytest.raises(SystemExit):
+        js_runtimes._run_initial_install("bun", env={})
+
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
+    assert "out of sync" in output
+    # The message points at the whole reflex.lock dir, not just bun.lock,
+    # so deleting it doesn't accidentally leave behind a package-lock.json.
+    assert constants.Bun.ROOT_LOCKFILE_DIR in output
+    assert "bun.lock" in output
+    assert "package-lock.json" in output
+
+
+@pytest.mark.usefixtures("install_packages_env")
+def test_run_initial_install_other_error_replays_logs(monkeypatch, capsys):
+    """Non-frozen-lockfile failures replay the captured logs."""
+
+    class _FakeProcess:
+        returncode = 1
+
+    monkeypatch.setattr(
+        js_runtimes.processes,
+        "new_process",
+        lambda *args, **kwargs: _FakeProcess(),
+    )
+    monkeypatch.setattr(
+        js_runtimes.processes,
+        "show_status",
+        lambda message, process, suppress_errors=False: [
+            "error: network unreachable\n",
+        ],
+    )
+
+    with pytest.raises(SystemExit):
+        js_runtimes._run_initial_install("bun", env={})
+
+    captured = capsys.readouterr()
+    assert "network unreachable" in captured.out + captured.err
 
 
 def test_extract_package_name():
