@@ -502,7 +502,7 @@ def test_deploy_non_interactive_export_failure(
 
 def test_deploy_envfile_missing_python_dotenv_exits(
     mocker: MockerFixture,
-    mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+    mock_export_fn: MagicMock,
 ):
     """Deploy should exit when --envfile is used without python-dotenv."""
     import builtins
