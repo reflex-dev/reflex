@@ -700,6 +700,73 @@ def test_install_frontend_packages_npm_lock_change_invalidates_cache(
     assert call_count > first_run_calls  # cache invalidated, install ran again
 
 
+def test_prefer_npm_over_bun_implicit_from_npm_lock(tmp_path, monkeypatch):
+    """A persisted package-lock.json with no bun.lock implies npm preference."""
+    monkeypatch.delenv("REFLEX_USE_NPM", raising=False)
+    monkeypatch.setattr(js_runtimes.constants, "IS_WINDOWS", False)
+    root_dir = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR
+    root_dir.mkdir(parents=True)
+    (root_dir / constants.Node.LOCKFILE_PATH).write_text("{}")
+
+    with chdir(tmp_path):
+        assert js_runtimes.prefer_npm_over_bun() is True
+
+
+def test_prefer_npm_over_bun_implicit_disabled_when_bun_lock_present(
+    tmp_path, monkeypatch
+):
+    """If both lockfiles are persisted, no implicit npm preference."""
+    monkeypatch.delenv("REFLEX_USE_NPM", raising=False)
+    monkeypatch.setattr(js_runtimes.constants, "IS_WINDOWS", False)
+    root_dir = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR
+    root_dir.mkdir(parents=True)
+    (root_dir / constants.Node.LOCKFILE_PATH).write_text("{}")
+    (root_dir / constants.Bun.LOCKFILE_PATH).write_text("")
+
+    with chdir(tmp_path):
+        assert js_runtimes.prefer_npm_over_bun() is False
+
+
+def test_prefer_npm_over_bun_explicit_false_overrides_implicit(tmp_path, monkeypatch):
+    """REFLEX_USE_NPM=0 overrides the implicit npm-lock-only detection."""
+    monkeypatch.setenv("REFLEX_USE_NPM", "0")
+    monkeypatch.setattr(js_runtimes.constants, "IS_WINDOWS", False)
+    root_dir = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR
+    root_dir.mkdir(parents=True)
+    (root_dir / constants.Node.LOCKFILE_PATH).write_text("{}")
+
+    with chdir(tmp_path):
+        assert js_runtimes.prefer_npm_over_bun() is False
+
+
+def test_prefer_npm_over_bun_explicit_true_wins(tmp_path, monkeypatch):
+    """REFLEX_USE_NPM=1 forces npm regardless of persisted state."""
+    monkeypatch.setenv("REFLEX_USE_NPM", "1")
+    monkeypatch.setattr(js_runtimes.constants, "IS_WINDOWS", False)
+
+    with chdir(tmp_path):
+        assert js_runtimes.prefer_npm_over_bun() is True
+
+
+def test_install_frontend_packages_does_not_fall_back(
+    install_packages_env: InstallPackagesEnv,
+):
+    """A failing primary package manager surfaces the error, no fallback."""
+    env = install_packages_env
+    env.root_lock.write_text("persisted-lock")
+    error_message = "primary failed"
+
+    def run_package_manager(args, **kwargs):
+        # If a fallback ever ran the test would not raise.
+        assert kwargs.get("fallbacks") is None
+        raise RuntimeError(error_message)
+
+    env.patch_pm(["bun"], run_package_manager)
+
+    with pytest.raises(RuntimeError, match=error_message):
+        env.install({"some-pkg@1.0.0"})
+
+
 def test_extract_package_name():
     assert js_runtimes._extract_package_name("react") == "react"
     assert js_runtimes._extract_package_name("react@1.2.3") == "react"

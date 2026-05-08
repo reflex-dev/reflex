@@ -92,15 +92,40 @@ def npm_escape_hatch() -> bool:
     return environment.REFLEX_USE_NPM.get()
 
 
+def _persisted_lockfile_implies_npm() -> bool:
+    """Whether the persisted lockfiles imply the project is npm-managed.
+
+    A project is treated as npm-managed when ``reflex.lock/`` carries an
+    npm lockfile but no bun lockfile, so committing only ``package-lock.json``
+    is enough to opt in without setting ``REFLEX_USE_NPM=1``.
+
+    Returns:
+        Whether the persisted state implies npm.
+    """
+    root_dir = Path.cwd() / constants.Bun.ROOT_LOCKFILE_DIR
+    return (root_dir / constants.Node.LOCKFILE_PATH).exists() and not (
+        root_dir / constants.Bun.LOCKFILE_PATH
+    ).exists()
+
+
 def prefer_npm_over_bun() -> bool:
     """Check if npm should be preferred over bun.
+
+    Order of precedence:
+      1. Windows + OneDrive — always npm (bun is broken there).
+      2. ``REFLEX_USE_NPM`` set — honor the explicit value.
+      3. Persisted lockfile state — implicit npm if only a npm lock is
+         present in ``reflex.lock/``.
 
     Returns:
         If npm should be preferred over bun.
     """
-    return npm_escape_hatch() or (
-        constants.IS_WINDOWS and windows_check_onedrive_in_path()
-    )
+    if constants.IS_WINDOWS and windows_check_onedrive_in_path():
+        return True
+    explicit = environment.REFLEX_USE_NPM.getenv()
+    if explicit is not None:
+        return explicit
+    return _persisted_lockfile_implies_npm()
 
 
 def get_nodejs_compatible_package_managers(
@@ -530,11 +555,14 @@ def _install_frontend_packages(
     )
 
     primary_package_manager = install_package_managers[0]
-    fallbacks = install_package_managers[1:]
 
+    # No fallback to a different package manager: switching mid-flow could
+    # bypass the persisted lockfile (e.g. on a package-integrity failure
+    # the alternate manager would happily fetch a new version), defeating
+    # the whole point of pinning. A failure here must surface as a failure.
     run_package_manager = functools.partial(
         processes.run_process_with_fallbacks,
-        fallbacks=fallbacks,
+        fallbacks=None,
         analytics_enabled=True,
         cwd=get_web_dir(),
         shell=constants.IS_WINDOWS,
@@ -570,15 +598,22 @@ def _install_frontend_packages(
         )
 
     # Install against the recovered lockfile so its pins are honored
-    # before any further mutation. Skip on brand-new projects where no
-    # lockfile exists yet — ``frozenLockfile`` would error, and the
-    # subsequent ``bun add`` calls will generate a fresh lockfile.
+    # before any further mutation. ``--frozen-lockfile`` ensures bun
+    # refuses to silently rewrite the lockfile here; npm ignores the
+    # flag. Skip on brand-new projects where no lockfile exists yet —
+    # ``--frozen-lockfile`` would error, and the subsequent ``bun add``
+    # calls will generate a fresh lockfile.
     if any(
         frontend_skeleton.get_web_lockfile_path(name).exists()
         for name in frontend_skeleton.LOCKFILE_NAMES
     ):
         run_package_manager(
-            [primary_package_manager, "install", "--legacy-peer-deps"],
+            [
+                primary_package_manager,
+                "install",
+                "--legacy-peer-deps",
+                "--frozen-lockfile",
+            ],
             show_status_message="Installing base frontend packages",
         )
 
