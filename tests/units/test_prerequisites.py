@@ -167,27 +167,50 @@ def test_update_react_router_config(config, export, expected_output):
                 app_name="test",
                 frontend_path="",
             ),
-            'base: "/",',
+            "base: '/',",
         ),
         (
             Config(
                 app_name="test",
                 frontend_path="/test",
             ),
-            'base: "/test/",',
+            "base: '/test/',",
         ),
         (
             Config(
                 app_name="test",
                 frontend_path="/test/",
             ),
-            'base: "/test/",',
+            "base: '/test/',",
         ),
     ],
 )
 def test_initialise_vite_config(config, expected_output):
     output = _compile_vite_config(config)
     assert expected_output in output
+
+
+def test_initialise_vite_config_with_custom_config():
+    """Test that the configured Vite config is merged into Reflex defaults."""
+    output = _compile_vite_config(
+        Config(
+            app_name="test",
+            vite_config={
+                "build": {"target": "es2022"},
+                "server": {
+                    "allowedHosts": True,
+                    "strictPort": True,
+                },
+            },
+        )
+    )
+
+    assert "sourcemap: false" in output
+    assert "target: 'es2022'" in output
+    assert "port: process.env.PORT" in output
+    assert "hmr: true" in output
+    assert "allowedHosts: true" in output
+    assert "strictPort: true" in output
 
 
 @pytest.mark.usefixtures("_stub_skeleton_initializers")

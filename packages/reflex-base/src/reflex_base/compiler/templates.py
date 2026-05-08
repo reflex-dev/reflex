@@ -3,13 +3,18 @@
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Iterable, Mapping
-from typing import TYPE_CHECKING, Any, Literal
+from string import Template
+from typing import TYPE_CHECKING, Any, Final, Literal
 
+from reflex.compiler.utils import compile_imports
 from reflex_base import constants
 from reflex_base.constants import Hooks
+from reflex_base.constants.vite import ViteConfigDict
 from reflex_base.utils.format import format_state_name, json_dumps
-from reflex_base.vars.base import VarData
+from reflex_base.utils.imports import ImportVar, parse_imports
+from reflex_base.vars.base import Var, VarData
 
 if TYPE_CHECKING:
     from reflex.compiler.utils import _ImportDict
@@ -119,6 +124,241 @@ class _RenderUtils:
             rest_imports_str = ",".join(sorted(rest_imports))
             return f'import {{{rest_imports_str}}} from "{module["lib"]}"'
         return f'import "{module["lib"]}"'
+
+
+class ViteConfig:
+    """Vite Config Renderer."""
+
+    _VITE_CONFIG_TEMPLATE = Template(
+        """$imports
+
+$functions
+
+export default defineConfig((config) => ($config
+));
+"""
+    )
+    _ALWAYS_USE_REACT_DOM_SERVER_NODE: Final = """
+// Ensure that bun always uses the react-dom/server.node functions.
+function alwaysUseReactDomServerNode() {
+  return {
+    name: "vite-plugin-always-use-react-dom-server-node",
+    enforce: "pre",
+
+    resolveId(source, importer) {
+      if (
+        typeof importer === "string" &&
+        importer.endsWith("/entry.server.node.tsx") &&
+        source.includes("react-dom/server")
+      ) {
+        return this.resolve("react-dom/server.node", importer, {
+          skipSelf: true,
+        });
+      }
+      return null;
+    },
+  };
+}
+"""
+    _FULL_RELOAD: Final = """
+function fullReload() {
+  return {
+    name: "full-reload",
+    enforce: "pre",
+    handleHotUpdate({ server }) {
+      server.ws.send({
+        type: "full-reload",
+      });
+      return [];
+    }
+  };
+}
+"""
+    _ON_WARN: Final = """onwarn(warning, warn) {
+    if (warning.code === "EVAL" && warning.id && warning.id.endsWith("state.js")) return;
+    warn(warning);
+}"""
+
+    def __init__(
+        self,
+        *,
+        base: str,
+        sourcemap: Literal["inline", "hidden"] | bool,
+        experimental_hmr: bool,
+        hmr: bool,
+        force_full_reload: bool,
+    ) -> None:
+        """Initialize the Vite Config Renderer."""
+        self.imports = {
+            "url": [
+                ImportVar(tag="fileURLToPath"),
+                ImportVar(tag="URL"),
+            ],
+            "@react-router": ImportVar(tag="reactRouter", package_path="/dev/vite"),
+            "vite": ImportVar(tag="defineConfig"),
+            "./vite-plugin-safari-cachebust": ImportVar(
+                tag="safariCacheBustPlugin", is_default=True
+            ),
+        }
+        self.functions = [
+            Var(self._ALWAYS_USE_REACT_DOM_SERVER_NODE),
+            Var(self._FULL_RELOAD),
+        ]
+        self.default_config: ViteConfigDict = {
+            "base": base,
+            "plugins": [
+                Var("alwaysUseReactDomServerNode()"),
+                Var("reactRouter()"),
+                Var("safariCacheBustPlugin()"),
+            ],
+            "build": {
+                "sourcemap": sourcemap,
+                "rollupOptions": {
+                    "": Var(self._ON_WARN),
+                    "jsx": {},
+                    "output": {
+                        "advancedChunks": {
+                            "groups": [
+                                {"test": Var("/env.json/"), "name": "reflex-env"}
+                            ],
+                        },
+                    },
+                },
+            },
+            "experimental": {
+                "enableNativePlugin": False,
+                "hmr": experimental_hmr,
+            },
+            "server": {
+                "port": Var("process.env.PORT"),
+                "hmr": hmr,
+                "watch": {
+                    "ignored": [
+                        "**/.web/backend/**",
+                        "**/.web/reflex.install_frontend_packages.cached",
+                    ],
+                },
+            },
+            "resolve": {
+                "mainFields": ["browser", "module", "jsnext"],
+                "alias": [
+                    {
+                        "find": "$",
+                        "replacement": Var(
+                            "fileURLToPath(new URL('./', import.meta.url))"
+                        ),
+                    },
+                    {
+                        "find": "@",
+                        "replacement": Var(
+                            "fileURLToPath(new URL('./public', import.meta.url))"
+                        ),
+                    },
+                ],
+            },
+        }
+        if force_full_reload:
+            self.default_config["plugins"].append(Var("fullReload()"))
+
+    def _deep_merge(
+        self, mergee: ViteConfigDict | dict, merger: ViteConfigDict
+    ) -> ViteConfigDict:
+        """Deep merge two Vite configuration dictionaries.
+
+        Args:
+            mergee: The source configuration to merge from.
+            merger: The target configuration to merge into, overwriting values.
+
+        Returns:
+            The merged configuration dictionary.
+        """
+        for k, v in mergee.items():
+            if isinstance(v, dict) and isinstance(merger.get(k), dict):
+                merger[k] = self._deep_merge(v, merger[k])
+            elif isinstance(v, list):
+                if k in merger:
+                    merger[k].extend(v)
+                else:
+                    merger[k] = v
+            else:
+                merger[k] = v
+        return merger
+
+    def _handle_dict(self, value: dict, sp: str, indent: int) -> str:
+        """Helper method to handle dictionary conversion to JavaScript object.
+
+        Returns:
+            The Python dict as a JS object string.
+        """
+        if set(value.keys()) and all(isinstance(k, str) for k in value):
+            items = []
+            for k, v in value.items():
+                if k == "":
+                    if not isinstance(v, Var):
+                        msg = (
+                            "An empty dict key can only be set to a Var for rendering."
+                        )
+                        raise RuntimeError(msg)
+                    items.append(f"{sp}  {self._render(v, indent + 1)}")
+                    continue
+                key = k if re.match(r"^[A-Za-z_$][A-Za-z0-9_$]*$", k) else f"'{k}'"
+                items.append(f"{sp}  {key}: {self._render(v, indent + 1)}")
+            return "{\n" + ",\n".join(items) + f"\n{sp}" + "}"
+        return "{}"
+
+    def _render(self, value: Any, indent: int = 0) -> str:
+        """Convert a Python value to JavaScript literal syntax.
+
+        Returns:
+            The rendered `vite.config.js` content.
+        """
+        sp = " " * indent
+
+        type_handlers = {
+            Var: lambda v: v._js_expr,
+            dict: lambda v: self._handle_dict(v, sp, indent),
+            list: lambda v: (
+                f"[{', '.join(self._render(item, indent + 1) for item in v)}]"
+            ),
+            str: lambda v: f"'{v}'",
+            bool: lambda v: "true" if v else "false",
+            type(None): lambda _: "null",
+        }
+
+        for value_type, handler in type_handlers.items():
+            if isinstance(value, value_type):
+                return handler(value)
+
+        # Numeric / fallback
+        return str(value)
+
+    def render(self, vite_config: ViteConfigDict | None) -> str:
+        """Render the Vite config content.
+
+        Returns:
+            The `vite.config.js` file content.
+        """
+        if vite_config:
+            if imports := vite_config.pop("imports", None):
+                self.imports.update(imports)
+
+            if functions := vite_config.pop("functions", None):
+                self.functions.extend(functions)
+
+        imports = parse_imports(self.imports)
+        imports_list = compile_imports(imports)
+        config_dict = (
+            self._deep_merge(vite_config, self.default_config)
+            if vite_config
+            else self.default_config
+        )
+        config = self._render(config_dict)
+
+        return self._VITE_CONFIG_TEMPLATE.safe_substitute(
+            imports="\n".join([_RenderUtils.get_import(imp) for imp in imports_list]),
+            functions="\n".join([function._js_expr for function in self.functions]),
+            config=config,
+        )
 
 
 def rxconfig_template(app_name: str):
@@ -506,7 +746,7 @@ def vite_config_template(
     force_full_reload: bool,
     experimental_hmr: bool,
     sourcemap: bool | Literal["inline", "hidden"],
-    allowed_hosts: bool | list[str] = False,
+    vite_config: ViteConfigDict | None,
 ):
     """Template for vite.config.js.
 
@@ -516,111 +756,18 @@ def vite_config_template(
         force_full_reload: Whether to force a full reload on changes.
         experimental_hmr: Whether to enable experimental HMR features.
         sourcemap: The sourcemap configuration.
-        allowed_hosts: Allow all hosts (True), specific hosts (list of strings), or only localhost (False).
+        vite_config: The user's optionally defined Vite config.
 
     Returns:
         Rendered vite.config.js content as string.
     """
-    if allowed_hosts is True:
-        allowed_hosts_line = "\n    allowedHosts: true,"
-    elif isinstance(allowed_hosts, list) and allowed_hosts:
-        allowed_hosts_line = f"\n    allowedHosts: {json.dumps(allowed_hosts)},"
-    else:
-        allowed_hosts_line = ""
-    return rf"""import {{ fileURLToPath, URL }} from "url";
-import {{ reactRouter }} from "@react-router/dev/vite";
-import {{ defineConfig }} from "vite";
-import safariCacheBustPlugin from "./vite-plugin-safari-cachebust";
-
-// Ensure that bun always uses the react-dom/server.node functions.
-function alwaysUseReactDomServerNode() {{
-  return {{
-    name: "vite-plugin-always-use-react-dom-server-node",
-    enforce: "pre",
-
-    resolveId(source, importer) {{
-      if (
-        typeof importer === "string" &&
-        importer.endsWith("/entry.server.node.tsx") &&
-        source.includes("react-dom/server")
-      ) {{
-        return this.resolve("react-dom/server.node", importer, {{
-          skipSelf: true,
-        }});
-      }}
-      return null;
-    }},
-  }};
-}}
-
-function fullReload() {{
-  return {{
-    name: "full-reload",
-    enforce: "pre",
-    handleHotUpdate({{ server }}) {{
-      server.ws.send({{
-        type: "full-reload",
-      }});
-      return [];
-    }}
-  }};
-}}
-
-export default defineConfig((config) => ({{
-  base: "{base}",
-  plugins: [
-    alwaysUseReactDomServerNode(),
-    reactRouter(),
-    safariCacheBustPlugin(),
-  ].concat({"[fullReload()]" if force_full_reload else "[]"}),
-  build: {{
-    sourcemap: {"true" if sourcemap is True else "false" if sourcemap is False else repr(sourcemap)},
-    rollupOptions: {{
-      onwarn(warning, warn) {{
-        if (warning.code === "EVAL" && warning.id && warning.id.endsWith("state.js")) return;
-        warn(warning);
-      }},
-      jsx: {{}},
-      output: {{
-        advancedChunks: {{
-          groups: [
-            {{
-              test: /env.json/,
-              name: "reflex-env",
-            }},
-          ],
-        }},
-      }},
-    }},
-  }},
-  experimental: {{
-    enableNativePlugin: false,
-    hmr: {"true" if experimental_hmr else "false"},
-  }},
-  server: {{
-    port: process.env.PORT,{allowed_hosts_line}
-    hmr: {"true" if hmr else "false"},
-    watch: {{
-      ignored: [
-        "**/.web/backend/**",
-        "**/.web/reflex.install_frontend_packages.cached",
-      ],
-    }},
-  }},
-  resolve: {{
-    mainFields: ["browser", "module", "jsnext"],
-    alias: [
-      {{
-        find: "$",
-        replacement: fileURLToPath(new URL("./", import.meta.url)),
-      }},
-      {{
-        find: "@",
-        replacement: fileURLToPath(new URL("./public", import.meta.url)),
-      }},
-    ],
-  }},
-}}));"""
+    return ViteConfig(
+        base=base,
+        hmr=hmr,
+        force_full_reload=force_full_reload,
+        experimental_hmr=experimental_hmr,
+        sourcemap=sourcemap,
+    ).render(vite_config=vite_config)
 
 
 def dynamic_component_template(

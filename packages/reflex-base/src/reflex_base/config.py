@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal
 
 from reflex_base import constants
 from reflex_base.constants.base import LogLevel
+from reflex_base.constants.vite import ViteConfigDict
 from reflex_base.environment import EnvironmentVariables as EnvironmentVariables
 from reflex_base.environment import EnvVar as EnvVar
 from reflex_base.environment import (
@@ -166,7 +167,7 @@ class BaseConfig:
         bun_path: The bun path.
         static_page_generation_timeout: Timeout to do a production build of a frontend page.
         cors_allowed_origins: Comma separated list of origins that are allowed to connect to the backend API.
-        vite_allowed_hosts: Allowed hosts for the Vite dev server. Set to True to allow all hosts, or provide a list of hostnames (e.g. ["myservice.local"]) to allow specific ones. Prevents 403 errors in Docker, Codespaces, reverse proxies, etc.
+        vite_config: A user-defined Vite config that will get deeply merged with Reflex's Vite config, allowing for customization and overriding of Reflex defaults.
         react_strict_mode: Whether to use React strict mode.
         frontend_packages: Additional frontend packages to install.
         state_manager_mode: Indicate which type of state manager to use.
@@ -220,7 +221,7 @@ class BaseConfig:
         SequenceOptions(delimiter=","),
     ] = dataclasses.field(default=("*",))
 
-    vite_allowed_hosts: bool | list[str] = False
+    vite_config: ViteConfigDict | None = None
 
     react_strict_mode: bool = True
 
