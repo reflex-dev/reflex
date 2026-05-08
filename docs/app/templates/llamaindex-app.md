@@ -39,8 +39,8 @@ input_payload = {
 deployment_name = os.environ.get("DEPLOYMENT_NAME", "MyDeployment")
 apiserver_url = os.environ.get("APISERVER_URL", "http://localhost:4501")
 response = await client.post(
-    f"\{apiserver_url}/deployments/\{deployment_name}/tasks/create",
-    json=\{"input": json.dumps(input_payload)},
+    f"{apiserver_url}/deployments/{deployment_name}/tasks/create",
+    json={"input": json.dumps(input_payload)},
     timeout=60,
 )
 answer = response.text

@@ -21,7 +21,7 @@ def hosting_section() -> rx.Component:
             faded_borders(),
             link_item(
                 "CloudServerIcon",
-                "How to Host",
+                "Deployment",
                 "Step-by-step instructions to deploy your Reflex application to the cloud, including configuration and setup guides.",
                 hosting_page.deploy_quick_start.path,
             ),

@@ -23,32 +23,32 @@ Lines `31` and `32` are rendering the component inside the root element. This ca
 ## React Code
 
 ```javascript
-1 | import React, \{ useState } from 'react';
+1 | import React, { useState } from 'react';
 2 | import ReactDOM from 'react-dom/client';
 3 |
 4 | // React Chart Component
-5 | import \{ AgCharts } from 'ag-charts-react';
+5 | import { AgCharts } from 'ag-charts-react';
 6 |
 7 | const ChartExample = () => {
 8 |     // Chart Options: Control & configure the chart
 9 |     const [chartOptions, setChartOptions] = useState({
 10|         // Data: Data to be displayed in the chart
 11|         data: [
-12|             \{ month: 'Jan', avgTemp: 2.3, iceCreamSales: 162000 },
-13|             \{ month: 'Mar', avgTemp: 6.3, iceCreamSales: 302000 },
-14|             \{ month: 'May', avgTemp: 16.2, iceCreamSales: 800000 },
-15|             \{ month: 'Jul', avgTemp: 22.8, iceCreamSales: 1254000 },
-16|             \{ month: 'Sep', avgTemp: 14.5, iceCreamSales: 950000 },
-17|             \{ month: 'Nov', avgTemp: 8.9, iceCreamSales: 200000 },
+12|             { month: 'Jan', avgTemp: 2.3, iceCreamSales: 162000 },
+13|             { month: 'Mar', avgTemp: 6.3, iceCreamSales: 302000 },
+14|             { month: 'May', avgTemp: 16.2, iceCreamSales: 800000 },
+15|             { month: 'Jul', avgTemp: 22.8, iceCreamSales: 1254000 },
+16|             { month: 'Sep', avgTemp: 14.5, iceCreamSales: 950000 },
+17|             { month: 'Nov', avgTemp: 8.9, iceCreamSales: 200000 },
 18|         ],
 19|         // Series: Defines which chart type and data to use
-20|         series: [\{ type: 'bar', xKey: 'month', yKey: 'iceCreamSales' }],
+20|         series: [{ type: 'bar', xKey: 'month', yKey: 'iceCreamSales' }],
 21|     });
 22|
 23|     // React Chart Component
 24|     return (
 25|         // AgCharts component with options passed as prop
-26|         <AgCharts options=\{chartOptions} />
+26|         <AgCharts options={chartOptions} />
 27|     );
 28| }
 29|
@@ -80,14 +80,14 @@ class State(rx.State):
     """The app state."""
     chart_options: dict = {
            "data": [
-                \{"month":"Jan", "avgTemp":2.3, "iceCreamSales":162000},
-                \{"month":"Mar", "avgTemp":6.3, "iceCreamSales":302000},
-                \{"month":"May", "avgTemp":16.2, "iceCreamSales":800000},
-                \{"month":"Jul", "avgTemp":22.8, "iceCreamSales":1254000},
-                \{"month":"Sep", "avgTemp":14.5, "iceCreamSales":950000},
-                \{"month":"Nov", "avgTemp":8.9, "iceCreamSales":200000}
+                {"month":"Jan", "avgTemp":2.3, "iceCreamSales":162000},
+                {"month":"Mar", "avgTemp":6.3, "iceCreamSales":302000},
+                {"month":"May", "avgTemp":16.2, "iceCreamSales":800000},
+                {"month":"Jul", "avgTemp":22.8, "iceCreamSales":1254000},
+                {"month":"Sep", "avgTemp":14.5, "iceCreamSales":950000},
+                {"month":"Nov", "avgTemp":8.9, "iceCreamSales":200000}
             ],
-            "series": [\{"type":"bar", "xKey":"month", "yKey":"iceCreamSales"}]
+            "series": [{"type":"bar", "xKey":"month", "yKey":"iceCreamSales"}]
         }
 
 def index() -> rx.Component:
@@ -127,22 +127,22 @@ Lines `24` and `25` defines and exports a React functional component named `Home
 3 |
 4 | const MapComponent = dynamic(
 5 |   () => {
-6 |     return import("react-leaflet").then((\{ MapContainer, TileLayer }) => {
+6 |     return import("react-leaflet").then(({ MapContainer, TileLayer }) => {
 7 |       return () => (
 8 |         <MapContainer
-9 |           center=\{[51.505, -0.09]}
-10|           zoom=\{13}
-11|           scrollWheelZoom=\{true}
-12|           style=\{\{ height: "50vh", width: "100%" }}
+9 |           center={[51.505, -0.09]}
+10|           zoom={13}
+11|           scrollWheelZoom={true}
+12|           style={{ height: "50vh", width: "100%" }}
 13|        >
 14|          <TileLayer
-15|            url="https://\{s}.tile.openstreetmap.org/\{z}/\{x}/\{y}.png"
+15|            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
 16|          />
 17|        </MapContainer>
 18|      );
 19|    });
 20|  },
-21|  \{ ssr: false }
+21|  { ssr: false }
 22| );
 23|
 24| export default function Home() {
@@ -170,7 +170,7 @@ class MapContainer(rx.NoSSRComponent):
 
     # Can also pass a url like: https://unpkg.com/leaflet/dist/leaflet.css
     def add_imports(self):
-        return \{"": ["leaflet/dist/leaflet.css"]}
+        return {"": ["leaflet/dist/leaflet.css"]}
 
 
 
@@ -188,7 +188,7 @@ tile_layer = TileLayer.create
 
 def index() -> rx.Component:
     return map_container(
-                tile_layer(url="https://\{s}.tile.openstreetmap.org/\{z}/\{x}/\{y}.png"),
+                tile_layer(url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"),
                 center=[51.505, -0.09],
                 zoom=13,
                 #scroll_wheel_zoom=True
@@ -220,7 +220,7 @@ _The style of the component._
 
 _A mapping from event triggers to event chains._
 
-`event_triggers: Dict[str, Union[EventChain, Var]] = \{}`
+`event_triggers: Dict[str, Union[EventChain, Var]] = {}`
 
 _The alias for the tag._
 
@@ -264,11 +264,11 @@ _only components that are allowed as parent_
 
 _props to change the name of_
 
-`_rename_props: Dict[str, str] = \{}`
+`_rename_props: Dict[str, str] = {}`
 
 _custom attribute_
 
-`custom_attrs: Dict[str, Union[Var, str]] = \{}`
+`custom_attrs: Dict[str, Union[Var, str]] = {}`
 
 _When to memoize this component and its children._
 
@@ -285,7 +285,7 @@ _State class associated with this component instance_
 
 ```javascript
 1 | import ReactDOM from 'react-dom';
-2 | import \{ Document, Page, Text, View, StyleSheet, PDFViewer } from '@react-pdf/renderer';
+2 | import { Document, Page, Text, View, StyleSheet, PDFViewer } from '@react-pdf/renderer';
 3 |
 4 | // Create styles
 5 | const styles = StyleSheet.create({
@@ -303,11 +303,11 @@ _State class associated with this component instance_
 17| // Create Document Component
 18| const MyDocument = () => (
 19|   <Document>
-20|     <Page size="A4" style=\{styles.page}>
-21|       <View style=\{styles.section}>
+20|     <Page size="A4" style={styles.page}>
+21|       <View style={styles.section}>
 22|         <Text>Section #1</Text>
 23|       </View>
-24|       <View style=\{styles.section}>
+24|       <View style={styles.section}>
 25|         <Text>Section #2</Text>
 26|       </View>
 27|     </Page>

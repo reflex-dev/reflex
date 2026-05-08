@@ -14,9 +14,20 @@ DataListRoot: |
   )
 DataListItem: |
   lambda **props: rx.data_list.root(
-      rx.foreach(
-          [["Status", "Authorized"], ["ID", "U-474747"], ["Name", "Developer Success"], ["Email", "foo@reflex.dev"]],
-          lambda item: rx.data_list.item(rx.data_list.label(item[0]), rx.data_list.value(item[1]), **props),
+      rx.data_list.item(
+          rx.data_list.label("Status"),
+          rx.data_list.value(rx.badge("Authorized", variant="soft", radius="full", size="2")),
+          **props,
+      ),
+      rx.data_list.item(
+          rx.data_list.label("Name"),
+          rx.data_list.value(rx.heading("Developer Success", size="4")),
+          **props,
+      ),
+      rx.data_list.item(
+          rx.data_list.label("Email"),
+          rx.data_list.value(rx.link("foo@reflex.dev", href="mailto:foo@reflex.dev")),
+          **props,
       ),
   )
 DataListLabel: |

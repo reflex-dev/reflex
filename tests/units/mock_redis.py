@@ -184,7 +184,7 @@ def mock_redis() -> Redis:
         )
 
     @contextlib.asynccontextmanager
-    async def pubsub():  # noqa: RUF029
+    async def pubsub():
         watch_patterns = {}
         event_log_pointer = 0
 

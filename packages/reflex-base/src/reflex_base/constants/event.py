@@ -33,7 +33,7 @@ class Endpoint(Enum):
 
         # Get the API URL from the config.
         config = get_config()
-        url = "".join([config.api_url, str(self)])
+        url = "".join([config.api_url, config.prepend_backend_path(str(self))])
 
         # The event endpoint is a websocket.
         if self == Endpoint.EVENT:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import contextvars
 import functools
 import io
 import json
@@ -376,12 +377,17 @@ def test_add_duplicate_page_route_error(app: App, first_page, second_page, route
     or not find_spec("pydantic"),
     reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
 )
-def test_initialize_with_admin_dashboard(test_model: Model):
+def test_initialize_with_admin_dashboard(
+    test_model: type[Model], mocker: MockerFixture
+):
     """Test setting the admin dashboard of an app.
 
     Args:
         test_model: The default model.
+        mocker: pytest mocker object.
     """
+    conf = rx.Config(app_name="testing", db_url="sqlite:///reflex.db")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
     app = App(admin_dash=AdminDash(models=[test_model]))
     assert app.admin_dash is not None
     assert len(app.admin_dash.models) > 0
@@ -424,16 +430,22 @@ def test_initialize_with_custom_admin_dashboard(
     or not find_spec("pydantic"),
     reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
 )
-def test_initialize_admin_dashboard_with_view_overrides(test_model):
+def test_initialize_admin_dashboard_with_view_overrides(
+    test_model: type[Model], mocker: MockerFixture
+):
     """Test setting the admin dashboard of an app with view class overridden.
 
     Args:
         test_model: The default model.
+        mocker: pytest mocker object.
     """
     from starlette_admin.contrib.sqla.view import ModelView
 
     class TestModelView(ModelView):
         pass
+
+    conf = rx.Config(app_name="testing", db_url="sqlite:///reflex.db")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
 
     app = App(
         admin_dash=AdminDash(
@@ -1308,72 +1320,6 @@ async def test_upload_file_closes_form_if_response_cancelled_before_stream_start
 
 
 @pytest.mark.asyncio
-async def test_upload_file_cancels_buffered_handler_on_disconnect(token: str):
-    """Buffered uploads cancel the streaming handler on client disconnect.
-
-    Args:
-        token: A token.
-    """
-    request_mock = unittest.mock.Mock()
-    request_mock.headers = {
-        "reflex-client-token": token,
-        "reflex-event-handler": f"{FileUploadState.get_full_name()}.multi_handle_upload",
-    }
-
-    bio = io.BytesIO(b"contents of image one")
-    file1 = UploadFile(filename="image1.jpg", file=bio)
-    form_data = FormData([("files", file1)])
-    original_close = form_data.close
-    form_close = AsyncMock(side_effect=original_close)
-    form_data.close = form_close
-
-    async def form():  # noqa: RUF029
-        return form_data
-
-    request_mock.form = form
-
-    stream_started = asyncio.Event()
-    stream_closed = asyncio.Event()
-
-    async def enqueue_stream_delta(_token, _event):
-        try:
-            stream_started.set()
-            yield {"state": {"ok": True}}
-            await asyncio.Event().wait()
-        finally:
-            stream_closed.set()
-
-    app = Mock(
-        event_processor=Mock(enqueue_stream_delta=enqueue_stream_delta),
-    )
-
-    upload_fn = upload(app)
-    streaming_response = await upload_fn(request_mock)
-
-    assert isinstance(streaming_response, StreamingResponse)
-
-    async def receive():
-        await stream_started.wait()
-        return {"type": "http.disconnect"}
-
-    async def send(_message):  # noqa: RUF029
-        return None
-
-    await asyncio.wait_for(
-        streaming_response(
-            {"type": "http", "asgi": {"spec_version": "2.4"}},
-            receive,
-            send,
-        ),
-        timeout=1,
-    )
-
-    await asyncio.wait_for(stream_closed.wait(), timeout=1)
-    assert form_close.await_count == 1
-    assert bio.closed
-
-
-@pytest.mark.asyncio
 async def test_upload_file_raises_client_disconnect_when_stream_send_fails(
     token: str,
 ):
@@ -2162,6 +2108,184 @@ def test_app_wrap_compile_theme(
     assert expected.split(",") == function_app_definition.split(",")
 
 
+def test_compile_without_radix_components_skips_radix_plugin(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """Pure HTML apps should not include Radix Themes assets or wrappers."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mock_deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+
+    app.add_page(lambda: rx.el.div("Index"), route="/")
+    app.add_page(lambda: rx.el.div("404"), route=constants.Page404.SLUG)
+    app._compile()
+
+    root_stylesheet = (
+        web_dir
+        / constants.Dirs.STYLES
+        / f"{constants.PageNames.STYLESHEET_ROOT}{constants.Ext.CSS}"
+    ).read_text()
+    app_root = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+
+    assert "@radix-ui/themes/styles.css" not in root_stylesheet
+    assert "RadixThemesTheme" not in app_root
+    mock_deprecate.assert_not_called()
+
+
+def test_compile_with_radix_component_auto_enables_radix_plugin(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """Using a Radix Themes component should enable the plugin with a warning."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mock_deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+
+    app.add_page(lambda: rx.box("Index"), route="/")
+    app.add_page(lambda: rx.el.div("404"), route=constants.Page404.SLUG)
+    app._compile()
+
+    root_stylesheet = (
+        web_dir
+        / constants.Dirs.STYLES
+        / f"{constants.PageNames.STYLESHEET_ROOT}{constants.Ext.CSS}"
+    ).read_text()
+    app_root = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+
+    assert "@radix-ui/themes/styles.css" in root_stylesheet
+    assert 'RadixThemesTheme,{accentColor:"blue"' in app_root
+    mock_deprecate.assert_called_once()
+    assert (
+        mock_deprecate.call_args.kwargs["feature_name"]
+        == "Implicit Radix Themes enablement"
+    )
+
+
+def test_compile_with_legacy_app_theme_warns_and_enables_radix_plugin(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """``App(theme=...)`` should continue to work with a deprecation warning."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mock_deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+
+    app.theme = rx.theme(accent_color="plum")
+    app.add_page(lambda: rx.el.div("Index"), route="/")
+    app.add_page(lambda: rx.el.div("404"), route=constants.Page404.SLUG)
+    app._compile()
+
+    root_stylesheet = (
+        web_dir
+        / constants.Dirs.STYLES
+        / f"{constants.PageNames.STYLESHEET_ROOT}{constants.Ext.CSS}"
+    ).read_text()
+    app_root = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+
+    assert "@radix-ui/themes/styles.css" in root_stylesheet
+    assert 'RadixThemesTheme,{accentColor:"plum"' in app_root
+    mock_deprecate.assert_called_once()
+    assert mock_deprecate.call_args.kwargs["feature_name"] == "App(theme=...)"
+
+
+def test_explicit_radix_plugin_wins_over_legacy_app_theme(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """Explicit RadixThemesPlugin config should win over deprecated App.theme."""
+    conf = rx.Config(
+        app_name="testing",
+        plugins=[rx.plugins.RadixThemesPlugin(theme=rx.theme(accent_color="green"))],
+    )
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mock_deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+
+    app.theme = rx.theme(accent_color="plum")
+    app.add_page(lambda: rx.el.div("Index"), route="/")
+    app.add_page(lambda: rx.el.div("404"), route=constants.Page404.SLUG)
+    app._compile()
+
+    app_root = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+
+    assert 'RadixThemesTheme,{accentColor:"green"' in app_root
+    assert 'RadixThemesTheme,{accentColor:"plum"' not in app_root
+    mock_deprecate.assert_called_once()
+    assert mock_deprecate.call_args.kwargs["feature_name"] == "App(theme=...)"
+
+
+def test_compile_writes_app_wrap_memo_components(
+    compilable_app: tuple[App, Path],
+    mocker,
+) -> None:
+    """App-wrap memo components are emitted to the shared components module."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+
+    app.add_page(rx.box("Index"), route="/")
+    app._compile()
+
+    components_index = (
+        web_dir
+        / constants.Dirs.UTILS
+        / f"{constants.PageNames.COMPONENTS}{constants.Ext.JSX}"
+    ).read_text()
+
+    # Per-memo modules live under .web/utils/components/; the index re-exports
+    # each one so page-side ``$/utils/components`` resolves the same tags.
+    assert "DefaultOverlayComponents" in components_index
+    assert "MemoizedToastProvider" in components_index
+    assert 'from "./components/DefaultOverlayComponents"' in components_index
+    assert 'from "./components/MemoizedToastProvider"' in components_index
+
+    memo_dir = web_dir / constants.Dirs.UTILS / constants.PageNames.COMPONENTS
+    assert (memo_dir / f"DefaultOverlayComponents{constants.Ext.JSX}").exists()
+    assert (memo_dir / f"MemoizedToastProvider{constants.Ext.JSX}").exists()
+
+
+def test_compile_writes_upload_files_provider_app_wrap(
+    compilable_app: tuple[App, Path],
+    mocker,
+) -> None:
+    """Upload pages emit the UploadFilesProvider app wrap into the app root."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+
+    app.add_page(
+        lambda: rx.upload.root(
+            rx.vstack(
+                rx.button("Select File"),
+                rx.text("Drag and drop files here or click to select files"),
+            ),
+        ),
+        route="/",
+    )
+    app._compile()
+
+    root_js = web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    root_contents = root_js.read_text()
+
+    assert "UploadFilesProvider" in root_contents
+
+
 @pytest.mark.parametrize(
     "react_strict_mode",
     [True, False],
@@ -2264,13 +2388,40 @@ def test_call_app():
     assert isinstance(api, Starlette)
 
 
-def test_app_with_optional_endpoints():
+@pytest.fixture
+def upload_enabled(monkeypatch):
+    """Fixture that enables Upload and cleans up afterward."""
     from reflex_components_core.core.upload import Upload
 
-    app = App()
-    Upload.is_used = True
-    app._add_optional_endpoints()
-    # TODO: verify the availability of the endpoints in app.api
+    monkeypatch.setattr(Upload, "is_used", True)
+    yield
+    monkeypatch.setattr(Upload, "is_used", False)
+
+
+@pytest.mark.usefixtures("upload_enabled")
+def test_app_with_optional_endpoints(tmp_path: Path):
+    from starlette.routing import Mount, Route
+
+    with chdir(tmp_path):
+        app = App()
+        app._add_optional_endpoints()
+
+        assert app._api is not None
+        upload_path = str(constants.Endpoint.UPLOAD)
+        routes = list(app._api.routes)
+
+        assert any(
+            isinstance(r, Route)
+            and r.path == upload_path
+            and "POST" in getattr(r, "methods", set())
+            for r in routes
+        )
+        assert any(
+            isinstance(r, Mount)
+            and r.path == upload_path
+            and r.name == "uploaded_files"
+            for r in routes
+        )
 
 
 def test_app_state_manager():
@@ -2611,3 +2762,142 @@ async def test_app_modify_state_clean(token: str, substate: bool, frontend: bool
         )
     else:
         assert app._event_namespace.emit_update.call_count == 0
+
+
+@pytest.fixture
+def app_with_processor() -> App:
+    """Create an App with a mocked event processor that has a root context.
+
+    Returns:
+        An App instance with a mock event processor and root context.
+    """
+    app = App(_state=EmptyState)
+    root_context = EventContext(
+        token="",
+        state_manager=StateManagerMemory(),
+        enqueue_impl=AsyncMock(),
+    )
+    processor = Mock()
+    processor._root_context = root_context
+    app._event_processor = processor
+    return app
+
+
+@pytest.fixture
+def isolated_context() -> contextvars.Context:
+    """Create a fresh empty contextvars.Context.
+
+    Returns:
+        A new Context with no variables set.
+    """
+    return contextvars.Context()
+
+
+@pytest.fixture(
+    params=[False, True],
+    ids=["unset_registration_context", "preset_registration_context"],
+)
+def pre_set_registration_context(
+    isolated_context: contextvars.Context,
+    request: pytest.FixtureRequest,
+) -> RegistrationContext | None:
+    """Optionally pre-set a RegistrationContext in the isolated context.
+
+    Args:
+        isolated_context: The empty context to optionally populate.
+        request: The pytest fixture request with the param value.
+
+    Returns:
+        The pre-set RegistrationContext, or None if unset.
+    """
+    if request.param:
+        ctx = RegistrationContext()
+        isolated_context.run(RegistrationContext.set, ctx)
+        return ctx
+    return None
+
+
+@pytest.fixture(
+    params=[False, True], ids=["unset_event_context", "preset_event_context"]
+)
+def pre_set_event_context(
+    isolated_context: contextvars.Context,
+    request: pytest.FixtureRequest,
+) -> EventContext | None:
+    """Optionally pre-set an EventContext in the isolated context.
+
+    Args:
+        isolated_context: The empty context to optionally populate.
+        request: The pytest fixture request with the param value.
+
+    Returns:
+        The pre-set EventContext, or None if unset.
+    """
+    if request.param:
+        ctx = EventContext(
+            token="pre-existing",
+            state_manager=StateManagerMemory(),
+            enqueue_impl=AsyncMock(),
+        )
+        isolated_context.run(EventContext.set, ctx)
+        return ctx
+    return None
+
+
+def test_set_contexts(
+    app_with_processor: App,
+    pre_set_registration_context: RegistrationContext | None,
+    pre_set_event_context: EventContext | None,
+    isolated_context: contextvars.Context,
+):
+    """set_contexts sets absent contexts, preserves existing ones, and resets on exit."""
+
+    def _test():
+        with app_with_processor.set_contexts():
+            # Pre-existing contexts are preserved; absent ones are filled in.
+            if pre_set_registration_context is not None:
+                assert RegistrationContext.get() is pre_set_registration_context
+            else:
+                assert (
+                    RegistrationContext.get()
+                    is app_with_processor._registration_context
+                )
+
+            if pre_set_event_context is not None:
+                assert EventContext.get() is pre_set_event_context
+            else:
+                assert app_with_processor._event_processor is not None
+                assert (
+                    EventContext.get()
+                    is app_with_processor._event_processor._root_context
+                )
+
+        # After exit: pushed contexts are reset, pre-existing ones remain.
+        if pre_set_registration_context is not None:
+            assert RegistrationContext.get() is pre_set_registration_context
+        else:
+            with pytest.raises(LookupError):
+                RegistrationContext.get()
+
+        if pre_set_event_context is not None:
+            assert EventContext.get() is pre_set_event_context
+        else:
+            with pytest.raises(LookupError):
+                EventContext.get()
+
+    isolated_context.run(_test)
+
+
+def test_set_contexts_no_event_processor(isolated_context: contextvars.Context):
+    """When event processor is None, EventContext should not be touched."""
+
+    def _test():
+        app = App(_state=EmptyState)
+        assert app._event_processor is None
+
+        with app.set_contexts():
+            assert RegistrationContext.get() is app._registration_context
+            with pytest.raises(LookupError):
+                EventContext.get()
+
+    isolated_context.run(_test)

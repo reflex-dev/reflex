@@ -59,8 +59,8 @@ SelectItem: |
       rx.select.content(
           rx.select.group(
               rx.select.item("apple", value="apple", **props),
-              rx.select.item("grape", value="grape"),
-              rx.select.item("pear", value="pear"),
+              rx.select.item("grape", value="grape", **props),
+              rx.select.item("pear", value="pear", **props),
           ),
       ),
       default_value="pear",

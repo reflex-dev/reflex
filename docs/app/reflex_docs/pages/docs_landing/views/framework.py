@@ -1,7 +1,7 @@
 import reflex as rx
-import reflex_ui as ui
-from reflex_ui_shared.components.marketing_button import button
-from reflex_ui_shared.constants import REFLEX_ASSETS_CDN
+import reflex_components_internal as ui
+from reflex_site_shared.components.marketing_button import button
+from reflex_site_shared.constants import REFLEX_ASSETS_CDN
 
 from reflex_docs.pages.docs import authentication, database, getting_started
 from reflex_docs.pages.docs.library import library
@@ -77,7 +77,7 @@ def component_link(name: str, href: str) -> rx.Component:
             size="xs",
             class_name="font-[525] w-full text-m-slate-12 dark:text-m-slate-3 px-0",
         ),
-        to=f"/docs/library/{href.strip('/')}",
+        to=f"/library/{href.strip('/')}",
         class_name="w-full",
     )
 

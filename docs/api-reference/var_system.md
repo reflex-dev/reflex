@@ -30,7 +30,7 @@ If the type is known, it can be any of the following:
 - `BooleanVar` represents a boolean expression. For example: `false`, `3 > 2`.
 - `StringVar` represents an expression that evaluates to a string. For example: `'hello'`, `(2).toString()`.
 - `ArrayVar` represents an expression that evaluates to an array object. For example: `[1, 2, 3]`, `'words'.split()`.
-- `ObjectVar` represents an expression that evaluates to an object. For example: `\{a: 2, b: 3}`, `\{deeply: \{nested: \{value: false}}}`.
+- `ObjectVar` represents an expression that evaluates to an object. For example: `{a: 2, b: 3}`, `{deeply: {nested: {value: false}}}`.
 - `NoneVar` represent null values. These can be either `undefined` or `null`.
 
 ## Creating Vars
@@ -67,7 +67,7 @@ from reflex.vars import var_operation, var_operation_return, ArrayVar, NumberVar
 @var_operation
 def multiply_array_values(a: ArrayVar):
     return var_operation_return(
-        js_expression=f"\{a}.reduce((p, c) => p * c, 1)",
+        js_expression=f"{a}.reduce((p, c) => p * c, 1)",
         var_type=int,
     )
 

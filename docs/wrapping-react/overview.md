@@ -58,6 +58,7 @@ We also have a var `color` which is the current color of the color picker.
 Since this component has interaction we must specify any event triggers that the component takes. The color picker has a single trigger `on_change` to specify when the color changes. This trigger takes in a single argument `color` which is the new color.
 
 ```python exec
+from reflex.experimental.client_state import ClientStateVar
 from reflex.components.component import NoSSRComponent
 
 
@@ -70,7 +71,7 @@ class ColorPicker(NoSSRComponent):
 
 color_picker = ColorPicker.create
 
-ColorPickerState = rx._x.client_state(default="#db114b", var_name="color")
+ColorPickerState = ClientStateVar.create(default="#db114b", var_name="color")
 ```
 
 ```python eval
@@ -124,7 +125,7 @@ There are some libraries on npm that are not do not expose React components and 
 A library like [spline](https://www.npmjs.com/package/@splinetool/runtime) below is going to be difficult to wrap with Reflex because it does not expose a React component.
 
 ```javascript
-import \{ Application } from '@splinetool/runtime';
+import { Application } from '@splinetool/runtime';
 
 // make sure you have a canvas in the body
 const canvas = document.getElementById('canvas3d');

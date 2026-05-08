@@ -48,10 +48,11 @@ from reflex.vars.base import Var, VarData
 from reflex_base.constants import Hooks
 from reflex.components.el.elements import Div
 
+
 class ComponentWithHooks(Div, MyBaseComponent):
     """MyComponent."""
 
-    def add_hooks(self) -> list[str| Var]:
+    def add_hooks(self) -> list[str | Var]:
         """Add hooks to the component."""
         hooks = []
         hooks1 = """const customHookVariable = "some value";"""
@@ -64,8 +65,10 @@ class ComponentWithHooks(Div, MyBaseComponent):
             }, []);
             """,
             _var_data=VarData(
-                imports=\{"react": ["useEffect"],\},
-                position=Hooks.HookPosition.PRE_TRIGGER
+                imports={
+                    "react": ["useEffect"],
+                },
+                position=Hooks.HookPosition.PRE_TRIGGER,
             ),
         )
         hooks.append(hooks2)
@@ -76,8 +79,10 @@ class ComponentWithHooks(Div, MyBaseComponent):
             }, []);
             """,
             _var_data=VarData(
-                imports=\{"react": ["useEffect"],\},
-                position=Hooks.HookPosition.POST_TRIGGER
+                imports={
+                    "react": ["useEffect"],
+                },
+                position=Hooks.HookPosition.POST_TRIGGER,
             ),
         )
         hooks.append(hooks3)
@@ -100,7 +105,7 @@ export function Div_7178f430b7b371af8a12d8265d65ab9b() {
     console.log("PostTrigger: "+ customHookVariable);
   }, []);
 
-  return jsx("div", \{\});
+  return jsx("div", {});
 }
 ```
 

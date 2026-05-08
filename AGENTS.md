@@ -27,7 +27,7 @@ uv run pre-commit run --all-files                                # all pre-commi
 
 ```
 reflex/                 # main framework package (app, state, compiler, components, utils, istate)
-packages/               # workspace sub-packages (reflex-base, reflex-components-*, reflex-docgen, reflex-ui)
+packages/               # workspace sub-packages (reflex-base, reflex-components-*, reflex-docgen, reflex-components-internal)
 tests/units/            # unit tests, mirrors source tree
 tests/integration/      # Selenium integration tests (run in dev+prod modes)
   tests_playwright/     # Playwright integration tests (preferred for new tests)
@@ -46,6 +46,7 @@ docs/                   # documentation site (separate workspace member)
 - No block comments (`# --- Section ---`, `# ============`). Plain inline comments only.
 - Be cautious creating new public APIs — they must be documented and supported long-term.
 - Google-style docstrings on all functions: one-line summary, optional detail sentence(s), then Args/Returns (or Yields)/Raises.
+- Prefer imports at the top of the module in isort order. Only use inline imports when necessary to avoid circular dependencies.
 
 ## Testing
 
@@ -62,16 +63,22 @@ Apps as factory functions, run via `AppHarness`:
 ```python
 def SomeApp():
     import reflex as rx
+
     class State(rx.State):
         value: str = ""
+
     def index():
         return rx.box(rx.text(State.value))
+
     app = rx.App()
     app.add_page(index)
 
+
 @pytest.fixture(scope="module")
 def some_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
-    with AppHarness.create(root=tmp_path_factory.mktemp("some_app"), app_source=SomeApp) as harness:
+    with AppHarness.create(
+        root=tmp_path_factory.mktemp("some_app"), app_source=SomeApp
+    ) as harness:
         yield harness
 ```
 
@@ -88,6 +95,7 @@ Reflex has downstream users — don't break them. Provide a fallback path during
 **Runtime warning** via `console.deprecate()`:
 ```python
 from reflex_base.utils import console
+
 console.deprecate(
     feature_name="OldFeature",
     reason="Use NewFeature instead.",
@@ -101,8 +109,10 @@ Set `deprecation_version` to the next dot version of the latest tag (`git fetch 
 ```python
 from __future__ import annotations
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from typing_extensions import deprecated
+
     @deprecated("Use new_method() instead")
     def old_method(self) -> str: ...
 ```

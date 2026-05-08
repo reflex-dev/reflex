@@ -34,7 +34,7 @@ def LifespanApp(
     connected_tokens: set[str] = set()
 
     @asynccontextmanager
-    async def lifespan_context(app, inc: int = 1):  # noqa: RUF029
+    async def lifespan_context(app, inc: int = 1):
         global lifespan_context_global
         print(f"Lifespan context entered: {app}.")
         lifespan_context_global += inc  # pyright: ignore[reportUnboundVariable]
@@ -67,7 +67,7 @@ def LifespanApp(
             raw_asyncio_task_global = 0
 
     @asynccontextmanager
-    async def assert_register_blocked_during_lifespan(app):  # noqa: RUF029
+    async def assert_register_blocked_during_lifespan(app):
         """Negative test: registering a task after lifespan has started must raise."""
         from reflex.utils.prerequisites import get_app
 

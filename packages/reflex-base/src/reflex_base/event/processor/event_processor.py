@@ -10,9 +10,9 @@ import inspect
 import sys
 import time
 import traceback
-from collections.abc import AsyncGenerator, Callable, Mapping, Sequence
+from collections.abc import AsyncGenerator, Callable, Coroutine, Mapping, Sequence
 from contextvars import Token, copy_context
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import rich.markup
 from typing_extensions import Self
@@ -39,6 +39,41 @@ else:
 
     class QueueShutDown(Exception):  # noqa: N818
         """Exception raised when trying to put an item into a shut down queue."""
+
+
+_StreamItemT = TypeVar("_StreamItemT")
+
+
+async def _stream_queue_until_done(
+    queue: asyncio.Queue[_StreamItemT],
+    done_when: Coroutine[Any, Any, Any],
+) -> AsyncGenerator[_StreamItemT]:
+    """Yield items from ``queue`` until ``done_when`` completes.
+
+    Items are yielded in the order they were enqueued. Completion of
+    ``done_when`` is signalled through the same queue via a private sentinel,
+    so items enqueued before completion are never lost to a race between
+    "watcher done" and "item available".
+
+    Args:
+        queue: The queue to drain.
+        done_when: Coroutine whose completion marks end-of-stream. Wrapped in
+            a task owned by this helper and cancelled on exit.
+
+    Yields:
+        Each item pulled from the queue, in order.
+    """
+    end_of_stream: Any = object()
+    watcher = asyncio.create_task(done_when)
+    watcher.add_done_callback(lambda _: queue.put_nowait(end_of_stream))
+    try:
+        while True:
+            item = await queue.get()
+            if item is end_of_stream:
+                return
+            yield item
+    finally:
+        watcher.cancel()
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
@@ -429,23 +464,13 @@ class EventProcessor:
                 emit_delta_impl=_emit_delta_impl,
             ),
         )
-        all_task_futures = asyncio.create_task(task_future.wait_all())
-        waiting_for = {all_task_futures, asyncio.create_task(deltas.get())}
+
         try:
-            while not all_task_futures.done() or not deltas.empty():
-                with contextlib.suppress(asyncio.TimeoutError):
-                    async for result in as_completed(
-                        waiting_for,
-                        timeout=1,
-                    ):
-                        waiting_for.remove(result)
-                        if result is not all_task_futures:
-                            yield await result
-                            waiting_for.add(asyncio.create_task(deltas.get()))
-                        break
+            async for delta in _stream_queue_until_done(
+                queue=deltas, done_when=task_future.wait_all()
+            ):
+                yield delta
         finally:
-            for future in waiting_for:
-                future.cancel()
             # Cancel the event chain if the streaming consumer exits early.
             if not task_future.done():
                 task_future.cancel()

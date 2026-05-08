@@ -39,7 +39,7 @@ for module in modules:
     name = module.__name__.lower()
     docs = generate_docs(name, module, extra_fields=extra_fields)
     title = name.replace("_", " ").title()
-    page_data = docpage(f"/docs/api-reference/{name}/", title)(docs)
+    page_data = docpage(f"/api-reference/{name}/", title)(docs)
     page_data.title = page_data.title.split("·")[0].strip()
     pages.append(page_data)
 

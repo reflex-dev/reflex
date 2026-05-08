@@ -387,8 +387,9 @@ class CodeBlock(Component, MarkdownComponentMap):
 
     alias = "SyntaxHighlighter"
 
-    theme: Var[Theme | str] = field(
-        default=Theme.one_light, doc='The theme to use ("light" or "dark").'
+    theme: Var[Theme] = field(
+        default=Theme.one_light,
+        doc="The theme to use, accessed via rx.code_block.themes (e.g. rx.code_block.themes.one_dark).",
     )
 
     language: Var[LiteralCodeLanguage] = field(
