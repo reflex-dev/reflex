@@ -149,6 +149,7 @@ manual_titles = {
     "docs/events/special_events.md": "Special Events Docs",
     "docs/library/graphing/general/tooltip.md": "Graphing Tooltip",
     "docs/recipes/content/grid.md": "Grid Recipe",
+    "docs/hosting/deploy-to-gcp.md": "Deploy to GCP",
 }
 
 

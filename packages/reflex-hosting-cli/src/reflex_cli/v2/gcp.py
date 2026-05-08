@@ -81,17 +81,19 @@ DEPLOY_ENV_ALLOWLIST = frozenset({
 })
 
 
-@click.group()
-def gcp_cli():
-    """Commands for deploying to GCP Cloud Run."""
-
-
-@gcp_cli.command(name="deploy")
+@click.command(name="deploy")
+@click.option(
+    "--gcp",
+    "use_gcp",
+    is_flag=True,
+    default=False,
+    help="Deploy to GCP Cloud Run. Required (the only supported target today).",
+)
 @click.option(
     "--gcp-project",
     "gcp_project",
-    required=True,
-    help="The GCP project ID to deploy into (sets GCP_PROJECT).",
+    default=None,
+    help="The GCP project ID to deploy into (sets GCP_PROJECT). Required with --gcp.",
 )
 @click.option(
     "--region",
@@ -150,8 +152,9 @@ def gcp_cli():
     default=constants.LogLevel.INFO.value,
     help="The log level to use.",
 )
-def gcp_deploy(
-    gcp_project: str,
+def deploy_command(
+    use_gcp: bool,
+    gcp_project: str | None,
     region: str,
     service_name: str,
     ar_repo: str,
@@ -163,14 +166,24 @@ def gcp_deploy(
     dry_run: bool,
     loglevel: str,
 ):
-    """Deploy a Reflex app to GCP Cloud Run.
+    """Deploy a Reflex app to a cloud target.
 
-    Fetches a Dockerfile and bash deploy script from flexgen, writes the Dockerfile
-    into the source directory, then asks before running the script.
+    Currently the only supported target is GCP Cloud Run via --gcp. The command
+    fetches a Dockerfile and bash deploy script from flexgen, writes the
+    Dockerfile into the source directory, then asks before running the script.
     """
     from reflex_cli.utils import hosting
 
     console.set_log_level(loglevel)
+
+    if not use_gcp:
+        console.error(
+            "Specify a deploy target. Currently supported: --gcp (GCP Cloud Run)."
+        )
+        raise click.exceptions.Exit(2)
+    if not gcp_project:
+        console.error("--gcp-project is required when using --gcp.")
+        raise click.exceptions.Exit(2)
 
     authenticated_client = hosting.get_authenticated_client(
         token=token, interactive=interactive

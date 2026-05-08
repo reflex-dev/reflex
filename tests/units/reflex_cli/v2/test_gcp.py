@@ -67,8 +67,8 @@ def test_gcp_deploy_writes_dockerfile_and_runs_script(
     result = runner.invoke(
         hosting_cli,
         [
-            "gcp",
             "deploy",
+            "--gcp",
             "--gcp-project",
             "my-gcp-project",
             "--region",
@@ -109,7 +109,7 @@ def test_gcp_deploy_aborts_on_no(mocker: MockFixture, tmp_path: Path):
 
     result = runner.invoke(
         hosting_cli,
-        ["gcp", "deploy", "--gcp-project", "p", "--source", str(tmp_path)],
+        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
         input="n\n",
     )
 
@@ -126,7 +126,7 @@ def test_gcp_deploy_propagates_script_failure(mocker: MockFixture, tmp_path: Pat
 
     result = runner.invoke(
         hosting_cli,
-        ["gcp", "deploy", "--gcp-project", "p", "--source", str(tmp_path)],
+        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
         input="y\n",
     )
 
@@ -140,8 +140,8 @@ def test_gcp_deploy_dry_run(mocker: MockFixture, tmp_path: Path):
     result = runner.invoke(
         hosting_cli,
         [
-            "gcp",
             "deploy",
+            "--gcp",
             "--gcp-project",
             "p",
             "--source",
@@ -167,7 +167,7 @@ def test_gcp_deploy_prompts_before_overwriting_dockerfile(
     # User says no to overwrite -> abort with non-zero.
     result = runner.invoke(
         hosting_cli,
-        ["gcp", "deploy", "--gcp-project", "p", "--source", str(tmp_path)],
+        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
         input="n\n",
     )
 
@@ -185,8 +185,8 @@ def test_gcp_deploy_overwrite_flag_skips_prompt(mocker: MockFixture, tmp_path: P
     result = runner.invoke(
         hosting_cli,
         [
-            "gcp",
             "deploy",
+            "--gcp",
             "--gcp-project",
             "p",
             "--source",
@@ -213,7 +213,7 @@ def test_gcp_deploy_requires_gcloud(mocker: MockFixture, tmp_path: Path):
 
     result = runner.invoke(
         hosting_cli,
-        ["gcp", "deploy", "--gcp-project", "p", "--source", str(tmp_path)],
+        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
     )
 
     assert result.exit_code == 1
@@ -232,7 +232,7 @@ def test_gcp_deploy_requires_docker(mocker: MockFixture, tmp_path: Path):
 
     result = runner.invoke(
         hosting_cli,
-        ["gcp", "deploy", "--gcp-project", "p", "--source", str(tmp_path)],
+        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
     )
 
     assert result.exit_code == 1
@@ -244,7 +244,7 @@ def test_gcp_deploy_requires_gcp_login(mocker: MockFixture, tmp_path: Path):
 
     result = runner.invoke(
         hosting_cli,
-        ["gcp", "deploy", "--gcp-project", "p", "--source", str(tmp_path)],
+        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
     )
 
     assert result.exit_code == 1
@@ -257,7 +257,7 @@ def test_gcp_deploy_403_mentions_enterprise_tier(mocker: MockFixture, tmp_path: 
 
     result = runner.invoke(
         hosting_cli,
-        ["gcp", "deploy", "--gcp-project", "p", "--source", str(tmp_path)],
+        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
     )
 
     assert result.exit_code == 1
@@ -270,7 +270,7 @@ def test_gcp_deploy_rejects_missing_fields(mocker: MockFixture, tmp_path: Path):
 
     result = runner.invoke(
         hosting_cli,
-        ["gcp", "deploy", "--gcp-project", "p", "--source", str(tmp_path)],
+        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
     )
 
     assert result.exit_code == 1
@@ -283,7 +283,7 @@ def test_gcp_deploy_default_version_is_timestamp(mocker: MockFixture, tmp_path: 
 
     result = runner.invoke(
         hosting_cli,
-        ["gcp", "deploy", "--gcp-project", "p", "--source", str(tmp_path)],
+        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
         input="y\n",
     )
 
@@ -304,8 +304,8 @@ def test_gcp_deploy_no_interactive_skips_run_prompt(
     result = runner.invoke(
         hosting_cli,
         [
-            "gcp",
             "deploy",
+            "--gcp",
             "--gcp-project",
             "p",
             "--source",
@@ -332,8 +332,8 @@ def test_gcp_deploy_no_interactive_refuses_to_overwrite_without_flag(
     result = runner.invoke(
         hosting_cli,
         [
-            "gcp",
             "deploy",
+            "--gcp",
             "--gcp-project",
             "p",
             "--source",
@@ -388,7 +388,7 @@ def test_gcp_deploy_env_is_restricted_to_allowlist(mocker: MockFixture, tmp_path
 
     result = runner.invoke(
         hosting_cli,
-        ["gcp", "deploy", "--gcp-project", "p", "--source", str(tmp_path)],
+        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
         input="y\n",
     )
 
@@ -404,6 +404,33 @@ def test_gcp_deploy_env_is_restricted_to_allowlist(mocker: MockFixture, tmp_path
     assert "AWS_SECRET_ACCESS_KEY" not in env
     assert "GITHUB_TOKEN" not in env
     assert "MY_RANDOM_VAR" not in env
+
+
+def test_deploy_requires_gcp_target_flag(tmp_path: Path):
+    """Without any target flag, the command errors with usage hint."""
+    result = runner.invoke(
+        hosting_cli,
+        ["deploy", "--gcp-project", "p", "--source", str(tmp_path)],
+    )
+
+    assert result.exit_code == 2
+    assert "--gcp" in result.output
+
+
+def test_deploy_gcp_requires_gcp_project(mocker: MockFixture, tmp_path: Path):
+    """With --gcp set but --gcp-project missing, errors before any auth/manifest call."""
+    auth_mock = mocker.patch("reflex_cli.utils.hosting.get_authenticated_client")
+    get_mock = mocker.patch("httpx.get")
+
+    result = runner.invoke(
+        hosting_cli,
+        ["deploy", "--gcp", "--source", str(tmp_path)],
+    )
+
+    assert result.exit_code == 2
+    assert "--gcp-project" in result.output
+    assert auth_mock.call_count == 0
+    assert get_mock.call_count == 0
 
 
 @pytest.fixture(autouse=True)

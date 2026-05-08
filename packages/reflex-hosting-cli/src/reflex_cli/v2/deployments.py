@@ -12,7 +12,7 @@ from packaging import version
 from reflex_cli import constants
 from reflex_cli.utils import console
 from reflex_cli.v2.apps import apps_cli
-from reflex_cli.v2.gcp import gcp_cli
+from reflex_cli.v2.gcp import deploy_command as gcp_deploy_command
 from reflex_cli.v2.project import project_cli
 from reflex_cli.v2.secrets import secrets_cli
 from reflex_cli.v2.vmtypes_regions import vm_types_regions_cli
@@ -66,8 +66,8 @@ hosting_cli.add_command(
     name="secrets",
 )
 hosting_cli.add_command(
-    gcp_cli,
-    name="gcp",
+    gcp_deploy_command,
+    name="deploy",
 )
 for name, command in vm_types_regions_cli.commands.items():
     # Add the command to the hosting CLI
