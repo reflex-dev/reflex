@@ -591,37 +591,42 @@ def _install_frontend_packages(
         show_status_message="Installing base frontend packages",
     )
 
-    framework_deps = _pinned_args_from_constants(constants.PackageJson.DEPENDENCIES)
-    if framework_deps:
-        run_package_manager(
-            [primary_package_manager, "add", "--legacy-peer-deps", *framework_deps],
-            show_status_message="Pinning framework frontend dependencies",
-        )
-
-    framework_dev_deps = _pinned_args_from_constants(
-        constants.PackageJson.DEV_DEPENDENCIES
-    )
-    if framework_dev_deps:
-        run_package_manager(
-            [
-                primary_package_manager,
-                "add",
-                "--legacy-peer-deps",
-                "-d",
-                *framework_dev_deps,
-            ],
-            show_status_message="Pinning framework frontend dev dependencies",
-        )
-
+    pinned_packages, unpinned_packages = _split_by_version_specifier(packages)
     pinned_dev_deps, unpinned_dev_deps = _split_by_version_specifier(development_deps)
-    if pinned_dev_deps:
+
+    all_pinned = (
+        _pinned_args_from_constants(constants.PackageJson.DEPENDENCIES)
+        | pinned_packages
+    )
+    all_pinned_dev = (
+        _pinned_args_from_constants(constants.PackageJson.DEV_DEPENDENCIES)
+        | pinned_dev_deps
+    )
+
+    if all_pinned:
+        run_package_manager(
+            [primary_package_manager, "add", "--legacy-peer-deps", *all_pinned],
+            show_status_message="Pinning frontend packages",
+        )
+    if unpinned_packages:
+        run_package_manager(
+            [
+                primary_package_manager,
+                "add",
+                "--legacy-peer-deps",
+                "--only-missing",
+                *unpinned_packages,
+            ],
+            show_status_message="Installing frontend packages",
+        )
+    if all_pinned_dev:
         run_package_manager(
             [
                 primary_package_manager,
                 "add",
                 "--legacy-peer-deps",
                 "-d",
-                *pinned_dev_deps,
+                *all_pinned_dev,
             ],
             show_status_message="Pinning frontend development dependencies",
         )
@@ -636,24 +641,6 @@ def _install_frontend_packages(
                 *unpinned_dev_deps,
             ],
             show_status_message="Installing frontend development dependencies",
-        )
-
-    pinned_packages, unpinned_packages = _split_by_version_specifier(packages)
-    if pinned_packages:
-        run_package_manager(
-            [primary_package_manager, "add", "--legacy-peer-deps", *pinned_packages],
-            show_status_message="Pinning frontend packages from config and components",
-        )
-    if unpinned_packages:
-        run_package_manager(
-            [
-                primary_package_manager,
-                "add",
-                "--legacy-peer-deps",
-                "--only-missing",
-                *unpinned_packages,
-            ],
-            show_status_message="Installing frontend packages from config and components",
         )
 
 
