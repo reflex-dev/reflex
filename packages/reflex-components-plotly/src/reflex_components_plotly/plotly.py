@@ -185,15 +185,17 @@ class Plotly(NoSSRComponent):
         Returns:
             The imports for the plotly component.
         """
-        return {
+        imports: ImportDict = {
             # For merging plotly data/layout/templates.
             "mergician@v2.0.2": "mergician",
+        }
+        if self.locale is not None:
             # For locale dictionaries injected into plot config.locales.
-            "plotly.js-locales@3.5.0": ImportVar(
+            imports["plotly.js-locales@3.5.0"] = ImportVar(
                 tag="plotlyLocales",
                 is_default=True,
-            ),
-        }
+            )
+        return imports
 
     def add_custom_code(self) -> list[str]:
         """Add custom codes for processing the plotly points data.
@@ -201,7 +203,7 @@ class Plotly(NoSSRComponent):
         Returns:
             Custom code snippets for the module level.
         """
-        return [
+        codes = [
             "const removeUndefined = (obj) => {Object.keys(obj).forEach(key => obj[key] === undefined && delete obj[key]); return obj}",
             """
 const extractPoints = (points) => {
@@ -232,7 +234,9 @@ const extractPoints = (points) => {
     })
 }
 """,
-            """
+        ]
+        if self.locale is not None:
+            codes.append("""
 const _rxResolvePlotlyLocaleData = (plotlyLocales, locale) => {
     if (locale === undefined || locale === null) return null;
     const localeString = String(locale).trim();
@@ -268,8 +272,8 @@ const _rxGetPlotlyLocaleConfig = (config, locale, plotlyLocales) => {
         },
     };
 }
-""",
-        ]
+""")
+        return codes
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -389,7 +393,7 @@ class PlotlyBasic(Plotly):
         Returns:
             The imports for the plotly basic component.
         """
-        return CREATE_PLOTLY_COMPONENT
+        return [super().add_imports(), CREATE_PLOTLY_COMPONENT]
 
     def _get_dynamic_imports(self) -> str:
         """Get the dynamic imports for the plotly basic component.
@@ -415,7 +419,7 @@ class PlotlyCartesian(Plotly):
         Returns:
             The imports for the plotly cartesian component.
         """
-        return CREATE_PLOTLY_COMPONENT
+        return [super().add_imports(), CREATE_PLOTLY_COMPONENT]
 
     def _get_dynamic_imports(self) -> str:
         """Get the dynamic imports for the plotly cartesian component.
@@ -441,7 +445,7 @@ class PlotlyGeo(Plotly):
         Returns:
             The imports for the plotly geo component.
         """
-        return CREATE_PLOTLY_COMPONENT
+        return [super().add_imports(), CREATE_PLOTLY_COMPONENT]
 
     def _get_dynamic_imports(self) -> str:
         """Get the dynamic imports for the plotly geo component.
@@ -467,7 +471,7 @@ class PlotlyGl3d(Plotly):
         Returns:
             The imports for the plotly 3d component.
         """
-        return CREATE_PLOTLY_COMPONENT
+        return [super().add_imports(), CREATE_PLOTLY_COMPONENT]
 
     def _get_dynamic_imports(self) -> str:
         """Get the dynamic imports for the plotly 3d component.
@@ -493,7 +497,7 @@ class PlotlyGl2d(Plotly):
         Returns:
             The imports for the plotly 2d component.
         """
-        return CREATE_PLOTLY_COMPONENT
+        return [super().add_imports(), CREATE_PLOTLY_COMPONENT]
 
     def _get_dynamic_imports(self) -> str:
         """Get the dynamic imports for the plotly 2d component.
@@ -519,7 +523,7 @@ class PlotlyMapbox(Plotly):
         Returns:
             The imports for the plotly mapbox component.
         """
-        return CREATE_PLOTLY_COMPONENT
+        return [super().add_imports(), CREATE_PLOTLY_COMPONENT]
 
     def _get_dynamic_imports(self) -> str:
         """Get the dynamic imports for the plotly mapbox component.
@@ -545,7 +549,7 @@ class PlotlyFinance(Plotly):
         Returns:
             The imports for the plotly finance component.
         """
-        return CREATE_PLOTLY_COMPONENT
+        return [super().add_imports(), CREATE_PLOTLY_COMPONENT]
 
     def _get_dynamic_imports(self) -> str:
         """Get the dynamic imports for the plotly finance component.
@@ -571,7 +575,7 @@ class PlotlyStrict(Plotly):
         Returns:
             The imports for the plotly strict component.
         """
-        return CREATE_PLOTLY_COMPONENT
+        return [super().add_imports(), CREATE_PLOTLY_COMPONENT]
 
     def _get_dynamic_imports(self) -> str:
         """Get the dynamic imports for the plotly strict component.
