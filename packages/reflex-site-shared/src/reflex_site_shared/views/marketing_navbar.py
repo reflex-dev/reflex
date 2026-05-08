@@ -142,17 +142,21 @@ def products_iterate_column_body() -> rx.Component:
         The component.
     """
     return rx.el.div(
-        rx.el.div(
-            rx.el.span(
-                "Framework",
-                class_name="text-base font-[525] text-secondary-12",
+        rx.el.elements.a(
+            rx.el.div(
+                rx.el.span(
+                    "Framework",
+                    class_name="text-base font-[525] text-secondary-12 group-hover:text-primary-10 dark:group-hover:text-primary-9 transition-colors",
+                ),
+                badge("Open source"),
+                class_name="flex flex-row items-center gap-2.5",
             ),
-            badge("Open source"),
-            class_name="flex flex-row items-center gap-2.5",
-        ),
-        rx.el.p(
-            "The full-stack Python framework, optimized to build with AI agents—apps that can be used by humans and agents alike.",
-            class_name="text-secondary-11 text-sm font-[475]",
+            rx.el.p(
+                "The full-stack Python framework, optimized to build with AI agents—apps that can be used by humans and agents alike.",
+                class_name="text-secondary-11 text-sm font-[475]",
+            ),
+            href="/open-source/",
+            class_name="group flex flex-col gap-2 items-center text-center",
         ),
         rx.el.elements.a(
             get_icon(
@@ -175,11 +179,11 @@ def products_ship_column_body() -> rx.Component:
     Returns:
         The component.
     """
-    return rx.el.div(
+    return rx.el.elements.a(
         rx.el.div(
             rx.el.span(
                 "Deploy, monitor & scale",
-                class_name="text-base font-[525] text-secondary-12",
+                class_name="text-base font-[525] text-secondary-12 group-hover:text-primary-10 dark:group-hover:text-primary-9 transition-colors",
             ),
             class_name="flex flex-row items-center gap-2.5 px-6 pt-6",
         ),
@@ -189,14 +193,15 @@ def products_ship_column_body() -> rx.Component:
         ),
         rx.el.div(
             rx.image(
-                src=f"{REFLEX_ASSETS_CDN}landing/features/{rx.color_mode_cond('light', 'dark')}/ship_navbar.svg",
+                src=f"{REFLEX_ASSETS_CDN}landing/features/{rx.color_mode_cond('light', 'dark')}/ship_navbar_2.svg",
                 alt="Deploy, monitor & scale",
                 loading="lazy",
                 class_name="h-auto w-full max-w-full object-cover",
             ),
             class_name="flex w-full mt-auto",
         ),
-        class_name="flex flex-col gap-2 text-center justify-center items-center min-h-[252px]",
+        href="/hosting/",
+        class_name="group flex flex-col gap-2 text-center justify-center items-center min-h-[252px]",
     )
 
 
@@ -207,37 +212,51 @@ def products_build_column_body() -> rx.Component:
         The component.
     """
     return rx.el.div(
-        rx.el.div(
-            rx.el.span(
-                "AI app builder",
-                class_name="text-base font-[525] text-secondary-12",
+        rx.el.elements.a(
+            rx.el.div(
+                rx.el.span(
+                    "AI app builder",
+                    class_name="text-base font-[525] text-secondary-12 group-hover:text-primary-10 dark:group-hover:text-primary-9 transition-colors",
+                ),
+                badge("New"),
+                class_name="flex flex-row items-center gap-2.5 px-6 pt-6",
             ),
-            badge("New"),
-            class_name="flex flex-row items-center gap-2.5 px-6 pt-6",
-        ),
-        rx.el.p(
-            "Describe it, Reflex builds it.",
-            class_name="text-secondary-11 text-sm font-[475] px-6 pb-6",
+            rx.el.p(
+                "Describe it, Reflex builds it.",
+                class_name="text-secondary-11 text-sm font-[475] px-6 pb-6",
+            ),
+            href=REFLEX_BUILD_URL,
+            target="_blank",
+            class_name="group flex flex-col gap-2 items-center text-center",
         ),
         rx.el.div(
-            get_icon("arrow_turn", class_name="shrink-0 text-secondary-10"),
+            get_icon(
+                "arrow_turn", class_name="shrink-0 text-secondary-10 -translate-y-0.75"
+            ),
             rx.el.span(
                 "OR",
                 class_name="px-2 font-mono text-xs font-[415] uppercase text-secondary-12",
             ),
-            get_icon("arrow_turn", class_name="shrink-0 text-secondary-10 rotate-180"),
+            get_icon(
+                "arrow_turn",
+                class_name="shrink-0 text-secondary-10 rotate-180 translate-y-0.75",
+            ),
             class_name="flex w-full shrink-0 items-center justify-center py-3 border-y border-secondary-4 px-6 bg-secondary-1",
         ),
-        rx.el.div(
-            rx.el.span(
-                "Agent Toolkit",
-                class_name="text-base font-[525] text-secondary-12",
+        rx.el.elements.a(
+            rx.el.div(
+                rx.el.span(
+                    "Agent Toolkit",
+                    class_name="text-base font-[525] text-secondary-12 group-hover:text-primary-10 dark:group-hover:text-primary-9 transition-colors",
+                ),
+                class_name="flex flex-row items-center gap-2.5 px-6 pt-6",
             ),
-            class_name="flex flex-row items-center gap-2.5 px-6 pt-6",
-        ),
-        rx.el.p(
-            "Get started with our MCP and Skills.",
-            class_name="text-secondary-11 text-sm font-[475] px-6 pb-6",
+            rx.el.p(
+                "Get started with our MCP and Skills.",
+                class_name="text-secondary-11 text-sm font-[475] px-6 pb-6",
+            ),
+            href="/docs/ai/integrations/ai-onboarding/",
+            class_name="group flex flex-col gap-2 items-center text-center",
         ),
         class_name="flex flex-col gap-2 text-center justify-center items-center min-h-[252px]",
     )
@@ -280,7 +299,7 @@ def products_content() -> rx.Component:
                 class_name="flex min-h-0 w-full flex-row bg-white-1",
             ),
             products_menu_footer(),
-            class_name="flex max-w-[min(100vw-2rem,1077px)] w-[1077px] flex-col overflow-hidden rounded-xl bg-secondary-1 dark:shadow-card-dark",
+            class_name="flex max-w-[min(100vw-2rem,1080px)] w-[1080px] flex-col overflow-hidden rounded-xl bg-secondary-1 dark:shadow-card-dark",
         ),
         class_name="p-0",
     )
@@ -787,7 +806,7 @@ def navigation_menu() -> rx.Component:
                 class_name="safari-nav-positioner box-border h-[var(--positioner-height)] w-[var(--positioner-width)] max-w-[var(--available-width)] transition-[top,left,right,bottom] duration-[0.35s] ease-[cubic-bezier(0.22,1,0.36,1)] data-[instant]:transition-none",
                 side_offset=30,
                 align="start",
-                align_offset=-104,
+                align_offset=-105,
                 position_method="fixed",
             ),
         ),

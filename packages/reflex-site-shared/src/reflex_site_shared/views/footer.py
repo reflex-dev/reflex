@@ -213,10 +213,6 @@ def newsletter() -> rx.Component:
         The component.
     """
     return rx.el.div(
-        rx.el.span(
-            "Get updates",
-            class_name="text-xs font-[525] text-secondary-12",
-        ),
         newsletter_input(),
         class_name="flex flex-col items-start gap-4 self-stretch mt-6",
     )

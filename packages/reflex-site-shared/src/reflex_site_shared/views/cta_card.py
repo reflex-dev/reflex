@@ -18,7 +18,7 @@ def cta_card():
     return rx.el.div(
         rx.el.div(
             rx.el.span(
-                "The Unified Platform to Build and Scale Enterprise Apps",
+                "The Platform to Build and Scale Enterprise Apps",
                 class_name="text-slate-12 lg:text-3xl text-2xl font-[575]",
             ),
             rx.el.span(
