@@ -171,6 +171,27 @@ def get_web_bun_lock_path() -> Path:
     return get_web_dir() / constants.Bun.LOCKFILE_PATH
 
 
+def get_root_package_json_path() -> Path:
+    """Get the persisted package.json path in the app root.
+
+    Stored alongside ``bun.lock`` inside the dedicated lockfile directory so
+    resolved dependency pins survive a fresh ``reflex init``.
+
+    Returns:
+        The persisted package.json path in the app root.
+    """
+    return Path.cwd() / constants.Bun.ROOT_LOCKFILE_DIR / constants.PackageJson.PATH
+
+
+def get_web_package_json_path() -> Path:
+    """Get the package.json path in the .web directory.
+
+    Returns:
+        The package.json path in the .web directory.
+    """
+    return get_web_dir() / constants.PackageJson.PATH
+
+
 def sync_root_bun_lock_to_web():
     """Mirror the canonical root bun.lock into .web.
 
@@ -199,6 +220,42 @@ def sync_web_bun_lock_to_root():
     path_ops.mkdir(root_bun_lock_path.parent)
     console.debug(f"Copying {web_bun_lock_path} to {root_bun_lock_path}")
     path_ops.cp(web_bun_lock_path, root_bun_lock_path)
+
+
+def sync_web_package_json_to_root():
+    """Persist the resolved .web package.json back to the app root.
+
+    Captures the dependency pins produced by ``bun add`` so the next
+    ``reflex init`` can restore them as the starting point for the new
+    package.json.
+    """
+    web_package_json_path = get_web_package_json_path()
+    if not web_package_json_path.exists():
+        return
+
+    root_package_json_path = get_root_package_json_path()
+    path_ops.mkdir(root_package_json_path.parent)
+    console.debug(f"Copying {web_package_json_path} to {root_package_json_path}")
+    path_ops.cp(web_package_json_path, root_package_json_path)
+
+
+def _read_persisted_package_json() -> dict:
+    """Read the persisted package.json from the app root.
+
+    Returns:
+        The parsed JSON object, or an empty dict if the file is missing or
+        cannot be parsed.
+    """
+    root_package_json_path = get_root_package_json_path()
+    if not root_package_json_path.exists():
+        return {}
+    try:
+        return json.loads(root_package_json_path.read_text())
+    except (json.JSONDecodeError, OSError) as e:
+        console.warn(
+            f"Failed to read {root_package_json_path}: {e}; starting with empty dependency lists."
+        )
+        return {}
 
 
 def initialize_web_directory():
@@ -277,13 +334,26 @@ def _update_react_router_config(config: Config, prerender_routes: bool = False):
 
 
 def _compile_package_json():
+    """Build package.json content for .web.
+
+    Recovers ``dependencies`` and ``devDependencies`` from the persisted
+    ``reflex.lock/package.json`` (when present) so resolved version pins
+    survive a fresh ``reflex init``. ``scripts`` and ``overrides`` are always
+    refreshed from constants. The framework-managed entries in
+    ``constants.PackageJson.DEPENDENCIES`` / ``DEV_DEPENDENCIES`` are added
+    later at install time via ``bun add`` so they pick up strict pins.
+
+    Returns:
+        Rendered package.json content as string.
+    """
+    persisted = _read_persisted_package_json()
     return templates.package_json_template(
         scripts={
             "dev": constants.PackageJson.Commands.DEV,
             "export": constants.PackageJson.Commands.EXPORT,
         },
-        dependencies=constants.PackageJson.DEPENDENCIES,
-        dev_dependencies=constants.PackageJson.DEV_DEPENDENCIES,
+        dependencies=persisted.get("dependencies") or {},
+        dev_dependencies=persisted.get("devDependencies") or {},
         overrides=constants.PackageJson.OVERRIDES,
     )
 

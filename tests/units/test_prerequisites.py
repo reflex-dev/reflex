@@ -1,3 +1,4 @@
+import json
 import shutil
 import tempfile
 from collections.abc import Callable, Generator
@@ -58,9 +59,17 @@ class InstallPackagesEnv:
     web_dir: Path
     root_lock: Path
     web_lock: Path
+    root_package_json: Path
+    web_package_json: Path
     config: Config
     patch_pm: Callable[[list[str], Callable], None]
     install: _InstallFn
+
+
+def _stub_framework_packages(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Empty out framework deps so install call counts are predictable."""
+    monkeypatch.setattr(constants.PackageJson, "DEPENDENCIES", {})
+    monkeypatch.setattr(constants.PackageJson, "DEV_DEPENDENCIES", {})
 
 
 @pytest.fixture
@@ -70,8 +79,10 @@ def install_packages_env(
     """Isolated environment for install_frontend_packages tests.
 
     Creates the web dir, patches get_web_dir, chdirs into tmp_path, and
-    exposes the bun lock paths, a Config, a package-manager patch helper,
-    and a runner that invokes install_frontend_packages.
+    exposes the bun lock and package.json paths, a Config, a
+    package-manager patch helper, and a runner that invokes
+    install_frontend_packages. Framework dep constants are emptied so
+    tests can reason about exactly the calls they trigger.
 
     Yields:
         An InstallPackagesEnv with paths, config, and patch_pm/install helpers.
@@ -79,6 +90,7 @@ def install_packages_env(
     web_dir = tmp_path / constants.Dirs.WEB
     web_dir.mkdir()
     _patch_web_dir(monkeypatch, web_dir)
+    _stub_framework_packages(monkeypatch)
     config = Config(app_name="test")
 
     def patch_pm(package_managers: list[str], run_package_manager: Callable) -> None:
@@ -89,13 +101,15 @@ def install_packages_env(
     def install(packages: set[str] | None = None) -> None:
         js_runtimes.install_frontend_packages(packages or set(), config)
 
-    root_lock = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR / constants.Bun.LOCKFILE_PATH
-    root_lock.parent.mkdir(parents=True, exist_ok=True)
+    root_lock_dir = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR
+    root_lock_dir.mkdir(parents=True, exist_ok=True)
     env = InstallPackagesEnv(
         tmp_path=tmp_path,
         web_dir=web_dir,
-        root_lock=root_lock,
+        root_lock=root_lock_dir / constants.Bun.LOCKFILE_PATH,
         web_lock=web_dir / constants.Bun.LOCKFILE_PATH,
+        root_package_json=root_lock_dir / constants.PackageJson.PATH,
+        web_package_json=web_dir / constants.PackageJson.PATH,
         config=config,
         patch_pm=patch_pm,
         install=install,
@@ -337,6 +351,159 @@ def test_install_frontend_packages_cache_hit_refreshes_web_bun_lock(
 
     assert call_count == 1
     assert env.web_lock.read_text() == "root-lock"
+
+
+def _record_calls(env: InstallPackagesEnv) -> list[list[str]]:
+    """Record `bun add`/`bun install` invocations into a list.
+
+    Args:
+        env: The install_packages_env fixture instance.
+
+    Returns:
+        A list that is appended to (in-place) on each package manager call.
+    """
+    calls: list[list[str]] = []
+
+    def run_package_manager(args, **kwargs):
+        calls.append(list(args))
+
+    env.patch_pm(["bun"], run_package_manager)
+    return calls
+
+
+def test_install_frontend_packages_pinned_packages_omit_only_missing(
+    install_packages_env: InstallPackagesEnv,
+):
+    env = install_packages_env
+    calls = _record_calls(env)
+
+    env.install({"some-pkg@1.2.3", "@scope/pkg@4.5.6"})
+
+    add_calls = [c for c in calls if "add" in c]
+    assert len(add_calls) == 1
+    pinned_call = add_calls[0]
+    assert "--only-missing" not in pinned_call
+    assert "some-pkg@1.2.3" in pinned_call
+    assert "@scope/pkg@4.5.6" in pinned_call
+
+
+def test_install_frontend_packages_unpinned_packages_use_only_missing(
+    install_packages_env: InstallPackagesEnv,
+):
+    env = install_packages_env
+    calls = _record_calls(env)
+
+    env.install({"some-pkg", "@scope/pkg"})
+
+    add_calls = [c for c in calls if "add" in c]
+    assert len(add_calls) == 1
+    unpinned_call = add_calls[0]
+    assert "--only-missing" in unpinned_call
+    assert "some-pkg" in unpinned_call
+    assert "@scope/pkg" in unpinned_call
+
+
+def test_install_frontend_packages_splits_pinned_and_unpinned(
+    install_packages_env: InstallPackagesEnv,
+):
+    env = install_packages_env
+    calls = _record_calls(env)
+
+    env.install({"pinned@1.0.0", "unpinned"})
+
+    add_calls = [c for c in calls if "add" in c]
+    assert len(add_calls) == 2
+
+    pinned_call = next(c for c in add_calls if "--only-missing" not in c)
+    unpinned_call = next(c for c in add_calls if "--only-missing" in c)
+    assert "pinned@1.0.0" in pinned_call
+    assert "unpinned" in unpinned_call
+    assert "unpinned" not in pinned_call
+    assert "pinned@1.0.0" not in unpinned_call
+
+
+def test_install_frontend_packages_pins_framework_dependencies(
+    install_packages_env: InstallPackagesEnv,
+    monkeypatch,
+):
+    env = install_packages_env
+    monkeypatch.setattr(
+        constants.PackageJson, "DEPENDENCIES", {"react": "19.2.5", "isbot": "5.1.39"}
+    )
+    monkeypatch.setattr(constants.PackageJson, "DEV_DEPENDENCIES", {"vite": "8.0.9"})
+    calls = _record_calls(env)
+
+    env.install()
+
+    add_calls = [c for c in calls if "add" in c]
+    pin_deps_call = next(c for c in add_calls if "react@19.2.5" in c)
+    assert "isbot@5.1.39" in pin_deps_call
+    assert "-d" not in pin_deps_call
+    assert "--only-missing" not in pin_deps_call
+
+    pin_dev_deps_call = next(c for c in add_calls if "vite@8.0.9" in c)
+    assert "-d" in pin_dev_deps_call
+    assert "--only-missing" not in pin_dev_deps_call
+
+
+def test_install_frontend_packages_persists_package_json_to_root(
+    install_packages_env: InstallPackagesEnv,
+):
+    env = install_packages_env
+
+    def run_package_manager(args, **kwargs):
+        env.web_package_json.write_text('{"name": "reflex", "dependencies": {}}')
+
+    env.patch_pm(["bun"], run_package_manager)
+    env.install()
+
+    assert env.root_package_json.read_text() == (
+        '{"name": "reflex", "dependencies": {}}'
+    )
+
+
+def test_compile_package_json_recovers_dependencies(tmp_path, monkeypatch):
+    """_compile_package_json should restore deps/devDeps from reflex.lock."""
+    root_pkg = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR / constants.PackageJson.PATH
+    root_pkg.parent.mkdir(parents=True, exist_ok=True)
+    root_pkg.write_text(
+        '{"name": "reflex", "type": "module", "scripts": {"old": "x"}, '
+        '"dependencies": {"react": "19.2.5"}, '
+        '"devDependencies": {"vite": "8.0.9"}, '
+        '"overrides": {"old-override": "1.0"}}'
+    )
+    monkeypatch.setattr(
+        constants.PackageJson,
+        "OVERRIDES",
+        {"cookie": "1.1.1"},
+    )
+
+    with chdir(tmp_path):
+        rendered = json.loads(frontend_skeleton._compile_package_json())
+
+    assert rendered["dependencies"] == {"react": "19.2.5"}
+    assert rendered["devDependencies"] == {"vite": "8.0.9"}
+    assert rendered["overrides"] == {"cookie": "1.1.1"}
+    assert rendered["scripts"] == {
+        "dev": constants.PackageJson.Commands.DEV,
+        "export": constants.PackageJson.Commands.EXPORT,
+    }
+
+
+def test_compile_package_json_no_persisted_starts_empty(tmp_path, monkeypatch):
+    """Without a persisted file, deps/devDeps are empty."""
+    monkeypatch.setattr(
+        constants.PackageJson,
+        "OVERRIDES",
+        {"cookie": "1.1.1"},
+    )
+
+    with chdir(tmp_path):
+        rendered = json.loads(frontend_skeleton._compile_package_json())
+
+    assert rendered["dependencies"] == {}
+    assert rendered["devDependencies"] == {}
+    assert rendered["overrides"] == {"cookie": "1.1.1"}
 
 
 def test_cached_procedure():

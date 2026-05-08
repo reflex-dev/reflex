@@ -385,11 +385,80 @@ def _sync_root_bun_lock_for_frontend_install():
             path_ops.rm(cache_file)
 
 
+def _has_version_specifier(package_spec: str) -> bool:
+    """Check whether a package spec already includes a version specifier.
+
+    Treats a package as pinned if it contains an ``@`` after the first
+    character (so scoped packages like ``@scope/pkg`` are unpinned, while
+    ``@scope/pkg@1.2.3`` is pinned).
+
+    Args:
+        package_spec: The package spec to inspect.
+
+    Returns:
+        Whether the spec carries a version specifier.
+    """
+    return "@" in package_spec[1:]
+
+
+def _split_by_version_specifier(
+    packages: set[str],
+) -> tuple[set[str], set[str]]:
+    """Partition packages into pinned and unpinned sets.
+
+    Args:
+        packages: Package specs to partition.
+
+    Returns:
+        A tuple ``(pinned, unpinned)`` of disjoint package sets.
+    """
+    pinned: set[str] = set()
+    unpinned: set[str] = set()
+    for package in packages:
+        if _has_version_specifier(package):
+            pinned.add(package)
+        else:
+            unpinned.add(package)
+    return pinned, unpinned
+
+
+def _pinned_args_from_constants(deps: dict[str, str]) -> set[str]:
+    """Render constants-style dep dicts as ``name@version`` add args.
+
+    Args:
+        deps: Mapping of package name to version string.
+
+    Returns:
+        Set of ``name@version`` specs.
+    """
+    return {f"{name}@{version}" for name, version in deps.items()}
+
+
+def _frontend_packages_cache_payload(
+    packages: set[str],
+    config: Config,
+    install_package_managers: Sequence[str],
+) -> str:
+    """Cache fingerprint for frontend package installs.
+
+    Args:
+        packages: Custom packages requested by the caller.
+        config: The active Reflex config.
+        install_package_managers: The package manager paths in priority order.
+
+    Returns:
+        Stable fingerprint string for the cached procedure.
+    """
+    return (
+        f"{sorted(packages)!r},{config.json()},{list(install_package_managers)!r},"
+        f"{sorted(constants.PackageJson.DEPENDENCIES.items())!r},"
+        f"{sorted(constants.PackageJson.DEV_DEPENDENCIES.items())!r}"
+    )
+
+
 @cached_procedure(
     cache_file_path=_frontend_packages_cache_path,
-    payload_fn=lambda packages, config, install_package_managers: (
-        f"{sorted(packages)!r},{config.json()},{list(install_package_managers)!r}"
-    ),
+    payload_fn=_frontend_packages_cache_payload,
 )
 def _install_frontend_packages(
     packages: set[str],
@@ -398,13 +467,26 @@ def _install_frontend_packages(
 ):
     """Installs the base and custom frontend packages.
 
+    Resolution rules:
+      * Framework deps in :attr:`constants.PackageJson.DEPENDENCIES` and
+        :attr:`constants.PackageJson.DEV_DEPENDENCIES` always carry version
+        specifiers and are added with strict pins so they overwrite any
+        existing entry in package.json.
+      * Plugin/custom packages with explicit version specifiers are also
+        added with strict pins.
+      * Plugin/custom packages without version specifiers are added with
+        ``--only-missing`` so previously resolved pins in package.json are
+        preserved across runs.
+
     Args:
-        packages: A list of package names to be installed.
-        config: The config object.
-        install_package_managers: The package managers available for install.
+        packages: Custom packages requested by the caller (from
+            ``Config.frontend_packages`` and inferred component imports).
+        config: The active Reflex config.
+        install_package_managers: The package manager paths in priority
+            order (primary plus fallbacks).
 
     Example:
-        >>> install_frontend_packages(["react", "react-dom"], get_config())
+        >>> install_frontend_packages({"react", "react-dom"}, get_config())
     """
     env = (
         {
@@ -426,32 +508,80 @@ def _install_frontend_packages(
         env=env,
     )
 
+    # Install whatever was recovered into package.json from reflex.lock so
+    # the lockfile is honored before any further mutation.
     run_package_manager(
         [primary_package_manager, "install", "--legacy-peer-deps"],
         show_status_message="Installing base frontend packages",
     )
 
-    development_deps: set[str] = set()
-    for plugin in config.plugins:
-        development_deps.update(plugin.get_frontend_development_dependencies())
-        packages.update(plugin.get_frontend_dependencies())
+    framework_deps = _pinned_args_from_constants(constants.PackageJson.DEPENDENCIES)
+    if framework_deps:
+        run_package_manager(
+            [primary_package_manager, "add", "--legacy-peer-deps", *framework_deps],
+            show_status_message="Pinning framework frontend dependencies",
+        )
 
-    if development_deps:
+    framework_dev_deps = _pinned_args_from_constants(
+        constants.PackageJson.DEV_DEPENDENCIES
+    )
+    if framework_dev_deps:
         run_package_manager(
             [
                 primary_package_manager,
                 "add",
                 "--legacy-peer-deps",
                 "-d",
-                *development_deps,
+                *framework_dev_deps,
+            ],
+            show_status_message="Pinning framework frontend dev dependencies",
+        )
+
+    development_deps: set[str] = set()
+    for plugin in config.plugins:
+        development_deps.update(plugin.get_frontend_development_dependencies())
+        packages.update(plugin.get_frontend_dependencies())
+
+    pinned_dev_deps, unpinned_dev_deps = _split_by_version_specifier(development_deps)
+    if pinned_dev_deps:
+        run_package_manager(
+            [
+                primary_package_manager,
+                "add",
+                "--legacy-peer-deps",
+                "-d",
+                *pinned_dev_deps,
+            ],
+            show_status_message="Pinning frontend development dependencies",
+        )
+    if unpinned_dev_deps:
+        run_package_manager(
+            [
+                primary_package_manager,
+                "add",
+                "--legacy-peer-deps",
+                "--only-missing",
+                "-d",
+                *unpinned_dev_deps,
             ],
             show_status_message="Installing frontend development dependencies",
         )
 
-    # Install custom packages defined in frontend_packages
-    if packages:
+    pinned_packages, unpinned_packages = _split_by_version_specifier(packages)
+    if pinned_packages:
         run_package_manager(
-            [primary_package_manager, "add", "--legacy-peer-deps", *packages],
+            [primary_package_manager, "add", "--legacy-peer-deps", *pinned_packages],
+            show_status_message="Pinning frontend packages from config and components",
+        )
+    if unpinned_packages:
+        run_package_manager(
+            [
+                primary_package_manager,
+                "add",
+                "--legacy-peer-deps",
+                "--only-missing",
+                *unpinned_packages,
+            ],
             show_status_message="Installing frontend packages from config and components",
         )
 
@@ -464,3 +594,4 @@ def install_frontend_packages(packages: set[str], config: Config):
     _sync_root_bun_lock_for_frontend_install()
     _install_frontend_packages(set(packages), config, install_package_managers)
     frontend_skeleton.sync_web_bun_lock_to_root()
+    frontend_skeleton.sync_web_package_json_to_root()
