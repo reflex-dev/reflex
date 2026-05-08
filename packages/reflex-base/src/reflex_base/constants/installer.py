@@ -30,6 +30,9 @@ class Bun(SimpleNamespace):
     # Path of the bunfig file
     CONFIG_PATH = "bunfig.toml"
 
+    # Path of the bun lockfile.
+    LOCKFILE_PATH = "bun.lock"
+
     @classproperty
     @classmethod
     def ROOT_PATH(cls):
