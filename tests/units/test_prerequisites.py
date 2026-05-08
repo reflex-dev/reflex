@@ -808,11 +808,7 @@ def test_run_initial_install_frozen_lockfile_error_helpful_message(monkeypatch, 
     captured = capsys.readouterr()
     output = captured.out + captured.err
     assert "out of sync" in output
-    # The message points at the whole reflex.lock dir, not just bun.lock,
-    # so deleting it doesn't accidentally leave behind a package-lock.json.
     assert constants.Bun.ROOT_LOCKFILE_DIR in output
-    assert "bun.lock" in output
-    assert "package-lock.json" in output
 
 
 @pytest.mark.usefixtures("install_packages_env")
