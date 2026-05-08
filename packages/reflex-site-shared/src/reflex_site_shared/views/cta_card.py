@@ -46,7 +46,7 @@ def cta_card():
             class_name="flex flex-col gap-6 justify-center max-w-[24.5rem]",
         ),
         rx.image(
-            f"{REFLEX_ASSETS_CDN}common/{rx.color_mode_cond('light', 'dark')}/cta.svg",
+            f"{REFLEX_ASSETS_CDN}common/{rx.color_mode_cond('light', 'dark')}/cta_gray_lines.svg",
             class_name="w-auto h-full pointer-events-none",
             loading="lazy",
             alt="CTA Card",
