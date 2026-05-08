@@ -124,7 +124,7 @@ def hosting_banner() -> rx.Component:
                                 variant="ghost-highlight",
                                 size="xs",
                                 aria_label="Learn more",
-                                class_name="max-lg:hidden",
+                                class_name="max-lg:hidden text-white hover:text-primary-10",
                             ),
                             class_name="flex flex-row items-center md:gap-4 gap-2",
                         ),
