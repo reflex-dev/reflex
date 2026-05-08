@@ -1,5 +1,6 @@
 """Define event classes to connect the frontend and backend."""
 
+import copy
 import dataclasses
 import inspect
 import sys
@@ -132,7 +133,17 @@ class Event:
                 msg = f"Unexpected event type, {type(e)}."
                 raise ValueError(msg)
             name = format.format_event_handler(e.handler)
-            payload = {k._js_expr: v._decode() for k, v in e.args}
+            # Deepcopy mutable values to detach them from any state-bound
+            # proxies (e.g. ImmutableMutableProxy from a background task's
+            # StateProxy).
+            payload = {
+                k._js_expr: (
+                    decoded
+                    if isinstance(decoded := v._decode(), _IMMUTABLE_PAYLOAD_TYPES)
+                    else copy.deepcopy(decoded)
+                )
+                for k, v in e.args
+            }
 
             # Create an event and append it to the list.
             out.append(
@@ -149,6 +160,18 @@ class Event:
 _EVENT_FIELDS: set[str] = {f.name for f in dataclasses.fields(Event)}
 _EMPTY_EVENTS = LiteralVar.create([])
 _EMPTY_EVENT_ACTIONS = LiteralVar.create({})
+
+# Values of these types are safe to pass into an Event payload by reference:
+# they are immutable and cannot be wrapped by a state-bound MutableProxy.
+_IMMUTABLE_PAYLOAD_TYPES = (
+    str,
+    int,
+    float,
+    bool,
+    bytes,
+    frozenset,
+    type(None),
+)
 
 BACKGROUND_TASK_MARKER = "_reflex_background_task"
 EVENT_ACTIONS_MARKER = "_rx_event_actions"

@@ -30,6 +30,9 @@ class Bun(SimpleNamespace):
     # Path of the bunfig file
     CONFIG_PATH = "bunfig.toml"
 
+    # Path of the bun lockfile.
+    LOCKFILE_PATH = "bun.lock"
+
     @classproperty
     @classmethod
     def ROOT_PATH(cls):
@@ -122,7 +125,6 @@ class PackageJson(SimpleNamespace):
             A dictionary of dependencies with their versions.
         """
         return {
-            "json5": "2.2.3",
             "react-router": cls._react_router_version,
             "react-router-dom": cls._react_router_version,
             "@react-router/node": cls._react_router_version,

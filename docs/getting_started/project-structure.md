@@ -44,6 +44,8 @@ This is where the compiled Javascript files will be stored. You will never need 
 
 Each Reflex page will compile to a corresponding `.js` file in the `.web/pages` directory.
 
+If Reflex installs frontend dependencies with Bun, the canonical `bun.lock` lives in your project root and should be committed to version control. Reflex mirrors it into `.web` when it needs to run the package manager.
+
 ## Assets
 
 The `assets` directory is where you can store any static assets you want to be publicly available. This includes images, fonts, and other files.

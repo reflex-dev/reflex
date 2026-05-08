@@ -102,7 +102,7 @@ The index groups docs by section and links to agent-friendly Markdown assets.
 Use MCP when your editor or agent can call tools for structured documentation and component lookup:
 
 ```text
-https://mcp.reflex.dev/mcp
+https://build.reflex.dev/mcp
 ```
 
 See the [MCP overview](/docs/ai/integrations/mcp-overview/) and [MCP installation](/docs/ai/integrations/mcp-installation/) guides for details.

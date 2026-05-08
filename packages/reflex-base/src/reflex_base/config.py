@@ -348,6 +348,9 @@ class Config(BaseConfig):
         for key, env_value in env_kwargs.items():
             setattr(self, key, env_value)
 
+        # Normalize plugins: auto-instantiate Plugin subclasses, reject bad values.
+        self._normalize_plugins()
+
         # Normalize disable_plugins: convert strings and Plugin subclasses to instances.
         self._normalize_disable_plugins()
 
@@ -381,6 +384,39 @@ class Config(BaseConfig):
         ):
             msg = f"{self._prefixes[0]}REDIS_URL is required when using the redis state manager."
             raise ConfigError(msg)
+
+    def _normalize_plugins(self):
+        """Normalize ``plugins`` entries to Plugin instances.
+
+        Auto-instantiates Plugin subclasses passed without parentheses (e.g.
+        ``plugins=[SitemapPlugin]``) so they behave the same as
+        ``plugins=[SitemapPlugin()]``. Any entry that is neither a Plugin
+        subclass nor a Plugin instance raises ``ConfigError`` with a message
+        that names the offending value, instead of failing later in the
+        compiler with a confusing ``TypeError`` about a missing ``self``.
+        """
+        normalized: list[Plugin] = []
+        for entry in self.plugins:
+            if isinstance(entry, Plugin):
+                normalized.append(entry)
+            elif isinstance(entry, type) and issubclass(entry, Plugin):
+                try:
+                    normalized.append(entry())
+                except TypeError as exc:
+                    msg = (
+                        f"reflex.Config.plugins entry {entry.__name__!r} could not be "
+                        f"instantiated and may require arguments; pass an instance "
+                        f"instead, e.g. plugins=[{entry.__name__}(...)]."
+                    )
+                    raise ConfigError(msg) from exc
+            else:
+                msg = (
+                    f"reflex.Config.plugins must contain Plugin instances, but got "
+                    f"{entry!r} of type {type(entry).__name__}. "
+                    f"Pass an instance, e.g. plugins=[SitemapPlugin()]."
+                )
+                raise ConfigError(msg)
+        self.plugins = normalized
 
     def _normalize_disable_plugins(self):
         """Normalize disable_plugins list entries to Plugin subclasses.
