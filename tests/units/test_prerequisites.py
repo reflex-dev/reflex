@@ -484,10 +484,9 @@ def test_compile_package_json_recovers_dependencies(tmp_path, monkeypatch):
     assert rendered["dependencies"] == {"react": "19.2.5"}
     assert rendered["devDependencies"] == {"vite": "8.0.9"}
     assert rendered["overrides"] == {"cookie": "1.1.1"}
-    assert rendered["scripts"] == {
-        "dev": constants.PackageJson.Commands.DEV,
-        "export": constants.PackageJson.Commands.EXPORT,
-    }
+    assert rendered["scripts"]["dev"] == constants.PackageJson.Commands.DEV
+    assert rendered["scripts"]["export"] == constants.PackageJson.Commands.EXPORT
+    assert rendered["scripts"]["old"] == "x"
 
 
 def test_compile_package_json_no_persisted_starts_empty(tmp_path, monkeypatch):
@@ -504,6 +503,106 @@ def test_compile_package_json_no_persisted_starts_empty(tmp_path, monkeypatch):
     assert rendered["dependencies"] == {}
     assert rendered["devDependencies"] == {}
     assert rendered["overrides"] == {"cookie": "1.1.1"}
+
+
+def test_compile_package_json_preserves_user_scripts(tmp_path):
+    """User-added scripts are preserved; only dev/export are refreshed."""
+    root_pkg = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR / constants.PackageJson.PATH
+    root_pkg.parent.mkdir(parents=True, exist_ok=True)
+    root_pkg.write_text(
+        json.dumps({
+            "scripts": {
+                "dev": "stale-dev",
+                "export": "stale-export",
+                "lint": "eslint .",
+                "custom": "echo hi",
+            },
+            "dependencies": {},
+            "devDependencies": {},
+        })
+    )
+
+    with chdir(tmp_path):
+        rendered = json.loads(frontend_skeleton._compile_package_json())
+
+    assert rendered["scripts"]["lint"] == "eslint ."
+    assert rendered["scripts"]["custom"] == "echo hi"
+    assert rendered["scripts"]["dev"] == constants.PackageJson.Commands.DEV
+    assert rendered["scripts"]["export"] == constants.PackageJson.Commands.EXPORT
+
+
+def test_install_frontend_packages_removes_stale_dependencies(
+    install_packages_env: InstallPackagesEnv,
+):
+    env = install_packages_env
+    env.web_package_json.write_text(
+        json.dumps({
+            "dependencies": {
+                "still-needed": "1.0.0",
+                "stale-dep": "2.0.0",
+            },
+            "devDependencies": {
+                "stale-dev-dep": "3.0.0",
+            },
+        })
+    )
+    calls = _record_calls(env)
+
+    env.install({"still-needed"})
+
+    remove_calls = [c for c in calls if "remove" in c]
+    assert len(remove_calls) == 1
+    remove_call = remove_calls[0]
+    assert "stale-dep" in remove_call
+    assert "stale-dev-dep" in remove_call
+    assert "still-needed" not in remove_call
+
+
+def test_install_frontend_packages_no_remove_when_all_needed(
+    install_packages_env: InstallPackagesEnv,
+):
+    env = install_packages_env
+    env.web_package_json.write_text(
+        json.dumps({"dependencies": {"keep-me": "1.0.0"}, "devDependencies": {}})
+    )
+    calls = _record_calls(env)
+
+    env.install({"keep-me"})
+
+    remove_calls = [c for c in calls if "remove" in c]
+    assert remove_calls == []
+
+
+def test_install_frontend_packages_keeps_framework_deps_during_remove(
+    install_packages_env: InstallPackagesEnv,
+    monkeypatch,
+):
+    env = install_packages_env
+    monkeypatch.setattr(constants.PackageJson, "DEPENDENCIES", {"react": "19.2.5"})
+    monkeypatch.setattr(constants.PackageJson, "DEV_DEPENDENCIES", {"vite": "8.0.9"})
+    env.web_package_json.write_text(
+        json.dumps({
+            "dependencies": {"react": "19.2.5", "stale-dep": "1.0.0"},
+            "devDependencies": {"vite": "8.0.9"},
+        })
+    )
+    calls = _record_calls(env)
+
+    env.install()
+
+    remove_calls = [c for c in calls if "remove" in c]
+    assert len(remove_calls) == 1
+    remove_call = remove_calls[0]
+    assert "stale-dep" in remove_call
+    assert "react" not in remove_call
+    assert "vite" not in remove_call
+
+
+def test_extract_package_name():
+    assert js_runtimes._extract_package_name("react") == "react"
+    assert js_runtimes._extract_package_name("react@1.2.3") == "react"
+    assert js_runtimes._extract_package_name("@scope/pkg") == "@scope/pkg"
+    assert js_runtimes._extract_package_name("@scope/pkg@1.2.3") == "@scope/pkg"
 
 
 def test_cached_procedure():

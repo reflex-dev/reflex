@@ -1,9 +1,10 @@
 """This module provides utilities for managing JavaScript runtimes like Node.js and Bun."""
 
 import functools
+import json
 import os
 import tempfile
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from pathlib import Path
 
 from packaging import version
@@ -385,6 +386,53 @@ def _sync_root_bun_lock_for_frontend_install():
             path_ops.rm(cache_file)
 
 
+def _extract_package_name(package_spec: str) -> str:
+    """Strip any version suffix from a ``bun add``-style spec.
+
+    Handles plain (``react``), pinned (``react@1.2.3``), scoped
+    (``@scope/pkg``), and pinned-scoped (``@scope/pkg@1.2.3``) forms.
+
+    Args:
+        package_spec: The spec to parse.
+
+    Returns:
+        The bare package name.
+    """
+    if package_spec.startswith("@"):
+        idx = package_spec.find("@", 1)
+        return package_spec if idx == -1 else package_spec[:idx]
+    return package_spec.split("@", 1)[0]
+
+
+def _stale_packages_in_web_package_json(needed_names: Iterable[str]) -> set[str]:
+    """Return packages currently in .web/package.json that are no longer needed.
+
+    Reads ``.web/package.json``'s ``dependencies`` and ``devDependencies``
+    and returns any name that is not in ``needed_names``. ``overrides`` are
+    excluded because they reference transitive deps.
+
+    Args:
+        needed_names: Bare package names that should remain in package.json.
+
+    Returns:
+        The set of bare package names that should be removed.
+    """
+    web_pkg_json_path = frontend_skeleton.get_web_package_json_path()
+    if not web_pkg_json_path.exists():
+        return set()
+    try:
+        data = json.loads(web_pkg_json_path.read_text())
+    except (json.JSONDecodeError, OSError) as e:
+        console.warn(
+            f"Failed to read {web_pkg_json_path}: {e}; skipping stale package check."
+        )
+        return set()
+    current = set(data.get("dependencies") or {}) | set(
+        data.get("devDependencies") or {}
+    )
+    return current - set(needed_names)
+
+
 def _has_version_specifier(package_spec: str) -> bool:
     """Check whether a package spec already includes a version specifier.
 
@@ -508,6 +556,34 @@ def _install_frontend_packages(
         env=env,
     )
 
+    # Resolve plugin-contributed deps up front so we know the full needed
+    # set before deciding which entries in package.json are stale.
+    development_deps: set[str] = set()
+    for plugin in config.plugins:
+        development_deps.update(plugin.get_frontend_development_dependencies())
+        packages.update(plugin.get_frontend_dependencies())
+
+    needed_names = (
+        set(constants.PackageJson.DEPENDENCIES.keys())
+        | set(constants.PackageJson.DEV_DEPENDENCIES.keys())
+        | {_extract_package_name(p) for p in packages}
+        | {_extract_package_name(p) for p in development_deps}
+    )
+
+    # Drop any deps lingering in package.json that no component, plugin, or
+    # framework constant calls for anymore.
+    stale_packages = _stale_packages_in_web_package_json(needed_names)
+    if stale_packages:
+        run_package_manager(
+            [
+                primary_package_manager,
+                "remove",
+                "--legacy-peer-deps",
+                *sorted(stale_packages),
+            ],
+            show_status_message="Removing unused frontend packages",
+        )
+
     # Install whatever was recovered into package.json from reflex.lock so
     # the lockfile is honored before any further mutation.
     run_package_manager(
@@ -536,11 +612,6 @@ def _install_frontend_packages(
             ],
             show_status_message="Pinning framework frontend dev dependencies",
         )
-
-    development_deps: set[str] = set()
-    for plugin in config.plugins:
-        development_deps.update(plugin.get_frontend_development_dependencies())
-        packages.update(plugin.get_frontend_dependencies())
 
     pinned_dev_deps, unpinned_dev_deps = _split_by_version_specifier(development_deps)
     if pinned_dev_deps:

@@ -338,20 +338,25 @@ def _compile_package_json():
 
     Recovers ``dependencies`` and ``devDependencies`` from the persisted
     ``reflex.lock/package.json`` (when present) so resolved version pins
-    survive a fresh ``reflex init``. ``scripts`` and ``overrides`` are always
-    refreshed from constants. The framework-managed entries in
-    ``constants.PackageJson.DEPENDENCIES`` / ``DEV_DEPENDENCIES`` are added
-    later at install time via ``bun add`` so they pick up strict pins.
+    survive a fresh ``reflex init``. User-added ``scripts`` are preserved;
+    only the framework-owned ``dev`` and ``export`` entries are refreshed
+    from constants. ``overrides`` are always refreshed. The framework-managed
+    entries in ``constants.PackageJson.DEPENDENCIES`` / ``DEV_DEPENDENCIES``
+    are added later at install time via ``bun add`` so they pick up strict
+    pins.
 
     Returns:
         Rendered package.json content as string.
     """
     persisted = _read_persisted_package_json()
+    persisted_scripts = persisted.get("scripts") or {}
+    scripts = {
+        **persisted_scripts,
+        "dev": constants.PackageJson.Commands.DEV,
+        "export": constants.PackageJson.Commands.EXPORT,
+    }
     return templates.package_json_template(
-        scripts={
-            "dev": constants.PackageJson.Commands.DEV,
-            "export": constants.PackageJson.Commands.EXPORT,
-        },
+        scripts=scripts,
         dependencies=persisted.get("dependencies") or {},
         dev_dependencies=persisted.get("devDependencies") or {},
         overrides=constants.PackageJson.OVERRIDES,
