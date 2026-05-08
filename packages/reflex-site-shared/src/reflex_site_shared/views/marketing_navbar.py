@@ -608,7 +608,7 @@ def products_menu_footer() -> rx.Component:
                 ),
                 "View All Docs",
                 ui.icon("ArrowUpRight03Icon", class_name="size-3 shrink-0 -ml-1.75"),
-                href="/docs/ai/overview/best-practices/",
+                href="/docs/",
                 target="_blank",
                 class_name="flex flex-row items-center gap-2 text-sm font-medium text-secondary-12 hover:text-primary-10 dark:hover:text-primary-9 group",
             ),
