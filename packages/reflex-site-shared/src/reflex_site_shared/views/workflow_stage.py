@@ -37,10 +37,6 @@ def _arrow_row_svg(count: int, width: int, *, inline_style: bool = False) -> str
     )
 
 
-def _arrow_row_svg_html(count: int, width: int) -> str:
-    return _arrow_row_svg(count, width, inline_style=True)
-
-
 def _arrow_mask_data_url(count: int, width: int) -> str:
     # Percent-encode the SVG body so Firefox/Safari accept the data URL
     # in mask-image; raw `<`, `>`, and spaces are not reliably parsed.
@@ -63,7 +59,7 @@ def workflow_stage_image(
 
     return rx.el.div(
         rx.html(
-            _arrow_row_svg_html(count, width),
+            _arrow_row_svg(count, width, inline_style=True),
             class_name="block h-full w-auto text-secondary-7",
         ),
         rx.el.div(
