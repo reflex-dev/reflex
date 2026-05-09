@@ -2,11 +2,12 @@
 name = "reflex-components-recharts"
 dynamic = ["version"]
 description = "Reflex recharts components."
+license.text = "Apache-2.0"
 readme = "README.md"
 authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 requires-python = ">=3.10"
-dependencies = []
+dependencies = ["reflex-base >= 0.9.0"]
 
 [tool.hatch.version]
 source = "uv-dynamic-versioning"

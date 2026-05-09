@@ -151,7 +151,7 @@ def upload_component():
 Below is an example of how to allow multiple file uploads (in this case images).
 
 ```python demo box
-rx.image(src="https://web.reflex-assets.dev/other/upload.gif")
+rx.image(src="https://web.reflex-assets.dev/other/upload.webp")
 ```
 
 ```python
@@ -262,7 +262,7 @@ def index():
                     "Select File",
                     color=color,
                     bg="white",
-                    border=f"1px solid \{color}",
+                    border=f"1px solid {color}",
                 ),
                 rx.text("Drag and drop files here or click to select files"),
             ),

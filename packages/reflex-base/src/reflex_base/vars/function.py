@@ -385,11 +385,10 @@ class DestructuredArg:
         Returns:
             The destructured argument in JavaScript.
         """
-        return format.wrap(
-            ", ".join(self.fields) + (f", ...{self.rest}" if self.rest else ""),
-            "{",
-            "}",
-        )
+        inner = ", ".join(self.fields)
+        if self.rest:
+            inner = f"{inner}, ...{self.rest}" if inner else f"...{self.rest}"
+        return format.wrap(inner, "{", "}")
 
 
 @dataclasses.dataclass(
@@ -415,9 +414,12 @@ def format_args_function_operation(
     Returns:
         The formatted args function operation.
     """
-    arg_names_str = ", ".join([
+    arg_parts = [
         arg if isinstance(arg, str) else arg.to_javascript() for arg in args.args
-    ]) + (f", ...{args.rest}" if args.rest else "")
+    ]
+    if args.rest:
+        arg_parts.append(f"...{args.rest}")
+    arg_names_str = ", ".join(arg_parts)
 
     return_expr_str = str(LiteralVar.create(return_expr))
 

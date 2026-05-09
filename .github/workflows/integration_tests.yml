@@ -183,20 +183,28 @@ jobs:
 
       - name: Create app directory
         run: mkdir rx-shout-from-template
-      - name: Init reflex-web from template
+      - name: Init rx-shout from template
         run: uv run reflex init --template https://github.com/masenf/rx_shout
         working-directory: ./rx-shout-from-template
-      - name: ignore reflex pin in requirements
-        run: sed -i -e '/reflex==/d' requirements.txt
+      - name: Override reflex sources to local checkout
+        # Force reflex install editable from this repo instead of PyPI.
         working-directory: ./rx-shout-from-template
-      - name: Install additional dependencies
-        run: uv pip install -r requirements.txt
+        run: |
+          cat >> pyproject.toml <<'EOF'
+
+          [tool.uv.sources]
+          reflex = { path = "..", editable = true }
+          EOF
+      - name: Install rx-shout dependencies
+        # Re-locks because pyproject.toml changed; --prerelease=allow matches
+        # the template's own lock options (rx_shout depends on reflex pre-releases).
         working-directory: ./rx-shout-from-template
-      - name: Run Website and Check for errors
+        run: uv sync --prerelease=allow
+      - name: Run App and Check for errors
         run: |
           # Check that npm is home
           npm -v
-          uv run bash scripts/integration.sh ./rx-shout-from-template prod
+          uv run --project ./rx-shout-from-template --no-sync bash scripts/integration.sh ./rx-shout-from-template prod
 
   reflex-docs-macos:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'

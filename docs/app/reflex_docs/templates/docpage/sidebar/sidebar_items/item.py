@@ -1,6 +1,6 @@
 import re
 
-from reflex_ui_shared.route import Route
+from reflex_site_shared.route import Route
 
 from ..state import SideBarItem
 

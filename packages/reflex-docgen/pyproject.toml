@@ -2,6 +2,7 @@
 name = "reflex-docgen"
 dynamic = ["version"]
 description = "Generate documentation for Reflex components."
+license.text = "Apache-2.0"
 readme = "README.md"
 authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
@@ -10,7 +11,7 @@ dependencies = [
     "griffelib>=2.0.1",
     "mistletoe>=1.4.0",
     "pyyaml>=6.0",
-    "reflex",
+    "reflex >= 0.9.0",
     "typing-extensions",
     "typing-inspection>=0.4.2",
 ]

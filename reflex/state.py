@@ -304,6 +304,38 @@ def _override_base_method(fn: Callable[PARAMS, RETURN]) -> Callable[PARAMS, RETU
     return fn
 
 
+def _is_user_descriptor(value: Any) -> bool:
+    """Whether a class attribute is a user-defined descriptor.
+
+    Excludes framework-recognized callables and var types so user-defined
+    descriptors (with __get__/__set__) are surfaced for computed-var dependency
+    tracking without being shadowed by backend-var storage.
+
+    Args:
+        value: The class attribute value to check.
+
+    Returns:
+        True if the value is a custom descriptor.
+    """
+    if not hasattr(type(value), "__get__"):
+        return False
+    if isinstance(
+        value,
+        (
+            FunctionType,
+            classmethod,
+            staticmethod,
+            property,
+            functools.cached_property,
+            EventHandler,
+            Var,
+            Field,
+        ),
+    ):
+        return False
+    return not is_computed_var(value)
+
+
 all_base_state_classes: dict[str, None] = {}
 
 CLASS_VAR_NAMES = frozenset({
@@ -432,8 +464,13 @@ class BaseState(EvenMoreBasicBaseState):
                     _reflex_internal_init=True,
                 )
 
-        # Create a fresh copy of the backend variables for this instance
-        self._backend_vars = copy.deepcopy(self.backend_vars)
+        # Create a fresh copy of only the non-inherited backend variables for this instance.
+        # Inherited backend vars are stored in the parent state, not in this instance.
+        self._backend_vars = {
+            k: copy.deepcopy(v)
+            for k, v in self.backend_vars.items()
+            if k not in self.inherited_backend_vars
+        }
 
     def __repr__(self) -> str:
         """Get the string representation of the state.
@@ -524,6 +561,28 @@ class BaseState(EvenMoreBasicBaseState):
                 )
                 raise StateValueError(msg)
 
+        # A descriptor defined directly on this class overrides any same-named
+        # entry inherited from a parent state. Drop those names from the
+        # inherited maps so backend var assembly, dependency tracking, and the
+        # __setattr__ routing all resolve to the descriptor on this class.
+        hints = cls._get_type_hints()
+        own_descriptor_names = {
+            name
+            for name, value in cls.__dict__.items()
+            if name in hints and _is_user_descriptor(value)
+        }
+        if own_descriptor_names:
+            cls.inherited_vars = {
+                k: v
+                for k, v in cls.inherited_vars.items()
+                if k not in own_descriptor_names
+            }
+            cls.inherited_backend_vars = {
+                k: v
+                for k, v in cls.inherited_backend_vars.items()
+                if k not in own_descriptor_names
+            }
+
         # Get computed vars.
         computed_vars = cls._get_computed_vars()
         cls._check_overridden_computed_vars()
@@ -554,11 +613,40 @@ class BaseState(EvenMoreBasicBaseState):
             for name, f in cls.get_fields().items()
             if name not in cls.get_skip_vars() and f.is_var and not name.startswith("_")
         }
+        # Surface user-defined descriptors as vars so computed vars can declare
+        # dependencies on them. Descriptors on this class always win over
+        # inherited or mixin-provided entries with the same name; mixin entries
+        # are skipped if already recorded.
+        descriptor_vars: dict[str, Var] = {}
+        for source_cls in (*cls._mixins(), cls):
+            is_self = source_cls is cls
+            for dname, dvalue in source_cls.__dict__.items():
+                if (
+                    dname not in hints
+                    or dname in cls.base_vars
+                    or not _is_user_descriptor(dvalue)
+                ):
+                    continue
+                if not is_self and (
+                    dname in descriptor_vars
+                    or dname in cls.inherited_vars
+                    or dname in cls.inherited_backend_vars
+                ):
+                    continue
+                descriptor_vars[dname] = dispatch(
+                    field_name=format.format_state_name(cls.get_full_name())
+                    + "."
+                    + dname
+                    + FIELD_MARKER,
+                    var_data=VarData.from_state(cls, dname),
+                    result_var_type=hints[dname],
+                )
         cls.computed_vars = {
             name: v._replace(merge_var_data=VarData.from_state(cls))
             for name, v in computed_vars
         }
         cls.vars = {
+            **descriptor_vars,
             **cls.inherited_vars,
             **cls.base_vars,
             **cls.computed_vars,
@@ -670,6 +758,7 @@ class BaseState(EvenMoreBasicBaseState):
             not name.startswith("_")
             and isinstance(value, Callable)
             and not isinstance(value, EventHandler)
+            and not getattr(value, "__override_base_method__", False)
             and hasattr(value, "__code__")
         )
 
@@ -1460,9 +1549,10 @@ class BaseState(EvenMoreBasicBaseState):
                 default = copy.deepcopy(field.default)
             setattr(self, prop_name, default)
 
-        # Reset the backend vars.
+        # Reset the backend vars that are not inherited from parent states.
         for prop_name, value in self.backend_vars.items():
-            setattr(self, prop_name, copy.deepcopy(value))
+            if prop_name not in self.inherited_backend_vars:
+                setattr(self, prop_name, copy.deepcopy(value))
 
         # Recursively reset the substates.
         for substate in self.substates.values():
@@ -1663,13 +1753,19 @@ class BaseState(EvenMoreBasicBaseState):
             raise UnretrievableVarValueError(msg)
         # Fastish case: this var belongs to this state
         if var_data.state == self.get_full_name():
-            return getattr(self, var_data.field_name)
+            value = getattr(self, var_data.field_name)
+            if inspect.isawaitable(value):
+                return await value
+            return value
 
         # Slow case: this var belongs to another state
         other_state = await self.get_state(
             self._get_root_state().get_class_substate(var_data.state)
         )
-        return getattr(other_state, var_data.field_name)
+        value = getattr(other_state, var_data.field_name)
+        if inspect.isawaitable(value):
+            return await value
+        return value
 
     def _mark_dirty_computed_vars(self) -> None:
         """Mark ComputedVars that need to be recalculated based on dirty_vars."""
@@ -1791,6 +1887,7 @@ class BaseState(EvenMoreBasicBaseState):
         """Update the _was_touched flag based on dirty_vars."""
         if self.dirty_vars and not self._was_touched:
             for var in self.dirty_vars:
+                # Mark touched if a base var or owned backend var (not inherited) changed.
                 if var in self.base_vars or var in self._backend_vars:
                     self._was_touched = True
                     break
@@ -2146,7 +2243,6 @@ class State(BaseState):
         Returns:
             The instance of state_cls associated with this state's client_token.
         """
-        state_instance = await super()._get_state_from_redis(state_cls)
         if (
             self._reflex_internal_links
             and (
@@ -2155,15 +2251,12 @@ class State(BaseState):
                 )
             )
             is not None
-            and (
-                internal_patch_linked_state := getattr(
-                    state_instance, "_internal_patch_linked_state", None
-                )
-            )
-            is not None
         ):
-            return await internal_patch_linked_state(linked_token)
-        return state_instance
+            from reflex.istate.shared import SharedStateBaseInternal
+
+            shared_base = await self.get_state(SharedStateBaseInternal)
+            return await shared_base._resolve_linked_state(state_cls, linked_token)  # type: ignore[return-value]
+        return await super()._get_state_from_redis(state_cls)
 
     @event
     async def hydrate(self) -> None:

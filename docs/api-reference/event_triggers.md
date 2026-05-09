@@ -73,7 +73,7 @@ def protected_page():
     return rx.text("Protected content")
 ```
 
-For more details on page load events, see the [page load events documentation](/docs/events/page_load_events).
+For more details on page load events, see the [page load events documentation](/docs/events/page-load-events).
 
 # Event Reference
 
@@ -266,7 +266,7 @@ def unmount_example():
         rx.text(UnmountState.status),
         rx.link(
             rx.button("Navigate Away (Triggers Unmount)"),
-            href="/docs",
+            href="/",
         ),
         on_mount=UnmountState.initialize_resource,
         on_unmount=UnmountState.on_unmount,
