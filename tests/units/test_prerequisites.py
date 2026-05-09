@@ -49,13 +49,11 @@ def _patch_frontend_package_manager(
     # Forward the initial-install helper through the same stub so tests can
     # inspect the install args without mocking subprocess primitives.
     def _stub_initial_install(primary_pm, env):
+        args = [primary_pm, "install", "--legacy-peer-deps"]
+        if js_runtimes._is_bun_package_manager(primary_pm):
+            args.append("--frozen-lockfile")
         run_package_manager(
-            [
-                primary_pm,
-                "install",
-                "--legacy-peer-deps",
-                "--frozen-lockfile",
-            ],
+            args,
             show_status_message="Installing base frontend packages",
         )
 
@@ -391,9 +389,10 @@ def _record_calls(env: InstallPackagesEnv) -> list[list[str]]:
     return calls
 
 
-def test_install_frontend_packages_pinned_packages_omit_only_missing(
+def test_install_frontend_packages_pinned_packages_single_call(
     install_packages_env: InstallPackagesEnv,
 ):
+    """All-pinned packages produce a single add call without ``--only-missing``."""
     env = install_packages_env
     calls = _record_calls(env)
 
@@ -407,9 +406,10 @@ def test_install_frontend_packages_pinned_packages_omit_only_missing(
     assert "@scope/pkg@4.5.6" in pinned_call
 
 
-def test_install_frontend_packages_unpinned_packages_use_only_missing(
+def test_install_frontend_packages_unpinned_packages_single_call(
     install_packages_env: InstallPackagesEnv,
 ):
+    """Unpinned packages are added without ``--only-missing`` when not present."""
     env = install_packages_env
     calls = _record_calls(env)
 
@@ -418,34 +418,101 @@ def test_install_frontend_packages_unpinned_packages_use_only_missing(
     add_calls = [c for c in calls if "add" in c]
     assert len(add_calls) == 1
     unpinned_call = add_calls[0]
-    assert "--only-missing" in unpinned_call
+    assert "--only-missing" not in unpinned_call
     assert "some-pkg" in unpinned_call
     assert "@scope/pkg" in unpinned_call
 
 
-def test_install_frontend_packages_splits_pinned_and_unpinned(
+def test_install_frontend_packages_combines_pinned_and_unpinned(
     install_packages_env: InstallPackagesEnv,
 ):
+    """Pinned and unpinned packages are batched into one add call."""
     env = install_packages_env
     calls = _record_calls(env)
 
     env.install({"pinned@1.0.0", "unpinned"})
 
     add_calls = [c for c in calls if "add" in c]
-    assert len(add_calls) == 2
+    assert len(add_calls) == 1
+    add_call = add_calls[0]
+    assert "--only-missing" not in add_call
+    assert "pinned@1.0.0" in add_call
+    assert "unpinned" in add_call
 
-    pinned_call = next(c for c in add_calls if "--only-missing" not in c)
-    unpinned_call = next(c for c in add_calls if "--only-missing" in c)
-    assert "pinned@1.0.0" in pinned_call
-    assert "unpinned" in unpinned_call
-    assert "unpinned" not in pinned_call
-    assert "pinned@1.0.0" not in unpinned_call
+
+def test_install_frontend_packages_skips_unpinned_already_in_package_json(
+    install_packages_env: InstallPackagesEnv,
+):
+    """An unpinned package already in package.json is not re-added."""
+    env = install_packages_env
+    env.web_package_json.write_text(
+        json.dumps({"dependencies": {"already-installed": "2.3.4"}})
+    )
+    calls = _record_calls(env)
+
+    env.install({"already-installed", "fresh-pkg"})
+
+    add_calls = [c for c in calls if "add" in c]
+    assert len(add_calls) == 1
+    add_call = add_calls[0]
+    assert "fresh-pkg" in add_call
+    assert "already-installed" not in add_call
+
+
+def test_install_frontend_packages_skips_unpinned_dev_dep_already_in_package_json(
+    install_packages_env: InstallPackagesEnv,
+    monkeypatch,
+):
+    """An unpinned dev dep already in package.json is not re-added."""
+    env = install_packages_env
+    env.web_package_json.write_text(
+        json.dumps({
+            "devDependencies": {
+                "already-dev": "1.2.3",
+            }
+        })
+    )
+
+    class FakePlugin:
+        def get_frontend_dependencies(self):
+            return set()
+
+        def get_frontend_development_dependencies(self):
+            return {"already-dev", "fresh-dev"}
+
+    monkeypatch.setattr(env.config, "plugins", [FakePlugin()])
+    calls = _record_calls(env)
+
+    env.install()
+
+    dev_add_calls = [c for c in calls if "add" in c and "-d" in c]
+    assert len(dev_add_calls) == 1
+    dev_call = dev_add_calls[0]
+    assert "fresh-dev" in dev_call
+    assert "already-dev" not in dev_call
+
+
+def test_install_frontend_packages_unpinned_already_present_makes_no_add_call(
+    install_packages_env: InstallPackagesEnv,
+):
+    """If every requested unpinned package is already present, no add call runs."""
+    env = install_packages_env
+    env.web_package_json.write_text(
+        json.dumps({"dependencies": {"some-pkg": "1.0.0", "@scope/pkg": "2.0.0"}})
+    )
+    calls = _record_calls(env)
+
+    env.install({"some-pkg", "@scope/pkg"})
+
+    add_calls = [c for c in calls if "add" in c]
+    assert add_calls == []
 
 
 def test_install_frontend_packages_pins_framework_dependencies(
     install_packages_env: InstallPackagesEnv,
     monkeypatch,
 ):
+    """Framework dep constants are emitted as pinned ``name@version`` specs."""
     env = install_packages_env
     monkeypatch.setattr(
         constants.PackageJson, "DEPENDENCIES", {"react": "19.2.5", "isbot": "5.1.39"}
@@ -464,6 +531,57 @@ def test_install_frontend_packages_pins_framework_dependencies(
     pin_dev_deps_call = next(c for c in add_calls if "vite@8.0.9" in c)
     assert "-d" in pin_dev_deps_call
     assert "--only-missing" not in pin_dev_deps_call
+
+
+def _record_calls_with_pm(
+    env: InstallPackagesEnv, package_manager: str
+) -> list[list[str]]:
+    """Record package-manager invocations for an arbitrary primary PM.
+
+    Args:
+        env: The install_packages_env fixture instance.
+        package_manager: The primary package manager path to patch in.
+
+    Returns:
+        A list that is appended to (in-place) on each package manager call.
+    """
+    calls: list[list[str]] = []
+
+    def run_package_manager(args, **kwargs):
+        calls.append(list(args))
+
+    env.patch_pm([package_manager], run_package_manager)
+    return calls
+
+
+def test_install_frontend_packages_npm_skips_frozen_lockfile(
+    install_packages_env: InstallPackagesEnv,
+):
+    """``--frozen-lockfile`` is bun-only and must not be passed to npm."""
+    env = install_packages_env
+    env.root_lock.write_text("npm-lock")
+    calls = _record_calls_with_pm(env, "npm")
+
+    env.install({"some-pkg@1.0.0"})
+
+    install_calls = [c for c in calls if "install" in c]
+    assert install_calls, "expected an initial `npm install` call"
+    for call in install_calls:
+        assert "--frozen-lockfile" not in call
+
+
+def test_install_frontend_packages_bun_keeps_frozen_lockfile(
+    install_packages_env: InstallPackagesEnv,
+):
+    """Bun still receives ``--frozen-lockfile`` on the initial install."""
+    env = install_packages_env
+    env.root_lock.write_text("bun-lock")
+    calls = _record_calls_with_pm(env, "bun")
+
+    env.install({"some-pkg"})
+
+    install_calls = [c for c in calls if "install" in c]
+    assert any("--frozen-lockfile" in c for c in install_calls)
 
 
 def test_install_frontend_packages_persists_package_json_to_root(

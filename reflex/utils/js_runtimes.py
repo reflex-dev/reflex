@@ -4,7 +4,7 @@ import functools
 import json
 import os
 import tempfile
-from collections.abc import Iterable, Sequence
+from collections.abc import Sequence
 from pathlib import Path
 
 from packaging import version
@@ -414,18 +414,15 @@ def _extract_package_name(package_spec: str) -> str:
     return package_spec.split("@", 1)[0]
 
 
-def _stale_packages_in_web_package_json(needed_names: Iterable[str]) -> set[str]:
-    """Return packages currently in .web/package.json that are no longer needed.
+def _existing_web_package_names() -> set[str]:
+    """Return packages currently declared in .web/package.json.
 
-    Reads ``.web/package.json``'s ``dependencies`` and ``devDependencies``
-    and returns any name that is not in ``needed_names``. ``overrides`` are
-    excluded because they reference transitive deps.
-
-    Args:
-        needed_names: Bare package names that should remain in package.json.
+    Reads ``.web/package.json``'s ``dependencies`` and ``devDependencies``.
+    ``overrides`` are excluded because they reference transitive deps.
 
     Returns:
-        The set of bare package names that should be removed.
+        The set of bare package names already in package.json. Empty if the
+        file is missing or unreadable.
     """
     web_pkg_json_path = frontend_skeleton.get_web_package_json_path()
     if not web_pkg_json_path.exists():
@@ -434,13 +431,26 @@ def _stale_packages_in_web_package_json(needed_names: Iterable[str]) -> set[str]
         data = json.loads(web_pkg_json_path.read_text())
     except (json.JSONDecodeError, OSError) as e:
         console.warn(
-            f"Failed to read {web_pkg_json_path}: {e}; skipping stale package check."
+            f"Failed to read {web_pkg_json_path}: {e}; skipping existing package check."
         )
         return set()
-    current = set(data.get("dependencies") or {}) | set(
-        data.get("devDependencies") or {}
-    )
-    return current - set(needed_names)
+    return set(data.get("dependencies") or {}) | set(data.get("devDependencies") or {})
+
+
+def _is_bun_package_manager(package_manager: str) -> bool:
+    """Whether the given package manager path refers to bun.
+
+    bun-specific CLI flags (``--frozen-lockfile``, ``--only-missing``) are
+    not understood by npm and will fail outright on upcoming npm versions
+    that reject unknown options, so callers gate those flags on this check.
+
+    Args:
+        package_manager: Path or bare name of the package manager executable.
+
+    Returns:
+        Whether the executable is bun.
+    """
+    return Path(package_manager).stem.lower() == "bun"
 
 
 def _run_initial_install(primary_package_manager: str, env: dict) -> None:
@@ -460,12 +470,16 @@ def _run_initial_install(primary_package_manager: str, env: dict) -> None:
         SystemExit: If the install fails. The exit message tells the user
             how to recover from a frozen-lockfile mismatch when applicable.
     """
-    args = processes.get_command_with_loglevel([
+    install_args = [
         primary_package_manager,
         "install",
         "--legacy-peer-deps",
-        "--frozen-lockfile",
-    ])
+    ]
+    if _is_bun_package_manager(primary_package_manager):
+        # ``--frozen-lockfile`` is bun-only; npm ignores it today and the
+        # next major rejects unknown flags outright.
+        install_args.append("--frozen-lockfile")
+    args = processes.get_command_with_loglevel(install_args)
     process = processes.new_process(
         args,
         cwd=get_web_dir(),
@@ -586,9 +600,11 @@ def _install_frontend_packages(
         existing entry in package.json.
       * Plugin/custom packages with explicit version specifiers are also
         added with strict pins.
-      * Plugin/custom packages without version specifiers are added with
-        ``--only-missing`` so previously resolved pins in package.json are
-        preserved across runs.
+      * Plugin/custom packages without version specifiers are skipped
+        entirely if package.json already declares them, so previously
+        resolved pins are preserved across runs without relying on
+        package-manager-specific flags. Otherwise they are added without
+        a version so the manager picks one.
 
     Args:
         packages: Custom packages requested by the caller (from
@@ -637,9 +653,11 @@ def _install_frontend_packages(
         | {_extract_package_name(p) for p in development_deps}
     )
 
+    existing_names = _existing_web_package_names()
+
     # Drop any deps lingering in package.json that no component, plugin, or
     # framework constant calls for anymore.
-    stale_packages = _stale_packages_in_web_package_json(needed_names)
+    stale_packages = existing_names - needed_names
     if stale_packages:
         run_package_manager(
             [
@@ -666,51 +684,37 @@ def _install_frontend_packages(
     pinned_packages, unpinned_packages = _split_by_version_specifier(packages)
     pinned_dev_deps, unpinned_dev_deps = _split_by_version_specifier(development_deps)
 
-    all_pinned = (
+    # Skip unpinned entries that already appear in package.json so the
+    # package manager doesn't churn the previously resolved version. This
+    # replaces bun's ``--only-missing`` flag with package-manager-agnostic
+    # logic that also works on npm.
+    new_unpinned_packages = unpinned_packages - existing_names
+    new_unpinned_dev_deps = unpinned_dev_deps - existing_names
+
+    deps_to_add = (
         _pinned_args_from_constants(constants.PackageJson.DEPENDENCIES)
         | pinned_packages
+        | new_unpinned_packages
     )
-    all_pinned_dev = (
+    dev_deps_to_add = (
         _pinned_args_from_constants(constants.PackageJson.DEV_DEPENDENCIES)
         | pinned_dev_deps
+        | new_unpinned_dev_deps
     )
 
-    if all_pinned:
+    if deps_to_add:
         run_package_manager(
-            [primary_package_manager, "add", "--legacy-peer-deps", *all_pinned],
-            show_status_message="Pinning frontend packages",
-        )
-    if unpinned_packages:
-        run_package_manager(
-            [
-                primary_package_manager,
-                "add",
-                "--legacy-peer-deps",
-                "--only-missing",
-                *unpinned_packages,
-            ],
+            [primary_package_manager, "add", "--legacy-peer-deps", *deps_to_add],
             show_status_message="Installing frontend packages",
         )
-    if all_pinned_dev:
+    if dev_deps_to_add:
         run_package_manager(
             [
                 primary_package_manager,
                 "add",
                 "--legacy-peer-deps",
                 "-d",
-                *all_pinned_dev,
-            ],
-            show_status_message="Pinning frontend development dependencies",
-        )
-    if unpinned_dev_deps:
-        run_package_manager(
-            [
-                primary_package_manager,
-                "add",
-                "--legacy-peer-deps",
-                "--only-missing",
-                "-d",
-                *unpinned_dev_deps,
+                *dev_deps_to_add,
             ],
             show_status_message="Installing frontend development dependencies",
         )
