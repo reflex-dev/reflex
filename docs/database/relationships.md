@@ -138,7 +138,7 @@ chain loaded from the `Post.flags` relationship.
 ### Specifying the Loading Mechanism on the Relationship
 
 Alternatively, the loading mechanism can be specified on the relationship by
-passing `sa_relationship_kwargs=\{"lazy": method}` to `sqlmodel.Relationship`,
+passing `sa_relationship_kwargs={"lazy": method}` to `sqlmodel.Relationship`,
 which will use the given loading mechanism in all queries by default.
 
 ```python
@@ -153,10 +153,10 @@ class Post(rx.Model, table=True):
     ...
     user: Optional["User"] = sqlmodel.Relationship(
         back_populates="posts",
-        sa_relationship_kwargs=\{"lazy": "selectin"},
+        sa_relationship_kwargs={"lazy": "selectin"},
     )
     flags: Optional[List["Flag"]] = sqlmodel.Relationship(
         back_populates="post",
-        sa_relationship_kwargs=\{"lazy": "selectin"},
+        sa_relationship_kwargs={"lazy": "selectin"},
     )
 ```

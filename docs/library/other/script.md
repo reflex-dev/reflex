@@ -28,7 +28,10 @@ This component is particularly helpful for including tracking and social scripts
 Any additional attrs needed for the script tag can be supplied via `custom_attrs` prop.
 
 ```python
-rx.script(src="//gc.zgo.at/count.js", custom_attrs=\{"data-goatcounter": "https://reflextoys.goatcounter.com/count"})
+rx.script(
+    src="//gc.zgo.at/count.js",
+    custom_attrs={"data-goatcounter": "https://reflextoys.goatcounter.com/count"},
+)
 ```
 
 This code renders to something like the following to enable stat counting with a third party service.

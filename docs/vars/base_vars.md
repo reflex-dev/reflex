@@ -42,7 +42,7 @@ In this example `ticker` and `price` are base vars in the app, which can be modi
 ```md alert warning
 # Vars must be JSON serializable.
 
-Vars are used to communicate between the frontend and backend. They must be primitive Python types, Plotly figures, Pandas dataframes, or [a custom defined type](/docs/vars/custom_vars).
+Vars are used to communicate between the frontend and backend. They must be primitive Python types, Plotly figures, Pandas dataframes, or [a custom defined type](/docs/vars/custom-vars).
 ```
 
 ## Accessing state variables on different pages
@@ -67,7 +67,7 @@ def ticker_example():
     return rx.center(
         rx.vstack(
             rx.heading(TickerState.ticker, size="3"),
-            rx.text(f"Current Price: \{TickerState.price}", font_size="md"),
+            rx.text(f"Current Price: {TickerState.price}", font_size="md"),
             rx.text("Change: 4%", color="green"),
         ),
     )

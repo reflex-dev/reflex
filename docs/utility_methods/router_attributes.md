@@ -17,24 +17,18 @@ class RouterState(rx.State):
 
 
 router_data = [
-    {"name": "rx.State.router.page.host", "value": RouterState.router.page.host},
-    {"name": "rx.State.router.page.path", "value": RouterState.router.page.path},
+    {"name": "rx.State.router.url", "value": RouterState.router.url},
+    {"name": "rx.State.router.url.scheme", "value": RouterState.router.url.scheme},
+    {"name": "rx.State.router.url.netloc", "value": RouterState.router.url.netloc},
+    {"name": "rx.State.router.url.origin", "value": RouterState.router.url.origin},
+    {"name": "rx.State.router.url.path", "value": RouterState.router.url.path},
+    {"name": "rx.State.router.url.query", "value": RouterState.router.url.query},
     {
-        "name": "rx.State.router.page.raw_path",
-        "value": RouterState.router.page.raw_path,
+        "name": "rx.State.router.url.query_parameters",
+        "value": RouterState.router.url.query_parameters.to_string(),
     },
-    {
-        "name": "rx.State.router.page.full_path",
-        "value": RouterState.router.page.full_path,
-    },
-    {
-        "name": "rx.State.router.page.full_raw_path",
-        "value": RouterState.router.page.full_raw_path,
-    },
-    {
-        "name": "rx.State.router.page.params",
-        "value": RouterState.router.page.params.to_string(),
-    },
+    {"name": "rx.State.router.url.fragment", "value": RouterState.router.url.fragment},
+    {"name": "rx.State.router.route_id", "value": RouterState.router.route_id},
     {
         "name": "rx.State.router.session.client_token",
         "value": RouterState.router.session.client_token,
@@ -112,13 +106,8 @@ about the current page, session, or state.
 
 The `self.router` attribute has several sub-attributes that provide various information:
 
-- `router.page`: data about the current page and route
-  - `host`: The hostname and port serving the current page (frontend).
-  - `path`: The path of the current page (for dynamic pages, this will contain the slug)
-  - `raw_path`: The path of the page displayed in the browser (including params and dynamic values)
-  - `full_path`: `path` with `host` prefixed
-  - `full_raw_path`: `raw_path` with `host` prefixed
-  - `params`: Dictionary of query params associated with the request
+- `router.url`: the URL of the current page, parsed into its components (see [URL Attributes](#url-attributes) below).
+- `router.route_id`: the route pattern that matched the current request (e.g. `/posts/[id]`). For [dynamic pages](/docs/pages/dynamic_routing) this contains the slug rather than the actual value used to load the page.
 
 - `router.session`: data about the current session
   - `client_token`: UUID associated with the current tab's token. Each tab has a unique token.
@@ -140,6 +129,64 @@ The `self.router` attribute has several sub-attributes that provide various info
   - `accept_encoding`: The accepted encodings.
   - `accept_language`: The accepted languages.
   - `raw_headers`: A mapping of all HTTP headers as a frozen dictionary. This provides access to any header that was sent with the request, not just the common ones listed above.
+
+## URL Attributes
+
+`self.router.url` is the full URL of the page currently displayed in the browser, parsed into its components using Python's standard `urllib.parse.urlsplit`. It is a string subclass, so it can be used anywhere a string is expected (for example, passed to `rx.text(self.router.url)` to render the whole URL), and additionally exposes the following attributes:
+
+- `scheme`: The URL scheme (e.g. `"http"` or `"https"`).
+- `netloc`: The network location, including hostname and optional port (e.g. `"example.com:3000"`).
+- `origin`: The scheme and netloc joined together (e.g. `"https://example.com:3000"`). Equivalent to `f"{scheme}://{netloc}"`.
+- `path`: The URL path as displayed in the browser, including any filled-in dynamic segments but excluding the query string and fragment (e.g. `"/posts/123"`).
+- `query`: The raw query string, without the leading `?` (e.g. `"tab=comments&sort=new"`).
+- `query_parameters`: The query string parsed into a frozen, immutable `Mapping[str, str]`. Use this instead of parsing `query` by hand.
+- `fragment`: The URL fragment, without the leading `#` (e.g. `"section-2"`). The client-side router sends the current fragment over the WebSocket, so this reflects whatever is shown in the browser URL bar.
+
+### Example
+
+For a request to `https://example.com:3000/posts/123?tab=comments#top` matching the route `/posts/[id]`:
+
+| Attribute                            | Value                                                  |
+| :----------------------------------- | :----------------------------------------------------- |
+| `self.router.url`                    | `"https://example.com:3000/posts/123?tab=comments#top"`|
+| `self.router.url.scheme`             | `"https"`                                              |
+| `self.router.url.netloc`             | `"example.com:3000"`                                   |
+| `self.router.url.origin`             | `"https://example.com:3000"`                           |
+| `self.router.url.path`               | `"/posts/123"`                                         |
+| `self.router.url.query`              | `"tab=comments"`                                       |
+| `self.router.url.query_parameters`   | `{"tab": "comments"}`                                  |
+| `self.router.url.fragment`           | `"top"`                                                |
+| `self.router.route_id`               | `"/posts/[id]"`                                        |
+
+### Reading Query Parameters
+
+`query_parameters` is the preferred way to read values from the query string. It is a frozen mapping (immutable and hashable), so it is safe to use inside `@rx.var` computed vars and event handlers:
+
+```python
+class State(rx.State):
+    @rx.var
+    def selected_tab(self) -> str:
+        return self.router.url.query_parameters.get("tab", "overview")
+
+    def on_load(self):
+        page = self.router.url.query_parameters.get("page", "1")
+        # ... load the appropriate data for that page ...
+```
+
+For dynamic path segments such as `[id]` or `[[...splat]]`, see [Dynamic Routes](/docs/pages/dynamic_routing) — those values are exposed as state vars on the root state (e.g. `rx.State.id`, `rx.State.splat`), not through `router.url`.
+
+## Migrating from `router.page`
+
+The `self.router.page` namespace is deprecated as of Reflex 0.8.1 and will be removed in 1.0. Its functionality is now provided by `self.router.url` together with `self.router.route_id`. Use the table below to update existing code:
+
+| Deprecated                          | Replacement                                                   | Notes                                                                 |
+| :---------------------------------- | :------------------------------------------------------------ | :-------------------------------------------------------------------- |
+| `self.router.page.path`             | `self.router.route_id`                                        | The route pattern, e.g. `/posts/[id]`.                                |
+| `self.router.page.raw_path`         | `self.router.url.path`                                        | The actual path in the browser. Append `?{url.query}` if you also need query params. |
+| `self.router.page.full_path`        | `f"{self.router.url.origin}{self.router.route_id}"`           | Origin prefixed onto the route pattern. Rarely needed.                |
+| `self.router.page.full_raw_path`    | `self.router.url`                                             | `router.url` is itself the full URL as a string.                      |
+| `self.router.page.host`             | `self.router.url.origin`                                      | Full origin including scheme (e.g. `"http://localhost:3000"`). Use `self.router.url.netloc` for just `host:port`. |
+| `self.router.page.params`           | `self.router.url.query_parameters`                            | Now a frozen mapping rather than a plain dict.                        |
 
 ### Example Values on this Page
 

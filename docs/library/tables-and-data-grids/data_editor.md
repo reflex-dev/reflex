@@ -35,7 +35,7 @@ data: list[list[Any]] = [
 ]
 ```
 
-This component is introduced as an alternative to the [datatable](/docs/library/tables-and-data-grids/data_table) to support editing the displayed data.
+This component is introduced as an alternative to the [datatable](/docs/library/tables-and-data-grids/data-table) to support editing the displayed data.
 
 ## Columns
 
@@ -349,7 +349,7 @@ class DataEditorState_HP(rx.State):
         yield self.get_clicked_data(pos)
 
     def get_clicked_data(self, pos) -> str:
-        self.clicked_data = f"Cell clicked: \{pos}"
+        self.clicked_data = f"Cell clicked: {pos}"
 ```
 
 ```python

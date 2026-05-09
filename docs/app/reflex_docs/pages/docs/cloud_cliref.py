@@ -177,83 +177,74 @@ def process(
     """Convert a Click command to a Markdown element."""
     actual_name = override_name or command["name"]
     full_name = prefix + " " + actual_name if prefix and actual_name else actual_name
-    cli_to_doc[full_name] = Section(
-        (
-            Paragraph(InlineText(command["help"])) if command["help"] else Empty(),
-            Section(
-                (
-                    Header(3, InlineText("Usage")),
-                    CodeBlock(
-                        "$"
-                        + (" " + prefix.strip() if prefix else "")
-                        + " "
-                        + actual_name.strip()
-                        + (
-                            " [OPTIONS]"
-                            if command["params"]
-                            and any(
-                                param.get("param_type_name") != "argument"
-                                for param in command["params"]
-                            )
-                            else ""
-                        )
-                        + (
-                            " " + " ".join(arguments)
-                            if (
-                                arguments := [
-                                    param["name"].upper()
-                                    for param in command["params"]
-                                    if param.get("param_type_name") == "argument"
-                                    and param["name"]
-                                ]
-                            )
-                            else ""
-                        ),
-                        language="console",
-                    ),
+    cli_to_doc[full_name] = Section((
+        Paragraph(InlineText(command["help"])) if command["help"] else Empty(),
+        Section((
+            Header(3, InlineText("Usage")),
+            CodeBlock(
+                "$"
+                + (" " + prefix.strip() if prefix else "")
+                + " "
+                + actual_name.strip()
+                + (
+                    " [OPTIONS]"
+                    if command["params"]
+                    and any(
+                        param.get("param_type_name") != "argument"
+                        for param in command["params"]
+                    )
+                    else ""
                 )
-            )
-            if actual_name
-            else Empty(),
-            Section(
-                (
-                    Header(3, InlineText("Options")),
-                    List(
-                        tuple(
-                            InlineTextCollection(
-                                (
-                                    InlineCode(
-                                        ", ".join(param["opts"])
-                                        + (
-                                            " / " + ", ".join(param["secondary_opts"])
-                                            if param["secondary_opts"]
-                                            else ""
-                                        )
-                                        + (
-                                            (
-                                                " " + param["type"]["name"].upper()
-                                                if param["type"]["name"] != "boolean"
-                                                else ""
-                                            )
-                                            if (choices := param["type"].get("choices"))
-                                            is None
-                                            else " [" + "|".join(choices) + "]"
-                                        )
-                                    ),
-                                    InlineText(": " + option_help),
-                                )
-                            )
+                + (
+                    " " + " ".join(arguments)
+                    if (
+                        arguments := [
+                            param["name"].upper()
                             for param in command["params"]
-                            if (option_help := param.get("help")) is not None
+                            if param.get("param_type_name") == "argument"
+                            and param["name"]
+                        ]
+                    )
+                    else ""
+                ),
+                language="console",
+            ),
+        ))
+        if actual_name
+        else Empty(),
+        Section((
+            Header(3, InlineText("Options")),
+            List(
+                tuple(
+                    InlineTextCollection((
+                        InlineCode(
+                            ", ".join(param["opts"])
+                            + (
+                                " / " + ", ".join(param["secondary_opts"])
+                                if param["secondary_opts"]
+                                else ""
+                            )
+                            + (
+                                (
+                                    " " + param["type"]["name"].upper()
+                                    if param["type"]["name"] != "boolean"
+                                    else ""
+                                )
+                                if (choices := param["type"].get("choices")) is None
+                                else " [" + "|".join(choices) + "]"
+                            )
                         ),
-                        ordered=False,
-                    ),
-                )
-            )
-            if command["params"]
-            else Empty(),
-        )
-    ).into_text()
+                        InlineText(": " + option_help),
+                    ))
+                    for param in command["params"]
+                    if (option_help := param.get("help")) is not None
+                ),
+                ordered=False,
+            ),
+        ))
+        if command["params"]
+        else Empty(),
+    )).into_text()
     for name, sub_command in sort_subcommands(command.get("commands", {})).items():
         process(
             sub_command,
@@ -352,6 +343,6 @@ pages = []
 for module_name, module_value in modules.items():
     docs = generate_docs(module_value)
     title = module_name.replace("_", " ").title()
-    page_data = docpage(f"/docs/hosting/cli/{module_name}/", title)(docs)
+    page_data = docpage(f"/hosting/cli/{module_name}/", title)(docs)
     page_data.title = page_data.title.split("·")[0].strip()
     pages.append(page_data)

@@ -214,11 +214,11 @@ def FrontendPathApp():
 
 @pytest.fixture(
     scope="module",
-    params=["", "/prefix"],
-    ids=["no-prefix", "with-prefix"],
+    params=["", "/prefix", "/prefix/nested"],
+    ids=["no-prefix", "single-level", "two-level"],
 )
 def frontend_path(request: pytest.FixtureRequest) -> str:
-    """Parametrise over no-prefix and /prefix.
+    """Parametrise over no-prefix and various prefix depths.
 
     Args:
         request: pytest fixture for accessing the current parameter.
@@ -240,12 +240,12 @@ def frontend_path_app(
     Args:
         app_harness_env: AppHarness (dev) or AppHarnessProd (prod).
         tmp_path_factory: pytest fixture for creating temporary directories.
-        frontend_path: "" or "/prefix".
+        frontend_path: The frontend_path prefix for this parametrised instance.
 
     Yields:
         Running AppHarness instance.
     """
-    suffix = frontend_path.strip("/") or "root"
+    suffix = frontend_path.strip("/").replace("/", "_") or "root"
     name = f"frontendpath_{suffix}_{app_harness_env.__name__.lower()}"
 
     with pytest.MonkeyPatch.context() as mp:

@@ -69,7 +69,7 @@ class State(rx.State):
     def user_post(self) -> str:
         args = self.router.page.params
         usernames = args.get("splat", [])
-        return f"Posts by \{', '.join(usernames)}"
+        return f"Posts by {', '.join(usernames)}"
 
 
 @rx.page(route="/users/[id]/posts/[[...splat]]")

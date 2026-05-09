@@ -5,16 +5,29 @@ tools that are not available on Windows.
 """
 
 import argparse
+import os
 import socket
+import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 def _pid_exists(pid: int):
-    # Note: For windows, the pid here is really the "winpid".
-    import psutil
+    # On Windows the pid here is really the "winpid"; os.kill(pid, 0) only
+    # accepts CTRL_*_EVENT signals on Windows, so fall back to psutil there.
+    # psutil is a runtime dep of reflex on win32 (see pyproject.toml), so
+    # any venv with reflex installed already has it.
+    if sys.platform == "win32":
+        import psutil
 
-    return psutil.pid_exists(pid)
+        return psutil.pid_exists(pid)
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
 
 
 def _wait_for_port(port: int, server_pid: int, timeout: float) -> tuple[bool, str]:

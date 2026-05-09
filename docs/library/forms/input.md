@@ -3,7 +3,7 @@ components:
   - rx.input
   - rx.input.slot
 
-Input: |
+TextFieldRoot: |
   lambda **props: rx.input(placeholder="Search the docs", **props)
 
 TextFieldSlot: |

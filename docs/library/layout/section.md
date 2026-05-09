@@ -1,6 +1,20 @@
 ---
 components:
   - rx.section
+
+Section: |
+  lambda **props: rx.section(
+      rx.text("Section content", color="black"),
+      background="white",
+      border_radius="0.5rem",
+      width="100%",
+      justify="center",
+      border="1px solid var(--gray-3)",
+      align="center",
+      display="flex",
+      padding="4rem",
+      **props,
+  )
 ---
 
 ```python exec

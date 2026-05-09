@@ -10,6 +10,8 @@ Lifespan tasks are defined as async coroutines or async contextmanagers. To avoi
 blocking the event thread, never use `time.sleep` or perform non-async I/O within
 a lifespan task.
 
+Tasks execute in the order they are registered.
+
 In dev mode, lifespan tasks will stop and restart when a hot-reload occurs.
 
 ## Tasks
@@ -21,7 +23,7 @@ any necessary clean up.
 
 ```python
 async def long_running_task(foo, bar):
-    print(f"Starting \{foo} \{bar} task")
+    print(f"Starting {foo} {bar} task")
     some_api = SomeApi(foo)
     try:
         while True:
@@ -38,13 +40,22 @@ async def long_running_task(foo, bar):
 To register a lifespan task, use `app.register_lifespan_task(coro_func, **kwargs)`.
 Any keyword arguments specified during registration will be passed to the task.
 
-If the task accepts the special argument, `app`, it will be an instance of the `FastAPI` object
-associated with the app.
+If the task accepts the special argument, `app`, it will be passed the `Starlette`
+application instance.
 
 ```python
 app = rx.App()
 app.register_lifespan_task(long_running_task, foo=42, bar=os.environ["BAR_PARAM"])
 ```
+
+All tasks must be registered before the app starts. Calling
+`register_lifespan_task` after the lifespan has begun (for example, from an
+event handler or from within another lifespan task) will raise a `RuntimeError`.
+
+### Inspecting Registered Tasks
+
+To get the currently registered lifespan tasks, use `app.get_lifespan_tasks()`,
+which returns a `tuple` of tasks in registration order.
 
 ## Context Managers
 
@@ -55,9 +66,6 @@ protocol.
 Code up to the first `yield` will run when the backend comes up. As the backend
 is shutting down, the code after the `yield` will run to clean up.
 
-Here is an example borrowed from the FastAPI docs and modified to work with this
-interface.
-
 ```python
 from contextlib import asynccontextmanager
 
@@ -66,16 +74,17 @@ def fake_answer_to_everything_ml_model(x: float):
     return x * 42
 
 
-ml_models = \{}
+ml_models = {}
 
 
 @asynccontextmanager
-async def setup_model(app: FastAPI):
+async def setup_model(app):
     # Load the ML model
     ml_models["answer_to_everything"] = fake_answer_to_everything_ml_model
     yield
     # Clean up the ML models and release the resources
     ml_models.clear()
+
 
 ...
 

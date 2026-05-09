@@ -2,9 +2,9 @@
 import reflex as rx
 ```
 
-# Reflex Basics
+# Basics
 
-This page gives an introduction to the most common concepts that you will use to build Reflex apps.
+**~10 min** · An introduction to the most common concepts you'll use to build Reflex apps.
 
 ```md section
 # You will learn how to:
@@ -18,13 +18,7 @@ This page gives an introduction to the most common concepts that you will use to
 - Create pages and navigate between them
 ```
 
-[Install](/docs/getting_started/installation) `reflex` with uv before continuing.
-
-```bash
-uv add reflex
-```
-
-Import the `reflex` library to get started.
+If you haven't yet, [install Reflex](/docs/getting-started/installation) before continuing. Every example below imports the library as `rx`:
 
 ```python
 import reflex as rx
@@ -46,7 +40,7 @@ Components can be nested inside each other to create complex UIs.
 To nest components as children, pass them as positional arguments to the parent component. In the example below, the `rx.text` and `my_button` components are children of the `rx.box` component.
 
 ```python demo exec
-def my_page():
+def my_container():
     return rx.box(
         rx.text("This is a page"),
         # Reference components defined in other functions.
@@ -54,7 +48,7 @@ def my_page():
     )
 ```
 
-You can also use any base HTML element through the [`rx.el`](/docs/library/other/html) namespace. This allows you to use standard HTML elements directly in your Reflex app when you need more control or when a specific component isn't available in the Reflex component library.
+You can also use any base HTML element through the [rx.el](/docs/library/html/) namespace. This allows you to use standard HTML elements directly in your Reflex app when you need more control or when a specific component isn't available in the Reflex component library.
 
 ```python demo exec
 def my_div():
@@ -107,7 +101,7 @@ In summary, components are made up of children and props.
 
 Apps need to store and display data that changes over time. Reflex handles this through [State](/docs/state/overview), which is a Python class that stores variables that can change when the app is running, as well as the functions that can change those variables.
 
-To define a state class, subclass `rx.State` and define fields that store the state of your app. The state variables ([vars](/docs/vars/base_vars)) should have a type annotation, and can be initialized with a default value.
+To define a state class, subclass `rx.State` and define fields that store the state of your app. The state variables ([vars](/docs/vars/base-vars)) should have a type annotation, and can be initialized with a default value.
 
 ```python
 class MyState(rx.State):
@@ -139,10 +133,10 @@ Vars can be referenced in multiple components, and will automatically update whe
 
 ## Responding to events and updating the screen
 
-So far, we've defined state vars but we haven't shown how to change them. All state changes are handled through functions in the state class, called [event handlers](/docs/events/events_overview).
+So far, we've defined state vars but we haven't shown how to change them. All state changes are handled through functions in the state class, called [event handlers](/docs/events/events-overview).
 
 ```md alert
-Event handlers are the ONLY way to change state in Reflex.
+Event handlers are the **only** way to change state in Reflex.
 ```
 
 Components have special props, such as `on_click`, called event triggers that can be used to make components interactive. Event triggers connect components to event handlers, which update the state.
@@ -214,7 +208,7 @@ def text_input():
 Make sure that the event handler has the same number of arguments as the event trigger, or an error will be raised.
 ```
 
-## Compile-time vs. runtime (IMPORTANT)
+## Compile-time vs. runtime
 
 Before we dive deeper into state, it's important to understand the difference between compile-time and runtime in Reflex.
 
@@ -314,7 +308,7 @@ In the next sections, we will show how to handle these cases.
 
 ## Conditional rendering
 
-As mentioned above, you cannot use Python `if/else` statements with state vars in components. Instead, use the [`rx.cond`](/docs/components/conditional_rendering) function to conditionally render components.
+As mentioned above, you cannot use Python `if/else` statements with state vars in components. Instead, use the [rx.cond](/docs/components/conditional-rendering) function to conditionally render components.
 
 ```python demo exec
 class LoginState(rx.State):
@@ -338,7 +332,7 @@ def show_login():
 
 ## Rendering lists
 
-To iterate over a var that is a list, use the [`rx.foreach`](/docs/components/rendering_iterables) function to render a list of components.
+To iterate over a var that is a list, use the [rx.foreach](/docs/components/rendering-iterables) function to render a list of components.
 
 Pass the list var and a function that returns a component as arguments to `rx.foreach`.
 
@@ -398,13 +392,26 @@ def index():
     return rx.text("Root Page")
 
 
-rx.app = rx.App()
+app = rx.App()
 app.add_page(index, route="/")
 ```
 
 ## Next Steps
 
-Now that you have a basic understanding of how Reflex works, the next step is to start coding your own apps. Try one of the following tutorials:
+You've got the core pieces — components, state, events, compile-time vs. runtime. Time to build.
 
-- [Dashboard Tutorial](/docs/getting_started/dashboard_tutorial)
-- [Chatapp Tutorial](/docs/getting_started/chatapp_tutorial)
+```md alert info
+# Build something real
+
+- [Dashboard tutorial](/docs/getting-started/dashboard-tutorial) — a data app with tables, forms, and state.
+- [Chatapp tutorial](/docs/getting-started/chatapp-tutorial) — streaming AI responses end-to-end.
+- [Open-source templates](/docs/getting-started/open-source-templates) — full apps to fork.
+```
+
+```md alert info
+# Go deeper
+
+- [Vars](/docs/vars/base-vars) and [var operations](/docs/vars/var-operations) — the full API.
+- [Events](/docs/events/events-overview) and [pages](/docs/pages/overview) — routing, triggers, handlers.
+- [How Reflex works](/docs/advanced-onboarding/how-reflex-works) — what runs where, and why.
+```

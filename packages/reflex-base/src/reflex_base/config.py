@@ -155,6 +155,7 @@ class BaseConfig:
         frontend_port: The port to run the frontend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
         frontend_path: The path to run the frontend on. For example, "/app" will run the frontend on http://localhost:3000/app
         backend_port: The port to run the backend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
+        backend_path: The path prefix for backend routes. For example, "/api" mounts the event websocket, /ping, /_upload, /_health, and /_all_routes under /api, and is automatically included in URLs baked into the frontend. Changing this requires a full `reflex run` restart — routes are registered at startup.
         api_url: The backend url the frontend will connect to. This must be updated if the backend is hosted elsewhere, or in production.
         deploy_url: The url the frontend will be hosted on.
         backend_host: The url the backend will be hosted on.
@@ -194,13 +195,15 @@ class BaseConfig:
 
     backend_port: int | None = None
 
+    backend_path: str = ""
+
     api_url: str = f"http://localhost:{constants.DefaultPorts.BACKEND_PORT}"
 
     deploy_url: str | None = f"http://localhost:{constants.DefaultPorts.FRONTEND_PORT}"
 
     backend_host: str = "0.0.0.0"
 
-    db_url: str | None = "sqlite:///reflex.db"
+    db_url: str | None = None
 
     async_db_url: str | None = None
 
@@ -345,6 +348,9 @@ class Config(BaseConfig):
         for key, env_value in env_kwargs.items():
             setattr(self, key, env_value)
 
+        # Normalize plugins: auto-instantiate Plugin subclasses, reject bad values.
+        self._normalize_plugins()
+
         # Normalize disable_plugins: convert strings and Plugin subclasses to instances.
         self._normalize_disable_plugins()
 
@@ -378,6 +384,39 @@ class Config(BaseConfig):
         ):
             msg = f"{self._prefixes[0]}REDIS_URL is required when using the redis state manager."
             raise ConfigError(msg)
+
+    def _normalize_plugins(self):
+        """Normalize ``plugins`` entries to Plugin instances.
+
+        Auto-instantiates Plugin subclasses passed without parentheses (e.g.
+        ``plugins=[SitemapPlugin]``) so they behave the same as
+        ``plugins=[SitemapPlugin()]``. Any entry that is neither a Plugin
+        subclass nor a Plugin instance raises ``ConfigError`` with a message
+        that names the offending value, instead of failing later in the
+        compiler with a confusing ``TypeError`` about a missing ``self``.
+        """
+        normalized: list[Plugin] = []
+        for entry in self.plugins:
+            if isinstance(entry, Plugin):
+                normalized.append(entry)
+            elif isinstance(entry, type) and issubclass(entry, Plugin):
+                try:
+                    normalized.append(entry())
+                except TypeError as exc:
+                    msg = (
+                        f"reflex.Config.plugins entry {entry.__name__!r} could not be "
+                        f"instantiated and may require arguments; pass an instance "
+                        f"instead, e.g. plugins=[{entry.__name__}(...)]."
+                    )
+                    raise ConfigError(msg) from exc
+            else:
+                msg = (
+                    f"reflex.Config.plugins must contain Plugin instances, but got "
+                    f"{entry!r} of type {type(entry).__name__}. "
+                    f"Pass an instance, e.g. plugins=[SitemapPlugin()]."
+                )
+                raise ConfigError(msg)
+        self.plugins = normalized
 
     def _normalize_disable_plugins(self):
         """Normalize disable_plugins list entries to Plugin subclasses.
@@ -476,6 +515,21 @@ class Config(BaseConfig):
 
         return json.dumps(self, default=serialize)
 
+    @staticmethod
+    def _prepend_path(path: str, prefix: str) -> str:
+        """Prepend ``prefix`` (normalized to ``/prefix``) to ``path`` when both are non-empty.
+
+        Args:
+            path: The path to prepend the prefix to.
+            prefix: The configured prefix (e.g. ``frontend_path`` or ``backend_path``).
+
+        Returns:
+            The path with the prefix prepended if it begins with a slash, otherwise the original path.
+        """
+        if prefix and path.startswith("/"):
+            return f"/{prefix.strip('/')}{path}"
+        return path
+
     def prepend_frontend_path(self, path: str) -> str:
         """Prepend the frontend path to a given path.
 
@@ -485,9 +539,18 @@ class Config(BaseConfig):
         Returns:
             The path with the frontend path prepended if it begins with a slash, otherwise the original path.
         """
-        if self.frontend_path and path.startswith("/"):
-            return f"/{self.frontend_path.strip('/')}{path}"
-        return path
+        return self._prepend_path(path, self.frontend_path)
+
+    def prepend_backend_path(self, path: str) -> str:
+        """Prepend the backend path to a given path.
+
+        Args:
+            path: The path to prepend the backend path to.
+
+        Returns:
+            The path with the backend path prepended if it begins with a slash, otherwise the original path.
+        """
+        return self._prepend_path(path, self.backend_path)
 
     @property
     def app_module(self) -> ModuleType | None:

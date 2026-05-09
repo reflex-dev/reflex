@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import asyncio
 import json
+import shutil
 import time
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from pathlib import Path
 from typing import Any
 
@@ -13,9 +14,11 @@ import pytest
 from reflex_base.constants.event import Endpoint
 from selenium.common.exceptions import NoAlertPresentException
 from selenium.webdriver.common.by import By
+from selenium.webdriver.remote.webdriver import WebDriver
+from selenium.webdriver.remote.webelement import WebElement
 
 import reflex as rx
-from reflex.testing import AppHarness, WebDriver
+from reflex.testing import AppHarness
 
 
 def UploadFile():
@@ -317,18 +320,35 @@ def UploadFile():
 
 
 @pytest.fixture(scope="module")
-def upload_file(tmp_path_factory) -> Generator[AppHarness, None, None]:
+def uploaded_files_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """Create and return a temporary directory for uploaded files.
+
+    Args:
+        tmp_path_factory: pytest fixture for creating temporary directories
+
+    Returns:
+        dir where uploaded files will be saved in the test (rx.get_upload_dir())
+    """
+    return tmp_path_factory.mktemp("uploaded_files")
+
+
+@pytest.fixture(scope="module")
+def upload_file(
+    tmp_path_factory: pytest.TempPathFactory, uploaded_files_dir: Path
+) -> Generator[AppHarness, None, None]:
     """Start UploadFile app at tmp_path via AppHarness.
 
     Args:
         tmp_path_factory: pytest tmp_path_factory fixture
+        uploaded_files_dir: dir where uploaded files will be saved in the test (rx.get_upload_dir())
 
     Yields:
         running AppHarness instance
     """
     monkeypatch = pytest.MonkeyPatch()
     monkeypatch.setenv(
-        "REFLEX_UPLOADED_FILES_DIR", str(tmp_path_factory.mktemp("uploaded_files"))
+        "REFLEX_UPLOADED_FILES_DIR",
+        str(uploaded_files_dir),
     )
     try:
         with AppHarness.create(
@@ -338,6 +358,25 @@ def upload_file(tmp_path_factory) -> Generator[AppHarness, None, None]:
             yield harness
     finally:
         monkeypatch.undo()
+
+
+@pytest.fixture(autouse=True)
+def clear_uploaded_files(uploaded_files_dir: Path):
+    """Clear the reflex uploaded files directory before and after each test.
+
+    Args:
+        uploaded_files_dir: dir where uploaded files will be saved in the test (rx.get_upload_dir())
+    """
+
+    def _clear_contents():
+        if not uploaded_files_dir.exists():
+            return
+        for child in uploaded_files_dir.iterdir():
+            shutil.rmtree(child) if child.is_dir() else child.unlink()
+
+    _clear_contents()
+    yield
+    _clear_contents()
 
 
 @pytest.fixture
@@ -356,6 +395,124 @@ def driver(upload_file: AppHarness):
         yield driver
     finally:
         driver.quit()
+
+
+@pytest.fixture
+def simulate_slow_network(driver: WebDriver) -> Generator[None, None, None]:
+    """Throttle network speed to 1 Mbps / 200ms latency to reduce race condition window.
+
+    Restores unthrottled conditions on teardown so the throttle cannot bleed
+    into other tests if the driver scope is ever widened.
+
+    Args:
+        driver: WebDriver instance
+
+    Yields:
+        None while the throttle is active.
+    """
+    driver.execute_cdp_cmd("Network.enable", {})
+    driver.execute_cdp_cmd(
+        "Network.emulateNetworkConditions",
+        {
+            "offline": False,
+            "downloadThroughput": 1024 * 1024 / 8,  # 1 Mbps
+            "uploadThroughput": 1024 * 1024 / 8,  # 1 Mbps
+            "latency": 200,  # 200ms
+        },
+    )
+    yield
+    driver.execute_cdp_cmd(
+        "Network.emulateNetworkConditions",
+        {
+            "offline": False,
+            "downloadThroughput": -1,
+            "uploadThroughput": -1,
+            "latency": 0,
+        },
+    )
+
+
+def _wrap_find_elements_by_xpath(
+    driver: WebDriver, xpath: str
+) -> Callable[[], list[WebElement]]:
+    """Helper fixture factory for finding elements by xpath.
+
+    Args:
+        driver: WebDriver instance
+        xpath: xpath string to find elements
+
+    Returns:
+        A callable that returns the list of found elements.
+    """
+
+    def _finder():
+        return driver.find_elements(By.XPATH, xpath)
+
+    return _finder
+
+
+@pytest.fixture
+def progress_dicts(driver: WebDriver) -> Callable[[], list[WebElement]]:
+    """For retrieving the list of progress dictionary elements.
+
+    Args:
+        driver: WebDriver instance
+
+    Returns:
+        A callable that returns the list of progress dictionary elements.
+    """
+    return _wrap_find_elements_by_xpath(driver, "//*[@id='progress_dicts']/p")
+
+
+@pytest.fixture
+def stream_progress_dicts(driver: WebDriver) -> Callable[[], list[WebElement]]:
+    """For retrieving the list of streaming upload progress dictionary elements.
+
+    Args:
+        driver: WebDriver instance
+
+    Returns:
+        A callable that returns the list of streaming upload progress dictionary elements.
+    """
+    return _wrap_find_elements_by_xpath(driver, "//*[@id='stream_progress_dicts']/p")
+
+
+async def poll_for_stopped_progress(
+    get_progress_dicts: Callable[[], list[WebElement]],
+    iterations: int = 20,
+    delay: int | float = 1.0,
+    stable_iterations: int = 3,
+) -> list[dict]:
+    """Poll for progress dictionaries to stop updating.
+
+    Args:
+        get_progress_dicts: A callable that returns the list of progress dictionary elements.
+        iterations: Maximum number of iterations to poll for.
+        delay: Delay in seconds between iterations.
+        stable_iterations: Number of consecutive iterations with no new progress dictionaries before considering it stopped.
+
+    Returns:
+        The stable list of deserialized progress dicts.
+
+    Raises:
+        TimeoutError: If progress dictionaries keep updating beyond the maximum iterations.
+    """
+    remaining_stable_iterations = stable_iterations
+    last_progress_dicts_content = [p.text for p in get_progress_dicts()]
+    for _ in range(iterations):
+        await asyncio.sleep(delay)
+        progress_dicts_content = [p.text for p in get_progress_dicts()]
+        if progress_dicts_content == last_progress_dicts_content:
+            # Content remains stable, decrement remaining_stable_iterations
+            remaining_stable_iterations -= 1
+            if remaining_stable_iterations <= 0:
+                return [json.loads(t) for t in last_progress_dicts_content]
+        else:
+            # Progress dicts content changed, we must start over counting stable iterations.
+            remaining_stable_iterations = stable_iterations
+            last_progress_dicts_content = progress_dicts_content
+    msg = f"Progress dictionaries kept updating after {iterations} iterations ({iterations * delay} seconds)."
+    raise TimeoutError(msg)
 
 
 def poll_for_token(driver: WebDriver, upload_file: AppHarness) -> str:
@@ -377,9 +534,34 @@ def poll_for_token(driver: WebDriver, upload_file: AppHarness) -> str:
     return token
 
 
-@pytest.mark.parametrize("secondary", [False, True])
+def get_upload_box(driver: WebDriver, upload_root_id: str | None = None) -> WebElement:
+    """Find the file input belonging to a specific rx.upload.root, by its id.
+
+    When ``upload_root_id`` is None, returns the first ``input[type=file]``
+    on the page (the default upload form, which has no id).
+
+    Args:
+        driver: WebDriver instance.
+        upload_root_id: id of the ``rx.upload.root`` whose file input to return,
+            or None for the default (first) upload form.
+
+    Returns:
+        The matching file input WebElement.
+    """
+    if upload_root_id is not None:
+        return driver.find_element(
+            By.XPATH, f"//*[@id='{upload_root_id}']//input[@type='file']"
+        )
+    return driver.find_element(By.XPATH, "//input[@type='file']")
+
+
+@pytest.mark.parametrize("upload_root_id", [None, "secondary"])
 def test_upload_file(
-    tmp_path, upload_file: AppHarness, driver: WebDriver, secondary: bool
+    tmp_path,
+    upload_file: AppHarness,
+    driver: WebDriver,
+    progress_dicts: Callable[[], list[WebElement]],
+    upload_root_id: str | None,
 ):
     """Submit a file upload and check that it arrived on the backend.
 
@@ -387,18 +569,17 @@ def test_upload_file(
         tmp_path: pytest tmp_path fixture
         upload_file: harness for UploadFile app.
         driver: WebDriver instance.
-        secondary: whether to use the secondary upload form
+        progress_dicts: callable to retrieve progress dictionary elements.
+        upload_root_id: ID of the upload root element, or None for the default.
     """
     assert upload_file.app_instance is not None
     poll_for_token(driver, upload_file)
     clear_btn = driver.find_element(By.ID, "clear_uploads")
     clear_btn.click()
 
-    suffix = "_secondary" if secondary else ""
+    suffix = f"_{upload_root_id}" if upload_root_id else ""
 
-    upload_box = driver.find_elements(By.XPATH, "//input[@type='file']")[
-        1 if secondary else 0
-    ]
+    upload_box = get_upload_box(driver, upload_root_id=upload_root_id)
     assert upload_box
     upload_button = driver.find_element(By.ID, f"upload_button{suffix}")
     assert upload_button
@@ -419,12 +600,12 @@ def test_upload_file(
     upload_done = driver.find_element(By.ID, "upload_done")
     assert upload_file.poll_for_value(upload_done, exp_not_equal="false") == "true"
 
-    if secondary:
+    if upload_root_id == "secondary":
         event_order_displayed = driver.find_element(By.ID, "event-order")
         AppHarness.expect(lambda: "chain_event" in event_order_displayed.text)
-        progress_dicts = driver.find_elements(By.XPATH, "//*[@id='progress_dicts']/p")
-        assert len(progress_dicts) > 0
-        assert json.loads(progress_dicts[-1].text)["progress"] == 1
+        final_progress = progress_dicts()
+        assert len(final_progress) > 0
+        assert json.loads(final_progress[-1].text)["progress"] == 1
 
     # look up the backend state and assert on uploaded contents
     actual_contents = (rx.get_upload_dir() / exp_name).read_text()
@@ -445,7 +626,7 @@ async def test_upload_file_multiple(tmp_path, upload_file: AppHarness, driver):
     clear_btn = driver.find_element(By.ID, "clear_uploads")
     clear_btn.click()
 
-    upload_box = driver.find_element(By.XPATH, "//input[@type='file']")
+    upload_box = get_upload_box(driver)
     assert upload_box
     upload_button = driver.find_element(By.ID, "upload_button")
     assert upload_button
@@ -480,9 +661,9 @@ async def test_upload_file_multiple(tmp_path, upload_file: AppHarness, driver):
         assert actual_contents == exp_content
 
 
-@pytest.mark.parametrize("secondary", [False, True])
+@pytest.mark.parametrize("upload_root_id", [None, "secondary"])
 def test_clear_files(
-    tmp_path, upload_file: AppHarness, driver: WebDriver, secondary: bool
+    tmp_path, upload_file: AppHarness, driver: WebDriver, upload_root_id: str | None
 ):
     """Select then clear several file uploads and check that they are cleared.
 
@@ -490,18 +671,16 @@ def test_clear_files(
         tmp_path: pytest tmp_path fixture
         upload_file: harness for UploadFile app.
         driver: WebDriver instance.
-        secondary: whether to use the secondary upload form.
+        upload_root_id: ID of the upload root element, or None for the default.
     """
     assert upload_file.app_instance is not None
     poll_for_token(driver, upload_file)
     clear_btn = driver.find_element(By.ID, "clear_uploads")
     clear_btn.click()
 
-    suffix = "_secondary" if secondary else ""
+    suffix = f"_{upload_root_id}" if upload_root_id else ""
 
-    upload_box = driver.find_elements(By.XPATH, "//input[@type='file']")[
-        1 if secondary else 0
-    ]
+    upload_box = get_upload_box(driver, upload_root_id=upload_root_id)
     assert upload_box
     upload_button = driver.find_element(By.ID, f"upload_button{suffix}")
     assert upload_button
@@ -537,51 +716,94 @@ def test_clear_files(
 # https://gist.github.com/florentbr/349b1ab024ca9f3de56e6bf8af2ac69e
 
 
+@pytest.mark.usefixtures("simulate_slow_network")
 @pytest.mark.asyncio
-async def test_cancel_upload(tmp_path, upload_file: AppHarness, driver: WebDriver):
+@pytest.mark.parametrize(
+    (
+        "upload_root_id",
+        "progress_fixture",
+        "exp_name",
+        "file_size_bytes",
+        "partial_subdir",
+    ),
+    [
+        pytest.param(
+            "secondary",
+            "progress_dicts",
+            "large.txt",
+            1024 * 1024,
+            None,
+            id="buffered",
+        ),
+        pytest.param(
+            "streaming",
+            "stream_progress_dicts",
+            "cancel_stream.txt",
+            2 * 1024 * 1024,
+            "streaming",
+            id="streaming",
+        ),
+    ],
+)
+async def test_cancel_upload(
+    request: pytest.FixtureRequest,
+    tmp_path,
+    upload_file: AppHarness,
+    driver: WebDriver,
+    upload_root_id: str,
+    progress_fixture: str,
+    exp_name: str,
+    file_size_bytes: int,
+    partial_subdir: str | None,
+):
     """Submit a large file upload and cancel it.
 
+    Covers both the standard upload form and the streaming-chunk upload form;
+    the latter additionally writes a partial file to a subdirectory under
+    ``rx.get_upload_dir()`` which is verified to be smaller than the source.
+
     Args:
+        request: pytest request fixture, used to resolve the parametrized progress fixture.
         tmp_path: pytest tmp_path fixture
         upload_file: harness for UploadFile app.
         driver: WebDriver instance.
+        upload_root_id: id of the rx.upload.root component to drive; also the suffix used for its upload/cancel button ids.
+        progress_fixture: name of the fixture providing the progress dicts callable.
+        exp_name: name of the file to upload.
+        file_size_bytes: size of the file to create, in bytes.
+        partial_subdir: subdirectory under the upload dir where a partial file is expected, or None if no partial file is written.
     """
     assert upload_file.app_instance is not None
-    driver.execute_cdp_cmd("Network.enable", {})
-    driver.execute_cdp_cmd(
-        "Network.emulateNetworkConditions",
-        {
-            "offline": False,
-            "downloadThroughput": 1024 * 1024 / 8,  # 1 Mbps
-            "uploadThroughput": 1024 * 1024 / 8,  # 1 Mbps
-            "latency": 200,  # 200ms
-        },
+    progress_dicts: Callable[[], list[WebElement]] = request.getfixturevalue(
+        progress_fixture
     )
     poll_for_token(driver, upload_file)
 
-    upload_box = driver.find_elements(By.XPATH, "//input[@type='file']")[1]
-    upload_button = driver.find_element(By.ID, "upload_button_secondary")
-    cancel_button = driver.find_element(By.ID, "cancel_button_secondary")
+    upload_box = get_upload_box(driver, upload_root_id=upload_root_id)
+    upload_button = driver.find_element(By.ID, f"upload_button_{upload_root_id}")
+    cancel_button = driver.find_element(By.ID, f"cancel_button_{upload_root_id}")
 
-    exp_name = "large.txt"
     target_file = tmp_path / exp_name
     with target_file.open("wb") as f:
-        f.seek(1024 * 1024)  # 1 MB file, should upload in ~8 seconds
+        f.seek(file_size_bytes)
         f.write(b"0")
 
     upload_box.send_keys(str(target_file))
     upload_button.click()
-    await asyncio.sleep(1)
+    # Check for at least 2 progress updates to ensure the upload is active.
+    AppHarness.expect(lambda: len(progress_dicts()) >= 2)
     cancel_button.click()
 
-    # Wait a bit for the upload to get cancelled.
-    await asyncio.sleep(12)
-
-    # But there should never be a final progress record for a cancelled upload.
-    for p in driver.find_elements(By.XPATH, "//*[@id='progress_dicts']/p"):
-        assert json.loads(p.text)["progress"] != 1
+    # There should never be a final progress record for a cancelled upload.
+    for p in await poll_for_stopped_progress(progress_dicts):
+        assert p["progress"] != 1
 
     assert not (rx.get_upload_dir() / exp_name).exists()
+
+    if partial_subdir is not None:
+        partial_path = rx.get_upload_dir() / partial_subdir / exp_name
+        assert partial_path.exists()
+        assert partial_path.stat().st_size < target_file.stat().st_size
 
     target_file.unlink()
 
@@ -594,7 +816,7 @@ async def test_upload_chunk_file(tmp_path, upload_file: AppHarness, driver: WebD
     clear_btn = driver.find_element(By.ID, "clear_uploads")
     clear_btn.click()
 
-    upload_box = driver.find_elements(By.XPATH, "//input[@type='file']")[4]
+    upload_box = get_upload_box(driver, upload_root_id="streaming")
     upload_button = driver.find_element(By.ID, "upload_button_streaming")
     selected_files = driver.find_element(By.ID, "selected_files_streaming")
     chunk_records_display = driver.find_element(By.ID, "stream_chunk_records")
@@ -636,58 +858,6 @@ async def test_upload_chunk_file(tmp_path, upload_file: AppHarness, driver: WebD
         ).read_text() == exp_contents
 
 
-@pytest.mark.asyncio
-async def test_cancel_upload_chunk(
-    tmp_path,
-    upload_file: AppHarness,
-    driver: WebDriver,
-):
-    """Submit a large streaming upload and cancel it."""
-    assert upload_file.app_instance is not None
-    driver.execute_cdp_cmd("Network.enable", {})
-    driver.execute_cdp_cmd(
-        "Network.emulateNetworkConditions",
-        {
-            "offline": False,
-            "downloadThroughput": 1024 * 1024 / 8,  # 1 Mbps
-            "uploadThroughput": 1024 * 1024 / 8,  # 1 Mbps
-            "latency": 200,  # 200ms
-        },
-    )
-    poll_for_token(driver, upload_file)
-
-    upload_box = driver.find_elements(By.XPATH, "//input[@type='file']")[4]
-    upload_button = driver.find_element(By.ID, "upload_button_streaming")
-    cancel_button = driver.find_element(By.ID, "cancel_button_streaming")
-
-    exp_name = "cancel_stream.txt"
-    target_file = tmp_path / exp_name
-    with target_file.open("wb") as f:
-        f.seek(2 * 1024 * 1024)
-        f.write(b"0")
-
-    upload_box.send_keys(str(target_file))
-    upload_button.click()
-    await asyncio.sleep(2)
-    cancel_button.click()
-
-    await asyncio.sleep(11)
-
-    # But there should never be a final progress record for a cancelled upload.
-    for p in driver.find_elements(By.XPATH, "//*[@id='stream_progress_dicts']/p"):
-        assert json.loads(p.text)["progress"] != 1
-
-    assert not (rx.get_upload_dir() / exp_name).exists()
-
-    partial_path = rx.get_upload_dir() / "streaming" / exp_name
-    assert partial_path.exists()
-    assert partial_path.stat().st_size < target_file.stat().st_size
-
-    target_file.unlink()
-    if partial_path.exists():
-        partial_path.unlink()
-
-
 def test_upload_download_file(
     tmp_path,
     upload_file: AppHarness,
@@ -708,7 +878,7 @@ def test_upload_download_file(
     clear_btn = driver.find_element(By.ID, "clear_uploads")
     clear_btn.click()
 
-    upload_box = driver.find_elements(By.XPATH, "//input[@type='file']")[2]
+    upload_box = get_upload_box(driver, upload_root_id="tertiary")
     assert upload_box
     upload_button = driver.find_element(By.ID, "upload_button_tertiary")
     assert upload_button
@@ -789,14 +959,13 @@ def test_uploaded_file_security_headers(
         expected_mime_type: expected Content-Type mime type.
     """
     import httpx
-    from reflex_base.config import get_config
 
     assert upload_file.app_instance is not None
     poll_for_token(driver, upload_file)
     clear_btn = driver.find_element(By.ID, "clear_uploads")
     clear_btn.click()
 
-    upload_box = driver.find_elements(By.XPATH, "//input[@type='file']")[2]
+    upload_box = get_upload_box(driver, upload_root_id="tertiary")
     upload_button = driver.find_element(By.ID, "upload_button_tertiary")
 
     target_file = tmp_path / exp_name
@@ -809,7 +978,7 @@ def test_uploaded_file_security_headers(
     assert upload_file.poll_for_value(upload_done, exp_not_equal="false") == "true"
 
     # Fetch the uploaded file directly via httpx and check security headers.
-    upload_url = f"{get_config().api_url}/{Endpoint.UPLOAD.value}/{exp_name}"
+    upload_url = f"{Endpoint.UPLOAD.get_url()}/{exp_name}"
     resp = httpx.get(upload_url)
     assert resp.status_code == 200
     assert resp.text == exp_contents
@@ -866,9 +1035,7 @@ def test_on_drop(
     clear_btn = driver.find_element(By.ID, "clear_uploads")
     clear_btn.click()
 
-    upload_box = driver.find_elements(By.XPATH, "//input[@type='file']")[
-        3
-    ]  # quaternary upload
+    upload_box = get_upload_box(driver, upload_root_id="quaternary")
     assert upload_box
 
     exp_name = "drop_test.txt"

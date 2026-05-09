@@ -36,7 +36,7 @@ from typing_extensions import NotRequired, is_typeddict
 
 from reflex_components_core.el.element import Element
 
-from .base import BaseHTML
+from .base import BaseHTML, RawTextBaseHTML, VoidBaseHTML
 
 _DYNAMIC_FORM_FIELD = object()
 
@@ -532,7 +532,7 @@ HTMLInputTypeAttribute = Literal[
 ]
 
 
-class BaseInput(BaseHTML):
+class BaseInput(VoidBaseHTML):
     """A base class for input elements."""
 
     tag = "input"
@@ -881,7 +881,7 @@ const enterKeySubmitOnKeyDown = (e, is_enabled) => {
 """
 
 
-class Textarea(BaseHTML):
+class Textarea(RawTextBaseHTML):
     """Display the textarea element."""
 
     tag = "textarea"

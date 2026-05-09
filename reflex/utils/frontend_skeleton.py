@@ -148,6 +148,55 @@ def initialize_requirements_txt(
     return False
 
 
+def get_root_bun_lock_path() -> Path:
+    """Get the canonical bun lock path in the app root.
+
+    This assumes the current working directory is the Reflex app root.
+
+    Returns:
+        The canonical bun lock path in the app root.
+    """
+    return Path.cwd() / constants.Bun.LOCKFILE_PATH
+
+
+def get_web_bun_lock_path() -> Path:
+    """Get the mirrored bun lock path in the .web directory.
+
+    Returns:
+        The mirrored bun lock path in the .web directory.
+    """
+    return get_web_dir() / constants.Bun.LOCKFILE_PATH
+
+
+def sync_root_bun_lock_to_web():
+    """Mirror the canonical root bun.lock into .web.
+
+    If the root lockfile is absent, remove any stale mirrored copy from .web.
+    """
+    root_bun_lock_path = get_root_bun_lock_path()
+    web_bun_lock_path = get_web_bun_lock_path()
+
+    if not root_bun_lock_path.exists():
+        if web_bun_lock_path.exists():
+            console.debug(f"Removing stale {web_bun_lock_path}")
+            path_ops.rm(web_bun_lock_path)
+        return
+
+    console.debug(f"Copying {root_bun_lock_path} to {web_bun_lock_path}")
+    path_ops.cp(root_bun_lock_path, web_bun_lock_path)
+
+
+def sync_web_bun_lock_to_root():
+    """Persist the mirrored .web bun.lock back to the app root."""
+    web_bun_lock_path = get_web_bun_lock_path()
+    if not web_bun_lock_path.exists():
+        return
+
+    root_bun_lock_path = get_root_bun_lock_path()
+    console.debug(f"Copying {web_bun_lock_path} to {root_bun_lock_path}")
+    path_ops.cp(web_bun_lock_path, root_bun_lock_path)
+
+
 def initialize_web_directory():
     """Initialize the web directory on reflex init."""
     console.log("Initializing the web directory.")
@@ -157,6 +206,9 @@ def initialize_web_directory():
 
     console.debug(f"Copying {constants.Templates.Dirs.WEB_TEMPLATE} to {get_web_dir()}")
     path_ops.copy_tree(constants.Templates.Dirs.WEB_TEMPLATE, str(get_web_dir()))
+
+    console.debug("Restoring the bun lock file.")
+    sync_root_bun_lock_to_web()
 
     console.debug("Initializing the web directory.")
     initialize_package_json()
