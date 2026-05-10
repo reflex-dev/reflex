@@ -658,9 +658,15 @@ def _install_frontend_packages(
     wanted_dep_names = set(constants.PackageJson.DEPENDENCIES.keys()) | {
         _extract_package_name(p) for p in packages
     }
-    wanted_dev_dep_names = set(constants.PackageJson.DEV_DEPENDENCIES.keys()) | {
-        _extract_package_name(p) for p in development_deps
-    }
+    # If the same package is requested as both a regular and a development
+    # dependency (e.g. two plugins disagree on the section), prefer the
+    # regular-dep section. This keeps the placement deterministic instead
+    # of depending on the order the package manager processes the two
+    # add calls.
+    wanted_dev_dep_names = (
+        set(constants.PackageJson.DEV_DEPENDENCIES.keys())
+        | {_extract_package_name(p) for p in development_deps}
+    ) - wanted_dep_names
     needed_names = wanted_dep_names | wanted_dev_dep_names
 
     existing_deps, existing_dev_deps = _existing_web_package_sections()
@@ -711,17 +717,20 @@ def _install_frontend_packages(
         | pinned_packages
         | new_unpinned_packages
     )
-    dev_deps_to_add = (
-        _pinned_args_from_constants(constants.PackageJson.DEV_DEPENDENCIES)
-        | pinned_dev_deps
-        | new_unpinned_dev_deps
-    )
-
-    if deps_to_add:
-        run_package_manager(
-            [primary_package_manager, "add", "--legacy-peer-deps", *deps_to_add],
-            show_status_message="Installing frontend packages",
+    deps_names_to_add = {_extract_package_name(p) for p in deps_to_add}
+    dev_deps_to_add = {
+        spec
+        for spec in (
+            _pinned_args_from_constants(constants.PackageJson.DEV_DEPENDENCIES)
+            | pinned_dev_deps
+            | new_unpinned_dev_deps
         )
+        if _extract_package_name(spec) not in deps_names_to_add
+    }
+
+    # Add dev dependencies first so that any subsequent regular-dep add
+    # for an overlapping name lands in ``dependencies`` regardless of
+    # whether the package manager moves entries between sections.
     if dev_deps_to_add:
         run_package_manager(
             [
@@ -732,6 +741,11 @@ def _install_frontend_packages(
                 *dev_deps_to_add,
             ],
             show_status_message="Installing frontend development dependencies",
+        )
+    if deps_to_add:
+        run_package_manager(
+            [primary_package_manager, "add", "--legacy-peer-deps", *deps_to_add],
+            show_status_message="Installing frontend packages",
         )
 
 

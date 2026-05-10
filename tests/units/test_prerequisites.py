@@ -588,6 +588,91 @@ def test_install_frontend_packages_moves_misplaced_pinned_framework_dep(
     assert "-d" not in add_call
 
 
+def test_install_frontend_packages_conflict_prefers_regular_section(
+    install_packages_env: InstallPackagesEnv,
+    monkeypatch,
+):
+    """A package wanted by both deps and dev-deps lands in deps only."""
+    env = install_packages_env
+
+    class FakePlugin:
+        def get_frontend_dependencies(self):
+            return {"shared-pkg"}
+
+        def get_frontend_development_dependencies(self):
+            return {"shared-pkg"}
+
+    monkeypatch.setattr(env.config, "plugins", [FakePlugin()])
+    calls = _record_calls(env)
+
+    env.install()
+
+    add_calls = [c for c in calls if "add" in c]
+    assert len(add_calls) == 1
+    add_call = add_calls[0]
+    assert "shared-pkg" in add_call
+    assert "-d" not in add_call
+
+
+def test_install_frontend_packages_dev_deps_added_before_regular_deps(
+    install_packages_env: InstallPackagesEnv,
+    monkeypatch,
+):
+    """When both sections have additions, the dev-deps add runs first."""
+    env = install_packages_env
+
+    class FakePlugin:
+        def get_frontend_dependencies(self):
+            return set()
+
+        def get_frontend_development_dependencies(self):
+            return {"some-dev"}
+
+    monkeypatch.setattr(env.config, "plugins", [FakePlugin()])
+    calls = _record_calls(env)
+
+    env.install({"some-pkg"})
+
+    add_calls = [c for c in calls if "add" in c]
+    assert len(add_calls) == 2
+    assert "-d" in add_calls[0]
+    assert "some-dev" in add_calls[0]
+    assert "-d" not in add_calls[1]
+    assert "some-pkg" in add_calls[1]
+
+
+def test_install_frontend_packages_conflict_with_misplaced_existing_entry(
+    install_packages_env: InstallPackagesEnv,
+    monkeypatch,
+):
+    """A conflicting name currently in devDeps is removed and re-added to deps."""
+    env = install_packages_env
+    env.web_package_json.write_text(
+        json.dumps({"devDependencies": {"shared-pkg": "1.0.0"}})
+    )
+
+    class FakePlugin:
+        def get_frontend_dependencies(self):
+            return {"shared-pkg"}
+
+        def get_frontend_development_dependencies(self):
+            return {"shared-pkg"}
+
+    monkeypatch.setattr(env.config, "plugins", [FakePlugin()])
+    calls = _record_calls(env)
+
+    env.install()
+
+    remove_calls = [c for c in calls if "remove" in c]
+    assert len(remove_calls) == 1
+    assert "shared-pkg" in remove_calls[0]
+
+    add_calls = [c for c in calls if "add" in c]
+    assert len(add_calls) == 1
+    assert "shared-pkg" in add_calls[0]
+    assert "-d" not in add_calls[0]
+
+
 def test_install_frontend_packages_does_not_move_correctly_placed_packages(
     install_packages_env: InstallPackagesEnv,
     monkeypatch,
