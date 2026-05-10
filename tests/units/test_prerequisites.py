@@ -508,6 +508,115 @@ def test_install_frontend_packages_unpinned_already_present_makes_no_add_call(
     assert add_calls == []
 
 
+def test_install_frontend_packages_moves_misplaced_unpinned_dep_to_deps(
+    install_packages_env: InstallPackagesEnv,
+):
+    """A regular dep currently sitting under devDependencies gets relocated."""
+    env = install_packages_env
+    env.web_package_json.write_text(
+        json.dumps({"devDependencies": {"some-pkg": "1.2.3"}})
+    )
+    calls = _record_calls(env)
+
+    env.install({"some-pkg"})
+
+    remove_calls = [c for c in calls if "remove" in c]
+    assert len(remove_calls) == 1
+    assert "some-pkg" in remove_calls[0]
+
+    add_calls = [c for c in calls if "add" in c]
+    assert len(add_calls) == 1
+    add_call = add_calls[0]
+    assert "some-pkg" in add_call
+    assert "-d" not in add_call
+
+
+def test_install_frontend_packages_moves_misplaced_unpinned_dev_dep_to_dev(
+    install_packages_env: InstallPackagesEnv,
+    monkeypatch,
+):
+    """A dev dep currently sitting under dependencies gets relocated."""
+    env = install_packages_env
+    env.web_package_json.write_text(json.dumps({"dependencies": {"some-dev": "1.2.3"}}))
+
+    class FakePlugin:
+        def get_frontend_dependencies(self):
+            return set()
+
+        def get_frontend_development_dependencies(self):
+            return {"some-dev"}
+
+    monkeypatch.setattr(env.config, "plugins", [FakePlugin()])
+    calls = _record_calls(env)
+
+    env.install()
+
+    remove_calls = [c for c in calls if "remove" in c]
+    assert len(remove_calls) == 1
+    assert "some-dev" in remove_calls[0]
+
+    dev_add_calls = [c for c in calls if "add" in c and "-d" in c]
+    assert len(dev_add_calls) == 1
+    assert "some-dev" in dev_add_calls[0]
+
+    deps_add_calls = [c for c in calls if "add" in c and "-d" not in c]
+    assert deps_add_calls == []
+
+
+def test_install_frontend_packages_moves_misplaced_pinned_framework_dep(
+    install_packages_env: InstallPackagesEnv,
+    monkeypatch,
+):
+    """A framework dep listed in the wrong section gets relocated and re-pinned."""
+    env = install_packages_env
+    monkeypatch.setattr(constants.PackageJson, "DEPENDENCIES", {"react": "19.2.5"})
+    env.web_package_json.write_text(
+        json.dumps({"devDependencies": {"react": "18.0.0"}})
+    )
+    calls = _record_calls(env)
+
+    env.install()
+
+    remove_calls = [c for c in calls if "remove" in c]
+    assert len(remove_calls) == 1
+    assert "react" in remove_calls[0]
+
+    add_calls = [c for c in calls if "add" in c]
+    assert len(add_calls) == 1
+    add_call = add_calls[0]
+    assert "react@19.2.5" in add_call
+    assert "-d" not in add_call
+
+
+def test_install_frontend_packages_does_not_move_correctly_placed_packages(
+    install_packages_env: InstallPackagesEnv,
+    monkeypatch,
+):
+    """Packages already in the right section trigger no remove/add."""
+    env = install_packages_env
+    env.web_package_json.write_text(
+        json.dumps({
+            "dependencies": {"regular": "1.0.0"},
+            "devDependencies": {"dev-only": "2.0.0"},
+        })
+    )
+
+    class FakePlugin:
+        def get_frontend_dependencies(self):
+            return set()
+
+        def get_frontend_development_dependencies(self):
+            return {"dev-only"}
+
+    monkeypatch.setattr(env.config, "plugins", [FakePlugin()])
+    calls = _record_calls(env)
+
+    env.install({"regular"})
+
+    assert [c for c in calls if "remove" in c] == []
+    assert [c for c in calls if "add" in c] == []
+
+
 def test_install_frontend_packages_pins_framework_dependencies(
     install_packages_env: InstallPackagesEnv,
     monkeypatch,

@@ -414,27 +414,32 @@ def _extract_package_name(package_spec: str) -> str:
     return package_spec.split("@", 1)[0]
 
 
-def _existing_web_package_names() -> set[str]:
-    """Return packages currently declared in .web/package.json.
+def _existing_web_package_sections() -> tuple[set[str], set[str]]:
+    """Return packages currently declared in .web/package.json by section.
 
-    Reads ``.web/package.json``'s ``dependencies`` and ``devDependencies``.
-    ``overrides`` are excluded because they reference transitive deps.
+    Reads ``.web/package.json``'s ``dependencies`` and ``devDependencies``
+    separately so callers can detect packages declared in the wrong
+    section. ``overrides`` are excluded because they reference transitive
+    deps.
 
     Returns:
-        The set of bare package names already in package.json. Empty if the
-        file is missing or unreadable.
+        A tuple ``(deps, dev_deps)`` of bare package names. Both empty if
+        the file is missing or unreadable.
     """
     web_pkg_json_path = frontend_skeleton.get_web_package_json_path()
     if not web_pkg_json_path.exists():
-        return set()
+        return set(), set()
     try:
         data = json.loads(web_pkg_json_path.read_text())
     except (json.JSONDecodeError, OSError) as e:
         console.warn(
             f"Failed to read {web_pkg_json_path}: {e}; skipping existing package check."
         )
-        return set()
-    return set(data.get("dependencies") or {}) | set(data.get("devDependencies") or {})
+        return set(), set()
+    return (
+        set(data.get("dependencies") or {}),
+        set(data.get("devDependencies") or {}),
+    )
 
 
 def _is_bun_package_manager(package_manager: str) -> bool:
@@ -601,10 +606,14 @@ def _install_frontend_packages(
       * Plugin/custom packages with explicit version specifiers are also
         added with strict pins.
       * Plugin/custom packages without version specifiers are skipped
-        entirely if package.json already declares them, so previously
-        resolved pins are preserved across runs without relying on
-        package-manager-specific flags. Otherwise they are added without
-        a version so the manager picks one.
+        entirely if package.json already declares them in the correct
+        section, so previously resolved pins are preserved across runs
+        without relying on package-manager-specific flags. Otherwise they
+        are added without a version so the manager picks one.
+      * Packages declared in the wrong section (e.g. a regular dep
+        listed under ``devDependencies``) are removed first and re-added
+        so they land in the section the framework/plugin/import-graph
+        actually intends.
 
     Args:
         packages: Custom packages requested by the caller (from
@@ -646,25 +655,33 @@ def _install_frontend_packages(
         development_deps.update(plugin.get_frontend_development_dependencies())
         packages.update(plugin.get_frontend_dependencies())
 
-    needed_names = (
-        set(constants.PackageJson.DEPENDENCIES.keys())
-        | set(constants.PackageJson.DEV_DEPENDENCIES.keys())
-        | {_extract_package_name(p) for p in packages}
-        | {_extract_package_name(p) for p in development_deps}
-    )
+    wanted_dep_names = set(constants.PackageJson.DEPENDENCIES.keys()) | {
+        _extract_package_name(p) for p in packages
+    }
+    wanted_dev_dep_names = set(constants.PackageJson.DEV_DEPENDENCIES.keys()) | {
+        _extract_package_name(p) for p in development_deps
+    }
+    needed_names = wanted_dep_names | wanted_dev_dep_names
 
-    existing_names = _existing_web_package_names()
+    existing_deps, existing_dev_deps = _existing_web_package_sections()
+    existing_names = existing_deps | existing_dev_deps
 
-    # Drop any deps lingering in package.json that no component, plugin, or
-    # framework constant calls for anymore.
+    # Drop deps lingering in package.json that no component, plugin, or
+    # framework constant calls for anymore, plus any package declared in
+    # the wrong section. bun and npm both update the existing entry
+    # in-place on a re-add and won't move it across sections, so misplaced
+    # entries must be removed first to land in the correct one.
     stale_packages = existing_names - needed_names
-    if stale_packages:
+    misplaced_in_dev = (wanted_dep_names & existing_dev_deps) - existing_deps
+    misplaced_in_deps = (wanted_dev_dep_names & existing_deps) - existing_dev_deps
+    to_remove = stale_packages | misplaced_in_dev | misplaced_in_deps
+    if to_remove:
         run_package_manager(
             [
                 primary_package_manager,
                 "remove",
                 "--legacy-peer-deps",
-                *sorted(stale_packages),
+                *sorted(to_remove),
             ],
             show_status_message="Removing unused frontend packages",
         )
@@ -680,12 +697,14 @@ def _install_frontend_packages(
     pinned_packages, unpinned_packages = _split_by_version_specifier(packages)
     pinned_dev_deps, unpinned_dev_deps = _split_by_version_specifier(development_deps)
 
-    # Skip unpinned entries that already appear in package.json so the
-    # package manager doesn't churn the previously resolved version. This
-    # replaces bun's ``--only-missing`` flag with package-manager-agnostic
-    # logic that also works on npm.
-    new_unpinned_packages = unpinned_packages - existing_names
-    new_unpinned_dev_deps = unpinned_dev_deps - existing_names
+    # Skip unpinned entries that already appear in the correct section so
+    # the package manager doesn't churn the previously resolved version.
+    # Misplaced entries fall through here and get re-added (after the
+    # remove step above) into the right section. This replaces bun's
+    # ``--only-missing`` flag with package-manager-agnostic logic that
+    # also works on npm.
+    new_unpinned_packages = unpinned_packages - existing_deps
+    new_unpinned_dev_deps = unpinned_dev_deps - existing_dev_deps
 
     deps_to_add = (
         _pinned_args_from_constants(constants.PackageJson.DEPENDENCIES)
