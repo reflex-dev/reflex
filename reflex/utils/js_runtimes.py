@@ -670,11 +670,7 @@ def _install_frontend_packages(
         )
 
     # Install against the recovered lockfile so its pins are honored
-    # before any further mutation. ``--frozen-lockfile`` ensures bun
-    # refuses to silently rewrite the lockfile here; npm ignores the
-    # flag. Skip on brand-new projects where no lockfile exists yet —
-    # ``--frozen-lockfile`` would error, and the subsequent ``bun add``
-    # calls will generate a fresh lockfile.
+    # before any further mutation.
     if any(
         frontend_skeleton.get_web_lockfile_path(name).exists()
         for name in frontend_skeleton.LOCKFILE_NAMES
