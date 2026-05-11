@@ -19,7 +19,7 @@ hosting_cli = (
 runner = CliRunner()
 
 DOCKERFILE = "FROM python:3.13-slim\nWORKDIR /app\n"
-# A realistic-shaped flexgen script — the rewrite logic targets the
+# A realistic-shaped Reflex deploy script — the rewrite logic targets the
 # `gcloud builds submit ... .` block in here.
 DEPLOY_SCRIPT = (
     "#!/usr/bin/env bash\n"
@@ -130,7 +130,7 @@ def test_gcp_deploy_runs_script_from_source_with_cloudbuild_yaml(
 
     # cloudbuild.yaml embeds the Reflex Dockerfile via heredoc and builds/pushes.
     yaml = captured["cloudbuild_yaml"]
-    assert "cat > Dockerfile <<'REFLEX_FLEXGEN_DOCKERFILE_EOF'" in yaml
+    assert "cat > Dockerfile <<'REFLEX_DOCKERFILE_EOF'" in yaml
     # Each Dockerfile line shows up in the YAML (indented under the literal block).
     for line in DOCKERFILE.splitlines():
         assert f"      {line}" in yaml
@@ -440,14 +440,14 @@ def test_build_cloudbuild_yaml_embeds_dockerfile_via_heredoc():
     yaml = gcp_module._build_cloudbuild_yaml(dockerfile)
 
     # Heredoc opens and closes with the same single-quoted marker.
-    assert "cat > Dockerfile <<'REFLEX_FLEXGEN_DOCKERFILE_EOF'" in yaml
-    assert yaml.count("REFLEX_FLEXGEN_DOCKERFILE_EOF") == 2
+    assert "cat > Dockerfile <<'REFLEX_DOCKERFILE_EOF'" in yaml
+    assert yaml.count("REFLEX_DOCKERFILE_EOF") == 2
 
     # Inside the heredoc body, every literal `$` from the Dockerfile is doubled
     # to escape Cloud Build's substitution pass. Slice out the heredoc body and
     # verify no bare `$` survives there.
-    open_marker = "cat > Dockerfile <<'REFLEX_FLEXGEN_DOCKERFILE_EOF'\n"
-    close_marker = "      REFLEX_FLEXGEN_DOCKERFILE_EOF\n"
+    open_marker = "cat > Dockerfile <<'REFLEX_DOCKERFILE_EOF'\n"
+    close_marker = "      REFLEX_DOCKERFILE_EOF\n"
     body_start = yaml.index(open_marker) + len(open_marker)
     body_end = yaml.index(close_marker)
     heredoc_body = yaml[body_start:body_end]
@@ -472,7 +472,7 @@ def test_build_cloudbuild_yaml_rejects_marker_collision():
     """If the Dockerfile happens to contain the heredoc marker as a whole line, error."""
     from reflex_cli.v2 import gcp as gcp_module
 
-    dockerfile = "FROM scratch\nREFLEX_FLEXGEN_DOCKERFILE_EOF\nCMD true\n"
+    dockerfile = "FROM scratch\nREFLEX_DOCKERFILE_EOF\nCMD true\n"
     with pytest.raises(ValueError, match="heredoc marker"):
         gcp_module._build_cloudbuild_yaml(dockerfile)
 

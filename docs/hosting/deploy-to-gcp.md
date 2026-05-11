@@ -45,7 +45,7 @@ The CLI will:
 4. Ask for confirmation, then run the script with `cwd=` your source directory: enable the required APIs, create the Artifact Registry repository, build the image on Cloud Build (which materializes the Dockerfile inside the build step from the `cloudbuild.yaml`), and deploy a public Cloud Run service.
 5. Delete the tempfile after the script finishes.
 
-Your source tree is never written to — if you have an existing `Dockerfile` in `--source`, it's left in place and ignored. The flexgen Dockerfile only exists inside the `cloudbuild.yaml` tempfile (and inside the Cloud Build job).
+Your source tree is never written to — if you have an existing `Dockerfile` in `--source`, it's left in place and ignored. The Reflex-provided Dockerfile only exists inside the `cloudbuild.yaml` tempfile (and inside the Cloud Build job).
 
 When it's done, you'll get a service URL like `https://my-reflex-app-<project-number>.us-central1.run.app`.
 
@@ -81,6 +81,24 @@ It then creates (idempotently) and uses:
 
 Re-running the command pushes a new image tag and rolls the Cloud Run service forward.
 
+## How the build runs
+
+The generated `cloudbuild.yaml` is a single Cloud Build step that:
+
+1. Writes the Dockerfile into the build workspace via a single-quoted heredoc:
+    ```yaml
+    - |
+      cat > Dockerfile <<'REFLEX_DOCKERFILE_EOF'
+      FROM python:3.13-slim
+      ...
+      REFLEX_DOCKERFILE_EOF
+      docker build -t "$_IMAGE" .
+      docker push "$_IMAGE"
+    ```
+2. Builds and pushes the image, tagging it with `_IMAGE` (passed to `gcloud builds submit` as `--substitutions=_IMAGE=...`).
+
+Because Cloud Build runs its own substitution pass over `args`, every literal `$` in the Dockerfile is doubled to `$$` before embedding (e.g. `ENV PATH="${UV_PROJECT_ENVIRONMENT}/bin:$PATH"` becomes `ENV PATH="$${UV_PROJECT_ENVIRONMENT}/bin:$$PATH"` in the YAML). Cloud Build's parser converts `$$` back to `$` before bash runs, so the Dockerfile written into the workspace contains the original characters.
+
 ## Security model
 
 The CLI runs the deploy script under a **restricted environment**. Only an explicit allowlist of host variables is forwarded to `bash` — things like `PATH`, `HOME`, `CLOUDSDK_*`, `DOCKER_*`, and proxy/TLS variables. Unrelated host secrets such as `AWS_*`, `GITHUB_TOKEN`, or arbitrary user variables are **not** forwarded, so a tampered or compromised manifest cannot exfiltrate them.
@@ -109,7 +127,7 @@ In non-interactive mode the CLI will not prompt, and it will exit non-zero if a 
 
 ## Troubleshooting
 
-**`Flexgen denied the request (403). GCP Cloud Run deploys require an Enterprise tier subscription.`**
+**`Reflex denied the request (403). GCP Cloud Run deploys require an Enterprise tier subscription.`**
 Your account is not on the Enterprise tier. Contact [sales@reflex.dev](mailto:sales@reflex.dev).
 
 **`Billing must be enabled for activation of service(s) ...` (`UREQ_PROJECT_BILLING_NOT_FOUND`)**
@@ -123,3 +141,9 @@ Run `gcloud auth login` and `gcloud auth application-default login`.
 
 **`The 'gcloud' / 'docker' / 'bash' CLI was not found on PATH.`**
 Install the missing tool and ensure it's on `PATH` for the shell you're invoking the CLI from.
+
+**`Dockerfile content contains the reserved heredoc marker 'REFLEX_DOCKERFILE_EOF'.`**
+Vanishingly unlikely — the Dockerfile from Reflex Cloud happens to contain a line that exactly matches the heredoc terminator the CLI uses to embed it. Re-run after the next CLI release, or open an issue.
+
+**`Couldn't find 'gcloud builds submit' in the deploy script.`**
+The CLI rewrites the `gcloud builds submit` block in the Reflex-supplied deploy script to use `--config=`. If Reflex Cloud changes the shape of that script before the CLI is updated to match, you'll see this error — upgrade `reflex-hosting-cli` (`uv tool upgrade reflex-hosting-cli` or `pip install -U reflex-hosting-cli`).

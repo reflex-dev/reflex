@@ -144,7 +144,7 @@ DEPLOY_ENV_ALLOWLIST = frozenset(
     default=".",
     show_default=True,
     type=click.Path(file_okay=False, dir_okay=True),
-    help="The directory containing the Reflex app. Staged into an ephemeral build context; the source tree itself is not modified.",
+    help="The directory containing the Reflex app. Uploaded to Cloud Build as the build context; the source tree itself is not modified.",
 )
 @click.option("--token", help="The Reflex authentication token.")
 @click.option(
@@ -157,7 +157,7 @@ DEPLOY_ENV_ALLOWLIST = frozenset(
     "--dry-run",
     is_flag=True,
     default=False,
-    help="Print the manifest without staging the build context or running the script.",
+    help="Print the manifest and generated cloudbuild.yaml without writing the tempfile or running the script.",
 )
 @click.option(
     "--loglevel",
@@ -181,9 +181,11 @@ def deploy_command(
     """Deploy a Reflex app to a cloud target.
 
     Currently the only supported target is GCP Cloud Run via --gcp. The
-    command fetches a Dockerfile and bash deploy script from Reflex, stages
-    them in an ephemeral build context alongside symlinked source entries
-    (your project tree is never modified), and runs the script from there.
+    command fetches a Dockerfile and bash deploy script from Reflex, embeds
+    the Dockerfile inside a generated ``cloudbuild.yaml`` (written to a
+    tempfile), rewrites the script's ``gcloud builds submit`` invocation to
+    reference that config, then runs the script with cwd= your source dir.
+    Your project tree is never modified.
     """
     from reflex_cli.utils import hosting
 
@@ -430,7 +432,7 @@ def _build_cloudbuild_yaml(dockerfile_contents: str) -> str:
             heredoc marker (would terminate the heredoc early).
 
     """
-    marker = "REFLEX_FLEXGEN_DOCKERFILE_EOF"
+    marker = "REFLEX_DOCKERFILE_EOF"
     if any(line.rstrip() == marker for line in dockerfile_contents.splitlines()):
         raise ValueError(
             f"Dockerfile content contains the reserved heredoc marker {marker!r}."
