@@ -130,8 +130,11 @@ def products_column_gutter() -> rx.Component:
         The component.
     """
     return rx.el.div(
+        rx.el.div(
+            class_name="pointer-events-none absolute top-0 left-0 h-12 w-full border-b border-secondary-4",
+        ),
         role="presentation",
-        class_name="w-8 shrink-0 bg-secondary-1 border-secondary-4 border-x",
+        class_name="w-8 shrink-0 bg-secondary-1 border-secondary-4 border-x relative",
     )
 
 
@@ -193,7 +196,7 @@ def products_ship_column_body() -> rx.Component:
         ),
         rx.el.div(
             rx.image(
-                src=f"{REFLEX_ASSETS_CDN}landing/features/{rx.color_mode_cond('light', 'dark')}/ship_navbar_2.svg",
+                src=f"{REFLEX_ASSETS_CDN}landing/features/{rx.color_mode_cond('light', 'dark')}/ship_navbar_3.svg",
                 alt="Deploy, monitor & scale",
                 loading="lazy",
                 class_name="h-auto w-full max-w-full object-cover",
@@ -299,7 +302,7 @@ def products_content() -> rx.Component:
                 class_name="flex min-h-0 w-full flex-row bg-white-1",
             ),
             products_menu_footer(),
-            class_name="flex max-w-[min(100vw-2rem,1080px)] w-[1080px] flex-col overflow-hidden rounded-xl bg-secondary-1 dark:shadow-card-dark",
+            class_name="flex max-w-[min(100vw-2rem,1240px)] w-[1240px] flex-col overflow-hidden rounded-xl bg-secondary-1 dark:shadow-card-dark",
         ),
         class_name="p-0",
     )
