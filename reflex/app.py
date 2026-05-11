@@ -1077,15 +1077,11 @@ class App(MiddlewareMixin, LifespanMixin):
             app_wrappers.update(component._get_all_app_wrap_components())
         order = sorted(app_wrappers, key=operator.itemgetter(0), reverse=True)
 
-        result: Component | None = None
-        for key in reversed(order):
+        ascending = iter(reversed(order))
+        result = copy.deepcopy(app_wrappers[next(ascending)])
+        for key in ascending:
             wrapper = copy.deepcopy(app_wrappers[key])
-            result = (
-                wrapper
-                if result is None
-                else wrapper.copy_with(children=(*wrapper.children, result))
-            )
-        assert result is not None
+            result = wrapper.copy_with(children=(*wrapper.children, result))
         return result
 
     def _should_compile(self) -> bool:

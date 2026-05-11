@@ -126,9 +126,9 @@ class DataTable(Gridjs):
             columns = LiteralVar.create(serialized["columns"])
             data = LiteralVar.create(serialized["data"])
 
-        props = {
-            attr.removesuffix("_"): getattr(self, attr) for attr in self.get_props()
-        }
-        props["columns"] = columns
-        props["data"] = data
-        return super()._render(props=props)
+        return (
+            super()
+            ._render()
+            .remove_props("columns", "data")
+            .add_props(columns=columns, data=data)
+        )

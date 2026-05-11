@@ -85,7 +85,7 @@ class ApplyStylePlugin(Plugin):
             A new frozen component carrying the merged style, or ``None``
             when the component has no type-level or app-level style to apply.
         """
-        new_style = utils.merge_component_style(comp, style)
+        new_style = comp._merge_app_style(style)
         if new_style is None:
             return None
         return comp.copy_with(style=new_style)

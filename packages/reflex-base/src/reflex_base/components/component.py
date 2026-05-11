@@ -306,8 +306,6 @@ class BaseComponent(metaclass=BaseComponentMeta):
         """
         if "children" in kwargs:
             kwargs["children"] = tuple(kwargs["children"])
-        # Bypass ``__setattr__``'s freeze guard: a brand-new instance can't be
-        # frozen, so the per-attribute check is pure overhead during init.
         d = vars(self)
         d.update(kwargs)
         for name, value in self.get_fields().items():
@@ -342,7 +340,6 @@ class BaseComponent(metaclass=BaseComponentMeta):
     def copy_with(self, **updates: Any) -> Self:
         """Return a frozen shallow copy with updated fields.
 
-        Bypasses ``__setattr__`` for speed and to skip the freeze guard.
         Render-path caches are dropped because they may depend on the fields
         being replaced.
 
@@ -355,8 +352,8 @@ class BaseComponent(metaclass=BaseComponentMeta):
         new = self.__class__.__new__(self.__class__)
         d = vars(new)
         d.update(vars(self))
-        for cache_attr in type(self)._CACHE_ATTRS:
-            d.pop(cache_attr, None)
+        for cache_attr in type(self)._CACHE_ATTRS & d.keys():
+            del d[cache_attr]
         if "children" in updates:
             updates["children"] = tuple(updates["children"])
         d.update(updates)
@@ -389,8 +386,8 @@ class BaseComponent(metaclass=BaseComponentMeta):
         new = self.__class__.__new__(self.__class__)
         new_dict = vars(new)
         new_dict.update(vars(self))
-        for attr in type(self)._CACHE_ATTRS:
-            new_dict.pop(attr, None)
+        for attr in type(self)._CACHE_ATTRS & new_dict.keys():
+            del new_dict[attr]
         return new
 
     def __eq__(self, value: Any) -> bool:
@@ -938,25 +935,20 @@ class Component(BaseComponent, ABC):
             TypeError: If an invalid prop is passed.
             ValueError: If an event trigger passed is not valid.
         """
-        # Set the id and children initially.
         children = kwargs.get("children", [])
 
         self._validate_component_children(children)
 
-        # Get the component fields, triggers, and props.
         fields = self.get_fields()
         component_specific_triggers = self.get_event_triggers()
         props = self.get_props()
 
-        # Lazily allocate the event_triggers dict only when a trigger is found.
-        # Most components have no events; allocating up-front is pure waste.
         existing_triggers = kwargs.get("event_triggers")
         event_triggers: dict[str, Any] | None = (
             dict(existing_triggers) if existing_triggers is not None else None
         )
         event_keys: list[str] = []
 
-        # Iterate through the kwargs and set the props.
         for key, value in kwargs.items():
             if key in component_specific_triggers:
                 if event_triggers is None:
@@ -1007,7 +999,6 @@ class Component(BaseComponent, ABC):
                 )
                 raise ValueError(msg)
 
-        # Promote any registered event triggers; drop the raw on_* keys.
         if event_triggers is not None:
             kwargs["event_triggers"] = event_triggers
             for key in event_keys:
@@ -1044,7 +1035,7 @@ class Component(BaseComponent, ABC):
                 "&": style,
             }
 
-        fields_style = self.get_fields()["style"]
+        fields_style = fields["style"]
 
         kwargs["style"] = Style({
             **fields_style.default_value(),
@@ -1082,8 +1073,6 @@ class Component(BaseComponent, ABC):
         ):
             msg = f"Invalid class_name passed for prop {type(self).__name__}.class_name, expected type str, got value {class_name._js_expr} of type {class_name._var_type}."
             raise TypeError(msg)
-        # Construct the component. Bypass ``__setattr__``'s freeze guard: the
-        # instance is freshly created and not yet frozen.
         vars(self).update(kwargs)
 
     @classmethod
@@ -1296,7 +1285,6 @@ class Component(BaseComponent, ABC):
         children_tuple = tuple(children)
         comp = cls.__new__(cls)
         super(Component, comp).__init__(id=props.get("id"), children=children_tuple)
-        # Bypass ``__setattr__``'s freeze guard: ``comp`` is not yet frozen.
         vars(comp).update(props)
         comp._freeze()
         return comp
@@ -1349,16 +1337,45 @@ class Component(BaseComponent, ABC):
             component_style = Style(style)
         return component_style
 
+    def _merge_app_style(self, app_style: ComponentStyle | Style) -> Style | None:
+        """Compute the final style for this component given app-level style.
+
+        Apply order (later overrides earlier):
+        1. Default style from `_add_style`/`add_style`.
+        2. User-defined style from `App.style`.
+        3. User-defined style from `Component.style`.
+
+        Args:
+            app_style: The app-level component style map.
+
+        Returns:
+            The merged style, or ``None`` when neither type-level nor app-level
+            style applies (and the caller can leave ``self.style`` untouched).
+
+        Raises:
+            UserWarning: If `_add_style` has been overridden.
+        """
+        if type(self)._add_style != Component._add_style:
+            msg = "Do not override _add_style directly. Use add_style instead."
+            raise UserWarning(msg)
+        style_addition = self._add_style()
+        component_style = self._get_component_style(app_style)
+        if not style_addition and not component_style:
+            return None
+        new_style = style_addition
+        style_vars = [new_style._var_data]
+        if component_style:
+            new_style.update(component_style)
+            style_vars.append(component_style._var_data)
+        new_style.update(self.style)
+        style_vars.append(self.style._var_data)
+        new_style._var_data = VarData.merge(*style_vars)
+        return new_style
+
     def _add_style_recursive(
         self, style: ComponentStyle | Style, theme: Component | None = None
     ) -> Component:
         """Add additional style to the component and its children.
-
-        Apply order is as follows (with the latest overriding the earliest):
-        1. Default style from `_add_style`/`add_style`.
-        2. User-defined style from `App.style`.
-        3. User-defined style from `Component.style`.
-        4. style dict and css props passed to the component instance.
 
         Args:
             style: A dict from component to styling.
@@ -1370,13 +1387,7 @@ class Component(BaseComponent, ABC):
         Raises:
             UserWarning: If `_add_style` has been overridden.
         """
-        if type(self)._add_style != Component._add_style:
-            msg = "Do not override _add_style directly. Use add_style instead."
-            raise UserWarning(msg)
-
-        style_addition = self._add_style()
-        component_style = self._get_component_style(style)
-        has_style_change = bool(style_addition) or bool(component_style)
+        merged_style = self._merge_app_style(style)
 
         new_children: list | None = None
         for i, child in enumerate(self.children):
@@ -1389,20 +1400,12 @@ class Component(BaseComponent, ABC):
                 new_children = list(self.children)
             new_children[i] = updated
 
-        if not has_style_change and new_children is None:
+        if merged_style is None and new_children is None:
             return self
 
         updates: dict[str, Any] = {}
-        if has_style_change:
-            new_style = style_addition
-            style_vars = [new_style._var_data]
-            if component_style:
-                new_style.update(component_style)
-                style_vars.append(component_style._var_data)
-            new_style.update(self.style)
-            style_vars.append(self.style._var_data)
-            new_style._var_data = VarData.merge(*style_vars)
-            updates["style"] = new_style
+        if merged_style is not None:
+            updates["style"] = merged_style
         if new_children is not None:
             updates["children"] = tuple(new_children)
         return self.copy_with(**updates)
