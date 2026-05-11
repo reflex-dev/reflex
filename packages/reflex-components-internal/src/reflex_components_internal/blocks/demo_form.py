@@ -269,7 +269,11 @@ def select_field(
     )
 
 
-def demo_form(id_prefix: str = "", **props) -> rx.Component:
+def demo_form(
+    id_prefix: str = "",
+    on_submit: EventType[dict[str, Any]] | None = None,
+    **props,
+) -> rx.Component:
     """Create and return the demo form component.
 
     Builds a complete form with all required fields, validation,
@@ -279,6 +283,7 @@ def demo_form(id_prefix: str = "", **props) -> rx.Component:
     Args:
         id_prefix: Optional prefix for all element IDs to ensure uniqueness when multiple forms exist.
                 If empty, a unique prefix will be auto-generated.
+        on_submit: Additional event handler(s) appended after the built-in submit handlers (PostHog tracking + dialog close).
         **props: Additional properties to pass to the form component
 
     Returns:
@@ -286,6 +291,9 @@ def demo_form(id_prefix: str = "", **props) -> rx.Component:
     """
     prefix = id_prefix or get_unique_variable_name()
     email_id = f"{prefix}_user_email"
+    extra_on_submit = (
+        on_submit if isinstance(on_submit, list) else [on_submit] if on_submit else []
+    )
     form = rx.el.form(
         rx.el.div(
             input_field("First name", "John", "first_name", "text", True),
@@ -367,6 +375,7 @@ def demo_form(id_prefix: str = "", **props) -> rx.Component:
         on_submit=[
             DemoFormStateUI.track_demo_form_posthog,
             rx.call_function(demo_form_open_cs.set_value(False)),
+            *extra_on_submit,
         ],
         data_default_form_id="965991",
         **props,
@@ -377,13 +386,17 @@ def demo_form(id_prefix: str = "", **props) -> rx.Component:
 
 
 def demo_form_dialog(
-    trigger: rx.Component | None = None, id_prefix: str = "", **props
+    trigger: rx.Component | None = None,
+    id_prefix: str = "",
+    on_submit: EventType[dict[str, Any]] | None = None,
+    **props,
 ) -> rx.Component:
     """Return a demo form dialog container element.
 
     Args:
         trigger: The component that triggers the dialog
         id_prefix: Optional prefix for all element IDs to ensure uniqueness when multiple dialogs exist
+        on_submit: Additional event handler(s) forwarded to the inner demo form's on_submit.
         **props: Additional properties to pass to the dialog root
 
     Returns:
@@ -413,7 +426,11 @@ def demo_form_dialog(
                         ),
                         class_name="flex flex-row justify-between items-center gap-1 px-6 pt-4 -mb-4",
                     ),
-                    demo_form(id_prefix=id_prefix, class_name="w-full max-w-md"),
+                    demo_form(
+                        id_prefix=id_prefix,
+                        on_submit=on_submit,
+                        class_name="w-full max-w-md",
+                    ),
                     class_name="relative isolate overflow-hidden -m-px w-full max-w-md",
                 ),
                 class_name="h-fit mt-1 overflow-hidden w-full max-w-md",
