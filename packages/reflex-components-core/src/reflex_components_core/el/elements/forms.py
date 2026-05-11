@@ -770,14 +770,10 @@ class Textarea(RawTextBaseHTML):
         ]
 
     def add_custom_code(self) -> list[str]:
-        """Add custom Javascript code for auto_height and enter_key_submit.
-
-        Custom code is inserted at module level, after any imports. Each string
-        is deduplicated per-page, so the same const or function is only
-        included once even when multiple Textarea components are on the page.
+        """Inject the JS helpers used by ``auto_height`` and ``enter_key_submit``.
 
         Returns:
-            The additional custom code for this component.
+            The module-level JS snippets required by the enabled features.
         """
         code: list[str] = []
         if self.auto_height is not None:
