@@ -186,11 +186,11 @@ def initialize_web_directory():
 def update_entry_client():
     """Write ``.web/app/entry.client.js`` from the framework-mode template.
 
-    Skipped when ``EmbedPlugin`` is registered — the plugin emits the
-    embed-aware variant via its own save task and overwriting it here would
-    just be redone on the same compile.
+    Skipped when any registered plugin reports ``provides_entry_client()`` —
+    that plugin emits its own variant via a save task and overwriting it
+    here would just be redone on the same compile.
     """
-    if get_embed_plugin() is not None:
+    if any(p.provides_entry_client() for p in get_config().plugins):
         return
     write_file(
         get_web_dir() / constants.Embed.ENTRY_PATH,

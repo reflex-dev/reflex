@@ -293,6 +293,19 @@ class EmbedPlugin(Plugin):
                 _inject_vite_dev_preview(self.mount_target),
             )
 
+    def provides_entry_client(self) -> bool:
+        """Declare that EmbedPlugin emits its own ``entry.client.js``.
+
+        ``pre_compile`` registers ``_embed_entry_task`` which writes the
+        embed-aware entry template at ``constants.Embed.ENTRY_PATH``; the
+        framework's default ``update_entry_client`` must skip this path to
+        avoid stomping the embed entry on every compile.
+
+        Returns:
+            Always ``True``.
+        """
+        return True
+
     def update_env_json(self, **context):
         """Contribute the mount target so the embed entry can read it.
 

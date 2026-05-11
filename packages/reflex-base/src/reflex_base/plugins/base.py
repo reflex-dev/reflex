@@ -153,6 +153,19 @@ class Plugin:
             context: The context for the plugin.
         """
 
+    def provides_entry_client(self) -> bool:
+        """Return whether this plugin emits its own ``entry.client.js``.
+
+        The framework calls this during ``setup_frontend`` to decide whether
+        to skip its default ``entry.client.js`` write. Plugins that register
+        a save task for the same path should return ``True`` so the framework
+        write doesn't race with (or overwrite) theirs.
+
+        Returns:
+            ``True`` if the plugin owns ``entry.client.js`` for this build.
+        """
+        return False
+
     def update_env_json(
         self, **context: Unpack[CommonContext]
     ) -> dict[str, Any] | None:

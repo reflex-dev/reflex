@@ -52,6 +52,11 @@ def test_update_env_json_returns_mount_target():
     assert plugin.update_env_json() == {"MOUNT_TARGET": "#widget"}
 
 
+def test_provides_entry_client_is_true():
+    plugin = EmbedPlugin(mount_target="#widget")
+    assert plugin.provides_entry_client() is True
+
+
 def test_pre_compile_registers_save_tasks():
     plugin = EmbedPlugin(mount_target="#root")
     saved: list[tuple] = []
