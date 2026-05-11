@@ -19,8 +19,17 @@ hosting_cli = (
 runner = CliRunner()
 
 DOCKERFILE = "FROM python:3.13-slim\nWORKDIR /app\n"
+# A realistic-shaped flexgen script — the rewrite logic targets the
+# `gcloud builds submit ... .` block in here.
 DEPLOY_SCRIPT = (
-    "#!/usr/bin/env bash\nset -euo pipefail\necho deploying ${SERVICE_NAME}\n"
+    "#!/usr/bin/env bash\n"
+    "set -euo pipefail\n"
+    'IMAGE="us-central1-docker.pkg.dev/${GCP_PROJECT}/reflex/${SERVICE_NAME}:${VERSION}"\n'
+    "gcloud builds submit \\\n"
+    '    --tag "${IMAGE}" \\\n'
+    '    --project "${GCP_PROJECT}" \\\n'
+    "    .\n"
+    'gcloud run deploy "${SERVICE_NAME}" --image "${IMAGE}"\n'
 )
 MANIFEST = {"dockerfile": DOCKERFILE, "deploy_command": DEPLOY_SCRIPT}
 
@@ -58,11 +67,35 @@ def _mock_manifest_response(
     return mocker.patch("httpx.get", return_value=response)
 
 
-def test_gcp_deploy_writes_dockerfile_and_runs_script(
+def test_gcp_deploy_runs_script_from_source_with_cloudbuild_yaml(
     mocker: MockFixture, tmp_path: Path
 ):
+    """Happy path: script runs with cwd=source, REFLEX_CLOUDBUILD_YAML points at a
+    tempfile that contains the generated cloudbuild.yaml, the script is rewritten
+    to use --config=, and the source tree is never written to.
+    """
+    import base64 as _b64
+
+    captured: dict = {}
+
+    def capture(**kwargs):
+        cloudbuild_path = Path(kwargs["env_overrides"]["REFLEX_CLOUDBUILD_YAML"])
+        captured["cloudbuild_existed_during_run"] = cloudbuild_path.exists()
+        captured["cloudbuild_path"] = cloudbuild_path
+        captured["cloudbuild_yaml"] = cloudbuild_path.read_text()
+        captured["script"] = kwargs["script"]
+        captured["cwd"] = Path(kwargs["cwd"])
+        captured["env_overrides"] = kwargs["env_overrides"]
+        return 0
+
     run_mock = _patch_environment(mocker)
+    run_mock.side_effect = capture
     get_mock = _mock_manifest_response(mocker)
+
+    # Pre-populate the source with a file and an existing Dockerfile that
+    # must NOT be touched.
+    (tmp_path / "app.py").write_text("print('hi')\n")
+    (tmp_path / "Dockerfile").write_text("FROM existing\n")
 
     result = runner.invoke(
         hosting_cli,
@@ -86,24 +119,46 @@ def test_gcp_deploy_writes_dockerfile_and_runs_script(
     )
 
     assert result.exit_code == 0, result.output
-    dockerfile = tmp_path / "Dockerfile"
-    assert dockerfile.read_text() == DOCKERFILE
+    # Source tree is untouched.
+    assert (tmp_path / "Dockerfile").read_text() == "FROM existing\n"
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["Dockerfile", "app.py"]
+
+    # cwd is the user's source dir — no temp build context.
+    assert captured["cwd"] == tmp_path.resolve()
+
+    # cloudbuild.yaml existed during the run and is removed after.
+    assert captured["cloudbuild_existed_during_run"]
+    assert not captured["cloudbuild_path"].exists()
+
+    # cloudbuild.yaml embeds the flexgen Dockerfile as base64 and builds/pushes.
+    yaml = captured["cloudbuild_yaml"]
+    expected_b64 = _b64.b64encode(DOCKERFILE.encode()).decode()
+    assert expected_b64 in yaml
+    assert 'docker build -t "$_IMAGE"' in yaml
+    assert 'docker push "$_IMAGE"' in yaml
+    assert "images:" in yaml
+
+    # The script's `gcloud builds submit --tag X .` was rewritten to --config=.
+    script = captured["script"]
+    assert "--tag" not in script
+    assert '--config="${REFLEX_CLOUDBUILD_YAML}"' in script
+    assert '--substitutions=_IMAGE="${IMAGE}"' in script
+    # Surrounding lines (run deploy etc.) are preserved.
+    assert 'gcloud run deploy "${SERVICE_NAME}"' in script
+
+    assert captured["env_overrides"]["GCP_PROJECT"] == "my-gcp-project"
+    assert captured["env_overrides"]["GCP_REGION"] == "europe-west1"
+    assert captured["env_overrides"]["SERVICE_NAME"] == "myapp"
+    assert captured["env_overrides"]["AR_REPO"] == "myrepo"
+    assert captured["env_overrides"]["VERSION"] == "v1"
+
     assert run_mock.call_count == 1
-    kwargs = run_mock.call_args.kwargs
-    assert kwargs["script"] == DEPLOY_SCRIPT
-    assert kwargs["cwd"] == tmp_path.resolve()
-    assert kwargs["env_overrides"] == {
-        "GCP_PROJECT": "my-gcp-project",
-        "GCP_REGION": "europe-west1",
-        "SERVICE_NAME": "myapp",
-        "AR_REPO": "myrepo",
-        "VERSION": "v1",
-    }
     # X-API-Token header is sent.
     assert get_mock.call_args.kwargs["headers"] == {"X-API-TOKEN": "fake-token"}
 
 
 def test_gcp_deploy_aborts_on_no(mocker: MockFixture, tmp_path: Path):
+    """Declining the run prompt aborts before any staging."""
     run_mock = _patch_environment(mocker)
     _mock_manifest_response(mocker)
 
@@ -114,8 +169,8 @@ def test_gcp_deploy_aborts_on_no(mocker: MockFixture, tmp_path: Path):
     )
 
     assert result.exit_code == 1
-    # Dockerfile is still written so the user can run it later.
-    assert (tmp_path / "Dockerfile").exists()
+    # Nothing was written into the source tree.
+    assert not (tmp_path / "Dockerfile").exists()
     assert run_mock.call_count == 0
 
 
@@ -156,48 +211,23 @@ def test_gcp_deploy_dry_run(mocker: MockFixture, tmp_path: Path):
     assert "Dry run" in result.output
 
 
-def test_gcp_deploy_prompts_before_overwriting_dockerfile(
+def test_gcp_deploy_existing_dockerfile_in_source_is_preserved(
     mocker: MockFixture, tmp_path: Path
 ):
+    """An existing Dockerfile in --source is never read or modified."""
     run_mock = _patch_environment(mocker)
     _mock_manifest_response(mocker)
     existing = tmp_path / "Dockerfile"
     existing.write_text("FROM existing\n")
 
-    # User says no to overwrite -> abort with non-zero.
     result = runner.invoke(
         hosting_cli,
         ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
-        input="n\n",
-    )
-
-    assert result.exit_code == 1
-    assert existing.read_text() == "FROM existing\n"
-    assert run_mock.call_count == 0
-
-
-def test_gcp_deploy_overwrite_flag_skips_prompt(mocker: MockFixture, tmp_path: Path):
-    run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
-    existing = tmp_path / "Dockerfile"
-    existing.write_text("FROM existing\n")
-
-    result = runner.invoke(
-        hosting_cli,
-        [
-            "deploy",
-            "--gcp",
-            "--gcp-project",
-            "p",
-            "--source",
-            str(tmp_path),
-            "--overwrite-dockerfile",
-        ],
         input="y\n",
     )
 
     assert result.exit_code == 0, result.output
-    assert existing.read_text() == DOCKERFILE
+    assert existing.read_text() == "FROM existing\n"
     assert run_mock.call_count == 1
 
 
@@ -317,37 +347,9 @@ def test_gcp_deploy_no_interactive_skips_run_prompt(
     )
 
     assert result.exit_code == 0, result.output
-    assert (tmp_path / "Dockerfile").read_text() == DOCKERFILE
+    # Source tree was not modified.
+    assert not (tmp_path / "Dockerfile").exists()
     assert run_mock.call_count == 1
-
-
-def test_gcp_deploy_no_interactive_refuses_to_overwrite_without_flag(
-    mocker: MockFixture, tmp_path: Path
-):
-    run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
-    existing = tmp_path / "Dockerfile"
-    existing.write_text("FROM existing\n")
-
-    result = runner.invoke(
-        hosting_cli,
-        [
-            "deploy",
-            "--gcp",
-            "--gcp-project",
-            "p",
-            "--source",
-            str(tmp_path),
-            "--no-interactive",
-            "--token",
-            "fake-token",
-        ],
-    )
-
-    assert result.exit_code == 1
-    assert "--overwrite-dockerfile" in result.output
-    assert existing.read_text() == "FROM existing\n"
-    assert run_mock.call_count == 0
 
 
 def test_gcp_deploy_env_is_restricted_to_allowlist(mocker: MockFixture, tmp_path: Path):
@@ -415,6 +417,77 @@ def test_deploy_requires_gcp_target_flag(tmp_path: Path):
 
     assert result.exit_code == 2
     assert "--gcp" in result.output
+
+
+def test_build_cloudbuild_yaml_embeds_dockerfile_as_base64():
+    """The generated cloudbuild.yaml round-trips the Dockerfile through base64."""
+    import base64 as _b64
+
+    from reflex_cli.v2 import gcp as gcp_module
+
+    dockerfile = "FROM python:3.13-slim\nRUN echo $weird '\"chars\"' \\\nthings\n"
+    yaml = gcp_module._build_cloudbuild_yaml(dockerfile)
+
+    # The Dockerfile body shows up exactly once as a base64 blob.
+    expected_b64 = _b64.b64encode(dockerfile.encode()).decode()
+    assert yaml.count(expected_b64) == 1
+    # And the recovery step decodes it back into a Dockerfile.
+    assert "base64 -d > Dockerfile" in yaml
+    # The build and push are wired up to the _IMAGE substitution.
+    assert 'docker build -t "$_IMAGE" .' in yaml
+    assert 'docker push "$_IMAGE"' in yaml
+    assert "images:\n  - $_IMAGE\n" in yaml
+
+
+def test_rewrite_builds_submit_replaces_tag_form_with_config():
+    """The rewrite consumes the full multi-line `gcloud builds submit ... .`."""
+    from reflex_cli.v2 import gcp as gcp_module
+
+    original = (
+        "set -e\n"
+        "gcloud builds submit \\\n"
+        '    --tag "${IMAGE}" \\\n'
+        '    --project "${GCP_PROJECT}" \\\n'
+        "    .\n"
+        'gcloud run deploy "${SERVICE_NAME}"\n'
+    )
+
+    rewritten = gcp_module._rewrite_builds_submit(original)
+
+    assert "--tag" not in rewritten
+    assert '--config="${REFLEX_CLOUDBUILD_YAML}"' in rewritten
+    assert '--substitutions=_IMAGE="${IMAGE}"' in rewritten
+    # Lines outside the rewritten block are preserved.
+    assert rewritten.startswith("set -e\n")
+    assert rewritten.endswith('gcloud run deploy "${SERVICE_NAME}"\n')
+
+
+def test_rewrite_builds_submit_errors_if_pattern_missing():
+    """Without a `gcloud builds submit` line, we fail loudly so the CLI surfaces it."""
+    from reflex_cli.v2 import gcp as gcp_module
+
+    with pytest.raises(ValueError, match="gcloud builds submit"):
+        gcp_module._rewrite_builds_submit("echo nothing here\n")
+
+
+def test_gcp_deploy_surfaces_rewrite_failure(mocker: MockFixture, tmp_path: Path):
+    """If the manifest's script can't be rewritten, the command errors out clearly."""
+    _patch_environment(mocker)
+    _mock_manifest_response(
+        mocker,
+        body={
+            "dockerfile": DOCKERFILE,
+            "deploy_command": "#!/usr/bin/env bash\necho no build here\n",
+        },
+    )
+
+    result = runner.invoke(
+        hosting_cli,
+        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+    )
+
+    assert result.exit_code == 1
+    assert "gcloud builds submit" in result.output
 
 
 def test_deploy_gcp_requires_gcp_project(mocker: MockFixture, tmp_path: Path):

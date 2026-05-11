@@ -1,18 +1,24 @@
 """GCP Cloud Run deploy commands for the Reflex Cloud CLI.
 
-Fetches a Dockerfile + bash deploy script from flexgen, writes the Dockerfile
-into the user's project, prints the script, and runs it via bash after the
-user confirms. The script reads its parameters from environment variables
-(GCP_PROJECT, GCP_REGION, SERVICE_NAME, AR_REPO, VERSION).
+Fetches a Dockerfile + bash deploy script from flexgen and runs the script
+against the user's source directory. The Dockerfile is materialized inside
+a Cloud Build job (via a ``cloudbuild.yaml`` written to a tempfile and
+referenced with ``gcloud builds submit --config=...``) — the user's project
+tree is never modified. The script reads its parameters from environment
+variables (GCP_PROJECT, GCP_REGION, SERVICE_NAME, AR_REPO, VERSION,
+REFLEX_CLOUDBUILD_YAML).
 """
 
 from __future__ import annotations
 
+import base64
 import contextlib
 import os
+import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urljoin
@@ -32,6 +38,18 @@ ENV_GCP_REGION = "GCP_REGION"
 ENV_SERVICE_NAME = "SERVICE_NAME"
 ENV_AR_REPO = "AR_REPO"
 ENV_VERSION = "VERSION"
+# Path to the Cloud Build config file written by the CLI. The rewritten
+# deploy script references it as ``--config="${REFLEX_CLOUDBUILD_YAML}"``.
+ENV_REFLEX_CLOUDBUILD_YAML = "REFLEX_CLOUDBUILD_YAML"
+
+# Pattern for the start of the `gcloud builds submit` invocation in the
+# flexgen deploy script. We rewrite that whole multi-line command to use
+# `--config=` so the Dockerfile lives inside a cloudbuild.yaml instead of
+# being staged on disk next to the user's source.
+_BUILDS_SUBMIT_PATTERN = re.compile(
+    r"(?P<indent>^[ \t]*)gcloud[ \t]+builds[ \t]+submit\b",
+    re.MULTILINE,
+)
 
 # Manifest response field names from flexgen.
 FIELD_DOCKERFILE = "dockerfile"
@@ -125,26 +143,20 @@ DEPLOY_ENV_ALLOWLIST = frozenset({
     default=".",
     show_default=True,
     type=click.Path(file_okay=False, dir_okay=True),
-    help="The directory containing the Reflex app and into which the Dockerfile is written.",
-)
-@click.option(
-    "--overwrite-dockerfile/--no-overwrite-dockerfile",
-    default=False,
-    show_default=True,
-    help="Overwrite an existing Dockerfile without prompting.",
+    help="The directory containing the Reflex app. Staged into an ephemeral build context; the source tree itself is not modified.",
 )
 @click.option("--token", help="The Reflex authentication token.")
 @click.option(
     "--interactive/--no-interactive",
     is_flag=True,
     default=True,
-    help="Whether to prompt before overwriting the Dockerfile and running the script.",
+    help="Whether to prompt before running the deploy script.",
 )
 @click.option(
     "--dry-run",
     is_flag=True,
     default=False,
-    help="Print the manifest without writing the Dockerfile or running the script.",
+    help="Print the manifest without staging the build context or running the script.",
 )
 @click.option(
     "--loglevel",
@@ -160,7 +172,6 @@ def deploy_command(
     ar_repo: str,
     version_tag: str | None,
     source_dir: str,
-    overwrite_dockerfile: bool,
     token: str | None,
     interactive: bool,
     dry_run: bool,
@@ -168,9 +179,10 @@ def deploy_command(
 ):
     """Deploy a Reflex app to a cloud target.
 
-    Currently the only supported target is GCP Cloud Run via --gcp. The command
-    fetches a Dockerfile and bash deploy script from flexgen, writes the
-    Dockerfile into the source directory, then asks before running the script.
+    Currently the only supported target is GCP Cloud Run via --gcp. The
+    command fetches a Dockerfile and bash deploy script from flexgen, stages
+    them in an ephemeral build context alongside symlinked source entries
+    (your project tree is never modified), and runs the script from there.
     """
     from reflex_cli.utils import hosting
 
@@ -224,7 +236,13 @@ def deploy_command(
     if not source_path.is_dir():
         console.error(f"Source directory does not exist: {source_path}")
         raise click.exceptions.Exit(1)
-    dockerfile_path = source_path / DOCKERFILE_NAME
+
+    cloudbuild_yaml = _build_cloudbuild_yaml(dockerfile)
+    try:
+        deploy_script = _rewrite_builds_submit(deploy_script)
+    except ValueError as ex:
+        console.error(str(ex))
+        raise click.exceptions.Exit(1) from ex
 
     version_value = version_tag or datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
     deploy_env = {
@@ -237,12 +255,12 @@ def deploy_command(
 
     console.info("Received deploy manifest from flexgen.")
     console.print("")
-    console.print(f"Dockerfile target: {dockerfile_path}")
+    console.print(f"Source: {source_path}")
     console.print("Deploy environment:")
     for key, value in deploy_env.items():
         console.print(f"  {key}={value}")
     console.print("")
-    console.print("Deploy script:")
+    console.print("Deploy script (rewritten to use cloudbuild.yaml):")
     console.print("─" * 60)
     console.print(deploy_script)
     console.print("─" * 60)
@@ -250,37 +268,43 @@ def deploy_command(
         f"The script runs with a restricted env (only {len(DEPLOY_ENV_ALLOWLIST)} "
         "allowlisted host variables forwarded plus the deploy variables above)."
     )
+    console.info(
+        "The Dockerfile is embedded in a Cloud Build config written to a "
+        "tempfile; your source directory is not modified."
+    )
 
     if dry_run:
         console.print("")
-        console.print("Dockerfile contents:")
+        console.print("cloudbuild.yaml contents:")
+        console.print("─" * 60)
+        console.print(cloudbuild_yaml)
+        console.print("─" * 60)
+        console.print("")
+        console.print("Dockerfile contents (embedded in the build step):")
         console.print("─" * 60)
         console.print(dockerfile)
         console.print("─" * 60)
-        console.info("Dry run — nothing written or executed.")
+        console.info("Dry run — nothing staged or executed.")
         return
-
-    if not _write_dockerfile(
-        dockerfile_path, dockerfile, overwrite_dockerfile, interactive
-    ):
-        raise click.exceptions.Exit(1)
 
     if interactive:
         answer = console.ask(
             "Run the deploy script now?", choices=["y", "n"], default="y"
         )
         if answer != "y":
-            console.warn(
-                "Aborted by user. The Dockerfile has been written for later use."
-            )
+            console.warn("Aborted by user.")
             raise click.exceptions.Exit(1)
 
-    exit_code = _run_deploy_script(
-        bash_path=bash_path,
-        script=deploy_script,
-        cwd=source_path,
-        env_overrides=deploy_env,
-    )
+    with _temp_cloudbuild_yaml(cloudbuild_yaml) as cloudbuild_path:
+        exit_code = _run_deploy_script(
+            bash_path=bash_path,
+            script=deploy_script,
+            cwd=source_path,
+            env_overrides={
+                **deploy_env,
+                ENV_REFLEX_CLOUDBUILD_YAML: str(cloudbuild_path),
+            },
+        )
     if exit_code != 0:
         console.error(f"Deploy script exited with status {exit_code}.")
         raise click.exceptions.Exit(exit_code)
@@ -385,44 +409,106 @@ def _request_manifest(token: str) -> tuple[str, str]:
     return dockerfile, deploy_command
 
 
-def _write_dockerfile(
-    path: Path, contents: str, overwrite: bool, interactive: bool
-) -> bool:
-    """Write the Dockerfile to disk, prompting before overwriting in interactive mode.
+def _build_cloudbuild_yaml(dockerfile_contents: str) -> str:
+    """Generate a Cloud Build config that materializes the Dockerfile inline.
+
+    The Dockerfile body is embedded as a single base64 line so we don't have
+    to worry about YAML literal-block indentation, bash here-doc markers, or
+    shell-meta characters in the Dockerfile leaking into the config. The
+    resulting build does ``docker build`` + ``docker push`` against the
+    user's source as the build context.
 
     Args:
-        path: Where to write the Dockerfile.
-        contents: The Dockerfile body.
-        overwrite: If True, overwrite without prompting.
-        interactive: If False, never prompt; require `overwrite` when the file exists.
+        dockerfile_contents: The Dockerfile body from flexgen.
 
     Returns:
-        True on success, False if the user declined to overwrite or write failed.
+        A complete ``cloudbuild.yaml`` body, ready to write to disk.
 
     """
-    if path.exists() and not overwrite:
-        if not interactive:
-            console.error(
-                f"{path} already exists. Pass --overwrite-dockerfile to replace it "
-                "in non-interactive mode."
-            )
-            return False
-        answer = console.ask(
-            f"{path} already exists. Overwrite?", choices=["y", "n"], default="n"
+    b64 = base64.b64encode(dockerfile_contents.encode("utf-8")).decode("ascii")
+    return (
+        "steps:\n"
+        "- name: gcr.io/cloud-builders/docker\n"
+        "  entrypoint: bash\n"
+        "  args:\n"
+        "    - -c\n"
+        "    - |\n"
+        f"      printf '%s' '{b64}' | base64 -d > Dockerfile\n"
+        '      docker build -t "$_IMAGE" .\n'
+        '      docker push "$_IMAGE"\n'
+        "images:\n"
+        "  - $_IMAGE\n"
+    )
+
+
+def _rewrite_builds_submit(script: str) -> str:
+    """Rewrite the flexgen script's `gcloud builds submit` invocation to use --config=.
+
+    Replaces the (possibly multi-line) ``gcloud builds submit --tag X .``
+    command with one that references our generated cloudbuild.yaml via the
+    ``REFLEX_CLOUDBUILD_YAML`` environment variable and passes the image tag
+    through ``--substitutions=_IMAGE=...``.
+
+    Args:
+        script: The flexgen deploy script body.
+
+    Returns:
+        The script with the build-submit step rewritten.
+
+    Raises:
+        ValueError: If `gcloud builds submit` cannot be located in the script.
+
+    """
+    match = _BUILDS_SUBMIT_PATTERN.search(script)
+    if not match:
+        raise ValueError(
+            "Couldn't find `gcloud builds submit` in the deploy script. The "
+            "flexgen manifest format may have changed; the CLI needs updating."
         )
-        if answer != "y":
-            console.warn(
-                f"Keeping the existing {path.name}. Re-run with --overwrite-dockerfile "
-                "or move the file aside to use the flexgen Dockerfile."
-            )
-            return False
+    indent = match.group("indent")
+    line_start = script.rfind("\n", 0, match.start()) + 1
+    # Consume continuation lines (trailing backslash) until we hit a final line.
+    cursor = match.end()
+    while True:
+        nl = script.find("\n", cursor)
+        if nl == -1:
+            cmd_end = len(script)
+            break
+        if not script[cursor:nl].rstrip().endswith("\\"):
+            cmd_end = nl
+            break
+        cursor = nl + 1
+
+    replacement = (
+        f"{indent}gcloud builds submit \\\n"
+        f'{indent}    --config="${{{ENV_REFLEX_CLOUDBUILD_YAML}}}" \\\n'
+        f'{indent}    --substitutions=_IMAGE="${{IMAGE}}" \\\n'
+        f'{indent}    --project "${{GCP_PROJECT}}" \\\n'
+        f"{indent}    ."
+    )
+    return script[:line_start] + replacement + script[cmd_end:]
+
+
+@contextlib.contextmanager
+def _temp_cloudbuild_yaml(contents: str):
+    """Write a cloudbuild.yaml to a tempfile and yield its path; always clean up.
+
+    Args:
+        contents: The cloudbuild.yaml body to write.
+
+    Yields:
+        The path to the written tempfile.
+
+    """
+    fd, path_str = tempfile.mkstemp(prefix="reflex-cloudbuild-", suffix=".yaml")
+    path = Path(path_str)
     try:
-        path.write_text(contents)
-    except OSError as ex:
-        console.error(f"Failed to write {path}: {ex}")
-        return False
-    console.info(f"Wrote {path}.")
-    return True
+        with os.fdopen(fd, "w") as fh:
+            fh.write(contents)
+        yield path
+    finally:
+        with contextlib.suppress(FileNotFoundError):
+            path.unlink()
 
 
 def _run_deploy_script(

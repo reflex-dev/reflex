@@ -4,7 +4,7 @@ import reflex as rx
 
 # Deploy to GCP Cloud Run
 
-The `reflex cloud deploy --gcp` command deploys a Reflex app to your own [Google Cloud Run](https://cloud.google.com/run) service. Reflex Cloud fetches a Cloud Run-ready Dockerfile and a `gcloud` deploy script, writes the Dockerfile into your project, and runs the script against the Google Cloud project you specify. The image is built on Cloud Build (so it works from any host OS, including Apple Silicon) and pushed to Artifact Registry.
+The `reflex cloud deploy --gcp` command deploys a Reflex app to your own [Google Cloud Run](https://cloud.google.com/run) service. Reflex Cloud fetches a Cloud Run-ready Dockerfile and a `gcloud` deploy script, wraps the Dockerfile inside a [Cloud Build config (`cloudbuild.yaml`)](https://cloud.google.com/build/docs/build-config-file-schema), and runs the script against the Google Cloud project you specify. The image is built on Cloud Build (so it works from any host OS, including Apple Silicon) and pushed to Artifact Registry. Your project tree is never modified — the Dockerfile lives only inside the build config that's submitted to Cloud Build.
 
 ```md alert info
 # Enterprise tier only.
@@ -40,9 +40,12 @@ reflex cloud deploy --gcp \
 The CLI will:
 
 1. Authenticate against Reflex Cloud and fetch the deploy manifest (Dockerfile + `gcloud` script).
-2. Print the manifest so you can review it.
-3. Write a `Dockerfile` into your project (after asking, if one already exists).
-4. Ask for confirmation, then run the `gcloud` script: enable the required APIs, create the Artifact Registry repository, build the image on Cloud Build, and deploy a public Cloud Run service.
+2. Generate a `cloudbuild.yaml` that embeds the Dockerfile as a build step, write it to a tempfile, and rewrite the script's `gcloud builds submit` invocation to use `--config="$REFLEX_CLOUDBUILD_YAML"`.
+3. Print the (rewritten) script so you can review it.
+4. Ask for confirmation, then run the script with `cwd=` your source directory: enable the required APIs, create the Artifact Registry repository, build the image on Cloud Build (which materializes the Dockerfile inside the build step from the `cloudbuild.yaml`), and deploy a public Cloud Run service.
+5. Delete the tempfile after the script finishes.
+
+Your source tree is never written to — if you have an existing `Dockerfile` in `--source`, it's left in place and ignored. The flexgen Dockerfile only exists inside the `cloudbuild.yaml` tempfile (and inside the Cloud Build job).
 
 When it's done, you'll get a service URL like `https://my-reflex-app-<project-number>.us-central1.run.app`.
 
@@ -56,11 +59,10 @@ When it's done, you'll get a service URL like `https://my-reflex-app-<project-nu
 | `--service-name` | `reflex-app` | Cloud Run service name. |
 | `--ar-repo` | `reflex` | Artifact Registry repository name (created on first deploy). |
 | `--version` | UTC timestamp (`YYYYMMDD-HHMMSS`) | Image version tag. |
-| `--source` | `.` | Directory containing the Reflex app and into which the Dockerfile is written. |
-| `--overwrite-dockerfile` | _off_ | Overwrite an existing `Dockerfile` without prompting. |
+| `--source` | `.` | Directory containing the Reflex app. Uploaded to Cloud Build as the build context; the source tree itself is not modified. |
 | `--token` | _from `~/.reflex` config_ | Reflex authentication token. |
-| `--interactive / --no-interactive` | `--interactive` | Whether to prompt before overwriting the Dockerfile and running the script. |
-| `--dry-run` | _off_ | Print the manifest without writing the Dockerfile or running the script. |
+| `--interactive / --no-interactive` | `--interactive` | Whether to prompt before running the deploy script. |
+| `--dry-run` | _off_ | Print the manifest, the generated `cloudbuild.yaml`, and the rewritten script without writing the tempfile or running the script. |
 | `--loglevel` | `info` | Log verbosity. |
 
 ## What gets created in your GCP project
@@ -83,7 +85,7 @@ Re-running the command pushes a new image tag and rolls the Cloud Run service fo
 
 The CLI runs the deploy script under a **restricted environment**. Only an explicit allowlist of host variables is forwarded to `bash` — things like `PATH`, `HOME`, `CLOUDSDK_*`, `DOCKER_*`, and proxy/TLS variables. Unrelated host secrets such as `AWS_*`, `GITHUB_TOKEN`, or arbitrary user variables are **not** forwarded, so a tampered or compromised manifest cannot exfiltrate them.
 
-You can preview the exact script and Dockerfile before anything runs by using `--dry-run`:
+You can preview the rewritten script, generated `cloudbuild.yaml`, and Dockerfile before anything runs by using `--dry-run`:
 
 ```bash
 reflex cloud deploy --gcp \
@@ -93,18 +95,17 @@ reflex cloud deploy --gcp \
 
 ## Non-interactive use (CI)
 
-For automated pipelines, pass `--no-interactive`, an explicit `--token`, and `--overwrite-dockerfile`:
+For automated pipelines, pass `--no-interactive` and an explicit `--token`:
 
 ```bash
 reflex cloud deploy --gcp \
     --gcp-project "$GCP_PROJECT_ID" \
     --service-name my-reflex-app \
     --token "$REFLEX_TOKEN" \
-    --no-interactive \
-    --overwrite-dockerfile
+    --no-interactive
 ```
 
-In non-interactive mode the CLI will not prompt — it will refuse to overwrite an existing `Dockerfile` unless `--overwrite-dockerfile` is set, and it will exit non-zero if a token cannot be resolved.
+In non-interactive mode the CLI will not prompt, and it will exit non-zero if a token cannot be resolved.
 
 ## Troubleshooting
 
