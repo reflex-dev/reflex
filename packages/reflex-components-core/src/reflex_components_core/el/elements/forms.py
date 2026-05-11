@@ -447,7 +447,7 @@ class Form(BaseHTML):
 
             required_fields = _get_required_typed_dict_fields(annotation)
             typed_dict_contracts.append((
-                event.handler.fn.__qualname__,
+                func.__qualname__,
                 annotation,
                 required_fields,
             ))
