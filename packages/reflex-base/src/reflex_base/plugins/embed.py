@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING
 
 from reflex_base import constants
 
-from .base import Plugin as PluginBase
+from .base import Plugin
 
 if TYPE_CHECKING:
     from reflex.app import UnevaluatedPage
@@ -241,7 +241,7 @@ def _inject_vite_dev_preview(mount_target: str):
 
 
 @dataclass
-class EmbedPlugin(PluginBase):
+class EmbedPlugin(Plugin):
     """Compile the app to mount into a host-page element instead of the document.
 
     When ``mount_target`` is omitted, the value is read from the
@@ -348,6 +348,3 @@ def get_embed_plugin() -> EmbedPlugin | None:
         (p for p in get_config().plugins if isinstance(p, EmbedPlugin)),
         None,
     )
-
-
-Plugin = EmbedPlugin
