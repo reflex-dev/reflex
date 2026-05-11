@@ -67,12 +67,22 @@ class _RenderUtils:
     @staticmethod
     def render_tag(component: Mapping[str, Any]) -> str:
         name = component.get("name") or "Fragment"
-        props = f"{{{','.join(component['props'])}}}"
+        props_list = component["props"]
+        props = f"{{{','.join(props_list)}}}"
         rendered_children = [
             _RenderUtils.render(child)
             for child in component.get("children", [])
             if child
         ]
+
+        # When `props` already declares `children:` (e.g. `rx.code_block` routes
+        # its content there via `CodeBlock._render`), do NOT also emit positional
+        # children. React's `createElement(type, props, x)` overrides
+        # `props.children` with the positional arg even when it is `undefined`
+        # (which is what the auto-memo wrapper passes when invoked with no
+        # children), silently nulling the legitimate value in props. See #6480.
+        if any(p.startswith("children:") for p in props_list):
+            return f"jsx({name},{props})"
 
         return f"jsx({name},{props},{','.join(rendered_children)})"
 

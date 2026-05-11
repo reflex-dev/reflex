@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 from pytest_mock import MockerFixture
 from reflex_base import constants
+from reflex_base.compiler.templates import _RenderUtils
 from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
 from reflex_base.constants.compiler import PageNames
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
@@ -514,3 +515,42 @@ def test_create_document_root_with_meta_viewport():
     assert str(root.children[0].children[2].name) == '"viewport"'  # pyright: ignore [reportAttributeAccessIssue]
     assert str(root.children[0].children[2].content) == '"foo"'  # pyright: ignore [reportAttributeAccessIssue]
     assert str(root.children[0].children[3].char_set) == '"utf-8"'  # pyright: ignore [reportAttributeAccessIssue]
+
+
+def test_render_tag_skips_positional_children_when_props_have_children():
+    """Regression for #6480.
+
+    Components that route their content through ``props.children`` (notably
+    ``rx.code_block`` via ``CodeBlock._render``) must not also receive the
+    rendered subtree as a positional argument — React's ``createElement``
+    overrides ``props.children`` with the positional arg even when that arg
+    is ``undefined`` (which the auto-memo wrapper passes whenever it is
+    invoked without children, as is always the case for ``rx.code_block``).
+    """
+    tag = {
+        "name": "SyntaxHighlighter",
+        "props": [
+            "children:state.template_file_content_rx_state_",
+            "language:'yaml'",
+        ],
+        "children": ["children"],  # auto-memo's `Bare(children)` placeholder
+    }
+    assert _RenderUtils.render_tag(tag) == (
+        "jsx(SyntaxHighlighter,"
+        "{children:state.template_file_content_rx_state_,language:'yaml'})"
+    )
+
+
+def test_render_tag_preserves_positional_children_for_normal_components():
+    """Components without a ``children:`` prop should still receive their
+    rendered subtree positionally — this is the common path and must not
+    regress when the #6480 guard is added.
+    """
+    tag = {
+        "name": "Box",
+        "props": ["style:({})"],
+        "children": [
+            {"name": "p", "props": [], "children": ["hello"]},
+        ],
+    }
+    assert _RenderUtils.render_tag(tag) == "jsx(Box,{style:({})},jsx(p,{},hello))"
