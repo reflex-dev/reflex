@@ -261,7 +261,7 @@ def products_build_column_body() -> rx.Component:
             href="/docs/ai/integrations/ai-onboarding/",
             class_name="group flex flex-col gap-2 items-center text-center",
         ),
-        class_name="flex flex-col gap-2 text-center justify-center items-center min-h-[252px]",
+        class_name="flex flex-col text-center justify-center items-center min-h-[252px]",
     )
 
 
