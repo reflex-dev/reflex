@@ -79,7 +79,7 @@ def dark_mode_toggle() -> rx.Component:
 
 
 def footer_link(text: str, href: str) -> rx.Component:
-    """External link styled for footer link columns.
+    """Link styled for footer link columns.
 
     Returns:
         The component.
@@ -92,7 +92,7 @@ def footer_link(text: str, href: str) -> rx.Component:
             class_name="shrink-0 lg:hidden flex",
         ),
         href=href,
-        target="_blank",
+        target="_blank" if not href.startswith("/") else "",
         class_name="font-[525] text-secondary-11 hover:text-secondary-12 text-sm transition-color w-full lg:w-fit flex flex-row justify-between items-center min-h-[24px]",
     )
 
