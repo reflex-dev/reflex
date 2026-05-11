@@ -63,6 +63,12 @@ class PostCompileContext(CommonContext):
     app: "App"
 
 
+class PostBuildContext(CommonContext):
+    """Context for post-build hooks."""
+
+    static_dir: Path
+
+
 class Plugin:
     """Base class for all plugins."""
 
@@ -132,6 +138,16 @@ class Plugin:
 
     def post_compile(self, **context: Unpack[PostCompileContext]) -> None:
         """Called after the compilation of the plugin.
+
+        Args:
+            context: The context for the plugin.
+        """
+
+    def post_build(self, **context: Unpack[PostBuildContext]) -> None:
+        """Called after the production frontend build finishes.
+
+        Fires after ``npm run export`` so plugins can inspect or post-process
+        the Vite output (``context["static_dir"]``).
 
         Args:
             context: The context for the plugin.

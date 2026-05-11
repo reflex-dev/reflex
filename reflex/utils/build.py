@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
-import json
 import os
 import zipfile
 from pathlib import Path, PosixPath
 
 from reflex_base import constants
 from reflex_base.config import get_config
-from reflex_base.plugins.embed import get_embed_plugin
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 
 from reflex.utils import console, js_runtimes, path_ops, prerequisites, processes
@@ -195,41 +193,6 @@ def _duplicate_index_html_to_parent_directory(directory: Path):
             _duplicate_index_html_to_parent_directory(child)
 
 
-def _emit_stable_entry_bootloader(static_dir: Path) -> None:
-    """In embed mode, emit a stable ``Embed.ENTRY_PATH`` shim for host pages.
-
-    The Vite build emits the entry chunk with a content hash
-    (``assets/entry.client-<hash>.js``), so a host page can't reference a
-    stable URL directly. When ``EmbedPlugin`` is registered, write a one-line
-    re-export shim at ``Embed.ENTRY_PATH`` so the same ``<script src>`` works
-    against both dev (Vite serves the source file at the same URL) and prod
-    (this shim points at the hashed asset).
-
-    Args:
-        static_dir: The Vite build output directory (``.web/build/client``).
-
-    Raises:
-        RuntimeError: If the entry chunk can't be located or is ambiguous.
-    """
-    embed_plugin = get_embed_plugin()
-    if embed_plugin is None:
-        return
-    matches = list((static_dir / "assets").glob("entry.client-*.js"))
-    if len(matches) != 1:
-        msg = (
-            f"Expected exactly one Vite entry chunk under {static_dir / 'assets'}, "
-            f"found {len(matches)}: {[m.name for m in matches]}. "
-            "The embed bootloader cannot be emitted; the host page's "
-            f"<script src='/{constants.Embed.ENTRY_PATH}'> will 404."
-        )
-        raise RuntimeError(msg)
-    base = (embed_plugin.embed_origin or "").rstrip("/")
-    hashed_url = f"{base}/assets/{matches[0].name}"
-    shim_path = static_dir / constants.Embed.ENTRY_PATH
-    shim_path.parent.mkdir(parents=True, exist_ok=True)
-    shim_path.write_text(f"import {json.dumps(hashed_url)};\n")
-
-
 def build():
     """Build the app for deployment.
 
@@ -270,30 +233,32 @@ def build():
         )
         raise SystemExit(1)
     _duplicate_index_html_to_parent_directory(wdir / constants.Dirs.STATIC)
-    _emit_stable_entry_bootloader(wdir / constants.Dirs.STATIC)
 
-    spa_fallback = wdir / constants.Dirs.STATIC / constants.ReactRouter.SPA_FALLBACK
+    config = get_config()
+    static_dir = wdir / constants.Dirs.STATIC
+    for plugin in config.plugins:
+        plugin.post_build(static_dir=static_dir)
+
+    spa_fallback = static_dir / constants.ReactRouter.SPA_FALLBACK
     if not spa_fallback.exists():
-        spa_fallback = wdir / constants.Dirs.STATIC / "index.html"
+        spa_fallback = static_dir / "index.html"
 
     if spa_fallback.exists():
         path_ops.cp(
             spa_fallback,
-            wdir / constants.Dirs.STATIC / "404.html",
+            static_dir / "404.html",
         )
-
-    config = get_config()
 
     if frontend_path := config.frontend_path.strip("/"):
         # Create a subdirectory that matches the configured frontend_path.
         frontend_path = PosixPath(frontend_path)
         first_part = frontend_path.parts[0]
-        for child in list((wdir / constants.Dirs.STATIC).iterdir()):
+        for child in list(static_dir.iterdir()):
             if child.is_dir() and child.name == first_part:
                 continue
             path_ops.mv(
                 child,
-                wdir / constants.Dirs.STATIC / frontend_path / child.name,
+                static_dir / frontend_path / child.name,
             )
 
 

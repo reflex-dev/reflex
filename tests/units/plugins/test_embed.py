@@ -207,3 +207,61 @@ def test_compile_embed_manifest_pairs_translated_paths_with_specifiers(
         tmp_path / constants.Dirs.PAGES / constants.Embed.MANIFEST_FILE
     )
     assert _ENTRY_RE.findall(code) == expected_pairs
+
+
+def _make_static_dir(tmp_path: Path, entry_names: list[str]) -> Path:
+    """Create a fake Vite static dir with ``assets/<name>`` for each entry.
+
+    Returns:
+        The created static-dir path.
+    """
+    static_dir = tmp_path / "client"
+    assets = static_dir / "assets"
+    assets.mkdir(parents=True)
+    for name in entry_names:
+        (assets / name).write_text("// chunk\n")
+    return static_dir
+
+
+def test_post_build_emits_shim_pointing_at_hashed_asset(tmp_path: Path):
+    static_dir = _make_static_dir(tmp_path, ["entry.client-abc123.js"])
+    plugin = EmbedPlugin(mount_target="#root")
+
+    plugin.post_build(static_dir=static_dir)
+
+    shim = static_dir / constants.Embed.ENTRY_PATH
+    assert shim.exists()
+    assert shim.read_text() == 'import "/assets/entry.client-abc123.js";\n'
+
+
+def test_post_build_prefixes_embed_origin(tmp_path: Path):
+    static_dir = _make_static_dir(tmp_path, ["entry.client-deadbeef.js"])
+    plugin = EmbedPlugin(mount_target="#root", embed_origin="https://cdn.example.com/")
+
+    plugin.post_build(static_dir=static_dir)
+
+    shim = static_dir / constants.Embed.ENTRY_PATH
+    assert (
+        shim.read_text()
+        == 'import "https://cdn.example.com/assets/entry.client-deadbeef.js";\n'
+    )
+
+
+def test_post_build_raises_when_no_entry_chunk(tmp_path: Path):
+    static_dir = _make_static_dir(tmp_path, [])
+    plugin = EmbedPlugin(mount_target="#root")
+
+    with pytest.raises(RuntimeError, match="Expected exactly one Vite entry chunk"):
+        plugin.post_build(static_dir=static_dir)
+
+
+def test_post_build_raises_when_multiple_entry_chunks(tmp_path: Path):
+    static_dir = _make_static_dir(
+        tmp_path, ["entry.client-aaa.js", "entry.client-bbb.js"]
+    )
+    plugin = EmbedPlugin(mount_target="#root")
+
+    with pytest.raises(
+        RuntimeError, match=r"Expected exactly one Vite entry chunk.*found 2: \["
+    ):
+        plugin.post_build(static_dir=static_dir)

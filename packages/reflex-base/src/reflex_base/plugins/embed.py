@@ -304,6 +304,37 @@ class EmbedPlugin(PluginBase):
         """
         return {"MOUNT_TARGET": self.mount_target}
 
+    def post_build(self, **context):
+        """Re-emit the hashed Vite entry chunk at a stable host-page URL.
+
+        Vite hashes the entry chunk (``assets/entry.client-<hash>.js``), so a
+        host page can't ``<script src>`` it directly. Write a one-line
+        re-export shim at ``Embed.ENTRY_PATH`` so the same script tag works
+        against both dev (Vite serves the source file at the same URL) and
+        prod (this shim points at the hashed asset).
+
+        Args:
+            context: The post-build plugin context (carries ``static_dir``).
+
+        Raises:
+            RuntimeError: If the entry chunk can't be located or is ambiguous.
+        """
+        static_dir = context["static_dir"]
+        matches = list((static_dir / "assets").glob("entry.client-*.js"))
+        if len(matches) != 1:
+            msg = (
+                f"Expected exactly one Vite entry chunk under {static_dir / 'assets'}, "
+                f"found {len(matches)}: {[m.name for m in matches]}. "
+                "The embed bootloader cannot be emitted; the host page's "
+                f"<script src='/{constants.Embed.ENTRY_PATH}'> will 404."
+            )
+            raise RuntimeError(msg)
+        base = (self.embed_origin or "").rstrip("/")
+        hashed_url = f"{base}/assets/{matches[0].name}"
+        shim_path = static_dir / constants.Embed.ENTRY_PATH
+        shim_path.parent.mkdir(parents=True, exist_ok=True)
+        shim_path.write_text(f"import {json.dumps(hashed_url)};\n")
+
 
 def get_embed_plugin() -> EmbedPlugin | None:
     """Return the EmbedPlugin instance from the active config, if any.
