@@ -2,15 +2,22 @@
 
 from __future__ import annotations
 
+import re
+from pathlib import Path
+
 import pytest
 from pytest_mock import MockerFixture
+from reflex_base import constants
 from reflex_base.plugins.embed import (
     EmbedPlugin,
     _inject_vite_dev_preview,
     _mount_attrs_for_selector,
     _render_dev_host_html,
+    compile_embed_manifest,
     get_embed_plugin,
 )
+
+from reflex.compiler import utils
 
 
 def test_explicit_args_set_fields():
@@ -38,6 +45,11 @@ def test_missing_mount_target_raises(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.delenv("REFLEX_EMBED_ORIGIN", raising=False)
     with pytest.raises(ValueError, match="mount_target"):
         EmbedPlugin()
+
+
+def test_update_env_json_returns_mount_target():
+    plugin = EmbedPlugin(mount_target="#widget")
+    assert plugin.update_env_json() == {"MOUNT_TARGET": "#widget"}
 
 
 def test_pre_compile_registers_save_tasks():
@@ -161,3 +173,37 @@ def test_inject_vite_dev_preview_is_idempotent():
     )
     modify = _inject_vite_dev_preview("#reflex-root")
     assert modify(original) == original
+
+
+_ENTRY_RE = re.compile(
+    r'\{\s*path:\s*"([^"]*)",\s*load:\s*\(\)\s*=>\s*import\("([^"]*)"\)\s*\}'
+)
+
+
+def test_compile_embed_manifest_pairs_translated_paths_with_specifiers(
+    mocker: MockerFixture, tmp_path: Path
+):
+    """Each route produces one entry pairing its React-Router path with its import specifier."""
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=tmp_path)
+
+    routes = [
+        "index",
+        "users/[id]",
+        "posts/[[slug]]",
+        "docs/[[...splat]]",
+        constants.Page404.SLUG,
+    ]
+    expected_pairs = [
+        ("", utils.get_page_import_specifier("index")),
+        ("users/:id", utils.get_page_import_specifier("users/[id]")),
+        ("posts/:slug?", utils.get_page_import_specifier("posts/[[slug]]")),
+        ("docs/*", utils.get_page_import_specifier("docs/[[...splat]]")),
+        ("*", utils.get_page_import_specifier(constants.Page404.SLUG)),
+    ]
+
+    output_path, code = compile_embed_manifest(routes)
+
+    assert output_path == str(
+        tmp_path / constants.Dirs.PAGES / constants.Embed.MANIFEST_FILE
+    )
+    assert _ENTRY_RE.findall(code) == expected_pairs

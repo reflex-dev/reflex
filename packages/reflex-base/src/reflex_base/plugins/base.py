@@ -137,6 +137,24 @@ class Plugin:
             context: The context for the plugin.
         """
 
+    def update_env_json(
+        self, **context: Unpack[CommonContext]
+    ) -> dict[str, Any] | None:
+        """Return entries to merge into ``.web/env.json``.
+
+        The framework merges each plugin's contribution on top of the base
+        ``env.json`` it writes during ``setup_frontend``. Later plugins
+        override earlier ones. Return ``None`` (the default) to contribute
+        nothing.
+
+        Args:
+            context: The context for the plugin.
+
+        Returns:
+            A mapping of env entries to add or override, or ``None``.
+        """
+        return None
+
     def eval_page(
         self,
         page_fn: Any,

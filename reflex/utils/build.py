@@ -19,15 +19,18 @@ from reflex.utils.exec import is_in_app_harness
 def set_env_json():
     """Write the upload url to a REFLEX_JSON."""
     config = get_config()
-    embed_plugin = get_embed_plugin()
+    env: dict[str, object] = {
+        **{endpoint.name: endpoint.get_url() for endpoint in constants.Endpoint},
+        "TRANSPORT": config.transport,
+        "TEST_MODE": is_in_app_harness(),
+    }
+    for plugin in config.plugins:
+        contribution = plugin.update_env_json()
+        if contribution:
+            env.update(contribution)
     path_ops.update_json_file(
         str(prerequisites.get_web_dir() / constants.Dirs.ENV_JSON),
-        {
-            **{endpoint.name: endpoint.get_url() for endpoint in constants.Endpoint},
-            "TRANSPORT": config.transport,
-            "TEST_MODE": is_in_app_harness(),
-            "MOUNT_TARGET": embed_plugin.mount_target if embed_plugin else None,
-        },
+        env,
     )
 
 
