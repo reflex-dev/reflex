@@ -74,8 +74,6 @@ def test_gcp_deploy_runs_script_from_source_with_cloudbuild_yaml(
     tempfile that contains the generated cloudbuild.yaml, the script is rewritten
     to use --config=, and the source tree is never written to.
     """
-    import base64 as _b64
-
     captured: dict = {}
 
     def capture(**kwargs):
@@ -130,11 +128,13 @@ def test_gcp_deploy_runs_script_from_source_with_cloudbuild_yaml(
     assert captured["cloudbuild_existed_during_run"]
     assert not captured["cloudbuild_path"].exists()
 
-    # cloudbuild.yaml embeds the flexgen Dockerfile as base64 and builds/pushes.
+    # cloudbuild.yaml embeds the Reflex Dockerfile via heredoc and builds/pushes.
     yaml = captured["cloudbuild_yaml"]
-    expected_b64 = _b64.b64encode(DOCKERFILE.encode()).decode()
-    assert expected_b64 in yaml
-    assert 'docker build -t "$_IMAGE"' in yaml
+    assert "cat > Dockerfile <<'REFLEX_FLEXGEN_DOCKERFILE_EOF'" in yaml
+    # Each Dockerfile line shows up in the YAML (indented under the literal block).
+    for line in DOCKERFILE.splitlines():
+        assert f"      {line}" in yaml
+    assert 'docker build -t "$_IMAGE" .' in yaml
     assert 'docker push "$_IMAGE"' in yaml
     assert "images:" in yaml
 
@@ -419,24 +419,62 @@ def test_deploy_requires_gcp_target_flag(tmp_path: Path):
     assert "--gcp" in result.output
 
 
-def test_build_cloudbuild_yaml_embeds_dockerfile_as_base64():
-    """The generated cloudbuild.yaml round-trips the Dockerfile through base64."""
-    import base64 as _b64
+def test_build_cloudbuild_yaml_embeds_dockerfile_via_heredoc():
+    r"""The cloudbuild.yaml writes the Dockerfile via a single-quoted heredoc.
 
+    The single-quoted marker means bash treats `/\ in the Dockerfile body
+    literally; `$` is doubled to `$$` so Cloud Build's substitution pass
+    over `args` doesn't grab Dockerfile variables. YAML literal-block indent
+    (6 spaces) gets stripped uniformly so the closing marker ends up at
+    column 0.
+    """
     from reflex_cli.v2 import gcp as gcp_module
 
-    dockerfile = "FROM python:3.13-slim\nRUN echo $weird '\"chars\"' \\\nthings\n"
+    # Dockerfile with the kinds of `$`/`${...}` Cloud Build would otherwise
+    # try to substitute, plus shell-meta chars that break naive quoting.
+    dockerfile = (
+        "FROM python:3.13-slim\n"
+        'ENV PATH="${UV_PROJECT_ENVIRONMENT}/bin:$PATH"\n'
+        "RUN echo $weird '\"chars\"' \\\nthings\n"
+    )
     yaml = gcp_module._build_cloudbuild_yaml(dockerfile)
 
-    # The Dockerfile body shows up exactly once as a base64 blob.
-    expected_b64 = _b64.b64encode(dockerfile.encode()).decode()
-    assert yaml.count(expected_b64) == 1
-    # And the recovery step decodes it back into a Dockerfile.
-    assert "base64 -d > Dockerfile" in yaml
-    # The build and push are wired up to the _IMAGE substitution.
+    # Heredoc opens and closes with the same single-quoted marker.
+    assert "cat > Dockerfile <<'REFLEX_FLEXGEN_DOCKERFILE_EOF'" in yaml
+    assert yaml.count("REFLEX_FLEXGEN_DOCKERFILE_EOF") == 2
+
+    # Inside the heredoc body, every literal `$` from the Dockerfile is doubled
+    # to escape Cloud Build's substitution pass. Slice out the heredoc body and
+    # verify no bare `$` survives there.
+    open_marker = "cat > Dockerfile <<'REFLEX_FLEXGEN_DOCKERFILE_EOF'\n"
+    close_marker = "      REFLEX_FLEXGEN_DOCKERFILE_EOF\n"
+    body_start = yaml.index(open_marker) + len(open_marker)
+    body_end = yaml.index(close_marker)
+    heredoc_body = yaml[body_start:body_end]
+    # Every `$` in the heredoc body is part of a `$$` pair — i.e. no isolated `$`.
+    assert "$" in heredoc_body  # sanity
+    assert heredoc_body.replace("$$", "") .count("$") == 0
+    # Concrete escapes are present.
+    assert '      ENV PATH="$${UV_PROJECT_ENVIRONMENT}/bin:$$PATH"' in heredoc_body
+    assert "      RUN echo $$weird '\"chars\"' \\" in heredoc_body
+
+    # Non-`$` Dockerfile lines pass through verbatim (with 6-space indent).
+    assert "      FROM python:3.13-slim" in yaml
+    assert "      things" in yaml
+
+    # Build + push lines use the `_IMAGE` substitution (single `$`).
     assert 'docker build -t "$_IMAGE" .' in yaml
     assert 'docker push "$_IMAGE"' in yaml
     assert "images:\n  - $_IMAGE\n" in yaml
+
+
+def test_build_cloudbuild_yaml_rejects_marker_collision():
+    """If the Dockerfile happens to contain the heredoc marker as a whole line, error."""
+    from reflex_cli.v2 import gcp as gcp_module
+
+    dockerfile = "FROM scratch\nREFLEX_FLEXGEN_DOCKERFILE_EOF\nCMD true\n"
+    with pytest.raises(ValueError, match="heredoc marker"):
+        gcp_module._build_cloudbuild_yaml(dockerfile)
 
 
 def test_rewrite_builds_submit_replaces_tag_form_with_config():

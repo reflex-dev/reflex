@@ -1,6 +1,6 @@
 """GCP Cloud Run deploy commands for the Reflex Cloud CLI.
 
-Fetches a Dockerfile + bash deploy script from flexgen and runs the script
+Fetches a Dockerfile + bash deploy script from Reflex and runs the script
 against the user's source directory. The Dockerfile is materialized inside
 a Cloud Build job (via a ``cloudbuild.yaml`` written to a tempfile and
 referenced with ``gcloud builds submit --config=...``) — the user's project
@@ -11,7 +11,6 @@ REFLEX_CLOUDBUILD_YAML).
 
 from __future__ import annotations
 
-import base64
 import contextlib
 import os
 import re
@@ -43,7 +42,7 @@ ENV_VERSION = "VERSION"
 ENV_REFLEX_CLOUDBUILD_YAML = "REFLEX_CLOUDBUILD_YAML"
 
 # Pattern for the start of the `gcloud builds submit` invocation in the
-# flexgen deploy script. We rewrite that whole multi-line command to use
+# Reflex deploy script. We rewrite that whole multi-line command to use
 # `--config=` so the Dockerfile lives inside a cloudbuild.yaml instead of
 # being staged on disk next to the user's source.
 _BUILDS_SUBMIT_PATTERN = re.compile(
@@ -51,52 +50,54 @@ _BUILDS_SUBMIT_PATTERN = re.compile(
     re.MULTILINE,
 )
 
-# Manifest response field names from flexgen.
+# Manifest response field names from Reflex.
 FIELD_DOCKERFILE = "dockerfile"
 FIELD_DEPLOY_COMMAND = "deploy_command"
 
 # Allowlist of host environment variables forwarded to the deploy script.
 # We deliberately exclude things like AWS_*/GITHUB_TOKEN/SSH agent sockets so a
 # compromised or tampered manifest cannot exfiltrate unrelated credentials.
-DEPLOY_ENV_ALLOWLIST = frozenset({
-    "PATH",
-    "HOME",
-    "USER",
-    "LOGNAME",
-    "SHELL",
-    "TERM",
-    "LANG",
-    "LC_ALL",
-    "LC_CTYPE",
-    "TMPDIR",
-    "TEMP",
-    "TMP",
-    "XDG_CONFIG_HOME",
-    # gcloud configuration
-    "CLOUDSDK_CONFIG",
-    "CLOUDSDK_ACTIVE_CONFIG_NAME",
-    "CLOUDSDK_CORE_PROJECT",
-    "CLOUDSDK_CORE_ACCOUNT",
-    "CLOUDSDK_AUTH_ACCESS_TOKEN_FILE",
-    "GOOGLE_APPLICATION_CREDENTIALS",
-    # docker configuration
-    "DOCKER_HOST",
-    "DOCKER_TLS_VERIFY",
-    "DOCKER_CERT_PATH",
-    "DOCKER_CONFIG",
-    "DOCKER_BUILDKIT",
-    # corporate proxy / TLS trust
-    "HTTP_PROXY",
-    "HTTPS_PROXY",
-    "NO_PROXY",
-    "http_proxy",
-    "https_proxy",
-    "no_proxy",
-    "SSL_CERT_FILE",
-    "SSL_CERT_DIR",
-    "REQUESTS_CA_BUNDLE",
-    "CURL_CA_BUNDLE",
-})
+DEPLOY_ENV_ALLOWLIST = frozenset(
+    {
+        "PATH",
+        "HOME",
+        "USER",
+        "LOGNAME",
+        "SHELL",
+        "TERM",
+        "LANG",
+        "LC_ALL",
+        "LC_CTYPE",
+        "TMPDIR",
+        "TEMP",
+        "TMP",
+        "XDG_CONFIG_HOME",
+        # gcloud configuration
+        "CLOUDSDK_CONFIG",
+        "CLOUDSDK_ACTIVE_CONFIG_NAME",
+        "CLOUDSDK_CORE_PROJECT",
+        "CLOUDSDK_CORE_ACCOUNT",
+        "CLOUDSDK_AUTH_ACCESS_TOKEN_FILE",
+        "GOOGLE_APPLICATION_CREDENTIALS",
+        # docker configuration
+        "DOCKER_HOST",
+        "DOCKER_TLS_VERIFY",
+        "DOCKER_CERT_PATH",
+        "DOCKER_CONFIG",
+        "DOCKER_BUILDKIT",
+        # corporate proxy / TLS trust
+        "HTTP_PROXY",
+        "HTTPS_PROXY",
+        "NO_PROXY",
+        "http_proxy",
+        "https_proxy",
+        "no_proxy",
+        "SSL_CERT_FILE",
+        "SSL_CERT_DIR",
+        "REQUESTS_CA_BUNDLE",
+        "CURL_CA_BUNDLE",
+    }
+)
 
 
 @click.command(name="deploy")
@@ -180,7 +181,7 @@ def deploy_command(
     """Deploy a Reflex app to a cloud target.
 
     Currently the only supported target is GCP Cloud Run via --gcp. The
-    command fetches a Dockerfile and bash deploy script from flexgen, stages
+    command fetches a Dockerfile and bash deploy script from Reflex, stages
     them in an ephemeral build context alongside symlinked source entries
     (your project tree is never modified), and runs the script from there.
     """
@@ -253,7 +254,7 @@ def deploy_command(
         ENV_VERSION: version_value,
     }
 
-    console.info("Received deploy manifest from flexgen.")
+    console.info("Received deploy manifest from Reflex.")
     console.print("")
     console.print(f"Source: {source_path}")
     console.print("Deploy environment:")
@@ -343,7 +344,7 @@ def _get_active_gcp_account(gcloud_path: str) -> str | None:
 
 
 def _request_manifest(token: str) -> tuple[str, str]:
-    """Fetch the Dockerfile + deploy script from flexgen.
+    """Fetch the Dockerfile + deploy script from Reflex.
 
     Args:
         token: The Reflex API token to authenticate with.
@@ -373,36 +374,36 @@ def _request_manifest(token: str) -> tuple[str, str]:
             detail = ex.response.json().get("detail", detail)
         if ex.response.status_code == 403:
             console.error(
-                "Flexgen denied the request (403). GCP Cloud Run deploys require an "
+                "Reflex denied the request (403). GCP Cloud Run deploys require an "
                 "Enterprise tier subscription."
             )
         else:
-            console.error(f"Flexgen rejected the manifest request: {detail}")
+            console.error(f"Reflex rejected the manifest request: {detail}")
         raise click.exceptions.Exit(1) from ex
     except httpx.HTTPError as ex:
-        console.error(f"Failed to reach flexgen at {url}: {ex}")
+        console.error(f"Failed to reach Reflex at {url}: {ex}")
         raise click.exceptions.Exit(1) from ex
 
     try:
         body = response.json()
     except ValueError as ex:
-        console.error("Flexgen returned a non-JSON response.")
+        console.error("Reflex returned a non-JSON response.")
         raise click.exceptions.Exit(1) from ex
 
     if not isinstance(body, dict):
-        console.error("Flexgen returned an unexpected response shape.")
+        console.error("Reflex returned an unexpected response shape.")
         raise click.exceptions.Exit(1)
 
     dockerfile = body.get(FIELD_DOCKERFILE)
     deploy_command = body.get(FIELD_DEPLOY_COMMAND)
     if not isinstance(dockerfile, str) or not dockerfile.strip():
         console.error(
-            f"Flexgen response is missing a non-empty {FIELD_DOCKERFILE!r} field."
+            f"Reflex response is missing a non-empty {FIELD_DOCKERFILE!r} field."
         )
         raise click.exceptions.Exit(1)
     if not isinstance(deploy_command, str) or not deploy_command.strip():
         console.error(
-            f"Flexgen response is missing a non-empty {FIELD_DEPLOY_COMMAND!r} field."
+            f"Reflex response is missing a non-empty {FIELD_DEPLOY_COMMAND!r} field."
         )
         raise click.exceptions.Exit(1)
 
@@ -410,22 +411,39 @@ def _request_manifest(token: str) -> tuple[str, str]:
 
 
 def _build_cloudbuild_yaml(dockerfile_contents: str) -> str:
-    """Generate a Cloud Build config that materializes the Dockerfile inline.
+    r"""Generate a Cloud Build config that materializes the Dockerfile inline.
 
-    The Dockerfile body is embedded as a single base64 line so we don't have
-    to worry about YAML literal-block indentation, bash here-doc markers, or
-    shell-meta characters in the Dockerfile leaking into the config. The
-    resulting build does ``docker build`` + ``docker push`` against the
-    user's source as the build context.
+    The Dockerfile body is dropped into a bash heredoc (``cat <<'MARKER' >
+    Dockerfile``) inside the build step. The marker is single-quoted so bash
+    treats the body literally — no shell-meta expansion of ``$``, `` ` ``, or
+    ``\``. YAML literal-block indentation gets stripped uniformly so the
+    closing marker line ends up at column 0 where bash expects it.
 
     Args:
-        dockerfile_contents: The Dockerfile body from flexgen.
+        dockerfile_contents: The Dockerfile body from Reflex.
 
     Returns:
         A complete ``cloudbuild.yaml`` body, ready to write to disk.
 
+    Raises:
+        ValueError: If the Dockerfile contains a line that exactly matches the
+            heredoc marker (would terminate the heredoc early).
+
     """
-    b64 = base64.b64encode(dockerfile_contents.encode("utf-8")).decode("ascii")
+    marker = "REFLEX_FLEXGEN_DOCKERFILE_EOF"
+    if any(line.rstrip() == marker for line in dockerfile_contents.splitlines()):
+        raise ValueError(
+            f"Dockerfile content contains the reserved heredoc marker {marker!r}."
+        )
+    # Cloud Build runs its own substitution pass over `args`, so any `$NAME` or
+    # `${NAME}` in the Dockerfile (e.g. `ENV PATH="${UV_PROJECT_ENVIRONMENT}/bin"`)
+    # would be treated as a Cloud Build variable and fail with
+    # "not a valid built-in substitution". Escape literal `$` to `$$` so the
+    # parser restores `$` before bash runs.
+    escaped = dockerfile_contents.replace("$", "$$")
+    # 6 spaces to fit inside the YAML literal block under `args:\n  - -c\n  - |`.
+    indent = "      "
+    body = "".join(f"{indent}{line}\n" for line in escaped.splitlines())
     return (
         "steps:\n"
         "- name: gcr.io/cloud-builders/docker\n"
@@ -433,16 +451,18 @@ def _build_cloudbuild_yaml(dockerfile_contents: str) -> str:
         "  args:\n"
         "    - -c\n"
         "    - |\n"
-        f"      printf '%s' '{b64}' | base64 -d > Dockerfile\n"
-        '      docker build -t "$_IMAGE" .\n'
-        '      docker push "$_IMAGE"\n'
+        f"{indent}cat > Dockerfile <<'{marker}'\n"
+        f"{body}"
+        f"{indent}{marker}\n"
+        f'{indent}docker build -t "$_IMAGE" .\n'
+        f'{indent}docker push "$_IMAGE"\n'
         "images:\n"
         "  - $_IMAGE\n"
     )
 
 
 def _rewrite_builds_submit(script: str) -> str:
-    """Rewrite the flexgen script's `gcloud builds submit` invocation to use --config=.
+    """Rewrite the Reflex script's `gcloud builds submit` invocation to use --config=.
 
     Replaces the (possibly multi-line) ``gcloud builds submit --tag X .``
     command with one that references our generated cloudbuild.yaml via the
@@ -450,7 +470,7 @@ def _rewrite_builds_submit(script: str) -> str:
     through ``--substitutions=_IMAGE=...``.
 
     Args:
-        script: The flexgen deploy script body.
+        script: The Reflex deploy script body.
 
     Returns:
         The script with the build-submit step rewritten.
@@ -463,7 +483,7 @@ def _rewrite_builds_submit(script: str) -> str:
     if not match:
         raise ValueError(
             "Couldn't find `gcloud builds submit` in the deploy script. The "
-            "flexgen manifest format may have changed; the CLI needs updating."
+            "manifest format may have changed; Contact support@reflex.dev"
         )
     indent = match.group("indent")
     line_start = script.rfind("\n", 0, match.start()) + 1
@@ -525,7 +545,7 @@ def _run_deploy_script(
 
     Args:
         bash_path: Resolved path to the bash executable.
-        script: The bash script body received from flexgen.
+        script: The bash script body received from Reflex.
         cwd: Working directory to run the script in.
         env_overrides: Environment variables required by the deploy script.
 
