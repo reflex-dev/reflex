@@ -453,7 +453,7 @@ def test_build_cloudbuild_yaml_embeds_dockerfile_via_heredoc():
     heredoc_body = yaml[body_start:body_end]
     # Every `$` in the heredoc body is part of a `$$` pair — i.e. no isolated `$`.
     assert "$" in heredoc_body  # sanity
-    assert heredoc_body.replace("$$", "") .count("$") == 0
+    assert heredoc_body.replace("$$", "").count("$") == 0
     # Concrete escapes are present.
     assert '      ENV PATH="$${UV_PROJECT_ENVIRONMENT}/bin:$$PATH"' in heredoc_body
     assert "      RUN echo $$weird '\"chars\"' \\" in heredoc_body

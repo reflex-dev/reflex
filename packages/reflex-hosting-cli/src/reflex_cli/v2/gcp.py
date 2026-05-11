@@ -57,47 +57,45 @@ FIELD_DEPLOY_COMMAND = "deploy_command"
 # Allowlist of host environment variables forwarded to the deploy script.
 # We deliberately exclude things like AWS_*/GITHUB_TOKEN/SSH agent sockets so a
 # compromised or tampered manifest cannot exfiltrate unrelated credentials.
-DEPLOY_ENV_ALLOWLIST = frozenset(
-    {
-        "PATH",
-        "HOME",
-        "USER",
-        "LOGNAME",
-        "SHELL",
-        "TERM",
-        "LANG",
-        "LC_ALL",
-        "LC_CTYPE",
-        "TMPDIR",
-        "TEMP",
-        "TMP",
-        "XDG_CONFIG_HOME",
-        # gcloud configuration
-        "CLOUDSDK_CONFIG",
-        "CLOUDSDK_ACTIVE_CONFIG_NAME",
-        "CLOUDSDK_CORE_PROJECT",
-        "CLOUDSDK_CORE_ACCOUNT",
-        "CLOUDSDK_AUTH_ACCESS_TOKEN_FILE",
-        "GOOGLE_APPLICATION_CREDENTIALS",
-        # docker configuration
-        "DOCKER_HOST",
-        "DOCKER_TLS_VERIFY",
-        "DOCKER_CERT_PATH",
-        "DOCKER_CONFIG",
-        "DOCKER_BUILDKIT",
-        # corporate proxy / TLS trust
-        "HTTP_PROXY",
-        "HTTPS_PROXY",
-        "NO_PROXY",
-        "http_proxy",
-        "https_proxy",
-        "no_proxy",
-        "SSL_CERT_FILE",
-        "SSL_CERT_DIR",
-        "REQUESTS_CA_BUNDLE",
-        "CURL_CA_BUNDLE",
-    }
-)
+DEPLOY_ENV_ALLOWLIST = frozenset({
+    "PATH",
+    "HOME",
+    "USER",
+    "LOGNAME",
+    "SHELL",
+    "TERM",
+    "LANG",
+    "LC_ALL",
+    "LC_CTYPE",
+    "TMPDIR",
+    "TEMP",
+    "TMP",
+    "XDG_CONFIG_HOME",
+    # gcloud configuration
+    "CLOUDSDK_CONFIG",
+    "CLOUDSDK_ACTIVE_CONFIG_NAME",
+    "CLOUDSDK_CORE_PROJECT",
+    "CLOUDSDK_CORE_ACCOUNT",
+    "CLOUDSDK_AUTH_ACCESS_TOKEN_FILE",
+    "GOOGLE_APPLICATION_CREDENTIALS",
+    # docker configuration
+    "DOCKER_HOST",
+    "DOCKER_TLS_VERIFY",
+    "DOCKER_CERT_PATH",
+    "DOCKER_CONFIG",
+    "DOCKER_BUILDKIT",
+    # corporate proxy / TLS trust
+    "HTTP_PROXY",
+    "HTTPS_PROXY",
+    "NO_PROXY",
+    "http_proxy",
+    "https_proxy",
+    "no_proxy",
+    "SSL_CERT_FILE",
+    "SSL_CERT_DIR",
+    "REQUESTS_CA_BUNDLE",
+    "CURL_CA_BUNDLE",
+})
 
 
 @click.command(name="deploy")
