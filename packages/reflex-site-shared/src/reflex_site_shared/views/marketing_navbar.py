@@ -444,7 +444,7 @@ def case_studies_column() -> rx.Component:
             rx.el.div(
                 rx.el.elements.a(
                     "How Autodesk saved 25% of their development time",
-                    href="/customers/autodesk/",
+                    href="/customers",
                     class_name="text-secondary-12 text-lg font-[525] hover:text-primary-10 dark:hover:text-primary-9 mt-auto",
                 ),
                 rx.el.div(
