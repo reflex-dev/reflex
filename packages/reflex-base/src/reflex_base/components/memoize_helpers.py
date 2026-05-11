@@ -20,6 +20,7 @@ Auto-memoized components compile using one of two render strategies:
 from __future__ import annotations
 
 import enum
+from collections.abc import Sequence
 from hashlib import md5
 from typing import TYPE_CHECKING
 
@@ -215,7 +216,7 @@ def _is_structural_memoization_child(component: Component) -> bool:
 
 
 def passthrough_children_var(
-    children: list[BaseComponent],
+    children: Sequence[BaseComponent],
 ) -> ArrayVar[list[BaseComponent]] | None:
     """Return the placeholder ``children`` array Var if ``children`` is a memo hole.
 
