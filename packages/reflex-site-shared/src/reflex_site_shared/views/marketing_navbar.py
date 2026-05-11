@@ -806,7 +806,7 @@ def navigation_menu() -> rx.Component:
                 class_name="safari-nav-positioner box-border h-[var(--positioner-height)] w-[var(--positioner-width)] max-w-[var(--available-width)] transition-[top,left,right,bottom] duration-[0.35s] ease-[cubic-bezier(0.22,1,0.36,1)] data-[instant]:transition-none",
                 side_offset=30,
                 align="start",
-                align_offset=-106,
+                align_offset=-109,
                 position_method="fixed",
             ),
         ),
