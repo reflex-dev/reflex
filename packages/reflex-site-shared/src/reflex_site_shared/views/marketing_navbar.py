@@ -172,7 +172,7 @@ def products_iterate_column_body() -> rx.Component:
             target="_blank",
             class_name="flex flex-row items-center gap-2 text-sm font-medium text-secondary-12 hover:text-primary-10 dark:hover:text-primary-9 group mt-auto",
         ),
-        class_name="flex flex-col gap-2 p-6 text-center justify-center items-center min-h-[252px] h-full",
+        class_name="flex flex-col p-6 text-center justify-center items-center min-h-[252px] h-full",
     )
 
 
