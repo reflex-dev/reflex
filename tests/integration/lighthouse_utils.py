@@ -899,21 +899,15 @@ def run_lighthouse(url: str, report_path: Path) -> dict[str, Any]:
     Returns:
         The parsed Lighthouse JSON report.
     """
-    chrome_path = get_chrome_path()
-    chrome_flags = ["--no-sandbox", "--disable-dev-shm-usage"]
-    # chrome-headless-shell is always headless and doesn't recognize --headless=new.
-    if "chrome-headless-shell" not in Path(chrome_path).name:
-        chrome_flags.insert(0, "--headless=new")
-
     command = [
         *_prepare_lighthouse_command(tuple(get_lighthouse_command())),
         url,
         "--output=json",
         f"--output-path={report_path}",
-        f"--chrome-path={chrome_path}",
+        f"--chrome-path={get_chrome_path()}",
         f"--only-categories={','.join(LIGHTHOUSE_CATEGORIES)}",
         "--quiet",
-        f"--chrome-flags={' '.join(chrome_flags)}",
+        "--chrome-flags=--headless=new --no-sandbox --disable-dev-shm-usage",
     ]
 
     try:
@@ -964,7 +958,6 @@ def _ensure_lighthouse_app(
 
 def _run_prod_lighthouse_benchmark(
     app_root: Path,
-    app_name: str,
     report_path: Path,
     label: str,
 ) -> LighthouseBenchmarkResult:
@@ -975,7 +968,6 @@ def _run_prod_lighthouse_benchmark(
 
     Args:
         app_root: The app root to initialize or reuse.
-        app_name: The app name matching the directory layout.
         report_path: Where to save the Lighthouse JSON report.
         label: A short label for the summary output.
 
@@ -1088,7 +1080,6 @@ def run_landing_prod_lighthouse_benchmark(
     _ensure_lighthouse_app(app_root, LIGHTHOUSE_LANDING_APP_NAME, LANDING_PAGE_SOURCE)
     return _run_prod_lighthouse_benchmark(
         app_root=app_root,
-        app_name=LIGHTHOUSE_LANDING_APP_NAME,
         report_path=report_path,
         label="landing page prod app",
     )
