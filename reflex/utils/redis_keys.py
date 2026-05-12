@@ -42,6 +42,8 @@ def logical_redis_key(redis_key: str) -> str:
     Returns:
         The logical key without any Redis Cluster hash tag prefix.
     """
-    if redis_key.startswith("{") and "}:" in redis_key:
-        return redis_key.split("}:", 1)[1]
+    if redis_key.startswith("{") and "}" in redis_key:
+        close = redis_key.index("}")
+        if close + 1 < len(redis_key) and redis_key[close + 1] == ":":
+            return redis_key[close + 2:]
     return redis_key
