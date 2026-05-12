@@ -2301,3 +2301,36 @@ def test_ref():
     assert id_component._render().props["ref"].equals(Var("ref_custom_id"))
 
     assert "ref" not in rx.box()._render().props
+
+
+def test_component_equality_compares_fields():
+    """``BaseComponent.__eq__`` must compare field values, not just class identity.
+
+    HTML ``Element`` subclasses (``rx.box`` etc.) override ``__eq__`` to compare by
+    tag only, so this test uses a plain ``Component`` subclass to exercise the
+    base implementation.
+    """
+
+    class EqProbe(Component):
+        tag = "EqProbe"
+        label: str = ""
+
+    class OtherProbe(Component):
+        tag = "OtherProbe"
+        label: str = ""
+
+    a = EqProbe.create(label="x")
+    b = EqProbe.create(label="x")
+    c = EqProbe.create(label="y")
+
+    assert a == b
+    assert a != c
+
+    parent_same = EqProbe.create(EqProbe.create(label="leaf"), label="root")
+    parent_other = EqProbe.create(EqProbe.create(label="leaf"), label="root")
+    parent_diff = EqProbe.create(EqProbe.create(label="other"), label="root")
+    assert parent_same == parent_other
+    assert parent_same != parent_diff
+
+    assert EqProbe.create() != OtherProbe.create()
+    assert EqProbe.create() != "not a component"

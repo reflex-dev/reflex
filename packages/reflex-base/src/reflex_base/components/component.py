@@ -346,7 +346,7 @@ class BaseComponent(metaclass=BaseComponentMeta):
         Returns:
             Whether the component is equal to the value.
         """
-        return type(self) is type(value) and bool(
+        return type(self) is type(value) and all(
             getattr(self, key) == getattr(value, key) for key in self.get_fields()
         )
 
