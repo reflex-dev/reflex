@@ -410,6 +410,10 @@ class State(rx.State):
     chat_history: list[tuple[str, str]]
 
     @rx.event
+    def set_question(self, value: str):
+        self.question = value
+
+    @rx.event
     def answer(self):
         # Our chatbot is not very smart right now...
         answer = "I don't know!"
@@ -480,7 +484,7 @@ def action_bar() -> rx.Component:
 
 Normal Python `for` loops don't work for iterating over state vars because these values can change and aren't known at compile time. Instead, we use the [foreach](/docs/library/dynamic-rendering/foreach) component to iterate over the chat history.
 
-We also bind the input's `on_change` event to the `set_question` event handler, which will update the `question` state var while the user types in the input. We bind the button's `on_click` event to the `answer` event handler, which will process the question and add the answer to the chat history. The `set_question` event handler is a built-in implicitly defined event handler. Every base var has one. Learn more in the [events docs](/docs/events/setters) under the Setters section.
+We also bind the input's `on_change` event to the `set_question` event handler, which will update the `question` state var while the user types in the input. We bind the button's `on_click` event to the `answer` event handler, which will process the question and add the answer to the chat history.
 
 ### Clearing the Input
 
@@ -739,6 +743,10 @@ import reflex as rx
 class State(rx.State):
     question: str
     chat_history: list[tuple[str, str]] = []
+
+    @rx.event
+    def set_question(self, value: str):
+        self.question = value
 
     async def answer(self):
         client = AsyncOpenAI(api_key=os.environ["OPENAI_API_KEY"])
