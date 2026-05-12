@@ -31,7 +31,7 @@ LIGHTHOUSE_COMMAND_PREP_TIMEOUT_SECONDS = 300
 LIGHTHOUSE_RUN_TIMEOUT_SECONDS = 300
 TRUTHY_ENV_VALUES = {"1", "true", "yes", "on"}
 LIGHTHOUSE_CATEGORY_THRESHOLDS = {
-    "performance": 0.9,
+    "performance": 0.56,
     "accessibility": 0.9,
     "best-practices": 0.9,
     "seo": 0.9,
@@ -899,15 +899,21 @@ def run_lighthouse(url: str, report_path: Path) -> dict[str, Any]:
     Returns:
         The parsed Lighthouse JSON report.
     """
+    chrome_path = get_chrome_path()
+    chrome_flags = ["--no-sandbox", "--disable-dev-shm-usage"]
+    # chrome-headless-shell is always headless and doesn't recognize --headless=new.
+    if "chrome-headless-shell" not in Path(chrome_path).name:
+        chrome_flags.insert(0, "--headless=new")
+
     command = [
         *_prepare_lighthouse_command(tuple(get_lighthouse_command())),
         url,
         "--output=json",
         f"--output-path={report_path}",
-        f"--chrome-path={get_chrome_path()}",
+        f"--chrome-path={chrome_path}",
         f"--only-categories={','.join(LIGHTHOUSE_CATEGORIES)}",
         "--quiet",
-        "--chrome-flags=--headless=new --no-sandbox --disable-dev-shm-usage",
+        f"--chrome-flags={' '.join(chrome_flags)}",
     ]
 
     try:

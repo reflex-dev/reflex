@@ -76,5 +76,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: lighthouse-report
-          path: .pytest-tmp/lighthouse
+          path: |
+            .pytest-tmp/lighthouse/**
+            !.pytest-tmp/lighthouse/*current
+            !.pytest-tmp/lighthouse/*current/**
           if-no-files-found: ignore
