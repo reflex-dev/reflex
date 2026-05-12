@@ -770,20 +770,21 @@ def navigation_menu() -> rx.Component:
                     href=REFLEX_BUILD_URL,
                     target="_blank",
                 ),
+                class_name="xl:flex hidden",
                 custom_attrs={"role": "menuitem"},
             ),
             ui.navigation_menu.item(
                 demo_form_dialog(
                     trigger=marketing_button(
-                        "Book a Demo",
+                        rx.el.span("Book a Demo", class_name="max-xl:hidden"),
+                        rx.el.span("Demo", class_name="xl:hidden"),
                         size="sm",
                         variant="primary",
-                        class_name=" whitespace-nowrap max-xl:hidden",
+                        class_name="whitespace-nowrap",
                         native_button=False,
                     ),
                 ),
                 unstyled=True,
-                class_name="xl:flex hidden",
                 custom_attrs={"role": "menuitem"},
             ),
             ui.navigation_menu.item(
@@ -792,7 +793,7 @@ def navigation_menu() -> rx.Component:
                 unstyled=True,
                 custom_attrs={"role": "menuitem"},
             ),
-            class_name="flex flex-row lg:gap-4 gap-2 m-0 h-full list-none items-center",
+            class_name="flex flex-row gap-4 m-0 h-full list-none items-center",
             custom_attrs={"role": "menubar"},
         ),
         ui.navigation_menu.portal(
