@@ -11,7 +11,7 @@ on:
       - "**/*.md"
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.id }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.id || github.sha }}
   cancel-in-progress: true
 
 permissions:
@@ -30,7 +30,6 @@ env:
   PYTHONIOENCODING: "utf8"
   REFLEX_TELEMETRY_ENABLED: false
   NODE_OPTIONS: "--max_old_space_size=8192"
-  PR_TITLE: ${{ github.event.pull_request.title }}
 
 jobs:
   example-counter-and-nba-proxy:
@@ -51,6 +50,7 @@ jobs:
         with:
           fetch-tags: true
           fetch-depth: 0
+          persist-credentials: false
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: ${{ matrix.python-version }}
@@ -61,6 +61,7 @@ jobs:
         with:
           repository: reflex-dev/reflex-examples
           path: reflex-examples
+          persist-credentials: false
       - name: Install requirements for counter example
         working-directory: ./reflex-examples/counter
         run: |
@@ -117,6 +118,7 @@ jobs:
         with:
           fetch-tags: true
           fetch-depth: 0
+          persist-credentials: false
 
       # Install sfw BEFORE any dependency installation so all packages are scanned.
       - name: Install Socket.dev Firewall (free)
@@ -176,9 +178,10 @@ jobs:
         with:
           fetch-tags: true
           fetch-depth: 0
+          persist-credentials: false
       - uses: ./.github/actions/setup_build_env
         with:
-          python-version: 3.14
+          python-version: "3.14"
           run-uv-sync: true
 
       - name: Create app directory
@@ -219,6 +222,7 @@ jobs:
         with:
           fetch-tags: true
           fetch-depth: 0
+          persist-credentials: false
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: ${{ matrix.python-version }}

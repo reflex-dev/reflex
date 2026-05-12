@@ -27,9 +27,10 @@ jobs:
         with:
           fetch-tags: true
           fetch-depth: 0
+          persist-credentials: false
       - uses: ./.github/actions/setup_build_env
         with:
-          python-version: 3.13
+          python-version: "3.13"
           run-uv-sync: true
 
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0

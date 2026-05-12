@@ -14,7 +14,6 @@ on:
 env:
   REFLEX_TELEMETRY_ENABLED: false
   NODE_OPTIONS: "--max_old_space_size=8192"
-  PR_TITLE: ${{ github.event.pull_request.title }}
   APP_HARNESS_HEADLESS: 1
   PYTHONUNBUFFERED: 1
 
@@ -27,6 +26,7 @@ jobs:
         with:
           fetch-tags: true
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
@@ -54,6 +54,7 @@ jobs:
         with:
           fetch-tags: true
           fetch-depth: 0
+          persist-credentials: false
 
       - uses: ./.github/actions/setup_build_env
         with:

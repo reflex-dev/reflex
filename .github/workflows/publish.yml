@@ -11,6 +11,9 @@ on:
         description: "Release tag (e.g. v1.2.3 or reflex-lucide-v0.1.0)"
         required: true
 
+permissions:
+  contents: read
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -26,6 +29,7 @@ jobs:
           ref: ${{ github.event.release.tag_name || inputs.tag }}
           fetch-tags: true
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0

@@ -18,18 +18,20 @@ on:
           - reflex-site-shared
 
 permissions:
-  contents: write
-  actions: write
+  contents: read
 
 jobs:
   detect:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       packages: ${{ steps.detect.outputs.packages }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 2
+          persist-credentials: false
       - id: detect
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -40,6 +42,9 @@ jobs:
     needs: detect
     if: needs.detect.outputs.packages != '[]'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
     strategy:
       matrix:
         package: ${{ fromJson(needs.detect.outputs.packages) }}
@@ -52,6 +57,7 @@ jobs:
         with:
           fetch-tags: true
           fetch-depth: 0
+          persist-credentials: false
       - name: Compute next version
         id: version
         env:

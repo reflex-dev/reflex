@@ -1,8 +1,11 @@
 name: Dispatch release
 
-# Note: any action starting with `release-` is gated on the `dispatch-release-approval`
-# environment. Configure required reviewers for that environment in repo Settings →
-# Environments to actually enforce the second approval; otherwise the gate is a no-op.
+# REQUIRED CONFIGURATION: any action starting with `release-` is gated on the
+# `dispatch-release-approval` environment. The gate only enforces a second
+# approval if that environment has required reviewers configured in repo
+# Settings → Environments. Without reviewers configured, the gate job
+# auto-succeeds and provides NO protection — verify the environment is set up
+# before relying on this workflow for production releases.
 
 on:
   workflow_dispatch:
@@ -89,16 +92,19 @@ on:
         default: false
 
 permissions:
-  contents: write
-  actions: write
+  contents: read
 
 jobs:
   detect:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       packages: ${{ steps.detect.outputs.packages }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
       - id: detect
         env:
           hatch_reflex_pyi: ${{ inputs.hatch_reflex_pyi }}
@@ -122,6 +128,8 @@ jobs:
   plan:
     needs: detect
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       releases: ${{ steps.plan.outputs.releases }}
     steps:
@@ -129,6 +137,7 @@ jobs:
         with:
           fetch-tags: true
           fetch-depth: 0
+          persist-credentials: false
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
       - id: plan
         env:
@@ -140,9 +149,13 @@ jobs:
     needs: plan
     if: ${{ startsWith(inputs.action, 'release-') }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     environment: dispatch-release-approval
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
       - name: Show release plan
         env:
           RELEASES: ${{ needs.plan.outputs.releases }}
@@ -153,6 +166,9 @@ jobs:
     needs: [plan, gate]
     if: ${{ always() && needs.plan.result == 'success' && (needs.gate.result == 'success' || needs.gate.result == 'skipped') }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
     strategy:
       matrix:
         include: ${{ fromJson(needs.plan.outputs.releases) }}
@@ -162,6 +178,8 @@ jobs:
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
