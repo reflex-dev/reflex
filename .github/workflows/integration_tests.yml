@@ -47,7 +47,7 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-tags: true
           fetch-depth: 0
@@ -57,7 +57,7 @@ jobs:
           run-uv-sync: true
 
       - name: Clone Reflex Examples Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           repository: reflex-dev/reflex-examples
           path: reflex-examples
@@ -113,19 +113,19 @@ jobs:
       REFLEX_WEB_WINDOWS_OVERRIDE: "1"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-tags: true
           fetch-depth: 0
 
       # Install sfw BEFORE any dependency installation so all packages are scanned.
       - name: Install Socket.dev Firewall (free)
-        uses: SocketDev/action@2d3f25590c6ed6ba11a9a14c064d962a3a04698f # v1.3.1
+        uses: SocketDev/action@ba6de6cc0565af1f42295590380973573297e31f # v1.3.2
         with:
           mode: firewall-free
 
       - name: Install Bun
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
       - name: Activate sfw shims for npm and bun
         run: |
           SHIM_DIR="$(cd scripts/sfw-shims && pwd)"
@@ -134,7 +134,7 @@ jobs:
 
       # Inline setup_build_env steps so all installs go through sfw.
       - name: Install UV
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
@@ -142,7 +142,7 @@ jobs:
           activate-environment: true
           cache-dependency-glob: "uv.lock"
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 22
 
@@ -161,7 +161,7 @@ jobs:
 
       - name: Upload Socket.dev Firewall report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: sfw-report-reflex-docs-py${{ matrix.python-version }}
           path: ${{ env.SFW_JSON_REPORT_PATH }}
@@ -172,7 +172,7 @@ jobs:
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-tags: true
           fetch-depth: 0
@@ -215,7 +215,7 @@ jobs:
         python-version: ["3.11", "3.12"]
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-tags: true
           fetch-depth: 0
