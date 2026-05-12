@@ -2334,3 +2334,36 @@ def test_component_equality_compares_fields():
 
     assert EqProbe.create() != OtherProbe.create()
     assert EqProbe.create() != "not a component"
+
+
+def test_component_equality_handles_var_fields():
+    """``BaseComponent.__eq__`` must not raise when a field holds a Var.
+
+    ``Var.__eq__`` returns a ``BooleanVar``; bool-ifying that raises
+    ``VarTypeError``. Equality has to compare Vars structurally (via
+    ``Var.equals``) and walk containers element-wise so list/dict fields that
+    hold Vars don't trip up the default container ``__eq__``.
+    """
+
+    class VarState(BaseState):
+        text: str = "hi"
+
+    class VarProbe(Component):
+        tag = "VarProbe"
+        label: str = ""
+        items: list = []
+        meta: dict = {}
+
+    same_a = VarProbe.create(label=VarState.text)
+    same_b = VarProbe.create(label=VarState.text)
+    different = VarProbe.create(label="literal")
+    assert same_a == same_b
+    assert same_a != different
+
+    list_a = VarProbe.create(items=[VarState.text])
+    list_b = VarProbe.create(items=[VarState.text])
+    assert list_a == list_b
+
+    dict_a = VarProbe.create(meta={"k": VarState.text})
+    dict_b = VarProbe.create(meta={"k": VarState.text})
+    assert dict_a == dict_b
