@@ -33,6 +33,11 @@ class Bun(SimpleNamespace):
     # Path of the bun lockfile.
     LOCKFILE_PATH = "bun.lock"
 
+    # Directory in the app root where the canonical bun lockfile is stored.
+    # A dedicated directory avoids clashes with a user's own bun project
+    # that may sit in the same directory as the Reflex project.
+    ROOT_LOCKFILE_DIR = "reflex.lock"
+
     @classproperty
     @classmethod
     def ROOT_PATH(cls):
@@ -70,6 +75,9 @@ class Node(SimpleNamespace):
 
     # Path of the node config file.
     CONFIG_PATH = ".npmrc"
+
+    # Path of the npm lockfile.
+    LOCKFILE_PATH = "package-lock.json"
 
     DEFAULT_CONFIG = """
 registry={registry}

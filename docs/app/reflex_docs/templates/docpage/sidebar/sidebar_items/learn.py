@@ -250,6 +250,7 @@ def get_sidebar_items_hosting():
             children=[
                 hosting.self_hosting,
                 hosting.databricks,
+                hosting.deploy_to_gcp,
             ],
         ),
     ]

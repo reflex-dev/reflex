@@ -4,12 +4,18 @@ import pytest
 from reflex_base.event import EventChain, prevent_default
 from reflex_base.utils.exceptions import EventHandlerValueError
 from reflex_base.vars.base import Var
+from reflex_components_core.el.elements.forms import (
+    AUTO_HEIGHT_JS,
+    ENTER_KEY_SUBMIT_JS,
+    Input,
+    Textarea,
+)
 from reflex_components_core.el.elements.forms import Form as HTMLForm
-from reflex_components_core.el.elements.forms import Input
 from reflex_components_radix.primitives.form import Form
 from typing_extensions import NotRequired
 
 import reflex as rx
+from reflex.compiler.utils import _root_only_custom_code
 
 
 def test_render_on_submit():
@@ -265,3 +271,22 @@ def test_on_submit_typed_dict_skips_dynamic_field_identifiers():
             Input.create(name="wrong_field"),
             on_submit=SignupState.on_submit,
         )
+
+
+def test_textarea_enter_key_submit_emits_helper():
+    """`enter_key_submit=True` must inject the onKeyDown helper into the page."""
+    ta = Textarea.create(enter_key_submit=True)
+    assert ENTER_KEY_SUBMIT_JS in _root_only_custom_code(ta)
+
+
+def test_textarea_auto_height_emits_helper():
+    """`auto_height=True` must inject the onInput helper into the page."""
+    ta = Textarea.create(auto_height=True)
+    assert AUTO_HEIGHT_JS in _root_only_custom_code(ta)
+
+
+def test_textarea_without_features_emits_no_helpers():
+    """A bare textarea should not pull in either helper snippet."""
+    collected = _root_only_custom_code(Textarea.create())
+    assert ENTER_KEY_SUBMIT_JS not in collected
+    assert AUTO_HEIGHT_JS not in collected

@@ -148,53 +148,171 @@ def initialize_requirements_txt(
     return False
 
 
-def get_root_bun_lock_path() -> Path:
-    """Get the canonical bun lock path in the app root.
+#: Lockfiles persisted under ``reflex.lock/`` and mirrored into ``.web``.
+#: Both bun and npm flows are covered so projects can be (re)built with
+#: either package manager without losing pinned versions.
+LOCKFILE_NAMES: tuple[str, ...] = (
+    constants.Bun.LOCKFILE_PATH,
+    constants.Node.LOCKFILE_PATH,
+)
 
-    This assumes the current working directory is the Reflex app root.
+
+def get_root_lockfile_path(filename: str) -> Path:
+    """Get a persisted lockfile path under the app root's reflex.lock dir.
+
+    Args:
+        filename: The lockfile basename (e.g. ``bun.lock``, ``package-lock.json``).
 
     Returns:
-        The canonical bun lock path in the app root.
+        The lockfile path inside ``<cwd>/reflex.lock/``.
     """
-    return Path.cwd() / constants.Bun.LOCKFILE_PATH
+    return Path.cwd() / constants.Bun.ROOT_LOCKFILE_DIR / filename
 
 
-def get_web_bun_lock_path() -> Path:
-    """Get the mirrored bun lock path in the .web directory.
+def get_web_lockfile_path(filename: str) -> Path:
+    """Get the mirrored lockfile path inside ``.web``.
+
+    Args:
+        filename: The lockfile basename.
 
     Returns:
-        The mirrored bun lock path in the .web directory.
+        The lockfile path inside the ``.web`` directory.
     """
-    return get_web_dir() / constants.Bun.LOCKFILE_PATH
+    return get_web_dir() / filename
 
 
-def sync_root_bun_lock_to_web():
-    """Mirror the canonical root bun.lock into .web.
+def get_root_package_json_path() -> Path:
+    """Get the persisted package.json path in the app root.
 
-    If the root lockfile is absent, remove any stale mirrored copy from .web.
+    Stored alongside the lockfiles inside ``reflex.lock/`` so resolved
+    dependency pins survive a fresh ``reflex init``.
+
+    Returns:
+        The persisted package.json path in the app root.
     """
-    root_bun_lock_path = get_root_bun_lock_path()
-    web_bun_lock_path = get_web_bun_lock_path()
+    return Path.cwd() / constants.Bun.ROOT_LOCKFILE_DIR / constants.PackageJson.PATH
 
-    if not root_bun_lock_path.exists():
-        if web_bun_lock_path.exists():
-            console.debug(f"Removing stale {web_bun_lock_path}")
-            path_ops.rm(web_bun_lock_path)
+
+def get_web_package_json_path() -> Path:
+    """Get the package.json path in the .web directory.
+
+    Returns:
+        The package.json path in the .web directory.
+    """
+    return get_web_dir() / constants.PackageJson.PATH
+
+
+def _copy_if_exists(src: Path, dest: Path) -> bool:
+    """Copy ``src`` to ``dest`` (creating ``dest`` parents as needed).
+
+    Args:
+        src: The source file. If absent, ``dest`` is removed when present.
+        dest: The destination file.
+
+    Returns:
+        True if ``dest``'s effective contents changed (created from absence,
+        overwritten with different bytes, or removed because ``src`` is gone).
+    """
+    if not src.exists():
+        if dest.exists():
+            console.debug(f"Removing stale {dest}")
+            path_ops.rm(dest)
+            return True
+        return False
+
+    if dest.exists() and dest.read_bytes() == src.read_bytes():
+        return False
+
+    changed = dest.exists()
+    path_ops.mkdir(dest.parent)
+    console.debug(f"Copying {src} to {dest}")
+    path_ops.cp(src, dest)
+    return changed
+
+
+def sync_root_lockfile_to_web(filename: str) -> bool:
+    """Mirror a single persisted lockfile into ``.web``.
+
+    Args:
+        filename: The lockfile basename.
+
+    Returns:
+        True if ``.web``'s copy was meaningfully changed (overwritten with
+        different bytes or removed because the root copy is gone). Initial
+        creation does not count as a meaningful change since no install
+        cache could exist yet.
+    """
+    return _copy_if_exists(
+        get_root_lockfile_path(filename), get_web_lockfile_path(filename)
+    )
+
+
+def sync_root_lockfiles_to_web() -> bool:
+    """Mirror every persisted lockfile into ``.web``.
+
+    Returns:
+        True if any ``.web`` lockfile was meaningfully changed.
+    """
+    # Materialize results so every lockfile is synced
+    changed = [sync_root_lockfile_to_web(name) for name in LOCKFILE_NAMES]
+    return any(changed)
+
+
+def sync_web_lockfile_to_root(filename: str):
+    """Persist a single ``.web`` lockfile back to the app root.
+
+    Args:
+        filename: The lockfile basename.
+    """
+    web = get_web_lockfile_path(filename)
+    if not web.exists():
+        return
+    root = get_root_lockfile_path(filename)
+    path_ops.mkdir(root.parent)
+    console.debug(f"Copying {web} to {root}")
+    path_ops.cp(web, root)
+
+
+def sync_web_lockfiles_to_root():
+    """Persist every ``.web`` lockfile back to the app root."""
+    for name in LOCKFILE_NAMES:
+        sync_web_lockfile_to_root(name)
+
+
+def sync_web_package_json_to_root():
+    """Persist the resolved .web package.json back to the app root.
+
+    Captures the dependency pins produced by ``bun add`` so the next
+    ``reflex init`` can restore them as the starting point for the new
+    package.json.
+    """
+    web_package_json_path = get_web_package_json_path()
+    if not web_package_json_path.exists():
         return
 
-    console.debug(f"Copying {root_bun_lock_path} to {web_bun_lock_path}")
-    path_ops.cp(root_bun_lock_path, web_bun_lock_path)
+    root_package_json_path = get_root_package_json_path()
+    path_ops.mkdir(root_package_json_path.parent)
+    console.debug(f"Copying {web_package_json_path} to {root_package_json_path}")
+    path_ops.cp(web_package_json_path, root_package_json_path)
 
 
-def sync_web_bun_lock_to_root():
-    """Persist the mirrored .web bun.lock back to the app root."""
-    web_bun_lock_path = get_web_bun_lock_path()
-    if not web_bun_lock_path.exists():
-        return
+def _read_persisted_package_json() -> dict:
+    """Read the persisted package.json from the app root.
 
-    root_bun_lock_path = get_root_bun_lock_path()
-    console.debug(f"Copying {web_bun_lock_path} to {root_bun_lock_path}")
-    path_ops.cp(web_bun_lock_path, root_bun_lock_path)
+    Returns:
+        The parsed JSON object, or an empty dict if the file is missing or
+        cannot be parsed.
+    """
+    root_package_json_path = get_root_package_json_path()
+    if not root_package_json_path.exists():
+        return {}
+    try:
+        return json.loads(root_package_json_path.read_text())
+    except (json.JSONDecodeError, OSError) as e:
+        console.warn(
+            f"Failed to read {root_package_json_path}: {e}; starting with empty dependency lists."
+        )
+        return {}
 
 
 def initialize_web_directory():
@@ -207,8 +325,8 @@ def initialize_web_directory():
     console.debug(f"Copying {constants.Templates.Dirs.WEB_TEMPLATE} to {get_web_dir()}")
     path_ops.copy_tree(constants.Templates.Dirs.WEB_TEMPLATE, str(get_web_dir()))
 
-    console.debug("Restoring the bun lock file.")
-    sync_root_bun_lock_to_web()
+    console.debug("Restoring lockfiles.")
+    sync_root_lockfiles_to_web()
 
     console.debug("Initializing the web directory.")
     initialize_package_json()
@@ -273,13 +391,31 @@ def _update_react_router_config(config: Config, prerender_routes: bool = False):
 
 
 def _compile_package_json():
+    """Build package.json content for .web.
+
+    Recovers ``dependencies`` and ``devDependencies`` from the persisted
+    ``reflex.lock/package.json`` (when present) so resolved version pins
+    survive a fresh ``reflex init``. User-added ``scripts`` are preserved;
+    only the framework-owned ``dev`` and ``export`` entries are refreshed
+    from constants. ``overrides`` are always refreshed. The framework-managed
+    entries in ``constants.PackageJson.DEPENDENCIES`` / ``DEV_DEPENDENCIES``
+    are added later at install time via ``bun add`` so they pick up strict
+    pins.
+
+    Returns:
+        Rendered package.json content as string.
+    """
+    persisted = _read_persisted_package_json()
+    persisted_scripts = persisted.get("scripts") or {}
+    scripts = {
+        **persisted_scripts,
+        "dev": constants.PackageJson.Commands.DEV,
+        "export": constants.PackageJson.Commands.EXPORT,
+    }
     return templates.package_json_template(
-        scripts={
-            "dev": constants.PackageJson.Commands.DEV,
-            "export": constants.PackageJson.Commands.EXPORT,
-        },
-        dependencies=constants.PackageJson.DEPENDENCIES,
-        dev_dependencies=constants.PackageJson.DEV_DEPENDENCIES,
+        scripts=scripts,
+        dependencies=persisted.get("dependencies") or {},
+        dev_dependencies=persisted.get("devDependencies") or {},
         overrides=constants.PackageJson.OVERRIDES,
     )
 

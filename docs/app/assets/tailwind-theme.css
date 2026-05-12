@@ -1226,6 +1226,8 @@
     --animate-ellipse-3: ellipse-3 2400ms ease-out infinite;
     --animate-ellipse-4: ellipse-4 2400ms ease-out infinite;
     --animate-ellipse-reversed: ellipse-reversed 2400ms ease-out infinite;
+    --arrow-sweep-duration: 4s;
+    --animate-arrow-sweep: arrow-sweep var(--arrow-sweep-duration) linear infinite backwards;
     /* Radius */
     --radius-ui-xxs: calc(var(--radius) - 0.25rem);
     --radius-ui-xs: calc(var(--radius) - 0.125rem);
@@ -1237,6 +1239,7 @@
     /* Width */
     --layout-max-width: 81rem;
     --docs-layout-max-width: 69rem;
+    --landing-layout-max-width: 78.5rem;
 
     @keyframes accordion-down {
         from {
@@ -1628,6 +1631,20 @@
 
         100% {
             top: calc(100% + 19.31rem);
+        }
+    }
+
+    @keyframes arrow-sweep {
+        0% {
+            transform: translateX(-100%);
+        }
+
+        25% {
+            transform: translateX(200%);
+        }
+
+        100% {
+            transform: translateX(200%);
         }
     }
 
@@ -2184,6 +2201,6 @@
     }
 
     body {
-        @apply isolate bg-slate-1 font-sans antialiased;
+        @apply isolate bg-secondary-1 font-sans antialiased;
     }
 }

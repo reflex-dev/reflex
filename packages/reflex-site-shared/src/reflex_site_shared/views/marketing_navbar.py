@@ -7,65 +7,19 @@ import reflex as rx
 from reflex_site_shared.backend.get_blogs import BlogPostDict, RecentBlogsState
 from reflex_site_shared.components.icons import get_icon
 from reflex_site_shared.components.marketing_button import button as marketing_button
-from reflex_site_shared.components.marquee import marquee
 from reflex_site_shared.constants import (
     CHANGELOG_URL,
-    CONTRIBUTING_URL,
-    DISCUSSIONS_URL,
+    DISCORD_URL,
     GITHUB_STARS,
     GITHUB_URL,
-    JOBS_BOARD_URL,
     REFLEX_ASSETS_CDN,
     REFLEX_BUILD_URL,
 )
 from reflex_site_shared.views.sidebar import navbar_sidebar_button
-
-
-def social_proof_card(image: str) -> rx.Component:
-    """Social proof card.
-
-    Returns:
-        The component.
-    """
-    return rx.el.div(
-        rx.image(
-            f"{REFLEX_ASSETS_CDN}companies/{rx.color_mode_cond('light', 'dark')}/{image}_small.svg",
-            loading="lazy",
-            alt=f"{image} logo",
-            class_name="w-auto h-fit pointer-events-none",
-        ),
-        class_name="flex justify-center items-center px-3",
-    )
-
-
-def logos_carousel() -> rx.Component:
-    """Logos carousel.
-
-    Returns:
-        The component.
-    """
-    logos = [
-        "agricole",
-        "man",
-        "shell",
-        "red_hat",
-        "accenture",
-        "dell",
-        "microsoft",
-        "world",
-        "ford",
-        "unicef",
-        "nike",
-    ]
-    return marquee(
-        *[social_proof_card(logo) for logo in logos],
-        direction="left",
-        gradient_color="light-dark(var(--c-white-1), var(--c-m-slate-11))",
-        class_name="h-[1.625rem] w-full overflow-hidden mt-auto",
-        gradient_width=65,
-        speed=25,
-        pause_on_hover=False,
-    )
+from reflex_site_shared.views.workflow_stage import (
+    workflow_stage_image,
+    workflow_stage_row,
+)
 
 
 def github() -> rx.Component:
@@ -152,7 +106,7 @@ def menu_trigger(title: str, content: rx.Component) -> rx.Component:
 
 
 def menu_content(content: rx.Component, class_name: str = "") -> rx.Component:
-    """Menu content.
+    """Styled dropdown panel wrapper for navigation menu items.
 
     Returns:
         The component.
@@ -169,36 +123,150 @@ def menu_content(content: rx.Component, class_name: str = "") -> rx.Component:
     )
 
 
-def platform_item(image: str, title: str, description: str, href: str) -> rx.Component:
-    """Platform item.
+def products_column_gutter() -> rx.Component:
+    """Vertical separator between product mega-menu columns.
 
     Returns:
         The component.
     """
     return rx.el.div(
-        rx.image(
-            src=f"{REFLEX_ASSETS_CDN}common/{rx.color_mode_cond('light', 'dark')}/{image}",
-            alt=title,
-            class_name="size-18",
-        ),
         rx.el.div(
-            rx.el.span(
-                title,
-                class_name="dark:text-m-slate-3 text-m-slate-12 text-sm font-[525]",
-            ),
-            rx.el.span(
-                description,
-                class_name="dark:text-m-slate-6 text-m-slate-7 text-sm font-[475]",
-            ),
-            class_name="flex flex-col",
+            class_name="pointer-events-none absolute top-0 left-0 h-12 w-full border-b border-secondary-4",
         ),
-        rx.el.elements.a(class_name="absolute inset-0", href=href),
-        class_name="p-4 flex flex-row gap-6 relative cursor-pointer rounded-sm hover-card-shadow",
+        role="presentation",
+        class_name="w-8 shrink-0 bg-secondary-1 border-secondary-4 border-x relative",
     )
 
 
-def platform_content() -> rx.Component:
-    """Platform content.
+def products_iterate_column_body() -> rx.Component:
+    """Iterate stage column: framework pitch and GitHub link.
+
+    Returns:
+        The component.
+    """
+    return rx.el.div(
+        rx.el.elements.a(
+            rx.el.div(
+                rx.el.span(
+                    "Framework",
+                    class_name="text-base font-[525] text-secondary-12 group-hover:text-primary-10 dark:group-hover:text-primary-9 transition-colors",
+                ),
+                badge("Open source"),
+                class_name="flex flex-row items-center gap-2.5",
+            ),
+            rx.el.p(
+                "The full-stack Python framework, optimized to build with AI agents—apps that can be used by humans and agents alike.",
+                class_name="text-secondary-11 text-sm font-[475]",
+            ),
+            href="/open-source/",
+            class_name="group flex flex-col gap-2 items-center text-center",
+        ),
+        rx.el.elements.a(
+            get_icon(
+                "github_navbar",
+                class_name="size-[18px] shrink-0 text-secondary-12 group-hover:text-primary-10 dark:group-hover:text-primary-9",
+            ),
+            "View on GitHub",
+            ui.icon("ArrowUpRight03Icon", class_name="size-3 shrink-0 -ml-1.75"),
+            href=GITHUB_URL,
+            target="_blank",
+            class_name="flex flex-row items-center gap-2 text-sm font-medium text-secondary-12 hover:text-primary-10 dark:hover:text-primary-9 group mt-auto",
+        ),
+        class_name="flex flex-col p-6 text-center justify-center items-center min-h-[252px] h-full",
+    )
+
+
+def products_ship_column_body() -> rx.Component:
+    """Ship stage column: deploy messaging and illustration.
+
+    Returns:
+        The component.
+    """
+    return rx.el.elements.a(
+        rx.el.div(
+            rx.el.span(
+                "Deploy, monitor & scale",
+                class_name="text-base font-[525] text-secondary-12 group-hover:text-primary-10 dark:group-hover:text-primary-9 transition-colors",
+            ),
+            class_name="flex flex-row items-center gap-2.5 px-6 pt-6",
+        ),
+        rx.el.p(
+            "One click to enterprise-grade infrastructure. Track, version, and grow across teams.",
+            class_name="text-secondary-11 text-sm font-[475] px-6",
+        ),
+        rx.el.div(
+            rx.image(
+                src=f"{REFLEX_ASSETS_CDN}landing/features/{rx.color_mode_cond('light', 'dark')}/ship_navbar_3.svg",
+                alt="Deploy, monitor & scale",
+                loading="lazy",
+                class_name="h-auto w-full max-w-full object-cover",
+            ),
+            class_name="flex w-full mt-auto",
+        ),
+        href="/hosting/",
+        class_name="group flex flex-col gap-2 text-center justify-center items-center min-h-[252px]",
+    )
+
+
+def products_build_column_body() -> rx.Component:
+    """Build stage column: AI builder and agent toolkit teaser.
+
+    Returns:
+        The component.
+    """
+    return rx.el.div(
+        rx.el.elements.a(
+            rx.el.div(
+                rx.el.span(
+                    "AI app builder",
+                    class_name="text-base font-[525] text-secondary-12 group-hover:text-primary-10 dark:group-hover:text-primary-9 transition-colors",
+                ),
+                badge("New"),
+                class_name="flex flex-row items-center gap-2.5 px-6 pt-6",
+            ),
+            rx.el.p(
+                "Describe it, Reflex builds it.",
+                class_name="text-secondary-11 text-sm font-[475] px-6 pb-6",
+            ),
+            href=REFLEX_BUILD_URL,
+            target="_blank",
+            class_name="group flex flex-col gap-2 items-center text-center",
+        ),
+        rx.el.div(
+            get_icon(
+                "arrow_turn", class_name="shrink-0 text-secondary-10 -translate-y-0.75"
+            ),
+            rx.el.span(
+                "OR",
+                class_name="px-2 font-mono text-xs font-[415] uppercase text-secondary-12",
+            ),
+            get_icon(
+                "arrow_turn",
+                class_name="shrink-0 text-secondary-10 rotate-180 translate-y-0.75",
+            ),
+            class_name="flex w-full shrink-0 items-center justify-center py-3 border-y border-secondary-4 px-6 bg-secondary-1",
+        ),
+        rx.el.elements.a(
+            rx.el.div(
+                rx.el.span(
+                    "Agent Toolkit",
+                    class_name="text-base font-[525] text-secondary-12 group-hover:text-primary-10 dark:group-hover:text-primary-9 transition-colors",
+                ),
+                class_name="flex flex-row items-center gap-2.5 px-6 pt-6",
+            ),
+            rx.el.p(
+                "Get started with our MCP and Skills.",
+                class_name="text-secondary-11 text-sm font-[475] px-6 pb-6",
+            ),
+            href="/docs/ai/integrations/ai-onboarding/",
+            class_name="group flex flex-col gap-2 items-center text-center",
+        ),
+        class_name="flex flex-col text-center justify-center items-center min-h-[252px]",
+    )
+
+
+def products_content() -> rx.Component:
+    """Mega-menu body for Products: build, iterate, ship columns.
 
     Returns:
         The component.
@@ -207,67 +275,41 @@ def platform_content() -> rx.Component:
         rx.el.div(
             rx.el.div(
                 rx.el.div(
-                    rx.el.div(
-                        rx.el.span(
-                            "AI Builder",
-                            class_name="dark:text-m-slate-3 text-m-slate-12 text-lg font-semibold mb-2",
-                        ),
-                        rx.el.span(
-                            "Build production-ready web apps for your team in seconds with AI-powered code generation.",
-                            class_name="dark:text-m-slate-6 text-m-slate-7 text-sm font-medium",
-                        ),
-                        class_name="p-4 flex flex-col relative hover-card-shadow rounded-md",
+                    workflow_stage_row(
+                        "Build", right=workflow_stage_image(sweep_index=0)
                     ),
-                    rx.image(
-                        src=f"{REFLEX_ASSETS_CDN}common/{rx.color_mode_cond('light', 'dark')}/ai_builder_pattern.svg",
-                        alt="AI Builder Navbar Pattern",
-                        class_name="pointer-events-none",
-                    ),
-                    rx.el.elements.a(
-                        class_name="absolute inset-0",
-                        href=REFLEX_BUILD_URL,
-                        target="_blank",
-                    ),
-                    class_name="relative flex flex-col hover-card-shadow rounded-md",
+                    products_build_column_body(),
+                    class_name="flex min-w-0 flex-1 shrink-0 flex-col",
                 ),
-                class_name="p-4 flex flex-col rounded-xl bg-white-1 dark:bg-m-slate-11 h-full shadow-card dark:shadow-card-dark dark:border-r dark:border-m-slate-9",
-            ),
-            rx.el.div(
-                platform_item(
-                    "framework_pixel.svg",
-                    "Reflex Framework",
-                    "Iterate on full-stack apps in pure Python. No JavaScript required.",
-                    "/open-source/",
-                ),
-                platform_item(
-                    "cloud_pixel.svg",
-                    "Cloud Hosting",
-                    "Deploy your app with a single command to Reflex Cloud.",
-                    "/hosting/",
-                ),
+                products_column_gutter(),
                 rx.el.div(
-                    rx.el.span(
-                        "Reflex Is The Operating System ",
-                        rx.el.br(),
-                        " for Enterprise Apps",
-                        class_name="dark:text-m-slate-6 text-m-slate-7 font-mono font-[415] text-[0.75rem] leading-4.5 uppercase",
+                    workflow_stage_row(
+                        "Iterate",
+                        left=workflow_stage_image(size="small", sweep_index=1),
+                        right=workflow_stage_image(size="small", sweep_index=2),
                     ),
-                    rx.image(
-                        src=f"{REFLEX_ASSETS_CDN}common/{rx.color_mode_cond('light', 'dark')}/squares_navbar.svg",
-                        alt="Squares Navbar",
-                        class_name="absolute bottom-4 right-4 pointer-events-none",
-                    ),
-                    class_name="relative p-4",
+                    products_iterate_column_body(),
+                    class_name="flex min-w-0 flex-1 shrink-0 flex-col",
                 ),
-                class_name="p-4 flex flex-col h-full",
+                products_column_gutter(),
+                rx.el.div(
+                    workflow_stage_row(
+                        "Ship", left=workflow_stage_image(sweep_index=3)
+                    ),
+                    products_ship_column_body(),
+                    class_name="flex min-w-0 flex-1 shrink-0 flex-col",
+                ),
+                class_name="flex min-h-0 w-full flex-row bg-white-1",
             ),
-            class_name="w-[46.5rem] grid grid-cols-2",
+            products_menu_footer(),
+            class_name="flex max-w-[min(100vw-2rem,1240px)] w-[1240px] flex-col overflow-hidden rounded-xl bg-secondary-1 dark:shadow-card-dark",
         ),
+        class_name="p-0",
     )
 
 
 def solutions_item(title: str, icon: str, href: str) -> rx.Component:
-    """Solutions item.
+    """Solutions submenu row with icon and title.
 
     Returns:
         The component.
@@ -275,16 +317,51 @@ def solutions_item(title: str, icon: str, href: str) -> rx.Component:
     return rx.el.elements.a(
         ui.icon(
             icon,
-            class_name="shrink-0 text-m-slate-7 dark:text-m-slate-6 size-4.5",
+            stroke_width=1.5,
+            class_name="shrink-0 text-secondary-11 size-5",
         ),
         title,
         href=href,
-        class_name="flex flex-row px-4 py-2 rounded-sm text-sm font-[525] text-m-slate-12 dark:text-m-slate-3 gap-3 items-center justify-start cursor-pointer hover-card-shadow",
+        class_name="flex flex-row px-4 py-2 rounded-sm text-sm font-[525] text-secondary-12 gap-3 items-center justify-start cursor-pointer hover-card-shadow text-nowrap",
+    )
+
+
+def solutions_row(
+    title: str,
+    icon: str,
+    href: str,
+    *,
+    trailing_pill: str | None = None,
+) -> rx.Component:
+    """Full-width solutions link row with optional badge.
+
+    Returns:
+        The component.
+    """
+    link_children: list[rx.Component] = [
+        ui.icon(
+            icon,
+            stroke_width=1.5,
+            class_name="shrink-0 text-secondary-11 size-5",
+        ),
+        rx.el.span(
+            title,
+            class_name="text-sm font-[525] text-secondary-12 text-nowrap",
+        ),
+    ]
+    if trailing_pill:
+        link_children.append(
+            badge(trailing_pill),
+        )
+    return rx.el.elements.a(
+        *link_children,
+        href=href,
+        class_name="flex flex-row px-4 py-2 rounded-sm gap-3 items-center w-full cursor-pointer hover-card-shadow text-nowrap",
     )
 
 
 def solutions_column(title: str, items: list[tuple[str, str, str]]) -> rx.Component:
-    """Solutions column.
+    """Grouped solutions links under a section heading.
 
     Returns:
         The component.
@@ -293,7 +370,7 @@ def solutions_column(title: str, items: list[tuple[str, str, str]]) -> rx.Compon
         rx.el.div(
             rx.el.span(
                 title,
-                class_name="font-mono font-[415] text-[0.75rem] leading-4 uppercase pb-4 border-b border-dashed dark:border-m-slate-8 border-m-slate-6 dark:text-m-slate-6 text-m-slate-7",
+                class_name="font-mono font-[415] text-[0.75rem] leading-4 uppercase pb-4 border-b border-dashed border-secondary-6 text-secondary-11",
             ),
             class_name="px-4 pt-4 flex flex-col",
         ),
@@ -306,7 +383,7 @@ def solutions_column(title: str, items: list[tuple[str, str, str]]) -> rx.Compon
 
 
 def blog_item(post: BlogPostDict) -> rx.Component:
-    """Blog item.
+    """Compact preview card for a recent blog post.
 
     Returns:
         The component.
@@ -316,7 +393,7 @@ def blog_item(post: BlogPostDict) -> rx.Component:
             rx.moment(
                 post["date"],
                 format="MMM DD YYYY",
-                class_name="text-m-slate-7 dark:text-m-slate-6 text-xs font-[415] font-mono uppercase text-nowrap",
+                class_name="text-secondary-11 text-xs font-[415] font-mono uppercase text-nowrap",
             ),
             rx.image(
                 src=f"{REFLEX_ASSETS_CDN}common/{rx.color_mode_cond('light', 'dark')}/squares_blog.svg",
@@ -327,7 +404,7 @@ def blog_item(post: BlogPostDict) -> rx.Component:
         ),
         rx.el.span(
             post["title"],
-            class_name="dark:text-m-slate-3 text-m-slate-12 text-sm font-[525] group-hover:text-primary-10 dark:group-hover:text-primary-9 line-clamp-3",
+            class_name="text-secondary-12 text-base font-[525] group-hover:text-primary-10 line-clamp-3",
         ),
         rx.el.elements.a(
             href=post["url"],
@@ -337,8 +414,168 @@ def blog_item(post: BlogPostDict) -> rx.Component:
     )
 
 
-def blog_column() -> rx.Component:
-    """Blog column.
+def badge(text: str) -> rx.Component:
+    """Small pill label for nav highlights (e.g. New, Enterprise).
+
+    Returns:
+        The component.
+    """
+    return rx.el.div(
+        text,
+        class_name="text-secondary-11 text-xs font-[475] bg-secondary-1 px-1.5 h-5 rounded-md flex items-center justify-center border border-secondary-4",
+    )
+
+
+def case_studies_column() -> rx.Component:
+    """Case study teaser and book-demo CTA for Solutions menu.
+
+    Returns:
+        The component.
+    """
+    return rx.el.div(
+        rx.el.div(
+            rx.el.div(
+                rx.el.span(
+                    "Case Studies",
+                    class_name="font-mono font-[415] text-[0.75rem] leading-4 uppercase pb-4 border-b border-dashed border-secondary-6 text-secondary-11",
+                ),
+                class_name="px-4 pt-4 flex flex-col",
+            ),
+            rx.el.div(
+                rx.el.elements.a(
+                    "How Autodesk saved 25% of their development time",
+                    href="/customers",
+                    class_name="text-secondary-12 text-lg font-[525] hover:text-primary-10 dark:hover:text-primary-9 mt-auto",
+                ),
+                rx.el.div(
+                    badge("Enterprise"),
+                    badge("AI"),
+                    class_name="flex flex-row gap-2",
+                ),
+                class_name="flex flex-col gap-2 px-4 pb-4",
+            ),
+            rx.el.div(
+                class_name="h-px w-[calc(100%+2rem)] -mx-4 shrink-0 bg-secondary-4",
+            ),
+            rx.el.div(
+                demo_form_dialog(
+                    trigger=rx.el.div(
+                        rx.el.div(
+                            "Book a Demo",
+                            ui.icon(
+                                "ArrowRight01Icon",
+                                class_name="size-5",
+                                stroke_width=1.5,
+                            ),
+                            class_name="flex flex-row items-center justify-between text-sm font-[525] text-secondary-12",
+                        ),
+                        rx.el.span(
+                            "Reflex in action with your team.",
+                            class_name="text-secondary-11 text-sm font-[475]",
+                        ),
+                        class_name="flex flex-col px-4 py-2 rounded-sm hover-card-shadow cursor-pointer ",
+                    ),
+                ),
+            ),
+            class_name="flex flex-col relative h-full justify-between",
+        ),
+        class_name="p-4 block z-[1] bg-secondary-1 dark:border-x dark:border-secondary-4 w-[296px]",
+    )
+
+
+def solutions_content() -> rx.Component:
+    """Mega-menu body for Solutions: industries, features, case studies.
+
+    Returns:
+        The component.
+    """
+    return menu_content(
+        rx.el.div(
+            rx.el.div(
+                rx.el.div(
+                    solutions_column(
+                        "Industries",
+                        [
+                            ("AI", "OfficeIcon", "/use-cases/"),
+                            ("Finance", "Wallet05Icon", "/use-cases/finance/"),
+                            ("Healthcare", "HealthIcon", "/use-cases/healthcare/"),
+                            (
+                                "Tech / SaaS",
+                                "SourceCodeCircleIcon",
+                                "/use-cases/consulting/",
+                            ),
+                            ("Government", "BankIcon", "/use-cases/government/"),
+                        ],
+                    ),
+                    solutions_column(
+                        "Features",
+                        [
+                            ("Security", "ShieldKeyIcon", "/docs/enterprise/overview/"),
+                            (
+                                "Auth",
+                                "LoginMethodIcon",
+                                "/docs/authentication/authentication-overview/",
+                            ),
+                            (
+                                "Role-based access",
+                                "UserUnlock01Icon",
+                                "/docs/hosting/adding-members/",
+                            ),
+                            (
+                                "On-prem & VPC Deploy",
+                                "ServerStack01Icon",
+                                "/blog/on-premises-deployment/",
+                            ),
+                            (
+                                "Integrations",
+                                "PlugSocketIcon",
+                                "/docs/ai/integrations/overview/",
+                            ),
+                        ],
+                    ),
+                    class_name="grid grid-cols-2",
+                ),
+                class_name="p-4 flex flex-col bg-white-1 h-full w-[28rem] shadow-card dark:shadow-card-dark border-r border-secondary-4",
+            ),
+            case_studies_column(),
+            class_name="flex flex-row",
+        ),
+    )
+
+
+def resources_agent_column() -> rx.Component:
+    """Agent onboarding links (agents, MCP, skills).
+
+    Returns:
+        The component.
+    """
+    return rx.el.div(
+        rx.el.div(
+            rx.el.span(
+                "Agent onboarding",
+                class_name="font-mono font-[415] text-[0.75rem] leading-4 uppercase pb-4 border-b border-dashed border-secondary-6 text-secondary-11",
+            ),
+            class_name="px-4 pt-4 flex flex-col",
+        ),
+        rx.el.div(
+            solutions_row(
+                "Agents",
+                "RoboticIcon",
+                "/docs/ai/integrations/mcp-installation/",
+                trailing_pill="Overview",
+            ),
+            solutions_row(
+                "MCP", "McpServerIcon", "/docs/ai/integrations/mcp-overview/"
+            ),
+            solutions_row("Skills", "ToolsIcon", "/docs/ai/integrations/skills/"),
+            class_name="flex flex-col",
+        ),
+        class_name="flex flex-col gap-4",
+    )
+
+
+def resources_blog_column() -> rx.Component:
+    """Recent posts list with link to the blog index.
 
     Returns:
         The component.
@@ -350,51 +587,87 @@ def blog_column() -> rx.Component:
         ),
         rx.el.elements.a(
             "Read All in Blog",
-            ui.icon("ArrowRight01Icon", class_name="ml-auto"),
+            ui.icon("ArrowRight01Icon", class_name="size-4 shrink-0"),
             href="/blog",
-            class_name="dark:text-m-slate-3 text-m-slate-12 text-sm font-[525] h-10 flex items-center justify-start gap-2 hover:text-primary-10 dark:hover:text-primary-9 mt-auto",
+            class_name="text-secondary-12 text-sm font-[525] flex items-center gap-1.5 hover:text-primary-10 dark:hover:text-primary-9 mt-auto pt-3",
         ),
         on_mount=RecentBlogsState.fetch_recent_blogs,
-        class_name="flex flex-col gap-6 p-4 h-full",
+        class_name="flex flex-col gap-4 p-8 h-full justify-between border-l border-secondary-4",
     )
 
 
-def customers_column() -> rx.Component:
-    """Customers column.
+def products_menu_footer() -> rx.Component:
+    """Footer links inside the Products mega-menu.
 
     Returns:
         The component.
     """
     return rx.el.div(
         rx.el.div(
-            rx.el.div(
-                rx.el.span(
-                    "Customers",
-                    class_name="font-mono font-[415] text-[0.75rem] leading-4 uppercase pb-4 border-b border-dashed dark:border-m-slate-8 border-m-slate-6 dark:text-m-slate-6 text-m-slate-7",
+            rx.el.elements.a(
+                get_icon(
+                    "docs",
+                    class_name="size-[18px] shrink-0 text-secondary-12 group-hover:text-primary-10 dark:group-hover:text-primary-9",
                 ),
-                class_name="px-4 pt-4 flex flex-col",
+                "View All Docs",
+                ui.icon("ArrowUpRight03Icon", class_name="size-3 shrink-0 -ml-1.75"),
+                href="/docs/",
+                target="_blank",
+                class_name="flex flex-row items-center gap-2 text-sm font-medium text-secondary-12 hover:text-primary-10 dark:hover:text-primary-9 group",
             ),
-            rx.el.div(
-                rx.el.span(
-                    "Read Stories How Teams Use Reflex",
-                    class_name="text-m-slate-12 dark:text-m-slate-3 text-lg font-[575]",
+            rx.el.elements.a(
+                get_icon(
+                    "reflex_small",
+                    class_name="size-[18px] shrink-0 text-secondary-12 group-hover:text-primary-10 dark:group-hover:text-primary-9",
                 ),
-                rx.el.span(
-                    "Discover how companies build internal tools, AI apps, and production dashboards in pure Python.",
-                    class_name="text-m-slate-7 dark:text-m-slate-6 text-sm font-[475]",
-                ),
-                logos_carousel(),
-                class_name="flex flex-col gap-2 px-4 pb-4 h-full",
+                "Get started for free",
+                ui.icon("ArrowUpRight03Icon", class_name="size-3 shrink-0 -ml-1.75"),
+                href=REFLEX_BUILD_URL,
+                target="_blank",
+                class_name="flex flex-row items-center gap-2 text-sm font-medium text-secondary-12 hover:text-primary-10 dark:hover:text-primary-9 group",
             ),
-            rx.el.elements.a(class_name="absolute inset-0", href="/customers/"),
-            class_name="flex flex-col gap-6 hover-card-shadow rounded-lg relative h-full hover:[--m-slate-11:var(--m-slate-10)] hover:shadow-card dark:hover:shadow-card-dark",
+            class_name="flex flex-row items-center gap-8 px-6 py-3",
         ),
-        class_name="p-4 block rounded-lg shadow-card dark:shadow-card-dark z-[1] bg-white-1 dark:bg-m-slate-11 dark:border-x dark:border-m-slate-9",
+        class_name="flex flex-col w-full shrink-0 bg-white-1 border-t border-secondary-4",
     )
 
 
-def solutions_content() -> rx.Component:
-    """Solutions content.
+def resources_menu_footer() -> rx.Component:
+    """Community links footer inside the Resources mega-menu.
+
+    Returns:
+        The component.
+    """
+    return rx.el.div(
+        rx.el.div(
+            rx.el.elements.a(
+                get_icon(
+                    "github_navbar",
+                    class_name="size-[18px] shrink-0 text-secondary-12 group-hover:text-primary-10 dark:group-hover:text-primary-9",
+                ),
+                "GitHub",
+                href=GITHUB_URL,
+                target="_blank",
+                class_name="flex flex-row items-center gap-2 text-sm font-medium text-secondary-12 hover:text-primary-10 dark:hover:text-primary-9 group",
+            ),
+            rx.el.elements.a(
+                get_icon(
+                    "discord_navbar",
+                    class_name="size-[18px] shrink-0 text-secondary-12 group-hover:text-primary-10 dark:group-hover:text-primary-9",
+                ),
+                "Discord",
+                href=DISCORD_URL,
+                target="_blank",
+                class_name="flex flex-row items-center gap-2 text-sm font-medium text-secondary-12 hover:text-primary-10 dark:hover:text-primary-9 group",
+            ),
+            class_name="flex flex-row items-center gap-8 px-6 py-3",
+        ),
+        class_name="flex flex-col w-full shrink-0 bg-white-1 border-t border-secondary-4",
+    )
+
+
+def resources_content() -> rx.Component:
+    """Mega-menu body for Resources: learn, agents, blog.
 
     Returns:
         The component.
@@ -403,139 +676,55 @@ def solutions_content() -> rx.Component:
         rx.el.div(
             rx.el.div(
                 rx.el.div(
-                    solutions_column(
-                        "Who's It For",
-                        [
-                            ("Executives", "LocationUser01Icon", "/use-cases/"),
-                            ("Developers", "SourceCodeSquareIcon", "/use-cases/"),
-                            ("Data Teams", "DatabaseIcon", "/use-cases/"),
-                            (
-                                "Non Technical",
-                                "CursorCircleSelection02Icon",
-                                "/use-cases/",
+                    rx.el.div(
+                        rx.el.div(
+                            solutions_column(
+                                "Learn",
+                                [
+                                    ("Documentation", "File02Icon", "/docs"),
+                                    ("Templates", "Layout02Icon", "/templates"),
+                                    ("Changelog", "Clock02Icon", CHANGELOG_URL),
+                                ],
                             ),
-                        ],
+                            resources_agent_column(),
+                            class_name="grid grid-cols-2 gap-8 min-w-0 p-5 bg-white-1 flex-1",
+                        ),
+                        resources_menu_footer(),
+                        class_name="flex flex-col min-w-0 h-full",
                     ),
-                    solutions_column(
-                        "Industries",
-                        [
-                            ("Enterprise", "OfficeIcon", "/use-cases/"),
-                            ("Finance", "Wallet05Icon", "/use-cases/finance/"),
-                            ("Healthcare", "HealthIcon", "/use-cases/healthcare/"),
-                            (
-                                "Consulting",
-                                "DocumentValidationIcon",
-                                "/use-cases/consulting/",
-                            ),
-                            (
-                                "Government",
-                                "BankIcon",
-                                "/use-cases/government/",
-                            ),
-                        ],
-                    ),
-                    class_name="grid grid-cols-2",
+                    resources_blog_column(),
+                    class_name="grid grid-cols-1 min-[480px]:grid-cols-[minmax(0,1fr)_min(17.5rem,40%)] h-full",
                 ),
-                class_name="p-4 flex flex-col rounded-xl bg-white-1 dark:bg-m-slate-11 h-full w-[28rem] shadow-card dark:shadow-card-dark dark:border-r dark:border-m-slate-9",
+                class_name="flex flex-col w-[728px] max-w-full overflow-hidden rounded-xl bg-secondary-1 dark:shadow-card-dark",
             ),
-            rx.el.div(
-                solutions_column(
-                    "Migration",
-                    [
-                        (
-                            "Switch from No Code",
-                            "WebDesign01Icon",
-                            "/migration/no-code/",
-                        ),
-                        (
-                            "Switch from Low Code",
-                            "SourceCodeSquareIcon",
-                            "/migration/low-code/",
-                        ),
-                        (
-                            "Switch from Other Frameworks",
-                            "CodeIcon",
-                            "/migration/other-frameworks/",
-                        ),
-                        (
-                            "Switch from Other AI tools",
-                            "ArtificialIntelligence04Icon",
-                            "/migration/other-ai-tools/",
-                        ),
-                    ],
-                ),
-                class_name="p-4 flex flex-col h-full",
-            ),
-            class_name="flex flex-row",
-        ),
-    )
-
-
-def resources_content() -> rx.Component:
-    """Resources content.
-
-    Returns:
-        The component.
-    """
-    return menu_content(
-        rx.el.div(
-            rx.el.div(
-                solutions_column(
-                    "Developers",
-                    [
-                        ("Templates", "Layout02Icon", "/templates/"),
-                        (
-                            "Integrations",
-                            "PlugSocketIcon",
-                            "/docs/ai-builder/integrations/overview/",
-                        ),
-                        ("Changelog", "Clock02Icon", CHANGELOG_URL),
-                        ("Contributing", "GitCommitIcon", CONTRIBUTING_URL),
-                        ("Discussion", "BubbleChatIcon", DISCUSSIONS_URL),
-                        ("FAQ", "HelpSquareIcon", "/faq/"),
-                    ],
-                ),
-                class_name="p-4 flex flex-col rounded-xl bg-m-slate-1 dark:bg-m-slate-12 h-full",
-            ),
-            customers_column(),
-            rx.el.div(
-                blog_column(),
-                class_name="p-4 flex flex-col h-full bg-m-slate-1 dark:bg-m-slate-12",
-            ),
-            class_name="w-[52.5rem] grid grid-cols-3",
-        ),
-    )
-
-
-def about_content() -> rx.Component:
-    """About content.
-
-    Returns:
-        The component.
-    """
-    return menu_content(
-        rx.el.div(
-            rx.el.div(
-                solutions_item("Company", "Profile02Icon", "/about/"),
-                solutions_item("Careers", "WorkIcon", JOBS_BOARD_URL),
-                class_name="p-4 flex flex-col rounded-xl bg-white-1 h-full dark:shadow-none dark:border dark:border-m-slate-9 dark:bg-m-slate-11 shadow-card",
-            ),
-            class_name="w-[12.5rem]",
+            class_name="p-0",
         ),
     )
 
 
 def navigation_menu() -> rx.Component:
-    """Navigation menu.
+    """Desktop navigation: mega-menus, CTAs, and GitHub.
 
     Returns:
         The component.
     """
     return ui.navigation_menu.root(
         ui.navigation_menu.list(
-            menu_trigger("Platform", platform_content()),
-            menu_trigger("Solutions", solutions_content()),
+            menu_trigger("Products", products_content()),
             menu_trigger("Resources", resources_content()),
+            menu_trigger("Solutions", solutions_content()),
+            ui.navigation_menu.item(
+                rx.el.elements.a(
+                    marketing_button(
+                        "Enterprise",
+                        size="sm",
+                        variant="ghost",
+                    ),
+                    href="/docs/enterprise/overview/",
+                ),
+                class_name="xl:flex hidden px-1",
+                custom_attrs={"role": "menuitem"},
+            ),
             ui.navigation_menu.item(
                 rx.el.elements.a(
                     marketing_button(
@@ -561,7 +750,6 @@ def navigation_menu() -> rx.Component:
                 class_name="xl:flex hidden px-1",
                 custom_attrs={"role": "menuitem"},
             ),
-            menu_trigger("About", about_content()),
             class_name="flex flex-row items-center m-0 h-full list-none",
             custom_attrs={"role": "menubar"},
         ),
@@ -615,13 +803,13 @@ def navigation_menu() -> rx.Component:
                         class_name="relative h-full w-full overflow-hidden rounded-[inherit]",
                     ),
                     unstyled=True,
-                    class_name="relative h-[var(--popup-height)] w-[var(--popup-width)] origin-[var(--transform-origin)] rounded-xl bg-m-slate-1 dark:bg-m-slate-12 navbar-shadow transition-[opacity,transform,width,height,scale,translate] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] data-[ending-style]:ease-[ease] data-[ending-style]:scale-90 data-[ending-style]:opacity-0 data-[ending-style]:duration-150 data-[starting-style]:scale-90 data-[starting-style]:opacity-0",
+                    class_name="relative h-[var(--popup-height)] w-[var(--popup-width)] origin-[var(--transform-origin)] rounded-xl bg-secondary-1 navbar-shadow transition-[opacity,transform,width,height,scale,translate] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] data-[ending-style]:ease-[ease] data-[ending-style]:scale-90 data-[ending-style]:opacity-0 data-[ending-style]:duration-150 data-[starting-style]:scale-90 data-[starting-style]:opacity-0",
                 ),
                 unstyled=True,
                 class_name="safari-nav-positioner box-border h-[var(--positioner-height)] w-[var(--positioner-width)] max-w-[var(--available-width)] transition-[top,left,right,bottom] duration-[0.35s] ease-[cubic-bezier(0.22,1,0.36,1)] data-[instant]:transition-none",
                 side_offset=30,
                 align="start",
-                align_offset=-20,
+                align_offset=-109,
                 position_method="fixed",
             ),
         ),
@@ -632,7 +820,7 @@ def navigation_menu() -> rx.Component:
 
 @rx.memo
 def marketing_navbar() -> rx.Component:
-    """Marketing navbar.
+    """Fixed header: hosting banner plus logo and full navigation.
 
     Returns:
         The component.
@@ -644,7 +832,7 @@ def marketing_navbar() -> rx.Component:
         rx.el.header(
             logo(),
             navigation_menu(),
-            class_name="w-full max-w-[71.5rem] h-[4.5rem] mx-auto flex flex-row items-center p-5 rounded-b-xl backdrop-blur-[16px] shadow-[0_-2px_2px_1px_rgba(0,0,0,0.02),0_1px_1px_0_rgba(0,0,0,0.08),0_4px_8px_0_rgba(0,0,0,0.03),0_0_0_1px_#FFF_inset] dark:shadow-none dark:border-x dark:border-b dark:border-m-slate-10 bg-gradient-to-b from-white to-m-slate-1 dark:from-m-slate-11 dark:to-m-slate-12",
+            class_name="w-full max-w-[81rem] h-[4.5rem] mx-auto flex flex-row items-center p-5 rounded-b-xl backdrop-blur-[16px] shadow-[0_-2px_2px_1px_rgba(0,0,0,0.02),0_1px_1px_0_rgba(0,0,0,0.08),0_4px_8px_0_rgba(0,0,0,0.03),0_0_0_1px_#FFF_inset] dark:shadow-none dark:border-x dark:border-b dark:border-m-slate-10 bg-gradient-to-b from-white to-m-slate-1 dark:from-m-slate-11 dark:to-m-slate-12",
         ),
         class_name="flex flex-col w-full top-0 z-[9999] fixed self-center",
     )
