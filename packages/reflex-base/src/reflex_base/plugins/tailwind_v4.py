@@ -1,16 +1,22 @@
 """Base class for all plugins."""
 
 import dataclasses
+from collections.abc import Sequence
 from pathlib import Path
 from types import SimpleNamespace
+from typing import TYPE_CHECKING
 
 from reflex_base.constants.base import Dirs
 from reflex_base.constants.compiler import Ext, PageNames
 from reflex_base.plugins.shared_tailwind import (
     TailwindConfig,
     TailwindPlugin,
+    strip_radix_theme_imports,
     tailwind_config_js_template,
 )
+
+if TYPE_CHECKING:
+    from reflex_base.components.component import BaseComponent
 
 
 class Constants(SimpleNamespace):
@@ -29,7 +35,8 @@ class Constants(SimpleNamespace):
     ROOT_STYLE_CONTENT = """@layer theme, base, components, utilities;
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/preflight.css" layer(base);
-{radix_import}@import "tailwindcss/utilities.css" layer(utilities);
+{radix_imports}
+@import "tailwindcss/utilities.css" layer(utilities);
 @config "../tailwind.config.js";
 """
 
@@ -52,25 +59,33 @@ def compile_config(config: TailwindConfig):
     )
 
 
-def compile_root_style(include_radix_themes: bool = True):
+def compile_root_style(
+    theme_roots: Sequence["BaseComponent | None"] | None = None,
+    include_radix_themes: bool = True,
+):
     """Compile the Tailwind root style.
 
     Args:
-        include_radix_themes: Whether to include the Radix stylesheet import.
+        theme_roots: Component roots used to detect which Radix color scales are
+            actually referenced so only those CSS files are imported.
+        include_radix_themes: Whether to include any Radix stylesheet imports.
 
     Returns:
         The compiled Tailwind root style.
     """
-    from reflex.compiler.compiler import RADIX_THEMES_STYLESHEET
+    from reflex.compiler.compiler import get_radix_themes_stylesheets
 
+    if include_radix_themes:
+        radix_imports = "\n".join(
+            f'@import "{sheet}" layer(components);'
+            for sheet in get_radix_themes_stylesheets(theme_roots)
+        )
+    else:
+        radix_imports = ""
     return str(
         Path(Dirs.STYLES) / Constants.ROOT_STYLE_PATH
     ), Constants.ROOT_STYLE_CONTENT.format(
-        radix_import=(
-            f'@import "{RADIX_THEMES_STYLESHEET}" layer(components);\n'
-            if include_radix_themes
-            else ""
-        ),
+        radix_imports=radix_imports,
     )
 
 
@@ -133,15 +148,18 @@ def add_tailwind_to_css_file(
     Returns:
         The modified css file content.
     """
-    from reflex.compiler.compiler import RADIX_THEMES_STYLESHEET
-
     if Constants.TAILWIND_CSS.splitlines()[0] in css_file_content:
         return css_file_content
-    if include_radix_themes and RADIX_THEMES_STYLESHEET in css_file_content:
-        return css_file_content.replace(
-            f"@import url('{RADIX_THEMES_STYLESHEET}');",
-            Constants.TAILWIND_CSS,
-        )
+
+    if include_radix_themes:
+        stripped, count = strip_radix_theme_imports(css_file_content)
+        if count == 0:
+            print(  # noqa: T201
+                f"Could not find any '@radix-ui/themes' import in {Dirs.STYLES}. "
+                "Please make sure the file exists and is valid."
+            )
+            return css_file_content
+        return stripped.rstrip() + "\n" + Constants.TAILWIND_CSS + "\n"
 
     lines = css_file_content.splitlines()
     insert_at = next(
@@ -183,8 +201,13 @@ class TailwindV4Plugin(TailwindPlugin):
         """
         context["add_save_task"](compile_config, self.get_unversioned_config())
         include_radix_themes = context["radix_themes_plugin"].enabled
+        theme_roots = context.get("theme_roots")
 
-        context["add_save_task"](compile_root_style, include_radix_themes)
+        context["add_save_task"](
+            compile_root_style,
+            theme_roots=theme_roots,
+            include_radix_themes=include_radix_themes,
+        )
         context["add_modify_task"](Dirs.POSTCSS_JS, add_tailwind_to_postcss_config)
         context["add_modify_task"](
             str(Path(Dirs.STYLES) / (PageNames.STYLESHEET_ROOT + Ext.CSS)),

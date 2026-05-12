@@ -67,6 +67,53 @@ the backend (event handlers) will be listening on port `8000`.
 Because the backend uses websockets, some reverse proxy servers, like [nginx](https://nginx.org/en/docs/http/websocket.html) or [apache](https://httpd.apache.org/docs/2.4/mod/mod_proxy.html#protoupgrade), must be configured to pass the `Upgrade` header to allow backend connectivity.
 ```
 
+## Pre-compressed Frontend Assets
+
+Production builds generate pre-compressed frontend assets so they can be served
+without compressing responses on the fly. By default Reflex emits `gzip`
+sidecars. You can also opt into Brotli and Zstandard in `rxconfig.py`:
+
+```python
+config = rx.Config(
+    app_name="your_app_name",
+    frontend_compression_formats=["gzip", "brotli", "zstd"],
+)
+```
+
+When Reflex serves the compiled frontend itself, it will negotiate
+`Accept-Encoding` and serve matching sidecar files directly. If you would rather
+have your reverse proxy handle compression itself, set
+`frontend_compression_formats=[]` to disable build-time pre-compression.
+
+If you are serving `.web/build/client` from a reverse proxy, enable its
+precompressed-file support:
+
+### Caddy
+
+```caddy
+example.com {
+    root * /srv/your-app/.web/build/client
+    try_files {path} /404.html
+    file_server {
+        precompressed zstd br gzip
+    }
+}
+```
+
+### Nginx
+
+```nginx
+location / {
+    root /srv/your-app/.web/build/client;
+    try_files $uri $uri/ /404.html;
+    gzip_static on;
+}
+```
+
+Nginx supports prebuilt `gzip` files directly. If you also want Brotli or Zstd
+at the proxy layer, use the corresponding Nginx modules or handle compression
+at a CDN/load-balancer layer instead.
+
 ## Exporting a Static Build
 
 Exporting a static build of the frontend allows the app to be served using a

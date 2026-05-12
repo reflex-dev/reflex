@@ -55,6 +55,7 @@ class PreCompileContext(CommonContext):
     add_modify_task: Callable[[str, Callable[[str], str]], None]
     radix_themes_plugin: Any
     unevaluated_pages: Sequence["UnevaluatedPage"]
+    theme_roots: Sequence["BaseComponent | None"]
 
 
 class PostCompileContext(CommonContext):

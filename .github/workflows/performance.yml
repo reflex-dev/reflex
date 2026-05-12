@@ -44,3 +44,37 @@ jobs:
         with:
           mode: instrumentation
           run: uv run pytest -v tests/benchmarks --codspeed
+
+  lighthouse:
+    name: Run Lighthouse benchmark
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: "3.14"
+          node-version: "22"
+          run-uv-sync: true
+
+      - name: Install playwright
+        run: uv run playwright install chromium --only-shell
+
+      - name: Run Lighthouse benchmark
+        env:
+          REFLEX_RUN_LIGHTHOUSE: "1"
+        run: |
+          mkdir -p .pytest-tmp/lighthouse
+          uv run pytest tests/integration/test_lighthouse.py -q -s --tb=no --basetemp=.pytest-tmp/lighthouse
+
+      - name: Upload Lighthouse artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report
+          path: .pytest-tmp/lighthouse
+          if-no-files-found: ignore

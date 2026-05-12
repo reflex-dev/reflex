@@ -135,6 +135,58 @@ def test_update_from_env_cors(
     ]
 
 
+def test_update_from_env_frontend_compression_formats(
+    base_config_values: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Test comma-delimited frontend compression formats from the environment."""
+    monkeypatch.setenv(
+        "REFLEX_FRONTEND_COMPRESSION_FORMATS", "gzip, brotli , zstd, gzip"
+    )
+    config = rx.Config(**base_config_values)
+    assert config.frontend_compression_formats == ["gzip", "brotli", "zstd"]
+
+
+def test_invalid_frontend_compression_formats(base_config_values: dict[str, Any]):
+    """Test that unsupported frontend compression formats raise config errors."""
+    with pytest.raises(
+        ConfigError,
+        match="frontend_compression_formats contains unsupported format",
+    ):
+        rx.Config(
+            **base_config_values,
+            frontend_compression_formats=["gzip", "snappy"],
+        )
+
+
+def test_default_frontend_image_formats(base_config_values: dict[str, Any]):
+    """Test default image optimization config values."""
+    config = rx.Config(**base_config_values)
+    assert config.frontend_image_formats == ["webp", "avif"]
+
+
+def test_update_from_env_frontend_image_formats(
+    base_config_values: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Test comma-delimited frontend image formats from the environment."""
+    monkeypatch.setenv("REFLEX_FRONTEND_IMAGE_FORMATS", "webp, avif , webp")
+    config = rx.Config(**base_config_values)
+    assert config.frontend_image_formats == ["webp", "avif"]
+
+
+def test_invalid_frontend_image_formats(base_config_values: dict[str, Any]):
+    """Test that unsupported frontend image formats raise config errors."""
+    with pytest.raises(
+        ConfigError,
+        match="frontend_image_formats contains unsupported format",
+    ):
+        rx.Config(
+            **base_config_values,
+            frontend_image_formats=["webp", "png"],
+        )
+
+
 @pytest.mark.parametrize(
     ("kwargs", "expected"),
     [

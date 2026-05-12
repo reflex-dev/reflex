@@ -70,6 +70,7 @@ from reflex.admin import AdminDash
 from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
 from reflex.compiler import compiler
 from reflex.compiler.compiler import readable_name_from_component
+from reflex.istate.data import RouterData
 from reflex.istate.manager import StateManager, StateModificationContext
 from reflex.istate.manager.token import BaseStateToken
 from reflex.page import DECORATED_PAGES
@@ -78,13 +79,7 @@ from reflex.route import (
     replace_brackets_with_keywords,
     verify_route_validity,
 )
-from reflex.state import (
-    BaseState,
-    RouterData,
-    State,
-    StateUpdate,
-    all_base_state_classes,
-)
+from reflex.state import BaseState, State, StateUpdate, all_base_state_classes
 from reflex.utils import codespaces, exceptions, format, js_runtimes, prerequisites
 from reflex.utils.exec import (
     get_compile_context,

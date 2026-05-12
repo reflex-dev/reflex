@@ -6,6 +6,7 @@ import json
 import sys
 from collections.abc import Callable, Iterable, Sequence
 from inspect import getmodule
+from itertools import chain
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -27,7 +28,7 @@ from reflex_base.style import SYSTEM_COLOR_MODE
 from reflex_base.utils.exceptions import ReflexError
 from reflex_base.utils.format import to_title_case
 from reflex_base.utils.imports import ImportVar
-from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.base import LiteralVar, Var, get_python_literal
 from reflex_components_core.base.app_wrap import AppWrap
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_radix.plugin import RadixThemesPlugin
@@ -114,37 +115,78 @@ def _compile_document_root(root: Component) -> str:
     )
 
 
-def _normalize_library_name(lib: str) -> str:
-    """Normalize the library name.
+# Path-like imports resolve to Reflex-controlled internal modules; non-matching
+# imports are external npm libraries where star imports defeat tree-shaking.
+_INTERNAL_LIB_PREFIXES = ("$/", "/", ".")
+
+
+def collect_window_library_imports(
+    import_sources: Iterable[dict[str, Any]],
+) -> dict[str, set[str] | None]:
+    """Build the ``window.__reflex`` surface for runtime-eval'd code.
+
+    Each bundled library gets either a set of named exports (for external libs,
+    collected from the app's actual static usage so Rolldown can tree-shake) or
+    ``None`` (for internal Reflex modules, which use a star import).
+
+    External library tags come from two sources:
+    (1) static page / app-root imports, and
+    (2) tags captured during compile-time serialization of dynamic Component
+    values (Component-typed state field defaults, computed Component vars
+    evaluated when generating the initial state) -- see
+    ``reflex_base.components.dynamic.dynamic_component_imports``.
+
+    Takes an iterable of import dicts (one per page / app_root / memo group)
+    instead of a single merged dict because ``dict.update`` loses information
+    when multiple sources import from the same library.
 
     Args:
-        lib: The library name to normalize.
+        import_sources: One import dict per source (page, app_root, etc).
 
     Returns:
-        The normalized library name.
+        Mapping from library path to either the set of named exports to expose
+        (external libs) or None (internal libs, use star import).
     """
-    if lib == "react":
-        return "React"
-    return lib.replace("$/", "").replace("@", "").replace("/", "_").replace("-", "_")
+    from reflex_base.components.dynamic import (
+        bundled_libraries,
+        dynamic_component_imports,
+    )
+    from reflex_base.utils.format import format_library_name
+
+    per_lib_tags: dict[str, set[str]] = {}
+    for source in chain(import_sources, (dynamic_component_imports,)):
+        for imported_lib, import_vars in source.items():
+            key = format_library_name(imported_lib)
+            for iv in import_vars:
+                if iv.tag and not iv.is_default:
+                    per_lib_tags.setdefault(key, set()).add(iv.tag)
+
+    result: dict[str, set[str] | None] = {}
+    for lib in bundled_libraries:
+        if lib.startswith(_INTERNAL_LIB_PREFIXES):
+            result[lib] = None
+            continue
+        tags = per_lib_tags.get(lib)
+        if tags:
+            result[lib] = tags
+    return result
 
 
-def _compile_app(app_root: Component) -> str:
+def _compile_app(
+    app_root: Component,
+    window_library_imports: dict[str, set[str] | None] | None = None,
+) -> str:
     """Compile the app template component.
 
     Args:
         app_root: The app root to compile.
+        window_library_imports: Per-library named-export surface to expose on
+            ``window.__reflex`` for dynamic components. Empty/None skips the
+            bootstrap entirely.
 
     Returns:
         The compiled app.
     """
-    from reflex_base.components.dynamic import bundled_libraries
-
-    window_libraries = [
-        (_normalize_library_name(name), name) for name in bundled_libraries
-    ]
-
-    window_libraries_deduped = list(dict.fromkeys(window_libraries))
-
     app_root_imports = app_root._get_all_imports()
     _apply_common_imports(app_root_imports)
 
@@ -152,7 +194,7 @@ def _compile_app(app_root: Component) -> str:
         imports=utils.compile_imports(app_root_imports),
         custom_codes=app_root._get_all_custom_code(),
         hooks=app_root._get_all_hooks(),
-        window_libraries=window_libraries_deduped,
+        window_library_imports=window_library_imports or {},
         render=app_root.render(),
         dynamic_imports=app_root._get_all_dynamic_imports(),
     )
@@ -227,6 +269,7 @@ def compile_root_stylesheet(
     stylesheets: list[str],
     reset_style: bool = True,
     plugins: Sequence[Plugin] | None = None,
+    theme_roots: Sequence[BaseComponent | None] | None = None,
 ) -> tuple[str, str]:
     """Compile the root stylesheet.
 
@@ -234,13 +277,15 @@ def compile_root_stylesheet(
         stylesheets: The stylesheets to include in the root stylesheet.
         reset_style: Whether to include CSS reset for margin and padding.
         plugins: The effective plugins for the active compile.
+        theme_roots: Component roots to scan for Theme components so only the
+            used Radix color scales are shipped.
 
     Returns:
         The path and code of the compiled root stylesheet.
     """
     output_path = utils.get_root_stylesheet_path()
 
-    code = _compile_root_stylesheet(stylesheets, reset_style, plugins)
+    code = _compile_root_stylesheet(stylesheets, reset_style, plugins, theme_roots)
 
     return output_path, code
 
@@ -280,10 +325,130 @@ def _validate_stylesheet(stylesheet_full_path: Path, assets_app_path: Path) -> N
         raise ValueError(msg)
 
 
+# Granular Radix Themes entry points. Importing these instead of the monolithic
+# styles.css lets us drop the ~30 unused color scales (~120KB raw of tokens.css).
+# Layout + reset live in tokens/components/utilities, so these three are always needed.
+_RADIX_THEMES_TOKENS_BASE = "@radix-ui/themes/tokens/base.css"
+_RADIX_THEMES_COMPONENTS = "@radix-ui/themes/components.css"
+_RADIX_THEMES_UTILITIES = "@radix-ui/themes/utilities.css"
+
+
+def _radix_color_stylesheet(color: str) -> str:
+    return f"@radix-ui/themes/tokens/colors/{color}.css"
+
+
+# When gray_color is "auto" or unset, Radix pairs each accent with a specific gray.
+# https://www.radix-ui.com/themes/docs/theme/color#natural-pairing
+_RADIX_ACCENT_TO_AUTO_GRAY: dict[str, str] = {
+    "tomato": "mauve",
+    "red": "mauve",
+    "ruby": "mauve",
+    "crimson": "mauve",
+    "pink": "mauve",
+    "plum": "mauve",
+    "purple": "mauve",
+    "violet": "mauve",
+    "iris": "slate",
+    "indigo": "slate",
+    "blue": "slate",
+    "sky": "slate",
+    "cyan": "slate",
+    "teal": "sage",
+    "jade": "sage",
+    "mint": "sage",
+    "green": "sage",
+    "grass": "sage",
+    "orange": "sand",
+    "amber": "sand",
+    "yellow": "sand",
+    "lime": "sand",
+    "brown": "sand",
+    "bronze": "sand",
+    "gold": "sand",
+    "gray": "gray",
+}
+
+
+def _extract_literal_prop(component: Any, prop_name: str) -> str | None:
+    """Return the literal string for a Theme prop, or None if unresolvable."""
+    literal = get_python_literal(getattr(component, prop_name, None))
+    return literal if isinstance(literal, str) else None
+
+
+def _walk_components(root: Any) -> Iterable[Any]:
+    """Yield root and every descendant via .children."""
+    stack = [root]
+    while stack:
+        node = stack.pop()
+        yield node
+        children = getattr(node, "children", None)
+        if children:
+            stack.extend(children)
+
+
+def _collect_radix_theme_colors(
+    roots: Iterable[Any],
+) -> tuple[set[str], set[str], bool]:
+    """Walk component trees for Theme components and collect their colors.
+
+    Args:
+        roots: Component trees to walk for Theme components.
+
+    Returns:
+        A tuple ``(accent_colors, gray_colors, has_dynamic)``. ``has_dynamic``
+        is True if any Theme has a non-literal (state-driven) color, in which
+        case the caller should fall back to the monolithic stylesheet.
+    """
+    accents: set[str] = set()
+    grays: set[str] = set()
+    has_dynamic = False
+    for root in roots:
+        if root is None:
+            continue
+        for node in _walk_components(root):
+            if getattr(node, "tag", None) != "Theme":
+                continue
+            accent = _extract_literal_prop(node, "accent_color")
+            gray = _extract_literal_prop(node, "gray_color")
+            # A Theme instance with a prop attribute but non-literal value is dynamic.
+            if accent is None and getattr(node, "accent_color", None) is not None:
+                has_dynamic = True
+            if gray is None and getattr(node, "gray_color", None) is not None:
+                has_dynamic = True
+            if accent:
+                accents.add(accent)
+            if gray and gray != "auto":
+                grays.add(gray)
+            # When gray_color is unset or "auto", Radix pairs the accent with a
+            # natural gray scale. Ship that scale too.
+            if accent and (gray is None or gray == "auto"):
+                grays.add(_RADIX_ACCENT_TO_AUTO_GRAY.get(accent, "gray"))
+    return accents, grays, has_dynamic
+
+
+def get_radix_themes_stylesheets(roots: Iterable[Any] | None = None) -> list[str]:
+    """Return the list of Radix Themes stylesheets to import.
+
+    If any Theme component uses a state-driven color, falls back to the
+    monolithic styles.css so runtime color changes keep working.
+    """
+    if roots is None:
+        return [RADIX_THEMES_STYLESHEET]
+    accents, grays, has_dynamic = _collect_radix_theme_colors(roots)
+    if has_dynamic or not accents:
+        return [RADIX_THEMES_STYLESHEET]
+    sheets = [_RADIX_THEMES_TOKENS_BASE]
+    sheets.extend(_radix_color_stylesheet(c) for c in sorted(grays))
+    sheets.extend(_radix_color_stylesheet(c) for c in sorted(accents))
+    sheets.extend([_RADIX_THEMES_COMPONENTS, _RADIX_THEMES_UTILITIES])
+    return sheets
+
+
 def _compile_root_stylesheet(
     stylesheets: list[str],
     reset_style: bool = True,
     plugins: Sequence[Plugin] | None = None,
+    theme_roots: Sequence[BaseComponent | None] | None = None,
 ) -> str:
     """Compile the root stylesheet.
 
@@ -291,6 +456,8 @@ def _compile_root_stylesheet(
         stylesheets: The stylesheets to include in the root stylesheet.
         reset_style: Whether to include CSS reset for margin and padding.
         plugins: The effective plugins for the active compile.
+        theme_roots: Component roots to scan for Theme components so only the
+            used Radix color scales are shipped.
 
     Returns:
         The compiled root stylesheet.
@@ -307,9 +474,23 @@ def _compile_root_stylesheet(
         sheets.append(f"./{ResetStylesheet.FILENAME}")
 
     active_plugins = get_config().plugins if plugins is None else plugins
-    sheets.extend([
-        sheet for plugin in active_plugins for sheet in plugin.get_stylesheet_paths()
-    ])
+    for plugin in active_plugins:
+        plugin_sheets = plugin.get_stylesheet_paths()
+        if (
+            isinstance(plugin, RadixThemesPlugin)
+            and plugin.enabled
+            and theme_roots is not None
+        ):
+            # Tree-shake the radix monolithic stylesheet into the granular set
+            # of color scales actually used by Theme components.
+            tree_shaken = get_radix_themes_stylesheets(theme_roots)
+            for s in plugin_sheets:
+                if s == RADIX_THEMES_STYLESHEET:
+                    sheets.extend(tree_shaken)
+                else:
+                    sheets.append(s)
+        else:
+            sheets.extend(plugin_sheets)
 
     failed_to_import_sass = False
     assets_app_path = Path.cwd() / constants.Dirs.APP_ASSETS
@@ -574,11 +755,17 @@ def compile_document_root(
     return output_path, code
 
 
-def compile_app_root(app_root: Component) -> tuple[str, str]:
+def compile_app_root(
+    app_root: Component,
+    window_library_imports: dict[str, set[str] | None] | None = None,
+) -> tuple[str, str]:
     """Compile the app root.
 
     Args:
         app_root: The app root component to compile.
+        window_library_imports: Per-library named-export surface for
+            ``window.__reflex`` (see ``collect_window_library_imports``). Pass
+            ``None`` to skip emitting ``window.__reflex`` entirely.
 
     Returns:
         The path and code of the compiled app wrapper.
@@ -589,7 +776,7 @@ def compile_app_root(app_root: Component) -> tuple[str, str]:
     )
 
     # Compile the document root.
-    code = _compile_app(app_root)
+    code = _compile_app(app_root, window_library_imports)
     return output_path, code
 
 
@@ -1172,6 +1359,13 @@ def compile_app(
     ) -> None:
         save_tasks.append((task_fn, args, kwargs))
 
+    # Theme roots let the compiler ship only the Radix color scales that are
+    # actually referenced by Theme components in the tree.
+    theme_roots: list[BaseComponent | None] = [
+        radix_themes_plugin.get_theme(),
+        *app._pages.values(),
+    ]
+
     for plugin in config.plugins:
         plugin.pre_compile(
             add_save_task=add_save_task,
@@ -1181,6 +1375,7 @@ def compile_app(
             )),
             radix_themes_plugin=radix_themes_plugin,
             unevaluated_pages=list(app._unevaluated_pages.values()),
+            theme_roots=theme_roots,
         )
 
     if save_tasks:
@@ -1193,6 +1388,7 @@ def compile_app(
             app.stylesheets,
             app.reset_style,
             plugins=compiler_plugins,
+            theme_roots=theme_roots,
         )
     )
     progress.advance(task)
@@ -1216,7 +1412,15 @@ def compile_app(
     )
     progress.advance(task)
 
-    compile_results.append(compile_app_root(app_root))
+    # Star imports of large libraries (e.g. @radix-ui/themes) defeat
+    # Rolldown tree-shaking for window.__reflex; pass per-source dicts
+    # so tags from multiple pages union instead of clobbering.
+    window_library_imports = collect_window_library_imports([
+        *(p._get_all_imports() for p in app._pages.values()),
+        app_root._get_all_imports(),
+    ])
+
+    compile_results.append(compile_app_root(app_root, window_library_imports))
     progress.advance(task)
 
     progress.stop()

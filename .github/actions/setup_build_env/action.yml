@@ -14,6 +14,10 @@ inputs:
   python-version:
     description: "Python version setup"
     required: true
+  node-version:
+    description: "Node.js version setup"
+    required: false
+    default: "22"
   run-uv-sync:
     description: "Whether to run uv sync on current dir"
     required: false
@@ -37,7 +41,7 @@ runs:
     - name: Setup Node
       uses: actions/setup-node@v4
       with:
-        node-version: 22
+        node-version: ${{ inputs.node-version }}
     - name: Install Dependencies
       if: inputs.run-uv-sync == 'true'
       run: uv sync

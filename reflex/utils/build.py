@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import zipfile
 from pathlib import Path, PosixPath
@@ -12,6 +13,7 @@ from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 
 from reflex.utils import console, js_runtimes, path_ops, prerequisites, processes
 from reflex.utils.exec import is_in_app_harness
+from reflex.utils.precompressed_staticfiles import _SUPPORTED_ENCODINGS
 
 
 def set_env_json():
@@ -164,13 +166,16 @@ def zip_app(
         )
 
 
-def _duplicate_index_html_to_parent_directory(directory: Path):
+def _duplicate_index_html_to_parent_directory(
+    directory: Path, suffixes: tuple[str, ...]
+):
     """Duplicate index.html in the child directories to the given directory.
 
     This makes accessing /route and /route/ work in production.
 
     Args:
         directory: The directory to duplicate index.html to.
+        suffixes: Precompressed sidecar suffixes to copy alongside each file.
     """
     for child in directory.iterdir():
         if child.is_dir():
@@ -181,10 +186,66 @@ def _duplicate_index_html_to_parent_directory(directory: Path):
                 if not target.exists():
                     console.debug(f"Copying {index_html} to {target}")
                     path_ops.cp(index_html, target)
+                    _copy_precompressed_sidecars(index_html, target, suffixes)
                 else:
                     console.debug(f"Skipping {index_html}, already exists at {target}")
             # Recursively call this function for the child directory.
-            _duplicate_index_html_to_parent_directory(child)
+            _duplicate_index_html_to_parent_directory(child, suffixes)
+
+
+def _copy_precompressed_sidecars(source: Path, target: Path, suffixes: tuple[str, ...]):
+    """Copy precompressed sidecars for a file if they exist.
+
+    Args:
+        source: The original file path.
+        target: The copied file path.
+        suffixes: The file suffixes to look for (e.g. ``(".gz",)``).
+    """
+    for suffix in suffixes:
+        source_sidecar = source.with_name(source.name + suffix)
+        if not source_sidecar.exists():
+            continue
+
+        target_sidecar = target.with_name(target.name + suffix)
+        console.debug(f"Copying {source_sidecar} to {target_sidecar}")
+        path_ops.cp(source_sidecar, target_sidecar)
+
+
+def _compress_static_output(directory: Path, formats: tuple[str, ...]) -> None:
+    """Run the shared frontend compressor against the final static output tree.
+
+    Args:
+        directory: The static output directory.
+        formats: The configured frontend compression formats.
+
+    Raises:
+        SystemExit: If no JavaScript runtime is available or compression fails.
+    """
+    if not formats:
+        return
+
+    web_dir = prerequisites.get_web_dir().resolve()
+    runtime = path_ops.get_node_path() or path_ops.get_bun_path()
+    if runtime is None:
+        console.error("Node.js or Bun is required to compress the exported frontend.")
+        raise SystemExit(1)
+
+    result = processes.new_process(
+        [
+            runtime,
+            web_dir / "compress-static.js",
+            directory.resolve(),
+            json.dumps(formats),
+        ],
+        cwd=web_dir,
+        shell=constants.IS_WINDOWS,
+        run=True,
+    )
+    if result.returncode != 0:
+        console.error(
+            "Failed to compress the exported frontend. Please run with --loglevel debug for more information."
+        )
+        raise SystemExit(1)
 
 
 def build():
@@ -226,19 +287,32 @@ def build():
             "Failed to build the frontend. Please run with --loglevel debug for more information.",
         )
         raise SystemExit(1)
-    _duplicate_index_html_to_parent_directory(wdir / constants.Dirs.STATIC)
+
+    config = get_config()
+    sidecar_suffixes = tuple(
+        _SUPPORTED_ENCODINGS[fmt].suffix for fmt in config.frontend_compression_formats
+    )
+
+    _duplicate_index_html_to_parent_directory(
+        wdir / constants.Dirs.STATIC, sidecar_suffixes
+    )
 
     spa_fallback = wdir / constants.Dirs.STATIC / constants.ReactRouter.SPA_FALLBACK
     if not spa_fallback.exists():
         spa_fallback = wdir / constants.Dirs.STATIC / "index.html"
 
     if spa_fallback.exists():
+        target_404 = wdir / constants.Dirs.STATIC / "404.html"
         path_ops.cp(
             spa_fallback,
-            wdir / constants.Dirs.STATIC / "404.html",
+            target_404,
         )
+        _copy_precompressed_sidecars(spa_fallback, target_404, sidecar_suffixes)
 
-    config = get_config()
+    _compress_static_output(
+        wdir / constants.Dirs.STATIC,
+        tuple(config.frontend_compression_formats),
+    )
 
     if frontend_path := config.frontend_path.strip("/"):
         # Create a subdirectory that matches the configured frontend_path.
