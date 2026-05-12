@@ -86,11 +86,6 @@ def footer_link(text: str, href: str) -> rx.Component:
     """
     return rx.el.elements.a(
         text,
-        rx.icon(
-            tag="chevron-right",
-            size=16,
-            class_name="shrink-0 hidden",
-        ),
         href=href,
         target="_blank" if not href.startswith("/") else "",
         class_name="font-[525] text-secondary-11 hover:text-secondary-12 text-sm transition-color w-fit flex flex-row items-center min-h-[24px]",
