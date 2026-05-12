@@ -98,7 +98,7 @@ jobs:
     outputs:
       packages: ${{ steps.detect.outputs.packages }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - id: detect
         env:
           hatch_reflex_pyi: ${{ inputs.hatch_reflex_pyi }}
@@ -125,11 +125,11 @@ jobs:
     outputs:
       releases: ${{ steps.plan.outputs.releases }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-tags: true
           fetch-depth: 0
-      - uses: astral-sh/setup-uv@v7
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
       - id: plan
         env:
           PACKAGES_JSON: ${{ needs.detect.outputs.packages }}
@@ -142,7 +142,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: dispatch-release-approval
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Show release plan
         env:
           RELEASES: ${{ needs.plan.outputs.releases }}
@@ -161,7 +161,7 @@ jobs:
       group: dispatch-release-${{ matrix.package }}
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
