@@ -211,6 +211,10 @@ def handle_library_doc(
     """Handle docs/library/** docs — component API reference via multi_docs."""
     clist = [title, *get_components_from_frontmatter(actual_path)]
     previews = get_previews_from_frontmatter(actual_path)
+    ll_actual_path = actual_path.replace(".md", "-ll.md")
+    ll_clist: list | None = None
+    if os.path.exists(ll_actual_path):
+        ll_clist = [title, *get_components_from_frontmatter(ll_actual_path)]
     if doc.startswith("docs/library/graphing"):
         graphing_components[resolved.category].append(clist)
     else:
@@ -222,6 +226,7 @@ def handle_library_doc(
         previews=previews,
         component_list=clist,
         title=resolved.display_title,
+        ll_component_list=ll_clist,
     )
 
 

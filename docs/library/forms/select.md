@@ -1,13 +1,6 @@
 ---
 components:
   - rx.select
-  - rx.select.root
-  - rx.select.trigger
-  - rx.select.content
-  - rx.select.group
-  - rx.select.item
-  - rx.select.label
-  - rx.select.separator
 
 HighLevelSelect: |
   lambda **props: rx.select(["apple", "grape", "pear"], default_value="pear", **props)
