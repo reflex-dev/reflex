@@ -14,7 +14,7 @@ def stable_redis_hash_tag(slot_key: str) -> str:
     Returns:
         A stable hash tag safe to place between Redis Cluster hash braces.
     """
-    return hashlib.sha256(slot_key.encode()).hexdigest()
+    return hashlib.sha256(slot_key.encode()).hexdigest()[:16]
 
 
 def format_redis_key(logical_key: str, *, cluster: bool, slot_key: str) -> str:
