@@ -279,19 +279,24 @@ def get_frontend_mount():
         A Mount serving the compiled frontend static files.
     """
     from starlette.routing import Mount
-    from starlette.staticfiles import StaticFiles
 
     from reflex.utils import prerequisites
+    from reflex.utils.precompressed_staticfiles import PrecompressedStaticFiles
 
     config = get_config()
 
+    static_dir = (
+        prerequisites.get_web_dir()
+        / constants.Dirs.STATIC
+        / config.frontend_path.strip("/")
+    ).resolve()
+
     return Mount(
         config.prepend_frontend_path("/"),
-        app=StaticFiles(
-            directory=prerequisites.get_web_dir()
-            / constants.Dirs.STATIC
-            / config.frontend_path.strip("/"),
+        app=PrecompressedStaticFiles(
+            directory=static_dir,
             html=True,
+            encodings=config.frontend_compression_formats,
         ),
         name="frontend",
     )
