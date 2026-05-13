@@ -6,7 +6,7 @@ config = rx.Config(
     app_name="reflex_docs",
     frontend_path="/docs",
     frontend_packages=[
-        "tailwindcss-animated",
+        "tailwindcss-animated@2.0.0",
     ],
     telemetry_enabled=False,
     plugins=[
