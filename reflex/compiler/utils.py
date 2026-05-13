@@ -14,8 +14,12 @@ from typing import Any, TypedDict
 from urllib.parse import urlparse
 
 from reflex_base import constants
-from reflex_base.components.component import Component, ComponentStyle, CustomComponent
-from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER, FIELD_MARKER
+from reflex_base.components.component import Component, ComponentStyle
+from reflex_base.components.memo import (
+    ExperimentalMemoComponentDefinition,
+    ExperimentalMemoFunctionDefinition,
+)
+from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.style import Style
 from reflex_base.utils import format, imports
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
@@ -28,10 +32,6 @@ from reflex_components_core.el.elements.metadata import Head, Link, Meta, Title
 from reflex_components_core.el.elements.other import Html
 from reflex_components_core.el.elements.sectioning import Body
 
-from reflex.experimental.memo import (
-    ExperimentalMemoComponentDefinition,
-    ExperimentalMemoFunctionDefinition,
-)
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.state import BaseState, _resolve_delta
 from reflex.utils import path_ops
@@ -319,53 +319,6 @@ def compile_client_storage(
         constants.LOCAL_STORAGE: local_storage,
         constants.SESSION_STORAGE: session_storage,
     }
-
-
-def compile_custom_component(
-    component: CustomComponent,
-) -> tuple[dict, ParsedImportDict]:
-    """Compile a custom component.
-
-    Args:
-        component: The custom component to compile.
-
-    Returns:
-        A tuple of the compiled component and the imports required by the component.
-    """
-    # Render the component.
-    render = component.get_component()
-
-    # Get the imports.
-    imports: ParsedImportDict = {}
-    for lib, fields in render._get_all_imports().items():
-        if lib != component.library:
-            imports[lib] = fields
-            continue
-
-        filtered_fields = [field for field in fields if field.tag != component.tag]
-        if filtered_fields:
-            imports[lib] = filtered_fields
-
-    imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
-
-    # Concatenate the props.
-    props = list(component.props)
-
-    # Compile the component.
-    return (
-        {
-            "name": component.tag,
-            "props": props,
-            "signature": DestructuredArg(
-                fields=tuple(f"{prop}:{prop}{CAMEL_CASE_MEMO_MARKER}" for prop in props)
-            ).to_javascript(),
-            "render": render.render(),
-            "hooks": render._get_all_hooks(),
-            "custom_code": render._get_all_custom_code(),
-            "dynamic_imports": render._get_all_dynamic_imports(),
-        },
-        imports,
-    )
 
 
 def _apply_component_style_for_compile(component: Component) -> Component:

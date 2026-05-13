@@ -2,7 +2,8 @@
 
 from reflex_components_core.el.elements.typography import Div
 
-from reflex.components.component import Component, memo
+from reflex.components.component import Component
+from reflex.components.memo import memo
 from reflex.vars.base import Var
 from reflex_components_internal.utils.twmerge import cn
 
@@ -15,7 +16,7 @@ class ClassNames:
 
 @memo
 def skeleton_component(
-    class_name: str | Var[str] = "",
+    class_name: Var[str] = "",
 ) -> Component:
     """Skeleton component.
 

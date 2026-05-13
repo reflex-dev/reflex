@@ -2,7 +2,8 @@
 
 from reflex_components_core.el.elements.media import svg
 
-from reflex.components.component import Component, memo
+from reflex.components.component import Component
+from reflex.components.memo import memo
 from reflex.vars.base import Var
 from reflex_components_internal.components.icons.hugeicon import hi
 from reflex_components_internal.utils.twmerge import cn
@@ -10,7 +11,7 @@ from reflex_components_internal.utils.twmerge import cn
 
 @memo
 def spinner_component(
-    class_name: str | Var[str] = "",
+    class_name: Var[str] = "",
 ) -> Component:
     """Create a spinner SVG icon.
 
@@ -44,7 +45,7 @@ spinner = spinner_component
 
 @memo
 def select_arrow_icon(
-    class_name: str | Var[str] = "",
+    class_name: Var[str] = "",
 ) -> Component:
     """A select arrow SVG icon.
 

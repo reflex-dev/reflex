@@ -140,9 +140,9 @@ _ALL_COMPONENTS_MAPPING: lazy_loader.SubmodAttrsType = {
     "reflex_base.components.component": [
         "Component",
         "NoSSRComponent",
-        "memo",
         "ComponentNamespace",
     ],
+    "reflex_base.components.memo": ["memo"],
     "reflex_components_core.el.elements.media": ["image"],
     "reflex_components_lucide": ["icon"],
     **_COMPONENTS_BASE_MAPPING,

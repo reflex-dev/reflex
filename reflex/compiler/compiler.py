@@ -11,12 +11,16 @@ from typing import TYPE_CHECKING, Any
 
 from reflex_base import constants
 from reflex_base.components.component import (
-    CUSTOM_COMPONENTS,
     BaseComponent,
     Component,
     ComponentStyle,
-    CustomComponent,
     evaluate_style_namespaces,
+)
+from reflex_base.components.memo import (
+    EXPERIMENTAL_MEMOS,
+    ExperimentalMemoComponentDefinition,
+    ExperimentalMemoDefinition,
+    ExperimentalMemoFunctionDefinition,
 )
 from reflex_base.config import get_config
 from reflex_base.constants.compiler import PageNames, ResetStylesheet
@@ -35,12 +39,6 @@ from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 
 from reflex.compiler import templates, utils
 from reflex.compiler.plugins import default_page_plugins
-from reflex.experimental.memo import (
-    EXPERIMENTAL_MEMOS,
-    ExperimentalMemoComponentDefinition,
-    ExperimentalMemoDefinition,
-    ExperimentalMemoFunctionDefinition,
-)
 from reflex.state import BaseState, code_uses_state_contexts
 from reflex.utils import console, frontend_skeleton, path_ops, prerequisites
 from reflex.utils.exec import get_compile_context, is_prod_mode
@@ -394,53 +392,29 @@ def _compile_component(component: Component) -> str:
 
 
 def _compile_memo_components(
-    components: Iterable[CustomComponent],
     experimental_memos: Iterable[ExperimentalMemoDefinition] = (),
 ) -> tuple[list[tuple[str, str]], dict[str, list[ImportVar]]]:
-    """Compile each memo/custom-component as its own module plus an index.
+    """Compile each memo as its own module plus an empty index.
 
     Each memo lands in ``.web/<components>/<name>.jsx`` with only the imports
-    it actually uses. Experimental memo wrappers declare their ``library`` as
-    that per-memo file path so page-side imports resolve directly to the
+    it actually uses. Memo wrappers declare their ``library`` as that
+    per-memo file path so page-side imports resolve directly to the
     individual module.
 
-    The ``$/utils/components`` index only re-exports the legacy
-    ``@rx.memo`` custom components, which are the ones app-level code
-    (``root.jsx``) imports by name. Keeping experimental memos out of the
-    index is what lets root's ``import * as utils_components`` avoid
-    transitively dragging every page-specific memo into the always-loaded
-    chunk — the tree-shaking win of per-memo files relies on that.
+    The ``$/utils/components`` index is emitted empty so callers still find
+    the file at the expected path.
 
     Args:
-        components: The components to compile.
-        experimental_memos: The experimental memos to compile.
+        experimental_memos: The memos to compile.
 
     Returns:
         A list of ``(path, code)`` pairs to write — one per memo plus one
         index — and the aggregated imports across all memo modules.
     """
     per_memo_files: list[tuple[str, str]] = []
-    # Only legacy custom components go through the index: they are the ones
-    # root.jsx/custom code imports by name from ``$/utils/components``.
-    # Experimental memos declare their library per-file (see
-    # ``_get_experimental_memo_component_class``) so pages import them
-    # directly and the index stays small.
-    index_entries: list[tuple[str, str]] = []
     aggregate_imports: dict[str, list[ImportVar]] = {}
 
     base_dir = utils.get_memo_components_dir()
-
-    for component in components:
-        component_render, component_imports = utils.compile_custom_component(component)
-        name = component_render["name"]
-        code, file_imports = _compile_single_memo_component(
-            component_render, component_imports
-        )
-        path = _memo_component_file_path(base_dir, name)
-        specifier = _memo_component_index_specifier(name)
-        per_memo_files.append((path, code))
-        index_entries.append((name, specifier))
-        _extend_imports_in_place(aggregate_imports, file_imports)
 
     for memo in experimental_memos:
         if isinstance(memo, ExperimentalMemoComponentDefinition):
@@ -463,7 +437,7 @@ def _compile_memo_components(
             _extend_imports_in_place(aggregate_imports, file_imports)
 
     index_path = utils.get_components_path()
-    index_code = templates.memo_index_template(index_entries)
+    index_code = templates.memo_index_template([])
     return [(index_path, index_code), *per_memo_files], aggregate_imports
 
 
@@ -678,20 +652,18 @@ def compile_page_from_context(page_ctx: PageContext) -> tuple[str, str]:
 
 
 def compile_memo_components(
-    components: Iterable[CustomComponent],
     experimental_memos: Iterable[ExperimentalMemoDefinition] = (),
 ) -> tuple[list[tuple[str, str]], dict[str, list[ImportVar]]]:
-    """Compile the custom components into one module per memo plus an index.
+    """Compile the memos into one module per memo plus an index.
 
     Args:
-        components: The custom components to compile.
-        experimental_memos: The experimental memos to compile.
+        experimental_memos: The memos to compile.
 
     Returns:
         A list of ``(path, code)`` pairs (one per memo module and one index)
         alongside the aggregated imports across all memo modules.
     """
-    return _compile_memo_components(components, experimental_memos)
+    return _compile_memo_components(experimental_memos)
 
 
 def purge_web_pages_dir():
@@ -944,10 +916,10 @@ def _resolve_app_wrap_components(
         app_wrappers[200, "StrictMode"] = StrictMode.create()
 
     if (toaster := app.toaster) is not None:
-        from reflex_base.components.component import memo
+        from reflex_base.components.memo import memo
 
         @memo
-        def memoized_toast_provider():
+        def memoized_toast_provider() -> Component:
             return toaster
 
         app_wrappers[44, "ToasterProvider"] = Fragment.create(memoized_toast_provider())
@@ -1124,7 +1096,6 @@ def compile_app(
     all_imports = utils.merge_imports(all_imports, app_root._get_all_imports())
 
     memo_component_files, memo_components_imports = compile_memo_components(
-        dict.fromkeys(CUSTOM_COMPONENTS.values()),
         (
             *tuple(EXPERIMENTAL_MEMOS.values()),
             *tuple(compile_ctx.auto_memo_components.values()),

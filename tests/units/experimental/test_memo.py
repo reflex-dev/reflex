@@ -6,7 +6,13 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
-from reflex_base.components.component import CUSTOM_COMPONENTS, Component
+from reflex_base.components.component import Component
+from reflex_base.components.memo import (
+    EXPERIMENTAL_MEMOS,
+    ExperimentalMemoComponent,
+    ExperimentalMemoComponentDefinition,
+    ExperimentalMemoFunctionDefinition,
+)
 from reflex_base.style import Style
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars import VarData
@@ -16,12 +22,6 @@ from reflex_base.vars.function import FunctionVar
 import reflex as rx
 from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
-from reflex.experimental.memo import (
-    EXPERIMENTAL_MEMOS,
-    ExperimentalMemoComponent,
-    ExperimentalMemoComponentDefinition,
-    ExperimentalMemoFunctionDefinition,
-)
 
 
 @pytest.fixture(autouse=True)
@@ -101,7 +101,7 @@ def test_component_returning_memo_with_children_and_rest():
     assert isinstance(definition, ExperimentalMemoComponentDefinition)
     assert any(str(prop) == "rest" for prop in definition.component.special_props)
 
-    files, _ = compiler.compile_memo_components((), tuple(EXPERIMENTAL_MEMOS.values()))
+    files, _ = compiler.compile_memo_components(tuple(EXPERIMENTAL_MEMOS.values()))
     code = "\n".join(c for _, c in files)
     assert "export const MyCard = memo(({children, title:title" in code
     assert "...rest" in code
@@ -125,7 +125,7 @@ def test_component_returning_memo_accepts_component_var_result():
         "contents": "(showRxMemo ? firstRxMemo : secondRxMemo)"
     }
 
-    files, _ = compiler.compile_memo_components((), tuple(EXPERIMENTAL_MEMOS.values()))
+    files, _ = compiler.compile_memo_components(tuple(EXPERIMENTAL_MEMOS.values()))
     code = "\n".join(c for _, c in files)
     assert "export const ConditionalSlot = memo(({show:showRxMemo" in code
     assert "(showRxMemo ? firstRxMemo : secondRxMemo)" in code
@@ -149,7 +149,7 @@ def test_var_returning_memo_with_rest_props():
     assert '["color"] : "red"' in str(merged)
     assert '["className"] : "primary"' in str(merged)
 
-    files, _ = compiler.compile_memo_components((), tuple(EXPERIMENTAL_MEMOS.values()))
+    files, _ = compiler.compile_memo_components(tuple(EXPERIMENTAL_MEMOS.values()))
     code = "\n".join(c for _, c in files)
     assert (
         "export const merge_styles = (({base, ...overrides}) => ({...base, ...overrides}));"
@@ -167,7 +167,7 @@ def test_component_returning_memo_with_only_rest():
     def hover_trigger(rest: rx.RestProp) -> rx.Component:
         return rx.text("hover me", rest)
 
-    files, _ = compiler.compile_memo_components((), tuple(EXPERIMENTAL_MEMOS.values()))
+    files, _ = compiler.compile_memo_components(tuple(EXPERIMENTAL_MEMOS.values()))
     code = "\n".join(c for _, c in files)
     assert "memo(({...rest})" in code
     assert "({," not in code
@@ -180,7 +180,7 @@ def test_var_returning_memo_with_only_rest():
     def merge_only(overrides: rx.RestProp) -> rx.Var[Any]:
         return overrides
 
-    files, _ = compiler.compile_memo_components((), tuple(EXPERIMENTAL_MEMOS.values()))
+    files, _ = compiler.compile_memo_components(tuple(EXPERIMENTAL_MEMOS.values()))
     code = "\n".join(c for _, c in files)
     assert "(({...overrides}) => overrides)" in code
     assert "({," not in code
@@ -208,7 +208,7 @@ def test_var_returning_memo_with_children_and_rest():
     assert '["children"]' in str(rendered)
     assert '["className"] : "slot"' in str(rendered)
 
-    files, _ = compiler.compile_memo_components((), tuple(EXPERIMENTAL_MEMOS.values()))
+    files, _ = compiler.compile_memo_components(tuple(EXPERIMENTAL_MEMOS.values()))
     code = "\n".join(c for _, c in files)
     assert "export const label_slot = (({children, label, ...rest}) => label);" in code
 
@@ -363,28 +363,25 @@ def test_var_returning_memo_rejects_non_bundled_imports():
             )
 
 
-def test_compile_memo_components_includes_experimental_functions_and_components():
-    """The shared memo output should include both experimental functions and components."""
+def test_compile_memo_components_includes_functions_and_components():
+    """The shared memo output should include both function and component memos."""
 
     @rx.memo
-    def old_wrapper(title: rx.Var[str]) -> rx.Component:
+    def text_wrapper(title: rx.Var[str]) -> rx.Component:
         return rx.text(title)
 
-    @rx._x.memo
+    @rx.memo
     def format_price(amount: rx.Var[int], currency: rx.Var[str]) -> rx.Var[str]:
         return currency.to(str) + ": $" + amount.to(str)
 
-    @rx._x.memo
+    @rx.memo
     def my_card(children: rx.Var[rx.Component], *, title: rx.Var[str]) -> rx.Component:
         return rx.box(rx.heading(title), children)
 
-    files, _ = compiler.compile_memo_components(
-        dict.fromkeys(CUSTOM_COMPONENTS.values()),
-        tuple(EXPERIMENTAL_MEMOS.values()),
-    )
+    files, _ = compiler.compile_memo_components(tuple(EXPERIMENTAL_MEMOS.values()))
     code = "\n".join(c for _, c in files)
 
-    assert "export const OldWrapper = memo(" in code
+    assert "export const TextWrapper = memo(" in code
     assert "export const format_price =" in code
     assert "export const MyCard = memo(" in code
 
@@ -443,7 +440,7 @@ def test_compile_memo_components_extends_imports_without_remerging(
     )
     monkeypatch.setattr(compiler_utils, "merge_imports", reject_growing_merge)
 
-    files, aggregate_imports = compiler.compile_memo_components((), memos)
+    files, aggregate_imports = compiler.compile_memo_components(memos)
 
     assert len(files) == len(memos) + 1
     assert [import_var.tag for import_var in aggregate_imports["shared-lib"]] == [
@@ -536,7 +533,7 @@ def test_compile_memo_components_includes_experimental_custom_code():
     def foo_component(label: rx.Var[str]) -> rx.Component:
         return FooComponent.create(label, rx.Var("foo"))
 
-    files, _ = compiler.compile_memo_components((), tuple(EXPERIMENTAL_MEMOS.values()))
+    files, _ = compiler.compile_memo_components(tuple(EXPERIMENTAL_MEMOS.values()))
     code = "\n".join(c for _, c in files)
 
     assert "const foo = 'bar'" in code

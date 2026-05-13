@@ -24,7 +24,7 @@ from reflex_base.constants.compiler import (
 from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER
 from reflex_base.utils import format
 from reflex_base.utils.imports import ImportVar
-from reflex_base.utils.types import safe_issubclass
+from reflex_base.utils.types import safe_issubclass, typehint_issubclass
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.function import (
@@ -35,10 +35,6 @@ from reflex_base.vars.function import (
     ReflexCallable,
 )
 from reflex_base.vars.object import RestProp
-from reflex_components_core.base.bare import Bare
-from reflex_components_core.base.fragment import Fragment
-
-from reflex.utils import types as type_utils
 
 
 @dataclasses.dataclass(frozen=True, slots=True, kw_only=True)
@@ -266,7 +262,7 @@ def _annotation_inner_type(annotation: Any) -> Any:
         return dict[str, Any]
 
     origin = get_origin(annotation) or annotation
-    if type_utils.safe_issubclass(origin, Var) and (args := get_args(annotation)):
+    if safe_issubclass(origin, Var) and (args := get_args(annotation)):
         return args[0]
     return Any
 
@@ -326,7 +322,7 @@ def _children_annotation_is_valid(annotation: Any) -> bool:
     Returns:
         Whether the annotation is valid for children.
     """
-    return _is_var_annotation(annotation) and type_utils.typehint_issubclass(
+    return _is_var_annotation(annotation) and typehint_issubclass(
         _annotation_inner_type(annotation), Component
     )
 
@@ -504,9 +500,9 @@ def _normalize_component_return(value: Any) -> Component | None:
     if isinstance(value, Component):
         return value
 
-    if isinstance(value, Var) and type_utils.typehint_issubclass(
-        value._var_type, Component
-    ):
+    if isinstance(value, Var) and typehint_issubclass(value._var_type, Component):
+        from reflex_components_core.base.bare import Bare
+
         return Bare.create(value)
 
     return None
@@ -521,6 +517,8 @@ def _lift_rest_props(component: Component) -> Component:
     Returns:
         The rewritten component tree.
     """
+    from reflex_components_core.base.bare import Bare
+
     special_props = list(component.special_props)
     rewritten_children = []
 
@@ -795,6 +793,8 @@ def _bind_function_runtime_args(
     # Build the props object passed to the imported FunctionVar.
     children_value: Any | None = None
     if children_param is not None:
+        from reflex_components_core.base.fragment import Fragment
+
         children_value = args[0] if len(args) == 1 else Fragment.create(*args)
 
     # Convert rest-prop keys to camelCase to match component memo behavior.
@@ -820,8 +820,7 @@ def _is_component_child(value: Any) -> bool:
         Whether the value is a component child.
     """
     return isinstance(value, Component) or (
-        isinstance(value, Var)
-        and type_utils.typehint_issubclass(value._var_type, Component)
+        isinstance(value, Var) and typehint_issubclass(value._var_type, Component)
     )
 
 
@@ -1056,6 +1055,8 @@ def create_passthrough_component_memo(
         # ``children`` parameter is present in the signature but unused.
         if not component.children:
             return new_component
+        from reflex_components_core.base.bare import Bare
+
         hole_bare = Bare.create(children)
         captured_hole_child.append(hole_bare)
         # Substitute the ``{children}`` hole for the original descendants so

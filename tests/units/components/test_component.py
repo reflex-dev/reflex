@@ -3,13 +3,7 @@ from dataclasses import dataclass
 from typing import Any, ClassVar
 
 import pytest
-from reflex_base.components.component import (
-    CUSTOM_COMPONENTS,
-    Component,
-    CustomComponent,
-    custom_component,
-    field,
-)
+from reflex_base.components.component import Component, field
 from reflex_base.constants import EventTriggers
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import (
@@ -46,7 +40,6 @@ from reflex import (
     _COMPONENTS_BASE_MAPPING,  # pyright: ignore[reportAttributeAccessIssue]
     _COMPONENTS_CORE_MAPPING,  # pyright: ignore[reportAttributeAccessIssue]
 )
-from reflex.compiler.utils import compile_custom_component
 from reflex.state import BaseState
 from reflex.utils import imports
 
@@ -270,20 +263,6 @@ def on_click2() -> EventHandler:
         pass
 
     return EventHandler(fn=on_click2)
-
-
-@pytest.fixture
-def my_component():
-    """A test component function.
-
-    Returns:
-        A test component function.
-    """
-
-    def my_component(prop1: Var[str], prop2: Var[int]):
-        return Box.create(prop1, prop2)
-
-    return my_component
 
 
 def test_set_style_attrs(component1):
@@ -858,52 +837,6 @@ def test_component_event_trigger_arbitrary_args():
             }
 
     C1.create(on_foo=C1State.mock_handler)
-
-
-def test_create_custom_component(my_component):
-    """Test that we can create a custom component.
-
-    Args:
-        my_component: A test custom component.
-    """
-    component = rx.memo(my_component)(prop1="test", prop2=1)
-    assert component.tag == "MyComponent"
-    assert set(component.get_props()) == {"prop1", "prop2"}
-    assert component.tag in CUSTOM_COMPONENTS
-
-
-def test_custom_component_hash(my_component):
-    """Test that the hash of a custom component is correct.
-
-    Args:
-        my_component: A test custom component.
-    """
-    component1 = rx.memo(my_component)(prop1="test", prop2=1)
-    component2 = rx.memo(my_component)(prop1="test", prop2=2)
-    assert {component1, component2} == {component1}
-
-
-def test_custom_component_wrapper():
-    """Test that the wrapper of a custom component is correct."""
-
-    @custom_component
-    def my_component(width: Var[int], color: Var[str]):
-        return rx.box(
-            width=width,
-            color=color,
-        )
-
-    from reflex_components_radix.themes.typography.text import Text
-
-    ccomponent = my_component(
-        rx.text("child"), width=LiteralVar.create(1), color=LiteralVar.create("red")
-    )
-    assert isinstance(ccomponent, CustomComponent)
-    assert len(ccomponent.children) == 1
-    assert isinstance(ccomponent.children[0], Text)
-
-    component = ccomponent.get_component()
-    assert isinstance(component, Box)
 
 
 def test_invalid_event_handler_args(component2, test_state: type[TestState]):
@@ -1756,43 +1689,6 @@ def test_rename_props():
     assert 'renamed_prop1:"prop1_2"' in rendered_c2["props"]
     assert 'subclass_prop2:"prop2_2"' in rendered_c2["props"]
     assert 'renamed_prop3:"prop3_2"' in rendered_c2["props"]
-
-
-def test_custom_component_get_imports():
-    class Inner(Component):
-        tag = "Inner"
-        library = "inner"
-
-    @rx.memo
-    def wrapper():
-        return Inner.create()
-
-    @rx.memo
-    def outer():
-        return wrapper()
-
-    custom_comp = wrapper()
-
-    # Inner is not imported directly, but it is imported by the custom component.
-    assert "inner" not in custom_comp._get_all_imports()
-    assert "outer" not in custom_comp._get_all_imports()
-
-    # The imports are only resolved during compilation.
-    custom_comp.get_component()
-    _, imports_inner = compile_custom_component(custom_comp)
-    assert "inner" in imports_inner
-    assert "outer" not in imports_inner
-
-    outer_comp = outer()
-
-    # Nested custom components are only imported during compilation.
-    assert "inner" not in outer_comp._get_all_imports()
-
-    # The imports are only resolved during compilation.
-    _, imports_outer = compile_custom_component(outer_comp)
-    assert "inner" not in imports_outer
-    assert "$/utils/components" in imports_outer
-    assert imports_outer["$/utils/components"] == [ImportVar(tag="Wrapper")]
 
 
 def test_custom_component_declare_event_handlers_in_fields():

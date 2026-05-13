@@ -6,13 +6,12 @@ from unittest import mock
 
 import pytest
 import reflex_base.config
-from reflex_base.components.component import CUSTOM_COMPONENTS
+from reflex_base.components.memo import EXPERIMENTAL_MEMOS
 from reflex_base.constants import IS_WINDOWS
 
 import reflex.reflex as reflex_cli
 import reflex.testing as reflex_testing
 import reflex.utils.prerequisites
-from reflex.experimental.memo import EXPERIMENTAL_MEMOS
 from reflex.testing import AppHarness
 
 
@@ -88,7 +87,7 @@ def harness_mocks(monkeypatch):
 def test_app_harness_initialize_clears_memo_registries(
     tmp_path, preserve_memo_registries, harness_mocks, monkeypatch
 ):
-    """Ensure app initialization clears leaked memo registries.
+    """Ensure app initialization clears the leaked memo registry.
 
     Args:
         tmp_path: pytest tmp_path fixture
@@ -98,7 +97,6 @@ def test_app_harness_initialize_clears_memo_registries(
     """
     monkeypatch.setattr(reflex_cli, "_init", lambda **kwargs: None)
 
-    CUSTOM_COMPONENTS["FooComponent"] = mock.sentinel.component
     EXPERIMENTAL_MEMOS["format_value"] = mock.sentinel.memo
 
     harness = AppHarness.create(
@@ -109,7 +107,6 @@ def test_app_harness_initialize_clears_memo_registries(
     harness.app_module_path.parent.mkdir(parents=True, exist_ok=True)
     harness._initialize_app()
 
-    assert "FooComponent" not in CUSTOM_COMPONENTS
     assert "format_value" not in EXPERIMENTAL_MEMOS
     harness_mocks.get_and_validate_app.assert_called_once_with(reload=True)
 

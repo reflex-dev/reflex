@@ -1,5 +1,6 @@
 import pytest
-from reflex_base.components.component import Component, memo
+from reflex_base.components.component import Component
+from reflex_base.components.memo import memo
 from reflex_base.vars.base import Var
 from reflex_components_code.code import CodeBlock
 from reflex_components_code.shiki_code_block import ShikiHighLevelCodeBlock
@@ -36,7 +37,7 @@ class CustomMarkdownComponent(Component, MarkdownComponentMap):
 
 def syntax_highlighter_memoized_component(codeblock: type[Component]):
     @memo
-    def code_block(code: str, language: str):
+    def code_block(code: Var[str], language: Var[str]) -> Component:
         return Box.create(
             codeblock.create(
                 code,

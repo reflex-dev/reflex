@@ -59,12 +59,16 @@ def VarOperations():
     app = rx.App()
 
     @rx.memo
-    def memo_comp(list1: list[int], int_var1: int, id: str):
+    def memo_comp(
+        list1: rx.Var[list[int]], int_var1: rx.Var[int], id: rx.Var[str]
+    ) -> rx.Component:
         return rx.text(list1, int_var1, id=id)
 
     @rx.memo
-    def memo_comp_nested(int_var2: int, id: str):
-        return memo_comp(list1=[3, 4], int_var1=int_var2, id=id)
+    def memo_comp_nested(int_var2: rx.Var[int], id: rx.Var[str]) -> rx.Component:
+        return memo_comp(
+            list1=rx.Var.create([3, 4]), int_var1=int_var2, id=id
+        )
 
     @app.add_page
     def index():
@@ -634,13 +638,13 @@ def VarOperations():
                 id="foreach_list_arg2",
             ),
             memo_comp(
-                list1=VarOperationState.list1,
+                list1=VarOperationState.list1.to(list[int]),
                 int_var1=VarOperationState.int_var1,
-                id="memo_comp",
+                id=rx.Var.create("memo_comp"),
             ),
             memo_comp_nested(
                 int_var2=VarOperationState.int_var2,
-                id="memo_comp_nested",
+                id=rx.Var.create("memo_comp_nested"),
             ),
             # length
             rx.box(

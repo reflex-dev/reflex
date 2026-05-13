@@ -10,14 +10,13 @@ from unittest import mock
 
 import pytest
 import pytest_asyncio
-from reflex_base.components.component import CUSTOM_COMPONENTS
+from reflex_base.components.memo import EXPERIMENTAL_MEMOS
 from reflex_base.event import Event, EventSpec
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
 from reflex_base.registry import RegistrationContext
 
 from reflex.app import App
-from reflex.experimental.memo import EXPERIMENTAL_MEMOS
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
@@ -491,17 +490,14 @@ def clean_registration_context() -> Generator[RegistrationContext, None, None]:
 
 @pytest.fixture
 def preserve_memo_registries():
-    """Save and restore global memo registries around a test.
+    """Save and restore the global memo registry around a test.
 
     Yields:
         None
     """
-    custom_components = dict(CUSTOM_COMPONENTS)
     experimental_memos = dict(EXPERIMENTAL_MEMOS)
     try:
         yield
     finally:
-        CUSTOM_COMPONENTS.clear()
-        CUSTOM_COMPONENTS.update(custom_components)
         EXPERIMENTAL_MEMOS.clear()
         EXPERIMENTAL_MEMOS.update(experimental_memos)

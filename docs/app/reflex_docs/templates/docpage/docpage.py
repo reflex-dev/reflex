@@ -223,7 +223,7 @@ def feedback_button_toc() -> rx.Component:
 
 
 @rx.memo
-def copy_to_markdown(text: str) -> rx.Component:
+def copy_to_markdown(text: rx.Var[str]) -> rx.Component:
     copied = ClientStateVar.create("is_copied", default=False, global_ref=False)
     return marketing_button(
         rx.cond(
@@ -270,7 +270,7 @@ def link_pill(text: str, href: str) -> rx.Component:
 
 
 @rx.memo
-def docpage_footer(path: str):
+def docpage_footer(path: rx.Var[str]) -> rx.Component:
     from reflex_site_shared.constants import FORUM_URL, ROADMAP_URL
 
     return rx.el.footer(

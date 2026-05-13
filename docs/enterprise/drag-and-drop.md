@@ -274,7 +274,7 @@ class DynamicListState(rx.State):
 
 
 @rx.memo
-def draggable_list_item(item: ListItem):
+def draggable_list_item(item: rx.Var[ListItem]) -> rx.Component:
     return rxe.dnd.draggable(
         rx.card(
             rx.text(item.text, weight="bold"),
