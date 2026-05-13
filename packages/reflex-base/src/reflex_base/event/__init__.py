@@ -2532,11 +2532,14 @@ class EventCallback(Generic[Unpack[P], P_spec], EventActionsMixin):
     @overload
     def __call__(
         self: "EventCallback[Unpack[Q], P_spec]",
+        **kwargs: Var[Any],
     ) -> "EventCallback[Unpack[Q], P_spec]": ...
 
     @overload
     def __call__(
-        self: "EventCallback[V, Unpack[Q], P_spec]", value: V | Var[V]
+        self: "EventCallback[V, Unpack[Q], P_spec]",
+        value: V | Var[V],
+        **kwargs: Var[Any],
     ) -> "EventCallback[Unpack[Q], P_spec]": ...
 
     @overload
@@ -2544,6 +2547,7 @@ class EventCallback(Generic[Unpack[P], P_spec], EventActionsMixin):
         self: "EventCallback[V, V2, Unpack[Q], P_spec]",
         value: V | Var[V],
         value2: V2 | Var[V2],
+        **kwargs: Var[Any],
     ) -> "EventCallback[Unpack[Q], P_spec]": ...
 
     @overload
@@ -2552,6 +2556,7 @@ class EventCallback(Generic[Unpack[P], P_spec], EventActionsMixin):
         value: V | Var[V],
         value2: V2 | Var[V2],
         value3: V3 | Var[V3],
+        **kwargs: Var[Any],
     ) -> "EventCallback[Unpack[Q], P_spec]": ...
 
     @overload
@@ -2561,6 +2566,7 @@ class EventCallback(Generic[Unpack[P], P_spec], EventActionsMixin):
         value2: V2 | Var[V2],
         value3: V3 | Var[V3],
         value4: V4 | Var[V4],
+        **kwargs: Var[Any],
     ) -> "EventCallback[Unpack[Q], P_spec]": ...
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:  # pyright: ignore [reportInconsistentOverload]
