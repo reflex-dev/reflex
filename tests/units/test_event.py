@@ -698,6 +698,33 @@ def test_event_decorator_backward_compatibility():
     assert hasattr(bg_handler.fn, BACKGROUND_TASK_MARKER)  # pyright: ignore [reportAttributeAccessIssue]
 
 
+def test_event_handler_accepts_keyword_arguments():
+    """Regression test for issue #6495: EventCallback should accept kwargs.
+
+    The event decorator preserves the wrapped function's signature so that
+    callers can pass arguments by keyword, matching the runtime behavior of
+    ``EventHandler.__call__``.
+    """
+
+    class MyTestState(BaseState):
+        @event
+        def do_something(self, tries: int = 1):
+            pass
+
+    # Calling with a keyword argument should produce the same EventSpec as a
+    # positional call, matching what the user wrote in the bug report.
+    spec_kwarg = MyTestState.do_something(tries=2)
+    spec_pos = MyTestState.do_something(2)
+    assert isinstance(spec_kwarg, EventSpec)
+    assert isinstance(spec_pos, EventSpec)
+    assert spec_kwarg.handler is spec_pos.handler
+
+    def _arg_summary(spec: EventSpec) -> list[tuple[str, str]]:
+        return [(name._js_expr, str(val)) for name, val in spec.args]
+
+    assert _arg_summary(spec_kwarg) == _arg_summary(spec_pos)
+
+
 def test_event_var_in_rx_cond():
     """Test that EventVar and EventChainVar cannot be used in rx.cond()."""
     from reflex_components_core.core.cond import cond as rx_cond

@@ -13,6 +13,7 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
+    Concatenate,
     Generic,
     Literal,
     NoReturn,
@@ -25,7 +26,14 @@ from typing import (
     overload,
 )
 
-from typing_extensions import Self, TypeAliasType, TypedDict, TypeVarTuple, Unpack
+from typing_extensions import (
+    ParamSpec,
+    Self,
+    TypeAliasType,
+    TypedDict,
+    TypeVarTuple,
+    Unpack,
+)
 
 from reflex_base import constants
 from reflex_base.components.field import BaseField
@@ -2489,18 +2497,28 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
 
 
 P = TypeVarTuple("P")
+P_spec = ParamSpec("P_spec")
 Q = TypeVarTuple("Q")
 V = TypeVar("V")
 V2 = TypeVar("V2")
 V3 = TypeVar("V3")
 V4 = TypeVar("V4")
-V5 = TypeVar("V5")
 
 
-class EventCallback(Generic[Unpack[P]], EventActionsMixin):
-    """A descriptor that wraps a function to be used as an event."""
+class EventCallback(Generic[Unpack[P], P_spec], EventActionsMixin):
+    """A descriptor that wraps a function to be used as an event.
 
-    def __init__(self, func: Callable[[Any, Unpack[P]], Any]):
+    Two type parameters describe the wrapped function for the type checker:
+
+    - The TypeVarTuple ``P`` mirrors the positional types of the wrapped
+      function (excluding ``self``). It is used by aliases like
+      ``EventType[int, str]`` to describe the positional shape of a handler.
+    - The ParamSpec ``P_spec`` captures the full signature of the wrapped
+      callable so that ``__call__`` accepts either positional or keyword
+      arguments and type-checks them against the underlying signature.
+    """
+
+    def __init__(self, func: Callable[Concatenate[Any, P_spec], Any]):
         """Initialize the descriptor with the function to be wrapped.
 
         Args:
@@ -2509,57 +2527,61 @@ class EventCallback(Generic[Unpack[P]], EventActionsMixin):
         self.func = func
 
     @overload
-    def __call__(
-        self: "EventCallback[Unpack[Q]]",
-    ) -> "EventCallback[Unpack[Q]]": ...
+    def __call__(self, *args: P_spec.args, **kwargs: P_spec.kwargs) -> Any: ...
 
     @overload
     def __call__(
-        self: "EventCallback[V, Unpack[Q]]", value: V | Var[V]
-    ) -> "EventCallback[Unpack[Q]]": ...
+        self: "EventCallback[Unpack[Q], P_spec]",
+    ) -> "EventCallback[Unpack[Q], P_spec]": ...
 
     @overload
     def __call__(
-        self: "EventCallback[V, V2, Unpack[Q]]",
+        self: "EventCallback[V, Unpack[Q], P_spec]", value: V | Var[V]
+    ) -> "EventCallback[Unpack[Q], P_spec]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, Unpack[Q], P_spec]",
         value: V | Var[V],
         value2: V2 | Var[V2],
-    ) -> "EventCallback[Unpack[Q]]": ...
+    ) -> "EventCallback[Unpack[Q], P_spec]": ...
 
     @overload
     def __call__(
-        self: "EventCallback[V, V2, V3, Unpack[Q]]",
+        self: "EventCallback[V, V2, V3, Unpack[Q], P_spec]",
         value: V | Var[V],
         value2: V2 | Var[V2],
         value3: V3 | Var[V3],
-    ) -> "EventCallback[Unpack[Q]]": ...
+    ) -> "EventCallback[Unpack[Q], P_spec]": ...
 
     @overload
     def __call__(
-        self: "EventCallback[V, V2, V3, V4, Unpack[Q]]",
+        self: "EventCallback[V, V2, V3, V4, Unpack[Q], P_spec]",
         value: V | Var[V],
         value2: V2 | Var[V2],
         value3: V3 | Var[V3],
         value4: V4 | Var[V4],
-    ) -> "EventCallback[Unpack[Q]]": ...
+    ) -> "EventCallback[Unpack[Q], P_spec]": ...
 
-    def __call__(self, *values) -> "EventCallback":  # pyright: ignore [reportInconsistentOverload]
-        """Call the function with the values.
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:  # pyright: ignore [reportInconsistentOverload]
+        """Call the function with the given values.
 
         Args:
-            *values: The values to call the function with.
+            *args: Positional arguments forwarded to the wrapped function.
+            **kwargs: Keyword arguments forwarded to the wrapped function.
 
         Returns:
-            The function with the values.
+            The result of calling the wrapped function.
         """
-        return self.func(*values)  # pyright: ignore [reportArgumentType]
+        return self.func(*args, **kwargs)  # pyright: ignore [reportCallIssue]
 
     @overload
     def __get__(
-        self: "EventCallback[Unpack[P]]", instance: None, owner: Any
-    ) -> "EventCallback[Unpack[P]]": ...
+        self: "EventCallback[Unpack[P], P_spec]", instance: None, owner: Any
+    ) -> "EventCallback[Unpack[P], P_spec]": ...
 
     @overload
-    def __get__(self, instance: Any, owner: Any) -> "Callable[[Unpack[P]]]": ...
+    def __get__(self, instance: Any, owner: Any) -> "Callable[P_spec, Any]": ...
 
     def __get__(self, instance: Any, owner: Any) -> Callable:
         """Get the function with the instance bound to it.
@@ -2615,7 +2637,7 @@ ARGS = TypeVarTuple("ARGS")
 
 LAMBDA_OR_STATE = TypeAliasType(
     "LAMBDA_OR_STATE",
-    LambdaEventCallback[Unpack[ARGS]] | EventCallback[Unpack[ARGS]],
+    LambdaEventCallback[Unpack[ARGS]] | EventCallback[Unpack[ARGS], ...],
     type_params=(ARGS,),
 )
 
@@ -2717,14 +2739,12 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
-    ) -> (
-        "Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]]"
-    ): ...
+    ) -> "Callable[[Callable[Concatenate[BASE_STATE, P_spec], Any]], EventCallback[Unpack[tuple[Any, ...]], P_spec]]": ...
 
     @overload
     def __new__(
         cls,
-        func: Callable[[BASE_STATE, Unpack[P]], Any],
+        func: Callable[[BASE_STATE], Any],
         *,
         background: bool | None = None,
         stop_propagation: bool | None = None,
@@ -2732,11 +2752,76 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
-    ) -> EventCallback[Unpack[P]]: ...
+    ) -> EventCallback[Unpack[tuple[()]], ...]: ...
+
+    @overload
+    def __new__(
+        cls,
+        func: Callable[[BASE_STATE, V], Any],
+        *,
+        background: bool | None = None,
+        stop_propagation: bool | None = None,
+        prevent_default: bool | None = None,
+        throttle: int | None = None,
+        debounce: int | None = None,
+        temporal: bool | None = None,
+    ) -> EventCallback[V, ...]: ...
+
+    @overload
+    def __new__(
+        cls,
+        func: Callable[[BASE_STATE, V, V2], Any],
+        *,
+        background: bool | None = None,
+        stop_propagation: bool | None = None,
+        prevent_default: bool | None = None,
+        throttle: int | None = None,
+        debounce: int | None = None,
+        temporal: bool | None = None,
+    ) -> EventCallback[V, V2, ...]: ...
+
+    @overload
+    def __new__(
+        cls,
+        func: Callable[[BASE_STATE, V, V2, V3], Any],
+        *,
+        background: bool | None = None,
+        stop_propagation: bool | None = None,
+        prevent_default: bool | None = None,
+        throttle: int | None = None,
+        debounce: int | None = None,
+        temporal: bool | None = None,
+    ) -> EventCallback[V, V2, V3, ...]: ...
+
+    @overload
+    def __new__(
+        cls,
+        func: Callable[[BASE_STATE, V, V2, V3, V4], Any],
+        *,
+        background: bool | None = None,
+        stop_propagation: bool | None = None,
+        prevent_default: bool | None = None,
+        throttle: int | None = None,
+        debounce: int | None = None,
+        temporal: bool | None = None,
+    ) -> EventCallback[V, V2, V3, V4, ...]: ...
+
+    @overload
+    def __new__(
+        cls,
+        func: Callable[Concatenate[BASE_STATE, P_spec], Any],
+        *,
+        background: bool | None = None,
+        stop_propagation: bool | None = None,
+        prevent_default: bool | None = None,
+        throttle: int | None = None,
+        debounce: int | None = None,
+        temporal: bool | None = None,
+    ) -> EventCallback[Unpack[tuple[Any, ...]], P_spec]: ...
 
     def __new__(
         cls,
-        func: Callable[[BASE_STATE, Unpack[P]], Any] | None = None,
+        func: Callable[..., Any] | None = None,
         *,
         background: bool | None = None,
         stop_propagation: bool | None = None,
@@ -2744,10 +2829,7 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
-    ) -> (
-        EventCallback[Unpack[P]]
-        | Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]]
-    ):
+    ) -> Any:
         """Wrap a function to be used as an event.
 
         Args:
@@ -2795,8 +2877,8 @@ class EventNamespace:
             return event_actions
 
         def wrapper(
-            func: Callable[[BASE_STATE, Unpack[P]], T],
-        ) -> EventCallback[Unpack[P]]:
+            func: Callable[Concatenate[BASE_STATE, P_spec], T],
+        ) -> EventCallback[Unpack[tuple[Any, ...]], P_spec]:
             if background is True:
                 if not inspect.iscoroutinefunction(
                     func
