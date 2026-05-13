@@ -23,6 +23,7 @@ from reflex_docgen import (
 from reflex_docs.docgen_pipeline import (
     get_docgen_toc,
     render_docgen_document,
+    render_inline_markdown,
     render_markdown,
 )
 from reflex_docs.templates.docpage import docpage, h1_comp, h2_comp
@@ -331,8 +332,6 @@ def prop_docs(
         type_name = type_.__name__
         short_type_name = type_name
 
-    # Get the default value.
-    default_value = prop.default_value if prop.default_value is not None else "-"
     # Get the color of the prop.
     color = TYPE_COLORS.get(short_type_name, "gray")
 
@@ -429,34 +428,17 @@ def prop_docs(
                     ),
                     class_name="flex flex-row items-start gap-2",
                 ),
-                class_name=ui.cn(_PROPS_TABLE_CELL_CLASS, "w-[34%]"),
+                class_name=ui.cn(_PROPS_TABLE_CELL_CLASS, "w-[25%]"),
             ),
             rx.el.td(
                 rx.box(
-                    rx.code(
-                        default_value,
-                        style=get_code_style(
-                            "red"
-                            if default_value == "False"
-                            else "green"
-                            if default_value == "True"
-                            else "gray"
-                        ),
-                        class_name="code-style leading-normal text-nowrap",
-                    ),
-                    class_name=cell_content_class,
-                ),
-                class_name=ui.cn(_PROPS_TABLE_CELL_CLASS, "w-[12%]"),
-            ),
-            rx.el.td(
-                rx.box(
-                    rx.text(
+                    render_inline_markdown(
                         description,
                         class_name="font-small text-slate-11 whitespace-normal leading-snug break-words",
                     ),
                     class_name=cell_content_class,
                 ),
-                class_name=ui.cn(_PROPS_TABLE_CELL_CLASS, "w-[34%]"),
+                class_name=ui.cn(_PROPS_TABLE_CELL_CLASS, "w-[55%]"),
             ),
         ],
         is_long_row,
@@ -780,15 +762,11 @@ def generate_props(
                         ),
                         rx.el.th(
                             "Type",
-                            class_name=ui.cn(_PROPS_TABLE_HEADER_CLASS, "w-[34%]"),
-                        ),
-                        rx.el.th(
-                            "Default",
-                            class_name=ui.cn(_PROPS_TABLE_HEADER_CLASS, "w-[12%]"),
+                            class_name=ui.cn(_PROPS_TABLE_HEADER_CLASS, "w-[25%]"),
                         ),
                         rx.el.th(
                             "Description",
-                            class_name=ui.cn(_PROPS_TABLE_HEADER_CLASS, "w-[34%]"),
+                            class_name=ui.cn(_PROPS_TABLE_HEADER_CLASS, "w-[55%]"),
                         ),
                     ),
                     class_name="border-b border-slate-4 bg-slate-2",
@@ -1009,12 +987,14 @@ def multi_docs(
             if components
             else []
         )
+        body, faq_script = render_docgen_document(
+            virtual_filepath=virtual_path, actual_filepath=actual_path
+        )
         return (toc, doc_content), rx.box(
             links("hl", ll_doc_exists, path),
-            render_docgen_document(
-                virtual_filepath=virtual_path, actual_filepath=actual_path
-            ),
+            body,
             *api_ref_section,
+            *([faq_script] if faq_script is not None else []),
             class_name="flex flex-col w-full",
         )
 
@@ -1035,12 +1015,14 @@ def multi_docs(
             if ll_components
             else []
         )
+        body, faq_script = render_docgen_document(
+            virtual_filepath=ll_virtual, actual_filepath=ll_actual_path
+        )
         return (toc, doc_content), rx.box(
             links("ll", ll_doc_exists, path),
-            render_docgen_document(
-                virtual_filepath=ll_virtual, actual_filepath=ll_actual_path
-            ),
+            body,
             *api_ref_section,
+            *([faq_script] if faq_script is not None else []),
             class_name="flex flex-col w-full",
         )
 

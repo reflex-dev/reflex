@@ -242,10 +242,12 @@ def get_component_docgen(virtual_doc: str, actual_path: str, title: str):
     def comp(_actual=actual_path, _virtual=virtual_doc):
         toc = get_docgen_toc(_actual)
         doc_content = Path(_actual).read_text(encoding="utf-8")
-        rendered = render_docgen_document(
+        body, faq_script = render_docgen_document(
             virtual_filepath=_virtual, actual_filepath=_actual
         )
-        return ((toc, doc_content), rendered)
+        if faq_script is not None:
+            body = rx.fragment(body, faq_script)
+        return ((toc, doc_content), body)
 
     return make_docpage(resolved.route, resolved.display_title, virtual_doc, comp)
 
