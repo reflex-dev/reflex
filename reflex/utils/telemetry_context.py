@@ -94,4 +94,4 @@ class TelemetryContext(BaseContext):
         Returns:
             The elapsed time in whole milliseconds.
         """
-        return int((time.perf_counter() - self.start_perf_counter) * 1000)
+        return int((time.perf_counter() - self.start_perf_counter) * 1000)  # seconds → milliseconds
