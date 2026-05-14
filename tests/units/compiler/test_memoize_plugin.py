@@ -2132,3 +2132,85 @@ def test_each_memo_wrapper_emits_one_component_module_file() -> None:
         "for Plain, one for WithProp, and one snapshot wrapper for the "
         f"LeafComponent boundary. Got: {sorted(ctx.memoize_wrappers)}"
     )
+
+
+class _IterVarHookState(BaseState):
+    rows: Field[list[dict[str, str]]] = field(
+        default_factory=lambda: [{"id": "a"}, {"id": "b"}]
+    )
+
+
+class _HookLeaf(Component):
+    """``MemoizationLeaf``-style stub whose internal hooks close over a prop Var.
+
+    Mirrors the shape of ``rx.upload.root`` and other ``recursive=False``
+    components that call React hooks (``useDropzone``, ``useCallback``) at the
+    top of their render body — the hook line embeds the value of a prop,
+    which becomes a stale reference if the leaf renders inside an
+    ``rx.foreach`` and the prop is the iter var.
+    """
+
+    tag = "HookLeaf"
+    library = "hook-leaf-lib"
+    _memoization_mode = MemoizationMode(recursive=False)
+
+    upload_id: Var[str] = component_field(default=LiteralVar.create(""))
+
+    def _get_hooks_internal(self):
+        hook_line = f"const __hook_for_{id(self)} = useFakeHook({self.upload_id!s});"
+        return {hook_line: VarData(state=_IterVarHookState.get_full_name())}
+
+
+@pytest.mark.xfail(
+    reason=(
+        "Bug: hooks from a snapshot-boundary descendant of rx.foreach are "
+        "hoisted to the snapshot memo body's top level, above the .map "
+        "callback that introduces the iter var. Produces 'c_rx_state_ is "
+        "not defined' at runtime. Fix should wrap the foreach body in a "
+        "per-iteration memo component so the hook lives at that component's "
+        "top level and the iter var is threaded in as a prop."
+    ),
+    strict=True,
+)
+def test_iter_var_does_not_leak_into_snapshot_memo_body_top_level_hooks() -> None:
+    """Foreach iter vars must not appear in hook lines hoisted above the ``.map``.
+
+    Regression for "c_rx_state_ is not defined": a snapshot-boundary component
+    (e.g. ``rx.upload.root``) placed inside ``rx.foreach`` carries hook lines
+    (``useDropzone``, ``useCallback``) whose Var arguments reference the
+    foreach iter var. The compiler currently collects these hooks via
+    ``_get_all_hooks`` and emits them at the top of the snapshot memo body —
+    above the ``.map`` callback that introduces the iter var name into scope.
+    The result is a ``ReferenceError: c_rx_state_ is not defined`` at runtime
+    because the hook line runs before any ``.map(...)`` binds the parameter.
+
+    The hooks must either move into a per-iteration sub-component (so the
+    iter var is passed as a prop) or the compiler must refuse this pattern
+    at compile time with a clear error. Either fix would make this assertion
+    pass; the current behavior fails it.
+    """
+    ctx, _page_ctx = _compile_single_page(
+        lambda: rx.foreach(
+            _IterVarHookState.rows,
+            lambda c: _HookLeaf.create(upload_id=c["id"]),
+        )
+    )
+    memo_code = _compile_memo_module_text(ctx)
+
+    # The iter var has the JS expression ``c_rx_state_`` (lambda param ``c``
+    # + ``FIELD_MARKER``). Find the first ``Array.prototype.map.call`` in the
+    # memo body and check that no ``c_rx_state_`` reference appears in the
+    # hook prelude before it (which is where the iter var is introduced into
+    # scope).
+    iter_name = "c_rx_state_"
+    first_map = memo_code.find("Array.prototype.map.call")
+    assert first_map != -1, (
+        f"Memo body must contain a ``.map`` callback but was:\n{memo_code[:2000]}"
+    )
+    prelude = memo_code[:first_map]
+    assert iter_name not in prelude, (
+        f"Foreach iter var {iter_name!r} leaked into a hook line above the "
+        f".map callback — the hook will run before {iter_name} is in scope "
+        "and crash with ReferenceError at render time.\n"
+        f"Prelude (top-of-memo-body) snippet:\n{prelude[-1500:]}"
+    )
