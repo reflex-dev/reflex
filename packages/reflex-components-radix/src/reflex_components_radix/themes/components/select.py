@@ -27,7 +27,7 @@ class SelectRoot(RadixThemesComponent):
             'The size of the select trigger. Defaults to `"2"` (medium). '
             'Use `"1"` for compact UIs like data tables, toolbars, or dense forms '
             'with many fields. Use `"3"` for prominent calls-to-action or main '
-            'page elements where the dropdown is the primary focus.'
+            "page elements where the dropdown is the primary focus."
         )
     )
 
@@ -182,9 +182,9 @@ class SelectContent(RadixThemesComponent):
 
     variant: Var[Literal["solid", "soft"]] = field(
         doc=(
-            'The visual style of the dropdown menu surface. Defaults to '
+            "The visual style of the dropdown menu surface. Defaults to "
             '`"solid"`. Use `"soft"` for a more subtle, translucent menu '
-            'background. Particularly effective on colored or image backgrounds.'
+            "background. Particularly effective on colored or image backgrounds."
         )
     )
 
@@ -207,43 +207,43 @@ class SelectContent(RadixThemesComponent):
 
     position: Var[Literal["item-aligned", "popper"]] = field(
         doc=(
-            'Controls how the dropdown menu positions itself relative to the '
-            'trigger. Same behavior as `position` on `rx.select.root`. Defaults '
+            "Controls how the dropdown menu positions itself relative to the "
+            "trigger. Same behavior as `position` on `rx.select.root`. Defaults "
             'to `"item-aligned"`. Set to `"popper"` when placing the select '
-            'inside a Drawer, Dialog, or Popover.'
+            "inside a Drawer, Dialog, or Popover."
         )
     )
 
     side: Var[Literal["top", "right", "bottom", "left"]] = field(
         doc=(
-            'Which side of the trigger the dropdown should appear on when using '
+            "Which side of the trigger the dropdown should appear on when using "
             '`position="popper"`. Defaults to `"bottom"`. Useful when the '
-            'trigger is near the bottom of the viewport and the default '
-            'placement would cause the menu to be clipped.'
+            "trigger is near the bottom of the viewport and the default "
+            "placement would cause the menu to be clipped."
         )
     )
 
     side_offset: Var[int] = field(
         doc=(
-            'The distance in pixels between the trigger and the dropdown menu '
+            "The distance in pixels between the trigger and the dropdown menu "
             'when `position="popper"`. Defaults to `0`. Increase for visual '
-            'separation between the trigger and menu.'
+            "separation between the trigger and menu."
         )
     )
 
     align: Var[Literal["start", "center", "end"]] = field(
         doc=(
-            'Horizontal alignment of the dropdown menu relative to the trigger '
+            "Horizontal alignment of the dropdown menu relative to the trigger "
             'when `position="popper"`. Defaults to `"start"`. Use `"end"` for '
-            'right-aligned dropdowns in RTL layouts or when the trigger is on '
-            'the right side of a container.'
+            "right-aligned dropdowns in RTL layouts or when the trigger is on "
+            "the right side of a container."
         )
     )
 
     align_offset: Var[int] = field(
         doc=(
             'Pixel offset for the alignment when `position="popper"`. Defaults '
-            'to `0`. Use to fine-tune the dropdown\'s horizontal position.'
+            "to `0`. Use to fine-tune the dropdown's horizontal position."
         )
     )
 
@@ -317,10 +317,10 @@ class HighLevelSelect(SelectRoot):
 
     placeholder: Var[str] = field(
         doc=(
-            'The text shown in the trigger button when no option has been '
-            'selected. Defaults to an empty string. The placeholder is '
-            'automatically hidden once `value` or `default_value` is set, so it '
-            'only appears in the initial empty state. Use placeholders to guide '
+            "The text shown in the trigger button when no option has been "
+            "selected. Defaults to an empty string. The placeholder is "
+            "automatically hidden once `value` or `default_value` is set, so it "
+            "only appears in the initial empty state. Use placeholders to guide "
             'the user toward the right choice (e.g., "Choose a country…" or '
             '"Pick a category").'
         )
@@ -333,9 +333,9 @@ class HighLevelSelect(SelectRoot):
             "Overrides the theme's accent color for this specific select. "
             'Accepts any Reflex color token (`"blue"`, `"green"`, `"red"`, '
             '`"purple"`, `"crimson"`, `"orange"`, etc.). Useful for '
-            'status-specific dropdowns. For example, a destructive action '
+            "status-specific dropdowns. For example, a destructive action "
             'select in `"red"`, or a success-state filter in `"green"`. Affects '
-            'the focus ring, active item highlight, and the dropdown arrow icon.'
+            "the focus ring, active item highlight, and the dropdown arrow icon."
         )
     )
 
@@ -355,15 +355,15 @@ class HighLevelSelect(SelectRoot):
             'Options: `"classic"` for a bordered button with a subtle '
             'background, `"surface"` for a filled background with a thin '
             'border, `"soft"` for a tinted background with no border, `"ghost"` '
-            'for minimal chrome that only appears on hover. Match the variant '
-            'to the visual weight you want the select to have in the '
-            'surrounding UI.'
+            "for minimal chrome that only appears on hover. Match the variant "
+            "to the visual weight you want the select to have in the "
+            "surrounding UI."
         )
     )
 
     radius: Var[LiteralRadius] = field(
         doc=(
-            'The border radius of the trigger button. Inherits from the theme '
+            "The border radius of the trigger button. Inherits from the theme "
             'by default. Use `"none"` for sharp corners, `"full"` for a '
             "pill-shaped trigger, or pick a specific value to match your app's "
             "design system. Doesn't affect the dropdown menu radius, only the "
@@ -375,14 +375,14 @@ class HighLevelSelect(SelectRoot):
 
     position: Var[Literal["item-aligned", "popper"]] = field(
         doc=(
-            'Controls how the dropdown menu positions itself relative to the '
+            "Controls how the dropdown menu positions itself relative to the "
             'trigger. Defaults to `"item-aligned"`, which aligns the currently '
             'selected option with the trigger button. Use `"popper"` when '
-            'placing the select inside a [Drawer](/docs/library/overlay/drawer), '
-            '[Dialog](/docs/library/overlay/dialog), '
-            '[Popover](/docs/library/overlay/popover), or any portal-based '
-            'container. This prevents the menu from being clipped or misaligned '
-            'by the overlay.'
+            "placing the select inside a [Drawer](/docs/library/overlay/drawer), "
+            "[Dialog](/docs/library/overlay/dialog), "
+            "[Popover](/docs/library/overlay/popover), or any portal-based "
+            "container. This prevents the menu from being clipped or misaligned "
+            "by the overlay."
         )
     )
 
