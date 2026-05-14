@@ -69,7 +69,7 @@ import reflex as rx
 
 A select component displays a dropdown list of options for the user to pick one from. It's one of the most common form controls in web applications, use it whenever you need a user to choose a single value from a predefined list and screen space is limited.
 
-Reflex's `rx.select` is a fully-featured, accessible dropdown built on Radix UI primitives. It works with simple option lists or full state-bound bindings, supports form integration, keyboard navigation, and works out-of-the-box on desktop and mobile. Unlike Streamlit's `st.selectbox` or Dash's dropdown, `rx.select` gives you full control over state, styling, and behavior in pure Python, no JavaScript or CSS required.
+Reflex's `rx.select` is a fully-featured, accessible dropdown built on Radix UI primitives. It works with simple option lists or full state-bound bindings, supports form integration, keyboard navigation, and works out-of-the-box on desktop and mobile.
 
 ## When to Use Select
 
