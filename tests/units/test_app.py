@@ -2901,3 +2901,101 @@ def test_set_contexts_no_event_processor(isolated_context: contextvars.Context):
                 EventContext.get()
 
     isolated_context.run(_test)
+
+
+def test_compile_sends_telemetry_when_enabled(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """When telemetry is enabled, ``_compile`` emits one ``compile`` PostHog event."""
+    conf = rx.Config(app_name="testing", telemetry_enabled=True)
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+
+    mocker.patch("reflex.compiler.compiler.compile_app", return_value=True)
+    send_mock = mocker.patch("reflex.utils.telemetry.send")
+
+    app._compile(trigger="initial")
+
+    compile_calls = [c for c in send_mock.call_args_list if c.args[0] == "compile"]
+    assert len(compile_calls) == 1
+    payload = compile_calls[0].kwargs["properties"]
+    for key in (
+        "plugins_enabled",
+        "plugins_disabled",
+        "pages_count",
+        "component_counts",
+        "states",
+        "features_used",
+        "duration_ms",
+        "trigger",
+        "exception",
+    ):
+        assert key in payload, f"missing key {key} in compile event payload"
+    assert payload["exception"] is None
+    assert payload["trigger"] == "initial"
+
+
+def test_compile_skips_telemetry_when_disabled(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """When telemetry is disabled, ``_compile`` does not emit a ``compile`` event."""
+    conf = rx.Config(app_name="testing", telemetry_enabled=False)
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+
+    mocker.patch("reflex.compiler.compiler.compile_app", return_value=True)
+    send_mock = mocker.patch("reflex.utils.telemetry.send")
+
+    app._compile()
+
+    assert all(c.args[0] != "compile" for c in send_mock.call_args_list)
+
+
+def test_compile_reports_exception_and_reraises(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """A compile exception is sanitized into the event and then re-raised."""
+    conf = rx.Config(app_name="testing", telemetry_enabled=True)
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+
+    class _BoomError(RuntimeError):
+        pass
+
+    mocker.patch(
+        "reflex.compiler.compiler.compile_app",
+        side_effect=_BoomError("/etc/passwd: secret token foo"),
+    )
+    send_mock = mocker.patch("reflex.utils.telemetry.send")
+
+    with pytest.raises(_BoomError):
+        app._compile()
+
+    compile_calls = [c for c in send_mock.call_args_list if c.args[0] == "compile"]
+    assert len(compile_calls) == 1
+    payload = compile_calls[0].kwargs["properties"]
+    assert payload["exception"] == {"type": "_BoomError"}
+
+
+def test_compile_skips_telemetry_when_compile_app_short_circuits(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """No ``compile`` event when ``compile_app()`` skipped the real compile."""
+    conf = rx.Config(app_name="testing", telemetry_enabled=True)
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+
+    mocker.patch("reflex.compiler.compiler.compile_app", return_value=False)
+    send_mock = mocker.patch("reflex.utils.telemetry.send")
+
+    app._compile(trigger="backend_startup")
+
+    assert all(c.args[0] != "compile" for c in send_mock.call_args_list)

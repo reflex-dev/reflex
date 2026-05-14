@@ -62,7 +62,9 @@ def export(
 
     if frontend:
         # Ensure module can be imported and app.compile() is called.
-        prerequisites.get_compiled_app(prerender_routes=prerender_routes)
+        prerequisites.get_compiled_app(
+            prerender_routes=prerender_routes, trigger="export"
+        )
         # Set up .web directory and install frontend dependencies.
         build.setup_frontend(Path.cwd())
 

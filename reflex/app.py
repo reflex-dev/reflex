@@ -85,7 +85,14 @@ from reflex.state import (
     StateUpdate,
     all_base_state_classes,
 )
-from reflex.utils import codespaces, exceptions, format, js_runtimes, prerequisites
+from reflex.utils import (
+    codespaces,
+    exceptions,
+    format,
+    js_runtimes,
+    prerequisites,
+    telemetry_accounting,
+)
 from reflex.utils.exec import (
     get_compile_context,
     is_prod_mode,
@@ -93,6 +100,7 @@ from reflex.utils.exec import (
     should_prerender_routes,
 )
 from reflex.utils.misc import run_in_thread
+from reflex.utils.telemetry_context import CompileTrigger, TelemetryContext
 from reflex.utils.token_manager import RedisTokenManager, TokenManager
 
 if sys.version_info < (3, 13):
@@ -662,7 +670,10 @@ class App(MiddlewareMixin, LifespanMixin):
         # rx.asset(shared=True) symlink re-creation doesn't trigger further reloads.
         remove_stale_external_asset_symlinks()
 
-        self._compile(prerender_routes=should_prerender_routes())
+        self._compile(
+            prerender_routes=should_prerender_routes(),
+            trigger="backend_startup",
+        )
 
         config = get_config()
 
@@ -1167,6 +1178,7 @@ class App(MiddlewareMixin, LifespanMixin):
         prerender_routes: bool = False,
         dry_run: bool = False,
         use_rich: bool = True,
+        trigger: CompileTrigger | None = None,
     ):
         """Compile the app and output it to the pages folder.
 
@@ -1174,17 +1186,39 @@ class App(MiddlewareMixin, LifespanMixin):
             prerender_routes: Whether to prerender the routes.
             dry_run: Whether to compile the app without saving it.
             use_rich: Whether to use rich progress bars.
+            trigger: Label identifying what initiated this compile. Recorded
+                on the ``compile`` telemetry event.
 
         Raises:
             ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
             FileNotFoundError: When a plugin requires a file that does not exist.
         """
-        compiler.compile_app(
-            self,
-            prerender_routes=prerender_routes,
-            dry_run=dry_run,
-            use_rich=use_rich,
-        )
+        ctx = TelemetryContext.start(trigger=trigger)
+        if ctx is None:
+            compiler.compile_app(
+                self,
+                prerender_routes=prerender_routes,
+                dry_run=dry_run,
+                use_rich=use_rich,
+            )
+            return
+
+        with ctx:
+            did_real_compile = False
+            try:
+                did_real_compile = compiler.compile_app(
+                    self,
+                    prerender_routes=prerender_routes,
+                    dry_run=dry_run,
+                    use_rich=use_rich,
+                )
+            except Exception as exc:
+                ctx.set_exception(exc)
+                did_real_compile = True
+                raise
+            finally:
+                if did_real_compile:
+                    telemetry_accounting.record_compile(self, ctx)
 
     def _write_stateful_pages_marker(self):
         """Write list of routes that create dynamic states for the backend to use later."""
