@@ -99,3 +99,10 @@ def test_nested_contexts_can_be_entered():
             assert TelemetryContext.get() is inner
         assert TelemetryContext.get() is outer
     assert TelemetryContext.get() is None
+
+
+def test_hot_reload_trigger_accepted():
+    """The ``hot_reload`` value is a valid ``CompileTrigger`` and round-trips."""
+    ctx = TelemetryContext.start(telemetry_enabled=True, trigger="hot_reload")
+    assert ctx is not None
+    assert ctx.trigger == "hot_reload"

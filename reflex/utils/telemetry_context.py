@@ -9,7 +9,9 @@ from typing import Any, Literal
 from reflex_base.config import get_config
 from reflex_base.context.base import BaseContext
 
-CompileTrigger = Literal["initial", "cli_compile", "backend_startup", "export"]
+CompileTrigger = Literal[
+    "initial", "cli_compile", "backend_startup", "hot_reload", "export"
+]
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True, eq=False)
@@ -94,4 +96,6 @@ class TelemetryContext(BaseContext):
         Returns:
             The elapsed time in whole milliseconds.
         """
-        return int((time.perf_counter() - self.start_perf_counter) * 1000)  # seconds → milliseconds
+        return int(
+            (time.perf_counter() - self.start_perf_counter) * 1000
+        )  # seconds → milliseconds

@@ -70,6 +70,7 @@ from reflex.admin import AdminDash
 from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
 from reflex.compiler import compiler
 from reflex.compiler.compiler import readable_name_from_component
+from reflex.istate.data import RouterData
 from reflex.istate.manager import StateManager, StateModificationContext
 from reflex.istate.manager.token import BaseStateToken
 from reflex.page import DECORATED_PAGES
@@ -78,13 +79,7 @@ from reflex.route import (
     replace_brackets_with_keywords,
     verify_route_validity,
 )
-from reflex.state import (
-    BaseState,
-    RouterData,
-    State,
-    StateUpdate,
-    all_base_state_classes,
-)
+from reflex.state import BaseState, State, StateUpdate, all_base_state_classes
 from reflex.utils import (
     codespaces,
     exceptions,
@@ -95,6 +90,7 @@ from reflex.utils import (
 )
 from reflex.utils.exec import (
     get_compile_context,
+    get_dev_backend_reload_marker,
     is_prod_mode,
     is_testing_env,
     should_prerender_routes,
@@ -117,6 +113,30 @@ else:
     ComponentCallable = Callable[[], Component | tuple[Component, ...] | str]
 
 Reducer = Callable[[Event], Coroutine[Any, Any, StateUpdate]]
+
+
+def _get_backend_startup_compile_trigger() -> CompileTrigger:
+    """Get the compile trigger for a backend worker startup.
+
+    Returns:
+        The compile trigger to report in telemetry.
+    """
+    if not environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.get():
+        return "backend_startup"
+    return (
+        "hot_reload" if get_dev_backend_reload_marker().exists() else "backend_startup"
+    )
+
+
+def _mark_dev_backend_started() -> None:
+    """Write the marker for future dev backend reload-capable worker starts."""
+    if not environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.get():
+        return
+
+    marker = get_dev_backend_reload_marker()
+    with contextlib.suppress(OSError):
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.touch()
 
 
 def default_frontend_exception_handler(exception: Exception) -> None:
@@ -670,10 +690,13 @@ class App(MiddlewareMixin, LifespanMixin):
         # rx.asset(shared=True) symlink re-creation doesn't trigger further reloads.
         remove_stale_external_asset_symlinks()
 
-        self._compile(
-            prerender_routes=should_prerender_routes(),
-            trigger="backend_startup",
-        )
+        try:
+            self._compile(
+                prerender_routes=should_prerender_routes(),
+                trigger=_get_backend_startup_compile_trigger(),
+            )
+        finally:
+            _mark_dev_backend_started()
 
         config = get_config()
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import importlib.util
 import json
@@ -28,6 +29,23 @@ from reflex.utils.prerequisites import get_web_dir
 
 # For uvicorn windows bug fix (#2335)
 frontend_process = None
+
+DEV_BACKEND_RELOAD_MARKER = ".reflex_dev_backend_started"
+
+
+def get_dev_backend_reload_marker() -> Path:
+    """Get the marker path for dev backend reload-capable worker starts.
+
+    Returns:
+        The path to the reload marker.
+    """
+    return get_web_dir() / DEV_BACKEND_RELOAD_MARKER
+
+
+def reset_dev_backend_reload_marker() -> None:
+    """Remove the reload marker at the start of a fresh dev backend session."""
+    with contextlib.suppress(OSError):
+        get_dev_backend_reload_marker().unlink(missing_ok=True)
 
 
 def get_package_json_and_hash(package_json_path: Path) -> tuple[PackageJson, str]:
@@ -537,6 +555,9 @@ def run_uvicorn_backend(host: str, port: int, loglevel: LogLevel):
     """
     import uvicorn
 
+    reset_dev_backend_reload_marker()
+    environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.set(True)
+
     uvicorn.run(
         app=f"{get_app_instance()}",
         factory=True,
@@ -587,6 +608,9 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     from granian.log import LogLevels
     from granian.server import Server as Granian
     from reflex_base.environment import _load_dotenv_from_env
+
+    reset_dev_backend_reload_marker()
+    environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.set(True)
 
     granian_app = Granian(
         target=get_app_instance_from_file(),

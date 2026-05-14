@@ -39,18 +39,14 @@ import reflex as rx
 from reflex import AdminDash, constants
 from reflex.app import App, ComponentCallable, upload
 from reflex.environment import environment
+from reflex.istate.data import RouterData
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
 from reflex.model import Model
-from reflex.state import (
-    BaseState,
-    OnLoadInternalState,
-    RouterData,
-    State,
-    reload_state_module,
-)
+from reflex.state import BaseState, OnLoadInternalState, State, reload_state_module
+from reflex.utils import exec as exec_utils
 
 from .conftest import chdir
 from .states import GenState
@@ -2999,3 +2995,60 @@ def test_compile_skips_telemetry_when_compile_app_short_circuits(
     app._compile(trigger="backend_startup")
 
     assert all(c.args[0] != "compile" for c in send_mock.call_args_list)
+
+
+def test_call_marks_first_dev_backend_worker_as_startup(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """The first reload-capable backend worker compile is backend startup."""
+    monkeypatch.setenv(environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name, "True")
+
+    app, web_dir = compilable_app
+    marker = web_dir / exec_utils.DEV_BACKEND_RELOAD_MARKER
+    compile_mock = mocker.patch.object(app, "_compile")
+
+    app()
+
+    compile_mock.assert_called_once()
+    assert compile_mock.call_args.kwargs["trigger"] == "backend_startup"
+    assert marker.exists()
+
+
+def test_call_marks_later_dev_backend_worker_as_hot_reload(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A later reload-capable backend worker compile is a hot reload."""
+    monkeypatch.setenv(environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name, "True")
+
+    app, web_dir = compilable_app
+    marker = web_dir / exec_utils.DEV_BACKEND_RELOAD_MARKER
+    marker.touch()
+    compile_mock = mocker.patch.object(app, "_compile")
+
+    app()
+
+    compile_mock.assert_called_once()
+    assert compile_mock.call_args.kwargs["trigger"] == "hot_reload"
+
+
+def test_call_ignores_stale_marker_without_dev_backend_reload(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A stale marker alone is not enough to label a compile as hot reload."""
+    monkeypatch.delenv(environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name, raising=False)
+
+    app, web_dir = compilable_app
+    marker = web_dir / exec_utils.DEV_BACKEND_RELOAD_MARKER
+    marker.touch()
+    compile_mock = mocker.patch.object(app, "_compile")
+
+    app()
+
+    compile_mock.assert_called_once()
+    assert compile_mock.call_args.kwargs["trigger"] == "backend_startup"
