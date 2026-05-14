@@ -272,42 +272,6 @@ def notify_app_running():
     console.rule("[bold green]App Running")
 
 
-def get_frontend_mount():
-    """Get a Starlette Mount for the compiled frontend static files.
-
-    Returns:
-        A Mount serving the compiled frontend static files.
-    """
-    from starlette.routing import Mount
-    from starlette.staticfiles import StaticFiles
-
-    from reflex.utils import prerequisites
-
-    config = get_config()
-
-    return Mount(
-        config.prepend_frontend_path("/"),
-        app=StaticFiles(
-            directory=prerequisites.get_web_dir()
-            / constants.Dirs.STATIC
-            / config.frontend_path.strip("/"),
-            html=True,
-        ),
-        name="frontend",
-    )
-
-
-def _frontend_prod_app():
-    """Create a Starlette app that serves the compiled frontend static files.
-
-    Returns:
-        A Starlette ASGI app serving static files.
-    """
-    from starlette.applications import Starlette
-
-    return Starlette(routes=[get_frontend_mount()])
-
-
 def run_frontend_prod(host: str, port: int):
     """Run the frontend in production mode by serving compiled static files.
 
@@ -318,15 +282,12 @@ def run_frontend_prod(host: str, port: int):
         port: The port to serve on.
     """
     loglevel = get_config().loglevel.subprocess_level()
+    app_target = "reflex.utils.frontend:_frontend_prod_app"
 
     if should_use_granian():
-        run_granian_backend_prod(
-            host, port, loglevel, app_target=f"{__name__}:_frontend_prod_app"
-        )
+        run_granian_backend_prod(host, port, loglevel, app_target=app_target)
     else:
-        run_uvicorn_backend_prod(
-            host, port, loglevel, app_target=f"{__name__}:_frontend_prod_app"
-        )
+        run_uvicorn_backend_prod(host, port, loglevel, app_target=app_target)
 
 
 @once

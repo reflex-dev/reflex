@@ -1027,6 +1027,7 @@ def compile_app(
                 app._compile_page(route, save_page=False)
 
         app._write_stateful_pages_marker()
+        app._write_routes_manifest()
         app._add_optional_endpoints()
         return
 
@@ -1077,6 +1078,7 @@ def compile_app(
 
     app._stateful_pages.update(compile_ctx.stateful_routes)
     app._write_stateful_pages_marker()
+    app._write_routes_manifest()
     app._add_optional_endpoints()
     app._validate_var_dependencies()
 

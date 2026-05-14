@@ -679,9 +679,9 @@ class App(MiddlewareMixin, LifespanMixin):
         asgi_app = self._api
 
         if environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.get():
-            from reflex.utils.exec import get_frontend_mount
+            from reflex.utils.frontend import get_frontend_mount
 
-            asgi_app.routes.append(get_frontend_mount())
+            asgi_app.routes.append(get_frontend_mount(route_resolver=self.router))
 
         if self.api_transformer is not None:
             api_transformers: Sequence[Starlette | Callable[[ASGIApp], ASGIApp]] = (
@@ -1195,6 +1195,20 @@ class App(MiddlewareMixin, LifespanMixin):
             stateful_pages_marker.parent.mkdir(parents=True, exist_ok=True)
             with stateful_pages_marker.open("w") as f:
                 json.dump(list(self._stateful_pages), f)
+
+    def _write_routes_manifest(self):
+        """Write all defined route patterns so the frontend mount can resolve them.
+
+        The standalone frontend prod server has no `App` instance and
+        therefore can't pass `app.router` directly; reading this manifest
+        from disk lets it return correct HTTP status codes for dynamic
+        routes vs. true 404s.
+        """
+        manifest_path = prerequisites.get_web_dir() / constants.Dirs.ROUTES_MANIFEST
+        manifest_path.parent.mkdir(parents=True, exist_ok=True)
+        routes = list(dict.fromkeys([*self._unevaluated_pages, *self._pages]))
+        with manifest_path.open("w") as f:
+            json.dump(routes, f)
 
     def add_all_routes_endpoint(self):
         """Add an endpoint to the app that returns all the routes."""

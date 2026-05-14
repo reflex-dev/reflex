@@ -60,6 +60,10 @@ class Dirs(SimpleNamespace):
     BACKEND = "backend"
     # JSON-encoded list of page routes that need to be evaluated on the backend.
     STATEFUL_PAGES = "stateful_pages.json"
+    # JSON-encoded list of all defined route patterns (static and dynamic).
+    # Used by the frontend mount to distinguish valid dynamic routes from
+    # true 404s when serving the SPA fallback.
+    ROUTES_MANIFEST = "routes_manifest.json"
     # Marker file indicating that upload component was used in the frontend.
     UPLOAD_IS_USED = "upload_is_used"
 
