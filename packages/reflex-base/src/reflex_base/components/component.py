@@ -137,6 +137,35 @@ def field(
     )
 
 
+def _field_values_equal(a: Any, b: Any) -> bool:
+    """Compare two component field values, handling Vars and nested containers.
+
+    Var equality returns a BooleanVar (not a Python bool), and bool-ifying a Var
+    raises VarTypeError. So Vars are compared structurally via ``Var.equals``,
+    and lists/dicts are walked element-wise so a contained Var doesn't trip up
+    the default container ``__eq__``.
+
+    Args:
+        a: First value.
+        b: Second value.
+
+    Returns:
+        Whether the values are structurally equal.
+    """
+    if a is b:
+        return True
+    a_is_var = isinstance(a, Var)
+    if a_is_var or isinstance(b, Var):
+        return a_is_var and isinstance(b, Var) and a.equals(b)
+    if isinstance(a, list) and isinstance(b, list):
+        return len(a) == len(b) and all(
+            _field_values_equal(x, y) for x, y in zip(a, b, strict=False)
+        )
+    if isinstance(a, dict) and isinstance(b, dict):
+        return a.keys() == b.keys() and all(_field_values_equal(a[k], b[k]) for k in a)
+    return a == b
+
+
 @dataclass_transform(kw_only_default=True, field_specifiers=(field,))
 class BaseComponentMeta(FieldBasedMeta, ABCMeta):
     """Meta class for BaseComponent."""
@@ -346,8 +375,9 @@ class BaseComponent(metaclass=BaseComponentMeta):
         Returns:
             Whether the component is equal to the value.
         """
-        return type(self) is type(value) and bool(
-            getattr(self, key) == getattr(value, key) for key in self.get_fields()
+        return type(self) is type(value) and all(
+            _field_values_equal(getattr(self, key), getattr(value, key))
+            for key in self.get_fields()
         )
 
     @classmethod
