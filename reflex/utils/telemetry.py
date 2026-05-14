@@ -285,15 +285,24 @@ def _prepare_event(event: str, **kwargs) -> _Event | None:
     if not event_data:
         return None
 
-    additional_keys = ["template", "context", "detail", "user_uuid"]
+    additional_keys = [
+        "template",
+        "context",
+        "detail",
+        "user_uuid",
+        "status",
+        "duration",
+        "compile_duration",
+        "build_duration",
+        "zip_duration",
+    ]
 
-    properties = event_data["properties"]
+    # Copy so we don't mutate the cached defaults across events.
+    properties = event_data["properties"].copy()
 
     for key in additional_keys:
-        if key in properties or key not in kwargs:
-            continue
-
-        properties[key] = kwargs[key]
+        if key in kwargs and kwargs[key] is not None:
+            properties[key] = kwargs[key]
 
     stamp = datetime.now(UTC).isoformat()
 
