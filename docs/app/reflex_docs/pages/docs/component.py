@@ -918,8 +918,7 @@ def multi_docs(
     ll_doc_exists = os.path.exists(ll_actual_path)
     ll_list = ll_component_list if ll_component_list is not None else component_list
     ll_components = [
-        component_docs(component_tuple, previews)
-        for component_tuple in ll_list[1:]
+        component_docs(component_tuple, previews) for component_tuple in ll_list[1:]
     ]
 
     active_class_name = "font-small bg-slate-2 p-2 text-slate-11 rounded-xl shadow-large w-28 cursor-default border border-slate-4 text-center"
