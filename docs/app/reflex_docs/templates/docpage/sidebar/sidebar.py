@@ -7,9 +7,9 @@ import reflex_components_internal as ui
 from reflex_site_shared.styles.colors import c_color
 
 from .sidebar_items.ai import (
+    agent_toolkit_items,
     ai_builder_integrations,
     ai_builder_overview_items,
-    ai_onboarding_items,
     mcp_items,
     skills_items,
 )
@@ -305,7 +305,7 @@ append_to_items(
     + recipes
     + ai_builder_overview_items
     + ai_builder_integrations
-    + ai_onboarding_items
+    + agent_toolkit_items
     + mcp_items
     + skills_items
     + api_reference
@@ -440,7 +440,7 @@ def sidebar_comp(
     recipes_index: list[int],
     enterprise_usage_index: list[int],
     enterprise_component_index: list[int],
-    ai_onboarding_index: list[int],
+    agent_toolkit_index: list[int],
     mcp_index: list[int],
     skills_index: list[int],
     #
@@ -461,7 +461,7 @@ def sidebar_comp(
     is_docs_hosting = path.startswith("/hosting/")
     is_docs_ai_builder = path.startswith("/ai/")
     is_ai_mcp_or_skills = path.startswith((
-        "/ai/integrations/ai-onboarding/",
+        "/ai/integrations/agent-toolkit/",
         "/ai/integrations/skills/",
         "/ai/integrations/agents-md/",
         "/ai/integrations/mcp",
@@ -505,8 +505,8 @@ def sidebar_comp(
                 ai_category == 0,
             ),
             sidebar_category(
-                "MCP/Skills",
-                ai_builder_pages.integrations.ai_onboarding.path,
+                "Agent Toolkit",
+                ai_builder_pages.integrations.agent_toolkit.path,
                 "plug",
                 ai_category == 1,
             ),
@@ -516,9 +516,9 @@ def sidebar_comp(
             rx.el.ul(
                 create_sidebar_section(
                     "Overview",
-                    ai_builder_pages.integrations.ai_onboarding.path,
-                    ai_onboarding_items,
-                    ai_onboarding_index,
+                    ai_builder_pages.integrations.agent_toolkit.path,
+                    agent_toolkit_items,
+                    agent_toolkit_index,
                     url,
                 ),
                 create_sidebar_section(
@@ -732,7 +732,7 @@ def sidebar(url=None, width: str = "100%") -> rx.Component:
     ai_builder_integrations_index = calculate_index(
         ai_builder_integrations, normalized_url
     )
-    ai_onboarding_index = calculate_index(ai_onboarding_items, normalized_url)
+    agent_toolkit_index = calculate_index(agent_toolkit_items, normalized_url)
     mcp_index = calculate_index(mcp_items, normalized_url)
     skills_index = calculate_index(skills_items, normalized_url)
 
@@ -750,7 +750,7 @@ def sidebar(url=None, width: str = "100%") -> rx.Component:
             recipes_index=recipes_index,
             enterprise_usage_index=enterprise_usage_index,
             enterprise_component_index=enterprise_component_index,
-            ai_onboarding_index=ai_onboarding_index,
+            agent_toolkit_index=agent_toolkit_index,
             ai_builder_overview_index=ai_builder_overview_index,
             ai_builder_integrations_index=ai_builder_integrations_index,
             cli_ref_index=cli_ref_index,

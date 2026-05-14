@@ -14,8 +14,11 @@ MCP_DOC_PATHS = {
     "ai/integrations/mcp-installation.md",
     "ai/integrations/mcp-overview.md",
 }
-AI_ONBOARDING_DOC_PATHS = {
-    "ai/integrations/ai-onboarding.md",
+AGENT_TOOLKIT_DOC_PATHS = {
+    "ai/integrations/agent-toolkit.md",
+}
+LEGACY_MARKDOWN_ALIASES = {
+    Path("ai/integrations/ai-onboarding.md"): Path("ai/integrations/agent-toolkit.md"),
 }
 MCP_DOC_ORDER = {
     "ai/integrations/mcp-overview.md": 0,
@@ -190,7 +193,7 @@ def _include_index_entry_in_llms_txt(markdown_file: MarkdownIndexEntry) -> bool:
     path = markdown_file.url_path.as_posix()
     return (
         path in MCP_DOC_PATHS
-        or path in AI_ONBOARDING_DOC_PATHS
+        or path in AGENT_TOOLKIT_DOC_PATHS
         or path in SKILLS_DOC_PATHS
         or not path.startswith("ai/")
         or path.startswith("ai/overview/")
@@ -200,8 +203,8 @@ def _include_index_entry_in_llms_txt(markdown_file: MarkdownIndexEntry) -> bool:
 def _section_for_path(url_path: Path) -> str:
     """Return the llms.txt section for a generated markdown asset."""
     path = url_path.as_posix()
-    if path in AI_ONBOARDING_DOC_PATHS:
-        return "AI Onboarding"
+    if path in AGENT_TOOLKIT_DOC_PATHS:
+        return "Agent Toolkit"
     if path in MCP_DOC_PATHS:
         return "MCP"
     if path in SKILLS_DOC_PATHS:
@@ -219,10 +222,10 @@ def _ordered_sections(
     if "AI Builder" in sections and "MCP" in sections:
         ordered_sections.remove("MCP")
         ordered_sections.insert(ordered_sections.index("AI Builder") + 1, "MCP")
-    if "AI Builder" in sections and "AI Onboarding" in sections:
-        ordered_sections.remove("AI Onboarding")
+    if "AI Builder" in sections and "Agent Toolkit" in sections:
+        ordered_sections.remove("Agent Toolkit")
         ordered_sections.insert(
-            ordered_sections.index("AI Builder") + 1, "AI Onboarding"
+            ordered_sections.index("AI Builder") + 1, "Agent Toolkit"
         )
     if "MCP" in sections and "Skills" in sections:
         ordered_sections.remove("Skills")
@@ -847,9 +850,16 @@ def generate_agent_files() -> tuple[tuple[Path, str | bytes], ...]:
         (entry.url_path, generate_markdown_file_content(entry))
         for entry in markdown_file_entries
     )
+    markdown_files_by_path = dict(markdown_files)
+    legacy_markdown_files = tuple(
+        (legacy_path, markdown_files_by_path[target_path])
+        for legacy_path, target_path in LEGACY_MARKDOWN_ALIASES.items()
+        if target_path in markdown_files_by_path
+    )
 
     all_markdown_files = [
         *markdown_files,
+        *legacy_markdown_files,
         *dynamic_api_reference_files,
     ]
 
