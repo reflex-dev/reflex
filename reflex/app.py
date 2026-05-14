@@ -89,8 +89,8 @@ from reflex.utils import (
     telemetry_accounting,
 )
 from reflex.utils.exec import (
+    get_backend_compile_trigger,
     get_compile_context,
-    get_dev_backend_reload_marker,
     is_prod_mode,
     is_testing_env,
     should_prerender_routes,
@@ -113,30 +113,6 @@ else:
     ComponentCallable = Callable[[], Component | tuple[Component, ...] | str]
 
 Reducer = Callable[[Event], Coroutine[Any, Any, StateUpdate]]
-
-
-def _get_backend_startup_compile_trigger() -> CompileTrigger:
-    """Get the compile trigger for a backend worker startup.
-
-    Returns:
-        The compile trigger to report in telemetry.
-    """
-    if not environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.get():
-        return "backend_startup"
-    return (
-        "hot_reload" if get_dev_backend_reload_marker().exists() else "backend_startup"
-    )
-
-
-def _mark_dev_backend_started() -> None:
-    """Write the marker for future dev backend reload-capable worker starts."""
-    if not environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.get():
-        return
-
-    marker = get_dev_backend_reload_marker()
-    with contextlib.suppress(OSError):
-        marker.parent.mkdir(parents=True, exist_ok=True)
-        marker.touch()
 
 
 def default_frontend_exception_handler(exception: Exception) -> None:
@@ -690,13 +666,10 @@ class App(MiddlewareMixin, LifespanMixin):
         # rx.asset(shared=True) symlink re-creation doesn't trigger further reloads.
         remove_stale_external_asset_symlinks()
 
-        try:
-            self._compile(
-                prerender_routes=should_prerender_routes(),
-                trigger=_get_backend_startup_compile_trigger(),
-            )
-        finally:
-            _mark_dev_backend_started()
+        self._compile(
+            prerender_routes=should_prerender_routes(),
+            trigger=get_backend_compile_trigger(),
+        )
 
         config = get_config()
 

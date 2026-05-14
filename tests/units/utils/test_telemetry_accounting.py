@@ -7,7 +7,13 @@ from pytest_mock import MockerFixture
 from reflex_base.plugins.sitemap import SitemapPlugin
 
 import reflex as rx
-from reflex.state import BaseState
+from reflex.state import (
+    BaseState,
+    FrontendEventExceptionState,
+    OnLoadInternalState,
+    State,
+    UpdateVarsInternalState,
+)
 from reflex.utils import telemetry_accounting
 from reflex.utils.telemetry_context import TelemetryContext
 
@@ -163,3 +169,50 @@ def test_collect_compile_event_payload_snapshots_features_used(mocker: MockerFix
     ctx.features_used["x"] = 999
     ctx.features_used["y"] = 2
     assert payload["features_used"] == {"x": 1}
+
+
+def test_walk_states_skips_framework_internal_substates():
+    """Framework-internal substates are excluded; user states still appear."""
+
+    class _UserWalkState(rx.State):
+        x: int = 0
+
+    walked = list(telemetry_accounting._walk_states(State))
+    walked_names = {cls.__name__ for cls in walked}
+
+    assert UpdateVarsInternalState not in walked
+    assert OnLoadInternalState not in walked
+    assert FrontendEventExceptionState not in walked
+    assert "SharedStateBaseInternal" not in walked_names
+    assert State not in walked
+    assert _UserWalkState in walked
+
+
+def test_memo_wrapper_class_records_wrapped_component_type():
+    """The dynamic memo subclass exposes the user-authored component class."""
+    import importlib
+
+    from reflex_components_radix.themes.components.button import Button
+
+    memo_module = importlib.import_module("reflex.experimental.memo")
+
+    wrapper_cls = memo_module._get_experimental_memo_component_class(
+        "Button_button_deadbeefcafebabe",
+        Button,
+    )
+    assert wrapper_cls._wrapped_component_type is Button
+
+
+def test_count_components_buckets_memo_wrapper_by_wrapped_type():
+    """Memo wrappers count under their wrapped component class name."""
+    from reflex_components_radix.themes.components.button import Button
+
+    class _StubMemoWrapper:
+        _wrapped_component_type = Button
+        children = ()
+
+    counts = telemetry_accounting._count_components(
+        [_StubMemoWrapper()],  # pyright: ignore[reportArgumentType]
+    )
+
+    assert counts == {"Button": 1}

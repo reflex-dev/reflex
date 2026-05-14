@@ -94,6 +94,12 @@ def _collect_compile_event_payload(
 def _count_components(pages: Iterable[BaseComponent]) -> dict[str, int]:
     """Count component types across one or more component trees.
 
+    Auto-memoized components live in the tree as dynamic
+    ``ExperimentalMemoComponent_<Type>_<tag>_<hash>`` subclasses. Bucketing by
+    the raw class name would explode telemetry cardinality (each handler hash
+    produces a new key), so wrappers are counted under the user-authored
+    component they stand in for, exposed via ``_wrapped_component_type``.
+
     Args:
         pages: Component-tree roots to walk.
 
@@ -104,7 +110,9 @@ def _count_components(pages: Iterable[BaseComponent]) -> dict[str, int]:
     stack: list[BaseComponent] = list(pages)
     while stack:
         node = stack.pop()
-        name = type(node).__name__
+        node_cls = type(node)
+        wrapped = getattr(node_cls, "_wrapped_component_type", None)
+        name = wrapped.__name__ if wrapped is not None else node_cls.__name__
         counts[name] = counts.get(name, 0) + 1
         if node.children:
             stack.extend(node.children)
@@ -112,17 +120,23 @@ def _count_components(pages: Iterable[BaseComponent]) -> dict[str, int]:
 
 
 def _walk_states(root: type[BaseState] | None) -> Iterator[type[BaseState]]:
-    """Yield ``root`` and every descendant state class in arbitrary order.
+    """Yield user-authored state classes reachable from ``root``.
+
+    Framework-internal states (those whose module lives under ``reflex.``) are
+    skipped, but their user-defined subclasses are still yielded — ``SharedState``
+    user classes hang off ``SharedStateBaseInternal``, so we descend through the
+    internal node rather than pruning the subtree.
 
     Args:
         root: The root state class, or ``None`` when the app has no state.
 
     Yields:
-        Every state class reachable through ``get_substates()``.
+        Every user-authored state class reachable through ``get_substates()``.
     """
     if root is None:
         return
-    yield root
+    if root.is_user_defined():
+        yield root
     for sub in root.get_substates():
         yield from _walk_states(sub)
 
