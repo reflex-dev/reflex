@@ -80,8 +80,9 @@ def export(
         if frontend:
             with _time_phase("compile_duration"):
                 prerequisites.get_compiled_app(prerender_routes=prerender_routes)
-            with _time_phase("build_duration"):
+            with _time_phase("setup_duration"):
                 build.setup_frontend(Path.cwd())
+            with _time_phase("build_duration"):
                 build.build()
         if zipping:
             with _time_phase("zip_duration"):
@@ -103,6 +104,7 @@ def export(
             detail=detail,
             duration=time.monotonic() - start,
             compile_duration=phase_durations.get("compile_duration"),
+            setup_duration=phase_durations.get("setup_duration"),
             build_duration=phase_durations.get("build_duration"),
             zip_duration=phase_durations.get("zip_duration"),
         )

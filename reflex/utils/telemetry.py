@@ -293,6 +293,7 @@ def _prepare_event(event: str, **kwargs) -> _Event | None:
         "status",
         "duration",
         "compile_duration",
+        "setup_duration",
         "build_duration",
         "zip_duration",
     ]
@@ -301,6 +302,8 @@ def _prepare_event(event: str, **kwargs) -> _Event | None:
     properties = event_data["properties"].copy()
 
     for key in additional_keys:
+        if key in properties:
+            continue
         if key in kwargs and kwargs[key] is not None:
             properties[key] = kwargs[key]
 
