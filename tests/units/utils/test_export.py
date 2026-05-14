@@ -63,6 +63,7 @@ def test_export_success_emits_success_event_with_all_phase_durations(patched_exp
     assert isinstance(kwargs["duration"], float)
     assert kwargs["duration"] >= 0
     assert isinstance(kwargs["compile_duration"], float)
+    assert isinstance(kwargs["setup_duration"], float)
     assert isinstance(kwargs["build_duration"], float)
     assert isinstance(kwargs["zip_duration"], float)
     assert kwargs["detail"] is None
@@ -74,21 +75,21 @@ def test_export_success_emits_success_event_with_all_phase_durations(patched_exp
         (
             "get_compiled_app",
             {"compile_duration"},
-            {"build_duration", "zip_duration"},
+            {"setup_duration", "build_duration", "zip_duration"},
         ),
         (
             "setup_frontend",
-            {"compile_duration", "build_duration"},
-            {"zip_duration"},
+            {"compile_duration", "setup_duration"},
+            {"build_duration", "zip_duration"},
         ),
         (
             "build",
-            {"compile_duration", "build_duration"},
+            {"compile_duration", "setup_duration", "build_duration"},
             {"zip_duration"},
         ),
         (
             "zip_app",
-            {"compile_duration", "build_duration", "zip_duration"},
+            {"compile_duration", "setup_duration", "build_duration", "zip_duration"},
             set(),
         ),
     ],
@@ -122,6 +123,7 @@ def test_export_backend_only_emits_only_zip_duration(patched_export):
     kwargs = _send_kwargs(patched_export["send"])
     assert kwargs["status"] == "success"
     assert kwargs["compile_duration"] is None
+    assert kwargs["setup_duration"] is None
     assert kwargs["build_duration"] is None
     assert isinstance(kwargs["zip_duration"], float)
 
@@ -132,5 +134,6 @@ def test_export_no_zip_emits_only_compile_and_build_durations(patched_export):
     kwargs = _send_kwargs(patched_export["send"])
     assert kwargs["status"] == "success"
     assert isinstance(kwargs["compile_duration"], float)
+    assert isinstance(kwargs["setup_duration"], float)
     assert isinstance(kwargs["build_duration"], float)
     assert kwargs["zip_duration"] is None
