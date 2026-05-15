@@ -70,7 +70,7 @@ def index():
 
 ## Forwarding Props with `rx.RestProp`
 
-Use `rx.RestProp` to accept and forward arbitrary props (think `...rest` in JSX). Useful for thin wrappers that re-style a primitive without re-declaring every prop.
+Use `rx.RestProp` to accept and forward arbitrary props (think `...rest` in JSX). Useful for thin wrappers that re-style a primitive without redeclaring every prop.
 
 ```python
 @rx.memo
