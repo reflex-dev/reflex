@@ -8,10 +8,11 @@ from reflex_base.components.component import Component
 from reflex_base.constants import Endpoint
 from reflex_base.utils.decorator import once
 from reflex_components_core.base.script import Script
-from reflex_components_core.core.banner import has_connection_errors
 from reflex_components_core.core.cond import cond
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
+
+from reflex.components.banner import has_connection_errors
 
 
 @once

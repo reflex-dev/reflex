@@ -9,7 +9,6 @@ maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 requires-python = ">=3.10"
 dependencies = [
     "reflex-base >= 0.9.0",
-    "reflex-components-lucide >= 0.9.0",
 ]
 
 [tool.hatch.version]
@@ -24,7 +23,7 @@ targets.sdist.artifacts = ["*.pyi"]
 targets.wheel.artifacts = ["*.pyi"]
 
 [tool.hatch.build.hooks.reflex-pyi]
-dependencies = ["ruff", "reflex-base", "reflex-components-lucide"]
+dependencies = ["ruff", "reflex-base"]
 
 [build-system]
 requires = ["hatchling", "uv-dynamic-versioning", "hatch-reflex-pyi"]

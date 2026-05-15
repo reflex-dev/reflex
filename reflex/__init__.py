@@ -100,7 +100,7 @@ del sys
 from reflex_components_radix.mappings import RADIX_MAPPING  # noqa: E402
 
 _COMPONENTS_CORE_MAPPING: lazy_loader.SubmodAttrsType = {
-    "reflex_components_core.core.banner": [
+    "reflex.components.banner": [
         "connection_banner",
         "connection_modal",
     ],

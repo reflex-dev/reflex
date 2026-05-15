@@ -1,10 +1,11 @@
-from reflex_components_core.core.banner import (
+from reflex_components_radix.themes.typography.text import Text
+
+from reflex.components.banner import (
     ConnectionBanner,
     ConnectionModal,
     ConnectionPulser,
     WebsocketTargetURL,
 )
-from reflex_components_radix.themes.typography.text import Text
 
 
 def test_websocket_target_url():

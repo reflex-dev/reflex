@@ -18,7 +18,6 @@ from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.function import FunctionVar
 from reflex_base.vars.number import ternary_operation
 from reflex_base.vars.object import ObjectVar
-from reflex_components_lucide.icon import Icon
 
 LiteralPosition = Literal[
     "top-left",
@@ -213,7 +212,7 @@ class Toaster(Component):
 
     gap: Var[int] = field(doc="Gap between toasts when expanded")
 
-    loading_icon: Var[Icon] = field(doc="Changes the default loading icon")
+    loading_icon: Var[Component] = field(doc="Changes the default loading icon")
 
     pause_when_page_is_hidden: Var[bool] = field(
         doc="Pauses toast timers when the page is hidden, e.g., when the tab is backgrounded, the browser is minimized, or the OS is locked."

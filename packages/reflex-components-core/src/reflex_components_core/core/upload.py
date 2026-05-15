@@ -32,11 +32,10 @@ from reflex_base.style import Style
 from reflex_base.utils import format
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars import VarData
-from reflex_base.vars.base import Var, get_unique_variable_name
+from reflex_base.vars.base import LiteralVar, Var, get_unique_variable_name
 from reflex_base.vars.function import FunctionVar
 from reflex_base.vars.object import ObjectVar
 from reflex_base.vars.sequence import ArrayVar, LiteralStringVar
-from reflex_components_sonner.toast import toast
 
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core._upload import UploadChunkIterator, UploadFile
@@ -179,6 +178,10 @@ _on_drop_args_spec = (
 )
 _on_drop_rejected_spec = passthrough_event_spec(list[dict[str, Any]])
 _UPLOAD_FILES_CLIENT_HANDLER = "uploadFiles"
+_toast_ref = Var(
+    _js_expr="refs['__toast']",
+    _var_data=VarData(imports={f"$/{Dirs.STATE_PATH}": [ImportVar(tag="refs")]}),
+)
 
 
 def _default_drop_rejected(rejected_files: ArrayVar[list[dict[str, Any]]]) -> EventSpec:
@@ -197,15 +200,23 @@ def _default_drop_rejected(rejected_files: ArrayVar[list[dict[str, Any]]]) -> Ev
         errors = rf["errors"].to(ArrayVar, list[dict[str, Any]])
         return f"{file['path']}: {errors.foreach(lambda kv: kv['message']).join(', ')}"  # noqa: FURB118
 
-    return toast.error(
-        title="Files not Accepted",
-        description=rejected_files
-        .to(ArrayVar)
-        .foreach(_format_rejected_file_record)
-        .join("\n\n"),
-        close_button=True,
-        style={"white_space": "pre-line"},
+    description = (
+        rejected_files.to(ArrayVar).foreach(_format_rejected_file_record).join("\n\n")
     )
+    toast_options = LiteralVar.create({
+        "title": "Files not Accepted",
+        "description": description,
+        "closeButton": True,
+        "style": {"whiteSpace": "pre-line"},
+    })
+    toast_call = Var(
+        _js_expr=f"{_toast_ref}?.error('', {toast_options!s})",
+        _var_data=VarData.merge(
+            _toast_ref._get_all_var_data(),
+            toast_options._get_all_var_data(),
+        ),
+    )
+    return run_script(toast_call)
 
 
 class UploadFilesProvider(Component):

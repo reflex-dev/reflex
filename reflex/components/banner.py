@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import cast
+
 from reflex_base import constants
 from reflex_base.components.component import Component
 from reflex_base.constants import Dirs, Hooks, Imports
@@ -13,13 +15,18 @@ from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.function import FunctionStringVar
 from reflex_base.vars.number import BooleanVar
 from reflex_base.vars.sequence import LiteralArrayVar
-from reflex_components_lucide.icon import Icon
-from reflex_components_sonner.toast import ToastProps, toast_ref
-
-from reflex_components_core import el
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core.cond import cond
+from reflex_components_core.el.elements.forms import Button
+from reflex_components_core.el.elements.inline import Span
+from reflex_components_core.el.elements.media import Path, Svg
+from reflex_components_core.el.elements.metadata import Link
+from reflex_components_core.el.elements.other import Dialog
+from reflex_components_core.el.elements.sectioning import H2
 from reflex_components_core.el.elements.typography import Div
+from reflex_components_core.react_router.dom import ReactRouterLink
+from reflex_components_lucide.icon import Icon
+from reflex_components_sonner.toast import ToastProps, toast_ref
 
 connect_error_var_data: VarData = VarData(
     imports=Imports.EVENTS,
@@ -204,9 +211,9 @@ class ConnectionBanner(Component):
         Returns:
             The connection banner component.
         """
-        if not comp:
-            comp = el.div(
-                el.span(
+        if comp is None:
+            comp = Div.create(
+                Span.create(
                     *default_connection_error(),
                     color="black",
                     font_size="1.125rem",
@@ -235,12 +242,12 @@ class ConnectionModal(Component):
         Returns:
             The connection banner component.
         """
-        if not comp:
-            comp = el.span(*default_connection_error())
+        if comp is None:
+            comp = Span.create(*default_connection_error())
         return cond(
             has_too_many_connection_errors,
-            el.dialog(
-                el.h2("Connection Error"),
+            Dialog.create(
+                H2.create("Connection Error"),
                 comp,
                 open=has_too_many_connection_errors,
                 z_index=9999,
@@ -265,16 +272,19 @@ class WifiOffPulse(Icon):
         pulse_var = Var(r"keyframes({ from: { opacity: 0 }, to: { opacity: 1 } })").to(
             str
         )
-        return super().create(
-            "wifi_off",
-            color=props.pop("color", "crimson"),
-            size=props.pop("size", 32),
-            z_index=props.pop("z_index", 9999),
-            position=props.pop("position", "fixed"),
-            bottom=props.pop("bottom", "33px"),
-            right=props.pop("right", "33px"),
-            animation=LiteralVar.create(f"{pulse_var} 1s infinite"),
-            **props,
+        return cast(
+            Icon,
+            super().create(
+                "wifi_off",
+                color=props.pop("color", "crimson"),
+                size=props.pop("size", 32),
+                z_index=props.pop("z_index", 9999),
+                position=props.pop("position", "fixed"),
+                bottom=props.pop("bottom", "33px"),
+                right=props.pop("right", "33px"),
+                animation=LiteralVar.create(f"{pulse_var} 1s infinite"),
+                **props,
+            ),
         )
 
     def add_imports(self) -> dict[str, str | ImportVar | list[str | ImportVar]]:
@@ -342,8 +352,8 @@ class BackendDisabled(Div):
             ),
         )
 
-        warning_icon = el.svg(
-            el.path(
+        warning_icon = Svg.create(
+            Path.create(
                 d="M6.90816 1.34341C7.61776 1.10786 8.38256 1.10786 9.09216 1.34341C9.7989 1.57799 10.3538 2.13435 10.9112 2.91605C11.4668 3.69515 12.0807 4.78145 12.872 6.18175L12.9031 6.23672C13.6946 7.63721 14.3085 8.72348 14.6911 9.60441C15.0755 10.4896 15.267 11.2539 15.1142 11.9881C14.9604 12.7275 14.5811 13.3997 14.0287 13.9079C13.4776 14.4147 12.7273 14.6286 11.7826 14.7313C10.8432 14.8334 9.6143 14.8334 8.0327 14.8334H7.9677C6.38604 14.8334 5.15719 14.8334 4.21778 14.7313C3.27301 14.6286 2.52269 14.4147 1.97164 13.9079C1.41924 13.3997 1.03995 12.7275 0.88613 11.9881C0.733363 11.2539 0.92483 10.4896 1.30926 9.60441C1.69184 8.72348 2.30573 7.63721 3.09722 6.23671L3.12828 6.18175C3.91964 4.78146 4.53355 3.69515 5.08914 2.91605C5.64658 2.13435 6.20146 1.57799 6.90816 1.34341ZM7.3335 11.3334C7.3335 10.9652 7.63063 10.6667 7.99716 10.6667H8.00316C8.3697 10.6667 8.66683 10.9652 8.66683 11.3334C8.66683 11.7016 8.3697 12.0001 8.00316 12.0001H7.99716C7.63063 12.0001 7.3335 11.7016 7.3335 11.3334ZM7.3335 8.66675C7.3335 9.03495 7.63196 9.33341 8.00016 9.33341C8.36836 9.33341 8.66683 9.03495 8.66683 8.66675V6.00008C8.66683 5.63189 8.36836 5.33341 8.00016 5.33341C7.63196 5.33341 7.3335 5.63189 7.3335 6.00008V8.66675Z",
                 fill_rule="evenodd",
                 clip_rule="evenodd",
@@ -358,10 +368,10 @@ class BackendDisabled(Div):
             flex_shrink="0",
         )
 
-        info_message = el.div(
-            el.span(
+        info_message = Div.create(
+            Span.create(
                 "If you are the owner of this app, visit ",
-                el.a(
+                ReactRouterLink.create(
                     "Reflex Cloud",
                     color=color("amber", 11),
                     text_decoration="underline",
@@ -393,8 +403,8 @@ class BackendDisabled(Div):
         # Prepend warning icon into info_message children
         info_message.children.insert(0, warning_icon)
 
-        resume_button = el.a(
-            el.button(
+        resume_button = ReactRouterLink.create(
+            Button.create(
                 "Resume app",
                 color="rgba(252, 252, 253, 1)",
                 font_size="0.875rem",
@@ -416,9 +426,9 @@ class BackendDisabled(Div):
             target="_blank",
         )
 
-        card = el.div(
-            el.div(
-                el.div(
+        card = Div.create(
+            Div.create(
+                Div.create(
                     "This app is paused",
                     font_size="1.5rem",
                     font_weight="600",
@@ -449,17 +459,17 @@ class BackendDisabled(Div):
         return super().create(
             cond(
                 is_backend_disabled,
-                el.div(
-                    el.link(
+                Div.create(
+                    Link.create(
                         rel="preconnect",
                         href="https://fonts.googleapis.com",
                     ),
-                    el.link(
+                    Link.create(
                         rel="preconnect",
                         href="https://fonts.gstatic.com",
                         crossorigin="",
                     ),
-                    el.link(
+                    Link.create(
                         href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,500;0,600&display=swap",
                         rel="stylesheet",
                     ),

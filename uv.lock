@@ -3588,8 +3588,6 @@ source = { editable = "packages/reflex-components-core" }
 dependencies = [
     { name = "python-multipart" },
     { name = "reflex-base" },
-    { name = "reflex-components-lucide" },
-    { name = "reflex-components-sonner" },
     { name = "starlette" },
     { name = "typing-extensions" },
 ]
@@ -3598,8 +3596,6 @@ dependencies = [
 requires-dist = [
     { name = "python-multipart" },
     { name = "reflex-base", editable = "packages/reflex-base" },
-    { name = "reflex-components-lucide", editable = "packages/reflex-components-lucide" },
-    { name = "reflex-components-sonner", editable = "packages/reflex-components-sonner" },
     { name = "starlette" },
     { name = "typing-extensions" },
 ]
@@ -3735,14 +3731,10 @@ name = "reflex-components-sonner"
 source = { editable = "packages/reflex-components-sonner" }
 dependencies = [
     { name = "reflex-base" },
-    { name = "reflex-components-lucide" },
 ]
 
 [package.metadata]
-requires-dist = [
-    { name = "reflex-base", editable = "packages/reflex-base" },
-    { name = "reflex-components-lucide", editable = "packages/reflex-components-lucide" },
-]
+requires-dist = [{ name = "reflex-base", editable = "packages/reflex-base" }]
 
 [[package]]
 name = "reflex-docgen"

@@ -47,11 +47,6 @@ from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
 from reflex_components_core.base.error_boundary import ErrorBoundary
 from reflex_components_core.base.fragment import Fragment
-from reflex_components_core.core.banner import (
-    backend_disabled,
-    connection_pulser,
-    connection_toaster,
-)
 from reflex_components_core.core.breakpoints import set_breakpoints
 from reflex_components_core.core.sticky import sticky
 from reflex_components_sonner.toast import toast
@@ -70,6 +65,11 @@ from reflex.admin import AdminDash
 from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
 from reflex.compiler import compiler
 from reflex.compiler.compiler import readable_name_from_component
+from reflex.components.banner import (
+    backend_disabled,
+    connection_pulser,
+    connection_toaster,
+)
 from reflex.istate.data import RouterData
 from reflex.istate.manager import StateManager, StateModificationContext
 from reflex.istate.manager.token import BaseStateToken

@@ -7,16 +7,6 @@ from reflex_base.utils import lazy_loader
 _SUBMODULES: set[str] = {"layout"}
 
 _SUBMOD_ATTRS: dict[str, list[str]] = {
-    "banner": [
-        "ConnectionBanner",
-        "ConnectionModal",
-        "ConnectionPulser",
-        "ConnectionToaster",
-        "connection_banner",
-        "connection_modal",
-        "connection_toaster",
-        "connection_pulser",
-    ],
     "clipboard": ["Clipboard", "clipboard"],
     "colors": [
         "color",
