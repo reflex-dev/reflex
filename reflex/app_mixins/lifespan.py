@@ -15,6 +15,8 @@ from reflex_base.utils import console
 from reflex_base.utils.exceptions import InvalidLifespanTaskTypeError
 from starlette.applications import Starlette
 
+from reflex.utils.telemetry_context import increment_feature
+
 from .mixin import AppMixin
 
 if TYPE_CHECKING:
@@ -198,4 +200,7 @@ class LifespanMixin(AppMixin):
             functools.update_wrapper(registered_task, task)
         self._lifespan_tasks[registered_task] = None
         console.debug(f"Registered lifespan task: {task_name}")
+        module = getattr(registered_task, "__module__", None) or ""
+        if module != "reflex" and not module.startswith("reflex."):
+            increment_feature("lifespan_tasks_count")
         return task

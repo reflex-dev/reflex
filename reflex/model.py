@@ -13,6 +13,8 @@ from reflex_base.environment import environment
 from reflex_base.utils import console
 from reflex_base.utils.serializers import serializer
 
+from reflex.utils.telemetry_context import increment_feature
+
 if TYPE_CHECKING:
     from typing import TypeVar
 
@@ -200,6 +202,7 @@ if find_spec("sqlalchemy"):
                 The model passed in as an argument (Allows decorator usage)
             """
             cls.models.add(model)
+            increment_feature("db_model_count")
             return model
 
         @classmethod

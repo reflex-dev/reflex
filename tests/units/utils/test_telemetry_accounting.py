@@ -3,10 +3,12 @@
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
+import pytest
 from pytest_mock import MockerFixture
 from reflex_base.plugins.sitemap import SitemapPlugin
 
 import reflex as rx
+from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.state import (
     BaseState,
     FrontendEventExceptionState,
@@ -16,6 +18,50 @@ from reflex.state import (
 )
 from reflex.utils import telemetry_accounting
 from reflex.utils.telemetry_context import TelemetryContext
+
+
+@pytest.fixture(autouse=True)
+def _reset_recorded_features():
+    """Reset the process-level feature counter between tests."""
+    telemetry_accounting._recorded_features.clear()
+    yield
+    telemetry_accounting._recorded_features.clear()
+
+
+def _fake_config(**overrides):
+    """Build a Mock config pre-populated with sane defaults for the collector.
+
+    Args:
+        **overrides: Config attribute overrides.
+
+    Returns:
+        A ``SimpleNamespace`` standing in for the resolved Reflex config.
+    """
+    defaults = {
+        "plugins": [],
+        "disable_plugins": [],
+        "state_manager_mode": SimpleNamespace(value="memory"),
+        "cors_allowed_origins": ("*",),
+    }
+    defaults.update(overrides)
+    return SimpleNamespace(**defaults)
+
+
+def _fake_app(**overrides):
+    """Build a SimpleNamespace app with the attributes the collector touches.
+
+    Args:
+        **overrides: App attribute overrides.
+
+    Returns:
+        A ``SimpleNamespace`` standing in for a compiled ``App``.
+    """
+    defaults = {
+        "_state": None,
+        "_pages": {},
+    }
+    defaults.update(overrides)
+    return SimpleNamespace(**defaults)
 
 
 class _TelAcctRoot(BaseState):
@@ -104,17 +150,16 @@ def test_collect_compile_event_payload_shape(mocker: MockerFixture):
     fake_plugin.__class__.__name__ = "FakePlugin"
     mocker.patch(
         "reflex.utils.telemetry_accounting.get_config",
-        return_value=mocker.Mock(
+        return_value=_fake_config(
             plugins=[fake_plugin], disable_plugins=[SitemapPlugin]
         ),
     )
 
-    app = SimpleNamespace(
+    app = _fake_app(
         _state=_TelAcctRoot,
         _pages={"/": rx.box(rx.text("hello"))},
     )
     ctx = TelemetryContext(trigger="cli_compile")
-    ctx.features_used["radix"] = True
 
     payload = telemetry_accounting._collect_compile_event_payload(
         app,  # pyright: ignore[reportArgumentType]
@@ -126,7 +171,6 @@ def test_collect_compile_event_payload_shape(mocker: MockerFixture):
     assert payload["pages_count"] == 1
     assert payload["component_counts"]
     assert any(s["depth_from_root"] == 0 for s in payload["states"])
-    assert payload["features_used"] == {"radix": True}
     assert payload["duration_ms"] >= 0
     assert payload["trigger"] == "cli_compile"
     assert payload["exception"] is None
@@ -136,10 +180,10 @@ def test_collect_compile_event_payload_with_exception(mocker: MockerFixture):
     """An attached exception lands in the payload as a sanitized type-only dict."""
     mocker.patch(
         "reflex.utils.telemetry_accounting.get_config",
-        return_value=mocker.Mock(plugins=[], disable_plugins=[]),
+        return_value=_fake_config(),
     )
 
-    app = SimpleNamespace(_state=None, _pages={})
+    app = _fake_app()
     ctx = TelemetryContext()
     ctx.set_exception(RuntimeError("oops"))
 
@@ -150,25 +194,6 @@ def test_collect_compile_event_payload_with_exception(mocker: MockerFixture):
     assert payload["exception"] == {"type": "RuntimeError"}
     assert payload["pages_count"] == 0
     assert payload["states"] == []
-
-
-def test_collect_compile_event_payload_snapshots_features_used(mocker: MockerFixture):
-    """features_used in the payload is a snapshot, immune to later mutation."""
-    mocker.patch(
-        "reflex.utils.telemetry_accounting.get_config",
-        return_value=mocker.Mock(plugins=[], disable_plugins=[]),
-    )
-    app = SimpleNamespace(_state=None, _pages={})
-    ctx = TelemetryContext()
-    ctx.features_used["x"] = 1
-
-    payload = telemetry_accounting._collect_compile_event_payload(
-        app,  # pyright: ignore[reportArgumentType]
-        ctx,
-    )
-    ctx.features_used["x"] = 999
-    ctx.features_used["y"] = 2
-    assert payload["features_used"] == {"x": 1}
 
 
 def test_walk_states_skips_framework_internal_substates():
@@ -216,3 +241,143 @@ def test_count_components_buckets_memo_wrapper_by_wrapped_type():
     )
 
     assert counts == {"Button": 1}
+
+
+def test_increment_feature_writes_to_active_context():
+    """``increment_feature`` bumps the active context's counter."""
+    ctx = TelemetryContext()
+    with ctx:
+        telemetry_accounting.increment_feature("upload_count")
+        telemetry_accounting.increment_feature("upload_count")
+        telemetry_accounting.increment_feature("upload_count", by=3)
+    assert ctx.features_used["upload_count"] == 5
+
+
+def test_increment_feature_falls_back_to_persistent_when_no_context():
+    """Outside a compile, ``increment_feature`` writes to the persistent dict."""
+    telemetry_accounting.increment_feature("cookie_count")
+    telemetry_accounting.increment_feature("cookie_count")
+    assert telemetry_accounting._recorded_features["cookie_count"] == 2
+
+
+def test_collect_features_used_emits_every_known_key(mocker: MockerFixture):
+    """All names in ``_KNOWN_FEATURES`` ship at 0 even with no signals."""
+    mocker.patch(
+        "reflex.utils.telemetry_accounting.get_config",
+        return_value=_fake_config(),
+    )
+    ctx = TelemetryContext()
+    features = telemetry_accounting._collect_features_used(ctx, [])
+    for name in telemetry_accounting._KNOWN_FEATURES:
+        assert name in features, name
+
+
+def test_collect_features_used_promotes_persistent_counters(mocker: MockerFixture):
+    """Import-time ``increment_feature`` calls land in the snapshot."""
+    mocker.patch(
+        "reflex.utils.telemetry_accounting.get_config",
+        return_value=_fake_config(),
+    )
+    telemetry_accounting.increment_feature("cookie_count", by=2)
+    telemetry_accounting.increment_feature("shared_state_count")
+
+    ctx = TelemetryContext()
+    features = telemetry_accounting._collect_features_used(ctx, [])
+    assert features["cookie_count"] == 2
+    assert features["shared_state_count"] == 1
+
+
+def test_collect_features_used_context_overrides_persistent(mocker: MockerFixture):
+    """Context-side counters beat the persistent baseline for the same key."""
+    mocker.patch(
+        "reflex.utils.telemetry_accounting.get_config",
+        return_value=_fake_config(),
+    )
+    telemetry_accounting._recorded_features["upload_count"] = 1
+    ctx = TelemetryContext()
+    with ctx:
+        telemetry_accounting.increment_feature("upload_count", by=4)
+
+    features = telemetry_accounting._collect_features_used(ctx, [])
+    assert features["upload_count"] == 4
+
+
+def test_collect_features_used_records_state_manager_mode(mocker: MockerFixture):
+    """The configured state-manager mode lights up exactly one boolean key."""
+    mocker.patch(
+        "reflex.utils.telemetry_accounting.get_config",
+        return_value=_fake_config(state_manager_mode=SimpleNamespace(value="redis")),
+    )
+    ctx = TelemetryContext()
+    features = telemetry_accounting._collect_features_used(ctx, [])
+    assert features["state_manager_redis"] == 1
+    assert features["state_manager_disk"] == 0
+    assert features["state_manager_memory"] == 0
+
+
+def test_collect_features_used_records_cors_customized(mocker: MockerFixture):
+    """A non-default ``cors_allowed_origins`` sets the cors counter to 1."""
+    mocker.patch(
+        "reflex.utils.telemetry_accounting.get_config",
+        return_value=_fake_config(cors_allowed_origins=("https://example.com",)),
+    )
+    ctx = TelemetryContext()
+    features = telemetry_accounting._collect_features_used(ctx, [])
+    assert features["cors_customized"] == 1
+
+
+def test_collect_features_used_default_cors_stays_zero(mocker: MockerFixture):
+    """Default ``("*",)`` origins read as not customized."""
+    mocker.patch(
+        "reflex.utils.telemetry_accounting.get_config",
+        return_value=_fake_config(),
+    )
+    ctx = TelemetryContext()
+    features = telemetry_accounting._collect_features_used(ctx, [])
+    assert features["cors_customized"] == 0
+
+
+def test_collect_features_used_counts_background_handlers(mocker: MockerFixture):
+    """The state walk counts ``@rx.event(background=True)`` handlers."""
+    mocker.patch(
+        "reflex.utils.telemetry_accounting.get_config",
+        return_value=_fake_config(),
+    )
+
+    class _BgState(BaseState):
+        @rx.event(background=True)
+        async def slow(self):
+            """Background handler used to assert detection."""
+
+        @rx.event
+        def fast(self):
+            """Foreground handler that must not be miscounted."""
+
+    ctx = TelemetryContext()
+    features = telemetry_accounting._collect_features_used(ctx, [_BgState])
+    assert features["background_event_handlers_count"] == 1
+
+
+def test_storage_classes_increment_their_counters():
+    """Constructing ``Cookie`` / ``LocalStorage`` / ``SessionStorage`` increments."""
+    Cookie()
+    Cookie()
+    LocalStorage()
+    SessionStorage()
+    assert telemetry_accounting._recorded_features["cookie_count"] == 2
+    assert telemetry_accounting._recorded_features["local_storage_count"] == 1
+    assert telemetry_accounting._recorded_features["session_storage_count"] == 1
+
+
+def test_shared_state_subclass_increments_counter():
+    """Subclassing ``rx.SharedState`` bumps the shared-state counter."""
+    before = telemetry_accounting._recorded_features.get("shared_state_count", 0)
+
+    class _SharedA(rx.SharedState):
+        x: int = 0
+
+    class _SharedB(rx.SharedState):
+        y: int = 0
+
+    after = telemetry_accounting._recorded_features["shared_state_count"]
+    assert after - before == 2
