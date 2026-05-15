@@ -10,7 +10,7 @@ We import the `AgCharts` component from the `ag-charts-react` library on line 5.
 
 Line `7` defines a functional React component, which on line `26` returns `AgCharts` which is similar in the Reflex code to using the `chart` component.
 
-Line `9` uses the `useState` hook to create a state variable `chartOptions` and its setter function `setChartOptions` (equivalent to the event handler `set_chart_options` in reflex). The initial state variable is of type dict and has two key value pairs `data` and `series`.
+Line `9` uses the `useState` hook to create a state variable `chartOptions` and its setter function `setChartOptions`. In Reflex, the equivalent is a base var on a `rx.State` subclass that is mutated by an event handler. The initial state variable is of type dict and has two key value pairs `data` and `series`.
 
 When we see `useState` in React code, it correlates to state variables in your State. As you can see in our Reflex code we have a state variable `chart_options` which is a dictionary, like in our React code.
 

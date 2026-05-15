@@ -9,7 +9,7 @@ import platform
 import warnings
 from contextlib import suppress
 from datetime import datetime, timezone
-from typing import TypedDict
+from typing import Any, TypedDict, cast
 
 from reflex_base import constants
 from reflex_base.environment import environment
@@ -271,12 +271,20 @@ def get_event_defaults() -> _DefaultEvent | None:
     return _get_event_defaults()
 
 
-def _prepare_event(event: str, **kwargs) -> _Event | None:
+def _prepare_event(
+    event: str,
+    *,
+    properties: dict[str, Any] | None = None,
+    **kwargs,
+) -> _Event | None:
     """Prepare the event to be sent to the PostHog server.
 
     Args:
         event: The event name.
-        kwargs: Additional data to send with the event.
+        properties: Arbitrary structured payload merged into the event
+            properties. Preferred over ``kwargs`` for new events.
+        kwargs: Additional data to send with the event. Allow-listed keys
+            kept for backward compatibility with existing call sites.
 
     Returns:
         The event data.
@@ -287,22 +295,29 @@ def _prepare_event(event: str, **kwargs) -> _Event | None:
 
     additional_keys = ["template", "context", "detail", "user_uuid"]
 
-    properties = event_data["properties"]
+    # Shallow-copy so we don't mutate the cached default properties dict.
+    merged_properties = dict(event_data["properties"])
 
     for key in additional_keys:
-        if key in properties or key not in kwargs:
+        if key in merged_properties or key not in kwargs:
             continue
 
-        properties[key] = kwargs[key]
+        merged_properties[key] = kwargs[key]
+
+    if properties:
+        merged_properties.update(properties)
 
     stamp = datetime.now(UTC).isoformat()
 
-    return {
-        "api_key": event_data["api_key"],
-        "event": event,
-        "properties": properties,
-        "timestamp": stamp,
-    }
+    return cast(
+        "_Event",
+        {
+            "api_key": event_data["api_key"],
+            "event": event,
+            "properties": merged_properties,
+            "timestamp": stamp,
+        },
+    )
 
 
 def _send_event(event_data: _Event) -> bool:
@@ -316,7 +331,13 @@ def _send_event(event_data: _Event) -> bool:
         return True
 
 
-def _send(event: str, telemetry_enabled: bool | None, **kwargs) -> bool:
+def _send(
+    event: str,
+    telemetry_enabled: bool | None,
+    *,
+    properties: dict[str, Any] | None = None,
+    **kwargs,
+) -> bool:
     from reflex_base.config import get_config
 
     # Get the telemetry_enabled from the config if it is not specified.
@@ -328,7 +349,7 @@ def _send(event: str, telemetry_enabled: bool | None, **kwargs) -> bool:
         return False
 
     with suppress(Exception):
-        event_data = _prepare_event(event, **kwargs)
+        event_data = _prepare_event(event, properties=properties, **kwargs)
         if not event_data:
             return False
         return _send_event(event_data)
@@ -338,22 +359,35 @@ def _send(event: str, telemetry_enabled: bool | None, **kwargs) -> bool:
 background_tasks = set()
 
 
-def send(event: str, telemetry_enabled: bool | None = None, **kwargs):
+def send(
+    event: str,
+    telemetry_enabled: bool | None = None,
+    *,
+    properties: dict[str, Any] | None = None,
+    **kwargs,
+):
     """Send anonymous telemetry for Reflex.
 
     Args:
         event: The event name.
         telemetry_enabled: Whether to send the telemetry (If None, get from config).
+        properties: Arbitrary structured payload merged into the event
+            properties. Preferred over ``kwargs`` for new events.
         kwargs: Additional data to send with the event.
     """
 
-    async def async_send(event: str, telemetry_enabled: bool | None, **kwargs):  # noqa: RUF029
-        return _send(event, telemetry_enabled, **kwargs)
+    async def async_send(  # noqa: RUF029
+        event: str,
+        telemetry_enabled: bool | None,
+        properties: dict[str, Any] | None,
+        **kwargs,
+    ):
+        return _send(event, telemetry_enabled, properties=properties, **kwargs)
 
     try:
         # Within an event loop context, send the event asynchronously.
         task = asyncio.create_task(
-            async_send(event, telemetry_enabled, **kwargs),
+            async_send(event, telemetry_enabled, properties, **kwargs),
             name=f"reflex_send_telemetry_event|{event}",
         )
         background_tasks.add(task)
@@ -361,7 +395,7 @@ def send(event: str, telemetry_enabled: bool | None = None, **kwargs):
     except RuntimeError:
         # If there is no event loop, send the event synchronously.
         warnings.filterwarnings("ignore", category=RuntimeWarning)
-        _send(event, telemetry_enabled, **kwargs)
+        _send(event, telemetry_enabled, properties=properties, **kwargs)
 
 
 def send_error(error: Exception, context: str):
