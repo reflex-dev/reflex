@@ -11,6 +11,7 @@ import sys
 import time
 import traceback
 from collections.abc import AsyncGenerator, Callable, Coroutine, Mapping, Sequence
+from concurrent.futures import Executor, ThreadPoolExecutor
 from contextvars import Token, copy_context
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -92,12 +93,14 @@ class EventProcessor:
         middleware: An optional middleware mixin to apply to all events processed by this processor.
         backend_exception_handler: An optional function to handle exceptions raised during event processing. The function should take an Exception as input and return an EventSpec or list of EventSpecs to be emitted in response, or None to not emit any events.
         graceful_shutdown_timeout: An optional amount of time in seconds to wait for the queue to drain before forcefully cancelling tasks when stopping the processor. If None, the processor will not wait and will cancel tasks immediately.
+        default_executor: The executor used to run non-async event handlers off the asyncio loop. If unset, a ``ThreadPoolExecutor`` is created lazily on first use and shut down when the processor stops. Per-handler executors set via ``@rx.event(executor=...)`` take precedence over this default.
 
         _queue: The asyncio queue for events to be processed.
         _queue_task: The task responsible for processing the event queue.
         _root_context: The root event context to use for events enqueued without an explicit context.
         _attached_root_context_token: The context variable token for the attached root context, used to reset the context variable on shutdown.
         _tasks: A mapping of active transaction ids to their corresponding event handler tasks, used for tracking and cancellation on shutdown.
+        _owns_default_executor: True when the processor lazily created its own ``default_executor`` and is responsible for shutting it down on stop.
     """
 
     middleware: MiddlewareMixin | None = None
@@ -105,6 +108,7 @@ class EventProcessor:
         Callable[[Exception], EventSpec | list[EventSpec] | None] | None
     ) = None
     graceful_shutdown_timeout: float | None = None
+    default_executor: Executor | None = None
 
     _queue: asyncio.Queue[EventQueueEntry] | None = dataclasses.field(
         default=None, init=False
@@ -124,6 +128,30 @@ class EventProcessor:
         str,
         collections.deque[tuple[EventQueueEntry, RegisteredEventHandler]],
     ] = dataclasses.field(default_factory=dict, init=False)
+    _owns_default_executor: bool = dataclasses.field(default=False, init=False)
+
+    def get_executor_for(self, handler: RegisteredEventHandler) -> Executor:
+        """Return the executor used to run a handler's non-async body.
+
+        The handler's per-handler executor (from ``@rx.event(executor=...)``)
+        takes precedence over the processor's ``default_executor``. If neither
+        is set, a ``ThreadPoolExecutor`` is created lazily and owned by this
+        processor.
+
+        Args:
+            handler: The registered event handler whose executor to resolve.
+
+        Returns:
+            The executor for running this handler's non-async body.
+        """
+        if (handler_executor := handler.handler.executor) is not None:
+            return handler_executor
+        if self.default_executor is None:
+            self.default_executor = ThreadPoolExecutor(
+                thread_name_prefix="reflex_event_handler"
+            )
+            self._owns_default_executor = True
+        return self.default_executor
 
     def configure(
         self,
@@ -240,13 +268,26 @@ class EventProcessor:
         """
         finished_tasks = set()
         # Graceful drain time, wait for tasks to finish and handle any exceptions.
-        if timeout is not None and self._tasks:
-            with contextlib.suppress(asyncio.TimeoutError):
-                async for task in as_completed(self._tasks.values(), timeout=timeout):
-                    # Exceptions are handled in _finish_task and ignored here.
-                    with contextlib.suppress(Exception):
-                        await task
-                    finished_tasks.add(task)
+        # Re-snapshot self._tasks each iteration so tasks dispatched by
+        # ``_finish_task`` after a previous task completes (e.g. the next
+        # entry in a per-token queue) are also awaited within the budget.
+        if timeout is not None:
+            deadline = time.monotonic() + timeout
+            while True:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    break
+                pending = [
+                    task for task in self._tasks.values() if task not in finished_tasks
+                ]
+                if not pending:
+                    break
+                with contextlib.suppress(asyncio.TimeoutError):
+                    async for task in as_completed(pending, timeout=remaining):
+                        # Exceptions are handled in _finish_task and ignored here.
+                        with contextlib.suppress(Exception):
+                            await task
+                        finished_tasks.add(task)
         # Cancel all outstanding event handler tasks.
         outstanding_tasks = [
             task for task in self._tasks.values() if task not in finished_tasks
@@ -316,6 +357,11 @@ class EventProcessor:
             if not future.done():
                 future.cancel()
         self._futures.clear()
+        # Shut down the lazily-created default executor (if owned).
+        if self._owns_default_executor and self.default_executor is not None:
+            self.default_executor.shutdown(wait=False)
+            self.default_executor = None
+            self._owns_default_executor = False
 
     async def join(
         self, timeout: float | None = None, queue: asyncio.Queue | None = None

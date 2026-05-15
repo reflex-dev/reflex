@@ -1,7 +1,10 @@
 """Tests for BaseStateEventProcessor, specifically the _rehydrate path."""
 
+import asyncio
+import threading
 import traceback
 from collections.abc import Mapping
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 import pytest
@@ -150,3 +153,102 @@ async def test_rehydrate_sets_is_hydrated_on_fresh_token(
     assert len(hydrated_deltas) >= 1, (
         f"Expected at least one delta with is_hydrated=True, got deltas: {emitted_deltas}"
     )
+
+
+async def test_sync_handler_runs_off_event_loop(
+    app_module_mock,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A non-async @rx.event handler runs in a thread, not the asyncio loop.
+
+    The handler captures the thread it ran on and asserts the asyncio loop is
+    still responsive while the handler is blocking (it blocks for a short
+    period using a real ``threading.Event``).
+
+    Args:
+        app_module_mock: The mock app module fixture.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    from reflex.app import App
+    from reflex.event import Event
+    from reflex.state import OnLoadInternalState, State
+
+    handler_threads: list[int] = []
+    release = threading.Event()
+
+    class MyState(State):
+        @event
+        def blocking(self):
+            handler_threads.append(threading.get_ident())
+            # Block the worker thread until the loop signals us.
+            assert release.wait(timeout=5), (
+                "asyncio loop never reached release.set() — sync handler"
+                " is blocking the event loop instead of running in a thread"
+            )
+
+    OnLoadInternalState._app_ref = None
+    app = app_module_mock.app = App()
+    assert real_base_state_processor._root_context is not None
+    app._state_manager = real_base_state_processor._root_context.state_manager
+    main_thread = threading.get_ident()
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(MyState.blocking())[0]
+        )
+        # While the handler is blocked, the asyncio loop must remain responsive.
+        await asyncio.sleep(0.05)
+        release.set()
+        await future
+
+    assert len(handler_threads) == 1
+    assert handler_threads[0] != main_thread
+
+
+async def test_custom_executor_used_for_sync_handler(
+    app_module_mock,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """Handlers decorated with ``executor=...`` run on that exact pool.
+
+    Args:
+        app_module_mock: The mock app module fixture.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    from reflex.app import App
+    from reflex.event import Event
+    from reflex.state import OnLoadInternalState, State
+
+    custom_executor = ThreadPoolExecutor(
+        max_workers=1, thread_name_prefix="rx_custom_pool"
+    )
+    handler_thread_names: list[str] = []
+    try:
+
+        class MyState(State):
+            @event(executor=custom_executor)
+            def on_custom(self):
+                handler_thread_names.append(threading.current_thread().name)
+
+        OnLoadInternalState._app_ref = None
+        app = app_module_mock.app = App()
+        assert real_base_state_processor._root_context is not None
+        app._state_manager = real_base_state_processor._root_context.state_manager
+
+        async with real_base_state_processor as processor:
+            await processor.enqueue(
+                token, Event.from_event_type(MyState.on_custom())[0]
+            )
+            await processor.join(1)
+            # When a handler brings its own executor, the processor never falls
+            # back to creating the lazy default.
+            assert processor.default_executor is None
+
+        assert len(handler_thread_names) == 1
+        assert handler_thread_names[0].startswith("rx_custom_pool")
+    finally:
+        custom_executor.shutdown(wait=False)
