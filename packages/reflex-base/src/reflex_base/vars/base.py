@@ -362,7 +362,7 @@ def can_use_in_object_var(cls: GenericType) -> bool:
         Whether the class can be used in an ObjectVar.
     """
     if types.is_union(cls):
-        return all(can_use_in_object_var(t) for t in types.get_args(cls))
+        return all(can_use_in_object_var(t) for t in get_args(cls))
     return (
         isinstance(cls, type)
         and not safe_issubclass(cls, Var)
@@ -3691,3 +3691,7 @@ class EvenMoreBasicBaseState(metaclass=BaseStateMeta):
                 annotated_type=var._var_type,
             )
         cls.__fields__[name] = new_field
+
+
+EMPTY_VAR_STR: Var[str] = LiteralVar.create("")
+EMPTY_VAR_INT: Var[int] = LiteralVar.create(0)

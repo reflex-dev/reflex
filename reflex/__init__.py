@@ -235,7 +235,7 @@ _MAPPING: lazy_loader.SubmodAttrsType = {
     "utils.imports": ["ImportDict", "ImportVar"],
     "utils.misc": ["run_in_thread"],
     "utils.serializers": ["serializer"],
-    "vars": ["Var", "field", "Field", "RestProp"],
+    "vars": ["Var", "field", "Field", "RestProp", "EMPTY_VAR_STR", "EMPTY_VAR_INT"],
 }
 
 _SUBMODULES: set[str] = {

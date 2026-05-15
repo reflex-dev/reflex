@@ -15,7 +15,7 @@ Every parameter must be annotated with `rx.Var[...]` or `rx.RestProp`. The compi
 3. **`rx.Var[rx.Component]` for slot children** — a parameter named `children` annotated as `rx.Var[rx.Component]` accepts children rendered by the caller.
 4. **Keyword arguments at the call site** — pass props by name, not by position.
 
-Defaults work normally: `class_name: rx.Var[str] = ""` falls back to `""` when the caller omits the prop.
+Defaults need to be `rx.Var` values. For the common empty cases use the module-level constants `rx.EMPTY_VAR_STR` (an empty string) and `rx.EMPTY_VAR_INT` (zero): `class_name: rx.Var[str] = rx.EMPTY_VAR_STR` falls back to `""` when the caller omits the prop.
 
 ## Basic Usage
 

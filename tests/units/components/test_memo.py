@@ -220,7 +220,7 @@ def test_var_returning_memo_with_children_and_rest():
 
 
 def test_memo_requires_var_annotations():
-    """Experimental memos should require Var annotations on parameters."""
+    """Memos should require Var annotations on parameters."""
     with pytest.raises(TypeError, match="must be annotated"):
 
         @rx._x.memo
