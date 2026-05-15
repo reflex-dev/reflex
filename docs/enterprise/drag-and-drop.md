@@ -34,7 +34,7 @@ class BasicDndState(rx.State):
 
 
 @rx.memo
-def draggable_card():
+def draggable_card() -> rx.Component:
     return rxe.dnd.draggable(
         rx.card(
             rx.text("Drag me!", weight="bold"),
