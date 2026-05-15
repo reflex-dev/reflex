@@ -66,9 +66,7 @@ def VarOperations():
 
     @rx.memo
     def memo_comp_nested(int_var2: rx.Var[int], id: rx.Var[str]) -> rx.Component:
-        return memo_comp(
-            list1=rx.Var.create([3, 4]), int_var1=int_var2, id=id
-        )
+        return memo_comp(list1=rx.Var.create([3, 4]), int_var1=int_var2, id=id)
 
     @app.add_page
     def index():

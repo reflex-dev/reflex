@@ -6,7 +6,7 @@ from unittest import mock
 
 import pytest
 import reflex_base.config
-from reflex_base.components.memo import EXPERIMENTAL_MEMOS
+from reflex_base.components.memo import MEMOS
 from reflex_base.constants import IS_WINDOWS
 
 import reflex.reflex as reflex_cli
@@ -97,7 +97,7 @@ def test_app_harness_initialize_clears_memo_registries(
     """
     monkeypatch.setattr(reflex_cli, "_init", lambda **kwargs: None)
 
-    EXPERIMENTAL_MEMOS["format_value"] = mock.sentinel.memo
+    MEMOS["format_value"] = mock.sentinel.memo
 
     harness = AppHarness.create(
         root=tmp_path / "memo_app",
@@ -107,7 +107,7 @@ def test_app_harness_initialize_clears_memo_registries(
     harness.app_module_path.parent.mkdir(parents=True, exist_ok=True)
     harness._initialize_app()
 
-    assert "format_value" not in EXPERIMENTAL_MEMOS
+    assert "format_value" not in MEMOS
     harness_mocks.get_and_validate_app.assert_called_once_with(reload=True)
 
 

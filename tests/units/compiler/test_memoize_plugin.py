@@ -11,8 +11,8 @@ import pytest
 from reflex_base.components.component import Component
 from reflex_base.components.component import field as component_field
 from reflex_base.components.memo import (
-    ExperimentalMemoComponent,
-    ExperimentalMemoComponentDefinition,
+    MemoComponent,
+    MemoComponentDefinition,
     create_passthrough_component_memo,
 )
 from reflex_base.components.memoize_helpers import (
@@ -198,7 +198,7 @@ def test_should_not_memoize_when_disposition_never() -> None:
     assert not _should_memoize(comp)
 
 
-def test_memoize_wrapper_uses_experimental_memo_component_and_call_site() -> None:
+def test_memoize_wrapper_uses_memo_component_and_call_site() -> None:
     """Memoizable component imports a generated ``rx._x.memo`` wrapper."""
     ctx, page_ctx = _compile_single_page(lambda: Plain.create(STATE_VAR))
 
@@ -327,7 +327,7 @@ def test_special_form_memo_wrappers_render_structural_body(
     ctx, page_ctx = _compile_single_page(lambda: rx.box(special_child()))
 
     memo_files, _memo_imports = compile_memo_components(
-        experimental_memos=tuple(ctx.auto_memo_components.values()),
+        memos=tuple(ctx.auto_memo_components.values()),
     )
     memo_code = "\n".join(code for _, code in memo_files)
 
@@ -368,7 +368,7 @@ def test_foreach_snapshot_memo_applies_component_styles() -> None:
     )
 
     memo_files, _memo_imports = compile_memo_components(
-        experimental_memos=tuple(ctx.auto_memo_components.values()),
+        memos=tuple(ctx.auto_memo_components.values()),
     )
     foreach_code = next(
         code for path, code in memo_files if "/Foreach" in path or "\\Foreach" in path
@@ -401,7 +401,7 @@ def test_foreach_parent_does_not_absorb_sibling_into_snapshot() -> None:
     wrapped_definitions = [
         definition
         for definition in ctx.auto_memo_components.values()
-        if isinstance(definition, ExperimentalMemoComponentDefinition)
+        if isinstance(definition, MemoComponentDefinition)
     ]
     wrapped_types = {type(definition.component) for definition in wrapped_definitions}
 
@@ -493,7 +493,7 @@ def test_generated_memo_component_is_not_itself_memoized() -> None:
     """The generated memo component instance itself is skipped by the heuristic."""
     wrapper_factory, _definition = create_passthrough_component_memo(Fragment.create())
     wrapper = wrapper_factory(Plain.create())
-    assert isinstance(wrapper, ExperimentalMemoComponent)
+    assert isinstance(wrapper, MemoComponent)
     assert not _should_memoize(wrapper)
 
 
@@ -541,7 +541,7 @@ def test_generated_memo_component_renders_as_its_exported_tag() -> None:
     """The generated experimental memo component renders as its exported tag."""
     wrapper_factory, definition = create_passthrough_component_memo(Fragment.create())
     wrapper = wrapper_factory(Plain.create())
-    assert isinstance(wrapper, ExperimentalMemoComponent)
+    assert isinstance(wrapper, MemoComponent)
     tag = definition.export_name
     assert tag.startswith("Fragment_"), (
         f"Expected the wrapped class qualname to be encoded in the tag prefix; "
@@ -773,7 +773,7 @@ def test_memoization_leaf_internal_hooks_do_not_leak_into_page() -> None:
         "expected an auto-memo wrapper to be generated for the leaf"
     )
     memo_files, _memo_imports = compile_memo_components(
-        experimental_memos=tuple(ctx.auto_memo_components.values()),
+        memos=tuple(ctx.auto_memo_components.values()),
     )
     memo_code = "\n".join(code for _, code in memo_files)
     assert "useLeafProbe" in memo_code, (
@@ -1016,7 +1016,7 @@ def test_cond_stateful_condition_renders_branch_logic_in_memo_body() -> None:
     )
 
     memo_files, _memo_imports = compile_memo_components(
-        experimental_memos=tuple(ctx.auto_memo_components.values()),
+        memos=tuple(ctx.auto_memo_components.values()),
     )
     memo_code = "\n".join(code for _, code in memo_files)
 
@@ -1113,7 +1113,7 @@ def test_match_stateful_condition_uses_memoized_branch_wrapper_in_memo_body() ->
     )
 
     memo_files, _memo_imports = compile_memo_components(
-        experimental_memos=tuple(ctx.auto_memo_components.values()),
+        memos=tuple(ctx.auto_memo_components.values()),
     )
     match_memo_code = next(
         code
@@ -1225,7 +1225,7 @@ def test_client_state_setter_in_call_function_event_imports_refs() -> None:
     wrapper_tag = next(iter(ctx.memoize_wrappers))
 
     memo_files, _memo_imports = compile_memo_components(
-        experimental_memos=tuple(ctx.auto_memo_components.values()),
+        memos=tuple(ctx.auto_memo_components.values()),
     )
     memo_code = next(
         code for path, code in memo_files if Path(path).name == f"{wrapper_tag}.jsx"
@@ -1308,7 +1308,7 @@ def test_debounce_input_memo_renders_react_debounce_wrapper() -> None:
     )
 
     memo_files, _memo_imports = compile_memo_components(
-        experimental_memos=tuple(ctx.auto_memo_components.values()),
+        memos=tuple(ctx.auto_memo_components.values()),
     )
     memo_code = next(
         code for path, code in memo_files if Path(path).name == f"{wrapper_tag}.jsx"
@@ -1656,7 +1656,7 @@ def _compile_memo_module_text(ctx: CompileContext) -> str:
     from reflex.compiler.compiler import compile_memo_components
 
     memo_files, _imports = compile_memo_components(
-        experimental_memos=tuple(ctx.auto_memo_components.values()),
+        memos=tuple(ctx.auto_memo_components.values()),
     )
     return "\n".join(code for _, code in memo_files)
 
@@ -2176,7 +2176,7 @@ def test_each_memo_wrapper_emits_one_component_module_file() -> None:
         )
     )
     memo_files, _imports = compile_memo_components(
-        experimental_memos=tuple(ctx.auto_memo_components.values()),
+        memos=tuple(ctx.auto_memo_components.values()),
     )
     component_module_names = {
         Path(path).name

@@ -28,7 +28,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeVar
 
 import uvicorn
-from reflex_base.components.memo import EXPERIMENTAL_MEMOS
+from reflex_base.components.memo import MEMOS
 from reflex_base.config import get_config
 from reflex_base.environment import environment
 from reflex_base.registry import RegistrationContext
@@ -241,7 +241,7 @@ class AppHarness:
         os.environ["REFLEX_TELEMETRY_ENABLED"] = "false"
         # Reset the global memo registry so previous AppHarness apps do not
         # leak compiled component definitions into the next test app.
-        EXPERIMENTAL_MEMOS.clear()
+        MEMOS.clear()
         self.app_path.mkdir(parents=True, exist_ok=True)
         if self.app_source is not None:
             app_globals = self._get_globals_from_signature(self.app_source)

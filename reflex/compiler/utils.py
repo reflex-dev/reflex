@@ -16,8 +16,8 @@ from urllib.parse import urlparse
 from reflex_base import constants
 from reflex_base.components.component import Component, ComponentStyle
 from reflex_base.components.memo import (
-    ExperimentalMemoComponentDefinition,
-    ExperimentalMemoFunctionDefinition,
+    MemoComponentDefinition,
+    MemoFunctionDefinition,
     MemoParamKind,
 )
 from reflex_base.constants.state import FIELD_MARKER
@@ -375,9 +375,9 @@ def _app_style() -> ComponentStyle | Style:
 
 
 def compile_experimental_component_memo(
-    definition: ExperimentalMemoComponentDefinition,
+    definition: MemoComponentDefinition,
 ) -> tuple[dict, ParsedImportDict]:
-    """Compile an experimental memo component.
+    """Compile a memo component.
 
     Args:
         definition: The component memo definition.
@@ -420,7 +420,7 @@ def compile_experimental_component_memo(
         dynamic_imports = render._get_all_dynamic_imports()
         all_imports = render._get_all_imports()
 
-    # Each experimental memo now lives in ``web/utils/components/<name>.jsx``,
+    # Each memo now lives in ``web/utils/components/<name>.jsx``,
     # so importing the ``$/utils/components`` index from this file is only
     # circular when ``<name>`` itself appears in that index — i.e. a legacy
     # ``@rx.memo`` wrapper file. For auto-memo wrappers around legacy custom
@@ -517,9 +517,9 @@ def _root_only_dynamic_imports(component: Component) -> set[str]:
 
 
 def compile_experimental_function_memo(
-    definition: ExperimentalMemoFunctionDefinition,
+    definition: MemoFunctionDefinition,
 ) -> tuple[dict, ParsedImportDict]:
-    """Compile an experimental memo function.
+    """Compile a memo function.
 
     Args:
         definition: The function memo definition.

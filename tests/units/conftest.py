@@ -10,7 +10,7 @@ from unittest import mock
 
 import pytest
 import pytest_asyncio
-from reflex_base.components.memo import EXPERIMENTAL_MEMOS
+from reflex_base.components.memo import MEMOS
 from reflex_base.event import Event, EventSpec
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
@@ -495,9 +495,9 @@ def preserve_memo_registries():
     Yields:
         None
     """
-    experimental_memos = dict(EXPERIMENTAL_MEMOS)
+    memos = dict(MEMOS)
     try:
         yield
     finally:
-        EXPERIMENTAL_MEMOS.clear()
-        EXPERIMENTAL_MEMOS.update(experimental_memos)
+        MEMOS.clear()
+        MEMOS.update(memos)

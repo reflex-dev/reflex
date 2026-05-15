@@ -9,10 +9,10 @@ import pytest
 from reflex_base.components.component import Component
 from reflex_base.components.memo import (
     _SPECS,
-    EXPERIMENTAL_MEMOS,
-    ExperimentalMemoComponent,
-    ExperimentalMemoComponentDefinition,
-    ExperimentalMemoFunctionDefinition,
+    MEMOS,
+    MemoComponent,
+    MemoComponentDefinition,
+    MemoFunctionDefinition,
     MemoParam,
     MemoParamKind,
     _MemoCallBinding,
@@ -55,8 +55,8 @@ def test_var_returning_memo():
     )
     assert isinstance(format_price._as_var(), FunctionVar)
 
-    definition = EXPERIMENTAL_MEMOS["format_price"]
-    assert isinstance(definition, ExperimentalMemoFunctionDefinition)
+    definition = MEMOS["format_price"]
+    assert isinstance(definition, MemoFunctionDefinition)
     assert (
         str(definition.function) == '((amount, currency) => ((currency+": $")+amount))'
     )
@@ -90,7 +90,7 @@ def test_component_returning_memo_with_children_and_rest():
     )
     component_again = my_card(title="World")
 
-    assert isinstance(component, ExperimentalMemoComponent)
+    assert isinstance(component, MemoComponent)
     assert len(component.children) == 2
     assert component.get_props() == ("title", "foo")
     assert type(component) is type(component_again)
@@ -103,11 +103,11 @@ def test_component_returning_memo_with_children_and_rest():
     assert 'foo:"extra"' in rendered["props"]
     assert 'className:"extra"' in rendered["props"]
 
-    definition = EXPERIMENTAL_MEMOS["MyCard"]
-    assert isinstance(definition, ExperimentalMemoComponentDefinition)
+    definition = MEMOS["MyCard"]
+    assert isinstance(definition, MemoComponentDefinition)
     assert any(str(prop) == "rest" for prop in definition.component.special_props)
 
-    files, _ = compiler.compile_memo_components(tuple(EXPERIMENTAL_MEMOS.values()))
+    files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
     code = "\n".join(c for _, c in files)
     assert "export const MyCard = memo(({children, title:title" in code
     assert "...rest" in code
@@ -125,13 +125,13 @@ def test_component_returning_memo_accepts_component_var_result():
     ) -> rx.Var[rx.Component]:
         return rx.cond(show, first, second)
 
-    definition = EXPERIMENTAL_MEMOS["ConditionalSlot"]
-    assert isinstance(definition, ExperimentalMemoComponentDefinition)
+    definition = MEMOS["ConditionalSlot"]
+    assert isinstance(definition, MemoComponentDefinition)
     assert definition.component.render() == {
         "contents": "(showRxMemo ? firstRxMemo : secondRxMemo)"
     }
 
-    files, _ = compiler.compile_memo_components(tuple(EXPERIMENTAL_MEMOS.values()))
+    files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
     code = "\n".join(c for _, c in files)
     assert "export const ConditionalSlot = memo(({show:showRxMemo" in code
     assert "(showRxMemo ? firstRxMemo : secondRxMemo)" in code
@@ -155,7 +155,7 @@ def test_var_returning_memo_with_rest_props():
     assert '["color"] : "red"' in str(merged)
     assert '["className"] : "primary"' in str(merged)
 
-    files, _ = compiler.compile_memo_components(tuple(EXPERIMENTAL_MEMOS.values()))
+    files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
     code = "\n".join(c for _, c in files)
     assert (
         "export const merge_styles = (({base, ...overrides}) => ({...base, ...overrides}));"
@@ -173,7 +173,7 @@ def test_component_returning_memo_with_only_rest():
     def hover_trigger(rest: rx.RestProp) -> rx.Component:
         return rx.text("hover me", rest)
 
-    files, _ = compiler.compile_memo_components(tuple(EXPERIMENTAL_MEMOS.values()))
+    files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
     code = "\n".join(c for _, c in files)
     assert "memo(({...rest})" in code
     assert "({," not in code
@@ -186,7 +186,7 @@ def test_var_returning_memo_with_only_rest():
     def merge_only(overrides: rx.RestProp) -> rx.Var[Any]:
         return overrides
 
-    files, _ = compiler.compile_memo_components(tuple(EXPERIMENTAL_MEMOS.values()))
+    files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
     code = "\n".join(c for _, c in files)
     assert "(({...overrides}) => overrides)" in code
     assert "({," not in code
@@ -214,7 +214,7 @@ def test_var_returning_memo_with_children_and_rest():
     assert '["children"]' in str(rendered)
     assert '["className"] : "slot"' in str(rendered)
 
-    files, _ = compiler.compile_memo_components(tuple(EXPERIMENTAL_MEMOS.values()))
+    files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
     code = "\n".join(c for _, c in files)
     assert "export const label_slot = (({children, label, ...rest}) => label);" in code
 
@@ -262,7 +262,7 @@ def test_memo_rejects_component_and_function_name_collision():
     def foo_bar() -> rx.Component:
         return rx.box()
 
-    assert "FooBar" in EXPERIMENTAL_MEMOS
+    assert "FooBar" in MEMOS
 
     with pytest.raises(ValueError, match=r"name collision.*FooBar"):
 
@@ -384,7 +384,7 @@ def test_compile_memo_components_includes_functions_and_components():
     def my_card(children: rx.Var[rx.Component], *, title: rx.Var[str]) -> rx.Component:
         return rx.box(rx.heading(title), children)
 
-    files, _ = compiler.compile_memo_components(tuple(EXPERIMENTAL_MEMOS.values()))
+    files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
     code = "\n".join(c for _, c in files)
 
     assert "export const TextWrapper = memo(" in code
@@ -401,7 +401,7 @@ def test_compile_memo_components_extends_imports_without_remerging(
         pass
 
     memos = tuple(
-        ExperimentalMemoComponentDefinition(
+        MemoComponentDefinition(
             fn=noop,
             python_name=f"memo_{idx}",
             params=(),
@@ -413,7 +413,7 @@ def test_compile_memo_components_extends_imports_without_remerging(
     )
 
     def fake_compile_experimental_component_memo(
-        definition: ExperimentalMemoComponentDefinition,
+        definition: MemoComponentDefinition,
     ) -> tuple[dict[str, str], dict[str, list[ImportVar]]]:
         return {"name": definition.export_name}, {}
 
@@ -469,8 +469,8 @@ def test_experimental_component_memo_get_imports():
 
     assert "inner" not in experimental_component._get_all_imports()
 
-    definition = EXPERIMENTAL_MEMOS["Wrapper"]
-    assert isinstance(definition, ExperimentalMemoComponentDefinition)
+    definition = MEMOS["Wrapper"]
+    assert isinstance(definition, MemoComponentDefinition)
     _, imports = compiler_utils.compile_experimental_component_memo(definition)
     assert "inner" in imports
 
@@ -484,8 +484,8 @@ def test_compile_experimental_component_memo_does_not_mutate_definition(
     def wrapper() -> rx.Component:
         return rx.box("hi")
 
-    definition = EXPERIMENTAL_MEMOS["Wrapper"]
-    assert isinstance(definition, ExperimentalMemoComponentDefinition)
+    definition = MEMOS["Wrapper"]
+    assert isinstance(definition, MemoComponentDefinition)
     assert definition.component.style == Style()
 
     monkeypatch.setattr(
@@ -522,7 +522,7 @@ def test_component_returning_memo_is_transparent_for_child_validation():
     wrapped_child = transparent(RestrictedChild.create())
     parent = ValidParent.create(wrapped_child)
 
-    assert isinstance(wrapped_child, ExperimentalMemoComponent)
+    assert isinstance(wrapped_child, MemoComponent)
     assert parent.children == [wrapped_child]
 
 
@@ -539,7 +539,7 @@ def test_compile_memo_components_includes_experimental_custom_code():
     def foo_component(label: rx.Var[str]) -> rx.Component:
         return FooComponent.create(label, rx.Var("foo"))
 
-    files, _ = compiler.compile_memo_components(tuple(EXPERIMENTAL_MEMOS.values()))
+    files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
     code = "\n".join(c for _, c in files)
 
     assert "const foo = 'bar'" in code
@@ -558,8 +558,8 @@ def test_component_memo_accepts_event_handler():
             rx.input(on_change=event),
         )
 
-    definition = EXPERIMENTAL_MEMOS["EhMemo"]
-    assert isinstance(definition, ExperimentalMemoComponentDefinition)
+    definition = MEMOS["EhMemo"]
+    assert isinstance(definition, MemoComponentDefinition)
     event_param = next(p for p in definition.params if p.name == "event")
     assert event_param.kind is MemoParamKind.EVENT_TRIGGER
     assert event_param.kind_data is not None
@@ -573,8 +573,8 @@ def test_component_memo_accepts_bare_event_handler():
     def bare_eh_memo(event: rx.EventHandler) -> rx.Component:
         return rx.button("click", on_click=event())
 
-    definition = EXPERIMENTAL_MEMOS["BareEhMemo"]
-    assert isinstance(definition, ExperimentalMemoComponentDefinition)
+    definition = MEMOS["BareEhMemo"]
+    assert isinstance(definition, MemoComponentDefinition)
     event_param = next(p for p in definition.params if p.name == "event")
     assert event_param.kind is MemoParamKind.EVENT_TRIGGER
     assert event_param.kind_data is no_args_event_spec
@@ -593,7 +593,7 @@ def test_component_memo_event_handler_compiles_to_prop_callback():
             rx.input(on_change=event),
         )
 
-    files, _ = compiler.compile_memo_components(tuple(EXPERIMENTAL_MEMOS.values()))
+    files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
     code = "\n".join(c for _, c in files)
 
     # Signature destructures the EH prop with the RxMemo suffix.
@@ -622,7 +622,7 @@ def test_component_memo_event_handler_wires_event_chain_at_call_site():
         return rx.button(some_value, on_click=event(some_value))
 
     component = eh_wired_memo(some_value="hello", event=raw_handler)
-    assert isinstance(component, ExperimentalMemoComponent)
+    assert isinstance(component, MemoComponent)
     # EH props live on event_triggers, not in get_props().
     assert "event" not in component.get_props()
     assert "event" in component.event_triggers

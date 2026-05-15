@@ -17,10 +17,10 @@ from reflex_base.components.component import (
     evaluate_style_namespaces,
 )
 from reflex_base.components.memo import (
-    EXPERIMENTAL_MEMOS,
-    ExperimentalMemoComponentDefinition,
-    ExperimentalMemoDefinition,
-    ExperimentalMemoFunctionDefinition,
+    MEMOS,
+    MemoComponentDefinition,
+    MemoDefinition,
+    MemoFunctionDefinition,
 )
 from reflex_base.config import get_config
 from reflex_base.constants.compiler import PageNames, ResetStylesheet
@@ -392,7 +392,7 @@ def _compile_component(component: Component) -> str:
 
 
 def _compile_memo_components(
-    experimental_memos: Iterable[ExperimentalMemoDefinition] = (),
+    memos: Iterable[MemoDefinition] = (),
 ) -> tuple[list[tuple[str, str]], dict[str, list[ImportVar]]]:
     """Compile each memo as its own module plus an empty index.
 
@@ -405,7 +405,7 @@ def _compile_memo_components(
     the file at the expected path.
 
     Args:
-        experimental_memos: The memos to compile.
+        memos: The memos to compile.
 
     Returns:
         A list of ``(path, code)`` pairs to write — one per memo plus one
@@ -416,8 +416,8 @@ def _compile_memo_components(
 
     base_dir = utils.get_memo_components_dir()
 
-    for memo in experimental_memos:
-        if isinstance(memo, ExperimentalMemoComponentDefinition):
+    for memo in memos:
+        if isinstance(memo, MemoComponentDefinition):
             memo_render, memo_imports = utils.compile_experimental_component_memo(memo)
             name = memo_render["name"]
             code, file_imports = _compile_single_memo_component(
@@ -426,7 +426,7 @@ def _compile_memo_components(
             path = _memo_component_file_path(base_dir, name)
             per_memo_files.append((path, code))
             _extend_imports_in_place(aggregate_imports, file_imports)
-        elif isinstance(memo, ExperimentalMemoFunctionDefinition):
+        elif isinstance(memo, MemoFunctionDefinition):
             memo_render, memo_imports = utils.compile_experimental_function_memo(memo)
             name = memo_render["name"]
             code, file_imports = _compile_single_memo_function(
@@ -652,18 +652,18 @@ def compile_page_from_context(page_ctx: PageContext) -> tuple[str, str]:
 
 
 def compile_memo_components(
-    experimental_memos: Iterable[ExperimentalMemoDefinition] = (),
+    memos: Iterable[MemoDefinition] = (),
 ) -> tuple[list[tuple[str, str]], dict[str, list[ImportVar]]]:
     """Compile the memos into one module per memo plus an index.
 
     Args:
-        experimental_memos: The memos to compile.
+        memos: The memos to compile.
 
     Returns:
         A list of ``(path, code)`` pairs (one per memo module and one index)
         alongside the aggregated imports across all memo modules.
     """
-    return _compile_memo_components(experimental_memos)
+    return _compile_memo_components(memos)
 
 
 def purge_web_pages_dir():
@@ -1102,7 +1102,7 @@ def compile_app(
 
     memo_component_files, memo_components_imports = compile_memo_components(
         (
-            *tuple(EXPERIMENTAL_MEMOS.values()),
+            *tuple(MEMOS.values()),
             *tuple(compile_ctx.auto_memo_components.values()),
         ),
     )

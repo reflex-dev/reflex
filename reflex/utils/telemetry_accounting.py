@@ -95,7 +95,7 @@ def _count_components(pages: Iterable[BaseComponent]) -> dict[str, int]:
     """Count component types across one or more component trees.
 
     Auto-memoized components live in the tree as dynamic
-    ``ExperimentalMemoComponent_<Type>_<tag>_<hash>`` subclasses. Bucketing by
+    ``MemoComponent_<Type>_<tag>_<hash>`` subclasses. Bucketing by
     the raw class name would explode telemetry cardinality (each handler hash
     produces a new key), so wrappers are counted under the user-authored
     component they stand in for, exposed via ``_wrapped_component_type``.

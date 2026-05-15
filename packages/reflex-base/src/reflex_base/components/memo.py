@@ -1,4 +1,4 @@
-"""Experimental memo support for vars and components."""
+"""Memo support for vars and components."""
 
 from __future__ import annotations
 
@@ -131,8 +131,8 @@ class _MemoParamSpec:
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
-class ExperimentalMemoDefinition:
-    """Base metadata for an experimental memo."""
+class MemoDefinition:
+    """Base metadata for a memo."""
 
     fn: Callable[..., Any]
     python_name: str
@@ -140,7 +140,7 @@ class ExperimentalMemoDefinition:
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
-class ExperimentalMemoFunctionDefinition(ExperimentalMemoDefinition):
+class MemoFunctionDefinition(MemoDefinition):
     """A memo that compiles to a JavaScript function."""
 
     function: ArgsFunctionOperation
@@ -148,7 +148,7 @@ class ExperimentalMemoFunctionDefinition(ExperimentalMemoDefinition):
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
-class ExperimentalMemoComponentDefinition(ExperimentalMemoDefinition):
+class MemoComponentDefinition(MemoDefinition):
     """A memo that compiles to a React component."""
 
     export_name: str
@@ -163,14 +163,14 @@ class ExperimentalMemoComponentDefinition(ExperimentalMemoDefinition):
     passthrough_hole_child: Component | None = None
 
 
-class ExperimentalMemoComponent(Component):
-    """A rendered instance of an experimental memo component."""
+class MemoComponent(Component):
+    """A rendered instance of a memo component."""
 
     library = f"$/{constants.Dirs.COMPONENTS_PATH}"
     _memoization_mode = MemoizationMode(disposition=MemoizationDisposition.NEVER)
 
     # The user-authored component class this wrapper stands in for. Populated
-    # on the dynamic subclass by ``_get_experimental_memo_component_class`` so
+    # on the dynamic subclass by ``_get_memo_component_class`` so
     # introspection (e.g. compile telemetry) can recover the underlying type
     # without parsing the wrapper's auto-generated class name.
     _wrapped_component_type: ClassVar[type[Component] | None] = None
@@ -178,7 +178,7 @@ class ExperimentalMemoComponent(Component):
     def _validate_component_children(self, children: list[Component]) -> None:
         """Skip direct parent/child validation for memo wrapper instances.
 
-        Experimental memos wrap an underlying compiled component definition.
+        Memos wrap an underlying compiled component definition.
         The runtime wrapper should not interpose on `_valid_parents` checks for
         the authored subtree because the wrapper itself is not the semantic
         parent in the user-authored component tree.
@@ -188,7 +188,7 @@ class ExperimentalMemoComponent(Component):
         """
 
     def _post_init(self, **kwargs):
-        """Initialize the experimental memo component.
+        """Initialize the memo component.
 
         Args:
             **kwargs: The kwargs to pass to the component.
@@ -209,11 +209,11 @@ class ExperimentalMemoComponent(Component):
 
 
 @cache
-def _get_experimental_memo_component_class(
+def _get_memo_component_class(
     export_name: str,
     wrapped_component_type: type[Component] = Component,
-) -> type[ExperimentalMemoComponent]:
-    """Get the component subclass for an experimental memo export.
+) -> type[MemoComponent]:
+    """Get the component subclass for a memo export.
 
     Class-level metadata that the compiler reads via ``type(comp)._get_*()``
     (notably ``_get_app_wrap_components``, which carries providers like
@@ -248,17 +248,17 @@ def _get_experimental_memo_component_class(
             wrapped_component_type._get_app_wrap_components
         )
     return type(
-        f"ExperimentalMemoComponent_{export_name}",
-        (ExperimentalMemoComponent,),
+        f"MemoComponent_{export_name}",
+        (MemoComponent,),
         attrs,
     )
 
 
-EXPERIMENTAL_MEMOS: dict[str, ExperimentalMemoDefinition] = {}
+MEMOS: dict[str, MemoDefinition] = {}
 
 
-def _memo_registry_key(definition: ExperimentalMemoDefinition) -> str:
-    """Get the registry key for an experimental memo.
+def _memo_registry_key(definition: MemoDefinition) -> str:
+    """Get the registry key for a memo.
 
     Args:
         definition: The memo definition.
@@ -266,14 +266,14 @@ def _memo_registry_key(definition: ExperimentalMemoDefinition) -> str:
     Returns:
         The registry key for the memo.
     """
-    if isinstance(definition, ExperimentalMemoComponentDefinition):
+    if isinstance(definition, MemoComponentDefinition):
         return definition.export_name
     return definition.python_name
 
 
 def _is_memo_reregistration(
-    existing: ExperimentalMemoDefinition,
-    definition: ExperimentalMemoDefinition,
+    existing: MemoDefinition,
+    definition: MemoDefinition,
 ) -> bool:
     """Check whether a memo definition replaces the same memo during reload.
 
@@ -292,8 +292,8 @@ def _is_memo_reregistration(
     )
 
 
-def _register_memo_definition(definition: ExperimentalMemoDefinition) -> None:
-    """Register an experimental memo definition.
+def _register_memo_definition(definition: MemoDefinition) -> None:
+    """Register a memo definition.
 
     Args:
         definition: The memo definition to register.
@@ -302,18 +302,18 @@ def _register_memo_definition(definition: ExperimentalMemoDefinition) -> None:
         ValueError: If another memo already compiles to the same exported name.
     """
     key = _memo_registry_key(definition)
-    if (existing := EXPERIMENTAL_MEMOS.get(key)) is not None and (
+    if (existing := MEMOS.get(key)) is not None and (
         not _is_memo_reregistration(existing, definition)
     ):
         msg = (
-            f"Experimental memo name collision for `{key}`: "
+            f"Memo name collision for `{key}`: "
             f"`{existing.fn.__module__}.{existing.python_name}` and "
             f"`{definition.fn.__module__}.{definition.python_name}` both compile "
             "to the same memo name."
         )
         raise ValueError(msg)
 
-    EXPERIMENTAL_MEMOS[key] = definition
+    MEMOS[key] = definition
 
 
 def _annotation_inner_type(annotation: Any) -> Any:
@@ -446,7 +446,7 @@ def _get_rest_param(params: tuple[MemoParam, ...]) -> MemoParam | None:
 
 
 def _imported_function_var(name: str, return_type: Any) -> FunctionVar:
-    """Create the imported FunctionVar for an experimental memo.
+    """Create the imported FunctionVar for a memo.
 
     Args:
         name: The exported function name.
@@ -467,7 +467,7 @@ def _imported_function_var(name: str, return_type: Any) -> FunctionVar:
 
 
 def _component_import_var(name: str) -> Var:
-    """Create the imported component var for an experimental memo component.
+    """Create the imported component var for a memo component.
 
     Args:
         name: The exported component name.
@@ -1028,7 +1028,7 @@ def _classify_parameter(
 def _create_function_definition(
     fn: Callable[..., Any],
     return_annotation: Any,
-) -> ExperimentalMemoFunctionDefinition:
+) -> MemoFunctionDefinition:
     """Create a definition for a var-returning memo.
 
     Args:
@@ -1066,7 +1066,7 @@ def _create_function_definition(
             return_expr=return_expr,
         )
 
-    return ExperimentalMemoFunctionDefinition(
+    return MemoFunctionDefinition(
         fn=fn,
         python_name=fn.__name__,
         params=params,
@@ -1080,7 +1080,7 @@ def _create_function_definition(
 def _create_component_definition(
     fn: Callable[..., Any],
     return_annotation: Any,
-) -> ExperimentalMemoComponentDefinition:
+) -> MemoComponentDefinition:
     """Create a definition for a component-returning memo.
 
     Args:
@@ -1102,7 +1102,7 @@ def _create_component_definition(
         )
         raise TypeError(msg)
 
-    return ExperimentalMemoComponentDefinition(
+    return MemoComponentDefinition(
         fn=fn,
         python_name=fn.__name__,
         params=params,
@@ -1112,7 +1112,7 @@ def _create_component_definition(
 
 
 def _bind_function_runtime_args(
-    definition: ExperimentalMemoFunctionDefinition,
+    definition: MemoFunctionDefinition,
     *args: Any,
     **kwargs: Any,
 ) -> tuple[Any, ...]:
@@ -1206,7 +1206,7 @@ def _bind_function_runtime_args(
 
 
 def _is_component_child(value: Any) -> bool:
-    """Check whether a value is valid as an experimental memo child.
+    """Check whether a value is valid as a memo child.
 
     Args:
         value: The value to check.
@@ -1219,10 +1219,10 @@ def _is_component_child(value: Any) -> bool:
     )
 
 
-class _ExperimentalMemoFunctionWrapper:
-    """Callable wrapper for a var-returning experimental memo."""
+class _MemoFunctionWrapper:
+    """Callable wrapper for a var-returning memo."""
 
-    def __init__(self, definition: ExperimentalMemoFunctionDefinition):
+    def __init__(self, definition: MemoFunctionDefinition):
         """Initialize the wrapper.
 
         Args:
@@ -1281,10 +1281,10 @@ class _ExperimentalMemoFunctionWrapper:
         return self._imported_var
 
 
-class _ExperimentalMemoComponentWrapper:
-    """Callable wrapper for a component-returning experimental memo."""
+class _MemoComponentWrapper:
+    """Callable wrapper for a component-returning memo."""
 
-    def __init__(self, definition: ExperimentalMemoComponentDefinition):
+    def __init__(self, definition: MemoComponentDefinition):
         """Initialize the wrapper.
 
         Args:
@@ -1300,7 +1300,7 @@ class _ExperimentalMemoComponentWrapper:
         ]
         update_wrapper(self, definition.fn)
 
-    def __call__(self, *children: Any, **props: Any) -> ExperimentalMemoComponent:
+    def __call__(self, *children: Any, **props: Any) -> MemoComponent:
         """Call the wrapped memo and return a component.
 
         Args:
@@ -1355,7 +1355,7 @@ class _ExperimentalMemoComponentWrapper:
             raise TypeError(msg)
 
         # Build the component props passed into the memo wrapper.
-        return _get_experimental_memo_component_class(
+        return _get_memo_component_class(
             definition.export_name, type(definition.component)
         )._create(
             children=list(children),
@@ -1374,8 +1374,8 @@ class _ExperimentalMemoComponentWrapper:
 
 
 def _create_function_wrapper(
-    definition: ExperimentalMemoFunctionDefinition,
-) -> _ExperimentalMemoFunctionWrapper:
+    definition: MemoFunctionDefinition,
+) -> _MemoFunctionWrapper:
     """Create the Python wrapper for a var-returning memo.
 
     Args:
@@ -1384,12 +1384,12 @@ def _create_function_wrapper(
     Returns:
         The wrapper callable.
     """
-    return _ExperimentalMemoFunctionWrapper(definition)
+    return _MemoFunctionWrapper(definition)
 
 
 def _create_component_wrapper(
-    definition: ExperimentalMemoComponentDefinition,
-) -> _ExperimentalMemoComponentWrapper:
+    definition: MemoComponentDefinition,
+) -> _MemoComponentWrapper:
     """Create the Python wrapper for a component-returning memo.
 
     Args:
@@ -1398,19 +1398,19 @@ def _create_component_wrapper(
     Returns:
         The wrapper callable.
     """
-    return _ExperimentalMemoComponentWrapper(definition)
+    return _MemoComponentWrapper(definition)
 
 
 def create_passthrough_component_memo(
     component: Component,
 ) -> tuple[
-    Callable[..., ExperimentalMemoComponent],
-    ExperimentalMemoComponentDefinition,
+    Callable[..., MemoComponent],
+    MemoComponentDefinition,
 ]:
     """Create an unregistered ``@rx._x.memo``-style passthrough component memo.
 
     This is used by compiler auto-memoization so generated wrappers compile
-    through the experimental memo pipeline instead of emitting ad-hoc page-local
+    through the memo pipeline instead of emitting ad-hoc page-local
     ``React.memo`` declarations.
 
     The exported memo name is derived from ``component._compute_memo_tag()``
@@ -1501,7 +1501,7 @@ def create_passthrough_component_memo(
 
 
 def memo(fn: Callable[..., Any]) -> Callable[..., Any]:
-    """Create an experimental memo from a function.
+    """Create a memo from a function.
 
     Args:
         fn: The function to memoize.
@@ -1539,11 +1539,11 @@ def memo(fn: Callable[..., Any]) -> Callable[..., Any]:
 
 
 __all__ = [
-    "EXPERIMENTAL_MEMOS",
-    "ExperimentalMemoComponent",
-    "ExperimentalMemoComponentDefinition",
-    "ExperimentalMemoDefinition",
-    "ExperimentalMemoFunctionDefinition",
+    "MEMOS",
+    "MemoComponent",
+    "MemoComponentDefinition",
+    "MemoDefinition",
+    "MemoFunctionDefinition",
     "create_passthrough_component_memo",
     "memo",
 ]

@@ -196,7 +196,7 @@ def test_memo_wrapper_class_records_wrapped_component_type():
 
     memo_module = importlib.import_module("reflex.experimental.memo")
 
-    wrapper_cls = memo_module._get_experimental_memo_component_class(
+    wrapper_cls = memo_module._get_memo_component_class(
         "Button_button_deadbeefcafebabe",
         Button,
     )
