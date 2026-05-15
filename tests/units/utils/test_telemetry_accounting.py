@@ -1,9 +1,11 @@
 """Tests for ``reflex.utils.telemetry_accounting``."""
 
 from types import SimpleNamespace
+from typing import cast
 from unittest.mock import MagicMock
 
 from pytest_mock import MockerFixture
+from reflex_base.config import Config
 from reflex_base.plugins.sitemap import SitemapPlugin
 from reflex_base.telemetry_context import TelemetryContext
 
@@ -19,14 +21,15 @@ from reflex.state import (
 from reflex.utils import telemetry_accounting
 
 
-def _fake_config(**overrides):
-    """Build a Mock config pre-populated with sane defaults for the collector.
+def _fake_config(**overrides) -> Config:
+    """Build a stand-in config pre-populated with defaults the collector reads.
 
     Args:
         **overrides: Config attribute overrides.
 
     Returns:
-        A ``SimpleNamespace`` standing in for the resolved Reflex config.
+        A ``SimpleNamespace`` standing in for the resolved Reflex config,
+        cast to ``Config`` so callers stay in the typed lane.
     """
     defaults = {
         "plugins": [],
@@ -35,7 +38,7 @@ def _fake_config(**overrides):
         "cors_allowed_origins": ("*",),
     }
     defaults.update(overrides)
-    return SimpleNamespace(**defaults)
+    return cast(Config, SimpleNamespace(**defaults))
 
 
 def _fake_app(**overrides):
@@ -108,9 +111,9 @@ def test_sanitize_exception_strips_message_and_path():
 def test_walk_components_walks_nested_tree():
     """Component counts include every node in nested trees, keyed by class name."""
     tree = rx.box(rx.box(rx.box()))
-    walk = telemetry_accounting._walk_components([tree])
-    assert walk["counts"][type(tree).__name__] == 3
-    assert walk["upload_count"] == 0
+    counts, upload_count = telemetry_accounting._walk_components([tree])
+    assert counts[type(tree).__name__] == 3
+    assert upload_count == 0
 
 
 def test_collect_state_stats_root_depth_zero():
@@ -234,12 +237,12 @@ def test_walk_components_buckets_memo_wrapper_by_wrapped_type():
         _wrapped_component_type = Button
         children = ()
 
-    walk = telemetry_accounting._walk_components(
+    counts, upload_count = telemetry_accounting._walk_components(
         [_StubMemoWrapper()],  # pyright: ignore[reportArgumentType]
     )
 
-    assert walk["counts"] == {"Button": 1}
-    assert walk["upload_count"] == 0
+    assert counts == {"Button": 1}
+    assert upload_count == 0
 
 
 def test_walk_components_counts_upload_subclass_instances():
@@ -254,42 +257,26 @@ def test_walk_components_counts_upload_subclass_instances():
     styled_inst = object.__new__(StyledUpload)
     styled_inst.children = []
 
-    walk = telemetry_accounting._walk_components(
+    _counts, upload_count = telemetry_accounting._walk_components(
         [upload_inst, styled_inst, _PlainStub()],  # pyright: ignore[reportArgumentType]
     )
-    assert walk["upload_count"] == 2
+    assert upload_count == 2
 
 
-def _empty_walk() -> telemetry_accounting._ComponentWalk:
-    """Build an empty component-walk aggregate for tests that don't render pages.
-
-    Returns:
-        A walk dict with no counts and zero uploads.
-    """
-    return {"counts": {}, "upload_count": 0}
-
-
-def test_collect_features_used_emits_every_known_key(mocker: MockerFixture):
+def test_collect_features_used_emits_every_known_key():
     """All names in ``_KNOWN_FEATURES`` ship in the snapshot, defaulted to 0."""
-    mocker.patch(
-        "reflex.utils.telemetry_accounting.get_config",
-        return_value=_fake_config(),
-    )
     features = telemetry_accounting._collect_features_used(
         _fake_app(),  # pyright: ignore[reportArgumentType]
+        _fake_config(),
         [],
-        _empty_walk(),
+        0,
     )
     for name in telemetry_accounting._KNOWN_FEATURES:
         assert name in features, name
 
 
-def test_collect_features_used_walks_state_fields_for_storage(mocker: MockerFixture):
+def test_collect_features_used_walks_state_fields_for_storage():
     """Storage counts come from a walk over user state fields."""
-    mocker.patch(
-        "reflex.utils.telemetry_accounting.get_config",
-        return_value=_fake_config(),
-    )
 
     class _StorageState(BaseState):
         c1: str = Cookie()
@@ -300,35 +287,28 @@ def test_collect_features_used_walks_state_fields_for_storage(mocker: MockerFixt
 
     features = telemetry_accounting._collect_features_used(
         _fake_app(),  # pyright: ignore[reportArgumentType]
+        _fake_config(),
         [_StorageState],
-        _empty_walk(),
+        0,
     )
     assert features["cookie_count"] == 2
     assert features["local_storage_count"] == 1
     assert features["session_storage_count"] == 1
 
 
-def test_collect_features_used_upload_from_component_walk(mocker: MockerFixture):
+def test_collect_features_used_upload_from_component_walk():
     """``upload_count`` is read from the component walk, not a marker."""
-    mocker.patch(
-        "reflex.utils.telemetry_accounting.get_config",
-        return_value=_fake_config(),
-    )
-    walk: telemetry_accounting._ComponentWalk = {"counts": {}, "upload_count": 3}
     features = telemetry_accounting._collect_features_used(
         _fake_app(),  # pyright: ignore[reportArgumentType]
+        _fake_config(),
         [],
-        walk,
+        3,
     )
     assert features["upload_count"] == 3
 
 
-def test_collect_features_used_counts_shared_state_subclasses(mocker: MockerFixture):
+def test_collect_features_used_counts_shared_state_subclasses():
     """The walk counts user states that subclass ``rx.SharedState``."""
-    mocker.patch(
-        "reflex.utils.telemetry_accounting.get_config",
-        return_value=_fake_config(),
-    )
 
     class _SharedOne(rx.SharedState):
         x: int = 0
@@ -338,18 +318,15 @@ def test_collect_features_used_counts_shared_state_subclasses(mocker: MockerFixt
 
     features = telemetry_accounting._collect_features_used(
         _fake_app(),  # pyright: ignore[reportArgumentType]
+        _fake_config(),
         [_SharedOne, _SharedTwo],
-        _empty_walk(),
+        0,
     )
     assert features["shared_state_count"] == 2
 
 
-def test_collect_features_used_counts_dynamic_routes(mocker: MockerFixture):
+def test_collect_features_used_counts_dynamic_routes():
     """Routes with ``[arg]`` parts count; static routes do not."""
-    mocker.patch(
-        "reflex.utils.telemetry_accounting.get_config",
-        return_value=_fake_config(),
-    )
     app = _fake_app(
         _unevaluated_pages={
             "/": object(),
@@ -360,18 +337,15 @@ def test_collect_features_used_counts_dynamic_routes(mocker: MockerFixture):
     )
     features = telemetry_accounting._collect_features_used(
         app,  # pyright: ignore[reportArgumentType]
+        _fake_config(),
         [],
-        _empty_walk(),
+        0,
     )
     assert features["dynamic_routes_count"] == 2
 
 
-def test_collect_features_used_counts_user_lifespan_tasks(mocker: MockerFixture):
+def test_collect_features_used_counts_user_lifespan_tasks():
     """User-module lifespan tasks count; ``reflex.*`` tasks are excluded."""
-    mocker.patch(
-        "reflex.utils.telemetry_accounting.get_config",
-        return_value=_fake_config(),
-    )
 
     def user_task():
         return None
@@ -384,83 +358,67 @@ def test_collect_features_used_counts_user_lifespan_tasks(mocker: MockerFixture)
     app = _fake_app(_lifespan_tasks={user_task: None, reflex_internal_task: None})
     features = telemetry_accounting._collect_features_used(
         app,  # pyright: ignore[reportArgumentType]
+        _fake_config(),
         [],
-        _empty_walk(),
+        0,
     )
     assert features["lifespan_tasks_count"] == 1
 
 
 def test_collect_features_used_counts_registered_db_models(mocker: MockerFixture):
     """A non-empty ``ModelRegistry`` reads into ``db_model_count``."""
-    mocker.patch(
-        "reflex.utils.telemetry_accounting.get_config",
-        return_value=_fake_config(),
-    )
     mocker.patch.object(telemetry_accounting, "_HAS_SQLALCHEMY", True)
-    mocker.patch.object(
-        telemetry_accounting.ModelRegistry,
-        "get_models",
-        return_value={object(), object()},
-    )
+    # Replace ModelRegistry wholesale so the test works whether sqlalchemy is
+    # installed (real ModelRegistry) or not (the _ClassThatErrorsOnInit stub).
+    fake_registry = SimpleNamespace(get_models=lambda: {object(), object()})
+    mocker.patch.object(telemetry_accounting, "ModelRegistry", fake_registry)
 
     features = telemetry_accounting._collect_features_used(
         _fake_app(),  # pyright: ignore[reportArgumentType]
+        _fake_config(),
         [],
-        _empty_walk(),
+        0,
     )
     assert features["db_model_count"] == 2
 
 
-def test_collect_features_used_records_state_manager_mode(mocker: MockerFixture):
+def test_collect_features_used_records_state_manager_mode():
     """The configured state-manager mode lights up exactly one boolean key."""
-    mocker.patch(
-        "reflex.utils.telemetry_accounting.get_config",
-        return_value=_fake_config(state_manager_mode=SimpleNamespace(value="redis")),
-    )
     features = telemetry_accounting._collect_features_used(
         _fake_app(),  # pyright: ignore[reportArgumentType]
+        _fake_config(state_manager_mode=SimpleNamespace(value="redis")),
         [],
-        _empty_walk(),
+        0,
     )
     assert features["state_manager_redis"] == 1
     assert features["state_manager_disk"] == 0
     assert features["state_manager_memory"] == 0
 
 
-def test_collect_features_used_records_cors_customized(mocker: MockerFixture):
+def test_collect_features_used_records_cors_customized():
     """A non-default ``cors_allowed_origins`` sets the cors counter to 1."""
-    mocker.patch(
-        "reflex.utils.telemetry_accounting.get_config",
-        return_value=_fake_config(cors_allowed_origins=("https://example.com",)),
-    )
     features = telemetry_accounting._collect_features_used(
         _fake_app(),  # pyright: ignore[reportArgumentType]
+        _fake_config(cors_allowed_origins=("https://example.com",)),
         [],
-        _empty_walk(),
+        0,
     )
     assert features["cors_customized"] == 1
 
 
-def test_collect_features_used_default_cors_stays_zero(mocker: MockerFixture):
+def test_collect_features_used_default_cors_stays_zero():
     """Default ``("*",)`` origins read as not customized."""
-    mocker.patch(
-        "reflex.utils.telemetry_accounting.get_config",
-        return_value=_fake_config(),
-    )
     features = telemetry_accounting._collect_features_used(
         _fake_app(),  # pyright: ignore[reportArgumentType]
+        _fake_config(),
         [],
-        _empty_walk(),
+        0,
     )
     assert features["cors_customized"] == 0
 
 
-def test_collect_features_used_counts_background_handlers(mocker: MockerFixture):
+def test_collect_features_used_counts_background_handlers():
     """The state walk counts ``@rx.event(background=True)`` handlers."""
-    mocker.patch(
-        "reflex.utils.telemetry_accounting.get_config",
-        return_value=_fake_config(),
-    )
 
     class _BgState(BaseState):
         @rx.event(background=True)
@@ -473,7 +431,8 @@ def test_collect_features_used_counts_background_handlers(mocker: MockerFixture)
 
     features = telemetry_accounting._collect_features_used(
         _fake_app(),  # pyright: ignore[reportArgumentType]
+        _fake_config(),
         [_BgState],
-        _empty_walk(),
+        0,
     )
     assert features["background_event_handlers_count"] == 1
