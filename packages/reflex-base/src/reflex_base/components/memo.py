@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from copy import copy
+from enum import Enum
 from functools import cache, update_wrapper
-from typing import Any, get_args, get_origin, get_type_hints
+from typing import Annotated, Any, get_args, get_origin, get_type_hints
 
 from reflex_base import constants
 from reflex_base.components.component import Component
@@ -22,6 +23,7 @@ from reflex_base.constants.compiler import (
     SpecialAttributes,
 )
 from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER
+from reflex_base.event import EventChain, EventHandler, no_args_event_spec, run_script
 from reflex_base.utils import format
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import safe_issubclass, typehint_issubclass
@@ -37,18 +39,95 @@ from reflex_base.vars.function import (
 from reflex_base.vars.object import RestProp
 
 
+class MemoParamKind(str, Enum):
+    """The role a memo parameter plays in the compiled component.
+
+    Each kind owns its full behavior — annotation classification, call-site
+    validation, placeholder construction, runtime binding, and JS signature
+    emission — via the per-kind :class:`_MemoParamSpec` instance in
+    :data:`_SPECS`. Adding a new kind means one new entry in :data:`_SPECS`
+    and one extra step in :data:`_CLASSIFICATION_ORDER`; the rest of the
+    module learns nothing else about the new kind.
+    """
+
+    VALUE = "value"
+    CHILDREN = "children"
+    REST = "rest"
+    EVENT_TRIGGER = "event_trigger"
+
+
 @dataclasses.dataclass(frozen=True, slots=True, kw_only=True)
 class MemoParam:
-    """Metadata about a memo parameter."""
+    """Metadata about an analyzed memo parameter."""
 
     name: str
+    kind: MemoParamKind
     annotation: Any
-    kind: inspect._ParameterKind
+    parameter_kind: inspect._ParameterKind
+    js_prop_name: str
+    placeholder_name: str
+    kind_data: Any = None
     default: Any = inspect.Parameter.empty
-    js_prop_name: str | None = None
-    placeholder_name: str = ""
-    is_children: bool = False
-    is_rest: bool = False
+
+    @property
+    def spec(self) -> _MemoParamSpec:
+        """The per-kind behavior bundle for this parameter."""
+        return _SPECS[self.kind]
+
+    def make_placeholder(self) -> Any:
+        """Build the value passed to the memo function during analysis.
+
+        Returns:
+            The placeholder value (a ``Var``, ``RestProp``, or plain callable).
+        """
+        return self.spec.make_placeholder(self)
+
+    def bind_call_value(self, binding: _MemoCallBinding) -> None:
+        """Route a user-provided value to props/event_triggers at instantiation.
+
+        Args:
+            binding: The call-site routing accumulator.
+        """
+        self.spec.bind_call_value(self, binding)
+
+    def signature_field(self) -> str | None:
+        """The destructured JSX signature entry, or ``None`` if emitted elsewhere.
+
+        Returns:
+            The destructured field (e.g. ``"event:eventRxMemo"``), or ``None``
+            when this kind is emitted out-of-band by the compiler.
+        """
+        return self.spec.signature_field(self)
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class _MemoParamSpec:
+    """The role-owned behavior for one :class:`MemoParamKind`.
+
+    Hooks (in classification + lifecycle order):
+        ``classify``: ``(annotation, param_name) -> (matches, kind_data)``.
+            Returns whether the annotation belongs to this kind, plus any
+            kind-specific payload (the args spec for ``EVENT_TRIGGER``).
+        ``validate``: ``(inspect.Parameter, fn_name, for_component) -> None``.
+            Raise ``TypeError`` for misuses (no defaults on EH, ``children``
+            naming, rest-on-var-memo, etc.).
+        ``placeholder_name``: choose the destructured JS identifier (Var/EH
+            use ``camelCase + RxMemo``; children/rest keep the bare name).
+        ``make_placeholder``: build the analysis-time value passed to the memo
+            body function (a ``Var``, a ``RestProp``, or a plain callable).
+        ``bind_call_value``: at instantiation, pop the user value from kwargs
+            and route it via ``_MemoCallBinding`` to props or event_triggers.
+        ``signature_field``: the destructured JSX entry, or ``None`` for kinds
+            emitted out-of-band (REST -> spread; CHILDREN -> hardcoded prefix).
+    """
+
+    kind: MemoParamKind
+    classify: Callable[[Any, str], tuple[bool, Any]]
+    validate: Callable[[inspect.Parameter, str, bool], None]
+    placeholder_name: Callable[[str, str, bool], str]
+    make_placeholder: Callable[[MemoParam], Any]
+    bind_call_value: Callable[[MemoParam, _MemoCallBinding], None]
+    signature_field: Callable[[MemoParam], str | None]
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -109,36 +188,17 @@ class ExperimentalMemoComponent(Component):
             **kwargs: The kwargs to pass to the component.
         """
         definition = kwargs.pop("memo_definition")
+        binding = _MemoCallBinding(kwargs)
 
-        explicit_props = {
-            param.name
-            for param in definition.params
-            if not param.is_children and not param.is_rest
-        }
-        component_fields = self.get_fields()
+        for param in definition.params:
+            param.bind_call_value(binding)
 
-        declared_props = {
-            key: kwargs.pop(key) for key in list(kwargs) if key in explicit_props
-        }
+        has_rest = _get_rest_param(definition.params) is not None
+        rest_props = binding.take_rest(self.get_fields()) if has_rest else {}
 
-        rest_props = {}
-        if _get_rest_param(definition.params) is not None:
-            rest_props = {
-                key: kwargs.pop(key)
-                for key in list(kwargs)
-                if key not in component_fields and not SpecialAttributes.is_special(key)
-            }
+        super()._post_init(**binding.build_super_kwargs())
 
-        super()._post_init(**kwargs)
-
-        props: dict[str, Any] = {}
-        for key, value in {**declared_props, **rest_props}.items():
-            camel_cased_key = format.to_camel_case(key)
-            literal_value = LiteralVar.create(value)
-            props[camel_cased_key] = literal_value
-            setattr(self, camel_cased_key, literal_value)
-
-        prop_names = tuple(props)
+        prop_names = binding.finalize(self, rest_props)
         object.__setattr__(self, "get_props", lambda: prop_names)
 
 
@@ -261,10 +321,25 @@ def _annotation_inner_type(annotation: Any) -> Any:
     if _is_rest_annotation(annotation):
         return dict[str, Any]
 
+    annotation = _strip_annotated(annotation)
     origin = get_origin(annotation) or annotation
     if safe_issubclass(origin, Var) and (args := get_args(annotation)):
         return args[0]
     return Any
+
+
+def _strip_annotated(annotation: Any) -> Any:
+    """Unwrap ``Annotated[X, ...]`` to ``X``; pass other annotations through.
+
+    Args:
+        annotation: The annotation to unwrap.
+
+    Returns:
+        The inner annotation, or the original if not ``Annotated``.
+    """
+    if get_origin(annotation) is Annotated:
+        return get_args(annotation)[0]
+    return annotation
 
 
 def _is_rest_annotation(annotation: Any) -> bool:
@@ -276,6 +351,7 @@ def _is_rest_annotation(annotation: Any) -> bool:
     Returns:
         Whether the annotation is a RestProp.
     """
+    annotation = _strip_annotated(annotation)
     origin = get_origin(annotation) or annotation
     return isinstance(origin, type) and issubclass(origin, RestProp)
 
@@ -289,8 +365,34 @@ def _is_var_annotation(annotation: Any) -> bool:
     Returns:
         Whether the annotation is Var-like.
     """
+    annotation = _strip_annotated(annotation)
     origin = get_origin(annotation) or annotation
     return isinstance(origin, type) and issubclass(origin, Var)
+
+
+def _is_event_handler_annotation(annotation: Any) -> tuple[bool, Any]:
+    """Detect ``EventHandler`` / ``EventHandler[spec]`` / ``EventHandler[s1, s2]``.
+
+    ``EventHandler.__class_getitem__`` returns ``Annotated[EventHandler, spec]`` for a
+    single spec and ``Annotated[EventHandler, (s1, s2)]`` (a tuple in the single
+    metadata slot) for multiple specs.
+
+    Args:
+        annotation: The annotation to inspect.
+
+    Returns:
+        ``(is_event_handler, args_spec)`` — ``args_spec`` is ``no_args_event_spec`` for
+        bare ``EventHandler``, a single spec callable for ``EventHandler[spec]``, or
+        the tuple of specs for the multi-spec form.
+    """
+    if get_origin(annotation) is Annotated:
+        inner, *metadata = get_args(annotation)
+        if isinstance(inner, type) and safe_issubclass(inner, EventHandler):
+            return True, metadata[0]
+        return False, None
+    if isinstance(annotation, type) and safe_issubclass(annotation, EventHandler):
+        return True, no_args_event_spec
+    return False, None
 
 
 def _is_component_annotation(annotation: Any) -> bool:
@@ -302,6 +404,7 @@ def _is_component_annotation(annotation: Any) -> bool:
     Returns:
         Whether the annotation resolves to Component.
     """
+    annotation = _strip_annotated(annotation)
     origin = get_origin(annotation) or annotation
     return isinstance(origin, type) and (
         safe_issubclass(origin, Component)
@@ -328,11 +431,11 @@ def _children_annotation_is_valid(annotation: Any) -> bool:
 
 
 def _get_children_param(params: tuple[MemoParam, ...]) -> MemoParam | None:
-    return next((param for param in params if param.is_children), None)
+    return next((p for p in params if p.kind is MemoParamKind.CHILDREN), None)
 
 
 def _get_rest_param(params: tuple[MemoParam, ...]) -> MemoParam | None:
-    return next((param for param in params if param.is_rest), None)
+    return next((p for p in params if p.kind is MemoParamKind.REST), None)
 
 
 def _imported_function_var(name: str, return_type: Any) -> FunctionVar:
@@ -445,18 +548,265 @@ def _var_placeholder(name: str, annotation: Any) -> Var:
     return Var(_js_expr=name, _var_type=_annotation_inner_type(annotation)).guess_type()
 
 
-def _placeholder_for_param(param: MemoParam) -> Var:
-    """Create a placeholder var for a parameter.
+def _event_handler_placeholder(placeholder_name: str, args_spec: Any) -> Callable:
+    """Placeholder callable that compiles calls to the destructured JS prop.
+
+    Returned as a plain callable (not an ``EventHandler``) so it flows through
+    ``EventChain.create`` -> ``call_event_fn``, which actually invokes it.
+    Wrapping in an ``EventHandler`` would skip the function body and bake the
+    Python function name into the rendered ``ReflexEvent(...)`` payload.
 
     Args:
-        param: The parameter metadata.
+        placeholder_name: The destructured JS prop identifier (e.g. ``eventRxMemo``).
+        args_spec: The user-declared spec, or a tuple of specs from
+            ``EventHandler[s1, s2]``. Only the first spec shapes the placeholder's
+            signature; the inner-trigger boundary handles the rest.
 
     Returns:
-        The placeholder var.
+        A plain callable suitable as a memo-function placeholder.
     """
-    if param.is_rest:
-        return _rest_placeholder(param.placeholder_name)
+    prop_callback = Var(_js_expr=placeholder_name).to(FunctionVar)
+    primary_spec = args_spec[0] if isinstance(args_spec, tuple) else args_spec
+
+    def _placeholder(*args: Any) -> Any:
+        return run_script(prop_callback.call(*args))
+
+    _placeholder.__signature__ = inspect.signature(primary_spec)  # pyright: ignore[reportFunctionMemberAccess]
+    return _placeholder
+
+
+def _classify_value(annotation: Any, name: str) -> tuple[bool, Any]:
+    # ``RestProp`` is a ``Var`` subclass, so guard against it here even though
+    # ``_CLASSIFICATION_ORDER`` already tries REST first — keeping the classifier
+    # self-exclusive removes the implicit ordering dependency.
+    return (
+        _is_var_annotation(annotation) and not _is_rest_annotation(annotation),
+        None,
+    )
+
+
+def _classify_children(annotation: Any, name: str) -> tuple[bool, Any]:
+    return (
+        name == "children" and _children_annotation_is_valid(annotation),
+        None,
+    )
+
+
+def _classify_rest(annotation: Any, name: str) -> tuple[bool, Any]:
+    return _is_rest_annotation(annotation), None
+
+
+def _classify_event_trigger(annotation: Any, name: str) -> tuple[bool, Any]:
+    return _is_event_handler_annotation(annotation)
+
+
+def _validate_noop(
+    parameter: inspect.Parameter, fn_name: str, for_component: bool
+) -> None:
+    pass
+
+
+def _validate_children(
+    parameter: inspect.Parameter, fn_name: str, for_component: bool
+) -> None:
+    if parameter.name != "children":
+        msg = (
+            f"`rx.Var[rx.Component]` parameters in `{fn_name}` must be named "
+            "`children`."
+        )
+        raise TypeError(msg)
+
+
+def _validate_rest(
+    parameter: inspect.Parameter, fn_name: str, for_component: bool
+) -> None:
+    if parameter.name == "children":
+        msg = f"`children` in `{fn_name}` cannot be `rx.RestProp`."
+        raise TypeError(msg)
+
+
+def _validate_event_trigger(
+    parameter: inspect.Parameter, fn_name: str, for_component: bool
+) -> None:
+    if not for_component:
+        msg = (
+            f"`rx.EventHandler` parameters are only supported on component-"
+            f"returning memos. Got `{parameter.name}` in `{fn_name}`."
+        )
+        raise TypeError(msg)
+    if parameter.name == "children":
+        msg = (
+            f"`children` in `{fn_name}` cannot be an `rx.EventHandler`; "
+            "use `rx.Var[rx.Component]`."
+        )
+        raise TypeError(msg)
+    if parameter.default is not inspect.Parameter.empty:
+        msg = (
+            f"`rx.EventHandler` parameter `{parameter.name}` in `{fn_name}` "
+            "must not have a default value."
+        )
+        raise TypeError(msg)
+
+
+def _placeholder_name_value(name: str, js_prop_name: str, for_component: bool) -> str:
+    return js_prop_name + CAMEL_CASE_MEMO_MARKER if for_component else name
+
+
+def _placeholder_name_passthrough(
+    name: str, js_prop_name: str, for_component: bool
+) -> str:
+    return name
+
+
+def _make_value_placeholder(param: MemoParam) -> Var:
     return _var_placeholder(param.placeholder_name, param.annotation)
+
+
+def _make_rest_placeholder_spec(param: MemoParam) -> RestProp:
+    return _rest_placeholder(param.placeholder_name)
+
+
+def _make_event_trigger_placeholder(param: MemoParam) -> Callable[..., Any]:
+    return _event_handler_placeholder(param.placeholder_name, param.kind_data)
+
+
+def _bind_value(param: MemoParam, binding: _MemoCallBinding) -> None:
+    if param.name in binding.raw_kwargs:
+        binding.add_prop(param.js_prop_name, binding.take(param.name))
+
+
+def _bind_children(param: MemoParam, binding: _MemoCallBinding) -> None:
+    pass
+
+
+def _bind_rest(param: MemoParam, binding: _MemoCallBinding) -> None:
+    pass
+
+
+def _bind_event_trigger(param: MemoParam, binding: _MemoCallBinding) -> None:
+    if param.name in binding.raw_kwargs:
+        binding.add_event_trigger(
+            param.js_prop_name, binding.take(param.name), param.kind_data
+        )
+
+
+def _signature_destructured(param: MemoParam) -> str:
+    return f"{param.js_prop_name}:{param.placeholder_name}"
+
+
+def _signature_none(param: MemoParam) -> None:
+    return None
+
+
+_SPECS: dict[MemoParamKind, _MemoParamSpec] = {
+    MemoParamKind.VALUE: _MemoParamSpec(
+        kind=MemoParamKind.VALUE,
+        classify=_classify_value,
+        validate=_validate_noop,
+        placeholder_name=_placeholder_name_value,
+        make_placeholder=_make_value_placeholder,
+        bind_call_value=_bind_value,
+        signature_field=_signature_destructured,
+    ),
+    MemoParamKind.CHILDREN: _MemoParamSpec(
+        kind=MemoParamKind.CHILDREN,
+        classify=_classify_children,
+        validate=_validate_children,
+        placeholder_name=_placeholder_name_passthrough,
+        make_placeholder=_make_value_placeholder,
+        bind_call_value=_bind_children,
+        signature_field=_signature_none,
+    ),
+    MemoParamKind.REST: _MemoParamSpec(
+        kind=MemoParamKind.REST,
+        classify=_classify_rest,
+        validate=_validate_rest,
+        placeholder_name=_placeholder_name_passthrough,
+        make_placeholder=_make_rest_placeholder_spec,
+        bind_call_value=_bind_rest,
+        signature_field=_signature_none,
+    ),
+    MemoParamKind.EVENT_TRIGGER: _MemoParamSpec(
+        kind=MemoParamKind.EVENT_TRIGGER,
+        classify=_classify_event_trigger,
+        validate=_validate_event_trigger,
+        placeholder_name=_placeholder_name_value,
+        make_placeholder=_make_event_trigger_placeholder,
+        bind_call_value=_bind_event_trigger,
+        signature_field=_signature_destructured,
+    ),
+}
+
+# Order matters: REST and CHILDREN before VALUE (``Var[Component]`` matches
+# VALUE's classifier, so children must be tried first). EVENT_TRIGGER is
+# independent (``Annotated[EventHandler, ...]`` is not a Var), but listing it
+# before VALUE makes the precedence explicit. VALUE is the open fallback.
+_CLASSIFICATION_ORDER: tuple[MemoParamKind, ...] = (
+    MemoParamKind.REST,
+    MemoParamKind.CHILDREN,
+    MemoParamKind.EVENT_TRIGGER,
+    MemoParamKind.VALUE,
+)
+
+
+class _MemoCallBinding:
+    """Accumulates routing decisions for one memo component instantiation.
+
+    Role specs call :meth:`take`, :meth:`add_prop`, and :meth:`add_event_trigger`
+    via ``param.bind_call_value(binding)``. The component then calls
+    :meth:`build_super_kwargs` (what :meth:`Component._post_init` should see) and
+    :meth:`finalize` (apply collected props as attributes after super returns).
+    """
+
+    __slots__ = ("_event_triggers", "_props", "raw_kwargs")
+
+    def __init__(self, raw_kwargs: dict[str, Any]) -> None:
+        self.raw_kwargs = raw_kwargs
+        self._props: dict[str, Any] = {}
+        self._event_triggers: dict[str, EventChain | Var] = {}
+
+    def take(self, key: str) -> Any:
+        return self.raw_kwargs.pop(key)
+
+    def add_prop(self, js_prop_name: str, value: Any) -> None:
+        self._props[js_prop_name] = LiteralVar.create(value)
+
+    def add_event_trigger(self, js_prop_name: str, value: Any, args_spec: Any) -> None:
+        self._event_triggers[js_prop_name] = EventChain.create(
+            value=value, args_spec=args_spec, key=js_prop_name
+        )
+
+    def take_rest(self, component_fields: Mapping[str, Any]) -> dict[str, Any]:
+        rest: dict[str, Any] = {}
+        for key in list(self.raw_kwargs):
+            if key in component_fields or SpecialAttributes.is_special(key):
+                continue
+            rest[format.to_camel_case(key)] = LiteralVar.create(
+                self.raw_kwargs.pop(key)
+            )
+        return rest
+
+    def build_super_kwargs(self) -> dict[str, Any]:
+        """Merge collected event triggers into raw kwargs for ``super()._post_init``.
+
+        Mutates ``raw_kwargs`` in place. Call once per instantiation.
+
+        Returns:
+            The kwargs to forward to ``Component._post_init``.
+        """
+        if self._event_triggers:
+            self.raw_kwargs.setdefault("event_triggers", {}).update(
+                self._event_triggers
+            )
+        return self.raw_kwargs
+
+    def finalize(
+        self, component: Component, rest_props: dict[str, Any]
+    ) -> tuple[str, ...]:
+        all_props = {**self._props, **rest_props}
+        for key, value in all_props.items():
+            setattr(component, key, value)
+        return tuple(all_props)
 
 
 def _evaluate_memo_function(
@@ -476,8 +826,8 @@ def _evaluate_memo_function(
     keyword_args = {}
 
     for param in params:
-        placeholder = _placeholder_for_param(param)
-        if param.kind in (
+        placeholder = param.make_placeholder()
+        if param.parameter_kind in (
             inspect.Parameter.POSITIONAL_ONLY,
             inspect.Parameter.POSITIONAL_OR_KEYWORD,
         ):
@@ -555,24 +905,13 @@ def _analyze_params(
         TypeError: If the function signature is not supported.
     """
     signature = inspect.signature(fn)
-    hints = get_type_hints(fn)
+    hints = get_type_hints(fn, include_extras=True)
 
     params: list[MemoParam] = []
     rest_count = 0
 
     for parameter in signature.parameters.values():
-        if parameter.kind is inspect.Parameter.VAR_POSITIONAL:
-            msg = f"`@rx._x.memo` does not support `*args` in `{fn.__name__}`."
-            raise TypeError(msg)
-        if parameter.kind is inspect.Parameter.VAR_KEYWORD:
-            msg = f"`@rx._x.memo` does not support `**kwargs` in `{fn.__name__}`."
-            raise TypeError(msg)
-        if parameter.kind is inspect.Parameter.POSITIONAL_ONLY:
-            msg = (
-                f"`@rx._x.memo` does not support positional-only parameters in "
-                f"`{fn.__name__}`."
-            )
-            raise TypeError(msg)
+        _check_parameter_kind(parameter, fn.__name__)
 
         annotation = hints.get(parameter.name, parameter.annotation)
         if annotation is inspect.Parameter.empty:
@@ -582,26 +921,24 @@ def _analyze_params(
             )
             raise TypeError(msg)
 
-        is_rest = _is_rest_annotation(annotation)
-        is_children = parameter.name == "children" and _children_annotation_is_valid(
-            annotation
-        )
-
-        if parameter.name == "children" and not is_children:
+        # Children parameters by name must match the children kind exactly —
+        # otherwise we accept a value-typed `children` and emit confusing JSX.
+        if (
+            parameter.name == "children"
+            and not _children_annotation_is_valid(annotation)
+            and not _is_event_handler_annotation(annotation)[0]
+        ):
             msg = (
                 f"`children` in `{fn.__name__}` must be annotated as "
                 "`rx.Var[rx.Component]`."
             )
             raise TypeError(msg)
 
-        if not is_rest and not _is_var_annotation(annotation):
-            msg = (
-                f"All parameters of `{fn.__name__}` must be annotated as `rx.Var[...]` "
-                f"or `rx.RestProp`, got `{annotation}` for `{parameter.name}`."
-            )
-            raise TypeError(msg)
+        kind, kind_data = _classify_parameter(annotation, parameter.name, fn.__name__)
+        spec = _SPECS[kind]
+        spec.validate(parameter, fn.__name__, for_component)
 
-        if is_rest:
+        if kind is MemoParamKind.REST:
             rest_count += 1
             if rest_count > 1:
                 msg = (
@@ -610,26 +947,75 @@ def _analyze_params(
                 raise TypeError(msg)
 
         js_prop_name = format.to_camel_case(parameter.name)
-        placeholder_name = (
-            parameter.name
-            if is_children or is_rest or not for_component
-            else js_prop_name + CAMEL_CASE_MEMO_MARKER
+        placeholder_name = spec.placeholder_name(
+            parameter.name, js_prop_name, for_component
         )
 
         params.append(
             MemoParam(
                 name=parameter.name,
+                kind=kind,
+                kind_data=kind_data,
                 annotation=annotation,
-                kind=parameter.kind,
+                parameter_kind=parameter.kind,
                 default=parameter.default,
                 js_prop_name=js_prop_name,
                 placeholder_name=placeholder_name,
-                is_children=is_children,
-                is_rest=is_rest,
             )
         )
 
     return tuple(params)
+
+
+def _check_parameter_kind(parameter: inspect.Parameter, fn_name: str) -> None:
+    """Reject Python parameter kinds (``*args`` / ``**kwargs`` / positional-only)
+    that memo does not support.
+
+    Args:
+        parameter: The parameter to check.
+        fn_name: The function name for error messages.
+
+    Raises:
+        TypeError: If the parameter uses an unsupported kind.
+    """
+    if parameter.kind is inspect.Parameter.VAR_POSITIONAL:
+        msg = f"`@rx._x.memo` does not support `*args` in `{fn_name}`."
+        raise TypeError(msg)
+    if parameter.kind is inspect.Parameter.VAR_KEYWORD:
+        msg = f"`@rx._x.memo` does not support `**kwargs` in `{fn_name}`."
+        raise TypeError(msg)
+    if parameter.kind is inspect.Parameter.POSITIONAL_ONLY:
+        msg = (
+            f"`@rx._x.memo` does not support positional-only parameters in `{fn_name}`."
+        )
+        raise TypeError(msg)
+
+
+def _classify_parameter(
+    annotation: Any, param_name: str, fn_name: str
+) -> tuple[MemoParamKind, Any]:
+    """Walk ``_CLASSIFICATION_ORDER`` and return the first matching kind.
+
+    Args:
+        annotation: The parameter annotation.
+        param_name: The parameter name (some kinds care, e.g. ``children``).
+        fn_name: The function name for error messages.
+
+    Returns:
+        The matched ``(kind, kind_data)``.
+
+    Raises:
+        TypeError: If no kind matches.
+    """
+    for kind in _CLASSIFICATION_ORDER:
+        matched, kind_data = _SPECS[kind].classify(annotation, param_name)
+        if matched:
+            return kind, kind_data
+    msg = (
+        f"All parameters of `{fn_name}` must be annotated as `rx.Var[...]` "
+        f"or `rx.RestProp`, got `{annotation}` for `{param_name}`."
+    )
+    raise TypeError(msg)
 
 
 def _create_function_definition(
@@ -661,7 +1047,9 @@ def _create_function_definition(
             args_names=(
                 DestructuredArg(
                     fields=tuple(
-                        param.placeholder_name for param in params if not param.is_rest
+                        param.placeholder_name
+                        for param in params
+                        if param.kind is not MemoParamKind.REST
                     ),
                     rest=(
                         rest_param.placeholder_name if rest_param is not None else None
@@ -764,7 +1152,7 @@ def _bind_function_runtime_args(
     explicit_params = [
         param
         for param in definition.params
-        if not param.is_rest and not param.is_children
+        if param.kind not in (MemoParamKind.REST, MemoParamKind.CHILDREN)
     ]
     explicit_values = {}
     remaining_props = kwargs.copy()
@@ -901,7 +1289,7 @@ class _ExperimentalMemoComponentWrapper:
         self._explicit_params = [
             param
             for param in definition.params
-            if not param.is_children and not param.is_rest
+            if param.kind not in (MemoParamKind.CHILDREN, MemoParamKind.REST)
         ]
         update_wrapper(self, definition.fn)
 

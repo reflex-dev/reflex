@@ -8,12 +8,18 @@ from typing import Any
 import pytest
 from reflex_base.components.component import Component
 from reflex_base.components.memo import (
+    _SPECS,
     EXPERIMENTAL_MEMOS,
     ExperimentalMemoComponent,
     ExperimentalMemoComponentDefinition,
     ExperimentalMemoFunctionDefinition,
+    MemoParam,
+    MemoParamKind,
+    _MemoCallBinding,
 )
+from reflex_base.event import EventChain, EventHandler, no_args_event_spec
 from reflex_base.style import Style
+from reflex_base.utils import format as format_utils
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars import VarData
 from reflex_base.vars.base import Var
@@ -537,3 +543,344 @@ def test_compile_memo_components_includes_experimental_custom_code():
     code = "\n".join(c for _, c in files)
 
     assert "const foo = 'bar'" in code
+
+
+def test_component_memo_accepts_event_handler():
+    """Component memos should accept EventHandler params with passthrough specs."""
+
+    @rx._x.memo
+    def eh_memo(
+        some_value: rx.Var[str],
+        event: rx.EventHandler[rx.event.passthrough_event_spec(str)],
+    ) -> rx.Component:
+        return rx.vstack(
+            rx.button(some_value, on_click=event(some_value)),
+            rx.input(on_change=event),
+        )
+
+    definition = EXPERIMENTAL_MEMOS["EhMemo"]
+    assert isinstance(definition, ExperimentalMemoComponentDefinition)
+    event_param = next(p for p in definition.params if p.name == "event")
+    assert event_param.kind is MemoParamKind.EVENT_TRIGGER
+    assert event_param.kind_data is not None
+    assert event_param.kind_data is not no_args_event_spec
+
+
+def test_component_memo_accepts_bare_event_handler():
+    """Component memos should accept bare EventHandler (no spec) params."""
+
+    @rx._x.memo
+    def bare_eh_memo(event: rx.EventHandler) -> rx.Component:
+        return rx.button("click", on_click=event())
+
+    definition = EXPERIMENTAL_MEMOS["BareEhMemo"]
+    assert isinstance(definition, ExperimentalMemoComponentDefinition)
+    event_param = next(p for p in definition.params if p.name == "event")
+    assert event_param.kind is MemoParamKind.EVENT_TRIGGER
+    assert event_param.kind_data is no_args_event_spec
+
+
+def test_component_memo_event_handler_compiles_to_prop_callback():
+    """`event(value)` and `on_change=event` should compile to the destructured JS prop."""
+
+    @rx._x.memo
+    def eh_compile_memo(
+        some_value: rx.Var[str],
+        event: rx.EventHandler[rx.event.passthrough_event_spec(str)],
+    ) -> rx.Component:
+        return rx.vstack(
+            rx.button(some_value, on_click=event(some_value)),
+            rx.input(on_change=event),
+        )
+
+    files, _ = compiler.compile_memo_components(tuple(EXPERIMENTAL_MEMOS.values()))
+    code = "\n".join(c for _, c in files)
+
+    # Signature destructures the EH prop with the RxMemo suffix.
+    assert "event:eventRxMemo" in code
+    # Partial application: event(some_value) -> eventRxMemo(someValueRxMemo).
+    assert "eventRxMemo(someValueRxMemo)" in code
+    # Raw pass-through: on_change=event -> eventRxMemo(...input event arg...).
+    assert (
+        "eventRxMemo(_ev_0)" in code or "eventRxMemo(" in code.split("onChange:", 1)[1]
+    )
+
+
+def test_component_memo_event_handler_wires_event_chain_at_call_site():
+    """Instantiating an EH memo should wrap the handler in an EventChain trigger."""
+
+    def _handler_fn(value: str):  # pyright: ignore[reportUnusedFunction]
+        pass
+
+    raw_handler = EventHandler(fn=_handler_fn)
+
+    @rx._x.memo
+    def eh_wired_memo(
+        some_value: rx.Var[str],
+        event: rx.EventHandler[rx.event.passthrough_event_spec(str)],
+    ) -> rx.Component:
+        return rx.button(some_value, on_click=event(some_value))
+
+    component = eh_wired_memo(some_value="hello", event=raw_handler)
+    assert isinstance(component, ExperimentalMemoComponent)
+    # EH props live on event_triggers, not in get_props().
+    assert "event" not in component.get_props()
+    assert "event" in component.event_triggers
+    assert isinstance(component.event_triggers["event"], EventChain)
+
+
+def test_var_returning_memo_rejects_event_handler():
+    """Var-returning memos should reject EventHandler params."""
+    with pytest.raises(TypeError, match="component-returning"):
+
+        @rx._x.memo
+        def bad_var_eh(
+            event: rx.EventHandler[rx.event.passthrough_event_spec(str)],
+        ) -> rx.Var[str]:
+            return rx.Var.create("x")
+
+
+def test_component_memo_rejects_event_handler_with_default():
+    """EH params should not allow defaults (matches old CustomComponent behavior)."""
+    with pytest.raises(TypeError, match="default"):
+
+        @rx._x.memo
+        def bad_eh_default(
+            event: rx.EventHandler[rx.event.passthrough_event_spec(str)] = None,  # pyright: ignore[reportArgumentType]
+        ) -> rx.Component:
+            return rx.button("hi")
+
+
+def test_component_memo_rejects_event_handler_named_children():
+    """A `children` parameter must not be an EventHandler."""
+    with pytest.raises(TypeError, match="children"):
+
+        @rx._x.memo
+        def bad_eh_children(
+            children: rx.EventHandler[rx.event.passthrough_event_spec(str)],
+        ) -> rx.Component:
+            return rx.box()
+
+
+# ---------------------------------------------------------------------------
+# Interface-level tests: target the _MemoParamSpec Seam directly.
+# These exercise per-kind behavior without going through the @rx.memo decorator,
+# giving a tight feedback loop for adding new kinds in the future.
+# ---------------------------------------------------------------------------
+
+
+def _make_param(
+    *,
+    name: str = "x",
+    kind: MemoParamKind,
+    annotation: Any = None,
+    kind_data: Any = None,
+    placeholder_name: str | None = None,
+    js_prop_name: str | None = None,
+) -> MemoParam:
+    """Build a MemoParam directly, bypassing _analyze_params.
+
+    Returns:
+        A populated ``MemoParam`` with sensible defaults for tests.
+    """
+    import inspect as _inspect
+
+    js = js_prop_name if js_prop_name is not None else format_utils.to_camel_case(name)
+    return MemoParam(
+        name=name,
+        kind=kind,
+        kind_data=kind_data,
+        annotation=annotation if annotation is not None else rx.Var[int],
+        parameter_kind=_inspect.Parameter.KEYWORD_ONLY,
+        js_prop_name=js,
+        placeholder_name=placeholder_name if placeholder_name is not None else name,
+    )
+
+
+def test_classify_routes_each_annotation_to_the_expected_kind():
+    """Ordered classification routes each supported annotation to one kind."""
+    from reflex_base.components.memo import _classify_parameter
+
+    cases = [
+        ("var", rx.Var[int], "x", MemoParamKind.VALUE),
+        ("rest", rx.RestProp, "rest", MemoParamKind.REST),
+        (
+            "event_with_spec",
+            rx.EventHandler[rx.event.passthrough_event_spec(str)],
+            "event",
+            MemoParamKind.EVENT_TRIGGER,
+        ),
+        ("bare_event", rx.EventHandler, "event", MemoParamKind.EVENT_TRIGGER),
+        ("children_var", rx.Var[rx.Component], "children", MemoParamKind.CHILDREN),
+        # Var[Component] *not* named children classifies as VALUE — that's the
+        # path conditional_slot/component-typed slots take in the existing suite.
+        ("named_x_var_component", rx.Var[rx.Component], "x", MemoParamKind.VALUE),
+    ]
+    for case_name, annotation, param_name, expected in cases:
+        kind, _ = _classify_parameter(annotation, param_name, "test_fn")
+        assert kind is expected, f"{case_name}: got {kind}, expected {expected}"
+
+
+def test_classify_value_excludes_rest_independent_of_order():
+    """The VALUE classifier must reject RestProp even called in isolation.
+
+    ``_CLASSIFICATION_ORDER`` puts REST before VALUE, but the classifier itself
+    is also self-exclusive so a reordering wouldn't silently regress.
+    """
+    assert _SPECS[MemoParamKind.VALUE].classify(rx.RestProp, "x") == (False, None)
+    assert _SPECS[MemoParamKind.VALUE].classify(rx.Var[int], "x") == (True, None)
+
+
+def test_children_classifier_requires_named_children():
+    """CHILDREN is the only name-sensitive kind; verify it gates on the name."""
+    spec = _SPECS[MemoParamKind.CHILDREN]
+    component_var_annotation = rx.Var[rx.Component]
+    assert spec.classify(component_var_annotation, "children")[0] is True
+    assert spec.classify(component_var_annotation, "x")[0] is False
+
+
+def test_value_make_placeholder_returns_typed_var():
+    """VALUE kind builds a Var placeholder whose _var_type unwraps the annotation."""
+    param = _make_param(
+        kind=MemoParamKind.VALUE,
+        annotation=rx.Var[int],
+        placeholder_name="xRxMemo",
+    )
+    placeholder = param.make_placeholder()
+    assert isinstance(placeholder, Var)
+    assert placeholder._js_expr == "xRxMemo"
+
+
+def test_event_trigger_make_placeholder_returns_plain_callable():
+    """EVENT_TRIGGER kind builds a plain callable, not an EventHandler.
+
+    The body's `event(value)` call site must compile to the destructured JS
+    prop name, which requires call_event_fn to actually execute the placeholder.
+    A synthetic EventHandler(fn=_stub) would bake the Python identifier into
+    the rendered ReflexEvent instead.
+    """
+    spec = rx.event.passthrough_event_spec(str)
+    param = _make_param(
+        name="event",
+        kind=MemoParamKind.EVENT_TRIGGER,
+        annotation=rx.EventHandler[spec],
+        kind_data=spec,
+        placeholder_name="eventRxMemo",
+        js_prop_name="event",
+    )
+    placeholder = param.make_placeholder()
+    assert callable(placeholder)
+    assert not isinstance(placeholder, EventHandler)
+
+    arg = Var(_js_expr="someValueRxMemo", _var_type=str)
+    rendered = str(placeholder(arg))
+    assert "eventRxMemo" in rendered
+    assert "someValueRxMemo" in rendered
+
+
+def test_bind_value_routes_to_props():
+    """VALUE binding pops the kwarg into binding._props (camelCased)."""
+    binding = _MemoCallBinding({"my_value": 42, "other": "x"})
+    param = _make_param(name="my_value", kind=MemoParamKind.VALUE)
+    param.bind_call_value(binding)
+
+    assert "my_value" not in binding.raw_kwargs
+    assert "other" in binding.raw_kwargs  # untouched
+    assert binding._props["myValue"]._js_expr == "42"
+    assert binding._event_triggers == {}
+
+
+def test_bind_event_trigger_routes_to_event_triggers():
+    """EVENT_TRIGGER binding wraps the value in an EventChain on event_triggers."""
+
+    def _handler(value: str):
+        pass
+
+    handler = EventHandler(fn=_handler)
+    spec = rx.event.passthrough_event_spec(str)
+    binding = _MemoCallBinding({"event": handler})
+    param = _make_param(
+        name="event",
+        kind=MemoParamKind.EVENT_TRIGGER,
+        kind_data=spec,
+    )
+
+    param.bind_call_value(binding)
+    assert "event" not in binding.raw_kwargs
+    assert binding._props == {}
+    assert isinstance(binding._event_triggers["event"], EventChain)
+
+
+def test_bind_children_and_rest_are_noops_at_the_param_level():
+    """CHILDREN comes in positionally; REST is swept by binding.take_rest."""
+    binding = _MemoCallBinding({"children": object(), "extra": 1})
+    children_param = _make_param(name="children", kind=MemoParamKind.CHILDREN)
+    rest_param = _make_param(name="rest", kind=MemoParamKind.REST)
+
+    children_param.bind_call_value(binding)
+    rest_param.bind_call_value(binding)
+
+    # Neither method consumed any kwarg.
+    assert binding.raw_kwargs == {
+        "children": binding.raw_kwargs["children"],
+        "extra": 1,
+    }
+    assert binding._props == {}
+    assert binding._event_triggers == {}
+
+
+def test_take_rest_sweeps_unconsumed_keys_into_camel_cased_dict():
+    """binding.take_rest collects every leftover kwarg not on the Component."""
+    binding = _MemoCallBinding({"foo_bar": "x", "class_name": "y"})
+    rest = binding.take_rest(component_fields={})
+    assert set(rest) == {"fooBar", "className"}
+    assert binding.raw_kwargs == {}
+
+
+@pytest.mark.parametrize(
+    ("kind", "expected"),
+    [
+        (MemoParamKind.VALUE, "amount:amountRxMemo"),
+        (MemoParamKind.EVENT_TRIGGER, "amount:amountRxMemo"),
+        (MemoParamKind.CHILDREN, None),
+        (MemoParamKind.REST, None),
+    ],
+)
+def test_signature_field_for_each_kind(kind: MemoParamKind, expected: str | None):
+    """VALUE/EVENT_TRIGGER destructure; CHILDREN/REST emit out-of-band."""
+    param = _make_param(
+        name="amount",
+        kind=kind,
+        js_prop_name="amount",
+        placeholder_name="amountRxMemo",
+    )
+    assert param.signature_field() == expected
+
+
+def test_event_trigger_validate_rejects_default_directly():
+    """The validate hook on _SPECS[EVENT_TRIGGER] rejects defaults without
+    going through the decorator. This pins per-kind invariants at the Seam.
+    """
+    import inspect as _inspect
+
+    parameter = _inspect.Parameter(
+        name="event",
+        kind=_inspect.Parameter.KEYWORD_ONLY,
+        default=None,
+        annotation=rx.EventHandler[rx.event.passthrough_event_spec(str)],
+    )
+    with pytest.raises(TypeError, match="default"):
+        _SPECS[MemoParamKind.EVENT_TRIGGER].validate(parameter, "fn", True)
+
+
+def test_event_trigger_validate_rejects_in_var_returning_memo():
+    """EVENT_TRIGGER is only valid on component-returning memos."""
+    import inspect as _inspect
+
+    parameter = _inspect.Parameter(
+        name="event",
+        kind=_inspect.Parameter.KEYWORD_ONLY,
+        annotation=rx.EventHandler,
+    )
+    with pytest.raises(TypeError, match="component-returning"):
+        _SPECS[MemoParamKind.EVENT_TRIGGER].validate(parameter, "fn", False)

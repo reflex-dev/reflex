@@ -37,20 +37,16 @@ from starlette_admin.auth import AuthProvider
 
 import reflex as rx
 from reflex import AdminDash, constants
-from reflex.app import App, ComponentCallable, upload
+from reflex._upload import upload
+from reflex.app import App, ComponentCallable
 from reflex.environment import environment
+from reflex.istate.data import RouterData
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
 from reflex.model import Model
-from reflex.state import (
-    BaseState,
-    OnLoadInternalState,
-    RouterData,
-    State,
-    reload_state_module,
-)
+from reflex.state import BaseState, OnLoadInternalState, State, reload_state_module
 
 from .conftest import chdir
 from .states import GenState
@@ -2234,7 +2230,7 @@ def test_compile_writes_app_wrap_memo_components(
     compilable_app: tuple[App, Path],
     mocker,
 ) -> None:
-    """App-wrap memo components are emitted to the shared components module."""
+    """App-wrap memo components are emitted as per-memo modules."""
     conf = rx.Config(app_name="testing")
     mocker.patch("reflex_base.config._get_config", return_value=conf)
     app, web_dir = compilable_app
@@ -2242,19 +2238,9 @@ def test_compile_writes_app_wrap_memo_components(
     app.add_page(rx.box("Index"), route="/")
     app._compile()
 
-    components_index = (
-        web_dir
-        / constants.Dirs.UTILS
-        / f"{constants.PageNames.COMPONENTS}{constants.Ext.JSX}"
-    ).read_text()
-
-    # Per-memo modules live under .web/utils/components/; the index re-exports
-    # each one so page-side ``$/utils/components`` resolves the same tags.
-    assert "DefaultOverlayComponents" in components_index
-    assert "MemoizedToastProvider" in components_index
-    assert 'from "./components/DefaultOverlayComponents"' in components_index
-    assert 'from "./components/MemoizedToastProvider"' in components_index
-
+    # Per-memo modules live under .web/utils/components/; each memo wrapper
+    # declares its ``library`` as the per-memo file path, so pages import it
+    # directly and the top-level index is intentionally empty.
     memo_dir = web_dir / constants.Dirs.UTILS / constants.PageNames.COMPONENTS
     assert (memo_dir / f"DefaultOverlayComponents{constants.Ext.JSX}").exists()
     assert (memo_dir / f"MemoizedToastProvider{constants.Ext.JSX}").exists()

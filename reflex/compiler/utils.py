@@ -18,6 +18,7 @@ from reflex_base.components.component import Component, ComponentStyle
 from reflex_base.components.memo import (
     ExperimentalMemoComponentDefinition,
     ExperimentalMemoFunctionDefinition,
+    MemoParamKind,
 )
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.style import Style
@@ -432,15 +433,17 @@ def compile_experimental_component_memo(
     imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
 
     signature_fields = [
-        f"{param.js_prop_name}:{param.placeholder_name}"
+        field
         for param in definition.params
-        if not param.is_children and not param.is_rest
+        if (field := param.signature_field()) is not None
     ]
 
-    if any(param.is_children for param in definition.params):
+    if any(p.kind is MemoParamKind.CHILDREN for p in definition.params):
         signature_fields.insert(0, "children")
 
-    rest_param = next((param for param in definition.params if param.is_rest), None)
+    rest_param = next(
+        (p for p in definition.params if p.kind is MemoParamKind.REST), None
+    )
 
     return (
         {
