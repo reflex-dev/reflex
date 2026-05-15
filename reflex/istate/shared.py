@@ -13,7 +13,6 @@ from typing_extensions import Self
 
 from reflex.istate.manager.token import BaseStateToken
 from reflex.state import BaseState, State, _override_base_method
-from reflex.utils.telemetry_context import increment_feature
 
 UPDATE_OTHER_CLIENT_TASKS: set[asyncio.Task] = set()
 LINKED_STATE = TypeVar("LINKED_STATE", bound="SharedStateBaseInternal")
@@ -520,4 +519,3 @@ class SharedState(SharedStateBaseInternal, mixin=True):
             # pulls in all linked states and substates which may not actually be
             # accessed for this event.
             root_state._always_dirty_substates.add(SharedStateBaseInternal.get_name())
-        increment_feature("shared_state_count")

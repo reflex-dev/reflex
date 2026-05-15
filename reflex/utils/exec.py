@@ -20,13 +20,13 @@ from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.constants.base import LogLevel
 from reflex_base.environment import environment
+from reflex_base.telemetry_context import CompileTrigger
 from reflex_base.utils import console
 from reflex_base.utils.decorator import once
 
 from reflex.utils import path_ops
 from reflex.utils.misc import get_module_path
 from reflex.utils.prerequisites import get_web_dir
-from reflex.utils.telemetry_context import CompileTrigger
 
 # For uvicorn windows bug fix (#2335)
 frontend_process = None

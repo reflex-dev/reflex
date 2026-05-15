@@ -42,6 +42,7 @@ from reflex_base.event import (
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
 from reflex_base.registry import RegistrationContext
+from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
 from reflex_base.utils import console
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
@@ -96,11 +97,6 @@ from reflex.utils.exec import (
     should_prerender_routes,
 )
 from reflex.utils.misc import run_in_thread
-from reflex.utils.telemetry_context import (
-    CompileTrigger,
-    TelemetryContext,
-    increment_feature,
-)
 from reflex.utils.token_manager import RedisTokenManager, TokenManager
 
 if sys.version_info < (3, 13):
@@ -913,8 +909,6 @@ class App(MiddlewareMixin, LifespanMixin):
         state = self._state or State
         route_args = get_route_args(route)
         state.setup_dynamic_args(route_args)
-        if route_args:
-            increment_feature("dynamic_routes_count")
 
         self._load_events[route] = (
             (on_load if isinstance(on_load, list) else [on_load])

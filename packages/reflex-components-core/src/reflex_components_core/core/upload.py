@@ -38,7 +38,6 @@ from reflex_base.vars.object import ObjectVar
 from reflex_base.vars.sequence import ArrayVar, LiteralStringVar
 from reflex_components_sonner.toast import toast
 
-from reflex.utils.telemetry_context import increment_feature
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core._upload import UploadChunkIterator, UploadFile
 from reflex_components_core.core.cond import cond
@@ -289,7 +288,6 @@ class Upload(MemoizationLeaf):
         """
         # Mark the Upload component as used in the app.
         cls.is_used = True
-        increment_feature("upload_count")
 
         props.setdefault("multiple", True)
 

@@ -1,8 +1,7 @@
 """Tests for ``reflex.utils.telemetry_context``."""
 
 from pytest_mock import MockerFixture
-
-from reflex.utils.telemetry_context import TelemetryContext
+from reflex_base.telemetry_context import TelemetryContext
 
 
 def test_get_returns_none_when_no_context_set():
@@ -13,7 +12,7 @@ def test_get_returns_none_when_no_context_set():
 def test_start_returns_none_when_telemetry_disabled(mocker: MockerFixture):
     """``start()`` short-circuits when the config has telemetry disabled."""
     mocker.patch(
-        "reflex.utils.telemetry_context.get_config",
+        "reflex_base.telemetry_context.get_config",
         return_value=mocker.Mock(telemetry_enabled=False),
     )
     assert TelemetryContext.start() is None
@@ -22,7 +21,7 @@ def test_start_returns_none_when_telemetry_disabled(mocker: MockerFixture):
 def test_start_returns_context_when_telemetry_enabled(mocker: MockerFixture):
     """``start()`` returns a fresh context when telemetry is enabled."""
     mocker.patch(
-        "reflex.utils.telemetry_context.get_config",
+        "reflex_base.telemetry_context.get_config",
         return_value=mocker.Mock(telemetry_enabled=True),
     )
     assert isinstance(TelemetryContext.start(), TelemetryContext)
@@ -56,17 +55,6 @@ def test_set_exception_records_value_on_frozen_dataclass():
     exc = ValueError("boom")
     ctx.set_exception(exc)
     assert ctx.exception is exc
-
-
-def test_features_used_writable_via_get():
-    """Writes through ``get()`` are visible on the original context instance."""
-    ctx = TelemetryContext()
-    with ctx:
-        active = TelemetryContext.get()
-        assert active is ctx
-        assert active is not None
-        active.features_used["foo"] = True
-    assert ctx.features_used == {"foo": True}
 
 
 def test_trigger_stored_on_context():

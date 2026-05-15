@@ -6,8 +6,6 @@ from typing import Any
 
 from reflex_base.utils import format
 
-from reflex.utils.telemetry_context import increment_feature
-
 
 class ClientStorageBase:
     """Base class for client-side storage."""
@@ -75,7 +73,6 @@ class Cookie(ClientStorageBase, str):
         inst.domain = domain
         inst.secure = secure
         inst.same_site = same_site
-        increment_feature("cookie_count")
         return inst
 
 
@@ -112,7 +109,6 @@ class LocalStorage(ClientStorageBase, str):
             inst = super().__new__(cls, object)
         inst.name = name
         inst.sync = sync
-        increment_feature("local_storage_count")
         return inst
 
 
@@ -145,5 +141,4 @@ class SessionStorage(ClientStorageBase, str):
         else:
             inst = super().__new__(cls, object)
         inst.name = name
-        increment_feature("session_storage_count")
         return inst

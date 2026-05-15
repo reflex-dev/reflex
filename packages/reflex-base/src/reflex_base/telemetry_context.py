@@ -1,4 +1,10 @@
-"""Compile-time telemetry context."""
+"""Compile-time telemetry context.
+
+Lives in ``reflex_base`` (not ``reflex``) so deep packages like
+``reflex_components_core`` — which depend on ``reflex_base`` but not
+``reflex`` — can read the active context without inverting the
+dependency hierarchy.
+"""
 
 from __future__ import annotations
 
@@ -31,33 +37,12 @@ FeatureName = Literal[
 
 _KNOWN_FEATURES: tuple[FeatureName, ...] = get_args(FeatureName)
 
-# Counters bumped outside an active compile context (import-time class
-# definitions, decorators, registrations) accumulate here so they survive
-# into the next compile event.
-_recorded_features: dict[FeatureName, int] = {}
-
-
-def increment_feature(name: FeatureName, by: int = 1) -> None:
-    """Bump a feature invocation counter.
-
-    Writes to the active TelemetryContext if one is attached, else to the
-    process-level counter so import-time signals survive into the next compile.
-
-    Args:
-        name: The feature counter to bump.
-        by: How much to add. Defaults to 1.
-    """
-    target = TelemetryContext.get()
-    target_dict = target.features_used if target is not None else _recorded_features
-    target_dict[name] = target_dict.get(name, 0) + by
-
 
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True, eq=False)
 class TelemetryContext(BaseContext):
     """Per-compile telemetry handle attached to the current contextvar."""
 
     start_perf_counter: float = dataclasses.field(default_factory=time.perf_counter)
-    features_used: dict[FeatureName, int] = dataclasses.field(default_factory=dict)
     trigger: CompileTrigger | None = None
     exception: BaseException | None = dataclasses.field(default=None, repr=False)
 
