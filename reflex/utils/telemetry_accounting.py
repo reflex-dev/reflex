@@ -267,8 +267,9 @@ def _walk_state_features(
         for handler in state_cls.event_handlers.values():
             if handler.is_background:
                 background += 1
-        for field in state_cls.get_fields().values():
-            key = _storage_feature_for_field(field)
+        fields = state_cls.get_fields()
+        for name in state_cls.base_vars:
+            key = _storage_feature_for_field(fields[name])
             if key is not None:
                 features[key] += 1
     features["shared_state_count"] = shared

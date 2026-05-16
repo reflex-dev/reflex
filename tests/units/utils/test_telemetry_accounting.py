@@ -296,6 +296,31 @@ def test_collect_features_used_walks_state_fields_for_storage():
     assert features["session_storage_count"] == 1
 
 
+def test_collect_features_used_storage_not_double_counted_through_inheritance():
+    """Inherited storage fields are not re-counted on each descendant."""
+
+    class _StorageParent(BaseState):
+        c: str = Cookie()
+        ls: str = LocalStorage()
+        ss: str = SessionStorage()
+
+    class _StorageChild(_StorageParent):
+        pass
+
+    class _StorageGrandchild(_StorageChild):
+        extra: str = Cookie()
+
+    features = telemetry_accounting._collect_features_used(
+        _fake_app(),  # pyright: ignore[reportArgumentType]
+        _fake_config(),
+        [_StorageParent, _StorageChild, _StorageGrandchild],
+        0,
+    )
+    assert features["cookie_count"] == 2
+    assert features["local_storage_count"] == 1
+    assert features["session_storage_count"] == 1
+
+
 def test_collect_features_used_upload_from_component_walk():
     """``upload_count`` is read from the component walk, not a marker."""
     features = telemetry_accounting._collect_features_used(
