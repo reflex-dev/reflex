@@ -1,0 +1,12 @@
+{
+  "contains": [
+    "match_template(",
+    "alpha",
+    "beta",
+    "default",
+    "mode"
+  ],
+  "not_contains": [
+    "undefined"
+  ]
+}

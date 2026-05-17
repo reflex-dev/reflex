@@ -1,0 +1,10 @@
+{
+  "contains": [
+    "alpha",
+    "beta",
+    "gamma"
+  ],
+  "not_contains": [
+    "undefined"
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "contains": [
+    "name"
+  ],
+  "not_contains": [
+    "undefined"
+  ]
+}

@@ -1,0 +1,25 @@
+[package]
+name = "reflex_py"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+name = "_native"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3            = { workspace = true }
+rmp             = { workspace = true }
+rmp-serde       = { workspace = true }
+serde           = { workspace = true }
+bumpalo         = { workspace = true }
+thiserror       = { workspace = true }
+reflex_ir       = { workspace = true }
+reflex_codegen  = { workspace = true }
+reflex_arena    = { workspace = true }
+reflex_intern   = { workspace = true }
+reflex_db       = { workspace = true }
+reflex_pyread   = { workspace = true }

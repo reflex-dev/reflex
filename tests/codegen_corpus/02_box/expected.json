@@ -1,0 +1,10 @@
+{
+  "contains": [
+    "jsx(",
+    "inside box",
+    "export const __reflex_route = \"/box\""
+  ],
+  "not_contains": [
+    "undefined"
+  ]
+}

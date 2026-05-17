@@ -1,0 +1,55 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/reflex_ir",
+    "crates/reflex_arena",
+    "crates/reflex_intern",
+    "crates/reflex_db",
+    "crates/reflex_semantic",
+    "crates/reflex_codegen",
+    "crates/reflex_py",
+    "crates/reflex_bench",
+    "crates/reflex_vars",
+    "crates/reflex_pyread",
+]
+
+[workspace.package]
+edition = "2021"
+rust-version = "1.79"
+license = "Apache-2.0"
+publish = false
+
+[workspace.dependencies]
+# Local crates
+reflex_ir       = { path = "crates/reflex_ir" }
+reflex_arena    = { path = "crates/reflex_arena" }
+reflex_intern   = { path = "crates/reflex_intern" }
+reflex_db       = { path = "crates/reflex_db" }
+reflex_semantic = { path = "crates/reflex_semantic" }
+reflex_codegen  = { path = "crates/reflex_codegen" }
+reflex_vars     = { path = "crates/reflex_vars" }
+reflex_pyread   = { path = "crates/reflex_pyread" }
+
+# Internal-but-shared
+xxhash-rust = { version = "0.8", features = ["xxh3"] }
+
+# External
+pyo3      = { version = "0.22", features = ["abi3-py310", "extension-module"] }
+bumpalo   = { version = "3.16", features = ["collections"] }
+rayon     = "1.10"
+rmp       = "0.8"
+rmp-serde = "1.3"
+serde     = { version = "1", features = ["derive"] }
+thiserror = "1.0"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+debug = false
+strip = "symbols"
+
+[profile.bench]
+inherits = "release"
+debug = true
+strip = "none"

@@ -1,0 +1,11 @@
+{
+  "contains": [
+    ".map((",
+    "?",
+    ":",
+    "show_all"
+  ],
+  "not_contains": [
+    "undefined"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "contains": [
+    "export default function Component()",
+    "hello corpus",
+    "export const __reflex_route = \"/text\""
+  ],
+  "not_contains": [
+    "undefined",
+    "TODO"
+  ]
+}

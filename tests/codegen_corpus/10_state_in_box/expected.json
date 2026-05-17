@@ -1,0 +1,9 @@
+{
+  "contains": [
+    "counter",
+    "count"
+  ],
+  "not_contains": [
+    "undefined"
+  ]
+}

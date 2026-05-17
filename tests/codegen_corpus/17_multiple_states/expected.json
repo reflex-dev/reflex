@@ -1,0 +1,9 @@
+{
+  "contains": [
+    "title",
+    "body"
+  ],
+  "not_contains": [
+    "undefined"
+  ]
+}

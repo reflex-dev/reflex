@@ -280,12 +280,21 @@ def _validate_stylesheet(stylesheet_full_path: Path, assets_app_path: Path) -> N
         raise ValueError(msg)
 
 
-def _compile_root_stylesheet(
+def _resolve_root_stylesheets(
     stylesheets: list[str],
     reset_style: bool = True,
     plugins: Sequence[Plugin] | None = None,
-) -> str:
-    """Compile the root stylesheet.
+) -> list[str]:
+    """Resolve the final list of stylesheet specifiers used by ``styles.css``.
+
+    Does the filesystem-walking and SASS-compile side effects that the
+    legacy compile flow needs, then returns just the list of URL/relative-
+    path strings the ``@import`` lines will reference. Used by:
+
+    * :func:`_compile_root_stylesheet` — the legacy template path.
+    * :func:`reflex.compiler.rust_pipeline._emit_static_artifacts` — the
+      rust pipeline that hands the resolved list to
+      :meth:`CompilerSession.compile_styles_root`.
 
     Args:
         stylesheets: The stylesheets to include in the root stylesheet.
@@ -293,7 +302,8 @@ def _compile_root_stylesheet(
         plugins: The effective plugins for the active compile.
 
     Returns:
-        The compiled root stylesheet.
+        The resolved sheet specifiers in the order ``styles.css`` should
+        ``@import`` them.
 
     Raises:
         FileNotFoundError: If a specified stylesheet in assets directory does not exist.
@@ -378,6 +388,32 @@ def _compile_root_stylesheet(
             'The `libsass` package is required to compile sass/scss stylesheet files. Run `pip install "libsass>=0.23.0"`.'
         )
 
+    return sheets
+
+
+def _compile_root_stylesheet(
+    stylesheets: list[str],
+    reset_style: bool = True,
+    plugins: Sequence[Plugin] | None = None,
+) -> str:
+    """Compile the root stylesheet via the legacy ``styles_template``.
+
+    Thin wrapper around :func:`_resolve_root_stylesheets` plus the
+    template emit. The rust pipeline calls the resolver directly and
+    hands the result to ``sess.compile_styles_root`` instead.
+
+    Args:
+        stylesheets: The stylesheets to include in the root stylesheet.
+        reset_style: Whether to include CSS reset for margin and padding.
+        plugins: The effective plugins for the active compile.
+
+    Returns:
+        The compiled root stylesheet.
+
+    Raises:
+        FileNotFoundError: If a specified stylesheet in assets directory does not exist.
+    """
+    sheets = _resolve_root_stylesheets(stylesheets, reset_style, plugins)
     return templates.styles_template(stylesheets=sheets)
 
 

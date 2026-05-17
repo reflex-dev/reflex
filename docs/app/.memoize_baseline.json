@@ -1,0 +1,8 @@
+{
+  "wall_ms": 3219.601642998896,
+  "decide_ms": 177.772342,
+  "build_wrapper_ms": 682.536636,
+  "passthrough_memo_ms": 538.522192,
+  "compile_memo_files_ms": 317.322601,
+  "leave_component_ms": 838.0503630000001
+}

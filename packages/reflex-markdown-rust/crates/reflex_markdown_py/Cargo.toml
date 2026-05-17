@@ -1,0 +1,15 @@
+[package]
+name = "reflex_markdown_py"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+name = "_native"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3           = { workspace = true }
+pulldown-cmark = { workspace = true }

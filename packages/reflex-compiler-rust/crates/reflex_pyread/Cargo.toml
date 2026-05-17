@@ -1,0 +1,27 @@
+[package]
+name = "reflex_pyread"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+# `pyo3` is optional so the pure-Rust helpers (string decoders, etc.) can
+# be unit-tested with `--no-default-features` — uv's snap-managed Python
+# hides libpython from the system linker, so anything that drags pyo3 in
+# fails to link a test binary.
+#
+# `reflex_py` (the cdylib) re-enables this feature plus `extension-module`
+# via its own dep declaration; in normal `maturin develop` builds the
+# `pyo3` feature here stays on.
+pyo3 = { version = "0.22", default-features = false, features = ["abi3-py310"], optional = true }
+
+thiserror       = { workspace = true }
+reflex_ir       = { workspace = true }
+reflex_arena    = { workspace = true }
+reflex_intern   = { workspace = true }
+
+[features]
+default = ["pyo3"]
+pyo3 = ["dep:pyo3"]

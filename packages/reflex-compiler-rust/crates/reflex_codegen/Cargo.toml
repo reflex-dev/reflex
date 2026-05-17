@@ -1,0 +1,15 @@
+[package]
+name = "reflex_codegen"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+reflex_ir       = { workspace = true }
+reflex_intern   = { workspace = true }
+reflex_arena    = { workspace = true }
+reflex_semantic = { workspace = true }
+itoa            = "1"
+ryu             = "1"

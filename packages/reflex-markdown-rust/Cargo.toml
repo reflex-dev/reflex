@@ -1,0 +1,20 @@
+[workspace]
+resolver = "2"
+members = ["crates/reflex_markdown_py"]
+
+[workspace.package]
+edition = "2021"
+rust-version = "1.79"
+license = "Apache-2.0"
+publish = false
+
+[workspace.dependencies]
+pyo3           = { version = "0.22", features = ["abi3-py310", "extension-module"] }
+pulldown-cmark = { version = "0.12", default-features = false, features = ["html"] }
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+debug = false
+strip = "symbols"

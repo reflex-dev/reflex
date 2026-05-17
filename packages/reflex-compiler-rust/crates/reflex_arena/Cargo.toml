@@ -1,0 +1,10 @@
+[package]
+name = "reflex_arena"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+bumpalo = { workspace = true }

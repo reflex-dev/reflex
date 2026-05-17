@@ -1,0 +1,27 @@
+[build-system]
+requires = ["maturin>=1.7,<2"]
+build-backend = "maturin"
+
+[project]
+name = "reflex-compiler-rust"
+version = "0.0.0"
+description = "Rust acceleration for the Reflex compiler (PyO3 + maturin). Spike scaffold; not a real release."
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Rust",
+]
+
+[project.optional-dependencies]
+bench = ["msgpack>=1.0.7"]
+
+[tool.maturin]
+manifest-path = "crates/reflex_py/Cargo.toml"
+module-name = "reflex_compiler_rust._native"
+python-source = "python"
+features = ["pyo3/extension-module"]

@@ -10,7 +10,12 @@ from reflex_base.config import get_config
 from reflex_base.context.base import BaseContext
 
 CompileTrigger = Literal[
-    "initial", "cli_compile", "backend_startup", "hot_reload", "export"
+    "initial",
+    "cli_compile",
+    "cli_run_rust",
+    "backend_startup",
+    "hot_reload",
+    "export",
 ]
 
 

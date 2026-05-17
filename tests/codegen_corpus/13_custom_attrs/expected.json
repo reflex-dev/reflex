@@ -1,0 +1,9 @@
+{
+  "contains": [
+    "content",
+    "my-box"
+  ],
+  "not_contains": [
+    "undefined"
+  ]
+}

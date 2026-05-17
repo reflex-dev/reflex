@@ -1,0 +1,14 @@
+[package]
+name = "reflex_ir"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+reflex_arena  = { workspace = true }
+reflex_intern = { workspace = true }
+bumpalo       = { workspace = true }
+rmp           = { workspace = true }
+thiserror     = { workspace = true }

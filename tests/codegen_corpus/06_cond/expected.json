@@ -1,0 +1,12 @@
+{
+  "contains": [
+    "welcome back",
+    "please log in",
+    "?",
+    ":",
+    "logged_in"
+  ],
+  "not_contains": [
+    "undefined"
+  ]
+}

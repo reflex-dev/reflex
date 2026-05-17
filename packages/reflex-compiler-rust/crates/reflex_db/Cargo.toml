@@ -1,0 +1,16 @@
+[package]
+name = "reflex_db"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+reflex_ir       = { workspace = true }
+reflex_codegen  = { workspace = true }
+reflex_arena    = { workspace = true }
+reflex_intern   = { workspace = true }
+rayon           = { workspace = true }
+thiserror       = { workspace = true }
+xxhash-rust     = { version = "0.8", features = ["xxh3"] }

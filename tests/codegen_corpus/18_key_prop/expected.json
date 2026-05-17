@@ -1,0 +1,9 @@
+{
+  "contains": [
+    ".map((",
+    "key"
+  ],
+  "not_contains": [
+    "undefined"
+  ]
+}

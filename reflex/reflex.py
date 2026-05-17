@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -12,6 +13,7 @@ from reflex_base.config import get_config
 from reflex_base.environment import environment
 from reflex_base.utils import console
 from reflex_cli.v2.deployments import hosting_cli
+from rich import markup
 
 from reflex.custom_components.custom_components import custom_components_cli
 
@@ -489,6 +491,195 @@ def compile(dry: bool, rich: bool):
     prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger="cli_compile")
     elapsed_time = time.monotonic() - starting_time
     console.success(f"App compiled successfully in {elapsed_time:.3f} seconds.")
+
+
+@cli.command(name="run-rust")
+@loglevel_option
+@click.option(
+    "--env",
+    type=click.Choice([e.value for e in constants.Env], case_sensitive=False),
+    default=constants.Env.DEV.value,
+    help="The environment to run the app in.",
+)
+@click.option(
+    "--frontend-only",
+    is_flag=True,
+    show_default=False,
+    help="Execute only frontend.",
+    envvar=environment.REFLEX_FRONTEND_ONLY.name,
+)
+@click.option(
+    "--backend-only",
+    is_flag=True,
+    show_default=False,
+    help="Execute only backend.",
+    envvar=environment.REFLEX_BACKEND_ONLY.name,
+)
+@click.option(
+    "--frontend-port",
+    type=int,
+    help="Specify a different frontend port.",
+    envvar=environment.REFLEX_FRONTEND_PORT.name,
+)
+@click.option(
+    "--backend-port",
+    type=int,
+    help="Specify a different backend port.",
+    envvar=environment.REFLEX_BACKEND_PORT.name,
+)
+@click.option(
+    "--backend-host",
+    help="Specify the backend host.",
+)
+@click.option(
+    "--routes",
+    multiple=True,
+    help="Restrict compilation to these routes (repeatable; default: all).",
+)
+def run_rust(
+    env: LITERAL_ENV,
+    frontend_only: bool,
+    backend_only: bool,
+    frontend_port: int | None,
+    backend_port: int | None,
+    backend_host: str | None,
+    routes: tuple[str, ...],
+):
+    """Run the app with the Rust compiler driving page JSX emission.
+
+    Requires:
+
+    * the ``reflex-compiler-rust`` wheel to be installed (see
+      ``packages/reflex-compiler-rust/``);
+    * ``.web/`` to already contain a Reflex scaffold (``package.json``,
+      ``vite.config.js``, ``utils/``). Run ``reflex init`` or ``reflex
+      run`` once to lay one down before invoking ``run-rust``.
+
+    Each registered page is evaluated in Python (the user's page callable
+    builds the Component tree) and then handed to Rust for IR conversion
+    and JSX emission. The legacy plugin chain, memoize plugin, and
+    custom-component compile do not run; for those, use ``reflex run``.
+    """
+    import time
+
+    from reflex.compiler import rust_pipeline
+    from reflex.compiler.session import CompilerSession
+    from reflex.utils import prerequisites
+
+    if frontend_only and backend_only:
+        console.error("Cannot use both --frontend-only and --backend-only options.")
+        raise SystemExit(1)
+
+    try:
+        sess = CompilerSession()
+    except RuntimeError as exc:
+        console.error(str(exc))
+        raise SystemExit(1) from exc
+
+    config = get_config()
+    frontend_port = frontend_port or config.frontend_port
+    backend_port = backend_port or config.backend_port
+    backend_host = backend_host or config.backend_host
+
+    environment.REFLEX_COMPILE_CONTEXT.set(constants.CompileContext.RUN)
+    environment.REFLEX_BACKEND_ONLY.set(backend_only)
+    environment.REFLEX_FRONTEND_ONLY.set(frontend_only)
+
+    running_mode = prerequisites.check_running_mode(frontend_only, backend_only)
+
+    if running_mode.has_frontend():
+        if prerequisites.needs_reinit():
+            _init(name=config.app_name)
+        get_config(reload=True)
+
+        if not rust_pipeline.scaffold_exists():
+            console.error(
+                ".web/ scaffold not found. Run `reflex init` or `reflex "
+                "run` once before invoking `reflex run-rust`."
+            )
+            raise SystemExit(1)
+
+        # Static artifacts the legacy compile produces — `app/root.jsx`
+        # (React Router root) and `utils/components.jsx` (memo index +
+        # toast/admin provider re-exports). When `_init` wiped `.web/`
+        # or on a fresh project they're missing, so we run the legacy
+        # compile *once* to lay them down. Subsequent runs skip this
+        # branch entirely and only the Rust pipeline executes. Pages
+        # the legacy compile emits get overwritten by the Rust pipeline
+        # below.
+        web_dir = prerequisites.get_web_dir()
+        # ``REFLEX_RUST_NO_LEGACY_REBUILD`` is set by
+        # ``scripts/diff_legacy_vs_rust.py`` so the rust snapshot reflects
+        # exactly what the Rust pipeline produces, without the static-
+        # artifact fallback masking the gaps.
+        needs_static_artifacts = (
+            not os.environ.get("REFLEX_RUST_NO_LEGACY_REBUILD")
+            and (
+                not (web_dir / "app" / "root.jsx").exists()
+                or not (web_dir / "utils" / "components.jsx").exists()
+            )
+        )
+        if needs_static_artifacts:
+            console.rule("[bold]Rebuilding static artifacts (one-shot legacy compile)")
+            legacy_start = time.monotonic()
+            # Clear the ``.nocompile`` marker a previous ``reflex run``
+            # may have left behind — otherwise ``App._compile`` short-
+            # circuits and we'd write neither ``root.jsx`` nor the memo
+            # index this branch is supposed to produce.
+            (web_dir / constants.NOCOMPILE_FILE).unlink(missing_ok=True)
+            prerequisites.get_compiled_app(trigger="cli_run_rust")
+            console.info(
+                f"  artifacts rebuilt in {time.monotonic() - legacy_start:.3f}s"
+            )
+
+        console.rule("[bold]Rust pipeline")
+        py_start = time.monotonic()
+        app_info = prerequisites.get_and_validate_app()
+        console.info(
+            f"  app import finished in {(time.monotonic() - py_start) * 1000:.1f}ms"
+        )
+
+        console.rule("[bold]Emitting pages with reflex-compiler-rust")
+        rust_start = time.monotonic()
+        written, all_imports = rust_pipeline.compile_pages(
+            app_info.app,
+            session=sess,
+            routes=list(routes) if routes else None,
+        )
+        elapsed = time.monotonic() - rust_start
+        for route, path in sorted(written.items()):
+            console.info(f"  {route:<24} → {markup.escape(str(path))}")
+        console.info(
+            f"  rust-compiled {len(written)} page(s) in {elapsed * 1000:.1f}ms"
+        )
+
+        # Install frontend dependencies (bun install of package.json +
+        # any custom packages the pages pulled in). The legacy compile
+        # would do this inside ``App._compile``; we run it ourselves
+        # here so ``react-router dev`` finds its binary in node_modules.
+        # If the one-shot legacy compile above already ran, it handled
+        # this — skip the redundant pass.
+        if not needs_static_artifacts:
+            console.rule("[bold]Installing frontend packages")
+            install_start = time.monotonic()
+            app_info.app._get_frontend_packages(all_imports)
+            console.info(
+                f"  install finished in {(time.monotonic() - install_start) * 1000:.1f}ms"
+            )
+
+    # The diff script (``scripts/diff_legacy_vs_rust.py``) sets this env var
+    # so it can capture the compile output without starting a dev server.
+    if os.environ.get("REFLEX_RUN_RUST_COMPILE_ONLY"):
+        return
+
+    _skip_compile()
+    _run(
+        env=constants.Env.DEV if env == constants.Env.DEV else constants.Env.PROD,
+        running_mode=running_mode,
+        frontend_port=frontend_port,
+        backend_port=backend_port,
+        backend_host=backend_host,
+    )
 
 
 @cli.command()

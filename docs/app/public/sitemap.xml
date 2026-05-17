@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='utf-8'?>
+<urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>http://localhost:3000/getting-started/introduction/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/library/forms/form/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/library/forms/form/low/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/library/forms/select/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/library/forms/select/low/</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/</loc>
+  </url>
+</urlset>

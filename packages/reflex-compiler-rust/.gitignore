@@ -1,0 +1,7 @@
+target/
+dist/
+wheels/
+*.so
+*.pyd
+__pycache__/
+.venv/
