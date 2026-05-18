@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'docs/app/reflex_docs/whitelist.py'
+      - '.github/workflows/docs_whitelist.yml'
 
 permissions:
   contents: read
