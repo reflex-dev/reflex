@@ -1,0 +1,17 @@
+name: docs whitelist check
+
+on:
+  pull_request:
+    paths:
+      - 'docs/app/reflex_docs/whitelist.py'
+
+permissions:
+  contents: read
+
+jobs:
+  check-whitelist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Assert whitelist is empty
+        run: echo -e "\nassert not WHITELISTED_PAGES, f'WHITELISTED_PAGES includes {WHITELISTED_PAGES}'" | cat "docs/app/reflex_docs/whitelist.py" - | python3
