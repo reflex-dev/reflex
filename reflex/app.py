@@ -1593,10 +1593,7 @@ class EventNamespace(AsyncNamespace):
         ):
             if isinstance(self._token_manager, RedisTokenManager):
                 # The socket belongs to another instance of the app, send it to the lost and found.
-                if not await self._token_manager.emit_lost_and_found(token, update):
-                    console.warn(
-                        f"Failed to send delta to lost and found for client {token!r}"
-                    )
+                await self._token_manager.emit_lost_and_found(token, update)
             else:
                 # If the socket record is None, we are not connected to a client. Prevent sending
                 # updates to all clients.
