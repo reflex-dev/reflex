@@ -118,22 +118,15 @@ def telemetry_compile_harness(
         The configured ``AppHarness`` instance after initialization.
     """
     root = tmp_path_factory.mktemp("telemetry_compile_app")
-    harness = AppHarness.create(
+    with AppHarness.create(
         root=root,
         app_source=functools.partial(
             TelemetryCompileApp,
             events_log_path=str(telemetry_events_log),
         ),
         app_name="telemetry_compile_app",
-    )
-    harness._initialize_app()
-    try:
+    ) as harness:
         yield harness
-    finally:
-        if harness._registry_token is not None:
-            from reflex_base.registry import RegistrationContext
-
-            RegistrationContext.reset(harness._registry_token)
 
 
 def _read_compile_events(events_log: Path) -> list[dict]:
