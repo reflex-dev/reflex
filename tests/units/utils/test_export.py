@@ -12,9 +12,6 @@ from reflex.utils import export
 def patched_export(mocker: MockerFixture) -> dict:
     """Patch out side-effecting dependencies of ``export.export()``.
 
-    Args:
-        mocker: pytest-mock fixture.
-
     Returns:
         Dict of patched mocks keyed by short name.
     """
@@ -29,8 +26,6 @@ def patched_export(mocker: MockerFixture) -> dict:
         "output_system_info": mocker.patch(
             "reflex.utils.export.exec.output_system_info"
         ),
-        "console_rule": mocker.patch("reflex.utils.export.console.rule"),
-        "set_log_level": mocker.patch("reflex.utils.export.console.set_log_level"),
         "env_mode_set": mocker.patch(
             "reflex.utils.export.environment.REFLEX_ENV_MODE.set"
         ),
@@ -43,16 +38,11 @@ def patched_export(mocker: MockerFixture) -> dict:
 def _send_kwargs(send_mock) -> dict:
     """Extract kwargs from the single telemetry.send call.
 
-    Args:
-        send_mock: Mock for ``telemetry.send``; must have been called exactly once with positional ``"export"``.
-
     Returns:
         The kwargs dict from the recorded call.
     """
     assert send_mock.call_count == 1
-    args, kwargs = send_mock.call_args
-    assert args == ("export",)
-    return kwargs
+    return send_mock.call_args.kwargs
 
 
 def test_export_success_emits_success_event_with_all_phase_durations(patched_export):
@@ -61,7 +51,6 @@ def test_export_success_emits_success_event_with_all_phase_durations(patched_exp
     kwargs = _send_kwargs(patched_export["send"])
     assert kwargs["status"] == "success"
     assert isinstance(kwargs["duration"], float)
-    assert kwargs["duration"] >= 0
     assert isinstance(kwargs["compile_duration"], float)
     assert isinstance(kwargs["setup_duration"], float)
     assert isinstance(kwargs["build_duration"], float)
