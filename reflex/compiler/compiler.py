@@ -1102,8 +1102,8 @@ def compile_app(
 
     memo_component_files, memo_components_imports = compile_memo_components(
         (
-            *tuple(MEMOS.values()),
-            *tuple(compile_ctx.auto_memo_components.values()),
+            *MEMOS.values(),
+            *compile_ctx.auto_memo_components.values(),
         ),
     )
     compile_results.extend(memo_component_files)

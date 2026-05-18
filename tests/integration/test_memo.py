@@ -1,4 +1,4 @@
-"""Integration tests for rx._x.memo."""
+"""Integration tests for the ``rx._x.memo`` deprecation shim."""
 
 from collections.abc import Generator
 
@@ -9,7 +9,7 @@ from reflex.testing import AppHarness
 
 
 def MemoApp():
-    """Reflex app that exercises experimental memo functions and components."""
+    """Reflex app that exercises memo functions and components via ``rx._x.memo``."""
     import reflex as rx
 
     class FooComponent(rx.Fragment):

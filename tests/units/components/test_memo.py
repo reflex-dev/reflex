@@ -1,7 +1,8 @@
-"""Tests for experimental memo support."""
+"""Tests for rx.memo support."""
 
 from __future__ import annotations
 
+import inspect
 from types import SimpleNamespace
 from typing import Any
 
@@ -683,15 +684,13 @@ def _make_param(
     Returns:
         A populated ``MemoParam`` with sensible defaults for tests.
     """
-    import inspect as _inspect
-
     js = js_prop_name if js_prop_name is not None else format_utils.to_camel_case(name)
     return MemoParam(
         name=name,
         kind=kind,
         kind_data=kind_data,
         annotation=annotation if annotation is not None else rx.Var[int],
-        parameter_kind=_inspect.Parameter.KEYWORD_ONLY,
+        parameter_kind=inspect.Parameter.KEYWORD_ONLY,
         js_prop_name=js,
         placeholder_name=placeholder_name if placeholder_name is not None else name,
     )
@@ -861,11 +860,9 @@ def test_event_trigger_validate_rejects_default_directly():
     """The validate hook on _SPECS[EVENT_TRIGGER] rejects defaults without
     going through the decorator. This pins per-kind invariants at the Seam.
     """
-    import inspect as _inspect
-
-    parameter = _inspect.Parameter(
+    parameter = inspect.Parameter(
         name="event",
-        kind=_inspect.Parameter.KEYWORD_ONLY,
+        kind=inspect.Parameter.KEYWORD_ONLY,
         default=None,
         annotation=rx.EventHandler[rx.event.passthrough_event_spec(str)],
     )
@@ -875,11 +872,9 @@ def test_event_trigger_validate_rejects_default_directly():
 
 def test_event_trigger_validate_rejects_in_var_returning_memo():
     """EVENT_TRIGGER is only valid on component-returning memos."""
-    import inspect as _inspect
-
-    parameter = _inspect.Parameter(
+    parameter = inspect.Parameter(
         name="event",
-        kind=_inspect.Parameter.KEYWORD_ONLY,
+        kind=inspect.Parameter.KEYWORD_ONLY,
         annotation=rx.EventHandler,
     )
     with pytest.raises(TypeError, match="component-returning"):
