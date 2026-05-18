@@ -64,7 +64,7 @@ def _fake_app(**overrides):
     )
 
 
-class _TelAcctRoot(BaseState):
+class TelAcctRoot(BaseState):
     """Root state for accounting tests."""
 
     a: int = 0
@@ -90,13 +90,13 @@ class _TelAcctRoot(BaseState):
         return self.a * 2
 
 
-class _TelAcctChild(_TelAcctRoot):
+class TelAcctChild(TelAcctRoot):
     """Child state for accounting tests."""
 
     c: int = 0
 
 
-class _TelAcctGrandchild(_TelAcctChild):
+class TelAcctGrandchild(TelAcctChild):
     """Grandchild state for accounting tests."""
 
     d: int = 0
@@ -118,12 +118,12 @@ def test_walk_components_walks_nested_tree():
 
 def test_collect_state_stats_root_depth_zero():
     """A root state has depth 0 and reports the counts straight off the class."""
-    stats = telemetry_accounting._collect_state_stats(_TelAcctRoot)
+    stats = telemetry_accounting._collect_state_stats(TelAcctRoot)
     assert stats == {
-        "event_handlers_count": len(_TelAcctRoot.event_handlers),
-        "vars_count": len(_TelAcctRoot.vars),
-        "backend_vars_count": len(_TelAcctRoot.backend_vars),
-        "computed_vars_count": len(_TelAcctRoot.computed_vars),
+        "event_handlers_count": len(TelAcctRoot.event_handlers),
+        "vars_count": len(TelAcctRoot.vars),
+        "backend_vars_count": len(TelAcctRoot.backend_vars),
+        "computed_vars_count": len(TelAcctRoot.computed_vars),
         "depth_from_root": 0,
     }
 
@@ -131,18 +131,18 @@ def test_collect_state_stats_root_depth_zero():
 def test_collect_state_stats_depth_hierarchy():
     """Depth increases with each parent-to-child step."""
     assert (
-        telemetry_accounting._collect_state_stats(_TelAcctChild)["depth_from_root"] == 1
+        telemetry_accounting._collect_state_stats(TelAcctChild)["depth_from_root"] == 1
     )
     assert (
-        telemetry_accounting._collect_state_stats(_TelAcctGrandchild)["depth_from_root"]
+        telemetry_accounting._collect_state_stats(TelAcctGrandchild)["depth_from_root"]
         == 2
     )
 
 
 def test_walk_states_yields_root_and_descendants():
     """The walker reaches every descendant transitively."""
-    walked = set(telemetry_accounting._walk_states(_TelAcctRoot))
-    assert {_TelAcctRoot, _TelAcctChild, _TelAcctGrandchild} <= walked
+    walked = set(telemetry_accounting._walk_states(TelAcctRoot))
+    assert {TelAcctRoot, TelAcctChild, TelAcctGrandchild} <= walked
 
 
 def test_collect_compile_event_payload_shape(mocker: MockerFixture):
@@ -157,7 +157,7 @@ def test_collect_compile_event_payload_shape(mocker: MockerFixture):
     )
 
     app = _fake_app(
-        _state=_TelAcctRoot,
+        _state=TelAcctRoot,
         _pages={"/": rx.box(rx.text("hello"))},
     )
     ctx = TelemetryContext(trigger="cli_compile")
@@ -200,7 +200,7 @@ def test_collect_compile_event_payload_with_exception(mocker: MockerFixture):
 def test_walk_states_skips_framework_internal_substates():
     """Framework-internal substates are excluded; user states still appear."""
 
-    class _UserWalkState(rx.State):
+    class UserWalkState(rx.State):
         x: int = 0
 
     walked = list(telemetry_accounting._walk_states(State))
@@ -211,7 +211,7 @@ def test_walk_states_skips_framework_internal_substates():
     assert FrontendEventExceptionState not in walked
     assert "SharedStateBaseInternal" not in walked_names
     assert State not in walked
-    assert _UserWalkState in walked
+    assert UserWalkState in walked
 
 
 def test_memo_wrapper_class_records_wrapped_component_type():
@@ -233,12 +233,12 @@ def test_walk_components_buckets_memo_wrapper_by_wrapped_type():
     """Memo wrappers count under their wrapped component class name."""
     from reflex_components_radix.themes.components.button import Button
 
-    class _StubMemoWrapper:
+    class StubMemoWrapper:
         _wrapped_component_type = Button
         children = ()
 
     counts, upload_count = telemetry_accounting._walk_components(
-        [_StubMemoWrapper()],  # pyright: ignore[reportArgumentType]
+        [StubMemoWrapper()],  # pyright: ignore[reportArgumentType]
     )
 
     assert counts == {"Button": 1}
@@ -249,16 +249,11 @@ def test_walk_components_counts_upload_subclass_instances():
     """``upload_count`` aggregates ``Upload`` and any subclass occurrences."""
     from reflex_components_core.core.upload import StyledUpload, Upload
 
-    class _PlainStub:
+    class PlainStub:
         children = ()
 
-    upload_inst = object.__new__(Upload)
-    upload_inst.children = []
-    styled_inst = object.__new__(StyledUpload)
-    styled_inst.children = []
-
     _counts, upload_count = telemetry_accounting._walk_components(
-        [upload_inst, styled_inst, _PlainStub()],  # pyright: ignore[reportArgumentType]
+        [Upload.create(), StyledUpload.create(), PlainStub()],  # pyright: ignore[reportArgumentType]
     )
     assert upload_count == 2
 
@@ -278,7 +273,7 @@ def test_collect_features_used_emits_every_known_key():
 def test_collect_features_used_walks_state_fields_for_storage():
     """Storage counts come from a walk over user state fields."""
 
-    class _StorageState(BaseState):
+    class StorageState(BaseState):
         c1: str = Cookie()
         c2: str = Cookie()
         ls: str = LocalStorage()
@@ -288,32 +283,33 @@ def test_collect_features_used_walks_state_fields_for_storage():
     features = telemetry_accounting._collect_features_used(
         _fake_app(),  # pyright: ignore[reportArgumentType]
         _fake_config(),
-        [_StorageState],
+        [StorageState],
         0,
     )
     assert features["cookie_count"] == 2
     assert features["local_storage_count"] == 1
     assert features["session_storage_count"] == 1
+    assert "plain" not in features
 
 
 def test_collect_features_used_storage_not_double_counted_through_inheritance():
     """Inherited storage fields are not re-counted on each descendant."""
 
-    class _StorageParent(BaseState):
+    class StorageParent(BaseState):
         c: str = Cookie()
         ls: str = LocalStorage()
         ss: str = SessionStorage()
 
-    class _StorageChild(_StorageParent):
+    class StorageChild(StorageParent):
         pass
 
-    class _StorageGrandchild(_StorageChild):
+    class StorageGrandchild(StorageChild):
         extra: str = Cookie()
 
     features = telemetry_accounting._collect_features_used(
         _fake_app(),  # pyright: ignore[reportArgumentType]
         _fake_config(),
-        [_StorageParent, _StorageChild, _StorageGrandchild],
+        [StorageParent, StorageChild, StorageGrandchild],
         0,
     )
     assert features["cookie_count"] == 2
@@ -335,16 +331,16 @@ def test_collect_features_used_upload_from_component_walk():
 def test_collect_features_used_counts_shared_state_subclasses():
     """The walk counts user states that subclass ``rx.SharedState``."""
 
-    class _SharedOne(rx.SharedState):
+    class SharedOne(rx.SharedState):
         x: int = 0
 
-    class _SharedTwo(rx.SharedState):
+    class SharedTwo(rx.SharedState):
         y: int = 0
 
     features = telemetry_accounting._collect_features_used(
         _fake_app(),  # pyright: ignore[reportArgumentType]
         _fake_config(),
-        [_SharedOne, _SharedTwo],
+        [SharedOne, SharedTwo],
         0,
     )
     assert features["shared_state_count"] == 2
@@ -445,7 +441,7 @@ def test_collect_features_used_default_cors_stays_zero():
 def test_collect_features_used_counts_background_handlers():
     """The state walk counts ``@rx.event(background=True)`` handlers."""
 
-    class _BgState(BaseState):
+    class BgState(BaseState):
         @rx.event(background=True)
         async def slow(self):
             """Background handler used to assert detection."""
@@ -457,7 +453,7 @@ def test_collect_features_used_counts_background_handlers():
     features = telemetry_accounting._collect_features_used(
         _fake_app(),  # pyright: ignore[reportArgumentType]
         _fake_config(),
-        [_BgState],
+        [BgState],
         0,
     )
     assert features["background_event_handlers_count"] == 1
