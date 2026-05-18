@@ -212,6 +212,10 @@ def handle_library_doc(
     """Handle docs/library/** docs — component API reference via multi_docs."""
     clist = [title, *get_components_from_frontmatter(actual_path)]
     previews = get_previews_from_frontmatter(actual_path)
+    ll_actual_path = actual_path.replace(".md", "-ll.md")
+    ll_clist: list | None = None
+    if os.path.exists(ll_actual_path):
+        ll_clist = [title, *get_components_from_frontmatter(ll_actual_path)]
     if doc.startswith("docs/library/graphing"):
         graphing_components[resolved.category].append(clist)
     else:
@@ -223,6 +227,7 @@ def handle_library_doc(
         previews=previews,
         component_list=clist,
         title=resolved.display_title,
+        ll_component_list=ll_clist,
     )
 
 
@@ -238,10 +243,12 @@ def get_component_docgen(virtual_doc: str, actual_path: str, title: str):
     def comp(_actual=actual_path, _virtual=virtual_doc):
         toc = get_docgen_toc(_actual)
         doc_content = Path(_actual).read_text(encoding="utf-8")
-        rendered = render_docgen_document(
+        body, faq_script = render_docgen_document(
             virtual_filepath=_virtual, actual_filepath=_actual
         )
-        return ((toc, doc_content), rendered)
+        if faq_script is not None:
+            body = rx.fragment(body, faq_script)
+        return ((toc, doc_content), body)
 
     return make_docpage(resolved.route, resolved.display_title, virtual_doc, comp)
 

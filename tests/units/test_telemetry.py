@@ -163,3 +163,55 @@ def test_send_drops_none_kwargs(mocker: MockerFixture):
     assert "detail" not in props
     assert "compile_duration" not in props
     assert "zip_duration" not in props
+
+
+def test_prepare_event_merges_properties(mocker: MockerFixture):
+    """``properties`` payloads are merged into the event properties."""
+    _patch_event_defaults(mocker, _mock_event_defaults())
+
+    event = telemetry._prepare_event(
+        "compile",
+        properties={"pages_count": 7, "trigger": "initial"},
+    )
+
+    assert event is not None
+    assert event["event"] == "compile"
+    props: dict = event["properties"]  # pyright: ignore[reportAssignmentType]
+    assert props["pages_count"] == 7
+    assert props["trigger"] == "initial"
+    # Existing default keys are preserved.
+    assert props["user_os"] == "Test OS"
+
+
+def test_prepare_event_does_not_mutate_cached_defaults(mocker: MockerFixture):
+    """``_prepare_event`` must not mutate the @once_unless_none cached defaults."""
+    cached = _mock_event_defaults()
+    _patch_event_defaults(mocker, cached)
+
+    cached_props_snapshot = dict(cached["properties"])
+
+    telemetry._prepare_event("init", template="my-template")
+    telemetry._prepare_event(
+        "compile",
+        properties={"pages_count": 3, "duration_ms": 42},
+    )
+
+    assert cached["properties"] == cached_props_snapshot
+    assert "template" not in cached["properties"]
+    assert "pages_count" not in cached["properties"]
+    assert "duration_ms" not in cached["properties"]
+
+
+def test_prepare_event_properties_override_kwargs(mocker: MockerFixture):
+    """If both kwargs and properties supply the same key, properties wins."""
+    _patch_event_defaults(mocker, _mock_event_defaults())
+
+    event = telemetry._prepare_event(
+        "init",
+        template="from-kwarg",
+        properties={"template": "from-properties"},
+    )
+
+    assert event is not None
+    props: dict = event["properties"]  # pyright: ignore[reportAssignmentType]
+    assert props["template"] == "from-properties"

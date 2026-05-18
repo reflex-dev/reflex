@@ -7,6 +7,7 @@ config = rx.Config(
     frontend_path="/docs",
     frontend_packages=[
         "tailwindcss-animated@2.0.0",
+        "tailwindcss-scroll-mask@0.0.3@2.0.0",
     ],
     telemetry_enabled=False,
     plugins=[

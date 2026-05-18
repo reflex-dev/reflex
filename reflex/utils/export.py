@@ -79,8 +79,12 @@ def export(
     try:
         if frontend:
             with _time_phase("compile_duration"):
-                prerequisites.get_compiled_app(prerender_routes=prerender_routes)
+                # Ensure module can be imported and app.compile() is called.
+                prerequisites.get_compiled_app(
+                    prerender_routes=prerender_routes, trigger="export"
+                )
             with _time_phase("setup_duration"):
+                # Set up .web directory and install frontend dependencies.
                 build.setup_frontend(Path.cwd())
             with _time_phase("build_duration"):
                 build.build()

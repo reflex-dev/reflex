@@ -356,6 +356,12 @@ class BaseComponent(metaclass=BaseComponentMeta):
         new = self.__class__.__new__(self.__class__)
         new_dict = vars(new)
         new_dict.update(vars(self))
+        new._clear_compile_caches()
+        return new
+
+    def _clear_compile_caches(self) -> None:
+        """Clear cached render/compiler artifacts after compile-time mutation."""
+        attrs = cast("dict[str, Any]", vars(self))
         for attr in (
             "_cached_render_result",
             "_vars_cache",
@@ -363,8 +369,7 @@ class BaseComponent(metaclass=BaseComponentMeta):
             "_hooks_internal_cache",
             "_get_component_prop_property",
         ):
-            new_dict.pop(attr, None)
-        return new
+            attrs.pop(attr, None)
 
     def __eq__(self, value: Any) -> bool:
         """Check if the component is equal to another value.
@@ -1367,6 +1372,7 @@ class Component(BaseComponent, ABC):
 
         # Assign the new style
         self.style = new_style
+        self._clear_compile_caches()
 
         # Recursively add style to the children.
         for child in self.children:
