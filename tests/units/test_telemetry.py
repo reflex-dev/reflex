@@ -180,6 +180,19 @@ def test_get_init_environment_reports_dependency_files(
     }
 
 
+def test_get_init_environment_reports_requirements_txt(
+    init_environment_cwd, venv_state
+):
+    (init_environment_cwd / "requirements.txt").write_text("")
+    venv_state(prefix="/usr", base_prefix="/usr", virtual_env="/tmp/venv")
+
+    assert telemetry.get_init_environment() == {
+        "in_virtualenv": True,
+        "has_pyproject_toml": False,
+        "has_requirements_txt": True,
+    }
+
+
 def test_get_init_environment_empty_directory(init_environment_cwd, venv_state):
     venv_state(prefix="/usr", base_prefix="/usr", virtual_env=None)
 
