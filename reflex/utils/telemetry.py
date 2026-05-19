@@ -5,10 +5,13 @@ import dataclasses
 import importlib.metadata
 import json
 import multiprocessing
+import os
 import platform
+import sys
 import warnings
 from contextlib import suppress
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, TypedDict, cast
 
 from reflex_base import constants
@@ -164,6 +167,31 @@ def get_cpu_count() -> int:
         The number of CPUs.
     """
     return multiprocessing.cpu_count()
+
+
+def is_in_virtualenv() -> bool:
+    """Whether the current Python is running inside a virtual environment.
+
+    Returns:
+        True if a virtual environment appears to be active.
+    """
+    if sys.prefix != sys.base_prefix:
+        return True
+    return bool(os.environ.get("VIRTUAL_ENV"))
+
+
+def get_init_environment() -> dict[str, bool]:
+    """Return Python tooling flags for the current working directory.
+
+    Returns:
+        A dict with ``in_virtualenv``, ``has_pyproject_toml`` and
+        ``has_requirements_txt`` boolean flags.
+    """
+    return {
+        "in_virtualenv": is_in_virtualenv(),
+        "has_pyproject_toml": Path(constants.PyprojectToml.FILE).exists(),
+        "has_requirements_txt": Path(constants.RequirementsTxt.FILE).exists(),
+    }
 
 
 def get_reflex_enterprise_version() -> str | None:

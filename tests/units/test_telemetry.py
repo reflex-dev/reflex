@@ -121,6 +121,75 @@ def test_prepare_event_does_not_mutate_cached_defaults(mocker: MockerFixture):
     assert "duration_ms" not in cached["properties"]
 
 
+@pytest.fixture
+def venv_state(monkeypatch: pytest.MonkeyPatch):
+    """Force a deterministic `is_in_virtualenv` reading.
+
+    Returns:
+        A callable that overrides `sys.prefix`, `sys.base_prefix`, and the
+        `VIRTUAL_ENV` env-var for the duration of the test.
+    """
+
+    def configure(*, prefix: str, base_prefix: str, virtual_env: str | None) -> None:
+        monkeypatch.setattr(telemetry.sys, "prefix", prefix)
+        monkeypatch.setattr(telemetry.sys, "base_prefix", base_prefix)
+        if virtual_env is None:
+            monkeypatch.delenv("VIRTUAL_ENV", raising=False)
+        else:
+            monkeypatch.setenv("VIRTUAL_ENV", virtual_env)
+
+    return configure
+
+
+def test_is_in_virtualenv_detects_pep_405_venv(venv_state):
+    venv_state(prefix="/tmp/venv", base_prefix="/usr", virtual_env=None)
+    assert telemetry.is_in_virtualenv() is True
+
+
+def test_is_in_virtualenv_falls_back_to_virtual_env_var(venv_state):
+    venv_state(prefix="/usr", base_prefix="/usr", virtual_env="/tmp/venv")
+    assert telemetry.is_in_virtualenv() is True
+
+
+def test_is_in_virtualenv_returns_false_for_system_python(venv_state):
+    venv_state(prefix="/usr", base_prefix="/usr", virtual_env=None)
+    assert telemetry.is_in_virtualenv() is False
+
+
+@pytest.fixture
+def init_environment_cwd(tmp_path, monkeypatch: pytest.MonkeyPatch):
+    """Chdir into a clean tmp dir and let the caller stage dependency files.
+
+    Returns:
+        The temporary directory now serving as the working directory.
+    """
+    monkeypatch.chdir(tmp_path)
+    return tmp_path
+
+
+def test_get_init_environment_reports_dependency_files(
+    init_environment_cwd, venv_state
+):
+    (init_environment_cwd / "pyproject.toml").write_text("")
+    venv_state(prefix="/tmp/venv", base_prefix="/usr", virtual_env=None)
+
+    assert telemetry.get_init_environment() == {
+        "in_virtualenv": True,
+        "has_pyproject_toml": True,
+        "has_requirements_txt": False,
+    }
+
+
+def test_get_init_environment_empty_directory(init_environment_cwd, venv_state):
+    venv_state(prefix="/usr", base_prefix="/usr", virtual_env=None)
+
+    assert telemetry.get_init_environment() == {
+        "in_virtualenv": False,
+        "has_pyproject_toml": False,
+        "has_requirements_txt": False,
+    }
+
+
 def test_prepare_event_properties_override_kwargs(mocker: MockerFixture):
     """If both kwargs and properties supply the same key, properties wins."""
     mocker.patch(

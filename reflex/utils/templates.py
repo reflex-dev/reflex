@@ -386,6 +386,10 @@ def initialize_app(app_name: str, template: str | None = None) -> str | None:
         telemetry.send("reinit")
         return None
 
+    # Captured before scaffolding so the snapshot reflects the user's CWD,
+    # not files the template will create.
+    init_environment = telemetry.get_init_environment()
+
     templates: dict[str, Template] = {}
 
     # Don't fetch app templates if the user directly asked for DEFAULT.
@@ -412,7 +416,7 @@ def initialize_app(app_name: str, template: str | None = None) -> str | None:
             app_name=app_name, template=template, templates=templates
         )
 
-    telemetry.send("init", template=template)
+    telemetry.send("init", template=template, properties=init_environment)
 
     return template
 
