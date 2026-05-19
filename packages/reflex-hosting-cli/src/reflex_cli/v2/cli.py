@@ -214,9 +214,7 @@ def deploy(
     try:
         if app_name and not app_id:
             search_project_id = project_id
-            if not interactive and not project and not search_project_id:
-                search_project_id = selected_project_id
-            elif interactive and not project:
+            if interactive and not project:
                 search_project_id = None
 
             app = hosting.search_app(
