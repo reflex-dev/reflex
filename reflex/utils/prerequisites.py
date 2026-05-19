@@ -31,9 +31,9 @@ from reflex.utils.misc import get_module_path
 if typing.TYPE_CHECKING:
     from redis import Redis as RedisSync
     from redis.asyncio import Redis
+    from reflex_base.telemetry_context import CompileTrigger
 
     from reflex.app import App
-    from reflex.utils.telemetry_context import CompileTrigger
 
 
 class AppInfo(NamedTuple):
