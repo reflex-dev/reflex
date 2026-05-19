@@ -5,8 +5,15 @@ from pytest_mock import MockerFixture
 from reflex.utils import telemetry
 
 
-def _mock_event_defaults() -> dict:
-    return {
+@pytest.fixture
+def event_defaults(mocker: MockerFixture) -> dict:
+    """Patch ``get_event_defaults()`` with a fresh dict.
+
+    Returns:
+        The dict that ``get_event_defaults()`` is patched to return, so tests
+        can assert it isn't mutated by the code under test.
+    """
+    defaults = {
         "api_key": "test_api_key",
         "properties": {
             "distinct_id": 12345,
@@ -23,11 +30,18 @@ def _mock_event_defaults() -> dict:
             "cpu_info": {},
         },
     }
+    mocker.patch("reflex.utils.telemetry.get_event_defaults", return_value=defaults)
+    return defaults
 
 
-def _patch_event_defaults(mocker: MockerFixture, value):
-    """Replace the cached get_event_defaults() so it returns ``value``, bypassing the once_unless_none cache."""
-    mocker.patch("reflex.utils.telemetry.get_event_defaults", return_value=value)
+@pytest.fixture
+def httpx_post(mocker: MockerFixture):
+    """Mock ``httpx.post`` used by ``telemetry._send``.
+
+    Returns:
+        The mock for ``httpx.post`` so tests can assert on the posted payload.
+    """
+    return mocker.patch("httpx.post")
 
 
 def test_telemetry():
@@ -84,24 +98,17 @@ def test_disable():
         ),
     ],
 )
-def test_send(mocker: MockerFixture, event, kwargs, expected_props):
-    httpx_post_mock = mocker.patch("httpx.post")
-    _patch_event_defaults(mocker, _mock_event_defaults())
-
+def test_send(event_defaults, httpx_post, event, kwargs, expected_props):
     telemetry._send(event, telemetry_enabled=True, **kwargs)
-    httpx_post_mock.assert_called_once()
-    posted = httpx_post_mock.call_args.kwargs["json"]
+    httpx_post.assert_called_once()
+    posted = httpx_post.call_args.kwargs["json"]
     assert posted["event"] == event
     for key, value in expected_props.items():
         assert posted["properties"][key] == value
 
 
-def test_send_does_not_leak_kwargs_between_events(mocker: MockerFixture):
+def test_send_does_not_leak_kwargs_between_events(event_defaults, httpx_post):
     """Per-event kwargs must not leak into a subsequent event's payload."""
-    httpx_post_mock = mocker.patch("httpx.post")
-    defaults = _mock_event_defaults()
-    _patch_event_defaults(mocker, defaults)
-
     telemetry._send("export", telemetry_enabled=True, status="success", duration=1.0)
     telemetry._send(
         "export",
@@ -111,9 +118,9 @@ def test_send_does_not_leak_kwargs_between_events(mocker: MockerFixture):
         duration=2.0,
     )
 
-    assert httpx_post_mock.call_count == 2
-    first_props = httpx_post_mock.call_args_list[0].kwargs["json"]["properties"]
-    second_props = httpx_post_mock.call_args_list[1].kwargs["json"]["properties"]
+    assert httpx_post.call_count == 2
+    first_props = httpx_post.call_args_list[0].kwargs["json"]["properties"]
+    second_props = httpx_post.call_args_list[1].kwargs["json"]["properties"]
 
     assert first_props["status"] == "success"
     assert first_props["duration"] == pytest.approx(1.0)
@@ -124,28 +131,22 @@ def test_send_does_not_leak_kwargs_between_events(mocker: MockerFixture):
     assert second_props["duration"] == pytest.approx(2.0)
 
     # The cached defaults must not have been polluted by either call.
-    assert "status" not in defaults["properties"]
-    assert "duration" not in defaults["properties"]
-    assert "detail" not in defaults["properties"]
+    assert "status" not in event_defaults["properties"]
+    assert "duration" not in event_defaults["properties"]
+    assert "detail" not in event_defaults["properties"]
 
 
-def test_send_drops_unknown_kwargs(mocker: MockerFixture):
+def test_send_drops_unknown_kwargs(event_defaults, httpx_post):
     """Unknown kwargs must not land in the posted payload."""
-    httpx_post_mock = mocker.patch("httpx.post")
-    _patch_event_defaults(mocker, _mock_event_defaults())
-
     telemetry._send("export", telemetry_enabled=True, foo="bar", secret="leak")
-    httpx_post_mock.assert_called_once()
-    props = httpx_post_mock.call_args.kwargs["json"]["properties"]
+    httpx_post.assert_called_once()
+    props = httpx_post.call_args.kwargs["json"]["properties"]
     assert "foo" not in props
     assert "secret" not in props
 
 
-def test_send_drops_none_kwargs(mocker: MockerFixture):
+def test_send_drops_none_kwargs(event_defaults, httpx_post):
     """None-valued kwargs for allowed keys are omitted from the posted payload."""
-    httpx_post_mock = mocker.patch("httpx.post")
-    _patch_event_defaults(mocker, _mock_event_defaults())
-
     telemetry._send(
         "export",
         telemetry_enabled=True,
@@ -156,8 +157,8 @@ def test_send_drops_none_kwargs(mocker: MockerFixture):
         build_duration=0.05,
         zip_duration=None,
     )
-    httpx_post_mock.assert_called_once()
-    props = httpx_post_mock.call_args.kwargs["json"]["properties"]
+    httpx_post.assert_called_once()
+    props = httpx_post.call_args.kwargs["json"]["properties"]
     assert props["status"] == "success"
     assert props["build_duration"] == pytest.approx(0.05)
     assert "detail" not in props
@@ -165,10 +166,8 @@ def test_send_drops_none_kwargs(mocker: MockerFixture):
     assert "zip_duration" not in props
 
 
-def test_prepare_event_merges_properties(mocker: MockerFixture):
+def test_prepare_event_merges_properties(event_defaults):
     """``properties`` payloads are merged into the event properties."""
-    _patch_event_defaults(mocker, _mock_event_defaults())
-
     event = telemetry._prepare_event(
         "compile",
         properties={"pages_count": 7, "trigger": "initial"},
@@ -183,12 +182,9 @@ def test_prepare_event_merges_properties(mocker: MockerFixture):
     assert props["user_os"] == "Test OS"
 
 
-def test_prepare_event_does_not_mutate_cached_defaults(mocker: MockerFixture):
+def test_prepare_event_does_not_mutate_cached_defaults(event_defaults):
     """``_prepare_event`` must not mutate the @once_unless_none cached defaults."""
-    cached = _mock_event_defaults()
-    _patch_event_defaults(mocker, cached)
-
-    cached_props_snapshot = dict(cached["properties"])
+    cached_props_snapshot = dict(event_defaults["properties"])
 
     telemetry._prepare_event("init", template="my-template")
     telemetry._prepare_event(
@@ -196,16 +192,14 @@ def test_prepare_event_does_not_mutate_cached_defaults(mocker: MockerFixture):
         properties={"pages_count": 3, "duration_ms": 42},
     )
 
-    assert cached["properties"] == cached_props_snapshot
-    assert "template" not in cached["properties"]
-    assert "pages_count" not in cached["properties"]
-    assert "duration_ms" not in cached["properties"]
+    assert event_defaults["properties"] == cached_props_snapshot
+    assert "template" not in event_defaults["properties"]
+    assert "pages_count" not in event_defaults["properties"]
+    assert "duration_ms" not in event_defaults["properties"]
 
 
-def test_prepare_event_properties_override_kwargs(mocker: MockerFixture):
+def test_prepare_event_properties_override_kwargs(event_defaults):
     """If both kwargs and properties supply the same key, properties wins."""
-    _patch_event_defaults(mocker, _mock_event_defaults())
-
     event = telemetry._prepare_event(
         "init",
         template="from-kwarg",
