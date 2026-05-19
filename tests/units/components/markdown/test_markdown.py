@@ -198,6 +198,11 @@ def _compile_page_output(root: Component) -> str:
     page, so callers can match against JSX wherever the auto-memoize plugin
     chose to place it.
 
+    Reaches into compiler internals (``CompileContext.auto_memo_components``,
+    ``compiler.compile_page_from_context``, ``compiler.compile_memo_components``)
+    because no public driver returns the combined page+memo JSX text. If those
+    APIs are renamed, update here.
+
     Args:
         root: The page root component to compile.
 
@@ -222,6 +227,18 @@ def _compile_page_output(root: Component) -> str:
     return "\n".join([page_code, *(code for _, code in memo_files)])
 
 
+class MarkdownVarChildRegressionState(rx.State):
+    """Module-scope state for the Var-child regression test.
+
+    Defined at module scope (not inside the test function) so the state
+    registry keys this class by a stable ``module.MarkdownVarChildRegressionState``
+    full name, avoiding re-registration leaks under pytest-repeat or duplicate
+    test collection.
+    """
+
+    some_text: str = "hello"
+
+
 def test_markdown_var_child_inlined_not_wrapped():
     """``rx.markdown(State.var)`` must inline the Var as the JSX child.
 
@@ -230,11 +247,7 @@ def test_markdown_var_child_inlined_not_wrapped():
     the Bare(state-Var) child into its own ``Bare_comp_<hash>`` React element,
     which renders as ``[object Object]`` at runtime.
     """
-
-    class _MdState(rx.State):
-        some_text: str = "hello"
-
-    root = Fragment.create(Markdown.create(_MdState.some_text))
+    root = Fragment.create(Markdown.create(MarkdownVarChildRegressionState.some_text))
     output = _compile_page_output(root)
 
     assert "jsx(ReactMarkdown" in output
