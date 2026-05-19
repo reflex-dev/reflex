@@ -108,12 +108,11 @@ def test_sanitize_exception_strips_message_and_path():
     assert telemetry_accounting._sanitize_exception(exc) == {"type": "ValueError"}
 
 
-def test_walk_components_walks_nested_tree():
+def test_count_components_walks_nested_tree():
     """Component counts include every node in nested trees, keyed by class name."""
     tree = rx.box(rx.box(rx.box()))
-    counts, upload_count = telemetry_accounting._walk_components([tree])
+    counts = telemetry_accounting._count_components([tree])
     assert counts[type(tree).__name__] == 3
-    assert upload_count == 0
 
 
 def test_collect_state_stats_root_depth_zero():
@@ -229,7 +228,7 @@ def test_memo_wrapper_class_records_wrapped_component_type():
     assert wrapper_cls._wrapped_component_type is Button
 
 
-def test_walk_components_buckets_memo_wrapper_by_wrapped_type():
+def test_count_components_buckets_memo_wrapper_by_wrapped_type():
     """Memo wrappers count under their wrapped component class name."""
     from reflex_components_radix.themes.components.button import Button
 
@@ -237,25 +236,11 @@ def test_walk_components_buckets_memo_wrapper_by_wrapped_type():
         _wrapped_component_type = Button
         children = ()
 
-    counts, upload_count = telemetry_accounting._walk_components(
+    counts = telemetry_accounting._count_components(
         [StubMemoWrapper()],  # pyright: ignore[reportArgumentType]
     )
 
     assert counts == {"Button": 1}
-    assert upload_count == 0
-
-
-def test_walk_components_counts_upload_subclass_instances():
-    """``upload_count`` aggregates ``Upload`` and any subclass occurrences."""
-    from reflex_components_core.core.upload import StyledUpload, Upload
-
-    class PlainStub:
-        children = ()
-
-    _counts, upload_count = telemetry_accounting._walk_components(
-        [Upload.create(), StyledUpload.create(), PlainStub()],  # pyright: ignore[reportArgumentType]
-    )
-    assert upload_count == 2
 
 
 def test_collect_features_used_emits_every_known_key():
@@ -264,7 +249,6 @@ def test_collect_features_used_emits_every_known_key():
         _fake_app(),  # pyright: ignore[reportArgumentType]
         _fake_config(),
         [],
-        0,
     )
     for name in telemetry_accounting._KNOWN_FEATURES:
         assert name in features, name
@@ -284,7 +268,6 @@ def test_collect_features_used_walks_state_fields_for_storage():
         _fake_app(),  # pyright: ignore[reportArgumentType]
         _fake_config(),
         [StorageState],
-        0,
     )
     assert features["cookie_count"] == 2
     assert features["local_storage_count"] == 1
@@ -310,22 +293,31 @@ def test_collect_features_used_storage_not_double_counted_through_inheritance():
         _fake_app(),  # pyright: ignore[reportArgumentType]
         _fake_config(),
         [StorageParent, StorageChild, StorageGrandchild],
-        0,
     )
     assert features["cookie_count"] == 2
     assert features["local_storage_count"] == 1
     assert features["session_storage_count"] == 1
 
 
-def test_collect_features_used_upload_from_component_walk():
-    """``upload_count`` is read from the component walk, not a marker."""
-    features = telemetry_accounting._collect_features_used(
+def test_collect_features_used_upload_reads_class_flag(mocker: MockerFixture):
+    """``upload_count`` mirrors ``Upload.is_used`` (no per-node tree walk)."""
+    from reflex_components_core.core.upload import Upload
+
+    mocker.patch.object(Upload, "is_used", True)
+    used = telemetry_accounting._collect_features_used(
         _fake_app(),  # pyright: ignore[reportArgumentType]
         _fake_config(),
         [],
-        3,
     )
-    assert features["upload_count"] == 3
+    assert used["upload_count"] == 1
+
+    mocker.patch.object(Upload, "is_used", False)
+    unused = telemetry_accounting._collect_features_used(
+        _fake_app(),  # pyright: ignore[reportArgumentType]
+        _fake_config(),
+        [],
+    )
+    assert unused["upload_count"] == 0
 
 
 def test_collect_features_used_counts_shared_state_subclasses():
@@ -341,7 +333,6 @@ def test_collect_features_used_counts_shared_state_subclasses():
         _fake_app(),  # pyright: ignore[reportArgumentType]
         _fake_config(),
         [SharedOne, SharedTwo],
-        0,
     )
     assert features["shared_state_count"] == 2
 
@@ -360,7 +351,6 @@ def test_collect_features_used_counts_dynamic_routes():
         app,  # pyright: ignore[reportArgumentType]
         _fake_config(),
         [],
-        0,
     )
     assert features["dynamic_routes_count"] == 2
 
@@ -381,7 +371,6 @@ def test_collect_features_used_counts_user_lifespan_tasks():
         app,  # pyright: ignore[reportArgumentType]
         _fake_config(),
         [],
-        0,
     )
     assert features["lifespan_tasks_count"] == 1
 
@@ -398,7 +387,6 @@ def test_collect_features_used_counts_registered_db_models(mocker: MockerFixture
         _fake_app(),  # pyright: ignore[reportArgumentType]
         _fake_config(),
         [],
-        0,
     )
     assert features["db_model_count"] == 2
 
@@ -409,7 +397,6 @@ def test_collect_features_used_records_state_manager_mode():
         _fake_app(),  # pyright: ignore[reportArgumentType]
         _fake_config(state_manager_mode=SimpleNamespace(value="redis")),
         [],
-        0,
     )
     assert features["state_manager_redis"] == 1
     assert features["state_manager_disk"] == 0
@@ -422,7 +409,6 @@ def test_collect_features_used_records_cors_customized():
         _fake_app(),  # pyright: ignore[reportArgumentType]
         _fake_config(cors_allowed_origins=("https://example.com",)),
         [],
-        0,
     )
     assert features["cors_customized"] == 1
 
@@ -433,7 +419,6 @@ def test_collect_features_used_default_cors_stays_zero():
         _fake_app(),  # pyright: ignore[reportArgumentType]
         _fake_config(),
         [],
-        0,
     )
     assert features["cors_customized"] == 0
 
@@ -454,6 +439,5 @@ def test_collect_features_used_counts_background_handlers():
         _fake_app(),  # pyright: ignore[reportArgumentType]
         _fake_config(),
         [BgState],
-        0,
     )
     assert features["background_event_handlers_count"] == 1

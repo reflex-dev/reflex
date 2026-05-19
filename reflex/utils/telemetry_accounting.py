@@ -96,24 +96,21 @@ def _collect_compile_event_payload(
     """
     config = get_config()
     user_states = list(_walk_states(app._state))
-    component_counts, upload_count = _walk_components(app._pages.values())
     return {
         "plugins_enabled": [p.__class__.__name__ for p in config.plugins],
         "plugins_disabled": [p.__name__ for p in config.disable_plugins],
         "pages_count": len(app._pages),
-        "component_counts": component_counts,
+        "component_counts": _count_components(app._pages.values()),
         "states": [_collect_state_stats(s) for s in user_states],
-        "features_used": _collect_features_used(app, config, user_states, upload_count),
+        "features_used": _collect_features_used(app, config, user_states),
         "duration_ms": ctx.elapsed_ms(),
         "trigger": ctx.trigger,
         "exception": _sanitize_exception(ctx.exception),
     }
 
 
-def _walk_components(
-    pages: Iterable[BaseComponent],
-) -> tuple[dict[str, int], int]:
-    """Walk page trees once and aggregate class-name counts and the upload total.
+def _count_components(pages: Iterable[BaseComponent]) -> dict[str, int]:
+    """Count component types across one or more component trees.
 
     Auto-memoized components live in the tree as dynamic
     ``ExperimentalMemoComponent_<Type>_<tag>_<hash>`` subclasses. Bucketing by
@@ -125,24 +122,19 @@ def _walk_components(
         pages: Component-tree roots to walk.
 
     Returns:
-        ``(counts, upload_count)`` where ``counts`` maps class name to
-        occurrence count and ``upload_count`` is the number of ``Upload``
-        instances (including subclasses).
+        Mapping of component class name to occurrence count.
     """
     counts: dict[str, int] = {}
-    upload_count = 0
     stack: list[BaseComponent] = list(pages)
     while stack:
         node = stack.pop()
-        if isinstance(node, Upload):
-            upload_count += 1
         node_cls = type(node)
         wrapped = getattr(node_cls, "_wrapped_component_type", None)
         name = wrapped.__name__ if wrapped is not None else node_cls.__name__
         counts[name] = counts.get(name, 0) + 1
         if node.children:
             stack.extend(node.children)
-    return counts, upload_count
+    return counts
 
 
 def _walk_states(root: type[BaseState] | None) -> Iterator[type[BaseState]]:
@@ -211,19 +203,17 @@ def _collect_features_used(
     app: App,
     config: Config,
     user_states: list[type[BaseState]],
-    upload_count: int,
 ) -> dict[FeatureName, int]:
     """Build the ``features_used`` snapshot for the compile event.
 
     Every known key ships with a count (zero by default) derived from a fresh
-    walk of the live app, its states, the compiled component tree, and the
-    config.
+    walk of the live app, its states, the config, and class-level usage
+    markers maintained by feature call sites (e.g. ``Upload.is_used``).
 
     Args:
         app: The compiled application.
         config: The active Reflex config.
         user_states: Pre-walked user state classes (shared with state stats).
-        upload_count: Pre-computed count of ``Upload`` instances in the tree.
 
     Returns:
         Dict of feature key -> invocation count.
@@ -231,7 +221,7 @@ def _collect_features_used(
     features: dict[FeatureName, int] = dict.fromkeys(_KNOWN_FEATURES, 0)
     _walk_state_features(features, user_states)
     _walk_app_features(features, app)
-    features["upload_count"] = upload_count
+    features["upload_count"] = int(Upload.is_used)
     if _HAS_SQLALCHEMY:
         features["db_model_count"] = len(ModelRegistry.get_models())
     _record_config_attestations(features, config)
