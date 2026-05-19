@@ -442,10 +442,9 @@ def case_studies_column() -> rx.Component:
                 class_name="px-4 pt-4 flex flex-col",
             ),
             rx.el.div(
-                rx.el.elements.a(
+                rx.el.span(
                     "How Autodesk saved 25% of their development time",
-                    href="/customers",
-                    class_name="text-secondary-12 text-lg font-[525] hover:text-primary-10 dark:hover:text-primary-9 mt-auto",
+                    class_name="text-secondary-12 text-lg font-[525] group-hover:text-primary-10 dark:group-hover:text-primary-9 mt-auto",
                 ),
                 rx.el.div(
                     badge("Enterprise"),
@@ -455,7 +454,7 @@ def case_studies_column() -> rx.Component:
                 class_name="flex flex-col gap-2 px-4 pb-4",
             ),
             rx.el.div(
-                class_name="h-px w-[calc(100%+2rem)] -mx-4 shrink-0 bg-secondary-4",
+                class_name="h-px w-[calc(100%+2rem)] -mx-4 shrink-0 bg-secondary-4 relative z-10",
             ),
             rx.el.div(
                 demo_form_dialog(
@@ -476,8 +475,13 @@ def case_studies_column() -> rx.Component:
                         class_name="flex flex-col px-4 py-2 rounded-sm hover-card-shadow cursor-pointer ",
                     ),
                 ),
+                class_name="relative z-10",
             ),
-            class_name="flex flex-col relative h-full justify-between",
+            rx.el.elements.a(
+                href="/customers",
+                class_name="absolute inset-0",
+            ),
+            class_name="group flex flex-col relative h-full justify-between",
         ),
         class_name="p-4 block z-[1] bg-secondary-1 dark:border-x dark:border-secondary-4 w-[296px]",
     )
