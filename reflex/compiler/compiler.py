@@ -993,8 +993,13 @@ def compile_app(
     prerender_routes: bool = False,
     dry_run: bool = False,
     use_rich: bool = True,
-) -> None:
-    """Compile an app using the compiler plugin pipeline."""
+) -> bool:
+    """Compile an app using the compiler plugin pipeline.
+
+    Returns:
+        ``True`` when a real frontend compile ran, ``False`` when the call
+        short-circuited (backend-only paths that only re-evaluate pages).
+    """
     from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
     from reflex_base.utils.exceptions import ReflexRuntimeError
 
@@ -1012,7 +1017,7 @@ def compile_app(
                 console.debug(f"BE Evaluating stateful page: {route}")
                 app._compile_page(route, save_page=False)
         app._add_optional_endpoints()
-        return
+        return False
 
     if constants.Page404.SLUG not in app._unevaluated_pages:
         app.add_page(route=constants.Page404.SLUG)
@@ -1028,7 +1033,7 @@ def compile_app(
 
         app._write_stateful_pages_marker()
         app._add_optional_endpoints()
-        return
+        return False
 
     for plugin in config.plugins:
         plugin.start_compile(app)
@@ -1225,7 +1230,7 @@ def compile_app(
     progress.stop()
 
     if dry_run:
-        return
+        return True
 
     with console.timing("Install Frontend Packages"):
         app._get_frontend_packages(all_imports)
@@ -1244,27 +1249,27 @@ def compile_app(
             if page_file.is_file() and page_file not in keep_files:
                 page_file.unlink()
 
+    frontend_skeleton.update_entry_client()
+
     output_mapping: dict[Path, str] = {}
     for output_path, code in compile_results:
         path = utils.resolve_path_of_web_dir(output_path)
         if path in output_mapping:
             console.warn(
-                f"Path {path} has two different outputs. The first one will be used."
+                f"Path {path} has two different outputs. The last one will be used."
             )
-        else:
-            output_mapping[path] = code
+        output_mapping[path] = code
 
     for plugin in config.plugins:
         for static_file_path, content in plugin.get_static_assets():
             path = utils.resolve_path_of_web_dir(static_file_path)
             if path in output_mapping:
                 console.warn(
-                    f"Plugin {plugin.__class__.__name__} is trying to write to {path} but it already exists. The plugin file will be ignored."
+                    f"Plugin {plugin.__class__.__name__} is overwriting existing files at {path}."
                 )
-            else:
-                output_mapping[path] = (
-                    content.decode("utf-8") if isinstance(content, bytes) else content
-                )
+            output_mapping[path] = (
+                content.decode("utf-8") if isinstance(content, bytes) else content
+            )
 
     for plugin_name, file_path, modify_fn in modify_files_tasks:
         path = utils.resolve_path_of_web_dir(file_path)
@@ -1280,3 +1285,5 @@ def compile_app(
     with console.timing("Write to Disk"):
         for output_path, code in output_mapping.items():
             utils.write_file(output_path, code)
+
+    return True

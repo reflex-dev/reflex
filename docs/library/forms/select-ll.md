@@ -1,6 +1,5 @@
 ---
 components:
-  - rx.select
   - rx.select.root
   - rx.select.trigger
   - rx.select.content

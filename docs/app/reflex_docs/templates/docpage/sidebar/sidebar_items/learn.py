@@ -150,7 +150,6 @@ def get_sidebar_items_backend():
             children=[
                 events.events_overview,
                 events.event_arguments,
-                events.setters,
                 events.yield_events,
                 events.chaining_events,
                 events.special_events,
@@ -251,6 +250,7 @@ def get_sidebar_items_hosting():
             children=[
                 hosting.self_hosting,
                 hosting.databricks,
+                hosting.deploy_to_gcp,
             ],
         ),
     ]

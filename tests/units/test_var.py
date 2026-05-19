@@ -955,6 +955,18 @@ def test_function_var():
     )
     assert str(explicit_return_func.call(1, 2)) == "(((a, b) => {return a + b})(1, 2))"
 
+    # Test rest argument alone (no positional args) does not emit a leading comma.
+    rest_only_func = ArgsFunctionOperation.create(
+        (), Var(_js_expr="args.length"), rest="args"
+    )
+    assert str(rest_only_func) == "((...args) => args.length)"
+
+    # Test rest argument combined with positional args.
+    rest_with_args_func = ArgsFunctionOperation.create(
+        ("a",), Var(_js_expr="[a, ...args]"), rest="args"
+    )
+    assert str(rest_with_args_func) == "((a, ...args) => [a, ...args])"
+
     unwrapped_arrow_func = FunctionStringVar.create(
         "(...args) => { const f = x => x + 1; return f(args); }"
     )

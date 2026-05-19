@@ -11,7 +11,7 @@ def divider(class_name: str = "") -> rx.Component:
             class_name="absolute top-0 -left-24 w-24 h-px bg-gradient-to-r from-transparent to-current text-m-slate-4 dark:text-m-slate-10"
         ),
         class_name=ui.cn(
-            "w-full h-[1px] bg-m-slate-4 dark:bg-m-slate-10 relative max-w-(--docs-layout-max-width) mx-auto",
+            "w-full h-[1px] bg-m-slate-4 dark:bg-m-slate-10 relative max-w-(--landing-layout-max-width) mx-auto",
             class_name,
         ),
     )

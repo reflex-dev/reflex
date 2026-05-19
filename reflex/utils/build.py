@@ -16,13 +16,19 @@ from reflex.utils.exec import is_in_app_harness
 
 def set_env_json():
     """Write the upload url to a REFLEX_JSON."""
+    config = get_config()
+    env: dict[str, object] = {
+        **{endpoint.name: endpoint.get_url() for endpoint in constants.Endpoint},
+        "TRANSPORT": config.transport,
+        "TEST_MODE": is_in_app_harness(),
+    }
+    for plugin in config.plugins:
+        contribution = plugin.update_env_json()
+        if contribution:
+            env.update(contribution)
     path_ops.update_json_file(
         str(prerequisites.get_web_dir() / constants.Dirs.ENV_JSON),
-        {
-            **{endpoint.name: endpoint.get_url() for endpoint in constants.Endpoint},
-            "TRANSPORT": get_config().transport,
-            "TEST_MODE": is_in_app_harness(),
-        },
+        env,
     )
 
 
@@ -228,28 +234,31 @@ def build():
         raise SystemExit(1)
     _duplicate_index_html_to_parent_directory(wdir / constants.Dirs.STATIC)
 
-    spa_fallback = wdir / constants.Dirs.STATIC / constants.ReactRouter.SPA_FALLBACK
+    config = get_config()
+    static_dir = wdir / constants.Dirs.STATIC
+    for plugin in config.plugins:
+        plugin.post_build(static_dir=static_dir)
+
+    spa_fallback = static_dir / constants.ReactRouter.SPA_FALLBACK
     if not spa_fallback.exists():
-        spa_fallback = wdir / constants.Dirs.STATIC / "index.html"
+        spa_fallback = static_dir / "index.html"
 
     if spa_fallback.exists():
         path_ops.cp(
             spa_fallback,
-            wdir / constants.Dirs.STATIC / "404.html",
+            static_dir / "404.html",
         )
-
-    config = get_config()
 
     if frontend_path := config.frontend_path.strip("/"):
         # Create a subdirectory that matches the configured frontend_path.
         frontend_path = PosixPath(frontend_path)
         first_part = frontend_path.parts[0]
-        for child in list((wdir / constants.Dirs.STATIC).iterdir()):
+        for child in list(static_dir.iterdir()):
             if child.is_dir() and child.name == first_part:
                 continue
             path_ops.mv(
                 child,
-                wdir / constants.Dirs.STATIC / frontend_path / child.name,
+                static_dir / frontend_path / child.name,
             )
 
 

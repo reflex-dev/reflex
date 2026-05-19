@@ -25,6 +25,7 @@ from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
 from reflex_base.utils import console, exceptions, format
+from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import computed_var
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
@@ -39,18 +40,14 @@ import reflex as rx
 from reflex import AdminDash, constants
 from reflex.app import App, ComponentCallable, upload
 from reflex.environment import environment
+from reflex.istate.data import RouterData
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
 from reflex.model import Model
-from reflex.state import (
-    BaseState,
-    OnLoadInternalState,
-    RouterData,
-    State,
-    reload_state_module,
-)
+from reflex.state import BaseState, OnLoadInternalState, State, reload_state_module
+from reflex.utils import exec as exec_utils
 
 from .conftest import chdir
 from .states import GenState
@@ -2363,6 +2360,73 @@ def test_app_wrap_priority(
     assert expected.split(",") == function_app_definition.split(",")
 
 
+def test_get_frontend_packages_maps_subpath_imports_to_installable_package_names(
+    mocker: MockerFixture,
+):
+    """Subpath imports should install the base npm package."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex.app.get_config", return_value=conf)
+    install_frontend_packages = mocker.patch(
+        "reflex.app.js_runtimes.install_frontend_packages"
+    )
+
+    app = App(theme=None)
+    app._get_frontend_packages({
+        "react-map-gl/maplibre": {ImportVar(tag="Map")},
+        "@scope/pkg/subpath": {ImportVar(tag="Widget")},
+        "react": {ImportVar(tag="useEffect")},
+    })
+
+    install_set, _ = install_frontend_packages.call_args.args
+    assert "react-map-gl" in install_set
+    assert "@scope/pkg" in install_set
+    assert "react-map-gl/maplibre" not in install_set
+    assert "@scope/pkg/subpath" not in install_set
+
+
+def test_get_frontend_packages_keeps_https_imports_unchanged(
+    mocker: MockerFixture,
+):
+    """URL-based imports should be passed through unchanged."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex.app.get_config", return_value=conf)
+    install_frontend_packages = mocker.patch(
+        "reflex.app.js_runtimes.install_frontend_packages"
+    )
+
+    app = App(theme=None)
+    app._get_frontend_packages({
+        "https://cdn.skypack.dev/some-lib": {ImportVar(tag="SomeTag")}
+    })
+
+    install_set, _ = install_frontend_packages.call_args.args
+    assert "https://cdn.skypack.dev/some-lib" in install_set
+    assert "https:" not in install_set
+
+
+def test_get_frontend_packages_maps_versioned_subpath_imports_to_pinned_base(
+    mocker: MockerFixture,
+):
+    """Versioned subpath imports should install the base package with its version."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex.app.get_config", return_value=conf)
+    install_frontend_packages = mocker.patch(
+        "reflex.app.js_runtimes.install_frontend_packages"
+    )
+
+    app = App(theme=None)
+    app._get_frontend_packages({
+        "react-map-gl@1.0.0/maplibre": {ImportVar(tag="Map")},
+        "@scope/pkg@2.0.0/subpath": {ImportVar(tag="Widget")},
+    })
+
+    install_set, _ = install_frontend_packages.call_args.args
+    assert "react-map-gl@1.0.0" in install_set
+    assert "@scope/pkg@2.0.0" in install_set
+    assert "react-map-gl@1.0.0/maplibre" not in install_set
+    assert "@scope/pkg@2.0.0/subpath" not in install_set
+
+
 def test_app_state_determination():
     """Test that the stateless status of an app is determined correctly."""
     a1 = App()
@@ -2388,13 +2452,40 @@ def test_call_app():
     assert isinstance(api, Starlette)
 
 
-def test_app_with_optional_endpoints():
+@pytest.fixture
+def upload_enabled(monkeypatch):
+    """Fixture that enables Upload and cleans up afterward."""
     from reflex_components_core.core.upload import Upload
 
-    app = App()
-    Upload.is_used = True
-    app._add_optional_endpoints()
-    # TODO: verify the availability of the endpoints in app.api
+    monkeypatch.setattr(Upload, "is_used", True)
+    yield
+    monkeypatch.setattr(Upload, "is_used", False)
+
+
+@pytest.mark.usefixtures("upload_enabled")
+def test_app_with_optional_endpoints(tmp_path: Path):
+    from starlette.routing import Mount, Route
+
+    with chdir(tmp_path):
+        app = App()
+        app._add_optional_endpoints()
+
+        assert app._api is not None
+        upload_path = str(constants.Endpoint.UPLOAD)
+        routes = list(app._api.routes)
+
+        assert any(
+            isinstance(r, Route)
+            and r.path == upload_path
+            and "POST" in getattr(r, "methods", set())
+            for r in routes
+        )
+        assert any(
+            isinstance(r, Mount)
+            and r.path == upload_path
+            and r.name == "uploaded_files"
+            for r in routes
+        )
 
 
 def test_app_state_manager():
@@ -2874,3 +2965,158 @@ def test_set_contexts_no_event_processor(isolated_context: contextvars.Context):
                 EventContext.get()
 
     isolated_context.run(_test)
+
+
+def test_compile_sends_telemetry_when_enabled(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """When telemetry is enabled, ``_compile`` emits one ``compile`` PostHog event."""
+    conf = rx.Config(app_name="testing", telemetry_enabled=True)
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+
+    mocker.patch("reflex.compiler.compiler.compile_app", return_value=True)
+    send_mock = mocker.patch("reflex.utils.telemetry.send")
+
+    app._compile(trigger="initial")
+
+    compile_calls = [c for c in send_mock.call_args_list if c.args[0] == "compile"]
+    assert len(compile_calls) == 1
+    payload = compile_calls[0].kwargs["properties"]
+    for key in (
+        "plugins_enabled",
+        "plugins_disabled",
+        "pages_count",
+        "component_counts",
+        "states",
+        "features_used",
+        "duration_ms",
+        "trigger",
+        "exception",
+    ):
+        assert key in payload, f"missing key {key} in compile event payload"
+    assert payload["exception"] is None
+    assert payload["trigger"] == "initial"
+
+
+def test_compile_skips_telemetry_when_disabled(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """When telemetry is disabled, ``_compile`` does not emit a ``compile`` event."""
+    conf = rx.Config(app_name="testing", telemetry_enabled=False)
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+
+    mocker.patch("reflex.compiler.compiler.compile_app", return_value=True)
+    send_mock = mocker.patch("reflex.utils.telemetry.send")
+
+    app._compile()
+
+    assert all(c.args[0] != "compile" for c in send_mock.call_args_list)
+
+
+def test_compile_reports_exception_and_reraises(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """A compile exception is sanitized into the event and then re-raised."""
+    conf = rx.Config(app_name="testing", telemetry_enabled=True)
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+
+    class _BoomError(RuntimeError):
+        pass
+
+    mocker.patch(
+        "reflex.compiler.compiler.compile_app",
+        side_effect=_BoomError("/etc/passwd: secret token foo"),
+    )
+    send_mock = mocker.patch("reflex.utils.telemetry.send")
+
+    with pytest.raises(_BoomError):
+        app._compile()
+
+    compile_calls = [c for c in send_mock.call_args_list if c.args[0] == "compile"]
+    assert len(compile_calls) == 1
+    payload = compile_calls[0].kwargs["properties"]
+    assert payload["exception"] == {"type": "_BoomError"}
+
+
+def test_compile_skips_telemetry_when_compile_app_short_circuits(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """No ``compile`` event when ``compile_app()`` skipped the real compile."""
+    conf = rx.Config(app_name="testing", telemetry_enabled=True)
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+
+    mocker.patch("reflex.compiler.compiler.compile_app", return_value=False)
+    send_mock = mocker.patch("reflex.utils.telemetry.send")
+
+    app._compile(trigger="backend_startup")
+
+    assert all(c.args[0] != "compile" for c in send_mock.call_args_list)
+
+
+def test_call_marks_first_dev_backend_worker_as_startup(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """The first reload-capable backend worker compile is backend startup."""
+    monkeypatch.setenv(environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name, "True")
+
+    app, web_dir = compilable_app
+    marker = web_dir / exec_utils.DEV_BACKEND_RELOAD_MARKER
+    compile_mock = mocker.patch.object(app, "_compile")
+
+    app()
+
+    compile_mock.assert_called_once()
+    assert compile_mock.call_args.kwargs["trigger"] == "backend_startup"
+    assert marker.exists()
+
+
+def test_call_marks_later_dev_backend_worker_as_hot_reload(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A later reload-capable backend worker compile is a hot reload."""
+    monkeypatch.setenv(environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name, "True")
+
+    app, web_dir = compilable_app
+    marker = web_dir / exec_utils.DEV_BACKEND_RELOAD_MARKER
+    marker.touch()
+    compile_mock = mocker.patch.object(app, "_compile")
+
+    app()
+
+    compile_mock.assert_called_once()
+    assert compile_mock.call_args.kwargs["trigger"] == "hot_reload"
+
+
+def test_call_ignores_stale_marker_without_dev_backend_reload(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A stale marker alone is not enough to label a compile as hot reload."""
+    monkeypatch.delenv(environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name, raising=False)
+
+    app, web_dir = compilable_app
+    marker = web_dir / exec_utils.DEV_BACKEND_RELOAD_MARKER
+    marker.touch()
+    compile_mock = mocker.patch.object(app, "_compile")
+
+    app()
+
+    compile_mock.assert_called_once()
+    assert compile_mock.call_args.kwargs["trigger"] == "backend_startup"

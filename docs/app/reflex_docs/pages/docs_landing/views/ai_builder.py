@@ -4,7 +4,8 @@ import frontmatter
 import reflex as rx
 import reflex_components_internal as ui
 from reflex_site_shared.components.marquee import marquee
-from reflex_site_shared.constants import INTEGRATIONS_IMAGES_URL, REFLEX_ASSETS_CDN
+from reflex_site_shared.constants import REFLEX_ASSETS_CDN
+from reflex_site_shared.integrations import get_integration_logo_url
 
 from reflex_docs.pages.docs import ai_builder as ai_builder_pages
 
@@ -93,12 +94,11 @@ def card(
 
 
 def integration_icon_marquee(integration_name: str) -> rx.Component:
-    normalized_name = integration_name.lower().replace(" ", "_")
     return ui.avatar.root(
         ui.avatar.image(
             src=rx.color_mode_cond(
-                f"{INTEGRATIONS_IMAGES_URL}light/{normalized_name}.svg",
-                f"{INTEGRATIONS_IMAGES_URL}dark/{normalized_name}.svg",
+                get_integration_logo_url(integration_name, "light"),
+                get_integration_logo_url(integration_name, "dark"),
             ),
             unstyled=True,
             class_name="size-full",
@@ -183,7 +183,7 @@ def ai_builder_section() -> rx.Component:
                 ),
                 class_name="grid grid-cols-1 lg:grid-cols-3 gap-12",
             ),
-            class_name="flex flex-col gap-10 max-lg:text-center relative max-w-(--docs-layout-max-width) mx-auto",
+            class_name="flex flex-col gap-10 max-lg:text-center relative max-w-(--landing-layout-max-width) mx-auto",
         ),
         class_name="bg-gradient-to-b from-white-1 to-m-slate-1 dark:from-m-slate-11 dark:to-m-slate-12 w-full lg:pt-24 lg:pb-24 pb-10 max-xl:px-6 max-lg:pt-10",
     )

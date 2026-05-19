@@ -500,6 +500,77 @@ def test_deploy_non_interactive_export_failure(
     watch_deployment.assert_not_called()
 
 
+def test_deploy_envfile_missing_python_dotenv_exits(
+    mocker: MockerFixture,
+    mock_export_fn: MagicMock,
+):
+    """Deploy should exit when --envfile is used without python-dotenv."""
+    import builtins
+
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_authenticated_client",
+        return_value=hosting.AuthenticatedClient(
+            token="fake-token", validated_data={"foo": "bar"}
+        ),
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.validate_deployment_args",
+        return_value="success",
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_selected_project",
+        return_value="fake-project",
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.search_app",
+        return_value={
+            "name": "fake-app",
+            "id": "fake-id",
+            "project_id": "fake-project",
+        },
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_hostname",
+        return_value={"hostname": "fake-hostname", "server": "fake-server"},
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_project",
+    )
+    create_deployment = mocker.patch(
+        "reflex_cli.utils.hosting.create_deployment",
+        return_value={"deployment_id": "fake-deployment-id"},
+    )
+    watch_deployment = mocker.patch(
+        "reflex_cli.utils.hosting.watch_deployment_status",
+        return_value={"status": "ready"},
+    )
+    console_error = mocker.patch("reflex_cli.utils.console.error")
+
+    real_import = builtins.__import__
+
+    def _mock_import(name: str, *args, **kwargs):
+        if name == "dotenv":
+            raise ImportError
+        return real_import(name, *args, **kwargs)
+
+    mocker.patch("builtins.__import__", side_effect=_mock_import)
+
+    with pytest.raises(click.exceptions.Exit):
+        cli.deploy(
+            app_name="fake-app",
+            export_fn=mock_export_fn,
+            interactive=False,
+            envfile=".env",
+        )
+
+    console_error.assert_any_call(
+        """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.0.1"`."""
+    )
+    mock_export_fn.assert_not_called()
+    create_deployment.assert_not_called()
+    watch_deployment.assert_not_called()
+
+
 def test_deploy_non_interactive_with_invalid_project(mocker: MockFixture):
     mocker.patch(
         "reflex_cli.utils.hosting.get_authenticated_client",

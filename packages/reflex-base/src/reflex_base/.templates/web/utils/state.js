@@ -42,6 +42,17 @@ export const refs = {};
 // Array holding pending events to be processed.
 const event_queue = [];
 
+// Mirrors the data router's location so applyEvent can populate router_data
+// with the in-widget URL. In embed mode the host page's window.location is
+// unrelated to the Reflex route, so the backend's on_load and dynamic-route
+// matching rely on this ref instead. Updated by useEventLoop once mounted;
+// pre-seeded in embed mode with the memory router's initial path (see
+// initialEntries in entry.client.embed.js) so events dispatched before the
+// first effect commit don't briefly fall back to the host page's URL.
+const locationRef = {
+  current: env.MOUNT_TARGET ? { pathname: "/", search: "", hash: "" } : null,
+};
+
 /**
  * Generate a UUID (Used for session tokens).
  * Taken from: https://stackoverflow.com/questions/105034/how-do-i-create-a-guid-uuid
@@ -378,16 +389,15 @@ export const applyEvent = async (event, socket, navigate, params) => {
     event.router_data === undefined ||
     Object.keys(event.router_data).length === 0
   ) {
-    // Since we don't have router directly, we need to get info from our hooks
+    const loc = locationRef.current ?? window.location;
+    const search = loc.search ?? "";
+    const hash = loc.hash ?? "";
     event.router_data = {
-      pathname: window.location.pathname,
-      asPath:
-        window.location.pathname +
-        window.location.search +
-        window.location.hash,
+      pathname: loc.pathname,
+      asPath: loc.pathname + search + hash,
     };
     const query = {
-      ...Object.fromEntries(new URLSearchParams(window.location.search)),
+      ...Object.fromEntries(new URLSearchParams(search)),
       ...params.current,
     };
     if (query && Object.keys(query).length > 0) {
@@ -902,6 +912,10 @@ export const useEventLoop = (
       params.current = remainingParams;
     }
   }, [paramsR]);
+
+  useEffect(() => {
+    locationRef.current = location;
+  }, [location]);
 
   const ensureSocketConnected = useCallback(async () => {
     if (!mounted.current) {

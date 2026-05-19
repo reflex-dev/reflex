@@ -194,7 +194,7 @@ def navbar_sidebar_button() -> rx.Component:
                     },
                 ),
                 size="icon-sm",
-                variant="outline",
+                variant="outline-shadow",
                 custom_attrs={"aria-label": "Open sidebar"},
                 native_button=False,
             ),

@@ -1,7 +1,6 @@
 ---
 components:
   - rx.input
-  - rx.input.slot
 
 TextFieldRoot: |
   lambda **props: rx.input(placeholder="Search the docs", **props)

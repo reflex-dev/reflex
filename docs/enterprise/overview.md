@@ -20,7 +20,8 @@ Reflex Enterprise is a package containing paid features built on top of Reflex.
 The full [End-User License Agreement (EULA)](https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/enterprise/LICENSE) for Reflex Enterprise is published in the Reflex repository.
 
 ```md alert info
-# Despite being an enterprise package, free users can use the components from this package. A badge "Built with Reflex" will be shown in the bottom right corner of the app.
+# Enterprise components are available to free users.
+Free apps can use these components with a "Built with Reflex" badge shown in the bottom right corner of the app.
 For more information on the badge, visit [Built with Reflex](/docs/enterprise/built-with-reflex/).
 ```
 

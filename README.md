@@ -105,152 +105,15 @@ If the `reflex` command is not on your PATH, run it through uv instead: `uv run 
 
 ## 🫧 Example App
 
-Let's go over an example: creating an image generation UI around [DALL·E](https://platform.openai.com/docs/guides/images/image-generation?context=node). For simplicity, we just call the [OpenAI API](https://platform.openai.com/docs/api-reference/authentication), but you could replace this with an ML model run locally.
-
-&nbsp;
+Build an image generation app in Python with Reflex: define the UI, manage state in a class, and call an image model from an event handler.
 
 <div align="center">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/dalle.gif" alt="A frontend wrapper for DALL·E, shown in the process of generating an image." width="550" />
+<video src="https://github.com/user-attachments/assets/aaff28ad-8b3c-43bf-967e-439ee34c8a87" width="900" controls muted poster="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex-image-generation-app.png">
+  <a href="https://github.com/user-attachments/assets/aaff28ad-8b3c-43bf-967e-439ee34c8a87">
+    <img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex-image-generation-app.png" alt="Preview of an image generation app built with Reflex" width="900">
+  </a>
+</video>
 </div>
-
-&nbsp;
-
-Here is the complete code to create this. This is all done in one Python file!
-
-```python
-import reflex as rx
-import openai
-
-openai_client = openai.OpenAI()
-
-
-class State(rx.State):
-    """The app state."""
-
-    prompt = ""
-    image_url = ""
-    processing = False
-    complete = False
-
-    def get_image(self):
-        """Get the image from the prompt."""
-        if self.prompt == "":
-            return rx.window_alert("Prompt Empty")
-
-        self.processing, self.complete = True, False
-        yield
-        response = openai_client.images.generate(
-            prompt=self.prompt, n=1, size="1024x1024"
-        )
-        self.image_url = response.data[0].url
-        self.processing, self.complete = False, True
-
-
-def index():
-    return rx.center(
-        rx.vstack(
-            rx.heading("DALL-E", font_size="1.5em"),
-            rx.input(
-                placeholder="Enter a prompt..",
-                on_blur=State.set_prompt,
-                width="25em",
-            ),
-            rx.button(
-                "Generate Image",
-                on_click=State.get_image,
-                width="25em",
-                loading=State.processing,
-            ),
-            rx.cond(
-                State.complete,
-                rx.image(src=State.image_url, width="20em"),
-            ),
-            align="center",
-        ),
-        width="100%",
-        height="100vh",
-    )
-
-
-# Add state and page to the app.
-app = rx.App()
-app.add_page(index, title="Reflex:DALL-E")
-```
-
-## Let's break this down.
-
-<div align="center">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/dalle_colored_code_example.png" alt="Explaining the differences between backend and frontend parts of the DALL-E app." width="900" />
-</div>
-
-### **Reflex UI**
-
-Let's start with the UI.
-
-```python
-def index():
-    return rx.center(...)
-```
-
-This `index` function defines the frontend of the app.
-
-We use different components such as `center`, `vstack`, `input`, and `button` to build the frontend. Components can be nested within each other
-to create complex layouts. And you can use keyword args to style them with the full power of CSS.
-
-Reflex comes with [60+ built-in components](https://reflex.dev/docs/library) to help you get started. We are actively adding more components, and it's easy to [create your own components](https://reflex.dev/docs/wrapping-react/overview/).
-
-### **State**
-
-Reflex represents your UI as a function of your state.
-
-```python
-class State(rx.State):
-    """The app state."""
-
-    prompt = ""
-    image_url = ""
-    processing = False
-    complete = False
-```
-
-The state defines all the variables (called vars) in an app that can change and the functions that change them.
-
-Here the state is comprised of a `prompt` and `image_url`. There are also the booleans `processing` and `complete` to indicate when to disable the button (during image generation) and when to show the resulting image.
-
-### **Event Handlers**
-
-```python
-def get_image(self):
-    """Get the image from the prompt."""
-    if self.prompt == "":
-        return rx.window_alert("Prompt Empty")
-
-    self.processing, self.complete = True, False
-    yield
-    response = openai_client.images.generate(prompt=self.prompt, n=1, size="1024x1024")
-    self.image_url = response.data[0].url
-    self.processing, self.complete = False, True
-```
-
-Within the state, we define functions called event handlers that change the state vars. Event handlers are the way that we can modify the state in Reflex. They can be called in response to user actions, such as clicking a button or typing in a text box. These actions are called events.
-
-Our DALL·E app has an event handler, `get_image` which gets this image from the OpenAI API. Using `yield` in the middle of an event handler will cause the UI to update. Otherwise the UI will update at the end of the event handler.
-
-### **Routing**
-
-Finally, we define our app.
-
-```python
-app = rx.App()
-```
-
-We add a page from the root of the app to the index component. We also add a title that will show up in the page preview/browser tab.
-
-```python
-app.add_page(index, title="DALL-E")
-```
-
-You can create a multi-page app by adding more pages.
 
 ## 📑 Resources
 

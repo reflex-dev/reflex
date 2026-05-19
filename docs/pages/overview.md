@@ -207,21 +207,22 @@ You can access the current page from the `router` attribute in any state. See th
 ```python
 class State(rx.State):
     def some_method(self):
-        current_page_route = self.router.page.path
-        current_page_url = self.router.page.raw_path
+        current_page_route = self.router.route_id
+        current_page_url = self.router.url.path
         # ... Your logic here ...
 ```
 
-The `router.page.path` attribute allows you to obtain the path of the current page from the router data,
+The `router.route_id` attribute allows you to obtain the route pattern matched for the current page,
 for [dynamic pages](/docs/pages/dynamic-routing) this will contain the slug rather than the actual value used to load the page.
 
-To get the actual URL displayed in the browser, use `router.page.raw_path`. This
-will contain all query parameters and dynamic path segments.
+To get the actual URL path displayed in the browser, use `router.url.path`. For
+query parameters and the URL fragment, use `router.url.query_parameters` and
+`router.url.fragment` respectively.
 
 In the above example, `current_page_route` will contain the route pattern (e.g., `/posts/[id]`), while `current_page_url`
-will contain the actual URL (e.g., `/posts/123`).
+will contain the actual URL path (e.g., `/posts/123`).
 
-To get the full URL, access the same attributes with `full_` prefix.
+To get the full URL (scheme, host, path, query and fragment), use `router.url` directly — it is a string subclass containing the complete URL.
 
 Example:
 
@@ -229,7 +230,7 @@ Example:
 class State(rx.State):
     @rx.var
     def current_url(self) -> str:
-        return self.router.page.full_raw_path
+        return self.router.url
 
 
 def index():
