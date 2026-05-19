@@ -78,7 +78,7 @@ Build an image generation app in Python with Reflex: define the UI, manage state
 import reflex as rx
 import openai
 
-client = openai.OpenAI()
+client = openai.AsyncOpenAI()
 
 
 class State(rx.State):
@@ -91,10 +91,13 @@ class State(rx.State):
         self.prompt = value
 
     @rx.event
-    def generate(self):
+    async def generate(self):
         self.processing = True
         yield
-        response = client.images.generate(model="gpt-image-1.5", prompt=self.prompt)
+        response = await client.images.generate(
+            model="gpt-image-1.5",
+            prompt=self.prompt,
+        )
         self.image_url = f"data:image/png;base64,{response.data[0].b64_json}"
         self.processing = False
 
