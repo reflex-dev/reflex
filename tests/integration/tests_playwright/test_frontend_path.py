@@ -214,8 +214,14 @@ def FrontendPathApp():
 
 @pytest.fixture(
     scope="module",
-    params=["", "/prefix", "/prefix/nested"],
-    ids=["no-prefix", "single-level", "two-level"],
+    params=["", "/prefix", "/prefix/nested", "noslash", "noslash/nested"],
+    ids=[
+        "no-prefix",
+        "single-level",
+        "two-level",
+        "noslash-single-level",
+        "noslash-two-level",
+    ],
 )
 def frontend_path(request: pytest.FixtureRequest) -> str:
     """Parametrise over no-prefix and various prefix depths.
@@ -450,3 +456,23 @@ def test_navigate_back_and_forth(frontend_path_app: AppHarness, page: Page):
     expect(log).to_contain_text("index")
     expect(log).to_contain_text("static")
     expect(log).to_contain_text("dynamic-7")
+
+
+def test_frontend_url_format(frontend_path_app: AppHarness, frontend_path: str):
+    """Verify that the frontend_url correctly incorporates the frontend_path."""
+    url = frontend_path_app.frontend_url
+    assert url is not None
+
+    from urllib.parse import urlparse
+
+    parsed = urlparse(url)
+
+    expected_path = frontend_path
+    if expected_path and not expected_path.startswith("/"):
+        expected_path = f"/{expected_path}"
+    if expected_path and not expected_path.endswith("/"):
+        expected_path = f"{expected_path}/"
+    if not expected_path:
+        expected_path = "/"
+
+    assert parsed.path == expected_path

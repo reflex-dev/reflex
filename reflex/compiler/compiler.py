@@ -993,8 +993,13 @@ def compile_app(
     prerender_routes: bool = False,
     dry_run: bool = False,
     use_rich: bool = True,
-) -> None:
-    """Compile an app using the compiler plugin pipeline."""
+) -> bool:
+    """Compile an app using the compiler plugin pipeline.
+
+    Returns:
+        ``True`` when a real frontend compile ran, ``False`` when the call
+        short-circuited (backend-only paths that only re-evaluate pages).
+    """
     from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
     from reflex_base.utils.exceptions import ReflexRuntimeError
 
@@ -1012,7 +1017,7 @@ def compile_app(
                 console.debug(f"BE Evaluating stateful page: {route}")
                 app._compile_page(route, save_page=False)
         app._add_optional_endpoints()
-        return
+        return False
 
     if constants.Page404.SLUG not in app._unevaluated_pages:
         app.add_page(route=constants.Page404.SLUG)
@@ -1028,7 +1033,7 @@ def compile_app(
 
         app._write_stateful_pages_marker()
         app._add_optional_endpoints()
-        return
+        return False
 
     progress = (
         Progress(
@@ -1222,7 +1227,7 @@ def compile_app(
     progress.stop()
 
     if dry_run:
-        return
+        return True
 
     with console.timing("Install Frontend Packages"):
         app._get_frontend_packages(all_imports)
@@ -1277,3 +1282,5 @@ def compile_app(
     with console.timing("Write to Disk"):
         for output_path, code in output_mapping.items():
             utils.write_file(output_path, code)
+
+    return True

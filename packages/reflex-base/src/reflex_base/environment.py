@@ -611,6 +611,10 @@ class EnvironmentVariables:
     # If this env var is set to "yes", App.compile will be a no-op
     REFLEX_SKIP_COMPILE: EnvVar[bool] = env_var(False, internal=True)
 
+    # Inherited by uvicorn/granian reload workers so the backend can distinguish
+    # dev reload-capable worker boots from other backend starts. Never set in prod.
+    REFLEX_DEV_BACKEND_RELOAD_ACTIVE: EnvVar[bool] = env_var(False, internal=True)
+
     # Whether to run app harness tests in headless mode.
     APP_HARNESS_HEADLESS: EnvVar[bool] = env_var(False)
 

@@ -356,6 +356,9 @@ class Config(BaseConfig):
 
         self._normalize_frontend_compression_formats()
 
+        # Normalize route prefixes to ensure they start with a slash.
+        self._normalize_paths()
+
         # Normalize plugins: auto-instantiate Plugin subclasses, reject bad values.
         self._normalize_plugins()
 
@@ -484,6 +487,14 @@ class Config(BaseConfig):
             normalized.append(name)
             seen.add(name)
         self.frontend_compression_formats = normalized
+
+    def _normalize_paths(self):
+        """Ensure frontend and backend paths start with a slash if provided."""
+        if self.frontend_path and not self.frontend_path.startswith("/"):
+            self.frontend_path = f"/{self.frontend_path}"
+
+        if self.backend_path and not self.backend_path.startswith("/"):
+            self.backend_path = f"/{self.backend_path}"
 
     def _add_builtin_plugins(self):
         """Add the builtin plugins to the config."""

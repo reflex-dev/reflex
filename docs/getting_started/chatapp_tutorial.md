@@ -1,15 +1,39 @@
 ```python exec
-import os
+from types import SimpleNamespace
 
 import reflex as rx
-import openai
 
-from docs.getting_started import chat_tutorial_style as style
-from docs.getting_started.chat_tutorial_utils import ChatappState
 
-# If it's in environment, no need to hardcode (openai SDK will pick it up)
-if "OPENAI_API_KEY" not in os.environ:
-    openai.api_key = "YOUR_OPENAI_KEY"
+# Styling for the live chat demos (the user-facing version lives in the `# style.py` block below).
+_chat_margin = "15%"
+_message_style = {
+    "padding": "0.75em 1em",
+    "border_radius": "18px",
+    "margin_y": "0.35em",
+    "max_width": "30em",
+    "display": "inline-block",
+    "line_height": "1.5",
+    "font_size": "0.95rem",
+}
+style = SimpleNamespace(
+    question_style=_message_style
+    | {
+        "background_color": rx.color("slate", 3),
+        "color": rx.color("slate", 12),
+        "border": f"1px solid {rx.color('slate', 4)}",
+        "margin_left": _chat_margin,
+        "border_bottom_right_radius": "6px",
+    },
+    answer_style=_message_style
+    | {
+        "background_color": rx.color("accent", 9),
+        "color": "white",
+        "margin_right": _chat_margin,
+        "border_bottom_left_radius": "6px",
+    },
+    input_style={"border_width": "1px", "width": "350px"},
+    button_style={"background_color": rx.color("accent", 9)},
+)
 ```
 
 # AI Chat App
@@ -302,7 +326,7 @@ button_style = dict(background_color=rx.color("accent", 10), box_shadow=shadow)
 We will import the styles in `chatapp.py` and use them in the components. At this point, the app should look like this:
 
 ```python exec
-def qa4(question: str, answer: str) -> rx.Component:
+def styled_qa(question: str, answer: str) -> rx.Component:
     return rx.box(
         rx.box(rx.text(question, style=style.question_style), text_align="right"),
         rx.box(rx.text(answer, style=style.answer_style), text_align="left"),
@@ -311,7 +335,7 @@ def qa4(question: str, answer: str) -> rx.Component:
     )
 
 
-def chat4() -> rx.Component:
+def styled_chat() -> rx.Component:
     qa_pairs = [
         ("What is Reflex?", "A way to build web apps in pure Python!"),
         (
@@ -319,10 +343,10 @@ def chat4() -> rx.Component:
             "Anything from a simple website to a complex web app!",
         ),
     ]
-    return rx.box(*[qa4(question, answer) for question, answer in qa_pairs])
+    return rx.box(*[styled_qa(question, answer) for question, answer in qa_pairs])
 
 
-def action_bar4() -> rx.Component:
+def styled_action_bar() -> rx.Component:
     return rx.hstack(
         rx.input(placeholder="Ask a question", style=style.input_style),
         rx.button("Ask", style=style.button_style),
@@ -332,8 +356,8 @@ def action_bar4() -> rx.Component:
 ```python demo box
 rx.center(
     rx.vstack(
-        chat4(),
-        action_bar4(),
+        styled_chat(),
+        styled_action_bar(),
         align="center",
     )
 )
@@ -410,6 +434,10 @@ class State(rx.State):
     chat_history: list[tuple[str, str]]
 
     @rx.event
+    def set_question(self, value: str):
+        self.question = value
+
+    @rx.event
     def answer(self):
         # Our chatbot is not very smart right now...
         answer = "I don't know!"
@@ -421,6 +449,21 @@ class State(rx.State):
 Now we can import the state in `chatapp.py` and reference it in our frontend components. We will modify the `chat` component to use the state instead of the current fixed questions and answers.
 
 ```python exec
+class BasicChatState(rx.State):
+    question: str = ""
+    chat_history: list[tuple[str, str]] = []
+
+    @rx.event
+    def set_question(self, value: str):
+        self.question = value
+
+    @rx.event
+    def answer(self):
+        # Our chatbot is not very smart right now...
+        answer = "I don't know!"
+        self.chat_history.append((self.question, answer))
+
+
 def qa(question: str, answer: str) -> rx.Component:
     return rx.box(
         rx.box(rx.text(question, style=style.question_style), text_align="right"),
@@ -430,29 +473,29 @@ def qa(question: str, answer: str) -> rx.Component:
     )
 
 
-def chat1() -> rx.Component:
+def basic_chat() -> rx.Component:
     return rx.box(
         rx.foreach(
-            ChatappState.chat_history, lambda messages: qa(messages[0], messages[1])
+            BasicChatState.chat_history, lambda messages: qa(messages[0], messages[1])
         )
     )
 
 
-def action_bar1() -> rx.Component:
+def basic_action_bar() -> rx.Component:
     return rx.hstack(
         rx.input(
             placeholder="Ask a question",
-            on_change=ChatappState.set_question,
+            on_change=BasicChatState.set_question,
             style=style.input_style,
         ),
-        rx.button("Ask", on_click=ChatappState.answer, style=style.button_style),
+        rx.button("Ask", on_click=BasicChatState.answer, style=style.button_style),
     )
 ```
 
 ```python demo box
 rx.container(
-    chat1(),
-    action_bar1(),
+    basic_chat(),
+    basic_action_bar(),
 )
 ```
 
@@ -471,7 +514,7 @@ def action_bar() -> rx.Component:
     return rx.hstack(
         rx.input(
             placeholder="Ask a question",
-            on_change=State.set_question1,
+            on_change=State.set_question,
             style=style.input_style,
         ),
         rx.button("Ask", on_click=State.answer, style=style.button_style),
@@ -480,29 +523,55 @@ def action_bar() -> rx.Component:
 
 Normal Python `for` loops don't work for iterating over state vars because these values can change and aren't known at compile time. Instead, we use the [foreach](/docs/library/dynamic-rendering/foreach) component to iterate over the chat history.
 
-We also bind the input's `on_change` event to the `set_question` event handler, which will update the `question` state var while the user types in the input. We bind the button's `on_click` event to the `answer` event handler, which will process the question and add the answer to the chat history. The `set_question` event handler is a built-in implicitly defined event handler. Every base var has one. Learn more in the [events docs](/docs/events/setters) under the Setters section.
+We also bind the input's `on_change` event to the `set_question` event handler, which will update the `question` state var while the user types in the input. We bind the button's `on_click` event to the `answer` event handler, which will process the question and add the answer to the chat history.
 
 ### Clearing the Input
 
 Currently the input doesn't clear after the user clicks the button. We can fix this by binding the value of the input to `question`, with `value=State.question`, and clear it when we run the event handler for `answer`, with `self.question = ''`.
 
 ```python exec
-def action_bar2() -> rx.Component:
+class ClearingChatState(rx.State):
+    question: str = ""
+    chat_history: list[tuple[str, str]] = []
+
+    @rx.event
+    def set_question(self, value: str):
+        self.question = value
+
+    @rx.event
+    def answer(self):
+        # Our chatbot is not very smart right now...
+        answer = "I don't know!"
+        self.chat_history.append((self.question, answer))
+        # Clear the question input.
+        self.question = ""
+
+
+def clearing_chat() -> rx.Component:
+    return rx.box(
+        rx.foreach(
+            ClearingChatState.chat_history,
+            lambda messages: qa(messages[0], messages[1]),
+        )
+    )
+
+
+def clearing_action_bar() -> rx.Component:
     return rx.hstack(
         rx.input(
-            value=ChatappState.question,
+            value=ClearingChatState.question,
             placeholder="Ask a question",
-            on_change=ChatappState.set_question,
+            on_change=ClearingChatState.set_question,
             style=style.input_style,
         ),
-        rx.button("Ask", on_click=ChatappState.answer2, style=style.button_style),
+        rx.button("Ask", on_click=ClearingChatState.answer, style=style.button_style),
     )
 ```
 
 ```python demo box
 rx.container(
-    chat1(),
-    action_bar2(),
+    clearing_chat(),
+    clearing_action_bar(),
 )
 ```
 
@@ -513,7 +582,7 @@ def action_bar() -> rx.Component:
         rx.input(
             value=State.question,
             placeholder="Ask a question",
-            on_change=State.set_question2,
+            on_change=State.set_question,
             style=style.input_style,
         ),
         rx.button("Ask", on_click=State.answer, style=style.button_style),
@@ -535,22 +604,58 @@ def answer(self):
 Normally state updates are sent to the frontend when an event handler returns. However, we want to stream the text from the chatbot as it is generated. We can do this by yielding from the event handler. See the [yield events docs](/docs/events/yield-events) for more info.
 
 ```python exec
-def action_bar3() -> rx.Component:
+import asyncio
+
+
+class StreamingChatState(rx.State):
+    question: str = ""
+    chat_history: list[tuple[str, str]] = []
+
+    @rx.event
+    def set_question(self, value: str):
+        self.question = value
+
+    @rx.event
+    async def answer(self):
+        # Our chatbot is not very smart right now...
+        answer = "I don't know!"
+        self.chat_history.append((self.question, ""))
+        # Clear the question input.
+        self.question = ""
+        # Yield here to clear the frontend input before continuing.
+        yield
+
+        for i in range(len(answer)):
+            await asyncio.sleep(0.1)
+            self.chat_history[-1] = (self.chat_history[-1][0], answer[: i + 1])
+            yield
+
+
+def streaming_chat() -> rx.Component:
+    return rx.box(
+        rx.foreach(
+            StreamingChatState.chat_history,
+            lambda messages: qa(messages[0], messages[1]),
+        )
+    )
+
+
+def streaming_action_bar() -> rx.Component:
     return rx.hstack(
         rx.input(
-            value=ChatappState.question,
+            value=StreamingChatState.question,
             placeholder="Ask a question",
-            on_change=ChatappState.set_question,
+            on_change=StreamingChatState.set_question,
             style=style.input_style,
         ),
-        rx.button("Ask", on_click=ChatappState.answer3, style=style.button_style),
+        rx.button("Ask", on_click=StreamingChatState.answer, style=style.button_style),
     )
 ```
 
 ```python demo box
 rx.container(
-    chat1(),
-    action_bar3(),
+    streaming_chat(),
+    streaming_action_bar(),
 )
 ```
 
@@ -613,7 +718,7 @@ def action_bar() -> rx.Component:
             value=State.question,
             placeholder="Ask a question",
             # on_change event updates the input as the user types a prompt.
-            on_change=State.set_question3,
+            on_change=State.set_question,
             style=style.input_style,
         ),
         # on_click event triggers the API to send the prompt to OpenAI.
@@ -739,6 +844,10 @@ import reflex as rx
 class State(rx.State):
     question: str
     chat_history: list[tuple[str, str]] = []
+
+    @rx.event
+    def set_question(self, value: str):
+        self.question = value
 
     async def answer(self):
         client = AsyncOpenAI(api_key=os.environ["OPENAI_API_KEY"])

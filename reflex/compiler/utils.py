@@ -460,8 +460,8 @@ def compile_experimental_component_memo(
         rendered = render.render()
     else:
         render = _apply_component_style_for_compile(copy.deepcopy(definition.component))
-        rendered = render.render()
         hooks = render._get_all_hooks()
+        rendered = render.render()
         custom_code = render._get_all_custom_code()
         dynamic_imports = render._get_all_dynamic_imports()
         all_imports = render._get_all_imports()
