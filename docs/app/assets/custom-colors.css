@@ -39,7 +39,33 @@
   --slate-a10: #00153686;
   --slate-a11: #001027a4;
   --slate-a12: #000711e5;
-  /* Violet */
+  /* Violet (Radix) */
+  --violet-1: #fdfcfe;
+  --violet-2: #faf8ff;
+  --violet-3: #f4f0fe;
+  --violet-4: #ebe4ff;
+  --violet-5: #e1d9ff;
+  --violet-6: #d4cafe;
+  --violet-7: #c2b5f5;
+  --violet-8: #aa99ec;
+  --violet-9: #6e56cf;
+  --violet-10: #654dc4;
+  --violet-11: #6550b9;
+  --violet-12: #2f265f;
+  --violet-a1: #5500aa03;
+  --violet-a2: #4900ff07;
+  --violet-a3: #4400ee0f;
+  --violet-a4: #4300ff1b;
+  --violet-a5: #3600ff26;
+  --violet-a6: #3100fb35;
+  --violet-a7: #2d01dd4a;
+  --violet-a8: #2b00d066;
+  --violet-a9: #2400b0a9;
+  --violet-a10: #2300a4b2;
+  --violet-a11: #1f0092af;
+  --violet-a12: #0c0046d9;
+  --violet-contrast: #fff;
+  /* Violet (Custom) */
   --c-violet-1: #fdfcfe;
   --c-violet-2: #fafbff;
   --c-violet-3: #f4f0fe;
@@ -108,6 +134,32 @@
   --slate-10: #737c8a;
   --slate-11: #adb4bf;
   --slate-12: #eceef1;
+  /* Violet (Radix) */
+  --violet-1: #14121f;
+  --violet-2: #1b1525;
+  --violet-3: #291f43;
+  --violet-4: #33255b;
+  --violet-5: #3c2e69;
+  --violet-6: #473876;
+  --violet-7: #56468b;
+  --violet-8: #6958a5;
+  --violet-9: #6e56cf;
+  --violet-10: #7d66d9;
+  --violet-11: #baa7ff;
+  --violet-12: #e2ddfe;
+  --violet-a1: #4422ff0b;
+  --violet-a2: #853dff14;
+  --violet-a3: #8354fe36;
+  --violet-a4: #7d51fd50;
+  --violet-a5: #845ffd5f;
+  --violet-a6: #8f6cfd6d;
+  --violet-a7: #9879ff83;
+  --violet-a8: #977df59e;
+  --violet-a9: #8668ffca;
+  --violet-a10: #9176ffd4;
+  --violet-a11: #baa7ff;
+  --violet-a12: #e3defffd;
+  --violet-contrast: #fff;
   --c-slate-1: #151618;
   --c-slate-2: #1a1b1d;
   /* #1A1B1D */
