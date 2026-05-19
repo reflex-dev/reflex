@@ -379,13 +379,13 @@ class App(MiddlewareMixin, LifespanMixin):
         default_factory=RegistrationContext.ensure_context
     )
 
-    frontend_exception_handler: Callable[[Exception], None] = (
+    frontend_exception_handler: Callable[[Exception], None] | None = (
         default_frontend_exception_handler
     )
 
-    backend_exception_handler: Callable[
-        [Exception], EventSpec | list[EventSpec] | None
-    ] = default_backend_exception_handler
+    backend_exception_handler: (
+        Callable[[Exception], EventSpec | list[EventSpec] | None] | None
+    ) = default_backend_exception_handler
 
     toaster: Component | None = dataclasses.field(default_factory=toast.provider)
 
@@ -1368,6 +1368,10 @@ class App(MiddlewareMixin, LifespanMixin):
             ],
             strict=True,
         ):
+            if handler_fn is None:
+                # If the handler is None, skip validation.
+                continue
+
             if hasattr(handler_fn, "__name__"):
                 fn_name_ = handler_fn.__name__
             else:
@@ -1414,7 +1418,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
             # Check if the return type is valid for backend exception handler
             if handler_domain == "backend":
-                sig = inspect.signature(self.backend_exception_handler)
+                sig = inspect.signature(handler_fn)
                 return_type = (
                     eval(sig.return_annotation)
                     if isinstance(sig.return_annotation, str)

@@ -2381,9 +2381,10 @@ class FrontendEventExceptionState(State):
                 "window.location.reload();"
                 "}"
             )
-        prerequisites.get_and_validate_app().app.frontend_exception_handler(
-            Exception(info)
-        )
+        app = prerequisites.get_and_validate_app().app
+
+        if app.frontend_exception_handler is not None:
+            app.frontend_exception_handler(Exception(info))
 
 
 class UpdateVarsInternalState(State):

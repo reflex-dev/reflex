@@ -428,6 +428,21 @@ async def test_backend_exception_handler_called(token: str):
     assert isinstance(caught[0], RuntimeError)
 
 
+async def test_backend_exception_handler_none_does_not_raise(token: str):
+    """A None backend_exception_handler skips error handling without crashing.
+
+    Args:
+        token: The client token.
+    """
+    ep = EventProcessor(backend_exception_handler=None, graceful_shutdown_timeout=2)
+    ep.configure()
+    async with ep:
+        future = await ep.enqueue(token, Event.from_event_type(error_event())[0])
+    assert future.done()
+    with pytest.raises(RuntimeError, match="boom"):
+        future.result()
+
+
 async def test_error_does_not_stop_queue(
     processor: EventProcessor,
     token: str,

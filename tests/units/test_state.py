@@ -1814,6 +1814,41 @@ async def test_state_with_invalid_yield(
     )
 
 
+@pytest.mark.asyncio
+async def test_state_with_invalid_yield_none_handler(
+    token: str,
+    mock_base_state_event_processor: BaseStateEventProcessor,
+):
+    """A None backend_exception_handler swallows handler errors silently.
+
+    Args:
+        token: A token.
+        mock_base_state_event_processor: The event processor.
+    """
+
+    class StateWithInvalidYieldNone(BaseState):
+        """A state that yields an invalid value."""
+
+        def invalid_handler(self):
+            """Invalid handler.
+
+            Yields:
+                an invalid value.
+            """
+            yield 1
+
+    mock_base_state_event_processor.backend_exception_handler = None
+
+    event = Event(
+        name=f"{StateWithInvalidYieldNone.get_full_name()}.invalid_handler",
+        payload={},
+    )
+    async with mock_base_state_event_processor as processor:
+        await processor.enqueue(token, event)
+    # No assertion errors and no captured exceptions means the None handler
+    # was honoured without crashing the processor.
+
+
 @pytest.fixture
 def substate_token(state_manager, token) -> BaseStateToken:
     """A token + substate name for looking up in state manager.

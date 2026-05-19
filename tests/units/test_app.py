@@ -2678,6 +2678,11 @@ custom_exception_handlers = {
             does_not_raise(),
             id="valid_class_method",
         ),
+        pytest.param(
+            None,
+            does_not_raise(),
+            id="none_handler",
+        ),
     ],
 )
 def test_frontend_exception_handler_validation(handler_fn, expected):
@@ -2746,6 +2751,11 @@ def backend_exception_handler_with_wrong_return_type(exception: Exception) -> in
             does_not_raise(),
             id="valid_class_method",
         ),
+        pytest.param(
+            None,
+            does_not_raise(),
+            id="none_handler",
+        ),
     ],
 )
 def test_backend_exception_handler_validation(handler_fn, expected):
@@ -2758,6 +2768,53 @@ def test_backend_exception_handler_validation(handler_fn, expected):
     """
     with expected:
         rx.App(backend_exception_handler=handler_fn)._validate_exception_handlers()
+
+
+def test_none_exception_handlers_validate():
+    """Both handlers may be set to None simultaneously."""
+    app = rx.App(frontend_exception_handler=None, backend_exception_handler=None)
+    app._validate_exception_handlers()
+    assert app.frontend_exception_handler is None
+    assert app.backend_exception_handler is None
+
+
+def test_handle_frontend_exception_none_handler(mocker: MockerFixture):
+    """`handle_frontend_exception` is a no-op when the handler is None."""
+    from reflex.state import FrontendEventExceptionState
+
+    app = rx.App(frontend_exception_handler=None)
+    mocker.patch(
+        "reflex.utils.prerequisites.get_and_validate_app",
+        return_value=Mock(app=app),
+    )
+
+    state = FrontendEventExceptionState()
+    # Should not raise even though the handler is disabled.
+    gen = state.handle_frontend_exception("ReferenceError: foo", "<stack>")
+    # Generator must close cleanly without yielding when no auto-reload pattern matches.
+    assert list(gen) == []
+
+
+def test_handle_frontend_exception_invokes_handler(mocker: MockerFixture):
+    """`handle_frontend_exception` invokes the configured handler."""
+    from reflex.state import FrontendEventExceptionState
+
+    captured: list[Exception] = []
+
+    def custom_handler(exception: Exception) -> None:
+        captured.append(exception)
+
+    app = rx.App(frontend_exception_handler=custom_handler)
+    mocker.patch(
+        "reflex.utils.prerequisites.get_and_validate_app",
+        return_value=Mock(app=app),
+    )
+
+    state = FrontendEventExceptionState()
+    list(state.handle_frontend_exception("ReferenceError: foo", "<stack>"))
+    assert len(captured) == 1
+    assert isinstance(captured[0], Exception)
+    assert str(captured[0]) == "ReferenceError: foo"
 
 
 @pytest.mark.parametrize(
