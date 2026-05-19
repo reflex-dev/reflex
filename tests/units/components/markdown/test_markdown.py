@@ -1,12 +1,18 @@
 import pytest
 from reflex_base.components.component import Component, memo
+from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 from reflex_base.vars.base import Var
 from reflex_components_code.code import CodeBlock
 from reflex_components_code.shiki_code_block import ShikiHighLevelCodeBlock
+from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core.markdown_component_map import MarkdownComponentMap
 from reflex_components_markdown.markdown import Markdown
 from reflex_components_radix.themes.layout.box import Box
 from reflex_components_radix.themes.typography.heading import Heading
+
+import reflex as rx
+from reflex.compiler import compiler
+from reflex.compiler.plugins import default_page_plugins
 
 
 class CustomMarkdownComponent(Component, MarkdownComponentMap):
@@ -183,3 +189,57 @@ def test_markdown_format_component(key, component_map, expected):
     result = markdown.format_component_map()
     print(str(result[key]))
     assert str(result[key]) == expected
+
+
+def _compile_page_output(root: Component) -> str:
+    """Compile ``root`` through the full page pipeline and return the JSX.
+
+    The result includes any per-memo wrapper modules emitted alongside the
+    page, so callers can match against JSX wherever the auto-memoize plugin
+    chose to place it.
+
+    Args:
+        root: The page root component to compile.
+
+    Returns:
+        The combined page-module JSX plus each per-memo module's JSX.
+    """
+    page_ctx = PageContext(name="page", route="/page", root_component=root)
+    hooks = CompilerHooks(plugins=default_page_plugins())
+    compile_ctx = CompileContext(pages=[], hooks=hooks)
+
+    with compile_ctx, page_ctx:
+        page_ctx.root_component = hooks.compile_component(
+            page_ctx.root_component,
+            page_context=page_ctx,
+            compile_context=compile_ctx,
+        )
+        hooks.compile_page(page_ctx, compile_context=compile_ctx)
+        _, page_code = compiler.compile_page_from_context(page_ctx)
+        memo_files, _ = compiler.compile_memo_components(
+            (), compile_ctx.auto_memo_components.values()
+        )
+    return "\n".join([page_code, *(code for _, code in memo_files)])
+
+
+def test_markdown_var_child_inlined_not_wrapped():
+    """``rx.markdown(State.var)`` must inline the Var as the JSX child.
+
+    ``react-markdown`` asserts its ``children`` prop is a string. Without the
+    snapshot-boundary wrapper on ``Markdown``, the auto-memoize plugin hoists
+    the Bare(state-Var) child into its own ``Bare_comp_<hash>`` React element,
+    which renders as ``[object Object]`` at runtime.
+    """
+
+    class _MdState(rx.State):
+        some_text: str = "hello"
+
+    root = Fragment.create(Markdown.create(_MdState.some_text))
+    output = _compile_page_output(root)
+
+    assert "jsx(ReactMarkdown" in output
+    assert "Bare_comp_" not in output, (
+        "Markdown Var child was wrapped in a Bare_comp_<hash> memoized "
+        f"component; ReactMarkdown requires a string child.\nOutput:\n{output}"
+    )
+    assert "some_text_rx_state_" in output
