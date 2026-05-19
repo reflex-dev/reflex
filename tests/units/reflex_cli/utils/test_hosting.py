@@ -13,6 +13,8 @@ from reflex_cli.utils.hosting import (
     delete_token_from_config,
     get_authenticated_client,
     get_existing_access_token,
+    get_selected_project,
+    normalize_project_id,
     save_token_to_config,
 )
 
@@ -177,3 +179,39 @@ def test_scale_params_as_json_is_pure_when_type_is_unspecified():
 
     assert scale_params.type is None
     assert first == second == {"type": ScaleType.REGION.value, "regions": {}}
+
+
+@pytest.mark.parametrize(
+    "config_content, expected",
+    [
+        ('{"project": "abc-uuid"}', "abc-uuid"),
+        ('{"project": ""}', None),
+        ('{"project": "   "}', None),
+        ('{"project": null}', None),
+        ('{"project": 123}', None),
+        ('{"project": []}', None),
+        ("{}", None),
+    ],
+)
+def test_get_selected_project_normalizes_empty_to_none(
+    mocker: MockerFixture, config_content: str, expected: str | None
+):
+    mocker.patch("pathlib.Path.open", mock_open(read_data=config_content))
+    assert get_selected_project() == expected
+
+
+@pytest.mark.parametrize(
+    "value, expected",
+    [
+        ("abc-uuid", "abc-uuid"),
+        ("  abc-uuid  ", "abc-uuid"),
+        ("", None),
+        ("   ", None),
+        (None, None),
+        (123, None),
+        ([], None),
+        ({}, None),
+    ],
+)
+def test_normalize_project_id(value: object, expected: str | None):
+    assert normalize_project_id(value) == expected
