@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 
 import pytest
-from starlette.responses import FileResponse
+from starlette.responses import FileResponse, Response
+from starlette.types import Message
 
 from reflex.utils.precompressed_staticfiles import PrecompressedStaticFiles
 
@@ -29,6 +31,24 @@ def _scope(path: str, accept_encoding: str | None = None) -> dict:
     }
 
 
+async def _collect_body(response: Response, scope: dict) -> bytes:
+    body = bytearray()
+    unreachable = "receive should not return"
+
+    async def receive() -> dict:
+        # Block until the response cancels us; never signal a disconnect.
+        await asyncio.Event().wait()
+        raise AssertionError(unreachable)
+
+    async def send(message: Message) -> None:
+        await asyncio.sleep(0)
+        if message["type"] == "http.response.body":
+            body.extend(message.get("body", b""))
+
+    await response(scope, receive, send)
+    return bytes(body)
+
+
 @pytest.mark.asyncio
 async def test_precompressed_static_files_supports_html_mode(tmp_path: Path):
     """Serve a precompressed index.html sidecar for directory requests."""
@@ -41,7 +61,8 @@ async def test_precompressed_static_files_supports_html_mode(tmp_path: Path):
         encodings=["gzip"],
     )
 
-    response = await static_files.get_response("", _scope("/", "gzip"))
+    scope = _scope("/", "gzip")
+    response = await static_files.get_response("", scope)
 
     assert isinstance(response, FileResponse)
     assert response.status_code == 200
@@ -49,6 +70,7 @@ async def test_precompressed_static_files_supports_html_mode(tmp_path: Path):
     assert response.headers["content-encoding"] == "gzip"
     assert response.headers["vary"] == "Accept-Encoding"
     assert response.media_type == "text/html"
+    assert await _collect_body(response, scope) == b"compressed-index"
 
 
 @pytest.mark.asyncio
@@ -63,13 +85,15 @@ async def test_precompressed_static_files_supports_html_404_fallback(tmp_path: P
         encodings=["gzip"],
     )
 
-    response = await static_files.get_response("missing", _scope("/missing", "gzip"))
+    scope = _scope("/missing", "gzip")
+    response = await static_files.get_response("missing", scope)
 
     assert isinstance(response, FileResponse)
     assert response.status_code == 404
     assert str(response.path).endswith("404.html.gz")
     assert response.headers["content-encoding"] == "gzip"
     assert response.media_type == "text/html"
+    assert await _collect_body(response, scope) == b"compressed-404"
 
 
 @pytest.mark.asyncio
@@ -86,16 +110,15 @@ async def test_precompressed_static_files_prefers_best_accept_encoding(
         encodings=["gzip", "brotli"],
     )
 
-    response = await static_files.get_response(
-        "app.js",
-        _scope("/app.js", "gzip;q=0.5, br;q=1"),
-    )
+    scope = _scope("/app.js", "gzip;q=0.5, br;q=1")
+    response = await static_files.get_response("app.js", scope)
 
     assert isinstance(response, FileResponse)
     assert str(response.path).endswith("app.js.br")
     assert response.headers["content-encoding"] == "br"
     assert response.media_type is not None
     assert "javascript" in response.media_type
+    assert await _collect_body(response, scope) == b"compressed-brotli"
 
 
 @pytest.mark.asyncio
@@ -109,12 +132,11 @@ async def test_precompressed_static_files_fall_back_to_identity(tmp_path: Path):
         encodings=["gzip"],
     )
 
-    response = await static_files.get_response(
-        "app.js",
-        _scope("/app.js", "identity"),
-    )
+    scope = _scope("/app.js", "identity")
+    response = await static_files.get_response("app.js", scope)
 
     assert isinstance(response, FileResponse)
     assert str(response.path).endswith("app.js")
     assert "content-encoding" not in response.headers
     assert response.headers["vary"] == "Accept-Encoding"
+    assert await _collect_body(response, scope) == b"console.log('hello');"
