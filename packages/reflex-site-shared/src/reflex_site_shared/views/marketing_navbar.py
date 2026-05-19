@@ -480,6 +480,7 @@ def case_studies_column() -> rx.Component:
             rx.el.elements.a(
                 href="/customers",
                 class_name="absolute inset-0",
+                custom_attrs={"aria-label": "View Autodesk case study"},
             ),
             class_name="group flex flex-col relative h-full justify-between",
         ),
