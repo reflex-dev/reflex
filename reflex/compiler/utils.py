@@ -420,11 +420,9 @@ def compile_experimental_component_memo(
         dynamic_imports = render._get_all_dynamic_imports()
         all_imports = render._get_all_imports()
 
-    # Each memo now lives in ``web/utils/components/<name>.jsx``,
-    # so importing the ``$/utils/components`` index from this file is only
-    # circular when ``<name>`` itself appears in that index — i.e. a legacy
-    # ``@rx.memo`` wrapper file. For auto-memo wrappers around legacy custom
-    # components, the index import is legitimate and must be preserved.
+    # Each memo lives in ``web/utils/components/<name>.jsx`` and is imported
+    # from ``$/utils/components/<name>``. Strip a self-import so a memo body
+    # that references the wrapper's own module specifier doesn't recurse.
     self_module = f"$/{constants.Dirs.COMPONENTS_PATH}/{definition.export_name}"
     imports: ParsedImportDict = {
         lib: fields for lib, fields in all_imports.items() if lib != self_module
@@ -743,25 +741,12 @@ def get_context_path() -> str:
     return str(get_web_dir() / (constants.Dirs.CONTEXTS_PATH + constants.Ext.JS))
 
 
-def get_components_path() -> str:
-    """Get the path of the compiled components.
-
-    Returns:
-        The path of the compiled components.
-    """
-    return str(
-        get_web_dir()
-        / constants.Dirs.UTILS
-        / (constants.PageNames.COMPONENTS + constants.Ext.JSX),
-    )
-
-
 def get_memo_components_dir() -> str:
     """Get the directory that holds per-memo module files.
 
     Returns:
-        The directory used for per-memo ``.jsx`` modules re-exported by the
-        top-level components index.
+        The directory used for per-memo ``.jsx`` modules. Pages import each
+        wrapper directly from ``$/utils/components/<name>``.
     """
     return str(
         get_web_dir() / constants.Dirs.UTILS / constants.PageNames.COMPONENTS,

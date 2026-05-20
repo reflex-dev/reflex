@@ -2243,7 +2243,7 @@ def test_compile_writes_app_wrap_memo_components(
 
     # Per-memo modules live under .web/utils/components/; each memo wrapper
     # declares its ``library`` as the per-memo file path, so pages import it
-    # directly and the top-level index is intentionally empty.
+    # directly.
     memo_dir = web_dir / constants.Dirs.UTILS / constants.PageNames.COMPONENTS
     assert (memo_dir / f"DefaultOverlayComponents{constants.Ext.JSX}").exists()
     assert (memo_dir / f"MemoizedToastProvider{constants.Ext.JSX}").exists()

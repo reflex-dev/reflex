@@ -542,7 +542,7 @@ def test_compile_memo_components_extends_imports_without_remerging(
 
     files, aggregate_imports = compiler.compile_memo_components(memos)
 
-    assert len(files) == len(memos) + 1
+    assert len(files) == len(memos)
     assert [import_var.tag for import_var in aggregate_imports["shared-lib"]] == [
         f"Memo{idx}" for idx in range(5)
     ]

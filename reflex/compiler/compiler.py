@@ -394,22 +394,19 @@ def _compile_component(component: Component) -> str:
 def _compile_memo_components(
     memos: Iterable[MemoDefinition] = (),
 ) -> tuple[list[tuple[str, str]], dict[str, list[ImportVar]]]:
-    """Compile each memo as its own module plus an empty index.
+    """Compile each memo as its own module.
 
     Each memo lands in ``.web/<components>/<name>.jsx`` with only the imports
     it actually uses. Memo wrappers declare their ``library`` as that
     per-memo file path so page-side imports resolve directly to the
     individual module.
 
-    The ``$/utils/components`` index is emitted empty so callers still find
-    the file at the expected path.
-
     Args:
         memos: The memos to compile.
 
     Returns:
-        A list of ``(path, code)`` pairs to write — one per memo plus one
-        index — and the aggregated imports across all memo modules.
+        A list of ``(path, code)`` pairs to write — one per memo — and the
+        aggregated imports across all memo modules.
     """
     per_memo_files: list[tuple[str, str]] = []
     aggregate_imports: dict[str, list[ImportVar]] = {}
@@ -436,9 +433,7 @@ def _compile_memo_components(
             per_memo_files.append((path, code))
             _extend_imports_in_place(aggregate_imports, file_imports)
 
-    index_path = utils.get_components_path()
-    index_code = templates.memo_index_template([])
-    return [(index_path, index_code), *per_memo_files], aggregate_imports
+    return per_memo_files, aggregate_imports
 
 
 def _compile_single_memo_component(
@@ -654,14 +649,14 @@ def compile_page_from_context(page_ctx: PageContext) -> tuple[str, str]:
 def compile_memo_components(
     memos: Iterable[MemoDefinition] = (),
 ) -> tuple[list[tuple[str, str]], dict[str, list[ImportVar]]]:
-    """Compile the memos into one module per memo plus an index.
+    """Compile the memos into one module per memo.
 
     Args:
         memos: The memos to compile.
 
     Returns:
-        A list of ``(path, code)`` pairs (one per memo module and one index)
-        alongside the aggregated imports across all memo modules.
+        A list of ``(path, code)`` pairs (one per memo module) alongside the
+        aggregated imports across all memo modules.
     """
     return _compile_memo_components(memos)
 
