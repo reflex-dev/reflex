@@ -9,6 +9,7 @@ Covers dev and prod modes via ``app_harness_env`` parametrisation.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Generator
 
 import httpx
@@ -107,6 +108,25 @@ def FrontendPathApp():
 
     # ---- Pages ----
 
+    def _router_info():
+        return rx.fragment(
+            rx.input(
+                value=FPState.router.url,
+                read_only=True,
+                id="router-url",
+            ),
+            rx.input(
+                value=FPState.router.url.path,
+                read_only=True,
+                id="router-url-path",
+            ),
+            rx.input(
+                value=FPState.router.page.raw_path,  # pyright: ignore[reportDeprecated]
+                read_only=True,
+                id="router-page-raw-path",
+            ),
+        )
+
     @rx.page("/", on_load=FPState.on_load_index)
     def index():
         return rx.box(
@@ -117,6 +137,7 @@ def FrontendPathApp():
                 read_only=True,
                 id="token",
             ),
+            _router_info(),
             # Links to app-relative paths.
             rx.link("go to static", href="/static-page", id="link-static"),
             rx.link("go to dynamic 7", href="/dynamic/7", id="link-dynamic"),
@@ -169,6 +190,7 @@ def FrontendPathApp():
                 read_only=True,
                 id="token",
             ),
+            _router_info(),
             rx.link("go home", href="/", id="link-home"),
             rx.link("go to dynamic 7", href="/dynamic/7", id="link-dynamic"),
             rx.box(
@@ -186,6 +208,7 @@ def FrontendPathApp():
                 read_only=True,
                 id="token",
             ),
+            _router_info(),
             rx.link("go home", href="/", id="link-home"),
             rx.link("go to static", href="/static-page", id="link-static"),
             rx.box(
@@ -456,6 +479,47 @@ def test_navigate_back_and_forth(frontend_path_app: AppHarness, page: Page):
     expect(log).to_contain_text("index")
     expect(log).to_contain_text("static")
     expect(log).to_contain_text("dynamic-7")
+
+
+def test_router_includes_frontend_path(
+    frontend_path_app: AppHarness, page: Page, frontend_path: str
+):
+    """State.router.url and State.router.page expose paths prefixed with frontend_path."""
+    base = _navigate(frontend_path_app, page)
+
+    prefix = "/" + frontend_path.strip("/") if frontend_path else ""
+
+    # Index page: in-app path is "/".
+    expected_path = f"{prefix}/"
+    expect(page.locator("#router-url-path")).to_have_value(expected_path)
+    expect(page.locator("#router-page-raw-path")).to_have_value(expected_path)
+    expect(page.locator("#router-url")).to_have_value(
+        re.compile(rf".+{re.escape(prefix)}/$")
+    )
+    expect(page.locator("#router-url")).to_have_value(f"{base}/")
+
+    # Client-side navigation to static page.
+    page.click("#link-static")
+    expect(page.locator("#page-id")).to_have_text("static page")
+    expected_path = f"{prefix}/static-page"
+    expect(page.locator("#router-url-path")).to_have_value(expected_path)
+    expect(page.locator("#router-page-raw-path")).to_have_value(expected_path)
+    expect(page.locator("#router-url")).to_have_value(f"{base}/static-page")
+
+    # Client-side navigation to dynamic page.
+    page.click("#link-dynamic")
+    expect(page.locator("#page-id")).to_contain_text("dynamic page")
+    expected_path = f"{prefix}/dynamic/7"
+    expect(page.locator("#router-url-path")).to_have_value(expected_path)
+    expect(page.locator("#router-page-raw-path")).to_have_value(expected_path)
+    expect(page.locator("#router-url")).to_have_value(f"{base}/dynamic/7")
+
+    # Direct (full-page-load) navigation to dynamic page with different id.
+    _navigate(frontend_path_app, page, "/dynamic/42")
+    expected_path = f"{prefix}/dynamic/42"
+    expect(page.locator("#router-url-path")).to_have_value(expected_path)
+    expect(page.locator("#router-page-raw-path")).to_have_value(expected_path)
+    expect(page.locator("#router-url")).to_have_value(f"{base}/dynamic/42")
 
 
 def test_frontend_url_format(frontend_path_app: AppHarness, frontend_path: str):
