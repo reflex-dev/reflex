@@ -19,6 +19,7 @@ from reflex_base.config import get_config
 from reflex_base.environment import environment
 from reflex_base.utils.decorator import once, once_unless_none
 from reflex_base.utils.exceptions import ReflexError
+from typing_extensions import NotRequired
 
 from reflex.utils import console, processes
 from reflex.utils.js_runtimes import get_bun_version, get_node_version
@@ -232,7 +233,7 @@ class _Properties(TypedDict):
     """Properties type for telemetry."""
 
     distinct_id: int
-    distinct_app_id: int
+    distinct_app_id: NotRequired[int]
     user_os: str
     user_os_detail: str
     reflex_version: str
@@ -264,36 +265,34 @@ def _get_event_defaults() -> _DefaultEvent | None:
     Returns:
         The default event data.
     """
-    installation_id = ensure_reflex_installation_id()
-    project_hash = get_project_hash(raise_on_fail=_raise_on_missing_project_hash())
-
-    if installation_id is None or project_hash is None:
-        console.debug(
-            f"Could not get installation_id or project_hash: {installation_id}, {project_hash}"
-        )
+    if (installation_id := ensure_reflex_installation_id()) is None:
+        console.debug("Could not get installation_id")
         return None
-
     cpuinfo = get_cpu_info()
+    properties: _Properties = {
+        "distinct_id": installation_id,
+        "user_os": get_os(),
+        "user_os_detail": get_detailed_platform_str(),
+        "reflex_version": get_reflex_version(),
+        "python_version": get_python_version(),
+        "node_version": (
+            str(node_version) if (node_version := get_node_version()) else None
+        ),
+        "bun_version": (
+            str(bun_version) if (bun_version := get_bun_version()) else None
+        ),
+        "reflex_enterprise_version": get_reflex_enterprise_version(),
+        "cpu_count": get_cpu_count(),
+        "cpu_info": dataclasses.asdict(cpuinfo) if cpuinfo else {},
+    }
+    if (
+        project_hash := get_project_hash(raise_on_fail=_raise_on_missing_project_hash())
+    ) is not None:
+        properties["distinct_app_id"] = project_hash
 
     return {
         "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
-        "properties": {
-            "distinct_id": installation_id,
-            "distinct_app_id": project_hash,
-            "user_os": get_os(),
-            "user_os_detail": get_detailed_platform_str(),
-            "reflex_version": get_reflex_version(),
-            "python_version": get_python_version(),
-            "node_version": (
-                str(node_version) if (node_version := get_node_version()) else None
-            ),
-            "bun_version": (
-                str(bun_version) if (bun_version := get_bun_version()) else None
-            ),
-            "reflex_enterprise_version": get_reflex_enterprise_version(),
-            "cpu_count": get_cpu_count(),
-            "cpu_info": dataclasses.asdict(cpuinfo) if cpuinfo else {},
-        },
+        "properties": properties,
     }
 
 
