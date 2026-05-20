@@ -1145,12 +1145,22 @@ export const isNotNullOrUndefined = (val) => {
 /***
  * Python-semantics OR: returns `a` if python-truthy, else evaluates and returns `b`.
  * `b` is a thunk so it is only evaluated when needed, preserving short-circuit.
+ * @template A
+ * @template B
+ * @param {A} a The left-hand value.
+ * @param {() => B} b Thunk producing the right-hand value.
+ * @returns {A | B} `a` if python-truthy, otherwise the result of `b()`.
  */
 export const pyOr = (a, b) => (isTrue(a) ? a : b());
 
 /***
  * Python-semantics AND: returns `a` if python-falsy, else evaluates and returns `b`.
  * `b` is a thunk so it is only evaluated when needed, preserving short-circuit.
+ * @template A
+ * @template B
+ * @param {A} a The left-hand value.
+ * @param {() => B} b Thunk producing the right-hand value.
+ * @returns {A | B} `a` if python-falsy, otherwise the result of `b()`.
  */
 export const pyAnd = (a, b) => (isTrue(a) ? b() : a);
 
