@@ -22,7 +22,7 @@ config = rx.Config(
 Or via environment variable:
 
 ```bash
-REFLEX_TELEMETRY_ENABLED=0 reflex init --template blank
+REFLEX_TELEMETRY_ENABLED=false reflex init --template blank
 ```
 
 The environment variable is the only supported opt-out method for reflex
