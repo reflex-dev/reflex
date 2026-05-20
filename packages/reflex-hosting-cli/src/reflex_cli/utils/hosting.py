@@ -1984,17 +1984,17 @@ def authenticate_on_browser() -> tuple[str, dict[str, Any]]:
         constants.Hosting.HOSTING_SERVICE_UI, f"/cli/login?request_id={request_id}"
     )
 
-    console.print(
-        f"Opening {auth_url} ... By connecting your account, you agree to "
-        "Reflex Cloud [Terms of Service] and [Privacy Policy].",
-        markup=False,
-    )
-
     if not is_valid_url(constants.Hosting.HOSTING_SERVICE_UI):
         console.error(
             f"Invalid hosting URL: {constants.Hosting.HOSTING_SERVICE_UI}. Ensure the URL is in the correct format and includes a valid scheme"
         )
         raise click.exceptions.Exit(1)
+
+    console.print(
+        f"Opening {auth_url} ... By connecting your account, you agree to "
+        "Reflex Cloud [Terms of Service] and [Privacy Policy].",
+        markup=False,
+    )
 
     if not webbrowser.open(auth_url):
         console.warn(
