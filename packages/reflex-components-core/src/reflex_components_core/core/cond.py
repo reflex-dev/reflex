@@ -14,6 +14,7 @@ from reflex_base.utils.imports import ImportDict, ImportVar
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.number import ternary_operation
+from typing_extensions import LiteralString
 
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
@@ -131,6 +132,19 @@ def cond(condition: Any, c1: Any, c2: Component, /) -> Component: ...  # pyright
 
 T = TypeVar("T", covariant=True)
 U = TypeVar("U", covariant=True)
+S = TypeVar("S", bound=LiteralString)
+
+
+@overload
+def cond(condition: Any, c1: S, c2: S, /) -> Var[S]: ...  # pyright: ignore [reportOverlappingOverload]
+
+
+@overload
+def cond(condition: Any, c1: S, c2: Var[U], /) -> Var[S | U]: ...  # pyright: ignore [reportOverlappingOverload]
+
+
+@overload
+def cond(condition: Any, c1: Var[T], c2: S, /) -> Var[T | S]: ...  # pyright: ignore [reportOverlappingOverload]
 
 
 @overload

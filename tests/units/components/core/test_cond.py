@@ -181,20 +181,32 @@ def test_cond_assert_types() -> None:
     # non-component, Component -> Component
     _ = assert_type(cond(True, "hello", text_comp), Component)
 
-    # T, T -> Var[T]
-    _ = assert_type(cond(True, "hello", "world"), Var[str])
+    # literal str, literal str -> Var[Literal[...]]
+    _ = assert_type(cond(True, "hello", "world"), Var[Literal["hello", "world"]])
 
     # T, U -> Var[T | U]
     _ = assert_type(cond(True, "hello", 3), Var[str | int])
 
-    # T, Var[T] -> Var[T]
-    _ = assert_type(cond(True, "hello", var_str), Var[str])
+    # literal str, literal Var[str] -> Var[Literal[...]]
+    _ = assert_type(cond(True, "hello", var_str), Var[Literal["hello", "a"]])
 
-    # Var[T], T -> Var[T]
-    _ = assert_type(cond(True, var_str, "world"), Var[str])
+    # literal str, literal Var[str] -> Var[Literal[...]]
+    _ = assert_type(
+        cond(True, "hello", LiteralVar.create("world")),
+        Var[Literal["hello", "world"]],
+    )
 
-    # T, Var[U] -> Var[T | U]
-    _ = assert_type(cond(True, "hello", var_int), Var[str | int])
+    # literal Var[str], literal str -> Var[Literal[...]]
+    _ = assert_type(cond(True, var_str, "world"), Var[Literal["a", "world"]])
+
+    # literal Var[str], literal str -> Var[Literal[...]]
+    _ = assert_type(
+        cond(True, LiteralVar.create("hello"), "world"),
+        Var[Literal["hello", "world"]],
+    )
+
+    # literal str, Var[U] -> Var[Literal[...] | U]
+    _ = assert_type(cond(True, "hello", var_int), Var[int | Literal["hello"]])
 
     # Var[T], U -> Var[T | U]
     _ = assert_type(cond(True, var_str, 3), Var[int | Literal["a"]])
