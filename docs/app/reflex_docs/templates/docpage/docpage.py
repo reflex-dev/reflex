@@ -228,9 +228,7 @@ def feedback_button() -> rx.Component:
         ),
         ui.popover.portal(
             ui.popover.positioner(
-                ui.popover.popup(
-                    render_=feedback_content(),
-                ),
+                ui.popover.popup(feedback_content()),
             ),
         ),
     )
