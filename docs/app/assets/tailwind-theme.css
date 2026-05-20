@@ -1,3 +1,4 @@
+@import 'tailwindcss-scroll-mask';
 @import "tailwindcss-animated";
 
 @custom-variant dark (&:where(.dark, .dark *));

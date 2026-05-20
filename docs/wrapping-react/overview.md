@@ -105,6 +105,10 @@ color_picker = ColorPicker.create
 class ColorPickerState(rx.State):
     color: str = "#db114b"
 
+    @rx.event
+    def set_color(self, value: str):
+        self.color = value
+
 
 def index():
     return rx.box(

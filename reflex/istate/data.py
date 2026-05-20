@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from urllib.parse import _NetlocResultMixinStr, parse_qsl, urlsplit
 
 from reflex_base import constants
+from reflex_base.config import get_config
 from reflex_base.utils import console, format
 from reflex_base.utils.serializers import serializer
 from reflex_base.vars.base import (
@@ -360,7 +361,12 @@ class PageData:
         """
         host = router_data.get(constants.RouteVar.HEADERS, {}).get("origin", "")
         path = router_data.get(constants.RouteVar.PATH, "")
-        raw_path = router_data.get(constants.RouteVar.ORIGIN, "")
+        # raw_path is the browser-visible URL path, so it includes the configured
+        # frontend_path prefix. path remains the matched route pattern, which is
+        # defined without the prefix.
+        raw_path = get_config().prepend_frontend_path(
+            router_data.get(constants.RouteVar.ORIGIN, "")
+        )
         return cls(
             host=host,
             path=path,
@@ -447,7 +453,9 @@ class RouterData:
             _page=PageData.from_router_data(router_data),
             url=ReflexURL(
                 router_data.get(constants.RouteVar.HEADERS, {}).get("origin", "")
-                + router_data.get(constants.RouteVar.ORIGIN, "")
+                + get_config().prepend_frontend_path(
+                    router_data.get(constants.RouteVar.ORIGIN, "")
+                )
             ),
             route_id=router_data.get(constants.RouteVar.PATH, ""),
         )

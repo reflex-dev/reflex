@@ -87,6 +87,25 @@ class ChildrenViaProp(Component):
         return super()._render().remove_props("code").add_props(children=self.code)
 
 
+class HookGeneratedProp(Component):
+    """Component whose hook collection fills a prop needed by render output."""
+
+    tag = "HookGeneratedProp"
+    library = "hook-generated-prop-lib"
+
+    label: Var[str] = component_field(default=LiteralVar.create(""))
+    callback: Var[Any] = component_field(default=LiteralVar.create(None))
+
+    def add_hooks(self) -> list[str]:
+        """Add a hook and wire its identifier into a component prop.
+
+        Returns:
+            The hook lines this component contributes.
+        """
+        self.callback = Var(_js_expr="generatedCallback")
+        return ["function generatedCallback(){ return true; }"]
+
+
 class SpecialFormMemoState(BaseState):
     items: Field[list[str]] = field(default_factory=lambda: ["a"])
     flag: Field[bool] = field(default=True)
@@ -190,6 +209,17 @@ def test_memoize_wrapper_uses_experimental_memo_component_and_call_site() -> Non
     assert f'import {{{wrapper_tag}}} from "$/utils/components/{wrapper_tag}"' in output
     assert f"jsx({wrapper_tag}," in (page_ctx.output_code or "")
     assert f"const {wrapper_tag} = memo" not in output
+
+
+def test_auto_memo_component_renders_after_add_hooks_mutates_props() -> None:
+    """Auto-memo modules render after ``add_hooks`` has filled derived props."""
+    ctx, _page_ctx = _compile_single_page(
+        lambda: HookGeneratedProp.create(label=STATE_VAR)
+    )
+    memo_code = _compile_memo_module_text(ctx)
+
+    assert "function generatedCallback(){ return true; }" in memo_code
+    assert "callback:generatedCallback" in memo_code
 
 
 def test_memoize_wrapper_deduped_across_repeated_subtrees() -> None:
@@ -309,6 +339,46 @@ def test_special_form_memo_wrappers_render_structural_body(
     assert state_wiring not in page_output
     assert body_marker in memo_code
     assert body_marker not in page_output
+
+
+def test_foreach_snapshot_memo_applies_component_styles() -> None:
+    """Foreach memo bodies must render styled children after preview rendering.
+
+    Regression for reflex-dev/reflex#6512: the auto-memo wrapper previews a
+    Foreach render before the memo body is compiled. If that unstyled preview
+    render stays cached, default styles from components inside the Foreach
+    never reach the generated memo module.
+    """
+    from reflex.compiler.compiler import compile_memo_components
+
+    def accordion() -> Component:
+        return rx.accordion.root(
+            rx.accordion.item(
+                header="Click me",
+                content=rx.text("Content here"),
+            ),
+            type="single",
+            collapsible=True,
+            width="400px",
+        )
+
+    ctx, _page_ctx = _compile_single_page(
+        lambda: rx.vstack(
+            rx.foreach(SpecialFormMemoState.items, lambda _item: accordion()),
+        )
+    )
+
+    memo_files, _memo_imports = compile_memo_components(
+        components=(),
+        experimental_memos=tuple(ctx.auto_memo_components.values()),
+    )
+    foreach_code = next(
+        code for path, code in memo_files if "/Foreach" in path or "\\Foreach" in path
+    )
+
+    assert '["width"] : "400px"' in foreach_code
+    assert '["borderRadius"] : "var(--radius-4)"' in foreach_code
+    assert '["justifyContent"] : "space-between"' in foreach_code
 
 
 def test_foreach_parent_does_not_absorb_sibling_into_snapshot() -> None:

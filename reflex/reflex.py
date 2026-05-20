@@ -139,6 +139,7 @@ def _compile_app(*, avoid_dirty_check: bool = True):
     kwargs = {
         "check_if_schema_up_to_date": True,
         "prerender_routes": exec.should_prerender_routes(),
+        "trigger": "initial",
     }
 
     # Granian fails if the app is already imported.
@@ -485,7 +486,7 @@ def compile(dry: bool, rich: bool):
         _init(name=get_config().app_name)
     get_config(reload=True)
     starting_time = time.monotonic()
-    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich)
+    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger="cli_compile")
     elapsed_time = time.monotonic() - starting_time
     console.success(f"App compiled successfully in {elapsed_time:.3f} seconds.")
 

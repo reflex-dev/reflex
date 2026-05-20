@@ -88,15 +88,14 @@ values that should not be sent to the client**.
 ```md alert warning
 # Protect auth data and sensitive state in backend-only vars.
 
-Regular vars and computed vars should **only** be used for rendering the state
-of your app in the frontend. Having any type of permissions or authenticated state based on
-a regular var presents a security risk as you may assume these have shared control
-with the frontend (client) due to default setter methods.
+Regular vars and computed vars are synchronized to the frontend so they can be
+rendered in the UI. Any value placed in a regular var is serialized and sent to
+the client, where it is visible to anyone who inspects the page or network
+traffic.
 
-For improved security, `state_auto_setters=False` may be set in `rxconfig.py`
-to prevent the automatic generation of setters for regular vars, however, the
-client will still be able to locally modify the contents of frontend vars as
-they are presented in the UI.
+For permissions, authentication tokens, or other sensitive state, store the
+value in a backend-only var (prefixed with `_`) so it is never sent to the
+client.
 ```
 
 For example, a backend-only var is used to store a large data structure which is
