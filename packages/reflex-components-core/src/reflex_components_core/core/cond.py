@@ -132,19 +132,25 @@ def cond(condition: Any, c1: Any, c2: Component, /) -> Component: ...  # pyright
 
 T = TypeVar("T", covariant=True)
 U = TypeVar("U", covariant=True)
-S = TypeVar("S", bound=LiteralString)
+LITERAL_STRING_S = TypeVar("LITERAL_STRING_S", bound=LiteralString)
 
 
 @overload
-def cond(condition: Any, c1: S, c2: S, /) -> Var[S]: ...  # pyright: ignore [reportOverlappingOverload]
+def cond(
+    condition: Any, c1: LITERAL_STRING_S, c2: LITERAL_STRING_S, /
+) -> Var[LITERAL_STRING_S]: ...  # pyright: ignore [reportOverlappingOverload]
 
 
 @overload
-def cond(condition: Any, c1: S, c2: Var[U], /) -> Var[S | U]: ...  # pyright: ignore [reportOverlappingOverload]
+def cond(
+    condition: Any, c1: LITERAL_STRING_S, c2: Var[U], /
+) -> Var[LITERAL_STRING_S | U]: ...  # pyright: ignore [reportOverlappingOverload]
 
 
 @overload
-def cond(condition: Any, c1: Var[T], c2: S, /) -> Var[T | S]: ...  # pyright: ignore [reportOverlappingOverload]
+def cond(
+    condition: Any, c1: Var[T], c2: LITERAL_STRING_S, /
+) -> Var[T | LITERAL_STRING_S]: ...  # pyright: ignore [reportOverlappingOverload]
 
 
 @overload
