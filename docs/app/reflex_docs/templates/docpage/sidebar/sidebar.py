@@ -117,37 +117,14 @@ def sidebar_leaf_guide(is_active: rx.vars.BooleanVar) -> rx.Component:
     )
 
 
+@rx._x.memo
 def sidebar_leaf(
-    item: SideBarItem,
-    url: rx.vars.StringVar[str],
-    guide_margin_class: str = "ml-[3rem]",
+    item_names: rx.vars.StringVar[str],
+    item_link: rx.vars.StringVar[str],
+    is_active: rx.vars.BooleanVar,
+    guide_margin_class: rx.vars.StringVar[str],
 ) -> rx.Component:
     """Get the leaf node of the sidebar."""
-    item.link = item.link.replace("_", "-").rstrip("/") + "/"
-    is_active = url == item.link
-    if item.outer:
-        return rx.el.li(
-            sidebar_link(
-                rx.flex(
-                    rx.text(
-                        item.names,
-                        color=rx.cond(
-                            is_active, c_color("violet", 9), c_color("slate", 9)
-                        ),
-                        _hover={
-                            "color": c_color("slate", 11),
-                        },
-                        margin="0.5em 0.5em 0.2em 0.5em",
-                        width="100%",
-                        class_name="m-0 transition-color",
-                    ),
-                ),
-                href=item.link,
-                class_name="block w-full",
-            ),
-            class_name="m-0 p-0 !overflow-visible w-full list-none",
-        )
-
     return rx.el.li(
         sidebar_link(
             rx.cond(
@@ -160,7 +137,7 @@ def sidebar_leaf(
             rx.flex(
                 sidebar_leaf_guide(is_active),
                 rx.text(
-                    item.names,
+                    item_names,
                     class_name=rx.cond(
                         is_active,
                         "m-0 text-sm text-primary-10 font-[525] transition-color pl-4",
@@ -173,7 +150,7 @@ def sidebar_leaf(
                     "relative pl-4 h-8 flex items-center",
                 ),
             ),
-            href=item.link,
+            href=item_link,
             class_name=rx.cond(
                 is_active,
                 "block w-full relative",
@@ -181,6 +158,35 @@ def sidebar_leaf(
             ),
         ),
         class_name="m-0 p-0 !overflow-visible w-full relative list-none",
+    )
+
+
+@rx._x.memo
+def sidebar_leaf_outer(
+    item_names: rx.vars.StringVar[str],
+    item_link: rx.vars.StringVar[str],
+    is_active: rx.vars.BooleanVar,
+    guide_margin_class: rx.vars.StringVar[str],
+) -> rx.Component:
+    """Get the leaf node of the sidebar."""
+    return rx.el.li(
+        sidebar_link(
+            rx.flex(
+                rx.text(
+                    item_names,
+                    color=rx.cond(is_active, c_color("violet", 9), c_color("slate", 9)),
+                    _hover={
+                        "color": c_color("slate", 11),
+                    },
+                    margin="0.5em 0.5em 0.2em 0.5em",
+                    width="100%",
+                    class_name="m-0 transition-color",
+                ),
+            ),
+            href=item_link,
+            class_name="block w-full",
+        ),
+        class_name="m-0 p-0 !overflow-visible w-full list-none",
     )
 
 
@@ -193,11 +199,20 @@ def sidebar_item_comp(
 ) -> rx.Component:
     """Render an item in the sidebar, recursing into its children."""
     if not item.children:
-        return sidebar_leaf(
-            item=item,
-            url=url,
-            guide_margin_class=guide_margin_class,
-        )
+        if item.outer:
+            return sidebar_leaf_outer(
+                item_names=item.names,
+                item_link=item.link,
+                is_active=(url == item.link),
+                guide_margin_class=guide_margin_class,
+            )
+        else:
+            return sidebar_leaf(
+                item_names=item.names,
+                item_link=item.link,
+                is_active=(url == item.link),
+                guide_margin_class=guide_margin_class,
+            )
 
     is_open = (index.length() > 0) & (index[0] == item_index)
     nested_index = rx.cond(is_open, index[1:], []).to(list[int])
@@ -267,8 +282,6 @@ def calculate_index(sidebar_items, url: str) -> list[int]:
         return index_list
 
     url = url.rstrip("/") + "/"
-    for item in sidebar_items:
-        item.link = item.link.rstrip("/") + "/"
     sub = 0
     for i, item in enumerate(sidebar_items):
         if not item.children:
