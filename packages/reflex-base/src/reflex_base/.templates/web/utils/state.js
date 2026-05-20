@@ -1142,6 +1142,18 @@ export const isNotNullOrUndefined = (val) => {
   return (val ?? undefined) !== undefined;
 };
 
+/***
+ * Python-semantics OR: returns `a` if python-truthy, else evaluates and returns `b`.
+ * `b` is a thunk so it is only evaluated when needed, preserving short-circuit.
+ */
+export const pyOr = (a, b) => (isTrue(a) ? a : b());
+
+/***
+ * Python-semantics AND: returns `a` if python-falsy, else evaluates and returns `b`.
+ * `b` is a thunk so it is only evaluated when needed, preserving short-circuit.
+ */
+export const pyAnd = (a, b) => (isTrue(a) ? b() : a);
+
 /**
  * Get the value from a ref.
  * @param ref The ref to get the value from.
