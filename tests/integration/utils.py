@@ -4,11 +4,41 @@ from __future__ import annotations
 
 from collections.abc import Generator, Iterator, Sequence
 from contextlib import contextmanager
+from http.client import HTTPConnection
+from urllib.parse import urlsplit
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 
 from reflex.testing import AppHarness
+
+
+def request_raw(
+    url: str,
+    path: str,
+    headers: dict[str, str] | None = None,
+) -> tuple[int, dict[str, str], bytes]:
+    """Send a raw HTTP request without client-side decompression.
+
+    Args:
+        url: The base URL to connect to.
+        path: The request path.
+        headers: Optional request headers.
+
+    Returns:
+        The status code, response headers, and raw body.
+    """
+    parsed = urlsplit(url)
+    assert parsed.hostname is not None
+    assert parsed.port is not None
+    conn = HTTPConnection(parsed.hostname, parsed.port, timeout=10)
+    conn.request("GET", path, headers=headers or {})
+    resp = conn.getresponse()
+    body = resp.read()
+    hdrs = {k.lower(): v for k, v in resp.getheaders()}
+    status = resp.status
+    conn.close()
+    return status, hdrs, body
 
 
 @contextmanager
