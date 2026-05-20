@@ -12,13 +12,14 @@ import warnings
 from contextlib import suppress
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, NotRequired, TypedDict, cast
+from typing import Any, TypedDict, cast
 
 from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.environment import environment
 from reflex_base.utils.decorator import once, once_unless_none
 from reflex_base.utils.exceptions import ReflexError
+from typing_extensions import NotRequired
 
 from reflex.utils import console, processes
 from reflex.utils.js_runtimes import get_bun_version, get_node_version
