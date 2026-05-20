@@ -1986,7 +1986,8 @@ def authenticate_on_browser() -> tuple[str, dict[str, Any]]:
 
     console.print(
         f"Opening {auth_url} ... By connecting your account, you agree to "
-        "Reflex Cloud [Terms of Service] and [Privacy Policy]."
+        "Reflex Cloud [Terms of Service] and [Privacy Policy].",
+        markup=False,
     )
 
     if not is_valid_url(constants.Hosting.HOSTING_SERVICE_UI):
