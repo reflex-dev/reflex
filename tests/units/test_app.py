@@ -45,6 +45,7 @@ from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
+from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.model import Model
 from reflex.state import BaseState, OnLoadInternalState, State, reload_state_module
 from reflex.utils import exec as exec_utils
@@ -3063,6 +3064,111 @@ def test_compile_skips_telemetry_when_compile_app_short_circuits(
     app._compile(trigger="backend_startup")
 
     assert all(c.args[0] != "compile" for c in send_mock.call_args_list)
+
+
+def test_compile_event_features_used_match_populated_app(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """End-to-end compile fills features_used with exact counts from the app.
+
+    Guards against data-malformation regressions like the inherited-field
+    double-count: storage vars declared on a parent state must be counted
+    once, even when descendants inherit them.
+    """
+    conf = rx.Config(app_name="testing", telemetry_enabled=True)
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mocker.patch("reflex.compiler.compiler.compile_app", return_value=True)
+    send_mock = mocker.patch("reflex.utils.telemetry.send")
+
+    class _PopulatedRoot(BaseState):
+        root_cookie: str = Cookie()
+        root_local: str = LocalStorage()
+
+        @rx.event(background=True)
+        async def heavy(self):
+            """Background handler used to assert detection."""
+
+    class _PopulatedChild(_PopulatedRoot):
+        # root_cookie is inherited here and must not be re-counted.
+        child_session: str = SessionStorage()
+
+    app._state = _PopulatedRoot
+
+    def about_page():
+        return rx.box(rx.text("about"))
+
+    def item_page():
+        return rx.box(rx.text("item"))
+
+    app.add_page(about_page, route="/about")
+    app.add_page(item_page, route="/items/[id]")
+
+    app._compile(trigger="initial")
+
+    compile_calls = [c for c in send_mock.call_args_list if c.args[0] == "compile"]
+    assert len(compile_calls) == 1
+    payload = compile_calls[0].kwargs["properties"]
+    features = payload["features_used"]
+    assert features["cookie_count"] == 1, (
+        "inherited cookie field was counted on parent and child"
+    )
+    assert features["local_storage_count"] == 1
+    assert features["session_storage_count"] == 1
+    assert features["background_event_handlers_count"] == 1
+    assert features["dynamic_routes_count"] == 1
+    assert sorted(s["depth_from_root"] for s in payload["states"]) == [0, 1]
+
+
+def test_compile_event_features_used_stable_across_hot_reload(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """Recompiling under hot_reload reports the same features_used as the initial compile.
+
+    A bug that accumulated state across compiles (e.g. caching the snapshot
+    or re-counting on each pass) would show up here as drift between the
+    two payloads.
+    """
+    conf = rx.Config(app_name="testing", telemetry_enabled=True)
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mocker.patch("reflex.compiler.compiler.compile_app", return_value=True)
+    send_mock = mocker.patch("reflex.utils.telemetry.send")
+
+    class _ReloadRoot(BaseState):
+        token: str = Cookie()
+
+    class _ReloadChild(_ReloadRoot):
+        session: str = SessionStorage()
+
+    app._state = _ReloadRoot
+
+    def page():
+        return rx.box(rx.text("hi"))
+
+    app.add_page(page, route="/items/[id]")
+
+    app._compile(trigger="initial")
+    app._compile(trigger="hot_reload")
+
+    compile_calls = [c for c in send_mock.call_args_list if c.args[0] == "compile"]
+    assert len(compile_calls) == 2
+    first = compile_calls[0].kwargs["properties"]
+    second = compile_calls[1].kwargs["properties"]
+    assert first["trigger"] == "initial"
+    assert second["trigger"] == "hot_reload"
+    assert first["features_used"] == second["features_used"]
+    assert [s["depth_from_root"] for s in first["states"]] == [
+        s["depth_from_root"] for s in second["states"]
+    ]
+    # Sanity-check the values themselves, not just equality.
+    assert first["features_used"]["cookie_count"] == 1
+    assert first["features_used"]["session_storage_count"] == 1
+    assert first["features_used"]["dynamic_routes_count"] == 1
 
 
 def test_call_marks_first_dev_backend_worker_as_startup(

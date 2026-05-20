@@ -1,10 +1,16 @@
-"""Compile-time telemetry context."""
+"""Compile-time telemetry context.
+
+Lives in ``reflex_base`` (not ``reflex``) so deep packages like
+``reflex_components_core`` — which depend on ``reflex_base`` but not
+``reflex`` — can read the active context without inverting the
+dependency hierarchy.
+"""
 
 from __future__ import annotations
 
 import dataclasses
 import time
-from typing import Any, Literal
+from typing import Literal, get_args
 
 from reflex_base.config import get_config
 from reflex_base.context.base import BaseContext
@@ -13,13 +19,30 @@ CompileTrigger = Literal[
     "initial", "cli_compile", "backend_startup", "hot_reload", "export"
 ]
 
+FeatureName = Literal[
+    "background_event_handlers_count",
+    "cookie_count",
+    "cors_customized",
+    "db_model_count",
+    "dynamic_routes_count",
+    "lifespan_tasks_count",
+    "local_storage_count",
+    "session_storage_count",
+    "shared_state_count",
+    "state_manager_disk",
+    "state_manager_memory",
+    "state_manager_redis",
+    "upload_count",
+]
+
+_KNOWN_FEATURES: tuple[FeatureName, ...] = get_args(FeatureName)
+
 
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True, eq=False)
 class TelemetryContext(BaseContext):
     """Per-compile telemetry handle attached to the current contextvar."""
 
     start_perf_counter: float = dataclasses.field(default_factory=time.perf_counter)
-    features_used: dict[str, Any] = dataclasses.field(default_factory=dict)
     trigger: CompileTrigger | None = None
     exception: BaseException | None = dataclasses.field(default=None, repr=False)
 

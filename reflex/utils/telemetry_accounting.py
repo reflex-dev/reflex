@@ -3,19 +3,36 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Iterator
-from typing import TYPE_CHECKING, Any, TypedDict
+from importlib.util import find_spec
+from typing import TYPE_CHECKING, TypedDict
 
-from reflex_base.config import get_config
+from reflex_base.config import Config, get_config
+from reflex_base.telemetry_context import _KNOWN_FEATURES, TelemetryContext
 from reflex_base.utils import console
+from reflex_components_core.core.upload import Upload
 
+from reflex.istate.shared import SharedState
+from reflex.istate.storage import (
+    ClientStorageBase,
+    Cookie,
+    LocalStorage,
+    SessionStorage,
+)
+from reflex.model import ModelRegistry
+from reflex.route import get_route_args
 from reflex.utils import telemetry
+
+_HAS_SQLALCHEMY = find_spec("sqlalchemy") is not None
+
+__all__ = ["record_compile"]
 
 if TYPE_CHECKING:
     from reflex_base.components.component import BaseComponent
+    from reflex_base.telemetry_context import CompileTrigger, FeatureName
+    from reflex_base.vars import Field
 
     from reflex.app import App
     from reflex.state import BaseState
-    from reflex.utils.telemetry_context import CompileTrigger, TelemetryContext
 
 
 class _StateStats(TypedDict):
@@ -42,7 +59,7 @@ class _CompileEventProperties(TypedDict):
     pages_count: int
     component_counts: dict[str, int]
     states: list[_StateStats]
-    features_used: dict[str, Any]
+    features_used: dict[FeatureName, int]
     duration_ms: int
     trigger: CompileTrigger | None
     exception: _ExceptionInfo | None
@@ -78,13 +95,14 @@ def _collect_compile_event_payload(
         The properties dict to send to PostHog.
     """
     config = get_config()
+    user_states = list(_walk_states(app._state))
     return {
         "plugins_enabled": [p.__class__.__name__ for p in config.plugins],
         "plugins_disabled": [p.__name__ for p in config.disable_plugins],
         "pages_count": len(app._pages),
         "component_counts": _count_components(app._pages.values()),
-        "states": _collect_all_state_stats(app),
-        "features_used": dict(ctx.features_used),
+        "states": [_collect_state_stats(s) for s in user_states],
+        "features_used": _collect_features_used(app, config, user_states),
         "duration_ms": ctx.elapsed_ms(),
         "trigger": ctx.trigger,
         "exception": _sanitize_exception(ctx.exception),
@@ -141,18 +159,6 @@ def _walk_states(root: type[BaseState] | None) -> Iterator[type[BaseState]]:
         yield from _walk_states(sub)
 
 
-def _collect_all_state_stats(app: App) -> list[_StateStats]:
-    """Collect per-state statistics for every state attached to the app.
-
-    Args:
-        app: The compiled application.
-
-    Returns:
-        A list of per-state stat dicts.
-    """
-    return [_collect_state_stats(state_cls) for state_cls in _walk_states(app._state)]
-
-
 def _collect_state_stats(state_cls: type[BaseState]) -> _StateStats:
     """Collect structural statistics for a single state class.
 
@@ -191,3 +197,135 @@ def _sanitize_exception(exc: BaseException | None) -> _ExceptionInfo | None:
     if exc is None:
         return None
     return {"type": type(exc).__name__}
+
+
+def _collect_features_used(
+    app: App,
+    config: Config,
+    user_states: list[type[BaseState]],
+) -> dict[FeatureName, int]:
+    """Build the ``features_used`` snapshot for the compile event.
+
+    Every known key ships with a count (zero by default) derived from a fresh
+    walk of the live app, its states, the config, and class-level usage
+    markers maintained by feature call sites (e.g. ``Upload.is_used``).
+
+    Args:
+        app: The compiled application.
+        config: The active Reflex config.
+        user_states: Pre-walked user state classes (shared with state stats).
+
+    Returns:
+        Dict of feature key -> invocation count.
+    """
+    features: dict[FeatureName, int] = dict.fromkeys(_KNOWN_FEATURES, 0)
+    _walk_state_features(features, user_states)
+    _walk_app_features(features, app)
+    features["upload_count"] = int(Upload.is_used)
+    if _HAS_SQLALCHEMY:
+        features["db_model_count"] = len(ModelRegistry.get_models())
+    _record_config_attestations(features, config)
+    return features
+
+
+_STATE_MANAGER_FEATURE: dict[str, FeatureName] = {
+    "disk": "state_manager_disk",
+    "memory": "state_manager_memory",
+    "redis": "state_manager_redis",
+}
+
+_STORAGE_FEATURE: dict[type[ClientStorageBase], FeatureName] = {
+    Cookie: "cookie_count",
+    LocalStorage: "local_storage_count",
+    SessionStorage: "session_storage_count",
+}
+
+
+def _walk_state_features(
+    features: dict[FeatureName, int], user_states: list[type[BaseState]]
+) -> None:
+    """Derive per-state feature counts in one pass over user states.
+
+    Args:
+        features: The snapshot to populate.
+        user_states: Pre-walked user state classes.
+    """
+    shared = background = 0
+    for state_cls in user_states:
+        if issubclass(state_cls, SharedState):
+            shared += 1
+        for handler in state_cls.event_handlers.values():
+            if handler.is_background:
+                background += 1
+        fields = state_cls.get_fields()
+        for name in state_cls.base_vars:
+            key = _storage_feature_for_field(fields[name])
+            if key is not None:
+                features[key] += 1
+    features["shared_state_count"] = shared
+    features["background_event_handlers_count"] = background
+
+
+def _walk_app_features(features: dict[FeatureName, int], app: App) -> None:
+    """Derive per-app feature counts (dynamic routes, lifespan tasks).
+
+    Args:
+        features: The snapshot to populate.
+        app: The compiled application.
+    """
+    features["dynamic_routes_count"] = sum(
+        1 for route in app._unevaluated_pages if get_route_args(route)
+    )
+    user_tasks = 0
+    for task in app.get_lifespan_tasks():
+        module = getattr(task, "__module__", None) or ""
+        if module != "reflex" and not module.startswith("reflex."):
+            user_tasks += 1
+    features["lifespan_tasks_count"] = user_tasks
+
+
+def _record_config_attestations(
+    features: dict[FeatureName, int], config: Config
+) -> None:
+    """Write config-derived feature counts (state-manager mode, CORS).
+
+    Args:
+        features: The snapshot to populate.
+        config: The active Reflex config.
+    """
+    key = _STATE_MANAGER_FEATURE.get(config.state_manager_mode.value)
+    if key is not None:
+        features[key] = 1
+    if tuple(config.cors_allowed_origins) != ("*",):
+        features["cors_customized"] = 1
+
+
+def _storage_feature_for_field(field: Field) -> FeatureName | None:
+    """Return the feature key for a client-storage state field, or None.
+
+    Mirrors ``BaseState._is_client_storage``: detected by an instance default
+    or by a ``ClientStorageBase`` subclass annotation. User subclasses of
+    ``Cookie`` / ``LocalStorage`` / ``SessionStorage`` are bucketed under
+    their parent via an MRO walk.
+
+    Args:
+        field: A ``Field`` from ``state_cls.get_fields()``.
+
+    Returns:
+        The feature key, or ``None`` if the field isn't a client-storage var.
+    """
+    default = field.default
+    if isinstance(default, ClientStorageBase):
+        cls: type = type(default)
+    elif isinstance(field.type_, type) and issubclass(field.type_, ClientStorageBase):
+        cls = field.type_
+    else:
+        return None
+    direct = _STORAGE_FEATURE.get(cls)
+    if direct is not None:
+        return direct
+    for ancestor in cls.__mro__:
+        feature = _STORAGE_FEATURE.get(ancestor)
+        if feature is not None:
+            return feature
+    return None

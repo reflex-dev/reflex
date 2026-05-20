@@ -179,19 +179,24 @@ def deploy(
         if not description:
             description = config.get("description", None)
 
-    # resolve the project id from the project name.
+    project_id = hosting.normalize_project_id(project_id)
+
     if project_name and not project_id:
         result = hosting.search_project(
             project_name, client=authenticated_client, interactive=interactive
         )
-        project_id = result.get("id") if result else None
+        project_id = hosting.normalize_project_id(result.get("id")) if result else None
 
+    selected_project_id = hosting.get_selected_project()
+
+    validated_project: dict[str, Any] | None = None
     try:
-        # check if provided project exists.
+        if not project_id:
+            project_id = selected_project_id
         if project_id:
-            hosting.get_project(project_id, client=authenticated_client)
-        else:
-            project_id = hosting.get_selected_project()
+            validated_project = hosting.get_project(
+                project_id, client=authenticated_client
+            )
     except httpx.HTTPStatusError as ex:
         try:
             console.error(ex.response.json().get("detail"))
@@ -209,9 +214,7 @@ def deploy(
     try:
         if app_name and not app_id:
             search_project_id = project_id
-            if not interactive and not project and not search_project_id:
-                search_project_id = hosting.get_selected_project()
-            elif interactive and not project:
+            if interactive and not project:
                 search_project_id = None
 
             app = hosting.search_app(
@@ -230,16 +233,13 @@ def deploy(
         raise click.exceptions.Exit(1) from ex
 
     if app and interactive and not project and not app_id:
-        default_project_id = hosting.get_selected_project()
+        default_project_id = selected_project_id
         app_project_id = app.get("project_id")
 
         if app_project_id and (
             not default_project_id or app_project_id != default_project_id
         ):
-            app_project = hosting.get_project(
-                app_project_id, client=authenticated_client
-            )
-            app_project_name = app_project.get("name", "Unknown")
+            app_project_name = (app.get("project") or {}).get("name") or app_project_id
             if (
                 console.ask(
                     f"Deploy to app '{app['name']}' in project '{app_project_name}'?",
@@ -262,55 +262,40 @@ def deploy(
             )
             == "y"
         ):
-            # Check if we need confirmation for deploying to non-default project
             if not project:
-                default_project_id = hosting.get_selected_project()
-                if not default_project_id:
-                    try:
-                        if project_id:
-                            target_project = hosting.get_project(
-                                project_id, client=authenticated_client
+                needs_confirmation = not selected_project_id or (
+                    project_id and project_id != selected_project_id
+                )
+                if needs_confirmation:
+                    if project_id:
+                        project_display_name = (
+                            (
+                                validated_project.get("name")
+                                if validated_project
+                                else None
                             )
-                            project_name = target_project.get("name", "Unknown")
-                        else:
-                            token = hosting.get_existing_access_token()
-                            default_project_id = hosting.get_default_project(
-                                authenticated_client
-                            )
-                            if default_project_id:
-                                default_project = hosting.get_project(
-                                    default_project_id, client=authenticated_client
+                            or project_name
+                            or project_id
+                        )
+                    else:
+                        project_display_name = "your default project"
+                        fallback_project_id = hosting.get_default_project(
+                            authenticated_client
+                        )
+                        if fallback_project_id:
+                            try:
+                                fallback_project = hosting.get_project(
+                                    fallback_project_id, client=authenticated_client
                                 )
-                                project_name = default_project.get(
-                                    "name", "Default Project"
+                                project_display_name = (
+                                    fallback_project.get("name") or project_display_name
                                 )
-                            else:
-                                project_name = "Default Project"
-                    except Exception:
-                        project_name = "Unknown"
+                            except Exception:
+                                pass
 
                     if (
                         console.ask(
-                            f"Create and deploy app '{app_name}' in project '{project_name}'?",
-                            choices=["y", "n"],
-                            default="y",
-                        )
-                        != "y"
-                    ):
-                        console.info("Deployment cancelled.")
-                        raise click.exceptions.Exit(0)
-                elif project_id and project_id != default_project_id:
-                    try:
-                        target_project = hosting.get_project(
-                            project_id, client=authenticated_client
-                        )
-                        project_name = target_project.get("name", "Unknown")
-                    except Exception:
-                        project_name = "Unknown"
-
-                    if (
-                        console.ask(
-                            f"Create and deploy app '{app_name}' in project '{project_name}'?",
+                            f"Create and deploy app '{app_name}' in project '{project_display_name}'?",
                             choices=["y", "n"],
                             default="y",
                         )
