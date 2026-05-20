@@ -96,12 +96,12 @@ def navbar_sidebar_drawer(trigger: rx.Component) -> rx.Component:
             rx.drawer.content(
                 rx.box(
                     drawer_item("Docs", "/docs", "docs"),
-                    drawer_item("Templates", "/gallery", "gallery"),
+                    drawer_item("Templates", "/templates", "templates"),
                     drawer_item("Blog", "/blog", "blog"),
                     drawer_item("Case Studies", "/customers", "customers"),
-                    drawer_item("Components", "/library", "library"),
-                    drawer_item("Open Source", "/framework", "open-source"),
-                    drawer_item("Cloud", "/cloud", "hosting"),
+                    drawer_item("Components", "/docs/library", "library"),
+                    drawer_item("Open Source", "/open-source", "open-source"),
+                    drawer_item("Cloud", "/hosting", "hosting"),
                     drawer_item("Pricing", "/pricing", "pricing"),
                     drawer_socials(),
                     rx.el.button(
