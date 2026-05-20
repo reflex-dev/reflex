@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import inspect
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from reflex_base.components.component import Component
@@ -39,7 +39,7 @@ def _restore_memo_registries(preserve_memo_registries):
 def test_var_returning_memo():
     """Var-returning memos should behave like imported function vars."""
 
-    @rx._x.memo
+    @rx.memo
     def format_price(amount: rx.Var[int], currency: rx.Var[str]) -> rx.Var[str]:
         return currency.to(str) + ": $" + amount.to(str)
 
@@ -69,7 +69,7 @@ def test_var_returning_memo():
 def test_component_returning_memo_with_children_and_rest():
     """Component-returning memos should accept positional children and forwarded props."""
 
-    @rx._x.memo
+    @rx.memo
     def my_card(
         children: rx.Var[rx.Component],
         rest: rx.RestProp,
@@ -118,7 +118,7 @@ def test_component_returning_memo_with_children_and_rest():
 def test_component_returning_memo_accepts_component_var_result():
     """Component-returning memos should accept component-typed var results."""
 
-    @rx._x.memo
+    @rx.memo
     def conditional_slot(
         show: rx.Var[bool],
         first: rx.Var[rx.Component],
@@ -141,7 +141,7 @@ def test_component_returning_memo_accepts_component_var_result():
 def test_var_returning_memo_with_rest_props():
     """Var-returning memos should capture extra keyword args into RestProp."""
 
-    @rx._x.memo
+    @rx.memo
     def merge_styles(
         base: rx.Var[dict[str, str]],
         overrides: rx.RestProp,
@@ -170,7 +170,7 @@ def test_var_returning_memo_with_rest_props():
 def test_component_returning_memo_with_only_rest():
     """Component-returning memos with only RestProp should emit valid JSX (#6443)."""
 
-    @rx._x.memo
+    @rx.memo
     def hover_trigger(rest: rx.RestProp) -> rx.Component:
         return rx.text("hover me", rest)
 
@@ -183,7 +183,7 @@ def test_component_returning_memo_with_only_rest():
 def test_var_returning_memo_with_only_rest():
     """Var-returning memos with only RestProp should emit valid JS (#6443)."""
 
-    @rx._x.memo
+    @rx.memo
     def merge_only(overrides: rx.RestProp) -> rx.Var[Any]:
         return overrides
 
@@ -196,7 +196,7 @@ def test_var_returning_memo_with_only_rest():
 def test_var_returning_memo_with_children_and_rest():
     """Var-returning memos should accept positional children plus keyword props."""
 
-    @rx._x.memo
+    @rx.memo
     def label_slot(
         children: rx.Var[rx.Component],
         rest: rx.RestProp,
@@ -224,13 +224,13 @@ def test_memo_requires_var_annotations():
     """Memos should require Var annotations on parameters."""
     with pytest.raises(TypeError, match="must be annotated"):
 
-        @rx._x.memo
+        @rx.memo
         def bad_annotation(value: int) -> rx.Var[str]:
             return rx.Var.create("x")
 
     with pytest.raises(TypeError, match="Missing annotation"):
 
-        @rx._x.memo
+        @rx.memo
         def missing_annotation(value) -> rx.Var[str]:
             return rx.Var.create("x")
 
@@ -239,7 +239,7 @@ def test_memo_rejects_invalid_children_annotation():
     """Component memos should validate the special children annotation."""
     with pytest.raises(TypeError, match="children"):
 
-        @rx._x.memo
+        @rx.memo
         def bad_children(children: rx.Var[str]) -> rx.Component:
             return rx.text(children)
 
@@ -248,7 +248,7 @@ def test_memo_rejects_multiple_rest_props():
     """Experimental memos should only allow a single RestProp."""
     with pytest.raises(TypeError, match="only supports one"):
 
-        @rx._x.memo
+        @rx.memo
         def too_many_rest(
             first: rx.RestProp,
             second: rx.RestProp,
@@ -259,7 +259,7 @@ def test_memo_rejects_multiple_rest_props():
 def test_memo_rejects_component_and_function_name_collision():
     """Experimental memos should reject same exported name across kinds."""
 
-    @rx._x.memo
+    @rx.memo
     def foo_bar() -> rx.Component:
         return rx.box()
 
@@ -267,7 +267,7 @@ def test_memo_rejects_component_and_function_name_collision():
 
     with pytest.raises(ValueError, match=r"name collision.*FooBar"):
 
-        @rx._x.memo
+        @rx.memo
         def FooBar() -> rx.Var[str]:
             return rx.Var.create("x")
 
@@ -275,13 +275,13 @@ def test_memo_rejects_component_and_function_name_collision():
 def test_memo_rejects_component_export_name_collision():
     """Experimental memos should reject duplicate component export names."""
 
-    @rx._x.memo
+    @rx.memo
     def foo_bar() -> rx.Component:
         return rx.box()
 
     with pytest.raises(ValueError, match=r"name collision.*FooBar"):
 
-        @rx._x.memo
+        @rx.memo
         def foo__bar() -> rx.Component:
             return rx.box()
 
@@ -290,13 +290,13 @@ def test_memo_rejects_varargs():
     """Experimental memos should reject *args and **kwargs."""
     with pytest.raises(TypeError, match=r"\*args"):
 
-        @rx._x.memo
+        @rx.memo
         def bad_args(*values: rx.Var[str]) -> rx.Var[str]:
             return rx.Var.create("x")
 
     with pytest.raises(TypeError, match=r"\*\*kwargs"):
 
-        @rx._x.memo
+        @rx.memo
         def bad_kwargs(**values: rx.Var[str]) -> rx.Var[str]:
             return rx.Var.create("x")
 
@@ -304,14 +304,14 @@ def test_memo_rejects_varargs():
 def test_component_memo_rejects_invalid_positional_usage():
     """Component memos should only accept positional children."""
 
-    @rx._x.memo
+    @rx.memo
     def title_card(*, title: rx.Var[str]) -> rx.Component:
         return rx.box(rx.heading(title))
 
     with pytest.raises(TypeError, match="only accepts keyword props"):
         title_card(rx.text("child"))
 
-    @rx._x.memo
+    @rx.memo
     def child_card(
         children: rx.Var[rx.Component], *, title: rx.Var[str]
     ) -> rx.Component:
@@ -324,7 +324,7 @@ def test_component_memo_rejects_invalid_positional_usage():
 def test_var_memo_rejects_invalid_positional_usage():
     """Var memos should also reserve positional arguments for children only."""
 
-    @rx._x.memo
+    @rx.memo
     def format_price(amount: rx.Var[int], currency: rx.Var[str]) -> rx.Var[str]:
         return currency.to(str) + ": $" + amount.to(str)
 
@@ -334,7 +334,7 @@ def test_var_memo_rejects_invalid_positional_usage():
     with pytest.raises(TypeError, match="only accepts keyword props"):
         format_price(price, currency)
 
-    @rx._x.memo
+    @rx.memo
     def child_label(
         children: rx.Var[rx.Component], *, label: rx.Var[str]
     ) -> rx.Var[str]:
@@ -348,7 +348,7 @@ def test_var_returning_memo_rejects_hooks():
     """Var-returning memos should reject hook-bearing expressions."""
     with pytest.raises(TypeError, match="cannot depend on hooks"):
 
-        @rx._x.memo
+        @rx.memo
         def bad_hook(value: rx.Var[str]) -> rx.Var[str]:
             return Var(
                 _js_expr="value",
@@ -361,7 +361,7 @@ def test_var_returning_memo_rejects_non_bundled_imports():
     """Var-returning memos should reject non-bundled imports."""
     with pytest.raises(TypeError, match="not bundled"):
 
-        @rx._x.memo
+        @rx.memo
         def bad_import(value: rx.Var[str]) -> rx.Var[str]:
             return Var(
                 _js_expr="value",
@@ -462,7 +462,7 @@ def test_experimental_component_memo_get_imports():
         tag = "Inner"
         library = "inner"
 
-    @rx._x.memo
+    @rx.memo
     def wrapper() -> rx.Component:
         return Inner.create()
 
@@ -481,7 +481,7 @@ def test_compile_experimental_component_memo_does_not_mutate_definition(
 ):
     """Experimental component memo compilation should not mutate stored components."""
 
-    @rx._x.memo
+    @rx.memo
     def wrapper() -> rx.Component:
         return rx.box("hi")
 
@@ -516,7 +516,7 @@ def test_component_returning_memo_is_transparent_for_child_validation():
         library = "restricted-child"
         _valid_parents = ["ValidParent"]
 
-    @rx._x.memo
+    @rx.memo
     def transparent(children: rx.Var[rx.Component]) -> rx.Component:
         return children  # type: ignore[return-value]
 
@@ -536,7 +536,7 @@ def test_compile_memo_components_includes_experimental_custom_code():
                 "const foo = 'bar'",
             ]
 
-    @rx._x.memo
+    @rx.memo
     def foo_component(label: rx.Var[str]) -> rx.Component:
         return FooComponent.create(label, rx.Var("foo"))
 
@@ -549,7 +549,7 @@ def test_compile_memo_components_includes_experimental_custom_code():
 def test_component_memo_accepts_event_handler():
     """Component memos should accept EventHandler params with passthrough specs."""
 
-    @rx._x.memo
+    @rx.memo
     def eh_memo(
         some_value: rx.Var[str],
         event: rx.EventHandler[rx.event.passthrough_event_spec(str)],
@@ -570,7 +570,7 @@ def test_component_memo_accepts_event_handler():
 def test_component_memo_accepts_bare_event_handler():
     """Component memos should accept bare EventHandler (no spec) params."""
 
-    @rx._x.memo
+    @rx.memo
     def bare_eh_memo(event: rx.EventHandler) -> rx.Component:
         return rx.button("click", on_click=event())
 
@@ -584,7 +584,7 @@ def test_component_memo_accepts_bare_event_handler():
 def test_component_memo_event_handler_compiles_to_prop_callback():
     """`event(value)` and `on_change=event` should compile to the destructured JS prop."""
 
-    @rx._x.memo
+    @rx.memo
     def eh_compile_memo(
         some_value: rx.Var[str],
         event: rx.EventHandler[rx.event.passthrough_event_spec(str)],
@@ -615,7 +615,7 @@ def test_component_memo_event_handler_wires_event_chain_at_call_site():
 
     raw_handler = EventHandler(fn=_handler_fn)
 
-    @rx._x.memo
+    @rx.memo
     def eh_wired_memo(
         some_value: rx.Var[str],
         event: rx.EventHandler[rx.event.passthrough_event_spec(str)],
@@ -634,7 +634,7 @@ def test_var_returning_memo_rejects_event_handler():
     """Var-returning memos should reject EventHandler params."""
     with pytest.raises(TypeError, match="component-returning"):
 
-        @rx._x.memo
+        @rx.memo
         def bad_var_eh(
             event: rx.EventHandler[rx.event.passthrough_event_spec(str)],
         ) -> rx.Var[str]:
@@ -645,7 +645,7 @@ def test_component_memo_rejects_event_handler_with_default():
     """EH params should not allow defaults (matches old CustomComponent behavior)."""
     with pytest.raises(TypeError, match="default"):
 
-        @rx._x.memo
+        @rx.memo
         def bad_eh_default(
             event: rx.EventHandler[rx.event.passthrough_event_spec(str)] = None,  # pyright: ignore[reportArgumentType]
         ) -> rx.Component:
@@ -656,7 +656,7 @@ def test_component_memo_rejects_event_handler_named_children():
     """A `children` parameter must not be an EventHandler."""
     with pytest.raises(TypeError, match="children"):
 
-        @rx._x.memo
+        @rx.memo
         def bad_eh_children(
             children: rx.EventHandler[rx.event.passthrough_event_spec(str)],
         ) -> rx.Component:
@@ -879,3 +879,44 @@ def test_event_trigger_validate_rejects_in_var_returning_memo():
     )
     with pytest.raises(TypeError, match="component-returning"):
         _SPECS[MemoParamKind.EVENT_TRIGGER].validate(parameter, "fn", False)
+
+
+def test_self_referencing_component_memo():
+    """Component memos whose body recursively calls themselves should decorate."""
+
+    @rx.memo
+    def recursive_box(items: rx.Var[list[int]]) -> rx.Component:
+        return rx.box(
+            rx.foreach(items, lambda item: recursive_box(items=items)),
+        )
+
+    assert "RecursiveBox" in MEMOS
+    definition = MEMOS["RecursiveBox"]
+    assert isinstance(definition, MemoComponentDefinition)
+
+    files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
+    body_source = next(
+        code for path, code in files if path.endswith("RecursiveBox.jsx")
+    )
+    # ``>= 2``: once for the export, once for the recursive foreach call site.
+    assert body_source.count("RecursiveBox") >= 2
+
+    instance = recursive_box(items=Var(_js_expr="items", _var_type=list[int]))
+    assert isinstance(instance, MemoComponent)
+    assert type(instance).tag == "RecursiveBox"
+
+
+def test_self_referencing_var_memo():
+    """Var-returning memos whose body recursively calls themselves should decorate."""
+
+    @rx.memo
+    def recursive_count(n: rx.vars.NumberVar[int]) -> rx.Var[int]:
+        recurse = cast("rx.vars.NumberVar[int]", recursive_count(n=n - 1))
+        return cast("rx.Var[int]", rx.cond(n.bool(), n + recurse, 0))
+
+    definition = MEMOS["recursive_count"]
+    assert isinstance(definition, MemoFunctionDefinition)
+    assert "recursive_count" in str(definition.function)
+
+    invoked = recursive_count(n=Var(_js_expr="three", _var_type=int))
+    assert "recursive_count" in str(invoked)

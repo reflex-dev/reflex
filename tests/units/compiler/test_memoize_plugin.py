@@ -199,7 +199,7 @@ def test_should_not_memoize_when_disposition_never() -> None:
 
 
 def test_memoize_wrapper_uses_memo_component_and_call_site() -> None:
-    """Memoizable component imports a generated ``rx._x.memo`` wrapper."""
+    """Memoizable component imports a generated ``rx.memo`` wrapper."""
     ctx, page_ctx = _compile_single_page(lambda: Plain.create(STATE_VAR))
 
     assert len(ctx.memoize_wrappers) == 1

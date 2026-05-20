@@ -2,13 +2,25 @@
 
 from __future__ import annotations
 
+import contextlib
 import dataclasses
 import inspect
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterator, Mapping
 from copy import copy
 from enum import Enum
 from functools import cache, update_wrapper
-from typing import Annotated, Any, ClassVar, get_args, get_origin, get_type_hints
+from typing import (
+    Annotated,
+    Any,
+    ClassVar,
+    TypeVar,
+    get_args,
+    get_origin,
+    get_type_hints,
+    overload,
+)
+
+from reflex_components_core.base.fragment import Fragment
 
 from reflex_base import constants
 from reflex_base.components.component import Component
@@ -503,16 +515,16 @@ def _validate_var_return_expr(return_expr: Var, func_name: str) -> None:
 
     if var_data.hooks:
         msg = (
-            f"Var-returning `@rx._x.memo` `{func_name}` cannot depend on hooks. "
-            "Use a component-returning `@rx._x.memo` instead."
+            f"Var-returning `@rx.memo` `{func_name}` cannot depend on hooks. "
+            "Use a component-returning `@rx.memo` instead."
         )
         raise TypeError(msg)
 
     if var_data.components:
         msg = (
-            f"Var-returning `@rx._x.memo` `{func_name}` cannot depend on embedded "
+            f"Var-returning `@rx.memo` `{func_name}` cannot depend on embedded "
             "components, custom code, or dynamic imports. Use a component-returning "
-            "`@rx._x.memo` instead."
+            "`@rx.memo` instead."
         )
         raise TypeError(msg)
 
@@ -524,8 +536,8 @@ def _validate_var_return_expr(return_expr: Var, func_name: str) -> None:
         if format.format_library_name(lib) in bundled_libraries:
             continue
         msg = (
-            f"Var-returning `@rx._x.memo` `{func_name}` cannot import `{lib}` because "
-            "it is not bundled. Use a component-returning `@rx._x.memo` instead."
+            f"Var-returning `@rx.memo` `{func_name}` cannot import `{lib}` because "
+            "it is not bundled. Use a component-returning `@rx.memo` instead."
         )
         raise TypeError(msg)
 
@@ -898,12 +910,15 @@ def _analyze_params(
     fn: Callable[..., Any],
     *,
     for_component: bool,
+    hints: dict[str, Any] | None = None,
 ) -> tuple[MemoParam, ...]:
     """Analyze and validate memo parameters.
 
     Args:
         fn: The function to analyze.
         for_component: Whether the memo returns a component.
+        hints: Pre-computed type hints with ``include_extras=True``; computed
+            from ``fn`` when omitted.
 
     Returns:
         The analyzed parameters.
@@ -912,7 +927,8 @@ def _analyze_params(
         TypeError: If the function signature is not supported.
     """
     signature = inspect.signature(fn)
-    hints = get_type_hints(fn, include_extras=True)
+    if hints is None:
+        hints = get_type_hints(fn, include_extras=True)
 
     params: list[MemoParam] = []
     rest_count = 0
@@ -948,9 +964,7 @@ def _analyze_params(
         if kind is MemoParamKind.REST:
             rest_count += 1
             if rest_count > 1:
-                msg = (
-                    f"`@rx._x.memo` only supports one `rx.RestProp` in `{fn.__name__}`."
-                )
+                msg = f"`@rx.memo` only supports one `rx.RestProp` in `{fn.__name__}`."
                 raise TypeError(msg)
 
         js_prop_name = format.to_camel_case(parameter.name)
@@ -986,15 +1000,13 @@ def _check_parameter_kind(parameter: inspect.Parameter, fn_name: str) -> None:
         TypeError: If the parameter uses an unsupported kind.
     """
     if parameter.kind is inspect.Parameter.VAR_POSITIONAL:
-        msg = f"`@rx._x.memo` does not support `*args` in `{fn_name}`."
+        msg = f"`@rx.memo` does not support `*args` in `{fn_name}`."
         raise TypeError(msg)
     if parameter.kind is inspect.Parameter.VAR_KEYWORD:
-        msg = f"`@rx._x.memo` does not support `**kwargs` in `{fn_name}`."
+        msg = f"`@rx.memo` does not support `**kwargs` in `{fn_name}`."
         raise TypeError(msg)
     if parameter.kind is inspect.Parameter.POSITIONAL_ONLY:
-        msg = (
-            f"`@rx._x.memo` does not support positional-only parameters in `{fn_name}`."
-        )
+        msg = f"`@rx.memo` does not support positional-only parameters in `{fn_name}`."
         raise TypeError(msg)
 
 
@@ -1025,55 +1037,36 @@ def _classify_parameter(
     raise TypeError(msg)
 
 
-def _create_function_definition(
-    fn: Callable[..., Any],
-    return_annotation: Any,
-) -> MemoFunctionDefinition:
-    """Create a definition for a var-returning memo.
+def _build_args_function(
+    params: tuple[MemoParam, ...], return_expr: Var
+) -> ArgsFunctionOperation:
+    """Build the JS ``ArgsFunctionOperation`` that wraps a memo's return expression.
 
     Args:
-        fn: The function to analyze.
-        return_annotation: The return annotation.
+        params: The memo parameters.
+        return_expr: The return expression of the memo body.
 
     Returns:
-        The function memo definition.
+        The compiled function operation.
     """
-    params = _analyze_params(fn, for_component=False)
-    return_expr = Var.create(_evaluate_memo_function(fn, params))
-    _validate_var_return_expr(return_expr, fn.__name__)
-
-    children_param = _get_children_param(params)
     rest_param = _get_rest_param(params)
-    if children_param is None and rest_param is None:
-        function = ArgsFunctionOperation.create(
+    if _get_children_param(params) is None and rest_param is None:
+        return ArgsFunctionOperation.create(
             args_names=tuple(param.placeholder_name for param in params),
             return_expr=return_expr,
         )
-    else:
-        function = ArgsFunctionOperation.create(
-            args_names=(
-                DestructuredArg(
-                    fields=tuple(
-                        param.placeholder_name
-                        for param in params
-                        if param.kind is not MemoParamKind.REST
-                    ),
-                    rest=(
-                        rest_param.placeholder_name if rest_param is not None else None
-                    ),
+    return ArgsFunctionOperation.create(
+        args_names=(
+            DestructuredArg(
+                fields=tuple(
+                    param.placeholder_name
+                    for param in params
+                    if param.kind is not MemoParamKind.REST
                 ),
+                rest=rest_param.placeholder_name if rest_param is not None else None,
             ),
-            return_expr=return_expr,
-        )
-
-    return MemoFunctionDefinition(
-        fn=fn,
-        python_name=fn.__name__,
-        params=params,
-        function=function,
-        imported_var=_imported_function_var(
-            fn.__name__, _annotation_inner_type(return_annotation)
         ),
+        return_expr=return_expr,
     )
 
 
@@ -1097,7 +1090,7 @@ def _create_component_definition(
     component = _normalize_component_return(_evaluate_memo_function(fn, params))
     if component is None:
         msg = (
-            f"Component-returning `@rx._x.memo` `{fn.__name__}` must return an "
+            f"Component-returning `@rx.memo` `{fn.__name__}` must return an "
             "`rx.Component` or `rx.Var[rx.Component]`."
         )
         raise TypeError(msg)
@@ -1407,7 +1400,7 @@ def create_passthrough_component_memo(
     Callable[..., MemoComponent],
     MemoComponentDefinition,
 ]:
-    """Create an unregistered ``@rx._x.memo``-style passthrough component memo.
+    """Create an unregistered ``@rx.memo``-style passthrough component memo.
 
     This is used by compiler auto-memoization so generated wrappers compile
     through the memo pipeline instead of emitting ad-hoc page-local
@@ -1500,7 +1493,53 @@ def create_passthrough_component_memo(
     return _create_component_wrapper(definition), definition
 
 
-def memo(fn: Callable[..., Any]) -> Callable[..., Any]:
+@contextlib.contextmanager
+def _bind_self_reference(fn: Callable[..., Any], wrapper: Any) -> Iterator[None]:
+    """Bind ``wrapper`` to ``fn.__name__`` so the body can self-reference.
+
+    Python only assigns the decorated name after the decorator returns, but
+    memo bodies are evaluated during decoration (and ``rx.foreach`` eagerly
+    invokes its render function once). The binding is installed at both the
+    module-global slot and the matching free-variable cell so recursion works
+    for module-level memos and for memos defined inside another function.
+    """
+    fn_name = fn.__name__
+    fn_globals = fn.__globals__
+    sentinel = object()
+    previous_global = fn_globals.get(fn_name, sentinel)
+    fn_globals[fn_name] = wrapper
+
+    cell = None
+    previous_cell_value: Any = sentinel
+    free_vars = fn.__code__.co_freevars
+    if fn_name in free_vars and fn.__closure__:
+        cell = fn.__closure__[free_vars.index(fn_name)]
+        # An unset cell stays in the ``sentinel`` state; the decorator's
+        # eventual return assigns the wrapper to the same cell anyway, so
+        # leaving our temporary write in place is a no-op.
+        with contextlib.suppress(ValueError):
+            previous_cell_value = cell.cell_contents
+        cell.cell_contents = wrapper
+
+    try:
+        yield
+    finally:
+        if previous_global is sentinel:
+            fn_globals.pop(fn_name, None)
+        else:
+            fn_globals[fn_name] = previous_global
+        if cell is not None and previous_cell_value is not sentinel:
+            cell.cell_contents = previous_cell_value
+
+
+_MemoVarT = TypeVar("_MemoVarT")
+
+
+@overload
+def memo(fn: Callable[..., Component]) -> _MemoComponentWrapper: ...
+@overload
+def memo(fn: Callable[..., Var[_MemoVarT]]) -> _MemoFunctionWrapper: ...
+def memo(fn: Callable[..., Any]) -> _MemoComponentWrapper | _MemoFunctionWrapper:
     """Create a memo from a function.
 
     Args:
@@ -1512,30 +1551,73 @@ def memo(fn: Callable[..., Any]) -> Callable[..., Any]:
     Raises:
         TypeError: If the return type is not supported.
     """
-    hints = get_type_hints(fn)
+    hints = get_type_hints(fn, include_extras=True)
     return_annotation = hints.get("return", inspect.Signature.empty)
     if return_annotation is inspect.Signature.empty:
         msg = (
-            f"`@rx._x.memo` requires a return annotation on `{fn.__name__}`. "
+            f"`@rx.memo` requires a return annotation on `{fn.__name__}`. "
             "Use `-> rx.Component` or `-> rx.Var[...]`."
         )
         raise TypeError(msg)
 
-    if _is_component_annotation(return_annotation):
-        definition = _create_component_definition(fn, return_annotation)
-        _register_memo_definition(definition)
-        return _create_component_wrapper(definition)
+    is_component = _is_component_annotation(return_annotation)
+    if not is_component and not _is_var_annotation(return_annotation):
+        msg = (
+            f"`@rx.memo` on `{fn.__name__}` must return `rx.Component` or "
+            f"`rx.Var[...]`, got `{return_annotation}`."
+        )
+        raise TypeError(msg)
 
-    if _is_var_annotation(return_annotation):
-        definition = _create_function_definition(fn, return_annotation)
-        _register_memo_definition(definition)
-        return _create_function_wrapper(definition)
+    params = _analyze_params(fn, for_component=is_component, hints=hints)
 
-    msg = (
-        f"`@rx._x.memo` on `{fn.__name__}` must return `rx.Component` or `rx.Var[...]`, "
-        f"got `{return_annotation}`."
-    )
-    raise TypeError(msg)
+    # Construct the wrapper against a placeholder body so the user's body can
+    # self-reference the memo during eager evaluation; the real body is patched
+    # in after eval completes (see `_bind_self_reference`).
+    definition: MemoComponentDefinition | MemoFunctionDefinition
+    if is_component:
+        definition = MemoComponentDefinition(
+            fn=fn,
+            python_name=fn.__name__,
+            params=params,
+            export_name=format.to_title_case(fn.__name__),
+            component=Fragment.create(),
+        )
+        wrapper = _create_component_wrapper(definition)
+    else:
+        definition = MemoFunctionDefinition(
+            fn=fn,
+            python_name=fn.__name__,
+            params=params,
+            function=ArgsFunctionOperation.create(
+                args_names=(), return_expr=LiteralVar.create(None)
+            ),
+            imported_var=_imported_function_var(
+                fn.__name__, _annotation_inner_type(return_annotation)
+            ),
+        )
+        wrapper = _create_function_wrapper(definition)
+
+    with _bind_self_reference(fn, wrapper):
+        result = _evaluate_memo_function(fn, params)
+
+    if is_component:
+        body = _normalize_component_return(result)
+        if body is None:
+            msg = (
+                f"Component-returning `@rx.memo` `{fn.__name__}` must return an "
+                "`rx.Component` or `rx.Var[rx.Component]`."
+            )
+            raise TypeError(msg)
+        object.__setattr__(definition, "component", _lift_rest_props(body))
+    else:
+        return_expr = Var.create(result)
+        _validate_var_return_expr(return_expr, fn.__name__)
+        object.__setattr__(
+            definition, "function", _build_args_function(params, return_expr)
+        )
+
+    _register_memo_definition(definition)
+    return wrapper
 
 
 __all__ = [
