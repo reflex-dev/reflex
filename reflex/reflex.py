@@ -598,12 +598,13 @@ def login():
 
     check_version()
 
-    validated_info = hosting_cli.login()
-    if validated_info is not None:
+    if (validated_info := hosting_cli.login()) and (
+        user_uuid := validated_info.get("user_id")
+    ):
         _skip_compile()  # Allow running outside of an app dir
         from reflex.utils import telemetry
 
-        telemetry.send("login", user_uuid=validated_info.get("user_id"))
+        telemetry.send("login", user_uuid=user_uuid)
 
 
 @cli.command()
