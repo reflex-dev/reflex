@@ -5,6 +5,7 @@ from __future__ import annotations
 import inspect
 from types import SimpleNamespace
 from typing import Any, cast
+from unittest.mock import patch
 
 import pytest
 from reflex_base.components.component import Component
@@ -20,6 +21,7 @@ from reflex_base.components.memo import (
 )
 from reflex_base.event import EventChain, EventHandler, no_args_event_spec
 from reflex_base.style import Style
+from reflex_base.utils import console
 from reflex_base.utils import format as format_utils
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars import VarData
@@ -221,18 +223,40 @@ def test_var_returning_memo_with_children_and_rest():
 
 
 def test_memo_requires_var_annotations():
-    """Memos should require Var annotations on parameters."""
+    """Memos should reject non-Var annotations on parameters."""
     with pytest.raises(TypeError, match="must be annotated"):
 
         @rx.memo
         def bad_annotation(value: int) -> rx.Var[str]:
             return rx.Var.create("x")
 
-    with pytest.raises(TypeError, match="Missing annotation"):
+
+def test_memo_warns_on_missing_param_annotation():
+    """Unannotated parameters should fall back to ``rx.Var[Any]`` with a warning."""
+    with patch.object(console, "deprecate") as mock_deprecate:
 
         @rx.memo
-        def missing_annotation(value) -> rx.Var[str]:
-            return rx.Var.create("x")
+        def soft_missing(value) -> rx.Component:
+            return rx.text(value.to(str))
+
+    mock_deprecate.assert_called_once()
+    kwargs = mock_deprecate.call_args.kwargs
+    assert "soft_missing" in kwargs["feature_name"]
+    assert "`value`" in kwargs["reason"]
+
+
+def test_memo_warns_on_missing_return_annotation():
+    """A missing return annotation should default to ``rx.Component`` with a warning."""
+    with patch.object(console, "deprecate") as mock_deprecate:
+
+        @rx.memo
+        def soft_return():
+            return rx.box()
+
+    mock_deprecate.assert_called_once()
+    kwargs = mock_deprecate.call_args.kwargs
+    assert "soft_return" in kwargs["feature_name"]
+    assert "return annotation" in kwargs["reason"]
 
 
 def test_memo_rejects_invalid_children_annotation():

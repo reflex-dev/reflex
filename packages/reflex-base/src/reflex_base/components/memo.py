@@ -5,7 +5,7 @@ from __future__ import annotations
 import contextlib
 import dataclasses
 import inspect
-from collections.abc import Callable, Iterator, Mapping
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from copy import copy
 from enum import Enum
 from functools import cache, update_wrapper
@@ -36,7 +36,7 @@ from reflex_base.constants.compiler import (
 )
 from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER
 from reflex_base.event import EventChain, EventHandler, no_args_event_spec, run_script
-from reflex_base.utils import format
+from reflex_base.utils import console, format
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import safe_issubclass, typehint_issubclass
 from reflex_base.vars import VarData
@@ -911,6 +911,7 @@ def _analyze_params(
     *,
     for_component: bool,
     hints: dict[str, Any] | None = None,
+    defaulted_params: list[str] | None = None,
 ) -> tuple[MemoParam, ...]:
     """Analyze and validate memo parameters.
 
@@ -919,6 +920,10 @@ def _analyze_params(
         for_component: Whether the memo returns a component.
         hints: Pre-computed type hints with ``include_extras=True``; computed
             from ``fn`` when omitted.
+        defaulted_params: When provided, parameters missing an annotation are
+            defaulted (``Var[Component]`` for ``children``, otherwise
+            ``Var[Any]``) and their names appended; when ``None``, a missing
+            annotation raises ``TypeError``.
 
     Returns:
         The analyzed parameters.
@@ -938,11 +943,14 @@ def _analyze_params(
 
         annotation = hints.get(parameter.name, parameter.annotation)
         if annotation is inspect.Parameter.empty:
-            msg = (
-                f"All parameters of `{fn.__name__}` must be annotated as `rx.Var[...]` "
-                f"or `rx.RestProp`. Missing annotation for `{parameter.name}`."
-            )
-            raise TypeError(msg)
+            if defaulted_params is None:
+                msg = (
+                    f"All parameters of `{fn.__name__}` must be annotated as `rx.Var[...]` "
+                    f"or `rx.RestProp`. Missing annotation for `{parameter.name}`."
+                )
+                raise TypeError(msg)
+            annotation = Var[Component] if parameter.name == "children" else Var[Any]
+            defaulted_params.append(parameter.name)
 
         # Children parameters by name must match the children kind exactly —
         # otherwise we accept a value-typed `children` and emit confusing JSX.
@@ -1535,6 +1543,33 @@ def _bind_self_reference(fn: Callable[..., Any], wrapper: Any) -> Iterator[None]
 _MemoVarT = TypeVar("_MemoVarT")
 
 
+def _warn_missing_annotations(
+    fn_name: str, missing_return: bool, defaulted_params: Sequence[str]
+) -> None:
+    """Emit a deprecation warning for ``@rx.memo`` without explicit annotations.
+
+    Args:
+        fn_name: Name of the decorated function (for the warning text).
+        missing_return: Whether the return annotation was missing.
+        defaulted_params: Names of parameters whose annotation was defaulted.
+    """
+    parts: list[str] = []
+    if missing_return:
+        parts.append("a return annotation (`-> rx.Component` or `-> rx.Var[...]`)")
+    if defaulted_params:
+        joined = ", ".join(f"`{name}`" for name in defaulted_params)
+        parts.append(f"annotations on parameter(s) {joined} (`rx.Var[...]`)")
+    console.deprecate(
+        feature_name=f"`@rx.memo` on `{fn_name}` without explicit annotations",
+        reason=(
+            f"Add {' and '.join(parts)}. Missing annotations now default to "
+            "`rx.Component` / `rx.Var[Any]`; this fallback will be removed."
+        ),
+        deprecation_version="0.9.3",
+        removal_version="1.0",
+    )
+
+
 @overload
 def memo(fn: Callable[..., Component]) -> _MemoComponentWrapper: ...
 @overload
@@ -1553,12 +1588,10 @@ def memo(fn: Callable[..., Any]) -> _MemoComponentWrapper | _MemoFunctionWrapper
     """
     hints = get_type_hints(fn, include_extras=True)
     return_annotation = hints.get("return", inspect.Signature.empty)
-    if return_annotation is inspect.Signature.empty:
-        msg = (
-            f"`@rx.memo` requires a return annotation on `{fn.__name__}`. "
-            "Use `-> rx.Component` or `-> rx.Var[...]`."
-        )
-        raise TypeError(msg)
+    missing_return = return_annotation is inspect.Signature.empty
+    if missing_return:
+        return_annotation = Component
+        hints["return"] = Component
 
     is_component = _is_component_annotation(return_annotation)
     if not is_component and not _is_var_annotation(return_annotation):
@@ -1568,7 +1601,15 @@ def memo(fn: Callable[..., Any]) -> _MemoComponentWrapper | _MemoFunctionWrapper
         )
         raise TypeError(msg)
 
-    params = _analyze_params(fn, for_component=is_component, hints=hints)
+    defaulted_params: list[str] = []
+    params = _analyze_params(
+        fn,
+        for_component=is_component,
+        hints=hints,
+        defaulted_params=defaulted_params,
+    )
+    if missing_return or defaulted_params:
+        _warn_missing_annotations(fn.__name__, missing_return, defaulted_params)
 
     # Construct the wrapper against a placeholder body so the user's body can
     # self-reference the memo during eager evaluation; the real body is patched
