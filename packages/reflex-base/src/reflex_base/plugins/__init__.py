@@ -2,7 +2,13 @@
 
 from . import embed, sitemap, tailwind_v3, tailwind_v4
 from ._screenshot import ScreenshotPlugin as _ScreenshotPlugin
-from .base import CommonContext, Plugin, PreCompileContext
+from .base import (
+    CommonContext,
+    Plugin,
+    PostBuildContext,
+    PostCompileContext,
+    PreCompileContext,
+)
 from .compiler import (
     BaseContext,
     CompileContext,
@@ -26,6 +32,8 @@ __all__ = [
     "PageContext",
     "PageDefinition",
     "Plugin",
+    "PostBuildContext",
+    "PostCompileContext",
     "PreCompileContext",
     "SitemapPlugin",
     "TailwindV3Plugin",

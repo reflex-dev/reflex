@@ -293,16 +293,27 @@ def _prepare_event(
     if not event_data:
         return None
 
-    additional_keys = ["template", "context", "detail", "user_uuid"]
+    additional_keys = [
+        "template",
+        "context",
+        "detail",
+        "user_uuid",
+        "status",
+        "duration",
+        "compile_duration",
+        "setup_duration",
+        "build_duration",
+        "zip_duration",
+    ]
 
     # Shallow-copy so we don't mutate the cached default properties dict.
     merged_properties = dict(event_data["properties"])
 
     for key in additional_keys:
-        if key in merged_properties or key not in kwargs:
+        if key in merged_properties:
             continue
-
-        merged_properties[key] = kwargs[key]
+        if key in kwargs and kwargs[key] is not None:
+            merged_properties[key] = kwargs[key]
 
     if properties:
         merged_properties.update(properties)
