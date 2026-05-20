@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import dataclasses
+import importlib
 import inspect
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from copy import copy
@@ -1543,8 +1544,91 @@ def _bind_self_reference(fn: Callable[..., Any], wrapper: Any) -> Iterator[None]
 _MemoVarT = TypeVar("_MemoVarT")
 
 
+_PUBLIC_NAMESPACES: tuple[tuple[str, str], ...] = (
+    # (display prefix, dotted attribute path to walk). Order matters — the
+    # shortest user-facing name wins. ``rxe`` only resolves when the optional
+    # ``reflex_enterprise`` package is installed.
+    ("rx.el", "reflex.el"),
+    ("rx", "reflex"),
+    ("rxe.dnd", "reflex_enterprise.dnd"),
+    ("rxe.flow", "reflex_enterprise.flow"),
+    ("rxe.components.dnd", "reflex_enterprise.components.dnd"),
+    ("rxe.components.flow", "reflex_enterprise.components.flow"),
+    ("rxe", "reflex_enterprise"),
+)
+
+
+def _resolve_namespace(dotted: str) -> Any:
+    """Walk a dotted path of attribute accesses rooted at an importable module.
+
+    Args:
+        dotted: e.g. ``"reflex.el"`` or ``"reflex_enterprise.components.flow"``.
+
+    Returns:
+        The resolved namespace object, or ``None`` if any step fails.
+    """
+    head, *rest = dotted.split(".")
+    try:
+        ns: Any = importlib.import_module(head)
+    except ImportError:
+        return None
+    for attr in rest:
+        ns = getattr(ns, attr, None)
+        if ns is None:
+            return None
+    return ns
+
+
+def _resolve_component_qualname(cls: type) -> str | None:
+    """Find the shortest public ``rx``/``rxe`` qualname under which ``cls`` lives.
+
+    Args:
+        cls: The class to resolve.
+
+    Returns:
+        The qualname (e.g. ``"rxe.dnd.Draggable"``), or ``None`` when no public
+        path is found.
+    """
+    name = cls.__name__
+    for display_prefix, dotted in _PUBLIC_NAMESPACES:
+        ns = _resolve_namespace(dotted)
+        if ns is not None and getattr(ns, name, None) is cls:
+            return f"{display_prefix}.{name}"
+    return None
+
+
+def _suggest_return_annotation(result: Any, is_component: bool) -> str | None:
+    """Infer a copy-pasteable return annotation from a memo body's eval result.
+
+    Args:
+        result: The value the body returned during memo eval.
+        is_component: Whether the memo was treated as component-returning.
+
+    Returns:
+        A suggestion like ``"rxe.dnd.Draggable"`` or ``"rx.Var[str]"``, or
+        ``None`` when the result doesn't map cleanly to a public name.
+    """
+    if is_component:
+        body = _normalize_component_return(result)
+        if body is None:
+            return None
+        return _resolve_component_qualname(type(body))
+    if isinstance(result, Var):
+        inner = result._var_type
+        if isinstance(inner, type):
+            qual = _resolve_component_qualname(inner)
+            if qual is not None:
+                return f"rx.Var[{qual}]"
+            if inner.__module__ == "builtins":
+                return f"rx.Var[{inner.__name__}]"
+    return None
+
+
 def _warn_missing_annotations(
-    fn_name: str, missing_return: bool, defaulted_params: Sequence[str]
+    fn_name: str,
+    missing_return: bool,
+    defaulted_params: Sequence[str],
+    suggested_return: str | None = None,
 ) -> None:
     """Emit a deprecation warning for ``@rx.memo`` without explicit annotations.
 
@@ -1552,10 +1636,15 @@ def _warn_missing_annotations(
         fn_name: Name of the decorated function (for the warning text).
         missing_return: Whether the return annotation was missing.
         defaulted_params: Names of parameters whose annotation was defaulted.
+        suggested_return: Inferred return type (e.g. ``"rxe.dnd.Draggable"``)
+            to surface in the message. When ``None``, the generic hint is used.
     """
     parts: list[str] = []
     if missing_return:
-        parts.append("a return annotation (`-> rx.Component` or `-> rx.Var[...]`)")
+        if suggested_return is not None:
+            parts.append(f"a return annotation `-> {suggested_return}`")
+        else:
+            parts.append("a return annotation (`-> rx.Component` or `-> rx.Var[...]`)")
     if defaulted_params:
         joined = ", ".join(f"`{name}`" for name in defaulted_params)
         parts.append(f"annotations on parameter(s) {joined} (`rx.Var[...]`)")
@@ -1563,7 +1652,7 @@ def _warn_missing_annotations(
         feature_name=f"`@rx.memo` on `{fn_name}` without explicit annotations",
         reason=(
             f"Add {' and '.join(parts)}. Missing annotations now default to "
-            "`rx.Component` / `rx.Var[Any]`; this fallback will be removed."
+            "`rx.Component` / `rx.Var[Any]`"
         ),
         deprecation_version="0.9.3",
         removal_version="1.0",
@@ -1608,8 +1697,6 @@ def memo(fn: Callable[..., Any]) -> _MemoComponentWrapper | _MemoFunctionWrapper
         hints=hints,
         defaulted_params=defaulted_params,
     )
-    if missing_return or defaulted_params:
-        _warn_missing_annotations(fn.__name__, missing_return, defaulted_params)
 
     # Construct the wrapper against a placeholder body so the user's body can
     # self-reference the memo during eager evaluation; the real body is patched
@@ -1640,6 +1727,16 @@ def memo(fn: Callable[..., Any]) -> _MemoComponentWrapper | _MemoFunctionWrapper
 
     with _bind_self_reference(fn, wrapper):
         result = _evaluate_memo_function(fn, params)
+
+    if missing_return or defaulted_params:
+        _warn_missing_annotations(
+            fn.__name__,
+            missing_return,
+            defaulted_params,
+            suggested_return=_suggest_return_annotation(result, is_component)
+            if missing_return
+            else None,
+        )
 
     if is_component:
         body = _normalize_component_return(result)

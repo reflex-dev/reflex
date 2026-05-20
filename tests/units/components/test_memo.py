@@ -17,6 +17,7 @@ from reflex_base.components.memo import (
     MemoFunctionDefinition,
     MemoParam,
     MemoParamKind,
+    _analyze_params,
     _MemoCallBinding,
 )
 from reflex_base.event import EventChain, EventHandler, no_args_event_spec
@@ -257,6 +258,74 @@ def test_memo_warns_on_missing_return_annotation():
     kwargs = mock_deprecate.call_args.kwargs
     assert "soft_return" in kwargs["feature_name"]
     assert "return annotation" in kwargs["reason"]
+
+
+def test_memo_warning_suggests_inferred_return_type():
+    """The warning should surface the inferred public qualname of the body's return."""
+    with patch.object(console, "deprecate") as mock_deprecate:
+
+        @rx.memo
+        def fragment_memo():
+            return rx.fragment(rx.text("x"))
+
+    reason = mock_deprecate.call_args.kwargs["reason"]
+    assert "-> rx.Fragment" in reason
+
+
+def test_memo_warns_once_when_return_and_param_both_missing():
+    """A function missing both should emit a single combined warning."""
+    with patch.object(console, "deprecate") as mock_deprecate:
+
+        @rx.memo
+        def soft_both(value):
+            return rx.text(value.to(str))
+
+    mock_deprecate.assert_called_once()
+    reason = mock_deprecate.call_args.kwargs["reason"]
+    assert "return annotation" in reason
+    assert "`value`" in reason
+
+
+def test_memo_defaults_children_to_var_component():
+    """An unannotated ``children`` parameter must default to ``Var[Component]``.
+
+    ``Var[Any]`` would fail the children-name validation in ``_analyze_params``;
+    this guards the name-based special case.
+    """
+    with patch.object(console, "deprecate") as mock_deprecate:
+
+        @rx.memo
+        def soft_children(children) -> rx.Component:
+            return rx.box(children)
+
+    mock_deprecate.assert_called_once()
+
+    definition = MEMOS["SoftChildren"]
+    assert isinstance(definition, MemoComponentDefinition)
+    (children_param,) = definition.params
+    assert children_param.name == "children"
+    assert children_param.kind is MemoParamKind.CHILDREN
+
+
+def test_memo_does_not_warn_when_fully_annotated():
+    """Fully-annotated memos must not trigger the deprecation fallback."""
+    with patch.object(console, "deprecate") as mock_deprecate:
+
+        @rx.memo
+        def fully_typed(value: rx.Var[str]) -> rx.Component:
+            return rx.text(value)
+
+    mock_deprecate.assert_not_called()
+
+
+def test_analyze_params_strict_mode_still_raises():
+    """Internal callers (``defaulted_params=None``) must keep the strict contract."""
+
+    def missing_annotation(value) -> rx.Component:
+        return rx.text("x")
+
+    with pytest.raises(TypeError, match="Missing annotation"):
+        _analyze_params(missing_annotation, for_component=True)
 
 
 def test_memo_rejects_invalid_children_annotation():

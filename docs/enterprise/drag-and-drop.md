@@ -34,7 +34,7 @@ class BasicDndState(rx.State):
 
 
 @rx.memo
-def draggable_card() -> rx.Component:
+def draggable_card() -> rxe.dnd.Draggable:
     return rxe.dnd.draggable(
         rx.card(
             rx.text("Drag me!", weight="bold"),
@@ -95,7 +95,7 @@ class MultiPositionState(rx.State):
 
 
 @rx.memo
-def movable_card():
+def movable_card() -> rxe.dnd.Draggable:
     return rxe.dnd.draggable(
         rx.card(
             rx.text("Movable Card", weight="bold"),
@@ -166,7 +166,7 @@ class StateTrackingState(rx.State):
 
 
 @rx.memo
-def tracked_draggable():
+def tracked_draggable() -> rxe.dnd.Draggable:
     drag_params = rxe.dnd.Draggable.collected_params
     return rxe.dnd.draggable(
         rx.card(
