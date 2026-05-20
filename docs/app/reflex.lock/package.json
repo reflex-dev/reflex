@@ -71,7 +71,7 @@
     "socket.io-client": "4.8.3",
     "sonner": "2.0.7",
     "tailwindcss-animated": "2.0.0",
-    "tailwindcss-scroll-mask": "0.0.3@2.0.0",
+    "tailwindcss-scroll-mask": "0.0.3",
     "universal-cookie": "7.2.2",
     "vaul": "1.1.2"
   },
