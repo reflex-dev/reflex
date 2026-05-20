@@ -113,8 +113,6 @@ def _extract_markdown_title(source: str) -> str | None:
 
 def _llms_url_for_path(url_path: Path) -> str:
     """Return the public URL for a generated markdown asset."""
-    from reflex_base.config import get_config
-
     config = get_config()
     deploy_url = config.deploy_url.removesuffix("/") if config.deploy_url else ""
     frontend_path = (config.frontend_path or "").strip("/")
@@ -128,8 +126,6 @@ def _llms_url_for_path(url_path: Path) -> str:
 
 def _docs_home_url() -> str:
     """Return the public URL for the docs home."""
-    from reflex_base.config import get_config
-
     config = get_config()
     deploy_url = config.deploy_url.removesuffix("/") if config.deploy_url else ""
     frontend_path = (config.frontend_path or "").strip("/")
