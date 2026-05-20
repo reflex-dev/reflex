@@ -150,6 +150,7 @@ manual_titles = {
     "docs/library/graphing/general/tooltip.md": "Graphing Tooltip",
     "docs/recipes/content/grid.md": "Grid Recipe",
     "docs/hosting/deploy-to-gcp.md": "Deploy to GCP",
+    "docs/ai_builder/integrations/agent_toolkit.md": "Agent Toolkit",
 }
 
 

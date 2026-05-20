@@ -261,7 +261,7 @@ def footer_index(class_name: str = "", grid_class_name: str = "") -> rx.Componen
                                 footer_link("AI Builder", REFLEX_BUILD_URL),
                                 footer_link(
                                     "Agent Toolkit",
-                                    "/docs/ai/integrations/overview/",
+                                    "/docs/ai/integrations/agent-toolkit/",
                                 ),
                                 footer_link(
                                     "Enterprise",

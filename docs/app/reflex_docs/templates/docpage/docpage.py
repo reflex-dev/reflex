@@ -667,8 +667,13 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
         docs_sidebar_drawer,
     )
 
-    # Split the path into segments, removing 'docs'.
+    # Split the path into segments, removing 'docs'. Some legacy URLs keep
+    # their old slugs for compatibility while using newer public labels.
     segments = [segment for segment in path.split("/") if segment and segment != "docs"]
+    segment_labels = {
+        "ai": "AI",
+        "ai-onboarding": "Agent Toolkit",
+    }
 
     # Initialize an empty list to store the breadcrumbs and their separators
     breadcrumbs = []
@@ -681,7 +686,10 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
         # Add the breadcrumb item to the list
         breadcrumbs.append(
             rx.el.a(
-                to_title_case(to_snake_case(segment), sep=" "),
+                segment_labels.get(
+                    segment,
+                    to_title_case(to_snake_case(segment), sep=" "),
+                ),
                 class_name="min-h-8 flex items-center text-sm font-[525] text-m-slate-12 dark:text-m-slate-3 last:text-m-slate-7 dark:last:text-m-slate-6 hover:text-primary-10 dark:hover:text-primary-9"
                 + (" truncate" if i == len(segments) - 1 else ""),
                 underline="none",

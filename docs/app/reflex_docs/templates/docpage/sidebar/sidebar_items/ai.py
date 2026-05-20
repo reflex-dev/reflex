@@ -146,13 +146,13 @@ def get_ai_builder_integrations():
     ]
 
 
-def get_sidebar_items_ai_onboarding():
+def get_sidebar_items_agent_toolkit():
     from reflex_docs.pages.docs import ai_builder
 
     return [
         SideBarItem(
-            names="AI Onboarding",
-            link=ai_builder.integrations.ai_onboarding.path,
+            names="Agent Toolkit",
+            link=ai_builder.integrations.agent_toolkit.path,
         ),
     ]
 
@@ -189,6 +189,6 @@ def get_sidebar_items_skills():
 
 ai_builder_overview_items = get_sidebar_items_ai_builder_overview()
 ai_builder_integrations = get_ai_builder_integrations()
-ai_onboarding_items = get_sidebar_items_ai_onboarding()
+agent_toolkit_items = get_sidebar_items_agent_toolkit()
 mcp_items = get_sidebar_items_mcp()
 skills_items = get_sidebar_items_skills()

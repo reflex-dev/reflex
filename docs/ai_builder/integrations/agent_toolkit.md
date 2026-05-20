@@ -1,4 +1,4 @@
-# AI Onboarding
+# Agent Toolkit
 
 ```python exec
 import reflex as rx
@@ -20,7 +20,7 @@ def _resource_card(
     )
 
 
-def onboarding_resources() -> rx.Component:
+def agent_toolkit_resources() -> rx.Component:
     return rx.el.div(
         _resource_card(
             "Docs for Agents",
@@ -51,12 +51,10 @@ def onboarding_resources() -> rx.Component:
     )
 ```
 
-Everything you need to onboard your AI coding assistant to Reflex.
-
-If you are building Reflex apps with AI, combine current docs, structured MCP context, and local skills so the assistant can plan, code, run, and debug with the same assumptions as the Reflex docs.
+The Agent Toolkit gives AI coding assistants the Reflex context they need to plan, code, run, and debug with the same assumptions as the Reflex docs.
 
 ```python eval
-onboarding_resources()
+agent_toolkit_resources()
 ```
 
 ## Prerequisite: Choose Your Workflow
@@ -71,7 +69,7 @@ You do not need an API key to read Reflex documentation. Start by deciding how y
 
 ## Reflex Docs for Agents
 
-You can give your assistant current Reflex documentation in a few ways.
+You can give your assistant current Reflex documentation in a few ways. These Agent Toolkit resources are designed for assistants that need focused Markdown pages, a broad docs index, structured MCP lookup, or repeatable local skills.
 
 `````md tabs
 
@@ -80,7 +78,7 @@ You can give your assistant current Reflex documentation in a few ways.
 Every docs page has a Markdown version that agents can read directly. Add `.md` to the docs path:
 
 ```text
-https://reflex.dev/docs/ai/integrations/ai-onboarding.md
+https://reflex.dev/docs/ai/integrations/agent-toolkit.md
 ```
 
 Use this when an agent needs one focused page.
