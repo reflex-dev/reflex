@@ -494,7 +494,7 @@ def test_router_includes_frontend_path(
     expect(page.locator("#router-url-path")).to_have_value(expected_path)
     expect(page.locator("#router-page-raw-path")).to_have_value(expected_path)
     expect(page.locator("#router-url")).to_have_value(
-        re.compile(rf".+{re.escape(prefix)}/$")
+        re.compile(rf".+{re.escape(expected_path)}$")
     )
     expect(page.locator("#router-url")).to_have_value(f"{base}/")
 
@@ -504,6 +504,9 @@ def test_router_includes_frontend_path(
     expected_path = f"{prefix}/static-page"
     expect(page.locator("#router-url-path")).to_have_value(expected_path)
     expect(page.locator("#router-page-raw-path")).to_have_value(expected_path)
+    expect(page.locator("#router-url")).to_have_value(
+        re.compile(rf".+{re.escape(expected_path)}$")
+    )
     expect(page.locator("#router-url")).to_have_value(f"{base}/static-page")
 
     # Client-side navigation to dynamic page.
@@ -512,6 +515,9 @@ def test_router_includes_frontend_path(
     expected_path = f"{prefix}/dynamic/7"
     expect(page.locator("#router-url-path")).to_have_value(expected_path)
     expect(page.locator("#router-page-raw-path")).to_have_value(expected_path)
+    expect(page.locator("#router-url")).to_have_value(
+        re.compile(rf".+{re.escape(expected_path)}$")
+    )
     expect(page.locator("#router-url")).to_have_value(f"{base}/dynamic/7")
 
     # Direct (full-page-load) navigation to dynamic page with different id.
@@ -519,6 +525,9 @@ def test_router_includes_frontend_path(
     expected_path = f"{prefix}/dynamic/42"
     expect(page.locator("#router-url-path")).to_have_value(expected_path)
     expect(page.locator("#router-page-raw-path")).to_have_value(expected_path)
+    expect(page.locator("#router-url")).to_have_value(
+        re.compile(rf".+{re.escape(expected_path)}$")
+    )
     expect(page.locator("#router-url")).to_have_value(f"{base}/dynamic/42")
 
 
