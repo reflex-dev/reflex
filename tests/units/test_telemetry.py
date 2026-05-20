@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 import pytest
 from packaging.version import parse as parse_python_version
 from pytest_mock import MockerFixture
@@ -234,13 +236,33 @@ def test_is_in_virtualenv_returns_false_for_system_python(venv_state):
 
 
 @pytest.fixture
-def init_environment_cwd(tmp_path, monkeypatch: pytest.MonkeyPatch):
-    """Chdir into a clean tmp dir and let the caller stage dependency files.
+def patch_telemetry_config(mocker: MockerFixture):
+    """Patch ``telemetry.get_config`` with a stub of a chosen ``telemetry_enabled``.
+
+    Returns:
+        A callable ``patch(enabled)`` that installs the mock on demand.
+    """
+
+    def patch(*, enabled: bool) -> None:
+        mocker.patch(
+            "reflex.utils.telemetry.get_config",
+            return_value=SimpleNamespace(telemetry_enabled=enabled),
+        )
+
+    return patch
+
+
+@pytest.fixture
+def init_environment_cwd(
+    tmp_path, monkeypatch: pytest.MonkeyPatch, patch_telemetry_config
+):
+    """Chdir into a clean tmp dir and force telemetry-enabled config.
 
     Returns:
         The temporary directory now serving as the working directory.
     """
     monkeypatch.chdir(tmp_path)
+    patch_telemetry_config(enabled=True)
     return tmp_path
 
 
@@ -248,12 +270,16 @@ def test_get_init_environment_reports_dependency_files(
     init_environment_cwd, venv_state
 ):
     (init_environment_cwd / "pyproject.toml").write_text("")
+    (init_environment_cwd / "uv.lock").write_text("")
+    (init_environment_cwd / "reflex.lock").mkdir()
     venv_state(prefix="/tmp/venv", base_prefix="/usr", virtual_env=None)
 
     assert telemetry.get_init_environment() == {
         "in_virtualenv": True,
         "has_pyproject_toml": True,
         "has_requirements_txt": False,
+        "has_uv_lock": True,
+        "has_reflex_lock": True,
     }
 
 
@@ -267,6 +293,8 @@ def test_get_init_environment_reports_requirements_txt(
         "in_virtualenv": True,
         "has_pyproject_toml": False,
         "has_requirements_txt": True,
+        "has_uv_lock": False,
+        "has_reflex_lock": False,
     }
 
 
@@ -277,7 +305,24 @@ def test_get_init_environment_empty_directory(init_environment_cwd, venv_state):
         "in_virtualenv": False,
         "has_pyproject_toml": False,
         "has_requirements_txt": False,
+        "has_uv_lock": False,
+        "has_reflex_lock": False,
     }
+
+
+def test_get_init_environment_short_circuits_when_telemetry_disabled(
+    tmp_path, monkeypatch: pytest.MonkeyPatch, patch_telemetry_config
+):
+    """When telemetry is disabled the env snapshot is skipped entirely.
+
+    A pyproject.toml is staged so a non-short-circuiting implementation would
+    surface ``has_pyproject_toml: True`` instead of an empty dict.
+    """
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "pyproject.toml").write_text("")
+    patch_telemetry_config(enabled=False)
+
+    assert telemetry.get_init_environment() == {}
 
 
 def test_prepare_event_properties_override_kwargs(event_defaults):

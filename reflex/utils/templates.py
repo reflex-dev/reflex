@@ -381,14 +381,13 @@ def initialize_app(app_name: str, template: str | None = None) -> str | None:
     # Local imports to avoid circular imports.
     from reflex.utils import telemetry
 
+    # Snapshot must reflect the user's CWD, not files the template would create.
+    init_environment = telemetry.get_init_environment()
+
     # Check if the app is already initialized.
     if constants.Config.FILE.exists():
-        telemetry.send("reinit")
+        telemetry.send("reinit", properties=init_environment)
         return None
-
-    # Captured before scaffolding so the snapshot reflects the user's CWD,
-    # not files the template will create.
-    init_environment = telemetry.get_init_environment()
 
     templates: dict[str, Template] = {}
 

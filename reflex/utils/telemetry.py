@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, TypedDict, cast
 
 from reflex_base import constants
+from reflex_base.config import get_config
 from reflex_base.environment import environment
 from reflex_base.utils.decorator import once, once_unless_none
 from reflex_base.utils.exceptions import ReflexError
@@ -184,13 +185,20 @@ def get_init_environment() -> dict[str, bool]:
     """Return Python tooling flags for the current working directory.
 
     Returns:
-        A dict with ``in_virtualenv``, ``has_pyproject_toml`` and
-        ``has_requirements_txt`` boolean flags.
+        A dict with ``in_virtualenv``, ``has_pyproject_toml``,
+        ``has_requirements_txt``, ``has_uv_lock`` and ``has_reflex_lock``
+        boolean flags, or an empty dict when telemetry is disabled (so the
+        filesystem stats are skipped when their results would be discarded).
     """
+    if not get_config().telemetry_enabled:
+        return {}
+
     return {
         "in_virtualenv": is_in_virtualenv(),
         "has_pyproject_toml": Path(constants.PyprojectToml.FILE).exists(),
         "has_requirements_txt": Path(constants.RequirementsTxt.FILE).exists(),
+        "has_uv_lock": Path(constants.UvLock.FILE).exists(),
+        "has_reflex_lock": Path(constants.Bun.ROOT_LOCKFILE_DIR).is_dir(),
     }
 
 
@@ -377,8 +385,6 @@ def _send(
     properties: dict[str, Any] | None = None,
     **kwargs,
 ) -> bool:
-    from reflex_base.config import get_config
-
     # Get the telemetry_enabled from the config if it is not specified.
     if telemetry_enabled is None:
         telemetry_enabled = get_config().telemetry_enabled
