@@ -673,7 +673,6 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
     segment_labels = {
         "ai": "AI",
         "ai-onboarding": "Agent Toolkit",
-        "agent-toolkit": "Agent Toolkit",
     }
 
     # Initialize an empty list to store the breadcrumbs and their separators
