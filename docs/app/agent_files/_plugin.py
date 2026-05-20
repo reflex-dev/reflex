@@ -7,6 +7,7 @@ from types import SimpleNamespace, UnionType
 from typing import Any, Literal, Union, get_args, get_origin
 
 from reflex.constants import Dirs
+from reflex_base.config import get_config
 from reflex_base.plugins import CommonContext, Plugin
 from typing_extensions import Unpack
 
@@ -882,6 +883,8 @@ class AgentFilesPlugin(Plugin):
     def get_static_assets(
         self, **context: Unpack[CommonContext]
     ) -> Sequence[tuple[Path, str | bytes]]:
-        return [
-            (Dirs.PUBLIC / path, content) for path, content in generate_agent_files()
-        ]
+        root = Path(Dirs.PUBLIC)
+        if frontend_path := get_config().frontend_path:
+            # Make sure the pre-rendered HTML does not get overwritten by md files.
+            root = root / frontend_path.lstrip("/")
+        return [(root / path, content) for path, content in generate_agent_files()]
