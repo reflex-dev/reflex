@@ -206,9 +206,7 @@ def test_gcp_deploy_resource_flags_have_defaults(mocker: MockFixture, tmp_path: 
     assert env_overrides["CLOUD_RUN_MIN_INSTANCES"] == "1"
 
 
-def test_gcp_deploy_rejects_negative_min_instances(
-    mocker: MockFixture, tmp_path: Path
-):
+def test_gcp_deploy_rejects_negative_min_instances(mocker: MockFixture, tmp_path: Path):
     """--min-instances is IntRange(min=0); negative values fail at the CLI layer."""
     run_mock = _patch_environment(mocker)
     _mock_manifest_response(mocker)
