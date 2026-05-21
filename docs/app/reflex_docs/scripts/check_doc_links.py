@@ -14,7 +14,7 @@ Run after building the frontend so .web/public/sitemap.xml is present:
 
     cd docs/app
     uv run reflex export --frontend-only --no-zip
-    uv run python scripts/check_doc_links.py
+    uv run python -m reflex_docs.scripts.check_doc_links
 """
 
 from __future__ import annotations
@@ -192,18 +192,19 @@ def check(md_root: Path, sitemap_path: Path) -> list[str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    here = Path(__file__).resolve().parent
+    # docs/app/reflex_docs/scripts/check_doc_links.py — climb out to docs/.
+    docs_app = Path(__file__).resolve().parents[2]
     parser.add_argument(
         "--md-root",
         type=Path,
-        default=here.parent.parent,
-        help="Root directory containing .md docs (default: ../..).",
+        default=docs_app.parent,
+        help="Root directory containing .md docs (default: <repo>/docs).",
     )
     parser.add_argument(
         "--sitemap",
         type=Path,
-        default=here.parent / ".web" / "public" / "sitemap.xml",
-        help="Path to sitemap.xml (default: ../.web/public/sitemap.xml).",
+        default=docs_app / ".web" / "public" / "sitemap.xml",
+        help="Path to sitemap.xml (default: <repo>/docs/app/.web/public/sitemap.xml).",
     )
     args = parser.parse_args()
 

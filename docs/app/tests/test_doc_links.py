@@ -1,19 +1,10 @@
-"""Unit tests for scripts/check_doc_links.py."""
+"""Unit tests for reflex_docs.scripts.check_doc_links."""
 
-import importlib.util
 from pathlib import Path
 
 import pytest
 
-_check_doc_links_path = (
-    Path(__file__).resolve().parent.parent / "scripts" / "check_doc_links.py"
-)
-_spec = importlib.util.spec_from_file_location("check_doc_links", _check_doc_links_path)
-assert _spec is not None and _spec.loader is not None
-_check_doc_links = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(_check_doc_links)
-_normalize = _check_doc_links._normalize
-check = _check_doc_links.check
+from reflex_docs.scripts.check_doc_links import _normalize, check
 
 SITEMAP_XML = """<?xml version='1.0' encoding='utf-8'?>
 <urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">
