@@ -183,9 +183,9 @@ def test_gcp_deploy_forwards_resource_flags(mocker: MockFixture, tmp_path: Path)
 
     assert result.exit_code == 0, result.output
     env_overrides = run_mock.call_args.kwargs["env_overrides"]
-    assert env_overrides["CPU"] == "4"
-    assert env_overrides["MEMORY"] == "2Gi"
-    assert env_overrides["MIN_INSTANCES"] == "0"
+    assert env_overrides["CLOUD_RUN_CPU"] == "4"
+    assert env_overrides["CLOUD_RUN_MEMORY"] == "2Gi"
+    assert env_overrides["CLOUD_RUN_MIN_INSTANCES"] == "0"
 
 
 def test_gcp_deploy_resource_flags_have_defaults(mocker: MockFixture, tmp_path: Path):
@@ -201,9 +201,35 @@ def test_gcp_deploy_resource_flags_have_defaults(mocker: MockFixture, tmp_path: 
 
     assert result.exit_code == 0, result.output
     env_overrides = run_mock.call_args.kwargs["env_overrides"]
-    assert env_overrides["CPU"] == "1"
-    assert env_overrides["MEMORY"] == "1Gi"
-    assert env_overrides["MIN_INSTANCES"] == "1"
+    assert env_overrides["CLOUD_RUN_CPU"] == "1"
+    assert env_overrides["CLOUD_RUN_MEMORY"] == "1Gi"
+    assert env_overrides["CLOUD_RUN_MIN_INSTANCES"] == "1"
+
+
+def test_gcp_deploy_rejects_negative_min_instances(
+    mocker: MockFixture, tmp_path: Path
+):
+    """--min-instances is IntRange(min=0); negative values fail at the CLI layer."""
+    run_mock = _patch_environment(mocker)
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "deploy",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--min-instances",
+            "-1",
+        ],
+    )
+
+    assert result.exit_code == 2
+    assert "min-instances" in result.output.lower()
+    assert run_mock.call_count == 0
 
 
 def test_gcp_deploy_aborts_on_no(mocker: MockFixture, tmp_path: Path):

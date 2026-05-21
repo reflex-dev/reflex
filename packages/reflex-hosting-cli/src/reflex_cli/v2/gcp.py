@@ -6,7 +6,8 @@ a Cloud Build job (via a ``cloudbuild.yaml`` written to a tempfile and
 referenced with ``gcloud builds submit --config=...``) — the user's project
 tree is never modified. The script reads its parameters from environment
 variables (GCP_PROJECT, GCP_REGION, SERVICE_NAME, AR_REPO, VERSION,
-CPU, MEMORY, MIN_INSTANCES, REFLEX_CLOUDBUILD_YAML).
+CLOUD_RUN_CPU, CLOUD_RUN_MEMORY, CLOUD_RUN_MIN_INSTANCES,
+REFLEX_CLOUDBUILD_YAML).
 """
 
 from __future__ import annotations
@@ -37,9 +38,9 @@ ENV_GCP_REGION = "GCP_REGION"
 ENV_SERVICE_NAME = "SERVICE_NAME"
 ENV_AR_REPO = "AR_REPO"
 ENV_VERSION = "VERSION"
-ENV_CPU = "CPU"
-ENV_MEMORY = "MEMORY"
-ENV_MIN_INSTANCES = "MIN_INSTANCES"
+ENV_CPU = "CLOUD_RUN_CPU"
+ENV_MEMORY = "CLOUD_RUN_MEMORY"
+ENV_MIN_INSTANCES = "CLOUD_RUN_MIN_INSTANCES"
 # Path to the Cloud Build config file written by the CLI. The rewritten
 # deploy script references it as ``--config="${REFLEX_CLOUDBUILD_YAML}"``.
 ENV_REFLEX_CLOUDBUILD_YAML = "REFLEX_CLOUDBUILD_YAML"
@@ -144,21 +145,22 @@ DEPLOY_ENV_ALLOWLIST = frozenset({
     "cpu",
     default="1",
     show_default=True,
-    help="Cloud Run CPU allocation, e.g. '1', '2', '4' (sets CPU).",
+    help="Cloud Run CPU allocation, e.g. '1', '2', '4' (sets CLOUD_RUN_CPU).",
 )
 @click.option(
     "--memory",
     "memory",
     default="1Gi",
     show_default=True,
-    help="Cloud Run memory allocation, e.g. '512Mi', '1Gi', '2Gi' (sets MEMORY).",
+    help="Cloud Run memory allocation, e.g. '512Mi', '1Gi', '2Gi' (sets CLOUD_RUN_MEMORY).",
 )
 @click.option(
     "--min-instances",
     "min_instances",
-    default="1",
+    default=1,
     show_default=True,
-    help="Minimum number of Cloud Run instances to keep warm (sets MIN_INSTANCES). Set to 0 to scale to zero.",
+    type=click.IntRange(min=0),
+    help="Minimum number of Cloud Run instances to keep warm (sets CLOUD_RUN_MIN_INSTANCES). Set to 0 to scale to zero.",
 )
 @click.option(
     "--source",
@@ -196,7 +198,7 @@ def deploy_command(
     version_tag: str | None,
     cpu: str,
     memory: str,
-    min_instances: str,
+    min_instances: int,
     source_dir: str,
     token: str | None,
     interactive: bool,
@@ -281,7 +283,7 @@ def deploy_command(
         ENV_VERSION: version_value,
         ENV_CPU: cpu,
         ENV_MEMORY: memory,
-        ENV_MIN_INSTANCES: min_instances,
+        ENV_MIN_INSTANCES: str(min_instances),
     }
 
     console.info("Received deploy manifest from Reflex.")
