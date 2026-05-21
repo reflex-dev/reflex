@@ -1,5 +1,6 @@
 """Tests for reflex_docs.scripts.check_doc_links."""
 
+import os
 from pathlib import Path
 
 import pytest
@@ -14,14 +15,19 @@ _SITEMAP = _DOCS_APP / ".web" / "public" / "sitemap.xml"
 def test_docs_links_against_exported_sitemap():
     """End-to-end check: every /docs link in real markdown resolves in the sitemap.
 
-    Requires `reflex export` to have populated .web/public/sitemap.xml. Skips
-    otherwise so `pytest tests/` still passes without a build.
+    Requires `reflex export` to have populated .web/public/sitemap.xml.
+    Skipped locally when the sitemap is absent so `pytest tests/` works
+    without a build; in CI (``CI`` env var set) a missing sitemap is a hard
+    failure — that would mean the workflow forgot to build the site.
     """
     if not _SITEMAP.is_file():
-        pytest.skip(
-            f"Sitemap not found at {_SITEMAP}; run "
-            "`uv run reflex export --frontend-only --no-zip` first."
+        message = (
+            f"Sitemap not found at {_SITEMAP}. Build the docs first "
+            "(e.g. `uv run reflex export --frontend-only --no-zip`)."
         )
+        if os.environ.get("CI"):
+            pytest.fail(message)
+        pytest.skip(message)
 
     errors = check(_MD_ROOT, _SITEMAP)
     assert not errors, "\n".join(errors)
