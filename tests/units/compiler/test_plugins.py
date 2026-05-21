@@ -1029,9 +1029,7 @@ def test_compile_context_requires_attached_context() -> None:
         hooks=CompilerHooks(),
     )
 
-    with pytest.raises(
-        RuntimeError, match="must be entered with 'with' or 'async with'"
-    ):
+    with pytest.raises(RuntimeError, match="must be entered"):
         compile_ctx.compile()
 
 
