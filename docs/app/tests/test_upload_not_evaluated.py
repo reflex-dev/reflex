@@ -10,12 +10,7 @@ that constructs an upload component is a regression — code samples for
 the ``components:`` frontmatter preview lambdas rendered by the docgen pipeline.
 """
 
-import sys
-from pathlib import Path
-
 import pytest
-
-sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 
 @pytest.fixture
