@@ -6,7 +6,7 @@ a Cloud Build job (via a ``cloudbuild.yaml`` written to a tempfile and
 referenced with ``gcloud builds submit --config=...``) — the user's project
 tree is never modified. The script reads its parameters from environment
 variables (GCP_PROJECT, GCP_REGION, SERVICE_NAME, AR_REPO, VERSION,
-REFLEX_CLOUDBUILD_YAML).
+CPU, MEMORY, MIN_INSTANCES, REFLEX_CLOUDBUILD_YAML).
 """
 
 from __future__ import annotations
@@ -37,6 +37,9 @@ ENV_GCP_REGION = "GCP_REGION"
 ENV_SERVICE_NAME = "SERVICE_NAME"
 ENV_AR_REPO = "AR_REPO"
 ENV_VERSION = "VERSION"
+ENV_CPU = "CPU"
+ENV_MEMORY = "MEMORY"
+ENV_MIN_INSTANCES = "MIN_INSTANCES"
 # Path to the Cloud Build config file written by the CLI. The rewritten
 # deploy script references it as ``--config="${REFLEX_CLOUDBUILD_YAML}"``.
 ENV_REFLEX_CLOUDBUILD_YAML = "REFLEX_CLOUDBUILD_YAML"
@@ -137,6 +140,27 @@ DEPLOY_ENV_ALLOWLIST = frozenset({
     help="The image version tag (sets VERSION). Defaults to a UTC timestamp.",
 )
 @click.option(
+    "--cpu",
+    "cpu",
+    default="1",
+    show_default=True,
+    help="Cloud Run CPU allocation, e.g. '1', '2', '4' (sets CPU).",
+)
+@click.option(
+    "--memory",
+    "memory",
+    default="1Gi",
+    show_default=True,
+    help="Cloud Run memory allocation, e.g. '512Mi', '1Gi', '2Gi' (sets MEMORY).",
+)
+@click.option(
+    "--min-instances",
+    "min_instances",
+    default="1",
+    show_default=True,
+    help="Minimum number of Cloud Run instances to keep warm (sets MIN_INSTANCES). Set to 0 to scale to zero.",
+)
+@click.option(
     "--source",
     "source_dir",
     default=".",
@@ -170,6 +194,9 @@ def deploy_command(
     service_name: str,
     ar_repo: str,
     version_tag: str | None,
+    cpu: str,
+    memory: str,
+    min_instances: str,
     source_dir: str,
     token: str | None,
     interactive: bool,
@@ -252,6 +279,9 @@ def deploy_command(
         ENV_SERVICE_NAME: service_name,
         ENV_AR_REPO: ar_repo,
         ENV_VERSION: version_value,
+        ENV_CPU: cpu,
+        ENV_MEMORY: memory,
+        ENV_MIN_INSTANCES: min_instances,
     }
 
     console.info("Received deploy manifest from Reflex.")

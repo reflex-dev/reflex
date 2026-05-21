@@ -157,6 +157,55 @@ def test_gcp_deploy_runs_script_from_source_with_cloudbuild_yaml(
     assert get_mock.call_args.kwargs["headers"] == {"X-API-TOKEN": "fake-token"}
 
 
+def test_gcp_deploy_forwards_resource_flags(mocker: MockFixture, tmp_path: Path):
+    """--cpu / --memory / --min-instances flow through to the deploy script env."""
+    run_mock = _patch_environment(mocker)
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "deploy",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--cpu",
+            "4",
+            "--memory",
+            "2Gi",
+            "--min-instances",
+            "0",
+        ],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    env_overrides = run_mock.call_args.kwargs["env_overrides"]
+    assert env_overrides["CPU"] == "4"
+    assert env_overrides["MEMORY"] == "2Gi"
+    assert env_overrides["MIN_INSTANCES"] == "0"
+
+
+def test_gcp_deploy_resource_flags_have_defaults(mocker: MockFixture, tmp_path: Path):
+    """When the user omits the new flags, defaults reach the deploy script env."""
+    run_mock = _patch_environment(mocker)
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    env_overrides = run_mock.call_args.kwargs["env_overrides"]
+    assert env_overrides["CPU"] == "1"
+    assert env_overrides["MEMORY"] == "1Gi"
+    assert env_overrides["MIN_INSTANCES"] == "1"
+
+
 def test_gcp_deploy_aborts_on_no(mocker: MockFixture, tmp_path: Path):
     """Declining the run prompt aborts before any staging."""
     run_mock = _patch_environment(mocker)
