@@ -65,4 +65,4 @@ jobs:
         run: reflex export
 
       - name: Validate /docs links against generated sitemap
-        run: uv run python -m reflex_docs.scripts.check_doc_links
+        run: uv run pytest tests/test_doc_links.py -v

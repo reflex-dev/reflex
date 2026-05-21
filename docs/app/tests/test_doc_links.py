@@ -1,10 +1,30 @@
-"""Unit tests for reflex_docs.scripts.check_doc_links."""
+"""Tests for reflex_docs.scripts.check_doc_links."""
 
 from pathlib import Path
 
 import pytest
 
 from reflex_docs.scripts.check_doc_links import _normalize, check
+
+_DOCS_APP = Path(__file__).resolve().parent.parent  # docs/app/
+_MD_ROOT = _DOCS_APP.parent  # docs/
+_SITEMAP = _DOCS_APP / ".web" / "public" / "sitemap.xml"
+
+
+def test_docs_links_against_exported_sitemap():
+    """End-to-end check: every /docs link in real markdown resolves in the sitemap.
+
+    Requires `reflex export` to have populated .web/public/sitemap.xml. Skips
+    otherwise so `pytest tests/` still passes without a build.
+    """
+    if not _SITEMAP.is_file():
+        pytest.skip(
+            f"Sitemap not found at {_SITEMAP}; run "
+            "`uv run reflex export --frontend-only --no-zip` first."
+        )
+
+    errors = check(_MD_ROOT, _SITEMAP)
+    assert not errors, "\n".join(errors)
 
 SITEMAP_XML = """<?xml version='1.0' encoding='utf-8'?>
 <urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">

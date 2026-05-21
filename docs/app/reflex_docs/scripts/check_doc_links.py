@@ -10,17 +10,14 @@ Using the real markdown AST means links inside fenced code blocks are
 correctly ignored, reference-style and multi-line links are caught, and
 escapes/edge cases are handled the same way the docs site renders them.
 
-Run after building the frontend so .web/public/sitemap.xml is present:
-
-    cd docs/app
-    uv run reflex export --frontend-only --no-zip
-    uv run python -m reflex_docs.scripts.check_doc_links
+The whole-docs run is driven by
+``tests/test_doc_links.py::test_docs_links_against_exported_sitemap``,
+which requires ``reflex export`` to have populated
+``.web/public/sitemap.xml``.
 """
 
 from __future__ import annotations
 
-import argparse
-import sys
 import xml.etree.ElementTree as ET
 from collections.abc import Iterator
 from pathlib import Path
@@ -190,33 +187,3 @@ def check(md_root: Path, sitemap_path: Path) -> list[str]:
     return errors
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    # docs/app/reflex_docs/scripts/check_doc_links.py — climb out to docs/.
-    docs_app = Path(__file__).resolve().parents[2]
-    parser.add_argument(
-        "--md-root",
-        type=Path,
-        default=docs_app.parent,
-        help="Root directory containing .md docs (default: <repo>/docs).",
-    )
-    parser.add_argument(
-        "--sitemap",
-        type=Path,
-        default=docs_app / ".web" / "public" / "sitemap.xml",
-        help="Path to sitemap.xml (default: <repo>/docs/app/.web/public/sitemap.xml).",
-    )
-    args = parser.parse_args()
-
-    errors = check(args.md_root.resolve(), args.sitemap.resolve())
-    if errors:
-        print(f"Found {len(errors)} broken /docs link(s):", file=sys.stderr)
-        for err in errors:
-            print(f"  {err}", file=sys.stderr)
-        return 1
-    print("All /docs links resolve against sitemap.xml.")
-    return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())
