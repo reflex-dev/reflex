@@ -33,11 +33,11 @@ def test_enterprise_parent_breadcrumb_uses_overview_route(monkeypatch):
 
 
 def test_breadcrumb_keeps_docs_segment_when_present_in_path():
-    """Breadcrumb segment mapping should not special-case the docs segment."""
+    """Every non-empty path segment should produce a crumb, including 'docs'."""
     from reflex_docs.templates.docpage.docpage import breadcrumb
 
     rendered = str(breadcrumb("/docs/ai/integrations/", rx.box()))
 
-    assert "Docs" in rendered
-    assert "Ai" in rendered
-    assert "Integrations" in rendered
+    assert 'to:"/docs"' in rendered
+    assert 'to:"/docs/ai"' in rendered
+    assert 'to:"/docs/ai/integrations"' in rendered
