@@ -11,7 +11,6 @@ from pathlib import Path
 
 import pytest
 
-
 MD_WITH_TWO_EXEC_BLOCKS = """\
 ```python exec
 import reflex as rx
