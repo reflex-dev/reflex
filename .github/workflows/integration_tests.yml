@@ -161,6 +161,10 @@ jobs:
           which npm && npm -v
           uv run --active --no-sync bash scripts/integration.sh ./docs/app prod
 
+      - name: Validate /docs links against generated sitemap
+        working-directory: ./docs/app
+        run: uv run --active --no-sync pytest tests/test_doc_links.py -v
+
       - name: Upload Socket.dev Firewall report
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
