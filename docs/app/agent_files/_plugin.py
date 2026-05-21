@@ -7,6 +7,7 @@ from types import SimpleNamespace, UnionType
 from typing import Any, Literal, Union, get_args, get_origin
 
 from reflex.constants import Dirs
+from reflex_base.config import get_config
 from reflex_base.plugins import CommonContext, Plugin
 from typing_extensions import Unpack
 
@@ -792,6 +793,26 @@ def generate_llms_full_txt(
     return (Path("llms-full.txt"), "\n".join(lines).rstrip() + "\n")
 
 
+def markdown_path_for_trailing_slash_url(path: Path) -> Path:
+    """Return the static-asset path that serves the trailing-slash URL variant.
+
+    A request for `<page>/.md` is served from the file at `<page>/.md` on disk,
+    making the trailing-slash URL `<page>/` resolve to the same content as the
+    no-slash URL `<page>.md`.
+
+    Example:
+        >>> markdown_path_for_trailing_slash_url(Path("ai/overview.md"))
+        PosixPath('ai/overview/.md')
+
+    Args:
+        path: The markdown file path.
+
+    Returns:
+        The asset path under which to serve the trailing-slash variant.
+    """
+    return path.with_suffix("") / ".md"
+
+
 def generate_agent_files() -> tuple[tuple[Path, str | bytes], ...]:
     markdown_file_entries = generate_markdown_file_entries()
     markdown_index_entries = tuple(
@@ -810,9 +831,19 @@ def generate_agent_files() -> tuple[tuple[Path, str | bytes], ...]:
         (entry.url_path, generate_markdown_file_content(entry))
         for entry in markdown_file_entries
     )
-    return (
+
+    all_markdown_files = [
         *markdown_files,
         *dynamic_api_reference_files,
+    ]
+
+    return (
+        *all_markdown_files,
+        # Such that `path/.md` would resolve to the same content as `path.md`
+        *[
+            (markdown_path_for_trailing_slash_url(path), content)
+            for path, content in all_markdown_files
+        ],
         generate_llms_txt((
             *markdown_index_entries,
             *dynamic_api_reference_entries,
@@ -835,6 +866,8 @@ class AgentFilesPlugin(Plugin):
     def get_static_assets(
         self, **context: Unpack[CommonContext]
     ) -> Sequence[tuple[Path, str | bytes]]:
-        return [
-            (Dirs.PUBLIC / path, content) for path, content in generate_agent_files()
-        ]
+        root = Path(Dirs.PUBLIC)
+        if frontend_path := get_config().frontend_path:
+            # Make sure the pre-rendered HTML does not get overwritten by md files.
+            root = root / frontend_path.lstrip("/")
+        return [(root / path, content) for path, content in generate_agent_files()]

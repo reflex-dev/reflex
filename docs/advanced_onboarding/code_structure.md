@@ -228,6 +228,10 @@ import reflex as rx
 class State(rx.State):
     v: str = "foo"
 
+    @rx.event
+    def set_v(self, value: str):
+        self.v = value
+
 
 @lru_cache
 def foo():

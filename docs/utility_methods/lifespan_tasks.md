@@ -40,8 +40,11 @@ async def long_running_task(foo, bar):
 To register a lifespan task, use `app.register_lifespan_task(coro_func, **kwargs)`.
 Any keyword arguments specified during registration will be passed to the task.
 
-If the task accepts the special argument, `app`, it will be passed the `Starlette`
-application instance.
+If the task accepts the special argument, `app`, it will be passed the Reflex app
+instance (`rx.App`/`LifespanMixin`).
+
+If the task accepts the special argument, `starlette_app`, it will be passed the
+underlying `Starlette` application instance.
 
 ```python
 app = rx.App()
