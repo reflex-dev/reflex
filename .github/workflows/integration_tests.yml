@@ -163,7 +163,7 @@ jobs:
 
       - name: Validate /docs links against generated sitemap
         working-directory: ./docs/app
-        run: uv run --active --no-sync pytest tests/test_doc_links.py -v
+        run: uv run --active --no-sync pytest --runxfail tests/test_doc_links.py -v
 
       - name: Upload Socket.dev Firewall report
         if: always()
