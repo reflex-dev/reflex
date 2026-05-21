@@ -366,7 +366,7 @@ For in-memory data, we use Python operations like `sorted()` and list comprehens
 
 The state variable `_people` is set to be a backend-only variable. This is done in case the variable is very large in order to reduce network traffic and improve performance.
 
-When a `select` item is selected, the `on_change` event trigger is hooked up to the `set_sort_value` event handler. Every base var has a built-in event handler to set its value for convenience, called `set_VARNAME`.
+When a `select` item is selected, the `on_change` event trigger is hooked up to the `set_sort_value` event handler, which updates the `sort_value` state var.
 
 `current_people` is an `rx.var(cache=True)`. It is a var that is only recomputed when the other state vars it depends on change. This ensures that the `People` shown in the table are always up to date whenever they are searched or sorted.
 

@@ -1,7 +1,7 @@
 name: integration-app-harness
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.id }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.id || github.sha }}
   cancel-in-progress: true
 
 on:
@@ -44,10 +44,11 @@ jobs:
           # Maps port 6379 on service container to the host
           - 6379:6379
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-tags: true
           fetch-depth: 0
+          persist-credentials: false
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: ${{ matrix.python-version }}
@@ -80,10 +81,11 @@ jobs:
         ports:
           - 6379:6379
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-tags: true
           fetch-depth: 0
+          persist-credentials: false
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: ${{ matrix.python-version }}

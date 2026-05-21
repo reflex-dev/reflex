@@ -8,7 +8,14 @@ from reflex_base.event import Event
 
 import reflex.constants
 import reflex.model
-from reflex.model import Model, ModelRegistry
+from reflex.model import (
+    Model,
+    ModelRegistry,
+    alembic_autogenerate,
+    alembic_init,
+    get_engine,
+    migrate,
+)
 from reflex.state import BaseState, State
 from tests.units.test_state import (
     mock_app_simple,  # noqa: F401 # for pytest.mark.usefixtures
@@ -93,7 +100,7 @@ def test_automigration(
     config_mock.db_url = f"sqlite:///{tmp_working_dir}/reflex.db"
     monkeypatch.setattr(reflex.model, "get_config", mock.Mock(return_value=config_mock))
 
-    Model.alembic_init()
+    alembic_init()
     assert alembic_ini.exists()
     assert versions.exists()
 
@@ -101,11 +108,9 @@ def test_automigration(
     class AlembicThing(Model, table=True):  # pyright: ignore [reportRedeclaration]
         t1: str
 
-    with Model.get_db_engine().connect() as connection:
-        assert Model.alembic_autogenerate(
-            connection=connection, message="Initial Revision"
-        )
-    assert Model.migrate()
+    with get_engine().connect() as connection:
+        assert alembic_autogenerate(connection=connection, message="Initial Revision")
+    assert migrate()
     version_scripts = list(versions.glob("*.py"))
     assert len(version_scripts) == 1
     assert version_scripts[0].name.endswith("initial_revision.py")
@@ -121,7 +126,7 @@ def test_automigration(
         t1: str | None = "default"
         t2: str = "bar"
 
-    assert Model.migrate(autogenerate=True)
+    assert migrate(autogenerate=True)
     assert len(list(versions.glob("*.py"))) == 2
 
     with reflex.model.session() as session:
@@ -140,7 +145,7 @@ def test_automigration(
     class AlembicThing(Model, table=True):  # pyright: ignore [reportRedeclaration]
         t2: str = "bar"
 
-    assert Model.migrate(autogenerate=True)
+    assert migrate(autogenerate=True)
     assert len(list(versions.glob("*.py"))) == 3
 
     with reflex.model.session() as session:
@@ -154,7 +159,7 @@ def test_automigration(
         a: int = 42
         b: float = 4.2
 
-    assert Model.migrate(autogenerate=True)
+    assert migrate(autogenerate=True)
     assert len(list(versions.glob("*.py"))) == 4
 
     with reflex.model.session() as session:
@@ -166,7 +171,7 @@ def test_automigration(
         assert math.isclose(result[0].b, 4.2)
 
     # No-op
-    assert Model.migrate(autogenerate=True)
+    assert migrate(autogenerate=True)
     assert len(list(versions.glob("*.py"))) == 4
 
     # drop table (AlembicSecond)
@@ -175,7 +180,7 @@ def test_automigration(
     class AlembicThing(Model, table=True):  # pyright: ignore [reportRedeclaration]
         t2: str = "bar"
 
-    assert Model.migrate(autogenerate=True)
+    assert migrate(autogenerate=True)
     assert len(list(versions.glob("*.py"))) == 5
 
     with reflex.model.session() as session:
@@ -194,14 +199,14 @@ def test_automigration(
         # changing column type not supported by default
         t2: int = 42
 
-    assert Model.migrate(autogenerate=True)
+    assert migrate(autogenerate=True)
     assert len(list(versions.glob("*.py"))) == 5
 
     # clear all metadata to avoid influencing subsequent tests
     model_registry.get_metadata().clear()
 
     # drop remaining tables
-    assert Model.migrate(autogenerate=True)
+    assert migrate(autogenerate=True)
     assert len(list(versions.glob("*.py"))) == 6
 
 

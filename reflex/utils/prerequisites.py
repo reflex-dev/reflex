@@ -31,6 +31,7 @@ from reflex.utils.misc import get_module_path
 if typing.TYPE_CHECKING:
     from redis import Redis as RedisSync
     from redis.asyncio import Redis
+    from reflex_base.telemetry_context import CompileTrigger
 
     from reflex.app import App
 
@@ -251,6 +252,7 @@ def get_compiled_app(
     dry_run: bool = False,
     check_if_schema_up_to_date: bool = False,
     use_rich: bool = True,
+    trigger: CompileTrigger | None = None,
 ) -> ModuleType:
     """Get the app module based on the default config after first compiling it.
 
@@ -260,6 +262,7 @@ def get_compiled_app(
         dry_run: If True, do not write the compiled app to disk.
         check_if_schema_up_to_date: If True, check if the schema is up to date.
         use_rich: Whether to use rich progress bars.
+        trigger: Optional label forwarded to ``App._compile`` for telemetry.
 
     Returns:
         The compiled app based on the default config.
@@ -267,7 +270,12 @@ def get_compiled_app(
     app, app_module = get_and_validate_app(
         reload=reload, check_if_schema_up_to_date=check_if_schema_up_to_date
     )
-    app._compile(prerender_routes=prerender_routes, dry_run=dry_run, use_rich=use_rich)
+    app._compile(
+        prerender_routes=prerender_routes,
+        dry_run=dry_run,
+        use_rich=use_rich,
+        trigger=trigger,
+    )
     return app_module
 
 
@@ -320,7 +328,7 @@ def _can_colorize() -> bool:
         try:
             import nt
 
-            if not nt._supports_virtual_terminal():
+            if not nt._supports_virtual_terminal():  # pyright: ignore[reportAttributeAccessIssue]
                 return False
         except (ImportError, AttributeError):
             return False
@@ -335,6 +343,7 @@ def compile_or_validate_app(
     compile: bool = False,
     check_if_schema_up_to_date: bool = False,
     prerender_routes: bool = False,
+    trigger: CompileTrigger | None = None,
 ) -> bool:
     """Compile or validate the app module based on the default config.
 
@@ -342,6 +351,7 @@ def compile_or_validate_app(
         compile: Whether to compile the app.
         check_if_schema_up_to_date: If True, check if the schema is up to date.
         prerender_routes: Whether to prerender routes.
+        trigger: Optional label forwarded to ``App._compile`` for telemetry.
 
     Returns:
         True if the app was successfully compiled or validated, False otherwise.
@@ -351,6 +361,7 @@ def compile_or_validate_app(
             get_compiled_app(
                 check_if_schema_up_to_date=check_if_schema_up_to_date,
                 prerender_routes=prerender_routes,
+                trigger=trigger,
             )
         else:
             get_and_validate_app(check_if_schema_up_to_date=check_if_schema_up_to_date)
@@ -664,11 +675,11 @@ def check_schema_up_to_date():
     """Check if the sqlmodel metadata matches the current database schema."""
     if get_config().db_url is None or not environment.ALEMBIC_CONFIG.get().exists():
         return
-    with model.Model.get_db_engine().connect() as connection:
+    with model.get_engine().connect() as connection:
         from alembic.util.exc import CommandError
 
         try:
-            if model.Model.alembic_autogenerate(
+            if model.alembic_autogenerate(
                 connection=connection,
                 write_migration_scripts=False,
             ):

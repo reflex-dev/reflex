@@ -1,7 +1,7 @@
 import reflex as rx
 import reflex_components_internal as ui
 from reflex.experimental import ClientStateVar
-from reflex_site_shared.constants import INTEGRATIONS_IMAGES_URL
+from reflex_site_shared.integrations import get_integration_logo_url
 
 from .integration_list import get_integration_path
 from .integration_request import request_integration_dialog
@@ -42,15 +42,15 @@ def integration_filters():
 
 
 def integration_gallery_cards(data):
-    integration_name = str(data["name"]).lower().replace(" ", "_")
+    integration_name = str(data["name"])
     return rx.el.a(
         rx.el.div(
             rx.el.div(
                 ui.avatar.root(
                     ui.avatar.image(
                         src=rx.color_mode_cond(
-                            f"{INTEGRATIONS_IMAGES_URL}light/{integration_name}.svg",
-                            f"{INTEGRATIONS_IMAGES_URL}dark/{integration_name}.svg",
+                            get_integration_logo_url(integration_name, "light"),
+                            get_integration_logo_url(integration_name, "dark"),
                         ),
                         unstyled=True,
                         class_name="size-full",
