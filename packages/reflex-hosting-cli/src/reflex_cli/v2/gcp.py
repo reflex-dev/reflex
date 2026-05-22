@@ -7,6 +7,7 @@ referenced with ``gcloud builds submit --config=...``) — the user's project
 tree is never modified. The script reads its parameters from environment
 variables (GCP_PROJECT, GCP_REGION, SERVICE_NAME, AR_REPO, VERSION,
 CLOUD_RUN_CPU, CLOUD_RUN_MEMORY, CLOUD_RUN_MIN_INSTANCES,
+CLOUD_RUN_MAX_INSTANCES, CLOUD_RUN_ALLOW_UNAUTHENTICATED,
 REFLEX_CLOUDBUILD_YAML).
 """
 
@@ -41,6 +42,8 @@ ENV_VERSION = "VERSION"
 ENV_CPU = "CLOUD_RUN_CPU"
 ENV_MEMORY = "CLOUD_RUN_MEMORY"
 ENV_MIN_INSTANCES = "CLOUD_RUN_MIN_INSTANCES"
+ENV_MAX_INSTANCES = "CLOUD_RUN_MAX_INSTANCES"
+ENV_ALLOW_UNAUTHENTICATED = "CLOUD_RUN_ALLOW_UNAUTHENTICATED"
 # Path to the Cloud Build config file written by the CLI. The rewritten
 # deploy script references it as ``--config="${REFLEX_CLOUDBUILD_YAML}"``.
 ENV_REFLEX_CLOUDBUILD_YAML = "REFLEX_CLOUDBUILD_YAML"
@@ -163,6 +166,21 @@ DEPLOY_ENV_ALLOWLIST = frozenset({
     help="Minimum number of Cloud Run instances to keep warm (sets CLOUD_RUN_MIN_INSTANCES). Set to 0 to scale to zero.",
 )
 @click.option(
+    "--max-instances",
+    "max_instances",
+    default=100,
+    show_default=True,
+    type=click.IntRange(min=1),
+    help="Maximum number of Cloud Run instances during autoscaling (sets CLOUD_RUN_MAX_INSTANCES). Caps cost under traffic spikes.",
+)
+@click.option(
+    "--allow-unauthenticated/--no-allow-unauthenticated",
+    "allow_unauthenticated",
+    default=True,
+    show_default=True,
+    help="Whether to make the Cloud Run service publicly reachable (sets CLOUD_RUN_ALLOW_UNAUTHENTICATED). Use --no-allow-unauthenticated for internal / IAP-fronted services; callers will then need a roles/run.invoker IAM binding.",
+)
+@click.option(
     "--source",
     "source_dir",
     default=".",
@@ -199,6 +217,8 @@ def deploy_command(
     cpu: str,
     memory: str,
     min_instances: int,
+    max_instances: int,
+    allow_unauthenticated: bool,
     source_dir: str,
     token: str | None,
     interactive: bool,
@@ -225,6 +245,11 @@ def deploy_command(
         raise click.exceptions.Exit(2)
     if not gcp_project:
         console.error("--gcp-project is required when using --gcp.")
+        raise click.exceptions.Exit(2)
+    if max_instances < min_instances:
+        console.error(
+            f"--max-instances ({max_instances}) must be >= --min-instances ({min_instances})."
+        )
         raise click.exceptions.Exit(2)
 
     authenticated_client = hosting.get_authenticated_client(
@@ -284,6 +309,8 @@ def deploy_command(
         ENV_CPU: cpu,
         ENV_MEMORY: memory,
         ENV_MIN_INSTANCES: str(min_instances),
+        ENV_MAX_INSTANCES: str(max_instances),
+        ENV_ALLOW_UNAUTHENTICATED: "true" if allow_unauthenticated else "false",
     }
 
     console.info("Received deploy manifest from Reflex.")

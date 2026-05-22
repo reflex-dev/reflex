@@ -206,6 +206,116 @@ def test_gcp_deploy_resource_flags_have_defaults(mocker: MockFixture, tmp_path: 
     assert env_overrides["CLOUD_RUN_MIN_INSTANCES"] == "1"
 
 
+def test_gcp_deploy_forwards_max_instances(mocker: MockFixture, tmp_path: Path):
+    """--max-instances threads through to CLOUD_RUN_MAX_INSTANCES."""
+    run_mock = _patch_environment(mocker)
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "deploy",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--max-instances",
+            "42",
+        ],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    env_overrides = run_mock.call_args.kwargs["env_overrides"]
+    assert env_overrides["CLOUD_RUN_MAX_INSTANCES"] == "42"
+
+
+def test_gcp_deploy_max_instances_default(mocker: MockFixture, tmp_path: Path):
+    """Default --max-instances is 100, matching Cloud Run's own default."""
+    run_mock = _patch_environment(mocker)
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    env_overrides = run_mock.call_args.kwargs["env_overrides"]
+    assert env_overrides["CLOUD_RUN_MAX_INSTANCES"] == "100"
+
+
+def test_gcp_deploy_rejects_max_less_than_min(mocker: MockFixture, tmp_path: Path):
+    """--max-instances < --min-instances is caught at the CLI, not inside gcloud."""
+    run_mock = _patch_environment(mocker)
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "deploy",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--min-instances",
+            "5",
+            "--max-instances",
+            "3",
+        ],
+    )
+
+    assert result.exit_code == 2
+    assert "max-instances" in result.output.lower()
+    assert "min-instances" in result.output.lower()
+    assert run_mock.call_count == 0
+
+
+def test_gcp_deploy_allow_unauthenticated_defaults_true(
+    mocker: MockFixture, tmp_path: Path
+):
+    """Default is --allow-unauthenticated (public service), matching prior behavior."""
+    run_mock = _patch_environment(mocker)
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    env_overrides = run_mock.call_args.kwargs["env_overrides"]
+    assert env_overrides["CLOUD_RUN_ALLOW_UNAUTHENTICATED"] == "true"
+
+
+def test_gcp_deploy_no_allow_unauthenticated(mocker: MockFixture, tmp_path: Path):
+    """--no-allow-unauthenticated produces the 'false' value."""
+    run_mock = _patch_environment(mocker)
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "deploy",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--no-allow-unauthenticated",
+        ],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    env_overrides = run_mock.call_args.kwargs["env_overrides"]
+    assert env_overrides["CLOUD_RUN_ALLOW_UNAUTHENTICATED"] == "false"
+
+
 def test_gcp_deploy_rejects_negative_min_instances(mocker: MockFixture, tmp_path: Path):
     """--min-instances is IntRange(min=0); negative values fail at the CLI layer."""
     run_mock = _patch_environment(mocker)
