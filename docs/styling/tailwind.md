@@ -179,7 +179,6 @@ In your `app.py` (or main application file), make the following changes:
 
 ```python
 app = rx.App(
-    theme=rx.theme(appearance="light"),
     stylesheets=["/style.css"],
 )
 app.add_page(

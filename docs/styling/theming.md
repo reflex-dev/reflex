@@ -18,13 +18,25 @@ As of Reflex `v0.4.0`, you can now theme your Reflex applications. The core of o
 
 ## Overview
 
-The `Theme` component is used to change the theme of the application. The `Theme` can be set directly in your rx.App.
+The app-level theme is configured in `rxconfig.py` with `RadixThemesPlugin`.
+Pass an `rx.theme` component to the plugin to customize the theme for every
+page in your app. `RadixThemesPlugin` was added in Reflex `v0.9.2`.
 
 ```python
-app = rx.App(
-    theme=rx.theme(
-        appearance="light", has_background=True, radius="large", accent_color="teal"
-    )
+import reflex as rx
+
+config = rx.Config(
+    app_name="my_app",
+    plugins=[
+        rx.plugins.RadixThemesPlugin(
+            theme=rx.theme(
+                appearance="light",
+                has_background=True,
+                radius="large",
+                accent_color="teal",
+            )
+        ),
+    ],
 )
 ```
 

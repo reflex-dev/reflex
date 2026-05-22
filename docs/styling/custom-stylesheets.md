@@ -44,11 +44,25 @@ You can use CSS variables directly in your Reflex app by passing them alongside 
 }
 ```
 
-Then, after referencing the CSS file within the `stylesheets` props of `rx.App`, you can access the CSS props directly like this
+Then, after configuring the light app theme in `rxconfig.py` and referencing
+the CSS file within the `stylesheets` props of `rx.App`, you can access the CSS
+props directly like this:
 
 ```python
+# rxconfig.py
+import reflex as rx
+
+config = rx.Config(
+    app_name="my_app",
+    plugins=[
+        rx.plugins.RadixThemesPlugin(theme=rx.theme(appearance="light")),
+    ],
+)
+```
+
+```python
+# app.py
 app = rx.App(
-    theme=rx.theme(appearance="light"),
     stylesheets=["/style.css"],
 )
 app.add_page(

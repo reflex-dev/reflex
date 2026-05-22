@@ -371,6 +371,33 @@ def test_add_duplicate_page_route_error(app: App, first_page, second_page, route
         app.add_page(second_page, route="/" + route.strip("/") if route else None)
 
 
+def test_add_page_during_page_evaluation(tmp_working_dir):
+    """Regression test: a page added during another page's evaluation is also compiled.
+
+    When a page render function calls ``app.add_page`` while it is being
+    evaluated, the newly-added page must still go through the compile pipeline
+    rather than being silently dropped because it was not part of the
+    pre-evaluation snapshot.
+
+    Args:
+        tmp_working_dir: Temporary working directory fixture.
+    """
+    app = App(enable_state=False)
+
+    def secondary():
+        return rx.box("Secondary")
+
+    def primary():
+        app.add_page(secondary)
+        return rx.box("Primary")
+
+    app.add_page(primary)
+    app._compile(dry_run=True, use_rich=False)
+
+    assert "primary" in app._pages
+    assert "secondary" in app._pages
+
+
 @pytest.mark.skipif(
     not find_spec("starlette_admin")
     or not find_spec("sqlmodel")

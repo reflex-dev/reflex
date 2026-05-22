@@ -1255,21 +1255,28 @@ app.add_page(
 )
 ```
 
-### Revisit `rx.App()`
+### Revisit `rx.App()` and `rxconfig.py`
 
-At the beginning of the tutorial we also mentioned that we defined our app using `app=rx.App()`. We can also pass in some props to the `rx.App` component to customize the app.
+At the beginning of the tutorial we also mentioned that we defined our app using `app=rx.App()`. To customize the app-wide Radix theme, update `rxconfig.py`.
 
-The most important one is `theme` which allows you to customize the look and feel of the app. The `theme` prop takes in an `rx.theme` component which has several props that can be set.
+The `RadixThemesPlugin` accepts an `rx.theme` component which has several props that can be set.
 
 The `radius` prop sets the global radius value for the app that is inherited by all components that have a `radius` prop. It can be overwritten locally for a specific component by manually setting the `radius` prop.
 
 The `accent_color` prop sets the accent color of the app. See the [theme docs](/docs/library/other/theme) for the full list of options.
 
-To see other props that can be set at the app level check out this [documentation](/docs/styling/theming)
+To see other theme props that can be set for the app check out this [documentation](/docs/styling/theming).
 
 ```python
-app = rx.App(
-    theme=rx.theme(radius="full", accent_color="grass"),
+import reflex as rx
+
+config = rx.Config(
+    app_name="app",
+    plugins=[
+        rx.plugins.RadixThemesPlugin(
+            theme=rx.theme(radius="full", accent_color="grass"),
+        ),
+    ],
 )
 ```
 
@@ -1527,9 +1534,7 @@ def index() -> rx.Component:
     )
 
 
-app = rx.App(
-    theme=rx.theme(radius="full", accent_color="grass"),
-)
+app = rx.App()
 
 app.add_page(
     index,

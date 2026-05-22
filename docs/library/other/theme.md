@@ -6,13 +6,24 @@ components:
 
 # Theme
 
-The `Theme` component is used to change the theme of the application. The `Theme` can be set directly in the rx.App.
+The `Theme` component is used to change the theme of the application. Configure
+the app-level theme in `rxconfig.py` with `RadixThemesPlugin`.
 
 ```python
-app = rx.App(
-    theme=rx.theme(
-        appearance="light", has_background=True, radius="large", accent_color="teal"
-    )
+import reflex as rx
+
+config = rx.Config(
+    app_name="my_app",
+    plugins=[
+        rx.plugins.RadixThemesPlugin(
+            theme=rx.theme(
+                appearance="light",
+                has_background=True,
+                radius="large",
+                accent_color="teal",
+            )
+        ),
+    ],
 )
 ```
 
