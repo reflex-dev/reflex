@@ -316,6 +316,162 @@ def test_gcp_deploy_no_allow_unauthenticated(mocker: MockFixture, tmp_path: Path
     assert env_overrides["CLOUD_RUN_ALLOW_UNAUTHENTICATED"] == "false"
 
 
+def test_gcp_deploy_no_env_vars_means_no_env_vars_file(
+    mocker: MockFixture, tmp_path: Path
+):
+    """Without --env or --envfile, REFLEX_ENV_VARS_FILE is absent from env_overrides."""
+    run_mock = _patch_environment(mocker)
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    env_overrides = run_mock.call_args.kwargs["env_overrides"]
+    assert "REFLEX_ENV_VARS_FILE" not in env_overrides
+
+
+def test_gcp_deploy_forwards_env_flag(mocker: MockFixture, tmp_path: Path):
+    """--env KEY=VALUE writes a tempfile and forwards its path via REFLEX_ENV_VARS_FILE.
+
+    Captures the file's contents during the run (the tempfile is unlinked
+    afterward) and verifies the YAML body uses json-encoded values.
+    """
+    captured: dict = {}
+
+    def capture(**kwargs):
+        path = Path(kwargs["env_overrides"]["REFLEX_ENV_VARS_FILE"])
+        captured["existed_during_run"] = path.exists()
+        captured["path"] = path
+        captured["yaml"] = path.read_text()
+        return 0
+
+    run_mock = _patch_environment(mocker)
+    run_mock.side_effect = capture
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "deploy",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--env",
+            "DB_URL=postgres://u:p@h/d",
+            "--env",
+            "FEATURE_FLAG=on",
+        ],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    assert captured["existed_during_run"]
+    assert not captured["path"].exists()  # cleaned up after run
+    # YAML uses json.dumps per value, so embedded special chars are escaped.
+    assert captured["yaml"] == 'DB_URL: "postgres://u:p@h/d"\nFEATURE_FLAG: "on"\n'
+
+
+def test_gcp_deploy_envfile_loads_dotenv(mocker: MockFixture, tmp_path: Path):
+    """--envfile reads a .env file via dotenv_values and forwards its contents."""
+    envfile = tmp_path / ".env"
+    envfile.write_text('DB_URL="postgres://u:p@h/d"\nFEATURE_FLAG=on\n')
+
+    captured: dict = {}
+
+    def capture(**kwargs):
+        path = Path(kwargs["env_overrides"]["REFLEX_ENV_VARS_FILE"])
+        captured["yaml"] = path.read_text()
+        return 0
+
+    run_mock = _patch_environment(mocker)
+    run_mock.side_effect = capture
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "deploy",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--envfile",
+            str(envfile),
+        ],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    yaml = captured["yaml"]
+    assert 'DB_URL: "postgres://u:p@h/d"' in yaml
+    assert 'FEATURE_FLAG: "on"' in yaml
+
+
+def test_gcp_deploy_envfile_takes_precedence_over_env_with_warning(
+    mocker: MockFixture, tmp_path: Path
+):
+    """When both --envfile and --env are passed, --envfile wins (matches existing flow)."""
+    envfile = tmp_path / ".env"
+    envfile.write_text("FROM_FILE=yes\n")
+
+    captured: dict = {}
+
+    def capture(**kwargs):
+        path = Path(kwargs["env_overrides"]["REFLEX_ENV_VARS_FILE"])
+        captured["yaml"] = path.read_text()
+        return 0
+
+    run_mock = _patch_environment(mocker)
+    run_mock.side_effect = capture
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "deploy",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--envfile",
+            str(envfile),
+            "--env",
+            "FROM_FLAG=no",
+        ],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "FROM_FILE" in captured["yaml"]
+    assert "FROM_FLAG" not in captured["yaml"]
+    assert "envfile" in result.output.lower()
+    assert "ignoring --env" in result.output
+
+
+def test_format_env_vars_yaml_escapes_specials():
+    """Values with quotes, backslashes, and newlines round-trip via json.dumps."""
+    from reflex_cli.v2 import gcp as gcp_module
+
+    envs = {
+        "QUOTED": 'has "quotes" and \\ backslash',
+        "MULTILINE": "line1\nline2",
+        "EMPTY": "",
+    }
+    yaml = gcp_module._format_env_vars_yaml(envs)
+    # Each line is `KEY: <json-encoded-value>`.
+    assert 'QUOTED: "has \\"quotes\\" and \\\\ backslash"' in yaml
+    assert 'MULTILINE: "line1\\nline2"' in yaml
+    assert 'EMPTY: ""' in yaml
+
+
 def test_gcp_deploy_rejects_negative_min_instances(mocker: MockFixture, tmp_path: Path):
     """--min-instances is IntRange(min=0); negative values fail at the CLI layer."""
     run_mock = _patch_environment(mocker)
