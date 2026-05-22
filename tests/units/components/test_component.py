@@ -7,8 +7,8 @@ from reflex_base.components.component import (
     CUSTOM_COMPONENTS,
     Component,
     CustomComponent,
-    StatefulComponent,
     custom_component,
+    field,
 )
 from reflex_base.constants import EventTriggers
 from reflex_base.constants.state import FIELD_MARKER
@@ -522,30 +522,25 @@ def test_get_imports(component1, component2):
     }
 
 
-def test_get_all_imports_includes_components_in_props():
-    """Test that _get_all_imports collects imports from components in props."""
+def test_get_imports_includes_components_in_props():
+    """Test that component-valued props contribute their imports."""
 
-    class InnerComponent(Component):
-        """A component that requires a specific import."""
+    class PropComponent(Component):
+        tag = "PropComponent"
+        library = "prop-lib"
 
-        def _get_imports(self) -> ParsedImportDict:
-            return {"some-library": [ImportVar(tag="SomeTag")]}
+    class ParentComponent(Component):
+        tag = "ParentComponent"
+        library = "parent-lib"
 
-    class OuterComponent(Component):
-        """A component with a component-typed prop."""
+        slot: Component | None = field(default=None)
 
-        fallback: Component | None = None
+    imports_ = ParentComponent.create(slot=PropComponent.create())._get_all_imports()
 
-        def _get_imports(self) -> ParsedImportDict:
-            return {"outer-library": [ImportVar(tag="OuterTag")]}
-
-    inner = InnerComponent.create()
-    outer = OuterComponent.create(fallback=inner)
-    all_imports = outer._get_all_imports()
-    assert "some-library" in all_imports, (
-        "_get_all_imports() should collect imports from components in props"
-    )
-    assert "outer-library" in all_imports
+    assert imports_ == parse_imports({
+        "parent-lib": ["ParentComponent"],
+        "prop-lib": ["PropComponent"],
+    })
 
 
 def test_get_custom_code(component1: Component, component2: Component):
@@ -1191,47 +1186,6 @@ def test_format_component(component, rendered):
     assert str(component) == rendered
 
 
-def test_stateful_component(test_state: type[TestState]):
-    """Test that a stateful component is created correctly.
-
-    Args:
-        test_state: A test state.
-    """
-    text_component = rx.text(test_state.num)
-    stateful_component = StatefulComponent.compile_from(text_component)
-    assert isinstance(stateful_component, StatefulComponent)
-    assert stateful_component.tag is not None
-    assert stateful_component.tag.startswith("Text_")
-    assert stateful_component.references == 1
-    sc2 = StatefulComponent.compile_from(rx.text(test_state.num))
-    assert isinstance(sc2, StatefulComponent)
-    assert stateful_component.references == 2
-    assert sc2.references == 2
-
-
-def test_stateful_component_memoize_event_trigger(test_state: type[TestState]):
-    """Test that a stateful component is created correctly with events.
-
-    Args:
-        test_state: A test state.
-    """
-    button_component = rx.button("Click me", on_blur=test_state.do_something)
-    stateful_component = StatefulComponent.compile_from(button_component)
-    assert isinstance(stateful_component, StatefulComponent)
-
-    # No event trigger? No StatefulComponent
-    assert not isinstance(
-        StatefulComponent.compile_from(rx.button("Click me")), StatefulComponent
-    )
-
-
-def test_stateful_banner():
-    """Test that a stateful component is created correctly with events."""
-    connection_modal_component = rx.connection_modal()
-    stateful_component = StatefulComponent.compile_from(connection_modal_component)
-    assert isinstance(stateful_component, StatefulComponent)
-
-
 TEST_VAR = LiteralVar.create("p")._replace(
     merge_var_data=VarData(
         hooks={"useTest": None},
@@ -1809,17 +1763,13 @@ def test_custom_component_get_imports():
         tag = "Inner"
         library = "inner"
 
-    class Other(Component):
-        tag = "Other"
-        library = "other"
-
     @rx.memo
     def wrapper():
         return Inner.create()
 
     @rx.memo
-    def outer(c: Component):
-        return Other.create(c)
+    def outer():
+        return wrapper()
 
     custom_comp = wrapper()
 
@@ -1833,16 +1783,16 @@ def test_custom_component_get_imports():
     assert "inner" in imports_inner
     assert "outer" not in imports_inner
 
-    outer_comp = outer(c=wrapper())
+    outer_comp = outer()
 
-    # Libraries are not imported directly, but are imported by the custom component.
+    # Nested custom components are only imported during compilation.
     assert "inner" not in outer_comp._get_all_imports()
-    assert "other" not in outer_comp._get_all_imports()
 
     # The imports are only resolved during compilation.
     _, imports_outer = compile_custom_component(outer_comp)
     assert "inner" not in imports_outer
-    assert "other" in imports_outer
+    assert "$/utils/components" in imports_outer
+    assert imports_outer["$/utils/components"] == [ImportVar(tag="Wrapper")]
 
 
 def test_custom_component_declare_event_handlers_in_fields():
@@ -2351,3 +2301,69 @@ def test_ref():
     assert id_component._render().props["ref"].equals(Var("ref_custom_id"))
 
     assert "ref" not in rx.box()._render().props
+
+
+def test_component_equality_compares_fields():
+    """``BaseComponent.__eq__`` must compare field values, not just class identity.
+
+    HTML ``Element`` subclasses (``rx.box`` etc.) override ``__eq__`` to compare by
+    tag only, so this test uses a plain ``Component`` subclass to exercise the
+    base implementation.
+    """
+
+    class EqProbe(Component):
+        tag = "EqProbe"
+        label: str = ""
+
+    class OtherProbe(Component):
+        tag = "OtherProbe"
+        label: str = ""
+
+    a = EqProbe.create(label="x")
+    b = EqProbe.create(label="x")
+    c = EqProbe.create(label="y")
+
+    assert a == b
+    assert a != c
+
+    parent_same = EqProbe.create(EqProbe.create(label="leaf"), label="root")
+    parent_other = EqProbe.create(EqProbe.create(label="leaf"), label="root")
+    parent_diff = EqProbe.create(EqProbe.create(label="other"), label="root")
+    assert parent_same == parent_other
+    assert parent_same != parent_diff
+
+    assert EqProbe.create() != OtherProbe.create()
+    assert EqProbe.create() != "not a component"
+
+
+def test_component_equality_handles_var_fields():
+    """``BaseComponent.__eq__`` must not raise when a field holds a Var.
+
+    ``Var.__eq__`` returns a ``BooleanVar``; bool-ifying that raises
+    ``VarTypeError``. Equality has to compare Vars structurally (via
+    ``Var.equals``) and walk containers element-wise so list/dict fields that
+    hold Vars don't trip up the default container ``__eq__``.
+    """
+
+    class VarState(BaseState):
+        text: str = "hi"
+
+    class VarProbe(Component):
+        tag = "VarProbe"
+        label: str = ""
+        items: list = []
+        meta: dict = {}
+
+    same_a = VarProbe.create(label=VarState.text)
+    same_b = VarProbe.create(label=VarState.text)
+    different = VarProbe.create(label="literal")
+    assert same_a == same_b
+    assert same_a != different
+
+    list_a = VarProbe.create(items=[VarState.text])
+    list_b = VarProbe.create(items=[VarState.text])
+    assert list_a == list_b
+
+    dict_a = VarProbe.create(meta={"k": VarState.text})
+    dict_b = VarProbe.create(meta={"k": VarState.text})
+    assert dict_a == dict_b

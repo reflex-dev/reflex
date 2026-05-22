@@ -4,33 +4,31 @@ import reflex as rx
 
 # Introduction
 
-**Reflex** is an open-source framework for quickly building beautiful, interactive web applications in **pure Python**.
+**~5 min** · **Reflex** lets you build and deploy full-stack web apps — frontend, backend, and database — in **pure Python**. No JavaScript, no separate API, no context switching.
 
 ## Goals
 
 ```md section
 ### Pure Python
 
-Use Python for everything. Don't worry about learning a new language.
+Write your entire app — frontend, backend, database — in Python. No need to learn another language.
 
 ### Easy to Learn
 
-Build and share your first app in minutes. No web development experience required.
+Ship your first app in minutes. No web development experience required.
 
 ### Full Flexibility
 
-Remain as flexible as traditional web frameworks. Reflex is easy to use, yet allows for advanced use cases.
-
-Build anything from small data science apps to large, multi-page websites. **This entire site was built and deployed with Reflex!**
+Build anything from small data apps to large multi-page websites. **This entire site was built and deployed with Reflex.**
 
 ### Batteries Included
 
-No need to reach for a bunch of different tools. Reflex handles the user interface, server-side logic, and deployment of your app.
+One tool covers it all: UI, server-side logic, and deployment.
 ```
 
-## An example: Make it count
+## Build a counter
 
-Here, we go over a simple counter app that lets the user count up or down.
+We'll build a counter app that lets the user count up or down. In ~20 lines of Python you'll touch the three core pieces of every Reflex app: **state**, **event handlers**, and **components**.
 
 ```python exec
 class CounterExampleState(rx.State):
@@ -57,20 +55,39 @@ class IntroTabsState(rx.State):
         self.value = val
 
 
+def counter_code_section(code: str, tab: str) -> rx.Component:
+    active = IntroTabsState.value == tab
+    return rx.box(
+        rx.code_block(
+            code,
+            class_name="code-block counter-code-block",
+        ),
+        background=rx.cond(active, "var(--c-violet-3)", "transparent"),
+        border_left=rx.cond(
+            active,
+            "3px solid var(--c-violet-9)",
+            "3px solid transparent",
+        ),
+        padding="0.875rem 1.5rem",
+        class_name="w-full transition-colors",
+    )
+
+
+def counter_code_gap() -> rx.Component:
+    return rx.box(height="0.875rem", flex_shrink="0")
+
+
 def tabs():
     return rx.tabs.root(
         rx.tabs.list(
-            rx.tabs.trigger("Frontend", value="tab1", class_name="tab-style"),
-            rx.tabs.trigger("Backend", value="tab2", class_name="tab-style"),
-            rx.tabs.trigger("Page", value="tab3", class_name="tab-style"),
+            rx.tabs.trigger("Frontend", value="tab1", class_name="pill-tab"),
+            rx.tabs.trigger("Backend", value="tab2", class_name="pill-tab"),
+            rx.tabs.trigger("Page", value="tab3", class_name="pill-tab"),
+            class_name="pill-tab-list",
         ),
         rx.tabs.content(
             rx.markdown(
-                """The frontend is built declaratively using Reflex components. Components are compiled down to JS and served to the users browser, therefore:
-
-- Only use Reflex components, vars, and var operations when building your UI. Any other logic should be put in your `State` (backend).
-
-- Use `rx.cond` and `rx.foreach` (replaces if statements and for loops), for creating dynamic UIs.
+                """The frontend is built declaratively with Reflex components, which compile to JS and run in the browser. Use `rx.cond` and `rx.foreach` instead of `if` and `for` for dynamic UIs. Any non-UI logic belongs in `State`.
                 """,
             ),
             value="tab1",
@@ -86,9 +103,7 @@ def tabs():
         ),
         rx.tabs.content(
             rx.markdown(
-                """Each page is a Python function that returns a Reflex component. You can define multiple pages and navigate between them, see the [Routing](/docs/pages/overview) section for more information.
-
-- Start with a single page and scale to 100s of pages.
+                """Each page is a Python function returning a Reflex component. Add as many as you want and link between them — see [Routing](/docs/pages/overview) for details.
                 """,
             ),
             value="tab3",
@@ -124,13 +139,11 @@ Here is the full code for this example:
 tabs()
 ```
 
-```python demo box
+```python eval
 rx.box(
-    rx._x.code_block(
-        """import reflex as rx """,
-        class_name="code-block !bg-transparent !border-none",
-    ),
-    rx._x.code_block(
+    counter_code_section("""import reflex as rx """, ""),
+    counter_code_gap(),
+    counter_code_section(
         """class State(rx.State):
     count: int = 0
 
@@ -141,19 +154,10 @@ rx.box(
     @rx.event
     def decrement(self):
         self.count -= 1""",
-        background=rx.cond(
-            IntroTabsState.value == "tab2",
-            "var(--c-violet-3) !important",
-            "transparent",
-        ),
-        border=rx.cond(
-            IntroTabsState.value == "tab2",
-            "1px solid var(--c-violet-5)",
-            "none !important",
-        ),
-        class_name="code-block",
+        "tab2",
     ),
-    rx._x.code_block(
+    counter_code_gap(),
+    counter_code_section(
         """def index():
     return rx.hstack(
         rx.button(
@@ -169,34 +173,18 @@ rx.box(
         ),
         spacing="4",
     )""",
-        border=rx.cond(
-            IntroTabsState.value == "tab1",
-            "1px solid var(--c-violet-5)",
-            "none !important",
-        ),
-        background=rx.cond(
-            IntroTabsState.value == "tab1",
-            "var(--c-violet-3) !important",
-            "transparent",
-        ),
-        class_name="code-block",
+        "tab1",
     ),
-    rx._x.code_block(
+    counter_code_gap(),
+    counter_code_section(
         """app = rx.App()
 app.add_page(index)""",
-        background=rx.cond(
-            IntroTabsState.value == "tab3",
-            "var(--c-violet-3) !important",
-            "transparent",
-        ),
-        border=rx.cond(
-            IntroTabsState.value == "tab3",
-            "1px solid var(--c-violet-5)",
-            "none !important",
-        ),
-        class_name="code-block",
+        "tab3",
     ),
-    class_name="w-full flex flex-col",
+    class_name=(
+        "w-full flex flex-col overflow-hidden rounded-xl border "
+        "border-slate-4 bg-slate-2 py-1"
+    ),
 )
 ```
 
@@ -210,7 +198,7 @@ Let's break this example down.
 import reflex as rx
 ```
 
-We begin by importing the `reflex` package (aliased to `rx`). We reference Reflex objects as `rx.*` by convention.
+Import Reflex as `rx`. All Reflex objects are accessed as `rx.*`.
 
 ### State
 
@@ -219,9 +207,7 @@ class State(rx.State):
     count: int = 0
 ```
 
-The state defines all the variables (called **[vars](/docs/vars/base_vars)**) in an app that can change, as well as the functions (called **[event_handlers](#event-handlers)**) that change them.
-
-Here our state has a single var, `count`, which holds the current value of the counter. We initialize it to `0`.
+State holds the app's mutable data. Variables declared here are called **[vars](/docs/vars/base-vars)**. Our counter has one: `count`, starting at `0`.
 
 ### Event Handlers
 
@@ -236,13 +222,7 @@ def decrement(self):
     self.count -= 1
 ```
 
-Within the state, we define functions, called **event handlers**, that change the state vars.
-
-Event handlers are the only way that we can modify the state in Reflex.
-They can be called in response to user actions, such as clicking a button or typing in a text box.
-These actions are called **events**.
-
-Our counter app has two event handlers, `increment` and `decrement`.
+**Event handlers** are the only way to modify state. They're triggered by user actions (clicks, typing, etc.) — those actions are called **events**. Our counter has two handlers: `increment` and `decrement`.
 
 ### User Interface (UI)
 
@@ -264,70 +244,44 @@ def index():
     )
 ```
 
-This function defines the app's user interface.
+The UI is built from components (`rx.hstack`, `rx.button`, `rx.heading`) that can be nested and styled with CSS or [Tailwind](/docs/styling/tailwind). Reflex ships with [50+ built-in components](/docs/library), and you can [wrap any React component](/docs/wrapping-react/overview).
 
-We use different components such as `rx.hstack`, `rx.button`, and `rx.heading` to build the frontend. Components can be nested to create complex layouts, and can be styled using the full power of CSS or [Tailwind CSS](/docs/styling/tailwind).
+Components reference state vars (`rx.heading(State.count, …)`) and reactively re-render when state changes. Event triggers (`on_click=State.decrement`) wire UI to handlers.
 
-Reflex comes with [50+ built-in components](/docs/library) to help you get started.
-We are actively adding more components. Also, it's easy to [wrap your own React components](/docs/wrapping-react/overview).
+The sequence goes like this:
 
-```python
-(rx.heading(State.count, font_size="2em"),)
-```
-
-Components can reference the app's state vars.
-The `rx.heading` component displays the current value of the counter by referencing `State.count`.
-All components that reference state will reactively update whenever the state changes.
-
-```python
-(
-    rx.button(
-        "Decrement",
-        color_scheme="ruby",
-        on_click=State.decrement,
-    ),
-)
-```
-
-Components interact with the state by binding events triggers to event handlers.
-For example, `on_click` is an event that is triggered when a user clicks a component.
-
-The first button in our app binds its `on_click` event to the `State.decrement` event handler. Similarly the second button binds `on_click` to `State.increment`.
-
-In other words, the sequence goes like this:
-
-- User clicks "increment" on the UI.
-- `on_click` event is triggered.
-- Event handler `State.increment` is called.
-- `State.count` is incremented.
-- UI updates to reflect the new value of `State.count`.
+1. User clicks "Increment".
+2. `on_click` fires.
+3. `State.increment` runs on the server.
+4. `State.count` is updated.
+5. UI re-renders with the new value.
 
 ### Add pages
-
-Next we define our app and add the counter component to the base route.
 
 ```python
 app = rx.App()
 app.add_page(index)
 ```
 
+Create the app and register the page at the base route.
+
 ## Next Steps
 
-🎉 And that's it!
+🎉 You've built a fully interactive web app in pure Python.
 
-We've created a simple, yet fully interactive web app in pure Python.
+```md alert info
+# Keep learning
 
-By continuing with our documentation, you will learn how to build awesome apps with Reflex. Use the sidebar to navigate through the sections, or search (`Ctrl+K` or `Cmd+K`) to quickly find a page.
+- [Dashboard tutorial](/docs/getting-started/dashboard-tutorial/) — build a real data app.
+- [Chatapp tutorial](/docs/getting-started/chatapp-tutorial/) — wire up streaming AI responses.
+- [How Reflex works](/docs/advanced-onboarding/how-reflex-works/) — what happens under the hood.
+```
 
-For a glimpse of the possibilities, check out these resources:
+```md alert info
+# Ship faster with AI
 
-- For a more real-world example, check out either the [dashboard tutorial](/docs/getting_started/dashboard_tutorial) or the [chatapp tutorial](/docs/getting_started/chatapp_tutorial).
-- Check out our open-source [templates](/docs/getting_started/open_source_templates)!
-- We have an AI Builder that can generate full Reflex apps or help with your existing app! Check it out at [Reflex Build](https://build.reflex.dev/)!
-- Deploy your app with a single command using [Reflex Cloud](https://reflex.dev/docs/hosting/deploy-quick-start/)!
+- [Reflex Build](https://build.reflex.dev/) — generate a full app from a prompt.
+- [Reflex Cloud](/docs/hosting/deploy-quick-start/) — one-command deploy.
+```
 
-If you want to learn more about how Reflex works, check out the [How Reflex Works](/docs/advanced_onboarding/how-reflex-works) section.
-
-## Join our Community
-
-If you have questions about anything related to Reflex, you're always welcome to ask our community on [GitHub Discussions](https://github.com/orgs/reflex-dev/discussions), [Discord](https://discord.gg/T5WSbC2YtQ), [Forum](https://forum.reflex.dev), and [X](https://twitter.com/getreflex).
+Browse our [open-source templates](/docs/getting-started/open-source-templates/), or press `Cmd+K` / `Ctrl+K` to search the docs.

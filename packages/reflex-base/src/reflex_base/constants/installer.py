@@ -14,7 +14,7 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.3.10"
+    VERSION = "1.3.13"
 
     # Min Bun Version
     MIN_VERSION = "1.3.0"
@@ -29,6 +29,14 @@ class Bun(SimpleNamespace):
 
     # Path of the bunfig file
     CONFIG_PATH = "bunfig.toml"
+
+    # Path of the bun lockfile.
+    LOCKFILE_PATH = "bun.lock"
+
+    # Directory in the app root where the canonical bun lockfile is stored.
+    # A dedicated directory avoids clashes with a user's own bun project
+    # that may sit in the same directory as the Reflex project.
+    ROOT_LOCKFILE_DIR = "reflex.lock"
 
     @classproperty
     @classmethod
@@ -68,6 +76,9 @@ class Node(SimpleNamespace):
     # Path of the node config file.
     CONFIG_PATH = ".npmrc"
 
+    # Path of the npm lockfile.
+    LOCKFILE_PATH = "package-lock.json"
+
     DEFAULT_CONFIG = """
 registry={registry}
 fetch-retries=0
@@ -75,7 +86,7 @@ fetch-retries=0
 
 
 def _determine_react_router_version() -> str:
-    default_version = "7.13.1"
+    default_version = "7.15.0"
     if (version := os.getenv("REACT_ROUTER_VERSION")) and version != default_version:
         from reflex_base.utils import console
 
@@ -87,7 +98,7 @@ def _determine_react_router_version() -> str:
 
 
 def _determine_react_version() -> str:
-    default_version = "19.2.4"
+    default_version = "19.2.6"
     if (version := os.getenv("REACT_VERSION")) and version != default_version:
         from reflex_base.utils import console
 
@@ -122,29 +133,26 @@ class PackageJson(SimpleNamespace):
             A dictionary of dependencies with their versions.
         """
         return {
-            "json5": "2.2.3",
             "react-router": cls._react_router_version,
             "react-router-dom": cls._react_router_version,
             "@react-router/node": cls._react_router_version,
             "react": cls._react_version,
             "react-helmet": "6.1.0",
             "react-dom": cls._react_version,
-            "isbot": "5.1.36",
+            "isbot": "5.1.40",
             "socket.io-client": "4.8.3",
             "universal-cookie": "7.2.2",
         }
 
     DEV_DEPENDENCIES = {
         "@emotion/react": "11.14.0",
-        "autoprefixer": "10.4.27",
-        "postcss": "8.5.8",
+        "autoprefixer": "10.5.0",
+        "postcss": "8.5.14",
         "postcss-import": "16.1.1",
         "@react-router/dev": _react_router_version,
         "@react-router/fs-routes": _react_router_version,
-        "vite": "8.0.0",
+        "vite": "8.0.12",
     }
     OVERRIDES = {
-        # This should always match the `react` version in DEPENDENCIES for recharts compatibility.
-        "react-is": _react_version,
         "cookie": "1.1.1",
     }

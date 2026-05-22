@@ -30,6 +30,7 @@ def EventChain():
     class State(rx.State):
         event_order: list[str] = []
         interim_value: str = ""
+        cond_input: str = ""
 
         @rx.event
         def event_no_args(self):
@@ -148,6 +149,18 @@ def EventChain():
             time.sleep(0.5)
             self.interim_value = "final"
 
+        @rx.event
+        def set_cond_input(self, value: str):
+            self.cond_input = value
+
+    # Frontend FunctionVar branch: writes a label into a DOM data-attribute.
+    mark_dom_fn = rx.vars.FunctionStringVar.create(
+        "((label) => { "
+        "const el = document.getElementById('mixed_cond_marker');"
+        "if (el) { el.setAttribute('data-value', label); }"
+        "})"
+    ).to(rx.EventChain)
+
     app = rx.App()
 
     common_elements = rx.vstack(
@@ -229,6 +242,25 @@ def EventChain():
                 "Click Yield Interim Value",
                 id="click_yield_interim_value",
                 on_click=State.click_yield_interim_value,
+            ),
+            rx.input(
+                value=State.cond_input,
+                on_change=State.set_cond_input,
+                id="cond_input",
+            ),
+            rx.box(
+                State.cond_input,
+                id="mixed_cond_marker",
+                custom_attrs={"data-value": ""},
+            ),
+            rx.button(
+                "Mixed Cond",
+                id="mixed_cond_btn",
+                on_click=lambda: rx.cond(
+                    State.cond_input == "fn",
+                    mark_dom_fn.partial("fn_branch"),
+                    State.event_arg("ev_branch"),
+                ),
             ),
         )
 
@@ -713,3 +745,34 @@ def test_yield_state_update(event_chain: AppHarness, driver: WebDriver, button_i
         event_chain.poll_for_value(interim_value_input, exp_not_equal="interim")
         == "final"
     )
+
+
+def test_mixed_cond_event_lambda(event_chain: AppHarness, driver: WebDriver):
+    """Verify a lambda returning rx.cond with a FunctionVar branch and an EventSpec branch.
+
+    Each branch is exercised end-to-end: the FunctionVar branch updates a DOM
+    data-attribute via a frontend-only function, and the EventSpec branch
+    dispatches a backend event handler.
+
+    Args:
+        event_chain: AppHarness for the event_chain app
+        driver: selenium WebDriver open to the app
+    """
+    assert_token(event_chain, driver)
+    cond_input = driver.find_element(By.ID, "cond_input")
+    marker = driver.find_element(By.ID, "mixed_cond_marker")
+    btn = driver.find_element(By.ID, "mixed_cond_btn")
+
+    # Default cond_input ("") -> EventSpec branch fires the backend handler.
+    btn.click()
+    poll_assert_event_order(driver, ["event_arg:ev_branch"])
+    assert marker.get_attribute("data-value") == ""
+
+    # Switch to the FunctionVar branch and click again.
+    cond_input.send_keys("fn")
+    assert event_chain.poll_for_content(marker, exp_not_equal="") == "fn"
+    btn.click()
+    AppHarness._poll_for(lambda: marker.get_attribute("data-value") == "fn_branch")
+    assert marker.get_attribute("data-value") == "fn_branch"
+    # Backend event order is unchanged because only the frontend function ran.
+    poll_assert_event_order(driver, ["event_arg:ev_branch"])

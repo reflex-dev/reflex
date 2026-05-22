@@ -2,13 +2,15 @@
 name = "reflex-components-core"
 dynamic = ["version"]
 description = "UI components for Reflex."
+license.text = "Apache-2.0"
 readme = "README.md"
 authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 requires-python = ">=3.10"
 dependencies = [
-    "reflex-components-lucide",
-    "reflex-components-sonner",
+    "reflex-base >= 0.9.0",
+    "reflex-components-lucide >= 0.9.0",
+    "reflex-components-sonner >= 0.9.0",
     "python_multipart",
     "starlette",
     "typing_extensions",

@@ -25,6 +25,7 @@ from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
 from reflex_base.utils import console, exceptions, format
+from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import computed_var
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
@@ -39,18 +40,15 @@ import reflex as rx
 from reflex import AdminDash, constants
 from reflex.app import App, ComponentCallable, upload
 from reflex.environment import environment
+from reflex.istate.data import RouterData
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
+from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.model import Model
-from reflex.state import (
-    BaseState,
-    OnLoadInternalState,
-    RouterData,
-    State,
-    reload_state_module,
-)
+from reflex.state import BaseState, OnLoadInternalState, State, reload_state_module
+from reflex.utils import exec as exec_utils
 
 from .conftest import chdir
 from .states import GenState
@@ -1320,72 +1318,6 @@ async def test_upload_file_closes_form_if_response_cancelled_before_stream_start
 
 
 @pytest.mark.asyncio
-async def test_upload_file_cancels_buffered_handler_on_disconnect(token: str):
-    """Buffered uploads cancel the streaming handler on client disconnect.
-
-    Args:
-        token: A token.
-    """
-    request_mock = unittest.mock.Mock()
-    request_mock.headers = {
-        "reflex-client-token": token,
-        "reflex-event-handler": f"{FileUploadState.get_full_name()}.multi_handle_upload",
-    }
-
-    bio = io.BytesIO(b"contents of image one")
-    file1 = UploadFile(filename="image1.jpg", file=bio)
-    form_data = FormData([("files", file1)])
-    original_close = form_data.close
-    form_close = AsyncMock(side_effect=original_close)
-    form_data.close = form_close
-
-    async def form():  # noqa: RUF029
-        return form_data
-
-    request_mock.form = form
-
-    stream_started = asyncio.Event()
-    stream_closed = asyncio.Event()
-
-    async def enqueue_stream_delta(_token, _event):
-        try:
-            stream_started.set()
-            yield {"state": {"ok": True}}
-            await asyncio.Event().wait()
-        finally:
-            stream_closed.set()
-
-    app = Mock(
-        event_processor=Mock(enqueue_stream_delta=enqueue_stream_delta),
-    )
-
-    upload_fn = upload(app)
-    streaming_response = await upload_fn(request_mock)
-
-    assert isinstance(streaming_response, StreamingResponse)
-
-    async def receive():
-        await stream_started.wait()
-        return {"type": "http.disconnect"}
-
-    async def send(_message):  # noqa: RUF029
-        return None
-
-    await asyncio.wait_for(
-        streaming_response(
-            {"type": "http", "asgi": {"spec_version": "2.4"}},
-            receive,
-            send,
-        ),
-        timeout=1,
-    )
-
-    await asyncio.wait_for(stream_closed.wait(), timeout=1)
-    assert form_close.await_count == 1
-    assert bio.closed
-
-
-@pytest.mark.asyncio
 async def test_upload_file_raises_client_disconnect_when_stream_send_fails(
     token: str,
 ):
@@ -2174,6 +2106,184 @@ def test_app_wrap_compile_theme(
     assert expected.split(",") == function_app_definition.split(",")
 
 
+def test_compile_without_radix_components_skips_radix_plugin(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """Pure HTML apps should not include Radix Themes assets or wrappers."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mock_deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+
+    app.add_page(lambda: rx.el.div("Index"), route="/")
+    app.add_page(lambda: rx.el.div("404"), route=constants.Page404.SLUG)
+    app._compile()
+
+    root_stylesheet = (
+        web_dir
+        / constants.Dirs.STYLES
+        / f"{constants.PageNames.STYLESHEET_ROOT}{constants.Ext.CSS}"
+    ).read_text()
+    app_root = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+
+    assert "@radix-ui/themes/styles.css" not in root_stylesheet
+    assert "RadixThemesTheme" not in app_root
+    mock_deprecate.assert_not_called()
+
+
+def test_compile_with_radix_component_auto_enables_radix_plugin(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """Using a Radix Themes component should enable the plugin with a warning."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mock_deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+
+    app.add_page(lambda: rx.box("Index"), route="/")
+    app.add_page(lambda: rx.el.div("404"), route=constants.Page404.SLUG)
+    app._compile()
+
+    root_stylesheet = (
+        web_dir
+        / constants.Dirs.STYLES
+        / f"{constants.PageNames.STYLESHEET_ROOT}{constants.Ext.CSS}"
+    ).read_text()
+    app_root = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+
+    assert "@radix-ui/themes/styles.css" in root_stylesheet
+    assert 'RadixThemesTheme,{accentColor:"blue"' in app_root
+    mock_deprecate.assert_called_once()
+    assert (
+        mock_deprecate.call_args.kwargs["feature_name"]
+        == "Implicit Radix Themes enablement"
+    )
+
+
+def test_compile_with_legacy_app_theme_warns_and_enables_radix_plugin(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """``App(theme=...)`` should continue to work with a deprecation warning."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mock_deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+
+    app.theme = rx.theme(accent_color="plum")
+    app.add_page(lambda: rx.el.div("Index"), route="/")
+    app.add_page(lambda: rx.el.div("404"), route=constants.Page404.SLUG)
+    app._compile()
+
+    root_stylesheet = (
+        web_dir
+        / constants.Dirs.STYLES
+        / f"{constants.PageNames.STYLESHEET_ROOT}{constants.Ext.CSS}"
+    ).read_text()
+    app_root = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+
+    assert "@radix-ui/themes/styles.css" in root_stylesheet
+    assert 'RadixThemesTheme,{accentColor:"plum"' in app_root
+    mock_deprecate.assert_called_once()
+    assert mock_deprecate.call_args.kwargs["feature_name"] == "App(theme=...)"
+
+
+def test_explicit_radix_plugin_wins_over_legacy_app_theme(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """Explicit RadixThemesPlugin config should win over deprecated App.theme."""
+    conf = rx.Config(
+        app_name="testing",
+        plugins=[rx.plugins.RadixThemesPlugin(theme=rx.theme(accent_color="green"))],
+    )
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mock_deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+
+    app.theme = rx.theme(accent_color="plum")
+    app.add_page(lambda: rx.el.div("Index"), route="/")
+    app.add_page(lambda: rx.el.div("404"), route=constants.Page404.SLUG)
+    app._compile()
+
+    app_root = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+
+    assert 'RadixThemesTheme,{accentColor:"green"' in app_root
+    assert 'RadixThemesTheme,{accentColor:"plum"' not in app_root
+    mock_deprecate.assert_called_once()
+    assert mock_deprecate.call_args.kwargs["feature_name"] == "App(theme=...)"
+
+
+def test_compile_writes_app_wrap_memo_components(
+    compilable_app: tuple[App, Path],
+    mocker,
+) -> None:
+    """App-wrap memo components are emitted to the shared components module."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+
+    app.add_page(rx.box("Index"), route="/")
+    app._compile()
+
+    components_index = (
+        web_dir
+        / constants.Dirs.UTILS
+        / f"{constants.PageNames.COMPONENTS}{constants.Ext.JSX}"
+    ).read_text()
+
+    # Per-memo modules live under .web/utils/components/; the index re-exports
+    # each one so page-side ``$/utils/components`` resolves the same tags.
+    assert "DefaultOverlayComponents" in components_index
+    assert "MemoizedToastProvider" in components_index
+    assert 'from "./components/DefaultOverlayComponents"' in components_index
+    assert 'from "./components/MemoizedToastProvider"' in components_index
+
+    memo_dir = web_dir / constants.Dirs.UTILS / constants.PageNames.COMPONENTS
+    assert (memo_dir / f"DefaultOverlayComponents{constants.Ext.JSX}").exists()
+    assert (memo_dir / f"MemoizedToastProvider{constants.Ext.JSX}").exists()
+
+
+def test_compile_writes_upload_files_provider_app_wrap(
+    compilable_app: tuple[App, Path],
+    mocker,
+) -> None:
+    """Upload pages emit the UploadFilesProvider app wrap into the app root."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+
+    app.add_page(
+        lambda: rx.upload.root(
+            rx.vstack(
+                rx.button("Select File"),
+                rx.text("Drag and drop files here or click to select files"),
+            ),
+        ),
+        route="/",
+    )
+    app._compile()
+
+    root_js = web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    root_contents = root_js.read_text()
+
+    assert "UploadFilesProvider" in root_contents
+
+
 @pytest.mark.parametrize(
     "react_strict_mode",
     [True, False],
@@ -2251,6 +2361,73 @@ def test_app_wrap_priority(
     assert expected.split(",") == function_app_definition.split(",")
 
 
+def test_get_frontend_packages_maps_subpath_imports_to_installable_package_names(
+    mocker: MockerFixture,
+):
+    """Subpath imports should install the base npm package."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex.app.get_config", return_value=conf)
+    install_frontend_packages = mocker.patch(
+        "reflex.app.js_runtimes.install_frontend_packages"
+    )
+
+    app = App(theme=None)
+    app._get_frontend_packages({
+        "react-map-gl/maplibre": {ImportVar(tag="Map")},
+        "@scope/pkg/subpath": {ImportVar(tag="Widget")},
+        "react": {ImportVar(tag="useEffect")},
+    })
+
+    install_set, _ = install_frontend_packages.call_args.args
+    assert "react-map-gl" in install_set
+    assert "@scope/pkg" in install_set
+    assert "react-map-gl/maplibre" not in install_set
+    assert "@scope/pkg/subpath" not in install_set
+
+
+def test_get_frontend_packages_keeps_https_imports_unchanged(
+    mocker: MockerFixture,
+):
+    """URL-based imports should be passed through unchanged."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex.app.get_config", return_value=conf)
+    install_frontend_packages = mocker.patch(
+        "reflex.app.js_runtimes.install_frontend_packages"
+    )
+
+    app = App(theme=None)
+    app._get_frontend_packages({
+        "https://cdn.skypack.dev/some-lib": {ImportVar(tag="SomeTag")}
+    })
+
+    install_set, _ = install_frontend_packages.call_args.args
+    assert "https://cdn.skypack.dev/some-lib" in install_set
+    assert "https:" not in install_set
+
+
+def test_get_frontend_packages_maps_versioned_subpath_imports_to_pinned_base(
+    mocker: MockerFixture,
+):
+    """Versioned subpath imports should install the base package with its version."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex.app.get_config", return_value=conf)
+    install_frontend_packages = mocker.patch(
+        "reflex.app.js_runtimes.install_frontend_packages"
+    )
+
+    app = App(theme=None)
+    app._get_frontend_packages({
+        "react-map-gl@1.0.0/maplibre": {ImportVar(tag="Map")},
+        "@scope/pkg@2.0.0/subpath": {ImportVar(tag="Widget")},
+    })
+
+    install_set, _ = install_frontend_packages.call_args.args
+    assert "react-map-gl@1.0.0" in install_set
+    assert "@scope/pkg@2.0.0" in install_set
+    assert "react-map-gl@1.0.0/maplibre" not in install_set
+    assert "@scope/pkg@2.0.0/subpath" not in install_set
+
+
 def test_app_state_determination():
     """Test that the stateless status of an app is determined correctly."""
     a1 = App()
@@ -2276,13 +2453,40 @@ def test_call_app():
     assert isinstance(api, Starlette)
 
 
-def test_app_with_optional_endpoints():
+@pytest.fixture
+def upload_enabled(monkeypatch):
+    """Fixture that enables Upload and cleans up afterward."""
     from reflex_components_core.core.upload import Upload
 
-    app = App()
-    Upload.is_used = True
-    app._add_optional_endpoints()
-    # TODO: verify the availability of the endpoints in app.api
+    monkeypatch.setattr(Upload, "is_used", True)
+    yield
+    monkeypatch.setattr(Upload, "is_used", False)
+
+
+@pytest.mark.usefixtures("upload_enabled")
+def test_app_with_optional_endpoints(tmp_path: Path):
+    from starlette.routing import Mount, Route
+
+    with chdir(tmp_path):
+        app = App()
+        app._add_optional_endpoints()
+
+        assert app._api is not None
+        upload_path = str(constants.Endpoint.UPLOAD)
+        routes = list(app._api.routes)
+
+        assert any(
+            isinstance(r, Route)
+            and r.path == upload_path
+            and "POST" in getattr(r, "methods", set())
+            for r in routes
+        )
+        assert any(
+            isinstance(r, Mount)
+            and r.path == upload_path
+            and r.name == "uploaded_files"
+            for r in routes
+        )
 
 
 def test_app_state_manager():
@@ -2762,3 +2966,263 @@ def test_set_contexts_no_event_processor(isolated_context: contextvars.Context):
                 EventContext.get()
 
     isolated_context.run(_test)
+
+
+def test_compile_sends_telemetry_when_enabled(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """When telemetry is enabled, ``_compile`` emits one ``compile`` PostHog event."""
+    conf = rx.Config(app_name="testing", telemetry_enabled=True)
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+
+    mocker.patch("reflex.compiler.compiler.compile_app", return_value=True)
+    send_mock = mocker.patch("reflex.utils.telemetry.send")
+
+    app._compile(trigger="initial")
+
+    compile_calls = [c for c in send_mock.call_args_list if c.args[0] == "compile"]
+    assert len(compile_calls) == 1
+    payload = compile_calls[0].kwargs["properties"]
+    for key in (
+        "plugins_enabled",
+        "plugins_disabled",
+        "pages_count",
+        "component_counts",
+        "states",
+        "features_used",
+        "duration_ms",
+        "trigger",
+        "exception",
+    ):
+        assert key in payload, f"missing key {key} in compile event payload"
+    assert payload["exception"] is None
+    assert payload["trigger"] == "initial"
+
+
+def test_compile_skips_telemetry_when_disabled(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """When telemetry is disabled, ``_compile`` does not emit a ``compile`` event."""
+    conf = rx.Config(app_name="testing", telemetry_enabled=False)
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+
+    mocker.patch("reflex.compiler.compiler.compile_app", return_value=True)
+    send_mock = mocker.patch("reflex.utils.telemetry.send")
+
+    app._compile()
+
+    assert all(c.args[0] != "compile" for c in send_mock.call_args_list)
+
+
+def test_compile_reports_exception_and_reraises(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """A compile exception is sanitized into the event and then re-raised."""
+    conf = rx.Config(app_name="testing", telemetry_enabled=True)
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+
+    class _BoomError(RuntimeError):
+        pass
+
+    mocker.patch(
+        "reflex.compiler.compiler.compile_app",
+        side_effect=_BoomError("/etc/passwd: secret token foo"),
+    )
+    send_mock = mocker.patch("reflex.utils.telemetry.send")
+
+    with pytest.raises(_BoomError):
+        app._compile()
+
+    compile_calls = [c for c in send_mock.call_args_list if c.args[0] == "compile"]
+    assert len(compile_calls) == 1
+    payload = compile_calls[0].kwargs["properties"]
+    assert payload["exception"] == {"type": "_BoomError"}
+
+
+def test_compile_skips_telemetry_when_compile_app_short_circuits(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """No ``compile`` event when ``compile_app()`` skipped the real compile."""
+    conf = rx.Config(app_name="testing", telemetry_enabled=True)
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+
+    mocker.patch("reflex.compiler.compiler.compile_app", return_value=False)
+    send_mock = mocker.patch("reflex.utils.telemetry.send")
+
+    app._compile(trigger="backend_startup")
+
+    assert all(c.args[0] != "compile" for c in send_mock.call_args_list)
+
+
+def test_compile_event_features_used_match_populated_app(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """End-to-end compile fills features_used with exact counts from the app.
+
+    Guards against data-malformation regressions like the inherited-field
+    double-count: storage vars declared on a parent state must be counted
+    once, even when descendants inherit them.
+    """
+    conf = rx.Config(app_name="testing", telemetry_enabled=True)
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mocker.patch("reflex.compiler.compiler.compile_app", return_value=True)
+    send_mock = mocker.patch("reflex.utils.telemetry.send")
+
+    class _PopulatedRoot(BaseState):
+        root_cookie: str = Cookie()
+        root_local: str = LocalStorage()
+
+        @rx.event(background=True)
+        async def heavy(self):
+            """Background handler used to assert detection."""
+
+    class _PopulatedChild(_PopulatedRoot):
+        # root_cookie is inherited here and must not be re-counted.
+        child_session: str = SessionStorage()
+
+    app._state = _PopulatedRoot
+
+    def about_page():
+        return rx.box(rx.text("about"))
+
+    def item_page():
+        return rx.box(rx.text("item"))
+
+    app.add_page(about_page, route="/about")
+    app.add_page(item_page, route="/items/[id]")
+
+    app._compile(trigger="initial")
+
+    compile_calls = [c for c in send_mock.call_args_list if c.args[0] == "compile"]
+    assert len(compile_calls) == 1
+    payload = compile_calls[0].kwargs["properties"]
+    features = payload["features_used"]
+    assert features["cookie_count"] == 1, (
+        "inherited cookie field was counted on parent and child"
+    )
+    assert features["local_storage_count"] == 1
+    assert features["session_storage_count"] == 1
+    assert features["background_event_handlers_count"] == 1
+    assert features["dynamic_routes_count"] == 1
+    assert sorted(s["depth_from_root"] for s in payload["states"]) == [0, 1]
+
+
+def test_compile_event_features_used_stable_across_hot_reload(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """Recompiling under hot_reload reports the same features_used as the initial compile.
+
+    A bug that accumulated state across compiles (e.g. caching the snapshot
+    or re-counting on each pass) would show up here as drift between the
+    two payloads.
+    """
+    conf = rx.Config(app_name="testing", telemetry_enabled=True)
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mocker.patch("reflex.compiler.compiler.compile_app", return_value=True)
+    send_mock = mocker.patch("reflex.utils.telemetry.send")
+
+    class _ReloadRoot(BaseState):
+        token: str = Cookie()
+
+    class _ReloadChild(_ReloadRoot):
+        session: str = SessionStorage()
+
+    app._state = _ReloadRoot
+
+    def page():
+        return rx.box(rx.text("hi"))
+
+    app.add_page(page, route="/items/[id]")
+
+    app._compile(trigger="initial")
+    app._compile(trigger="hot_reload")
+
+    compile_calls = [c for c in send_mock.call_args_list if c.args[0] == "compile"]
+    assert len(compile_calls) == 2
+    first = compile_calls[0].kwargs["properties"]
+    second = compile_calls[1].kwargs["properties"]
+    assert first["trigger"] == "initial"
+    assert second["trigger"] == "hot_reload"
+    assert first["features_used"] == second["features_used"]
+    assert [s["depth_from_root"] for s in first["states"]] == [
+        s["depth_from_root"] for s in second["states"]
+    ]
+    # Sanity-check the values themselves, not just equality.
+    assert first["features_used"]["cookie_count"] == 1
+    assert first["features_used"]["session_storage_count"] == 1
+    assert first["features_used"]["dynamic_routes_count"] == 1
+
+
+def test_call_marks_first_dev_backend_worker_as_startup(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """The first reload-capable backend worker compile is backend startup."""
+    monkeypatch.setenv(environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name, "True")
+
+    app, web_dir = compilable_app
+    marker = web_dir / exec_utils.DEV_BACKEND_RELOAD_MARKER
+    compile_mock = mocker.patch.object(app, "_compile")
+
+    app()
+
+    compile_mock.assert_called_once()
+    assert compile_mock.call_args.kwargs["trigger"] == "backend_startup"
+    assert marker.exists()
+
+
+def test_call_marks_later_dev_backend_worker_as_hot_reload(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A later reload-capable backend worker compile is a hot reload."""
+    monkeypatch.setenv(environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name, "True")
+
+    app, web_dir = compilable_app
+    marker = web_dir / exec_utils.DEV_BACKEND_RELOAD_MARKER
+    marker.touch()
+    compile_mock = mocker.patch.object(app, "_compile")
+
+    app()
+
+    compile_mock.assert_called_once()
+    assert compile_mock.call_args.kwargs["trigger"] == "hot_reload"
+
+
+def test_call_ignores_stale_marker_without_dev_backend_reload(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A stale marker alone is not enough to label a compile as hot reload."""
+    monkeypatch.delenv(environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name, raising=False)
+
+    app, web_dir = compilable_app
+    marker = web_dir / exec_utils.DEV_BACKEND_RELOAD_MARKER
+    marker.touch()
+    compile_mock = mocker.patch.object(app, "_compile")
+
+    app()
+
+    compile_mock.assert_called_once()
+    assert compile_mock.call_args.kwargs["trigger"] == "backend_startup"

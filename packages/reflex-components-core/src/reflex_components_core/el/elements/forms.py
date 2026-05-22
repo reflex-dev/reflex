@@ -29,7 +29,7 @@ from reflex_base.vars.number import ternary_operation
 
 from reflex_components_core.el.element import Element
 
-from .base import BaseHTML
+from .base import BaseHTML, RawTextBaseHTML, VoidBaseHTML
 
 
 def _handle_submit_js_template(
@@ -305,7 +305,7 @@ HTMLInputTypeAttribute = Literal[
 ]
 
 
-class BaseInput(BaseHTML):
+class BaseInput(VoidBaseHTML):
     """A base class for input elements."""
 
     tag = "input"
@@ -652,7 +652,7 @@ const enterKeySubmitOnKeyDown = (e, is_enabled) => {
 """
 
 
-class Textarea(BaseHTML):
+class Textarea(RawTextBaseHTML):
     """Display the textarea element."""
 
     tag = "textarea"
@@ -769,18 +769,18 @@ class Textarea(BaseHTML):
             "enter_key_submit",
         ]
 
-    def _get_all_custom_code(self) -> dict[str, None]:
-        """Include the custom code for auto_height and enter_key_submit functionality.
+    def add_custom_code(self) -> list[str]:
+        """Inject the JS helpers used by ``auto_height`` and ``enter_key_submit``.
 
         Returns:
-            The custom code for the component.
+            The module-level JS snippets required by the enabled features.
         """
-        custom_code = super()._get_all_custom_code()
+        code: list[str] = []
         if self.auto_height is not None:
-            custom_code[AUTO_HEIGHT_JS] = None
+            code.append(AUTO_HEIGHT_JS)
         if self.enter_key_submit is not None:
-            custom_code[ENTER_KEY_SUBMIT_JS] = None
-        return custom_code
+            code.append(ENTER_KEY_SUBMIT_JS)
+        return code
 
 
 button = Button.create

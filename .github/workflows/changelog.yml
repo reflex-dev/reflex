@@ -51,7 +51,7 @@ jobs:
           for pkg_dir in packages/*/; do
             pkg=$(basename "$pkg_dir")
             case "$pkg" in
-              integrations-docs|reflex-ui|reflex-ui-shared) continue ;;
+              integrations-docs|reflex-components-internal|reflex-site-shared) continue ;;
             esac
             if printf '%s\n' "$changed" | grep -qE "^packages/$pkg/src/"; then
               affected+=("${pkg_dir%/}")

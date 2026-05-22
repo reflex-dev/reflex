@@ -1,35 +1,18 @@
-```python exec
-import reflex as rx
-
-app_name = "my_app_name"
-default_url = "http://localhost:3000"
-```
-
 # Installation
 
-Reflex requires Python 3.10+.
-
-```md video https://youtube.com/embed/ITOZkzjtjUA?start=758&end=1206
-# Video: Installation
-```
+~3 minutes · Requires Python 3.10+.
 
 ## Virtual Environment
 
-We **highly recommend** creating a virtual environment for your project.
+We recommend [uv](https://docs.astral.sh/uv/) as the default; [venv](https://docs.python.org/3/library/venv.html), [conda](https://conda.io/), and [poetry](https://python-poetry.org/) are alternatives.
 
-[uv](https://docs.astral.sh/uv/) is the recommended modern option. [venv](https://docs.python.org/3/library/venv.html), [conda](https://conda.io/) and [poetry](https://python-poetry.org/) are some alternatives.
-
-# Install Reflex on your system
+## Install Reflex on your system
 
 `````md tabs
 
 ## macOS/Linux
 
-We will go with [uv](https://docs.astral.sh/uv/) here.
-
-### Prerequisites
-
-#### Install uv
+### Install uv
 
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -39,51 +22,30 @@ After installation, restart your terminal or run `source ~/.bashrc` (or `source 
 
 Alternatively, install via [Homebrew, PyPI, or other methods](https://docs.astral.sh/uv/getting-started/installation/).
 
-**macOS (Apple Silicon) users:** Install [Rosetta 2](https://support.apple.com/en-us/HT211861). Run this command:
+```md alert warning
+# macOS (Apple Silicon) users: install Rosetta 2
 
-`/usr/sbin/softwareupdate --install-rosetta --agree-to-license`
-
-### Create the project directory
-
-Replace `{app_name}` with your project name. Switch to the new directory.
-
-```bash
-mkdir {app_name}
-cd {app_name}
+Run `/usr/sbin/softwareupdate --install-rosetta --agree-to-license`. See [Apple's instructions](https://support.apple.com/en-us/HT211861) for details.
 ```
 
-### Initialize uv project
+### Set up the Reflex project
+
+Replace `<your-app>` with your project name, then switch into the new directory.
 
 ```bash
+mkdir <your-app>
+cd <your-app>
 uv init
-```
-
-### Add Reflex to the project
-
-```bash
 uv add reflex
-```
-
-### Initialize the Reflex project
-
-```bash
 uv run reflex init
 ```
 
 
 ## Windows
 
-For Windows users, we recommend using [Windows Subsystem for Linux (WSL)](https://learn.microsoft.com/en-us/windows/wsl/about) for optimal performance.
+For Windows users, we recommend [WSL](https://learn.microsoft.com/en-us/windows/wsl/about) for optimal performance — WSL users should follow the macOS/Linux tab; the rest of this section covers native Windows.
 
-**WSL users:** Refer to the macOS/Linux instructions above.
-
-For the rest of this section we will work with native Windows (non-WSL).
-
-We will go with [uv](https://docs.astral.sh/uv/) here.
-
-### Prerequisites
-
-#### Install uv
+### Install uv
 
 ```powershell
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
@@ -93,30 +55,15 @@ After installation, restart your terminal (PowerShell or Command Prompt).
 
 Alternatively, install via [WinGet, Scoop, or other methods](https://docs.astral.sh/uv/getting-started/installation/).
 
-### Create the project directory
+### Set up the Reflex project
 
-Replace `{app_name}` with your project name. Switch to the new directory.
+Replace `<your-app>` with your project name, then switch into the new directory.
 
-```bash
-mkdir {app_name}
-cd {app_name}
-```
-
-### Initialize uv project
-
-```bash
+```powershell
+mkdir <your-app>
+cd <your-app>
 uv init
-```
-
-### Add Reflex to the project
-
-```bash
 uv add reflex
-```
-
-### Initialize the Reflex project
-
-```bash
 uv run reflex init
 ```
 
@@ -127,6 +74,7 @@ Bun requires runtime components of Visual C++ libraries to run on Windows. This 
 ```
 
 `````
+
 Running `uv run reflex init` will return the option to start with a blank Reflex app, premade templates built by the Reflex team, or to try our [AI builder](https://build.reflex.dev/).
 
 ```bash
@@ -139,7 +87,7 @@ Get started with a template:
 Which template would you like to use? (0):
 ```
 
-From here select an option.
+If this is your first time, pick **(0) A blank Reflex app** — the rest of the docs assume you started there.
 
 ## Run the App
 
@@ -149,12 +97,16 @@ Run it in development mode:
 uv run reflex run
 ```
 
-Your app runs at [http://localhost:3000](http://localhost:3000).
+Your app runs at [http://localhost:3000](http://localhost:3000). Reflex _hot reloads_ any code changes in real time — your edits show up automatically.
 
-Reflex prints logs to the terminal. To increase log verbosity to help with debugging, use the `--loglevel` flag:
+For troubleshooting, increase log verbosity with the `--loglevel` flag:
 
 ```bash
 uv run reflex run --loglevel debug
 ```
 
-Reflex will _hot reload_ any code changes in real time when running in development mode. Your code edits will show up on [http://localhost:3000](http://localhost:3000) automatically.
+```md alert info
+# Next: Build your first app
+
+Reflex is installed. The [Introduction](/docs/getting-started/introduction) walks through a working counter app in pure Python — the shortest path from "it runs" to "I understand it."
+```

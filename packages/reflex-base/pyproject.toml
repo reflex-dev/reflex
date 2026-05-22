@@ -2,6 +2,7 @@
 name = "reflex-base"
 dynamic = ["version"]
 description = "Core types for the Reflex framework."
+license.text = "Apache-2.0"
 readme = "README.md"
 authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]

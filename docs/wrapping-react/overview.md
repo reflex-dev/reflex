@@ -25,7 +25,7 @@ class Spline(rx.Component):
     """Spline component."""
 
     # The name of the npm package.
-    library = "@splinetool/react-spline"
+    library = "@splinetool/react-spline@4.1.0"
 
     # Any additional libraries needed to use the component.
     lib_dependencies: list[str] = ["@splinetool/runtime@1.5.5"]
@@ -58,11 +58,12 @@ We also have a var `color` which is the current color of the color picker.
 Since this component has interaction we must specify any event triggers that the component takes. The color picker has a single trigger `on_change` to specify when the color changes. This trigger takes in a single argument `color` which is the new color.
 
 ```python exec
+from reflex.experimental.client_state import ClientStateVar
 from reflex.components.component import NoSSRComponent
 
 
 class ColorPicker(NoSSRComponent):
-    library = "react-colorful"
+    library = "react-colorful@5.7.0"
     tag = "HexColorPicker"
     color: rx.Var[str]
     on_change: rx.EventHandler[lambda color: [color]]
@@ -70,7 +71,7 @@ class ColorPicker(NoSSRComponent):
 
 color_picker = ColorPicker.create
 
-ColorPickerState = rx._x.client_state(default="#db114b", var_name="color")
+ColorPickerState = ClientStateVar.create(default="#db114b", var_name="color")
 ```
 
 ```python eval
@@ -92,7 +93,7 @@ from reflex.components.component import NoSSRComponent
 
 
 class ColorPicker(NoSSRComponent):
-    library = "react-colorful"
+    library = "react-colorful@5.7.0"
     tag = "HexColorPicker"
     color: rx.Var[str]
     on_change: rx.EventHandler[lambda color: [color]]
@@ -103,6 +104,10 @@ color_picker = ColorPicker.create
 
 class ColorPickerState(rx.State):
     color: str = "#db114b"
+
+    @rx.event
+    def set_color(self, value: str):
+        self.color = value
 
 
 def index():
@@ -124,7 +129,7 @@ There are some libraries on npm that are not do not expose React components and 
 A library like [spline](https://www.npmjs.com/package/@splinetool/runtime) below is going to be difficult to wrap with Reflex because it does not expose a React component.
 
 ```javascript
-import \{ Application } from '@splinetool/runtime';
+import { Application } from '@splinetool/runtime';
 
 // make sure you have a canvas in the body
 const canvas = document.getElementById('canvas3d');

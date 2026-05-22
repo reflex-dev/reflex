@@ -1,5 +1,6 @@
 """Pipeline for rendering reflex-shipped docs via reflex_docgen.markdown."""
 
+import json
 import sys
 import types
 from pathlib import Path
@@ -35,23 +36,23 @@ from reflex_docgen.markdown._types import (
     TextSpan,
 )
 from reflex_docgen.markdown.transformer import DocumentTransformer
-from reflex_ui_shared.components.blocks.code import code_block
-from reflex_ui_shared.components.blocks.collapsible import collapsible_box
-from reflex_ui_shared.components.blocks.demo import docdemo, docdemobox, docgraphing
-from reflex_ui_shared.components.blocks.headings import (
+from reflex_site_shared.components.blocks.code import code_block
+from reflex_site_shared.components.blocks.collapsible import collapsible_box
+from reflex_site_shared.components.blocks.demo import docdemo, docdemobox, docgraphing
+from reflex_site_shared.components.blocks.headings import (
     h1_comp_xd,
     h2_comp_xd,
     h3_comp_xd,
     h4_comp_xd,
     img_comp_xd,
 )
-from reflex_ui_shared.components.blocks.typography import (
+from reflex_site_shared.components.blocks.typography import (
     code_comp,
     doclink2,
     list_comp,
     text_comp,
 )
-from reflex_ui_shared.constants import REFLEX_ASSETS_CDN
+from reflex_site_shared.constants import REFLEX_ASSETS_CDN
 
 # ---------------------------------------------------------------------------
 # Exec environment — mirrors reflex_docgen's module-based exec mechanism
@@ -516,12 +517,18 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
         """Render a ``md alert`` directive."""
         status = block.args[0] if block.args else "info"
         colors: dict[str, ColorType] = {
-            "info": "accent",
+            "info": "slate",
             "success": "grass",
             "warning": "amber",
             "error": "red",
         }
-        color: ColorType = colors.get(status, "blue")
+        color: ColorType = colors.get(status, "slate")
+        background_shade = 2 if status == "info" else 3
+        # For "info" alerts, use the neutral custom slate scale (--c-slate-*)
+        # so the card matches the codeblock styling instead of the blue-tinted
+        # default --slate-* scale that rx.color() produces.
+        bg_override = "var(--c-slate-2)" if status == "info" else None
+        border_override = "var(--c-slate-4)" if status == "info" else None
 
         # First child may be a heading used as the alert title.
         children = block.children
@@ -560,7 +567,14 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
                 padding="0px",
                 margin_top="16px",
             )
-            return collapsible_box(trigger, body, color)
+            return collapsible_box(
+                trigger,
+                body,
+                color,
+                background_shade=background_shade,
+                background_override=bg_override,
+                border_override=border_override,
+            )
 
         # Title only, or text-only (no heading) — simple non-collapsible box.
         if title_spans:
@@ -588,8 +602,8 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
                 spacing="1",
                 padding=["16px", "24px"],
             ),
-            border=f"1px solid {rx.color(color, 4)}",
-            background_color=f"{rx.color(color, 3)}",
+            border=f"1px solid {border_override or rx.color(color, 4)}",
+            background_color=f"{bg_override or rx.color(color, background_shade)}",
             border_radius="12px",
             margin_bottom="16px",
             margin_top="16px",
@@ -666,22 +680,26 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
                 rx.tabs.trigger(
                     title,
                     value=value,
-                    class_name="tab-style font-base font-semibold text-[1.25rem]",
+                    class_name="pill-tab",
                 )
             )
             contents.append(
-                rx.tabs.content(self._render_children(body_blocks), value=value),
+                rx.tabs.content(
+                    self._render_children(body_blocks),
+                    value=value,
+                    class_name="pt-6",
+                ),
             )
 
         return rx.tabs.root(
-            rx.tabs.list(*triggers, class_name="mt-4"),
+            rx.tabs.list(*triggers, class_name="pill-tab-list mt-2"),
             *contents,
             default_value="tab1",
         )
 
     def _render_definition(self, block: DirectiveBlock) -> rx.Component:
         """Render a ``md definition`` directive."""
-        from reflex_ui_shared.components.blocks.typography import definition
+        from reflex_site_shared.components.blocks.typography import definition
 
         sections = self._split_children_by_heading(block.children)
         defs = [
@@ -702,29 +720,43 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
 
     def _render_section(self, block: DirectiveBlock) -> rx.Component:
         """Render a ``md section`` directive."""
-        from reflex_ui_shared.styles.colors import c_color
-
         sections = self._split_children_by_heading(block.children)
-        return rx.box(
-            rx.vstack(
+        return rx.el.div(
+            rx.el.div(
                 *[
-                    rx.fragment(
-                        rx.text(
-                            rx.text.span(header, font_weight="bold"),
-                            width="100%",
+                    rx.el.div(
+                        rx.el.div(
+                            header,
+                            style={
+                                "fontWeight": "600",
+                                "color": "var(--c-slate-12)",
+                                "fontSize": "1rem",
+                                "lineHeight": "1.5",
+                            },
                         ),
-                        rx.box(self._render_children(body), width="100%"),
+                        rx.el.div(
+                            self._render_children(body),
+                            style={"width": "100%"},
+                        ),
+                        style={
+                            "display": "flex",
+                            "flexDirection": "column",
+                            "gap": "0.25rem",
+                            "width": "100%",
+                        },
                     )
                     for header, body in sections
                 ],
-                text_align="left",
-                margin_y="1em",
-                width="100%",
+                style={
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "gap": "1.25rem",
+                    "width": "100%",
+                    "paddingLeft": "1.5rem",
+                    "borderLeft": "1.5px solid var(--c-slate-4)",
+                },
             ),
-            border_left=f"1.5px {c_color('slate', 4)} solid",
-            padding_left="1em",
-            width="100%",
-            align_items="center",
+            style={"width": "100%", "margin": "1.5rem 0"},
         )
 
 
@@ -738,20 +770,95 @@ def _parse_doc(filepath: str | Path) -> Document:
     return parse_document(source)
 
 
+FAQS_START_MARKER = "<!-- faqs-start -->"
+FAQS_END_MARKER = "<!-- faqs-end -->"
+
+
+def _extract_faqs_jsonld(source: str) -> tuple[str, rx.Component | None]:
+    """Strip an FAQ section from the source and return a JSON-LD script for it.
+
+    Looks for content between :data:`FAQS_START_MARKER` and :data:`FAQS_END_MARKER`.
+    Inside that block, each H3 (``### Question``) heading is treated as a question
+    and the following text blocks (until the next H3) make up the answer. The
+    pairs are emitted as a single ``<script type="application/ld+json">`` element
+    using the schema.org ``FAQPage`` shape.
+
+    Returns ``(stripped_source, jsonld_script_or_none)``. The script is ``None``
+    if either marker is missing or no question/answer pairs were found.
+    """
+    if FAQS_START_MARKER not in source or FAQS_END_MARKER not in source:
+        return source, None
+    before, _, rest = source.partition(FAQS_START_MARKER)
+    faq_chunk, _, after = rest.partition(FAQS_END_MARKER)
+    stripped = before + after
+
+    doc = parse_document(faq_chunk)
+    faqs: list[tuple[str, str]] = []
+    current_q: str | None = None
+    current_a_parts: list[str] = []
+
+    def flush() -> None:
+        if current_q is not None:
+            answer = " ".join(p.strip() for p in current_a_parts if p.strip())
+            if answer:
+                faqs.append((current_q, answer))
+
+    for block in doc.blocks:
+        if isinstance(block, HeadingBlock) and block.level == 3:
+            flush()
+            current_q = _spans_to_plaintext(block.children)
+            current_a_parts = []
+        elif current_q is not None and isinstance(block, TextBlock):
+            current_a_parts.append(_spans_to_plaintext(block.children))
+    flush()
+
+    if not faqs:
+        return stripped, None
+
+    schema = {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": q,
+                "acceptedAnswer": {"@type": "Answer", "text": a},
+            }
+            for q, a in faqs
+        ],
+    }
+    jsonld = json.dumps(schema, ensure_ascii=False)
+    return stripped, rx.el.script(jsonld, type="application/ld+json")
+
+
 def render_docgen_document(
     virtual_filepath: str | Path, actual_filepath: str | Path
-) -> rx.Component:
-    """Parse and render a doc file from the reflex package using reflex_docgen."""
-    doc = _parse_doc(actual_filepath)
+) -> tuple[rx.Component, rx.Component | None]:
+    """Render a doc file as ``(body, faq_jsonld)``.
+
+    The FAQ section (between :data:`FAQS_START_MARKER` and
+    :data:`FAQS_END_MARKER`, if present) is stripped from the visible body and
+    returned as a JSON-LD ``<script>`` component for SEO. ``faq_jsonld`` is
+    ``None`` if no FAQ block is found.
+    """
+    source = Path(actual_filepath).read_text(encoding="utf-8")
+    source, faq_script = _extract_faqs_jsonld(source)
     transformer = ReflexDocTransformer(
         virtual_filepath=str(virtual_filepath), filename=str(actual_filepath)
     )
-    return transformer.transform(doc)
+    return transformer.transform(parse_document(source)), faq_script
 
 
 def get_docgen_toc(filepath: str | Path) -> list[tuple[int, str]]:
-    """Extract TOC headings as (level, text) tuples — same format as reflex_docgen's get_toc."""
-    doc = _parse_doc(filepath)
+    """Extract TOC headings as (level, text) tuples.
+
+    The FAQ block (between :data:`FAQS_START_MARKER` and
+    :data:`FAQS_END_MARKER`) is stripped before extraction so its headings do
+    not appear in the TOC — they live only in the emitted JSON-LD.
+    """
+    source = Path(filepath).read_text(encoding="utf-8")
+    source, _ = _extract_faqs_jsonld(source)
+    doc = parse_document(source)
     return [(h.level, _spans_to_plaintext(h.children)) for h in doc.headings]
 
 
@@ -760,3 +867,21 @@ def render_markdown(text: str) -> rx.Component:
     doc = parse_document(text)
     transformer = ReflexDocTransformer()
     return transformer.transform(doc)
+
+
+def render_inline_markdown(text: str, class_name: str = "") -> rx.Component:
+    """Render a short markdown string inline (links, code spans, emphasis).
+
+    Intended for places like prop-table descriptions where the source contains
+    inline markdown (e.g. ``[Foo](/path)``, `` `code` ``) but the surrounding
+    layout expects a single styled text node, not a stack of block-level
+    elements. Block-level markdown (headings, lists, code fences) falls back
+    to the full transformer.
+    """
+    if not text:
+        return rx.fragment()
+    doc = parse_document(text)
+    if len(doc.blocks) == 1 and isinstance(doc.blocks[0], TextBlock):
+        children = _render_spans(doc.blocks[0].children)
+        return rx.text(*children, class_name=class_name)
+    return ReflexDocTransformer().transform(doc)

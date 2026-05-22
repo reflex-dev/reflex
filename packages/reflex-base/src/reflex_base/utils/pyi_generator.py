@@ -9,6 +9,7 @@ import inspect
 import json
 import logging
 import multiprocessing
+import os
 import re
 import subprocess
 import sys
@@ -25,6 +26,7 @@ from types import MappingProxyType, ModuleType, SimpleNamespace, UnionType
 from typing import Any, ClassVar, get_args, get_origin
 
 from reflex_base.components.component import DEFAULT_TRIGGERS_AND_DESC, Component
+from reflex_base.environment import interpret_boolean_env
 from reflex_base.vars.base import Var
 
 
@@ -1621,6 +1623,15 @@ class PyiGenerator:
                     self.written_files.append(result)
             return
 
+        raise_on_failed_imports_key = "PYI_GENERATOR_RAISE_FAILED_IMPORTS"
+        raise_on_failed_imports = os.getenv(raise_on_failed_imports_key)
+
+        raise_if_failed_imports = (
+            interpret_boolean_env(raise_on_failed_imports, raise_on_failed_imports_key)
+            if raise_on_failed_imports is not None
+            else False
+        )
+
         # Pre-import all modules sequentially to populate sys.modules
         # so forked workers inherit the cache and skip redundant imports.
         importable_files: list[Path] = []
@@ -1631,6 +1642,8 @@ class PyiGenerator:
                 importable_files.append(file)
             except Exception:
                 logger.exception(f"Failed to import {module_import}")
+                if raise_if_failed_imports:
+                    raise
 
         # Generate stubs in parallel using forked worker processes.
         ctx = multiprocessing.get_context("fork")

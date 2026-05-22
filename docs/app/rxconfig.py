@@ -4,14 +4,15 @@ from agent_files import AgentFilesPlugin
 
 config = rx.Config(
     app_name="reflex_docs",
-    deploy_url="https://reflex.dev",
+    frontend_path="/docs",
     frontend_packages=[
-        "tailwindcss-animated",
+        "tailwindcss-animated@2.0.0",
+        "tailwindcss-scroll-mask@0.0.3",
     ],
     telemetry_enabled=False,
     plugins=[
         rx.plugins.TailwindV4Plugin(),
-        rx.plugins.SitemapPlugin(),
+        rx.plugins.SitemapPlugin(trailing_slash="always"),
         AgentFilesPlugin(),
     ],
 )

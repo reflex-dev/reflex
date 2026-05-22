@@ -13,15 +13,13 @@ def reflex_web_app():
     app_root = Path(__file__).parent.parent
     from reflex_docs.whitelist import WHITELISTED_PAGES
 
-    WHITELISTED_PAGES.extend(
-        [
-            "/docs/events",
-            "/docs/vars",
-            "/docs/getting-started",
-            "/docs/library/graphing",
-            "/docs/api-reference/special-events",
-        ]
-    )
+    WHITELISTED_PAGES.extend([
+        "/events",
+        "/vars",
+        "/getting-started",
+        "/library/graphing",
+        "/api-reference/special-events",
+    ])
 
     with AppHarness.create(root=app_root) as harness:
         yield harness

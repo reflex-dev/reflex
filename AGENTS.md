@@ -27,7 +27,7 @@ uv run pre-commit run --all-files                                # all pre-commi
 
 ```
 reflex/                 # main framework package (app, state, compiler, components, utils, istate)
-packages/               # workspace sub-packages (reflex-base, reflex-components-*, reflex-docgen, reflex-ui)
+packages/               # workspace sub-packages (reflex-base, reflex-components-*, reflex-docgen, reflex-components-internal)
 tests/units/            # unit tests, mirrors source tree
 tests/integration/      # Selenium integration tests (run in dev+prod modes)
   tests_playwright/     # Playwright integration tests (preferred for new tests)
@@ -46,6 +46,7 @@ docs/                   # documentation site (separate workspace member)
 - No block comments (`# --- Section ---`, `# ============`). Plain inline comments only.
 - Be cautious creating new public APIs — they must be documented and supported long-term.
 - Google-style docstrings on all functions: one-line summary, optional detail sentence(s), then Args/Returns (or Yields)/Raises.
+- Prefer imports at the top of the module in isort order. Only use inline imports when necessary to avoid circular dependencies.
 
 ## Testing
 

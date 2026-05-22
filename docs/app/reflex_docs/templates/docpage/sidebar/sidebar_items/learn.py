@@ -10,13 +10,18 @@ def get_sidebar_items_learn():
         create_item(
             "Getting Started",
             children=[
-                getting_started.introduction,
                 getting_started.installation,
+                getting_started.introduction,
                 getting_started.basics,
                 getting_started.project_structure,
+                getting_started.open_source_templates,
+            ],
+        ),
+        create_item(
+            "Tutorials",
+            children=[
                 getting_started.dashboard_tutorial,
                 getting_started.chatapp_tutorial,
-                getting_started.open_source_templates,
             ],
         ),
         create_item(
@@ -144,7 +149,6 @@ def get_sidebar_items_backend():
             children=[
                 events.events_overview,
                 events.event_arguments,
-                events.setters,
                 events.yield_events,
                 events.chaining_events,
                 events.special_events,
@@ -245,6 +249,7 @@ def get_sidebar_items_hosting():
             children=[
                 hosting.self_hosting,
                 hosting.databricks,
+                hosting.deploy_to_gcp,
             ],
         ),
     ]

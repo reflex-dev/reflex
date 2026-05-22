@@ -99,13 +99,13 @@ Under the hood, these components compile down to React components. For example, 
 
 ```jsx
 <HStack>
-    <Link href=\{GithubState.url}>
-        <Avatar src=\{GithubState.profile_image}/>
+    <Link href={GithubState.url}>
+        <Avatar src={GithubState.profile_image}/>
     </Link>
     <Input
         placeholder="Your Github username"
         // This would actually be a websocket call to the backend.
-        onBlur=\{GithubState.set_profile}
+        onBlur={GithubState.set_profile}
     >
 </HStack>
 ```
@@ -140,7 +140,7 @@ class GithubState(rx.State):
     def set_profile(self, username: str):
         if username == "":
             return
-        github_data = requests.get(f"https://api.github.com/users/\{username}").json()
+        github_data = requests.get(f"https://api.github.com/users/{username}").json()
         self.url = github_data["url"]
         self.profile_image = github_data["avatar_url"]
 ```
@@ -197,7 +197,7 @@ On the frontend, we maintain an event queue of all pending events.
 When an event is triggered, it is added to the queue. We have a `processing` flag to make sure only one event is processed at a time. This ensures that the state is always consistent and there aren't any race conditions with two event handlers modifying the state at the same time.
 
 ```md alert info
-# There are exceptions to this, such as [background events](/docs/events/background_events) which allow you to run events in the background without blocking the UI.
+# There are exceptions to this, such as [background events](/docs/events/background-events) which allow you to run events in the background without blocking the UI.
 ```
 
 Once the event is ready to be processed, it is sent to the backend through a WebSocket connection.
@@ -216,7 +216,7 @@ Once we have the user's state, the next step is to run the event handler with th
 def set_profile(self, username: str):
     if username == "":
         return
-    github_data = requests.get(f"https://api.github.com/users/\{username}").json()
+    github_data = requests.get(f"https://api.github.com/users/{username}").json()
     self.url = github_data["url"]
     self.profile_image = github_data["avatar_url"]
 ```
@@ -225,7 +225,7 @@ In our example, the `set_profile` event handler is run on the user's state. This
 
 ### State Updates
 
-Every time an event handler returns (or [yields](/docs/events/yield_events)), we save the state in the state manager and send the **state updates** to the frontend to update the UI.
+Every time an event handler returns (or [yields](/docs/events/yield-events)), we save the state in the state manager and send the **state updates** to the frontend to update the UI.
 
 To maintain performance as your state grows, internally Reflex keeps track of vars that were updated during the event handler (**dirty vars**). When the event handler is done processing, we find all the dirty vars and create a state update to send to the frontend.
 

@@ -151,7 +151,7 @@ class Customer(rx.Model, table=True):
 
 A semantic table for presenting tabular data.
 
-If you just want to [represent static data](/docs/library/tables-and-data-grids/data_table) then the [`rx.data_table`](/docs/library/tables-and-data-grids/data_table) might be a better fit for your use case as it comes with in-built pagination, search and sorting.
+If you just want to [represent static data](/docs/library/tables-and-data-grids/data-table) then the [`rx.data_table`](/docs/library/tables-and-data-grids/data-table) might be a better fit for your use case as it comes with in-built pagination, search and sorting.
 
 ## Basic Example
 
@@ -193,7 +193,7 @@ rx.table.root(
 
 Many times there is a need for the data we represent in our table to be dynamic. Dynamic data must be in `State`. Later we will show an example of how to access data from a database and how to load data from a source file.
 
-In this example there is a `people` data structure in `State` that is [iterated through using `rx.foreach`](/docs/components/rendering_iterables).
+In this example there is a `people` data structure in `State` that is [iterated through using `rx.foreach`](/docs/components/rendering-iterables).
 
 ```python demo exec
 class TableForEachState(rx.State):
@@ -366,7 +366,7 @@ For in-memory data, we use Python operations like `sorted()` and list comprehens
 
 The state variable `_people` is set to be a backend-only variable. This is done in case the variable is very large in order to reduce network traffic and improve performance.
 
-When a `select` item is selected, the `on_change` event trigger is hooked up to the `set_sort_value` event handler. Every base var has a built-in event handler to set its value for convenience, called `set_VARNAME`.
+When a `select` item is selected, the `on_change` event trigger is hooked up to the `set_sort_value` event handler, which updates the `sort_value` state var.
 
 `current_people` is an `rx.var(cache=True)`. It is a var that is only recomputed when the other state vars it depends on change. This ensures that the `People` shown in the table are always up to date whenever they are searched or sorted.
 

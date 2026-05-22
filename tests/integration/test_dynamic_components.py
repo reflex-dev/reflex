@@ -17,6 +17,7 @@ def DynamicComponents():
 
     class DynamicComponentsState(rx.State):
         value: int = 10
+        count: int = 0
 
         button: rx.Component = rx.button(
             "Click me",
@@ -33,6 +34,15 @@ def DynamicComponents():
                     "id": "button",
                 },
             )
+
+        @rx.event
+        def set_count(self, count: int):
+            """Set the counter value.
+
+            Args:
+                count: The new counter value.
+            """
+            self.count = count
 
         @rx.var
         def client_token_component(self) -> rx.Component:
@@ -53,6 +63,27 @@ def DynamicComponents():
                 ),
             )
 
+        @rx.var
+        def counter_component(self) -> rx.Component:
+            """Get a dynamic counter component with event handlers.
+
+            Returns:
+                The dynamic counter component.
+            """
+            return rx.hstack(
+                rx.button(
+                    "-",
+                    id="decrement",
+                    on_click=DynamicComponentsState.set_count(self.count - 1),
+                ),
+                rx.text(self.count, id="count"),
+                rx.button(
+                    "+",
+                    id="increment",
+                    on_click=DynamicComponentsState.set_count(self.count + 1),
+                ),
+            )
+
     app = rx.App()
 
     def factorial(n: int) -> int:
@@ -65,6 +96,7 @@ def DynamicComponents():
         return rx.vstack(
             DynamicComponentsState.client_token_component,
             DynamicComponentsState.button,
+            DynamicComponentsState.counter_component,
             rx.text(
                 DynamicComponentsState._evaluate(
                     lambda state: factorial(state.value), of_type=int
@@ -135,12 +167,28 @@ def test_dynamic_components(driver, dynamic_components: AppHarness):
     assert update_button
     update_button.click()
 
-    assert (
-        dynamic_components.poll_for_content(button, exp_not_equal="Click me")
-        == "Clicked"
+    assert AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "button").text == "Clicked"
     )
 
     factorial = AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "factorial")
     )
     assert factorial.text == "3628800"
+
+    count = AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "count")
+    )
+    assert count.text == "0"
+
+    increment = driver.find_element(By.ID, "increment")
+    increment.click()
+    assert AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "count").text == "1"
+    )
+
+    decrement = driver.find_element(By.ID, "decrement")
+    decrement.click()
+    assert AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "count").text == "0"
+    )

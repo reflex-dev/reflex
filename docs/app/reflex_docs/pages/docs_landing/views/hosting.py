@@ -21,7 +21,7 @@ def hosting_section() -> rx.Component:
             faded_borders(),
             link_item(
                 "CloudServerIcon",
-                "How to Host",
+                "Deployment",
                 "Step-by-step instructions to deploy your Reflex application to the cloud, including configuration and setup guides.",
                 hosting_page.deploy_quick_start.path,
             ),
@@ -47,5 +47,5 @@ def hosting_section() -> rx.Component:
             ),
             class_name="grid grid-cols-1 lg:grid-cols-2 border-t border-m-slate-4 dark:border-m-slate-10 relative",
         ),
-        class_name="flex flex-col gap-10 max-lg:text-center relative max-w-(--docs-layout-max-width) mx-auto w-full justify-start max-xl:px-6 lg:mb-24 overflow-hidden",
+        class_name="flex flex-col gap-10 max-lg:text-center relative max-w-(--landing-layout-max-width) mx-auto w-full justify-start max-xl:px-6 lg:mb-24 overflow-hidden",
     )
