@@ -7,7 +7,7 @@ referenced with ``gcloud builds submit --config=...``) — the user's project
 tree is never modified. The script reads its parameters from environment
 variables (GCP_PROJECT, GCP_REGION, SERVICE_NAME, AR_REPO, VERSION,
 CLOUD_RUN_CPU, CLOUD_RUN_MEMORY, CLOUD_RUN_MIN_INSTANCES,
-REFLEX_CLOUDBUILD_YAML).
+CLOUD_RUN_SERVICE_ACCOUNT, REFLEX_CLOUDBUILD_YAML).
 """
 
 from __future__ import annotations
@@ -41,6 +41,7 @@ ENV_VERSION = "VERSION"
 ENV_CPU = "CLOUD_RUN_CPU"
 ENV_MEMORY = "CLOUD_RUN_MEMORY"
 ENV_MIN_INSTANCES = "CLOUD_RUN_MIN_INSTANCES"
+ENV_SERVICE_ACCOUNT = "CLOUD_RUN_SERVICE_ACCOUNT"
 # Path to the Cloud Build config file written by the CLI. The rewritten
 # deploy script references it as ``--config="${REFLEX_CLOUDBUILD_YAML}"``.
 ENV_REFLEX_CLOUDBUILD_YAML = "REFLEX_CLOUDBUILD_YAML"
@@ -163,6 +164,12 @@ DEPLOY_ENV_ALLOWLIST = frozenset({
     help="Minimum number of Cloud Run instances to keep warm (sets CLOUD_RUN_MIN_INSTANCES). Set to 0 to scale to zero.",
 )
 @click.option(
+    "--service-account",
+    "service_account",
+    default=None,
+    help="IAM service account email the Cloud Run service runs as (sets CLOUD_RUN_SERVICE_ACCOUNT). If omitted, Cloud Run uses the project's default compute SA. The deploying principal needs roles/iam.serviceAccountUser on the target SA.",
+)
+@click.option(
     "--source",
     "source_dir",
     default=".",
@@ -199,6 +206,7 @@ def deploy_command(
     cpu: str,
     memory: str,
     min_instances: int,
+    service_account: str | None,
     source_dir: str,
     token: str | None,
     interactive: bool,
@@ -285,6 +293,8 @@ def deploy_command(
         ENV_MEMORY: memory,
         ENV_MIN_INSTANCES: str(min_instances),
     }
+    if service_account:
+        deploy_env[ENV_SERVICE_ACCOUNT] = service_account
 
     console.info("Received deploy manifest from Reflex.")
     console.print("")
