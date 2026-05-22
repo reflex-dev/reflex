@@ -18,7 +18,7 @@ def get_pixel_website_trackers() -> list[rx.Component]:
         The component.
     """
     return [
-        *get_google_analytics_trackers(tracking_id="G-4T7C8ZD9TR"),
+        *get_google_analytics_trackers(tracking_id="AW-18175470538"),
         gtag_report_conversion(
             conversion_id_and_label="AW-11360851250/ASB4COvpisIbELKqo6kq"
         ),
