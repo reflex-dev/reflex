@@ -25,6 +25,7 @@ DEPLOY_SCRIPT = (
     "#!/usr/bin/env bash\n"
     "set -euo pipefail\n"
     'IMAGE="us-central1-docker.pkg.dev/${GCP_PROJECT}/reflex/${SERVICE_NAME}:${VERSION}"\n'
+    "AUTH=${CLOUD_RUN_ALLOW_UNAUTHENTICATED:-true}\n"
     "gcloud builds submit \\\n"
     '    --tag "${IMAGE}" \\\n'
     '    --project "${GCP_PROJECT}" \\\n'
@@ -290,6 +291,53 @@ def test_gcp_deploy_allow_unauthenticated_defaults_true(
     assert result.exit_code == 0, result.output
     env_overrides = run_mock.call_args.kwargs["env_overrides"]
     assert env_overrides["CLOUD_RUN_ALLOW_UNAUTHENTICATED"] == "true"
+
+
+def test_gcp_deploy_no_allow_unauthenticated_requires_backend_support(
+    mocker: MockFixture, tmp_path: Path
+):
+    """--no-allow-unauthenticated aborts when the fetched script doesn't honor it.
+
+    The deploy script's auth flag is read from CLOUD_RUN_ALLOW_UNAUTHENTICATED.
+    If we shipped a CLI build against an older backend that still hard-codes
+    --allow-unauthenticated, the user's --no-allow-unauthenticated would be
+    silently ignored and the service would deploy as PUBLIC. Catch the
+    mismatch at the CLI before we deploy anything.
+    """
+    run_mock = _patch_environment(mocker)
+    # Manifest from an older backend that doesn't reference the env var —
+    # built from scratch so it doesn't inherit DEPLOY_SCRIPT's auth env var.
+    legacy_script = (
+        "#!/usr/bin/env bash\n"
+        "set -euo pipefail\n"
+        'IMAGE="us-central1-docker.pkg.dev/${GCP_PROJECT}/reflex/${SERVICE_NAME}:${VERSION}"\n'
+        "gcloud builds submit \\\n"
+        '    --tag "${IMAGE}" \\\n'
+        '    --project "${GCP_PROJECT}" \\\n'
+        "    .\n"
+        'gcloud run deploy "${SERVICE_NAME}" --image "${IMAGE}" --allow-unauthenticated\n'
+    )
+    _mock_manifest_response(
+        mocker, body={"dockerfile": DOCKERFILE, "deploy_command": legacy_script}
+    )
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "deploy",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--no-allow-unauthenticated",
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert "CLOUD_RUN_ALLOW_UNAUTHENTICATED" in result.output
+    assert "PUBLIC" in result.output
+    assert run_mock.call_count == 0
 
 
 def test_gcp_deploy_no_allow_unauthenticated(mocker: MockFixture, tmp_path: Path):

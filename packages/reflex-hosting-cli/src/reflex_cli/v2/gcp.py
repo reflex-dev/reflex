@@ -306,6 +306,21 @@ def deploy_command(
 
     dockerfile, deploy_script = _request_manifest(authenticated_client.token)
 
+    # If the user asks for a private service, abort when the fetched script
+    # doesn't reference CLOUD_RUN_ALLOW_UNAUTHENTICATED. Without that backend
+    # support the deploy would silently use the script's hard-coded
+    # --allow-unauthenticated, producing a public service when the user
+    # explicitly asked for a private one — a silent privacy flip we'd rather
+    # fail loud on.
+    if not allow_unauthenticated and ENV_ALLOW_UNAUTHENTICATED not in deploy_script:
+        console.error(
+            "The Reflex backend's deploy script doesn't yet recognize "
+            f"{ENV_ALLOW_UNAUTHENTICATED} — without it, --no-allow-unauthenticated "
+            "would be silently ignored and the service would deploy as PUBLIC. "
+            "Upgrade the Reflex backend, or remove --no-allow-unauthenticated."
+        )
+        raise click.exceptions.Exit(1)
+
     source_path = Path(source_dir).resolve()
     if not source_path.is_dir():
         console.error(f"Source directory does not exist: {source_path}")
