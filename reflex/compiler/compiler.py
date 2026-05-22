@@ -1036,7 +1036,7 @@ def compile_app(
         return False
 
     for plugin in config.plugins:
-        plugin.start_compile(app)
+        plugin.start_compile(app=app)
 
     progress = (
         Progress(

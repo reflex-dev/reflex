@@ -615,17 +615,17 @@ class TestFrontendInspectorPlugin:
             file="/leftover.py", line=1, column=1, component="Stale"
         )
         baseline = len(app.head_components)
-        plugin.start_compile(app)
+        plugin.start_compile(app=app)
         assert inspector_state.is_enabled() is True
         assert inspector_capture.snapshot() == {}
         assert len(app.head_components) == baseline + 2
 
         # Calling again on the same app is idempotent.
-        plugin.start_compile(app)
+        plugin.start_compile(app=app)
         assert len(app.head_components) == baseline + 2
 
         monkeypatch.setenv("REFLEX_ENV_MODE", Env.PROD.value)
-        plugin.start_compile(app)
+        plugin.start_compile(app=app)
         assert inspector_state.is_enabled() is False
 
 

@@ -44,10 +44,9 @@ from reflex_base.inspector import (
 )
 from reflex_base.inspector.shortcut import parse_shortcut
 
-from .base import CommonContext, Plugin, PreCompileContext
+from .base import CommonContext, Plugin, PreCompileContext, StartCompileContext
 
 if TYPE_CHECKING:
-    from reflex.app import App
     from reflex_base.components.component import Component
 
 LAUNCH_EDITOR_VERSION = "^2.6.1"
@@ -84,7 +83,7 @@ class FrontendInspectorPlugin(Plugin):
 
         return environment.REFLEX_ENV_MODE.get() != constants.Env.PROD
 
-    def start_compile(self, app: App) -> None:
+    def start_compile(self, **context: Unpack[StartCompileContext]) -> None:
         """Reset capture, flip the runtime flag, and inject head scripts.
 
         ``app.head_components`` has to be extended here rather than in
@@ -92,8 +91,9 @@ class FrontendInspectorPlugin(Plugin):
         the page-rendering phase, which runs before ``pre_compile``.
 
         Args:
-            app: The Reflex App being compiled.
+            context: The context for the plugin.
         """
+        app = context["app"]
         active = self._is_active()
         # Force off so the inspector's own ``<Script>`` head components do
         # not capture themselves into the source map.

@@ -57,6 +57,12 @@ class PreCompileContext(CommonContext):
     unevaluated_pages: Sequence["UnevaluatedPage"]
 
 
+class StartCompileContext(CommonContext):
+    """Context for start-compile hooks."""
+
+    app: "App"
+
+
 class PostCompileContext(CommonContext):
     """Context for post-compile hooks."""
 
@@ -105,7 +111,7 @@ class Plugin:
         """
         return []
 
-    def start_compile(self, app: "App") -> None:
+    def start_compile(self, **context: Unpack[StartCompileContext]) -> None:
         """Lifecycle hook fired before pages are evaluated.
 
         Use this to flip runtime state that must be set before user code in
@@ -115,7 +121,7 @@ class Plugin:
         either job.
 
         Args:
-            app: The Reflex ``App`` being compiled.
+            context: The context for the plugin.
         """
 
     def get_static_assets(
