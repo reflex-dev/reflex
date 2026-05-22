@@ -2583,6 +2583,19 @@ def empty_component() -> Component:
 
 
 def _format_patterns_into_condition(patterns: list, element: Var) -> Var:
+    """Combine match-case patterns into a single boolean condition.
+
+    Each pattern is compared to `element` by stringified equality, and the
+    resulting comparisons are OR-ed together.
+
+    Args:
+        patterns: The patterns of a single match case to compare against `element`.
+        element: The Var to compare each pattern to.
+
+    Returns:
+        A Var that evaluates to True when `element` matches any pattern, or
+        `False` when `patterns` is empty.
+    """
     if not patterns:
         return Var.create(False)
     conditions = [
