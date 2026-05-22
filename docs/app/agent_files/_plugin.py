@@ -9,6 +9,7 @@ from typing import Any, Literal, Union, get_args, get_origin
 from reflex.constants import Dirs
 from reflex_base.config import get_config
 from reflex_base.plugins import CommonContext, Plugin
+from reflex_site_shared.utils.url import public_url
 from typing_extensions import Unpack
 
 MCP_DOC_PATHS = {
@@ -113,15 +114,11 @@ def _extract_markdown_title(source: str) -> str | None:
 
 def _llms_url_for_path(url_path: Path) -> str:
     """Return the public URL for a generated markdown asset."""
-    from reflex_site_shared.utils.url import public_url
-
     return public_url(f"/{url_path.as_posix()}")
 
 
 def _docs_home_url() -> str:
     """Return the public URL for the docs home."""
-    from reflex_site_shared.utils.url import public_url
-
     return public_url("/")
 
 
