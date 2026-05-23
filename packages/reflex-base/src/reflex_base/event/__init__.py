@@ -18,6 +18,7 @@ from typing import (
     NoReturn,
     Protocol,
     TypeVar,
+    Union,
     get_args,
     get_origin,
     get_type_hints,
@@ -54,6 +55,7 @@ from reflex_base.vars.function import (
     FunctionVar,
     VarOperationCall,
 )
+from reflex_base.vars.number import ternary_operation
 from reflex_base.vars.object import ObjectVar
 
 if TYPE_CHECKING:
@@ -2076,6 +2078,56 @@ def call_event_fn(
     # while keeping other scalar values for validation below.
     out = list(out) if isinstance(out, (list, tuple)) else [out]
 
+    def _dispatch_mixed_event_var(event_like_var: Var) -> FunctionVar:
+        """Wrap a mixed event-like Var into a callable frontend dispatcher.
+
+        Args:
+            event_like_var: A Var that may resolve to either an EventSpec-like object
+                or a callable frontend function at runtime.
+
+        Returns:
+            A FunctionVar that dispatches runtime values as frontend calls or
+            backend addEvents queueing.
+        """
+        alias_name = "__event_or_fn"
+        alias_var = Var(_js_expr=alias_name)
+        rest_args = Var(_js_expr="args")
+        spread_args = Var(_js_expr="...args")
+
+        is_function = Var(
+            _js_expr=f'typeof {alias_name} === "function"',
+            _var_type=bool,
+        )
+        add_events = FunctionStringVar.create(
+            CompileVars.ADD_EVENTS,
+            _var_data=VarData(
+                imports=Imports.EVENTS,
+                hooks={Hooks.EVENTS: None},
+            ),
+        )
+        dispatch_expr = ternary_operation(
+            is_function,
+            alias_var.to(FunctionVar).call(spread_args),
+            add_events.call(
+                LiteralVar.create([alias_var]),
+                rest_args,
+                _EMPTY_EVENT_ACTIONS,
+            ),
+        )
+        body = Var(
+            _js_expr=f"const {alias_name} = {event_like_var!s}; return {dispatch_expr!s};",
+            _var_data=VarData.merge(
+                event_like_var._get_all_var_data(),
+                dispatch_expr._get_all_var_data(),
+            ),
+        )
+        return ArgsFunctionOperation.create(
+            args_names=(),
+            return_expr=body,
+            rest="args",
+            explicit_return=True,
+        ).to(FunctionVar)
+
     # Convert any event specs to event specs.
     events = []
     for e in out:
@@ -2086,6 +2138,14 @@ def call_event_fn(
         if isinstance(e, EventChain):
             # Nested EventChain is treated like a FunctionVar.
             e = Var.create(e)
+
+        if (
+            isinstance(e, Var)
+            and not isinstance(e, (EventVar, FunctionVar))
+            and get_origin(e._var_type) in (Union, types.UnionType)
+            and typehint_issubclass(e._var_type, EventSpec | Callable)
+        ):
+            e = _dispatch_mixed_event_var(e)
 
         # Make sure the event spec is valid.
         if not isinstance(e, (EventSpec, FunctionVar, EventVar)):

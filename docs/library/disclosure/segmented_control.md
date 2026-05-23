@@ -66,6 +66,6 @@ rx.vstack(
 
 **In the example above:**
 
-`on_change` is used to specify a callback function that will be called when the user selects a different segment. In this case, the `SegmentedState.setvar("control")` function is used to update the `control` state variable when the user changes the selected segment.
+`on_change` is used to specify a callback function that will be called when the user selects a different segment. In this case, the `SegmentedState.set_control` event handler is used to update the `control` state variable when the user changes the selected segment.
 
 `value` prop is used to specify the currently selected segment, which is bound to the `SegmentedState.control` state variable.

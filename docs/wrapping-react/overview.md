@@ -25,7 +25,7 @@ class Spline(rx.Component):
     """Spline component."""
 
     # The name of the npm package.
-    library = "@splinetool/react-spline"
+    library = "@splinetool/react-spline@4.1.0"
 
     # Any additional libraries needed to use the component.
     lib_dependencies: list[str] = ["@splinetool/runtime@1.5.5"]
@@ -63,7 +63,7 @@ from reflex.components.component import NoSSRComponent
 
 
 class ColorPicker(NoSSRComponent):
-    library = "react-colorful"
+    library = "react-colorful@5.7.0"
     tag = "HexColorPicker"
     color: rx.Var[str]
     on_change: rx.EventHandler[lambda color: [color]]
@@ -93,7 +93,7 @@ from reflex.components.component import NoSSRComponent
 
 
 class ColorPicker(NoSSRComponent):
-    library = "react-colorful"
+    library = "react-colorful@5.7.0"
     tag = "HexColorPicker"
     color: rx.Var[str]
     on_change: rx.EventHandler[lambda color: [color]]
@@ -104,6 +104,10 @@ color_picker = ColorPicker.create
 
 class ColorPickerState(rx.State):
     color: str = "#db114b"
+
+    @rx.event
+    def set_color(self, value: str):
+        self.color = value
 
 
 def index():
