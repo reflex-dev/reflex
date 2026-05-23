@@ -5,16 +5,21 @@ import dataclasses
 import importlib.metadata
 import json
 import multiprocessing
+import os
 import platform
+import sys
 import warnings
 from contextlib import suppress
 from datetime import datetime, timezone
-from typing import TypedDict
+from pathlib import Path
+from typing import Any, TypedDict, cast
 
 from reflex_base import constants
+from reflex_base.config import get_config
 from reflex_base.environment import environment
 from reflex_base.utils.decorator import once, once_unless_none
 from reflex_base.utils.exceptions import ReflexError
+from typing_extensions import NotRequired
 
 from reflex.utils import console, processes
 from reflex.utils.js_runtimes import get_bun_version, get_node_version
@@ -166,6 +171,38 @@ def get_cpu_count() -> int:
     return multiprocessing.cpu_count()
 
 
+def is_in_virtualenv() -> bool:
+    """Whether the current Python is running inside a virtual environment.
+
+    Returns:
+        True if a virtual environment appears to be active.
+    """
+    if sys.prefix != sys.base_prefix:
+        return True
+    return bool(os.environ.get("VIRTUAL_ENV"))
+
+
+def get_init_environment() -> dict[str, bool]:
+    """Return Python tooling flags for the current working directory.
+
+    Returns:
+        A dict with ``in_virtualenv``, ``has_pyproject_toml``,
+        ``has_requirements_txt``, ``has_uv_lock`` and ``has_reflex_lock``
+        boolean flags, or an empty dict when telemetry is disabled (so the
+        filesystem stats are skipped when their results would be discarded).
+    """
+    if not get_config().telemetry_enabled:
+        return {}
+
+    return {
+        "in_virtualenv": is_in_virtualenv(),
+        "has_pyproject_toml": Path(constants.PyprojectToml.FILE).exists(),
+        "has_requirements_txt": Path(constants.RequirementsTxt.FILE).exists(),
+        "has_uv_lock": Path(constants.UvLock.FILE).exists(),
+        "has_reflex_lock": Path(constants.Bun.ROOT_LOCKFILE_DIR).is_dir(),
+    }
+
+
 def get_reflex_enterprise_version() -> str | None:
     """Get the version of reflex-enterprise if installed.
 
@@ -196,7 +233,7 @@ class _Properties(TypedDict):
     """Properties type for telemetry."""
 
     distinct_id: int
-    distinct_app_id: int
+    distinct_app_id: NotRequired[int]
     user_os: str
     user_os_detail: str
     reflex_version: str
@@ -228,36 +265,34 @@ def _get_event_defaults() -> _DefaultEvent | None:
     Returns:
         The default event data.
     """
-    installation_id = ensure_reflex_installation_id()
-    project_hash = get_project_hash(raise_on_fail=_raise_on_missing_project_hash())
-
-    if installation_id is None or project_hash is None:
-        console.debug(
-            f"Could not get installation_id or project_hash: {installation_id}, {project_hash}"
-        )
+    if (installation_id := ensure_reflex_installation_id()) is None:
+        console.debug("Could not get installation_id")
         return None
-
     cpuinfo = get_cpu_info()
+    properties: _Properties = {
+        "distinct_id": installation_id,
+        "user_os": get_os(),
+        "user_os_detail": get_detailed_platform_str(),
+        "reflex_version": get_reflex_version(),
+        "python_version": get_python_version(),
+        "node_version": (
+            str(node_version) if (node_version := get_node_version()) else None
+        ),
+        "bun_version": (
+            str(bun_version) if (bun_version := get_bun_version()) else None
+        ),
+        "reflex_enterprise_version": get_reflex_enterprise_version(),
+        "cpu_count": get_cpu_count(),
+        "cpu_info": dataclasses.asdict(cpuinfo) if cpuinfo else {},
+    }
+    if (
+        project_hash := get_project_hash(raise_on_fail=_raise_on_missing_project_hash())
+    ) is not None:
+        properties["distinct_app_id"] = project_hash
 
     return {
         "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
-        "properties": {
-            "distinct_id": installation_id,
-            "distinct_app_id": project_hash,
-            "user_os": get_os(),
-            "user_os_detail": get_detailed_platform_str(),
-            "reflex_version": get_reflex_version(),
-            "python_version": get_python_version(),
-            "node_version": (
-                str(node_version) if (node_version := get_node_version()) else None
-            ),
-            "bun_version": (
-                str(bun_version) if (bun_version := get_bun_version()) else None
-            ),
-            "reflex_enterprise_version": get_reflex_enterprise_version(),
-            "cpu_count": get_cpu_count(),
-            "cpu_info": dataclasses.asdict(cpuinfo) if cpuinfo else {},
-        },
+        "properties": properties,
     }
 
 
@@ -271,12 +306,20 @@ def get_event_defaults() -> _DefaultEvent | None:
     return _get_event_defaults()
 
 
-def _prepare_event(event: str, **kwargs) -> _Event | None:
+def _prepare_event(
+    event: str,
+    *,
+    properties: dict[str, Any] | None = None,
+    **kwargs,
+) -> _Event | None:
     """Prepare the event to be sent to the PostHog server.
 
     Args:
         event: The event name.
-        kwargs: Additional data to send with the event.
+        properties: Arbitrary structured payload merged into the event
+            properties. Preferred over ``kwargs`` for new events.
+        kwargs: Additional data to send with the event. Allow-listed keys
+            kept for backward compatibility with existing call sites.
 
     Returns:
         The event data.
@@ -285,24 +328,42 @@ def _prepare_event(event: str, **kwargs) -> _Event | None:
     if not event_data:
         return None
 
-    additional_keys = ["template", "context", "detail", "user_uuid"]
+    additional_keys = [
+        "template",
+        "context",
+        "detail",
+        "user_uuid",
+        "status",
+        "duration",
+        "compile_duration",
+        "setup_duration",
+        "build_duration",
+        "zip_duration",
+    ]
 
-    properties = event_data["properties"]
+    # Shallow-copy so we don't mutate the cached default properties dict.
+    merged_properties = dict(event_data["properties"])
 
     for key in additional_keys:
-        if key in properties or key not in kwargs:
+        if key in merged_properties:
             continue
+        if key in kwargs and kwargs[key] is not None:
+            merged_properties[key] = kwargs[key]
 
-        properties[key] = kwargs[key]  # ty:ignore[invalid-key]
+    if properties:
+        merged_properties.update(properties)
 
     stamp = datetime.now(UTC).isoformat()
 
-    return {
-        "api_key": event_data["api_key"],
-        "event": event,
-        "properties": properties,
-        "timestamp": stamp,
-    }
+    return cast(
+        "_Event",
+        {
+            "api_key": event_data["api_key"],
+            "event": event,
+            "properties": merged_properties,
+            "timestamp": stamp,
+        },
+    )
 
 
 def _send_event(event_data: _Event) -> bool:
@@ -316,9 +377,13 @@ def _send_event(event_data: _Event) -> bool:
         return True
 
 
-def _send(event: str, telemetry_enabled: bool | None, **kwargs) -> bool:
-    from reflex_base.config import get_config
-
+def _send(
+    event: str,
+    telemetry_enabled: bool | None,
+    *,
+    properties: dict[str, Any] | None = None,
+    **kwargs,
+) -> bool:
     # Get the telemetry_enabled from the config if it is not specified.
     if telemetry_enabled is None:
         telemetry_enabled = get_config().telemetry_enabled
@@ -328,7 +393,7 @@ def _send(event: str, telemetry_enabled: bool | None, **kwargs) -> bool:
         return False
 
     with suppress(Exception):
-        event_data = _prepare_event(event, **kwargs)
+        event_data = _prepare_event(event, properties=properties, **kwargs)
         if not event_data:
             return False
         return _send_event(event_data)
@@ -338,22 +403,35 @@ def _send(event: str, telemetry_enabled: bool | None, **kwargs) -> bool:
 background_tasks = set()
 
 
-def send(event: str, telemetry_enabled: bool | None = None, **kwargs):
+def send(
+    event: str,
+    telemetry_enabled: bool | None = None,
+    *,
+    properties: dict[str, Any] | None = None,
+    **kwargs,
+):
     """Send anonymous telemetry for Reflex.
 
     Args:
         event: The event name.
         telemetry_enabled: Whether to send the telemetry (If None, get from config).
+        properties: Arbitrary structured payload merged into the event
+            properties. Preferred over ``kwargs`` for new events.
         kwargs: Additional data to send with the event.
     """
 
-    async def async_send(event: str, telemetry_enabled: bool | None, **kwargs):  # noqa: RUF029
-        return _send(event, telemetry_enabled, **kwargs)
+    async def async_send(  # noqa: RUF029
+        event: str,
+        telemetry_enabled: bool | None,
+        properties: dict[str, Any] | None,
+        **kwargs,
+    ):
+        return _send(event, telemetry_enabled, properties=properties, **kwargs)
 
     try:
         # Within an event loop context, send the event asynchronously.
         task = asyncio.create_task(
-            async_send(event, telemetry_enabled, **kwargs),
+            async_send(event, telemetry_enabled, properties, **kwargs),
             name=f"reflex_send_telemetry_event|{event}",
         )
         background_tasks.add(task)
@@ -361,7 +439,7 @@ def send(event: str, telemetry_enabled: bool | None = None, **kwargs):
     except RuntimeError:
         # If there is no event loop, send the event synchronously.
         warnings.filterwarnings("ignore", category=RuntimeWarning)
-        _send(event, telemetry_enabled, **kwargs)
+        _send(event, telemetry_enabled, properties=properties, **kwargs)
 
 
 def send_error(error: Exception, context: str):

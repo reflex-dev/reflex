@@ -100,6 +100,27 @@ class PageNames(SimpleNamespace):
     STATEFUL_COMPONENTS = "stateful_components"
 
 
+class Embed(SimpleNamespace):
+    """Public artifacts for ``mount_target`` (embed) builds.
+
+    These paths form the host-page contract: a host script tag points at
+    ``ENTRY_PATH`` (relative to the frontend origin), which loads the route
+    manifest at ``MANIFEST_FILE`` and dispatches into the embedded app. They
+    are intentionally stable across dev and prod so the same host HTML works
+    in both modes.
+    """
+
+    # Host pages reference this path (e.g. ``<script src="/app/entry.client.js">``).
+    # In dev, Vite serves the source file at this URL; in prod, a shim emitted
+    # by ``_emit_stable_entry_bootloader`` re-exports the hashed Vite entry.
+    ENTRY_PATH = "app/entry.client.js"
+    # Embed-aware variant of the entry, swapped in only when ``mount_target``
+    # is set so non-embed builds remain byte-identical to the framework default.
+    ENTRY_EMBED_TEMPLATE = "app/entry.client.embed.js"
+    # Compile-time-emitted route manifest the embed entry imports at runtime.
+    MANIFEST_FILE = "__reflex_embed_manifest.js"
+
+
 class ComponentName(Enum):
     """Component names."""
 

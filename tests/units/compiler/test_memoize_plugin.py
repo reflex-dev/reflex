@@ -75,6 +75,37 @@ class LeafComponent(Component):
     _memoization_mode = MemoizationMode(recursive=False)
 
 
+class ChildrenViaProp(Component):
+    """Stub mirroring ``CodeBlock`` — injects its content as ``children`` prop."""
+
+    tag = "ChildrenViaProp"
+    library = "children-via-prop-lib"
+
+    code: Var[str] = component_field(default=LiteralVar.create(""))
+
+    def _render(self):
+        return super()._render().remove_props("code").add_props(children=self.code)
+
+
+class HookGeneratedProp(Component):
+    """Component whose hook collection fills a prop needed by render output."""
+
+    tag = "HookGeneratedProp"
+    library = "hook-generated-prop-lib"
+
+    label: Var[str] = component_field(default=LiteralVar.create(""))
+    callback: Var[Any] = component_field(default=LiteralVar.create(None))
+
+    def add_hooks(self) -> list[str]:
+        """Add a hook and wire its identifier into a component prop.
+
+        Returns:
+            The hook lines this component contributes.
+        """
+        self.callback = Var(_js_expr="generatedCallback")
+        return ["function generatedCallback(){ return true; }"]
+
+
 class SpecialFormMemoState(BaseState):
     items: Field[list[str]] = field(default_factory=lambda: ["a"])
     flag: Field[bool] = field(default=True)
@@ -178,6 +209,17 @@ def test_memoize_wrapper_uses_experimental_memo_component_and_call_site() -> Non
     assert f'import {{{wrapper_tag}}} from "$/utils/components/{wrapper_tag}"' in output
     assert f"jsx({wrapper_tag}," in (page_ctx.output_code or "")
     assert f"const {wrapper_tag} = memo" not in output
+
+
+def test_auto_memo_component_renders_after_add_hooks_mutates_props() -> None:
+    """Auto-memo modules render after ``add_hooks`` has filled derived props."""
+    ctx, _page_ctx = _compile_single_page(
+        lambda: HookGeneratedProp.create(label=STATE_VAR)
+    )
+    memo_code = _compile_memo_module_text(ctx)
+
+    assert "function generatedCallback(){ return true; }" in memo_code
+    assert "callback:generatedCallback" in memo_code
 
 
 def test_memoize_wrapper_deduped_across_repeated_subtrees() -> None:
@@ -299,6 +341,46 @@ def test_special_form_memo_wrappers_render_structural_body(
     assert body_marker not in page_output
 
 
+def test_foreach_snapshot_memo_applies_component_styles() -> None:
+    """Foreach memo bodies must render styled children after preview rendering.
+
+    Regression for reflex-dev/reflex#6512: the auto-memo wrapper previews a
+    Foreach render before the memo body is compiled. If that unstyled preview
+    render stays cached, default styles from components inside the Foreach
+    never reach the generated memo module.
+    """
+    from reflex.compiler.compiler import compile_memo_components
+
+    def accordion() -> Component:
+        return rx.accordion.root(
+            rx.accordion.item(
+                header="Click me",
+                content=rx.text("Content here"),
+            ),
+            type="single",
+            collapsible=True,
+            width="400px",
+        )
+
+    ctx, _page_ctx = _compile_single_page(
+        lambda: rx.vstack(
+            rx.foreach(SpecialFormMemoState.items, lambda _item: accordion()),
+        )
+    )
+
+    memo_files, _memo_imports = compile_memo_components(
+        components=(),
+        experimental_memos=tuple(ctx.auto_memo_components.values()),
+    )
+    foreach_code = next(
+        code for path, code in memo_files if "/Foreach" in path or "\\Foreach" in path
+    )
+
+    assert '["width"] : "400px"' in foreach_code
+    assert '["borderRadius"] : "var(--radius-4)"' in foreach_code
+    assert '["justifyContent"] : "space-between"' in foreach_code
+
+
 def test_foreach_parent_does_not_absorb_sibling_into_snapshot() -> None:
     """Foreach owns its own snapshot while the parent stays passthrough.
 
@@ -415,6 +497,23 @@ def test_generated_memo_component_is_not_itself_memoized() -> None:
     wrapper = wrapper_factory(Plain.create())
     assert isinstance(wrapper, ExperimentalMemoComponent)
     assert not _should_memoize(wrapper)
+
+
+def test_passthrough_memo_skips_hole_for_childless_component() -> None:
+    """Childless components own their JSX output, so the wrapper must not
+    inject a ``{children}`` hole.
+
+    Regression: components like ``CodeBlock`` set ``children`` on their own
+    rendered Tag via ``_render``. Substituting a ``Bare({children})`` hole
+    would emit ``jsx(Inner, {children: "..."}, hole)``, and at call time the
+    undefined hole arg overwrites ``props.children`` under Emotion's jsx
+    semantics — causing every reactive ``rx.code_block`` to render an empty
+    ``<code>`` element.
+    """
+    component = ChildrenViaProp.create(code=STATE_VAR)
+    assert not component.children
+    _wrapper_factory, definition = create_passthrough_component_memo(component)
+    assert definition.passthrough_hole_child is None
 
 
 def test_event_trigger_memoization_not_emit_usecallback_in_page_hooks() -> None:

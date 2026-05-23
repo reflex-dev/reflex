@@ -548,6 +548,10 @@ class TestEnvironmentVariables:
         """Test internal environment variables have correct names."""
         assert environment.REFLEX_COMPILE_CONTEXT.name == "__REFLEX_COMPILE_CONTEXT"
         assert environment.REFLEX_SKIP_COMPILE.name == "__REFLEX_SKIP_COMPILE"
+        assert (
+            environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name
+            == "__REFLEX_DEV_BACKEND_RELOAD_ACTIVE"
+        )
 
     def test_performance_mode_enum(self):
         """Test PerformanceMode enum."""

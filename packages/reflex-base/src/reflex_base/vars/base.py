@@ -1956,6 +1956,15 @@ class CachedVarOperation:
         ))
 
 
+_PY_AND_IMPORT: ImportDict = {
+    f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="pyAnd")],
+}
+
+_PY_OR_IMPORT: ImportDict = {
+    f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="pyOr")],
+}
+
+
 def and_operation(
     a: Var[VAR_TYPE] | Any, b: Var[OTHER_VAR_TYPE] | Any
 ) -> Var[VAR_TYPE | OTHER_VAR_TYPE]:
@@ -1983,8 +1992,9 @@ def _and_operation(a: Var, b: Var):
         The result of the logical AND operation.
     """
     return var_operation_return(
-        js_expression=f"({a} && {b})",
+        js_expression=f"pyAnd({a}, () => ({b}))",
         var_type=unionize(a._var_type, b._var_type),
+        var_data=VarData(imports=_PY_AND_IMPORT),
     )
 
 
@@ -2015,8 +2025,9 @@ def _or_operation(a: Var, b: Var):
         The result of the logical OR operation.
     """
     return var_operation_return(
-        js_expression=f"({a} || {b})",
+        js_expression=f"pyOr({a}, () => ({b}))",
         var_type=unionize(a._var_type, b._var_type),
+        var_data=VarData(imports=_PY_OR_IMPORT),
     )
 
 

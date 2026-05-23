@@ -80,7 +80,16 @@ LOCK_EXPIRE_SLEEP = 2.5 if CI else 0.4
 
 formatted_router = {
     "route_id": "",
-    "url": "",
+    "url": {
+        "scheme": "",
+        "netloc": "",
+        "origin": "://",
+        "path": "",
+        "query": "",
+        "query_parameters": {},
+        "fragment": "",
+        "href": "",
+    },
     "session": {"client_token": "", "client_ip": "", "session_id": ""},
     "headers": {
         "host": "",

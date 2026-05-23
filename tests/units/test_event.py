@@ -17,6 +17,7 @@ from reflex_base.event import (
     fix_events,
 )
 from reflex_base.utils import format
+from reflex_base.utils.exceptions import EventHandlerValueError
 from reflex_base.vars.base import Field, LiteralVar, Var, VarData, field
 
 import reflex as rx
@@ -822,6 +823,47 @@ def test_event_chain_create_lambda_preserves_explicit_event_chain():
     chain_event = chain.events[0]
     assert isinstance(chain_event, Var)
     assert chain_event.equals(Var.create(inner))
+
+
+def test_event_chain_create_lambda_allows_conditional_mixed_function_and_event():
+    """Lambdas should allow rx.cond returning FunctionVar or EventSpec."""
+
+    class MixedState(BaseState):
+        @event
+        def do_a_thing(self, value: str):
+            pass
+
+    log_after_timeout = make_timeout_logger()
+
+    def return_conditional_mixed(v: Var[Any]) -> Any:
+        return rx.cond(
+            v == "foo",
+            log_after_timeout.partial("Input was foo!"),
+            MixedState.do_a_thing(v.to(str)),
+        )
+
+    chain = EventChain.create(
+        cast(LambdaEventCallback[Any], return_conditional_mixed),
+        args_spec=lambda e: [e],
+    )
+    rendered = str(LiteralVar.create(chain))
+
+    assert isinstance(chain, EventChain)
+    assert "Timeout reached!" in rendered
+    assert "addEvents(" in rendered
+
+
+def test_event_chain_create_lambda_rejects_non_union_callable_var():
+    """Plain callable Vars should remain invalid event-lambda return values."""
+
+    def return_plain_callable_var(_v: Var[Any]) -> Any:
+        return Var(_js_expr="notAnEventLikeCallable", _var_type=Callable)
+
+    with pytest.raises(EventHandlerValueError, match="Invalid event chain"):
+        EventChain.create(
+            cast(LambdaEventCallback[Any], return_plain_callable_var),
+            args_spec=lambda e: [e],
+        )
 
 
 def test_event_chain_create_wraps_plain_function_var_kwargs():

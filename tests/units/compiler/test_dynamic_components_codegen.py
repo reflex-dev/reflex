@@ -28,7 +28,7 @@ def test_dynamic_component_codegen_wires_event_handlers() -> None:
     assert "const {Fragment,useContext,useEffect}" in code
     assert "const {EventLoopContext} = window['__reflex'][\"$/utils/context\"]" in code
     assert (
-        "const {ReflexEvent,applyEventActions} = window['__reflex'][\"$/utils/state\"]"
+        "const {ReflexEvent,applyEventActions,pyOr} = window['__reflex'][\"$/utils/state\"]"
         in code
     )
     assert "const [addEvents, connectErrors] = useContext(EventLoopContext);" in code
@@ -94,7 +94,7 @@ def test_dynamic_component_codegen_wires_state_var_counter_events() -> None:
     assert "const {Fragment,useContext,useEffect}" in code
     assert "const {EventLoopContext} = window['__reflex'][\"$/utils/context\"]" in code
     assert (
-        "const {ReflexEvent,applyEventActions} = window['__reflex'][\"$/utils/state\"]"
+        "const {ReflexEvent,applyEventActions,pyOr} = window['__reflex'][\"$/utils/state\"]"
         in code
     )
     assert "const [addEvents, connectErrors] = useContext(EventLoopContext);" in code

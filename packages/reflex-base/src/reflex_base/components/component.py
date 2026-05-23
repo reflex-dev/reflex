@@ -46,6 +46,7 @@ from reflex_base.utils import console, format, imports, types
 from reflex_base.utils.imports import ImportDict, ImportVar, ParsedImportDict
 from reflex_base.vars import VarData
 from reflex_base.vars.base import (
+    _PY_OR_IMPORT,
     CachedVarOperation,
     LiteralNoneVar,
     LiteralVar,
@@ -136,6 +137,35 @@ def field(
         is_javascript=is_javascript_property,
         doc=doc,
     )
+
+
+def _field_values_equal(a: Any, b: Any) -> bool:
+    """Compare two component field values, handling Vars and nested containers.
+
+    Var equality returns a BooleanVar (not a Python bool), and bool-ifying a Var
+    raises VarTypeError. So Vars are compared structurally via ``Var.equals``,
+    and lists/dicts are walked element-wise so a contained Var doesn't trip up
+    the default container ``__eq__``.
+
+    Args:
+        a: First value.
+        b: Second value.
+
+    Returns:
+        Whether the values are structurally equal.
+    """
+    if a is b:
+        return True
+    a_is_var = isinstance(a, Var)
+    if a_is_var or isinstance(b, Var):
+        return a_is_var and isinstance(b, Var) and a.equals(b)
+    if isinstance(a, list) and isinstance(b, list):
+        return len(a) == len(b) and all(
+            _field_values_equal(x, y) for x, y in zip(a, b, strict=False)
+        )
+    if isinstance(a, dict) and isinstance(b, dict):
+        return a.keys() == b.keys() and all(_field_values_equal(a[k], b[k]) for k in a)
+    return a == b
 
 
 @dataclass_transform(kw_only_default=True, field_specifiers=(field,))
@@ -328,6 +358,12 @@ class BaseComponent(metaclass=BaseComponentMeta):
         new = self.__class__.__new__(self.__class__)
         new_dict = vars(new)
         new_dict.update(vars(self))
+        new._clear_compile_caches()
+        return new
+
+    def _clear_compile_caches(self) -> None:
+        """Clear cached render/compiler artifacts after compile-time mutation."""
+        attrs = cast("dict[str, Any]", vars(self))
         for attr in (
             "_cached_render_result",
             "_vars_cache",
@@ -335,8 +371,7 @@ class BaseComponent(metaclass=BaseComponentMeta):
             "_hooks_internal_cache",
             "_get_component_prop_property",
         ):
-            new_dict.pop(attr, None)
-        return new
+            attrs.pop(attr, None)
 
     def __eq__(self, value: Any) -> bool:
         """Check if the component is equal to another value.
@@ -347,8 +382,9 @@ class BaseComponent(metaclass=BaseComponentMeta):
         Returns:
             Whether the component is equal to the value.
         """
-        return type(self) is type(value) and bool(
-            getattr(self, key) == getattr(value, key) for key in self.get_fields()
+        return type(self) is type(value) and all(
+            _field_values_equal(getattr(self, key), getattr(value, key))
+            for key in self.get_fields()
         )
 
     @classmethod
@@ -1338,6 +1374,7 @@ class Component(BaseComponent, ABC):
 
         # Assign the new style
         self.style = new_style
+        self._clear_compile_caches()
 
         # Recursively add style to the children.
         for child in self.children:
@@ -2546,6 +2583,31 @@ def empty_component() -> Component:
     return Bare.create("")
 
 
+def _format_patterns_into_condition(patterns: list, element: Var) -> Var:
+    """Combine match-case patterns into a single boolean condition.
+
+    Each pattern is compared to `element` by stringified equality, and the
+    resulting comparisons are OR-ed together.
+
+    Args:
+        patterns: The patterns of a single match case to compare against `element`.
+        element: The Var to compare each pattern to.
+
+    Returns:
+        A Var that evaluates to True when `element` matches any pattern, or
+        `False` when `patterns` is empty.
+    """
+    if not patterns:
+        return Var.create(False)
+    conditions = [
+        Var(pattern).to_string() == element.to_string() for pattern in patterns
+    ]
+    return functools.reduce(
+        operator.or_,
+        conditions,
+    )
+
+
 def render_dict_to_var(tag: dict[str, Any] | Component | str) -> Var:
     """Convert a render dict to a Var.
 
@@ -2587,12 +2649,8 @@ def render_dict_to_var(tag: dict[str, Any] | Component | str) -> Var:
         conditionals = render_dict_to_var(tag["default"])  # ty:ignore[invalid-argument-type]
 
         for case in tag["match_cases"][::-1]:  # ty:ignore[invalid-argument-type, not-subscriptable]
-            conditions, return_value = case
-            condition = Var.create(False)
-            for pattern in conditions:
-                condition = condition | (
-                    Var(pattern).to_string() == element.to_string()
-                )
+            patterns, return_value = case
+            condition = _format_patterns_into_condition(patterns, element)
 
             conditionals = ternary_operation(
                 condition,
@@ -2661,6 +2719,17 @@ class LiteralComponentVar(CachedVarOperation, LiteralVar[Component], ComponentVa
             ),
             VarData(
                 imports=self._var_value._get_all_imports(),
+            ),
+            VarData(
+                # Rendering rx.match in the code above produces conditional expressions
+                # of the form (pattern1 == element || pattern2 == element || ...), which
+                # introduce the OR operator and get compiled to a pyOr function call. Since
+                # the component itself might not otherwise require pyOr, and since we ignore
+                # the imports of the rendered Var above, we add the pyOr import here to
+                # ensure it is available. An alternative would be to have `render_dict_to_var`
+                # return a Var carrying all the required VarData, so this call could just
+                # retrieve it from there.
+                imports=_PY_OR_IMPORT
             ),
         )
 

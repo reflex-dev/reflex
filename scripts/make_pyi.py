@@ -79,6 +79,11 @@ def _get_changed_files() -> list[Path] | None:
     changed_files = _git_changed_files([f"{last_run_commit_sha}..HEAD"])
     # get all unstaged changes
     changed_files.extend(_git_changed_files())
+    # also pick up staged-but-uncommitted changes — pre-commit aligns the
+    # worktree with the index, so without this they'd be invisible to the
+    # diffs above and the corresponding .pyi files would not be regenerated.
+    changed_files.extend(_git_changed_files(["--cached"]))
+    changed_files = list(dict.fromkeys(changed_files))
     if _relative_to_pwd(GENERATOR_FILE) not in changed_files:
         return changed_files
     logger.info("make_pyi.py has changed, checking diff now")
