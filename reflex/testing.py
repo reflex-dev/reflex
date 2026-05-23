@@ -62,7 +62,7 @@ except ImportError:
 # The timeout (minutes) to check for the port.
 DEFAULT_TIMEOUT = 15
 POLL_INTERVAL = 0.25
-FRONTEND_POPEN_ARGS = {}
+FRONTEND_POPEN_ARGS: dict[str, Any] = {}
 T = TypeVar("T")
 TimeoutType = int | float | None
 if platform.system() == "Windows":

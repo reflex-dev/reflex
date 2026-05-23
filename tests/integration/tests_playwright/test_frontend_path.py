@@ -121,7 +121,7 @@ def FrontendPathApp():
                 id="router-url-path",
             ),
             rx.input(
-                value=FPState.router.page.raw_path,  # pyright: ignore[reportDeprecated]
+                value=FPState.router.page.raw_path,
                 read_only=True,
                 id="router-page-raw-path",
             ),

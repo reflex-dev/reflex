@@ -140,7 +140,7 @@ def convert_item(
 
 def convert_list(
     responsive_list: list[str | dict | Var],
-) -> tuple[list[str | dict[str, Var | list | dict]], VarData | None]:
+) -> tuple[list[Var | str | dict[str, Var | str | list | dict]], VarData | None]:
     """Format a responsive value list.
 
     Args:
@@ -149,12 +149,12 @@ def convert_list(
     Returns:
         The recursively converted responsive value list and any associated VarData.
     """
-    converted_value = []
+    converted_value: list[Var | str | dict[str, Var | str | list | dict]] = []
     item_var_datas = []
     for responsive_item in responsive_list:
-        if isinstance(responsive_item, dict):
+        if not isinstance(responsive_item, Var) and isinstance(responsive_item, dict):
             # Recursively format nested style dictionaries.
-            item, item_var_data = convert(responsive_item)  # ty:ignore[invalid-argument-type]
+            item, item_var_data = convert(responsive_item)
         else:
             item, item_var_data = convert_item(responsive_item)
         converted_value.append(item)
@@ -163,8 +163,8 @@ def convert_list(
 
 
 def convert(
-    style_dict: dict[str, Var | dict | list | str],
-) -> tuple[dict[str, str | list | dict], VarData | None]:
+    style_dict: Mapping[str, Any],
+) -> tuple[dict[str, Var | str | list | dict], VarData | None]:
     """Format a style dictionary.
 
     Args:
@@ -174,7 +174,7 @@ def convert(
         The formatted style dictionary.
     """
     var_data = None  # Track import/hook data from any Vars in the style dict.
-    out = {}
+    out: dict[str, Var | str | list | dict] = {}
 
     def update_out_dict(
         return_value: Var | dict | list | str, keys_to_update: tuple[str, ...]

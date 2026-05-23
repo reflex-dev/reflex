@@ -1104,7 +1104,7 @@ def typehint_issubclass(
 
 def resolve_annotations(
     raw_annotations: Mapping[str, type[Any]], module_name: str | None
-) -> dict[str, type[Any]]:
+) -> dict[str, type[Any] | ForwardRef]:
     """Partially taken from typing.get_type_hints.
 
     Resolve string or ForwardRef annotations into type objects if possible.
@@ -1114,7 +1114,9 @@ def resolve_annotations(
         module_name: The name of the module.
 
     Returns:
-        The resolved annotations.
+        The resolved annotations. Entries that could not be resolved remain
+        as ``ForwardRef`` instances (callers can re-resolve them later via
+        ``update_forward_refs``).
     """
     module = sys.modules.get(module_name, None) if module_name is not None else None
 
@@ -1122,7 +1124,7 @@ def resolve_annotations(
         module.__dict__ if module is not None else None
     )
 
-    annotations = {}
+    annotations: dict[str, type[Any] | ForwardRef] = {}
     for name, value in raw_annotations.items():
         if isinstance(value, str):
             if sys.version_info == (3, 10, 0):

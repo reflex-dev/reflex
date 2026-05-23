@@ -122,7 +122,7 @@ class Foreach(Component):
         return component
 
     def _render(self) -> IterTag:
-        props = {}
+        props: dict[str, Any] = {}
 
         render_sig = inspect.signature(self.render_fn)
         params = list(render_sig.parameters.values())

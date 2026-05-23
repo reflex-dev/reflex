@@ -1313,7 +1313,7 @@ class BaseState(EvenMoreBasicBaseState):
         }
 
     @classmethod
-    def _update_substate_inherited_vars(cls, vars_to_add: builtins.dict[str, Var]):
+    def _update_substate_inherited_vars(cls, vars_to_add: Mapping[str, Var]):
         """Update the inherited vars of substates recursively when new vars are added.
 
         Also updates the var dependency tracking dicts after adding vars.

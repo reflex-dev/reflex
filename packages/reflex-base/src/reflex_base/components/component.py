@@ -363,7 +363,7 @@ class BaseComponent(metaclass=BaseComponentMeta):
 
     def _clear_compile_caches(self) -> None:
         """Clear cached render/compiler artifacts after compile-time mutation."""
-        attrs = cast("dict[str, Any]", vars(self))
+        attrs = vars(self)
         for attr in (
             "_cached_render_result",
             "_vars_cache",

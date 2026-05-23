@@ -1001,6 +1001,12 @@ def passthrough_event_spec(
 
 
 @overload
+def passthrough_event_spec(
+    event_type: types.UnionType, /
+) -> Callable[[Var[Any]], tuple[Var[Any]]]: ...
+
+
+@overload
 def passthrough_event_spec(*event_types: type[T]) -> IdentityEventReturn[T]: ...
 
 

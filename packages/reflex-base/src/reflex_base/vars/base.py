@@ -2433,12 +2433,11 @@ class ComputedVar(Var[RETURN_TYPE]):
         """
         from .dep_tracking import DependencyTracker
 
-        d = {}
+        d: dict[str, set[str]] = {}
         if self._static_deps:
-            d.update(self._static_deps)
             # None is a placeholder for the current state class.
-            if None in d:
-                d[objclass.get_full_name()] = d.pop(None)
+            for k, v in self._static_deps.items():
+                d[k if k is not None else objclass.get_full_name()] = v
 
         if not self._auto_deps:
             return d

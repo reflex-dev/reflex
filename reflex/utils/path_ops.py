@@ -7,6 +7,7 @@ import os
 import re
 import shutil
 import stat
+from collections.abc import Mapping
 from pathlib import Path
 
 from reflex_base.config import get_config
@@ -224,7 +225,7 @@ def get_bun_path() -> Path | None:
     return bun_path.absolute() if bun_path else None
 
 
-def update_json_file(file_path: str | Path, update_dict: dict[str, object]):
+def update_json_file(file_path: str | Path, update_dict: Mapping[str, object]):
     """Update the contents of a json file.
 
     Args:

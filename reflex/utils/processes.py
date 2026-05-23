@@ -260,7 +260,7 @@ def new_process(
 
 @contextlib.contextmanager
 def run_concurrently_context(
-    *fns: Callable[..., Any] | tuple[Callable[..., Any], ...],
+    *fns: Callable[..., Any] | tuple[Any, ...],
 ) -> Generator[list[futures.Future], None, None]:
     """Run functions concurrently in a thread pool.
 

@@ -1462,7 +1462,7 @@ async def health(_request: Request) -> JSONResponse:
             - "db" (bool or str): Database status - True, False, or "NA".
             - "redis" (bool or str): Redis status - True, False, or "NA".
     """
-    health_status = {"status": True}
+    health_status: dict[str, bool | None] = {"status": True}
     status_code = 200
 
     tasks = []
