@@ -1744,7 +1744,7 @@ def var_operation(
         }
 
         return CustomVarOperation.create(
-            name=func.__name__,  # ty:ignore[unresolved-attribute]
+            name=callable_name(func),
             args=tuple(list(args_vars.items()) + list(kwargs_vars.items())),
             return_var=func(*args_vars.values(), **kwargs_vars),  # ty:ignore[invalid-argument-type]
         ).guess_type()
@@ -2358,7 +2358,7 @@ class ComputedVar(Var[RETURN_TYPE]):
     @overload
     def __get__(self, instance: BaseState, owner: type) -> RETURN_TYPE: ...
 
-    def __get__(self, instance: BaseState | None, owner: type):
+    def __get__(self, instance: BaseState | None, owner: type[BaseState]):
         """Get the ComputedVar value.
 
         If the value is already cached on the instance, return the cached value.
@@ -2372,18 +2372,21 @@ class ComputedVar(Var[RETURN_TYPE]):
         """
         if instance is None:
             state_where_defined = owner
-            while self._name in state_where_defined.inherited_vars:  # ty:ignore[unresolved-attribute]
-                state_where_defined = state_where_defined.get_parent_state()  # ty:ignore[unresolved-attribute]
+            while self._name in state_where_defined.inherited_vars:
+                parent = state_where_defined.get_parent_state()
+                if parent is None:
+                    break
+                state_where_defined = parent
 
             field_name = (
-                format_state_name(state_where_defined.get_full_name())  # ty:ignore[unresolved-attribute]
+                format_state_name(state_where_defined.get_full_name())
                 + "."
                 + self._js_expr
             )
 
             return dispatch(
                 field_name,
-                var_data=VarData.from_state(state_where_defined, self._name),  # ty:ignore[invalid-argument-type]
+                var_data=VarData.from_state(state_where_defined, self._name),
                 result_var_type=self._var_type,
                 existing_var=self,
             )

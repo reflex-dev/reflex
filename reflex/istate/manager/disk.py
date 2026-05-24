@@ -198,7 +198,7 @@ class StateManagerDisk(StateManager):
         if state is None:
             state = token.cls()
         self.states[token.cache_key] = state
-        return cast(TOKEN_TYPE, state)  # ty:ignore[redundant-cast]
+        return state
 
     async def set_state_for_substate(
         self, token: StateToken[TOKEN_TYPE], substate: TOKEN_TYPE

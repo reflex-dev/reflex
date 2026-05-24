@@ -307,14 +307,11 @@ def test_special_form_memo_wrappers_render_structural_body(
                 lambda item: rx.text(item),
             )
         if special_form == "cond":
-            return cast(
-                Component,
-                rx.cond(
-                    SpecialFormMemoState.flag,
-                    rx.text("yes"),
-                    rx.text("no"),
-                ),
-            )  # ty:ignore[redundant-cast]
+            return rx.cond(
+                SpecialFormMemoState.flag,
+                rx.text("yes"),
+                rx.text("no"),
+            )
         return cast(
             Component,
             rx.match(
@@ -445,14 +442,11 @@ def test_common_memoization_snapshot_helper_classifies_snapshot_cases() -> None:
             lambda item: rx.text(item),
         )
     )
-    cond_fragment = cast(
-        Component,
-        rx.cond(
-            SpecialFormMemoState.flag,
-            rx.text("yes"),
-            rx.text("no"),
-        ),
-    )  # ty:ignore[redundant-cast]
+    cond_fragment = rx.cond(
+        SpecialFormMemoState.flag,
+        rx.text("yes"),
+        rx.text("no"),
+    )
     match_fragment = cast(
         Component,
         rx.match(

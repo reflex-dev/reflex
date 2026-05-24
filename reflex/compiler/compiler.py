@@ -892,23 +892,17 @@ def compile_unevaluated_page(
 
         component = Fragment.create(component)
 
-        meta_args = {
-            "title": (
+        # Add meta information to the component.
+        utils.add_meta(
+            component,
+            title=(
                 page.title
                 if page.title is not None
                 else make_default_page_title(get_config().app_name, route)
             ),
-            "image": page.image,
-            "meta": page.meta,
-        }
-
-        if page.description is not None:
-            meta_args["description"] = page.description
-
-        # Add meta information to the component.
-        utils.add_meta(
-            component,
-            **meta_args,  # ty:ignore[invalid-argument-type]
+            image=page.image,
+            meta=page.meta,
+            description=page.description,
         )
 
     except Exception as e:

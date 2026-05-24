@@ -303,8 +303,9 @@ def has_args(cls: type) -> bool:
         return True
 
     # Check if the class inherits from a generic class (using __orig_bases__)
-    if hasattr(cls, "__orig_bases__"):
-        for base in cls.__orig_bases__:  # ty:ignore[not-iterable]
+    orig_bases = getattr(cls, "__orig_bases__", None)
+    if orig_bases is not None:
+        for base in orig_bases:
             if get_args(base):
                 return True
 
@@ -929,13 +930,14 @@ def validate_literal(key: str, value: Any, expected_type: type, comp_name: str):
     """
     from reflex_base.vars import Var
 
+    expected_args = get_args(expected_type)
     if (
         is_literal(expected_type)
         and not isinstance(value, Var)  # validating vars is not supported yet.
         and not is_encoded_fstring(value)  # f-strings are not supported.
-        and value not in expected_type.__args__  # ty:ignore[unresolved-attribute]
+        and value not in expected_args
     ):
-        allowed_values = expected_type.__args__  # ty:ignore[unresolved-attribute]
+        allowed_values = expected_args
         if value not in allowed_values:
             allowed_value_str = ",".join([
                 str(v) if not isinstance(v, str) else f"'{v}'" for v in allowed_values

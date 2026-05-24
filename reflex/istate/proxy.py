@@ -741,6 +741,8 @@ class ImmutableMutableProxy(MutableProxy):
     to modify the wrapped object when the StateProxy is immutable.
     """
 
+    _self_state: StateProxy
+
     # Ensure that recursively wrapped proxies use ImmutableMutableProxy as base.
     __base_proxy__ = "ImmutableMutableProxy"
 
@@ -767,7 +769,7 @@ class ImmutableMutableProxy(MutableProxy):
         Raises:
             ImmutableStateError: if the StateProxy is not mutable.
         """
-        if not self._self_state._is_mutable():  # ty:ignore[unresolved-attribute]
+        if not self._self_state._is_mutable():
             msg = (
                 "Background task StateProxy is immutable outside of a context "
                 "manager. Use `async with self` to modify state."

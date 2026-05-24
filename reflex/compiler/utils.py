@@ -813,10 +813,10 @@ def get_memo_components_dir() -> str:
 
 def add_meta(
     page: Component,
-    title: str,
-    image: str,
+    title: str | Var,
+    image: str | Var,
     meta: Sequence[Mapping[str, Any] | Component],
-    description: str | None = None,
+    description: str | Var | None = None,
 ) -> Component:
     """Add metadata to a page.
 
