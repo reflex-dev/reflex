@@ -387,13 +387,13 @@ class PlotlyBasic(Plotly):
 
     lib_dependencies: list[str] = ["plotly.js-basic-dist-min@3.5.0"]
 
-    def add_imports(self) -> ImportDict | list[ImportDict]:
+    def add_imports(self) -> ImportDict:
         """Add imports for the plotly basic component.
 
         Returns:
             The imports for the plotly basic component.
         """
-        return [super().add_imports(), CREATE_PLOTLY_COMPONENT]
+        return CREATE_PLOTLY_COMPONENT
 
     def _get_dynamic_imports(self) -> str:
         """Get the dynamic imports for the plotly basic component.
@@ -413,13 +413,13 @@ class PlotlyCartesian(Plotly):
 
     lib_dependencies: list[str] = ["plotly.js-cartesian-dist-min@3.5.0"]
 
-    def add_imports(self) -> ImportDict | list[ImportDict]:
+    def add_imports(self) -> ImportDict:
         """Add imports for the plotly cartesian component.
 
         Returns:
             The imports for the plotly cartesian component.
         """
-        return [super().add_imports(), CREATE_PLOTLY_COMPONENT]
+        return CREATE_PLOTLY_COMPONENT
 
     def _get_dynamic_imports(self) -> str:
         """Get the dynamic imports for the plotly cartesian component.
@@ -439,13 +439,13 @@ class PlotlyGeo(Plotly):
 
     lib_dependencies: list[str] = ["plotly.js-geo-dist-min@3.5.0"]
 
-    def add_imports(self) -> ImportDict | list[ImportDict]:
+    def add_imports(self) -> ImportDict:
         """Add imports for the plotly geo component.
 
         Returns:
             The imports for the plotly geo component.
         """
-        return [super().add_imports(), CREATE_PLOTLY_COMPONENT]
+        return CREATE_PLOTLY_COMPONENT
 
     def _get_dynamic_imports(self) -> str:
         """Get the dynamic imports for the plotly geo component.
@@ -465,13 +465,13 @@ class PlotlyGl3d(Plotly):
 
     lib_dependencies: list[str] = ["plotly.js-gl3d-dist-min@3.5.0"]
 
-    def add_imports(self) -> ImportDict | list[ImportDict]:
+    def add_imports(self) -> ImportDict:
         """Add imports for the plotly 3d component.
 
         Returns:
             The imports for the plotly 3d component.
         """
-        return [super().add_imports(), CREATE_PLOTLY_COMPONENT]
+        return CREATE_PLOTLY_COMPONENT
 
     def _get_dynamic_imports(self) -> str:
         """Get the dynamic imports for the plotly 3d component.
@@ -491,13 +491,13 @@ class PlotlyGl2d(Plotly):
 
     lib_dependencies: list[str] = ["plotly.js-gl2d-dist-min@3.5.0"]
 
-    def add_imports(self) -> ImportDict | list[ImportDict]:
+    def add_imports(self) -> ImportDict:
         """Add imports for the plotly 2d component.
 
         Returns:
             The imports for the plotly 2d component.
         """
-        return [super().add_imports(), CREATE_PLOTLY_COMPONENT]
+        return CREATE_PLOTLY_COMPONENT
 
     def _get_dynamic_imports(self) -> str:
         """Get the dynamic imports for the plotly 2d component.
@@ -517,13 +517,13 @@ class PlotlyMapbox(Plotly):
 
     lib_dependencies: list[str] = ["plotly.js-mapbox-dist-min@3.5.0"]
 
-    def add_imports(self) -> ImportDict | list[ImportDict]:
+    def add_imports(self) -> ImportDict:
         """Add imports for the plotly mapbox component.
 
         Returns:
             The imports for the plotly mapbox component.
         """
-        return [super().add_imports(), CREATE_PLOTLY_COMPONENT]
+        return CREATE_PLOTLY_COMPONENT
 
     def _get_dynamic_imports(self) -> str:
         """Get the dynamic imports for the plotly mapbox component.
@@ -543,13 +543,13 @@ class PlotlyFinance(Plotly):
 
     lib_dependencies: list[str] = ["plotly.js-finance-dist-min@3.5.0"]
 
-    def add_imports(self) -> ImportDict | list[ImportDict]:
+    def add_imports(self) -> ImportDict:
         """Add imports for the plotly finance component.
 
         Returns:
             The imports for the plotly finance component.
         """
-        return [super().add_imports(), CREATE_PLOTLY_COMPONENT]
+        return CREATE_PLOTLY_COMPONENT
 
     def _get_dynamic_imports(self) -> str:
         """Get the dynamic imports for the plotly finance component.
@@ -569,13 +569,13 @@ class PlotlyStrict(Plotly):
 
     lib_dependencies: list[str] = ["plotly.js-strict-dist-min@3.5.0"]
 
-    def add_imports(self) -> ImportDict | list[ImportDict]:
+    def add_imports(self) -> ImportDict:
         """Add imports for the plotly strict component.
 
         Returns:
             The imports for the plotly strict component.
         """
-        return [super().add_imports(), CREATE_PLOTLY_COMPONENT]
+        return CREATE_PLOTLY_COMPONENT
 
     def _get_dynamic_imports(self) -> str:
         """Get the dynamic imports for the plotly strict component.
