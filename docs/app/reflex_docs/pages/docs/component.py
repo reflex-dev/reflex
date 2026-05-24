@@ -6,14 +6,21 @@ import re
 import textwrap
 from pathlib import Path
 from types import UnionType
-from typing import Literal, Union, _GenericAlias, get_args, get_origin
+from typing import (
+    Any,
+    Literal,
+    Union,
+    _GenericAlias,  # ty:ignore[unresolved-import]
+    get_args,
+    get_origin,
+)
 
 import reflex as rx
 import reflex_components_internal as ui
-from reflex.components.base.fragment import Fragment
-from reflex.components.component import Component
-from reflex.components.radix.primitives.base import RadixPrimitiveComponent
-from reflex.components.radix.themes.base import RadixThemesComponent
+from reflex_base.components.component import Component
+from reflex_components_core.base.fragment import Fragment
+from reflex_components_radix.primitives.base import RadixPrimitiveComponent
+from reflex_components_radix.themes.base import RadixThemesComponent
 from reflex_docgen import (
     EventHandlerDocumentation,
     PropDocumentation,
@@ -27,16 +34,6 @@ from reflex_docs.docgen_pipeline import (
     render_markdown,
 )
 from reflex_docs.templates.docpage import docpage, h1_comp, h2_comp
-
-
-def get_code_style(color: str):
-    return {
-        "color": rx.color(color, 11),
-        "border_radius": "0.25rem",
-        "border": f"1px solid {rx.color(color, 5)}",
-        "background": rx.color(color, 3),
-    }
-
 
 # Mapping from types to colors.
 TYPE_COLORS = {
@@ -336,7 +333,7 @@ def prop_docs(
     color = TYPE_COLORS.get(short_type_name, "gray")
 
     description = prop.description or ""
-    is_long_row = len(description) > 160 or (
+    is_long_row = len(description) > 160 or bool(
         literal_values and len(literal_values) > 8 and prop.name not in common_types
     )
 
@@ -389,7 +386,7 @@ def prop_docs(
                                 [
                                     rx.code(
                                         f'"{v}"',
-                                        color_scheme=color,
+                                        color_scheme=color,  # ty:ignore[invalid-argument-type]
                                         variant="soft",
                                         class_name="code-style leading-normal text-nowrap",
                                     )
@@ -399,7 +396,7 @@ def prop_docs(
                                 else [
                                     rx.code(
                                         type_name,
-                                        color_scheme=color,
+                                        color_scheme=color,  # ty:ignore[invalid-argument-type]
                                         variant="soft",
                                         class_name="code-style leading-normal whitespace-normal break-words",
                                     )
@@ -515,7 +512,7 @@ def generate_props(
         if prop.name.startswith("on_"):  # ignore event trigger props
             continue
         cells, is_long_row, expanded_name, expanded = prop_docs(prop, component)
-        row_props = {
+        row_props: dict[str, Any] = {
             "class_name": ui.cn(
                 "border-b border-slate-4 last:border-b-0 transition-colors hover:bg-slate-2",
                 "group cursor-pointer" if is_long_row else "",

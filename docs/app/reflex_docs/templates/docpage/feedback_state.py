@@ -71,7 +71,7 @@ Integration Request: {request}
             )
 
         # Send to general webhook (suppressed errors)
-        with contextlib.suppress(httpx.HTTPError) and httpx.Client() as client:
+        with contextlib.suppress(httpx.HTTPError), httpx.Client() as client:
             client.post(
                 REFLEX_DEV_WEB_GENERAL_FORM_FEEDBACK_WEBHOOK_URL,
                 json=form_data,

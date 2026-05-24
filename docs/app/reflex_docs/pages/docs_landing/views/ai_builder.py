@@ -47,7 +47,7 @@ def get_integration_path() -> list:
                 else:
                     tag = ""
 
-                description = post.get("description", "").strip()
+                description = str(post.get("description") or "").strip()
                 title = key.replace("_", " ").title()
 
                 if title == "Open Ai":
@@ -67,7 +67,11 @@ def get_integration_path() -> list:
 
 
 def card(
-    title: str, description: str, content: str, href: str, enteprise_only: bool = False
+    title: str,
+    description: str,
+    content: rx.Component,
+    href: str,
+    enteprise_only: bool = False,
 ) -> rx.Component:
     return rx.el.div(
         rx.el.span(

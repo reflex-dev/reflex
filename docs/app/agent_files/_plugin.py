@@ -4,12 +4,15 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace, UnionType
-from typing import Any, Literal, Union, get_args, get_origin
+from typing import TYPE_CHECKING, Any, Literal, Union, get_args, get_origin
 
 from reflex.constants import Dirs
 from reflex_base.config import get_config
 from reflex_base.plugins import CommonContext, Plugin
 from typing_extensions import Unpack
+
+if TYPE_CHECKING:
+    from reflex_base.components.component import Component
 
 MCP_DOC_PATHS = {
     "ai/integrations/mcp-installation.md",
@@ -373,7 +376,9 @@ def _component_from_frontmatter_ref(component_ref: str):
     raise ValueError(msg)
 
 
-def _component_refs_from_source(source_path: Path) -> tuple[tuple[type, str], ...]:
+def _component_refs_from_source(
+    source_path: Path,
+) -> tuple[tuple[type["Component"], str], ...]:
     """Return component classes and display refs from a markdown source file."""
     from reflex_docgen.markdown import parse_document
 

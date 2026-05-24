@@ -13,6 +13,7 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
+    ClassVar,
     Generic,
     Literal,
     NoReturn,
@@ -2663,6 +2664,12 @@ else:
 class EventNamespace:
     """A namespace for event related classes."""
 
+    if TYPE_CHECKING:
+        event: ClassVar["type[EventNamespace]"]
+        __path__: ClassVar[Any]
+        __spec__: ClassVar[Any]
+        __package__: ClassVar[str | None]
+
     # Core Event Classes
     Event = Event
     EventActionsMixin = EventActionsMixin
@@ -2929,9 +2936,9 @@ class EventNamespace:
 
 
 event = EventNamespace
-event.event = event  # ty:ignore[unresolved-attribute]
+event.event = event
 _this = sys.modules[__name__]
-event.__path__ = _this.__path__  # ty:ignore[unresolved-attribute]
-event.__spec__ = _this.__spec__  # ty:ignore[unresolved-attribute]
-event.__package__ = _this.__package__  # ty:ignore[unresolved-attribute]
+event.__path__ = _this.__path__
+event.__spec__ = _this.__spec__
+event.__package__ = _this.__package__
 sys.modules[__name__] = event  # ty:ignore[invalid-assignment]

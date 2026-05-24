@@ -1,5 +1,4 @@
-import reflex as rx
-from reflex.utils.format import to_snake_case, to_title_case
+from reflex.utils.format import to_kebab_case, to_snake_case, to_title_case
 
 from ..state import SideBarItem
 
@@ -38,7 +37,7 @@ def sort_html_components(components: list) -> list:
 
 
 def get_component_link(category, clist, prefix="") -> str:
-    component_name = rx.utils.format.to_kebab_case(clist[0])
+    component_name = to_kebab_case(clist[0])
     # construct the component link. The component name points to the name of the md file.
     return f"/library/{prefix.strip('/') + '/' if prefix.strip('/') else ''}{category.lower().replace(' ', '-')}/{component_name.lower()}"
 

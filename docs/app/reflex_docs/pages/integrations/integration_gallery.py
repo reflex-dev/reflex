@@ -86,11 +86,14 @@ def integration_gallery_cards(data):
             class_name="flex flex-col gap-y-6 rounded-ui-xl border border-secondary-a4 bg-secondary-1 shadow-small p-6 h-[13rem] justify-between hover:bg-secondary-2",
         ),
         href=data["path"],
-        class_name="group text-inherit hover:!text-inherit decoration-none no-underline "
-        + rx.cond(
-            (selected_filter.value == data["tags"]) | (selected_filter.value == "All"),
-            "flex",
-            "hidden",
+        class_name=ui.cn(
+            "group text-inherit hover:!text-inherit decoration-none no-underline",
+            rx.cond(
+                (selected_filter.value == data["tags"])
+                | (selected_filter.value == "All"),
+                "flex",
+                "hidden",
+            ),
         ),
     )
 

@@ -2,8 +2,10 @@ import os
 from collections import defaultdict, namedtuple
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any
 
 import reflex as rx
+import reflex.utils.format
 from reflex_components_core.core.cond import Cond
 from reflex_docgen.markdown import parse_document
 
@@ -304,7 +306,10 @@ def register_doc(virtual_doc: str, comp):
     route = doc_route_from_path(virtual_doc)
 
     build_nested_namespace(
-        docs_ns, path, title, Route(path=route, title=title2, component=lambda: "")
+        docs_ns,
+        path,
+        title,
+        Route(path=route, title=title2, component=rx.fragment),
     )
 
     if comp is not None:
@@ -329,5 +334,16 @@ for _virtual, _actual in sorted(all_docs.items()):
     )
 
 
-for name, ns in docs_ns.__dict__.items():
-    globals()[name] = ns
+def __getattr__(name: str) -> Any:
+    """Expose ``docs_ns`` sub-namespaces (``ai_builder``, ``enterprise``, ...).
+
+    These names are populated lazily from the on-disk markdown layout, so
+    static analysers can't see them via the normal ``globals()`` write loop.
+    PEP 562 ``__getattr__`` lets ty resolve ``from reflex_docs.pages.docs import
+    ai_builder`` to ``Any`` instead of an unresolved-import error.
+    """
+    try:
+        return docs_ns.__dict__[name]
+    except KeyError as exc:
+        msg = f"module {__name__!r} has no attribute {name!r}"
+        raise AttributeError(msg) from exc

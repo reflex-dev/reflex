@@ -149,7 +149,6 @@ exclude = [
   "**/.*",
   "**/.templates",
   "**/node_modules",
-  "docs",
   "packages/reflex-site-shared",
   "packages/integrations-docs",
 ]
