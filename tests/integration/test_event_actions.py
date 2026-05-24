@@ -25,16 +25,19 @@ def TestEventAction():
     class EventActionState(rx.State):
         order: list[str]
 
-        def on_click(self, ev):
+        @rx.event
+        def on_click(self, ev: str):
             self.order.append(f"on_click:{ev}")
 
         @rx.event
         def on_click2(self):
             self.order.append("on_click2")
 
+        @rx.event
         def on_click_throttle(self):
             self.order.append("on_click_throttle")
 
+        @rx.event
         def on_click_debounce(self):
             self.order.append("on_click_debounce")
 
@@ -76,12 +79,12 @@ def TestEventAction():
             ),
             rx.button(
                 "Click event",
-                on_click=EventActionState.on_click("no_event_actions"),  # ty:ignore[invalid-argument-type, missing-argument]
+                on_click=EventActionState.on_click("no_event_actions"),
                 id="btn-click-event",
             ),
             rx.button(
                 "Click stop propagation",
-                on_click=EventActionState.on_click("stop_propagation").stop_propagation,  # ty:ignore[invalid-argument-type, missing-argument]
+                on_click=EventActionState.on_click("stop_propagation").stop_propagation,
                 id="btn-click-stop-propagation",
             ),
             rx.button(
@@ -97,15 +100,15 @@ def TestEventAction():
             rx.link(
                 "Link",
                 href="?link",
-                on_click=EventActionState.on_click("link_no_event_actions"),  # ty:ignore[invalid-argument-type, missing-argument]
+                on_click=EventActionState.on_click("link_no_event_actions"),
                 id="link",
             ),
             rx.link(
                 "Link Stop Propagation",
                 href="?link-stop-propagation",
                 on_click=EventActionState.on_click(
-                    "link_stop_propagation"  # ty:ignore[invalid-argument-type]
-                ).stop_propagation,  # ty:ignore[missing-argument]
+                    "link_stop_propagation"
+                ).stop_propagation,
                 id="link-stop-propagation",
             ),
             rx.link(
@@ -118,41 +121,41 @@ def TestEventAction():
                 "Link Prevent Default",
                 href="/invalid",
                 on_click=EventActionState.on_click(
-                    "link_prevent_default"  # ty:ignore[invalid-argument-type]
-                ).prevent_default,  # ty:ignore[missing-argument]
+                    "link_prevent_default"
+                ).prevent_default,
                 id="link-prevent-default",
             ),
             rx.link(
                 "Link Both",
                 href="/invalid",
                 on_click=EventActionState.on_click(
-                    "link_both"  # ty:ignore[invalid-argument-type]
-                ).stop_propagation.prevent_default,  # ty:ignore[missing-argument]
+                    "link_both"
+                ).stop_propagation.prevent_default,
                 id="link-stop-propagation-prevent-default",
             ),
             EventFiringComponent.create(
                 id="custom-stop-propagation",
                 on_click=EventActionState.on_click(
-                    "custom-stop-propagation"  # ty:ignore[invalid-argument-type]
-                ).stop_propagation,  # ty:ignore[missing-argument]
+                    "custom-stop-propagation"
+                ).stop_propagation,
             ),
             EventFiringComponent.create(
                 id="custom-prevent-default",
                 on_click=EventActionState.on_click(
-                    "custom-prevent-default"  # ty:ignore[invalid-argument-type]
-                ).prevent_default,  # ty:ignore[missing-argument]
+                    "custom-prevent-default"
+                ).prevent_default,
             ),
             rx.button(
                 "Throttle",
                 id="btn-throttle",
                 on_click=lambda: (
-                    EventActionState.on_click_throttle.throttle(200).stop_propagation  # ty:ignore[unresolved-attribute]
+                    EventActionState.on_click_throttle.throttle(200).stop_propagation
                 ),
             ),
             rx.button(
                 "Debounce",
                 id="btn-debounce",
-                on_click=EventActionState.on_click_debounce.debounce(  # ty:ignore[unresolved-attribute]
+                on_click=EventActionState.on_click_debounce.debounce(
                     200
                 ).stop_propagation,
             ),
@@ -163,7 +166,7 @@ def TestEventAction():
                 ),
                 id="event_order",
             ),
-            on_click=EventActionState.on_click("outer"),  # ty:ignore[invalid-argument-type, missing-argument]
+            on_click=EventActionState.on_click("outer"),
         ), rx.form(
             rx.dialog.root(
                 rx.dialog.trigger(

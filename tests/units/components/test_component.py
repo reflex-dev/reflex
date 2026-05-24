@@ -1245,7 +1245,8 @@ class EventState(rx.State):
     def handler(self):
         """A handler that does nothing."""
 
-    def handler2(self, arg):
+    @rx.event
+    def handler2(self, arg: int):
         """A handler that takes an arg.
 
         Args:
@@ -1368,17 +1369,17 @@ class EventState(rx.State):
             id="direct-event-handler",
         ),
         pytest.param(
-            rx.fragment(on_blur=EventState.handler2(TEST_VAR)),  # ty:ignore[invalid-argument-type, missing-argument]
+            rx.fragment(on_blur=EventState.handler2(TEST_VAR)),
             [ARG_VAR, TEST_VAR],
             id="direct-event-handler-arg",
         ),
         pytest.param(
-            rx.fragment(on_blur=EventState.handler2(EventState.v)),  # ty:ignore[invalid-argument-type, missing-argument]
+            rx.fragment(on_blur=EventState.handler2(EventState.v)),
             [ARG_VAR, EventState.v],
             id="direct-event-handler-arg2",
         ),
         pytest.param(
-            rx.fragment(on_blur=lambda: EventState.handler2(TEST_VAR)),  # ty:ignore[invalid-argument-type, missing-argument]
+            rx.fragment(on_blur=lambda: EventState.handler2(TEST_VAR)),
             [ARG_VAR, TEST_VAR],
             id="direct-event-handler-lambda",
         ),

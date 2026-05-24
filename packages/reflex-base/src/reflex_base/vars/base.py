@@ -1327,8 +1327,17 @@ VAR_SUBCLASS = TypeVar("VAR_SUBCLASS", bound=Var)
 VAR_INSIDE = TypeVar("VAR_INSIDE")
 
 
+@dataclasses.dataclass(eq=False, frozen=True)
 class ToOperation:
     """A var operation that converts a var to another type."""
+
+    _js_expr: str = ""
+    _var_type: GenericType = Any
+    _var_data: VarData | None = None
+    _original: Var = dataclasses.field(
+        default_factory=lambda: Var(_js_expr="null", _var_type=None)
+    )
+    _default_var_type: ClassVar[GenericType] = Any
 
     def __getattr__(self, name: str) -> Any:
         """Get an attribute of the var.
@@ -1386,10 +1395,10 @@ class ToOperation:
             The ToOperation.
         """
         return cls(
-            _js_expr="",  # ty:ignore[unknown-argument]
-            _var_data=_var_data,  # ty:ignore[unknown-argument]
-            _var_type=_var_type or cls._default_var_type,  # ty:ignore[unknown-argument, unresolved-attribute]
-            _original=value,  # ty:ignore[unknown-argument]
+            _js_expr="",
+            _var_data=_var_data,
+            _var_type=_var_type or cls._default_var_type,
+            _original=value,
         )
 
 
