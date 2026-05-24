@@ -1326,9 +1326,11 @@ class Component(BaseComponent, ABC):
             The style of the component.
         """
         component_style = None
-        if (style := styles.get(type(self))) is not None:  # ty:ignore[invalid-argument-type]
+        if isinstance(styles, Style):
+            return component_style
+        if (style := styles.get(type(self))) is not None:
             component_style = Style(style)
-        if (style := styles.get(self.create)) is not None:  # ty:ignore[invalid-argument-type]
+        if (style := styles.get(self.create)) is not None:
             component_style = Style(style)
         return component_style
 
@@ -2257,7 +2259,7 @@ class CustomComponent(Component):
         self.style = Style()
 
         # Set the tag to the name of the function.
-        self.tag = format.to_title_case(self.component_fn.__name__)  # ty:ignore[unresolved-attribute]
+        self.tag = format.to_title_case(format.callable_name(self.component_fn))
 
         for key, value in props.items():
             # Skip kwargs that are not props.
@@ -2617,38 +2619,38 @@ def render_dict_to_var(tag: dict[str, Any] | Component | str) -> Var:
     Returns:
         The Var.
     """
+    if isinstance(tag, Component):
+        return render_dict_to_var(tag.render())
     if not isinstance(tag, dict):
-        if isinstance(tag, Component):
-            return render_dict_to_var(tag.render())
         return Var.create(tag)
+    render_dict: dict[str, Any] = tag
 
-    if "contents" in tag:
-        return Var(tag["contents"])  # ty:ignore[invalid-argument-type]
+    if "contents" in render_dict:
+        return Var(render_dict["contents"])
 
-    if "iterable" in tag:
+    if "iterable" in render_dict:
         function_return = LiteralArrayVar.create([
-            render_dict_to_var(child.render())
-            for child in tag["children"]  # ty:ignore[invalid-argument-type, not-iterable]
+            render_dict_to_var(child.render()) for child in render_dict["children"]
         ])
 
         func = ArgsFunctionOperation.create(
-            (tag["arg_var_name"], tag["index_var_name"]),  # ty:ignore[invalid-argument-type]
+            (render_dict["arg_var_name"], render_dict["index_var_name"]),
             function_return,
         )
 
         return FunctionStringVar.create("Array.prototype.map.call").call(
-            tag["iterable"]  # ty:ignore[invalid-argument-type]
-            if not isinstance(tag["iterable"], ObjectVar)  # ty:ignore[invalid-argument-type]
-            else tag["iterable"].items(),  # ty:ignore[invalid-argument-type]
+            render_dict["iterable"]
+            if not isinstance(render_dict["iterable"], ObjectVar)
+            else render_dict["iterable"].items(),
             func,
         )
 
-    if "match_cases" in tag:
-        element = Var(tag["cond"])  # ty:ignore[invalid-argument-type]
+    if "match_cases" in render_dict:
+        element = Var(render_dict["cond"])
 
-        conditionals = render_dict_to_var(tag["default"])  # ty:ignore[invalid-argument-type]
+        conditionals = render_dict_to_var(render_dict["default"])
 
-        for case in tag["match_cases"][::-1]:  # ty:ignore[invalid-argument-type, not-subscriptable]
+        for case in render_dict["match_cases"][::-1]:
             patterns, return_value = case
             condition = _format_patterns_into_condition(patterns, element)
 
@@ -2660,18 +2662,18 @@ def render_dict_to_var(tag: dict[str, Any] | Component | str) -> Var:
 
         return conditionals
 
-    if "cond_state" in tag:
+    if "cond_state" in render_dict:
         return ternary_operation(
-            Var(tag["cond_state"]),  # ty:ignore[invalid-argument-type]
-            render_dict_to_var(tag["true_value"]),  # ty:ignore[invalid-argument-type]
-            render_dict_to_var(tag["false_value"])  # ty:ignore[invalid-argument-type]
-            if tag["false_value"] is not None  # ty:ignore[invalid-argument-type]
+            Var(render_dict["cond_state"]),
+            render_dict_to_var(render_dict["true_value"]),
+            render_dict_to_var(render_dict["false_value"])
+            if render_dict["false_value"] is not None
             else LiteralNoneVar.create(),
         )
 
-    props = Var("({" + ",".join(tag["props"]) + "})")  # ty:ignore[invalid-argument-type, no-matching-overload]
+    props = Var("({" + ",".join(render_dict["props"]) + "})")
 
-    raw_tag_name = tag.get("name")  # ty:ignore[invalid-argument-type]
+    raw_tag_name = render_dict.get("name")
     tag_name = Var(raw_tag_name or "Fragment")
 
     return FunctionStringVar.create(
@@ -2679,7 +2681,7 @@ def render_dict_to_var(tag: dict[str, Any] | Component | str) -> Var:
     ).call(
         tag_name,
         props,
-        *[render_dict_to_var(child) for child in tag["children"]],  # ty:ignore[invalid-argument-type, not-iterable]
+        *[render_dict_to_var(child) for child in render_dict["children"]],
     )
 
 

@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, TypeVar, overload
 
 from reflex_base.utils import console
 from reflex_base.utils.exceptions import InvalidLifespanTaskTypeError
+from reflex_base.utils.format import callable_name
 from starlette.applications import Starlette
 
 from .mixin import AppMixin
@@ -34,7 +35,7 @@ def _get_task_name(task: asyncio.Task | Callable) -> str:
     """
     if isinstance(task, asyncio.Task):
         return task.get_name()
-    return task.__name__  # ty:ignore[unresolved-attribute]
+    return callable_name(task)
 
 
 @dataclasses.dataclass
@@ -123,22 +124,18 @@ class LifespanMixin(AppMixin):
                 console.debug(f"Canceling lifespan task: {task}")
                 task.cancel(msg="lifespan_cleanup")
         # Disassociate sid / token pairings so they can be reconnected properly.
-        try:
-            event_namespace = self.event_namespace  # ty:ignore[unresolved-attribute]
-        except AttributeError:
-            pass
-        else:
+        event_namespace = getattr(self, "event_namespace", None)
+        if event_namespace:
             try:
-                if event_namespace:
-                    await event_namespace._token_manager.disconnect_all()
+                await event_namespace._token_manager.disconnect_all()
             except Exception as e:
                 console.error(f"Error during lifespan cleanup: {e}")
         # Flush any pending writes from the state manager.
         try:
-            state_manager = self.state_manager  # ty:ignore[unresolved-attribute]
-        except (AttributeError, ValueError):
-            pass
-        else:
+            state_manager = getattr(self, "state_manager", None)
+        except ValueError:
+            state_manager = None
+        if state_manager is not None:
             await state_manager.close()
 
     @overload
@@ -185,7 +182,7 @@ class LifespanMixin(AppMixin):
             )
             raise RuntimeError(msg)
         if inspect.isgeneratorfunction(task) or inspect.isasyncgenfunction(task):
-            msg = f"Task {task.__name__} of type generator must be decorated with contextlib.asynccontextmanager."  # ty:ignore[unresolved-attribute]
+            msg = f"Task {_get_task_name(task)} of type generator must be decorated with contextlib.asynccontextmanager."
             raise InvalidLifespanTaskTypeError(msg)
 
         task_name = _get_task_name(task)

@@ -53,7 +53,7 @@ from reflex_base.utils.exceptions import (
     VarDependencyError,
     VarTypeError,
 )
-from reflex_base.utils.format import format_state_name
+from reflex_base.utils.format import callable_name, format_state_name
 from reflex_base.utils.imports import (
     ImmutableImportDict,
     ImmutableParsedImportDict,
@@ -2120,10 +2120,11 @@ class ComputedVar(Var[RETURN_TYPE]):
             "return", Any
         )
 
+        fget_name = callable_name(fget)
         if hint is Any:
-            raise UntypedComputedVarError(var_name=fget.__name__)  # ty:ignore[unresolved-attribute]
+            raise UntypedComputedVarError(var_name=fget_name)
         is_using_fget_name = "_js_expr" not in kwargs
-        js_expr = kwargs.pop("_js_expr", fget.__name__ + FIELD_MARKER)  # ty:ignore[unresolved-attribute]
+        js_expr = kwargs.pop("_js_expr", fget_name + FIELD_MARKER)
         kwargs.setdefault("_var_type", hint)
 
         Var.__init__(
@@ -2132,7 +2133,7 @@ class ComputedVar(Var[RETURN_TYPE]):
             _var_type=kwargs.pop("_var_type"),
             _var_data=kwargs.pop(
                 "_var_data",
-                VarData(field_name=fget.__name__) if is_using_fget_name else None,  # ty:ignore[unresolved-attribute]
+                VarData(field_name=fget_name) if is_using_fget_name else None,
             ),
         )
 
@@ -2141,12 +2142,12 @@ class ComputedVar(Var[RETURN_TYPE]):
             raise TypeError(msg)
 
         if backend is None:
-            backend = fget.__name__.startswith("_")  # ty:ignore[unresolved-attribute]
+            backend = fget_name.startswith("_")
 
         object.__setattr__(self, "_backend", backend)
         object.__setattr__(self, "_initial_value", initial_value)
         object.__setattr__(self, "_cache", cache)
-        object.__setattr__(self, "_name", fget.__name__)  # ty:ignore[unresolved-attribute]
+        object.__setattr__(self, "_name", fget_name)
 
         if isinstance(interval, int):
             interval = datetime.timedelta(seconds=interval)
@@ -2780,7 +2781,7 @@ def computed_var(
     if fget is not None:
         sign = inspect.signature(fget)
         if len(sign.parameters) != 1:
-            raise ComputedVarSignatureError(fget.__name__, signature=str(sign))  # ty:ignore[unresolved-attribute]
+            raise ComputedVarSignatureError(callable_name(fget), signature=str(sign))
 
         if inspect.iscoroutinefunction(fget):
             computed_var_cls = AsyncComputedVar
@@ -3149,15 +3150,16 @@ def transform(fn: Callable[[Var], Var]) -> Callable[[Var], Var]:
     return_type = types["return"]
 
     origin = get_origin(return_type)
+    fn_name = callable_name(fn)
 
     if origin is not Var:
-        msg = f"Expected return type of {fn.__name__} to be a Var, got {origin}."  # ty:ignore[unresolved-attribute]
+        msg = f"Expected return type of {fn_name} to be a Var, got {origin}."
         raise TypeError(msg)
 
     generic_args = get_args(return_type)
 
     if not generic_args:
-        msg = f"Expected Var return type of {fn.__name__} to have a generic type."  # ty:ignore[unresolved-attribute]
+        msg = f"Expected Var return type of {fn_name} to have a generic type."
         raise TypeError(msg)
 
     generic_type = get_origin(generic_args[0]) or generic_args[0]
@@ -3198,6 +3200,7 @@ def dispatch(
 
     if result_origin_var_type in dispatchers:
         fn = dispatchers[result_origin_var_type]
+        fn_name = callable_name(fn)
         fn_types = get_type_hints(fn)
         fn_first_arg_type = fn_types.get(
             next(iter(inspect.signature(fn).parameters.values())).name, Any
@@ -3208,7 +3211,7 @@ def dispatch(
         fn_return_origin = get_origin(fn_return) or fn_return
 
         if fn_return_origin is not Var:
-            msg = f"Expected return type of {fn.__name__} to be a Var, got {fn_return}."  # ty:ignore[unresolved-attribute]
+            msg = f"Expected return type of {fn_name} to be a Var, got {fn_return}."
             raise TypeError(msg)
 
         fn_return_generic_args = get_args(fn_return)
@@ -3220,7 +3223,7 @@ def dispatch(
         arg_origin = get_origin(fn_first_arg_type) or fn_first_arg_type
 
         if arg_origin is not Var:
-            msg = f"Expected first argument of {fn.__name__} to be a Var, got {fn_first_arg_type}."  # ty:ignore[unresolved-attribute]
+            msg = f"Expected first argument of {fn_name} to be a Var, got {fn_first_arg_type}."
             raise TypeError(msg)
 
         arg_generic_args = get_args(fn_first_arg_type)

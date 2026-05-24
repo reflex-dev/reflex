@@ -850,7 +850,9 @@ class App(MiddlewareMixin, LifespanMixin):
                 msg = "Route must be set if component is not a callable."
                 raise exceptions.RouteValueError(msg)
             # Format the route.
-            route = format.format_route(format.to_kebab_case(component.__name__))  # ty:ignore[unresolved-attribute]
+            route = format.format_route(
+                format.to_kebab_case(format.callable_name(component))
+            )
         else:
             route = format.format_route(route)
 

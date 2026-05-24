@@ -25,7 +25,7 @@ from reflex_base.environment import environment
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
 from reflex_base.style import SYSTEM_COLOR_MODE
 from reflex_base.utils.exceptions import ReflexError
-from reflex_base.utils.format import to_title_case
+from reflex_base.utils.format import callable_name, to_title_case
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_components_core.base.app_wrap import AppWrap
@@ -760,9 +760,10 @@ def readable_name_from_component(
             module = getmodule(component)
             if module is not None:
                 module_name = module.__name__
+        name = callable_name(component)
         if module_name is not None:
-            return f"{module_name}.{component.__name__}"  # ty:ignore[unresolved-attribute]
-        return component.__name__  # ty:ignore[unresolved-attribute]
+            return f"{module_name}.{name}"
+        return name
     return None
 
 

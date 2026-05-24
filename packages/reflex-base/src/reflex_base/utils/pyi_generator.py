@@ -747,7 +747,9 @@ def type_to_ast(
         return ast.Name(id=str(typ))
 
     # Get the base type name (List, Dict, Optional, etc.)
-    base_name = getattr(origin, "_name", origin.__name__)  # ty:ignore[unresolved-attribute]
+    base_name = getattr(origin, "_name", None) or getattr(
+        origin, "__name__", repr(origin)
+    )
 
     # Get type arguments
     args = get_args(typ)

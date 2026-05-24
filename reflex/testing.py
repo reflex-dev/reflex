@@ -30,6 +30,7 @@ from reflex_base.components.component import CUSTOM_COMPONENTS, CustomComponent
 from reflex_base.config import get_config
 from reflex_base.environment import environment
 from reflex_base.registry import RegistrationContext
+from reflex_base.utils.format import callable_name
 from reflex_base.utils.types import ASGIApp
 from typing_extensions import Self
 
@@ -151,14 +152,14 @@ class AppHarness:
             elif isinstance(app_source, functools.partial):
                 keywords = app_source.keywords
                 slug_suffix = "_".join([str(v) for v in keywords.values()])
-                func_name = app_source.func.__name__  # ty:ignore[unresolved-attribute]
+                func_name = callable_name(app_source.func)
                 app_name = f"{func_name}_{slug_suffix}"
                 app_name = re.sub(r"[^a-zA-Z0-9_]", "_", app_name)
             elif isinstance(app_source, str):
                 msg = "app_name must be provided when app_source is a string."
                 raise ValueError(msg)
             else:
-                app_name = app_source.__name__  # ty:ignore[unresolved-attribute]
+                app_name = callable_name(app_source)
 
             app_name = app_name.lower()
             while "__" in app_name:
@@ -402,10 +403,12 @@ class AppHarness:
             msg = "Frontend did not start"
             raise RuntimeError(msg)
 
+        stdout = self.frontend_process.stdout
+
         def consume_frontend_output():
             while True:
                 try:
-                    line = self.frontend_process.stdout.readline()  # ty:ignore[unresolved-attribute]
+                    line = stdout.readline()
                 # catch I/O operation on closed file.
                 except ValueError as e:
                     console.error(str(e))

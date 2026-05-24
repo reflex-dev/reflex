@@ -32,6 +32,21 @@ WRAP_MAP = {
 }
 
 
+def callable_name(fn: object) -> str:
+    """Return ``fn.__name__`` when available, otherwise ``repr(fn)``.
+
+    Args:
+        fn: The object whose display name is wanted.
+
+    Returns:
+        The display name.
+    """
+    name = getattr(fn, "__name__", None)
+    if isinstance(name, str):
+        return name
+    return repr(fn)
+
+
 def length_of_largest_common_substring(str1: str, str2: str) -> int:
     """Find the length of the largest common substring between two strings.
 
