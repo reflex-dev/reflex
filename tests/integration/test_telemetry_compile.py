@@ -13,7 +13,6 @@ import functools
 import json
 from collections.abc import Generator
 from pathlib import Path
-from typing import Any
 
 import pytest
 
@@ -36,6 +35,7 @@ def TelemetryCompileApp(events_log_path: str = ""):
     import json
     import os
     from pathlib import Path
+    from typing import Any
 
     import reflex as rx
     from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
