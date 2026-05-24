@@ -13,13 +13,8 @@ from reflex_base.utils import exceptions
 
 if TYPE_CHECKING:
     from reflex_base.components.component import ComponentStyle
-    from reflex_base.event import (
-        ArgsSpec,
-        EventChain,
-        EventHandler,
-        EventSpec,
-        EventType,
-    )
+    from reflex_base.event import EventChain, EventHandler, EventSpec, EventType
+    from reflex_base.utils.types import ArgsSpec
 
 WRAP_MAP = {
     "{": "}",
@@ -445,32 +440,41 @@ def format_props(*single_props, **key_value_props) -> list[str]:
 
 
 def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
-    """Get the state and function name of an event handler.
+    """Get the (state, function) name pair for an event handler.
+
+    Both names pass through the active
+    :class:`~reflex_base.registry.NameResolver`, so any installed rewrite
+    (minification, prefixing, etc.) is applied transparently.
 
     Args:
-        handler: The event handler to get the parts of.
+        handler: The event handler.
 
     Returns:
-        The state and function name.
+        ``(state_full_name, handler_name)`` — both resolved.
     """
-    # Get the name of the event function.
+    from reflex_base.registry import DefaultNameResolver, RegistrationContext
+
     name = handler.fn.__qualname__
-
-    # Get the state full name
-    state_full_name = handler.state.get_full_name() if handler.state else ""
-
-    # If there's no enclosing state, just return the full name.
     if handler.state is None:
         return ("", name)
 
-    # Get the event name inside the state.
+    state_full_name = handler.state.get_full_name()
     func_name = name.rpartition(".")[2]
+    ctx = RegistrationContext.try_get()
+    if ctx is None or type(ctx.name_resolver) is DefaultNameResolver:
+        return (state_full_name, func_name)
+    return (state_full_name, ctx.get_handler_name(handler.state, func_name))
 
-    return (state_full_name, func_name)
+
+_FORMATTED_NAME_CACHE_ATTR = "_formatted_name"
 
 
 def format_event_handler(handler: EventHandler) -> str:
     """Format an event handler.
+
+    Cached on the handler instance under ``_formatted_name`` to skip the
+    registry/resolver dispatch on every event. The cache is invalidated by
+    :meth:`reflex_base.registry.RegistrationContext.set_name_resolver`.
 
     Args:
         handler: The event handler to format.
@@ -478,10 +482,13 @@ def format_event_handler(handler: EventHandler) -> str:
     Returns:
         The formatted function.
     """
+    cached = handler.__dict__.get(_FORMATTED_NAME_CACHE_ATTR)
+    if cached is not None:
+        return cached
     state, name = get_event_handler_parts(handler)
-    if state == "":
-        return name
-    return f"{state}.{name}"
+    full = name if state == "" else f"{state}.{name}"
+    object.__setattr__(handler, _FORMATTED_NAME_CACHE_ATTR, full)
+    return full
 
 
 def format_event(event_spec: EventSpec) -> str:
