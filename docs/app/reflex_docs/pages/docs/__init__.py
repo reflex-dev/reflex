@@ -328,5 +328,6 @@ for _virtual, _actual in sorted(all_docs.items()):
         get_component_docgen(_virtual, _actual, doc_title_from_path(_virtual)),
     )
 
+
 for name, ns in docs_ns.__dict__.items():
     globals()[name] = ns

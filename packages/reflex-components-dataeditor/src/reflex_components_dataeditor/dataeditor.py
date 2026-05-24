@@ -364,7 +364,7 @@ class DataEditor(NoSSRComponent):
     )
 
     on_finished_editing: EventHandler[
-        passthrough_event_spec(GridCell | None, tuple[int, int])  # ty:ignore[no-matching-overload]
+        passthrough_event_spec(GridCell | None, tuple[int, int])
     ] = field(doc="Fired when editing is finished.")
 
     on_row_appended: EventHandler[no_args_event_spec] = field(

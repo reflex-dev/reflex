@@ -1007,6 +1007,14 @@ def passthrough_event_spec(
 
 
 @overload
+def passthrough_event_spec(
+    event_type_1: types.UnionType | type[T],
+    event_type2: types.UnionType | type[U],
+    /,
+) -> Callable[[Var[Any], Var[Any]], tuple[Var[Any], Var[Any]]]: ...
+
+
+@overload
 def passthrough_event_spec(*event_types: type[T]) -> IdentityEventReturn[T]: ...
 
 
@@ -2565,7 +2573,7 @@ class EventCallback(Generic[Unpack[P]], EventActionsMixin):
     ) -> "EventCallback[Unpack[P]]": ...
 
     @overload
-    def __get__(self, instance: Any, owner: Any) -> "Callable[[Unpack[P]]]": ...  # ty:ignore[invalid-type-form]
+    def __get__(self, instance: Any, owner: Any) -> "Callable[[Unpack[P]], Any]": ...
 
     def __get__(self, instance: Any, owner: Any) -> Callable:
         """Get the function with the instance bound to it.

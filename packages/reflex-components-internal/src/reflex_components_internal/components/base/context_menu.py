@@ -377,7 +377,7 @@ class ContextMenuRadioGroup(ContextMenuBaseComponent):
     value: Var[str | int]
 
     # Event handler called when the value changes.
-    on_value_change: EventHandler[passthrough_event_spec(str | int, dict)]  # ty:ignore[no-matching-overload]
+    on_value_change: EventHandler[passthrough_event_spec(str | int, dict)]
 
     # Whether the component should ignore user interaction. Defaults to False.
     disabled: Var[bool]
