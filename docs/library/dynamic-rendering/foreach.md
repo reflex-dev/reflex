@@ -21,13 +21,13 @@ from typing import List
 
 
 class ForeachState(rx.State):
-    colors: List[tuple[str, str]] = [
-        ("Tomato", "#E5484D"),
-        ("Teal", "#12A594"),
-        ("Blue", "#3E63DD"),
-        ("Amber", "#F5A400"),
-        ("Orange", "#F76B15"),
-        ("Purple", "#8E4EC6"),
+    colors: List[str] = [
+        "#E5484D",
+        "#12A594",
+        "#3E63DD",
+        "#AD5700",
+        "#F76B15",
+        "#8E4EC6",
     ]
 
 
@@ -45,8 +45,8 @@ def color_swatch(label, color: rx.Var[str]):
     )
 
 
-def colored_box(color: rx.Var[tuple[str, str]]):
-    return color_swatch(color[0], color[1])
+def colored_box(color: rx.Var[str]):
+    return color_swatch(color, color)
 
 
 def foreach_example():
@@ -59,8 +59,8 @@ def foreach_example():
 The function can also take an index as a second argument.
 
 ```python demo exec
-def colored_box_index(color: rx.Var[tuple[str, str]], index: int):
-    return color_swatch(index, color[1])
+def colored_box_index(color: rx.Var[str], index: int):
+    return color_swatch(index, color)
 
 
 def foreach_example_index():
@@ -171,7 +171,7 @@ class SimpleDictForeachState(rx.State):
 
 
 def display_color(color: rx.Var[tuple[int, str]]):
-    # color is presented as a key-value pair such as (1, "blue").
+    # color is presented as a key-value pair such as (1, "#3E63DD").
     return color_swatch(color[0], color[1])
 
 
@@ -182,27 +182,27 @@ def foreach_dict_example():
 ```
 
 Now let's show a more complex example with dicts using the color example.
-Assuming we want to display a dictionary of secondary colors as keys and their constituent primary colors as values, we can modify the code as below:
+This example groups related hex colors in a dictionary and renders both the keys and values as swatches:
 
 ```python demo exec
 from typing import List, Dict
 
 
 class ComplexDictForeachState(rx.State):
-    color_chart: Dict[str, tuple[str, List[tuple[str, str]]]] = {
-        "Purple": ("#8E4EC6", [("Tomato", "#E5484D"), ("Blue", "#3E63DD")]),
-        "Orange": ("#F76B15", [("Amber", "#F5A400"), ("Tomato", "#E5484D")]),
-        "Green": ("#12A594", [("Blue", "#3E63DD"), ("Amber", "#F5A400")]),
+    color_chart: Dict[str, List[str]] = {
+        "#8E4EC6": ["#E5484D", "#3E63DD"],
+        "#F76B15": ["#AD5700", "#E5484D"],
+        "#12A594": ["#3E63DD", "#AD5700"],
     }
 
 
-def display_colors(color: rx.Var[tuple[str, tuple[str, list[tuple[str, str]]]]]):
+def display_colors(color: rx.Var[tuple[str, list[str]]]):
     return rx.vstack(
-        color_swatch(color[0], color[1][0]),
+        color_swatch(color[0], color[0]),
         rx.hstack(
             rx.foreach(
-                color[1][1],
-                lambda x: color_swatch(x[0], x[1]),
+                color[1],
+                lambda x: color_swatch(x, x),
             )
         ),
         align="center",
