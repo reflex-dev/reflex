@@ -209,11 +209,14 @@ def display_colors(color: rx.Var[tuple[str, list[str]]]):
             )
         ),
         align="center",
+        spacing="2",
     )
 
 
 def foreach_complex_dict_example():
     return rx.grid(
-        rx.foreach(ComplexDictForeachState.color_chart, display_colors), columns="2"
+        rx.foreach(ComplexDictForeachState.color_chart, display_colors),
+        columns="3",
+        spacing="4",
     )
 ```
