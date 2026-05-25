@@ -21,22 +21,37 @@ from typing import List
 
 
 class ForeachState(rx.State):
-    color: List[str] = ["red", "green", "blue", "yellow", "orange", "purple"]
+    colors: List[tuple[str, str]] = [
+        ("Tomato", "#E5484D"),
+        ("Teal", "#12A594"),
+        ("Blue", "#3E63DD"),
+        ("Amber", "#F5A400"),
+        ("Orange", "#F76B15"),
+        ("Purple", "#8E4EC6"),
+    ]
 
 
-def colored_box(color: rx.Var[str]):
+def color_swatch(label, color: rx.Var[str]):
     return rx.box(
-        rx.text(color, color="white", text_shadow="0 1px 2px black"),
+        rx.text(label, color="white", weight="medium"),
         bg=color,
-        padding="0.5em",
-        min_width="5em",
+        padding_y="0.5em",
+        padding_x="0.75em",
+        min_width="5.5em",
         text_align="center",
+        border_radius="0.375rem",
+        border="1px solid rgba(0, 0, 0, 0.12)",
+        box_shadow="0 1px 2px rgba(0, 0, 0, 0.10)",
     )
+
+
+def colored_box(color: rx.Var[tuple[str, str]]):
+    return color_swatch(color[0], color[1])
 
 
 def foreach_example():
     return rx.grid(
-        rx.foreach(ForeachState.color, colored_box),
+        rx.foreach(ForeachState.colors, colored_box),
         columns="2",
     )
 ```
@@ -44,20 +59,14 @@ def foreach_example():
 The function can also take an index as a second argument.
 
 ```python demo exec
-def colored_box_index(color: rx.Var[str], index: int):
-    return rx.box(
-        rx.text(index, color="white", text_shadow="0 1px 2px black"),
-        bg=color,
-        padding="0.5em",
-        min_width="5em",
-        text_align="center",
-    )
+def colored_box_index(color: rx.Var[tuple[str, str]], index: int):
+    return color_swatch(index, color[1])
 
 
 def foreach_example_index():
     return rx.grid(
         rx.foreach(
-            ForeachState.color, lambda color, index: colored_box_index(color, index)
+            ForeachState.colors, lambda color, index: colored_box_index(color, index)
         ),
         columns="2",
     )
@@ -158,18 +167,12 @@ Using the color example, we can slightly modify the code to use dicts as shown b
 
 ```python demo exec
 class SimpleDictForeachState(rx.State):
-    color_chart: dict[int, str] = {1: "blue", 2: "red", 3: "green"}
+    color_chart: dict[int, str] = {1: "#3E63DD", 2: "#E5484D", 3: "#12A594"}
 
 
 def display_color(color: rx.Var[tuple[int, str]]):
     # color is presented as a key-value pair such as (1, "blue").
-    return rx.box(
-        rx.text(color[0], color="white", text_shadow="0 1px 2px black"),
-        bg=color[1],
-        padding="0.5em",
-        min_width="5em",
-        text_align="center",
-    )
+    return color_swatch(color[0], color[1])
 
 
 def foreach_dict_example():
@@ -186,26 +189,20 @@ from typing import List, Dict
 
 
 class ComplexDictForeachState(rx.State):
-    color_chart: Dict[str, List[str]] = {
-        "purple": ["red", "blue"],
-        "orange": ["yellow", "red"],
-        "green": ["blue", "yellow"],
+    color_chart: Dict[str, tuple[str, List[tuple[str, str]]]] = {
+        "Purple": ("#8E4EC6", [("Tomato", "#E5484D"), ("Blue", "#3E63DD")]),
+        "Orange": ("#F76B15", [("Amber", "#F5A400"), ("Tomato", "#E5484D")]),
+        "Green": ("#12A594", [("Blue", "#3E63DD"), ("Amber", "#F5A400")]),
     }
 
 
-def display_colors(color: rx.Var[tuple[str, list[str]]]):
+def display_colors(color: rx.Var[tuple[str, tuple[str, list[tuple[str, str]]]]]):
     return rx.vstack(
-        rx.text(color[0], color=color[0], weight="bold"),
+        color_swatch(color[0], color[1][0]),
         rx.hstack(
             rx.foreach(
-                color[1],
-                lambda x: rx.box(
-                    rx.text(x, color="white", text_shadow="0 1px 2px black"),
-                    bg=x,
-                    padding="0.5em",
-                    min_width="5em",
-                    text_align="center",
-                ),
+                color[1][1],
+                lambda x: color_swatch(x[0], x[1]),
             )
         ),
         align="center",
