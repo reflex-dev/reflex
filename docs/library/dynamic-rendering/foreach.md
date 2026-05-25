@@ -9,13 +9,11 @@ import reflex as rx
 
 # Foreach
 
-The `rx.foreach` component takes an iterable(list, tuple or dict) and a function that renders each item in the list.
+The `rx.foreach` component takes an iterable (list, tuple, or dict) and a function that renders each item in the list.
 This is useful for dynamically rendering a list of items defined in a state.
 
 ```md alert warning
-# `rx.foreach` is specialized for usecases where the iterable is defined in a state var.
-
-For an iterable where the content doesn't change at runtime, i.e a constant, using a list/dict comprehension instead of `rx.foreach` is preferred.
+# Use `rx.foreach` for state vars; use Python list or dict comprehensions for constants.
 ```
 
 ```python demo exec
@@ -26,8 +24,14 @@ class ForeachState(rx.State):
     color: List[str] = ["red", "green", "blue", "yellow", "orange", "purple"]
 
 
-def colored_box(color: str):
-    return rx.box(rx.text(color), bg=color)
+def colored_box(color: rx.Var[str]):
+    return rx.box(
+        rx.text(color, color="white", text_shadow="0 1px 2px black"),
+        bg=color,
+        padding="0.5em",
+        min_width="5em",
+        text_align="center",
+    )
 
 
 def foreach_example():
@@ -40,8 +44,14 @@ def foreach_example():
 The function can also take an index as a second argument.
 
 ```python demo exec
-def colored_box_index(color: str, index: int):
-    return rx.box(rx.text(index), bg=color)
+def colored_box_index(color: rx.Var[str], index: int):
+    return rx.box(
+        rx.text(index, color="white", text_shadow="0 1px 2px black"),
+        bg=color,
+        padding="0.5em",
+        min_width="5em",
+        text_align="center",
+    )
 
 
 def foreach_example_index():
@@ -66,7 +76,7 @@ class NestedForeachState(rx.State):
     numbers: List[List[str]] = [["1", "2", "3"], ["4", "5", "6"], ["7", "8", "9"]]
 
 
-def display_row(row):
+def display_row(row: rx.Var[list[str]]):
     return rx.hstack(
         rx.foreach(
             row,
@@ -101,18 +111,19 @@ class ListState(rx.State):
     def add_item(self):
         self.items += [self.new_item]
 
+    @rx.event
     def finish_item(self, item: str):
         self.items = [i for i in self.items if i != item]
 
 
-def get_item(item):
+def get_item(item: rx.Var[str]):
     return rx.list.item(
         rx.hstack(
             rx.button(
+                "Done",
                 on_click=lambda: ListState.finish_item(item),
-                height="1.5em",
-                background_color="white",
-                border="1px solid blue",
+                size="1",
+                variant="soft",
             ),
             rx.text(item, font_size="1.25em"),
         ),
@@ -125,7 +136,7 @@ def todo_example():
         rx.input(
             on_blur=ListState.set_new_item, placeholder="Add a todo...", bg="white"
         ),
-        rx.button("Add", on_click=ListState.add_item, bg="white"),
+        rx.button("Add", on_click=ListState.add_item),
         rx.divider(),
         rx.list.ordered(
             rx.foreach(
@@ -142,20 +153,23 @@ def todo_example():
 
 ## Dictionaries
 
-Items in a dictionary can be accessed as list of key-value pairs.
+Items in a dictionary are passed to the render function as key-value pairs.
 Using the color example, we can slightly modify the code to use dicts as shown below.
 
 ```python demo exec
-from typing import List
-
-
 class SimpleDictForeachState(rx.State):
     color_chart: dict[int, str] = {1: "blue", 2: "red", 3: "green"}
 
 
-def display_color(color: List):
-    # color is presented as a list key-value pair([1, "blue"],[2, "red"], [3, "green"])
-    return rx.box(rx.text(color[0]), bg=color[1])
+def display_color(color: rx.Var[tuple[int, str]]):
+    # color is presented as a key-value pair such as (1, "blue").
+    return rx.box(
+        rx.text(color[0], color="white", text_shadow="0 1px 2px black"),
+        bg=color[1],
+        padding="0.5em",
+        min_width="5em",
+        text_align="center",
+    )
 
 
 def foreach_dict_example():
@@ -179,12 +193,22 @@ class ComplexDictForeachState(rx.State):
     }
 
 
-def display_colors(color: List):
+def display_colors(color: rx.Var[tuple[str, list[str]]]):
     return rx.vstack(
-        rx.text(color[0], color=color[0]),
+        rx.text(color[0], color=color[0], weight="bold"),
         rx.hstack(
-            rx.foreach(color[1], lambda x: rx.box(rx.text(x, color="black"), bg=x))
+            rx.foreach(
+                color[1],
+                lambda x: rx.box(
+                    rx.text(x, color="white", text_shadow="0 1px 2px black"),
+                    bg=x,
+                    padding="0.5em",
+                    min_width="5em",
+                    text_align="center",
+                ),
+            )
         ),
+        align="center",
     )
 
 
