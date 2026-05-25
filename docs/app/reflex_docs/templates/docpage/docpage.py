@@ -6,10 +6,10 @@ from datetime import datetime
 
 import reflex as rx
 import reflex_components_internal as ui
+from reflex.components.radix.themes.base import LiteralAccentColor
 from reflex.experimental.client_state import ClientStateVar
 from reflex.utils.format import to_snake_case, to_title_case
 from reflex_base.event import run_script
-from reflex_components_radix.themes.base import LiteralAccentColor
 from reflex_site_shared.backend.status import StatusState
 from reflex_site_shared.components.blocks.code import *
 from reflex_site_shared.components.blocks.demo import *
@@ -57,11 +57,9 @@ class FeedbackState(rx.State):
 
     score: int = -1
 
-    @rx.event
     def set_score(self, score: int):
         self.score = score
 
-    @rx.event
     def handle_submit(self, form_data: dict):
         pass
 
@@ -146,7 +144,7 @@ def thumbs_cards() -> rx.Component:
     )
 
 
-def feedback_choice_button(label: str, icon: str, score: int, class_name: str | rx.Var):
+def feedback_choice_button(label: str, icon: str, score: int, class_name: str):
     active = FeedbackState.score == score
     return rx.el.button(
         ui.icon(icon),
@@ -773,11 +771,7 @@ def docpage(
         path = get_path(contents, "reflex-docs/pages") if set_path is None else set_path
         _register_doc_route(path)
 
-        title = (
-            getattr(contents, "__name__", "page").replace("_", " ").title()
-            if t is None
-            else t
-        )
+        title = contents.__name__.replace("_", " ").title() if t is None else t
 
         @functools.wraps(contents)
         def wrapper(*args, **kwargs) -> rx.Component:
@@ -848,8 +842,8 @@ def docpage(
             else:
                 links.append(rx.fragment())
 
-            toc: list = []
-            doc_content: str | None = None
+            toc = []
+            doc_content = None
             if not isinstance(contents, rx.Component):
                 comp = contents(*args, **kwargs)
             else:
@@ -859,11 +853,11 @@ def docpage(
                 first, second = comp
                 # Check if first is (toc, doc_content) from get_toc
                 if isinstance(first, tuple) and len(first) == 2:
-                    toc, doc_content = first  # ty:ignore[invalid-assignment]
+                    toc, doc_content = first
                     comp = second
                 else:
                     # Legacy format: (toc, comp)
-                    toc, comp = first, second  # ty:ignore[invalid-assignment]
+                    toc, comp = first, second
 
             show_right_sidebar = right_sidebar and len(toc) >= 2
             return rx.box(
@@ -871,14 +865,14 @@ def docpage(
                 rx.el.main(
                     rx.box(
                         sidebar,
-                        class_name=ui.cn(
-                            "w-[19.5rem] shrink-0 hidden lg:block z-10 border-r border-m-slate-4 dark:border-m-slate-10 sticky left-0",
-                            "before:content-[''] before:absolute before:top-0 before:bottom-0 before:right-0 before:w-[100vw] before:bg-white-1 dark:before:bg-secondary-2 before:-z-10",
-                            rx.cond(
+                        class_name=(
+                            "w-[19.5rem] shrink-0 hidden lg:block z-10 border-r border-m-slate-4 dark:border-m-slate-10 sticky left-0 "
+                            "before:content-[''] before:absolute before:top-0 before:bottom-0 before:right-0 before:w-[100vw] before:bg-white-1 dark:before:bg-secondary-2 before:-z-10 "
+                            + rx.cond(
                                 HostingBannerState.is_banner_visible,
-                                "top-[113px] h-[calc(100vh-113px)]",
-                                "top-[77px] h-[calc(100vh-77px)]",
-                            ),
+                                " top-[113px] h-[calc(100vh-113px)]",
+                                " top-[77px] h-[calc(100vh-77px)]",
+                            )
                         ),
                     ),
                     rx.box(
@@ -888,13 +882,13 @@ def docpage(
                                 nav_sidebar=nav_sidebar,
                                 doc_content=doc_content,
                             ),
-                            class_name=ui.cn(
-                                "px-0 pt-0 mb-[2rem]",
-                                rx.cond(
+                            class_name=(
+                                "px-0 pt-0 mb-[2rem]"
+                                + rx.cond(
                                     HostingBannerState.is_banner_visible,
-                                    "mt-[90px]",
+                                    " mt-[90px]",
                                     "",
-                                ),
+                                )
                             ),
                         ),
                         rx.box(
@@ -973,13 +967,13 @@ def docpage(
                                 ),
                                 class_name="flex flex-col justify-start gap-y-4 overflow-y-auto sticky top-4",
                             ),
-                            class_name=ui.cn(
-                                "w-full h-full",
-                                rx.cond(
+                            class_name=(
+                                "w-full h-full"
+                                + rx.cond(
                                     HostingBannerState.is_banner_visible,
-                                    "mt-[146px]",
-                                    "mt-[90px]",
-                                ),
+                                    " mt-[146px]",
+                                    " mt-[90px]",
+                                )
                             ),
                         ),
                         class_name=(
@@ -1066,7 +1060,7 @@ def dict_to_formatted_string(input_dict):
 
 
 def used_component(
-    component_used: Callable[..., rx.Component],
+    component_used: rx.Component,
     components_passed: rx.Component | str | None,
     color_scheme: str,
     variant: str,
@@ -1112,7 +1106,7 @@ def used_component(
 
 
 def style_grid(
-    component_used: Callable[..., rx.Component],
+    component_used: rx.Component,
     component_used_str: str,
     variants: list,
     components_passed: rx.Component | str | None = None,
@@ -1227,7 +1221,7 @@ def style_grid(
                         rx.html(
                             """<svg width="9" height="9" viewBox="0 0 9 9" fill="currentcolor" xmlns="http://www.w3.org/2000/svg" class="rt-SelectIcon" aria-hidden="true"><path d="M0.135232 3.15803C0.324102 2.95657 0.640521 2.94637 0.841971 3.13523L4.5 6.56464L8.158 3.13523C8.3595 2.94637 8.6759 2.95657 8.8648 3.15803C9.0536 3.35949 9.0434 3.67591 8.842 3.86477L4.84197 7.6148C4.64964 7.7951 4.35036 7.7951 4.15803 7.6148L0.158031 3.86477C-0.0434285 3.67591 -0.0536285 3.35949 0.135232 3.15803Z"></path></svg>"""
                         ),
-                        color_scheme=RadixDocState.color,  # ty:ignore[invalid-argument-type]
+                        color_scheme=RadixDocState.color,
                         variant="surface",
                         class_name="justify-between w-32",
                     ),
@@ -1240,24 +1234,20 @@ def style_grid(
                             rx.icon(
                                 "check",
                                 size=15,
-                                class_name=ui.cn(
-                                    "top-1/2 left-1/2 absolute text-gray-12 transform -translate-x-1/2 -translate-y-1/2",
-                                    rx.cond(
-                                        RadixDocState.color == color,
-                                        "block",
-                                        "hidden",
-                                    ),
+                                class_name="top-1/2 left-1/2 absolute text-gray-12 transform -translate-x-1/2 -translate-y-1/2"
+                                + rx.cond(
+                                    RadixDocState.color == color,
+                                    " block",
+                                    " hidden",
                                 ),
                             ),
                             on_click=RadixDocState.set_color(color),
                             background_color=f"var(--{color}-9)",
-                            class_name=ui.cn(
-                                "relative rounded-md cursor-pointer shrink-0 size-[30px]",
-                                rx.cond(
-                                    RadixDocState.color == color,
-                                    "border-2 border-gray-12",
-                                    "",
-                                ),
+                            class_name="relative rounded-md cursor-pointer shrink-0 size-[30px]"
+                            + rx.cond(
+                                RadixDocState.color == color,
+                                " border-2 border-gray-12",
+                                "",
                             ),
                         )
                         for color in list(map(str, LiteralAccentColor.__args__))

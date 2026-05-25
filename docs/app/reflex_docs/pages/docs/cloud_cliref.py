@@ -173,8 +173,8 @@ def process(
     command: CommandInfoDict | MultiCommandInfoDict,
     prefix: str | None,
     override_name: str | None,
-) -> None:
-    """Convert a Click command to a Markdown element and record it in ``cli_to_doc``."""
+) -> Element:
+    """Convert a Click command to a Markdown element."""
     actual_name = override_name or command["name"]
     full_name = prefix + " " + actual_name if prefix and actual_name else actual_name
     cli_to_doc[full_name] = Section((
@@ -253,21 +253,20 @@ def process(
         )
 
 
-def process_command(command: click.Command, name: str) -> None:
+def process_command(command: click.Command, name: str) -> str:
     """Convert a Click command to a Markdown text representation."""
     with click.Context(command) as ctx:
         process(ctx.to_info_dict()["command"], None, name)
 
 
-cli_command: click.Command = cli
 if find_spec("typer") is not None and find_spec("typer.main") is not None:
-    import typer
+    import typer  # pyright: ignore[reportMissingImports]
 
     if isinstance(cli, typer.Typer):
-        cli_command = typer.main.get_command(cli)
+        cli = typer.main.get_command(cli)
 
 # Iterate over each command configuration
-process_command(cli_command, "reflex")
+process_command(cli, "reflex")
 
 
 REFLEX_PREFIX = "reflex"

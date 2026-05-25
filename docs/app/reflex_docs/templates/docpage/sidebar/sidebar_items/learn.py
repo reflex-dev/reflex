@@ -108,9 +108,9 @@ def get_sidebar_items_frontend():
         create_item(
             "Custom Components",
             children=[
-                custom_components.overview,  # ty:ignore[unresolved-attribute]
-                custom_components.prerequisites_for_publishing,  # ty:ignore[unresolved-attribute]
-                custom_components.command_reference,  # ty:ignore[unresolved-attribute]
+                custom_components.overview,
+                custom_components.prerequisites_for_publishing,
+                custom_components.command_reference,
             ],
         ),
     ]

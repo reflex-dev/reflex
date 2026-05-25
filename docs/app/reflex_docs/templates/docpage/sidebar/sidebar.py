@@ -622,17 +622,17 @@ def sidebar_comp(
             html_lib_index,
             url,
         ),
-        rx.link(
-            rx.box(
-                rx.box(
-                    rx.icon("atom", size=16),
+        rx.link(  # pyright: ignore [reportCallIssue]
+            rx.box(  # pyright: ignore [reportCallIssue]
+                rx.box(  # pyright: ignore [reportCallIssue]
+                    rx.icon("atom", size=16),  # pyright: ignore [reportCallIssue]
                     rx.el.h5(
                         "Custom Components",
                         class_name="font-smbold text-[0.875rem] text-slate-12 leading-5 tracking-[-0.01313rem] transition-color",
                     ),
                     class_name="flex flex-row items-center gap-3 text-slate-12",
                 ),
-                rx.text(
+                rx.text(  # pyright: ignore [reportCallIssue]
                     "See what components people have made with Reflex!",
                     class_name="font-small text-slate-9",
                 ),
@@ -727,7 +727,7 @@ def sidebar_comp(
         rx.cond(is_docs_ai_builder, ai_builder_content, docs_content),
     )
 
-    return rx.box(
+    return rx.box(  # pyright: ignore [reportCallIssue]
         categories,
         content,
         style={

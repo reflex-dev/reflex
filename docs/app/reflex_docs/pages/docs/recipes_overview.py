@@ -1,5 +1,4 @@
 import reflex as rx
-import reflex.utils.format
 
 from reflex_docs.templates.docpage import docpage, h1_comp, h2_comp, text_comp_2
 

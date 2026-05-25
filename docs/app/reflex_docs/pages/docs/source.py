@@ -24,26 +24,30 @@ def format_fields(
     headers: list[str],
     fields: tuple[FieldDocumentation, ...],
 ) -> rx.Component:
-    return rx.table.root(
-        rx.table.header(
-            rx.table.row(*[
-                rx.table.column_header_cell(header, class_name=table_header_class_name)
-                for header in headers
-            ])
-        ),
-        rx.table.body(
-            *[
-                rx.table.row(
-                    rx.table.cell(
-                        format_field(field),
-                    ),
-                    rx.table.cell(
-                        render_markdown(field.description or ""),
-                        class_name="font-small text-slate-11",
-                    ),
-                )
-                for field in fields
-            ],
+    return (
+        rx.table.root(
+            rx.table.header(
+                rx.table.row(*[
+                    rx.table.column_header_cell(
+                        header, class_name=table_header_class_name
+                    )
+                    for header in headers
+                ])
+            ),
+            rx.table.body(
+                *[
+                    rx.table.row(
+                        rx.table.cell(
+                            format_field(field),
+                        ),
+                        rx.table.cell(
+                            render_markdown(field.description or ""),
+                            class_name="font-small text-slate-11",
+                        ),
+                    )
+                    for field in fields
+                ],
+            ),
         ),
     )
 

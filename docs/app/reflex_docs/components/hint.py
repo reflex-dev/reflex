@@ -1,13 +1,11 @@
-from typing import Literal
-
 import reflex as rx
 
 
 def hint(
     text: str,
     content: rx.Component,
-    side: Literal["bottom", "left", "right", "top"] = "top",
-    align: Literal["center", "end", "start"] = "center",
+    side: str = "top",
+    align: str = "center",
     active: bool = False,
     class_name: str = "",
     **props,

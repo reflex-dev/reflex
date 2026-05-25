@@ -35,7 +35,7 @@ def _llms_txt_directive() -> rx.Component:
 
 # Create the app.
 app = rxe.App(
-    style=styles.BASE_STYLE,  # ty:ignore[invalid-argument-type]
+    style=styles.BASE_STYLE,
     stylesheets=styles.STYLESHEETS,
     app_wraps={},
     theme=rx.theme(
@@ -44,7 +44,7 @@ app = rxe.App(
         radius="large",
         accent_color="violet",
     ),
-    head_components=get_pixel_website_trackers()  # ty:ignore[invalid-argument-type]
+    head_components=get_pixel_website_trackers()
     + favicons_links()
     + [
         rx.el.link(
@@ -106,7 +106,7 @@ for route in routes:
             page_args["meta"].extend(route.meta)
 
         # Call add_page with the dynamically constructed arguments
-        app.add_page(**page_args)  # ty:ignore[invalid-argument-type]
+        app.add_page(**page_args)
 
 # Add redirects.
 redirects = [

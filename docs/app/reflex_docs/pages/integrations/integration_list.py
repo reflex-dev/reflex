@@ -41,7 +41,7 @@ def get_integration_path() -> list:
                 else:
                     tag = ""
 
-                description = str(post.get("description") or "").strip()
+                description = post.get("description", "").strip()
                 title = key.replace("_", " ").title()
 
                 if title == "Open Ai":
