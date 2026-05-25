@@ -22,8 +22,8 @@ from reflex_docs.whitelist import _check_whitelisted_path
 from .apiref import pages as apiref_pages
 from .cloud import pages as cloud_pages
 from .cloud_cliref import pages as cloud_cliref_pages
-from .custom_components import custom_components
-from .library import library
+from .custom_components import custom_components as _custom_components_route
+from .library import library as _library_route
 from .recipes_overview import overview
 
 SPECIAL_COMPONENT_DOCS = {
@@ -275,8 +275,8 @@ for _virtual, _actual in all_docs.items():
     doc_markdown_sources[_route] = _actual
 
 doc_routes = [
-    library,
-    custom_components,
+    _library_route,
+    _custom_components_route,
     overview,
     *components_previews_pages,
     *apiref_pages,
@@ -323,7 +323,7 @@ def register_doc(virtual_doc: str, comp):
 
 
 # Alias needed by sidebar — the library page route object.
-library_: Route = library  # type: ignore[assignment]
+library_: Route = _library_route
 
 
 # Process all docs via reflex_docgen pipeline.
@@ -334,13 +334,21 @@ for _virtual, _actual in sorted(all_docs.items()):
     )
 
 
-def __getattr__(name: str) -> Any:
-    """Expose ``docs_ns`` sub-namespaces (``ai_builder``, ``enterprise``, ...).
+for _name, _ns in docs_ns.__dict__.items():
+    globals()[_name] = _ns
 
-    These names are populated lazily from the on-disk markdown layout, so
-    static analysers can't see them via the normal ``globals()`` write loop.
-    PEP 562 ``__getattr__`` lets ty resolve ``from reflex_docs.pages.docs import
-    ai_builder`` to ``Any`` instead of an unresolved-import error.
+
+def __getattr__(name: str) -> Any:
+    """Resolve ``docs_ns`` sub-namespaces for static analysers.
+
+    Args:
+        name: The attribute name being looked up.
+
+    Returns:
+        The matching ``docs_ns`` sub-namespace.
+
+    Raises:
+        AttributeError: If ``name`` is not a known sub-namespace.
     """
     try:
         return docs_ns.__dict__[name]
