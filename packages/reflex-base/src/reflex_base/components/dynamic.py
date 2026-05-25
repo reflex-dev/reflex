@@ -42,6 +42,17 @@ def reset_bundled_libraries() -> None:
     bundled_libraries.extend(DEFAULT_BUNDLED_LIBRARIES)
 
 
+# Tags reachable only through eval'd dynamic components -- captured during
+# Component serialization so ``collect_window_library_imports`` can expose
+# them on ``window.__reflex`` (otherwise ``evalReactComponent`` can't resolve).
+dynamic_component_imports: dict[str, set[imports.ImportVar]] = {}
+
+
+def reset_dynamic_component_imports() -> None:
+    """Clear the captured dynamic-component import set."""
+    dynamic_component_imports.clear()
+
+
 def bundle_library(component: Union["Component", str]):
     """Bundle a library with the component.
 
@@ -102,6 +113,11 @@ def load_dynamic_serializer():
 
         component_imports = component._get_all_imports()
         compiler._apply_common_imports(component_imports)
+
+        for lib, ivs in component_imports.items():
+            named = {iv for iv in ivs if iv.tag and not iv.is_default}
+            if named:
+                dynamic_component_imports.setdefault(lib, set()).update(named)
 
         imports = {}
         for lib, names in component_imports.items():

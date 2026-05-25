@@ -38,7 +38,8 @@ from starlette_admin.auth import AuthProvider
 
 import reflex as rx
 from reflex import AdminDash, constants
-from reflex.app import App, ComponentCallable, upload
+from reflex._upload import upload
+from reflex.app import App, ComponentCallable
 from reflex.environment import environment
 from reflex.istate.data import RouterData
 from reflex.istate.manager.disk import StateManagerDisk
@@ -2159,7 +2160,7 @@ def test_compile_with_radix_component_auto_enables_radix_plugin(
         web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
     ).read_text()
 
-    assert "@radix-ui/themes/styles.css" in root_stylesheet
+    assert "@radix-ui/themes/tokens/colors/blue.css" in root_stylesheet
     assert 'RadixThemesTheme,{accentColor:"blue"' in app_root
     mock_deprecate.assert_called_once()
     assert (
@@ -2193,7 +2194,7 @@ def test_compile_with_legacy_app_theme_warns_and_enables_radix_plugin(
         web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
     ).read_text()
 
-    assert "@radix-ui/themes/styles.css" in root_stylesheet
+    assert "@radix-ui/themes/tokens/colors/plum.css" in root_stylesheet
     assert 'RadixThemesTheme,{accentColor:"plum"' in app_root
     mock_deprecate.assert_called_once()
     assert mock_deprecate.call_args.kwargs["feature_name"] == "App(theme=...)"
