@@ -71,7 +71,7 @@ class Node(SimpleNamespace):
     """Node/ NPM constants."""
 
     # The minimum required node version.
-    MIN_VERSION = "20.19.0"
+    MIN_VERSION = "22.12.0"
 
     # Path of the node config file.
     CONFIG_PATH = ".npmrc"
