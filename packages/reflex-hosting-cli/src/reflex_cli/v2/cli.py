@@ -28,7 +28,8 @@ def login(
         loglevel: The log level to use.
 
     Returns:
-        Information about the logged in user.
+        Information about the newly logged in user or empty dict if already
+        logged in.
 
     Raises:
         SystemExit: If the command fails.
@@ -42,7 +43,7 @@ def login(
     access_token, validated_info = hosting.authenticated_token()
     if access_token:
         console.print("You already logged in.")
-        return validated_info
+        return {}
 
     # If not already logged in, open a browser window/tab to the login page.
     access_token, validated_info = hosting.authenticate_on_browser()

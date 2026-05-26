@@ -38,6 +38,7 @@ from reflex_base.utils import console, format, imports, types
 from reflex_base.utils.imports import ImportDict, ImportVar, ParsedImportDict
 from reflex_base.vars import VarData
 from reflex_base.vars.base import (
+    _PY_OR_IMPORT,
     CachedVarOperation,
     LiteralNoneVar,
     LiteralVar,
@@ -2261,6 +2262,31 @@ def empty_component() -> Component:
     return Bare.create("")
 
 
+def _format_patterns_into_condition(patterns: list, element: Var) -> Var:
+    """Combine match-case patterns into a single boolean condition.
+
+    Each pattern is compared to `element` by stringified equality, and the
+    resulting comparisons are OR-ed together.
+
+    Args:
+        patterns: The patterns of a single match case to compare against `element`.
+        element: The Var to compare each pattern to.
+
+    Returns:
+        A Var that evaluates to True when `element` matches any pattern, or
+        `False` when `patterns` is empty.
+    """
+    if not patterns:
+        return Var.create(False)
+    conditions = [
+        Var(pattern).to_string() == element.to_string() for pattern in patterns
+    ]
+    return functools.reduce(
+        operator.or_,
+        conditions,
+    )
+
+
 def render_dict_to_var(tag: dict | Component | str) -> Var:
     """Convert a render dict to a Var.
 
@@ -2301,12 +2327,8 @@ def render_dict_to_var(tag: dict | Component | str) -> Var:
         conditionals = render_dict_to_var(tag["default"])
 
         for case in tag["match_cases"][::-1]:
-            conditions, return_value = case
-            condition = Var.create(False)
-            for pattern in conditions:
-                condition = condition | (
-                    Var(pattern).to_string() == element.to_string()
-                )
+            patterns, return_value = case
+            condition = _format_patterns_into_condition(patterns, element)
 
             conditionals = ternary_operation(
                 condition,
@@ -2375,6 +2397,17 @@ class LiteralComponentVar(CachedVarOperation, LiteralVar[Component], ComponentVa
             ),
             VarData(
                 imports=self._var_value._get_all_imports(),
+            ),
+            VarData(
+                # Rendering rx.match in the code above produces conditional expressions
+                # of the form (pattern1 == element || pattern2 == element || ...), which
+                # introduce the OR operator and get compiled to a pyOr function call. Since
+                # the component itself might not otherwise require pyOr, and since we ignore
+                # the imports of the rendered Var above, we add the pyOr import here to
+                # ensure it is available. An alternative would be to have `render_dict_to_var`
+                # return a Var carrying all the required VarData, so this call could just
+                # retrieve it from there.
+                imports=_PY_OR_IMPORT
             ),
         )
 

@@ -5,16 +5,21 @@ import dataclasses
 import importlib.metadata
 import json
 import multiprocessing
+import os
 import platform
+import sys
 import warnings
 from contextlib import suppress
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, TypedDict, cast
 
 from reflex_base import constants
+from reflex_base.config import get_config
 from reflex_base.environment import environment
 from reflex_base.utils.decorator import once, once_unless_none
 from reflex_base.utils.exceptions import ReflexError
+from typing_extensions import NotRequired
 
 from reflex.utils import console, processes
 from reflex.utils.js_runtimes import get_bun_version, get_node_version
@@ -166,6 +171,38 @@ def get_cpu_count() -> int:
     return multiprocessing.cpu_count()
 
 
+def is_in_virtualenv() -> bool:
+    """Whether the current Python is running inside a virtual environment.
+
+    Returns:
+        True if a virtual environment appears to be active.
+    """
+    if sys.prefix != sys.base_prefix:
+        return True
+    return bool(os.environ.get("VIRTUAL_ENV"))
+
+
+def get_init_environment() -> dict[str, bool]:
+    """Return Python tooling flags for the current working directory.
+
+    Returns:
+        A dict with ``in_virtualenv``, ``has_pyproject_toml``,
+        ``has_requirements_txt``, ``has_uv_lock`` and ``has_reflex_lock``
+        boolean flags, or an empty dict when telemetry is disabled (so the
+        filesystem stats are skipped when their results would be discarded).
+    """
+    if not get_config().telemetry_enabled:
+        return {}
+
+    return {
+        "in_virtualenv": is_in_virtualenv(),
+        "has_pyproject_toml": Path(constants.PyprojectToml.FILE).exists(),
+        "has_requirements_txt": Path(constants.RequirementsTxt.FILE).exists(),
+        "has_uv_lock": Path(constants.UvLock.FILE).exists(),
+        "has_reflex_lock": Path(constants.Bun.ROOT_LOCKFILE_DIR).is_dir(),
+    }
+
+
 def get_reflex_enterprise_version() -> str | None:
     """Get the version of reflex-enterprise if installed.
 
@@ -196,7 +233,7 @@ class _Properties(TypedDict):
     """Properties type for telemetry."""
 
     distinct_id: int
-    distinct_app_id: int
+    distinct_app_id: NotRequired[int]
     user_os: str
     user_os_detail: str
     reflex_version: str
@@ -228,36 +265,34 @@ def _get_event_defaults() -> _DefaultEvent | None:
     Returns:
         The default event data.
     """
-    installation_id = ensure_reflex_installation_id()
-    project_hash = get_project_hash(raise_on_fail=_raise_on_missing_project_hash())
-
-    if installation_id is None or project_hash is None:
-        console.debug(
-            f"Could not get installation_id or project_hash: {installation_id}, {project_hash}"
-        )
+    if (installation_id := ensure_reflex_installation_id()) is None:
+        console.debug("Could not get installation_id")
         return None
-
     cpuinfo = get_cpu_info()
+    properties: _Properties = {
+        "distinct_id": installation_id,
+        "user_os": get_os(),
+        "user_os_detail": get_detailed_platform_str(),
+        "reflex_version": get_reflex_version(),
+        "python_version": get_python_version(),
+        "node_version": (
+            str(node_version) if (node_version := get_node_version()) else None
+        ),
+        "bun_version": (
+            str(bun_version) if (bun_version := get_bun_version()) else None
+        ),
+        "reflex_enterprise_version": get_reflex_enterprise_version(),
+        "cpu_count": get_cpu_count(),
+        "cpu_info": dataclasses.asdict(cpuinfo) if cpuinfo else {},
+    }
+    if (
+        project_hash := get_project_hash(raise_on_fail=_raise_on_missing_project_hash())
+    ) is not None:
+        properties["distinct_app_id"] = project_hash
 
     return {
         "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
-        "properties": {
-            "distinct_id": installation_id,
-            "distinct_app_id": project_hash,
-            "user_os": get_os(),
-            "user_os_detail": get_detailed_platform_str(),
-            "reflex_version": get_reflex_version(),
-            "python_version": get_python_version(),
-            "node_version": (
-                str(node_version) if (node_version := get_node_version()) else None
-            ),
-            "bun_version": (
-                str(bun_version) if (bun_version := get_bun_version()) else None
-            ),
-            "reflex_enterprise_version": get_reflex_enterprise_version(),
-            "cpu_count": get_cpu_count(),
-            "cpu_info": dataclasses.asdict(cpuinfo) if cpuinfo else {},
-        },
+        "properties": properties,
     }
 
 
@@ -349,8 +384,6 @@ def _send(
     properties: dict[str, Any] | None = None,
     **kwargs,
 ) -> bool:
-    from reflex_base.config import get_config
-
     # Get the telemetry_enabled from the config if it is not specified.
     if telemetry_enabled is None:
         telemetry_enabled = get_config().telemetry_enabled

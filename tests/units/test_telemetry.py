@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 import pytest
 from packaging.version import parse as parse_python_version
 from pytest_mock import MockerFixture
@@ -196,6 +198,131 @@ def test_prepare_event_does_not_mutate_cached_defaults(event_defaults):
     assert "template" not in event_defaults["properties"]
     assert "pages_count" not in event_defaults["properties"]
     assert "duration_ms" not in event_defaults["properties"]
+
+
+@pytest.fixture
+def venv_state(monkeypatch: pytest.MonkeyPatch):
+    """Force a deterministic `is_in_virtualenv` reading.
+
+    Returns:
+        A callable that overrides `sys.prefix`, `sys.base_prefix`, and the
+        `VIRTUAL_ENV` env-var for the duration of the test.
+    """
+
+    def configure(*, prefix: str, base_prefix: str, virtual_env: str | None) -> None:
+        monkeypatch.setattr(telemetry.sys, "prefix", prefix)
+        monkeypatch.setattr(telemetry.sys, "base_prefix", base_prefix)
+        if virtual_env is None:
+            monkeypatch.delenv("VIRTUAL_ENV", raising=False)
+        else:
+            monkeypatch.setenv("VIRTUAL_ENV", virtual_env)
+
+    return configure
+
+
+def test_is_in_virtualenv_detects_pep_405_venv(venv_state):
+    venv_state(prefix="/tmp/venv", base_prefix="/usr", virtual_env=None)
+    assert telemetry.is_in_virtualenv() is True
+
+
+def test_is_in_virtualenv_falls_back_to_virtual_env_var(venv_state):
+    venv_state(prefix="/usr", base_prefix="/usr", virtual_env="/tmp/venv")
+    assert telemetry.is_in_virtualenv() is True
+
+
+def test_is_in_virtualenv_returns_false_for_system_python(venv_state):
+    venv_state(prefix="/usr", base_prefix="/usr", virtual_env=None)
+    assert telemetry.is_in_virtualenv() is False
+
+
+@pytest.fixture
+def patch_telemetry_config(mocker: MockerFixture):
+    """Patch ``telemetry.get_config`` with a stub of a chosen ``telemetry_enabled``.
+
+    Returns:
+        A callable ``patch(enabled)`` that installs the mock on demand.
+    """
+
+    def patch(*, enabled: bool) -> None:
+        mocker.patch(
+            "reflex.utils.telemetry.get_config",
+            return_value=SimpleNamespace(telemetry_enabled=enabled),
+        )
+
+    return patch
+
+
+@pytest.fixture
+def init_environment_cwd(
+    tmp_path, monkeypatch: pytest.MonkeyPatch, patch_telemetry_config
+):
+    """Chdir into a clean tmp dir and force telemetry-enabled config.
+
+    Returns:
+        The temporary directory now serving as the working directory.
+    """
+    monkeypatch.chdir(tmp_path)
+    patch_telemetry_config(enabled=True)
+    return tmp_path
+
+
+def test_get_init_environment_reports_dependency_files(
+    init_environment_cwd, venv_state
+):
+    (init_environment_cwd / "pyproject.toml").write_text("")
+    (init_environment_cwd / "uv.lock").write_text("")
+    (init_environment_cwd / "reflex.lock").mkdir()
+    venv_state(prefix="/tmp/venv", base_prefix="/usr", virtual_env=None)
+
+    assert telemetry.get_init_environment() == {
+        "in_virtualenv": True,
+        "has_pyproject_toml": True,
+        "has_requirements_txt": False,
+        "has_uv_lock": True,
+        "has_reflex_lock": True,
+    }
+
+
+def test_get_init_environment_reports_requirements_txt(
+    init_environment_cwd, venv_state
+):
+    (init_environment_cwd / "requirements.txt").write_text("")
+    venv_state(prefix="/usr", base_prefix="/usr", virtual_env="/tmp/venv")
+
+    assert telemetry.get_init_environment() == {
+        "in_virtualenv": True,
+        "has_pyproject_toml": False,
+        "has_requirements_txt": True,
+        "has_uv_lock": False,
+        "has_reflex_lock": False,
+    }
+
+
+def test_get_init_environment_empty_directory(init_environment_cwd, venv_state):
+    venv_state(prefix="/usr", base_prefix="/usr", virtual_env=None)
+
+    assert telemetry.get_init_environment() == {
+        "in_virtualenv": False,
+        "has_pyproject_toml": False,
+        "has_requirements_txt": False,
+        "has_uv_lock": False,
+        "has_reflex_lock": False,
+    }
+
+
+def test_get_init_environment_short_circuits_when_telemetry_disabled(
+    tmp_path, monkeypatch: pytest.MonkeyPatch, patch_telemetry_config
+):
+    """When telemetry is disabled the env snapshot is skipped entirely.
+
+    A pyproject.toml is staged so a non-short-circuiting implementation would
+    surface ``has_pyproject_toml: True`` instead of an empty dict.
+    """
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "pyproject.toml").write_text("")
+    patch_telemetry_config(enabled=False)
+
+    assert telemetry.get_init_environment() == {}
 
 
 def test_prepare_event_properties_override_kwargs(event_defaults):
