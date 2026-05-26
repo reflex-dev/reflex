@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
-import itertools
+import hashlib
 import sys
 from pathlib import Path
 
@@ -24,7 +24,6 @@ class SourceInfo:
 
 _REGISTRY: dict[int, SourceInfo] = {}
 _BY_INFO: dict[SourceInfo, int] = {}
-_COUNTER = itertools.count(1)
 _FRAMEWORK_ROOTS: tuple[Path, ...] = ()
 _RESOLVED_PATH_CACHE: dict[str, str] = {}
 
@@ -54,16 +53,34 @@ def _resolve_filename(filename: str) -> str:
     return resolved
 
 
+def _stable_id(info: SourceInfo) -> int:
+    """Hash a source location to a 32-bit id.
+
+    The same ``(file, line, column, component)`` always hashes to the same
+    id, so a ``multiprocessing.spawn``-ed worker can re-capture at request
+    time and produce ids that match ``source-map.json`` written by the
+    parent's compile pass.
+
+    Args:
+        info: The source location to hash.
+
+    Returns:
+        A 32-bit unsigned integer derived from the source location.
+    """
+    key = (f"{info.file}\x00{info.line}\x00{info.column}\x00{info.component}").encode()
+    return int.from_bytes(hashlib.blake2b(key, digest_size=4).digest(), "big")
+
+
 def capture(component_name: str) -> int | None:
-    """Walk the call stack and return a fresh inspector id for the user frame.
+    """Walk the call stack and return an inspector id for the user frame.
 
     Args:
         component_name: ``cls.__name__`` of the component being constructed.
 
     Returns:
-        A new integer id when the inspector is enabled and a non-framework
-        frame is found; ``None`` otherwise (e.g. inspector disabled, only
-        framework code on the stack).
+        A deterministic integer id when the inspector is enabled and a
+        non-framework frame is found; ``None`` otherwise (e.g. inspector
+        disabled, only framework code on the stack).
     """
     if not state.is_enabled():
         return None
@@ -82,7 +99,15 @@ def capture(component_name: str) -> int | None:
         )
         if (existing := _BY_INFO.get(info)) is not None:
             return existing
-        cid = next(_COUNTER)
+        cid = _stable_id(info)
+        # 32-bit collisions are vanishingly rare, but the cost of getting
+        # it wrong is "wrong file opens in editor". Resalt until unique.
+        salt = 0
+        while (claimed := _REGISTRY.get(cid)) is not None and claimed != info:
+            salt += 1
+            cid = _stable_id(
+                dataclasses.replace(info, column=info.column + salt * 1_000_000)
+            )
         _REGISTRY[cid] = info
         _BY_INFO[info] = cid
         return cid
@@ -107,10 +132,9 @@ def reset() -> None:
     Framework roots are also cleared so the next ``capture`` rediscovers
     them — covers framework subpackages imported between compile passes.
     """
-    global _COUNTER, _FRAMEWORK_ROOTS
+    global _FRAMEWORK_ROOTS
     _REGISTRY.clear()
     _BY_INFO.clear()
-    _COUNTER = itertools.count(1)
     _FRAMEWORK_ROOTS = ()
     _is_framework_frame.cache_clear()
     _RESOLVED_PATH_CACHE.clear()

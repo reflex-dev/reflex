@@ -27,13 +27,32 @@ def test_capture_returns_none_when_disabled():
 
 def test_capture_records_user_frame(enabled_inspector):
     cid = capture.capture("Box")
-    assert cid == 1
+    assert cid is not None
     info = capture.snapshot()[cid]
     assert info.component == "Box"
     # The frame walked is this test file, not the framework.
     assert info.file == str(Path(__file__).resolve())
     assert info.line > 0
     assert info.column == 1
+
+
+def test_capture_is_deterministic_across_resets(enabled_inspector):
+    """Same call site must hash to the same id even after a reset.
+
+    The backend is spawned via ``multiprocessing.spawn`` so the request
+    handler runs in a fresh interpreter. Ids that diverge across resets
+    would mean a ``data-rx`` value with no matching ``source-map.json``
+    entry.
+    """
+
+    def at_same_site():
+        return capture.capture("Box")
+
+    first = at_same_site()
+    capture.reset()
+    state.set_enabled(True)
+    second = at_same_site()
+    assert first == second
 
 
 def test_capture_skips_framework_frames(enabled_inspector, monkeypatch):
