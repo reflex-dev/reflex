@@ -107,7 +107,7 @@ about the current page, session, or state.
 The `self.router` attribute has several sub-attributes that provide various information:
 
 - `router.url`: the URL of the current page, parsed into its components (see [URL Attributes](#url-attributes) below).
-- `router.route_id`: the route pattern that matched the current request (e.g. `/posts/[id]`). For [dynamic pages](/docs/pages/dynamic_routing) this contains the slug rather than the actual value used to load the page.
+- `router.route_id`: the route pattern that matched the current request (e.g. `/posts/[id]`). For [dynamic pages](/docs/pages/dynamic-routing) this contains the slug rather than the actual value used to load the page.
 
 - `router.session`: data about the current session
   - `client_token`: UUID associated with the current tab's token. Each tab has a unique token.
@@ -173,7 +173,7 @@ class State(rx.State):
         # ... load the appropriate data for that page ...
 ```
 
-For dynamic path segments such as `[id]` or `[[...splat]]`, see [Dynamic Routes](/docs/pages/dynamic_routing) — those values are exposed as state vars on the root state (e.g. `rx.State.id`, `rx.State.splat`), not through `router.url`.
+For dynamic path segments such as `[id]` or `[[...splat]]`, see [Dynamic Routes](/docs/pages/dynamic-routing) — those values are exposed as state vars on the root state (e.g. `rx.State.id`, `rx.State.splat`), not through `router.url`.
 
 ## Migrating from `router.page`
 

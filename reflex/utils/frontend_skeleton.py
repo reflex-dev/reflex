@@ -7,8 +7,10 @@ from pathlib import Path
 from reflex_base import constants
 from reflex_base.config import Config, get_config
 from reflex_base.environment import environment
+from reflex_base.plugins.embed import get_embed_plugin
 
 from reflex.compiler import templates
+from reflex.compiler.utils import write_file
 from reflex.utils import console, path_ops
 from reflex.utils.prerequisites import get_project_hash, get_web_dir
 from reflex.utils.registry import get_npm_registry
@@ -351,27 +353,33 @@ def initialize_web_directory():
     init_reflex_json(project_hash=project_hash)
 
 
+def update_entry_client():
+    """Write ``.web/app/entry.client.js`` from the framework-mode template.
+
+    Skipped when any registered plugin reports ``provides_entry_client()`` —
+    that plugin emits its own variant via a save task and overwriting it
+    here would just be redone on the same compile.
+    """
+    if any(p.provides_entry_client() for p in get_config().plugins):
+        return
+    write_file(
+        get_web_dir() / constants.Embed.ENTRY_PATH,
+        (
+            constants.Templates.Dirs.WEB_TEMPLATE / constants.Embed.ENTRY_PATH
+        ).read_text(),
+    )
+
+
 def update_react_router_config(prerender_routes: bool = False):
     """Update react-router.config.js config from Reflex config.
 
     Args:
         prerender_routes: Whether to enable prerendering of routes.
     """
-    react_router_config_file_path = get_web_dir() / constants.ReactRouter.CONFIG_FILE
-
-    new_react_router_config = _update_react_router_config(
-        get_config(), prerender_routes=prerender_routes
+    write_file(
+        get_web_dir() / constants.ReactRouter.CONFIG_FILE,
+        _update_react_router_config(get_config(), prerender_routes=prerender_routes),
     )
-
-    # Overwriting the config file triggers a full server reload, so make sure
-    # there is actually a diff.
-    old_react_router_config = (
-        react_router_config_file_path.read_text()
-        if react_router_config_file_path.exists()
-        else ""
-    )
-    if old_react_router_config != new_react_router_config:
-        react_router_config_file_path.write_text(new_react_router_config)
 
 
 def _update_react_router_config(config: Config, prerender_routes: bool = False):
@@ -427,9 +435,14 @@ def initialize_package_json():
 
 
 def _compile_vite_config(config: Config):
-    # base must have exactly one trailing slash
+    base = config.prepend_frontend_path("/")
+    embed_plugin = get_embed_plugin()
+    if embed_plugin and embed_plugin.embed_origin:
+        # Cross-origin hosts must resolve assets against the bundle's server
+        # rather than their own document.baseURI.
+        base = embed_plugin.embed_origin.rstrip("/") + base
     return templates.vite_config_template(
-        base=config.prepend_frontend_path("/"),
+        base=base,
         hmr=environment.VITE_HMR.get(),
         force_full_reload=environment.VITE_FORCE_FULL_RELOAD.get(),
         experimental_hmr=environment.VITE_EXPERIMENTAL_HMR.get(),

@@ -26,20 +26,20 @@ def cta_card():
                 class_name="text-m-slate-7 dark:text-m-slate-6 text-sm font-medium",
             ),
             rx.el.div(
-                demo_form_dialog(
-                    trigger=marketing_button(
-                        "Book a Demo",
-                        variant="primary",
-                    ),
-                ),
                 rx.el.elements.a(
                     marketing_button(
                         "Try for free",
                         ui.icon("ArrowRight01Icon"),
-                        variant="ghost",
+                        variant="primary",
                     ),
                     href=REFLEX_BUILD_URL,
                     target="_blank",
+                ),
+                demo_form_dialog(
+                    trigger=marketing_button(
+                        "Book a Demo",
+                        variant="ghost",
+                    ),
                 ),
                 class_name="flex flex-row gap-4 items-center",
             ),

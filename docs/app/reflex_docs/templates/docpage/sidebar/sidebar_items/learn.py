@@ -149,7 +149,6 @@ def get_sidebar_items_backend():
             children=[
                 events.events_overview,
                 events.event_arguments,
-                events.setters,
                 events.yield_events,
                 events.chaining_events,
                 events.special_events,

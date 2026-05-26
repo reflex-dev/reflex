@@ -126,7 +126,11 @@ def to_cdn_image_url(image: str | None) -> str:
 
 
 def create_meta_tags(
-    title: str, description: str, image: str | None, url: str | None = None
+    title: str,
+    description: str,
+    image: str | None,
+    url: str | None = None,
+    canonical: str | None = None,
 ) -> list[dict[str, str] | rx.Component]:
     """Create meta tags for a page.
 
@@ -135,11 +139,18 @@ def create_meta_tags(
         description: The page description.
         image: The image path for social media previews (None to omit).
         url: The page URL (optional, defaults to REFLEX_DOMAIN_URL).
+        canonical: Override for the canonical link. Use when one page should
+            consolidate SEO signals to a different URL (for example, a blog
+            post that canonicalizes to a dedicated comparison lander). When
+            set, ``og:url`` and ``twitter:url`` also follow the canonical so
+            social crawlers index the same target as search engines. Leave
+            None to canonicalize to ``url``.
 
     Returns:
         A list of meta tag dictionaries.
     """
     page_url = url or REFLEX_DOMAIN_URL
+    canonical_url = canonical if canonical is not None else page_url
     image_url = to_cdn_image_url(image) if image else None
 
     return [
@@ -147,9 +158,9 @@ def create_meta_tags(
             title=title,
             description=description,
             image=image_url,
-            url=page_url,
+            url=canonical_url,
         ),
-        rx.el.link(rel="canonical", href=page_url),
+        rx.el.link(rel="canonical", href=canonical_url),
     ]
 
 

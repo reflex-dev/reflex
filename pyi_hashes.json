@@ -39,8 +39,8 @@
   "packages/reflex-components-core/src/reflex_components_core/react_router/dom.pyi": "b5f6d8ce3fcdfc1d5efd5dfac2b95e3b",
   "packages/reflex-components-dataeditor/src/reflex_components_dataeditor/dataeditor.pyi": "69b644aa2d116ea3532155ada09be70a",
   "packages/reflex-components-gridjs/src/reflex_components_gridjs/datatable.pyi": "74ce1f8a302aa9b9b317e6e63e5dac41",
-  "packages/reflex-components-lucide/src/reflex_components_lucide/icon.pyi": "d50c68fcfaebd46e0fa27aa5f0df368b",
-  "packages/reflex-components-markdown/src/reflex_components_markdown/markdown.pyi": "a30df34c9b12979bc9a87562fe125772",
+  "packages/reflex-components-lucide/src/reflex_components_lucide/icon.pyi": "45c585da411e66228ee2b75fdfd4c2e4",
+  "packages/reflex-components-markdown/src/reflex_components_markdown/markdown.pyi": "f8cc52a4790ef4d761b2e214afc2094d",
   "packages/reflex-components-moment/src/reflex_components_moment/moment.pyi": "2623f3930c838f52a13018fb5ded01c0",
   "packages/reflex-components-plotly/src/reflex_components_plotly/plotly.pyi": "700dac836a2610094c4e85e068d2c8f7",
   "packages/reflex-components-radix/src/reflex_components_radix/__init__.pyi": "19216eb3618f68c8a76e5e43801cf4af",
@@ -80,7 +80,7 @@
   "packages/reflex-components-radix/src/reflex_components_radix/themes/components/radio_group.pyi": "ba6f983a6dbee4fd9665bb63544152d4",
   "packages/reflex-components-radix/src/reflex_components_radix/themes/components/scroll_area.pyi": "3b746f28fb7f9518697edb2dfc0a2c90",
   "packages/reflex-components-radix/src/reflex_components_radix/themes/components/segmented_control.pyi": "0b5e8273d1d3044772c710f32475f2b4",
-  "packages/reflex-components-radix/src/reflex_components_radix/themes/components/select.pyi": "e21ac6b7fb0501ad68de76a32f7ecf53",
+  "packages/reflex-components-radix/src/reflex_components_radix/themes/components/select.pyi": "75f5da11fe90491751d8ebcb3d1332a1",
   "packages/reflex-components-radix/src/reflex_components_radix/themes/components/separator.pyi": "0885e5b47e0f158511b26c111ccea9ba",
   "packages/reflex-components-radix/src/reflex_components_radix/themes/components/skeleton.pyi": "b4abd9619577a34783f7b41e4041170c",
   "packages/reflex-components-radix/src/reflex_components_radix/themes/components/slider.pyi": "e714426507967f2d0d1feebb8ca8c005",
@@ -120,5 +120,5 @@
   "packages/reflex-components-sonner/src/reflex_components_sonner/toast.pyi": "13e2466062abe801d0741b55a39ae978",
   "reflex/__init__.pyi": "3a9bb8544cbc338ffaf0a5927d9156df",
   "reflex/components/__init__.pyi": "f39a2af77f438fa243c58c965f19d42e",
-  "reflex/experimental/memo.pyi": "57c239cb7e649346fb99a02410c1c941"
+  "reflex/experimental/memo.pyi": "20f0711ba049e999fef795ae87e430cb"
 }

@@ -442,10 +442,9 @@ def case_studies_column() -> rx.Component:
                 class_name="px-4 pt-4 flex flex-col",
             ),
             rx.el.div(
-                rx.el.elements.a(
+                rx.el.span(
                     "How Autodesk saved 25% of their development time",
-                    href="/customers",
-                    class_name="text-secondary-12 text-lg font-[525] hover:text-primary-10 dark:hover:text-primary-9 mt-auto",
+                    class_name="text-secondary-12 text-lg font-[525] group-hover:text-primary-10 dark:group-hover:text-primary-9 mt-auto",
                 ),
                 rx.el.div(
                     badge("Enterprise"),
@@ -455,7 +454,7 @@ def case_studies_column() -> rx.Component:
                 class_name="flex flex-col gap-2 px-4 pb-4",
             ),
             rx.el.div(
-                class_name="h-px w-[calc(100%+2rem)] -mx-4 shrink-0 bg-secondary-4",
+                class_name="h-px w-[calc(100%+2rem)] -mx-4 shrink-0 bg-secondary-4 relative z-10",
             ),
             rx.el.div(
                 demo_form_dialog(
@@ -476,8 +475,14 @@ def case_studies_column() -> rx.Component:
                         class_name="flex flex-col px-4 py-2 rounded-sm hover-card-shadow cursor-pointer ",
                     ),
                 ),
+                class_name="relative z-10",
             ),
-            class_name="flex flex-col relative h-full justify-between",
+            rx.el.elements.a(
+                href="/customers",
+                class_name="absolute inset-0",
+                custom_attrs={"aria-label": "View Autodesk case study"},
+            ),
+            class_name="group flex flex-col relative h-full justify-between",
         ),
         class_name="p-4 block z-[1] bg-secondary-1 dark:border-x dark:border-secondary-4 w-[296px]",
     )
@@ -770,20 +775,21 @@ def navigation_menu() -> rx.Component:
                     href=REFLEX_BUILD_URL,
                     target="_blank",
                 ),
+                class_name="xl:flex hidden",
                 custom_attrs={"role": "menuitem"},
             ),
             ui.navigation_menu.item(
                 demo_form_dialog(
                     trigger=marketing_button(
-                        "Book a Demo",
+                        rx.el.span("Book a Demo", class_name="max-xl:hidden"),
+                        rx.el.span("Demo", class_name="xl:hidden"),
                         size="sm",
                         variant="primary",
-                        class_name=" whitespace-nowrap max-xl:hidden",
+                        class_name="whitespace-nowrap",
                         native_button=False,
                     ),
                 ),
                 unstyled=True,
-                class_name="xl:flex hidden",
                 custom_attrs={"role": "menuitem"},
             ),
             ui.navigation_menu.item(
@@ -792,7 +798,7 @@ def navigation_menu() -> rx.Component:
                 unstyled=True,
                 custom_attrs={"role": "menuitem"},
             ),
-            class_name="flex flex-row lg:gap-4 gap-2 m-0 h-full list-none items-center",
+            class_name="flex flex-row gap-4 m-0 h-full list-none items-center",
             custom_attrs={"role": "menubar"},
         ),
         ui.navigation_menu.portal(

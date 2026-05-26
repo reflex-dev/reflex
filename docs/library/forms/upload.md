@@ -2,9 +2,6 @@
 components:
   - rx.upload
   - rx.upload.root
-
-Upload: |
-  lambda **props: rx.center(rx.upload(id="my_upload", **props))
 ---
 
 ```python exec
@@ -370,7 +367,7 @@ def index():
 
 To use a completely unstyled upload component and apply your own customization, use `rx.upload.root` instead:
 
-```python demo
+```python
 rx.upload.root(
     rx.box(
         rx.icon(

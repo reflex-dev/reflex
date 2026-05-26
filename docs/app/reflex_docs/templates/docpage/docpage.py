@@ -1,8 +1,8 @@
 """Template for documentation pages."""
 
 import functools
+from collections.abc import Callable, Collection
 from datetime import datetime
-from typing import Callable
 
 import reflex as rx
 import reflex_components_internal as ui
@@ -21,6 +21,35 @@ from reflex_site_shared.components.server_status import server_status
 from reflex_site_shared.route import Route, get_path
 from reflex_site_shared.utils.docpage import right_sidebar_item_highlight
 from reflex_site_shared.views.footer import dark_mode_toggle
+
+_REGISTERED_DOC_ROUTES: set[str] = set()
+
+
+def _normalize_doc_route(path: str) -> str:
+    """Normalize a docs route to use leading and trailing slashes."""
+    route = f"/{path.strip('/')}"
+    return "/" if route == "/" else f"{route}/"
+
+
+def _register_doc_route(path: str) -> None:
+    """Track a route registered through the docpage template."""
+    _REGISTERED_DOC_ROUTES.add(_normalize_doc_route(path))
+
+
+def _resolve_breadcrumb_href(
+    href: str, registered_routes: Collection[str] | None = None
+) -> str:
+    """Resolve a generated breadcrumb href to a registered docs route."""
+    routes = _REGISTERED_DOC_ROUTES if registered_routes is None else registered_routes
+    route = _normalize_doc_route(href)
+    if route in routes:
+        return route
+
+    overview_route = _normalize_doc_route(f"{route}overview")
+    if overview_route in routes:
+        return overview_route
+
+    return href
 
 
 class FeedbackState(rx.State):
@@ -199,9 +228,7 @@ def feedback_button() -> rx.Component:
         ),
         ui.popover.portal(
             ui.popover.positioner(
-                ui.popover.popup(
-                    render_=feedback_content(),
-                ),
+                ui.popover.popup(feedback_content()),
             ),
         ),
     )
@@ -640,12 +667,8 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
         docs_sidebar_drawer,
     )
 
-    # Split the path into segments, removing 'docs' and capitalizing each segment
-    segments = [
-        segment.capitalize()
-        for segment in path.split("/")
-        if segment and segment != "docs"
-    ]
+    # Split the path into segments, removing 'docs'.
+    segments = [segment for segment in path.split("/") if segment and segment != "docs"]
 
     # Initialize an empty list to store the breadcrumbs and their separators
     breadcrumbs = []
@@ -653,7 +676,7 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
     # Iteratively build the href for each segment (paths are app-relative, no /docs prefix)
     current_path = ""
     for i, segment in enumerate(segments):
-        current_path += f"/{segment.lower()}"
+        current_path += f"/{segment}"
 
         # Add the breadcrumb item to the list
         breadcrumbs.append(
@@ -662,7 +685,7 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
                 class_name="min-h-8 flex items-center text-sm font-[525] text-m-slate-12 dark:text-m-slate-3 last:text-m-slate-7 dark:last:text-m-slate-6 hover:text-primary-10 dark:hover:text-primary-9"
                 + (" truncate" if i == len(segments) - 1 else ""),
                 underline="none",
-                href=current_path,
+                href=_resolve_breadcrumb_href(current_path),
             )
         )
 
@@ -746,6 +769,7 @@ def docpage(
             The final route with the template applied.
         """
         path = get_path(contents, "reflex-docs/pages") if set_path is None else set_path
+        _register_doc_route(path)
 
         title = contents.__name__.replace("_", " ").title() if t is None else t
 
@@ -899,7 +923,7 @@ def docpage(
                                             rx.el.li(
                                                 rx.el.a(
                                                     text,
-                                                    class_name="text-sm font-[525] text-m-slate-7 dark:text-m-slate-6 pl-4 py-1 block hover:text-m-slate-9 dark:hover:text-m-slate-5 transition-colors truncate",
+                                                    class_name="text-sm font-[525] text-m-slate-7 dark:text-m-slate-6 pl-4 py-1 hover:text-m-slate-9 dark:hover:text-m-slate-5 transition-colors line-clamp-2",
                                                     href=path
                                                     + "#"
                                                     + text.lower().replace(" ", "-"),
@@ -910,7 +934,7 @@ def docpage(
                                                 rx.el.li(
                                                     rx.el.a(
                                                         text,
-                                                        class_name="text-sm font-[525] text-m-slate-7 dark:text-m-slate-6 pl-4 py-1 block hover:text-m-slate-9 dark:hover:text-m-slate-5 transition-colors truncate",
+                                                        class_name="text-sm font-[525] text-m-slate-7 dark:text-m-slate-6 pl-4 py-1 hover:text-m-slate-9 dark:hover:text-m-slate-5 transition-colors line-clamp-2",
                                                         href=path
                                                         + "#"
                                                         + text.lower().replace(
@@ -922,7 +946,7 @@ def docpage(
                                                 else rx.el.li(
                                                     rx.el.a(
                                                         text,
-                                                        class_name="text-sm font-[525] text-m-slate-7 dark:text-m-slate-6 pl-8 py-1 block hover:text-m-slate-9 dark:hover:text-m-slate-5 transition-colors truncate",
+                                                        class_name="text-sm font-[525] text-m-slate-7 dark:text-m-slate-6 pl-8 py-1 hover:text-m-slate-9 dark:hover:text-m-slate-5 transition-colors line-clamp-2",
                                                         href=path
                                                         + "#"
                                                         + text.lower().replace(
@@ -935,7 +959,7 @@ def docpage(
                                         for level, text in toc
                                     ],
                                     id="toc-navigation",
-                                    class_name="flex flex-col gap-y-1 list-none shadow-[1.5px_0_0_0_var(--m-slate-4)_inset] dark:shadow-[1.5px_0_0_0_var(--m-slate-9)_inset] max-h-[80vh]",
+                                    class_name="flex flex-col gap-y-1 list-none shadow-[1.5px_0_0_0_var(--m-slate-4)_inset] dark:shadow-[1.5px_0_0_0_var(--m-slate-9)_inset] max-h-[60vh] overflow-y-auto scroll-mask-y-10 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
                                 ),
                                 rx.el.div(
                                     feedback_button_toc(),

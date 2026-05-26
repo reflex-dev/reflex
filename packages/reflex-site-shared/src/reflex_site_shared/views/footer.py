@@ -41,7 +41,7 @@ def logo() -> rx.Component:
             class_name="shrink-0 hidden dark:block",
         ),
         href="/",
-        class_name="block shrink-0 mr-[7rem] md:hidden xl:block h-fit",
+        class_name="block shrink-0 lg:mr-28 md:hidden xl:block h-fit max-lg:mx-6",
     )
 
 
@@ -86,14 +86,9 @@ def footer_link(text: str, href: str) -> rx.Component:
     """
     return rx.el.elements.a(
         text,
-        rx.icon(
-            tag="chevron-right",
-            size=16,
-            class_name="shrink-0 lg:hidden flex",
-        ),
         href=href,
         target="_blank" if not href.startswith("/") else "",
-        class_name="font-[525] text-secondary-11 hover:text-secondary-12 text-sm transition-color w-full lg:w-fit flex flex-row justify-between items-center min-h-[24px]",
+        class_name="font-[525] text-secondary-11 hover:text-secondary-12 text-sm transition-color w-fit flex flex-row items-center min-h-[24px]",
     )
 
 
@@ -129,7 +124,7 @@ def social_menu_item(
         custom_attrs={"aria-label": "Social link for " + name},
         target="_blank",
         class_name=ui.cn(
-            "text-secondary-11 hover:text-secondary-12 transition-colors flex items-center justify-center size-7 rounded-md",
+            "text-secondary-11 hover:text-secondary-12 transition-colors flex items-center justify-center h-full w-full rounded-none",
             "lg:size-auto lg:h-full lg:w-full lg:rounded-none",
             class_name,
         ),
@@ -148,7 +143,7 @@ def menu_socials() -> rx.Component:
         social_menu_item("discord_navbar", DISCORD_URL, "Discord"),
         social_menu_item("linkedin_footer", LINKEDIN_URL, "LinkedIn"),
         social_menu_item("forum_footer", FORUM_URL, "Forum"),
-        class_name="flex flex-row items-center gap-2 lg:gap-0 lg:grid lg:grid-cols-5 lg:border-y lg:border-secondary-4 lg:divide-x lg:divide-secondary-4 lg:w-full lg:h-16",
+        class_name="grid grid-cols-5 border-y border-secondary-4 divide-x divide-secondary-4 h-16 max-lg:w-auto lg:w-full",
     )
 
 
@@ -189,16 +184,16 @@ def newsletter_input() -> rx.Component:
                     type="email",
                     required=True,
                     size="sm",
-                    class_name="w-[195px]",
+                    class_name="min-w-0 flex-1 lg:w-[195px]",
                 ),
                 ui.button(
-                    "Subscribe",
+                    "Get Updates",
                     type="submit",
                     variant="outline-shadow",
                     size="sm",
                     class_name="w-fit max-w-full",
                 ),
-                class_name="w-full flex flex-col lg:flex-row gap-2 lg:items-center items-start",
+                class_name="w-full flex flex-row gap-2 items-center",
                 on_submit=IndexState.signup,
             ),
         ),
@@ -214,7 +209,24 @@ def newsletter() -> rx.Component:
     """
     return rx.el.div(
         newsletter_input(),
-        class_name="flex flex-col items-start gap-4 self-stretch mt-6",
+        class_name="flex flex-col items-start gap-4 self-stretch mt-6 max-lg:px-6 lg:max-w-[289px]",
+    )
+
+
+def footer_legal(class_name: str = "") -> rx.Component:
+    """Color-mode controls, copyright, and status indicator.
+
+    Returns:
+        The component.
+    """
+    return rx.el.div(
+        dark_mode_toggle(),
+        rx.el.span(
+            f"Copyright © {datetime.now().year} Pynecone, Inc.",
+            class_name="text-xs font-[525] text-secondary-11",
+        ),
+        rx.el.div(server_status(StatusState.status), class_name="-ml-2.5"),
+        class_name=ui.cn("justify-start flex flex-col items-start gap-6", class_name),
     )
 
 
@@ -237,20 +249,10 @@ def footer_index(class_name: str = "", grid_class_name: str = "") -> rx.Componen
                         newsletter(),
                         rx.el.div(
                             menu_socials(),
-                            class_name="mt-6 w-full lg:-mx-8 lg:w-[calc(100%+4rem)]",
+                            class_name="mt-8 w-full lg:-mx-8 lg:w-[calc(100%+4rem)]",
                         ),
-                        rx.el.div(
-                            dark_mode_toggle(),
-                            rx.el.span(
-                                f"Copyright © {datetime.now().year} Pynecone, Inc.",
-                                class_name="text-xs font-[525] text-secondary-11",
-                            ),
-                            rx.el.div(
-                                server_status(StatusState.status), class_name="-ml-2.5"
-                            ),
-                            class_name="mt-auto justify-start flex flex-col items-start gap-6 pt-8",
-                        ),
-                        class_name="flex flex-col lg:pr-8 lg:pl-8 lg:pb-8 min-w-[337px] lg:border-r border-secondary-4 shrink-0 relative pt-16",
+                        footer_legal("mt-auto pt-8 max-lg:hidden"),
+                        class_name="flex flex-col lg:pr-8 lg:pl-8 pb-8 min-w-0 lg:min-w-[337px] lg:border-r border-secondary-4 shrink-0 relative pt-16",
                     ),
                     rx.el.div(
                         footer_link_flex(
@@ -332,11 +334,14 @@ def footer_index(class_name: str = "", grid_class_name: str = "") -> rx.Componen
                             ],
                         ),
                         class_name=ui.cn(
-                            "grid grid-cols-1 lg:grid-cols-3 gap-x-12 gap-y-12 w-full relative lg:px-8 pb-8 pt-16",
+                            "grid grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-12 w-full relative px-6 lg:px-8 pb-8 pt-6 lg:pt-16",
                             grid_class_name,
                         ),
                     ),
-                    class_name="flex lg:flex-row flex-col max-lg:gap-6 w-full",
+                    footer_legal(
+                        "lg:hidden w-full border-t border-secondary-4 px-6 py-8"
+                    ),
+                    class_name="flex lg:flex-row flex-col w-full",
                 ),
                 rx.el.div(
                     class_name="absolute -top-px -right-24 w-24 h-px bg-linear-to-l from-transparent to-current text-secondary-4 max-lg:hidden"
@@ -344,12 +349,12 @@ def footer_index(class_name: str = "", grid_class_name: str = "") -> rx.Componen
                 rx.el.div(
                     class_name="absolute -top-px -left-24 w-24 h-px bg-linear-to-r from-transparent to-current text-secondary-4 max-lg:hidden"
                 ),
-                class_name="relative flex flex-col w-full lg:border-x border-secondary-4 border-t",
+                class_name="relative flex flex-col w-full border-x border-secondary-4 border-t",
             ),
             class_name="w-full min-w-0 lg:px-2",
         ),
         class_name=ui.cn(
-            "flex flex-col w-full min-w-0 max-w-(--landing-layout-max-width) items-stretch mx-auto max-lg:px-4 lg:border-x border-secondary-4 relative",
+            "flex flex-col w-full min-w-0 max-w-(--landing-layout-max-width) items-stretch mx-auto lg:border-x border-secondary-4 relative",
             class_name,
         ),
     )

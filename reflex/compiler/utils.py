@@ -460,8 +460,8 @@ def compile_experimental_component_memo(
         rendered = render.render()
     else:
         render = _apply_component_style_for_compile(copy.deepcopy(definition.component))
-        rendered = render.render()
         hooks = render._get_all_hooks()
+        rendered = render.render()
         custom_code = render._get_all_custom_code()
         dynamic_imports = render._get_all_dynamic_imports()
         all_imports = render._get_all_imports()
@@ -735,6 +735,20 @@ def get_page_path(path: str) -> str:
         / constants.Dirs.PAGES
         / constants.Dirs.ROUTES
         / (_path_to_file_stem(path) + constants.Ext.JSX)
+    )
+
+
+def get_page_import_specifier(path: str) -> str:
+    """Get the ``$``-aliased module specifier for the given page.
+
+    Args:
+        path: The path of the page.
+
+    Returns:
+        The import specifier (e.g. ``"$/pages/routes/users.$id._index"``).
+    """
+    return (
+        f"$/{constants.Dirs.PAGES}/{constants.Dirs.ROUTES}/{_path_to_file_stem(path)}"
     )
 
 
