@@ -185,7 +185,9 @@ def get_radix_themes_stylesheets(
     if needs_fallback or not accents:
         return [RADIX_THEMES_STYLESHEET]
     sheets = [_RADIX_THEMES_TOKENS_BASE]
-    sheets.extend(_radix_color_stylesheet(c) for c in sorted(grays))
+    # An accent and its paired gray can be the same scale (e.g. accent_color="gray"
+    # auto-pairs with "gray"); subtract to avoid importing the same file twice.
+    sheets.extend(_radix_color_stylesheet(c) for c in sorted(grays - accents))
     sheets.extend(_radix_color_stylesheet(c) for c in sorted(accents))
     sheets.extend([_RADIX_THEMES_COMPONENTS, _RADIX_THEMES_UTILITIES])
     return sheets

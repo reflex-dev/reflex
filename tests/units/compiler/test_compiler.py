@@ -471,6 +471,17 @@ def test_radix_themes_stylesheets_explicit_gray_overrides_auto_pairing():
     assert len(color_sheets) == 2
 
 
+def test_radix_themes_stylesheets_gray_accent_no_duplicate_import():
+    """accent_color='gray' auto-pairs with 'gray' -- emit gray.css only once."""
+    sheets = get_radix_themes_stylesheets([rx.theme(accent_color="gray")])
+    assert sheets.count("@radix-ui/themes/tokens/colors/gray.css") == 1
+    # And with an explicit matching gray_color too.
+    sheets = get_radix_themes_stylesheets([
+        rx.theme(accent_color="gray", gray_color="gray")
+    ])
+    assert sheets.count("@radix-ui/themes/tokens/colors/gray.css") == 1
+
+
 def test_radix_themes_stylesheets_nested_themes_union_colors():
     """Nested Theme components contribute the union of their colors."""
     root = rx.box(
