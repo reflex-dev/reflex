@@ -14,6 +14,7 @@ from reflex_base.components.component import (
     Component,
     ComponentNamespace,
     CustomComponent,
+    MemoizationLeaf,
     field,
 )
 from reflex_base.components.tags.tag import Tag
@@ -188,8 +189,15 @@ def get_base_component_map() -> dict[str, Callable]:
     }
 
 
-class Markdown(Component):
-    """A markdown component."""
+class Markdown(MemoizationLeaf):
+    """A markdown component.
+
+    ``react-markdown`` requires its ``children`` prop to be a string. Acting as
+    a memoization snapshot boundary keeps any Var child inlined inside the
+    snapshot body, instead of letting the auto-memoize plugin hoist a state
+    read into a separate ``Bare_comp_<hash>`` React element child (which would
+    render as a JSX element, not a string).
+    """
 
     library = "react-markdown@10.1.0"
 

@@ -121,10 +121,10 @@ def hosting_banner() -> rx.Component:
                             ui.button(
                                 "Learn more",
                                 ui.icon("ArrowRight01Icon"),
-                                variant="ghost",
+                                variant="ghost-highlight",
                                 size="xs",
                                 aria_label="Learn more",
-                                class_name="text-m-slate-3 dark:hover:text-m-slate-5 max-lg:hidden",
+                                class_name="max-lg:hidden text-white hover:text-primary-10",
                             ),
                             class_name="flex flex-row items-center md:gap-4 gap-2",
                         ),

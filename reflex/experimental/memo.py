@@ -7,7 +7,7 @@ import inspect
 from collections.abc import Callable
 from copy import copy
 from functools import cache, update_wrapper
-from typing import Any, get_args, get_origin, get_type_hints
+from typing import Any, ClassVar, get_args, get_origin, get_type_hints
 
 from reflex_base import constants
 from reflex_base.components.component import Component
@@ -94,6 +94,12 @@ class ExperimentalMemoComponent(Component):
     library = f"$/{constants.Dirs.COMPONENTS_PATH}"
     _memoization_mode = MemoizationMode(disposition=MemoizationDisposition.NEVER)
 
+    # The user-authored component class this wrapper stands in for. Populated
+    # on the dynamic subclass by ``_get_experimental_memo_component_class`` so
+    # introspection (e.g. compile telemetry) can recover the underlying type
+    # without parsing the wrapper's auto-generated class name.
+    _wrapped_component_type: ClassVar[type[Component] | None] = None
+
     def _validate_component_children(self, children: list[Component]) -> None:
         """Skip direct parent/child validation for memo wrapper instances.
 
@@ -176,6 +182,7 @@ def _get_experimental_memo_component_class(
         # Per-file import paths give Vite distinct module boundaries per
         # memo, enabling actual code-split by page.
         "library": f"$/{constants.Dirs.COMPONENTS_PATH}/{export_name}",
+        "_wrapped_component_type": wrapped_component_type,
     }
     if (
         wrapped_component_type._get_app_wrap_components

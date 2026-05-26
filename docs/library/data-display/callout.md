@@ -1,9 +1,6 @@
 ---
 components:
   - rx.callout
-  - rx.callout.root
-  - rx.callout.icon
-  - rx.callout.text
 
 Callout: |
   lambda **props: rx.callout("Basic Callout", icon="search", **props)
