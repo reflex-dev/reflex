@@ -576,9 +576,10 @@ function fullReload() {{
 }}
 
 function esToolkitCompatEsm() {{
-  // recharts default-imports CJS shims like `es-toolkit/compat/get`; Rolldown can
-  // emit their interop helper into a chunk that loads after a lazy route chunk,
-  // crashing any page with a chart (#6561). Redirect to the pure-ESM compat barrel.
+  // recharts default-imports CJS shims like `es-toolkit/compat/get`; the CJS interop
+  // helper can land in a chunk that runs before it is initialized, crashing any page
+  // with a chart (#6561). Redirect to the pure-ESM compat barrel. Registered for both
+  // the prod build (plugins) and the dev prebundle (optimizeDeps.rolldownOptions).
   const VIRTUAL = "\0es-toolkit-compat:";
   return {{
     name: "vite-plugin-es-toolkit-compat-esm",
@@ -621,6 +622,11 @@ export default defineConfig((config) => ({{
           ],
         }},
       }},
+    }},
+  }},
+  optimizeDeps: {{
+    rolldownOptions: {{
+      plugins: [esToolkitCompatEsm()],
     }},
   }},
   experimental: {{
