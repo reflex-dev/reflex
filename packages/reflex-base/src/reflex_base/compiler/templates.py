@@ -575,10 +575,31 @@ function fullReload() {{
   }};
 }}
 
+function esToolkitCompatEsm() {{
+  // recharts default-imports CJS shims like `es-toolkit/compat/get`; Rolldown can
+  // emit their interop helper into a chunk that loads after a lazy route chunk,
+  // crashing any page with a chart (#6561). Redirect to the pure-ESM compat barrel.
+  const VIRTUAL = "\0es-toolkit-compat:";
+  return {{
+    name: "vite-plugin-es-toolkit-compat-esm",
+    enforce: "pre",
+    resolveId(source) {{
+      const match = /^es-toolkit\/compat\/([A-Za-z0-9_]+)$/.exec(source);
+      return match ? VIRTUAL + match[1] : null;
+    }},
+    load(id) {{
+      if (!id.startsWith(VIRTUAL)) return null;
+      const name = id.slice(VIRTUAL.length);
+      return "export {{ " + name + " as default }} from \"es-toolkit/compat\";";
+    }},
+  }};
+}}
+
 export default defineConfig((config) => ({{
   base: "{base}",
   plugins: [
     alwaysUseReactDomServerNode(),
+    esToolkitCompatEsm(),
     reactRouter(),
     safariCacheBustPlugin(),
   ].concat({"[fullReload()]" if force_full_reload else "[]"}),
