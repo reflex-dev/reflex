@@ -121,18 +121,22 @@ def RechartsApp():
         )
 
 
-@pytest.fixture
-def recharts_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
+@pytest.fixture(scope="module")
+def recharts_app(
+    app_harness_env: type[AppHarness], tmp_path_factory
+) -> Generator[AppHarness, None, None]:
     """Start RechartsApp at tmp_path via AppHarness.
 
     Args:
+        app_harness_env: The AppHarness environment to use for the test.
         tmp_path_factory: pytest tmp_path_factory fixture
 
     Yields:
         running AppHarness instance
     """
-    with AppHarness.create(
+    with app_harness_env.create(
         root=tmp_path_factory.mktemp("recharts"),
+        app_name=f"rechartsapp_{app_harness_env.__name__.lower()}",
         app_source=RechartsApp,
     ) as harness:
         assert harness.app_instance is not None, "app is not running"
