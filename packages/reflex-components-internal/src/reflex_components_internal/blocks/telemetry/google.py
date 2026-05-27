@@ -5,11 +5,11 @@ import reflex as rx
 # Google Tag Manager script template
 GTAG_SCRIPT_TEMPLATE: str = """
 window.dataLayer = window.dataLayer || [];
-function gtag() {{
+window.gtag = window.gtag || function gtag() {{
     window.dataLayer.push(arguments);
-}}
-gtag('js', new Date());
-gtag('config', '{tracking_id}');
+}};
+window.gtag('js', new Date());
+window.gtag('config', '{tracking_id}');
 """
 
 # Google Tag Manager script URL template
