@@ -604,7 +604,16 @@ def login():
         _skip_compile()  # Allow running outside of an app dir
         from reflex.utils import telemetry
 
-        telemetry.send("login", user_uuid=user_uuid)
+        telemetry.send(
+            "login",
+            properties={
+                "$set": {
+                    "email": validated_info.get("email"),
+                    "tier": validated_info.get("tier"),
+                },
+                "user_uuid": user_uuid,
+            },
+        )
 
 
 @cli.command()
