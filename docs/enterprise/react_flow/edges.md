@@ -165,7 +165,7 @@ def button_edge(
     sourcePosition: rx.Var[Position],
     targetPosition: rx.Var[Position],
     markerEnd: rx.Var[str],
-):
+) -> rx.Fragment:
     bezier_path = rxe.components.flow.util.get_bezier_path(
         source_x=sourceX,
         source_y=sourceY,

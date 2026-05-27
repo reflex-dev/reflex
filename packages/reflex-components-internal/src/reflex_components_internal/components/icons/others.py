@@ -2,15 +2,16 @@
 
 from reflex_components_core.el.elements.media import svg
 
-from reflex.components.component import Component, memo
-from reflex.vars.base import Var
+from reflex.components.component import Component
+from reflex.components.memo import memo
+from reflex.vars.base import EMPTY_VAR_STR, Var
 from reflex_components_internal.components.icons.hugeicon import hi
 from reflex_components_internal.utils.twmerge import cn
 
 
 @memo
 def spinner_component(
-    class_name: str | Var[str] = "",
+    class_name: Var[str] = EMPTY_VAR_STR,
 ) -> Component:
     """Create a spinner SVG icon.
 
@@ -44,7 +45,7 @@ spinner = spinner_component
 
 @memo
 def select_arrow_icon(
-    class_name: str | Var[str] = "",
+    class_name: Var[str] = EMPTY_VAR_STR,
 ) -> Component:
     """A select arrow SVG icon.
 
@@ -58,7 +59,7 @@ select_arrow = select_arrow_icon
 
 
 @memo
-def arrow_svg_component(class_name: str | Var[str] = "") -> Component:
+def arrow_svg_component(class_name: Var[str] = EMPTY_VAR_STR) -> Component:
     """Create a tooltip arrow SVG icon.
 
     The arrow SVG icon.

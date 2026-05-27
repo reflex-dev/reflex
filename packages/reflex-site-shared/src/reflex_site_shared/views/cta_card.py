@@ -9,7 +9,7 @@ from reflex_site_shared.constants import REFLEX_ASSETS_CDN, REFLEX_BUILD_URL
 
 
 @rx.memo
-def cta_card():
+def cta_card() -> rx.Component:
     """Cta card.
 
     Returns:

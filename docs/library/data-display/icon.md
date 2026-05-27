@@ -13,7 +13,7 @@ icon_search_cs = ClientStateVar.create("icon_search", default="")
 
 
 @rx.memo
-def lucide_icons():
+def lucide_icons() -> rx.Component:
     return rx.box(
         rx.box(
             rx.box(
