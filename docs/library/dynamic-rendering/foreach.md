@@ -1,8 +1,3 @@
----
-components:
-  - rx.foreach
----
-
 ```python exec
 import reflex as rx
 ```
@@ -17,11 +12,8 @@ This is useful for dynamically rendering a list of items defined in a state.
 ```
 
 ```python demo exec
-from typing import List
-
-
 class ForeachState(rx.State):
-    colors: List[str] = [
+    colors: list[str] = [
         "#E5484D",
         "#12A594",
         "#3E63DD",
@@ -31,7 +23,7 @@ class ForeachState(rx.State):
     ]
 
 
-def color_swatch(label, color: rx.Var[str]):
+def color_swatch(label: rx.Var[str | int], color: rx.Var[str]):
     return rx.box(
         rx.text(label, color="white", weight="medium"),
         bg=color,
@@ -59,7 +51,7 @@ def foreach_example():
 The function can also take an index as a second argument.
 
 ```python demo exec
-def colored_box_index(color: rx.Var[str], index: int):
+def colored_box_index(color: rx.Var[str], index: rx.Var[int]):
     return color_swatch(index, color)
 
 
@@ -78,11 +70,8 @@ When indexing into a nested list, it's important to declare the list's type as R
 This ensures that any potential frontend JS errors are caught before the user can encounter them.
 
 ```python demo exec
-from typing import List
-
-
 class NestedForeachState(rx.State):
-    numbers: List[List[str]] = [["1", "2", "3"], ["4", "5", "6"], ["7", "8", "9"]]
+    numbers: list[list[str]] = [["1", "2", "3"], ["4", "5", "6"], ["7", "8", "9"]]
 
 
 def display_row(row: rx.Var[list[str]]):
@@ -105,12 +94,23 @@ def nested_foreach_example():
 Below is a more complex example of foreach within a todo list.
 
 ```python demo exec
-from typing import List
+from dataclasses import dataclass, field
+from uuid import UUID, uuid4
+
+
+@dataclass
+class TodoItem:
+    text: str
+    id: UUID = field(default_factory=uuid4)
 
 
 class ListState(rx.State):
-    items: List[str] = ["Write Code", "Sleep", "Have Fun"]
-    new_item: str
+    items: list[TodoItem] = [
+        TodoItem(text="Write Code"),
+        TodoItem(text="Sleep"),
+        TodoItem(text="Have Fun"),
+    ]
+    new_item: str = ""
 
     @rx.event
     def set_new_item(self, new_item: str):
@@ -118,24 +118,25 @@ class ListState(rx.State):
 
     @rx.event
     def add_item(self):
-        self.items += [self.new_item]
+        self.items += [TodoItem(text=self.new_item)]
 
     @rx.event
-    def finish_item(self, item: str):
-        self.items = [i for i in self.items if i != item]
+    def finish_item(self, item_id: UUID):
+        self.items = [item for item in self.items if item.id != item_id]
 
 
-def get_item(item: rx.Var[str]):
+def get_item(item: rx.Var[TodoItem]):
     return rx.list.item(
         rx.hstack(
             rx.button(
                 "Done",
-                on_click=lambda: ListState.finish_item(item),
+                on_click=lambda: ListState.finish_item(item.id),
                 size="1",
                 variant="soft",
             ),
-            rx.text(item, font_size="1.25em"),
+            rx.text(item.text, font_size="1.25em"),
         ),
+        key=item.id,
     )
 
 
@@ -163,6 +164,7 @@ def todo_example():
 ## Dictionaries
 
 Items in a dictionary are passed to the render function as key-value pairs.
+When iterating over a dict, keys are coerced to strings in the `foreach` callback, even when the Python dictionary uses another key type.
 Using the color example, we can slightly modify the code to use dicts as shown below.
 
 ```python demo exec
@@ -170,8 +172,8 @@ class SimpleDictForeachState(rx.State):
     color_chart: dict[int, str] = {1: "#3E63DD", 2: "#E5484D", 3: "#12A594"}
 
 
-def display_color(color: rx.Var[tuple[int, str]]):
-    # color is presented as a key-value pair such as (1, "#3E63DD").
+def display_color(color: rx.Var[tuple[str, str]]):
+    # color is presented as a key-value pair such as ("1", "#3E63DD").
     return color_swatch(color[0], color[1])
 
 
@@ -185,11 +187,8 @@ Now let's show a more complex example with dicts using the color example.
 This example groups related hex colors in a dictionary and renders both the keys and values as swatches:
 
 ```python demo exec
-from typing import List, Dict
-
-
 class ComplexDictForeachState(rx.State):
-    color_chart: Dict[str, List[str]] = {
+    color_chart: dict[str, list[str]] = {
         "#8E4EC6": ["#E5484D", "#3E63DD"],
         "#F76B15": ["#AD5700", "#E5484D"],
         "#12A594": ["#3E63DD", "#AD5700"],
@@ -217,3 +216,14 @@ def foreach_complex_dict_example():
         spacing="4",
     )
 ```
+
+## API Reference
+
+### `rx.foreach`
+
+```python
+rx.foreach(iterable, render_fn)
+```
+
+- `iterable`: A state var or iterable to render. Lists, tuples, sets, strings, and dicts are supported; dicts are passed to `render_fn` as key-value tuples with string keys.
+- `render_fn`: A function that returns a component for each item. It receives the item as the first `rx.Var[...]` argument and, optionally, the index as a second `rx.Var[int]` argument.
