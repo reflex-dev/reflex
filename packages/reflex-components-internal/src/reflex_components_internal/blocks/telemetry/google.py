@@ -31,8 +31,13 @@ def get_google_analytics_trackers(
     """
     # Load Google Tag Manager script
     return [
-        rx.script(src=GTAG_SCRIPT_URL_TEMPLATE.format(tracking_id=tracking_id)),
-        rx.script(GTAG_SCRIPT_TEMPLATE.format(tracking_id=tracking_id)),
+        rx.el.script(
+            src=GTAG_SCRIPT_URL_TEMPLATE.format(tracking_id=tracking_id),
+            async_=True,
+        ),
+        rx.el.script(
+            GTAG_SCRIPT_TEMPLATE.format(tracking_id=tracking_id), type="module"
+        ),
     ]
 
 
@@ -45,7 +50,7 @@ def gtag_report_conversion(conversion_id_and_label: str) -> rx.Component:
     Returns:
         rx.Component: Script component to report the conversion.
     """
-    return rx.script(
+    return rx.el.script(
         f"""function gtag_report_conversion() {{
             var callback = function () {{
                 console.log('Conversion recorded!');

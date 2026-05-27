@@ -130,10 +130,11 @@ def get_posthog_trackers(
     Returns:
         rx.Component: Script component needed for PostHog tracking
     """
-    return rx.script(
+    return rx.el.script(
         POSTHOG_SCRIPT_TEMPLATE.format(
             project_id=project_id,
             api_host=api_host,
             ui_host=ui_host,
-        )
+        ),
+        type="module",
     )
