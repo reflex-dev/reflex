@@ -256,6 +256,34 @@ def test_gcp_deploy_omits_service_account_when_unset(
     assert "CLOUD_RUN_SERVICE_ACCOUNT" not in env_overrides
 
 
+def test_gcp_deploy_rejects_empty_service_account(mocker: MockFixture, tmp_path: Path):
+    """An explicit --service-account "" errors instead of silently falling back.
+
+    A common footgun is `--service-account "$VAR"` in CI where VAR is unset; the
+    flag would otherwise resolve to the default compute SA against user intent.
+    """
+    run_mock = _patch_environment(mocker)
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "deploy",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--service-account",
+            "",
+        ],
+        input="y\n",
+    )
+
+    assert result.exit_code == 2
+    run_mock.assert_not_called()
+
+
 def test_gcp_deploy_rejects_negative_min_instances(mocker: MockFixture, tmp_path: Path):
     """--min-instances is IntRange(min=0); negative values fail at the CLI layer."""
     run_mock = _patch_environment(mocker)

@@ -293,7 +293,10 @@ def deploy_command(
         ENV_MEMORY: memory,
         ENV_MIN_INSTANCES: str(min_instances),
     }
-    if service_account:
+    if service_account is not None:
+        if not service_account:
+            console.error("--service-account cannot be an empty string.")
+            raise click.exceptions.Exit(2)
         deploy_env[ENV_SERVICE_ACCOUNT] = service_account
 
     console.info("Received deploy manifest from Reflex.")
