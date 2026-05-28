@@ -14,8 +14,13 @@ from typing import Any, TypedDict
 from urllib.parse import urlparse
 
 from reflex_base import constants
-from reflex_base.components.component import Component, ComponentStyle, CustomComponent
-from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER, FIELD_MARKER
+from reflex_base.components.component import Component, ComponentStyle
+from reflex_base.components.memo import (
+    MemoComponentDefinition,
+    MemoFunctionDefinition,
+    MemoParamKind,
+)
+from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.style import Style
 from reflex_base.utils import format, imports
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
@@ -28,10 +33,6 @@ from reflex_components_core.el.elements.metadata import Head, Link, Meta, Title
 from reflex_components_core.el.elements.other import Html
 from reflex_components_core.el.elements.sectioning import Body
 
-from reflex.experimental.memo import (
-    ExperimentalMemoComponentDefinition,
-    ExperimentalMemoFunctionDefinition,
-)
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.state import BaseState, _resolve_delta
 from reflex.utils import path_ops
@@ -321,53 +322,6 @@ def compile_client_storage(
     }
 
 
-def compile_custom_component(
-    component: CustomComponent,
-) -> tuple[dict, ParsedImportDict]:
-    """Compile a custom component.
-
-    Args:
-        component: The custom component to compile.
-
-    Returns:
-        A tuple of the compiled component and the imports required by the component.
-    """
-    # Render the component.
-    render = component.get_component()
-
-    # Get the imports.
-    imports: ParsedImportDict = {}
-    for lib, fields in render._get_all_imports().items():
-        if lib != component.library:
-            imports[lib] = fields
-            continue
-
-        filtered_fields = [field for field in fields if field.tag != component.tag]
-        if filtered_fields:
-            imports[lib] = filtered_fields
-
-    imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
-
-    # Concatenate the props.
-    props = list(component.props)
-
-    # Compile the component.
-    return (
-        {
-            "name": component.tag,
-            "props": props,
-            "signature": DestructuredArg(
-                fields=tuple(f"{prop}:{prop}{CAMEL_CASE_MEMO_MARKER}" for prop in props)
-            ).to_javascript(),
-            "render": render.render(),
-            "hooks": render._get_all_hooks(),
-            "custom_code": render._get_all_custom_code(),
-            "dynamic_imports": render._get_all_dynamic_imports(),
-        },
-        imports,
-    )
-
-
 def _apply_component_style_for_compile(component: Component) -> Component:
     """Apply the app style to a compiled component tree.
 
@@ -421,9 +375,9 @@ def _app_style() -> ComponentStyle | Style:
 
 
 def compile_experimental_component_memo(
-    definition: ExperimentalMemoComponentDefinition,
+    definition: MemoComponentDefinition,
 ) -> tuple[dict, ParsedImportDict]:
-    """Compile an experimental memo component.
+    """Compile a memo component.
 
     Args:
         definition: The component memo definition.
@@ -466,11 +420,9 @@ def compile_experimental_component_memo(
         dynamic_imports = render._get_all_dynamic_imports()
         all_imports = render._get_all_imports()
 
-    # Each experimental memo now lives in ``web/utils/components/<name>.jsx``,
-    # so importing the ``$/utils/components`` index from this file is only
-    # circular when ``<name>`` itself appears in that index — i.e. a legacy
-    # ``@rx.memo`` wrapper file. For auto-memo wrappers around legacy custom
-    # components, the index import is legitimate and must be preserved.
+    # Each memo lives in ``web/utils/components/<name>.jsx`` and is imported
+    # from ``$/utils/components/<name>``. Strip a self-import so a memo body
+    # that references the wrapper's own module specifier doesn't recurse.
     self_module = f"$/{constants.Dirs.COMPONENTS_PATH}/{definition.export_name}"
     imports: ParsedImportDict = {
         lib: fields for lib, fields in all_imports.items() if lib != self_module
@@ -479,15 +431,17 @@ def compile_experimental_component_memo(
     imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
 
     signature_fields = [
-        f"{param.js_prop_name}:{param.placeholder_name}"
+        field
         for param in definition.params
-        if not param.is_children and not param.is_rest
+        if (field := param.signature_field()) is not None
     ]
 
-    if any(param.is_children for param in definition.params):
+    if any(p.kind is MemoParamKind.CHILDREN for p in definition.params):
         signature_fields.insert(0, "children")
 
-    rest_param = next((param for param in definition.params if param.is_rest), None)
+    rest_param = next(
+        (p for p in definition.params if p.kind is MemoParamKind.REST), None
+    )
 
     return (
         {
@@ -561,9 +515,9 @@ def _root_only_dynamic_imports(component: Component) -> set[str]:
 
 
 def compile_experimental_function_memo(
-    definition: ExperimentalMemoFunctionDefinition,
+    definition: MemoFunctionDefinition,
 ) -> tuple[dict, ParsedImportDict]:
-    """Compile an experimental memo function.
+    """Compile a memo function.
 
     Args:
         definition: The function memo definition.
@@ -787,25 +741,12 @@ def get_context_path() -> str:
     return str(get_web_dir() / (constants.Dirs.CONTEXTS_PATH + constants.Ext.JS))
 
 
-def get_components_path() -> str:
-    """Get the path of the compiled components.
-
-    Returns:
-        The path of the compiled components.
-    """
-    return str(
-        get_web_dir()
-        / constants.Dirs.UTILS
-        / (constants.PageNames.COMPONENTS + constants.Ext.JSX),
-    )
-
-
 def get_memo_components_dir() -> str:
     """Get the directory that holds per-memo module files.
 
     Returns:
-        The directory used for per-memo ``.jsx`` modules re-exported by the
-        top-level components index.
+        The directory used for per-memo ``.jsx`` modules. Pages import each
+        wrapper directly from ``$/utils/components/<name>``.
     """
     return str(
         get_web_dir() / constants.Dirs.UTILS / constants.PageNames.COMPONENTS,

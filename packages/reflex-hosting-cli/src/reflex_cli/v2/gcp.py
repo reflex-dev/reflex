@@ -8,7 +8,8 @@ tree is never modified. The script reads its parameters from environment
 variables (GCP_PROJECT, GCP_REGION, SERVICE_NAME, AR_REPO, VERSION,
 CLOUD_RUN_CPU, CLOUD_RUN_MEMORY, CLOUD_RUN_MIN_INSTANCES,
 CLOUD_RUN_MAX_INSTANCES, CLOUD_RUN_ALLOW_UNAUTHENTICATED,
-REFLEX_CLOUDBUILD_YAML, REFLEX_ENV_VARS_FILE).
+CLOUD_RUN_SERVICE_ACCOUNT, REFLEX_CLOUDBUILD_YAML,
+REFLEX_ENV_VARS_FILE).
 """
 
 from __future__ import annotations
@@ -45,6 +46,7 @@ ENV_MEMORY = "CLOUD_RUN_MEMORY"
 ENV_MIN_INSTANCES = "CLOUD_RUN_MIN_INSTANCES"
 ENV_MAX_INSTANCES = "CLOUD_RUN_MAX_INSTANCES"
 ENV_ALLOW_UNAUTHENTICATED = "CLOUD_RUN_ALLOW_UNAUTHENTICATED"
+ENV_SERVICE_ACCOUNT = "CLOUD_RUN_SERVICE_ACCOUNT"
 # Path to the Cloud Build config file written by the CLI. The rewritten
 # deploy script references it as ``--config="${REFLEX_CLOUDBUILD_YAML}"``.
 ENV_REFLEX_CLOUDBUILD_YAML = "REFLEX_CLOUDBUILD_YAML"
@@ -185,6 +187,12 @@ DEPLOY_ENV_ALLOWLIST = frozenset({
     help="Whether to make the Cloud Run service publicly reachable (sets CLOUD_RUN_ALLOW_UNAUTHENTICATED). Use --no-allow-unauthenticated for internal / IAP-fronted services; callers will then need a roles/run.invoker IAM binding.",
 )
 @click.option(
+    "--service-account",
+    "service_account",
+    default=None,
+    help="IAM service account email the Cloud Run service runs as (sets CLOUD_RUN_SERVICE_ACCOUNT). If omitted, Cloud Run uses the project's default compute SA. The deploying principal needs roles/iam.serviceAccountUser on the target SA.",
+)
+@click.option(
     "--envfile",
     default=None,
     help="Path to a .env file. Loaded into the Cloud Run service as env vars. Takes precedence over --env.",
@@ -234,6 +242,7 @@ def deploy_command(
     min_instances: int,
     max_instances: int,
     allow_unauthenticated: bool,
+    service_account: str | None,
     envfile: str | None,
     envs: tuple[str, ...],
     source_dir: str,
@@ -346,6 +355,11 @@ def deploy_command(
         ENV_MAX_INSTANCES: str(max_instances),
         ENV_ALLOW_UNAUTHENTICATED: "true" if allow_unauthenticated else "false",
     }
+    if service_account is not None:
+        if not service_account:
+            console.error("--service-account cannot be an empty string.")
+            raise click.exceptions.Exit(2)
+        deploy_env[ENV_SERVICE_ACCOUNT] = service_account
 
     console.info("Received deploy manifest from Reflex.")
     console.print("")

@@ -1,12 +1,8 @@
 """Tests for docs breadcrumbs."""
 
 import importlib
-import sys
-from pathlib import Path
 
 import reflex as rx
-
-sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 
 def test_enterprise_parent_breadcrumb_uses_overview_route(monkeypatch):
