@@ -604,13 +604,15 @@ def login():
         _skip_compile()  # Allow running outside of an app dir
         from reflex.utils import telemetry
 
+        set_props = {}
+        if user_email := validated_info.get("email"):
+            set_props["email"] = user_email
+        if user_tier := validated_info.get("tier"):
+            set_props["tier"] = user_tier
         telemetry.send(
             "login",
             properties={
-                "$set": {
-                    "email": validated_info.get("email"),
-                    "tier": validated_info.get("tier"),
-                },
+                "$set": set_props,
                 "user_uuid": user_uuid,
             },
         )
