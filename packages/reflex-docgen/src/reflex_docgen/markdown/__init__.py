@@ -1,5 +1,9 @@
 """Markdown parsing and types for Reflex documentation."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from reflex_docgen.markdown import transformer as transformer
 from reflex_docgen.markdown._parser import parse_document as parse_document
 from reflex_docgen.markdown._types import Block as Block
@@ -27,6 +31,11 @@ from reflex_docgen.markdown._types import TextBlock as TextBlock
 from reflex_docgen.markdown._types import TextSpan as TextSpan
 from reflex_docgen.markdown._types import ThematicBreakBlock as ThematicBreakBlock
 
+if TYPE_CHECKING:
+    from reflex_docgen.markdown.transformer import (
+        ReflexComponentTransformer as ReflexComponentTransformer,
+    )
+
 __all__ = [
     "Block",
     "BoldSpan",
@@ -44,6 +53,7 @@ __all__ = [
     "ListBlock",
     "ListItem",
     "QuoteBlock",
+    "ReflexComponentTransformer",
     "Span",
     "StrikethroughSpan",
     "TableBlock",
@@ -55,3 +65,23 @@ __all__ = [
     "parse_document",
     "transformer",
 ]
+
+
+def __getattr__(name: str) -> object:
+    """Lazily re-export the reflex-dependent transformer on first access.
+
+    Args:
+        name: The attribute being accessed.
+
+    Returns:
+        The resolved attribute.
+
+    Raises:
+        AttributeError: If the attribute does not exist.
+    """
+    if name == "ReflexComponentTransformer":
+        from reflex_docgen.markdown.transformer import ReflexComponentTransformer
+
+        return ReflexComponentTransformer
+    msg = f"module {__name__!r} has no attribute {name!r}"
+    raise AttributeError(msg)

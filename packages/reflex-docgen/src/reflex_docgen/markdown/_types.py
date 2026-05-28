@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from collections.abc import Mapping
+from dataclasses import dataclass, field
 
 # ---------------------------------------------------------------------------
 # Span types — inline content without exposing mistletoe
@@ -141,12 +142,16 @@ class FrontMatter:
         only_low_level: Whether to show only low-level component variants.
         title: An optional page title.
         component_previews: Preview lambdas keyed by component class name.
+        metadata: The full raw frontmatter mapping, including the keys modeled
+            by the fields above plus any arbitrary keys a site defines (e.g.
+            ``author``, ``tags``, ``order``).
     """
 
     components: tuple[str, ...]
     only_low_level: bool
     title: str | None
     component_previews: tuple[ComponentPreview, ...]
+    metadata: Mapping[str, object] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -174,11 +179,16 @@ class DirectiveBlock:
         name: The directive name (e.g. "alert", "video", "definition", "section").
         args: Additional arguments after the name (e.g. ("info",) or ("https://...",)).
         children: The parsed block-level content inside the directive.
+        content: The raw (unparsed) inner text. Directives whose body is
+            line-oriented rather than markdown (e.g. a ``quote`` block's
+            ``- name:``/``- role:`` lines) should read this instead of
+            ``children`` to avoid CommonMark reflowing the lines.
     """
 
     name: str
     args: tuple[str, ...]
     children: tuple[Block, ...]
+    content: str = ""
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -309,6 +319,11 @@ class Document:
 
     frontmatter: FrontMatter | None
     blocks: tuple[Block, ...]
+
+    @property
+    def metadata(self) -> Mapping[str, object]:
+        """Return the raw frontmatter mapping, or an empty mapping if absent."""
+        return self.frontmatter.metadata if self.frontmatter is not None else {}
 
     @property
     def headings(self) -> tuple[HeadingBlock, ...]:
