@@ -31,7 +31,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import tomllib
 from packaging.requirements import Requirement
 from packaging.version import InvalidVersion, Version
 
@@ -143,6 +142,8 @@ def main(argv: list[str]) -> int:
     Returns:
         A process exit code.
     """
+    import tomllib  # stdlib only on 3.11+; imported here so the pure helpers above remain importable on 3.10 for testing
+
     reflex_version_str = os.environ.get("VERSION")
     if not reflex_version_str:
         print("Error: VERSION environment variable is required", file=sys.stderr)  # noqa: T201
