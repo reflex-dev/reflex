@@ -95,6 +95,8 @@ def _plain_text(spans: tuple[Span, ...]) -> str:
             span, BoldSpan | ItalicSpan | StrikethroughSpan | LinkSpan | ImageSpan
         ):
             parts.append(_plain_text(span.children))
+        elif isinstance(span, LineBreakSpan):
+            parts.append(" ")
     return "".join(parts)
 
 

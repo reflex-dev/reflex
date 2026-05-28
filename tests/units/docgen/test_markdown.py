@@ -164,6 +164,13 @@ def test_metadata_empty_without_frontmatter():
     assert dict(parse_document("# Hi\n").metadata) == {}
 
 
+def test_frontmatter_is_hashable_with_metadata():
+    """FrontMatter / Document stay hashable even when metadata holds a dict."""
+    doc = parse_document("---\nauthor: Jane\norder: 3\n---\n# Hi\n")
+    hash(doc.frontmatter)
+    hash(doc)
+
+
 def test_metadata_on_frontmatter_block():
     """The raw mapping is also available on the FrontMatter block itself."""
     fm = parse_document("---\nauthor: Jane\n---\n# Hi\n").frontmatter

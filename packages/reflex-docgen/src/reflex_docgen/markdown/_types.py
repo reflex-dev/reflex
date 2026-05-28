@@ -151,7 +151,9 @@ class FrontMatter:
     only_low_level: bool
     title: str | None
     component_previews: tuple[ComponentPreview, ...]
-    metadata: Mapping[str, object] = field(default_factory=dict)
+    metadata: Mapping[str, object] = field(
+        default_factory=dict, hash=False, compare=False
+    )
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
