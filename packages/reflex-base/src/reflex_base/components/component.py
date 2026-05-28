@@ -95,6 +95,35 @@ class ComponentField(BaseField[FIELD_TYPE]):
             return f"ComponentField(default={self.default!r}, is_javascript={self.is_javascript!r}{annotated_type_str})"
         return f"ComponentField(default_factory={self.default_factory!r}, is_javascript={self.is_javascript!r}{annotated_type_str})"
 
+    def __get__(self, instance: Any, owner: type[Any] | None = None) -> Any:
+        """Supply an unset field's default via the descriptor protocol.
+
+        With no ``__set__`` this is a non-data descriptor: an explicitly-set
+        value in the instance ``__dict__`` shadows it, so only unset fields
+        reach here. Construction can therefore skip materializing every
+        default onto every instance and let reads resolve them lazily.
+
+        Args:
+            instance: The component instance, or ``None`` for class access.
+            owner: The owning class.
+
+        Returns:
+            ``self`` for class access, otherwise the default. Factory defaults
+            are cached on the instance so later in-place mutation persists.
+
+        Raises:
+            AttributeError: The field has neither a default nor a factory.
+        """
+        if instance is None:
+            return self
+        if self.default is not MISSING:
+            return self.default
+        if self.default_factory is not None:
+            value = self.default_factory()
+            instance.__dict__[self._name] = value
+            return value
+        raise AttributeError(self._name)
+
 
 def field(
     default: FIELD_TYPE | _MISSING_TYPE = MISSING,
@@ -278,6 +307,15 @@ class BaseComponentMeta(FieldBasedMeta, ABCMeta):
             if value.is_javascript is True
         }
 
+        # Install each own field as a class-level descriptor so unset instance
+        # attributes resolve to their default through ``ComponentField.__get__``
+        # (inherited fields resolve via the MRO). Skip names already bound to a
+        # non-field value so a ``@property`` or literal override keeps winning.
+        for field_name, field_ in own_fields.items():
+            existing = namespace.get(field_name)
+            if existing is None or isinstance(existing, ComponentField):
+                namespace[field_name] = field_
+
 
 class BaseComponent(metaclass=BaseComponentMeta):
     """The base class for all Reflex components.
@@ -314,9 +352,6 @@ class BaseComponent(metaclass=BaseComponentMeta):
         """
         for key, value in kwargs.items():
             setattr(self, key, value)
-        for name, value in self.get_fields().items():
-            if name not in kwargs:
-                setattr(self, name, value.default_value())
 
     def set(self, **kwargs):
         """Set the component props.
@@ -1070,7 +1105,14 @@ class Component(BaseComponent, ABC):
         """
         # Look for component specific triggers,
         # e.g. variable declared as EventHandler types.
-        return DEFAULT_TRIGGERS | args_specs_from_fields(cls.get_fields())  # pyright: ignore [reportOperatorIssue]
+        # Cache on the class's own __dict__ (not inherited) so each subclass
+        # computes its own; the field set is fixed at class creation.
+        cached = cls.__dict__.get("_event_triggers_cache")
+        if cached is not None:
+            return cached
+        result = DEFAULT_TRIGGERS | args_specs_from_fields(cls.get_fields())  # pyright: ignore [reportOperatorIssue]
+        cls._event_triggers_cache = result
+        return result
 
     def __repr__(self) -> str:
         """Represent the component in React.
