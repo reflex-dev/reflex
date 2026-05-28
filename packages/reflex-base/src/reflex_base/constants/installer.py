@@ -155,4 +155,7 @@ class PackageJson(SimpleNamespace):
     }
     OVERRIDES = {
         "cookie": "1.1.1",
+        # Pin es-toolkit to avoid deferred cjs compat shims loading after dependents
+        # reflex-dev/reflex#6561, recharts/recharts#7376, toss/es-toolkit#1740
+        "es-toolkit": "1.46.1",
     }
