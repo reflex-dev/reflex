@@ -47,11 +47,11 @@ jobs:
           TAG: ${{ github.event.release.tag_name || inputs.tag }}
         run: bash .github/scripts/publish/parse_tag.sh
 
-      - name: Pin reflex-base to exact version
+      - name: Pin internal packages to exact versions
         if: steps.parse.outputs.package == 'reflex'
         env:
           VERSION: ${{ steps.parse.outputs.version }}
-        run: bash .github/scripts/publish/pin_reflex_base.sh
+        run: uv run --script .github/scripts/publish/pin_internal_packages.py
 
       - name: Build
         run: uv build --directory "${{ steps.parse.outputs.build_dir }}"
