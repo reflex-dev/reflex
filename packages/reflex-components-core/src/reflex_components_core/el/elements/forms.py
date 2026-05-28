@@ -769,18 +769,18 @@ class Textarea(RawTextBaseHTML):
             "enter_key_submit",
         ]
 
-    def _get_all_custom_code(self) -> dict[str, None]:
-        """Include the custom code for auto_height and enter_key_submit functionality.
+    def add_custom_code(self) -> list[str]:
+        """Inject the JS helpers used by ``auto_height`` and ``enter_key_submit``.
 
         Returns:
-            The custom code for the component.
+            The module-level JS snippets required by the enabled features.
         """
-        custom_code = super()._get_all_custom_code()
+        code: list[str] = []
         if self.auto_height is not None:
-            custom_code[AUTO_HEIGHT_JS] = None
+            code.append(AUTO_HEIGHT_JS)
         if self.enter_key_submit is not None:
-            custom_code[ENTER_KEY_SUBMIT_JS] = None
-        return custom_code
+            code.append(ENTER_KEY_SUBMIT_JS)
+        return code
 
 
 button = Button.create

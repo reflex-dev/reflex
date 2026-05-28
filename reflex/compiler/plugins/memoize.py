@@ -9,8 +9,8 @@ see the original components and collect their imports/hooks as usual.
 
 Each unique subtree shape contributes:
 
-- One generated experimental memo component definition, compiled into the
-  shared ``$/utils/components`` module.
+- One generated experimental memo component definition, compiled into its own
+  per-memo module at ``$/utils/components/<name>``.
 - ``useCallback`` hook lines for each non-lifecycle event trigger, emitted into
   the generated memo body so handler hooks stay inside that rendering domain.
 
@@ -22,14 +22,11 @@ from __future__ import annotations
 import dataclasses
 from typing import Any
 
-from reflex_base.components.component import (
-    BaseComponent,
-    Component,
-    _deterministic_hash,
-    _hash_str,
-)
+from reflex_base.components.component import BaseComponent, Component
+from reflex_base.components.memo import create_passthrough_component_memo
 from reflex_base.components.memoize_helpers import (
     MemoizationStrategy,
+    _is_structural_memoization_child,
     fix_event_triggers_for_memo,
     get_memoization_strategy,
     is_snapshot_boundary,
@@ -37,38 +34,6 @@ from reflex_base.components.memoize_helpers import (
 from reflex_base.constants.compiler import MemoizationDisposition
 from reflex_base.plugins import ComponentAndChildren, PageContext
 from reflex_base.plugins.base import Plugin
-from reflex_base.utils import format
-
-from reflex.experimental.memo import create_passthrough_component_memo
-
-
-def _compute_memo_tag(component: Component) -> str | None:
-    """Compute a stable tag name for a memoizable component.
-
-    Returns ``None`` for components that render empty (non-visual components
-    are never memoized).
-
-    The class qualname is encoded directly in the tag prefix so that distinct
-    classes which render identically never collide on a tag. Tag collision
-    would silently share a single cached memo wrapper across classes and drop
-    the later class's class-level metadata (e.g. ``_get_app_wrap_components``,
-    which carries providers like ``UploadFilesProvider`` that must reach the
-    app root). Baking the qualname into the prefix avoids re-concatenating
-    the rendered JSX into the hash input on every call.
-
-    Args:
-        component: The component to name.
-
-    Returns:
-        The stable tag name, or ``None`` if the component renders empty.
-    """
-    rendered_code = component.render()
-    if not rendered_code:
-        return None
-    code_hash = _hash_str(_deterministic_hash(rendered_code))
-    return format.format_state_name(
-        f"{type(component).__qualname__}_{component.tag or 'Comp'}_{code_hash}"
-    ).capitalize()
 
 
 def _subtree_has_reactive_data(
@@ -188,8 +153,16 @@ def _should_memoize(component: Component) -> bool:
                 ):
                     return True
     # Cond and Match render conditional branch JSX from their own props rather
-    # than from a tag, so they have no `tag` but still must be considered.
-    if component.tag is None and not isinstance(component, (Cond, Match)):
+    # than from a tag; structural memoization children (e.g. ``Foreach``)
+    # render via their own structural form. All have no ``tag`` but still
+    # must be considered for memoization — the structural-child case in
+    # particular owns its whole subtree as a snapshot, so if it does not
+    # wrap here, its descendants leak to the page module.
+    if (
+        component.tag is None
+        and not isinstance(component, (Cond, Match))
+        and not _is_structural_memoization_child(component)
+    ):
         return False
     if component._memoization_mode.disposition == MemoizationDisposition.ALWAYS:
         return True
@@ -374,16 +347,17 @@ class MemoizeStatefulPlugin(Plugin):
             The wrapper instance, or ``None`` if the component's render is
             empty and has no meaningful tag.
         """
-        tag = _compute_memo_tag(comp)
-        if tag is None:
-            return None
-
         comp = fix_event_triggers_for_memo(comp, page_context)
 
-        compile_context.memoize_wrappers[tag] = None
         # Passthrough memo definitions capture app-specific event/state vars, so
-        # they must be rebuilt for each compile instead of shared globally.
-        wrapper_factory, definition = create_passthrough_component_memo(tag, comp)
+        # they must be rebuilt for each compile instead of shared globally. The
+        # tag is derived from the rendered memo body inside
+        # ``create_passthrough_component_memo`` after the ``{children}`` hole
+        # is substituted, so passthrough wrappers that differ only in their
+        # children collapse to a single definition.
+        wrapper_factory, definition = create_passthrough_component_memo(comp)
+        tag = definition.export_name
+        compile_context.memoize_wrappers[tag] = None
         compile_context.auto_memo_components[tag] = definition
 
         wrapper = wrapper_factory()

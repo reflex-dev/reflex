@@ -34,7 +34,7 @@ REFLEX_DEV_WEB_GENERAL_FORM_FEEDBACK_WEBHOOK_URL: str = os.environ.get(
     "REFLEX_DEV_WEB_GENERAL_FORM_FEEDBACK_WEBHOOK_URL", ""
 )
 RECENT_BLOGS_API_URL: str = os.environ.get(
-    "RECENT_BLOGS_API_URL", "https://reflex.dev/api/v1/recent-blogs"
+    "RECENT_BLOGS_API_URL", "https://reflex.dev/blog-api/api/v1/recent-blogs"
 )
 
 

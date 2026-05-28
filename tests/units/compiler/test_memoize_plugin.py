@@ -8,7 +8,13 @@ from types import SimpleNamespace
 from typing import Any, cast
 
 import pytest
-from reflex_base.components.component import Component, field
+from reflex_base.components.component import Component
+from reflex_base.components.component import field as component_field
+from reflex_base.components.memo import (
+    MemoComponent,
+    MemoComponentDefinition,
+    create_passthrough_component_memo,
+)
 from reflex_base.components.memoize_helpers import (
     MemoizationStrategy,
     get_memoization_strategy,
@@ -16,10 +22,11 @@ from reflex_base.components.memoize_helpers import (
 from reflex_base.constants.compiler import MemoizationDisposition, MemoizationMode
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 from reflex_base.vars import VarData
-from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.base import Field, LiteralVar, Var, field
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.base.link import RawLink, ScriptTag
+from reflex_components_core.core.foreach import Foreach
 from reflex_components_core.el.elements.forms import BaseInput, Textarea
 from reflex_components_core.el.elements.inline import Br, Wbr
 from reflex_components_core.el.elements.media import (
@@ -37,15 +44,12 @@ from reflex_components_core.el.elements.metadata import Base, Link, Meta, StyleE
 from reflex_components_core.el.elements.scripts import Noscript, Script
 from reflex_components_core.el.elements.tables import Col
 from reflex_components_core.el.elements.typography import Hr
+from reflex_components_radix.themes.layout.box import Box
 
 import reflex as rx
 import reflex.compiler.plugins.memoize as memoize_plugin
 from reflex.compiler.plugins import DefaultCollectorPlugin, default_page_plugins
 from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin, _should_memoize
-from reflex.experimental.memo import (
-    ExperimentalMemoComponent,
-    create_passthrough_component_memo,
-)
 from reflex.state import BaseState
 
 STATE_VAR = LiteralVar.create("value")._replace(
@@ -62,7 +66,7 @@ class WithProp(Component):
     tag = "WithProp"
     library = "with-prop-lib"
 
-    label: Var[str] = field(default=LiteralVar.create(""))
+    label: Var[str] = component_field(default=LiteralVar.create(""))
 
 
 class LeafComponent(Component):
@@ -71,10 +75,41 @@ class LeafComponent(Component):
     _memoization_mode = MemoizationMode(recursive=False)
 
 
+class ChildrenViaProp(Component):
+    """Stub mirroring ``CodeBlock`` — injects its content as ``children`` prop."""
+
+    tag = "ChildrenViaProp"
+    library = "children-via-prop-lib"
+
+    code: Var[str] = component_field(default=LiteralVar.create(""))
+
+    def _render(self):
+        return super()._render().remove_props("code").add_props(children=self.code)
+
+
+class HookGeneratedProp(Component):
+    """Component whose hook collection fills a prop needed by render output."""
+
+    tag = "HookGeneratedProp"
+    library = "hook-generated-prop-lib"
+
+    label: Var[str] = component_field(default=LiteralVar.create(""))
+    callback: Var[Any] = component_field(default=LiteralVar.create(None))
+
+    def add_hooks(self) -> list[str]:
+        """Add a hook and wire its identifier into a component prop.
+
+        Returns:
+            The hook lines this component contributes.
+        """
+        self.callback = Var(_js_expr="generatedCallback")
+        return ["function generatedCallback(){ return true; }"]
+
+
 class SpecialFormMemoState(BaseState):
-    items: list[str] = ["a"]
-    flag: bool = True
-    value: str = "a"
+    items: Field[list[str]] = field(default_factory=lambda: ["a"])
+    flag: Field[bool] = field(default=True)
+    value: Field[str] = field(default="a")
 
 
 @dataclasses.dataclass(slots=True)
@@ -163,8 +198,8 @@ def test_should_not_memoize_when_disposition_never() -> None:
     assert not _should_memoize(comp)
 
 
-def test_memoize_wrapper_uses_experimental_memo_component_and_call_site() -> None:
-    """Memoizable component imports a generated ``rx._x.memo`` wrapper."""
+def test_memoize_wrapper_uses_memo_component_and_call_site() -> None:
+    """Memoizable component imports a generated ``rx.memo`` wrapper."""
     ctx, page_ctx = _compile_single_page(lambda: Plain.create(STATE_VAR))
 
     assert len(ctx.memoize_wrappers) == 1
@@ -174,6 +209,17 @@ def test_memoize_wrapper_uses_experimental_memo_component_and_call_site() -> Non
     assert f'import {{{wrapper_tag}}} from "$/utils/components/{wrapper_tag}"' in output
     assert f"jsx({wrapper_tag}," in (page_ctx.output_code or "")
     assert f"const {wrapper_tag} = memo" not in output
+
+
+def test_auto_memo_component_renders_after_add_hooks_mutates_props() -> None:
+    """Auto-memo modules render after ``add_hooks`` has filled derived props."""
+    ctx, _page_ctx = _compile_single_page(
+        lambda: HookGeneratedProp.create(label=STATE_VAR)
+    )
+    memo_code = _compile_memo_module_text(ctx)
+
+    assert "function generatedCallback(){ return true; }" in memo_code
+    assert "callback:generatedCallback" in memo_code
 
 
 def test_memoize_wrapper_deduped_across_repeated_subtrees() -> None:
@@ -190,6 +236,50 @@ def test_memoize_wrapper_deduped_across_repeated_subtrees() -> None:
     assert (page_ctx.output_code or "").count(
         f'import {{{wrapper_tag}}} from "$/utils/components/{wrapper_tag}"'
     ) == 1
+
+
+def test_memoize_wrappers_distinct_for_different_on_mount() -> None:
+    """Two components differing only in ``on_mount`` must NOT dedupe.
+
+    ``on_mount`` is excluded from ``_render``'s props, so its handler does not
+    appear in ``component.render()``. The memo wrapper body, however, includes
+    a ``useEffect`` lifecycle hook whose body invokes the ``on_mount`` handler
+    — two distinct handlers produce two distinct memo bodies and must compile
+    to two distinct memo wrappers. Hashing only ``render()`` lets them collide
+    on a single tag, silently dropping one handler's logic.
+    """
+    ctx, _page_ctx = _compile_single_page(
+        lambda: Fragment.create(
+            Plain.create(on_mount=rx.console_log("a")),
+            Plain.create(on_mount=rx.console_log("b")),
+        )
+    )
+    assert len(ctx.memoize_wrappers) == 2, (
+        "Components with different on_mount handlers must produce distinct "
+        f"memo wrappers, got: {list(ctx.memoize_wrappers)}"
+    )
+
+
+def test_memoize_wrappers_dedupe_passthrough_with_different_children() -> None:
+    """Passthrough memos with identical props but different children must dedupe.
+
+    Passthrough memo bodies render a ``{children}`` placeholder rather than
+    the captured child JSX — the actual children flow through at the page-side
+    call site. Two components with identical props but different children
+    therefore generate identical memo body code and must share one wrapper
+    tag. Hashing the rendered children into the tag splits them needlessly,
+    bloating the generated component module with duplicate definitions.
+    """
+    ctx, _page_ctx = _compile_single_page(
+        lambda: Fragment.create(
+            WithProp.create("apple", label=STATE_VAR),
+            WithProp.create("banana", label=STATE_VAR),
+        )
+    )
+    assert len(ctx.memoize_wrappers) == 1, (
+        "Passthrough memos differing only in children must collapse to one "
+        f"wrapper, got: {list(ctx.memoize_wrappers)}"
+    )
 
 
 @pytest.mark.parametrize(
@@ -237,8 +327,7 @@ def test_special_form_memo_wrappers_render_structural_body(
     ctx, page_ctx = _compile_single_page(lambda: rx.box(special_child()))
 
     memo_files, _memo_imports = compile_memo_components(
-        components=(),
-        experimental_memos=tuple(ctx.auto_memo_components.values()),
+        memos=tuple(ctx.auto_memo_components.values()),
     )
     memo_code = "\n".join(code for _, code in memo_files)
 
@@ -251,9 +340,100 @@ def test_special_form_memo_wrappers_render_structural_body(
     assert body_marker not in page_output
 
 
+def test_foreach_snapshot_memo_applies_component_styles() -> None:
+    """Foreach memo bodies must render styled children after preview rendering.
+
+    Regression for reflex-dev/reflex#6512: the auto-memo wrapper previews a
+    Foreach render before the memo body is compiled. If that unstyled preview
+    render stays cached, default styles from components inside the Foreach
+    never reach the generated memo module.
+    """
+    from reflex.compiler.compiler import compile_memo_components
+
+    def accordion() -> Component:
+        return rx.accordion.root(
+            rx.accordion.item(
+                header="Click me",
+                content=rx.text("Content here"),
+            ),
+            type="single",
+            collapsible=True,
+            width="400px",
+        )
+
+    ctx, _page_ctx = _compile_single_page(
+        lambda: rx.vstack(
+            rx.foreach(SpecialFormMemoState.items, lambda _item: accordion()),
+        )
+    )
+
+    memo_files, _memo_imports = compile_memo_components(
+        memos=tuple(ctx.auto_memo_components.values()),
+    )
+    foreach_code = next(
+        code for path, code in memo_files if "/Foreach" in path or "\\Foreach" in path
+    )
+
+    assert '["width"] : "400px"' in foreach_code
+    assert '["borderRadius"] : "var(--radius-4)"' in foreach_code
+    assert '["justifyContent"] : "space-between"' in foreach_code
+
+
+def test_foreach_parent_does_not_absorb_sibling_into_snapshot() -> None:
+    """Foreach owns its own snapshot while the parent stays passthrough.
+
+    Regression for the foreach-parent memoization fix: a parent component
+    holding a Foreach used to be promoted to SNAPSHOT, absorbing any sibling
+    reactive content into the same wide memo body. The parent should now render
+    on the page side, with Foreach and any reactive sibling each getting their
+    own independent wrapper.
+    """
+    ctx, _page_ctx = _compile_single_page(
+        lambda: rx.box(
+            Bare.create(SpecialFormMemoState.items.length()),
+            rx.foreach(
+                SpecialFormMemoState.items,
+                lambda item: rx.text(item),
+            ),
+        )
+    )
+
+    wrapped_definitions = [
+        definition
+        for definition in ctx.auto_memo_components.values()
+        if isinstance(definition, MemoComponentDefinition)
+    ]
+    wrapped_types = {type(definition.component) for definition in wrapped_definitions}
+
+    assert len(wrapped_definitions) == 2
+    assert Box not in wrapped_types
+
+    foreach_definition = next(
+        definition
+        for definition in wrapped_definitions
+        if isinstance(definition.component, Foreach)
+    )
+    assert (
+        get_memoization_strategy(foreach_definition.component)
+        is MemoizationStrategy.SNAPSHOT
+    )
+
+    bare_definition = next(
+        definition
+        for definition in wrapped_definitions
+        if isinstance(definition.component, Bare)
+    )
+    assert (
+        get_memoization_strategy(bare_definition.component)
+        is MemoizationStrategy.PASSTHROUGH
+    )
+    assert bare_definition is not foreach_definition
+
+
 def test_common_memoization_snapshot_helper_classifies_snapshot_cases() -> None:
     """The shared memoization strategy classifies structural render forms."""
     from reflex_components_core.core.cond import Cond
+    from reflex_components_core.core.foreach import Foreach
     from reflex_components_core.core.match import Match
     from reflex_components_core.el.elements.forms import Form, Input
 
@@ -280,7 +460,13 @@ def test_common_memoization_snapshot_helper_classifies_snapshot_cases() -> None:
         ),
     )
 
-    assert get_memoization_strategy(foreach_parent) is MemoizationStrategy.SNAPSHOT
+    # A parent with a structural-memoization child (Foreach) is itself
+    # PASSTHROUGH — the snapshotting is owned by the structural child, which
+    # captures its whole subtree.
+    assert get_memoization_strategy(foreach_parent) is MemoizationStrategy.PASSTHROUGH
+    foreach_child = foreach_parent.children[0]
+    assert isinstance(foreach_child, Foreach)
+    assert get_memoization_strategy(foreach_child) is MemoizationStrategy.SNAPSHOT
     assert get_memoization_strategy(cond_fragment) is MemoizationStrategy.PASSTHROUGH
     # Cond and Match now use passthrough so branch JSX renders on the page side
     # and the memo body just selects via children[i] indexing.
@@ -305,12 +491,27 @@ def test_common_memoization_snapshot_helper_classifies_snapshot_cases() -> None:
 
 def test_generated_memo_component_is_not_itself_memoized() -> None:
     """The generated memo component instance itself is skipped by the heuristic."""
-    wrapper_factory, _definition = create_passthrough_component_memo(
-        "MyTag", Fragment.create()
-    )
+    wrapper_factory, _definition = create_passthrough_component_memo(Fragment.create())
     wrapper = wrapper_factory(Plain.create())
-    assert isinstance(wrapper, ExperimentalMemoComponent)
+    assert isinstance(wrapper, MemoComponent)
     assert not _should_memoize(wrapper)
+
+
+def test_passthrough_memo_skips_hole_for_childless_component() -> None:
+    """Childless components own their JSX output, so the wrapper must not
+    inject a ``{children}`` hole.
+
+    Regression: components like ``CodeBlock`` set ``children`` on their own
+    rendered Tag via ``_render``. Substituting a ``Bare({children})`` hole
+    would emit ``jsx(Inner, {children: "..."}, hole)``, and at call time the
+    undefined hole arg overwrites ``props.children`` under Emotion's jsx
+    semantics — causing every reactive ``rx.code_block`` to render an empty
+    ``<code>`` element.
+    """
+    component = ChildrenViaProp.create(code=STATE_VAR)
+    assert not component.children
+    _wrapper_factory, definition = create_passthrough_component_memo(component)
+    assert definition.passthrough_hole_child is None
 
 
 def test_event_trigger_memoization_not_emit_usecallback_in_page_hooks() -> None:
@@ -338,14 +539,16 @@ def test_event_trigger_memoization_not_emit_usecallback_in_page_hooks() -> None:
 
 def test_generated_memo_component_renders_as_its_exported_tag() -> None:
     """The generated experimental memo component renders as its exported tag."""
-    wrapper_factory, definition = create_passthrough_component_memo(
-        "MyWrapper_abc", Fragment.create()
-    )
+    wrapper_factory, definition = create_passthrough_component_memo(Fragment.create())
     wrapper = wrapper_factory(Plain.create())
-    assert isinstance(wrapper, ExperimentalMemoComponent)
-    assert wrapper.tag == "MyWrapper_abc"
-    assert definition.export_name == "MyWrapper_abc"
-    assert wrapper.render()["name"] == "MyWrapper_abc"
+    assert isinstance(wrapper, MemoComponent)
+    tag = definition.export_name
+    assert tag.startswith("Fragment_"), (
+        f"Expected the wrapped class qualname to be encoded in the tag prefix; "
+        f"got {tag!r}"
+    )
+    assert wrapper.tag == tag
+    assert wrapper.render()["name"] == tag
 
 
 def test_passthrough_memo_definitions_are_not_shared_globally(monkeypatch) -> None:
@@ -359,18 +562,14 @@ def test_passthrough_memo_definitions_are_not_shared_globally(monkeypatch) -> No
     first_component = Plain.create(STATE_VAR)
     second_component = Plain.create(STATE_VAR)
 
-    monkeypatch.setattr(memoize_plugin, "_compute_memo_tag", lambda comp: tag)
     monkeypatch.setattr(
         memoize_plugin,
         "fix_event_triggers_for_memo",
         lambda comp, page_context: comp,
     )
 
-    def fake_create_passthrough_component_memo(
-        export_name: str,
-        component: Component,
-    ):
-        definition = SimpleNamespace(export_name=export_name, component=component)
+    def fake_create_passthrough_component_memo(component: Component):
+        definition = SimpleNamespace(export_name=tag, component=component)
         return (lambda definition=definition: definition), definition
 
     monkeypatch.setattr(
@@ -574,8 +773,7 @@ def test_memoization_leaf_internal_hooks_do_not_leak_into_page() -> None:
         "expected an auto-memo wrapper to be generated for the leaf"
     )
     memo_files, _memo_imports = compile_memo_components(
-        components=(),
-        experimental_memos=tuple(ctx.auto_memo_components.values()),
+        memos=tuple(ctx.auto_memo_components.values()),
     )
     memo_code = "\n".join(code for _, code in memo_files)
     assert "useLeafProbe" in memo_code, (
@@ -818,8 +1016,7 @@ def test_cond_stateful_condition_renders_branch_logic_in_memo_body() -> None:
     )
 
     memo_files, _memo_imports = compile_memo_components(
-        components=(),
-        experimental_memos=tuple(ctx.auto_memo_components.values()),
+        memos=tuple(ctx.auto_memo_components.values()),
     )
     memo_code = "\n".join(code for _, code in memo_files)
 
@@ -916,8 +1113,7 @@ def test_match_stateful_condition_uses_memoized_branch_wrapper_in_memo_body() ->
     )
 
     memo_files, _memo_imports = compile_memo_components(
-        components=(),
-        experimental_memos=tuple(ctx.auto_memo_components.values()),
+        memos=tuple(ctx.auto_memo_components.values()),
     )
     match_memo_code = next(
         code
@@ -1029,8 +1225,7 @@ def test_client_state_setter_in_call_function_event_imports_refs() -> None:
     wrapper_tag = next(iter(ctx.memoize_wrappers))
 
     memo_files, _memo_imports = compile_memo_components(
-        components=(),
-        experimental_memos=tuple(ctx.auto_memo_components.values()),
+        memos=tuple(ctx.auto_memo_components.values()),
     )
     memo_code = next(
         code for path, code in memo_files if Path(path).name == f"{wrapper_tag}.jsx"
@@ -1113,8 +1308,7 @@ def test_debounce_input_memo_renders_react_debounce_wrapper() -> None:
     )
 
     memo_files, _memo_imports = compile_memo_components(
-        components=(),
-        experimental_memos=tuple(ctx.auto_memo_components.values()),
+        memos=tuple(ctx.auto_memo_components.values()),
     )
     memo_code = next(
         code for path, code in memo_files if Path(path).name == f"{wrapper_tag}.jsx"
@@ -1462,8 +1656,7 @@ def _compile_memo_module_text(ctx: CompileContext) -> str:
     from reflex.compiler.compiler import compile_memo_components
 
     memo_files, _imports = compile_memo_components(
-        components=(),
-        experimental_memos=tuple(ctx.auto_memo_components.values()),
+        memos=tuple(ctx.auto_memo_components.values()),
     )
     return "\n".join(code for _, code in memo_files)
 
@@ -1983,8 +2176,7 @@ def test_each_memo_wrapper_emits_one_component_module_file() -> None:
         )
     )
     memo_files, _imports = compile_memo_components(
-        components=(),
-        experimental_memos=tuple(ctx.auto_memo_components.values()),
+        memos=tuple(ctx.auto_memo_components.values()),
     )
     component_module_names = {
         Path(path).name

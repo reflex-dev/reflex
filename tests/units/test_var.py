@@ -313,8 +313,8 @@ def test_basic_operations(TestObj):
     assert str(LiteralNumberVar.create(1) // 2) == "Math.floor(1 / 2)"
     assert str(LiteralNumberVar.create(1) % 2) == "(1 % 2)"
     assert str(LiteralNumberVar.create(1) ** 2) == "(1 ** 2)"
-    assert str(LiteralNumberVar.create(1) & v(2)) == "(1 && 2)"
-    assert str(LiteralNumberVar.create(1) | v(2)) == "(1 || 2)"
+    assert str(LiteralNumberVar.create(1) & v(2)) == "pyAnd(1, () => (2))"
+    assert str(LiteralNumberVar.create(1) | v(2)) == "pyOr(1, () => (2))"
     assert str(LiteralArrayVar.create([1, 2, 3])[0]) == "[1, 2, 3]?.at?.(0)"
     assert (
         str(LiteralObjectVar.create({"a": 1, "b": 2})["a"])
@@ -955,6 +955,18 @@ def test_function_var():
     )
     assert str(explicit_return_func.call(1, 2)) == "(((a, b) => {return a + b})(1, 2))"
 
+    # Test rest argument alone (no positional args) does not emit a leading comma.
+    rest_only_func = ArgsFunctionOperation.create(
+        (), Var(_js_expr="args.length"), rest="args"
+    )
+    assert str(rest_only_func) == "((...args) => args.length)"
+
+    # Test rest argument combined with positional args.
+    rest_with_args_func = ArgsFunctionOperation.create(
+        ("a",), Var(_js_expr="[a, ...args]"), rest="args"
+    )
+    assert str(rest_with_args_func) == "((a, ...args) => [a, ...args])"
+
     unwrapped_arrow_func = FunctionStringVar.create(
         "(...args) => { const f = x => x + 1; return f(args); }"
     )
@@ -1013,7 +1025,7 @@ def test_all_number_operations():
 
     assert (
         str(even_more_complicated_number)
-        == "!(isTrue((Math.abs(Math.floor(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))) || (2 && Math.round(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))))))"
+        == "!(isTrue(pyOr(Math.abs(Math.floor(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))), () => (pyAnd(2, () => (Math.round(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))))))))"
     )
 
     assert str(LiteralNumberVar.create(5) > False) == "(5 > 0)"

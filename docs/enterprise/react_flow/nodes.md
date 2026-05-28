@@ -201,7 +201,9 @@ class CustomNodeState(rx.State):
 
 
 @rx.memo
-def color_selector_node(data: rx.Var[dict], isConnectable: rx.Var[bool]):
+def color_selector_node(
+    data: rx.Var[dict], isConnectable: rx.Var[bool]
+) -> rx.Component:
     data = data.to(dict)
     return rx.el.div(
         rxe.flow.handle(

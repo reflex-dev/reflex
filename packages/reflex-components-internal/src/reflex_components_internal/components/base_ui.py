@@ -5,7 +5,7 @@
 from reflex_components_internal.components.component import CoreComponent
 
 PACKAGE_NAME = "@base-ui/react"
-PACKAGE_VERSION = "1.3.0"
+PACKAGE_VERSION = "1.5.0"
 
 
 class BaseUIComponent(CoreComponent):
