@@ -151,11 +151,8 @@ class PackageJson(SimpleNamespace):
         "postcss-import": "16.1.1",
         "@react-router/dev": _react_router_version,
         "@react-router/fs-routes": _react_router_version,
-        "vite": "8.0.12",
+        "vite": "8.0.14",
     }
     OVERRIDES = {
         "cookie": "1.1.1",
-        # Pin es-toolkit to avoid deferred cjs compat shims loading after dependents
-        # reflex-dev/reflex#6561, recharts/recharts#7376, toss/es-toolkit#1740
-        "es-toolkit": "1.46.1",
     }
