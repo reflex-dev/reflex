@@ -89,7 +89,8 @@ def latest_version(
     Args:
         package: The sub-package name, used to strip the ``<package>-v`` prefix.
         tags: Candidate tag names for the package.
-        allow_prerelease: Whether pre-release and dev versions are eligible.
+        allow_prerelease: Whether pre-release versions are eligible (``is_prerelease``
+            already covers dev releases).
 
     Returns:
         The highest eligible version, or None if there are no candidates.
@@ -103,7 +104,7 @@ def latest_version(
             version = Version(tag[len(prefix) :])
         except InvalidVersion:
             continue
-        if not allow_prerelease and (version.is_prerelease or version.is_devrelease):
+        if not allow_prerelease and version.is_prerelease:
             continue
         versions.append(version)
     return max(versions) if versions else None
@@ -123,6 +124,8 @@ def pin_dependencies(text: str, pins: list[tuple[str, str, Version]]) -> str:
         RuntimeError: If a dependency string cannot be located exactly once.
     """
     for name, original, version in pins:
+        # Assumes double-quoted dependency strings, matching how this repo's
+        # pyproject.toml is written; single-quoted TOML strings would not match.
         old = f'"{original}"'
         new = f'"{name} == {version}"'
         count = text.count(old)
@@ -149,7 +152,7 @@ def main(argv: list[str]) -> int:
         print("Error: VERSION environment variable is required", file=sys.stderr)  # noqa: T201
         return 1
     reflex_version = Version(reflex_version_str)
-    allow_prerelease = reflex_version.is_prerelease or reflex_version.is_devrelease
+    allow_prerelease = reflex_version.is_prerelease
 
     path = Path(argv[1]) if len(argv) > 1 else Path("pyproject.toml")
     text = path.read_text()
