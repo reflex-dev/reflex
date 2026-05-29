@@ -1,5 +1,7 @@
 """Base class for all plugins."""
 
+from __future__ import annotations
+
 from collections.abc import Callable, Sequence
 from enum import Enum
 from pathlib import Path
@@ -59,13 +61,13 @@ class PreCompileContext(CommonContext):
     add_save_task: AddTaskProtocol
     add_modify_task: Callable[[str, Callable[[str], str]], None]
     radix_themes_plugin: Any
-    unevaluated_pages: Sequence["UnevaluatedPage"]
+    unevaluated_pages: Sequence[UnevaluatedPage]
 
 
 class PostCompileContext(CommonContext):
     """Context for post-compile hooks."""
 
-    app: "App"
+    app: App
 
 
 class PostBuildContext(CommonContext):
@@ -191,10 +193,10 @@ class Plugin:
 
     def eval_page(
         self,
-        page_fn: "PageComponent",
+        page_fn: PageComponent,
         /,
         **kwargs: Any,
-    ) -> "PageContext | None":
+    ) -> PageContext | None:
         """Evaluate a page-like object into a page context.
 
         Args:
@@ -208,7 +210,7 @@ class Plugin:
 
     def compile_page(
         self,
-        page_ctx: "PageContext",
+        page_ctx: PageContext,
         /,
         **kwargs: Any,
     ) -> None:
@@ -217,13 +219,13 @@ class Plugin:
 
     def enter_component(
         self,
-        comp: "BaseComponent",
+        comp: BaseComponent,
         /,
         *,
-        page_context: "PageContext",
-        compile_context: "CompileContext",
+        page_context: PageContext,
+        compile_context: CompileContext,
         in_prop_tree: bool = False,
-    ) -> "BaseComponent | ComponentAndChildren | None":
+    ) -> BaseComponent | ComponentAndChildren | None:
         """Inspect or transform a component before visiting its descendants.
 
         Args:
@@ -239,14 +241,14 @@ class Plugin:
 
     def leave_component(
         self,
-        comp: "BaseComponent",
-        children: tuple["BaseComponent", ...],
+        comp: BaseComponent,
+        children: tuple[BaseComponent, ...],
         /,
         *,
-        page_context: "PageContext",
-        compile_context: "CompileContext",
+        page_context: PageContext,
+        compile_context: CompileContext,
         in_prop_tree: bool = False,
-    ) -> "BaseComponent | ComponentAndChildren | None":
+    ) -> BaseComponent | ComponentAndChildren | None:
         """Inspect or transform a component after visiting its descendants.
 
         Args:
