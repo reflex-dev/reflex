@@ -309,11 +309,13 @@ class BaseComponentMeta(FieldBasedMeta, ABCMeta):
 
         # Install each own field as a class-level descriptor so unset instance
         # attributes resolve to their default through ``ComponentField.__get__``
-        # (inherited fields resolve via the MRO). Skip names already bound to a
-        # non-field value so a ``@property`` or literal override keeps winning.
+        # (inherited fields resolve via the MRO). A name bound to a plain value
+        # — a ``@property``, method, or literal default — serves the attribute
+        # itself, so only absent names and field() markers get the descriptor.
         for field_name, field_ in own_fields.items():
-            existing = namespace.get(field_name)
-            if existing is None or isinstance(existing, ComponentField):
+            if field_name not in namespace or isinstance(
+                namespace[field_name], ComponentField
+            ):
                 namespace[field_name] = field_
 
 
