@@ -51,18 +51,57 @@ def collect_var_app_wraps_in_subtree(
         )
 
 
+def _ingest_component_var_app_wraps(
+    wraps_by_key: dict[tuple[int, str], Component],
+    existing: dict[tuple[int, str], Component],
+    component: Component,
+    hooks_internal: dict[str, VarData | None],
+    added_hooks: dict[str, VarData | None],
+) -> None:
+    """Ingest app_wraps from a component's Vars, pre-fetched hooks, and events.
+
+    Scans the component's Vars (props/style/event-trigger args), the VarData on
+    its framework-managed internal hooks and ``add_hooks`` output (e.g.
+    ``Hooks.EVENTS``), and the state/event-loop providers it requires via
+    :meth:`Component._get_event_app_wraps`.
+
+    ``hooks_internal`` and ``added_hooks`` are supplied by the caller rather than
+    re-fetched here so the page collector — which already pulls them to populate
+    ``page_hooks`` — doesn't pay for a second ``_get_hooks_internal`` /
+    ``_get_added_hooks`` (and the latter is uncached). New entries are written
+    into ``wraps_by_key``; entries already in ``existing`` are skipped.
+    """
+    for var in component._get_vars():
+        var_data = var._get_all_var_data()
+        if var_data is None:
+            continue
+        _ingest_var_data_app_wraps(wraps_by_key, existing, var_data)
+    for hook_var_data in hooks_internal.values():
+        if hook_var_data is None:
+            continue
+        _ingest_var_data_app_wraps(wraps_by_key, existing, hook_var_data)
+    for hook, hook_var_data in added_hooks.items():
+        if hook_var_data is None and hook == Hooks.EVENTS:
+            hook_var_data = get_events_hooks_var_data()
+        if hook_var_data is None:
+            continue
+        _ingest_var_data_app_wraps(wraps_by_key, existing, hook_var_data)
+    for key, wrapper in component._get_event_app_wraps().items():
+        if key in existing or key in wraps_by_key:
+            continue
+        wraps_by_key[key] = wrapper
+
+
 def collect_var_app_wraps_for_component(
     page_app_wrap_components: dict[tuple[int, str], Component],
     component: Component,
 ) -> dict[tuple[int, str], Component]:
     """Return Var-declared app_wraps newly contributed by ``component``.
 
-    Scans the component's Vars (props/style/event-trigger args), the
-    VarData attached to its framework-managed internal hooks (e.g.
-    ``Hooks.EVENTS``), and any state/event-loop providers it requires
-    via :meth:`Component._get_event_app_wraps` — so the providers needed
-    for ``addEvents`` dispatch surface even when the page walker only
-    sees a memoization wrapper for the original event-triggering node.
+    Convenience wrapper over :func:`_ingest_component_var_app_wraps` for callers
+    (snapshot-boundary and app-root walks) that don't already have the
+    component's hooks in hand. The page collector fetches the hooks once and
+    calls the underlying helper directly instead.
 
     Entries already in ``page_app_wrap_components`` are skipped, leaving the
     caller to decide how to merge the result and whether to recurse into
@@ -72,29 +111,13 @@ def collect_var_app_wraps_for_component(
         Mapping of ``(priority, name)`` -> wrapper for new entries only.
     """
     wraps_by_key: dict[tuple[int, str], Component] = {}
-    for var in component._get_vars():
-        var_data = var._get_all_var_data()
-        if var_data is None:
-            continue
-        _ingest_var_data_app_wraps(wraps_by_key, page_app_wrap_components, var_data)
-    for hook_var_data in component._get_hooks_internal().values():
-        if hook_var_data is None:
-            continue
-        _ingest_var_data_app_wraps(
-            wraps_by_key, page_app_wrap_components, hook_var_data
-        )
-    for hook, hook_var_data in component._get_added_hooks().items():
-        if hook_var_data is None and hook == Hooks.EVENTS:
-            hook_var_data = get_events_hooks_var_data()
-        if hook_var_data is None:
-            continue
-        _ingest_var_data_app_wraps(
-            wraps_by_key, page_app_wrap_components, hook_var_data
-        )
-    for key, wrapper in component._get_event_app_wraps().items():
-        if key in page_app_wrap_components or key in wraps_by_key:
-            continue
-        wraps_by_key[key] = wrapper
+    _ingest_component_var_app_wraps(
+        wraps_by_key,
+        page_app_wrap_components,
+        component,
+        component._get_hooks_internal(),
+        component._get_added_hooks(),
+    )
     return wraps_by_key
 
 
@@ -303,19 +326,28 @@ class DefaultCollectorPlugin(Plugin):
 
         self._collect_component_custom_code(page_context.module_code, comp)
 
+        # Fetch once and reuse for both page-hook aggregation and the app-wrap
+        # scan; ``_get_added_hooks`` is uncached, so a second call recomputes.
+        hooks_internal = comp._get_hooks_internal()
+        added_hooks = comp._get_added_hooks()
+
         if not in_prop_tree:
-            self._collect_component_hooks(page_context.hooks, comp)
+            self._apply_component_hooks(
+                page_context.hooks, comp, hooks_internal, added_hooks
+            )
 
             if (
                 type(comp)._get_app_wrap_components
                 is not Component._get_app_wrap_components
-            ) or comp.event_triggers:
+            ):
                 self._collect_app_wrap_components(
                     page_context.app_wrap_components,
                     comp,
                 )
 
-        self._collect_var_app_wraps(page_context.app_wrap_components, comp)
+        self._collect_var_app_wraps(
+            page_context.app_wrap_components, comp, hooks_internal, added_hooks
+        )
 
         if (dynamic_import := comp._get_dynamic_imports()) is not None:
             page_context.dynamic_imports.add(dynamic_import)
@@ -363,7 +395,7 @@ class DefaultCollectorPlugin(Plugin):
         refs = page_context.refs
         app_wrap_components = page_context.app_wrap_components
         extend_imports = self._extend_imports
-        collect_component_hooks = self._collect_component_hooks
+        apply_component_hooks = self._apply_component_hooks
         collect_component_custom_code = self._collect_component_custom_code
         collect_app_wrap_components = self._collect_app_wrap_components
         collect_var_app_wraps = self._collect_var_app_wraps
@@ -384,22 +416,25 @@ class DefaultCollectorPlugin(Plugin):
 
             collect_component_custom_code(module_code, comp)
 
+            # Fetch once and reuse for both page-hook aggregation and the
+            # app-wrap scan; ``_get_added_hooks`` is uncached.
+            hooks_internal = comp._get_hooks_internal()
+            added_hooks = comp._get_added_hooks()
+
             if not in_prop_tree:
-                collect_component_hooks(hooks, comp)
+                apply_component_hooks(hooks, comp, hooks_internal, added_hooks)
 
                 app_wrap_method = type(comp)._get_app_wrap_components
-                has_subclass_override = (
-                    app_wrap_method is not base_get_app_wrap_components
-                )
                 if (
-                    has_subclass_override
+                    app_wrap_method is not base_get_app_wrap_components
                     and app_wrap_method not in seen_app_wrap_methods
-                ) or comp.event_triggers:
-                    if has_subclass_override:
-                        seen_app_wrap_methods.add(app_wrap_method)
+                ):
+                    seen_app_wrap_methods.add(app_wrap_method)
                     collect_app_wrap_components(app_wrap_components, comp)
 
-            collect_var_app_wraps(app_wrap_components, comp)
+            collect_var_app_wraps(
+                app_wrap_components, comp, hooks_internal, added_hooks
+            )
 
             dynamic_import = comp._get_dynamic_imports()
             if dynamic_import is not None:
@@ -412,15 +447,22 @@ class DefaultCollectorPlugin(Plugin):
         return leave_component
 
     @staticmethod
-    def _collect_component_hooks(
+    def _apply_component_hooks(
         page_hooks: dict[str, VarData | None],
         component: Component,
+        hooks_internal: dict[str, VarData | None],
+        added_hooks: dict[str, VarData | None],
     ) -> None:
-        """Collect hooks for one structural-tree component in legacy order."""
-        page_hooks.update(component._get_hooks_internal())
+        """Add one structural-tree component's hooks in legacy order.
+
+        ``hooks_internal`` and ``added_hooks`` are passed in (rather than
+        re-fetched) so the same dicts feed both this aggregation and the
+        app-wrap scan.
+        """
+        page_hooks.update(hooks_internal)
         if (user_hooks := component._get_hooks()) is not None:
             page_hooks[user_hooks] = None
-        page_hooks.update(component._get_added_hooks())
+        page_hooks.update(added_hooks)
 
     @staticmethod
     def _extend_imports(
@@ -454,14 +496,12 @@ class DefaultCollectorPlugin(Plugin):
         page_app_wrap_components: dict[tuple[int, str], Component],
         component: Component,
     ) -> None:
-        """Collect app-wrap components for a structural-tree component."""
+        """Collect subclass-declared app-wrap components for a component.
+
+        Var-driven providers (including event-trigger ones) are collected by
+        :meth:`_collect_var_app_wraps`, which visits every component.
+        """
         direct_wrappers = component._get_app_wrap_components()
-        # Event-trigger providers ride alongside subclass-declared wraps so
-        # subclass overrides of ``_get_app_wrap_components`` (e.g. radix
-        # color-mode) don't strip them. ``setdefault`` preserves a wrap a
-        # subclass already declared at the same key.
-        for key, wrapper in component._get_event_app_wraps().items():
-            direct_wrappers.setdefault(key, wrapper)
         if not direct_wrappers:
             return
 
@@ -482,10 +522,22 @@ class DefaultCollectorPlugin(Plugin):
         self,
         page_app_wrap_components: dict[tuple[int, str], Component],
         component: Component,
+        hooks_internal: dict[str, VarData | None],
+        added_hooks: dict[str, VarData | None],
     ) -> None:
-        """Collect app-wrap components declared by VarData on ``component``."""
-        wraps_by_key = collect_var_app_wraps_for_component(
-            page_app_wrap_components, component
+        """Collect app-wrap components declared by VarData on ``component``.
+
+        ``hooks_internal`` and ``added_hooks`` are the dicts already fetched for
+        page-hook aggregation, reused here to avoid a second uncached
+        ``_get_added_hooks`` per component.
+        """
+        wraps_by_key: dict[tuple[int, str], Component] = {}
+        _ingest_component_var_app_wraps(
+            wraps_by_key,
+            page_app_wrap_components,
+            component,
+            hooks_internal,
+            added_hooks,
         )
         if not wraps_by_key:
             return
