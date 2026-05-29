@@ -611,7 +611,7 @@ def test_component_returning_memo_is_transparent_for_child_validation():
 
     @rx.memo
     def transparent(children: rx.Var[rx.Component]) -> rx.Component:
-        return children  # type: ignore[return-value]  # ty:ignore[invalid-return-type]
+        return children  # ty:ignore[invalid-return-type]
 
     wrapped_child = transparent(RestrictedChild.create())
     parent = ValidParent.create(wrapped_child)

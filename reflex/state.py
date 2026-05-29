@@ -2257,7 +2257,7 @@ class State(BaseState):
             from reflex.istate.shared import SharedStateBaseInternal
 
             shared_base = await self.get_state(SharedStateBaseInternal)
-            return await shared_base._resolve_linked_state(state_cls, linked_token)  # type: ignore[return-value]  # ty:ignore[invalid-return-type]
+            return await shared_base._resolve_linked_state(state_cls, linked_token)  # ty:ignore[invalid-return-type]
         return await super()._get_state_from_redis(state_cls)
 
     @event

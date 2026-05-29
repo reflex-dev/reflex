@@ -105,7 +105,7 @@ class StateManager(ABC):
             from reflex.istate.manager.token import BaseStateToken
             from reflex.state import State
 
-            return BaseStateToken.from_legacy_token(token, root_state=State)  # type: ignore[return-value]  # ty:ignore[invalid-return-type]
+            return BaseStateToken.from_legacy_token(token, root_state=State)  # ty:ignore[invalid-return-type]
         return token
 
     @overload
