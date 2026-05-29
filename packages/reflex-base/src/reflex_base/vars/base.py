@@ -368,11 +368,8 @@ class VarData:
         Returns:
             The var with the set state.
         """
-        # Lazy imports: state_context imports VarData from this module.
-        from reflex_base.components.state_context import (
-            EventLoopContextProvider,
-            StateContextProvider,
-        )
+        # Lazy import: state_context imports VarData from this module.
+        from reflex_base.components.state_context import get_event_app_wraps
         from reflex_base.utils import format
 
         state_name = state if isinstance(state, str) else state.get_full_name()
@@ -388,17 +385,9 @@ class VarData:
                 f"$/{constants.Dirs.CONTEXTS_PATH}": [ImportVar(tag="StateContexts")],
                 "react": [ImportVar(tag="useContext")],
             },
-            app_wraps=(
-                # Higher priority wraps further out. ``StateProvider`` must
-                # enclose ``EventLoopProvider`` because the latter reads
-                # ``DispatchContext`` (provided by StateProvider) at its top.
-                # Both must enclose the chain's other wraps so the hooks
-                # AppWrap hosts (e.g. ``useContext(EventLoopContext)``) see
-                # them as React-tree ancestors. The compiler dedupes by
-                # ``(priority, tag)`` so fresh per-call instances are fine.
-                (100, StateContextProvider.create()),
-                (90, EventLoopContextProvider.create()),
-            ),
+            # State Vars read ``StateContexts``/``EventLoopContext``, so the
+            # providers must enclose every component that uses them.
+            app_wraps=get_event_app_wraps(),
         )
 
 

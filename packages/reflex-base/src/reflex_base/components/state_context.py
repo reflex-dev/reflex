@@ -29,22 +29,31 @@ class EventLoopContextProvider(Component):
     tag = "EventLoopProvider"
 
 
+_event_app_wraps: tuple[tuple[int, Component], ...] | None = None
+
+
 def get_event_app_wraps() -> tuple[tuple[int, Component], ...]:
     """Return state/event-loop providers required when events are dispatched.
 
-    ``StateProvider`` (100) wraps further out than ``EventLoopProvider``
-    (90) because the latter reads ``DispatchContext`` from the former.
-    Providers are constructed fresh per call — module-level caching
-    breaks because ``copy.deepcopy`` (used when assembling the app-root
-    chain) carries ``_cached_render_result`` across compile runs.
+    ``StateProvider`` (100) wraps further out than ``EventLoopProvider`` (90)
+    because the latter reads ``DispatchContext`` from the former.
+
+    The two providers are created once and shared: they are immutable markers
+    deduped by ``(priority, tag)``, and every consumer (``App._app_root``)
+    deep-copies them before rebinding children, so the shared instances are
+    never mutated in place. Sharing also lets the page-tree deepcopy and the
+    render-hash memoize them instead of paying per state Var.
 
     Returns:
         ``(priority, provider)`` entries deduped by the compiler.
     """
-    return (
-        (100, StateContextProvider.create()),
-        (90, EventLoopContextProvider.create()),
-    )
+    global _event_app_wraps
+    if _event_app_wraps is None:
+        _event_app_wraps = (
+            (100, StateContextProvider.create()),
+            (90, EventLoopContextProvider.create()),
+        )
+    return _event_app_wraps
 
 
 def get_events_hooks_var_data() -> VarData:
