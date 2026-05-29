@@ -327,7 +327,7 @@ def test_get_var_value_with_import_from():
     async def get_state_import_from(self: DependencyTestState):
         from tests.units.states.mutation import MutableTestState
 
-        return await self.get_var_value(MutableTestState.hashmap)  # pyright: ignore[reportArgumentType]
+        return await self.get_var_value(MutableTestState.hashmap)  # ty:ignore[invalid-argument-type]
 
     from tests.units.states.mutation import MutableTestState
 

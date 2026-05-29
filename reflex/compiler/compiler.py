@@ -29,7 +29,7 @@ from reflex_base.environment import environment
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
 from reflex_base.style import SYSTEM_COLOR_MODE
 from reflex_base.utils.exceptions import ReflexError
-from reflex_base.utils.format import to_title_case
+from reflex_base.utils.format import callable_name, to_title_case
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_components_core.base.app_wrap import AppWrap
@@ -727,9 +727,10 @@ def readable_name_from_component(
             module = getmodule(component)
             if module is not None:
                 module_name = module.__name__
+        name = callable_name(component)
         if module_name is not None:
-            return f"{module_name}.{component.__name__}"
-        return component.__name__
+            return f"{module_name}.{name}"
+        return name
     return None
 
 
@@ -780,7 +781,7 @@ def into_component(component: Component | ComponentCallable) -> Component:
         raise TypeError(msg)
 
     try:
-        component_called = component()
+        component_called = component()  # ty:ignore[call-top-callable]
     except KeyError as e:
         if isinstance(e, ReflexError):
             _modify_exception(e)
@@ -858,23 +859,17 @@ def compile_unevaluated_page(
 
         component = Fragment.create(component)
 
-        meta_args = {
-            "title": (
+        # Add meta information to the component.
+        utils.add_meta(
+            component,
+            title=(
                 page.title
                 if page.title is not None
                 else make_default_page_title(get_config().app_name, route)
             ),
-            "image": page.image,
-            "meta": page.meta,
-        }
-
-        if page.description is not None:
-            meta_args["description"] = page.description
-
-        # Add meta information to the component.
-        utils.add_meta(
-            component,
-            **meta_args,
+            image=page.image,
+            meta=page.meta,
+            description=page.description,
         )
 
     except Exception as e:

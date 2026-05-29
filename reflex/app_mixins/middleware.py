@@ -49,7 +49,7 @@ class MiddlewareMixin(AppMixin):
             An optional state to return.
         """
         for middleware in self._middlewares:
-            out = middleware.preprocess(app=self, state=state, event=event)  # pyright: ignore [reportArgumentType]
+            out = middleware.preprocess(app=self, state=state, event=event)  # ty:ignore[invalid-argument-type]
             if inspect.isawaitable(out):
                 out = await out
             if out is not None:
@@ -75,11 +75,11 @@ class MiddlewareMixin(AppMixin):
         out = update
         for middleware in self._middlewares:
             out = middleware.postprocess(
-                app=self,  # pyright: ignore [reportArgumentType]
+                app=self,  # ty:ignore[invalid-argument-type]
                 state=state,
                 event=event,
                 update=update,
             )
             if inspect.isawaitable(out):
                 out = await out
-        return out  # pyright: ignore[reportReturnType]
+        return out

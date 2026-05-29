@@ -167,7 +167,7 @@ def UploadFile():
             ),
             rx.button(
                 "Upload",
-                on_click=lambda: UploadState.handle_upload(rx.upload_files()),  # pyright: ignore [reportArgumentType]
+                on_click=lambda: UploadState.handle_upload(rx.upload_files()),
                 id="upload_button",
             ),
             rx.box(
@@ -193,7 +193,7 @@ def UploadFile():
             rx.button(
                 "Upload",
                 on_click=UploadState.handle_upload_secondary(
-                    rx.upload_files(  # pyright: ignore [reportArgumentType]
+                    rx.upload_files(
                         upload_id="secondary",
                         on_upload_progress=UploadState.upload_progress,
                     ),
@@ -235,7 +235,7 @@ def UploadFile():
             rx.button(
                 "Upload",
                 on_click=UploadState.handle_upload_tertiary(
-                    rx.upload_files(  # pyright: ignore [reportArgumentType]
+                    rx.upload_files(
                         upload_id="tertiary",
                     ),
                 ),
@@ -257,7 +257,7 @@ def UploadFile():
                     rx.text("Drag and drop files here or click to select files"),
                 ),
                 on_drop=UploadState.handle_upload_quaternary(
-                    rx.upload_files(  # pyright: ignore [reportArgumentType]
+                    rx.upload_files(
                         upload_id="quaternary",
                     ),
                 ),
@@ -278,7 +278,7 @@ def UploadFile():
             rx.button(
                 "Upload",
                 on_click=UploadState.handle_upload_stream(
-                    rx.upload_files_chunk(  # pyright: ignore [reportArgumentType]
+                    rx.upload_files_chunk(
                         upload_id="streaming",
                         on_upload_progress=UploadState.stream_upload_progress,
                     )

@@ -1169,7 +1169,7 @@ def test_type_chains():
         == '(Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }) ?? {})?.at?.(1)?.at?.(1) - 1)'
     )
     assert (
-        str(object_var["c"] + object_var["b"])  # pyright: ignore [reportCallIssue, reportOperatorIssue]
+        str(object_var["c"] + object_var["b"])
         == '(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })?.["c"] + ({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })?.["b"])'
     )
 
@@ -1179,7 +1179,7 @@ def test_nested_dict():
 
     assert (
         str(arr[0]["bar"][0])
-        == '[({ ["bar"] : ["foo", "bar"] })]?.at?.(0)?.["bar"]?.at?.(0)'  # pyright: ignore [reportIndexIssue]
+        == '[({ ["bar"] : ["foo", "bar"] })]?.at?.(0)?.["bar"]?.at?.(0)'
     )
 
 
@@ -1376,7 +1376,7 @@ def test_unsupported_types_for_contains(var: Var):
         var: The base var.
     """
     with pytest.raises(TypeError) as err:
-        assert var.contains(1)  # pyright: ignore [reportAttributeAccessIssue]
+        assert var.contains(1)  # ty:ignore[unresolved-attribute]
     assert (
         err.value.args[0]
         == f"Var of type {var._var_type} does not support contains check."
@@ -1406,7 +1406,7 @@ def test_unsupported_types_for_string_contains(other):
 
 def test_unsupported_default_contains():
     with pytest.raises(TypeError) as err:
-        assert 1 in Var(_js_expr="var", _var_type=str).guess_type()  # pyright: ignore [reportOperatorIssue]
+        assert 1 in Var(_js_expr="var", _var_type=str).guess_type()
     assert (
         err.value.args[0]
         == "'in' operator not supported for Var types, use Var.contains() instead."

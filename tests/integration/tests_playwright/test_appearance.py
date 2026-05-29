@@ -65,7 +65,7 @@ def ColorToggleApp():
                     rx.icon(tag="moon", size=20),
                     value="dark",
                 ),
-                on_change=set_color_mode,  # pyright: ignore[reportArgumentType]
+                on_change=set_color_mode,
                 variant="classic",
                 radius="large",
                 value=color_mode,

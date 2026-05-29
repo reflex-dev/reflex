@@ -8,7 +8,7 @@ from reflex_components_core.core.upload import (
     StyledUpload,
     Upload,
     UploadNamespace,
-    _on_drop_spec,  # pyright: ignore [reportAttributeAccessIssue]
+    _on_drop_spec,
     cancel_upload,
     get_upload_url,
 )
@@ -157,7 +157,7 @@ def test_upload_create():
     up_comp_5 = Upload.create(
         id="foo_id",
         on_drop=StreamingUploadStateTest.chunk_drop_handler(
-            rx.upload_files_chunk(upload_id="foo_id")  # pyright: ignore[reportArgumentType]
+            rx.upload_files_chunk(upload_id="foo_id")
         ),
     )
     assert isinstance(up_comp_5, Upload)
@@ -166,7 +166,7 @@ def test_upload_create():
     up_comp_6 = Upload.create(
         id="foo_id",
         on_drop=StreamingUploadStateTest.chunk_upload_alias_handler(
-            rx.upload_files_chunk(upload_id="foo_id")  # pyright: ignore[reportArgumentType]
+            rx.upload_files_chunk(upload_id="foo_id")
         ),
     )
     assert isinstance(up_comp_6, Upload)
@@ -189,7 +189,7 @@ def test_upload_button_handlers_allow_custom_param_names():
     chunk_button = rx.button(
         "Upload",
         on_click=StreamingUploadStateTest.chunk_upload_alias_handler(
-            rx.upload_files_chunk(upload_id="foo_id")  # pyright: ignore[reportArgumentType]
+            rx.upload_files_chunk(upload_id="foo_id")
         ),
     )
     chunk_chain = cast(EventChain, chunk_button.event_triggers["on_click"])

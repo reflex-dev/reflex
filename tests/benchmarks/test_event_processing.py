@@ -90,7 +90,7 @@ async def event_processing_harness():
             async with processor as p:
                 async for _ in asyncio.as_completed([
                     await p.enqueue(token, event) for _ in range(num_events)
-                ]):
+                ]):  # ty:ignore[not-iterable]
                     pass
             assert len(emitted_deltas) == num_expected_deltas
 

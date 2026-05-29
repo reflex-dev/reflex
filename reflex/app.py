@@ -695,7 +695,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 [self.api_transformer]
                 if not isinstance(self.api_transformer, Sequence)
                 else self.api_transformer
-            )
+            )  # ty:ignore[invalid-assignment]
 
             for api_transformer in api_transformers:
                 if isinstance(api_transformer, Starlette):
@@ -850,7 +850,9 @@ class App(MiddlewareMixin, LifespanMixin):
                 msg = "Route must be set if component is not a callable."
                 raise exceptions.RouteValueError(msg)
             # Format the route.
-            route = format.format_route(format.to_kebab_case(component.__name__))
+            route = format.format_route(
+                format.to_kebab_case(format.callable_name(component))
+            )
         else:
             route = format.format_route(route)
 
@@ -1300,7 +1302,7 @@ class App(MiddlewareMixin, LifespanMixin):
         previous_dirty_vars: dict[str, set[str]] | None = None,
     ) -> contextlib.AbstractAsyncContextManager[BaseState]: ...
 
-    @contextlib.asynccontextmanager
+    @contextlib.asynccontextmanager  # ty:ignore[no-matching-overload]
     async def modify_state(
         self,
         token: BaseStateToken | str,
@@ -1462,7 +1464,7 @@ async def health(_request: Request) -> JSONResponse:
             - "db" (bool or str): Database status - True, False, or "NA".
             - "redis" (bool or str): Redis status - True, False, or "NA".
     """
-    health_status = {"status": True}
+    health_status: dict[str, bool | None] = {"status": True}
     status_code = 200
 
     tasks = []

@@ -2,7 +2,7 @@
 
 import sys
 
-from reflex_base.event import *  # pyright: ignore[reportWildcardImportFromLibrary]
+from reflex_base.event import *
 from reflex_base.event import event
 
-sys.modules[__name__] = event  # pyright: ignore[reportArgumentType]
+sys.modules[__name__] = event  # ty:ignore[invalid-assignment]

@@ -13,6 +13,7 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
+    ClassVar,
     Generic,
     Literal,
     NoReturn,
@@ -42,6 +43,7 @@ from reflex_base.utils.types import (
     GenericType,
     Unset,
     safe_issubclass,
+    set_signature,
     typehint_issubclass,
 )
 from reflex_base.vars import VarData
@@ -118,7 +120,7 @@ class Event:
         for e in events:
             if callable(e) and getattr(e, "__name__", "") == "<lambda>":
                 # A lambda was returned, assume the user wants to call it with no args.
-                e = e()
+                e = e()  # ty:ignore[call-top-callable]
             if isinstance(e, Event):
                 # If the event is already an event, append it to the list.
                 if router_data is not None and e.router_data != router_data:
@@ -406,16 +408,17 @@ class EventHandler(EventActionsMixin):
         return parameters
 
     @classmethod
-    def __class_getitem__(cls, args_spec: str) -> Annotated:
+    def __class_getitem__(cls, args_spec: Callable | Sequence[Callable]) -> Annotated:  # ty:ignore[invalid-type-form]
         """Get a typed EventHandler.
 
         Args:
-            args_spec: The args_spec of the EventHandler.
+            args_spec: The args spec of the EventHandler: a single spec callable
+                or a sequence of them, attached to the resulting ``Annotated``.
 
         Returns:
             The EventHandler class item.
         """
-        return Annotated[cls, args_spec]
+        return Annotated[cls, args_spec]  # ty:ignore[invalid-type-form]
 
     @property
     def is_background(self) -> bool:
@@ -512,7 +515,7 @@ class EventSpec(EventActionsMixin):
         args: The arguments to pass to the function.
     """
 
-    handler: EventHandler = dataclasses.field(default=None)  # pyright: ignore [reportAssignmentType]
+    handler: EventHandler = dataclasses.field(default=None)  # ty:ignore[invalid-assignment]
 
     client_handler_name: str = dataclasses.field(default="")
 
@@ -724,7 +727,7 @@ class EventChain(EventActionsMixin):
                     events.append(v)
                 elif isinstance(v, FunctionVar):
                     # Apply the args_spec transformations as partial arguments to the function.
-                    events.append(v.partial(*parse_args_spec(args_spec)[0]))
+                    events.append(v.partial(*parse_args_spec(args_spec)[0]))  # ty:ignore[no-matching-overload]
                 elif isinstance(v, Callable):
                     # Call the lambda to get the event chain.
                     events.extend(call_event_fn(v, args_spec, key=key))
@@ -989,7 +992,7 @@ class IdentityEventReturn(Generic[T], Protocol):
 
 
 @overload
-def passthrough_event_spec(  # pyright: ignore [reportOverlappingOverload]
+def passthrough_event_spec(
     event_type: type[T], /
 ) -> Callable[[Var[T]], tuple[Var[T]]]: ...
 
@@ -1001,10 +1004,24 @@ def passthrough_event_spec(
 
 
 @overload
+def passthrough_event_spec(
+    event_type: types.UnionType, /
+) -> Callable[[Var[Any]], tuple[Var[Any]]]: ...
+
+
+@overload
+def passthrough_event_spec(
+    event_type_1: types.UnionType | type[T],
+    event_type2: types.UnionType | type[U],
+    /,
+) -> Callable[[Var[Any], Var[Any]], tuple[Var[Any], Var[Any]]]: ...
+
+
+@overload
 def passthrough_event_spec(*event_types: type[T]) -> IdentityEventReturn[T]: ...
 
 
-def passthrough_event_spec(*event_types: type[T]) -> IdentityEventReturn[T]:  # pyright: ignore [reportInconsistentOverload]
+def passthrough_event_spec(*event_types: type[T]) -> IdentityEventReturn[T]:
     """A helper function that returns the input event as output.
 
     Args:
@@ -1017,22 +1034,23 @@ def passthrough_event_spec(*event_types: type[T]) -> IdentityEventReturn[T]:  # 
     def inner(*values: Var[T]) -> tuple[Var[T], ...]:
         return values
 
-    inner_type = tuple(Var[event_type] for event_type in event_types)
-    return_annotation = tuple[inner_type]
+    inner_type = tuple(Var[event_type] for event_type in event_types)  # ty:ignore[invalid-type-form]
+    return_annotation = tuple[inner_type]  # ty:ignore[invalid-type-form]
 
-    inner.__signature__ = inspect.signature(inner).replace(  # pyright: ignore [reportFunctionMemberAccess]
+    new_signature = inspect.signature(inner).replace(
         parameters=[
             inspect.Parameter(
                 f"ev_{i}",
                 kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
-                annotation=Var[event_type],
+                annotation=Var[event_type],  # ty:ignore[invalid-type-form]
             )
             for i, event_type in enumerate(event_types)
         ],
         return_annotation=return_annotation,
     )
+    set_signature(inner, new_signature)
     for i, event_type in enumerate(event_types):
-        inner.__annotations__[f"ev_{i}"] = Var[event_type]
+        inner.__annotations__[f"ev_{i}"] = Var[event_type]  # ty:ignore[invalid-type-form]
     inner.__annotations__["return"] = return_annotation
 
     return inner
@@ -1228,7 +1246,7 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
         return None
 
     fn.__qualname__ = name
-    fn.__signature__ = sig  # pyright: ignore [reportFunctionMemberAccess]
+    set_signature(fn, sig)
     return EventSpec(
         handler=EventHandler(fn=fn),
         args=tuple(
@@ -1947,7 +1965,7 @@ def parse_args_spec(arg_spec: ArgsSpec | Sequence[ArgsSpec]):
     # if there's multiple, the first is the default
     if isinstance(arg_spec, Sequence):
         annotations = [get_type_hints(one_arg_spec) for one_arg_spec in arg_spec]
-        arg_spec = arg_spec[0]
+        arg_spec = arg_spec[0]  # ty:ignore[invalid-assignment]
     else:
         annotations = [get_type_hints(arg_spec)]
 
@@ -1957,11 +1975,11 @@ def parse_args_spec(arg_spec: ArgsSpec | Sequence[ArgsSpec]):
         arg_spec(*[
             Var(f"_{l_arg}").to(
                 unwrap_var_annotation(
-                    resolve_annotation(annotations[0], l_arg, spec=arg_spec)
+                    resolve_annotation(annotations[0], l_arg, spec=arg_spec)  # ty:ignore[invalid-argument-type]
                 )
             )
             for l_arg in spec.args
-        ])
+        ])  # ty:ignore[call-non-callable]
     ), annotations
 
 
@@ -2225,7 +2243,7 @@ def fix_events(
     for e in events:
         if callable(e) and getattr(e, "__name__", "") == "<lambda>":
             # A lambda was returned, assume the user wants to call it with no args.
-            e = e()
+            e = e()  # ty:ignore[call-top-callable]
         if isinstance(e, Event):
             # If the event is already an event, append it to the list.
             out.append(e)
@@ -2285,7 +2303,7 @@ class EventVar(ObjectVar, python_types=(EventSpec, EventHandler)):
 class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
     """A literal event var."""
 
-    _var_value: EventSpec = dataclasses.field(default=None)  # pyright: ignore [reportAssignmentType]
+    _var_value: EventSpec = dataclasses.field(default=None)  # ty:ignore[invalid-assignment]
 
     def __hash__(self) -> int:
         """Get the hash of the var.
@@ -2314,6 +2332,7 @@ class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
             EventFnArgMismatchError: If the event handler takes arguments.
         """
         if isinstance(value, EventHandler):
+            handler = value
 
             def no_args():
                 return ()
@@ -2321,7 +2340,7 @@ class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
             try:
                 value = call_event_handler(value, no_args)
             except EventFnArgMismatchError:
-                msg = f"Event handler {value.fn.__qualname__} used inside of a rx.cond() must not take any arguments."
+                msg = f"Event handler {format.callable_qualname(handler.fn)} used inside of a rx.cond() must not take any arguments."
                 raise EventFnArgMismatchError(msg) from None
 
         return cls(
@@ -2372,7 +2391,7 @@ class EventChainVar(BuilderFunctionVar, python_types=EventChain):
 class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainVar):
     """A literal event chain var."""
 
-    _var_value: EventChain = dataclasses.field(default=None)  # pyright: ignore [reportAssignmentType]
+    _var_value: EventChain = dataclasses.field(default=None)  # ty:ignore[invalid-assignment]
 
     def __hash__(self) -> int:
         """Get the hash of the var.
@@ -2405,7 +2424,7 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
             if isinstance(value.args_spec, Sequence)
             else value.args_spec
         )
-        sig = inspect.signature(arg_spec)  # pyright: ignore [reportArgumentType]
+        sig = inspect.signature(arg_spec)  # ty:ignore[invalid-argument-type]
         arg_vars = ()
         if sig.parameters:
             arg_def = tuple(f"_{p}" for p in sig.parameters)
@@ -2442,7 +2461,7 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
                     LiteralVar.create([LiteralVar.create(event)]),
                     arg_def_expr,
                     _EMPTY_EVENT_ACTIONS,
-                )
+                )  # ty:ignore[no-matching-overload]
             )
             for event in value.events
         ]
@@ -2453,7 +2472,7 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
                     _EMPTY_EVENTS,
                     arg_def_expr,
                     _EMPTY_EVENT_ACTIONS,
-                )
+                )  # ty:ignore[no-matching-overload]
             )
 
         if len(statements) == 1 and not value.event_actions:
@@ -2506,7 +2525,7 @@ class EventCallback(Generic[Unpack[P]], EventActionsMixin):
         Args:
             func: The function to be wrapped.
         """
-        self.func = func
+        self.func = func  # ty:ignore[invalid-assignment]
 
     @overload
     def __call__(
@@ -2542,7 +2561,7 @@ class EventCallback(Generic[Unpack[P]], EventActionsMixin):
         value4: V4 | Var[V4],
     ) -> "EventCallback[Unpack[Q]]": ...
 
-    def __call__(self, *values) -> "EventCallback":  # pyright: ignore [reportInconsistentOverload]
+    def __call__(self, *values) -> "EventCallback":
         """Call the function with the values.
 
         Args:
@@ -2551,7 +2570,7 @@ class EventCallback(Generic[Unpack[P]], EventActionsMixin):
         Returns:
             The function with the values.
         """
-        return self.func(*values)  # pyright: ignore [reportArgumentType]
+        return self.func(*values)
 
     @overload
     def __get__(
@@ -2559,7 +2578,7 @@ class EventCallback(Generic[Unpack[P]], EventActionsMixin):
     ) -> "EventCallback[Unpack[P]]": ...
 
     @overload
-    def __get__(self, instance: Any, owner: Any) -> "Callable[[Unpack[P]]]": ...
+    def __get__(self, instance: Any, owner: Any) -> "Callable[[Unpack[P]], Any]": ...
 
     def __get__(self, instance: Any, owner: Any) -> Callable:
         """Get the function with the instance bound to it.
@@ -2648,6 +2667,12 @@ else:
 
 class EventNamespace:
     """A namespace for event related classes."""
+
+    if TYPE_CHECKING:
+        event: ClassVar["type[EventNamespace]"]
+        __path__: ClassVar[Any]
+        __spec__: ClassVar[Any]
+        __package__: ClassVar[str | None]
 
     # Core Event Classes
     Event = Event
@@ -2819,7 +2844,7 @@ class EventNamespace:
                 types = get_type_hints(func)
                 state_arg_name = next(iter(inspect.signature(func).parameters), None)
                 state_cls = state_arg_name and types.get(state_arg_name)
-                if state_cls and issubclass(state_cls, BaseState):
+                if state_cls and issubclass(state_cls, BaseState):  # ty:ignore[invalid-argument-type]
                     name = (
                         (func.__module__ + "." + qualname)
                         .replace(".", "_")
@@ -2845,7 +2870,7 @@ class EventNamespace:
             event_actions = _build_event_actions()
             if event_actions:
                 setattr(func, EVENT_ACTIONS_MARKER, event_actions)
-            return func  # pyright: ignore [reportReturnType]
+            return func
 
         if func is not None:
             return wrapper(func)
@@ -2899,7 +2924,7 @@ class EventNamespace:
     __file__ = __file__
 
     @property
-    def BaseState(self) -> "type[BaseState]":  # noqa: N802
+    def BaseState(self) -> "type[BaseState]":  # noqa: N802  # ty:ignore[invalid-type-form]
         """Get the BaseState class.
 
         A reference to BaseState is needed for doc generation when resolving
@@ -2915,9 +2940,9 @@ class EventNamespace:
 
 
 event = EventNamespace
-event.event = event  # pyright: ignore[reportAttributeAccessIssue]
+event.event = event
 _this = sys.modules[__name__]
-event.__path__ = _this.__path__  # pyright: ignore[reportAttributeAccessIssue]
-event.__spec__ = _this.__spec__  # pyright: ignore[reportAttributeAccessIssue]
-event.__package__ = _this.__package__  # pyright: ignore[reportAttributeAccessIssue]
-sys.modules[__name__] = event  # pyright: ignore[reportArgumentType]
+event.__path__ = _this.__path__
+event.__spec__ = _this.__spec__
+event.__package__ = _this.__package__
+sys.modules[__name__] = event  # ty:ignore[invalid-assignment]

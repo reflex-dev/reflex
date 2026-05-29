@@ -451,7 +451,7 @@ def get_type_hints_environment(cls: type) -> dict[str, Any]:
     return get_type_hints(cls)
 
 
-class env_var:  # noqa: N801 # pyright: ignore [reportRedeclaration]
+class env_var:  # noqa: N801
     """Descriptor for environment variables."""
 
     name: str
@@ -713,7 +713,7 @@ environment = EnvironmentVariables()
 try:
     from dotenv import load_dotenv
 except ImportError:
-    load_dotenv = None
+    load_dotenv = None  # ty:ignore[invalid-assignment]
 
 
 def _paths_from_env_files(env_files: str) -> list[Path]:

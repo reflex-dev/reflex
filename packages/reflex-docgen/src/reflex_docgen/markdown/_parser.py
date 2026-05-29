@@ -273,9 +273,9 @@ def _convert_block(token: BlockToken) -> Block | None:
                     raise TypeError(msg)
                 item_blocks = _convert_block_children(item_token)
                 items.append(ListItem(children=item_blocks))
-        # List.start is an instance attribute (int | None) but pyright sees
+        # List.start is an instance attribute (int | None) but the type checker sees
         # the classmethod start(cls, line) instead.
-        list_start = cast("int | None", token.start)  # pyright: ignore[reportAttributeAccessIssue]
+        list_start = cast("int | None", token.start)
         return ListBlock(
             ordered=list_start is not None,
             start=list_start,

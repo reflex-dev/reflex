@@ -142,12 +142,12 @@ class DebounceInput(Component):
         )
 
         component = super().create(**props)
-        component._get_style = child._get_style
+        component._get_style = child._get_style  # ty:ignore[invalid-assignment]
         component.event_triggers.update(child.event_triggers)
         component.children = child.children
-        component._rename_props = child._rename_props  # pyright: ignore[reportAttributeAccessIssue]
+        component._rename_props = child._rename_props  # ty:ignore[invalid-attribute-access]
         outer_get_all_custom_code = component._get_all_custom_code
-        component._get_all_custom_code = lambda: (
+        component._get_all_custom_code = lambda: (  # ty:ignore[invalid-assignment]
             outer_get_all_custom_code() | (child._get_all_custom_code())
         )
         return component

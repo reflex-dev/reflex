@@ -275,7 +275,7 @@ def _exclude_paths_from_frame_info() -> list[Path]:
     try:
         import reflex as rx
     except ImportError:
-        rx = None
+        rx = None  # ty:ignore[invalid-assignment]
 
     # Exclude utility modules that should never be the source of deprecated reflex usage.
     exclude_modules: list[ModuleType | None] = [

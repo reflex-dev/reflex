@@ -17,7 +17,7 @@ def test_render_on_submit():
         _var_type=EventChain,
     )
     f = Form.create(on_submit=submit_it)
-    exp_submit_name = f"handleSubmit_{f.handle_submit_unique_name}"  # pyright: ignore [reportAttributeAccessIssue]
+    exp_submit_name = f"handleSubmit_{f.handle_submit_unique_name}"  # ty:ignore[unresolved-attribute]
     assert f"onSubmit:{exp_submit_name}" in f.render()["props"]
 
 

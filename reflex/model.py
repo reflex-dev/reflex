@@ -51,7 +51,7 @@ class _ClassThatErrorsOnInit:
         _print_db_not_available(*args, **kwargs)
 
 
-if find_spec("sqlalchemy"):
+if TYPE_CHECKING or find_spec("sqlalchemy"):
     import sqlalchemy
     import sqlalchemy.exc
     import sqlalchemy.ext.asyncio
@@ -257,14 +257,14 @@ if find_spec("sqlalchemy"):
 
             return metadata
 
-else:
+elif not TYPE_CHECKING:
     get_engine_args = _print_db_not_available
     get_engine = _print_db_not_available
     get_async_engine = _print_db_not_available
     sqla_session = _print_db_not_available
-    ModelRegistry = _ClassThatErrorsOnInit  # pyright: ignore [reportAssignmentType]
+    ModelRegistry = _ClassThatErrorsOnInit
 
-if find_spec("sqlalchemy") and find_spec("alembic"):
+if TYPE_CHECKING or (find_spec("sqlalchemy") and find_spec("alembic")):
     import alembic.autogenerate
     import alembic.command
     import alembic.config
@@ -509,6 +509,7 @@ else:
 if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
     import sqlmodel
     from sqlmodel.ext.asyncio.session import AsyncSession
+    from sqlmodel.main import SQLModelConfig
 
     _AsyncSessionLocal: dict[str | None, sqlalchemy.ext.asyncio.async_sessionmaker] = {}
 
@@ -574,11 +575,11 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
 
         id: int | None = sqlmodel.Field(default=None, primary_key=True)
 
-        model_config = {  # pyright: ignore [reportAssignmentType]
-            "arbitrary_types_allowed": True,
-            "use_enum_values": True,
-            "extra": "allow",
-        }
+        model_config = SQLModelConfig(
+            arbitrary_types_allowed=True,
+            use_enum_values=True,
+            extra="allow",
+        )
 
         def __init_subclass__(cls, **kwargs):
             """Automatically register subclasses as models."""
@@ -713,8 +714,8 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
             )
         return _AsyncSessionLocal[url]()
 
-else:
+elif not TYPE_CHECKING:
     get_db_status = _print_db_not_available
     session = _print_db_not_available
     asession = _print_db_not_available
-    Model = _ClassThatErrorsOnInit  # pyright: ignore [reportAssignmentType]
+    Model = _ClassThatErrorsOnInit

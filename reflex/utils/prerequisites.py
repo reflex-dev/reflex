@@ -328,7 +328,7 @@ def _can_colorize() -> bool:
         try:
             import nt
 
-            if not nt._supports_virtual_terminal():  # pyright: ignore[reportAttributeAccessIssue]
+            if not nt._supports_virtual_terminal():
                 return False
         except (ImportError, AttributeError):
             return False
@@ -370,7 +370,7 @@ def compile_or_validate_app(
 
         try:
             colorize = _can_colorize()
-            traceback.print_exception(e, colorize=colorize)  # pyright: ignore[reportCallIssue]
+            traceback.print_exception(e, colorize=colorize)  # ty:ignore[no-matching-overload]
         except Exception:
             traceback.print_exception(e)
         return False

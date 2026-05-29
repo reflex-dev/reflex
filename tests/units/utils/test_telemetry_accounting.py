@@ -162,7 +162,7 @@ def test_collect_compile_event_payload_shape(mocker: MockerFixture):
     ctx = TelemetryContext(trigger="cli_compile")
 
     payload = telemetry_accounting._collect_compile_event_payload(
-        app,  # pyright: ignore[reportArgumentType]
+        app,
         ctx,
     )
 
@@ -188,7 +188,7 @@ def test_collect_compile_event_payload_with_exception(mocker: MockerFixture):
     ctx.set_exception(RuntimeError("oops"))
 
     payload = telemetry_accounting._collect_compile_event_payload(
-        app,  # pyright: ignore[reportArgumentType]
+        app,
         ctx,
     )
     assert payload["exception"] == {"type": "RuntimeError"}
@@ -221,7 +221,7 @@ def test_memo_wrapper_class_records_wrapped_component_type():
 
     memo_module = importlib.import_module("reflex.experimental.memo")
 
-    wrapper_cls = memo_module._get_memo_component_class(
+    wrapper_cls = memo_module._get_memo_component_class(  # ty:ignore[unresolved-attribute]
         "Button_button_deadbeefcafebabe",
         Button,
     )
@@ -237,7 +237,7 @@ def test_count_components_buckets_memo_wrapper_by_wrapped_type():
         children = ()
 
     counts = telemetry_accounting._count_components(
-        [StubMemoWrapper()],  # pyright: ignore[reportArgumentType]
+        [StubMemoWrapper()],  # ty:ignore[invalid-argument-type]
     )
 
     assert counts == {"Button": 1}
@@ -246,7 +246,7 @@ def test_count_components_buckets_memo_wrapper_by_wrapped_type():
 def test_collect_features_used_emits_every_known_key():
     """All names in ``_KNOWN_FEATURES`` ship in the snapshot, defaulted to 0."""
     features = telemetry_accounting._collect_features_used(
-        _fake_app(),  # pyright: ignore[reportArgumentType]
+        _fake_app(),
         _fake_config(),
         [],
     )
@@ -265,7 +265,7 @@ def test_collect_features_used_walks_state_fields_for_storage():
         plain: int = 0
 
     features = telemetry_accounting._collect_features_used(
-        _fake_app(),  # pyright: ignore[reportArgumentType]
+        _fake_app(),
         _fake_config(),
         [StorageState],
     )
@@ -290,7 +290,7 @@ def test_collect_features_used_storage_not_double_counted_through_inheritance():
         extra: str = Cookie()
 
     features = telemetry_accounting._collect_features_used(
-        _fake_app(),  # pyright: ignore[reportArgumentType]
+        _fake_app(),
         _fake_config(),
         [StorageParent, StorageChild, StorageGrandchild],
     )
@@ -305,7 +305,7 @@ def test_collect_features_used_upload_reads_class_flag(mocker: MockerFixture):
 
     mocker.patch.object(Upload, "is_used", True)
     used = telemetry_accounting._collect_features_used(
-        _fake_app(),  # pyright: ignore[reportArgumentType]
+        _fake_app(),
         _fake_config(),
         [],
     )
@@ -313,7 +313,7 @@ def test_collect_features_used_upload_reads_class_flag(mocker: MockerFixture):
 
     mocker.patch.object(Upload, "is_used", False)
     unused = telemetry_accounting._collect_features_used(
-        _fake_app(),  # pyright: ignore[reportArgumentType]
+        _fake_app(),
         _fake_config(),
         [],
     )
@@ -330,7 +330,7 @@ def test_collect_features_used_counts_shared_state_subclasses():
         y: int = 0
 
     features = telemetry_accounting._collect_features_used(
-        _fake_app(),  # pyright: ignore[reportArgumentType]
+        _fake_app(),
         _fake_config(),
         [SharedOne, SharedTwo],
     )
@@ -348,7 +348,7 @@ def test_collect_features_used_counts_dynamic_routes():
         },
     )
     features = telemetry_accounting._collect_features_used(
-        app,  # pyright: ignore[reportArgumentType]
+        app,
         _fake_config(),
         [],
     )
@@ -368,7 +368,7 @@ def test_collect_features_used_counts_user_lifespan_tasks():
 
     app = _fake_app(_lifespan_tasks={user_task: None, reflex_internal_task: None})
     features = telemetry_accounting._collect_features_used(
-        app,  # pyright: ignore[reportArgumentType]
+        app,
         _fake_config(),
         [],
     )
@@ -384,7 +384,7 @@ def test_collect_features_used_counts_registered_db_models(mocker: MockerFixture
     mocker.patch.object(telemetry_accounting, "ModelRegistry", fake_registry)
 
     features = telemetry_accounting._collect_features_used(
-        _fake_app(),  # pyright: ignore[reportArgumentType]
+        _fake_app(),
         _fake_config(),
         [],
     )
@@ -394,7 +394,7 @@ def test_collect_features_used_counts_registered_db_models(mocker: MockerFixture
 def test_collect_features_used_records_state_manager_mode():
     """The configured state-manager mode lights up exactly one boolean key."""
     features = telemetry_accounting._collect_features_used(
-        _fake_app(),  # pyright: ignore[reportArgumentType]
+        _fake_app(),
         _fake_config(state_manager_mode=SimpleNamespace(value="redis")),
         [],
     )
@@ -406,7 +406,7 @@ def test_collect_features_used_records_state_manager_mode():
 def test_collect_features_used_records_cors_customized():
     """A non-default ``cors_allowed_origins`` sets the cors counter to 1."""
     features = telemetry_accounting._collect_features_used(
-        _fake_app(),  # pyright: ignore[reportArgumentType]
+        _fake_app(),
         _fake_config(cors_allowed_origins=("https://example.com",)),
         [],
     )
@@ -416,7 +416,7 @@ def test_collect_features_used_records_cors_customized():
 def test_collect_features_used_default_cors_stays_zero():
     """Default ``("*",)`` origins read as not customized."""
     features = telemetry_accounting._collect_features_used(
-        _fake_app(),  # pyright: ignore[reportArgumentType]
+        _fake_app(),
         _fake_config(),
         [],
     )
@@ -436,7 +436,7 @@ def test_collect_features_used_counts_background_handlers():
             """Foreground handler that must not be miscounted."""
 
     features = telemetry_accounting._collect_features_used(
-        _fake_app(),  # pyright: ignore[reportArgumentType]
+        _fake_app(),
         _fake_config(),
         [BgState],
     )

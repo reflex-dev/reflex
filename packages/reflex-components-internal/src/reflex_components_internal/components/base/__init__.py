@@ -11,5 +11,5 @@ _SUBMOD_ATTRS = {
 __getattr__, __dir__, __all__ = lazy_loader.attach(
     __name__,
     submodules=_SUBMODULES,
-    submod_attrs=_SUBMOD_ATTRS,
+    submod_attrs=_SUBMOD_ATTRS,  # ty:ignore[invalid-argument-type]
 )

@@ -315,7 +315,7 @@ def test_field_doc_takes_priority():
             name: From docstring.
         """
 
-        name: str = dataclasses.field(default="x", doc="From field.doc")
+        name: str = dataclasses.field(default="x", doc="From field.doc")  # ty:ignore[no-matching-overload]
 
     doc = generate_class_documentation(_DataclassWithFieldDoc)
     fields_by_name = {f.name: f for f in doc.fields}

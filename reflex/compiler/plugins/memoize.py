@@ -20,7 +20,6 @@ No shared ``stateful_components`` file is produced.
 from __future__ import annotations
 
 import dataclasses
-from typing import Any
 
 from reflex_base.components.component import BaseComponent, Component
 from reflex_base.components.memo import create_passthrough_component_memo
@@ -32,7 +31,7 @@ from reflex_base.components.memoize_helpers import (
     is_snapshot_boundary,
 )
 from reflex_base.constants.compiler import MemoizationDisposition
-from reflex_base.plugins import ComponentAndChildren, PageContext
+from reflex_base.plugins import CompileContext, ComponentAndChildren, PageContext
 from reflex_base.plugins.base import Plugin
 
 
@@ -219,7 +218,7 @@ class MemoizeStatefulPlugin(Plugin):
         /,
         *,
         page_context: PageContext,
-        compile_context: Any,
+        compile_context: CompileContext,
         in_prop_tree: bool = False,
     ) -> BaseComponent | ComponentAndChildren | None:
         """Memoize snapshot-boundary subtrees before descent.
@@ -279,7 +278,7 @@ class MemoizeStatefulPlugin(Plugin):
         /,
         *,
         page_context: PageContext,
-        compile_context: Any,
+        compile_context: CompileContext,
         in_prop_tree: bool = False,
     ) -> BaseComponent | ComponentAndChildren | None:
         """Wrap non-boundary memoizables and pop any suppression this component pushed.
@@ -329,7 +328,7 @@ class MemoizeStatefulPlugin(Plugin):
     def _build_wrapper(
         comp: Component,
         page_context: PageContext,
-        compile_context: Any,
+        compile_context: CompileContext,
     ) -> BaseComponent | None:
         """Return the memo wrapper component for ``comp``, or ``None`` if untagged.
 

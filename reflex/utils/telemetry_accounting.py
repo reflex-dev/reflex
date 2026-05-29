@@ -316,7 +316,7 @@ def _storage_feature_for_field(field: Field) -> FeatureName | None:
     """
     default = field.default
     if isinstance(default, ClientStorageBase):
-        cls: type = type(default)
+        cls: type[ClientStorageBase] = type(default)
     elif isinstance(field.type_, type) and issubclass(field.type_, ClientStorageBase):
         cls = field.type_
     else:
@@ -325,6 +325,8 @@ def _storage_feature_for_field(field: Field) -> FeatureName | None:
     if direct is not None:
         return direct
     for ancestor in cls.__mro__:
+        if not issubclass(ancestor, ClientStorageBase):
+            continue
         feature = _STORAGE_FEATURE.get(ancestor)
         if feature is not None:
             return feature

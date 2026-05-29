@@ -10,6 +10,7 @@ from collections.abc import Callable, Iterator, Mapping, Sequence
 from copy import copy
 from enum import Enum
 from functools import cache, update_wrapper
+from types import FunctionType
 from typing import (
     Annotated,
     Any,
@@ -39,7 +40,7 @@ from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER
 from reflex_base.event import EventChain, EventHandler, no_args_event_spec, run_script
 from reflex_base.utils import console, format
 from reflex_base.utils.imports import ImportVar
-from reflex_base.utils.types import safe_issubclass, typehint_issubclass
+from reflex_base.utils.types import safe_issubclass, set_signature, typehint_issubclass
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.function import (
@@ -147,7 +148,7 @@ class _MemoParamSpec:
 class MemoDefinition:
     """Base metadata for a memo."""
 
-    fn: Callable[..., Any]
+    fn: FunctionType
     python_name: str
     params: tuple[MemoParam, ...]
 
@@ -591,7 +592,7 @@ def _event_handler_placeholder(placeholder_name: str, args_spec: Any) -> Callabl
     def _placeholder(*args: Any) -> Any:
         return run_script(prop_callback.call(*args))
 
-    _placeholder.__signature__ = inspect.signature(primary_spec)  # pyright: ignore[reportFunctionMemberAccess]
+    set_signature(_placeholder, inspect.signature(primary_spec))
     return _placeholder
 
 
@@ -830,7 +831,7 @@ class _MemoCallBinding:
 
 
 def _evaluate_memo_function(
-    fn: Callable[..., Any],
+    fn: FunctionType,
     params: tuple[MemoParam, ...],
 ) -> Any:
     """Evaluate a memo function with placeholder vars.
@@ -908,7 +909,7 @@ def _lift_rest_props(component: Component) -> Component:
 
 
 def _analyze_params(
-    fn: Callable[..., Any],
+    fn: FunctionType,
     *,
     for_component: bool,
     hints: dict[str, Any] | None = None,
@@ -1080,7 +1081,7 @@ def _build_args_function(
 
 
 def _create_component_definition(
-    fn: Callable[..., Any],
+    fn: FunctionType,
     return_annotation: Any,
 ) -> MemoComponentDefinition:
     """Create a definition for a component-returning memo.
@@ -1503,7 +1504,7 @@ def create_passthrough_component_memo(
 
 
 @contextlib.contextmanager
-def _bind_self_reference(fn: Callable[..., Any], wrapper: Any) -> Iterator[None]:
+def _bind_self_reference(fn: FunctionType, wrapper: Any) -> Iterator[None]:
     """Bind ``wrapper`` to ``fn.__name__`` so the body can self-reference.
 
     Python only assigns the decorated name after the decorator returns, but
@@ -1663,7 +1664,7 @@ def _warn_missing_annotations(
 def memo(fn: Callable[..., Component]) -> _MemoComponentWrapper: ...
 @overload
 def memo(fn: Callable[..., Var[_MemoVarT]]) -> _MemoFunctionWrapper: ...
-def memo(fn: Callable[..., Any]) -> _MemoComponentWrapper | _MemoFunctionWrapper:
+def memo(fn: FunctionType) -> _MemoComponentWrapper | _MemoFunctionWrapper:
     """Create a memo from a function.
 
     Args:

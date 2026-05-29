@@ -93,7 +93,7 @@ def serializer(
         # Make sure the type is not already registered.
         registered_fn = SERIALIZERS.get(type_)
         if registered_fn is not None and registered_fn != fn and overwrite is not True:
-            message = f"Overwriting serializer for type {type_} from {registered_fn.__module__}:{registered_fn.__qualname__} to {fn.__module__}:{fn.__qualname__}."
+            message = f"Overwriting serializer for type {type_} from {registered_fn.__module__}:{registered_fn.__qualname__} to {fn.__module__}:{fn.__qualname__}."  # ty:ignore[unresolved-attribute]
             if overwrite is False:
                 raise ValueError(message)
             caller_frame = next(
@@ -494,7 +494,7 @@ with contextlib.suppress(ImportError):
         base64_image = base64.b64encode(image_bytes).decode("utf-8")
         try:
             # Newer method to get the mime type, but does not always work.
-            mime_type = image.get_format_mimetype()  # pyright: ignore [reportAttributeAccessIssue]
+            mime_type = image.get_format_mimetype()  # ty:ignore[unresolved-attribute]
         except AttributeError:
             try:
                 # Fallback method

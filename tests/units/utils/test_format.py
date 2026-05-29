@@ -701,7 +701,7 @@ formatted_router = {
     ("input", "output"),
     [
         (
-            TestState(_reflex_internal_init=True).dict(),  # pyright: ignore [reportCallIssue]
+            TestState(_reflex_internal_init=True).dict(),  # ty:ignore[missing-argument, unknown-argument]
             {
                 TestState.get_full_name(): {
                     "array" + FIELD_MARKER: [1, 2, 3.15],
@@ -735,7 +735,7 @@ formatted_router = {
             },
         ),
         (
-            DateTimeState(_reflex_internal_init=True).dict(),  # pyright: ignore [reportCallIssue]
+            DateTimeState(_reflex_internal_init=True).dict(),  # ty:ignore[unknown-argument]
             {
                 DateTimeState.get_full_name(): {
                     "d" + FIELD_MARKER: "1989-11-09",

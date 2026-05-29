@@ -5,6 +5,7 @@ from __future__ import annotations
 import dataclasses
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
+from typing import final
 
 
 def merge_parsed_imports(
@@ -103,6 +104,7 @@ def collapse_imports(
     }
 
 
+@final
 @dataclasses.dataclass(frozen=True)
 class ImportVar:
     """An import var."""

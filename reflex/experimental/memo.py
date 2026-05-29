@@ -8,4 +8,4 @@ from reflex.experimental import ExperimentalNamespace
 
 ExperimentalNamespace.register_component_warning("memo")
 
-sys.modules[__name__] = memo  # pyright: ignore[reportArgumentType]
+sys.modules[__name__] = memo

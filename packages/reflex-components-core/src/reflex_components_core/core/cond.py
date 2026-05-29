@@ -118,7 +118,7 @@ class Cond(Component):
 
 
 @overload
-def cond(condition: Any, c1: Component, c2: Any, /) -> Component: ...  # pyright: ignore [reportOverlappingOverload]
+def cond(condition: Any, c1: Component, c2: Any, /) -> Component: ...
 
 
 @overload
@@ -126,7 +126,7 @@ def cond(condition: Any, c1: Component, /) -> Component: ...
 
 
 @overload
-def cond(condition: Any, c1: Any, c2: Component, /) -> Component: ...  # pyright: ignore [reportOverlappingOverload]
+def cond(condition: Any, c1: Any, c2: Component, /) -> Component: ...
 
 
 T = TypeVar("T", covariant=True)
@@ -134,15 +134,15 @@ U = TypeVar("U", covariant=True)
 
 
 @overload
-def cond(condition: Any, c1: Var[T], c2: Var[U], /) -> Var[T | U]: ...  # pyright: ignore [reportOverlappingOverload]
+def cond(condition: Any, c1: Var[T], c2: Var[U], /) -> Var[T | U]: ...
 
 
 @overload
-def cond(condition: Any, c1: T, c2: Var[U], /) -> Var[T | U]: ...  # pyright: ignore [reportOverlappingOverload]
+def cond(condition: Any, c1: T, c2: Var[U], /) -> Var[T | U]: ...
 
 
 @overload
-def cond(condition: Any, c1: Var[T], c2: U, /) -> Var[T | U]: ...  # pyright: ignore [reportOverlappingOverload]
+def cond(condition: Any, c1: Var[T], c2: U, /) -> Var[T | U]: ...
 
 
 @overload
@@ -199,7 +199,7 @@ def cond(condition: Any, c1: Any, c2: Any = types.Unset(), /) -> Component | Var
 
 
 @overload
-def color_mode_cond(light: Component, dark: Component | None = None) -> Component: ...  # pyright: ignore [reportOverlappingOverload]
+def color_mode_cond(light: Component, dark: Component | None = None) -> Component: ...
 
 
 @overload

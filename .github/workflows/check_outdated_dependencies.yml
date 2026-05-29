@@ -30,14 +30,14 @@ jobs:
           echo "Outdated:"
           echo "$outdated"
 
-          filtered_outdated=$(echo "$outdated" | grep -vE 'pyright|ruff' || true)
+          filtered_outdated=$(echo "$outdated" | grep -vE 'ty|ruff' || true)
 
           if [ ! -z "$filtered_outdated" ]; then
             echo "Outdated dependencies found:"
             echo "$filtered_outdated"
             exit 1
           else
-            echo "All dependencies are up to date. (pyright and ruff are ignored)"
+            echo "All dependencies are up to date. (ty and ruff are ignored)"
           fi
 
   frontend:

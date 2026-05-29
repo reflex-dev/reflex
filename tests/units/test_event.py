@@ -453,7 +453,7 @@ def test_event_actions_on_state():
     assert isinstance(handler, EventHandler)
     assert not handler.event_actions
 
-    sp_handler = EventActionState.handler.stop_propagation  # pyright: ignore [reportFunctionMemberAccess]
+    sp_handler = EventActionState.handler.stop_propagation  # ty:ignore[unresolved-attribute]
     assert sp_handler.event_actions == {"stopPropagation": True}
     # should NOT affect other references to the handler
     assert not handler.event_actions
@@ -615,7 +615,7 @@ def test_event_decorator_with_event_actions():
     # Test background + event actions work together
     bg_temporal_handler = MyTestState.handle_background_temporal
     assert bg_temporal_handler.event_actions == {"temporal": True}
-    assert hasattr(bg_temporal_handler.fn, BACKGROUND_TASK_MARKER)  # pyright: ignore [reportAttributeAccessIssue]
+    assert hasattr(bg_temporal_handler.fn, BACKGROUND_TASK_MARKER)
 
     # Test no event actions (existing behavior preserved)
     no_actions_handler = MyTestState.handle_no_actions
@@ -690,12 +690,12 @@ def test_event_decorator_backward_compatibility():
     old_handler = MyTestState.handle_old_style
     assert isinstance(old_handler, EventHandler)
     assert old_handler.event_actions == {}
-    assert not hasattr(old_handler.fn, BACKGROUND_TASK_MARKER)  # pyright: ignore [reportAttributeAccessIssue]
+    assert not hasattr(old_handler.fn, BACKGROUND_TASK_MARKER)
 
     # Old background parameter should work unchanged
     bg_handler = MyTestState.handle_old_background
     assert bg_handler.event_actions == {}
-    assert hasattr(bg_handler.fn, BACKGROUND_TASK_MARKER)  # pyright: ignore [reportAttributeAccessIssue]
+    assert hasattr(bg_handler.fn, BACKGROUND_TASK_MARKER)
 
 
 def test_event_var_in_rx_cond():

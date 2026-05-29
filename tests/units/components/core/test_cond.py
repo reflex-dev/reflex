@@ -17,7 +17,7 @@ from reflex.state import BaseState
 @pytest.fixture
 def cond_state(request):
     class CondState(BaseState):
-        value: request.param["value_type"] = request.param["value"]  # pyright: ignore [reportInvalidTypeForm, reportUndefinedVariable] # noqa: F821
+        value: request.param["value_type"] = request.param["value"]  # noqa: F821
 
     return CondState
 
@@ -44,7 +44,7 @@ def test_validate_cond(cond_state: BaseState):
         cond_state: A fixture.
     """
     cond_component = cond(
-        cond_state.value,  # pyright: ignore[reportAttributeAccessIssue]
+        cond_state.value,  # ty:ignore[unresolved-attribute]
         Text.create("cond is True"),
         Text.create("cond is False"),
     )
@@ -52,7 +52,7 @@ def test_validate_cond(cond_state: BaseState):
     assert cond_dict["name"] == "Fragment"
 
     [condition] = cond_dict["children"]
-    assert condition["cond_state"] == str(cond_state.value.bool())  # pyright: ignore[reportAttributeAccessIssue]
+    assert condition["cond_state"] == str(cond_state.value.bool())  # ty:ignore[unresolved-attribute]
 
     # true value
     true_value = condition["true_value"]
@@ -115,12 +115,12 @@ def test_cond_no_else():
     comp = comp.children[0]
     assert isinstance(comp, Cond)
     assert comp.cond._decode() is True
-    assert comp.children[0].render() == Fragment.create(Text.create("hello")).render()  # pyright: ignore [reportOptionalMemberAccess]
+    assert comp.children[0].render() == Fragment.create(Text.create("hello")).render()
     assert comp.children[1] == Fragment.create()
 
     # Props do not support the use of cond without else
     with pytest.raises(ValueError):
-        cond(True, "hello")  # pyright: ignore [reportArgumentType]
+        cond(True, "hello")  # ty:ignore[invalid-argument-type]
 
 
 def test_cond_render_missing_false_child_defaults_to_fragment() -> None:
@@ -163,7 +163,7 @@ def test_cond_computed_var():
 
 
 def test_cond_assert_types() -> None:
-    """Test that pyright infers the correct return types for cond overloads."""
+    """Test that the type checker infers the correct return types for cond overloads."""
     text_comp = Text.create("hello")
     text_comp2 = Text.create("world")
     var_int: Var[int] = LiteralVar.create(1)
@@ -182,22 +182,22 @@ def test_cond_assert_types() -> None:
     _ = assert_type(cond(True, "hello", text_comp), Component)
 
     # T, T -> Var[T]
-    _ = assert_type(cond(True, "hello", "world"), Var[str])
+    _ = assert_type(cond(True, "hello", "world"), Var[str])  # ty:ignore[type-assertion-failure]
 
     # T, U -> Var[T | U]
-    _ = assert_type(cond(True, "hello", 3), Var[str | int])
+    _ = assert_type(cond(True, "hello", 3), Var[str | int])  # ty:ignore[type-assertion-failure]
 
     # T, Var[T] -> Var[T]
-    _ = assert_type(cond(True, "hello", var_str), Var[str])
+    _ = assert_type(cond(True, "hello", var_str), Var[str])  # ty:ignore[type-assertion-failure]
 
     # Var[T], T -> Var[T]
-    _ = assert_type(cond(True, var_str, "world"), Var[str])
+    _ = assert_type(cond(True, var_str, "world"), Var[str])  # ty:ignore[type-assertion-failure]
 
     # T, Var[U] -> Var[T | U]
-    _ = assert_type(cond(True, "hello", var_int), Var[str | int])
+    _ = assert_type(cond(True, "hello", var_int), Var[str | int])  # ty:ignore[type-assertion-failure]
 
     # Var[T], U -> Var[T | U]
-    _ = assert_type(cond(True, var_str, 3), Var[int | Literal["a"]])
+    _ = assert_type(cond(True, var_str, 3), Var[int | Literal["a"]])  # ty:ignore[type-assertion-failure]
 
     # Var[T], Var[U] -> Var[T | U]
     _ = assert_type(cond(True, var_int, var_str), Var[int | Literal["a"]])

@@ -467,9 +467,9 @@ class StateManagerRedis(StateManager):
             return
 
         # Opportunistically reuse existing lock.
-        async with self._get_state_cached(token) as cached_state:
+        async with self._get_state_cached(token) as cached_state:  # ty:ignore[invalid-argument-type]
             if cached_state is not None:
-                yield cached_state
+                yield cached_state  # ty:ignore[invalid-yield]
                 self._notify_next_waiter(self._lock_key(token))
                 return
 
@@ -547,7 +547,7 @@ class StateManagerRedis(StateManager):
         """
         token = self._coerce_token(token)
         while True:
-            async with self._try_modify_state(token, **context) as state_instance:
+            async with self._try_modify_state(token, **context) as state_instance:  # ty:ignore[invalid-argument-type]
                 if state_instance is not None:
                     yield cast(TOKEN_TYPE, state_instance)
                     return
@@ -587,7 +587,8 @@ class StateManagerRedis(StateManager):
                                     raise ValueError  # noqa: TRY301
                             except ValueError:
                                 await self.get_state(
-                                    token, for_state_instance=cached_state
+                                    token,  # ty:ignore[invalid-argument-type]
+                                    for_state_instance=cached_state,
                                 )
                         yield cast(TOKEN_TYPE, cached_state)
                         return
@@ -816,7 +817,7 @@ class StateManagerRedis(StateManager):
             lock_waiter_key_pattern: self._handle_lock_contention,
         }
         async with self.redis.pubsub() as pubsub:
-            await pubsub.psubscribe(**handlers)  # pyright: ignore[reportArgumentType]
+            await pubsub.psubscribe(**handlers)
             self._lock_updates_subscribed.set()
             try:
                 async for _ in pubsub.listen():
@@ -933,7 +934,7 @@ class StateManagerRedis(StateManager):
         res = self.redis.scard(lock_key + b"_waiters")
         if inspect.isawaitable(res):
             res = await res
-        return res
+        return res  # ty:ignore[invalid-return-type]
 
     @contextlib.asynccontextmanager
     async def _request_lock_release(

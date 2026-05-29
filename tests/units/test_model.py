@@ -105,7 +105,7 @@ def test_automigration(
     assert versions.exists()
 
     # initial table
-    class AlembicThing(Model, table=True):  # pyright: ignore [reportRedeclaration]
+    class AlembicThing(Model, table=True):
         t1: str
 
     with get_engine().connect() as connection:
@@ -122,7 +122,7 @@ def test_automigration(
     model_registry.get_metadata().clear()
 
     # Create column t2, mark t1 as optional with default
-    class AlembicThing(Model, table=True):  # pyright: ignore [reportRedeclaration]
+    class AlembicThing(Model, table=True):
         t1: str | None = "default"
         t2: str = "bar"
 
@@ -142,7 +142,7 @@ def test_automigration(
     model_registry.get_metadata().clear()
 
     # Drop column t1
-    class AlembicThing(Model, table=True):  # pyright: ignore [reportRedeclaration]
+    class AlembicThing(Model, table=True):
         t2: str = "bar"
 
     assert migrate(autogenerate=True)
@@ -177,7 +177,7 @@ def test_automigration(
     # drop table (AlembicSecond)
     model_registry.get_metadata().clear()
 
-    class AlembicThing(Model, table=True):  # pyright: ignore [reportRedeclaration]
+    class AlembicThing(Model, table=True):
         t2: str = "bar"
 
     assert migrate(autogenerate=True)

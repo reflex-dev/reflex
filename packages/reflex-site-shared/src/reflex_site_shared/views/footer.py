@@ -55,7 +55,7 @@ def tab_item(mode: str, icon: str) -> rx.Component:
     unactive_cn = " hover:text-secondary-12 text-secondary-11"
     return rx.el.button(
         get_icon(icon, class_name="shrink-0"),
-        on_click=set_color_mode(mode),  # type: ignore[reportArgumentType]
+        on_click=set_color_mode(mode),
         class_name=ui.cn(
             "flex items-center cursor-pointer justify-center rounded-lg transition-colors size-7 outline-none focus:outline-none ",
             rx.cond(mode == color_mode, active_cn, unactive_cn),

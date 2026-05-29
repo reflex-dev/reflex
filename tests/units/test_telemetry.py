@@ -177,7 +177,7 @@ def test_prepare_event_merges_properties(event_defaults):
 
     assert event is not None
     assert event["event"] == "compile"
-    props: dict = event["properties"]  # pyright: ignore[reportAssignmentType]
+    props: dict = event["properties"]  # ty:ignore[invalid-assignment]
     assert props["pages_count"] == 7
     assert props["trigger"] == "initial"
     # Existing default keys are preserved.
@@ -334,5 +334,5 @@ def test_prepare_event_properties_override_kwargs(event_defaults):
     )
 
     assert event is not None
-    props: dict = event["properties"]  # pyright: ignore[reportAssignmentType]
+    props: dict = event["properties"]  # ty:ignore[invalid-assignment]
     assert props["template"] == "from-properties"

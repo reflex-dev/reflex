@@ -365,7 +365,7 @@ def deploy(
 
     if envfile:
         try:
-            from dotenv import dotenv_values  # pyright: ignore[reportMissingImports]
+            from dotenv import dotenv_values
 
             processed_envs = dotenv_values(envfile)
         except ImportError:
@@ -393,7 +393,7 @@ def deploy(
                 False,
                 True,
                 True,
-            )  # pyright: ignore[reportCallIssue]
+            )  # ty:ignore[missing-argument]
         else:
             export_fn(
                 str(temporary_dir_path),
@@ -402,7 +402,7 @@ def deploy(
                 False,
                 True,
                 include_db,
-                True,  # pyright: ignore[reportCallIssue]
+                True,  # ty:ignore[too-many-positional-arguments]
             )
     except Exception as ex:
         console.error(f"Unable to export due to: {ex}")
@@ -414,7 +414,7 @@ def deploy(
     try:
         # Check if the reflex version is >= 0.7.6
         if rx_version <= breaking_version:
-            export_fn(str(temporary_dir_path), server_url, host_url, True, False, True)  # pyright: ignore[reportCallIssue]
+            export_fn(str(temporary_dir_path), server_url, host_url, True, False, True)  # ty:ignore[missing-argument]
         else:
             export_fn(
                 str(temporary_dir_path),
@@ -423,7 +423,7 @@ def deploy(
                 True,
                 False,
                 include_db,
-                True,  # pyright: ignore[reportCallIssue]
+                True,  # ty:ignore[too-many-positional-arguments]
             )
     except ImportError as ie:
         console.error(

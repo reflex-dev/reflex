@@ -318,7 +318,7 @@ def register_doc(virtual_doc: str, comp):
 
 
 # Alias needed by sidebar — the library page route object.
-library_: Route = library  # type: ignore[assignment]
+library_: Route = library
 
 
 # Process all docs via reflex_docgen pipeline.

@@ -71,7 +71,7 @@ def event_log(state_manager_redis: StateManagerRedis) -> list[dict[str, Any]]:
     Returns:
         The redis event log.
     """
-    return state_manager_redis.redis._internals["event_log"]  # pyright: ignore[reportAttributeAccessIssue]
+    return state_manager_redis.redis._internals["event_log"]  # ty:ignore[unresolved-attribute]
 
 
 @pytest.fixture
@@ -87,7 +87,7 @@ def event_log_on_update(state_manager_redis: StateManagerRedis) -> asyncio.Event
     Returns:
         The event that is set when new events are added to the redis event log.
     """
-    return state_manager_redis.redis._internals["event_log_on_update"]  # pyright: ignore[reportAttributeAccessIssue]
+    return state_manager_redis.redis._internals["event_log_on_update"]  # ty:ignore[unresolved-attribute]
 
 
 @pytest.mark.asyncio
@@ -131,13 +131,13 @@ async def test_modify(
 
     # Initial modify should set count to 1
     async with state_manager_redis.modify_state(
-        BaseStateToken(ident=token, cls=root_state)
+        BaseStateToken(ident=token, cls=root_state)  # ty:ignore[invalid-argument-type]
     ) as new_state:
-        new_state.count = 1
+        new_state.count = 1  # ty:ignore[unresolved-attribute]
 
     # Subsequent modify should set count to 2
     async with state_manager_redis.modify_state(
-        BaseStateToken(ident=token, cls=root_state)
+        BaseStateToken(ident=token, cls=root_state)  # ty:ignore[invalid-argument-type]
     ) as new_state:
         assert isinstance(new_state, root_state)
         assert new_state.count == 1
@@ -178,9 +178,9 @@ async def test_modify_oplock(
 
     # Initial modify should set count to 1
     async with state_manager_redis.modify_state(
-        BaseStateToken(ident=token, cls=root_state),
+        BaseStateToken(ident=token, cls=root_state),  # ty:ignore[invalid-argument-type]
     ) as new_state:
-        new_state.count = 1
+        new_state.count = 1  # ty:ignore[unresolved-attribute]
 
     # Initial state manager should be holding a lease
     lease_task_1 = state_manager_redis._local_leases.get(token)
@@ -202,9 +202,9 @@ async def test_modify_oplock(
 
     # The second modify should NOT trigger another redis lock
     async with state_manager_redis.modify_state(
-        BaseStateToken(ident=token, cls=root_state),
+        BaseStateToken(ident=token, cls=root_state),  # ty:ignore[invalid-argument-type]
     ) as new_state:
-        new_state.count = 2
+        new_state.count = 2  # ty:ignore[unresolved-attribute]
         assert state_lock_1.locked()
 
     lock_events_after = len([
@@ -218,9 +218,9 @@ async def test_modify_oplock(
     # Contend the lock from another state manager
     event_log_on_update.clear()
     async with state_manager_2.modify_state(
-        BaseStateToken(ident=token, cls=root_state),
+        BaseStateToken(ident=token, cls=root_state),  # ty:ignore[invalid-argument-type]
     ) as new_state:
-        new_state.count = 3
+        new_state.count = 3  # ty:ignore[unresolved-attribute]
         state_lock_2 = state_manager_2._cached_states_locks.get(token)
         assert state_lock_2 is not None
         assert state_lock_2.locked()
@@ -315,7 +315,7 @@ async def test_oplock_contention_queue(
 
     async def modify_1():
         async with state_manager_redis.modify_state(
-            BaseStateToken(ident=token, cls=root_state),
+            BaseStateToken(ident=token, cls=root_state),  # ty:ignore[invalid-argument-type]
         ) as new_state:
             assert isinstance(new_state, root_state)
             new_state.count += 1
@@ -326,7 +326,7 @@ async def test_oplock_contention_queue(
         await modify_started.wait()
         modify_2_started.set()
         async with state_manager_2.modify_state(
-            BaseStateToken(ident=token, cls=root_state),
+            BaseStateToken(ident=token, cls=root_state),  # ty:ignore[invalid-argument-type]
         ) as new_state:
             assert isinstance(new_state, root_state)
             new_state.count += 1
@@ -336,7 +336,7 @@ async def test_oplock_contention_queue(
         await modify_started.wait()
         modify_2_started.set()
         async with state_manager_2.modify_state(
-            BaseStateToken(ident=token, cls=root_state),
+            BaseStateToken(ident=token, cls=root_state),  # ty:ignore[invalid-argument-type]
         ) as new_state:
             assert isinstance(new_state, root_state)
             new_state.count += 1
@@ -414,7 +414,7 @@ async def test_oplock_contention_no_lease(
 
     async def modify_1():
         async with state_manager_redis.modify_state(
-            BaseStateToken(ident=token, cls=root_state),
+            BaseStateToken(ident=token, cls=root_state),  # ty:ignore[invalid-argument-type]
         ) as new_state:
             assert isinstance(new_state, root_state)
             new_state.count += 1
@@ -425,7 +425,7 @@ async def test_oplock_contention_no_lease(
         await modify_started.wait()
         modify_2_started.set()
         async with state_manager_2.modify_state(
-            BaseStateToken(ident=token, cls=root_state),
+            BaseStateToken(ident=token, cls=root_state),  # ty:ignore[invalid-argument-type]
         ) as new_state:
             assert isinstance(new_state, root_state)
             new_state.count += 1
@@ -435,7 +435,7 @@ async def test_oplock_contention_no_lease(
         await modify_started.wait()
         modify_2_started.set()
         async with state_manager_3.modify_state(
-            BaseStateToken(ident=token, cls=root_state),
+            BaseStateToken(ident=token, cls=root_state),  # ty:ignore[invalid-argument-type]
         ) as new_state:
             assert isinstance(new_state, root_state)
             new_state.count += 1
@@ -514,7 +514,7 @@ async def test_oplock_contention_racers(
     async def modify_1():
         nonlocal lease_1
         async with state_manager_redis.modify_state(
-            BaseStateToken(ident=token, cls=root_state),
+            BaseStateToken(ident=token, cls=root_state),  # ty:ignore[invalid-argument-type]
         ) as new_state:
             lease_1 = await state_manager_redis._get_local_lease(token)
             assert isinstance(new_state, root_state)
@@ -525,7 +525,7 @@ async def test_oplock_contention_racers(
             await asyncio.sleep(racer_delay)
         nonlocal lease_2
         async with state_manager_2.modify_state(
-            BaseStateToken(ident=token, cls=root_state),
+            BaseStateToken(ident=token, cls=root_state),  # ty:ignore[invalid-argument-type]
         ) as new_state:
             lease_2 = await state_manager_2._get_local_lease(token)
             assert isinstance(new_state, root_state)
@@ -574,7 +574,7 @@ async def test_oplock_immediate_cancel(
     task = asyncio.create_task(canceller())
 
     async with state_manager_redis.modify_state(
-        BaseStateToken(ident=token, cls=root_state),
+        BaseStateToken(ident=token, cls=root_state),  # ty:ignore[invalid-argument-type]
     ) as new_state:
         assert await state_manager_redis._get_local_lease(token) is None
         assert isinstance(new_state, root_state)
@@ -602,24 +602,24 @@ async def test_oplock_fetch_substate(
     state_manager_redis._oplock_enabled = True
 
     async with state_manager_redis.modify_state(
-        BaseStateToken(ident=token, cls=SubState1),
+        BaseStateToken(ident=token, cls=SubState1),  # ty:ignore[invalid-argument-type]
     ) as new_state:
-        assert SubState1.get_name() in new_state.substates
-        assert SubState2.get_name() not in new_state.substates
+        assert SubState1.get_name() in new_state.substates  # ty:ignore[unresolved-attribute]
+        assert SubState2.get_name() not in new_state.substates  # ty:ignore[unresolved-attribute]
 
     async with state_manager_redis.modify_state(
-        BaseStateToken(ident=token, cls=SubState2),
+        BaseStateToken(ident=token, cls=SubState2),  # ty:ignore[invalid-argument-type]
     ) as new_state:
         # Both substates should be fetched and cached.
-        assert SubState1.get_name() in new_state.substates
-        assert SubState2.get_name() in new_state.substates
+        assert SubState1.get_name() in new_state.substates  # ty:ignore[unresolved-attribute]
+        assert SubState2.get_name() in new_state.substates  # ty:ignore[unresolved-attribute]
 
     async with state_manager_redis.modify_state(
-        BaseStateToken(ident=token, cls=SubState1),
+        BaseStateToken(ident=token, cls=SubState1),  # ty:ignore[invalid-argument-type]
     ) as new_state:
         # Both substates should be fetched and cached now.
-        assert SubState1.get_name() in new_state.substates
-        assert SubState2.get_name() in new_state.substates
+        assert SubState1.get_name() in new_state.substates  # ty:ignore[unresolved-attribute]
+        assert SubState2.get_name() in new_state.substates  # ty:ignore[unresolved-attribute]
 
     # Should have still only been one lock acquisition.
     lock_events = len([
@@ -677,7 +677,7 @@ async def test_oplock_hold_oplock_after_cancel(
 
     async def modify():
         async with state_manager_redis.modify_state(
-            BaseStateToken(ident=token, cls=root_state),
+            BaseStateToken(ident=token, cls=root_state),  # ty:ignore[invalid-argument-type]
         ) as new_state:
             modify_started.set()
             assert isinstance(new_state, root_state)
@@ -714,7 +714,7 @@ async def test_oplock_hold_oplock_after_cancel(
     # Modify the state again, this should get a new lock and lease
     event_log_on_update.clear()
     async with state_manager_redis.modify_state(
-        BaseStateToken(ident=token, cls=root_state),
+        BaseStateToken(ident=token, cls=root_state),  # ty:ignore[invalid-argument-type]
     ) as new_state:
         assert isinstance(new_state, root_state)
         new_state.count += 1

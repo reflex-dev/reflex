@@ -18,7 +18,7 @@ uv run pytest tests/units --cov --no-cov-on-fail --cov-report=   # unit tests (>
 uv run pytest tests/integration                                  # integration tests (slow)
 uv run ruff check .                                              # lint
 uv run ruff format .                                             # format
-uv run pyright reflex tests                                      # type check
+uv run ty check                                                  # type check
 uv run python scripts/make_pyi.py                                # regenerate .pyi stubs
 uv run pre-commit run --all-files                                # all pre-commit hooks
 ```
@@ -122,7 +122,7 @@ if TYPE_CHECKING:
 Before submitting:
 1. Tests pass with adequate coverage
 2. `uv run ruff check .` and `uv run ruff format .` clean
-3. `uv run pyright reflex tests` passes
+3. `uv run ty check` passes
 4. `pyi_hashes.json` updated if components changed
 5. Documentation updated if user-facing behavior changed
 6. Deprecation warnings added if breaking changes introduced

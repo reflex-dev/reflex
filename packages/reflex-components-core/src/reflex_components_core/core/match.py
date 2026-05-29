@@ -197,16 +197,17 @@ class Match(Component):
             MatchTypeError: If the return types of cases are different.
         """
         first_case_return = match_cases[0][-1]
-        return_type = type(first_case_return)
-
+        return_type: type[Var] | type[BaseComponent]
         if isinstance(first_case_return, BaseComponent):
             return_type = BaseComponent
         elif isinstance(first_case_return, Var):
             return_type = Var
+        else:
+            msg = "Return value must be a var or component"
+            raise MatchTypeError(msg)
 
-        cases = []
         for index, case in enumerate(match_cases):
-            conditions, return_value = case
+            return_value = case[-1]
             if not isinstance(return_value, return_type):
                 msg = (
                     f"Match cases should have the same return types. Case {index} with return "
@@ -214,8 +215,7 @@ class Match(Component):
                     f" of type {type(return_value)!r} is not {return_type}"
                 )
                 raise MatchTypeError(msg)
-            cases.append((conditions, return_value))
-        return cases
+        return match_cases  # ty:ignore[invalid-return-type]
 
     @classmethod
     def _create_match_cond_var_or_component(
@@ -244,7 +244,7 @@ class Match(Component):
                     cond=match_cond_var,
                     match_cases=match_cases,
                     default=default,
-                    children=[case[1] for case in match_cases] + [default],  # pyright: ignore [reportArgumentType]
+                    children=[case[1] for case in match_cases] + [default],  # ty:ignore[invalid-argument-type]
                 )
             )
 

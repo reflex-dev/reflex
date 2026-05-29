@@ -106,7 +106,7 @@ def tailwind_config_js_template(
 
     # Extract destructured imports from plugin dicts only
     imports = [
-        plugin["import"]
+        plugin["import"]  # ty:ignore[invalid-argument-type]
         for plugin in plugins
         if isinstance(plugin, Mapping) and "import" in plugin
     ]
@@ -121,7 +121,7 @@ def tailwind_config_js_template(
     for i, plugin in enumerate(plugins, 1):
         if isinstance(plugin, Mapping) and "call" not in plugin:
             plugin_imports.append(
-                f"import plugin{i} from {json.dumps(plugin['name'])};"
+                f"import plugin{i} from {json.dumps(plugin['name'])};"  # ty:ignore[invalid-argument-type]
             )
         elif not isinstance(plugin, Mapping):
             plugin_imports.append(f"import plugin{i} from {json.dumps(plugin)};")
@@ -139,8 +139,8 @@ def tailwind_config_js_template(
         if isinstance(plugin, Mapping) and "call" in plugin:
             args_part = ""
             if "args" in plugin:
-                args_part = json.dumps(plugin["args"])
-            plugin_list.append(f"{plugin['call']}({args_part})")
+                args_part = json.dumps(plugin["args"])  # ty:ignore[invalid-argument-type, invalid-key]
+            plugin_list.append(f"{plugin['call']}({args_part})")  # ty:ignore[invalid-argument-type, invalid-key]
         else:
             plugin_list.append(f"plugin{i}")
 

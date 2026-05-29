@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Protocol, TypeAlias, TypeVar, c
 from typing_extensions import Self
 
 from reflex_base.components.component import BaseComponent, Component
+from reflex_base.utils.format import callable_name
 from reflex_base.utils.imports import ParsedImportDict, collapse_imports, merge_imports
 from reflex_base.vars import VarData
 
@@ -490,7 +491,7 @@ class CompilerHooks:
                     updated_children = list(children[:index])
                 updated_children.append(compiled_child)
             if updated_children is None:
-                return children if isinstance(children, tuple) else tuple(children)
+                return children if isinstance(children, tuple) else tuple(children)  # ty:ignore[invalid-return-type]
             return tuple(updated_children)
 
         def visit(
@@ -577,7 +578,7 @@ class CompilerHooks:
         if replacement is None:
             return comp, children
         if isinstance(replacement, tuple):
-            return replacement
+            return replacement  # ty:ignore[invalid-return-type]
         return replacement, children
 
 
@@ -807,7 +808,7 @@ class CompileContext(BaseContext):
                 **kwargs,
             )
             if page_ctx is None:
-                page_name = getattr(page_fn, "__name__", repr(page_fn))
+                page_name = callable_name(page_fn)
                 msg = (
                     f"No compiler plugin was able to evaluate page {page.route!r} "
                     f"({page_name})."

@@ -35,7 +35,7 @@ class BaseField(Generic[FIELD_TYPE]):
         # Process type annotation
         type_origin = get_origin(annotated_type) or annotated_type
         if type_origin is Annotated:
-            type_origin = annotated_type.__origin__  # pyright: ignore [reportAttributeAccessIssue]
+            type_origin = annotated_type.__origin__  # ty:ignore[unresolved-attribute]
             # For Annotated types, use the actual type inside the annotation
             self.type_ = annotated_type
         else:
