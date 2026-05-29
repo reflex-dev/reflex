@@ -206,6 +206,84 @@ def test_gcp_deploy_resource_flags_have_defaults(mocker: MockFixture, tmp_path: 
     assert env_overrides["CLOUD_RUN_MIN_INSTANCES"] == "1"
 
 
+def test_gcp_deploy_forwards_service_account(mocker: MockFixture, tmp_path: Path):
+    """--service-account threads through to CLOUD_RUN_SERVICE_ACCOUNT."""
+    run_mock = _patch_environment(mocker)
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "deploy",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--service-account",
+            "my-sa@p.iam.gserviceaccount.com",
+        ],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    env_overrides = run_mock.call_args.kwargs["env_overrides"]
+    assert (
+        env_overrides["CLOUD_RUN_SERVICE_ACCOUNT"] == "my-sa@p.iam.gserviceaccount.com"
+    )
+
+
+def test_gcp_deploy_omits_service_account_when_unset(
+    mocker: MockFixture, tmp_path: Path
+):
+    """Without --service-account, CLOUD_RUN_SERVICE_ACCOUNT is not in env_overrides.
+
+    The deploy script defaults it to empty, so Cloud Run falls back to the
+    project's default compute SA. Leaving the key out of env_overrides (rather
+    than sending an empty string) keeps the dry-run output tidy.
+    """
+    run_mock = _patch_environment(mocker)
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    env_overrides = run_mock.call_args.kwargs["env_overrides"]
+    assert "CLOUD_RUN_SERVICE_ACCOUNT" not in env_overrides
+
+
+def test_gcp_deploy_rejects_empty_service_account(mocker: MockFixture, tmp_path: Path):
+    """An explicit --service-account "" errors instead of silently falling back.
+
+    A common footgun is `--service-account "$VAR"` in CI where VAR is unset; the
+    flag would otherwise resolve to the default compute SA against user intent.
+    """
+    run_mock = _patch_environment(mocker)
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "deploy",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--service-account",
+            "",
+        ],
+        input="y\n",
+    )
+
+    assert result.exit_code == 2
+    run_mock.assert_not_called()
+
+
 def test_gcp_deploy_rejects_negative_min_instances(mocker: MockFixture, tmp_path: Path):
     """--min-instances is IntRange(min=0); negative values fail at the CLI layer."""
     run_mock = _patch_environment(mocker)
