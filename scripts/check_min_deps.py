@@ -19,6 +19,13 @@ Run with ``uv run python scripts/check_min_deps.py [package ...]``. With no argu
 every checkable package is validated.
 """
 
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "tomli; python_version < '3.11'",
+# ]
+# ///
+
 from __future__ import annotations
 
 import argparse
@@ -30,7 +37,10 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 
-import tomllib
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 

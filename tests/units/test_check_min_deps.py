@@ -1,8 +1,17 @@
 """Unit tests for scripts/check_min_deps.py (the minimum-dependency-version checker)."""
 
+import sys
 from pathlib import Path
 
 import pytest
+
+# The script relies on ``tomllib`` (stdlib only on 3.11+); on 3.10 it falls back to the
+# ``tomli`` backport. Skip the whole module when neither is available, so the tests still
+# run on 3.10 whenever ``tomli`` happens to be installed.
+if sys.version_info < (3, 11):
+    pytest.importorskip(
+        "tomli", reason="check_min_deps requires tomli on Python < 3.11"
+    )
 
 from scripts import check_min_deps
 
