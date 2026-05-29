@@ -592,7 +592,7 @@ def _event_handler_placeholder(placeholder_name: str, args_spec: Any) -> Callabl
     def _placeholder(*args: Any) -> Any:
         return run_script(prop_callback.call(*args))
 
-    _placeholder.__signature__ = inspect.signature(primary_spec)  # pyright: ignore[reportFunctionMemberAccess]  # ty:ignore[unresolved-attribute]
+    _placeholder.__signature__ = inspect.signature(primary_spec)  # ty:ignore[unresolved-attribute]
     return _placeholder
 
 

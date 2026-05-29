@@ -5,6 +5,7 @@ from __future__ import annotations
 import dataclasses
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
+from typing import final
 
 
 def merge_parsed_imports(
@@ -50,7 +51,7 @@ def merge_imports(
             if isinstance(fields, (list, tuple, set)):
                 all_imports[lib].extend(
                     ImportVar(field) if isinstance(field, str) else field
-                    for field in fields  # ty:ignore[invalid-argument-type]
+                    for field in fields
                 )
             else:
                 all_imports[lib].append(
@@ -103,6 +104,7 @@ def collapse_imports(
     }
 
 
+@final
 @dataclasses.dataclass(frozen=True)
 class ImportVar:
     """An import var."""
