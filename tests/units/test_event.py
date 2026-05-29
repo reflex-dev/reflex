@@ -868,6 +868,50 @@ def test_event_chain_create_lambda_allows_conditional_mixed_function_and_event()
     assert "addEvents(" in rendered
 
 
+def test_event_chain_mixed_dispatch_reaches_addevents_via_module_import():
+    """The mixed function/event dispatcher must not emit a stale events hook.
+
+    ``Imports.EVENTS`` no longer imports ``EventLoopContext``; the mixed
+    dispatcher reaches the module-level ``addEvents`` instead. Emitting the
+    legacy ``const [addEvents, connectErrors] = useContext(EventLoopContext)``
+    hook here would render a component that throws ``ReferenceError:
+    EventLoopContext is not defined``. State/event-loop providers ride along
+    on ``app_wraps``.
+    """
+
+    class MixedState(BaseState):
+        @event
+        def do_a_thing(self, value: str):
+            pass
+
+    log_after_timeout = make_timeout_logger()
+
+    def return_conditional_mixed(v: Var[Any]) -> Any:
+        return rx.cond(
+            v == "foo",
+            log_after_timeout.partial("Input was foo!"),
+            MixedState.do_a_thing(v.to(str)),
+        )
+
+    chain = EventChain.create(
+        cast(LambdaEventCallback[Any], return_conditional_mixed),
+        args_spec=lambda e: [e],
+    )
+    var_data = LiteralVar.create(chain)._get_all_var_data()
+    assert var_data is not None
+
+    hook_text = "\n".join(str(hook) for hook in var_data.hooks)
+    assert "EventLoopContext" not in hook_text
+
+    imported = {tag.tag for _lib, tags in var_data.imports for tag in tags}
+    assert "addEvents" in imported
+
+    assert {wrapper.tag for _, wrapper in var_data.app_wraps} >= {
+        "StateProvider",
+        "EventLoopProvider",
+    }
+
+
 def test_event_chain_create_lambda_rejects_non_union_callable_var():
     """Plain callable Vars should remain invalid event-lambda return values."""
 

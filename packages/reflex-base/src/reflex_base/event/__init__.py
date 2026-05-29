@@ -29,7 +29,7 @@ from typing_extensions import Self, TypeAliasType, TypedDict, TypeVarTuple, Unpa
 
 from reflex_base import constants
 from reflex_base.components.field import BaseField
-from reflex_base.constants.compiler import CompileVars, Hooks, Imports
+from reflex_base.constants.compiler import CompileVars, Imports
 from reflex_base.utils import format
 from reflex_base.utils.decorator import once
 from reflex_base.utils.exceptions import (
@@ -2098,11 +2098,14 @@ def call_event_fn(
             _js_expr=f'typeof {alias_name} === "function"',
             _var_type=bool,
         )
+        # Lazy import: state_context → component → event (this module).
+        from reflex_base.components.state_context import get_event_app_wraps
+
         add_events = FunctionStringVar.create(
             CompileVars.ADD_EVENTS,
             _var_data=VarData(
                 imports=Imports.EVENTS,
-                hooks={Hooks.EVENTS: None},
+                app_wraps=get_event_app_wraps(),
             ),
         )
         dispatch_expr = ternary_operation(
