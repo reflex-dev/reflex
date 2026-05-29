@@ -1039,9 +1039,9 @@ def test_self_referencing_component_memo():
     assert isinstance(definition, MemoComponentDefinition)
 
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
-    body_source = next(
-        code for path, code in files if path.endswith("RecursiveBox.jsx")
-    )
+    # The memo mirrors to its source module's combined file, so match on
+    # content rather than a per-name path.
+    body_source = "\n".join(code for _, code in files)
     # ``>= 2``: once for the export, once for the recursive foreach call site.
     assert body_source.count("RecursiveBox") >= 2
 
