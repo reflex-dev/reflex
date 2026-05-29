@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import copy
 import dataclasses
 import enum
 import functools
@@ -279,6 +280,15 @@ class BaseComponentMeta(FieldBasedMeta, ABCMeta):
         }
 
 
+_COMPILE_CACHE_ATTRS = (
+    "_cached_render_result",
+    "_vars_cache",
+    "_imports_cache",
+    "_hooks_internal_cache",
+    "_get_component_prop_property",
+)
+
+
 class BaseComponent(metaclass=BaseComponentMeta):
     """The base class for all Reflex components.
 
@@ -349,16 +359,36 @@ class BaseComponent(metaclass=BaseComponentMeta):
         new._clear_compile_caches()
         return new
 
+    def __deepcopy__(self, memo: dict[int, Any]) -> BaseComponent:
+        """Return a deep copy suitable for compile-time mutation.
+
+        Like :meth:`__copy__`, the clone exists for the compiler to mutate
+        (e.g. rebinding ``children`` while assembling the app-wrap chain in
+        ``App._app_root``), so the render-path caches populated on the
+        original are not carried over — otherwise ``render()`` on the mutated
+        clone would return the pre-mutation result. Unlike ``__copy__``,
+        nested mutable containers are deep-copied so the clone is fully
+        independent of the original.
+
+        Args:
+            memo: The deepcopy memo mapping object ids to their copies.
+
+        Returns:
+            A deep-copied instance with compile-time caches dropped.
+        """
+        new = self.__class__.__new__(self.__class__)
+        memo[id(self)] = new
+        new_dict = vars(new)
+        for key, value in vars(self).items():
+            if key in _COMPILE_CACHE_ATTRS:
+                continue
+            new_dict[key] = copy.deepcopy(value, memo)
+        return new
+
     def _clear_compile_caches(self) -> None:
         """Clear cached render/compiler artifacts after compile-time mutation."""
         attrs = cast("dict[str, Any]", vars(self))
-        for attr in (
-            "_cached_render_result",
-            "_vars_cache",
-            "_imports_cache",
-            "_hooks_internal_cache",
-            "_get_component_prop_property",
-        ):
+        for attr in _COMPILE_CACHE_ATTRS:
             attrs.pop(attr, None)
 
     def __eq__(self, value: Any) -> bool:
