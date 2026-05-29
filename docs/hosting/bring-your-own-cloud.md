@@ -1,7 +1,3 @@
-```python exec
-import reflex as rx
-```
-
 # Bring Your Own Cloud
 
 Bring Your Own Cloud (BYOC) lets you deploy Reflex apps to your own **AWS**, **GCP**, or **Azure** account with the same `reflex cloud deploy` command you already use. Everything runs inside your account: the build runs on your cloud's builders, the image is pushed to your internal registry, and the app runs on your cloud's managed runtime. Reflex never holds standing credentials into your account, and nothing about the app or its data leaves your perimeter.
