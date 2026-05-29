@@ -43,6 +43,7 @@ from reflex_base.utils.types import (
     GenericType,
     Unset,
     safe_issubclass,
+    set_signature,
     typehint_issubclass,
 )
 from reflex_base.vars import VarData
@@ -1036,7 +1037,7 @@ def passthrough_event_spec(*event_types: type[T]) -> IdentityEventReturn[T]:
     inner_type = tuple(Var[event_type] for event_type in event_types)  # ty:ignore[invalid-type-form]
     return_annotation = tuple[inner_type]  # ty:ignore[invalid-type-form]
 
-    inner.__signature__ = inspect.signature(inner).replace(  # ty:ignore[unresolved-attribute]
+    new_signature = inspect.signature(inner).replace(
         parameters=[
             inspect.Parameter(
                 f"ev_{i}",
@@ -1047,6 +1048,7 @@ def passthrough_event_spec(*event_types: type[T]) -> IdentityEventReturn[T]:
         ],
         return_annotation=return_annotation,
     )
+    set_signature(inner, new_signature)
     for i, event_type in enumerate(event_types):
         inner.__annotations__[f"ev_{i}"] = Var[event_type]  # ty:ignore[invalid-type-form]
     inner.__annotations__["return"] = return_annotation
@@ -1244,7 +1246,7 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
         return None
 
     fn.__qualname__ = name
-    fn.__signature__ = sig  # ty:ignore[unresolved-attribute]
+    set_signature(fn, sig)
     return EventSpec(
         handler=EventHandler(fn=fn),
         args=tuple(

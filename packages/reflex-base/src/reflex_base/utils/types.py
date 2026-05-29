@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import inspect
 import sys
 import types
 from collections.abc import Callable, Iterable, Mapping, Sequence
@@ -39,6 +40,21 @@ from typing_extensions import override as override
 
 from reflex_base import constants
 from reflex_base.utils import console
+
+
+def set_signature(fn: Any, signature: inspect.Signature) -> None:
+    """Attach an explicit ``__signature__`` to a callable.
+
+    ``__signature__`` is an optional attribute that ``inspect.signature`` reads
+    when present, but it is not part of a function's static type, so it is set
+    here through an ``Any``-typed handle rather than direct attribute access.
+
+    Args:
+        fn: The callable to annotate.
+        signature: The signature to expose for ``fn``.
+    """
+    fn.__signature__ = signature
+
 
 # Potential GenericAlias types for isinstance checks.
 GenericAliasTypes = (_GenericAlias, GenericAlias, _SpecialGenericAlias)

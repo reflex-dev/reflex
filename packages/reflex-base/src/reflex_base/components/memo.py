@@ -40,7 +40,7 @@ from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER
 from reflex_base.event import EventChain, EventHandler, no_args_event_spec, run_script
 from reflex_base.utils import console, format
 from reflex_base.utils.imports import ImportVar
-from reflex_base.utils.types import safe_issubclass, typehint_issubclass
+from reflex_base.utils.types import safe_issubclass, set_signature, typehint_issubclass
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.function import (
@@ -592,7 +592,7 @@ def _event_handler_placeholder(placeholder_name: str, args_spec: Any) -> Callabl
     def _placeholder(*args: Any) -> Any:
         return run_script(prop_callback.call(*args))
 
-    _placeholder.__signature__ = inspect.signature(primary_spec)  # ty:ignore[unresolved-attribute]
+    set_signature(_placeholder, inspect.signature(primary_spec))
     return _placeholder
 
 
