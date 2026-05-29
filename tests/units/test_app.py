@@ -2052,8 +2052,8 @@ module.exports = {
     "postcss-import": {},
     autoprefixer: {},
   },
-	};
-	""",
+};
+""",
     )
     reload_state_module(__name__)
     app = App(theme=None)
