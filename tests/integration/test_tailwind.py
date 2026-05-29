@@ -42,7 +42,9 @@ def TailwindApp(
             id="p-content",
         )
 
-    assets = Path(__file__).resolve().parent.parent / "assets"
+    # Write next to the compiled app (Path.cwd() inside the harness) so reruns
+    # don't end up with a stale __file__ from a previous tmp_path's importlib.reload.
+    assets = Path.cwd() / "assets"
     assets.mkdir(exist_ok=True)
     stylesheet = assets / "test_styles.css"
     stylesheet.write_text(".external { color: rgba(0, 0, 255, 0.5) }")
@@ -121,18 +123,24 @@ def test_tailwind_app(tailwind_app: AppHarness, tailwind_version: bool):
     )
     paragraphs = content.find_elements(By.TAG_NAME, "p")
     assert len(paragraphs) == 3
+    if tailwind_version == 3:
+        expected_colors = TEXT_RED_500_COLOR_v3
+    elif tailwind_version == 4:
+        expected_colors = TEXT_RED_500_COLOR_v4
+    else:
+        expected_colors = None
     for p in paragraphs:
         assert tailwind_app.poll_for_content(p, exp_not_equal="") == PARAGRAPH_TEXT
         assert p.value_of_css_property("font-family") == "monospace"
-        if not tailwind_version:
+        if expected_colors is None:
             # expect default color, not "text-red-500" from tailwind utility class
             assert p.value_of_css_property("color") not in TEXT_RED_500_COLOR_v3
-        elif tailwind_version == 3:
-            # expect "text-red-500" from tailwind utility class
-            assert p.value_of_css_property("color") in TEXT_RED_500_COLOR_v3
-        elif tailwind_version == 4:
-            # expect "text-red-500" from tailwind utility class
-            assert p.value_of_css_property("color") in TEXT_RED_500_COLOR_v4
+        else:
+            # Tailwind's utility class may not have painted yet in dev mode;
+            # poll until the expected color is applied.
+            AppHarness.poll_for_or_raise_timeout(
+                lambda p=p: p.value_of_css_property("color") in expected_colors
+            )
 
     # Assert external stylesheet is applying rules
     external = driver.find_elements(By.CLASS_NAME, "external")

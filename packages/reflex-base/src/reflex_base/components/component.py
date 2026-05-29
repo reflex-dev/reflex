@@ -6,16 +6,14 @@ import contextlib
 import dataclasses
 import enum
 import functools
-import inspect
 import operator
 import typing
 from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import _MISSING_TYPE, MISSING
-from functools import wraps
 from hashlib import md5
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, ClassVar, TypeVar, cast, get_args, get_origin
+from typing import TYPE_CHECKING, Any, ClassVar, TypeVar, cast
 
 from rich.markup import escape
 from typing_extensions import Self, dataclass_transform
@@ -27,35 +25,27 @@ from reflex_base.components.field import BaseField, FieldBasedMeta
 from reflex_base.components.tags import Tag
 from reflex_base.constants import Dirs, EventTriggers, Hooks, Imports, MemoizationMode
 from reflex_base.constants.compiler import SpecialAttributes
-from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER
 from reflex_base.event import (
     EventCallback,
     EventChain,
-    EventHandler,
     EventSpec,
     args_specs_from_fields,
     no_args_event_spec,
-    parse_args_spec,
     pointer_event_spec,
-    run_script,
-    unwrap_var_annotation,
 )
 from reflex_base.style import Style, format_as_emotion
 from reflex_base.utils import console, format, imports, types
 from reflex_base.utils.imports import ImportDict, ImportVar, ParsedImportDict
 from reflex_base.vars import VarData
 from reflex_base.vars.base import (
+    _PY_OR_IMPORT,
     CachedVarOperation,
     LiteralNoneVar,
     LiteralVar,
     Var,
     cached_property_no_lock,
 )
-from reflex_base.vars.function import (
-    ArgsFunctionOperation,
-    FunctionStringVar,
-    FunctionVar,
-)
+from reflex_base.vars.function import ArgsFunctionOperation, FunctionStringVar
 from reflex_base.vars.number import ternary_operation
 from reflex_base.vars.object import ObjectVar
 from reflex_base.vars.sequence import LiteralArrayVar, LiteralStringVar, StringVar
@@ -135,6 +125,35 @@ def field(
         is_javascript=is_javascript_property,
         doc=doc,
     )
+
+
+def _field_values_equal(a: Any, b: Any) -> bool:
+    """Compare two component field values, handling Vars and nested containers.
+
+    Var equality returns a BooleanVar (not a Python bool), and bool-ifying a Var
+    raises VarTypeError. So Vars are compared structurally via ``Var.equals``,
+    and lists/dicts are walked element-wise so a contained Var doesn't trip up
+    the default container ``__eq__``.
+
+    Args:
+        a: First value.
+        b: Second value.
+
+    Returns:
+        Whether the values are structurally equal.
+    """
+    if a is b:
+        return True
+    a_is_var = isinstance(a, Var)
+    if a_is_var or isinstance(b, Var):
+        return a_is_var and isinstance(b, Var) and a.equals(b)
+    if isinstance(a, list) and isinstance(b, list):
+        return len(a) == len(b) and all(
+            _field_values_equal(x, y) for x, y in zip(a, b, strict=False)
+        )
+    if isinstance(a, dict) and isinstance(b, dict):
+        return a.keys() == b.keys() and all(_field_values_equal(a[k], b[k]) for k in a)
+    return a == b
 
 
 @dataclass_transform(kw_only_default=True, field_specifiers=(field,))
@@ -399,8 +418,9 @@ class BaseComponent(metaclass=BaseComponentMeta):
         Returns:
             Whether the component is equal to the value.
         """
-        return type(self) is type(value) and bool(
-            getattr(self, key) == getattr(value, key) for key in self.get_fields()
+        return type(self) is type(value) and all(
+            _field_values_equal(getattr(self, key), getattr(value, key))
+            for key in self.get_fields()
         )
 
     @classmethod
@@ -2060,14 +2080,25 @@ class Component(BaseComponent, ABC):
             else:
                 code[str(hook)] = var_data
 
-        # Add the hook code from add_hooks for each parent class (this is reversed to preserve
-        # the order of the hooks in the final output)
-        for clz in reversed(self._iter_parent_classes_with_method("add_hooks")):
-            for hook in clz.add_hooks(self):
-                if isinstance(hook, Var):
-                    extract_var_hooks(hook)
-                else:
-                    code[hook] = None
+        # ``add_hooks`` may wire compile-time-derived values into props (e.g.
+        # ``DataEditor`` binds a generated callback name into a prop). Lift the
+        # freeze around the calls so those writes land on this instance, matching
+        # the mutate-self protocol these components rely on.
+        was_frozen = self.__dict__.get("_frozen", False)
+        if was_frozen:
+            object.__setattr__(self, "_frozen", False)
+        try:
+            # Add the hook code from add_hooks for each parent class (this is reversed to preserve
+            # the order of the hooks in the final output)
+            for clz in reversed(self._iter_parent_classes_with_method("add_hooks")):
+                for hook in clz.add_hooks(self):
+                    if isinstance(hook, Var):
+                        extract_var_hooks(hook)
+                    else:
+                        code[hook] = None
+        finally:
+            if was_frozen:
+                object.__setattr__(self, "_frozen", True)
 
         return code
 
@@ -2206,314 +2237,6 @@ class Component(BaseComponent, ABC):
         return components
 
 
-class CustomComponent(Component):
-    """A custom user-defined component."""
-
-    # Use the components library.
-    library = f"$/{Dirs.COMPONENTS_PATH}"
-
-    component_fn: Callable[..., Component] = field(
-        doc="The function that creates the component.", default=Component.create
-    )
-
-    props: dict[str, Any] = field(
-        doc="The props of the component.", default_factory=dict
-    )
-
-    def _post_init(self, **kwargs):
-        """Initialize the custom component.
-
-        Args:
-            **kwargs: The kwargs to pass to the component.
-        """
-        component_fn = kwargs.get("component_fn")
-
-        # Set the props.
-        props_types = typing.get_type_hints(component_fn) if component_fn else {}
-        props = {key: value for key, value in kwargs.items() if key in props_types}
-        kwargs = {key: value for key, value in kwargs.items() if key not in props_types}
-
-        event_types = {
-            key
-            for key in props
-            if (
-                (get_origin((annotation := props_types.get(key))) or annotation)
-                == EventHandler
-            )
-        }
-
-        def get_args_spec(key: str) -> types.ArgsSpec | Sequence[types.ArgsSpec]:
-            type_ = props_types[key]
-
-            return (
-                args[0]
-                if (args := get_args(type_))
-                else (
-                    annotation_args[1]
-                    if get_origin(
-                        annotation := inspect.getfullargspec(component_fn).annotations[
-                            key
-                        ]
-                    )
-                    is typing.Annotated
-                    and (annotation_args := get_args(annotation))
-                    else no_args_event_spec
-                )
-            )
-
-        super()._post_init(
-            event_triggers={
-                key: EventChain.create(
-                    value=props[key],
-                    args_spec=get_args_spec(key),
-                    key=key,
-                )
-                for key in event_types
-            },
-            **kwargs,
-        )
-
-        to_camel_cased_props = {
-            format.to_camel_case(key): None for key in props if key not in event_types
-        }
-        self.get_props = lambda: to_camel_cased_props  # pyright: ignore [reportIncompatibleVariableOverride]
-
-        # Unset the style.
-        self.style = Style()
-
-        # Set the tag to the name of the function.
-        self.tag = format.to_title_case(self.component_fn.__name__)
-
-        for key, value in props.items():
-            # Skip kwargs that are not props.
-            if key not in props_types:
-                continue
-
-            camel_cased_key = format.to_camel_case(key)
-
-            # Get the type based on the annotation.
-            type_ = props_types[key]
-
-            # Handle event chains.
-            if type_ is EventHandler:
-                inspect.getfullargspec(component_fn).annotations[key]
-                self.props[camel_cased_key] = EventChain.create(
-                    value=value, args_spec=get_args_spec(key), key=key
-                )
-                continue
-
-            value = LiteralVar.create(value)
-            self.props[camel_cased_key] = value
-            setattr(self, camel_cased_key, value)
-
-    def __eq__(self, other: Any) -> bool:
-        """Check if the component is equal to another.
-
-        Args:
-            other: The other component.
-
-        Returns:
-            Whether the component is equal to the other.
-        """
-        return isinstance(other, CustomComponent) and self.tag == other.tag
-
-    def __hash__(self) -> int:
-        """Get the hash of the component.
-
-        Returns:
-            The hash of the component.
-        """
-        return hash(self.tag)
-
-    @classmethod
-    def get_props(cls) -> Iterable[str]:
-        """Get the props for the component.
-
-        Returns:
-            The set of component props.
-        """
-        return ()
-
-    @staticmethod
-    def _get_event_spec_from_args_spec(name: str, event: EventChain) -> Callable:
-        """Get the event spec from the args spec.
-
-        Args:
-            name: The name of the event
-            event: The args spec.
-
-        Returns:
-            The event spec.
-        """
-
-        def fn(*args):
-            return run_script(Var(name).to(FunctionVar).call(*args))
-
-        if event.args_spec:
-            arg_spec = (
-                event.args_spec
-                if not isinstance(event.args_spec, Sequence)
-                else event.args_spec[0]
-            )
-            names = inspect.getfullargspec(arg_spec).args
-            fn.__signature__ = inspect.Signature(  # pyright: ignore[reportFunctionMemberAccess]
-                parameters=[
-                    inspect.Parameter(
-                        name=name,
-                        kind=inspect.Parameter.POSITIONAL_ONLY,
-                        annotation=arg._var_type,
-                    )
-                    for name, arg in zip(
-                        names, parse_args_spec(event.args_spec)[0], strict=True
-                    )
-                ]
-            )
-
-        return fn
-
-    def get_prop_vars(self) -> list[Var | Callable]:
-        """Get the prop vars.
-
-        Returns:
-            The prop vars.
-        """
-        return [
-            Var(
-                _js_expr=name + CAMEL_CASE_MEMO_MARKER,
-                _var_type=(prop._var_type if isinstance(prop, Var) else type(prop)),
-            ).guess_type()
-            if isinstance(prop, Var) or not isinstance(prop, EventChain)
-            else CustomComponent._get_event_spec_from_args_spec(
-                name + CAMEL_CASE_MEMO_MARKER, prop
-            )
-            for name, prop in self.props.items()
-        ]
-
-    @functools.cache  # noqa: B019
-    def get_component(self) -> Component:
-        """Render the component.
-
-        Returns:
-            The code to render the component.
-        """
-        component = self.component_fn(*self.get_prop_vars())
-
-        try:
-            from reflex.utils.prerequisites import get_and_validate_app
-
-            style = get_and_validate_app().app.style
-        except Exception:
-            style = {}
-
-        return component._add_style_recursive(style)
-
-    def _get_all_app_wrap_components(
-        self, *, ignore_ids: set[int] | None = None
-    ) -> dict[tuple[int, str], Component]:
-        """Get the app wrap components for the custom component.
-
-        Args:
-            ignore_ids: A set of IDs to ignore to avoid infinite recursion.
-
-        Returns:
-            The app wrap components.
-        """
-        ignore_ids = ignore_ids or set()
-        component = self.get_component()
-        if id(component) in ignore_ids:
-            return {}
-        ignore_ids.add(id(component))
-        return self.get_component()._get_all_app_wrap_components(ignore_ids=ignore_ids)
-
-
-CUSTOM_COMPONENTS: dict[str, CustomComponent] = {}
-
-
-def _register_custom_component(
-    component_fn: Callable[..., Component],
-):
-    """Register a custom component to be compiled.
-
-    Args:
-        component_fn: The function that creates the component.
-
-    Returns:
-        The custom component.
-
-    Raises:
-        TypeError: If the tag name cannot be determined.
-    """
-    dummy_props = {
-        prop: (
-            Var(
-                "",
-                _var_type=unwrap_var_annotation(annotation),
-            ).guess_type()
-            if not types.safe_issubclass(annotation, EventHandler)
-            else EventSpec(handler=EventHandler(fn=no_args_event_spec))
-        )
-        for prop, annotation in typing.get_type_hints(component_fn).items()
-        if prop != "return"
-    }
-    dummy_component = CustomComponent._create(
-        children=[],
-        component_fn=component_fn,
-        **dummy_props,
-    )
-    if dummy_component.tag is None:
-        msg = f"Could not determine the tag name for {component_fn!r}"
-        raise TypeError(msg)
-    CUSTOM_COMPONENTS[dummy_component.tag] = dummy_component
-    return dummy_component
-
-
-def custom_component(
-    component_fn: Callable[..., Component],
-) -> Callable[..., CustomComponent]:
-    """Create a custom component from a function.
-
-    Args:
-        component_fn: The function that creates the component.
-
-    Returns:
-        The decorated function.
-    """
-
-    @wraps(component_fn)
-    def wrapper(*children, **props) -> CustomComponent:
-        # Remove the children from the props.
-        props.pop("children", None)
-        return CustomComponent._create(
-            children=list(children), component_fn=component_fn, **props
-        )
-
-    # Register this component so it can be compiled.
-    dummy_component = _register_custom_component(component_fn)
-    if tag := dummy_component.tag:
-        object.__setattr__(
-            wrapper,
-            "_as_var",
-            lambda: Var(
-                tag,
-                _var_type=type[Component],
-                _var_data=VarData(
-                    imports={
-                        f"$/{constants.Dirs.UTILS}/components": [ImportVar(tag=tag)],
-                        "@emotion/react": [
-                            ImportVar(tag="jsx"),
-                        ],
-                    }
-                ),
-            ),
-        )
-
-    return wrapper
-
-
-# Alias memo to custom_component.
-memo = custom_component
-
-
 class NoSSRComponent(Component):
     """A dynamic component that is not rendered on the server."""
 
@@ -2607,6 +2330,31 @@ def empty_component() -> Component:
     return Bare.create("")
 
 
+def _format_patterns_into_condition(patterns: list, element: Var) -> Var:
+    """Combine match-case patterns into a single boolean condition.
+
+    Each pattern is compared to `element` by stringified equality, and the
+    resulting comparisons are OR-ed together.
+
+    Args:
+        patterns: The patterns of a single match case to compare against `element`.
+        element: The Var to compare each pattern to.
+
+    Returns:
+        A Var that evaluates to True when `element` matches any pattern, or
+        `False` when `patterns` is empty.
+    """
+    if not patterns:
+        return Var.create(False)
+    conditions = [
+        Var(pattern).to_string() == element.to_string() for pattern in patterns
+    ]
+    return functools.reduce(
+        operator.or_,
+        conditions,
+    )
+
+
 def render_dict_to_var(tag: dict | Component | str) -> Var:
     """Convert a render dict to a Var.
 
@@ -2647,12 +2395,8 @@ def render_dict_to_var(tag: dict | Component | str) -> Var:
         conditionals = render_dict_to_var(tag["default"])
 
         for case in tag["match_cases"][::-1]:
-            conditions, return_value = case
-            condition = Var.create(False)
-            for pattern in conditions:
-                condition = condition | (
-                    Var(pattern).to_string() == element.to_string()
-                )
+            patterns, return_value = case
+            condition = _format_patterns_into_condition(patterns, element)
 
             conditionals = ternary_operation(
                 condition,
@@ -2721,6 +2465,17 @@ class LiteralComponentVar(CachedVarOperation, LiteralVar[Component], ComponentVa
             ),
             VarData(
                 imports=self._var_value._get_all_imports(),
+            ),
+            VarData(
+                # Rendering rx.match in the code above produces conditional expressions
+                # of the form (pattern1 == element || pattern2 == element || ...), which
+                # introduce the OR operator and get compiled to a pyOr function call. Since
+                # the component itself might not otherwise require pyOr, and since we ignore
+                # the imports of the rendered Var above, we add the pyOr import here to
+                # ensure it is available. An alternative would be to have `render_dict_to_var`
+                # return a Var carrying all the required VarData, so this call could just
+                # retrieve it from there.
+                imports=_PY_OR_IMPORT
             ),
         )
 

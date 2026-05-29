@@ -7,17 +7,19 @@ from agent_files._plugin import (
     MarkdownFileEntry,
     MarkdownIndexEntry,
     dynamic_api_reference_index_entries,
+    generate_agent_files,
     generate_dynamic_api_reference_files,
     generate_llms_full_txt,
     generate_llms_txt,
     generate_markdown_file_content,
+    markdown_path_for_trailing_slash_url,
 )
 
 
 def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
     """The docs mount exposes public-root llms.txt as /docs/llms.txt."""
     monkeypatch.setattr(
-        "reflex_base.config.get_config",
+        "agent_files._plugin.get_config",
         lambda: SimpleNamespace(
             deploy_url="https://reflex.dev",
             frontend_path="/docs",
@@ -126,7 +128,7 @@ def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
 def test_generate_markdown_file_content_adds_agent_directive(monkeypatch, tmp_path):
     """Generated markdown pages advertise the docs index and markdown access."""
     monkeypatch.setattr(
-        "reflex_base.config.get_config",
+        "agent_files._plugin.get_config",
         lambda: SimpleNamespace(
             deploy_url="http://localhost:3000",
             frontend_path="/docs",
@@ -160,7 +162,7 @@ def test_generate_markdown_file_content_appends_component_props_table(
 ):
     """Component docs markdown includes generated API reference props tables."""
     monkeypatch.setattr(
-        "reflex_base.config.get_config",
+        "agent_files._plugin.get_config",
         lambda: SimpleNamespace(
             deploy_url="https://reflex.dev",
             frontend_path="/docs",
@@ -216,7 +218,7 @@ def test_generate_markdown_file_content_appends_component_props_table(
 def test_generate_dynamic_api_reference_files(monkeypatch):
     """Dynamic API reference pages have generated markdown assets."""
     monkeypatch.setattr(
-        "reflex_base.config.get_config",
+        "agent_files._plugin.get_config",
         lambda: SimpleNamespace(
             deploy_url="https://reflex.dev",
             frontend_path="/docs",
@@ -272,7 +274,7 @@ def test_generate_dynamic_api_reference_files(monkeypatch):
 def test_generate_llms_full_txt_stitches_markdown_docs(monkeypatch, tmp_path):
     """llms-full.txt contains full Markdown page bodies with source URLs."""
     monkeypatch.setattr(
-        "reflex_base.config.get_config",
+        "agent_files._plugin.get_config",
         lambda: SimpleNamespace(
             deploy_url="https://reflex.dev",
             frontend_path="/docs",
@@ -343,3 +345,28 @@ def test_generate_llms_full_txt_stitches_markdown_docs(monkeypatch, tmp_path):
         "`reflex_base.event.EventHandler`"
     ) in content
     assert "For AI agents: the complete documentation index" not in content
+
+
+def test_markdown_path_for_trailing_slash_url():
+    """The trailing-slash variant nests `.md` under the page name."""
+    assert markdown_path_for_trailing_slash_url(Path("ai/overview.md")) == Path(
+        "ai/overview/.md"
+    )
+    assert markdown_path_for_trailing_slash_url(Path("api-reference/var.md")) == Path(
+        "api-reference/var/.md"
+    )
+
+
+def test_generate_agent_files_emits_trailing_slash_variants():
+    """Every markdown asset has a trailing-slash twin with identical content."""
+    files = dict(generate_agent_files())
+
+    markdown_paths = [
+        path for path in files if path.suffix == ".md" and path.name != ".md"
+    ]
+    assert markdown_paths, "expected at least one markdown asset"
+
+    for path in markdown_paths:
+        twin = markdown_path_for_trailing_slash_url(path)
+        assert twin in files, f"missing trailing-slash twin for {path}"
+        assert files[twin] == files[path], f"content mismatch for {twin}"

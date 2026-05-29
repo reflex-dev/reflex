@@ -18,6 +18,7 @@ _COMPONENTS_MAPPING = {
     "components.base.link": ["link"],
     "components.base.menu": ["menu"],
     "components.base.navigation_menu": ["navigation_menu"],
+    "components.base.otp_field": ["otp_field"],
     "components.base.popover": ["popover"],
     "components.base.preview_card": ["preview_card"],
     "components.base.scroll_area": ["scroll_area"],

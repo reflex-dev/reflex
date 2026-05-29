@@ -11,8 +11,8 @@ from reflex_site_shared.components.icons import get_icon
 
 @rx.memo
 def install_command(
-    command: str,
-    show_dollar_sign: bool = True,
+    command: rx.Var[str],
+    show_dollar_sign: rx.Var[bool] = True,
 ) -> rx.Component:
     """Install command.
 

@@ -9,8 +9,8 @@ see the original components and collect their imports/hooks as usual.
 
 Each unique subtree shape contributes:
 
-- One generated experimental memo component definition, compiled into the
-  shared ``$/utils/components`` module.
+- One generated experimental memo component definition, compiled into its own
+  per-memo module at ``$/utils/components/<name>``.
 - ``useCallback`` hook lines for each non-lifecycle event trigger, emitted into
   the generated memo body so handler hooks stay inside that rendering domain.
 
@@ -23,6 +23,7 @@ import dataclasses
 from typing import Any
 
 from reflex_base.components.component import BaseComponent, Component
+from reflex_base.components.memo import create_passthrough_component_memo
 from reflex_base.components.memoize_helpers import (
     MemoizationStrategy,
     _is_structural_memoization_child,
@@ -33,8 +34,6 @@ from reflex_base.components.memoize_helpers import (
 from reflex_base.constants.compiler import MemoizationDisposition
 from reflex_base.plugins import ComponentAndChildren, PageContext
 from reflex_base.plugins.base import Plugin
-
-from reflex.experimental.memo import create_passthrough_component_memo
 
 
 def _subtree_has_reactive_data(

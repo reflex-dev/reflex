@@ -63,6 +63,12 @@ class PostCompileContext(CommonContext):
     app: "App"
 
 
+class PostBuildContext(CommonContext):
+    """Context for post-build hooks."""
+
+    static_dir: Path
+
+
 class Plugin:
     """Base class for all plugins."""
 
@@ -136,6 +142,47 @@ class Plugin:
         Args:
             context: The context for the plugin.
         """
+
+    def post_build(self, **context: Unpack[PostBuildContext]) -> None:
+        """Called after the production frontend build finishes.
+
+        Fires after ``npm run export`` so plugins can inspect or post-process
+        the Vite output (``context["static_dir"]``).
+
+        Args:
+            context: The context for the plugin.
+        """
+
+    def provides_entry_client(self) -> bool:
+        """Return whether this plugin emits its own ``entry.client.js``.
+
+        The framework calls this during ``setup_frontend`` to decide whether
+        to skip its default ``entry.client.js`` write. Plugins that register
+        a save task for the same path should return ``True`` so the framework
+        write doesn't race with (or overwrite) theirs.
+
+        Returns:
+            ``True`` if the plugin owns ``entry.client.js`` for this build.
+        """
+        return False
+
+    def update_env_json(
+        self, **context: Unpack[CommonContext]
+    ) -> dict[str, Any] | None:
+        """Return entries to merge into ``.web/env.json``.
+
+        The framework merges each plugin's contribution on top of the base
+        ``env.json`` it writes during ``setup_frontend``. Later plugins
+        override earlier ones. Return ``None`` (the default) to contribute
+        nothing.
+
+        Args:
+            context: The context for the plugin.
+
+        Returns:
+            A mapping of env entries to add or override, or ``None``.
+        """
+        return None
 
     def eval_page(
         self,

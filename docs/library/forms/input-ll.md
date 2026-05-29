@@ -1,6 +1,5 @@
 ---
 components:
-  - rx.input
   - rx.input.slot
 ---
 

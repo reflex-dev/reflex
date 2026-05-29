@@ -3,13 +3,7 @@ from dataclasses import dataclass
 from typing import Any, ClassVar
 
 import pytest
-from reflex_base.components.component import (
-    CUSTOM_COMPONENTS,
-    Component,
-    CustomComponent,
-    custom_component,
-    field,
-)
+from reflex_base.components.component import Component, field
 from reflex_base.constants import EventTriggers
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import (
@@ -46,7 +40,6 @@ from reflex import (
     _COMPONENTS_BASE_MAPPING,  # pyright: ignore[reportAttributeAccessIssue]
     _COMPONENTS_CORE_MAPPING,  # pyright: ignore[reportAttributeAccessIssue]
 )
-from reflex.compiler.utils import compile_custom_component
 from reflex.state import BaseState
 from reflex.utils import imports
 
@@ -270,20 +263,6 @@ def on_click2() -> EventHandler:
         pass
 
     return EventHandler(fn=on_click2)
-
-
-@pytest.fixture
-def my_component():
-    """A test component function.
-
-    Returns:
-        A test component function.
-    """
-
-    def my_component(prop1: Var[str], prop2: Var[int]):
-        return Box.create(prop1, prop2)
-
-    return my_component
 
 
 def test_set_style_attrs(component1):
@@ -858,52 +837,6 @@ def test_component_event_trigger_arbitrary_args():
             }
 
     C1.create(on_foo=C1State.mock_handler)
-
-
-def test_create_custom_component(my_component):
-    """Test that we can create a custom component.
-
-    Args:
-        my_component: A test custom component.
-    """
-    component = rx.memo(my_component)(prop1="test", prop2=1)
-    assert component.tag == "MyComponent"
-    assert set(component.get_props()) == {"prop1", "prop2"}
-    assert component.tag in CUSTOM_COMPONENTS
-
-
-def test_custom_component_hash(my_component):
-    """Test that the hash of a custom component is correct.
-
-    Args:
-        my_component: A test custom component.
-    """
-    component1 = rx.memo(my_component)(prop1="test", prop2=1)
-    component2 = rx.memo(my_component)(prop1="test", prop2=2)
-    assert {component1, component2} == {component1}
-
-
-def test_custom_component_wrapper():
-    """Test that the wrapper of a custom component is correct."""
-
-    @custom_component
-    def my_component(width: Var[int], color: Var[str]):
-        return rx.box(
-            width=width,
-            color=color,
-        )
-
-    from reflex_components_radix.themes.typography.text import Text
-
-    ccomponent = my_component(
-        rx.text("child"), width=LiteralVar.create(1), color=LiteralVar.create("red")
-    )
-    assert isinstance(ccomponent, CustomComponent)
-    assert len(ccomponent.children) == 1
-    assert isinstance(ccomponent.children[0], Text)
-
-    component = ccomponent.get_component()
-    assert isinstance(component, Box)
 
 
 def test_invalid_event_handler_args(component2, test_state: type[TestState]):
@@ -1758,43 +1691,6 @@ def test_rename_props():
     assert 'renamed_prop3:"prop3_2"' in rendered_c2["props"]
 
 
-def test_custom_component_get_imports():
-    class Inner(Component):
-        tag = "Inner"
-        library = "inner"
-
-    @rx.memo
-    def wrapper():
-        return Inner.create()
-
-    @rx.memo
-    def outer():
-        return wrapper()
-
-    custom_comp = wrapper()
-
-    # Inner is not imported directly, but it is imported by the custom component.
-    assert "inner" not in custom_comp._get_all_imports()
-    assert "outer" not in custom_comp._get_all_imports()
-
-    # The imports are only resolved during compilation.
-    custom_comp.get_component()
-    _, imports_inner = compile_custom_component(custom_comp)
-    assert "inner" in imports_inner
-    assert "outer" not in imports_inner
-
-    outer_comp = outer()
-
-    # Nested custom components are only imported during compilation.
-    assert "inner" not in outer_comp._get_all_imports()
-
-    # The imports are only resolved during compilation.
-    _, imports_outer = compile_custom_component(outer_comp)
-    assert "inner" not in imports_outer
-    assert "$/utils/components" in imports_outer
-    assert imports_outer["$/utils/components"] == [ImportVar(tag="Wrapper")]
-
-
 def test_custom_component_declare_event_handlers_in_fields():
     class ReferenceComponent(Component):
         @classmethod
@@ -2372,6 +2268,32 @@ def test_unsafe_create_returns_frozen():
         bare.tag = "div"
 
 
+def test_add_hooks_can_mutate_props_on_frozen_component():
+    """``add_hooks`` may derive props onto a frozen component during compile."""
+
+    class HookMutator(Component):
+        tag = "HookMutator"
+
+        callback: Var[Any] = field(default=LiteralVar.create(None))
+
+        def add_hooks(self):
+            self.callback = Var(_js_expr="generatedCallback")
+            return ["function generatedCallback(){ return true; }"]
+
+    c = HookMutator.create()
+    # Direct writes stay blocked outside the add_hooks protocol.
+    with pytest.raises(AttributeError, match="copy_with"):
+        c.callback = Var(_js_expr="blocked")
+
+    hooks = c._get_added_hooks()
+    assert "function generatedCallback(){ return true; }" in hooks
+    assert str(c.callback) == "generatedCallback"
+
+    # The component is re-frozen once hook collection finishes.
+    with pytest.raises(AttributeError, match="copy_with"):
+        c.callback = Var(_js_expr="blocked_again")
+
+
 def test_add_style_recursive_no_op_returns_self():
     """A recursive style pass with no addition and no child change returns ``self``."""
 
@@ -2413,3 +2335,69 @@ def test_bare_add_style_recursive_threads_var_components():
     assert isinstance(rebuilt_embedded, Component)
     assert "color" in rebuilt_embedded.style
     assert "color" not in embedded.style
+
+
+def test_component_equality_compares_fields():
+    """``BaseComponent.__eq__`` must compare field values, not just class identity.
+
+    HTML ``Element`` subclasses (``rx.box`` etc.) override ``__eq__`` to compare by
+    tag only, so this test uses a plain ``Component`` subclass to exercise the
+    base implementation.
+    """
+
+    class EqProbe(Component):
+        tag = "EqProbe"
+        label: str = ""
+
+    class OtherProbe(Component):
+        tag = "OtherProbe"
+        label: str = ""
+
+    a = EqProbe.create(label="x")
+    b = EqProbe.create(label="x")
+    c = EqProbe.create(label="y")
+
+    assert a == b
+    assert a != c
+
+    parent_same = EqProbe.create(EqProbe.create(label="leaf"), label="root")
+    parent_other = EqProbe.create(EqProbe.create(label="leaf"), label="root")
+    parent_diff = EqProbe.create(EqProbe.create(label="other"), label="root")
+    assert parent_same == parent_other
+    assert parent_same != parent_diff
+
+    assert EqProbe.create() != OtherProbe.create()
+    assert EqProbe.create() != "not a component"
+
+
+def test_component_equality_handles_var_fields():
+    """``BaseComponent.__eq__`` must not raise when a field holds a Var.
+
+    ``Var.__eq__`` returns a ``BooleanVar``; bool-ifying that raises
+    ``VarTypeError``. Equality has to compare Vars structurally (via
+    ``Var.equals``) and walk containers element-wise so list/dict fields that
+    hold Vars don't trip up the default container ``__eq__``.
+    """
+
+    class VarState(BaseState):
+        text: str = "hi"
+
+    class VarProbe(Component):
+        tag = "VarProbe"
+        label: str = ""
+        items: list = []
+        meta: dict = {}
+
+    same_a = VarProbe.create(label=VarState.text)
+    same_b = VarProbe.create(label=VarState.text)
+    different = VarProbe.create(label="literal")
+    assert same_a == same_b
+    assert same_a != different
+
+    list_a = VarProbe.create(items=[VarState.text])
+    list_b = VarProbe.create(items=[VarState.text])
+    assert list_a == list_b
+
+    dict_a = VarProbe.create(meta={"k": VarState.text})
+    dict_b = VarProbe.create(meta={"k": VarState.text})
+    assert dict_a == dict_b
