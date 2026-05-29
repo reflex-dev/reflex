@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import builtins
 import dataclasses
-from typing import Any, Literal
+from typing import Any, Literal, final
 
 from reflex_base.components.component import Component, ComponentNamespace, field
 from reflex_base.components.props import NoExtrasAllowedProps
@@ -36,6 +36,7 @@ toast_ref = Var(
 )
 
 
+@final
 @dataclasses.dataclass
 class ToastAction:
     """A toast action that render a button in the toast."""
@@ -153,11 +154,11 @@ class ToastProps(NoExtrasAllowedProps):
         if "action" in d:
             d["action"] = self.action
             if isinstance(self.action, dict):
-                d["action"] = ToastAction(**self.action)  # ty:ignore[invalid-argument-type]
+                d["action"] = ToastAction(**self.action)
         if "cancel" in d:
             d["cancel"] = self.cancel
             if isinstance(self.cancel, dict):
-                d["cancel"] = ToastAction(**self.cancel)  # ty:ignore[invalid-argument-type]
+                d["cancel"] = ToastAction(**self.cancel)
         if "onDismiss" in d:
             d["onDismiss"] = format.format_queue_events(
                 self.on_dismiss, _toast_callback_signature
