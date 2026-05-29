@@ -216,7 +216,9 @@ def _pyright_errors(report: dict) -> dict[tuple[str, int, int, str], str]:
     for diagnostic in report.get("generalDiagnostics", []):
         if diagnostic.get("severity") != "error":
             continue
-        start = diagnostic["range"]["start"]
+        start = diagnostic.get("range", {}).get("start", {})
+        if "line" not in start or "character" not in start:
+            continue
         key = (
             diagnostic["file"],
             start["line"],
