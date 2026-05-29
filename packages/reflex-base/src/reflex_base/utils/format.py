@@ -47,6 +47,25 @@ def callable_name(fn: object) -> str:
     return repr(fn)
 
 
+def callable_qualname(fn: object) -> str:
+    """Return ``fn.__qualname__`` when available, otherwise the display name.
+
+    Like :func:`callable_name` but keeps the qualifying path (e.g.
+    ``MyState.handler``) for callables that expose ``__qualname__``, falling
+    back to :func:`callable_name` for those that don't (e.g. ``partial``).
+
+    Args:
+        fn: The object whose qualified name is wanted.
+
+    Returns:
+        The qualified display name.
+    """
+    qualname = getattr(fn, "__qualname__", None)
+    if isinstance(qualname, str):
+        return qualname
+    return callable_name(fn)
+
+
 def length_of_largest_common_substring(str1: str, str2: str) -> int:
     """Find the length of the largest common substring between two strings.
 

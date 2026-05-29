@@ -2332,6 +2332,7 @@ class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
             EventFnArgMismatchError: If the event handler takes arguments.
         """
         if isinstance(value, EventHandler):
+            handler = value
 
             def no_args():
                 return ()
@@ -2339,7 +2340,7 @@ class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
             try:
                 value = call_event_handler(value, no_args)
             except EventFnArgMismatchError:
-                msg = f"Event handler {value.fn.__qualname__} used inside of a rx.cond() must not take any arguments."  # ty:ignore[unresolved-attribute]
+                msg = f"Event handler {format.callable_qualname(handler.fn)} used inside of a rx.cond() must not take any arguments."
                 raise EventFnArgMismatchError(msg) from None
 
         return cls(

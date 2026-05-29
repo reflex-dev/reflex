@@ -18,7 +18,7 @@ from reflex.utils import console, types
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
 from reflex_base.registry import RegisteredEventHandler
-from reflex_base.utils.format import format_event_handler
+from reflex_base.utils.format import callable_qualname, format_event_handler
 
 if TYPE_CHECKING:
     from reflex.event import EventHandler, EventSpec
@@ -393,7 +393,7 @@ class BaseStateEventProcessor(EventProcessor):
             if events := self.backend_exception_handler(ex):
                 await chain_updates(
                     events=events,
-                    handler_name=self.backend_exception_handler.__qualname__,  # ty:ignore[unresolved-attribute]
+                    handler_name=callable_qualname(self.backend_exception_handler),
                 )
 
 
