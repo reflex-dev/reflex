@@ -115,6 +115,17 @@ def track_intro_form_posthog_submission(
     )
 
 
+def track_newsletter_posthog_submission(
+    form_data: dict[str, Any],
+) -> rx.event.EventSpec:
+    """Capture a newsletter_signup event in PostHog.
+
+    Returns:
+        Event that runs PostHog identify and capture in the browser.
+    """
+    return _track_form_posthog("newsletter_signup", form_data, _COMMON_KEYS)
+
+
 def get_posthog_trackers(
     project_id: str,
     api_host: str = POSTHOG_API_HOST,
