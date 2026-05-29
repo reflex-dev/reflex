@@ -1753,13 +1753,19 @@ class BaseState(EvenMoreBasicBaseState):
             raise UnretrievableVarValueError(msg)
         # Fastish case: this var belongs to this state
         if var_data.state == self.get_full_name():
-            return getattr(self, var_data.field_name)
+            value = getattr(self, var_data.field_name)
+            if inspect.isawaitable(value):
+                return await value
+            return value
 
         # Slow case: this var belongs to another state
         other_state = await self.get_state(
             self._get_root_state().get_class_substate(var_data.state)
         )
-        return getattr(other_state, var_data.field_name)
+        value = getattr(other_state, var_data.field_name)
+        if inspect.isawaitable(value):
+            return await value
+        return value
 
     def _mark_dirty_computed_vars(self) -> None:
         """Mark ComputedVars that need to be recalculated based on dirty_vars."""

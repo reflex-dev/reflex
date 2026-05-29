@@ -1,5 +1,6 @@
 """Define event classes to connect the frontend and backend."""
 
+import copy
 import dataclasses
 import inspect
 import sys
@@ -17,6 +18,7 @@ from typing import (
     NoReturn,
     Protocol,
     TypeVar,
+    Union,
     get_args,
     get_origin,
     get_type_hints,
@@ -53,6 +55,7 @@ from reflex_base.vars.function import (
     FunctionVar,
     VarOperationCall,
 )
+from reflex_base.vars.number import ternary_operation
 from reflex_base.vars.object import ObjectVar
 
 if TYPE_CHECKING:
@@ -132,7 +135,17 @@ class Event:
                 msg = f"Unexpected event type, {type(e)}."
                 raise ValueError(msg)
             name = format.format_event_handler(e.handler)
-            payload = {k._js_expr: v._decode() for k, v in e.args}
+            # Deepcopy mutable values to detach them from any state-bound
+            # proxies (e.g. ImmutableMutableProxy from a background task's
+            # StateProxy).
+            payload = {
+                k._js_expr: (
+                    decoded
+                    if isinstance(decoded := v._decode(), _IMMUTABLE_PAYLOAD_TYPES)
+                    else copy.deepcopy(decoded)
+                )
+                for k, v in e.args
+            }
 
             # Create an event and append it to the list.
             out.append(
@@ -149,6 +162,18 @@ class Event:
 _EVENT_FIELDS: set[str] = {f.name for f in dataclasses.fields(Event)}
 _EMPTY_EVENTS = LiteralVar.create([])
 _EMPTY_EVENT_ACTIONS = LiteralVar.create({})
+
+# Values of these types are safe to pass into an Event payload by reference:
+# they are immutable and cannot be wrapped by a state-bound MutableProxy.
+_IMMUTABLE_PAYLOAD_TYPES = (
+    str,
+    int,
+    float,
+    bool,
+    bytes,
+    frozenset,
+    type(None),
+)
 
 BACKGROUND_TASK_MARKER = "_reflex_background_task"
 EVENT_ACTIONS_MARKER = "_rx_event_actions"
@@ -2053,6 +2078,56 @@ def call_event_fn(
     # while keeping other scalar values for validation below.
     out = list(out) if isinstance(out, (list, tuple)) else [out]
 
+    def _dispatch_mixed_event_var(event_like_var: Var) -> FunctionVar:
+        """Wrap a mixed event-like Var into a callable frontend dispatcher.
+
+        Args:
+            event_like_var: A Var that may resolve to either an EventSpec-like object
+                or a callable frontend function at runtime.
+
+        Returns:
+            A FunctionVar that dispatches runtime values as frontend calls or
+            backend addEvents queueing.
+        """
+        alias_name = "__event_or_fn"
+        alias_var = Var(_js_expr=alias_name)
+        rest_args = Var(_js_expr="args")
+        spread_args = Var(_js_expr="...args")
+
+        is_function = Var(
+            _js_expr=f'typeof {alias_name} === "function"',
+            _var_type=bool,
+        )
+        add_events = FunctionStringVar.create(
+            CompileVars.ADD_EVENTS,
+            _var_data=VarData(
+                imports=Imports.EVENTS,
+                hooks={Hooks.EVENTS: None},
+            ),
+        )
+        dispatch_expr = ternary_operation(
+            is_function,
+            alias_var.to(FunctionVar).call(spread_args),
+            add_events.call(
+                LiteralVar.create([alias_var]),
+                rest_args,
+                _EMPTY_EVENT_ACTIONS,
+            ),
+        )
+        body = Var(
+            _js_expr=f"const {alias_name} = {event_like_var!s}; return {dispatch_expr!s};",
+            _var_data=VarData.merge(
+                event_like_var._get_all_var_data(),
+                dispatch_expr._get_all_var_data(),
+            ),
+        )
+        return ArgsFunctionOperation.create(
+            args_names=(),
+            return_expr=body,
+            rest="args",
+            explicit_return=True,
+        ).to(FunctionVar)
+
     # Convert any event specs to event specs.
     events = []
     for e in out:
@@ -2063,6 +2138,14 @@ def call_event_fn(
         if isinstance(e, EventChain):
             # Nested EventChain is treated like a FunctionVar.
             e = Var.create(e)
+
+        if (
+            isinstance(e, Var)
+            and not isinstance(e, (EventVar, FunctionVar))
+            and get_origin(e._var_type) in (Union, types.UnionType)
+            and typehint_issubclass(e._var_type, EventSpec | Callable)
+        ):
+            e = _dispatch_mixed_event_var(e)
 
         # Make sure the event spec is valid.
         if not isinstance(e, (EventSpec, FunctionVar, EventVar)):

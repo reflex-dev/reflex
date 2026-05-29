@@ -139,6 +139,7 @@ def _compile_app(*, avoid_dirty_check: bool = True):
     kwargs = {
         "check_if_schema_up_to_date": True,
         "prerender_routes": exec.should_prerender_routes(),
+        "trigger": "initial",
     }
 
     # Granian fails if the app is already imported.
@@ -485,7 +486,7 @@ def compile(dry: bool, rich: bool):
         _init(name=get_config().app_name)
     get_config(reload=True)
     starting_time = time.monotonic()
-    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich)
+    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger="cli_compile")
     elapsed_time = time.monotonic() - starting_time
     console.success(f"App compiled successfully in {elapsed_time:.3f} seconds.")
 
@@ -597,12 +598,13 @@ def login():
 
     check_version()
 
-    validated_info = hosting_cli.login()
-    if validated_info is not None:
+    if (validated_info := hosting_cli.login()) and (
+        user_uuid := validated_info.get("user_id")
+    ):
         _skip_compile()  # Allow running outside of an app dir
         from reflex.utils import telemetry
 
-        telemetry.send("login", user_uuid=validated_info.get("user_id"))
+        telemetry.send("login", user_uuid=user_uuid)
 
 
 @cli.command()
@@ -658,8 +660,8 @@ def db_init():
     # Initialize the database.
     _skip_compile()
     prerequisites.get_compiled_app()
-    model.Model.alembic_init()
-    model.Model.migrate(autogenerate=True)
+    model.alembic_init()
+    model.migrate(autogenerate=True)
 
 
 @db_cli.command()
@@ -671,14 +673,14 @@ def migrate():
     prerequisites.get_app()
     if not prerequisites.check_db_initialized():
         return
-    model.Model.migrate()
+    model.migrate()
     prerequisites.check_schema_up_to_date()
 
 
 @db_cli.command()
 def status():
     """Check the status of the database schema."""
-    from reflex.model import Model, format_revision
+    from reflex.model import format_revision, get_migration_history
     from reflex.utils import prerequisites
 
     prerequisites.get_app()
@@ -695,7 +697,7 @@ def status():
     console.print(f"[bold]\\[{config.db_url}][/bold]")
 
     # Get migration history using Model method
-    current_rev, revisions = Model.get_migration_history()
+    current_rev, revisions = get_migration_history()
     if current_rev is None and not revisions:
         return
 
@@ -725,9 +727,9 @@ def makemigrations(message: str | None):
     prerequisites.get_compiled_app()
     if not prerequisites.check_db_initialized():
         return
-    with model.Model.get_db_engine().connect() as connection:
+    with model.get_engine().connect() as connection:
         try:
-            model.Model.alembic_autogenerate(connection=connection, message=message)
+            model.alembic_autogenerate(connection=connection, message=message)
         except CommandError as command_error:
             if "Target database is not up to date." not in str(command_error):
                 raise

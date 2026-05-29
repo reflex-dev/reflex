@@ -53,31 +53,19 @@ def drawer_socials() -> rx.Component:
     )
 
 
-def drawer_item(text: str, url: str, active_str: str = "") -> rx.Component:
+def drawer_item(text: str, url: str) -> rx.Component:
     """Drawer item.
 
     Returns:
         The component.
     """
-    router_path = rx.State.router.page.path
     if not url.endswith("/"):
         url += "/"
-    active = router_path.contains(active_str)
-    if active_str == "docs":
-        active = rx.cond(
-            router_path.contains("hosting")
-            | router_path.contains("library")
-            | router_path.contains("gallery"),
-            False,
-            active,
-        )
-    if active_str == "":
-        active = False
     return rx.el.elements.a(
         text,
         href=url,
         underline="none",
-        color=rx.cond(active, "var(--c-violet-9)", "var(--c-slate-9)"),
+        color="var(--c-slate-9)",
         class_name="flex justify-center items-center border-slate-4 px-4 py-[0.875rem] border-t-0 border-b border-solid w-full font-small hover:!text-violet-9 border-x-0",
     )
 
@@ -95,14 +83,14 @@ def navbar_sidebar_drawer(trigger: rx.Component) -> rx.Component:
         rx.drawer.portal(
             rx.drawer.content(
                 rx.box(
-                    drawer_item("Docs", "/docs", "docs"),
-                    drawer_item("Templates", "/gallery", "gallery"),
-                    drawer_item("Blog", "/blog", "blog"),
-                    drawer_item("Case Studies", "/customers", "customers"),
-                    drawer_item("Components", "/library", "library"),
-                    drawer_item("Open Source", "/framework", "open-source"),
-                    drawer_item("Cloud", "/cloud", "hosting"),
-                    drawer_item("Pricing", "/pricing", "pricing"),
+                    drawer_item("Docs", "/docs"),
+                    drawer_item("Templates", "/templates"),
+                    drawer_item("Blog", "/blog"),
+                    drawer_item("Case Studies", "/customers"),
+                    drawer_item("Components", "/docs/library"),
+                    drawer_item("Open Source", "/open-source"),
+                    drawer_item("Cloud", "/hosting"),
+                    drawer_item("Pricing", "/pricing"),
                     drawer_socials(),
                     rx.el.button(
                         rx.color_mode.icon(
@@ -194,7 +182,7 @@ def navbar_sidebar_button() -> rx.Component:
                     },
                 ),
                 size="icon-sm",
-                variant="outline",
+                variant="outline-shadow",
                 custom_attrs={"aria-label": "Open sidebar"},
                 native_button=False,
             ),

@@ -13,7 +13,7 @@ from reflex_base.components.component import (
     BaseComponent,
     Component,
     ComponentNamespace,
-    CustomComponent,
+    MemoizationLeaf,
     field,
 )
 from reflex_base.components.tags.tag import Tag
@@ -188,8 +188,15 @@ def get_base_component_map() -> dict[str, Callable]:
     }
 
 
-class Markdown(Component):
-    """A markdown component."""
+class Markdown(MemoizationLeaf):
+    """A markdown component.
+
+    ``react-markdown`` requires its ``children`` prop to be a string. Acting as
+    a memoization snapshot boundary keeps any Var child inlined inside the
+    snapshot body, instead of letting the auto-memoize plugin hoist a state
+    read into a separate ``Bare_comp_<hash>`` React element child (which would
+    render as a JSX element, not a string).
+    """
 
     library = "react-markdown@10.1.0"
 
@@ -405,15 +412,7 @@ let {_LANGUAGE!s} = match ? match[1] : '';
         if isinstance(component, MarkdownComponentMap):
             custom_code_list.append(component.get_component_map_custom_code())
 
-        # If the component is a custom component(rx.memo), obtain the underlining
-        # component and get the custom code from the children.
-        if isinstance(component, CustomComponent):
-            custom_code_list.extend(
-                self._get_map_fn_custom_code_from_children(
-                    component.component_fn(*component.get_prop_vars())
-                )
-            )
-        elif isinstance(component, Component):
+        if isinstance(component, Component):
             for child in component.children:
                 custom_code_list.extend(
                     self._get_map_fn_custom_code_from_children(child)

@@ -6,15 +6,6 @@ from reflex_site_shared.components.marketing_button import button
 from reflex_site_shared.constants import DISCORD_URL, GITHUB_URL, TWITTER_URL
 from reflex_site_shared.views.hosting_banner import HostingBannerState
 
-_DRAWER_LINKS_DOCS = "/docs"
-_DRAWER_LINKS_TEMPLATES = "/templates"
-_DRAWER_LINKS_BLOG = "/blog"
-_DRAWER_LINKS_CUSTOMERS = "/customers"
-_DRAWER_LINKS_LIBRARY = "/docs/library"
-_DRAWER_LINKS_OPEN_SOURCE = "/open-source"
-_DRAWER_LINKS_HOSTING = "/hosting"
-_DRAWER_LINKS_PRICING = "/pricing"
-
 
 def social_menu_item(
     icon: str,
@@ -49,29 +40,14 @@ def drawer_socials() -> rx.Component:
     )
 
 
-def drawer_item(text: str, url: str, active_str: str = "") -> rx.Component:
-    router_path = rx.State.router.page.path
+def drawer_item(text: str, url: str) -> rx.Component:
     if not url.endswith("/"):
         url += "/"
-    active = router_path.contains(active_str)
-    if active_str == "docs":
-        is_docs_home = (router_path == "/") | (router_path == "/index")
-        active = rx.cond(
-            is_docs_home,
-            False,
-            ~router_path.contains("hosting")
-            & ~router_path.contains("library")
-            & ~router_path.contains("gallery")
-            & ~router_path.startswith("/ai/")
-            & ~router_path.startswith("/docs/ai/"),
-        )
-    if active_str == "":
-        active = False
     return rx.el.elements.a(
         text,
         href=url,
         underline="none",
-        color=rx.cond(active, "var(--c-violet-9)", "var(--c-slate-9)"),
+        color="var(--c-slate-9)",
         class_name="flex justify-center items-center border-slate-4 px-4 py-[0.875rem] border-t-0 border-b border-solid w-full font-small hover:!text-violet-9 border-x-0",
     )
 
@@ -84,16 +60,14 @@ def navbar_sidebar_drawer(trigger) -> rx.Component:
         rx.drawer.portal(
             rx.drawer.content(
                 rx.box(
-                    drawer_item("Docs", _DRAWER_LINKS_DOCS, "docs"),
-                    drawer_item("Templates", _DRAWER_LINKS_TEMPLATES, "templates"),
-                    drawer_item("Blog", _DRAWER_LINKS_BLOG, "blog"),
-                    drawer_item("Case Studies", _DRAWER_LINKS_CUSTOMERS, "customers"),
-                    drawer_item("Components", _DRAWER_LINKS_LIBRARY, "library"),
-                    drawer_item(
-                        "Open Source", _DRAWER_LINKS_OPEN_SOURCE, "open-source"
-                    ),
-                    drawer_item("Cloud", _DRAWER_LINKS_HOSTING, "hosting"),
-                    drawer_item("Pricing", _DRAWER_LINKS_PRICING, "pricing"),
+                    drawer_item("Docs", "/docs"),
+                    drawer_item("Templates", "/templates"),
+                    drawer_item("Blog", "/blog"),
+                    drawer_item("Case Studies", "/customers"),
+                    drawer_item("Components", "/docs/library"),
+                    drawer_item("Open Source", "/open-source"),
+                    drawer_item("Cloud", "/hosting"),
+                    drawer_item("Pricing", "/pricing"),
                     drawer_socials(),
                     rx.el.button(
                         rx.color_mode.icon(

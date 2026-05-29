@@ -87,6 +87,7 @@ _COMMON_KEYS = {
     "company_name",
     "number_of_employees",
     "how_did_you_hear_about_us",
+    "interested_in",
     "internal_tools",
     "technical_level",
 }

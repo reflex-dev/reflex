@@ -1078,6 +1078,20 @@ def select_project(project: str, token: str | None = None) -> str:
     return f"{project} is now selected."
 
 
+def normalize_project_id(value: Any) -> str | None:
+    """Normalize a project ID value, treating empty/whitespace strings and non-strings as None.
+
+    Args:
+        value: The raw project ID value from config, CLI args, or hosting.json.
+
+    Returns:
+        The stripped project ID, or None if the value is missing or blank.
+    """
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    return None
+
+
 def get_selected_project() -> str | None:
     """Retrieve the currently selected project ID.
 
@@ -1088,10 +1102,10 @@ def get_selected_project() -> str | None:
     try:
         with constants.Hosting.HOSTING_JSON.open() as config_file:
             hosting_config = json.load(config_file)
-            return hosting_config.get("project")
+            return normalize_project_id(hosting_config.get("project"))
     except Exception as ex:
         console.debug(
-            f"Unable to fetch token from {constants.Hosting.HOSTING_JSON} due to: {ex}"
+            f"Unable to read selected project from {constants.Hosting.HOSTING_JSON} due to: {ex}"
         )
     return None
 
@@ -1970,13 +1984,17 @@ def authenticate_on_browser() -> tuple[str, dict[str, Any]]:
         constants.Hosting.HOSTING_SERVICE_UI, f"/cli/login?request_id={request_id}"
     )
 
-    console.print(f"Opening {auth_url} ...")
-
     if not is_valid_url(constants.Hosting.HOSTING_SERVICE_UI):
         console.error(
             f"Invalid hosting URL: {constants.Hosting.HOSTING_SERVICE_UI}. Ensure the URL is in the correct format and includes a valid scheme"
         )
         raise click.exceptions.Exit(1)
+
+    console.print(
+        f"Opening {auth_url} ... By connecting your account, you agree to "
+        "Reflex Cloud [Terms of Service] and [Privacy Policy].",
+        markup=False,
+    )
 
     if not webbrowser.open(auth_url):
         console.warn(

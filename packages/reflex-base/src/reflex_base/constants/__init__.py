@@ -29,6 +29,7 @@ from .compiler import (
     CompileContext,
     CompileVars,
     ComponentName,
+    Embed,
     Ext,
     Hooks,
     Imports,
@@ -44,6 +45,7 @@ from .config import (
     GitIgnore,
     PyprojectToml,
     RequirementsTxt,
+    UvLock,
 )
 from .custom_components import CustomComponents
 from .event import Endpoint, EventTriggers, SocketEvent
@@ -90,6 +92,7 @@ __all__ = [
     "DefaultPage",
     "DefaultPorts",
     "Dirs",
+    "Embed",
     "Endpoint",
     "Env",
     "EventTriggers",
@@ -118,4 +121,5 @@ __all__ = [
     "SocketEvent",
     "StateManagerMode",
     "Templates",
+    "UvLock",
 ]

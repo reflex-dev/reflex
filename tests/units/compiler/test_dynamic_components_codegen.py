@@ -30,7 +30,7 @@ def test_dynamic_component_codegen_wires_event_handlers() -> None:
     # no more ``useContext(EventLoopContext)`` hoist needed for dispatch.
     assert "const {addEvents} = window['__reflex'][\"$/utils/context\"]" in code
     assert (
-        "const {ReflexEvent,applyEventActions} = window['__reflex'][\"$/utils/state\"]"
+        "const {ReflexEvent,applyEventActions,pyOr} = window['__reflex'][\"$/utils/state\"]"
         in code
     )
     assert "useContext(EventLoopContext)" not in code
@@ -96,7 +96,7 @@ def test_dynamic_component_codegen_wires_state_var_counter_events() -> None:
     assert "const {Fragment,useEffect}" in code
     assert "const {addEvents} = window['__reflex'][\"$/utils/context\"]" in code
     assert (
-        "const {ReflexEvent,applyEventActions} = window['__reflex'][\"$/utils/state\"]"
+        "const {ReflexEvent,applyEventActions,pyOr} = window['__reflex'][\"$/utils/state\"]"
         in code
     )
     assert "useContext(EventLoopContext)" not in code

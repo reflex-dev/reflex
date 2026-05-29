@@ -180,6 +180,10 @@ def get_sidebar_items_skills():
             names="Overview",
             link=ai_builder.integrations.skills.path,
         ),
+        SideBarItem(
+            names="AGENTS.md / CLAUDE.md",
+            link=ai_builder.integrations.agents_md.path,
+        ),
     ]
 
 
