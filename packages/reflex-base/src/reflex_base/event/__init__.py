@@ -407,11 +407,12 @@ class EventHandler(EventActionsMixin):
         return parameters
 
     @classmethod
-    def __class_getitem__(cls, args_spec: str) -> Annotated:  # ty:ignore[invalid-type-form]
+    def __class_getitem__(cls, args_spec: Callable | Sequence[Callable]) -> Annotated:  # ty:ignore[invalid-type-form]
         """Get a typed EventHandler.
 
         Args:
-            args_spec: The args_spec of the EventHandler.
+            args_spec: The args spec of the EventHandler: a single spec callable
+                or a sequence of them, attached to the resulting ``Annotated``.
 
         Returns:
             The EventHandler class item.

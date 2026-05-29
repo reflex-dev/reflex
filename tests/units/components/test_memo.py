@@ -798,7 +798,7 @@ def test_classify_routes_each_annotation_to_the_expected_kind():
         ("rest", rx.RestProp, "rest", MemoParamKind.REST),
         (
             "event_with_spec",
-            rx.EventHandler[rx.event.passthrough_event_spec(str)],  # ty:ignore[invalid-argument-type]
+            rx.EventHandler[rx.event.passthrough_event_spec(str)],
             "event",
             MemoParamKind.EVENT_TRIGGER,
         ),
@@ -855,7 +855,7 @@ def test_event_trigger_make_placeholder_returns_plain_callable():
     param = _make_param(
         name="event",
         kind=MemoParamKind.EVENT_TRIGGER,
-        annotation=rx.EventHandler[spec],  # ty:ignore[invalid-argument-type]
+        annotation=rx.EventHandler[spec],
         kind_data=spec,
         placeholder_name="eventRxMemo",
         js_prop_name="event",
@@ -957,7 +957,7 @@ def test_event_trigger_validate_rejects_default_directly():
         name="event",
         kind=inspect.Parameter.KEYWORD_ONLY,
         default=None,
-        annotation=rx.EventHandler[rx.event.passthrough_event_spec(str)],  # ty:ignore[invalid-argument-type]
+        annotation=rx.EventHandler[rx.event.passthrough_event_spec(str)],
     )
     with pytest.raises(TypeError, match="default"):
         _SPECS[MemoParamKind.EVENT_TRIGGER].validate(parameter, "fn", True)

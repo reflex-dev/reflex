@@ -509,6 +509,7 @@ else:
 if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
     import sqlmodel
     from sqlmodel.ext.asyncio.session import AsyncSession
+    from sqlmodel.main import SQLModelConfig
 
     _AsyncSessionLocal: dict[str | None, sqlalchemy.ext.asyncio.async_sessionmaker] = {}
 
@@ -574,11 +575,11 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
 
         id: int | None = sqlmodel.Field(default=None, primary_key=True)
 
-        model_config = {
-            "arbitrary_types_allowed": True,
-            "use_enum_values": True,
-            "extra": "allow",
-        }
+        model_config = SQLModelConfig(
+            arbitrary_types_allowed=True,
+            use_enum_values=True,
+            extra="allow",
+        )
 
         def __init_subclass__(cls, **kwargs):
             """Automatically register subclasses as models."""
