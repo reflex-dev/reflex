@@ -46,9 +46,12 @@ def _subtree_has_reactive_data(
 ) -> bool:
     """Whether ``component``'s subtree carries reactive signals worth memoizing.
 
-    No-arg event handlers (``on_click=State.ping``) contribute hooks only via
-    ``event_triggers`` / ``_get_events_hooks``, not as a Var, so the per-Var
-    scan must be paired with an explicit ``event_triggers`` check.
+    No-arg event handlers (``on_click=State.ping``) are deliberately not
+    treated as reactive on their ``event_triggers`` alone: ``addEvents`` is
+    reached through a module-level import (``Imports.EVENTS``) rather than a
+    hoisted hook, so the inline callback never drives a re-render and the
+    subtree gains nothing from being wrapped. Handlers that reference state
+    (e.g. ``State.set_x(State.y)``) still surface through the per-Var scan.
 
     ``useRef`` from a static ``id`` prop is intentionally ignored — it lives
     in ``_get_hooks_internal``, not in any Var, so static-id-only elements
@@ -63,8 +66,8 @@ def _subtree_has_reactive_data(
             break cycles.
 
     Returns:
-        True if the subtree carries event triggers, explicit hooks, or any
-        Var whose merged var_data has ``state`` or ``hooks``.
+        True if the subtree carries explicit or internal hooks, or any Var
+        whose merged var_data has ``state`` or ``hooks``.
     """
     if _cache is None:
         _cache = {}
@@ -105,12 +108,6 @@ def _component_subtree_is_reactive(
         if hook_key != ref_hook_key:
             return True
     if component._get_hooks() is not None or component._get_added_hooks():
-        return True
-    # ``addEvents`` no longer hoists a hook here (it's reached via the
-    # module-level import in ``Imports.EVENTS``), so a no-arg
-    # ``on_click=State.ping`` only shows up as ``event_triggers`` — without
-    # this check the boundary skips memoization and the callback leaks.
-    if component.event_triggers:
         return True
     for var in component._get_vars(include_children=False):
         var_data = var._get_all_var_data()

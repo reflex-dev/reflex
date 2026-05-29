@@ -1458,19 +1458,19 @@ def test_snapshot_boundary_with_event_trigger_descendant_is_wrapped() -> None:
     )
 
 
-def test_snapshot_boundary_with_no_arg_event_handler_descendant_is_wrapped() -> None:
-    """A boundary whose descendant has on_click without arg vars still wraps.
+def test_snapshot_boundary_with_no_arg_event_handler_descendant_not_wrapped() -> None:
+    """A boundary whose descendant has only a no-arg on_click is not wrapped.
 
-    No-arg handlers (``on_click=State.ping``) contribute to the page only
-    via the descendant's ``event_triggers`` and ``_get_events_hooks`` — the
-    per-Var subtree scan misses them. The reactive-data check must also
-    inspect ``event_triggers`` directly so the boundary wraps and the
-    callback's ``useCallback`` lands inside the snapshot body.
+    No-arg handlers (``on_click=State.ping``) surface only through the
+    descendant's ``event_triggers`` and reach ``addEvents`` via a
+    module-level import rather than a hoisted hook. The inline callback
+    carries no reactive data and never drives a re-render, so the boundary
+    gains nothing from memoization and is left to render in the page module.
     """
     inner = Plain.create()
     inner.event_triggers["on_click"] = Var(_js_expr="evt")
     boundary = LeafComponent.create(inner)
-    assert _should_memoize(boundary)
+    assert not _should_memoize(boundary)
 
 
 def test_title_with_stateful_var_child_does_not_wrap_bare_independently() -> None:
