@@ -143,7 +143,7 @@ h_comp_common = HeadingLink.create
 
 
 @rx.memo
-def h1_comp(text: str) -> rx.Component:
+def h1_comp(text: rx.Var[str]) -> rx.Component:
     """H1 comp.
 
     Returns:
@@ -157,7 +157,7 @@ def h1_comp(text: str) -> rx.Component:
 
 
 @rx.memo
-def h1_comp_xd(text: str) -> rx.Component:
+def h1_comp_xd(text: rx.Var[str]) -> rx.Component:
     """H1 comp xd.
 
     Returns:
@@ -171,7 +171,7 @@ def h1_comp_xd(text: str) -> rx.Component:
 
 
 @rx.memo
-def h2_comp(text: str) -> rx.Component:
+def h2_comp(text: rx.Var[str]) -> rx.Component:
     """H2 comp.
 
     Returns:
@@ -186,7 +186,7 @@ def h2_comp(text: str) -> rx.Component:
 
 
 @rx.memo
-def h2_comp_xd(text: str) -> rx.Component:
+def h2_comp_xd(text: rx.Var[str]) -> rx.Component:
     """H2 comp xd.
 
     Returns:
@@ -201,7 +201,7 @@ def h2_comp_xd(text: str) -> rx.Component:
 
 
 @rx.memo
-def h3_comp(text: str) -> rx.Component:
+def h3_comp(text: rx.Var[str]) -> rx.Component:
     """H3 comp.
 
     Returns:
@@ -216,7 +216,7 @@ def h3_comp(text: str) -> rx.Component:
 
 
 @rx.memo
-def h3_comp_xd(text: str) -> rx.Component:
+def h3_comp_xd(text: rx.Var[str]) -> rx.Component:
     """H3 comp xd.
 
     Returns:
@@ -231,7 +231,7 @@ def h3_comp_xd(text: str) -> rx.Component:
 
 
 @rx.memo
-def h4_comp(text: str) -> rx.Component:
+def h4_comp(text: rx.Var[str]) -> rx.Component:
     """H4 comp.
 
     Returns:
@@ -246,7 +246,7 @@ def h4_comp(text: str) -> rx.Component:
 
 
 @rx.memo
-def h4_comp_xd(text: str) -> rx.Component:
+def h4_comp_xd(text: rx.Var[str]) -> rx.Component:
     """H4 comp xd.
 
     Returns:
@@ -261,7 +261,7 @@ def h4_comp_xd(text: str) -> rx.Component:
 
 
 @rx.memo
-def img_comp_xd(src: str) -> rx.Component:
+def img_comp_xd(src: rx.Var[str]) -> rx.Component:
     """Img comp xd.
 
     Returns:

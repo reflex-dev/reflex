@@ -194,9 +194,9 @@ def default_overlay_component() -> Component:
     Returns:
         The default overlay component, which is a connection banner/toaster set.
     """
-    from reflex_base.components.component import memo
+    from reflex_base.components.memo import memo
 
-    def default_overlay_components():
+    def default_overlay_components() -> Component:
         return Fragment.create(
             connection_pulser(),
             connection_toaster(),
@@ -1164,10 +1164,10 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def _setup_sticky_badge(self):
         """Add the sticky badge to the app."""
-        from reflex_base.components.component import memo
+        from reflex_base.components.memo import memo
 
         @memo
-        def memoized_badge():
+        def memoized_badge() -> Component:
             sticky_badge = sticky()
             sticky_badge._add_style_recursive({})
             return sticky_badge

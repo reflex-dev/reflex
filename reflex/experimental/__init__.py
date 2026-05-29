@@ -1,7 +1,9 @@
 """Namespace for experimental features."""
 
 from types import SimpleNamespace
+from typing import Any
 
+from reflex_base.components.memo import memo as _memo
 from reflex_base.utils.console import warn
 from reflex_components_code.shiki_code_block import code_block as code_block
 
@@ -9,7 +11,6 @@ from reflex.utils.misc import run_in_thread
 
 from . import hooks as hooks
 from .client_state import ClientStateVar as ClientStateVar
-from .memo import memo as memo
 
 
 class ExperimentalNamespace(SimpleNamespace):
@@ -42,6 +43,16 @@ class ExperimentalNamespace(SimpleNamespace):
         self.register_component_warning("run_in_thread")
         return run_in_thread
 
+    @property
+    def memo(self) -> Any:
+        """Deprecated alias for :func:`rx.memo`.
+
+        Returns:
+            The promoted memo decorator from ``reflex_base.components.memo``.
+        """
+        self.register_component_warning("memo")
+        return _memo
+
     @staticmethod
     def register_component_warning(component_name: str):
         """Add component to emitted warnings and throw a warning if it
@@ -60,5 +71,4 @@ _x = ExperimentalNamespace(
     client_state=ClientStateVar.create,
     hooks=hooks,
     code_block=code_block,
-    memo=memo,
 )
