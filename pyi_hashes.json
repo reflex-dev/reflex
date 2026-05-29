@@ -120,5 +120,5 @@
   "packages/reflex-components-sonner/src/reflex_components_sonner/toast.pyi": "ba6c853c503fd8ad6fe89350ef4df073",
   "reflex/__init__.pyi": "12a863ddbcac050c702a3ec6092ae17c",
   "reflex/components/__init__.pyi": "f39a2af77f438fa243c58c965f19d42e",
-  "reflex/experimental/memo.pyi": "5bfbbd60585132d7a76840a0dbacbdd2"
+  "reflex/experimental/memo.pyi": "72001108420e10165405aad1425bd01d"
 }
