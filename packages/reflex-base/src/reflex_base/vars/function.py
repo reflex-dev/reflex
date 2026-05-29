@@ -414,9 +414,12 @@ def format_args_function_operation(
     Returns:
         The formatted args function operation.
     """
-    arg_names_str = ", ".join([
+    arg_parts = [
         arg if isinstance(arg, str) else arg.to_javascript() for arg in args.args
-    ]) + (f", ...{args.rest}" if args.rest else "")
+    ]
+    if args.rest:
+        arg_parts.append(f"...{args.rest}")
+    arg_names_str = ", ".join(arg_parts)
 
     return_expr_str = str(LiteralVar.create(return_expr))
 

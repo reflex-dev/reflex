@@ -35,5 +35,5 @@ def other_section() -> rx.Component:
             faded_borders(),
             class_name="grid grid-cols-1 lg:grid-cols-2 border-t border-secondary-4 relative",
         ),
-        class_name="flex flex-col gap-10 max-lg:text-center relative max-w-(--docs-layout-max-width) mx-auto w-full justify-start lg:mb-24 mb-10 max-xl:px-6 overflow-hidden",
+        class_name="flex flex-col gap-10 max-lg:text-center relative max-w-(--landing-layout-max-width) mx-auto w-full justify-start lg:mb-24 mb-10 max-xl:px-6 overflow-hidden",
     )

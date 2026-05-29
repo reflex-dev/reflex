@@ -87,7 +87,7 @@ class LifespanMixin(AppMixin):
         return tuple(self._lifespan_tasks)
 
     @contextlib.asynccontextmanager
-    async def _run_lifespan_tasks(self, app: Starlette):
+    async def _run_lifespan_tasks(self, starlette_app: Starlette):
         self._lifespan_tasks_started = True
         running_tasks = []
         try:
@@ -100,7 +100,9 @@ class LifespanMixin(AppMixin):
                     else:
                         signature = inspect.signature(task)
                         if "app" in signature.parameters:
-                            task = functools.partial(task, app=app)
+                            task = functools.partial(task, app=self)
+                        if "starlette_app" in signature.parameters:
+                            task = functools.partial(task, starlette_app=starlette_app)
                         t_ = task()
                         if isinstance(t_, contextlib._AsyncGeneratorContextManager):
                             await stack.enter_async_context(t_)

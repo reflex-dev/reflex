@@ -42,6 +42,7 @@ from reflex_base.event import (
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
 from reflex_base.registry import RegistrationContext
+from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
 from reflex_base.utils import console, memo_paths
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
@@ -70,6 +71,7 @@ from reflex.admin import AdminDash
 from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
 from reflex.compiler import compiler
 from reflex.compiler.compiler import readable_name_from_component
+from reflex.istate.data import RouterData
 from reflex.istate.manager import StateManager, StateModificationContext
 from reflex.istate.manager.token import BaseStateToken
 from reflex.page import DECORATED_PAGES
@@ -78,15 +80,17 @@ from reflex.route import (
     replace_brackets_with_keywords,
     verify_route_validity,
 )
-from reflex.state import (
-    BaseState,
-    RouterData,
-    State,
-    StateUpdate,
-    all_base_state_classes,
+from reflex.state import BaseState, State, StateUpdate, all_base_state_classes
+from reflex.utils import (
+    codespaces,
+    exceptions,
+    format,
+    js_runtimes,
+    prerequisites,
+    telemetry_accounting,
 )
-from reflex.utils import codespaces, exceptions, format, js_runtimes, prerequisites
 from reflex.utils.exec import (
+    get_backend_compile_trigger,
     get_compile_context,
     is_prod_mode,
     is_testing_env,
@@ -190,9 +194,9 @@ def default_overlay_component() -> Component:
     Returns:
         The default overlay component, which is a connection banner/toaster set.
     """
-    from reflex_base.components.component import memo
+    from reflex_base.components.memo import memo
 
-    def default_overlay_components():
+    def default_overlay_components() -> Component:
         return Fragment.create(
             connection_pulser(),
             connection_toaster(),
@@ -666,7 +670,10 @@ class App(MiddlewareMixin, LifespanMixin):
         # rx.asset(shared=True) symlink re-creation doesn't trigger further reloads.
         remove_stale_external_asset_symlinks()
 
-        self._compile(prerender_routes=should_prerender_routes())
+        self._compile(
+            prerender_routes=should_prerender_routes(),
+            trigger=get_backend_compile_trigger(),
+        )
 
         config = get_config()
 
@@ -912,7 +919,8 @@ class App(MiddlewareMixin, LifespanMixin):
         # Setup dynamic args for the route.
         # this state assignment is only required for tests using the deprecated state kwarg for App
         state = self._state or State
-        state.setup_dynamic_args(get_route_args(route))
+        route_args = get_route_args(route)
+        state.setup_dynamic_args(route_args)
 
         self._load_events[route] = (
             (on_load if isinstance(on_load, list) else [on_load])
@@ -1061,12 +1069,11 @@ class App(MiddlewareMixin, LifespanMixin):
         dependencies = constants.PackageJson.DEPENDENCIES
         dev_dependencies = constants.PackageJson.DEV_DEPENDENCIES
         page_imports = {
-            i
-            for i, tags in imports.items()
-            if i not in dependencies
-            and i not in dev_dependencies
-            and not any(i.startswith(prefix) for prefix in ["/", "$/", "."])
-            and i != ""
+            package_name
+            for import_name, tags in imports.items()
+            if (package_name := self._get_frontend_package_name(import_name))
+            and package_name not in dependencies
+            and package_name not in dev_dependencies
             and any(tag.install for tag in tags)
         }
         pinned = {i.rpartition("@")[0] for i in page_imports if "@" in i}
@@ -1083,6 +1090,48 @@ class App(MiddlewareMixin, LifespanMixin):
             filtered_frontend_packages.append(package)
         page_imports.update(filtered_frontend_packages)
         js_runtimes.install_frontend_packages(page_imports, get_config())
+
+    @staticmethod
+    def _get_frontend_package_name(import_name: str) -> str | None:
+        """Resolve the npm package name to install for a library import path.
+
+        Args:
+            import_name: The import path key used in component imports.
+
+        Returns:
+            The package name that should be installed, including pinned version when
+            available, or None when the import does not represent an installable npm package.
+        """
+        if import_name == "" or any(
+            import_name.startswith(prefix) for prefix in ("/", "$/", ".")
+        ):
+            return None
+        if import_name.startswith(("https://", "http://")):
+            return import_name
+
+        library_name = format.format_library_name(import_name)
+        if library_name.startswith("@"):
+            scope, slash, package_and_path = library_name.partition("/")
+            package_name = (
+                f"{scope}/{package_and_path.split('/', maxsplit=1)[0]}"
+                if slash and package_and_path
+                else library_name
+            )
+        else:
+            package_name = library_name.split("/", maxsplit=1)[0]
+
+        if import_name.startswith(f"{library_name}@"):
+            version_and_maybe_subpath = import_name[len(library_name) + 1 :]
+            version, slash, _ = version_and_maybe_subpath.partition("/")
+            if slash and ":" not in version:
+                return f"{package_name}@{version}"
+            if package_name == library_name:
+                return import_name
+            return f"{package_name}@{version_and_maybe_subpath}"
+
+        if package_name == library_name:
+            return import_name
+        return package_name
 
     def _app_root(self, app_wrappers: dict[tuple[int, str], Component]) -> Component:
         for component in tuple(app_wrappers.values()):
@@ -1125,10 +1174,10 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def _setup_sticky_badge(self):
         """Add the sticky badge to the app."""
-        from reflex_base.components.component import memo
+        from reflex_base.components.memo import memo
 
         @memo
-        def memoized_badge():
+        def memoized_badge() -> Component:
             sticky_badge = sticky()
             sticky_badge._add_style_recursive({})
             return sticky_badge
@@ -1179,6 +1228,7 @@ class App(MiddlewareMixin, LifespanMixin):
         prerender_routes: bool = False,
         dry_run: bool = False,
         use_rich: bool = True,
+        trigger: CompileTrigger | None = None,
     ):
         """Compile the app and output it to the pages folder.
 
@@ -1186,17 +1236,39 @@ class App(MiddlewareMixin, LifespanMixin):
             prerender_routes: Whether to prerender the routes.
             dry_run: Whether to compile the app without saving it.
             use_rich: Whether to use rich progress bars.
+            trigger: Label identifying what initiated this compile. Recorded
+                on the ``compile`` telemetry event.
 
         Raises:
             ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
             FileNotFoundError: When a plugin requires a file that does not exist.
         """
-        compiler.compile_app(
-            self,
-            prerender_routes=prerender_routes,
-            dry_run=dry_run,
-            use_rich=use_rich,
-        )
+        ctx = TelemetryContext.start(trigger=trigger)
+        if ctx is None:
+            compiler.compile_app(
+                self,
+                prerender_routes=prerender_routes,
+                dry_run=dry_run,
+                use_rich=use_rich,
+            )
+            return
+
+        with ctx:
+            did_real_compile = False
+            try:
+                did_real_compile = compiler.compile_app(
+                    self,
+                    prerender_routes=prerender_routes,
+                    dry_run=dry_run,
+                    use_rich=use_rich,
+                )
+            except Exception as exc:
+                ctx.set_exception(exc)
+                did_real_compile = True
+                raise
+            finally:
+                if did_real_compile:
+                    telemetry_accounting.record_compile(self, ctx)
 
     def _write_stateful_pages_marker(self):
         """Write list of routes that create dynamic states for the backend to use later."""
@@ -1534,10 +1606,7 @@ class EventNamespace(AsyncNamespace):
         ):
             if isinstance(self._token_manager, RedisTokenManager):
                 # The socket belongs to another instance of the app, send it to the lost and found.
-                if not await self._token_manager.emit_lost_and_found(token, update):
-                    console.warn(
-                        f"Failed to send delta to lost and found for client {token!r}"
-                    )
+                await self._token_manager.emit_lost_and_found(token, update)
             else:
                 # If the socket record is None, we are not connected to a client. Prevent sending
                 # updates to all clients.

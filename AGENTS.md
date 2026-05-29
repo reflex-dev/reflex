@@ -46,6 +46,7 @@ docs/                   # documentation site (separate workspace member)
 - No block comments (`# --- Section ---`, `# ============`). Plain inline comments only.
 - Be cautious creating new public APIs — they must be documented and supported long-term.
 - Google-style docstrings on all functions: one-line summary, optional detail sentence(s), then Args/Returns (or Yields)/Raises.
+- Prefer imports at the top of the module in isort order. Only use inline imports when necessary to avoid circular dependencies.
 
 ## Testing
 

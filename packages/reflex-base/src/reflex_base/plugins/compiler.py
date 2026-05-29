@@ -766,11 +766,11 @@ class CompileContext(BaseContext):
     # Auto-memoize wrapper tags seen during the tree walk (populated by
     # ``MemoizeStatefulPlugin``).
     memoize_wrappers: dict[str, None] = dataclasses.field(default_factory=dict)
-    # Compiler-generated experimental memo definitions for auto-memoized
-    # stateful wrappers. Keyed by ``(tag, source_module)`` so identical-rendering
-    # subtrees from different user modules each get their own entry and emit
-    # into the right mirrored memo file. Stored as ``Any`` to keep
-    # ``reflex_base`` decoupled from ``reflex.experimental.memo``.
+    # Compiler-generated memo definitions for auto-memoized stateful wrappers.
+    # Keyed by ``(tag, source_module)`` so identical-rendering subtrees from
+    # different user modules each get their own entry and emit into the right
+    # mirrored memo file. Stored as ``Any`` to avoid an import cycle with
+    # ``reflex_base.components.memo``.
     auto_memo_components: dict[tuple[str, str | None], Any] = dataclasses.field(
         default_factory=dict
     )
