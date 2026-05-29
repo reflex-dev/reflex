@@ -572,8 +572,12 @@ def test_passthrough_memo_definitions_are_not_shared_globally(monkeypatch) -> No
         fake_create_passthrough_component_memo,
     )
 
-    first_compile = SimpleNamespace(memoize_wrappers={}, auto_memo_components={})
-    second_compile = SimpleNamespace(memoize_wrappers={}, auto_memo_components={})
+    first_compile = cast(
+        CompileContext, SimpleNamespace(memoize_wrappers={}, auto_memo_components={})
+    )
+    second_compile = cast(
+        CompileContext, SimpleNamespace(memoize_wrappers={}, auto_memo_components={})
+    )
     page_context = cast(PageContext, SimpleNamespace())
 
     MemoizeStatefulPlugin._build_wrapper(

@@ -19,7 +19,12 @@ class HookOrder(str, Enum):
 if TYPE_CHECKING:
     from reflex.app import App, UnevaluatedPage
     from reflex_base.components.component import BaseComponent
-    from reflex_base.plugins.compiler import ComponentAndChildren, PageContext
+    from reflex_base.plugins.compiler import (
+        CompileContext,
+        ComponentAndChildren,
+        PageComponent,
+        PageContext,
+    )
 
 
 class CommonContext(TypedDict):
@@ -186,7 +191,7 @@ class Plugin:
 
     def eval_page(
         self,
-        page_fn: Any,
+        page_fn: "PageComponent",
         /,
         **kwargs: Any,
     ) -> "PageContext | None":
@@ -216,7 +221,7 @@ class Plugin:
         /,
         *,
         page_context: "PageContext",
-        compile_context: Any,
+        compile_context: "CompileContext",
         in_prop_tree: bool = False,
     ) -> "BaseComponent | ComponentAndChildren | None":
         """Inspect or transform a component before visiting its descendants.
@@ -239,7 +244,7 @@ class Plugin:
         /,
         *,
         page_context: "PageContext",
-        compile_context: Any,
+        compile_context: "CompileContext",
         in_prop_tree: bool = False,
     ) -> "BaseComponent | ComponentAndChildren | None":
         """Inspect or transform a component after visiting its descendants.

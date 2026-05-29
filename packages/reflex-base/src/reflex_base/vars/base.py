@@ -3319,13 +3319,13 @@ class Field(Generic[FIELD_TYPE]):
             if type_origin is Field and (
                 args := getattr(annotated_type, "__args__", None)
             ):
-                annotated_type: GenericType = args[0]
+                annotated_type = args[0]
                 type_origin = get_origin(annotated_type) or annotated_type
 
             if self.default is MISSING and self.default_factory is None:
                 default_value = types.get_default_value_for_type(annotated_type)
                 if default_value is None and not types.is_optional(annotated_type):
-                    annotated_type = annotated_type | None  # ty:ignore[conflicting-declarations]
+                    annotated_type = annotated_type | None
                 if types.is_immutable(default_value):
                     self.default = default_value
                 else:

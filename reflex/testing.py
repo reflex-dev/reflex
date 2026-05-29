@@ -119,7 +119,7 @@ class AppHarness:
     backend: uvicorn.Server | None = None
     _frontends: list[WebDriver] = dataclasses.field(default_factory=list)
     _registry_token: contextvars.Token[RegistrationContext] | None = None
-    _base_registration_context: ClassVar[RegistrationContext] | None = None  # ty:ignore[invalid-type-form]
+    _base_registration_context: ClassVar[RegistrationContext | None] = None
 
     @classmethod
     def create(

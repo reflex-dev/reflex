@@ -481,7 +481,7 @@ def _get_class_annotation_globals(target_class: type) -> Mapping[str, Any]:
 
 
 @cache
-def _get_class_event_triggers(target_class: type) -> frozenset[str]:
+def _get_class_event_triggers(target_class: type[Component]) -> frozenset[str]:
     """Get and cache event trigger names for a class.
 
     Args:
@@ -490,7 +490,7 @@ def _get_class_event_triggers(target_class: type) -> frozenset[str]:
     Returns:
         The event trigger names defined on the class.
     """
-    return frozenset(target_class.get_event_triggers())  # ty:ignore[unresolved-attribute]
+    return frozenset(target_class.get_event_triggers())
 
 
 def _generate_imports(
@@ -593,7 +593,7 @@ def _extract_func_kwargs_as_ast_nodes(
 
 def _extract_class_props_as_ast_nodes(
     func: Callable,
-    clzs: list[type],
+    clzs: list[type[Component]],
     type_hint_globals: dict[str, Any],
     extract_real_default: bool = False,
 ) -> Sequence[tuple[ast.arg, ast.Constant | None]]:
@@ -841,7 +841,7 @@ def _generate_component_create_functiondef(
     all_classes = [c for c in clz.__mro__ if issubclass(c, Component)]
     prop_kwargs = _extract_class_props_as_ast_nodes(
         clz.create,
-        all_classes,  # ty:ignore[invalid-argument-type]
+        all_classes,
         type_hint_globals,
     )
     all_props = [arg[0].arg for arg in prop_kwargs]
