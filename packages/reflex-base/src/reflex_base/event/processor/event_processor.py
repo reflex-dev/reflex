@@ -477,7 +477,7 @@ class EventProcessor:
         # Raise any exceptions for the caller, waiting for all chained events.
         await task_future.wait_all()
 
-    def _try_clean_future(self, future: EventFuture) -> None:  # type: ignore[override]
+    def _try_clean_future(self, future: EventFuture) -> None:
         """Pop a future from _futures when it and all immediate children are done.
 
         After popping, cascade the check upward: if the parent future is also
@@ -499,7 +499,7 @@ class EventProcessor:
         if parent is not None and parent.txid:
             self._try_clean_future(parent)
 
-    def _on_future_done(self, future: EventFuture) -> None:  # type: ignore[override]
+    def _on_future_done(self, future: EventFuture) -> None:
         """Callback invoked when an enqueued future completes.
 
         If the future was cancelled externally, cancel the running task
@@ -710,7 +710,7 @@ class EventProcessor:
 
         if sys.version_info < (3, 12):
             # py3.11 compat
-            task_ctx = task._event_ctx  # type: ignore[attr-defined]  # ty:ignore[unresolved-attribute]
+            task_ctx = task._event_ctx  # ty:ignore[unresolved-attribute]
         else:
             task_ctx = task.get_context().run(EventContext.get)
         self._tasks.pop(task_ctx.txid, None)
