@@ -2080,25 +2080,14 @@ class Component(BaseComponent, ABC):
             else:
                 code[str(hook)] = var_data
 
-        # ``add_hooks`` may wire compile-time-derived values into props (e.g.
-        # ``DataEditor`` binds a generated callback name into a prop). Lift the
-        # freeze around the calls so those writes land on this instance, matching
-        # the mutate-self protocol these components rely on.
-        was_frozen = self.__dict__.get("_frozen", False)
-        if was_frozen:
-            object.__setattr__(self, "_frozen", False)
-        try:
-            # Add the hook code from add_hooks for each parent class (this is reversed to preserve
-            # the order of the hooks in the final output)
-            for clz in reversed(self._iter_parent_classes_with_method("add_hooks")):
-                for hook in clz.add_hooks(self):
-                    if isinstance(hook, Var):
-                        extract_var_hooks(hook)
-                    else:
-                        code[hook] = None
-        finally:
-            if was_frozen:
-                object.__setattr__(self, "_frozen", True)
+        # Add the hook code from add_hooks for each parent class (this is reversed to preserve
+        # the order of the hooks in the final output)
+        for clz in reversed(self._iter_parent_classes_with_method("add_hooks")):
+            for hook in clz.add_hooks(self):
+                if isinstance(hook, Var):
+                    extract_var_hooks(hook)
+                else:
+                    code[hook] = None
 
         return code
 

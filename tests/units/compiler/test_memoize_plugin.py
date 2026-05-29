@@ -88,7 +88,12 @@ class ChildrenViaProp(Component):
 
 
 class HookGeneratedProp(Component):
-    """Component whose hook collection fills a prop needed by render output."""
+    """Component whose hook fills a prop needed by render output.
+
+    Mirrors the ``DataEditor`` pattern: the callback name is derived
+    deterministically and wired into a prop at creation, and ``add_hooks`` emits
+    the matching hook — no compile-time mutation of the frozen component.
+    """
 
     tag = "HookGeneratedProp"
     library = "hook-generated-prop-lib"
@@ -96,13 +101,26 @@ class HookGeneratedProp(Component):
     label: Var[str] = component_field(default=LiteralVar.create(""))
     callback: Var[Any] = component_field(default=LiteralVar.create(None))
 
+    @classmethod
+    def create(cls, *children, **props):
+        """Create the component with its derived callback prop wired in.
+
+        Args:
+            *children: The component children.
+            **props: The component props.
+
+        Returns:
+            The created component.
+        """
+        props["callback"] = Var(_js_expr="generatedCallback")
+        return super().create(*children, **props)
+
     def add_hooks(self) -> list[str]:
-        """Add a hook and wire its identifier into a component prop.
+        """Emit the hook whose identifier the callback prop references.
 
         Returns:
             The hook lines this component contributes.
         """
-        self.callback = Var(_js_expr="generatedCallback")
         return ["function generatedCallback(){ return true; }"]
 
 
@@ -211,8 +229,13 @@ def test_memoize_wrapper_uses_memo_component_and_call_site() -> None:
     assert f"const {wrapper_tag} = memo" not in output
 
 
-def test_auto_memo_component_renders_after_add_hooks_mutates_props() -> None:
-    """Auto-memo modules render after ``add_hooks`` has filled derived props."""
+def test_auto_memo_component_renders_with_hook_derived_props() -> None:
+    """Auto-memo modules render props derived for an ``add_hooks`` hook.
+
+    The callback prop is wired in deterministically at creation and the matching
+    hook is emitted by ``add_hooks`` — no compile-time mutation of the frozen
+    component.
+    """
     ctx, _page_ctx = _compile_single_page(
         lambda: HookGeneratedProp.create(label=STATE_VAR)
     )

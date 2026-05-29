@@ -5,6 +5,7 @@ from __future__ import annotations
 import dataclasses
 from collections.abc import Mapping, Sequence
 from enum import Enum
+from hashlib import md5
 from typing import Any, Literal, TypedDict
 
 from reflex_base.components.component import Component, NoSSRComponent, field
@@ -13,7 +14,6 @@ from reflex_base.event import EventHandler, no_args_event_spec, passthrough_even
 from reflex_base.utils import console, format, types
 from reflex_base.utils.imports import ImportDict, ImportVar
 from reflex_base.utils.serializers import serializer
-from reflex_base.vars import get_unique_variable_name
 from reflex_base.vars.base import Var, VarData
 from reflex_base.vars.function import FunctionStringVar
 from reflex_base.vars.sequence import ArrayVar
@@ -463,21 +463,40 @@ class DataEditor(NoSSRComponent):
                     """
         ]
 
+    @staticmethod
+    def _data_callback_name(columns: Var, data: Var) -> str:
+        """Derive the getData callback name from the editor's columns and data.
+
+        The name is a deterministic function of the inputs the callback closes
+        over, so ``add_hooks`` and the rendered ``get_cell_content`` prop always
+        agree without storing state on the component. Editors with identical
+        columns/data share one callback (their hook bodies are identical and
+        dedupe); editors with different bindings get distinct names.
+
+        The columns string is length-prefixed so the digest input is injective:
+        ``|`` (and ``||``) occur in compiled Var expressions, so a plain
+        ``columns|data`` join would let different bindings concatenate to the same
+        string and clash on one name with conflicting hook bodies.
+
+        Args:
+            columns: The editor's columns Var.
+            data: The editor's data Var.
+
+        Returns:
+            A stable JS identifier for the editor's getData callback.
+        """
+        columns_str = str(columns)
+        payload = f"{len(columns_str)}|{columns_str}{data!s}"
+        digest = md5(payload.encode(), usedforsecurity=False)
+        return f"getData_{digest.hexdigest()[:12]}"
+
     def add_hooks(self) -> list[str]:
         """Get the hooks to render.
 
         Returns:
             The hooks to render.
         """
-        # Define the id of the component in case multiple are used in the same page.
-        editor_id = get_unique_variable_name()
-
-        # Define the name of the getData callback associated with this component and assign to get_cell_content.
-        if self.get_cell_content is not None:
-            data_callback = self.get_cell_content._js_expr
-        else:
-            data_callback = f"getData_{editor_id}"
-            self.get_cell_content = Var(_js_expr=data_callback)
+        data_callback = self._data_callback_name(self.columns, self.data)
 
         code = [f"function {data_callback}([col, row]){{"]
 
@@ -567,6 +586,14 @@ class DataEditor(NoSSRComponent):
             )
 
         grid = super().create(*children, **props)
+        # Wire the getData callback name (referenced by add_hooks) into the prop
+        # so the rendered JSX and the emitted hook agree. Derived deterministically
+        # so no compile-time mutation of the frozen component is needed.
+        grid = grid.copy_with(
+            get_cell_content=Var(
+                _js_expr=cls._data_callback_name(grid.columns, grid.data)
+            )
+        )
         return Div.create(
             grid,
             width=props.pop("width", "100%"),

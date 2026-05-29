@@ -2268,8 +2268,13 @@ def test_unsafe_create_returns_frozen():
         bare.tag = "div"
 
 
-def test_add_hooks_can_mutate_props_on_frozen_component():
-    """``add_hooks`` may derive props onto a frozen component during compile."""
+def test_add_hooks_must_not_mutate_frozen_component():
+    """The freeze has no escape hatch: ``add_hooks`` must derive, not mutate.
+
+    Compile-time-derived props (e.g. ``DataEditor``'s ``get_cell_content``)
+    must be wired in via deterministic derivation, not by assigning to ``self``
+    during hook collection. Assigning still raises so the contract is enforced.
+    """
 
     class HookMutator(Component):
         tag = "HookMutator"
@@ -2281,17 +2286,8 @@ def test_add_hooks_can_mutate_props_on_frozen_component():
             return ["function generatedCallback(){ return true; }"]
 
     c = HookMutator.create()
-    # Direct writes stay blocked outside the add_hooks protocol.
     with pytest.raises(AttributeError, match="copy_with"):
-        c.callback = Var(_js_expr="blocked")
-
-    hooks = c._get_added_hooks()
-    assert "function generatedCallback(){ return true; }" in hooks
-    assert str(c.callback) == "generatedCallback"
-
-    # The component is re-frozen once hook collection finishes.
-    with pytest.raises(AttributeError, match="copy_with"):
-        c.callback = Var(_js_expr="blocked_again")
+        c._get_added_hooks()
 
 
 def test_add_style_recursive_no_op_returns_self():
