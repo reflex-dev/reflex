@@ -2487,6 +2487,26 @@ def test_selected_files_collects_upload_provider_without_upload_component() -> N
     assert (90, "EventLoopProvider") not in page_ctx.app_wrap_components
 
 
+def test_no_upload_usage_omits_upload_provider() -> None:
+    """A page that never references upload Vars omits ``UploadFilesProvider``.
+
+    The provider rides only on ``selected_files`` / ``upload_files`` Var data
+    (or an ``Upload`` component). A page that uses state and events but no
+    upload must not pull it into the registry — the complement of
+    :func:`test_selected_files_collects_upload_provider_without_upload_component`.
+    """
+    page_ctx = compile_page_context_for_app_wraps(
+        rx.button("ping", on_click=rx.console_log("ping"))
+    )
+    keys = page_ctx.app_wrap_components.keys()
+
+    # Event triggers pull in the state/event providers...
+    assert (100, "StateProvider") in keys
+    assert (90, "EventLoopProvider") in keys
+    # ...but nothing references upload, so its provider stays out.
+    assert (5, "UploadFilesProvider") not in keys
+
+
 def test_upload_root_collects_upload_and_event_providers() -> None:
     """Upload root requires both upload context and event-loop providers."""
     page_ctx = compile_page_context_for_app_wraps(
