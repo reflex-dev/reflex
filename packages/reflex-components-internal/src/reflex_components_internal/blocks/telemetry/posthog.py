@@ -43,12 +43,57 @@ def identify_posthog_user(user_id: str) -> rx.event.EventSpec:
     )
 
 
+def _capture_posthog_person_event(
+    event_name: str,
+    props: dict[str, Any],
+    person_keys: set[str],
+) -> rx.event.EventSpec:
+    """Capture an event while keeping PII out of distinct_id.
+
+    Returns:
+        Event that runs PostHog capture in the browser.
+    """
+    props_json = json.dumps(props)
+    person_keys_json = json.dumps(sorted(person_keys))
+
+    return rx.call_script(
+        f"""
+        if (typeof posthog !== 'undefined') {{
+            const props = {props_json};
+            const personKeys = new Set({person_keys_json});
+            const personProps = Object.fromEntries(
+                Object.entries(props).filter(
+                    ([key, value]) => personKeys.has(key) && value !== undefined && value !== null && value !== ''
+                )
+            );
+            const canonicalDistinctId = props.user_uuid || props.user_id || props.contact_uuid || props.contact_id || props.distinct_id;
+            const eventProps = {{...props}};
+            delete eventProps.user_uuid;
+            delete eventProps.user_id;
+            delete eventProps.contact_uuid;
+            delete eventProps.contact_id;
+            delete eventProps.distinct_id;
+            for (const key of personKeys) {{
+                delete eventProps[key];
+            }}
+            if (Object.keys(personProps).length > 0) {{
+                eventProps.$set = personProps;
+            }}
+            if (canonicalDistinctId && canonicalDistinctId !== props.email) {{
+                posthog.identify(String(canonicalDistinctId), personProps);
+            }}
+            posthog.capture('{event_name}', eventProps);
+        }}
+        """
+    )
+
+
 def _track_form_posthog(
     event_name: str,
     form_data: dict[str, Any],
     allowed_keys: set[str],
 ) -> rx.event.EventSpec:
-    """Identify the submitter and capture a form event in PostHog.
+    """Capture a form event in PostHog with person properties.
 
     Args:
         event_name: PostHog event name to capture.
@@ -56,27 +101,10 @@ def _track_form_posthog(
         allowed_keys: Set of keys to include from form_data.
 
     Returns:
-        Event that runs PostHog identify and capture in the browser.
+        Event that runs PostHog capture in the browser.
     """
     filtered = {k: v for k, v in form_data.items() if k in allowed_keys}
-    props_json = json.dumps(filtered)
-
-    return rx.call_script(
-        f"""
-        if (typeof posthog !== 'undefined') {{
-            const props = {props_json};
-            const distinctId = props.email || ('anon_' + String(Date.now()));
-            posthog.identify(distinctId, {{
-                email: props.email,
-                first_name: props.first_name,
-                last_name: props.last_name,
-                job_title: props.job_title,
-                company_name: props.company_name,
-            }});
-            posthog.capture('{event_name}', props);
-        }}
-        """
-    )
+    return _capture_posthog_person_event(event_name, filtered, _PERSON_KEYS)
 
 
 _COMMON_KEYS = {
@@ -85,6 +113,11 @@ _COMMON_KEYS = {
     "last_name",
     "job_title",
     "company_name",
+    "user_uuid",
+    "user_id",
+    "contact_uuid",
+    "contact_id",
+    "distinct_id",
     "number_of_employees",
     "how_did_you_hear_about_us",
     "interested_in",
@@ -92,12 +125,20 @@ _COMMON_KEYS = {
     "technical_level",
 }
 
+_PERSON_KEYS = {
+    "email",
+    "first_name",
+    "last_name",
+    "job_title",
+    "company_name",
+}
+
 
 def track_demo_form_posthog_submission(form_data: dict[str, Any]) -> rx.event.EventSpec:
     """Capture a demo_request event in PostHog.
 
     Returns:
-        Event that runs PostHog identify and capture in the browser.
+        Event that runs PostHog capture in the browser.
     """
     return _track_form_posthog("demo_request", form_data, _COMMON_KEYS)
 
@@ -108,11 +149,28 @@ def track_intro_form_posthog_submission(
     """Capture an intro_submit event in PostHog.
 
     Returns:
-        Event that runs PostHog identify and capture in the browser.
+        Event that runs PostHog capture in the browser.
     """
     return _track_form_posthog(
         "intro_submit", form_data, _COMMON_KEYS | {"phone_number"}
     )
+
+
+def track_newsletter_posthog_subscription(
+    email: str | None,
+    contact_uuid: str | None = None,
+) -> rx.event.EventSpec:
+    """Capture a newsletter subscription without using email as distinct_id.
+
+    Returns:
+        Event that runs PostHog capture in the browser.
+    """
+    props = {}
+    if email:
+        props["email"] = email
+    if contact_uuid:
+        props["contact_uuid"] = contact_uuid
+    return _capture_posthog_person_event("newsletter_subscribed", props, {"email"})
 
 
 def get_posthog_trackers(

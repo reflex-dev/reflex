@@ -5,7 +5,7 @@ from .common_room import get_common_room_trackers, identify_common_room_user
 from .default import get_default_telemetry_script
 from .google import get_google_analytics_trackers, gtag_report_conversion
 from .koala import get_koala_trackers
-from .posthog import get_posthog_trackers
+from .posthog import get_posthog_trackers, track_newsletter_posthog_subscription
 from .rb2b import get_rb2b_trackers
 from .unify import get_unify_trackers
 
@@ -20,4 +20,5 @@ __all__ = [
     "get_unify_trackers",
     "gtag_report_conversion",
     "identify_common_room_user",
+    "track_newsletter_posthog_subscription",
 ]
