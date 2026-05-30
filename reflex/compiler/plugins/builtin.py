@@ -15,6 +15,7 @@ from reflex_base.plugins.base import HookOrder
 from reflex_base.utils.format import make_default_page_title
 from reflex_base.utils.imports import collapse_imports, merge_imports
 from reflex_base.vars import VarData
+from reflex_base.vars.base import insert_app_wraps
 from reflex_components_core.base.fragment import Fragment
 
 from reflex.compiler import utils
@@ -86,10 +87,14 @@ def _ingest_component_var_app_wraps(
         if hook_var_data is None:
             continue
         _ingest_var_data_app_wraps(wraps_by_key, existing, hook_var_data)
-    for key, wrapper in component._get_event_app_wraps().items():
-        if key in existing or key in wraps_by_key:
-            continue
-        wraps_by_key[key] = wrapper
+    insert_app_wraps(
+        wraps_by_key,
+        (
+            (priority, wrapper)
+            for (priority, _tag), wrapper in component._get_event_app_wraps().items()
+        ),
+        existing=existing,
+    )
 
 
 def collect_var_app_wraps_for_component(
@@ -143,13 +148,15 @@ def _ingest_app_wraps(
     app_wraps: tuple[tuple[int, BaseComponent], ...],
 ) -> None:
     """Insert app_wraps not already present in ``existing`` or ``wraps_by_key``."""
-    for priority, wrapper in app_wraps:
-        if not isinstance(wrapper, Component):
-            continue
-        key = (priority, wrapper.tag or type(wrapper).__name__)
-        if key in existing or key in wraps_by_key:
-            continue
-        wraps_by_key[key] = wrapper
+    insert_app_wraps(
+        wraps_by_key,
+        (
+            (priority, wrapper)
+            for priority, wrapper in app_wraps
+            if isinstance(wrapper, Component)
+        ),
+        existing=existing,
+    )
 
 
 @dataclasses.dataclass(frozen=True, slots=True)

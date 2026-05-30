@@ -23,6 +23,7 @@ from reflex_base.plugins import (
 )
 from reflex_base.plugins.base import HookOrder
 from reflex_base.utils import format as format_utils
+from reflex_base.utils.exceptions import ReflexError
 from reflex_base.utils.imports import ImportVar, collapse_imports, merge_imports
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
@@ -837,6 +838,24 @@ def test_default_collector_dedupes_var_app_wraps_against_component_wraps() -> No
 
     # Component-declared wrap wins because it's collected first; var wrap is skipped.
     assert page_ctx.app_wrap_components[10, "WrapperComponent"] is component_wrap
+
+
+def test_default_collector_raises_on_conflicting_var_app_wraps() -> None:
+    """The page walk surfaces a conflict between two Var-declared wraps."""
+    # Same tag/priority, unequal wrappers, on two Vars of one component.
+    wrap_a = WrapperComponent.create(class_name="a")
+    wrap_b = WrapperComponent.create(class_name="b")
+    var_a = LiteralVar.create("a")._replace(
+        merge_var_data=VarData(app_wraps=((10, wrap_a),))
+    )
+    var_b = LiteralVar.create("b")._replace(
+        merge_var_data=VarData(app_wraps=((10, wrap_b),))
+    )
+
+    component = RootComponent.create(ChildComponent.create(id=var_a, class_name=var_b))
+
+    with pytest.raises(ReflexError, match="Conflicting app wraps"):
+        collect_page_context(component, plugins=(DefaultCollectorPlugin(),))
 
 
 def test_default_collector_collects_direct_events_hook_app_wraps() -> None:

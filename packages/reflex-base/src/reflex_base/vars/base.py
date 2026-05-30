@@ -113,6 +113,48 @@ _var_subclasses: list[VarSubclassEntry] = []
 _var_literal_subclasses: list[tuple[type[LiteralVar], VarSubclassEntry]] = []
 
 
+_AppWrap = TypeVar("_AppWrap", bound="BaseComponent")
+
+
+def insert_app_wraps(
+    target: dict[tuple[int, str], _AppWrap],
+    sources: Iterable[tuple[int, _AppWrap]],
+    *,
+    existing: Mapping[tuple[int, str], _AppWrap] | None = None,
+) -> None:
+    """Merge app-wrap requests into ``target`` keyed by ``(priority, tag)``.
+
+    App wraps model a set of required wrapper roles: at most one wrapper per
+    ``(priority, tag)``. Requests resolving to an equal wrapper are deduped;
+    two different wrappers claiming one role is a conflict and raises. This is
+    the single place that rule lives, shared by ``VarData.merge`` (within one
+    Var) and the compiler's page-wide collection.
+
+    Args:
+        target: Registry that receives newly seen wraps.
+        sources: ``(priority, wrapper)`` requests to merge in.
+        existing: Already-committed wraps to dedupe against without writing,
+            letting callers collect only the wraps they newly contribute.
+
+    Raises:
+        ReflexError: If two different wrappers claim one ``(priority, tag)``.
+    """
+    for priority, wrapper in sources:
+        key = (priority, wrapper.tag or type(wrapper).__name__)
+        seen = existing.get(key) if existing is not None else None
+        if seen is None:
+            seen = target.get(key)
+        if seen is not None:
+            if seen != wrapper:
+                msg = (
+                    f"Conflicting app wraps for {key!r}: two different "
+                    "components claim the same (priority, tag) slot."
+                )
+                raise exceptions.ReflexError(msg)
+            continue
+        target[key] = wrapper
+
+
 @dataclasses.dataclass(
     eq=True,
     frozen=True,
@@ -269,15 +311,9 @@ class VarData:
             component for var_data in all_var_datas for component in var_data.components
         )
 
-        app_wraps_seen: set[tuple[int, str]] = set()
-        app_wraps_list: list[tuple[int, BaseComponent]] = []
+        app_wraps: dict[tuple[int, str], BaseComponent] = {}
         for var_data in all_var_datas:
-            for priority, wrapper in var_data.app_wraps:
-                key = (priority, wrapper.tag or type(wrapper).__name__)
-                if key in app_wraps_seen:
-                    continue
-                app_wraps_seen.add(key)
-                app_wraps_list.append((priority, wrapper))
+            insert_app_wraps(app_wraps, var_data.app_wraps)
 
         return VarData(
             state=state,
@@ -287,7 +323,9 @@ class VarData:
             deps=deps,
             position=position,
             components=components,
-            app_wraps=tuple(app_wraps_list),
+            app_wraps=tuple(
+                (priority, wrapper) for (priority, _tag), wrapper in app_wraps.items()
+            ),
         )
 
     def __bool__(self) -> bool:
@@ -314,7 +352,9 @@ class VarData:
         ``__eq__`` override drops the default hash. Use component identity for
         embedded components because they can contribute hooks/imports, and use
         the compiler's app-wrap registry key for wrappers so fresh provider
-        instances with the same role still compare equal.
+        instances with the same role still compare equal. App wraps are a set
+        of required roles, so a ``frozenset`` keeps identity insensitive to the
+        order vars happened to merge in (``a + b`` and ``b + a`` stay equal).
 
         Returns:
             A hashable tuple uniquely identifying this VarData.
@@ -327,11 +367,8 @@ class VarData:
             self.deps,
             self.position,
             tuple(id(component) for component in self.components),
-            tuple(
-                (
-                    priority,
-                    component.tag or type(component).__name__,
-                )
+            frozenset(
+                (priority, component.tag or type(component).__name__)
                 for priority, component in self.app_wraps
             ),
         )

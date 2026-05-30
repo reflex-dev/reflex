@@ -2000,10 +2000,11 @@ class Component(BaseComponent, ABC):
     def _get_events_hooks(self) -> dict[str, VarData | None]:
         """Get the hooks required by events referenced in this component.
 
-        ``addEvents`` is reached via the module-level import in
-        ``Imports.EVENTS``, so no in-scope hook is needed for events.
-        State/event-loop providers ride along on the event invocation's
-        ``VarData.app_wraps`` and via :meth:`_get_event_app_wraps`.
+        Always empty: ``addEvents`` is reached via the module-level import
+        in ``Imports.EVENTS``, so events need no in-scope hook. The state/
+        event-loop providers they still depend on are mounted as app wraps
+        instead — carried on the event invocation's ``VarData.app_wraps``
+        and via :meth:`_get_event_app_wraps`.
 
         Returns:
             An empty dict.
@@ -2166,12 +2167,17 @@ class Component(BaseComponent, ABC):
     def _get_event_app_wraps(self) -> dict[tuple[int, str], Component]:
         """Return state/event-loop providers required by event triggers.
 
-        Kept separate from :meth:`_get_app_wrap_components` so subclass
-        overrides of that method don't inadvertently strip these out —
-        the providers must be in the React tree for ``StateContexts``,
-        ``EventLoopContext``, and the websocket plumbing to stay alive
-        even though ``addEvents`` itself is reached via module-level
-        import rather than a hook closure.
+        A component with event triggers calls ``addEvents`` at runtime,
+        which only does anything if ``StateProvider`` (supplies the
+        dispatch context) and ``EventLoopProvider`` (runs the websocket)
+        are mounted as ancestors. ``addEvents`` now comes from a
+        module-level import rather than an in-scope hook, so nothing drags
+        those providers into the tree on its own — this method requests
+        them explicitly as app wraps.
+
+        Kept separate from :meth:`_get_app_wrap_components` because
+        subclasses override that method to add their own app wraps; folding
+        these in would let such an override silently drop them.
 
         Returns:
             The state/event-loop provider entries (empty if no event
