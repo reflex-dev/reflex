@@ -38,8 +38,24 @@ def _register_doc_route(path: str) -> None:
 
 def _resolve_breadcrumb_href(
     href: str, registered_routes: Collection[str] | None = None
-) -> str:
-    """Resolve a generated breadcrumb href to a registered docs route."""
+) -> str | None:
+    """Resolve a generated breadcrumb href to a registered docs route.
+
+    Breadcrumbs are built from path segments, but intermediate segments (e.g.
+    ``/ai`` or ``/hosting``) are often just categories with no page of their
+    own. This returns the matching route, preferring an ``overview`` child when
+    the bare path is not itself a page, or ``None`` when no registered route
+    exists so the caller can render the segment as non-clickable text instead of
+    a broken link.
+
+    Args:
+        href: The generated, app-relative breadcrumb href (no ``/docs`` prefix).
+        registered_routes: Routes to match against. Defaults to the routes
+            registered through the docpage template.
+
+    Returns:
+        The resolved route, or ``None`` if no registered route matches.
+    """
     routes = _REGISTERED_DOC_ROUTES if registered_routes is None else registered_routes
     route = _normalize_doc_route(href)
     if route in routes:
@@ -49,7 +65,7 @@ def _resolve_breadcrumb_href(
     if overview_route in routes:
         return overview_route
 
-    return href
+    return None
 
 
 class FeedbackState(rx.State):
@@ -678,16 +694,31 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
     for i, segment in enumerate(segments):
         current_path += f"/{segment}"
 
-        # Add the breadcrumb item to the list
-        breadcrumbs.append(
-            rx.el.a(
-                to_title_case(to_snake_case(segment), sep=" "),
-                class_name="min-h-8 flex items-center text-sm font-[525] text-m-slate-12 dark:text-m-slate-3 last:text-m-slate-7 dark:last:text-m-slate-6 hover:text-primary-10 dark:hover:text-primary-9"
-                + (" truncate" if i == len(segments) - 1 else ""),
-                underline="none",
-                href=_resolve_breadcrumb_href(current_path),
-            )
+        label = to_title_case(to_snake_case(segment), sep=" ")
+        if label == "Ai":
+            label = "AI"
+        base_class = ui.cn(
+            "min-h-8 flex items-center text-sm font-[525] text-m-slate-12 dark:text-m-slate-3 last:text-m-slate-7 dark:last:text-m-slate-6",
+            "truncate" if i == len(segments) - 1 else "",
         )
+
+        # Category segments (e.g. /ai, /hosting) often have no page of their own.
+        # Render those as plain text so the breadcrumb doesn't link to a 404.
+        href = _resolve_breadcrumb_href(current_path)
+        if href is None:
+            breadcrumbs.append(rx.el.span(label, class_name=base_class))
+        else:
+            breadcrumbs.append(
+                rx.el.a(
+                    label,
+                    class_name=ui.cn(
+                        base_class,
+                        "hover:text-primary-10 dark:hover:text-primary-9",
+                    ),
+                    underline="none",
+                    href=href,
+                )
+            )
 
         # If it's not the last segment, add a separator
         if i < len(segments) - 1:
