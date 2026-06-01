@@ -24,6 +24,15 @@ from reflex_site_shared.views.footer import dark_mode_toggle
 
 _REGISTERED_DOC_ROUTES: set[str] = set()
 
+# Title-cased breadcrumb labels that should be displayed as acronyms.
+_BREADCRUMB_LABEL_OVERRIDES: dict[str, str] = {
+    "Ai": "AI",
+    "Api": "API",
+    "Sdk": "SDK",
+    "Cli": "CLI",
+    "Css": "CSS",
+}
+
 
 def _normalize_doc_route(path: str) -> str:
     """Normalize a docs route to use leading and trailing slashes."""
@@ -695,8 +704,7 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
         current_path += f"/{segment}"
 
         label = to_title_case(to_snake_case(segment), sep=" ")
-        if label == "Ai":
-            label = "AI"
+        label = _BREADCRUMB_LABEL_OVERRIDES.get(label, label)
         base_class = ui.cn(
             "min-h-8 flex items-center text-sm font-[525] text-m-slate-12 dark:text-m-slate-3 last:text-m-slate-7 dark:last:text-m-slate-6",
             "truncate" if i == len(segments) - 1 else "",
