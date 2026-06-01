@@ -8,11 +8,42 @@ import reflex_enterprise as rxe
 from reflex_site_shared import styles
 from reflex_site_shared.backend.status import monitor_checkly_status
 from reflex_site_shared.constants import REFLEX_ASSETS_CDN
-from reflex_site_shared.meta.meta import favicons_links, to_cdn_image_url
+from reflex_site_shared.meta.meta import (
+    ONE_LINE_DESCRIPTION,
+    create_meta_tags,
+    favicons_links,
+    to_cdn_image_url,
+)
 from reflex_site_shared.telemetry import get_pixel_website_trackers
+from reflex_site_shared.utils.url import public_url
 
 from reflex_docs.pages import page404, routes
+from reflex_docs.templates.docpage.docpage import DOCS_PROD_BASE
 from reflex_docs.whitelist import _check_whitelisted_path
+
+
+def _seo_meta_tags(
+    title: str, description: str, image: str, canonical_url: str
+) -> list:
+    """Build the per-page SEO meta tag set, deduped against framework output.
+
+    Reflex's ``add_page`` already emits ``<meta name="description">`` (from
+    its ``description=`` arg) and ``<meta property="og:image">`` (from its
+    ``image=`` arg). We strip those entries from ``create_meta_tags`` to
+    avoid duplicate tags in the rendered ``<head>``.
+    """
+    tags = create_meta_tags(
+        title=title, description=description, image=image, url=canonical_url
+    )
+    return [
+        t
+        for t in tags
+        if not (
+            isinstance(t, dict)
+            and (t.get("name") == "description" or t.get("property") == "og:image")
+        )
+    ]
+
 
 # This number discovered by trial and error on Windows 11 w/ Node 18, any
 # higher and the prod build fails with EMFILE error.
@@ -76,37 +107,39 @@ if sys.platform == "win32":
     routes = routes[:WINDOWS_MAX_ROUTES]
 
 # Add the pages to the app.
+_DEFAULT_PREVIEW = f"{REFLEX_ASSETS_CDN}previews/index_preview.webp"
 for route in routes:
     # print(f"Adding route: {route}")
     if _check_whitelisted_path(route.path):
-        # Normalize image to CDN URL when it's a relative path
         image_url = (
-            f"{REFLEX_ASSETS_CDN}previews/index_preview.webp"
-            if route.image is None
-            else to_cdn_image_url(route.image)
-            or f"{REFLEX_ASSETS_CDN}previews/index_preview.webp"
-        )
+            to_cdn_image_url(route.image) if route.image else None
+        ) or _DEFAULT_PREVIEW
+        page_description = route.description or ONE_LINE_DESCRIPTION
 
-        page_args = {
-            "component": route.component,
-            "route": route.path,
-            "title": route.title,
-            "image": image_url,
-            "meta": [
-                {"name": "theme-color", "content": route.background_color},
-            ],
-            "on_load": route.on_load,
-        }
-
-        # Add the description only if it is not None
-        if route.description is not None:
-            page_args["description"] = route.description
-        # Add the extra meta data only if it is not None
+        meta_tags: list = [
+            {"name": "theme-color", "content": route.background_color},
+        ]
+        if isinstance(route.title, str):
+            meta_tags.extend(
+                _seo_meta_tags(
+                    title=route.title,
+                    description=page_description,
+                    image=image_url,
+                    canonical_url=public_url(route.path, fallback_base=DOCS_PROD_BASE),
+                )
+            )
         if route.meta is not None:
-            page_args["meta"].extend(route.meta)
+            meta_tags.extend(route.meta)
 
-        # Call add_page with the dynamically constructed arguments
-        app.add_page(**page_args)
+        app.add_page(
+            component=route.component,
+            route=route.path,
+            title=route.title,
+            description=page_description,
+            image=image_url,
+            meta=meta_tags,
+            on_load=route.on_load,
+        )
 
 # Add redirects.
 redirects = [

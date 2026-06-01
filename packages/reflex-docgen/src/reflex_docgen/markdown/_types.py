@@ -140,6 +140,8 @@ class FrontMatter:
         components: Component paths to document (e.g. ``["rx.button"]``).
         only_low_level: Whether to show only low-level component variants.
         title: An optional page title.
+        description: An optional SEO meta description for the page.
+        image: An optional social-preview image path/URL for the page.
         component_previews: Preview lambdas keyed by component class name.
     """
 
@@ -147,6 +149,8 @@ class FrontMatter:
     only_low_level: bool
     title: str | None
     component_previews: tuple[ComponentPreview, ...]
+    description: str | None = None
+    image: str | None = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

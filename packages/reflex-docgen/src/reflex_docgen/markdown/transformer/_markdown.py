@@ -120,6 +120,10 @@ class MarkdownTransformer(DocumentTransformer[str]):
             data["only_low_level"] = [True]
         if block.title is not None:
             data["title"] = block.title
+        if block.description is not None:
+            data["description"] = block.description
+        if block.image is not None:
+            data["image"] = block.image
         for preview in block.component_previews:
             data[preview.name] = preview.source
         return f"---\n{yaml.dump(data, default_flow_style=False, sort_keys=False).rstrip()}\n---"

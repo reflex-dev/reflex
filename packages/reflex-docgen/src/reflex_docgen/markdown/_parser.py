@@ -40,7 +40,13 @@ _FRONTMATTER_RE = re.compile(r"\A---\n(.*?\n)---\n", re.DOTALL)
 
 
 #: Known frontmatter keys that are not component preview lambdas.
-_KNOWN_KEYS = frozenset({"components", "only_low_level", "title"})
+_KNOWN_KEYS = frozenset({
+    "components",
+    "only_low_level",
+    "title",
+    "description",
+    "image",
+})
 
 
 def _extract_frontmatter(source: str) -> tuple[FrontMatter | None, str]:
@@ -79,6 +85,14 @@ def _extract_frontmatter(source: str) -> tuple[FrontMatter | None, str]:
     raw_title = data.get("title")
     title = str(raw_title) if raw_title is not None else None
 
+    # SEO description
+    raw_description = data.get("description")
+    description = str(raw_description) if raw_description is not None else None
+
+    # social preview image
+    raw_image = data.get("image")
+    image = str(raw_image) if raw_image is not None else None
+
     # component previews — any key not in _KNOWN_KEYS with a string value
     previews: list[ComponentPreview] = []
     for key, value in data.items():
@@ -90,6 +104,8 @@ def _extract_frontmatter(source: str) -> tuple[FrontMatter | None, str]:
             components=components,
             only_low_level=only_low_level,
             title=title,
+            description=description,
+            image=image,
             component_previews=tuple(previews),
         ),
         source[m.end() :],

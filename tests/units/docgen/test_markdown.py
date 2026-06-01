@@ -118,6 +118,49 @@ def test_multiple_previews():
     assert "InputSlot" in names
 
 
+def test_frontmatter_description():
+    """Frontmatter ``description`` is extracted as a string."""
+    source = "---\ndescription: A short SEO description.\n---\n# Hello\n"
+    fm = parse_document(source).frontmatter
+    assert fm is not None
+    assert fm.description == "A short SEO description."
+
+
+def test_frontmatter_image():
+    """Frontmatter ``image`` is extracted as a string."""
+    source = "---\nimage: /previews/foo.webp\n---\n# Hello\n"
+    fm = parse_document(source).frontmatter
+    assert fm is not None
+    assert fm.image == "/previews/foo.webp"
+
+
+def test_frontmatter_description_and_image_default_none():
+    """``description`` / ``image`` default to None when absent."""
+    source = "---\ntitle: Test\n---\n# Hello\n"
+    fm = parse_document(source).frontmatter
+    assert fm is not None
+    assert fm.description is None
+    assert fm.image is None
+
+
+def test_frontmatter_description_image_not_treated_as_preview():
+    """``description`` / ``image`` are reserved keys, not component previews."""
+    source = (
+        "---\n"
+        "components:\n  - rx.button\n"
+        "description: SEO desc\n"
+        "image: /img.webp\n\n"
+        "Button: |\n  lambda **props: rx.button(**props)\n"
+        "---\n# Button\n"
+    )
+    fm = parse_document(source).frontmatter
+    assert fm is not None
+    assert fm.description == "SEO desc"
+    assert fm.image == "/img.webp"
+    assert len(fm.component_previews) == 1
+    assert fm.component_previews[0].name == "Button"
+
+
 def test_transform_frontmatter_with_previews():
     """FrontMatter with component previews renders correctly."""
     fm = FrontMatter(
@@ -147,6 +190,46 @@ def test_transform_frontmatter_with_only_low_level():
         component_previews=(),
     )
     assert "only_low_level" in _md.frontmatter(fm)
+
+
+def test_transform_frontmatter_with_description_and_image():
+    """FrontMatter ``description`` / ``image`` round-trip through the writer."""
+    fm = FrontMatter(
+        components=(),
+        only_low_level=False,
+        title=None,
+        description="A SEO description.",
+        image="/previews/foo.webp",
+        component_previews=(),
+    )
+    md = _md.frontmatter(fm)
+    assert "description: A SEO description." in md
+    assert "image: /previews/foo.webp" in md
+
+
+def test_transform_frontmatter_omits_unset_description_and_image():
+    """Unset ``description`` / ``image`` are not emitted by the writer."""
+    fm = FrontMatter(
+        components=(),
+        only_low_level=False,
+        title=None,
+        component_previews=(),
+    )
+    md = _md.frontmatter(fm)
+    assert "description:" not in md
+    assert "image:" not in md
+
+
+def test_frontmatter_description_image_round_trip():
+    """Parser → transformer → parser preserves ``description`` and ``image``."""
+    original = "---\ndescription: Round trip\nimage: /round/trip.webp\n---\n# Hi\n"
+    fm = parse_document(original).frontmatter
+    assert fm is not None
+    rendered = _md.frontmatter(fm) + "\n# Hi\n"
+    fm2 = parse_document(rendered).frontmatter
+    assert fm2 is not None
+    assert fm2.description == "Round trip"
+    assert fm2.image == "/round/trip.webp"
 
 
 def test_h1():
