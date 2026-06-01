@@ -848,22 +848,6 @@ export const {function["name"]} = {function["function"]};
 """
 
 
-def memo_index_template(reexports: Iterable[tuple[str, str]]) -> str:
-    """Template for the memo index module that re-exports every memo file.
-
-    Args:
-        reexports: Iterable of ``(export_name, relative_module_specifier)``.
-
-    Returns:
-        The rendered index module code.
-    """
-    lines = [
-        f'export {{ {export_name} }} from "{specifier}";'
-        for export_name, specifier in reexports
-    ]
-    return "\n".join(lines) + "\n"
-
-
 def styles_template(stylesheets: list[str]) -> str:
     """Template for styles.css.
 

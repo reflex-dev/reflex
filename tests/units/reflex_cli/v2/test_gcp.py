@@ -157,6 +157,157 @@ def test_gcp_deploy_runs_script_from_source_with_cloudbuild_yaml(
     assert get_mock.call_args.kwargs["headers"] == {"X-API-TOKEN": "fake-token"}
 
 
+def test_gcp_deploy_forwards_resource_flags(mocker: MockFixture, tmp_path: Path):
+    """--cpu / --memory / --min-instances flow through to the deploy script env."""
+    run_mock = _patch_environment(mocker)
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "deploy",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--cpu",
+            "4",
+            "--memory",
+            "2Gi",
+            "--min-instances",
+            "0",
+        ],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    env_overrides = run_mock.call_args.kwargs["env_overrides"]
+    assert env_overrides["CLOUD_RUN_CPU"] == "4"
+    assert env_overrides["CLOUD_RUN_MEMORY"] == "2Gi"
+    assert env_overrides["CLOUD_RUN_MIN_INSTANCES"] == "0"
+
+
+def test_gcp_deploy_resource_flags_have_defaults(mocker: MockFixture, tmp_path: Path):
+    """When the user omits the new flags, defaults reach the deploy script env."""
+    run_mock = _patch_environment(mocker)
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    env_overrides = run_mock.call_args.kwargs["env_overrides"]
+    assert env_overrides["CLOUD_RUN_CPU"] == "1"
+    assert env_overrides["CLOUD_RUN_MEMORY"] == "1Gi"
+    assert env_overrides["CLOUD_RUN_MIN_INSTANCES"] == "1"
+
+
+def test_gcp_deploy_forwards_service_account(mocker: MockFixture, tmp_path: Path):
+    """--service-account threads through to CLOUD_RUN_SERVICE_ACCOUNT."""
+    run_mock = _patch_environment(mocker)
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "deploy",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--service-account",
+            "my-sa@p.iam.gserviceaccount.com",
+        ],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    env_overrides = run_mock.call_args.kwargs["env_overrides"]
+    assert (
+        env_overrides["CLOUD_RUN_SERVICE_ACCOUNT"] == "my-sa@p.iam.gserviceaccount.com"
+    )
+
+
+def test_gcp_deploy_omits_service_account_when_unset(
+    mocker: MockFixture, tmp_path: Path
+):
+    """Without --service-account, CLOUD_RUN_SERVICE_ACCOUNT is not in env_overrides.
+
+    The deploy script defaults it to empty, so Cloud Run falls back to the
+    project's default compute SA. Leaving the key out of env_overrides (rather
+    than sending an empty string) keeps the dry-run output tidy.
+    """
+    run_mock = _patch_environment(mocker)
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    env_overrides = run_mock.call_args.kwargs["env_overrides"]
+    assert "CLOUD_RUN_SERVICE_ACCOUNT" not in env_overrides
+
+
+def test_gcp_deploy_rejects_empty_service_account(mocker: MockFixture, tmp_path: Path):
+    """An explicit --service-account "" errors instead of silently falling back.
+
+    A common footgun is `--service-account "$VAR"` in CI where VAR is unset; the
+    flag would otherwise resolve to the default compute SA against user intent.
+    """
+    run_mock = _patch_environment(mocker)
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "deploy",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--service-account",
+            "",
+        ],
+        input="y\n",
+    )
+
+    assert result.exit_code == 2
+    run_mock.assert_not_called()
+
+
+def test_gcp_deploy_rejects_negative_min_instances(mocker: MockFixture, tmp_path: Path):
+    """--min-instances is IntRange(min=0); negative values fail at the CLI layer."""
+    run_mock = _patch_environment(mocker)
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "deploy",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--min-instances",
+            "-1",
+        ],
+    )
+
+    assert result.exit_code == 2
+    assert "min-instances" in result.output.lower()
+    assert run_mock.call_count == 0
+
+
 def test_gcp_deploy_aborts_on_no(mocker: MockFixture, tmp_path: Path):
     """Declining the run prompt aborts before any staging."""
     run_mock = _patch_environment(mocker)

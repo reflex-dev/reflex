@@ -231,7 +231,10 @@ def footer_legal(class_name: str = "") -> rx.Component:
 
 
 @rx.memo
-def footer_index(class_name: str = "", grid_class_name: str = "") -> rx.Component:
+def footer_index(
+    class_name: rx.Var[str] = rx.EMPTY_VAR_STR,
+    grid_class_name: rx.Var[str] = rx.EMPTY_VAR_STR,
+) -> rx.Component:
     """Full marketing footer: logo, newsletter, links, and legal.
 
     Returns:
