@@ -53,7 +53,7 @@ from reflex_site_shared.components.blocks.typography import (
     text_comp,
 )
 from reflex_site_shared.constants import REFLEX_ASSETS_CDN
-from reflex_site_shared.integrations import rewrite_integration_doc_image_src
+from reflex_site_shared.integrations import rewrite_integration_doc_images_in_source
 
 # ---------------------------------------------------------------------------
 # Exec environment — mirrors reflex_docgen's module-based exec mechanism
@@ -172,7 +172,7 @@ def _render_spans(spans: tuple[Span, ...]) -> list[rx.Component | str]:
                 )
                 out.append(doclink2(text=inner, href=target))
             case ImageSpan(src=src):
-                out.append(img_comp_xd(src=rewrite_integration_doc_image_src(src)))
+                out.append(img_comp_xd(src=src))
             case LineBreakSpan(soft=soft):
                 out.append("\n" if soft else rx.el.br())
     return out
@@ -403,7 +403,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
         return doclink2(text=inner, href=span.target)
 
     def image(self, span: ImageSpan) -> rx.Component:
-        return img_comp_xd(src=rewrite_integration_doc_image_src(span.src))
+        return img_comp_xd(src=span.src)
 
     def line_break(self, span: LineBreakSpan) -> rx.Component:
         return rx.fragment()
@@ -843,6 +843,7 @@ def render_docgen_document(
     ``None`` if no FAQ block is found.
     """
     source = Path(actual_filepath).read_text(encoding="utf-8")
+    source = rewrite_integration_doc_images_in_source(source)
     source, faq_script = _extract_faqs_jsonld(source)
     transformer = ReflexDocTransformer(
         virtual_filepath=str(virtual_filepath), filename=str(actual_filepath)

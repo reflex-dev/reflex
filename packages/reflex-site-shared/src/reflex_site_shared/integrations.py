@@ -1,6 +1,5 @@
 """Helpers for resolving integration asset URLs from the local integrations_docs package."""
 
-from functools import cache
 from pathlib import Path
 from typing import Literal
 
@@ -8,6 +7,7 @@ import integrations_docs
 from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.environment import EnvironmentVariables
+from reflex_base.utils.decorator import once
 
 RAW_DOC_IMAGES_PREFIX = (
     "https://raw.githubusercontent.com/reflex-dev/integrations-docs/"
@@ -15,7 +15,6 @@ RAW_DOC_IMAGES_PREFIX = (
 )
 
 
-@cache
 def _integrations_images_url(subdir: str) -> str:
     """Symlink integrations_docs/images/<subdir> into assets/external and return its public URL.
 
@@ -49,6 +48,7 @@ def _integrations_images_url(subdir: str) -> str:
     return get_config().prepend_frontend_path(relative_path)
 
 
+@once
 def _integrations_logos_url() -> str:
     """Return the public URL prefix for the integrations_docs logos directory.
 
@@ -56,6 +56,16 @@ def _integrations_logos_url() -> str:
         The public frontend URL prefix for the integrations_docs logos directory.
     """
     return _integrations_images_url("logos")
+
+
+@once
+def _integrations_doc_images_url() -> str:
+    """Return the public URL prefix for the integrations_docs screenshots directory.
+
+    Returns:
+        The public frontend URL prefix for the integrations_docs docs images directory.
+    """
+    return _integrations_images_url("docs")
 
 
 def format_integration_name(integration_name: str) -> str:
@@ -85,28 +95,18 @@ def get_integration_logo_url(
     return f"{_integrations_logos_url()}{theme}/{format_integration_name(integration_name)}.svg"
 
 
-def get_integration_doc_image_url(filename: str) -> str:
-    """Build the public URL for an integration doc screenshot served from the local package.
+def rewrite_integration_doc_images_in_source(source: str) -> str:
+    """Rewrite raw GitHub integrations-docs screenshot URLs in a markdown source to local URLs.
+
+    Operates on the raw markdown text before parsing, so it is renderer-agnostic and can be
+    used by any docs pipeline (reflex_docgen, flexdown, etc.).
 
     Args:
-        filename: The screenshot filename (e.g. ``"databricks_integration_1.webp"``).
+        source: The markdown document source.
 
     Returns:
-        The public URL for the doc screenshot.
+        The source with every raw GitHub doc screenshot URL replaced by its local asset URL.
     """
-    return f"{_integrations_images_url('docs')}{filename}"
-
-
-def rewrite_integration_doc_image_src(src: str) -> str:
-    """Rewrite a raw GitHub integrations-docs screenshot URL to its local asset URL.
-
-    Args:
-        src: The image source URL as written in the markdown.
-
-    Returns:
-        The local asset URL when ``src`` is a raw GitHub doc screenshot URL, otherwise
-        ``src`` unchanged.
-    """
-    if src.startswith(RAW_DOC_IMAGES_PREFIX):
-        return get_integration_doc_image_url(src[len(RAW_DOC_IMAGES_PREFIX) :])
-    return src
+    if RAW_DOC_IMAGES_PREFIX not in source:
+        return source
+    return source.replace(RAW_DOC_IMAGES_PREFIX, _integrations_doc_images_url())
