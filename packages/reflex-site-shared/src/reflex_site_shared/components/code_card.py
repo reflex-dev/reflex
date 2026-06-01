@@ -1,7 +1,5 @@
 """Code Card module."""
 
-import re
-
 import reflex_components_internal as ui
 
 import reflex as rx
@@ -122,85 +120,4 @@ def code_card(app: dict) -> rx.Component:
             },
         },
         class_name="box-border flex flex-col border-slate-5 bg-slate-1 shadow-large border rounded-xl w-full h-[280px] overflow-hidden",
-    )
-
-
-def gallery_app_card(app: dict[str, str]) -> rx.Component:
-    """Gallery app card.
-
-    Returns:
-        The component.
-    """
-    slug = re.sub(r"[\s_]+", "-", app["title"]).lower()
-    return rx.flex(
-        rx.box(
-            rx.el.elements.a(
-                rx.image(
-                    src=app["image"],
-                    loading="lazy",
-                    alt="Image preview for app: " + app["title"],
-                    class_name="size-full duration-150 object-cover hover:scale-105 transition-transform ease-out",
-                ),
-                href=f"/docs/getting-started/open-source-templates/{slug}",
-            ),
-            class_name="relative border-slate-5 border-b border-solid w-full overflow-hidden h-[180px]",
-        ),
-        rx.box(
-            rx.box(
-                rx.el.h6(
-                    app["title"],
-                    class_name="font-smbold text-slate-12 truncate shrink-0",
-                    width="100%",
-                ),
-                rx.text(
-                    app["description"],
-                    class_name="text-slate-10 font-small truncate text-pretty shrink-0",
-                    width="100%",
-                ),
-                rx.box(
-                    rx.box(
-                        install_command(
-                            command=f"reflex init --template {app['title']}",
-                            show_dollar_sign=False,
-                        ),
-                        *(
-                            [
-                                rx.box(
-                                    repo(app["demo"]),
-                                    class_name="flex flex-row justify-start",
-                                )
-                            ]
-                            if "demo" in app
-                            else []
-                        ),
-                        class_name="flex flex-row max-w-full gap-2 w-full shrink-0",
-                    ),
-                    rx.box(class_name="grow"),
-                    rx.cond(
-                        "Reflex" in app["author"],
-                        rx.box(
-                            rx.text(
-                                "by",
-                                class_name="text-slate-9 font-small",
-                            ),
-                            get_icon(icon="badge_logo"),
-                            rx.text(
-                                app["author"],
-                                class_name="text-slate-9 font-small",
-                            ),
-                            class_name="flex flex-row items-start gap-1",
-                        ),
-                        rx.text(
-                            f"by {app['author']}",
-                            class_name="text-slate-9 font-small",
-                        ),
-                    ),
-                    class_name="flex flex-col gap-[6px] size-full",
-                ),
-                class_name="flex flex-col items-start gap-2 p-[0.625rem_0.75rem_0.625rem_0.75rem] w-full h-full",
-            ),
-            class_name="flex flex-col gap-[10px] w-full h-full flex-1",
-        ),
-        key=app["title"],
-        class_name="box-border flex-col border-slate-5 bg-slate-1 shadow-large border rounded-xl w-full h-[360px] overflow-hidden",
     )

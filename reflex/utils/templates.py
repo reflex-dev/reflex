@@ -398,10 +398,6 @@ def initialize_app(app_name: str, template: str | None = None) -> str | None:
     if template is None:
         template = prompt_for_template_options(get_init_cli_prompt_options())
 
-        if template == constants.Templates.CHOOSE_TEMPLATES:
-            redir.reflex_templates()
-            raise SystemExit(0)
-
     if template == constants.Templates.AI:
         redir.reflex_build_redirect()
         raise SystemExit(0)
@@ -430,11 +426,6 @@ def get_init_cli_prompt_options() -> list[Template]:
         Template(
             name=constants.Templates.DEFAULT,
             description="A blank Reflex app.",
-            code_url="",
-        ),
-        Template(
-            name=constants.Templates.CHOOSE_TEMPLATES,
-            description="Premade templates built by the Reflex team.",
             code_url="",
         ),
         Template(

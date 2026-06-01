@@ -14,7 +14,6 @@ def get_sidebar_items_learn():
                 getting_started.introduction,
                 getting_started.basics,
                 getting_started.project_structure,
-                getting_started.open_source_templates,
             ],
         ),
         create_item(

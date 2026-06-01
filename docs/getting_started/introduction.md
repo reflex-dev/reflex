@@ -284,4 +284,4 @@ Create the app and register the page at the base route.
 - [Reflex Cloud](/docs/hosting/deploy-quick-start/) — one-command deploy.
 ```
 
-Browse our [open-source templates](/docs/getting-started/open-source-templates/), or press `Cmd+K` / `Ctrl+K` to search the docs.
+Press `Cmd+K` / `Ctrl+K` to search the docs.
