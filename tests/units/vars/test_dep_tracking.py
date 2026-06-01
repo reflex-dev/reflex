@@ -428,6 +428,66 @@ def test_property_dependencies():
     assert tracker.dependencies == expected_deps
 
 
+def test_hybrid_property_dependencies():
+    """Test tracking dependencies through hybrid_property access (without custom .var)."""
+    from reflex.experimental import hybrid_property
+
+    class StateWithHybridProperty(State):
+        first_name: str = "John"
+        last_name: str = "Doe"
+
+        @hybrid_property
+        def full_name(self) -> str:
+            return f"{self.first_name} {self.last_name}"
+
+        def func_using_hybrid_property(self):
+            return self.full_name
+
+    tracker = DependencyTracker(
+        StateWithHybridProperty.func_using_hybrid_property, StateWithHybridProperty
+    )
+
+    # Should recurse into the hybrid_property's fget and track its underlying deps.
+    expected_deps = {
+        StateWithHybridProperty.get_full_name(): {"first_name", "last_name"}
+    }
+    assert tracker.dependencies == expected_deps
+
+
+def test_hybrid_property_with_custom_var_dependencies():
+    """Test tracking dependencies through hybrid_property access when a custom .var is set.
+
+    The dep tracker must still recurse into the Python fget (not the frontend var function),
+    since computed vars use the backend implementation at runtime.
+    """
+    from reflex.experimental import hybrid_property
+    from reflex.vars.base import Var
+
+    class StateWithHybridPropertyVar(State):
+        last_name: str = "Doe"
+        unrelated: str = "ignored"
+
+        @hybrid_property
+        def has_last_name(self) -> str:
+            return "yes" if self.last_name else "no"
+
+        @has_last_name.var
+        def has_last_name(cls) -> Var[str]:
+            # Reference an unrelated field here to confirm the tracker uses fget, not this.
+            return cls.unrelated  # pyright: ignore[reportReturnType]
+
+        def func_using_hybrid_property(self):
+            return self.has_last_name
+
+    tracker = DependencyTracker(
+        StateWithHybridPropertyVar.func_using_hybrid_property,
+        StateWithHybridPropertyVar,
+    )
+
+    expected_deps = {StateWithHybridPropertyVar.get_full_name(): {"last_name"}}
+    assert tracker.dependencies == expected_deps
+
+
 def test_no_dependencies():
     """Test functions with no state dependencies."""
 
