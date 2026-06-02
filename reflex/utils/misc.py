@@ -139,7 +139,7 @@ def google_font(
     weights: Sequence[int] = (400,),
     italic: bool = False,
     display: str = "swap",
-):
+) -> list:
     """Create the components that load a Google Font from the document head.
 
     Adding these to ``head_components`` (instead of ``rx.App(stylesheets=...)``, which chains
