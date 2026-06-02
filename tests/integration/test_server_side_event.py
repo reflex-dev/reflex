@@ -38,6 +38,10 @@ def ServerSideEvent():
         def set_value_return_c(self):
             return rx.set_value("c", "")
 
+        @rx.event
+        def copy_secret(self):
+            return rx.set_clipboard("the secret")
+
     app = rx.App()
 
     @app.add_page
@@ -83,6 +87,11 @@ def ServerSideEvent():
                 "Focus input",
                 id="focus_input",
                 on_click=rx.set_focus("focus_target"),
+            ),
+            rx.el.button(
+                "Copy secret",
+                id="copy_secret",
+                on_click=SSState.copy_secret,
             ),
         )
 
@@ -209,4 +218,76 @@ def test_set_focus(driver):
         lambda: (
             driver.execute_script("return document.activeElement?.id") == "focus_target"
         )
+    )
+
+
+def test_set_clipboard(driver):
+    """Call set_clipboard from a backend handler via the non-WebKit fallback path.
+
+    On a non-WebKit user agent, _set_clipboard writes directly via writeText. The
+    system clipboard is permission-gated and unavailable in headless CI, so
+    writeText is stubbed to capture the value, exercising the round-trip wiring
+    (backend handler -> _set_clipboard event -> clipboard write).
+
+    Args:
+        driver: selenium WebDriver open to the app
+    """
+    btn = driver.find_element(By.ID, "copy_secret")
+    assert btn
+
+    driver.execute_script(
+        "window.__copied = null;"
+        "navigator.clipboard.writeText = (t) => { window.__copied = t; "
+        "return Promise.resolve(); };"
+    )
+    btn.click()
+
+    assert AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.execute_script("return window.__copied") == "the secret"
+    )
+
+
+# A WebKit user agent (no Chrome/Chromium/Edg token) so isWebKit() returns true
+# and addEvents arms a deferred clipboard write, just as on Safari/iOS.
+_SAFARI_USER_AGENT = (
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) "
+    "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
+)
+
+
+def test_set_clipboard_webkit_arming(driver):
+    """Exercise the WebKit arm-and-resolve path for a backend-returned set_clipboard.
+
+    armClipboard is gated behind isWebKit() and needs ClipboardItem,
+    navigator.clipboard.write, and an active user activation. Chrome provides all
+    three, so spoofing the user agent makes headless Chrome run the same code path
+    Safari does: arm a deferred ClipboardItem write inside the click gesture, then
+    resolve it when the _set_clipboard event returns from the backend. ClipboardItem
+    and clipboard.write are stubbed to capture the deferred value, so this asserts
+    the arming branch ran (the writeText fallback is never touched).
+
+    Args:
+        driver: selenium WebDriver open to the app
+    """
+    driver.execute_cdp_cmd(
+        "Network.setUserAgentOverride", {"userAgent": _SAFARI_USER_AGENT}
+    )
+
+    btn = driver.find_element(By.ID, "copy_secret")
+    assert btn
+
+    # Capture the deferred Blob promise handed to ClipboardItem; resolve it to text
+    # only once set_clipboard arms and the backend round-trip resolves it.
+    driver.execute_script("""
+        window.__armed = null;
+        window.ClipboardItem = function (data) { this._text = data['text/plain']; };
+        navigator.clipboard.write = async (items) => {
+            const blob = await items[0]._text;
+            window.__armed = await blob.text();
+        };
+    """)
+    btn.click()
+
+    assert AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.execute_script("return window.__armed") == "the secret"
     )

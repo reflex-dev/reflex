@@ -1482,18 +1482,23 @@ def remove_session_storage(key: str) -> EventSpec:
 def set_clipboard(content: str | Var[str]) -> EventSpec:
     """Set the text in content in the clipboard.
 
+    On WebKit (Safari/iOS), ``navigator.clipboard.writeText`` must be invoked
+    within the user-activation window of the originating gesture. When this event
+    is returned from a backend handler it runs after a WebSocket round-trip, by
+    which point activation has expired. The frontend works around this by arming a
+    deferred ``ClipboardItem`` write during the gesture and resolving it with this
+    content when the event arrives; see ``armClipboard`` in ``utils/state.js``.
+
     Args:
         content: The text to add to clipboard.
 
     Returns:
         EventSpec: An event to set some content in the clipboard.
     """
-    return run_script(
-        Var("navigator")
-        .to(dict)
-        .clipboard.to(dict)
-        .writeText.to(FunctionVar)
-        .call(content)
+    return server_side(
+        "_set_clipboard",
+        inspect.signature(set_clipboard),
+        content=content,
     )
 
 

@@ -328,6 +328,27 @@ def test_set_value():
     )
 
 
+def test_set_clipboard():
+    """Test set_clipboard emits a _set_clipboard event carrying the content.
+
+    The frontend resolves this against a clipboard write armed during the user
+    gesture, which is required for set_clipboard to work on WebKit when returned
+    from a backend handler.
+    """
+    spec = event.set_clipboard("hello")
+    assert isinstance(spec, EventSpec)
+    assert spec.handler.fn.__qualname__ == "_set_clipboard"
+    assert spec.args[0][0].equals(Var(_js_expr="content"))
+    assert spec.args[0][1].equals(LiteralVar.create("hello"))
+    assert (
+        format.format_event(spec) == 'ReflexEvent("_set_clipboard", {content:"hello"})'
+    )
+    spec = event.set_clipboard(Var(_js_expr="message"))
+    assert (
+        format.format_event(spec) == 'ReflexEvent("_set_clipboard", {content:message})'
+    )
+
+
 def test_remove_cookie():
     """Test the event remove_cookie."""
     spec = event.remove_cookie("testkey")

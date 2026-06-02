@@ -206,6 +206,59 @@ function urlFrom(string) {
 }
 
 /**
+ * Detect WebKit-based browsers (Safari, iOS) excluding Chromium/Edge, which
+ * report AppleWebKit in their UA string but do not need the clipboard workaround.
+ * @returns True if running on a WebKit browser that requires the workaround.
+ */
+const isWebKit = () =>
+  typeof navigator !== "undefined" &&
+  /AppleWebKit/.test(navigator.userAgent) &&
+  !/Chrome|Chromium|Edg/.test(navigator.userAgent);
+
+// Holds the deferred resolver for a clipboard write armed during a user gesture.
+// See armClipboard / the "_set_clipboard" branch in applyEvent.
+let clipboardResolver = null;
+
+/**
+ * Arm a clipboard write during the current user gesture so that a value computed
+ * by the backend can be written after a WebSocket round-trip.
+ *
+ * WebKit only honors navigator.clipboard.write inside the user-activation window
+ * of the originating gesture. We satisfy that by issuing the write synchronously
+ * here, backed by a Promise that resolves later when a "_set_clipboard" event
+ * arrives. If the gesture produces no clipboard event, the Promise is rejected,
+ * which aborts the write and leaves the system clipboard untouched.
+ */
+const armClipboard = () => {
+  if (
+    typeof ClipboardItem === "undefined" ||
+    !navigator?.clipboard?.write ||
+    !navigator.userActivation?.isActive
+  ) {
+    return;
+  }
+  // Abandon any previously armed write so its pending promise does not linger.
+  clipboardResolver?.reject?.();
+
+  let resolve;
+  let reject;
+  const text = new Promise((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  clipboardResolver = { resolve, reject };
+
+  navigator.clipboard
+    .write([
+      new ClipboardItem({
+        "text/plain": text.then((t) => new Blob([t], { type: "text/plain" })),
+      }),
+    ])
+    // Rejection is expected when an armed write goes unused; ignore it.
+    .catch(() => {});
+};
+
+/**
  * Handle frontend event or send the event to the backend via Websocket.
  * @param event The event to send.
  * @param socket The socket object to send the event on.
@@ -327,6 +380,18 @@ export const applyEvent = async (event, socket, navigate, params) => {
       event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
     if (ref.current) {
       ref.current.value = event.payload.value;
+    }
+    return;
+  }
+
+  if (event.name == "_set_clipboard") {
+    const content = event.payload.content;
+    if (clipboardResolver) {
+      // Resolve a write armed during the originating gesture (WebKit workaround).
+      clipboardResolver.resolve(content);
+      clipboardResolver = null;
+    } else if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(content).catch((e) => console.error(e));
     }
     return;
   }
@@ -956,6 +1021,13 @@ export const useEventLoop = (
   // Function to add new events to the event queue.
   const addEvents = useCallback((events, args, event_actions) => {
     const _events = events.filter((e) => e !== undefined && e !== null);
+
+    if (isWebKit()) {
+      // Arm a clipboard write inside the active user gesture so set_clipboard
+      // returned from a backend handler still works on WebKit. No-op unless a
+      // user activation is in effect, so programmatic dispatches are unaffected.
+      armClipboard();
+    }
 
     event_actions = _events.reduce(
       (acc, e) => ({ ...acc, ...e.event_actions }),
