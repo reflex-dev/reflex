@@ -73,6 +73,8 @@ from reflex_docgen.markdown._types import (
 )
 from reflex_docgen.markdown.transformer._base import DocumentTransformer
 
+__all__ = ["ReflexComponentTransformer"]
+
 
 def _plain_text(spans: tuple[Span, ...]) -> str:
     """Flatten inline spans into their plain text content.
@@ -134,9 +136,25 @@ class ReflexComponentTransformer(DocumentTransformer["rx.Component"]):
         return rx.fragment(*self.transform_blocks(document.blocks))
 
     def frontmatter(self, block: FrontMatter) -> rx.Component:
+        """Render frontmatter as nothing (an empty fragment).
+
+        Args:
+            block: The frontmatter block.
+
+        Returns:
+            An empty fragment.
+        """
         return rx.fragment()
 
     def heading(self, block: HeadingBlock) -> rx.Component:
+        """Render a heading as an ``<h1>``-``<h6>`` element.
+
+        Args:
+            block: The heading block.
+
+        Returns:
+            The heading component.
+        """
         level = min(max(block.level, 1), 6)
         children = self.transform_spans(block.children)
         if builder := self._overrides.get(f"h{level}"):
@@ -144,12 +162,28 @@ class ReflexComponentTransformer(DocumentTransformer["rx.Component"]):
         return getattr(rx.el, f"h{level}")(*children)
 
     def text_block(self, block: TextBlock) -> rx.Component:
+        """Render a paragraph as a ``<p>`` element.
+
+        Args:
+            block: The text block.
+
+        Returns:
+            The paragraph component.
+        """
         children = self.transform_spans(block.children)
         if builder := self._overrides.get("p"):
             return builder(children)
         return rx.el.p(*children)
 
     def list_block(self, block: ListBlock) -> rx.Component:
+        """Render a list as a ``<ul>`` or ``<ol>`` element.
+
+        Args:
+            block: The list block.
+
+        Returns:
+            The list component.
+        """
         items = [self.transform_list_item(item) for item in block.items]
         if builder := self._overrides.get("ol" if block.ordered else "ul"):
             return builder(items)
@@ -157,25 +191,66 @@ class ReflexComponentTransformer(DocumentTransformer["rx.Component"]):
         return tag(*items)
 
     def transform_list_item(self, item: ListItem) -> rx.Component:
+        """Render a single list item as an ``<li>`` element.
+
+        Args:
+            item: The list item.
+
+        Returns:
+            The list-item component.
+        """
         return rx.el.li(*self.transform_blocks(item.children))
 
     def quote(self, block: QuoteBlock) -> rx.Component:
+        """Render a block quote as a ``<blockquote>`` element.
+
+        Args:
+            block: The quote block.
+
+        Returns:
+            The blockquote component.
+        """
         children = self.transform_blocks(block.children)
         if builder := self._overrides.get("blockquote"):
             return builder(children)
         return rx.el.blockquote(*children)
 
     def code_block(self, block: CodeBlock) -> rx.Component:
+        """Render a fenced code block as a ``<pre><code>`` element.
+
+        Args:
+            block: The code block.
+
+        Returns:
+            The preformatted code component.
+        """
         if builder := self._overrides.get("pre"):
             return builder(block.content, block.language)
         return rx.el.pre(rx.el.code(block.content))
 
     def directive(self, block: DirectiveBlock) -> rx.Component:
+        """Render a directive, falling back to a plain ``<div>``.
+
+        Args:
+            block: The directive block.
+
+        Returns:
+            The component produced by the matching override, or a ``<div>``
+            wrapping the directive's children.
+        """
         if builder := self._overrides.get(block.name):
             return builder(block)
         return rx.el.div(*self.transform_blocks(block.children))
 
     def table(self, block: TableBlock) -> rx.Component:
+        """Render a table as a ``<table>`` element.
+
+        Args:
+            block: The table block.
+
+        Returns:
+            The table component.
+        """
         thead = rx.el.thead(self.transform_table_row(block.header, header=True))
         tbody = rx.el.tbody(*(self.transform_table_row(row) for row in block.rows))
         if builder := self._overrides.get("table"):
@@ -185,6 +260,15 @@ class ReflexComponentTransformer(DocumentTransformer["rx.Component"]):
     def transform_table_row(
         self, row: TableRow, *, header: bool = False
     ) -> rx.Component:
+        """Render a single table row as a ``<tr>`` element.
+
+        Args:
+            row: The table row.
+            header: Whether the row belongs to the table header.
+
+        Returns:
+            The table-row component.
+        """
         return rx.el.tr(
             *(self.transform_table_cell(cell, header=header) for cell in row.cells)
         )
@@ -192,6 +276,15 @@ class ReflexComponentTransformer(DocumentTransformer["rx.Component"]):
     def transform_table_cell(
         self, cell: TableCell, *, header: bool = False
     ) -> rx.Component:
+        """Render a single table cell as a ``<th>`` or ``<td>`` element.
+
+        Args:
+            cell: The table cell.
+            header: Whether the cell belongs to the table header.
+
+        Returns:
+            The table-cell component.
+        """
         children = self.transform_spans(cell.children)
         tag = rx.el.th if header else rx.el.td
         if cell.align is not None:
@@ -199,51 +292,123 @@ class ReflexComponentTransformer(DocumentTransformer["rx.Component"]):
         return tag(*children)
 
     def thematic_break(self, block: ThematicBreakBlock) -> rx.Component:
+        """Render a thematic break as an ``<hr>`` element.
+
+        Args:
+            block: The thematic-break block.
+
+        Returns:
+            The horizontal-rule component.
+        """
         if builder := self._overrides.get("hr"):
             return builder()
         return rx.el.hr()
 
     def text_span(self, span: TextSpan) -> rx.Component:
+        """Render plain text as a ``<span>`` element.
+
+        Args:
+            span: The text span.
+
+        Returns:
+            The span component.
+        """
         if builder := self._overrides.get("span"):
             return builder(span.text)
         return rx.el.span(span.text)
 
     def bold(self, span: BoldSpan) -> rx.Component:
+        """Render bold text as a ``<strong>`` element.
+
+        Args:
+            span: The bold span.
+
+        Returns:
+            The strong component.
+        """
         children = self.transform_spans(span.children)
         if builder := self._overrides.get("strong"):
             return builder(children)
         return rx.el.strong(*children)
 
     def italic(self, span: ItalicSpan) -> rx.Component:
+        """Render italic text as an ``<em>`` element.
+
+        Args:
+            span: The italic span.
+
+        Returns:
+            The emphasis component.
+        """
         children = self.transform_spans(span.children)
         if builder := self._overrides.get("em"):
             return builder(children)
         return rx.el.em(*children)
 
     def strikethrough(self, span: StrikethroughSpan) -> rx.Component:
+        """Render struck-through text as an ``<s>`` element.
+
+        Args:
+            span: The strikethrough span.
+
+        Returns:
+            The strikethrough component.
+        """
         children = self.transform_spans(span.children)
         if builder := self._overrides.get("s"):
             return builder(children)
         return rx.el.s(*children)
 
     def code_span(self, span: CodeSpan) -> rx.Component:
+        """Render inline code as a ``<code>`` element.
+
+        Args:
+            span: The code span.
+
+        Returns:
+            The inline-code component.
+        """
         if builder := self._overrides.get("code"):
             return builder(span.code)
         return rx.el.code(span.code)
 
     def link(self, span: LinkSpan) -> rx.Component:
+        """Render a link as an ``<a>`` element.
+
+        Args:
+            span: The link span.
+
+        Returns:
+            The anchor component.
+        """
         children = self.transform_spans(span.children)
         if builder := self._overrides.get("a"):
             return builder(children, span.target)
         return rx.el.a(*children, href=span.target)
 
     def image(self, span: ImageSpan) -> rx.Component:
+        """Render an image as an ``<img>`` element.
+
+        Args:
+            span: The image span.
+
+        Returns:
+            The image component.
+        """
         alt = _plain_text(span.children)
         if builder := self._overrides.get("img"):
             return builder(span.src, alt)
         return rx.el.img(src=span.src, alt=alt)
 
     def line_break(self, span: LineBreakSpan) -> rx.Component:
+        """Render a line break as a ``<br>`` element.
+
+        Args:
+            span: The line-break span.
+
+        Returns:
+            The line-break component.
+        """
         if builder := self._overrides.get("br"):
             return builder()
         return rx.el.br()

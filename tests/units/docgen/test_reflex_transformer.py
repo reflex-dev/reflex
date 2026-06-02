@@ -1,7 +1,7 @@
 """Tests for the reflex-docgen ReflexComponentTransformer."""
 
 from reflex_docgen.markdown import HeadingBlock, TextSpan, parse_document
-from reflex_docgen.markdown.transformer import ReflexComponentTransformer
+from reflex_docgen.markdown.transformer.reflex import ReflexComponentTransformer
 
 import reflex as rx
 from reflex.components.component import BaseComponent
@@ -112,7 +112,7 @@ def test_image_renders_img():
 def test_image_alt_line_break_becomes_space():
     """A line break inside spans flattens to a single space, not nothing."""
     from reflex_docgen.markdown._types import LineBreakSpan
-    from reflex_docgen.markdown.transformer._reflex import _plain_text
+    from reflex_docgen.markdown.transformer.reflex import _plain_text
 
     spans = (TextSpan(text="two"), LineBreakSpan(soft=True), TextSpan(text="words"))
     assert _plain_text(spans) == "two words"
@@ -121,7 +121,7 @@ def test_image_alt_line_break_becomes_space():
 def test_image_alt_flattened():
     """Formatted alt text is flattened to a plain string for the alt attribute."""
     from reflex_docgen.markdown import BoldSpan, CodeSpan, LinkSpan
-    from reflex_docgen.markdown.transformer._reflex import _plain_text
+    from reflex_docgen.markdown.transformer.reflex import _plain_text
 
     spans = (
         TextSpan(text="a "),
