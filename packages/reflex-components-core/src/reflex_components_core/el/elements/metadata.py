@@ -30,6 +30,10 @@ class Link(VoidBaseHTML):
 
     tag = "link"
 
+    as_: Var[str] = field(
+        doc="Specifies the type of content being loaded, required by rel='preload'"
+    )
+
     cross_origin: Var[CrossOrigin] = field(
         doc="Specifies the CORS settings for the linked resource"
     )

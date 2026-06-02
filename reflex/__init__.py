@@ -233,7 +233,7 @@ _MAPPING: lazy_loader.SubmodAttrsType = {
     "istate.wrappers": ["get_state"],
     "style": ["Style", "toggle_color_mode"],
     "utils.imports": ["ImportDict", "ImportVar"],
-    "utils.misc": ["run_in_thread"],
+    "utils.misc": ["google_font", "run_in_thread"],
     "utils.serializers": ["serializer"],
     "vars": ["Var", "field", "Field", "RestProp", "EMPTY_VAR_STR", "EMPTY_VAR_INT"],
 }
