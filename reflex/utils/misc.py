@@ -160,6 +160,9 @@ def google_font(
     """
     from reflex_components_core.el.elements.metadata import Link
 
+    if not weights:
+        msg = "weights must not be empty"
+        raise ValueError(msg)
     family_param = family.replace(" ", "+")
     sorted_weights = sorted(weights)
     if italic:
