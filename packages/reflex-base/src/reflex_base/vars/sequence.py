@@ -674,6 +674,20 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         """
         return string_lower_operation(self)
 
+    def lstrip(self, chars: StringVar | str | None = None) -> StringVar:
+        """Left strip the string.
+
+        Args:
+            chars: Characters to remove from the left side. If None, strip whitespace.
+
+        Returns:
+            The string lstrip operation.
+        """
+        if chars is not None and not isinstance(chars, (StringVar, str)):
+            raise_unsupported_operand_types("lstrip", (type(self), type(chars)))
+
+        return string_lstrip_operation(self, chars)
+
     def upper(self) -> StringVar:
         """Convert the string to uppercase.
 
@@ -698,13 +712,19 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         """
         return string_capitalize_operation(self)
 
-    def strip(self) -> StringVar:
+    def strip(self, chars: StringVar | str | None = None) -> StringVar:
         """Strip the string.
+
+        Args:
+            chars: Characters to remove from both ends. If None, strip whitespace.
 
         Returns:
             The string strip operation.
         """
-        return string_strip_operation(self)
+        if chars is not None and not isinstance(chars, (StringVar, str)):
+            raise_unsupported_operand_types("strip", (type(self), type(chars)))
+
+        return string_strip_operation(self, chars)
 
     def reversed(self) -> StringVar:
         """Reverse the string.
@@ -713,6 +733,20 @@ class StringVar(Var[STRING_TYPE], python_types=str):
             The string reverse operation.
         """
         return self.split().reverse().join()
+
+    def rstrip(self, chars: StringVar | str | None = None) -> StringVar:
+        """Right strip the string.
+
+        Args:
+            chars: Characters to remove from the right side. If None, strip whitespace.
+
+        Returns:
+            The string rstrip operation.
+        """
+        if chars is not None and not isinstance(chars, (StringVar, str)):
+            raise_unsupported_operand_types("rstrip", (type(self), type(chars)))
+
+        return string_rstrip_operation(self, chars)
 
     def contains(
         self, other: StringVar | str, field: StringVar | str | None = None
@@ -972,16 +1006,48 @@ def string_capitalize_operation(string: StringVar[Any]):
 
 
 @var_operation
-def string_strip_operation(string: StringVar[Any]):
-    """Strip a string.
+def string_strip_operation(
+    string: StringVar[Any],
+    chars: StringVar[Any] | str | None = None,
+):
+    """Strip a string."""
+    if str(chars) == "null":
+        return var_operation_return(js_expression=f"{string}.trim()", var_type=str)
 
-    Args:
-        string: The string to strip.
+    return var_operation_return(
+        js_expression=f"{string}.replace(/^[{chars}]+|[{chars}]+$/g, '')",
+        var_type=str,
+    )
 
-    Returns:
-        The stripped string.
-    """
-    return var_operation_return(js_expression=f"{string}.trim()", var_type=str)
+
+@var_operation
+def string_lstrip_operation(
+    string: StringVar[Any],
+    chars: StringVar[Any] | str | None = None,
+):
+    """Left strip a string."""
+    if str(chars) == "null":
+        return var_operation_return(js_expression=f"{string}.trimStart()", var_type=str)
+
+    return var_operation_return(
+        js_expression=f"{string}.replace(/^[{chars}]+/, '')",
+        var_type=str,
+    )
+
+
+@var_operation
+def string_rstrip_operation(
+    string: StringVar[Any],
+    chars: StringVar[Any] | str | None = None,
+):
+    """Right strip a string."""
+    if str(chars) == "null":
+        return var_operation_return(js_expression=f"{string}.trimEnd()", var_type=str)
+
+    return var_operation_return(
+        js_expression=f"{string}.replace(/[{chars}]+$/, '')",
+        var_type=str,
+    )
 
 
 @var_operation

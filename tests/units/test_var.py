@@ -1001,8 +1001,10 @@ def test_string_operations():
 
     assert str(basic_string.length()) == '"Hello, World!".split("").length'
     assert str(basic_string.lower()) == '"Hello, World!".toLowerCase()'
+    assert str(basic_string.lstrip()) == '"Hello, World!".trimStart()'
     assert str(basic_string.upper()) == '"Hello, World!".toUpperCase()'
     assert str(basic_string.strip()) == '"Hello, World!".trim()'
+    assert str(basic_string.rstrip()) == '"Hello, World!".trimEnd()'
     assert str(basic_string.contains("World")) == '"Hello, World!".includes("World")'
     assert (
         str(basic_string.split(" ").join(",")) == '"Hello, World!".split(" ").join(",")'
