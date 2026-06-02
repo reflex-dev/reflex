@@ -223,13 +223,90 @@ def test_var_returning_memo_with_children_and_rest():
     assert "export const label_slot = (({children, label, ...rest}) => label);" in code
 
 
-def test_memo_requires_var_annotations():
-    """Memos should reject non-Var annotations on parameters."""
-    with pytest.raises(TypeError, match="must be annotated"):
+def test_memo_munges_legacy_bare_type_param():
+    """Legacy bare-type params should coerce to ``rx.Var[...]`` with a warning."""
+    with patch.object(console, "deprecate") as mock_deprecate:
 
         @rx.memo
         def bad_annotation(value: int) -> rx.Var[str]:
             return rx.Var.create("x")
+
+    mock_deprecate.assert_called_once()
+    kwargs = mock_deprecate.call_args.kwargs
+    assert "bad_annotation" in kwargs["feature_name"]
+    assert "`value`" in kwargs["reason"]
+
+    definition = MEMOS["bad_annotation"]
+    assert isinstance(definition, MemoFunctionDefinition)
+    (value_param,) = definition.params
+    assert value_param.kind is MemoParamKind.VALUE
+    # The bare ``int`` annotation is coerced into ``Var[int]``.
+    assert value_param.annotation == rx.Var[int]
+
+
+def test_memo_munges_legacy_bare_type_params_for_component():
+    """Component memos coerce legacy bare-type params and keep their defaults."""
+    with patch.object(console, "deprecate") as mock_deprecate:
+
+        @rx.memo
+        def legacy_card(title: str, count: int = 3) -> rx.Component:
+            return rx.box(rx.heading(title), rx.text(count))
+
+    mock_deprecate.assert_called_once()
+    reason = mock_deprecate.call_args.kwargs["reason"]
+    assert "`title`" in reason
+    assert "`count`" in reason
+
+    definition = MEMOS["LegacyCard"]
+    assert isinstance(definition, MemoComponentDefinition)
+    assert {p.name: p.kind for p in definition.params} == {
+        "title": MemoParamKind.VALUE,
+        "count": MemoParamKind.VALUE,
+    }
+    count_param = next(p for p in definition.params if p.name == "count")
+    assert count_param.default == 3
+
+    # The munged props bind at instantiation; ``count`` falls back to its default.
+    component = legacy_card(title="Hi")
+    assert isinstance(component, MemoComponent)
+
+
+def test_memo_does_not_warn_for_event_handler_param():
+    """``rx.EventHandler`` params are recognized and must not be munged/warned."""
+    with patch.object(console, "deprecate") as mock_deprecate:
+
+        @rx.memo
+        def eh_only(event: rx.EventHandler) -> rx.Component:
+            return rx.button("click", on_click=event())
+
+    mock_deprecate.assert_not_called()
+
+
+def test_analyze_params_strict_mode_rejects_bare_type():
+    """Strict callers (``defaulted_params=None``) must still reject bare types."""
+
+    def bare(value: int) -> rx.Component:
+        return rx.text("x")
+
+    with pytest.raises(TypeError, match="must be annotated"):
+        _analyze_params(bare, for_component=True)
+
+
+def test_is_memo_annotation_recognizes_supported_kinds():
+    """``_is_memo_annotation`` gates which annotations are coerced to ``Var``."""
+    from reflex_base.components.memo import _is_memo_annotation
+
+    assert _is_memo_annotation(rx.Var[int]) is True
+    assert _is_memo_annotation(rx.RestProp) is True
+    assert _is_memo_annotation(rx.EventHandler) is True
+    assert (
+        _is_memo_annotation(rx.EventHandler[rx.event.passthrough_event_spec(str)])
+        is True
+    )
+    # Legacy bare types are not recognized -> they get munged + warned.
+    assert _is_memo_annotation(int) is False
+    assert _is_memo_annotation(str) is False
+    assert _is_memo_annotation(list[str]) is False
 
 
 def test_memo_warns_on_missing_param_annotation():

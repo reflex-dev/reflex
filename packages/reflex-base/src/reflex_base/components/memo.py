@@ -436,6 +436,23 @@ def _is_component_annotation(annotation: Any) -> bool:
     )
 
 
+def _is_memo_annotation(annotation: Any) -> bool:
+    """Check whether an annotation is already a recognized memo annotation.
+
+    Recognized annotations are ``rx.Var[...]`` (including ``rx.RestProp``, a
+    ``Var`` subclass) and ``rx.EventHandler[...]``. Anything else is a legacy
+    bare Python type that the public :func:`memo` decorator coerces into
+    ``rx.Var[...]`` for backwards compatibility.
+
+    Args:
+        annotation: The annotation to check.
+
+    Returns:
+        Whether the annotation is already a valid memo parameter annotation.
+    """
+    return _is_var_annotation(annotation) or _is_event_handler_annotation(annotation)[0]
+
+
 def _children_annotation_is_valid(annotation: Any) -> bool:
     """Check whether an annotation is valid for children.
 
@@ -921,10 +938,12 @@ def _analyze_params(
         for_component: Whether the memo returns a component.
         hints: Pre-computed type hints with ``include_extras=True``; computed
             from ``fn`` when omitted.
-        defaulted_params: When provided, parameters missing an annotation are
-            defaulted (``Var[Component]`` for ``children``, otherwise
-            ``Var[Any]``) and their names appended; when ``None``, a missing
-            annotation raises ``TypeError``.
+        defaulted_params: When provided, parameters that are missing an
+            annotation or carry a legacy bare-type annotation are coerced to
+            ``Var[...]`` (``Var[Component]`` for ``children``, ``Var[Any]`` for
+            a missing annotation, otherwise ``Var[<bare type>]``) and their
+            names appended; when ``None`` (strict mode, used by internal
+            callers) either case raises ``TypeError``.
 
     Returns:
         The analyzed parameters.
@@ -951,6 +970,16 @@ def _analyze_params(
                 )
                 raise TypeError(msg)
             annotation = Var[Component] if parameter.name == "children" else Var[Any]
+            defaulted_params.append(parameter.name)
+        elif defaulted_params is not None and not _is_memo_annotation(annotation):
+            # Legacy `@rx.memo` (the old `custom_component`) accepted bare Python
+            # types and auto-wrapped them in a `Var`. Preserve that path by
+            # coercing the annotation into `rx.Var[...]` and flagging the
+            # parameter, so one deprecation warning can point the user at the
+            # parameters that still need an explicit `rx.Var[...]` annotation.
+            annotation = (
+                Var[Component] if parameter.name == "children" else Var[annotation]
+            )
             defaulted_params.append(parameter.name)
 
         # Children parameters by name must match the children kind exactly —
@@ -1635,7 +1664,8 @@ def _warn_missing_annotations(
     Args:
         fn_name: Name of the decorated function (for the warning text).
         missing_return: Whether the return annotation was missing.
-        defaulted_params: Names of parameters whose annotation was defaulted.
+        defaulted_params: Names of parameters whose annotation was missing or a
+            legacy bare type and so was coerced to ``rx.Var[...]``.
         suggested_return: Inferred return type (e.g. ``"rxe.dnd.Draggable"``)
             to surface in the message. When ``None``, the generic hint is used.
     """
@@ -1647,12 +1677,13 @@ def _warn_missing_annotations(
             parts.append("a return annotation (`-> rx.Component` or `-> rx.Var[...]`)")
     if defaulted_params:
         joined = ", ".join(f"`{name}`" for name in defaulted_params)
-        parts.append(f"annotations on parameter(s) {joined} (`rx.Var[...]`)")
+        parts.append(f"`rx.Var[...]` annotations on parameter(s) {joined}")
     console.deprecate(
         feature_name=f"`@rx.memo` on `{fn_name}` without explicit annotations",
         reason=(
-            f"Add {' and '.join(parts)}. Missing annotations now default to "
-            "`rx.Component` / `rx.Var[Any]`"
+            f"Add {' and '.join(parts)}. Until removal, a missing return "
+            "defaults to `rx.Component` and missing or bare-type parameters are "
+            "coerced to `rx.Var[...]`"
         ),
         deprecation_version="0.9.3",
         removal_version="1.0",
