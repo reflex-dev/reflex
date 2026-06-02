@@ -62,7 +62,8 @@ def test_var_returning_memo():
     definition = MEMOS["format_price"]
     assert isinstance(definition, MemoFunctionDefinition)
     assert (
-        str(definition.function) == '((amount, currency) => ((currency+": $")+amount))'
+        str(definition.get_function())
+        == '((amount, currency) => ((currency+": $")+amount))'
     )
 
     with pytest.raises(TypeError, match="only accepts keyword props"):
@@ -131,7 +132,7 @@ def test_component_returning_memo_accepts_component_var_result():
 
     definition = MEMOS["ConditionalSlot"]
     assert isinstance(definition, MemoComponentDefinition)
-    assert definition.component.render() == {
+    assert definition.get_component().render() == {
         "contents": "(showRxMemo ? firstRxMemo : secondRxMemo)"
     }
 
@@ -337,16 +338,73 @@ def test_memo_warns_on_missing_return_annotation():
     assert "return annotation" in kwargs["reason"]
 
 
-def test_memo_warning_suggests_inferred_return_type():
-    """The warning should surface the inferred public qualname of the body's return."""
+def test_memo_warning_suggests_component_return():
+    """A missing return annotation warns with a constant `-> rx.Component` hint.
+
+    The suggestion no longer inspects the body's return value, so the warning
+    fires eagerly at decoration time even though the body itself runs lazily.
+    """
+    evaluated = []
     with patch.object(console, "deprecate") as mock_deprecate:
 
         @rx.memo
         def fragment_memo():
+            evaluated.append(1)
             return rx.fragment(rx.text("x"))
 
+    mock_deprecate.assert_called_once()
     reason = mock_deprecate.call_args.kwargs["reason"]
-    assert "-> rx.Fragment" in reason
+    assert "-> rx.Component" in reason
+    # Emitting the warning did not require evaluating the body.
+    assert evaluated == []
+
+
+def test_memo_component_body_not_evaluated_until_used():
+    """A component memo's body must not run until the wrapper is instantiated."""
+    evaluated = []
+
+    @rx.memo
+    def lazy_box(value: rx.Var[str]) -> rx.Component:
+        evaluated.append(1)
+        return rx.box(value)
+
+    # Decoration registers the memo without running the body.
+    assert "LazyBox" in MEMOS
+    assert evaluated == []
+
+    # First instantiation triggers a single evaluation...
+    component = lazy_box(value="hi")
+    assert isinstance(component, MemoComponent)
+    assert evaluated == [1]
+
+    # ...and subsequent uses reuse the cached body.
+    lazy_box(value="bye")
+    assert evaluated == [1]
+
+
+def test_memo_function_body_not_evaluated_until_compiled():
+    """A var memo's body must not run at decoration or when merely called."""
+    evaluated = []
+
+    @rx.memo
+    def lazy_join(value: rx.Var[str]) -> rx.Var[str]:
+        evaluated.append(1)
+        return value
+
+    assert "lazy_join" in MEMOS
+    assert evaluated == []
+
+    # Calling a function memo references the imported var, not the body.
+    lazy_join(value=Var(_js_expr="x", _var_type=str))
+    assert evaluated == []
+
+    # The compiler (here, get_function) triggers a single evaluation.
+    definition = MEMOS["lazy_join"]
+    assert isinstance(definition, MemoFunctionDefinition)
+    definition.get_function()
+    assert evaluated == [1]
+    definition.get_function()
+    assert evaluated == [1]
 
 
 def test_memo_warns_once_when_return_and_param_both_missing():
@@ -515,7 +573,7 @@ def test_var_memo_rejects_invalid_positional_usage():
 
 
 def test_var_returning_memo_rejects_hooks():
-    """Var-returning memos should reject hook-bearing expressions."""
+    """Var-returning memos should reject hook-bearing expressions (lazily)."""
     with pytest.raises(TypeError, match="cannot depend on hooks"):
 
         @rx.memo
@@ -526,9 +584,12 @@ def test_var_returning_memo_rejects_hooks():
                 _var_data=VarData(hooks={"const badHook = 1": None}),
             )
 
+        # The body is compiled lazily; force evaluation to surface the error.
+        MEMOS["bad_hook"].get_function()  # pyright: ignore[reportAttributeAccessIssue]
+
 
 def test_var_returning_memo_rejects_non_bundled_imports():
-    """Var-returning memos should reject non-bundled imports."""
+    """Var-returning memos should reject non-bundled imports (lazily)."""
     with pytest.raises(TypeError, match="not bundled"):
 
         @rx.memo
@@ -538,6 +599,9 @@ def test_var_returning_memo_rejects_non_bundled_imports():
                 _var_type=str,
                 _var_data=VarData(imports={"some-lib": [ImportVar(tag="x")]}),
             )
+
+        # The body is compiled lazily; force evaluation to surface the error.
+        MEMOS["bad_import"].get_function()  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_compile_memo_components_includes_functions_and_components():
@@ -657,13 +721,14 @@ def test_compile_experimental_component_memo_does_not_mutate_definition(
 
     definition = MEMOS["Wrapper"]
     assert isinstance(definition, MemoComponentDefinition)
-    assert definition.component.style == Style()
+    # ``get_component`` triggers the deferred body evaluation.
+    assert definition.get_component().style == Style()
 
     monkeypatch.setattr(
         "reflex.utils.prerequisites.get_and_validate_app",
         lambda: SimpleNamespace(
             app=SimpleNamespace(
-                style={type(definition.component): Style({"color": "red"})}
+                style={type(definition.get_component()): Style({"color": "red"})}
             )
         ),
     )
@@ -671,7 +736,7 @@ def test_compile_experimental_component_memo_does_not_mutate_definition(
     render, _ = compiler_utils.compile_experimental_component_memo(definition)
 
     assert render["render"]["props"] == ['css:({ ["color"] : "red" })']
-    assert definition.component.style == Style()
+    assert definition.get_component().style == Style()
 
 
 def test_component_returning_memo_is_transparent_for_child_validation():
@@ -1086,7 +1151,7 @@ def test_self_referencing_var_memo():
 
     definition = MEMOS["recursive_count"]
     assert isinstance(definition, MemoFunctionDefinition)
-    assert "recursive_count" in str(definition.function)
+    assert "recursive_count" in str(definition.get_function())
 
     invoked = recursive_count(n=Var(_js_expr="three", _var_type=int))
     assert "recursive_count" in str(invoked)
