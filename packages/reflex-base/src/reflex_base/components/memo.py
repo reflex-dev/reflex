@@ -12,6 +12,7 @@ from typing import (
     Annotated,
     Any,
     ClassVar,
+    Generic,
     TypeVar,
     get_args,
     get_origin,
@@ -165,6 +166,85 @@ class _MemoParamSpec:
     signature_field: Callable[[MemoParam], str | None]
 
 
+_BodyT = TypeVar("_BodyT")
+
+
+class _LazyBody(Generic[_BodyT]):
+    """A memo body computed once, on first read.
+
+    ``@rx.memo`` registers a definition without running the decorated body; the
+    body is built by ``thunk`` on the first :meth:`get` and cached thereafter,
+    so decoration has no import-time side effects. A re-entrant read during that
+    evaluation — a component memo that instantiates itself via recursive
+    ``rx.foreach`` — returns the ``placeholder`` instead of recursing. Var memos
+    never re-enter (recursion resolves through the imported function var), so
+    they pass no placeholder. Eagerly built definitions use :meth:`ready`.
+
+    Not thread-safe: the re-entrancy guard is a plain flag, which is sufficient
+    because memo bodies are only ever evaluated during single-threaded compile.
+    """
+
+    __slots__ = ("_busy", "_placeholder", "_ready", "_thunk", "_value")
+    _value: _BodyT
+
+    def __init__(
+        self, thunk: Callable[[], _BodyT], placeholder: _BodyT | None = None
+    ) -> None:
+        """Defer ``thunk`` until first read.
+
+        Args:
+            thunk: Builds and returns the body on first :meth:`get`.
+            placeholder: Stand-in returned if the body is read while ``thunk``
+                is still running (the recursive component-memo case).
+        """
+        self._thunk = thunk
+        self._placeholder = placeholder
+        self._ready = False
+        self._busy = False
+
+    @classmethod
+    def ready(cls, value: _BodyT) -> _LazyBody[_BodyT]:
+        """Wrap an already-computed body.
+
+        Args:
+            value: The precomputed body.
+
+        Returns:
+            A lazy body that yields ``value`` without running a thunk.
+        """
+        body = cls(lambda: value)
+        body._value = value
+        body._ready = True
+        return body
+
+    def get(self) -> _BodyT:
+        """Return the body, running and caching ``thunk`` on first read.
+
+        Returns:
+            The cached body, or the placeholder when read mid-evaluation.
+
+        Raises:
+            RuntimeError: If the body re-enters its own evaluation but carries
+                no placeholder (only component memos re-enter, and they always
+                provide one — so this signals a broken invariant, not a missing
+                body).
+        """
+        if self._ready:
+            return self._value
+        if self._busy:
+            if self._placeholder is None:
+                msg = "Re-entrant memo body read before its evaluation finished."
+                raise RuntimeError(msg)
+            return self._placeholder
+        self._busy = True
+        try:
+            self._value = self._thunk()
+            self._ready = True
+        finally:
+            self._busy = False
+        return self._value
+
+
 @dataclasses.dataclass(frozen=True, slots=True)
 class MemoDefinition:
     """Base metadata for a memo."""
@@ -178,24 +258,17 @@ class MemoDefinition:
 class MemoFunctionDefinition(MemoDefinition):
     """A memo that compiles to a JavaScript function."""
 
-    function: ArgsFunctionOperation
+    _function: _LazyBody[ArgsFunctionOperation]
     imported_var: FunctionVar
-    # Lazy-evaluation state. ``memo()`` registers the definition with a
-    # placeholder ``function`` and ``_evaluated=False`` so the decorated body
-    # is not executed at import time; the first reader (here, the compiler via
-    # ``get_function``) triggers it. Every other construction path builds the
-    # real value eagerly and keeps the default ``_evaluated=True``.
-    _evaluated: bool = dataclasses.field(default=True, repr=False, compare=False)
-    _evaluating: bool = dataclasses.field(default=False, repr=False, compare=False)
 
-    def get_function(self) -> ArgsFunctionOperation:
-        """Return the compiled function body, evaluating it on first access.
+    @property
+    def function(self) -> ArgsFunctionOperation:
+        """The compiled function body, evaluated on first access.
 
         Returns:
             The compiled ``ArgsFunctionOperation`` for this memo.
         """
-        _ensure_definition_evaluated(self)
-        return self.function
+        return self._function.get()
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -203,7 +276,7 @@ class MemoComponentDefinition(MemoDefinition):
     """A memo that compiles to a React component."""
 
     export_name: str
-    component: Component
+    _component: _LazyBody[Component]
     # For passthrough wrappers built by the auto-memoize plugin: the
     # ``Bare``-wrapped ``{children}`` placeholder used when rendering the memo
     # body. The ``component`` keeps its ORIGINAL children so compile-time
@@ -212,20 +285,15 @@ class MemoComponentDefinition(MemoDefinition):
     # imports collection, so descendants emit their refs/imports/hooks in the
     # page scope rather than being duplicated inside the memo body.
     passthrough_hole_child: Component | None = None
-    # See ``MemoFunctionDefinition`` for the lazy-evaluation contract. The
-    # first reader is usually the component wrapper at instantiation (which
-    # needs ``type(component)``), otherwise the compiler.
-    _evaluated: bool = dataclasses.field(default=True, repr=False, compare=False)
-    _evaluating: bool = dataclasses.field(default=False, repr=False, compare=False)
 
-    def get_component(self) -> Component:
-        """Return the compiled component body, evaluating it on first access.
+    @property
+    def component(self) -> Component:
+        """The compiled component body, evaluated on first access.
 
         Returns:
             The compiled ``Component`` for this memo.
         """
-        _ensure_definition_evaluated(self)
-        return self.component
+        return self._component.get()
 
 
 class MemoComponent(Component):
@@ -1164,54 +1232,46 @@ def _build_args_function(
     )
 
 
-def _ensure_definition_evaluated(
-    definition: MemoComponentDefinition | MemoFunctionDefinition,
-) -> None:
-    """Evaluate a deferred memo body once, on first access to its compiled form.
-
-    ``memo()`` registers definitions with a placeholder ``component`` /
-    ``function`` and ``_evaluated=False`` so the user's body is not executed at
-    import time (which can run code with unmet import-order dependencies). The
-    first reader — the component wrapper at instantiation, or the compiler —
-    triggers evaluation here; the result is cached back onto the frozen
-    definition and reused thereafter.
-
-    A re-entrant call (e.g. a recursive component memo whose body invokes itself
-    via ``rx.foreach``) returns early while ``_evaluating`` is set, leaving the
-    placeholder component in place so the recursive instance still compiles to
-    the memo's export tag.
+def _evaluate_component_body(
+    fn: Callable[..., Any], params: tuple[MemoParam, ...]
+) -> Component:
+    """Run a component memo's body and return its compiled component.
 
     Args:
-        definition: The memo definition to evaluate.
+        fn: The decorated function.
+        params: The analyzed memo parameters.
+
+    Returns:
+        The wrapped component the body returned.
 
     Raises:
-        TypeError: If a component memo body does not return a component.
+        TypeError: If the body does not return a component.
     """
-    if definition._evaluated or definition._evaluating:
-        return
-    object.__setattr__(definition, "_evaluating", True)
-    try:
-        result = _evaluate_memo_function(definition.fn, definition.params)
-        if isinstance(definition, MemoComponentDefinition):
-            body = _normalize_component_return(result)
-            if body is None:
-                msg = (
-                    f"Component-returning `@rx.memo` `{definition.fn.__name__}` must "
-                    "return an `rx.Component` or `rx.Var[rx.Component]`."
-                )
-                raise TypeError(msg)
-            object.__setattr__(definition, "component", _lift_rest_props(body))
-        else:
-            return_expr = Var.create(result)
-            _validate_var_return_expr(return_expr, definition.fn.__name__)
-            object.__setattr__(
-                definition,
-                "function",
-                _build_args_function(definition.params, return_expr),
-            )
-        object.__setattr__(definition, "_evaluated", True)
-    finally:
-        object.__setattr__(definition, "_evaluating", False)
+    body = _normalize_component_return(_evaluate_memo_function(fn, params))
+    if body is None:
+        msg = (
+            f"Component-returning `@rx.memo` `{fn.__name__}` must return an "
+            "`rx.Component` or `rx.Var[rx.Component]`."
+        )
+        raise TypeError(msg)
+    return _lift_rest_props(body)
+
+
+def _evaluate_function_body(
+    fn: Callable[..., Any], params: tuple[MemoParam, ...]
+) -> ArgsFunctionOperation:
+    """Run a var memo's body and build its compiled function.
+
+    Args:
+        fn: The decorated function.
+        params: The analyzed memo parameters.
+
+    Returns:
+        The compiled ``ArgsFunctionOperation`` for the memo body.
+    """
+    return_expr = Var.create(_evaluate_memo_function(fn, params))
+    _validate_var_return_expr(return_expr, fn.__name__)
+    return _build_args_function(params, return_expr)
 
 
 def _create_component_definition(
@@ -1231,20 +1291,12 @@ def _create_component_definition(
         TypeError: If the function does not return a component.
     """
     params = _analyze_params(fn, for_component=True)
-    component = _normalize_component_return(_evaluate_memo_function(fn, params))
-    if component is None:
-        msg = (
-            f"Component-returning `@rx.memo` `{fn.__name__}` must return an "
-            "`rx.Component` or `rx.Var[rx.Component]`."
-        )
-        raise TypeError(msg)
-
     return MemoComponentDefinition(
         fn=fn,
         python_name=fn.__name__,
         params=params,
         export_name=format.to_title_case(fn.__name__),
-        component=_lift_rest_props(component),
+        _component=_LazyBody.ready(_evaluate_component_body(fn, params)),
     )
 
 
@@ -1499,11 +1551,11 @@ class _MemoComponentWrapper:
                 raise TypeError(msg)
             _warn_legacy_base_props(definition.python_name, list(remaining_props))
 
-        # Build the component props passed into the memo wrapper. Reading the
-        # component through ``get_component`` evaluates a deferred memo body on
-        # first instantiation so ``type(...)`` reflects the real wrapped class.
+        # Build the component props passed into the memo wrapper. Reading
+        # ``component`` evaluates a deferred memo body on first instantiation so
+        # ``type(...)`` reflects the real wrapped class.
         return _get_memo_component_class(
-            definition.export_name, type(definition.get_component())
+            definition.export_name, type(definition.component)
         )._create(
             children=list(children),
             memo_definition=definition,
@@ -1713,12 +1765,12 @@ def memo(fn: Callable[..., Any]) -> _MemoComponentWrapper | _MemoFunctionWrapper
     The decorated function's body is **not** executed here. Only signature-level
     analysis — return annotation, parameter kinds, name-collision registration,
     and the deprecation warning for missing annotations — runs at decoration
-    time. The body is compiled lazily on first use (when the component wrapper
-    is instantiated, or when the compiler reads the memo) via
-    ``_ensure_definition_evaluated``. Deferring the body keeps ``@rx.memo``
-    free of import-time side effects, so a memo whose body references another
-    module no longer forces that module to load during import — sidestepping
-    circular-import ordering issues.
+    time. The body is compiled lazily on first read of ``.component`` /
+    ``.function`` — when the component wrapper is instantiated, or when the
+    compiler reads the memo (see ``_LazyBody``). Deferring the body keeps
+    ``@rx.memo`` free of import-time side effects, so a memo whose body
+    references another module no longer forces that module to load during
+    import — sidestepping circular-import ordering issues.
 
     Args:
         fn: The function to memoize.
@@ -1755,11 +1807,11 @@ def memo(fn: Callable[..., Any]) -> _MemoComponentWrapper | _MemoFunctionWrapper
     if missing_return or defaulted_params:
         _warn_missing_annotations(fn.__name__, missing_return, defaulted_params)
 
-    # Build the definition with a placeholder body and ``_evaluated=False``; the
-    # real body is compiled on first access (see ``_ensure_definition_evaluated``).
-    # The placeholder also stands in for re-entrant access during a recursive
-    # memo's own evaluation, where the name resolves to ``wrapper`` (already
-    # bound by the time anything triggers evaluation).
+    # Build the definition with a deferred body: the decorated function runs on
+    # first read of ``.component`` / ``.function`` (see ``_LazyBody``), not here,
+    # so decoration has no import-time side effects. The component placeholder
+    # stands in for re-entrant reads during a recursive memo's own evaluation,
+    # where the name resolves to ``wrapper`` (already bound by first use).
     definition: MemoComponentDefinition | MemoFunctionDefinition
     if is_component:
         definition = MemoComponentDefinition(
@@ -1767,8 +1819,10 @@ def memo(fn: Callable[..., Any]) -> _MemoComponentWrapper | _MemoFunctionWrapper
             python_name=fn.__name__,
             params=params,
             export_name=format.to_title_case(fn.__name__),
-            component=Fragment.create(),
-            _evaluated=False,
+            _component=_LazyBody(
+                lambda: _evaluate_component_body(fn, params),
+                placeholder=Fragment.create(),
+            ),
         )
         wrapper = _create_component_wrapper(definition)
     else:
@@ -1776,13 +1830,10 @@ def memo(fn: Callable[..., Any]) -> _MemoComponentWrapper | _MemoFunctionWrapper
             fn=fn,
             python_name=fn.__name__,
             params=params,
-            function=ArgsFunctionOperation.create(
-                args_names=(), return_expr=LiteralVar.create(None)
-            ),
+            _function=_LazyBody(lambda: _evaluate_function_body(fn, params)),
             imported_var=_imported_function_var(
                 fn.__name__, _annotation_inner_type(return_annotation)
             ),
-            _evaluated=False,
         )
         wrapper = _create_function_wrapper(definition)
 

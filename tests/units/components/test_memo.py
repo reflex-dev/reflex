@@ -19,6 +19,7 @@ from reflex_base.components.memo import (
     MemoParam,
     MemoParamKind,
     _analyze_params,
+    _LazyBody,
     _MemoCallBinding,
 )
 from reflex_base.event import EventChain, EventHandler, no_args_event_spec
@@ -63,8 +64,7 @@ def test_var_returning_memo():
     definition = MEMOS["format_price"]
     assert isinstance(definition, MemoFunctionDefinition)
     assert (
-        str(definition.get_function())
-        == '((amount, currency) => ((currency+": $")+amount))'
+        str(definition.function) == '((amount, currency) => ((currency+": $")+amount))'
     )
 
     with pytest.raises(TypeError, match="only accepts keyword props"):
@@ -133,7 +133,7 @@ def test_component_returning_memo_accepts_component_var_result():
 
     definition = MEMOS["ConditionalSlot"]
     assert isinstance(definition, MemoComponentDefinition)
-    assert definition.get_component().render() == {
+    assert definition.component.render() == {
         "contents": "(showRxMemo ? firstRxMemo : secondRxMemo)"
     }
 
@@ -466,13 +466,41 @@ def test_memo_function_body_not_evaluated_until_compiled():
     lazy_join(value=Var(_js_expr="x", _var_type=str))
     assert evaluated == []
 
-    # The compiler (here, get_function) triggers a single evaluation.
+    # The compiler (reading ``.function``) triggers a single evaluation.
     definition = MEMOS["lazy_join"]
     assert isinstance(definition, MemoFunctionDefinition)
-    definition.get_function()
+    _ = definition.function
     assert evaluated == [1]
-    definition.get_function()
+    _ = definition.function
     assert evaluated == [1]
+
+
+def test_lazy_body_placeholder_stands_in_for_reentrant_read():
+    """A re-entrant read returns the placeholder, then caches the real body."""
+    cell: _LazyBody[str]
+    seen = []
+
+    def thunk() -> str:
+        seen.append(cell.get())  # re-enters while the thunk is running
+        return "real"
+
+    cell = _LazyBody(thunk, placeholder="placeholder")
+    assert cell.get() == "real"
+    assert seen == ["placeholder"]
+    # Cached afterwards; the thunk does not run again.
+    assert cell.get() == "real"
+
+
+def test_lazy_body_reentrant_read_without_placeholder_raises():
+    """A placeholder-less body that re-enters its own evaluation fails loudly."""
+    cell: _LazyBody[str]
+
+    def thunk() -> str:
+        return cell.get()
+
+    cell = _LazyBody(thunk)
+    with pytest.raises(RuntimeError, match="Re-entrant"):
+        cell.get()
 
 
 @pytest.mark.parametrize(
@@ -679,34 +707,38 @@ def test_var_memo_rejects_invalid_positional_usage():
 
 def test_var_returning_memo_rejects_hooks():
     """Var-returning memos should reject hook-bearing expressions (lazily)."""
+
+    @rx.memo
+    def bad_hook(value: rx.Var[str]) -> rx.Var[str]:
+        return Var(
+            _js_expr="value",
+            _var_type=str,
+            _var_data=VarData(hooks={"const badHook = 1": None}),
+        )
+
+    # Decoration defers the body; reading ``.function`` surfaces the error.
+    definition = MEMOS["bad_hook"]
+    assert isinstance(definition, MemoFunctionDefinition)
     with pytest.raises(TypeError, match="cannot depend on hooks"):
-
-        @rx.memo
-        def bad_hook(value: rx.Var[str]) -> rx.Var[str]:
-            return Var(
-                _js_expr="value",
-                _var_type=str,
-                _var_data=VarData(hooks={"const badHook = 1": None}),
-            )
-
-        # The body is compiled lazily; force evaluation to surface the error.
-        MEMOS["bad_hook"].get_function()  # pyright: ignore[reportAttributeAccessIssue]
+        _ = definition.function
 
 
 def test_var_returning_memo_rejects_non_bundled_imports():
     """Var-returning memos should reject non-bundled imports (lazily)."""
+
+    @rx.memo
+    def bad_import(value: rx.Var[str]) -> rx.Var[str]:
+        return Var(
+            _js_expr="value",
+            _var_type=str,
+            _var_data=VarData(imports={"some-lib": [ImportVar(tag="x")]}),
+        )
+
+    # Decoration defers the body; reading ``.function`` surfaces the error.
+    definition = MEMOS["bad_import"]
+    assert isinstance(definition, MemoFunctionDefinition)
     with pytest.raises(TypeError, match="not bundled"):
-
-        @rx.memo
-        def bad_import(value: rx.Var[str]) -> rx.Var[str]:
-            return Var(
-                _js_expr="value",
-                _var_type=str,
-                _var_data=VarData(imports={"some-lib": [ImportVar(tag="x")]}),
-            )
-
-        # The body is compiled lazily; force evaluation to surface the error.
-        MEMOS["bad_import"].get_function()  # pyright: ignore[reportAttributeAccessIssue]
+        _ = definition.function
 
 
 def test_compile_memo_components_includes_functions_and_components():
@@ -746,7 +778,7 @@ def test_compile_memo_components_extends_imports_without_remerging(
             python_name=f"memo_{idx}",
             params=(),
             export_name=f"Memo{idx}",
-            component=rx.fragment(),
+            _component=_LazyBody.ready(rx.fragment()),
             passthrough_hole_child=None,
         )
         for idx in range(5)
@@ -826,14 +858,14 @@ def test_compile_experimental_component_memo_does_not_mutate_definition(
 
     definition = MEMOS["Wrapper"]
     assert isinstance(definition, MemoComponentDefinition)
-    # ``get_component`` triggers the deferred body evaluation.
-    assert definition.get_component().style == Style()
+    # Reading ``.component`` triggers the deferred body evaluation.
+    assert definition.component.style == Style()
 
     monkeypatch.setattr(
         "reflex.utils.prerequisites.get_and_validate_app",
         lambda: SimpleNamespace(
             app=SimpleNamespace(
-                style={type(definition.get_component()): Style({"color": "red"})}
+                style={type(definition.component): Style({"color": "red"})}
             )
         ),
     )
@@ -841,7 +873,7 @@ def test_compile_experimental_component_memo_does_not_mutate_definition(
     render, _ = compiler_utils.compile_experimental_component_memo(definition)
 
     assert render["render"]["props"] == ['css:({ ["color"] : "red" })']
-    assert definition.get_component().style == Style()
+    assert definition.component.style == Style()
 
 
 def test_component_returning_memo_is_transparent_for_child_validation():
@@ -1256,7 +1288,7 @@ def test_self_referencing_var_memo():
 
     definition = MEMOS["recursive_count"]
     assert isinstance(definition, MemoFunctionDefinition)
-    assert "recursive_count" in str(definition.get_function())
+    assert "recursive_count" in str(definition.function)
 
     invoked = recursive_count(n=Var(_js_expr="three", _var_type=int))
     assert "recursive_count" in str(invoked)

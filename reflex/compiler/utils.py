@@ -393,7 +393,7 @@ def compile_experimental_component_memo(
         # we skip the O(n) deepcopy + recursive style pass. Descendants are
         # rendered AND styled in the page scope, not here, so only the root
         # needs app-level style merged.
-        render = copy.copy(definition.get_component())
+        render = copy.copy(definition.component)
         _apply_root_style(render)
 
         hooks = _root_only_hooks(render)
@@ -413,9 +413,7 @@ def compile_experimental_component_memo(
         render.children = [hole_child]
         rendered = render.render()
     else:
-        render = _apply_component_style_for_compile(
-            copy.deepcopy(definition.get_component())
-        )
+        render = _apply_component_style_for_compile(copy.deepcopy(definition.component))
         hooks = render._get_all_hooks()
         rendered = render.render()
         custom_code = render._get_all_custom_code()
@@ -528,9 +526,8 @@ def compile_experimental_function_memo(
         A tuple of the compiled function definition and its imports.
     """
     imports: ParsedImportDict = {}
-    # Evaluates a deferred function-memo body on first read (see
-    # ``MemoFunctionDefinition.get_function``).
-    function = definition.get_function()
+    # Reading ``.function`` evaluates a deferred function-memo body on first use.
+    function = definition.function
     if var_data := function._get_all_var_data():
         # Per-file memo modules live at ``$/utils/components/<name>``; strip
         # only a self-import to this function memo's own module.
