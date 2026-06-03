@@ -88,6 +88,17 @@ If you don't yet know the PR number, use an [orphan fragment](https://towncrier.
 
 **Skipping the fragment check:** for PRs that are genuinely not user-facing (CI-only tweaks, script fixes, test-only changes), apply the `skip-changelog` label on the PR to bypass the changelog CI check.
 
+**Publishing CHANGELOG.md**: This step should be completed by maintainers during the release process. If you have access to publish a release, you can run the following command to generate the `CHANGELOG.md` file.
+
+```bash
+for package in . packages/*; do
+  if ls $package/news/*.md > /dev/null 2>&1; then
+    echo "Generating changelog for $package..."
+    uv run towncrier build --config pyproject.toml --draft --dir "$package"
+  fi
+done
+```
+
 ## ✅ Making a PR
 
 Once you solve a current issue or improvement to Reflex, you can make a PR, and we will review the changes.
@@ -163,11 +174,7 @@ Paths must start with `/`, have no trailing slash, and are prefix-matched. An em
 
 ## Editing Templates
 
-To edit the templates in Reflex you can do so in two way.
-
-Change to the basic `blank` template can be done in the `reflex/.templates/apps/blank` directory.
-
-Others templates can be edited in their own repository. For example the `sidebar` template can be found in the [`reflex-sidebar`](https://github.com/reflex-dev/sidebar-template) repository.
+Changes to the basic `blank` template can be done in the `reflex/.templates/apps/blank` directory.
 
 ## Other Notes
 
