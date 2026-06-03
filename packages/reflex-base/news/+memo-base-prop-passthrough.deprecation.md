@@ -1,0 +1,1 @@
+Component-returning `@rx.memo` again accepts `key` without an `rx.RestProp` (with a deprecation warning), so `rx.foreach` call sites that set the react `key` keep working; this fallback is removed in 1.0. Other base props (`id`, `class_name`, `style`, `custom_attrs`, `ref`) and identity fields like `tag`/`library` still raise — declare an `rx.RestProp` to forward them.

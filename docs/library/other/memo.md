@@ -15,7 +15,7 @@ Every parameter must be annotated with `rx.Var[...]` or `rx.RestProp`. The compi
 3. **`rx.Var[rx.Component]` for slot children** — a parameter named `children` annotated as `rx.Var[rx.Component]` accepts children rendered by the caller.
 4. **Keyword arguments at the call site** — pass props by name, not by position.
 
-Defaults need to be `rx.Var` values. For the common empty cases use the module-level constants `rx.EMPTY_VAR_STR` (an empty string) and `rx.EMPTY_VAR_INT` (zero): `class_name: rx.Var[str] = rx.EMPTY_VAR_STR` falls back to `""` when the caller omits the prop.
+Defaults need to be `rx.Var` values. For the common empty cases use the module-level constants `rx.EMPTY_VAR_STR` (an empty string), `rx.EMPTY_VAR_INT` (zero), and `rx.EMPTY_VAR_COMPONENT` (an empty component): `class_name: rx.Var[str] = rx.EMPTY_VAR_STR` falls back to `""` when the caller omits the prop, and `children: rx.Var[rx.Component] = rx.EMPTY_VAR_COMPONENT` makes a slot optional.
 
 ## Basic Usage
 
@@ -79,7 +79,7 @@ def primary_button(
     *,
     label: rx.Var[str],
 ) -> rx.Component:
-    return rx.button(label, class_name="bg-primary-9 text-white", **rest)
+    return rx.button(label, rest, class_name="bg-primary-9 text-white")
 
 
 def index():
@@ -91,6 +91,30 @@ def index():
 ```
 
 At most one `rx.RestProp` parameter is allowed per memo.
+
+The `rest` parameter should be treated as an opaque value and passed
+positionally to any component which will use it.
+
+You may use the `.merge` var operation to combine the arbitrary props with
+another object Var or python dict. The memo body can read placeholders like
+`rest.get("class_name", "")`, but the actual value will be unavailable at
+compile time, so you can't branch on it or do python operations with the values,
+only var operations which will be translated to Javascript expressions.
+
+The same example as above, but now allowing the caller to optionally pass a
+`class_name` that gets merged with the default styles:
+
+```python
+@rx.memo
+def primary_button(
+    rest: rx.RestProp,
+    *,
+    label: rx.Var[str],
+) -> rx.Component:
+    class_name = rest.get("class_name", "") + " bg-primary-9 text-white"
+    return rx.button(label, rest.merge({"class_name": class_name}))
+```
+
 
 ## Accepting Children
 
