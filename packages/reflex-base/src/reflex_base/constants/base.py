@@ -101,8 +101,6 @@ class Reflex(SimpleNamespace):
     # The root directory of the reflex library.
     ROOT_DIR = Path(__file__).parents[1]
 
-    RELEASES_URL = "https://api.github.com/repos/reflex-dev/templates/releases"
-
     # The reflex stylesheet language supported
     STYLESHEETS_SUPPORTED = ["css", "sass", "scss"]
 

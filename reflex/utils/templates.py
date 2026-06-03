@@ -218,9 +218,6 @@ def validate_and_create_app_using_remote_template(app_name: str, template: str):
         console.error(f"Template `{template}` not found or invalid.")
         raise SystemExit(1)
 
-    if template_url is None:
-        return
-
     create_config_init_app_from_remote_template(
         app_name=app_name, template_url=template_url
     )
