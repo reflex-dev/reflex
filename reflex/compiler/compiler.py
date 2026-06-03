@@ -270,7 +270,6 @@ def compile_root_stylesheet(
     stylesheets: list[str],
     reset_style: bool = True,
     plugins: Sequence[Plugin] | None = None,
-    theme_roots: Sequence[BaseComponent | None] | None = None,
 ) -> tuple[str, str]:
     """Compile the root stylesheet.
 
@@ -278,15 +277,13 @@ def compile_root_stylesheet(
         stylesheets: The stylesheets to include in the root stylesheet.
         reset_style: Whether to include CSS reset for margin and padding.
         plugins: The effective plugins for the active compile.
-        theme_roots: Component roots to scan for Theme components so only the
-            used Radix color scales are shipped.
 
     Returns:
         The path and code of the compiled root stylesheet.
     """
     output_path = utils.get_root_stylesheet_path()
 
-    code = _compile_root_stylesheet(stylesheets, reset_style, plugins, theme_roots)
+    code = _compile_root_stylesheet(stylesheets, reset_style, plugins)
 
     return output_path, code
 
@@ -330,7 +327,6 @@ def _compile_root_stylesheet(
     stylesheets: list[str],
     reset_style: bool = True,
     plugins: Sequence[Plugin] | None = None,
-    theme_roots: Sequence[BaseComponent | None] | None = None,
 ) -> str:
     """Compile the root stylesheet.
 
@@ -338,8 +334,6 @@ def _compile_root_stylesheet(
         stylesheets: The stylesheets to include in the root stylesheet.
         reset_style: Whether to include CSS reset for margin and padding.
         plugins: The effective plugins for the active compile.
-        theme_roots: Component roots to scan for Theme components so only the
-            used Radix color scales are shipped.
 
     Returns:
         The compiled root stylesheet.
@@ -356,11 +350,8 @@ def _compile_root_stylesheet(
         sheets.append(f"./{ResetStylesheet.FILENAME}")
 
     active_plugins = get_config().plugins if plugins is None else plugins
-    plugin_context: dict[str, Any] = {"theme_roots": theme_roots}
     sheets.extend([
-        sheet
-        for plugin in active_plugins
-        for sheet in plugin.get_stylesheet_paths(**plugin_context)
+        sheet for plugin in active_plugins for sheet in plugin.get_stylesheet_paths()
     ])
 
     failed_to_import_sass = False
@@ -1162,11 +1153,6 @@ def compile_app(
     app_root_imports = app_root._get_all_imports()
     all_imports = utils.merge_imports(all_imports, app_root_imports)
 
-    theme_roots: list[BaseComponent | None] = [
-        app_root,
-        *(p.root_component for p in compile_ctx.compiled_pages.values()),
-    ]
-
     memo_component_files, memo_components_imports = compile_memo_components(
         (
             *MEMOS.values(),
@@ -1224,7 +1210,6 @@ def compile_app(
             )),
             radix_themes_plugin=radix_themes_plugin,
             unevaluated_pages=list(app._unevaluated_pages.values()),
-            theme_roots=theme_roots,
         )
 
     if save_tasks:
@@ -1237,7 +1222,6 @@ def compile_app(
             app.stylesheets,
             app.reset_style,
             plugins=compiler_plugins,
-            theme_roots=theme_roots,
         )
     )
     progress.advance(task)

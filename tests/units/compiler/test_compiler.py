@@ -1,8 +1,6 @@
 import importlib.util
 import os
 from pathlib import Path
-from types import SimpleNamespace
-from typing import TYPE_CHECKING, cast
 
 import pytest
 from pytest_mock import MockerFixture
@@ -16,13 +14,9 @@ from reflex_components_core.base import document
 from reflex_components_core.base.document import Links, Scripts
 from reflex_components_core.el.elements.metadata import Head, Link, Meta
 from reflex_components_core.el.elements.other import Html
-from reflex_components_radix.plugin import get_radix_themes_stylesheets
 
 import reflex as rx
 from reflex.compiler import compiler, utils
-
-if TYPE_CHECKING:
-    from reflex_base.components.component import BaseComponent
 
 
 @pytest.mark.parametrize(
@@ -439,95 +433,6 @@ def test_compile_nonexistent_stylesheet(tmp_path, mocker: MockerFixture):
 
     with pytest.raises(FileNotFoundError):
         compiler.compile_root_stylesheet(stylesheets)
-
-
-def test_radix_themes_stylesheets_no_roots_falls_back_to_monolith():
-    """When no roots are provided, use the monolithic stylesheet."""
-    assert get_radix_themes_stylesheets(None) == ["@radix-ui/themes/styles.css"]
-
-
-def test_radix_themes_stylesheets_literal_accent_emits_granular_imports():
-    """A literal accent_color emits only the needed granular imports."""
-    sheets = get_radix_themes_stylesheets([rx.theme(accent_color="blue")])
-    assert sheets == [
-        "@radix-ui/themes/tokens/base.css",
-        # blue's natural gray pairing is slate
-        "@radix-ui/themes/tokens/colors/slate.css",
-        "@radix-ui/themes/tokens/colors/blue.css",
-        "@radix-ui/themes/components.css",
-        "@radix-ui/themes/utilities.css",
-    ]
-
-
-def test_radix_themes_stylesheets_explicit_gray_overrides_auto_pairing():
-    """An explicit gray_color replaces the accent's auto-paired gray."""
-    sheets = get_radix_themes_stylesheets([
-        rx.theme(accent_color="red", gray_color="mauve")
-    ])
-    assert "@radix-ui/themes/tokens/colors/mauve.css" in sheets
-    assert "@radix-ui/themes/tokens/colors/red.css" in sheets
-    # The default auto pairing for red is also mauve, so no extra colors.
-    color_sheets = [s for s in sheets if "/colors/" in s]
-    assert len(color_sheets) == 2
-
-
-def test_radix_themes_stylesheets_gray_accent_no_duplicate_import():
-    """accent_color='gray' auto-pairs with 'gray' -- emit gray.css only once."""
-    sheets = get_radix_themes_stylesheets([rx.theme(accent_color="gray")])
-    assert sheets.count("@radix-ui/themes/tokens/colors/gray.css") == 1
-    # And with an explicit matching gray_color too.
-    sheets = get_radix_themes_stylesheets([
-        rx.theme(accent_color="gray", gray_color="gray")
-    ])
-    assert sheets.count("@radix-ui/themes/tokens/colors/gray.css") == 1
-
-
-def test_radix_themes_stylesheets_nested_themes_union_colors():
-    """Nested Theme components contribute the union of their colors."""
-    root = rx.box(
-        rx.theme(accent_color="green"),
-        rx.theme(accent_color="pink"),
-    )
-    sheets = get_radix_themes_stylesheets([root])
-    color_sheets = {s for s in sheets if "/colors/" in s}
-    assert "@radix-ui/themes/tokens/colors/green.css" in color_sheets
-    assert "@radix-ui/themes/tokens/colors/pink.css" in color_sheets
-
-
-def test_radix_themes_stylesheets_dynamic_color_falls_back_to_monolith():
-    """A state-driven Theme color forces the monolithic stylesheet."""
-    from typing import Literal
-
-    class _S(rx.State):
-        color: Literal["red", "blue"] = "red"
-
-    sheets = get_radix_themes_stylesheets([rx.theme(accent_color=_S.color)])
-    assert sheets == ["@radix-ui/themes/styles.css"]
-
-
-def test_radix_themes_stylesheets_unknown_color_falls_back_to_monolith():
-    """Defensive: an unrecognized accent color (e.g. Radix adds new ones that
-    don't map to a granular file in our pinned layout) falls back to the
-    monolithic stylesheet instead of emitting a 404 ``tokens/colors/X.css``.
-    """
-    fake_theme = cast(
-        "BaseComponent",
-        SimpleNamespace(
-            tag="Theme", accent_color="paprika", gray_color=None, children=()
-        ),
-    )
-    assert get_radix_themes_stylesheets([fake_theme]) == ["@radix-ui/themes/styles.css"]
-
-
-def test_radix_themes_stylesheets_unknown_gray_falls_back_to_monolith():
-    """Same defense for an unrecognized gray color."""
-    fake_theme = cast(
-        "BaseComponent",
-        SimpleNamespace(
-            tag="Theme", accent_color="blue", gray_color="taupe", children=()
-        ),
-    )
-    assert get_radix_themes_stylesheets([fake_theme]) == ["@radix-ui/themes/styles.css"]
 
 
 @pytest.fixture

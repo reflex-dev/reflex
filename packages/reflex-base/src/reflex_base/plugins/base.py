@@ -5,7 +5,7 @@ from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, ParamSpec, Protocol, TypedDict
 
-from typing_extensions import NotRequired, Unpack
+from typing_extensions import Unpack
 
 
 class HookOrder(str, Enum):
@@ -55,7 +55,6 @@ class PreCompileContext(CommonContext):
     add_modify_task: Callable[[str, Callable[[str], str]], None]
     radix_themes_plugin: Any
     unevaluated_pages: Sequence["UnevaluatedPage"]
-    theme_roots: NotRequired[Sequence["BaseComponent | None"]]
 
 
 class PostCompileContext(CommonContext):
