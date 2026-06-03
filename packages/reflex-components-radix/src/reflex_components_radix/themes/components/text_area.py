@@ -112,8 +112,9 @@ class TextArea(RadixThemesComponent, elements.Textarea):
         """
         added_style: dict[str, dict] = {}
         added_style.setdefault("& textarea", {})
-        if "padding" in self.style:
-            added_style["& textarea"]["padding"] = self.style.pop("padding")
+        padding = self.style.get("padding")
+        if padding is not None:
+            added_style["& textarea"]["padding"] = padding
         return added_style
 
 

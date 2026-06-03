@@ -112,6 +112,6 @@ class IterTag(Tag):
 
         # Set the component key.
         if component.key is None:
-            component.key = index
+            component = component.copy_with(key=index)
 
         return component

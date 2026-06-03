@@ -16,7 +16,7 @@ from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, ClassVar, TypeVar, cast
 
 from rich.markup import escape
-from typing_extensions import dataclass_transform
+from typing_extensions import Self, dataclass_transform
 
 from reflex_base import constants
 from reflex_base.breakpoints import Breakpoints
@@ -285,9 +285,20 @@ class BaseComponent(metaclass=BaseComponentMeta):
     This is something that can be rendered as a Component via the Reflex compiler.
     """
 
-    children: list[BaseComponent] = field(
+    _frozen: ClassVar[bool] = False
+
+    # Render-path caches; allowed to be written even on frozen instances.
+    _CACHE_ATTRS: ClassVar[frozenset[str]] = frozenset({
+        "_cached_render_result",
+        "_vars_cache",
+        "_imports_cache",
+        "_hooks_internal_cache",
+        "_get_component_prop_property",
+    })
+
+    children: tuple[BaseComponent, ...] = field(
         doc="The children nested within the component.",
-        default_factory=list,
+        default_factory=tuple,
         is_javascript_property=False,
     )
 
@@ -312,24 +323,72 @@ class BaseComponent(metaclass=BaseComponentMeta):
         Args:
             **kwargs: The kwargs to pass to the component.
         """
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+        if "children" in kwargs:
+            kwargs["children"] = tuple(kwargs["children"])
+        d = vars(self)
+        d.update(kwargs)
         for name, value in self.get_fields().items():
             if name not in kwargs:
-                setattr(self, name, value.default_value())
+                d[name] = value.default_value()
+
+    def __setattr__(self, key: str, value: Any) -> None:
+        """Block writes to frozen components, except for cache attributes.
+
+        Args:
+            key: The attribute name.
+            value: The attribute value.
+
+        Raises:
+            AttributeError: If the component is frozen and the attribute is not a cache.
+        """
+        if self.__dict__.get("_frozen", False) and key not in type(self)._CACHE_ATTRS:
+            msg = (
+                f"Cannot set {key!r} on frozen {type(self).__name__}; "
+                "use copy_with() to create a modified copy."
+            )
+            raise AttributeError(msg)
+        super().__setattr__(key, value)
+
+    def _freeze(self) -> None:
+        """Mark this component as frozen.
+
+        Subsequent attribute writes outside the cache allowlist will raise.
+        """
+        object.__setattr__(self, "_frozen", True)
+
+    def copy_with(self, **updates: Any) -> Self:
+        """Return a frozen shallow copy with updated fields.
+
+        Render-path caches are dropped because they may depend on the fields
+        being replaced.
+
+        Args:
+            **updates: Field values to override on the copy.
+
+        Returns:
+            A new frozen instance with the requested updates applied.
+        """
+        new = self.__class__.__new__(self.__class__)
+        d = vars(new)
+        d.update(vars(self))
+        for cache_attr in type(self)._CACHE_ATTRS & d.keys():
+            del d[cache_attr]
+        if "children" in updates:
+            updates["children"] = tuple(updates["children"])
+        d.update(updates)
+        d["_frozen"] = True
+        return new
 
     def set(self, **kwargs):
-        """Set the component props.
+        """Set the component props, returning a new frozen instance.
 
         Args:
             **kwargs: The kwargs to set.
 
         Returns:
-            The component with the updated props.
+            A new component with the updated props.
         """
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-        return self
+        return self.copy_with(**kwargs)
 
     def __copy__(self) -> BaseComponent:
         """Return a shallow copy suitable for compile-time mutation.
@@ -346,20 +405,9 @@ class BaseComponent(metaclass=BaseComponentMeta):
         new = self.__class__.__new__(self.__class__)
         new_dict = vars(new)
         new_dict.update(vars(self))
-        new._clear_compile_caches()
+        for attr in type(self)._CACHE_ATTRS & new_dict.keys():
+            del new_dict[attr]
         return new
-
-    def _clear_compile_caches(self) -> None:
-        """Clear cached render/compiler artifacts after compile-time mutation."""
-        attrs = cast("dict[str, Any]", vars(self))
-        for attr in (
-            "_cached_render_result",
-            "_vars_cache",
-            "_imports_cache",
-            "_hooks_internal_cache",
-            "_get_component_prop_property",
-        ):
-            attrs.pop(attr, None)
 
     def __eq__(self, value: Any) -> bool:
         """Check if the component is equal to another value.
@@ -907,86 +955,74 @@ class Component(BaseComponent, ABC):
             TypeError: If an invalid prop is passed.
             ValueError: If an event trigger passed is not valid.
         """
-        # Set the id and children initially.
         children = kwargs.get("children", [])
 
         self._validate_component_children(children)
 
-        # Get the component fields, triggers, and props.
         fields = self.get_fields()
         component_specific_triggers = self.get_event_triggers()
         props = self.get_props()
 
-        # Add any events triggers.
-        if "event_triggers" not in kwargs:
-            kwargs["event_triggers"] = {}
-        kwargs["event_triggers"] = kwargs["event_triggers"].copy()
+        existing_triggers = kwargs.get("event_triggers")
+        event_triggers: dict[str, Any] | None = (
+            dict(existing_triggers) if existing_triggers is not None else None
+        )
+        event_keys: list[str] = []
 
-        # Iterate through the kwargs and set the props.
         for key, value in kwargs.items():
-            if (
-                key.startswith("on_")
-                and key not in component_specific_triggers
-                and key not in props
-            ):
-                valid_triggers = sorted(component_specific_triggers.keys())
-                msg = (
-                    f"The {(comp_name := type(self).__name__)} does not take in an `{key}` event trigger. "
-                    f"Valid triggers for {comp_name}: {valid_triggers}. "
-                    f"If {comp_name} is a third party component make sure to add `{key}` to the component's event triggers. "
-                    f"visit https://reflex.dev/docs/wrapping-react/guide/#event-triggers for more info."
-                )
-                raise ValueError(msg)
             if key in component_specific_triggers:
-                # Event triggers are bound to event chains.
-                is_var = False
-            elif key in props:
-                # Set the field type.
-                is_var = (
-                    field.type_origin is Var if (field := fields.get(key)) else False
+                if event_triggers is None:
+                    event_triggers = {}
+                event_triggers[key] = EventChain.create(
+                    value=value,
+                    args_spec=component_specific_triggers[key],
+                    key=key,
                 )
-            else:
+                event_keys.append(key)
                 continue
 
-            # Check whether the key is a component prop.
-            if is_var:
+            if key in props:
+                field_def = fields.get(key)
+                if field_def is None or field_def.type_origin is not Var:
+                    continue
                 try:
                     kwargs[key] = LiteralVar.create(value)
-
-                    # Get the passed type and the var type.
                     passed_type = kwargs[key]._var_type
                     expected_type = typing.get_args(
                         types.get_field_type(type(self), key)
                     )[0]
                 except TypeError:
-                    # If it is not a valid var, check the base types.
                     passed_type = type(value)
                     expected_type = types.get_field_type(type(self), key)
 
                 if not satisfies_type_hint(value, expected_type):
                     value_name = value._js_expr if isinstance(value, Var) else value
-
                     additional_info = (
                         " You can call `.bool()` on the value to convert it to a boolean."
                         if expected_type is bool and isinstance(value, Var)
                         else ""
                     )
-
                     raise TypeError(
                         f"Invalid var passed for prop {type(self).__name__}.{key}, expected type {expected_type}, got value {value_name} of type {passed_type}."
                         + additional_info
                     )
-            # Check if the key is an event trigger.
-            if key in component_specific_triggers:
-                kwargs["event_triggers"][key] = EventChain.create(
-                    value=value,
-                    args_spec=component_specific_triggers[key],
-                    key=key,
-                )
+                continue
 
-        # Remove any keys that were added as events.
-        for key in kwargs["event_triggers"]:
-            kwargs.pop(key, None)
+            if key.startswith("on_"):
+                valid_triggers = sorted(component_specific_triggers.keys())
+                comp_name = type(self).__name__
+                msg = (
+                    f"The {comp_name} does not take in an `{key}` event trigger. "
+                    f"Valid triggers for {comp_name}: {valid_triggers}. "
+                    f"If {comp_name} is a third party component make sure to add `{key}` to the component's event triggers. "
+                    f"visit https://reflex.dev/docs/wrapping-react/guide/#event-triggers for more info."
+                )
+                raise ValueError(msg)
+
+        if event_triggers is not None:
+            kwargs["event_triggers"] = event_triggers
+            for key in event_keys:
+                kwargs.pop(key, None)
 
         # Place data_ and aria_ attributes into custom_attrs
         special_attributes = [
@@ -1019,7 +1055,7 @@ class Component(BaseComponent, ABC):
                 "&": style,
             }
 
-        fields_style = self.get_fields()["style"]
+        fields_style = fields["style"]
 
         kwargs["style"] = Style({
             **fields_style.default_value(),
@@ -1057,9 +1093,7 @@ class Component(BaseComponent, ABC):
         ):
             msg = f"Invalid class_name passed for prop {type(self).__name__}.class_name, expected type str, got value {class_name._js_expr} of type {class_name._var_type}."
             raise TypeError(msg)
-        # Construct the component.
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+        vars(self).update(kwargs)
 
     @classmethod
     def get_event_triggers(cls) -> dict[str, types.ArgsSpec | Sequence[types.ArgsSpec]]:
@@ -1248,9 +1282,11 @@ class Component(BaseComponent, ABC):
         Returns:
             The component.
         """
+        children_tuple = tuple(children)
         comp = cls.__new__(cls)
-        super(Component, comp).__init__(id=props.get("id"), children=list(children))
-        comp._post_init(children=list(children), **props)
+        super(Component, comp).__init__(id=props.get("id"), children=children_tuple)
+        comp._post_init(children=children_tuple, **props)
+        comp._freeze()
         return comp
 
     @classmethod
@@ -1266,10 +1302,11 @@ class Component(BaseComponent, ABC):
         Returns:
             The component.
         """
+        children_tuple = tuple(children)
         comp = cls.__new__(cls)
-        super(Component, comp).__init__(id=props.get("id"), children=list(children))
-        for prop, value in props.items():
-            setattr(comp, prop, value)
+        super(Component, comp).__init__(id=props.get("id"), children=children_tuple)
+        vars(comp).update(props)
+        comp._freeze()
         return comp
 
     def add_style(self) -> dict[str, Any] | None:
@@ -1320,57 +1357,78 @@ class Component(BaseComponent, ABC):
             component_style = Style(style)
         return component_style
 
+    def _merge_app_style(self, app_style: ComponentStyle | Style) -> Style | None:
+        """Compute the final style for this component given app-level style.
+
+        Apply order (later overrides earlier):
+        1. Default style from `_add_style`/`add_style`.
+        2. User-defined style from `App.style`.
+        3. User-defined style from `Component.style`.
+
+        Args:
+            app_style: The app-level component style map.
+
+        Returns:
+            The merged style, or ``None`` when neither type-level nor app-level
+            style applies (and the caller can leave ``self.style`` untouched).
+
+        Raises:
+            UserWarning: If `_add_style` has been overridden.
+        """
+        if type(self)._add_style != Component._add_style:
+            msg = "Do not override _add_style directly. Use add_style instead."
+            raise UserWarning(msg)
+        style_addition = self._add_style()
+        component_style = self._get_component_style(app_style)
+        if not style_addition and not component_style:
+            return None
+        new_style = style_addition
+        style_vars = [new_style._var_data]
+        if component_style:
+            new_style.update(component_style)
+            style_vars.append(component_style._var_data)
+        new_style.update(self.style)
+        style_vars.append(self.style._var_data)
+        new_style._var_data = VarData.merge(*style_vars)
+        return new_style
+
     def _add_style_recursive(
         self, style: ComponentStyle | Style, theme: Component | None = None
     ) -> Component:
         """Add additional style to the component and its children.
-
-        Apply order is as follows (with the latest overriding the earliest):
-        1. Default style from `_add_style`/`add_style`.
-        2. User-defined style from `App.style`.
-        3. User-defined style from `Component.style`.
-        4. style dict and css props passed to the component instance.
 
         Args:
             style: A dict from component to styling.
             theme: The theme to apply. (for retro-compatibility with deprecated _apply_theme API)
 
         Returns:
-            The component with the additional style.
+            A component with the additional style; ``self`` if nothing changed.
 
         Raises:
             UserWarning: If `_add_style` has been overridden.
         """
-        # 1. Default style from `_add_style`/`add_style`.
-        if type(self)._add_style != Component._add_style:
-            msg = "Do not override _add_style directly. Use add_style instead."
-            raise UserWarning(msg)
-        new_style = self._add_style()
-        style_vars = [new_style._var_data]
+        merged_style = self._merge_app_style(style)
 
-        # 2. User-defined style from `App.style`.
-        component_style = self._get_component_style(style)
-        if component_style:
-            new_style.update(component_style)
-            style_vars.append(component_style._var_data)
-
-        # 4. style dict and css props passed to the component instance.
-        new_style.update(self.style)
-        style_vars.append(self.style._var_data)
-
-        new_style._var_data = VarData.merge(*style_vars)
-
-        # Assign the new style
-        self.style = new_style
-        self._clear_compile_caches()
-
-        # Recursively add style to the children.
-        for child in self.children:
-            # Skip non-Component children.
+        new_children: list | None = None
+        for i, child in enumerate(self.children):
             if not isinstance(child, Component):
                 continue
-            child._add_style_recursive(style, theme)
-        return self
+            updated = child._add_style_recursive(style, theme)
+            if updated is child:
+                continue
+            if new_children is None:
+                new_children = list(self.children)
+            new_children[i] = updated
+
+        if merged_style is None and new_children is None:
+            return self
+
+        updates: dict[str, Any] = {}
+        if merged_style is not None:
+            updates["style"] = merged_style
+        if new_children is not None:
+            updates["children"] = tuple(new_children)
+        return self.copy_with(**updates)
 
     def _get_style(self) -> dict:
         """Get the style for the component.
@@ -1494,18 +1552,17 @@ class Component(BaseComponent, ABC):
             children: The children of the component.
 
         """
+        if (
+            not self._invalid_children
+            and not self._valid_children
+            and all(child._valid_parents == [] for child in children)
+        ):
+            return
+
         from reflex_components_core.base.fragment import Fragment
         from reflex_components_core.core.cond import Cond
         from reflex_components_core.core.foreach import Foreach
         from reflex_components_core.core.match import Match
-
-        no_valid_parents_defined = all(child._valid_parents == [] for child in children)
-        if (
-            not self._invalid_children
-            and not self._valid_children
-            and no_valid_parents_defined
-        ):
-            return
 
         comp_name = type(self).__name__
         allowed_components = [

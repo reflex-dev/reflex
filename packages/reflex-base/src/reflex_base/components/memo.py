@@ -902,9 +902,10 @@ def _lift_rest_props(component: Component) -> Component:
 
         rewritten_children.append(child)
 
-    component.children = rewritten_children
-    component.special_props = special_props
-    return component
+    return component.copy_with(
+        children=tuple(rewritten_children),
+        special_props=special_props,
+    )
 
 
 def _analyze_params(
@@ -1441,9 +1442,8 @@ def create_passthrough_component_memo(
     captured_hole_child: list[Component] = []
 
     def passthrough(children: Var[Component]) -> Component:
-        new_component = copy(component)
         if render_snapshot:
-            return new_component
+            return copy(component)
         # Components with no original structural children own their own JSX
         # output (e.g. ``CodeBlock`` injects ``code`` as the ``children`` prop
         # in ``_render``). Substituting a ``{children}`` hole here would emit
@@ -1451,7 +1451,7 @@ def create_passthrough_component_memo(
         # call time clobbers the prop. Skip the substitution so the wrapper's
         # ``children`` parameter is present in the signature but unused.
         if not component.children:
-            return new_component
+            return copy(component)
         from reflex_components_core.base.bare import Bare
 
         hole_bare = Bare.create(children)
@@ -1461,7 +1461,7 @@ def create_passthrough_component_memo(
         # specific children at any given call site. Original descendants stay
         # reachable on the page-level wrapper via the plugin's
         # ``_get_all_refs`` delegation back to the source component.
-        new_component.children = [hole_bare]
+        new_component = component.copy_with(children=(hole_bare,))
         # Compile-time walkers that need the real subtree (notably
         # ``Form._get_form_refs`` collecting id-based input refs into the
         # generated ``handleSubmit`` JS) call ``self._get_all_refs()`` while

@@ -852,7 +852,7 @@ def compile_unevaluated_page(
         # Generate the component if it is a callable.
         component = into_component(page.component)
 
-        component._add_style_recursive(style or {}, theme)
+        component = component._add_style_recursive(style or {}, theme)
 
         from reflex_base.utils.format import make_default_page_title
 
@@ -872,7 +872,7 @@ def compile_unevaluated_page(
             meta_args["description"] = page.description
 
         # Add meta information to the component.
-        utils.add_meta(
+        component = utils.add_meta(
             component,
             **meta_args,
         )

@@ -88,7 +88,12 @@ class ChildrenViaProp(Component):
 
 
 class HookGeneratedProp(Component):
-    """Component whose hook collection fills a prop needed by render output."""
+    """Component whose hook fills a prop needed by render output.
+
+    Mirrors the ``DataEditor`` pattern: the callback name is derived
+    deterministically and wired into a prop at creation, and ``add_hooks`` emits
+    the matching hook — no compile-time mutation of the frozen component.
+    """
 
     tag = "HookGeneratedProp"
     library = "hook-generated-prop-lib"
@@ -96,13 +101,26 @@ class HookGeneratedProp(Component):
     label: Var[str] = component_field(default=LiteralVar.create(""))
     callback: Var[Any] = component_field(default=LiteralVar.create(None))
 
+    @classmethod
+    def create(cls, *children, **props):
+        """Create the component with its derived callback prop wired in.
+
+        Args:
+            *children: The component children.
+            **props: The component props.
+
+        Returns:
+            The created component.
+        """
+        props["callback"] = Var(_js_expr="generatedCallback")
+        return super().create(*children, **props)
+
     def add_hooks(self) -> list[str]:
-        """Add a hook and wire its identifier into a component prop.
+        """Emit the hook whose identifier the callback prop references.
 
         Returns:
             The hook lines this component contributes.
         """
-        self.callback = Var(_js_expr="generatedCallback")
         return ["function generatedCallback(){ return true; }"]
 
 
@@ -211,8 +229,13 @@ def test_memoize_wrapper_uses_memo_component_and_call_site() -> None:
     assert f"const {wrapper_tag} = memo" not in output
 
 
-def test_auto_memo_component_renders_after_add_hooks_mutates_props() -> None:
-    """Auto-memo modules render after ``add_hooks`` has filled derived props."""
+def test_auto_memo_component_renders_with_hook_derived_props() -> None:
+    """Auto-memo modules render props derived for an ``add_hooks`` hook.
+
+    The callback prop is wired in deterministically at creation and the matching
+    hook is emitted by ``add_hooks`` — no compile-time mutation of the frozen
+    component.
+    """
     ctx, _page_ctx = _compile_single_page(
         lambda: HookGeneratedProp.create(label=STATE_VAR)
     )
@@ -631,7 +654,7 @@ def test_shared_parent_instance_across_pages_preserves_original() -> None:
     for the memo tag on the second page.
     """
     shared_parent = Fragment.create(WithProp.create(label=STATE_VAR))
-    original_children = list(shared_parent.children)
+    original_children = tuple(shared_parent.children)
     original_child = shared_parent.children[0]
 
     ctx = CompileContext(
@@ -675,9 +698,9 @@ def test_shared_nested_parent_mirroring_common_elements_preserves_original() -> 
         inner_parent,
         WithProp.create(label=LiteralVar.create("trailing")),
     )
-    original_outer_children = list(shared_outer.children)
+    original_outer_children = tuple(shared_outer.children)
     original_inner = shared_outer.children[1]
-    original_inner_children = list(inner_parent.children)
+    original_inner_children = tuple(inner_parent.children)
     original_innermost = inner_parent.children[0]
 
     ctx = CompileContext(
@@ -743,8 +766,9 @@ def test_memoization_leaf_internal_hooks_do_not_leak_into_page() -> None:
                     state="LeafState",
                 ),
             )
-            internal_child = Plain.create(*children)
-            internal_child.special_props = [internal_hook_var]
+            internal_child = Plain.create(*children).copy_with(
+                special_props=[internal_hook_var]
+            )
             return super().create(internal_child, **props)
 
     stateful_event = Var(_js_expr="evt")._replace(
@@ -752,7 +776,9 @@ def test_memoization_leaf_internal_hooks_do_not_leak_into_page() -> None:
         merge_var_data=VarData(state="LeafState"),
     )
     leaf = StatefulLeaf.create()
-    leaf.event_triggers["on_something"] = stateful_event
+    leaf = leaf.copy_with(
+        event_triggers={**leaf.event_triggers, "on_something": stateful_event}
+    )
 
     ctx, page_ctx = _compile_single_page(lambda: leaf)
 
@@ -1979,8 +2005,7 @@ def test_hooks_only_var_data_descendant_inside_snapshot_boundary_is_memoized() -
     hook_var = Var(_js_expr="hookOnlyProbe")._replace(
         merge_var_data=VarData(hooks={"const hookOnlyProbe = useHookOnly();": None})
     )
-    child = Plain.create()
-    child.special_props = [hook_var]
+    child = Plain.create().copy_with(special_props=[hook_var])
     boundary = LeafComponent.create(child)
 
     ctx, page_ctx = _compile_single_page(lambda: boundary)

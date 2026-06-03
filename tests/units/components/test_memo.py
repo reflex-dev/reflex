@@ -617,7 +617,7 @@ def test_component_returning_memo_is_transparent_for_child_validation():
     parent = ValidParent.create(wrapped_child)
 
     assert isinstance(wrapped_child, MemoComponent)
-    assert parent.children == [wrapped_child]
+    assert parent.children == (wrapped_child,)
 
 
 def test_compile_memo_components_includes_experimental_custom_code():

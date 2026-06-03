@@ -296,7 +296,7 @@ def test_create_component(component1):
     attrs = {"color": "white", "text_align": "center"}
     c = component1.create(*children, **attrs)
     assert isinstance(c, component1)
-    assert c.children == children
+    assert c.children == tuple(children)
     assert (
         str(LiteralVar.create(c.style))
         == '({ ["color"] : "white", ["textAlign"] : "center" })'
@@ -447,7 +447,7 @@ def test_create_component_prop_validation(
     with ctx:
         c = component1.create(**kwargs)
         assert isinstance(c, component1)
-        assert c.children == []
+        assert c.children == ()
         assert c.style == {}
 
 
@@ -2024,7 +2024,7 @@ def test_add_style_embedded_vars(test_state: type[TestState]):
             }
 
     page = rx.vstack(StyledComponent.create())
-    page._add_style_recursive(Style())
+    page = page._add_style_recursive(Style())
 
     assert (
         f"const {test_state.get_name()} = useContext(StateContexts.{test_state.get_name()})"
@@ -2049,7 +2049,7 @@ def test_add_style_foreach():
             return Style({"color": "red"})
 
     page = rx.vstack(rx.foreach(Var.range(3), lambda i: StyledComponent.create(i)))
-    page._add_style_recursive(Style())
+    page = page._add_style_recursive(Style())
 
     # Expect only a single child of the foreach on the python side
     assert len(page.children[0].children) == 1
@@ -2197,6 +2197,140 @@ def test_ref():
     assert id_component._render().props["ref"].equals(Var("ref_custom_id"))
 
     assert "ref" not in rx.box()._render().props
+
+
+def test_component_frozen_after_create():
+    """A component returned from ``create`` rejects post-construction writes."""
+    c = rx.box()
+    with pytest.raises(AttributeError, match="copy_with"):
+        c.style = Style()
+
+
+def test_children_is_tuple_after_create():
+    """Children should be stored as an immutable tuple."""
+    c = rx.box(rx.text("a"), rx.text("b"))
+    assert isinstance(c.children, tuple)
+    assert not hasattr(c.children, "append")
+
+
+def test_copy_with_returns_new_frozen_instance():
+    """``copy_with`` returns a new frozen instance with overrides applied."""
+    a = rx.box(rx.text("a"), id="orig")
+    b = a.copy_with(id="new")
+    assert a is not b
+    assert a.id == "orig"
+    assert b.id == "new"
+    assert a.children is b.children
+    with pytest.raises(AttributeError):
+        b.id = "still_new"
+
+
+def test_copy_with_drops_render_caches():
+    """``copy_with`` drops render-path caches that may depend on replaced fields."""
+    a = rx.box()
+    a.render()
+    assert "_cached_render_result" in a.__dict__
+    b = a.copy_with(id="x")
+    assert "_cached_render_result" not in b.__dict__
+
+
+def test_copy_with_coerces_children_list_to_tuple():
+    """``copy_with(children=[...])`` should coerce the iterable to a tuple."""
+    a = rx.box()
+    b = a.copy_with(children=[rx.text("x")])
+    assert isinstance(b.children, tuple)
+    assert len(b.children) == 1
+
+
+def test_cache_writes_allowed_on_frozen():
+    """Cache attribute writes should bypass the freeze guard."""
+    c = rx.box(rx.text("a"))
+    # These populate the various caches and would raise if blocked.
+    c.render()
+    c._get_imports()
+    c._get_hooks_internal()
+    list(c._get_vars())
+
+
+def test_cached_property_on_frozen_component():
+    """``cached_property`` should work on frozen components via __dict__ writes."""
+    c = rx.box(rx.text("a"))
+    result1 = c._get_component_prop_property
+    result2 = c._get_component_prop_property
+    assert result1 is result2
+    assert "_get_component_prop_property" in c.__dict__
+
+
+def test_unsafe_create_returns_frozen():
+    """``Bare`` (uses ``_unsafe_create``) returns a frozen instance."""
+    bare = Bare.create("hello")
+    with pytest.raises(AttributeError, match="copy_with"):
+        bare.tag = "div"
+
+
+def test_add_hooks_must_not_mutate_frozen_component():
+    """The freeze has no escape hatch: ``add_hooks`` must derive, not mutate.
+
+    Compile-time-derived props (e.g. ``DataEditor``'s ``get_cell_content``)
+    must be wired in via deterministic derivation, not by assigning to ``self``
+    during hook collection. Assigning still raises so the contract is enforced.
+    """
+
+    class HookMutator(Component):
+        tag = "HookMutator"
+
+        callback: Var[Any] = field(default=LiteralVar.create(None))
+
+        def add_hooks(self):
+            self.callback = Var(_js_expr="generatedCallback")
+            return ["function generatedCallback(){ return true; }"]
+
+    c = HookMutator.create()
+    with pytest.raises(AttributeError, match="copy_with"):
+        c._get_added_hooks()
+
+
+def test_add_style_recursive_no_op_returns_self():
+    """A recursive style pass with no addition and no child change returns ``self``."""
+
+    class NoStyleComponent(Component):
+        tag = "NoStyleComponent"
+
+    parent = NoStyleComponent.create(NoStyleComponent.create())
+    result = parent._add_style_recursive({})
+    assert result is parent
+
+
+def test_bare_add_style_recursive_threads_var_components():
+    """A styled embedded component reachable via ``Var._var_data.components`` is rethreaded."""
+
+    class StyledEmbedded(Component):
+        tag = "StyledEmbedded"
+
+        def add_style(self):
+            return Style({"color": "red"})
+
+    embedded = StyledEmbedded.create()
+    contents = Var(
+        _js_expr="value",
+        _var_type=str,
+        _var_data=VarData(components=[embedded]),
+    )
+    bare = Bare.create(contents)
+    result = bare._add_style_recursive({})
+
+    assert result is not bare
+    assert isinstance(result, Bare)
+    assert isinstance(result.contents, Var)
+    new_var_data = result.contents._var_data
+    assert new_var_data is not None
+    new_components = new_var_data.components
+    assert new_components
+    rebuilt_embedded = new_components[0]
+    assert rebuilt_embedded is not embedded
+    assert isinstance(rebuilt_embedded, Component)
+    assert "color" in rebuilt_embedded.style
+    assert "color" not in embedded.style
 
 
 def test_component_equality_compares_fields():

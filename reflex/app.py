@@ -1125,19 +1125,13 @@ class App(MiddlewareMixin, LifespanMixin):
         for component in tuple(app_wrappers.values()):
             app_wrappers.update(component._get_all_app_wrap_components())
         order = sorted(app_wrappers, key=operator.itemgetter(0), reverse=True)
-        root = copy.deepcopy(app_wrappers[order[0]])
 
-        def reducer(parent: Component, key: tuple[int, str]) -> Component:
-            child = copy.deepcopy(app_wrappers[key])
-            parent.children.append(child)
-            return child
-
-        functools.reduce(
-            lambda parent, key: reducer(parent, key),
-            order[1:],
-            root,
-        )
-        return root
+        ascending = iter(reversed(order))
+        result = copy.deepcopy(app_wrappers[next(ascending)])
+        for key in ascending:
+            wrapper = copy.deepcopy(app_wrappers[key])
+            result = wrapper.copy_with(children=(*wrapper.children, result))
+        return result
 
     def _should_compile(self) -> bool:
         """Check if the app should be compiled.
@@ -1166,9 +1160,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         @memo
         def memoized_badge() -> Component:
-            sticky_badge = sticky()
-            sticky_badge._add_style_recursive({})
-            return sticky_badge
+            return sticky()._add_style_recursive({})
 
         self.app_wraps[0, "StickyBadge"] = lambda _: memoized_badge()
 
