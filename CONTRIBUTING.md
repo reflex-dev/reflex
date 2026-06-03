@@ -88,15 +88,12 @@ If you don't yet know the PR number, use an [orphan fragment](https://towncrier.
 
 **Skipping the fragment check:** for PRs that are genuinely not user-facing (CI-only tweaks, script fixes, test-only changes), apply the `skip-changelog` label on the PR to bypass the changelog CI check.
 
-**Publishing CHANGELOG.md**: This step should be completed by maintainers during the release process. If you have access to publish a release, you can run the following command to generate the `CHANGELOG.md` file.
+**Publishing CHANGELOG.md**: This step should be completed by maintainers during
+the release process. If you have access to publish a release, you can run the
+following command to generate the `CHANGELOG.md` file in each subpackage.
 
 ```bash
-for package in . packages/*; do
-  if ls $package/news/*.md > /dev/null 2>&1; then
-    echo "Generating changelog for $package..."
-    uv run towncrier build --config pyproject.toml --draft --dir "$package"
-  fi
-done
+uv run towncrier build --config pyproject.toml --version v0.9.4
 ```
 
 ## ✅ Making a PR
