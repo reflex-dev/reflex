@@ -44,7 +44,6 @@
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "19.2.6",
-    "react-dropzone": "15.0.0",
     "react-fast-marquee": "1.6.5",
     "react-helmet": "6.1.0",
     "react-leaflet": "5.0.0",
