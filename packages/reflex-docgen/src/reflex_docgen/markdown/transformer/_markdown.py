@@ -113,15 +113,24 @@ class MarkdownTransformer(DocumentTransformer[str]):
     def frontmatter(self, block: FrontMatter) -> str:
         import yaml
 
-        data: dict[str, object] = {}
-        if block.components:
-            data["components"] = list(block.components)
-        if block.only_low_level:
-            data["only_low_level"] = [True]
-        if block.title is not None:
-            data["title"] = block.title
-        for preview in block.component_previews:
-            data[preview.name] = preview.source
+        if block.metadata:
+            # The raw mapping is the faithful source of truth for a parsed
+            # document: render it verbatim so a parse -> render round-trip
+            # preserves key order, falsy values (e.g. ``only_low_level: false``),
+            # and preview source text exactly.
+            data: dict[str, object] = dict(block.metadata)
+        else:
+            # Programmatically constructed frontmatter carries no raw mapping;
+            # rebuild one from the typed fields and previews.
+            data = {}
+            if block.components:
+                data["components"] = list(block.components)
+            if block.only_low_level:
+                data["only_low_level"] = [True]
+            if block.title is not None:
+                data["title"] = block.title
+            for preview in block.component_previews:
+                data[preview.name] = preview.source
         return f"---\n{yaml.dump(data, default_flow_style=False, sort_keys=False).rstrip()}\n---"
 
     def code_block(self, block: CodeBlock) -> str:
