@@ -285,13 +285,16 @@ def test_memo_does_not_warn_for_event_handler_param():
     mock_deprecate.assert_not_called()
 
 
-def test_memo_component_forwards_base_props_without_rest():
-    """Base ``Component`` props pass through a ``RestProp``-less memo with a warning.
+def test_memo_component_forwards_key_without_rest():
+    """``key`` passes through a ``RestProp``-less memo and reaches the element.
 
-    The legacy custom-component ``@rx.memo`` accepted base props (notably
-    ``key``, needed under ``rx.foreach``) directly on the wrapper. They keep
-    working — set as real base fields — while a deprecation warning points at
-    ``rx.RestProp``.
+    ``key`` is the one base ``Component`` prop that takes effect without an
+    ``rx.RestProp``: React consumes it at the reconciliation layer, so the
+    legacy custom-component use case (notably setting ``key`` under
+    ``rx.foreach``) keeps working. It is set as a real base field while a
+    deprecation warning points at ``rx.RestProp``. Props that only matter once
+    spread onto the rendered root (``id``, ``class_name``, ...) are *not*
+    forwardable here — see ``test_memo_nonkey_base_props_require_rest_prop``.
     """
 
     @rx.memo
@@ -299,19 +302,112 @@ def test_memo_component_forwards_base_props_without_rest():
         return rx.text(title)
 
     with patch.object(console, "deprecate") as mock_deprecate:
-        component = keyed_card(title="hi", key="row-1", id="card-id")
+        component = keyed_card(title="hi", key="row-1")
 
     mock_deprecate.assert_called_once()
-    kwargs = mock_deprecate.call_args.kwargs
-    assert "keyed_card" in kwargs["feature_name"]
-    assert "`key`" in kwargs["feature_name"]
-    assert "`id`" in kwargs["feature_name"]
+    feature_name = mock_deprecate.call_args.kwargs["feature_name"]
+    assert "keyed_card" in feature_name
+    assert "`key`" in feature_name
 
     assert isinstance(component, MemoComponent)
-    # ``key``/``id`` land as real base fields, not as declared memo props.
+    # ``key`` lands as a real base field, not as a declared memo prop ...
     assert component.key == "row-1"
-    assert component.id == "card-id"
     assert component.get_props() == ("title",)
+    # ... and reaches the rendered element, where React reads it for list
+    # reconciliation.
+    assert 'key:"row-1"' in component.render()["props"]
+
+
+def test_memo_component_key_deprecation_warns_once_across_instances():
+    """Repeated ``key=`` instantiations warn once, without re-walking the stack.
+
+    Under ``rx.foreach`` a keyed memo is instantiated once per row. The warning
+    is deduped, but ``console.deprecate`` walks and path-resolves the call stack
+    *before* its dedupe check, so an ungated call site would pay that walk on
+    every row. The wrapper gates the call so only the first row reaches
+    ``console.deprecate`` at all.
+    """
+
+    @rx.memo
+    def row_card(title: rx.Var[str]) -> rx.Component:
+        return rx.text(title)
+
+    with patch.object(console, "deprecate") as mock_deprecate:
+        for i in range(5):
+            row_card(title="hi", key=f"row-{i}")
+
+    mock_deprecate.assert_called_once()
+
+
+def test_memo_nonkey_base_props_require_rest_prop():
+    """Non-``key`` base props raise without a ``RestProp`` rather than silently dropping.
+
+    Without a ``RestProp`` the compiled memo function destructures only its
+    declared params and emits no ``...rest`` spread, so ``id``/``class_name``/
+    ``style``/``custom_attrs``/``ref`` set on the wrapper never reach the
+    rendered root — they would be silently discarded. Reject them and point at
+    ``rx.RestProp``, which genuinely forwards them (see
+    ``test_memo_base_props_forward_to_root_via_rest_prop``).
+    """
+
+    @rx.memo
+    def plain_card(title: rx.Var[str]) -> rx.Component:
+        return rx.text(title)
+
+    for prop, value in (
+        ("id", "card-id"),
+        ("class_name", "c"),
+        ("style", {"color": "red"}),
+        ("custom_attrs", {"data-x": "y"}),
+        ("ref", "myref"),
+    ):
+        with pytest.raises(TypeError, match=f"does not accept prop `{prop}`"):
+            plain_card(title="hi", **{prop: value})
+
+
+def test_memo_nonkey_base_prop_dropped_from_render_without_rest():
+    """Guard the *reason* non-``key`` base props are rejected: they don't render.
+
+    Bypass the call-site gate by setting ``class_name`` directly on a built memo
+    wrapper, then compile. The base prop shows up on the page-level element but
+    the memo's own function body neither destructures nor spreads it onto the
+    root — proving a ``RestProp``-less memo cannot forward it, which is why the
+    call site rejects it.
+    """
+
+    @rx.memo
+    def dropper(title: rx.Var[str]) -> rx.Component:
+        return rx.box(rx.text(title))
+
+    component = dropper(title="hi")
+    component.class_name = Var.create("leaks")  # set past the call-site gate
+
+    files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
+    code = next(c for path, c in files if path.endswith("Dropper.jsx"))
+    # No rest capture, and the root Box gets an empty props object.
+    assert "...rest" not in code
+    assert "className" not in code
+
+
+def test_memo_base_props_forward_to_root_via_rest_prop():
+    """With an ``rx.RestProp``, base props reach the rendered root via JS ``...rest``.
+
+    This is the supported forwarding path the rejection message points users at.
+    """
+
+    @rx.memo
+    def rest_card(rest: rx.RestProp, *, title: rx.Var[str]) -> rx.Component:
+        return rx.box(rx.text(title), rest)
+
+    component = rest_card(title="hi", class_name="c", id="card-id")
+    assert isinstance(component, MemoComponent)
+
+    files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
+    code = next(c for path, c in files if path.endswith("RestCard.jsx"))
+    # Undeclared props are captured in ``...rest`` and spread onto the root, so
+    # ``className``/``id`` actually reach the rendered element.
+    assert "...rest" in code
+    assert "{...rest}" in code
 
 
 def test_memo_component_still_rejects_unknown_props_without_rest():

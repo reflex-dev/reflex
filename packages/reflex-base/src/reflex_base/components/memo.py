@@ -61,21 +61,19 @@ from reflex_base.vars.object import RestProp
 # entry point. ``memo.py`` is imported lazily, after ``environment`` is ready.
 EMPTY_VAR_COMPONENT: Var[Component] = LiteralVar.create(Component.create())
 
-# Standard base ``Component`` props the legacy custom-component ``@rx.memo``
-# accepted on any instance. A memo without an ``rx.RestProp`` still forwards
-# these to the rendered component (with a deprecation warning) so existing call
-# sites — notably setting ``key`` under ``rx.foreach`` — keep working. Identity
-# and internal fields (``tag``, ``library``, ``State``, ``event_triggers``, ...)
-# are deliberately excluded: overriding them would corrupt the memo's render, so
-# they keep raising like any other unknown prop.
-_FORWARDABLE_BASE_PROPS: frozenset[str] = frozenset({
-    "key",
-    "id",
-    "class_name",
-    "style",
-    "custom_attrs",
-    "ref",
-})
+# Base ``Component`` props a memo accepts without an ``rx.RestProp`` (with a
+# deprecation warning). Only ``key`` qualifies: React consumes it at the
+# reconciliation layer, so it takes effect on the rendered element even though
+# the compiled memo function destructures only its declared params. The legacy
+# custom-component use case this restores is setting ``key`` under ``rx.foreach``.
+#
+# Other base props (``id``, ``class_name``, ``style``, ``custom_attrs``,
+# ``ref``) are deliberately NOT forwardable: without a ``RestProp`` the memo
+# function emits no ``...rest`` spread, so they would be silently dropped rather
+# than reaching the root. They raise like any unknown prop, and the error points
+# at ``rx.RestProp`` — which compiles to a ``...rest`` spread that genuinely
+# forwards them.
+_FORWARDABLE_BASE_PROPS: frozenset[str] = frozenset({"key"})
 
 
 class MemoParamKind(str, Enum):
@@ -1523,6 +1521,11 @@ class _MemoComponentWrapper:
             for param in definition.params
             if param.kind not in (MemoParamKind.CHILDREN, MemoParamKind.REST)
         ]
+        # Forwardable-base-prop name sets already warned about, keyed per
+        # wrapper. ``console.deprecate`` walks and path-resolves the call stack
+        # before its own dedupe check, so a keyed memo under ``rx.foreach``
+        # would pay that walk on every row. Gating here keeps it to the first.
+        self._warned_base_props: set[frozenset[str]] = set()
         update_wrapper(self, definition.fn)
 
     def __call__(self, *children: Any, **props: Any) -> MemoComponent:
@@ -1570,11 +1573,9 @@ class _MemoComponentWrapper:
                 msg = f"`{definition.python_name}` is missing required prop `{param.name}`."
                 raise TypeError(msg)
 
-        # Reject unknown props unless a rest prop is declared. Standard base
-        # ``Component`` props (``key``, ``id``, ``style``, ...) stay accepted for
-        # backwards compatibility with the legacy custom-component ``@rx.memo``:
-        # they pass through to the rendered component while a deprecation warning
-        # points at ``rx.RestProp``.
+        # Reject unknown props unless a rest prop is declared. ``key`` is the
+        # one exception (see ``_FORWARDABLE_BASE_PROPS``); every other undeclared
+        # prop raises with a message that points at ``rx.RestProp``.
         if remaining_props and rest_param is None:
             unknown = [
                 name for name in remaining_props if name not in _FORWARDABLE_BASE_PROPS
@@ -1585,7 +1586,10 @@ class _MemoComponentWrapper:
                     "Only declared props may be passed when no `rx.RestProp` is present."
                 )
                 raise TypeError(msg)
-            _warn_legacy_base_props(definition.python_name, list(remaining_props))
+            warned_key = frozenset(remaining_props)
+            if warned_key not in self._warned_base_props:
+                self._warned_base_props.add(warned_key)
+                _warn_legacy_base_props(definition.python_name, list(remaining_props))
 
         # Reading ``component`` materializes the deferred body, so ``type(...)``
         # reflects the real wrapped class rather than the placeholder.
@@ -1771,6 +1775,8 @@ def _warn_missing_annotations(
 def _warn_legacy_base_props(fn_name: str, prop_names: Sequence[str]) -> None:
     """Warn that base-``Component`` props on a ``RestProp``-less memo are deprecated.
 
+    ``prop_names`` is effectively always ``["key"]`` — the only forwardable prop.
+
     Args:
         fn_name: Name of the memo (for the warning text).
         prop_names: The base-component prop names passed at the call site.
@@ -1782,8 +1788,8 @@ def _warn_legacy_base_props(fn_name: str, prop_names: Sequence[str]) -> None:
             "without an `rx.RestProp`"
         ),
         reason=(
-            "Declare an `rx.RestProp` parameter to forward props like `key` and "
-            "`id` to the rendered component"
+            "Declare an `rx.RestProp` parameter to keep passing base props like "
+            "`key` to the rendered component"
         ),
         deprecation_version="0.9.3",
         removal_version="1.0",
