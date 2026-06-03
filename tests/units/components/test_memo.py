@@ -21,6 +21,7 @@ from reflex_base.components.memo import (
     _analyze_params,
     _LazyBody,
     _MemoCallBinding,
+    _strip_optional,
 )
 from reflex_base.event import EventChain, EventHandler, no_args_event_spec
 from reflex_base.style import Style
@@ -487,8 +488,9 @@ def test_lazy_body_placeholder_stands_in_for_reentrant_read():
     cell = _LazyBody(thunk, placeholder="placeholder")
     assert cell.get() == "real"
     assert seen == ["placeholder"]
-    # Cached afterwards; the thunk does not run again.
+    # Cached afterwards; the thunk does not run again (``seen`` stays unchanged).
     assert cell.get() == "real"
+    assert seen == ["placeholder"]
 
 
 def test_lazy_body_reentrant_read_without_placeholder_raises():
@@ -1022,6 +1024,41 @@ def test_component_memo_rejects_event_handler_with_default():
             event: rx.EventHandler[rx.event.passthrough_event_spec(str)] = None,  # pyright: ignore[reportArgumentType]
         ) -> rx.Component:
             return rx.button("hi")
+
+
+def test_strip_optional_unwraps_none_union():
+    """`_strip_optional` collapses a ``X | None`` union to ``X``; any other
+    annotation passes through unchanged.
+    """
+    assert _strip_optional(int | None) is int
+    var = rx.Var[str]
+    assert _strip_optional(var) is var
+
+
+def test_analyze_params_unwraps_optional_event_handler_default(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Regression: on Python 3.10 ``get_type_hints`` rewrites ``event: EH = None``
+    to ``Optional[EH]``. With that shim active, ``_analyze_params`` must still see
+    the ``EventHandler`` underneath and reject the default (it silently passed on
+    3.10 before the fix, since ``Optional[...]`` is not recognized as an EH).
+
+    Force the shim on so this exercises the path on every Python version, not
+    only the <=3.10 interpreters that actually wrap the annotation.
+    """
+    monkeypatch.setattr(
+        "reflex_base.components.memo._GET_TYPE_HINTS_WRAPS_NONE_DEFAULT", True
+    )
+
+    def fn(event=None) -> rx.Component:
+        return rx.button("hi")
+
+    # Python <=3.10 wraps a ``= None`` param into a union with ``None`` (its
+    # ``get_type_hints`` adds ``Optional``); the ``EventHandler`` underneath
+    # must still be recognized so the default is rejected.
+    wrapped_hints = {"event": EventHandler | None}
+    with pytest.raises(TypeError, match="default"):
+        _analyze_params(fn, for_component=True, hints=wrapped_hints)
 
 
 def test_component_memo_rejects_event_handler_named_children():
