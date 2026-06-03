@@ -43,4 +43,6 @@ def get_koala_trackers(public_api_key: str) -> rx.Component:
     """
     script_url = KOALA_SCRIPT_URL_TEMPLATE.format(public_api_key=public_api_key)
 
-    return rx.script(KOALA_SCRIPT_TEMPLATE.format(script_url=script_url))
+    return rx.el.script(
+        KOALA_SCRIPT_TEMPLATE.format(script_url=script_url), type="module"
+    )
