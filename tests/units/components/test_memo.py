@@ -284,6 +284,73 @@ def test_memo_does_not_warn_for_event_handler_param():
     mock_deprecate.assert_not_called()
 
 
+def test_memo_component_forwards_base_props_without_rest():
+    """Base ``Component`` props pass through a ``RestProp``-less memo with a warning.
+
+    The legacy custom-component ``@rx.memo`` accepted base props (notably
+    ``key``, needed under ``rx.foreach``) directly on the wrapper. They keep
+    working — set as real base fields — while a deprecation warning points at
+    ``rx.RestProp``.
+    """
+
+    @rx.memo
+    def keyed_card(title: rx.Var[str]) -> rx.Component:
+        return rx.text(title)
+
+    with patch.object(console, "deprecate") as mock_deprecate:
+        component = keyed_card(title="hi", key="row-1", id="card-id")
+
+    mock_deprecate.assert_called_once()
+    kwargs = mock_deprecate.call_args.kwargs
+    assert "keyed_card" in kwargs["feature_name"]
+    assert "`key`" in kwargs["feature_name"]
+    assert "`id`" in kwargs["feature_name"]
+
+    assert isinstance(component, MemoComponent)
+    # ``key``/``id`` land as real base fields, not as declared memo props.
+    assert component.key == "row-1"
+    assert component.id == "card-id"
+    assert component.get_props() == ("title",)
+
+
+def test_memo_component_still_rejects_unknown_props_without_rest():
+    """Props that are not base ``Component`` fields still raise without a ``RestProp``."""
+
+    @rx.memo
+    def plain_card(title: rx.Var[str]) -> rx.Component:
+        return rx.text(title)
+
+    with pytest.raises(TypeError, match="does not accept prop `bogus`"):
+        plain_card(title="hi", bogus="x")
+
+
+def test_memo_component_rejects_unknown_even_alongside_base_props():
+    """A genuinely-unknown prop raises even when a base prop is also present."""
+
+    @rx.memo
+    def mixed_card(title: rx.Var[str]) -> rx.Component:
+        return rx.text(title)
+
+    with pytest.raises(TypeError, match="does not accept prop `bogus`"):
+        mixed_card(title="hi", key="row-1", bogus="x")
+
+
+def test_memo_component_rejects_structural_base_fields_without_rest():
+    """Identity/internal base fields (``tag``, ``library``, ...) are not forwardable.
+
+    Overriding them would corrupt the memo's render, so they keep raising like
+    any other unknown prop rather than passing through.
+    """
+
+    @rx.memo
+    def struct_card(title: rx.Var[str]) -> rx.Component:
+        return rx.text(title)
+
+    for prop in ("tag", "library", "event_triggers", "special_props"):
+        with pytest.raises(TypeError, match=f"does not accept prop `{prop}`"):
+            struct_card(title="hi", **{prop: "x"})
+
+
 def test_analyze_params_strict_mode_rejects_bare_type():
     """Strict callers (``defaulted_params=None``) must still reject bare types."""
 

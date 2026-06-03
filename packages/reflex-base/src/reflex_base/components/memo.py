@@ -57,6 +57,22 @@ from reflex_base.vars.object import RestProp
 # entry point. ``memo.py`` is imported lazily, after ``environment`` is ready.
 EMPTY_VAR_COMPONENT: Var[Component] = LiteralVar.create(Component.create())
 
+# Standard base ``Component`` props the legacy custom-component ``@rx.memo``
+# accepted on any instance. A memo without an ``rx.RestProp`` still forwards
+# these to the rendered component (with a deprecation warning) so existing call
+# sites — notably setting ``key`` under ``rx.foreach`` — keep working. Identity
+# and internal fields (``tag``, ``library``, ``State``, ``event_triggers``, ...)
+# are deliberately excluded: overriding them would corrupt the memo's render, so
+# they keep raising like any other unknown prop.
+_FORWARDABLE_BASE_PROPS: frozenset[str] = frozenset({
+    "key",
+    "id",
+    "class_name",
+    "style",
+    "custom_attrs",
+    "ref",
+})
+
 
 class MemoParamKind(str, Enum):
     """The role a memo parameter plays in the compiled component.
@@ -998,24 +1014,28 @@ def _analyze_params(
         _check_parameter_kind(parameter, fn.__name__)
 
         annotation = hints.get(parameter.name, parameter.annotation)
-        if annotation is inspect.Parameter.empty:
+        is_missing = annotation is inspect.Parameter.empty
+        # Legacy `@rx.memo` (the old `custom_component`) accepted missing and
+        # bare Python-type annotations and auto-wrapped them in a `Var`. Coerce
+        # both into `rx.Var[...]` and flag the parameter, so one deprecation
+        # warning points the user at the params that still need an explicit
+        # annotation. Strict callers (`defaulted_params is None`) reject a
+        # missing annotation here; a bare type falls through to
+        # `_classify_parameter`, which rejects it.
+        is_legacy = defaulted_params is not None and not _is_memo_annotation(annotation)
+        if is_missing or is_legacy:
             if defaulted_params is None:
                 msg = (
                     f"All parameters of `{fn.__name__}` must be annotated as `rx.Var[...]` "
                     f"or `rx.RestProp`. Missing annotation for `{parameter.name}`."
                 )
                 raise TypeError(msg)
-            annotation = Var[Component] if parameter.name == "children" else Var[Any]
-            defaulted_params.append(parameter.name)
-        elif defaulted_params is not None and not _is_memo_annotation(annotation):
-            # Legacy `@rx.memo` (the old `custom_component`) accepted bare Python
-            # types and auto-wrapped them in a `Var`. Preserve that path by
-            # coercing the annotation into `rx.Var[...]` and flagging the
-            # parameter, so one deprecation warning can point the user at the
-            # parameters that still need an explicit `rx.Var[...]` annotation.
-            annotation = (
-                Var[Component] if parameter.name == "children" else Var[annotation]
-            )
+            if parameter.name == "children":
+                annotation = Var[Component]
+            elif is_missing:
+                annotation = Var[Any]
+            else:
+                annotation = Var[annotation]
             defaulted_params.append(parameter.name)
 
         # Children parameters by name must match the children kind exactly —
@@ -1462,14 +1482,22 @@ class _MemoComponentWrapper:
                 msg = f"`{definition.python_name}` is missing required prop `{param.name}`."
                 raise TypeError(msg)
 
-        # Reject unknown props unless a rest prop is declared.
+        # Reject unknown props unless a rest prop is declared. Standard base
+        # ``Component`` props (``key``, ``id``, ``style``, ...) stay accepted for
+        # backwards compatibility with the legacy custom-component ``@rx.memo``:
+        # they pass through to the rendered component while a deprecation warning
+        # points at ``rx.RestProp``.
         if remaining_props and rest_param is None:
-            unexpected_prop = next(iter(remaining_props))
-            msg = (
-                f"`{definition.python_name}` does not accept prop `{unexpected_prop}`. "
-                "Only declared props may be passed when no `rx.RestProp` is present."
-            )
-            raise TypeError(msg)
+            unknown = [
+                name for name in remaining_props if name not in _FORWARDABLE_BASE_PROPS
+            ]
+            if unknown:
+                msg = (
+                    f"`{definition.python_name}` does not accept prop `{unknown[0]}`. "
+                    "Only declared props may be passed when no `rx.RestProp` is present."
+                )
+                raise TypeError(msg)
+            _warn_legacy_base_props(definition.python_name, list(remaining_props))
 
         # Build the component props passed into the memo wrapper. Reading the
         # component through ``get_component`` evaluates a deferred memo body on
@@ -1647,6 +1675,28 @@ def _warn_missing_annotations(
             f"Add {' and '.join(parts)}. Until removal, a missing return "
             "defaults to `rx.Component` and missing or bare-type parameters are "
             "coerced to `rx.Var[...]`"
+        ),
+        deprecation_version="0.9.3",
+        removal_version="1.0",
+    )
+
+
+def _warn_legacy_base_props(fn_name: str, prop_names: Sequence[str]) -> None:
+    """Warn that base-``Component`` props on a ``RestProp``-less memo are deprecated.
+
+    Args:
+        fn_name: Name of the memo (for the warning text).
+        prop_names: The base-component prop names passed at the call site.
+    """
+    joined = ", ".join(f"`{name}`" for name in prop_names)
+    console.deprecate(
+        feature_name=(
+            f"Passing base-component prop(s) {joined} to `@rx.memo` `{fn_name}` "
+            "without an `rx.RestProp`"
+        ),
+        reason=(
+            "Declare an `rx.RestProp` parameter to forward props like `key` and "
+            "`id` to the rendered component"
         ),
         deprecation_version="0.9.3",
         removal_version="1.0",
