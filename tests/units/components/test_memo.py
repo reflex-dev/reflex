@@ -11,6 +11,7 @@ import pytest
 from reflex_base.components.component import Component
 from reflex_base.components.memo import (
     _SPECS,
+    EMPTY_VAR_COMPONENT,
     MEMOS,
     MemoComponent,
     MemoComponentDefinition,
@@ -405,6 +406,43 @@ def test_memo_function_body_not_evaluated_until_compiled():
     assert evaluated == [1]
     definition.get_function()
     assert evaluated == [1]
+
+
+@pytest.mark.parametrize(
+    ("attr_name", "expected_type", "expected_render"),
+    [
+        ("EMPTY_VAR_STR", str, '""'),
+        ("EMPTY_VAR_INT", int, "0"),
+        ("EMPTY_VAR_COMPONENT", Component, "(jsx(Fragment, ({})))"),
+    ],
+)
+def test_empty_var_sentinels_are_public_typed_vars(
+    attr_name: str, expected_type: type, expected_render: str
+):
+    """`rx.EMPTY_VAR_*` defaults are public, correctly-typed empty Vars.
+
+    These back the documented `rx.Var[...]` memo prop defaults;
+    `EMPTY_VAR_COMPONENT` lives in `memo` (not `component`) to avoid a circular
+    import, but must still be reachable as `rx.EMPTY_VAR_COMPONENT`.
+    """
+    sentinel = getattr(rx, attr_name)
+    assert isinstance(sentinel, Var)
+    assert sentinel._var_type is expected_type
+    assert str(sentinel) == expected_render
+
+
+def test_empty_var_component_default_for_memo_children_slot():
+    """`EMPTY_VAR_COMPONENT` works as the default for a memo `children` slot."""
+
+    @rx.memo
+    def slot(
+        children: rx.Var[rx.Component] = EMPTY_VAR_COMPONENT,
+    ) -> rx.Component:
+        return rx.box(children)
+
+    # Omitting children falls back to the empty-component default.
+    assert isinstance(slot(), MemoComponent)
+    assert isinstance(slot(rx.text("hi")), MemoComponent)
 
 
 def test_memo_warns_once_when_return_and_param_both_missing():

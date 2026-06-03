@@ -49,6 +49,14 @@ from reflex_base.vars.function import (
 )
 from reflex_base.vars.object import RestProp
 
+# A `Var[Component]` default for memo `children` slots (and any prop typed
+# `rx.Var[rx.Component]`), mirroring `EMPTY_VAR_STR` / `EMPTY_VAR_INT`. It lives
+# here rather than in ``component.py`` because materializing a component var
+# eagerly imports ``Bare`` (and thus ``reflex_base.environment``); defining it
+# in the always-early ``component.py`` would cycle when ``environment`` is the
+# entry point. ``memo.py`` is imported lazily, after ``environment`` is ready.
+EMPTY_VAR_COMPONENT: Var[Component] = LiteralVar.create(Component.create())
+
 
 class MemoParamKind(str, Enum):
     """The role a memo parameter plays in the compiled component.
@@ -1733,6 +1741,7 @@ def memo(fn: Callable[..., Any]) -> _MemoComponentWrapper | _MemoFunctionWrapper
 
 
 __all__ = [
+    "EMPTY_VAR_COMPONENT",
     "MEMOS",
     "MemoComponent",
     "MemoComponentDefinition",
