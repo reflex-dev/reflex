@@ -192,8 +192,18 @@ class DefaultCollectorPlugin(Plugin):
 
         self._collect_component_custom_code(page_context.module_code, comp)
 
+        # Fetch once and reuse for both the module_code scan and page-hook
+        # aggregation; _get_added_hooks is uncached, so a second call recomputes.
+        hooks_internal = comp._get_hooks_internal()
+        added_hooks = comp._get_added_hooks()
+        self._collect_var_module_code(
+            page_context.module_code, comp, hooks_internal, added_hooks
+        )
+
         if not in_prop_tree:
-            self._collect_component_hooks(page_context.hooks, comp)
+            self._collect_component_hooks(
+                page_context.hooks, comp, hooks_internal, added_hooks
+            )
 
             if (
                 type(comp)._get_app_wrap_components
@@ -252,6 +262,7 @@ class DefaultCollectorPlugin(Plugin):
         extend_imports = self._extend_imports
         collect_component_hooks = self._collect_component_hooks
         collect_component_custom_code = self._collect_component_custom_code
+        collect_var_module_code = self._collect_var_module_code
         collect_app_wrap_components = self._collect_app_wrap_components
         base_get_app_wrap_components = Component._get_app_wrap_components
         seen_app_wrap_methods: set[object] = set()
@@ -270,8 +281,14 @@ class DefaultCollectorPlugin(Plugin):
 
             collect_component_custom_code(module_code, comp)
 
+            # Fetch once and reuse for both the module_code scan and page-hook
+            # aggregation; _get_added_hooks is uncached.
+            hooks_internal = comp._get_hooks_internal()
+            added_hooks = comp._get_added_hooks()
+            collect_var_module_code(module_code, comp, hooks_internal, added_hooks)
+
             if not in_prop_tree:
-                collect_component_hooks(hooks, comp)
+                collect_component_hooks(hooks, comp, hooks_internal, added_hooks)
 
                 app_wrap_method = type(comp)._get_app_wrap_components
                 if (
@@ -295,12 +312,19 @@ class DefaultCollectorPlugin(Plugin):
     def _collect_component_hooks(
         page_hooks: dict[str, VarData | None],
         component: Component,
+        hooks_internal: dict[str, VarData | None],
+        added_hooks: dict[str, VarData | None],
     ) -> None:
-        """Collect hooks for one structural-tree component in legacy order."""
-        page_hooks.update(component._get_hooks_internal())
+        """Add one structural-tree component's hooks in legacy order.
+
+        ``hooks_internal`` and ``added_hooks`` are passed in (already fetched for
+        the module_code scan) rather than re-fetched, so each component pays a
+        single uncached ``_get_added_hooks``.
+        """
+        page_hooks.update(hooks_internal)
         if (user_hooks := component._get_hooks()) is not None:
             page_hooks[user_hooks] = None
-        page_hooks.update(component._get_added_hooks())
+        page_hooks.update(added_hooks)
 
     @staticmethod
     def _extend_imports(
@@ -328,6 +352,34 @@ class DefaultCollectorPlugin(Plugin):
         for clz in component._iter_parent_classes_with_method("add_custom_code"):
             for item in clz.add_custom_code(component):
                 module_code[item] = None
+
+    @staticmethod
+    def _collect_var_module_code(
+        module_code: dict[str, None],
+        component: Component,
+        hooks_internal: dict[str, VarData | None],
+        added_hooks: dict[str, VarData | None],
+    ) -> None:
+        """Collect module_code from this component's Vars and pre-fetched hooks.
+
+        ``hooks_internal`` and ``added_hooks`` are the dicts already fetched for
+        page-hook aggregation, reused here so each component avoids a second
+        uncached ``_get_added_hooks``. Per-component contract — the walker
+        re-enters each prop subtree with ``in_prop_tree=True`` so this helper
+        does not recurse, mirroring :meth:`_collect_component_custom_code`.
+        """
+        for snippet in component._iter_var_only_module_code():
+            module_code.setdefault(snippet, None)
+        for hook_var_data in hooks_internal.values():
+            if hook_var_data is None:
+                continue
+            for snippet in hook_var_data.module_code:
+                module_code.setdefault(snippet, None)
+        for hook_var_data in added_hooks.values():
+            if hook_var_data is None:
+                continue
+            for snippet in hook_var_data.module_code:
+                module_code.setdefault(snippet, None)
 
     def _collect_app_wrap_components(
         self,

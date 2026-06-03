@@ -357,6 +357,7 @@ class BaseComponent(metaclass=BaseComponentMeta):
             "_vars_cache",
             "_imports_cache",
             "_hooks_internal_cache",
+            "_var_module_code_cache",
             "_get_component_prop_property",
         ):
             attrs.pop(attr, None)
@@ -1733,6 +1734,45 @@ class Component(BaseComponent, ABC):
         """
         return None
 
+    def _iter_var_module_code(self) -> Iterator[str]:
+        """Yield module_code carried by Vars and hook-VarData on this component.
+
+        Per-component only — does not recurse into children or prop subtrees.
+        Callers that need a subtree walk (e.g. :meth:`_get_all_custom_code`)
+        recurse externally.
+
+        Yields:
+            module_code snippets contributed by this component's Vars.
+        """
+        yield from self._iter_var_only_module_code()
+        for hook_var_data in self._get_hooks_internal().values():
+            if hook_var_data is None:
+                continue
+            yield from hook_var_data.module_code
+        for hook_var_data in self._get_added_hooks().values():
+            if hook_var_data is None:
+                continue
+            yield from hook_var_data.module_code
+
+    def _iter_var_only_module_code(self) -> Iterator[str]:
+        """Yield module_code carried by this component's own Vars.
+
+        Covers Vars on props, style, and event-trigger args — but not the
+        VarData on hooks. Callers that already hold the component's hook dicts
+        collect hook module_code separately, avoiding a second uncached
+        :meth:`_get_added_hooks`.
+
+        The snippets are gathered during :meth:`_get_vars_hooks`'s Var walk and
+        cached, so this reuses that single walk rather than iterating the Vars
+        (and re-reading their VarData) again.
+
+        Yields:
+            module_code snippets from this component's Vars.
+        """
+        if "_var_module_code_cache" not in self.__dict__:
+            self._get_hooks_internal()
+        yield from self._var_module_code_cache
+
     def _get_all_custom_code(self) -> dict[str, None]:
         """Get custom code for the component and its children.
 
@@ -1754,6 +1794,9 @@ class Component(BaseComponent, ABC):
         for clz in self._iter_parent_classes_with_method("add_custom_code"):
             for item in clz.add_custom_code(self):
                 code[item] = None
+
+        for snippet in self._iter_var_module_code():
+            code.setdefault(snippet, None)
 
         # Add the custom code for the children.
         for child in self.children:
@@ -1948,10 +1991,15 @@ class Component(BaseComponent, ABC):
     def _get_vars_hooks(self) -> dict[str, VarData | None]:
         """Get the hooks required by vars referenced in this component.
 
+        The Var module_code is gathered during this same walk and cached on
+        ``_var_module_code_cache`` so :meth:`_iter_var_only_module_code` reuses
+        it instead of iterating the Vars (and their VarData) a second time.
+
         Returns:
             The hooks for the vars.
         """
         vars_hooks = {}
+        var_module_code: list[str] = []
         for var in self._get_vars():
             var_data = var._get_all_var_data()
             if var_data is not None:
@@ -1965,6 +2013,8 @@ class Component(BaseComponent, ABC):
                 )
                 for component in var_data.components:
                     vars_hooks.update(component._get_all_hooks())
+                var_module_code.extend(var_data.module_code)
+        self._var_module_code_cache = tuple(var_module_code)
         return vars_hooks
 
     def _get_events_hooks(self) -> dict[str, VarData | None]:
