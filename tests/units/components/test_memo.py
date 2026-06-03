@@ -186,6 +186,37 @@ def test_component_returning_memo_with_only_rest():
     assert "({," not in code
 
 
+def test_component_memo_rest_prop_merge_is_forwarded_as_rest_prop():
+    """A merged ``RestProp`` stays a ``RestProp``.
+
+    Passing ``rest.merge({...})`` to another component must lift it onto that
+    component's ``special_props`` (a JSX spread), exactly like the bare ``rest``
+    — not render it as a literal child.
+    """
+
+    @rx.memo
+    def primary_button(rest: rx.RestProp, *, label: rx.Var[str]) -> rx.Component:
+        return rx.button(label, rest.merge({"className": "btn"}))
+
+    definition = MEMOS["PrimaryButton"]
+    assert isinstance(definition, MemoComponentDefinition)
+
+    # The merged value is accepted as a RestProp: lifted onto special_props
+    # rather than wrapped as a child.
+    merged_specials = [
+        prop
+        for prop in definition.component.special_props
+        if isinstance(prop, rx.RestProp)
+    ]
+    assert len(merged_specials) == 1
+    assert "...rest" in str(merged_specials[0])
+
+    files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
+    code = "\n".join(c for _, c in files)
+    # Spread into the button props, not emitted as a jsx child.
+    assert '{...({...rest, ...({ ["className"] : "btn" })})}' in code
+
+
 def test_var_returning_memo_with_only_rest():
     """Var-returning memos with only RestProp should emit valid JS (#6443)."""
 
