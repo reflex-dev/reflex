@@ -1,11 +1,11 @@
-"""Miscellaneous functions for the experimental package."""
+"""Miscellaneous utility functions."""
 
 import asyncio
 import contextlib
 import inspect
 import sys
 import threading
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -131,3 +131,51 @@ if (typeof document !== 'undefined') {
 """
 
     return Script.create(script_content)
+
+
+def google_font(
+    family: str,
+    *,
+    weights: Sequence[int] = (400,),
+    italic: bool = False,
+    display: str = "swap",
+) -> list:
+    """Create the components that load a Google Font from the document head.
+
+    Adding these to ``head_components`` (instead of ``rx.App(stylesheets=...)``, which chains
+    fonts behind an ``@import`` in the global stylesheet) lets the browser discover the font
+    during the initial HTML parse and fetch it in parallel, with ``display=swap`` so text paints
+    immediately using a fallback face::
+
+        app = rx.App(head_components=rx.google_font("Inter", weights=[400, 700]))
+
+    Args:
+        family: The font family name, e.g. ``"Open Sans"``.
+        weights: The font weights to request.
+        italic: Whether to also request italic styles for each weight.
+        display: The CSS ``font-display`` strategy.
+
+    Returns:
+        The preconnect and stylesheet components to add to ``head_components``.
+    """
+    from reflex_components_core.el.elements.metadata import Link
+
+    if not weights:
+        msg = "weights must not be empty"
+        raise ValueError(msg)
+    family_param = family.replace(" ", "+")
+    sorted_weights = sorted(weights)
+    if italic:
+        axis = "ital,wght@" + ";".join(
+            f"{style},{weight}" for style in (0, 1) for weight in sorted_weights
+        )
+    else:
+        axis = "wght@" + ";".join(str(weight) for weight in sorted_weights)
+    href = f"https://fonts.googleapis.com/css2?family={family_param}:{axis}&display={display}"
+    return [
+        Link.create(rel="preconnect", href="https://fonts.googleapis.com"),
+        Link.create(
+            rel="preconnect", href="https://fonts.gstatic.com", cross_origin="anonymous"
+        ),
+        Link.create(rel="stylesheet", href=href),
+    ]

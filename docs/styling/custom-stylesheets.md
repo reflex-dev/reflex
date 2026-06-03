@@ -146,6 +146,34 @@ app = rx.App(
 )
 ```
 
+### Loading Google Fonts faster
+
+Stylesheets passed to `stylesheets` are bundled behind an `@import` chain, so the browser only
+discovers the font after it has downloaded and parsed the app's global stylesheet. For fonts this
+delays first paint. To load a Google Font as early as possible, use `rx.google_font` and add it to
+`head_components` instead. It emits `preconnect` hints to the Google Fonts origins and requests the
+font with `display=swap` so text paints immediately with a fallback face:
+
+```python
+app = rx.App(
+    head_components=rx.google_font("JetBrains Mono", weights=[400, 700], italic=True),
+)
+```
+
+`rx.google_font` is a convenience that builds the right `<link>` tags. For a font from any other
+provider, add the provider's stylesheet (and an optional `preconnect`) to `head_components` yourself:
+
+```python
+app = rx.App(
+    head_components=[
+        rx.el.link(rel="preconnect", href="https://fonts.bunny.net"),
+        rx.el.link(
+            rel="stylesheet", href="https://fonts.bunny.net/css?family=inter:400,700"
+        ),
+    ],
+)
+```
+
 Then you can use the font in your component by setting the `font_family` prop.
 
 ```python demo
@@ -188,3 +216,22 @@ app = rx.App(
 ```
 
 And that's it! You can now use `MyFont` like any other FontFamily to style your components.
+
+To avoid a flash of unstyled text, preload the font file from the document head so the browser fetches
+it in parallel with the page. Fonts are always fetched in CORS mode, so the `cross_origin` is required
+even for same-origin files:
+
+```python
+app = rx.App(
+    head_components=[
+        rx.el.link(
+            rel="preload",
+            href="/fonts/MyFont.otf",
+            as_="font",
+            type="font/otf",
+            cross_origin="anonymous",
+        ),
+    ],
+    stylesheets=["/fonts/myfont.css"],
+)
+```
