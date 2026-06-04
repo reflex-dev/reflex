@@ -1,15 +1,10 @@
+import copy
 from contextlib import nullcontext
 from dataclasses import dataclass
 from typing import Any, ClassVar, TypedDict
 
 import pytest
-from reflex_base.components.component import (
-    CUSTOM_COMPONENTS,
-    Component,
-    CustomComponent,
-    custom_component,
-    field,
-)
+from reflex_base.components.component import Component, field
 from reflex_base.constants import EventTriggers
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import (
@@ -46,7 +41,6 @@ from reflex import (
     _COMPONENTS_BASE_MAPPING,  # pyright: ignore[reportAttributeAccessIssue]
     _COMPONENTS_CORE_MAPPING,  # pyright: ignore[reportAttributeAccessIssue]
 )
-from reflex.compiler.utils import compile_custom_component
 from reflex.state import BaseState
 from reflex.utils import imports
 
@@ -270,20 +264,6 @@ def on_click2() -> EventHandler:
         pass
 
     return EventHandler(fn=on_click2)
-
-
-@pytest.fixture
-def my_component():
-    """A test component function.
-
-    Returns:
-        A test component function.
-    """
-
-    def my_component(prop1: Var[str], prop2: Var[int]):
-        return Box.create(prop1, prop2)
-
-    return my_component
 
 
 def test_set_style_attrs(component1):
@@ -886,52 +866,6 @@ def test_non_submit_mapping_events_do_not_accept_typed_dict_handlers():
 
     with pytest.raises(EventHandlerArgTypeMismatchError):
         C1.create(on_foo=C1State.mock_handler)
-
-
-def test_create_custom_component(my_component):
-    """Test that we can create a custom component.
-
-    Args:
-        my_component: A test custom component.
-    """
-    component = rx.memo(my_component)(prop1="test", prop2=1)
-    assert component.tag == "MyComponent"
-    assert set(component.get_props()) == {"prop1", "prop2"}
-    assert component.tag in CUSTOM_COMPONENTS
-
-
-def test_custom_component_hash(my_component):
-    """Test that the hash of a custom component is correct.
-
-    Args:
-        my_component: A test custom component.
-    """
-    component1 = rx.memo(my_component)(prop1="test", prop2=1)
-    component2 = rx.memo(my_component)(prop1="test", prop2=2)
-    assert {component1, component2} == {component1}
-
-
-def test_custom_component_wrapper():
-    """Test that the wrapper of a custom component is correct."""
-
-    @custom_component
-    def my_component(width: Var[int], color: Var[str]):
-        return rx.box(
-            width=width,
-            color=color,
-        )
-
-    from reflex_components_radix.themes.typography.text import Text
-
-    ccomponent = my_component(
-        rx.text("child"), width=LiteralVar.create(1), color=LiteralVar.create("red")
-    )
-    assert isinstance(ccomponent, CustomComponent)
-    assert len(ccomponent.children) == 1
-    assert isinstance(ccomponent.children[0], Text)
-
-    component = ccomponent.get_component()
-    assert isinstance(component, Box)
 
 
 def test_invalid_event_handler_args(component2, test_state: type[TestState]):
@@ -1786,43 +1720,6 @@ def test_rename_props():
     assert 'renamed_prop3:"prop3_2"' in rendered_c2["props"]
 
 
-def test_custom_component_get_imports():
-    class Inner(Component):
-        tag = "Inner"
-        library = "inner"
-
-    @rx.memo
-    def wrapper():
-        return Inner.create()
-
-    @rx.memo
-    def outer():
-        return wrapper()
-
-    custom_comp = wrapper()
-
-    # Inner is not imported directly, but it is imported by the custom component.
-    assert "inner" not in custom_comp._get_all_imports()
-    assert "outer" not in custom_comp._get_all_imports()
-
-    # The imports are only resolved during compilation.
-    custom_comp.get_component()
-    _, imports_inner = compile_custom_component(custom_comp)
-    assert "inner" in imports_inner
-    assert "outer" not in imports_inner
-
-    outer_comp = outer()
-
-    # Nested custom components are only imported during compilation.
-    assert "inner" not in outer_comp._get_all_imports()
-
-    # The imports are only resolved during compilation.
-    _, imports_outer = compile_custom_component(outer_comp)
-    assert "inner" not in imports_outer
-    assert "$/utils/components" in imports_outer
-    assert imports_outer["$/utils/components"] == [ImportVar(tag="Wrapper")]
-
-
 def test_custom_component_declare_event_handlers_in_fields():
     class ReferenceComponent(Component):
         @classmethod
@@ -2395,3 +2292,33 @@ def test_component_equality_handles_var_fields():
     dict_a = VarProbe.create(meta={"k": VarState.text})
     dict_b = VarProbe.create(meta={"k": VarState.text})
     assert dict_a == dict_b
+
+
+def test_deepcopy_drops_stale_render_cache() -> None:
+    """A deep-copied component must re-render after its children are mutated.
+
+    ``render()`` memoizes ``_cached_render_result``. The compiler deep-copies
+    app-wrap components and rebinds their ``children`` (e.g. in
+    ``App._app_root``); if the clone kept the original's cache, the appended
+    child would be silently dropped — the page content ``children`` would
+    never reach the rendered tree and the page would render blank.
+    """
+    original = Fragment.create()
+    original.render()  # populate _cached_render_result with no children
+
+    clone = copy.deepcopy(original)
+    clone.children.append(Bare.create(contents="page-content"))
+
+    assert len(clone.render()["children"]) == 1
+    # The original must be untouched (independent deep copy).
+    assert original.render()["children"] == []
+
+
+def test_deepcopy_produces_independent_children() -> None:
+    """Deep copy must not share the ``children`` list with the original."""
+    original = Fragment.create(Bare.create(contents="a"))
+    clone = copy.deepcopy(original)
+    clone.children.append(Bare.create(contents="b"))
+
+    assert len(original.children) == 1
+    assert len(clone.children) == 2

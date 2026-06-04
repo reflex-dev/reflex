@@ -11,7 +11,7 @@ COLLAPSED_MAX_HEIGHT = "400px"
 
 
 @rx.memo
-def _plain_code_block(code: str, language: str):
+def _plain_code_block(code: rx.Var[str], language: rx.Var[str]) -> rx.Component:
     """Shared plain code block implementation.
 
     Returns:
@@ -83,7 +83,7 @@ def code_block(code: str, language: str):
 
 
 @rx.memo
-def code_block_dark(code: str, language: str):
+def code_block_dark(code: rx.Var[str], language: rx.Var[str]) -> rx.Component:
     """Code block dark.
 
     Returns:

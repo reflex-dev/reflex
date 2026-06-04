@@ -75,15 +75,14 @@ Bun requires runtime components of Visual C++ libraries to run on Windows. This 
 
 `````
 
-Running `uv run reflex init` will return the option to start with a blank Reflex app, premade templates built by the Reflex team, or to try our [AI builder](https://build.reflex.dev/).
+Running `uv run reflex init` will return the option to start with a blank Reflex app or to try our [AI builder](https://build.reflex.dev/).
 
 ```bash
 Initializing the web directory.
 
 Get started with a template:
 (0) A blank Reflex app.
-(1) Premade templates built by the Reflex team.
-(2) Try our AI builder.
+(1) Try our AI builder.
 Which template would you like to use? (0):
 ```
 

@@ -10,6 +10,11 @@ from typing import Any, cast
 import pytest
 from reflex_base.components.component import Component
 from reflex_base.components.component import field as component_field
+from reflex_base.components.memo import (
+    MemoComponent,
+    MemoComponentDefinition,
+    create_passthrough_component_memo,
+)
 from reflex_base.components.memoize_helpers import (
     MemoizationStrategy,
     get_memoization_strategy,
@@ -45,11 +50,6 @@ import reflex as rx
 import reflex.compiler.plugins.memoize as memoize_plugin
 from reflex.compiler.plugins import DefaultCollectorPlugin, default_page_plugins
 from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin, _should_memoize
-from reflex.experimental.memo import (
-    ExperimentalMemoComponent,
-    ExperimentalMemoComponentDefinition,
-    create_passthrough_component_memo,
-)
 from reflex.state import BaseState
 
 STATE_VAR = LiteralVar.create("value")._replace(
@@ -73,6 +73,19 @@ class LeafComponent(Component):
     tag = "LeafComponent"
     library = "leaf-lib"
     _memoization_mode = MemoizationMode(recursive=False)
+
+
+class SnapshotWithSlot(Component):
+    tag = "SnapshotWithSlot"
+    library = "snapshot-with-slot-lib"
+    _memoization_mode = MemoizationMode(recursive=False)
+
+    slot: Component | None = component_field(default=None)
+
+
+class MemoAppWrapProvider(Component):
+    tag = "MemoAppWrapProvider"
+    library = "memo-app-wrap-provider-lib"
 
 
 class ChildrenViaProp(Component):
@@ -198,8 +211,8 @@ def test_should_not_memoize_when_disposition_never() -> None:
     assert not _should_memoize(comp)
 
 
-def test_memoize_wrapper_uses_experimental_memo_component_and_call_site() -> None:
-    """Memoizable component imports a generated ``rx._x.memo`` wrapper."""
+def test_memoize_wrapper_uses_memo_component_and_call_site() -> None:
+    """Memoizable component imports a generated ``rx.memo`` wrapper."""
     ctx, page_ctx = _compile_single_page(lambda: Plain.create(STATE_VAR))
 
     assert len(ctx.memoize_wrappers) == 1
@@ -236,6 +249,40 @@ def test_memoize_wrapper_deduped_across_repeated_subtrees() -> None:
     assert (page_ctx.output_code or "").count(
         f'import {{{wrapper_tag}}} from "$/utils/components/{wrapper_tag}"'
     ) == 1
+
+
+def test_passthrough_memo_collects_var_app_wraps_from_replaced_component() -> None:
+    """Var app_wraps on passthrough-memoized components survive replacement."""
+    provider = MemoAppWrapProvider.create()
+    stateful_var_with_wrap = LiteralVar.create("needs-wrap")._replace(
+        merge_var_data=VarData(
+            hooks={"useNeedsWrap": None},
+            app_wraps=((70, provider),),
+        )
+    )
+
+    _ctx, page_ctx = _compile_single_page(
+        lambda: WithProp.create(label=stateful_var_with_wrap)
+    )
+
+    assert (70, "MemoAppWrapProvider") in page_ctx.app_wrap_components
+
+
+def test_snapshot_memo_collects_var_app_wraps_from_prop_components() -> None:
+    """Snapshot memo boundaries collect app_wraps buried in prop components."""
+    provider = MemoAppWrapProvider.create()
+    var_with_wrap = LiteralVar.create("needs-wrap")._replace(
+        merge_var_data=VarData(app_wraps=((70, provider),))
+    )
+
+    _ctx, page_ctx = _compile_single_page(
+        lambda: SnapshotWithSlot.create(
+            STATE_VAR,
+            slot=WithProp.create(label=var_with_wrap),
+        )
+    )
+
+    assert (70, "MemoAppWrapProvider") in page_ctx.app_wrap_components
 
 
 def test_memoize_wrappers_distinct_for_different_on_mount() -> None:
@@ -327,8 +374,7 @@ def test_special_form_memo_wrappers_render_structural_body(
     ctx, page_ctx = _compile_single_page(lambda: rx.box(special_child()))
 
     memo_files, _memo_imports = compile_memo_components(
-        components=(),
-        experimental_memos=tuple(ctx.auto_memo_components.values()),
+        memos=tuple(ctx.auto_memo_components.values()),
     )
     memo_code = "\n".join(code for _, code in memo_files)
 
@@ -369,8 +415,7 @@ def test_foreach_snapshot_memo_applies_component_styles() -> None:
     )
 
     memo_files, _memo_imports = compile_memo_components(
-        components=(),
-        experimental_memos=tuple(ctx.auto_memo_components.values()),
+        memos=tuple(ctx.auto_memo_components.values()),
     )
     foreach_code = next(
         code for path, code in memo_files if "/Foreach" in path or "\\Foreach" in path
@@ -403,7 +448,7 @@ def test_foreach_parent_does_not_absorb_sibling_into_snapshot() -> None:
     wrapped_definitions = [
         definition
         for definition in ctx.auto_memo_components.values()
-        if isinstance(definition, ExperimentalMemoComponentDefinition)
+        if isinstance(definition, MemoComponentDefinition)
     ]
     wrapped_types = {type(definition.component) for definition in wrapped_definitions}
 
@@ -495,7 +540,7 @@ def test_generated_memo_component_is_not_itself_memoized() -> None:
     """The generated memo component instance itself is skipped by the heuristic."""
     wrapper_factory, _definition = create_passthrough_component_memo(Fragment.create())
     wrapper = wrapper_factory(Plain.create())
-    assert isinstance(wrapper, ExperimentalMemoComponent)
+    assert isinstance(wrapper, MemoComponent)
     assert not _should_memoize(wrapper)
 
 
@@ -543,7 +588,7 @@ def test_generated_memo_component_renders_as_its_exported_tag() -> None:
     """The generated experimental memo component renders as its exported tag."""
     wrapper_factory, definition = create_passthrough_component_memo(Fragment.create())
     wrapper = wrapper_factory(Plain.create())
-    assert isinstance(wrapper, ExperimentalMemoComponent)
+    assert isinstance(wrapper, MemoComponent)
     tag = definition.export_name
     assert tag.startswith("Fragment_"), (
         f"Expected the wrapped class qualname to be encoded in the tag prefix; "
@@ -775,8 +820,7 @@ def test_memoization_leaf_internal_hooks_do_not_leak_into_page() -> None:
         "expected an auto-memo wrapper to be generated for the leaf"
     )
     memo_files, _memo_imports = compile_memo_components(
-        components=(),
-        experimental_memos=tuple(ctx.auto_memo_components.values()),
+        memos=tuple(ctx.auto_memo_components.values()),
     )
     memo_code = "\n".join(code for _, code in memo_files)
     assert "useLeafProbe" in memo_code, (
@@ -1019,8 +1063,7 @@ def test_cond_stateful_condition_renders_branch_logic_in_memo_body() -> None:
     )
 
     memo_files, _memo_imports = compile_memo_components(
-        components=(),
-        experimental_memos=tuple(ctx.auto_memo_components.values()),
+        memos=tuple(ctx.auto_memo_components.values()),
     )
     memo_code = "\n".join(code for _, code in memo_files)
 
@@ -1117,8 +1160,7 @@ def test_match_stateful_condition_uses_memoized_branch_wrapper_in_memo_body() ->
     )
 
     memo_files, _memo_imports = compile_memo_components(
-        components=(),
-        experimental_memos=tuple(ctx.auto_memo_components.values()),
+        memos=tuple(ctx.auto_memo_components.values()),
     )
     match_memo_code = next(
         code
@@ -1230,8 +1272,7 @@ def test_client_state_setter_in_call_function_event_imports_refs() -> None:
     wrapper_tag = next(iter(ctx.memoize_wrappers))
 
     memo_files, _memo_imports = compile_memo_components(
-        components=(),
-        experimental_memos=tuple(ctx.auto_memo_components.values()),
+        memos=tuple(ctx.auto_memo_components.values()),
     )
     memo_code = next(
         code for path, code in memo_files if Path(path).name == f"{wrapper_tag}.jsx"
@@ -1314,8 +1355,7 @@ def test_debounce_input_memo_renders_react_debounce_wrapper() -> None:
     )
 
     memo_files, _memo_imports = compile_memo_components(
-        components=(),
-        experimental_memos=tuple(ctx.auto_memo_components.values()),
+        memos=tuple(ctx.auto_memo_components.values()),
     )
     memo_code = next(
         code for path, code in memo_files if Path(path).name == f"{wrapper_tag}.jsx"
@@ -1418,19 +1458,19 @@ def test_snapshot_boundary_with_event_trigger_descendant_is_wrapped() -> None:
     )
 
 
-def test_snapshot_boundary_with_no_arg_event_handler_descendant_is_wrapped() -> None:
-    """A boundary whose descendant has on_click without arg vars still wraps.
+def test_snapshot_boundary_with_no_arg_event_handler_descendant_not_wrapped() -> None:
+    """A boundary whose descendant has only a no-arg on_click is not wrapped.
 
-    No-arg handlers (``on_click=State.ping``) contribute to the page only
-    via the descendant's ``event_triggers`` and ``_get_events_hooks`` — the
-    per-Var subtree scan misses them. The reactive-data check must also
-    inspect ``event_triggers`` directly so the boundary wraps and the
-    callback's ``useCallback`` lands inside the snapshot body.
+    No-arg handlers (``on_click=State.ping``) surface only through the
+    descendant's ``event_triggers`` and reach ``addEvents`` via a
+    module-level import rather than a hoisted hook. The inline callback
+    carries no reactive data and never drives a re-render, so the boundary
+    gains nothing from memoization and is left to render in the page module.
     """
     inner = Plain.create()
     inner.event_triggers["on_click"] = Var(_js_expr="evt")
     boundary = LeafComponent.create(inner)
-    assert _should_memoize(boundary)
+    assert not _should_memoize(boundary)
 
 
 def test_title_with_stateful_var_child_does_not_wrap_bare_independently() -> None:
@@ -1663,8 +1703,7 @@ def _compile_memo_module_text(ctx: CompileContext) -> str:
     from reflex.compiler.compiler import compile_memo_components
 
     memo_files, _imports = compile_memo_components(
-        components=(),
-        experimental_memos=tuple(ctx.auto_memo_components.values()),
+        memos=tuple(ctx.auto_memo_components.values()),
     )
     return "\n".join(code for _, code in memo_files)
 
@@ -2184,8 +2223,7 @@ def test_each_memo_wrapper_emits_one_component_module_file() -> None:
         )
     )
     memo_files, _imports = compile_memo_components(
-        components=(),
-        experimental_memos=tuple(ctx.auto_memo_components.values()),
+        memos=tuple(ctx.auto_memo_components.values()),
     )
     component_module_names = {
         Path(path).name

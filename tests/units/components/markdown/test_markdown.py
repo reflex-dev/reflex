@@ -1,5 +1,6 @@
 import pytest
-from reflex_base.components.component import Component, memo
+from reflex_base.components.component import Component
+from reflex_base.components.memo import memo
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 from reflex_base.vars.base import Var
 from reflex_components_code.code import CodeBlock
@@ -42,7 +43,7 @@ class CustomMarkdownComponent(Component, MarkdownComponentMap):
 
 def syntax_highlighter_memoized_component(codeblock: type[Component]):
     @memo
-    def code_block(code: str, language: str):
+    def code_block(code: Var[str], language: Var[str]) -> Component:
         return Box.create(
             codeblock.create(
                 code,
@@ -222,7 +223,7 @@ def _compile_page_output(root: Component) -> str:
         hooks.compile_page(page_ctx, compile_context=compile_ctx)
         _, page_code = compiler.compile_page_from_context(page_ctx)
         memo_files, _ = compiler.compile_memo_components(
-            (), compile_ctx.auto_memo_components.values()
+            compile_ctx.auto_memo_components.values()
         )
     return "\n".join([page_code, *(code for _, code in memo_files)])
 

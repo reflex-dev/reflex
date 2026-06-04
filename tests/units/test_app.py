@@ -22,6 +22,7 @@ from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
+from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
 from reflex_base.utils import console, exceptions, format
@@ -29,6 +30,7 @@ from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import computed_var
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
+from reflex_components_core.core.upload import selected_files
 from reflex_components_radix.themes.typography.text import Text
 from starlette.applications import Starlette
 from starlette.datastructures import FormData, Headers, UploadFile
@@ -38,7 +40,10 @@ from starlette_admin.auth import AuthProvider
 
 import reflex as rx
 from reflex import AdminDash, constants
-from reflex.app import App, ComponentCallable, upload
+from reflex._upload import upload
+from reflex.app import App, ComponentCallable
+from reflex.compiler.compiler import _compile_app, _resolve_app_wrap_components
+from reflex.compiler.plugins import default_page_plugins
 from reflex.environment import environment
 from reflex.istate.data import RouterData
 from reflex.istate.manager.disk import StateManagerDisk
@@ -2019,11 +2024,15 @@ async def test_process_events(
 
 
 @pytest.fixture
-def compilable_app(tmp_path: Path) -> Generator[tuple[App, Path], None, None]:
+def compilable_app(
+    tmp_path: Path,
+    forked_registration_context: RegistrationContext,
+) -> Generator[tuple[App, Path], None, None]:
     """Fixture for an app that can be compiled.
 
     Args:
         tmp_path: Temporary path.
+        forked_registration_context: Isolated state/event registration context.
 
     Yields:
         Tuple containing (app instance, Path to ".web" directory)
@@ -2046,10 +2055,59 @@ module.exports = {
 };
 """,
     )
+    reload_state_module(__name__)
     app = App(theme=None)
     app._get_frontend_packages = unittest.mock.Mock()
     with chdir(app_path):
         yield app, web_dir
+
+
+EVENT_LOOP_CONTEXT_HOOK = (
+    "const [addEvents, connectErrors] = useContext(EventLoopContext);"
+)
+
+
+def compile_page_context_for_app_wraps(component: Component):
+    """Compile one component through the page plugin pipeline.
+
+    Args:
+        component: The page root component to compile.
+
+    Returns:
+        The compiled page context.
+    """
+    page_ctx = PageContext(name="page", route="/page", root_component=component)
+    page_hooks = CompilerHooks(plugins=default_page_plugins(style=None))
+    compile_ctx = CompileContext(pages=[], hooks=page_hooks)
+
+    with compile_ctx, page_ctx:
+        page_ctx.root_component = page_hooks.compile_component(
+            page_ctx.root_component,
+            page_context=page_ctx,
+            compile_context=compile_ctx,
+        )
+        page_hooks.compile_page(page_ctx, compile_context=compile_ctx)
+
+    return page_ctx
+
+
+def compile_app_root_from_page_wraps(
+    app: App,
+    page_app_wrap_components: dict[tuple[int, str], Component],
+) -> str:
+    """Render app-root code from an app and pre-collected page app wraps.
+
+    Args:
+        app: The app whose root wrapper chain should be compiled.
+        page_app_wrap_components: The app wraps collected from page compilation.
+
+    Returns:
+        The generated app root source.
+    """
+    app_root = app._app_root(
+        _resolve_app_wrap_components(app, page_app_wrap_components)
+    )
+    return _compile_app(app_root)
 
 
 @pytest.mark.parametrize(
@@ -2077,17 +2135,22 @@ def test_app_wrap_compile_theme(
     app_js_contents = (
         web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
     ).read_text()
+    # AppWrap renders the entire chain in its body. ``addEvents`` is now a
+    # module-level callable (see ``$/utils/context``) so no
+    # ``useContext(EventLoopContext)`` hoist is needed; the events hook
+    # block is empty. State/event-loop providers ride along as the highest
+    # collected app wraps, ahead of ErrorBoundary etc.
     function_app_definition = app_js_contents[
         app_js_contents.index("function AppWrap") : app_js_contents.index(
             "export function Layout"
         )
     ].strip()
-
     expected = (
-        "function AppWrap({children}) {\n"
-        "const [addEvents, connectErrors] = useContext(EventLoopContext);\n\n\n\n"
+        "function AppWrap({children}) {\n\n\n\n\n"
         "return ("
         + ("jsx(StrictMode,{}," if react_strict_mode else "")
+        + "jsx(StateProvider,{},"
+        + "jsx(EventLoopProvider,{},"
         + "jsx(ErrorBoundary,{"
         """fallbackRender:((event_args) => (jsx("div", ({css:({ ["height"] : "100%", ["width"] : "100%", ["position"] : "absolute", ["backgroundColor"] : "#fff", ["color"] : "#000", ["display"] : "flex", ["alignItems"] : "center", ["justifyContent"] : "center" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "0.5rem", ["maxWidth"] : "min(80ch, 90vw)", ["borderRadius"] : "0.25rem", ["padding"] : "1rem" })}), (jsx("div", ({css:({ ["opacity"] : "0.5", ["display"] : "flex", ["gap"] : "4vmin", ["alignItems"] : "center" })}), (jsx("svg", ({className:"lucide lucide-frown-icon lucide-frown",fill:"none",stroke:"currentColor","stroke-linecap":"round","stroke-linejoin":"round","stroke-width":"2",viewBox:"0 0 24 24",width:"25vmin",xmlns:"http://www.w3.org/2000/svg"}), (jsx("circle", ({cx:"12",cy:"12",r:"10"}))), (jsx("path", ({d:"M16 16s-1.5-2-4-2-4 2-4 2"}))), (jsx("line", ({x1:"9",x2:"9.01",y1:"9",y2:"9"}))), (jsx("line", ({x1:"15",x2:"15.01",y1:"9",y2:"9"}))))), (jsx("h2", ({css:({ ["fontSize"] : "5vmin", ["fontWeight"] : "bold" })}), "An error occurred while rendering this page.")))), (jsx("p", ({css:({ ["opacity"] : "0.75", ["marginBlock"] : "1rem" })}), "This is an error with the application itself. Refreshing the page might help.")), (jsx("div", ({css:({ ["width"] : "100%", ["background"] : "color-mix(in srgb, currentColor 5%, transparent)", ["maxHeight"] : "15rem", ["overflow"] : "auto", ["borderRadius"] : "0.4rem" })}), (jsx("div", ({css:({ ["padding"] : "0.5rem" })}), (jsx("pre", ({css:({ ["wordBreak"] : "break-word", ["whiteSpace"] : "pre-wrap" })}), event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack)))))), (jsx("button", ({css:({ ["padding"] : "0.35rem 1.35rem", ["marginBlock"] : "0.5rem", ["marginInlineStart"] : "auto", ["background"] : "color-mix(in srgb, currentColor 15%, transparent)", ["borderRadius"] : "0.4rem", ["width"] : "fit-content", ["&:hover"] : ({ ["background"] : "color-mix(in srgb, currentColor 25%, transparent)" }), ["&:active"] : ({ ["background"] : "color-mix(in srgb, currentColor 35%, transparent)" }) }),onClick:((_e) => (addEvents([(ReflexEvent("_call_function", ({ ["function"] : (() => (navigator?.["clipboard"]?.["writeText"](event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack))), ["callback"] : null }), ({  })))], [_e], ({  }))))}), "Copy")), (jsx("hr", ({css:({ ["borderColor"] : "currentColor", ["opacity"] : "0.25" })}))), (jsx(ReactRouterLink, ({to:"https://reflex.dev"}), (jsx("div", ({css:({ ["display"] : "flex", ["alignItems"] : "baseline", ["justifyContent"] : "center", ["fontFamily"] : "monospace", ["--default-font-family"] : "monospace", ["gap"] : "0.5rem" })}), "Built with ", (jsx("svg", ({"aria-label":"Reflex",css:({ ["fill"] : "currentColor" }),height:"12",role:"img",width:"56",xmlns:"http://www.w3.org/2000/svg"}), (jsx("path", ({d:"M0 11.5999V0.399902H8.96V4.8799H6.72V2.6399H2.24V4.8799H6.72V7.1199H2.24V11.5999H0ZM6.72 11.5999V7.1199H8.96V11.5999H6.72Z"}))), (jsx("path", ({d:"M11.2 11.5999V0.399902H17.92V2.6399H13.44V4.8799H17.92V7.1199H13.44V9.3599H17.92V11.5999H11.2Z"}))), (jsx("path", ({d:"M20.16 11.5999V0.399902H26.88V2.6399H22.4V4.8799H26.88V7.1199H22.4V11.5999H20.16Z"}))), (jsx("path", ({d:"M29.12 11.5999V0.399902H31.36V9.3599H35.84V11.5999H29.12Z"}))), (jsx("path", ({d:"M38.08 11.5999V0.399902H44.8V2.6399H40.32V4.8799H44.8V7.1199H40.32V9.3599H44.8V11.5999H38.08Z"}))), (jsx("path", ({d:"M47.04 4.8799V0.399902H49.28V4.8799H47.04ZM53.76 4.8799V0.399902H56V4.8799H53.76ZM49.28 7.1199V4.8799H53.76V7.1199H49.28ZM47.04 11.5999V7.1199H49.28V11.5999H47.04ZM53.76 11.5999V7.1199H56V11.5999H53.76Z"}))), (jsx("title", ({}), "Reflex"))))))))))))),"""
         """onError:((_error, _info) => (addEvents([(ReflexEvent("reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception", ({ ["info"] : ((((_error?.["name"]+": ")+_error?.["message"])+"\\n")+_error?.["stack"]), ["component_stack"] : _info?.["componentStack"] }), ({  })))], [_error, _info], ({  }))))"""
@@ -2100,8 +2163,9 @@ def test_app_wrap_compile_theme(
         + "jsx(DefaultOverlayComponents,{},),"
         + "jsx(Fragment,{},"
         + "children"
-        "))))))" + (")" if react_strict_mode else "") + ")"
-        "\n}"
+        + "))))))))"
+        + (")" if react_strict_mode else "")
+        + ")\n}"
     )
     assert expected.split(",") == function_app_definition.split(",")
 
@@ -2232,7 +2296,7 @@ def test_compile_writes_app_wrap_memo_components(
     compilable_app: tuple[App, Path],
     mocker,
 ) -> None:
-    """App-wrap memo components are emitted to the shared components module."""
+    """App-wrap memo components are emitted as per-memo modules."""
     conf = rx.Config(app_name="testing")
     mocker.patch("reflex_base.config._get_config", return_value=conf)
     app, web_dir = compilable_app
@@ -2240,19 +2304,9 @@ def test_compile_writes_app_wrap_memo_components(
     app.add_page(rx.box("Index"), route="/")
     app._compile()
 
-    components_index = (
-        web_dir
-        / constants.Dirs.UTILS
-        / f"{constants.PageNames.COMPONENTS}{constants.Ext.JSX}"
-    ).read_text()
-
-    # Per-memo modules live under .web/utils/components/; the index re-exports
-    # each one so page-side ``$/utils/components`` resolves the same tags.
-    assert "DefaultOverlayComponents" in components_index
-    assert "MemoizedToastProvider" in components_index
-    assert 'from "./components/DefaultOverlayComponents"' in components_index
-    assert 'from "./components/MemoizedToastProvider"' in components_index
-
+    # Per-memo modules live under .web/utils/components/; each memo wrapper
+    # declares its ``library`` as the per-memo file path, so pages import it
+    # directly.
     memo_dir = web_dir / constants.Dirs.UTILS / constants.PageNames.COMPONENTS
     assert (memo_dir / f"DefaultOverlayComponents{constants.Ext.JSX}").exists()
     assert (memo_dir / f"MemoizedToastProvider{constants.Ext.JSX}").exists()
@@ -2282,6 +2336,186 @@ def test_compile_writes_upload_files_provider_app_wrap(
     root_contents = root_js.read_text()
 
     assert "UploadFilesProvider" in root_contents
+
+
+def test_app_wrap_event_hook_requires_state_providers(mocker: MockerFixture) -> None:
+    """App-root chain components with event triggers pull state/event providers.
+
+    The default error boundary's fallback render contains a Copy button.
+    The button has an ``on_click`` handler, so the page collector pulls
+    ``StateProvider`` and ``EventLoopProvider`` into the app root via the
+    event-trigger app-wrap path. ``addEvents`` itself reaches its call
+    sites through the module-level import — no ``useContext`` hoist.
+    """
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app = App(theme=None, enable_state=False)
+
+    root_contents = compile_app_root_from_page_wraps(app, {})
+
+    assert EVENT_LOOP_CONTEXT_HOOK not in root_contents
+    assert "jsx(StateProvider" in root_contents
+    assert "jsx(EventLoopProvider" in root_contents
+
+
+def test_event_provider_app_wrap_order(mocker: MockerFixture) -> None:
+    """StateProvider wraps EventLoopProvider, and both wrap AppWrap."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    page_ctx = compile_page_context_for_app_wraps(
+        rx.button("ping", on_click=rx.console_log("ping"))
+    )
+    app = App(theme=None, enable_state=False)
+
+    root_contents = compile_app_root_from_page_wraps(app, page_ctx.app_wrap_components)
+
+    # The provider chain is rendered inside the ``AppWrap`` function body;
+    # ``ReflexProviders`` references ``jsx(AppWrap, {}, children)`` earlier in
+    # the file, so scope the search to the chain to avoid matching that.
+    chain = root_contents[root_contents.index("function AppWrap({children})") :]
+    state_index = chain.index("jsx(StateProvider")
+    event_loop_index = chain.index("jsx(EventLoopProvider")
+    children_index = chain.rindex("children")
+    assert state_index < event_loop_index < children_index
+
+
+def test_minimal_static_app_wrap_omits_state_providers(
+    mocker: MockerFixture,
+) -> None:
+    """An app-root chain with no event/state hooks avoids state providers."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app = App(theme=None, enable_state=False)
+    app.app_wraps = {}
+    app.extra_app_wraps = {}
+    app.toaster = None
+
+    root_contents = compile_app_root_from_page_wraps(app, {})
+
+    assert EVENT_LOOP_CONTEXT_HOOK not in root_contents
+    assert "jsx(StateProvider" not in root_contents
+    assert "jsx(EventLoopProvider" not in root_contents
+
+
+def test_event_triggers_collect_state_providers_via_var_app_wrap() -> None:
+    """A component with event triggers collects ``StateProvider`` and
+    ``EventLoopProvider`` into the page-level app_wrap registry through the
+    Var-driven path attached to ``Hooks.EVENTS``.
+
+    Uses the page-walk pipeline directly (not ``app._compile()``) so the
+    assertion is robust against ``rx.State`` registration leaks between
+    tests in this file.
+    """
+    component = rx.button("ping", on_click=rx.console_log("ping"))
+
+    page_ctx = PageContext(name="page", route="/page", root_component=component)
+    page_hooks = CompilerHooks(plugins=default_page_plugins(style=None))
+    compile_ctx = CompileContext(pages=[], hooks=page_hooks)
+
+    with compile_ctx, page_ctx:
+        page_ctx.root_component = page_hooks.compile_component(
+            page_ctx.root_component,
+            page_context=page_ctx,
+            compile_context=compile_ctx,
+        )
+        page_hooks.compile_page(page_ctx, compile_context=compile_ctx)
+
+    keys = page_ctx.app_wrap_components.keys()
+    # ``from_state`` priorities: StateProvider outer (100), EventLoopProvider
+    # inner (90). Both must be present whenever a component carries event
+    # triggers, since the ``useContext(EventLoopContext)`` hook hoisted at
+    # ``AppWrap`` level requires both providers as React-tree ancestors.
+    assert (100, "StateProvider") in keys
+    assert (90, "EventLoopProvider") in keys
+
+
+def test_no_event_triggers_omits_state_providers() -> None:
+    """A static page with no event triggers does not pull state providers in.
+
+    Validates that the migration is *conditional* — apps that don't use
+    state machinery don't pay for unused providers in the app root.
+    """
+    component = rx.text("hello")
+
+    page_ctx = PageContext(name="page", route="/page", root_component=component)
+    page_hooks = CompilerHooks(plugins=default_page_plugins(style=None))
+    compile_ctx = CompileContext(pages=[], hooks=page_hooks)
+
+    with compile_ctx, page_ctx:
+        page_ctx.root_component = page_hooks.compile_component(
+            page_ctx.root_component,
+            page_context=page_ctx,
+            compile_context=compile_ctx,
+        )
+        page_hooks.compile_page(page_ctx, compile_context=compile_ctx)
+
+    keys = page_ctx.app_wrap_components.keys()
+    assert (100, "StateProvider") not in keys
+    assert (90, "EventLoopProvider") not in keys
+
+
+def test_compile_writes_upload_files_provider_via_var_app_wrap(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+) -> None:
+    """A page that uses ``selected_files`` *without* an Upload component still
+    pulls the UploadFilesProvider in via the Var-declared app_wrap path.
+    """
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+
+    app.add_page(
+        lambda: rx.text(selected_files("custom-id").to_string()),
+        route="/",
+    )
+    app._compile()
+
+    root_js = web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    root_contents = root_js.read_text()
+    assert "UploadFilesProvider" in root_contents
+
+
+def test_selected_files_collects_upload_provider_without_upload_component() -> None:
+    """``selected_files`` alone pulls in UploadFilesProvider."""
+    page_ctx = compile_page_context_for_app_wraps(
+        rx.text(selected_files("custom-id").to_string())
+    )
+
+    assert (5, "UploadFilesProvider") in page_ctx.app_wrap_components
+    assert (100, "StateProvider") not in page_ctx.app_wrap_components
+    assert (90, "EventLoopProvider") not in page_ctx.app_wrap_components
+
+
+def test_no_upload_usage_omits_upload_provider() -> None:
+    """A page that never references upload Vars omits ``UploadFilesProvider``.
+
+    The provider rides only on ``selected_files`` / ``upload_files`` Var data
+    (or an ``Upload`` component). A page that uses state and events but no
+    upload must not pull it into the registry — the complement of
+    :func:`test_selected_files_collects_upload_provider_without_upload_component`.
+    """
+    page_ctx = compile_page_context_for_app_wraps(
+        rx.button("ping", on_click=rx.console_log("ping"))
+    )
+    keys = page_ctx.app_wrap_components.keys()
+
+    # Event triggers pull in the state/event providers...
+    assert (100, "StateProvider") in keys
+    assert (90, "EventLoopProvider") in keys
+    # ...but nothing references upload, so its provider stays out.
+    assert (5, "UploadFilesProvider") not in keys
+
+
+def test_upload_root_collects_upload_and_event_providers() -> None:
+    """Upload root requires both upload context and event-loop providers."""
+    page_ctx = compile_page_context_for_app_wraps(
+        rx.upload.root(rx.button("Select file"))
+    )
+
+    assert (5, "UploadFilesProvider") in page_ctx.app_wrap_components
+    assert (100, "StateProvider") in page_ctx.app_wrap_components
+    assert (90, "EventLoopProvider") in page_ctx.app_wrap_components
 
 
 @pytest.mark.parametrize(
@@ -2331,19 +2565,22 @@ def test_app_wrap_priority(
     app_js_contents = (
         web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
     ).read_text()
+    # AppWrap renders the priority-ordered chain inside its body.
+    # ``addEvents`` is reached via module-level import so the events hook
+    # block is empty.
     function_app_definition = app_js_contents[
         app_js_contents.index("function AppWrap") : app_js_contents.index(
             "export function Layout"
         )
     ].strip()
-
     expected = (
-        "function AppWrap({children}) {\n"
-        "const [addEvents, connectErrors] = useContext(EventLoopContext);\n\n\n\n"
+        "function AppWrap({children}) {\n\n\n\n\n"
         "return ("
         + ("jsx(StrictMode,{}," if react_strict_mode else "")
+        + "jsx(StateProvider,{},"
         + "jsx(RadixThemesBox,{},"
-        "jsx(ErrorBoundary,{"
+        + "jsx(EventLoopProvider,{},"
+        + "jsx(ErrorBoundary,{"
         """fallbackRender:((event_args) => (jsx("div", ({css:({ ["height"] : "100%", ["width"] : "100%", ["position"] : "absolute", ["backgroundColor"] : "#fff", ["color"] : "#000", ["display"] : "flex", ["alignItems"] : "center", ["justifyContent"] : "center" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "0.5rem", ["maxWidth"] : "min(80ch, 90vw)", ["borderRadius"] : "0.25rem", ["padding"] : "1rem" })}), (jsx("div", ({css:({ ["opacity"] : "0.5", ["display"] : "flex", ["gap"] : "4vmin", ["alignItems"] : "center" })}), (jsx("svg", ({className:"lucide lucide-frown-icon lucide-frown",fill:"none",stroke:"currentColor","stroke-linecap":"round","stroke-linejoin":"round","stroke-width":"2",viewBox:"0 0 24 24",width:"25vmin",xmlns:"http://www.w3.org/2000/svg"}), (jsx("circle", ({cx:"12",cy:"12",r:"10"}))), (jsx("path", ({d:"M16 16s-1.5-2-4-2-4 2-4 2"}))), (jsx("line", ({x1:"9",x2:"9.01",y1:"9",y2:"9"}))), (jsx("line", ({x1:"15",x2:"15.01",y1:"9",y2:"9"}))))), (jsx("h2", ({css:({ ["fontSize"] : "5vmin", ["fontWeight"] : "bold" })}), "An error occurred while rendering this page.")))), (jsx("p", ({css:({ ["opacity"] : "0.75", ["marginBlock"] : "1rem" })}), "This is an error with the application itself. Refreshing the page might help.")), (jsx("div", ({css:({ ["width"] : "100%", ["background"] : "color-mix(in srgb, currentColor 5%, transparent)", ["maxHeight"] : "15rem", ["overflow"] : "auto", ["borderRadius"] : "0.4rem" })}), (jsx("div", ({css:({ ["padding"] : "0.5rem" })}), (jsx("pre", ({css:({ ["wordBreak"] : "break-word", ["whiteSpace"] : "pre-wrap" })}), event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack)))))), (jsx("button", ({css:({ ["padding"] : "0.35rem 1.35rem", ["marginBlock"] : "0.5rem", ["marginInlineStart"] : "auto", ["background"] : "color-mix(in srgb, currentColor 15%, transparent)", ["borderRadius"] : "0.4rem", ["width"] : "fit-content", ["&:hover"] : ({ ["background"] : "color-mix(in srgb, currentColor 25%, transparent)" }), ["&:active"] : ({ ["background"] : "color-mix(in srgb, currentColor 35%, transparent)" }) }),onClick:((_e) => (addEvents([(ReflexEvent("_call_function", ({ ["function"] : (() => (navigator?.["clipboard"]?.["writeText"](event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack))), ["callback"] : null }), ({  })))], [_e], ({  }))))}), "Copy")), (jsx("hr", ({css:({ ["borderColor"] : "currentColor", ["opacity"] : "0.25" })}))), (jsx(ReactRouterLink, ({to:"https://reflex.dev"}), (jsx("div", ({css:({ ["display"] : "flex", ["alignItems"] : "baseline", ["justifyContent"] : "center", ["fontFamily"] : "monospace", ["--default-font-family"] : "monospace", ["gap"] : "0.5rem" })}), "Built with ", (jsx("svg", ({"aria-label":"Reflex",css:({ ["fill"] : "currentColor" }),height:"12",role:"img",width:"56",xmlns:"http://www.w3.org/2000/svg"}), (jsx("path", ({d:"M0 11.5999V0.399902H8.96V4.8799H6.72V2.6399H2.24V4.8799H6.72V7.1199H2.24V11.5999H0ZM6.72 11.5999V7.1199H8.96V11.5999H6.72Z"}))), (jsx("path", ({d:"M11.2 11.5999V0.399902H17.92V2.6399H13.44V4.8799H17.92V7.1199H13.44V9.3599H17.92V11.5999H11.2Z"}))), (jsx("path", ({d:"M20.16 11.5999V0.399902H26.88V2.6399H22.4V4.8799H26.88V7.1199H22.4V11.5999H20.16Z"}))), (jsx("path", ({d:"M29.12 11.5999V0.399902H31.36V9.3599H35.84V11.5999H29.12Z"}))), (jsx("path", ({d:"M38.08 11.5999V0.399902H44.8V2.6399H40.32V4.8799H44.8V7.1199H40.32V9.3599H44.8V11.5999H38.08Z"}))), (jsx("path", ({d:"M47.04 4.8799V0.399902H49.28V4.8799H47.04ZM53.76 4.8799V0.399902H56V4.8799H53.76ZM49.28 7.1199V4.8799H53.76V7.1199H49.28ZM47.04 11.5999V7.1199H49.28V11.5999H47.04ZM53.76 11.5999V7.1199H56V11.5999H53.76Z"}))), (jsx("title", ({}), "Reflex"))))))))))))),"""
         """onError:((_error, _info) => (addEvents([(ReflexEvent("reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception", ({ ["info"] : ((((_error?.["name"]+": ")+_error?.["message"])+"\\n")+_error?.["stack"]), ["component_stack"] : _info?.["componentStack"] }), ({  })))], [_error, _info], ({  }))))"""
         + "},"
@@ -2356,7 +2593,9 @@ def test_app_wrap_priority(
         + "jsx(DefaultOverlayComponents,{},),"
         + "jsx(Fragment,{},"
         + "children"
-        ")))))))" + (")" if react_strict_mode else "") + "))\n}"
+        + "))))))))))"
+        + (")" if react_strict_mode else "")
+        + ")\n}"
     )
     assert expected.split(",") == function_app_definition.split(",")
 

@@ -22,18 +22,17 @@ requires-python = ">=3.10,<4.0"
 dependencies = [
   "click >=8.2",
   "granian[reload] >=2.5.5",
-  "httpx >=0.23.3,<1.0",
+  "httpx >=0.26,<1.0",
   "packaging >=24.2,<27",
   "psutil >=7.0.0,<8.0; sys_platform == 'win32'",
   "python-multipart >=0.0.20,<1.0",
   "python-socketio >=5.12.0,<6.0",
-  "redis >=5.2.1,<8.0",
-  "reflex-hosting-cli",
+  "redis >=6.4,<8.0",
   "rich >=13,<16",
   "starlette >=0.47.0",
   "typing_extensions >=4.13.0",
   "wrapt >=1.17.0,<3.0",
-  "reflex-base >= 0.9.0",
+  "reflex-base >= 0.9.4",
   "reflex-components-code >= 0.9.0",
   "reflex-components-core >= 0.9.0",
   "reflex-components-dataeditor >= 0.9.0",
@@ -42,10 +41,11 @@ dependencies = [
   "reflex-components-markdown >= 0.9.0",
   "reflex-components-moment >= 0.9.0",
   "reflex-components-plotly >= 0.9.0",
-  "reflex-components-radix >= 0.9.0",
+  "reflex-components-radix >= 0.9.2",
   "reflex-components-react-player >= 0.9.0",
   "reflex-components-recharts >= 0.9.0",
   "reflex-components-sonner >= 0.9.0",
+  "reflex-hosting-cli >= 0.1.66",
 ]
 
 classifiers = [
@@ -111,6 +111,7 @@ dev = [
   "sqlmodel",
   "starlette-admin",
   "toml",
+  "towncrier",
   "typer",
   "uvicorn",
 ]
@@ -173,7 +174,6 @@ target-version = "py310"
 output-format = "concise"
 extend-exclude = ["tests/units/reflex_base/utils/pyi_generator/golden"]
 lint.isort.split-on-trailing-comma = false
-preview = true
 lint.select = ["ALL"]
 lint.ignore = [
   "A",
@@ -219,6 +219,7 @@ lint.flake8-bugbear.extend-immutable-calls = [
   "reflex_base.utils.types.Unset",
   "reflex_base.vars.base.Var.create",
 ]
+preview = true
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
@@ -249,6 +250,7 @@ lint.flake8-bugbear.extend-immutable-calls = [
 "*/.templates/apps/blank/code/*" = ["INP001"]
 "*/blank.py" = ["I001"]
 "docs/package/scripts/*.py" = ["INP001"]
+"scripts/check_min_deps.py" = ["T201"]
 
 [tool.pytest.ini_options]
 filterwarnings = "ignore:fields may not start with an underscore:RuntimeWarning"
@@ -316,6 +318,53 @@ exclude_also = [
 
 [tool.coverage.html]
 directory = "coverage_html_report"
+
+[tool.towncrier]
+# Shared monorepo config. package/name intentionally empty — each invocation
+# passes --dir <package_path> --name <package> --version <vX.Y.Z> to target a
+# specific package. See https://towncrier.readthedocs.io/en/stable/monorepo.html
+package = ""
+name = ""
+directory = "news"
+filename = "CHANGELOG.md"
+title_format = "## {version} ({project_date})"
+issue_format = "[#{issue}](https://github.com/reflex-dev/reflex/issues/{issue})"
+start_string = "<!-- towncrier release notes start -->\n"
+
+[[tool.towncrier.type]]
+directory = "breaking"
+name = "Breaking Changes"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "deprecation"
+name = "Deprecations"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "feature"
+name = "Features"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "bugfix"
+name = "Bug Fixes"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "performance"
+name = "Performance"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "docs"
+name = "Documentation"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "misc"
+name = "Miscellaneous"
+showcontent = true
 
 [tool.uv]
 required-version = ">=0.7.0"

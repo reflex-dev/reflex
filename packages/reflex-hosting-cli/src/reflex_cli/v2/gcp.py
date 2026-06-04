@@ -7,12 +7,15 @@ referenced with ``gcloud builds submit --config=...``) — the user's project
 tree is never modified. The script reads its parameters from environment
 variables (GCP_PROJECT, GCP_REGION, SERVICE_NAME, AR_REPO, VERSION,
 CLOUD_RUN_CPU, CLOUD_RUN_MEMORY, CLOUD_RUN_MIN_INSTANCES,
-REFLEX_CLOUDBUILD_YAML).
+CLOUD_RUN_MAX_INSTANCES, CLOUD_RUN_ALLOW_UNAUTHENTICATED,
+CLOUD_RUN_SERVICE_ACCOUNT, REFLEX_CLOUDBUILD_YAML,
+REFLEX_ENV_VARS_FILE).
 """
 
 from __future__ import annotations
 
 import contextlib
+import json
 import os
 import re
 import shutil
@@ -41,9 +44,15 @@ ENV_VERSION = "VERSION"
 ENV_CPU = "CLOUD_RUN_CPU"
 ENV_MEMORY = "CLOUD_RUN_MEMORY"
 ENV_MIN_INSTANCES = "CLOUD_RUN_MIN_INSTANCES"
+ENV_MAX_INSTANCES = "CLOUD_RUN_MAX_INSTANCES"
+ENV_ALLOW_UNAUTHENTICATED = "CLOUD_RUN_ALLOW_UNAUTHENTICATED"
+ENV_SERVICE_ACCOUNT = "CLOUD_RUN_SERVICE_ACCOUNT"
 # Path to the Cloud Build config file written by the CLI. The rewritten
 # deploy script references it as ``--config="${REFLEX_CLOUDBUILD_YAML}"``.
 ENV_REFLEX_CLOUDBUILD_YAML = "REFLEX_CLOUDBUILD_YAML"
+# Path to a YAML file with user-supplied env vars. When set, the deploy
+# script passes it to ``gcloud run deploy --env-vars-file=...``.
+ENV_REFLEX_ENV_VARS_FILE = "REFLEX_ENV_VARS_FILE"
 
 # Pattern for the start of the `gcloud builds submit` invocation in the
 # Reflex deploy script. We rewrite that whole multi-line command to use
@@ -163,6 +172,38 @@ DEPLOY_ENV_ALLOWLIST = frozenset({
     help="Minimum number of Cloud Run instances to keep warm (sets CLOUD_RUN_MIN_INSTANCES). Set to 0 to scale to zero.",
 )
 @click.option(
+    "--max-instances",
+    "max_instances",
+    default=100,
+    show_default=True,
+    type=click.IntRange(min=1),
+    help="Maximum number of Cloud Run instances during autoscaling (sets CLOUD_RUN_MAX_INSTANCES). Caps cost under traffic spikes.",
+)
+@click.option(
+    "--allow-unauthenticated/--no-allow-unauthenticated",
+    "allow_unauthenticated",
+    default=True,
+    show_default=True,
+    help="Whether to make the Cloud Run service publicly reachable (sets CLOUD_RUN_ALLOW_UNAUTHENTICATED). Use --no-allow-unauthenticated for internal / IAP-fronted services; callers will then need a roles/run.invoker IAM binding.",
+)
+@click.option(
+    "--service-account",
+    "service_account",
+    default=None,
+    help="IAM service account email the Cloud Run service runs as (sets CLOUD_RUN_SERVICE_ACCOUNT). If omitted, Cloud Run uses the project's default compute SA. The deploying principal needs roles/iam.serviceAccountUser on the target SA.",
+)
+@click.option(
+    "--envfile",
+    default=None,
+    help="Path to a .env file. Loaded into the Cloud Run service as env vars. Takes precedence over --env.",
+)
+@click.option(
+    "--env",
+    "envs",
+    multiple=True,
+    help="Environment variable to set on the Cloud Run service: <key>=<value>. Repeat for multiple, e.g. --env K1=V1 --env K2=V2. Plain Cloud Run env vars — visible to anyone with roles/run.viewer; for sensitive values use Secret Manager separately.",
+)
+@click.option(
     "--source",
     "source_dir",
     default=".",
@@ -199,6 +240,11 @@ def deploy_command(
     cpu: str,
     memory: str,
     min_instances: int,
+    max_instances: int,
+    allow_unauthenticated: bool,
+    service_account: str | None,
+    envfile: str | None,
+    envs: tuple[str, ...],
     source_dir: str,
     token: str | None,
     interactive: bool,
@@ -226,6 +272,13 @@ def deploy_command(
     if not gcp_project:
         console.error("--gcp-project is required when using --gcp.")
         raise click.exceptions.Exit(2)
+    if max_instances < min_instances:
+        console.error(
+            f"--max-instances ({max_instances}) must be >= --min-instances ({min_instances})."
+        )
+        raise click.exceptions.Exit(2)
+
+    parsed_envs = _parse_envs(envfile=envfile, envs=envs)
 
     authenticated_client = hosting.get_authenticated_client(
         token=token, interactive=interactive
@@ -262,6 +315,21 @@ def deploy_command(
 
     dockerfile, deploy_script = _request_manifest(authenticated_client.token)
 
+    # If the user asks for a private service, abort when the fetched script
+    # doesn't reference CLOUD_RUN_ALLOW_UNAUTHENTICATED. Without that backend
+    # support the deploy would silently use the script's hard-coded
+    # --allow-unauthenticated, producing a public service when the user
+    # explicitly asked for a private one — a silent privacy flip we'd rather
+    # fail loud on.
+    if not allow_unauthenticated and ENV_ALLOW_UNAUTHENTICATED not in deploy_script:
+        console.error(
+            "The Reflex backend's deploy script doesn't yet recognize "
+            f"{ENV_ALLOW_UNAUTHENTICATED} — without it, --no-allow-unauthenticated "
+            "would be silently ignored and the service would deploy as PUBLIC. "
+            "Upgrade the Reflex backend, or remove --no-allow-unauthenticated."
+        )
+        raise click.exceptions.Exit(1)
+
     source_path = Path(source_dir).resolve()
     if not source_path.is_dir():
         console.error(f"Source directory does not exist: {source_path}")
@@ -284,7 +352,14 @@ def deploy_command(
         ENV_CPU: cpu,
         ENV_MEMORY: memory,
         ENV_MIN_INSTANCES: str(min_instances),
+        ENV_MAX_INSTANCES: str(max_instances),
+        ENV_ALLOW_UNAUTHENTICATED: "true" if allow_unauthenticated else "false",
     }
+    if service_account is not None:
+        if not service_account:
+            console.error("--service-account cannot be an empty string.")
+            raise click.exceptions.Exit(2)
+        deploy_env[ENV_SERVICE_ACCOUNT] = service_account
 
     console.info("Received deploy manifest from Reflex.")
     console.print("")
@@ -306,6 +381,8 @@ def deploy_command(
         "tempfile; your source directory is not modified."
     )
 
+    env_vars_yaml = _format_env_vars_yaml(parsed_envs) if parsed_envs else None
+
     if dry_run:
         console.print("")
         console.print("cloudbuild.yaml contents:")
@@ -317,6 +394,12 @@ def deploy_command(
         console.print("─" * 60)
         console.print(dockerfile)
         console.print("─" * 60)
+        if env_vars_yaml is not None:
+            console.print("")
+            console.print(f"env-vars file contents ({len(parsed_envs)} variable(s)):")
+            console.print("─" * 60)
+            console.print(env_vars_yaml)
+            console.print("─" * 60)
         console.info("Dry run — nothing staged or executed.")
         return
 
@@ -328,15 +411,21 @@ def deploy_command(
             console.warn("Aborted by user.")
             raise click.exceptions.Exit(1)
 
-    with _temp_cloudbuild_yaml(cloudbuild_yaml) as cloudbuild_path:
+    with contextlib.ExitStack() as stack:
+        cloudbuild_path = stack.enter_context(_temp_cloudbuild_yaml(cloudbuild_yaml))
+        env_overrides = {
+            **deploy_env,
+            ENV_REFLEX_CLOUDBUILD_YAML: str(cloudbuild_path),
+        }
+        if env_vars_yaml is not None:
+            env_vars_path = stack.enter_context(_temp_env_vars_yaml(env_vars_yaml))
+            env_overrides[ENV_REFLEX_ENV_VARS_FILE] = str(env_vars_path)
+
         exit_code = _run_deploy_script(
             bash_path=bash_path,
             script=deploy_script,
             cwd=source_path,
-            env_overrides={
-                **deploy_env,
-                ENV_REFLEX_CLOUDBUILD_YAML: str(cloudbuild_path),
-            },
+            env_overrides=env_overrides,
         )
     if exit_code != 0:
         console.error(f"Deploy script exited with status {exit_code}.")
@@ -561,6 +650,85 @@ def _temp_cloudbuild_yaml(contents: str):
     finally:
         with contextlib.suppress(FileNotFoundError):
             path.unlink()
+
+
+@contextlib.contextmanager
+def _temp_env_vars_yaml(contents: str):
+    """Write the env-vars YAML to a tempfile and yield its path; always clean up.
+
+    Args:
+        contents: The YAML body to write (one ``KEY: "value"`` line per env var).
+
+    Yields:
+        The path to the written tempfile.
+
+    """
+    fd, path_str = tempfile.mkstemp(prefix="reflex-env-vars-", suffix=".yaml")
+    path = Path(path_str)
+    try:
+        with os.fdopen(fd, "w") as fh:
+            fh.write(contents)
+        yield path
+    finally:
+        with contextlib.suppress(FileNotFoundError):
+            path.unlink()
+
+
+def _parse_envs(envfile: str | None, envs: tuple[str, ...]) -> dict[str, str]:
+    """Resolve --envfile + --env into a single dict of env vars.
+
+    Mirrors the precedence of the existing `reflex deploy` / `reflex secrets
+    update` flow: when both are provided, --envfile wins and --env is
+    discarded with a warning. Empty values are preserved as empty strings;
+    keys defined without a value in the envfile (``FOO`` with no ``=``)
+    become empty strings rather than ``None``.
+
+    Args:
+        envfile: Path to a .env file, or None.
+        envs: Tuple of ``KEY=VALUE`` strings from repeated --env flags.
+
+    Returns:
+        Dict of env var name → string value. Empty when neither input is set.
+
+    """
+    from reflex_cli.utils import hosting
+
+    if envfile and envs:
+        console.warn("--envfile is set; ignoring --env")
+
+    if envfile:
+        try:
+            from dotenv import dotenv_values  # pyright: ignore[reportMissingImports]
+        except ImportError:
+            console.error(
+                'The `python-dotenv` package is required for --envfile. Run `pip install "python-dotenv>=1.0.1"`.'
+            )
+            raise click.exceptions.Exit(1) from None
+        return {
+            k: (v if v is not None else "") for k, v in dotenv_values(envfile).items()
+        }
+
+    if envs:
+        return hosting.process_envs(list(envs))
+
+    return {}
+
+
+def _format_env_vars_yaml(envs: dict[str, str]) -> str:
+    """Format env vars as YAML for gcloud ``--env-vars-file``.
+
+    Uses ``json.dumps`` per value so any string — quotes, backslashes,
+    newlines, unicode — is encoded safely. JSON strings are valid YAML, so
+    the output round-trips through gcloud's YAML loader.
+
+    Args:
+        envs: Dict of env var name → string value.
+
+    Returns:
+        YAML body with one ``KEY: "value"`` line per env var.
+
+    """
+    return "".join(f"{k}: {json.dumps(v)}\n" for k, v in envs.items())
 
 
 def _run_deploy_script(

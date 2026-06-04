@@ -36,7 +36,7 @@ from typing_extensions import (
 
 from reflex_base import constants
 from reflex_base.components.field import BaseField
-from reflex_base.constants.compiler import CompileVars, Hooks, Imports
+from reflex_base.constants.compiler import CompileVars, Imports
 from reflex_base.utils import format
 from reflex_base.utils.decorator import once
 from reflex_base.utils.exceptions import (
@@ -1090,14 +1090,14 @@ class FileUpload:
         """
         from reflex_components_core.core.upload import (
             DEFAULT_UPLOAD_ID,
-            upload_files_context_var_data,
+            get_upload_files_context_var_data,
         )
 
         upload_id = self.upload_id if self.upload_id is not None else DEFAULT_UPLOAD_ID
         upload_files_var = Var(
             _js_expr="filesById",
             _var_type=dict[str, Any],
-            _var_data=VarData.merge(upload_files_context_var_data),
+            _var_data=VarData.merge(get_upload_files_context_var_data()),
         ).to(ObjectVar)[LiteralVar.create(upload_id)]
         spec_args = [
             (
@@ -2142,11 +2142,14 @@ def call_event_fn(
             _js_expr=f'typeof {alias_name} === "function"',
             _var_type=bool,
         )
+        # Lazy import: state_context → component → event (this module).
+        from reflex_base.components.state_context import get_event_app_wraps
+
         add_events = FunctionStringVar.create(
             CompileVars.ADD_EVENTS,
             _var_data=VarData(
                 imports=Imports.EVENTS,
-                hooks={Hooks.EVENTS: None},
+                app_wraps=get_event_app_wraps(),
             ),
         )
         dispatch_expr = ternary_operation(
@@ -2462,11 +2465,14 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
             arg_def_expr = Var(_js_expr="args")
 
         if value.invocation is None:
+            # Lazy import: state_context → component → event (this module).
+            from reflex_base.components.state_context import get_event_app_wraps
+
             invocation = FunctionStringVar.create(
                 CompileVars.ADD_EVENTS,
                 _var_data=VarData(
                     imports=Imports.EVENTS,
-                    hooks={Hooks.EVENTS: None},
+                    app_wraps=get_event_app_wraps(),
                 ),
             )
         else:
@@ -2507,11 +2513,14 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
                 _js_expr=f"{{{''.join(f'{statement};' for statement in statements)}}}",
             )
             if value.event_actions:
+                # Lazy import: state_context → component → event (this module).
+                from reflex_base.components.state_context import get_event_app_wraps
+
                 apply_event_actions = FunctionStringVar.create(
                     CompileVars.APPLY_EVENT_ACTIONS,
                     _var_data=VarData(
                         imports=Imports.EVENTS,
-                        hooks={Hooks.EVENTS: None},
+                        app_wraps=get_event_app_wraps(),
                     ),
                 )
                 return_expr = apply_event_actions.call(

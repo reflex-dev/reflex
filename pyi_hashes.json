@@ -20,7 +20,7 @@
   "packages/reflex-components-core/src/reflex_components_core/core/helmet.pyi": "5d542049d242432da93bdb37f064232c",
   "packages/reflex-components-core/src/reflex_components_core/core/html.pyi": "90f372ef93b742ed445a6afa8b671e5c",
   "packages/reflex-components-core/src/reflex_components_core/core/sticky.pyi": "fe237bf5b5c0030cb85c7b72b2eabdfe",
-  "packages/reflex-components-core/src/reflex_components_core/core/upload.pyi": "5937accd238b386ed68adc40c88eb5b4",
+  "packages/reflex-components-core/src/reflex_components_core/core/upload.pyi": "b8e4b197e7678faa653d9a2f7da10591",
   "packages/reflex-components-core/src/reflex_components_core/core/window_events.pyi": "c51889b4e63f6b3132ae195da959ea1e",
   "packages/reflex-components-core/src/reflex_components_core/datadisplay/__init__.pyi": "c96fed4da42a13576d64f84e3c7cb25c",
   "packages/reflex-components-core/src/reflex_components_core/el/__init__.pyi": "f09129ddefb57ab4c7769c86dc9a3153",
@@ -40,7 +40,7 @@
   "packages/reflex-components-dataeditor/src/reflex_components_dataeditor/dataeditor.pyi": "69b644aa2d116ea3532155ada09be70a",
   "packages/reflex-components-gridjs/src/reflex_components_gridjs/datatable.pyi": "74ce1f8a302aa9b9b317e6e63e5dac41",
   "packages/reflex-components-lucide/src/reflex_components_lucide/icon.pyi": "45c585da411e66228ee2b75fdfd4c2e4",
-  "packages/reflex-components-markdown/src/reflex_components_markdown/markdown.pyi": "f8cc52a4790ef4d761b2e214afc2094d",
+  "packages/reflex-components-markdown/src/reflex_components_markdown/markdown.pyi": "62a1b311ed239ff1dc943478ae2b7c7d",
   "packages/reflex-components-moment/src/reflex_components_moment/moment.pyi": "2623f3930c838f52a13018fb5ded01c0",
   "packages/reflex-components-plotly/src/reflex_components_plotly/plotly.pyi": "700dac836a2610094c4e85e068d2c8f7",
   "packages/reflex-components-radix/src/reflex_components_radix/__init__.pyi": "19216eb3618f68c8a76e5e43801cf4af",
@@ -118,7 +118,7 @@
   "packages/reflex-components-recharts/src/reflex_components_recharts/polar.pyi": "1ad9783b38fda94d9c64ac808a7f2535",
   "packages/reflex-components-recharts/src/reflex_components_recharts/recharts.pyi": "193ab7e39b83b8898feeeed98f21d542",
   "packages/reflex-components-sonner/src/reflex_components_sonner/toast.pyi": "13e2466062abe801d0741b55a39ae978",
-  "reflex/__init__.pyi": "3a9bb8544cbc338ffaf0a5927d9156df",
+  "reflex/__init__.pyi": "674cc55e646deb97c0e414e1d0e850ef",
   "reflex/components/__init__.pyi": "f39a2af77f438fa243c58c965f19d42e",
-  "reflex/experimental/memo.pyi": "20f0711ba049e999fef795ae87e430cb"
+  "reflex/experimental/memo.pyi": "65d82b5be0014638d8d1f830aef66f45"
 }

@@ -3,19 +3,18 @@
 from __future__ import annotations
 
 import contextlib
+import copy
 import dataclasses
 import enum
 import functools
-import inspect
 import operator
 import typing
 from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import _MISSING_TYPE, MISSING
-from functools import wraps
 from hashlib import md5
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, ClassVar, TypeVar, cast, get_args, get_origin
+from typing import TYPE_CHECKING, Any, ClassVar, TypeVar, cast
 
 from rich.markup import escape
 from typing_extensions import dataclass_transform
@@ -27,18 +26,13 @@ from reflex_base.components.field import BaseField, FieldBasedMeta
 from reflex_base.components.tags import Tag
 from reflex_base.constants import Dirs, EventTriggers, Hooks, Imports, MemoizationMode
 from reflex_base.constants.compiler import SpecialAttributes
-from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER
 from reflex_base.event import (
     EventCallback,
     EventChain,
-    EventHandler,
     EventSpec,
     args_specs_from_fields,
     no_args_event_spec,
-    parse_args_spec,
     pointer_event_spec,
-    run_script,
-    unwrap_var_annotation,
 )
 from reflex_base.style import Style, format_as_emotion
 from reflex_base.utils import console, format, imports, types
@@ -52,11 +46,7 @@ from reflex_base.vars.base import (
     Var,
     cached_property_no_lock,
 )
-from reflex_base.vars.function import (
-    ArgsFunctionOperation,
-    FunctionStringVar,
-    FunctionVar,
-)
+from reflex_base.vars.function import ArgsFunctionOperation, FunctionStringVar
 from reflex_base.vars.number import ternary_operation
 from reflex_base.vars.object import ObjectVar
 from reflex_base.vars.sequence import LiteralArrayVar, LiteralStringVar, StringVar
@@ -290,6 +280,15 @@ class BaseComponentMeta(FieldBasedMeta, ABCMeta):
         }
 
 
+_COMPILE_CACHE_ATTRS = (
+    "_cached_render_result",
+    "_vars_cache",
+    "_imports_cache",
+    "_hooks_internal_cache",
+    "_get_component_prop_property",
+)
+
+
 class BaseComponent(metaclass=BaseComponentMeta):
     """The base class for all Reflex components.
 
@@ -360,16 +359,36 @@ class BaseComponent(metaclass=BaseComponentMeta):
         new._clear_compile_caches()
         return new
 
+    def __deepcopy__(self, memo: dict[int, Any]) -> BaseComponent:
+        """Return a deep copy suitable for compile-time mutation.
+
+        Like :meth:`__copy__`, the clone exists for the compiler to mutate
+        (e.g. rebinding ``children`` while assembling the app-wrap chain in
+        ``App._app_root``), so the render-path caches populated on the
+        original are not carried over — otherwise ``render()`` on the mutated
+        clone would return the pre-mutation result. Unlike ``__copy__``,
+        nested mutable containers are deep-copied so the clone is fully
+        independent of the original.
+
+        Args:
+            memo: The deepcopy memo mapping object ids to their copies.
+
+        Returns:
+            A deep-copied instance with compile-time caches dropped.
+        """
+        new = self.__class__.__new__(self.__class__)
+        memo[id(self)] = new
+        new_dict = vars(new)
+        for key, value in vars(self).items():
+            if key in _COMPILE_CACHE_ATTRS:
+                continue
+            new_dict[key] = copy.deepcopy(value, memo)
+        return new
+
     def _clear_compile_caches(self) -> None:
         """Clear cached render/compiler artifacts after compile-time mutation."""
         attrs = cast("dict[str, Any]", vars(self))
-        for attr in (
-            "_cached_render_result",
-            "_vars_cache",
-            "_imports_cache",
-            "_hooks_internal_cache",
-            "_get_component_prop_property",
-        ):
+        for attr in _COMPILE_CACHE_ATTRS:
             attrs.pop(attr, None)
 
     def __eq__(self, value: Any) -> bool:
@@ -1984,14 +2003,16 @@ class Component(BaseComponent, ABC):
     def _get_events_hooks(self) -> dict[str, VarData | None]:
         """Get the hooks required by events referenced in this component.
 
+        Always empty: ``addEvents`` is reached via the module-level import
+        in ``Imports.EVENTS``, so events need no in-scope hook. The state/
+        event-loop providers they still depend on are mounted as app wraps
+        instead — carried on the event invocation's ``VarData.app_wraps``
+        and via :meth:`_get_event_app_wraps`.
+
         Returns:
-            The hooks for the events.
+            An empty dict.
         """
-        return (
-            {Hooks.EVENTS: VarData(position=Hooks.HookPosition.INTERNAL)}
-            if self.event_triggers
-            else {}
-        )
+        return {}
 
     def _get_hooks_internal(self) -> dict[str, VarData | None]:
         """Get the React hooks for this component managed by the framework.
@@ -2146,6 +2167,35 @@ class Component(BaseComponent, ABC):
         """
         return {}
 
+    def _get_event_app_wraps(self) -> dict[tuple[int, str], Component]:
+        """Return state/event-loop providers required by event triggers.
+
+        A component with event triggers calls ``addEvents`` at runtime,
+        which only does anything if ``StateProvider`` (supplies the
+        dispatch context) and ``EventLoopProvider`` (runs the websocket)
+        are mounted as ancestors. ``addEvents`` now comes from a
+        module-level import rather than an in-scope hook, so nothing drags
+        those providers into the tree on its own — this method requests
+        them explicitly as app wraps.
+
+        Kept separate from :meth:`_get_app_wrap_components` because
+        subclasses override that method to add their own app wraps; folding
+        these in would let such an override silently drop them.
+
+        Returns:
+            The state/event-loop provider entries (empty if no event
+            triggers are bound).
+        """
+        if not self.event_triggers:
+            return {}
+        # Lazy import: state_context imports from this module.
+        from reflex_base.components.state_context import get_event_app_wraps
+
+        return {
+            (priority, provider.tag or type(provider).__name__): provider
+            for priority, provider in get_event_app_wraps()
+        }
+
     def _get_all_app_wrap_components(
         self, *, ignore_ids: set[int] | None = None
     ) -> dict[tuple[int, str], Component]:
@@ -2181,315 +2231,6 @@ class Component(BaseComponent, ABC):
 
         # Return the components.
         return components
-
-
-class CustomComponent(Component):
-    """A custom user-defined component."""
-
-    # Use the components library.
-    library = f"$/{Dirs.COMPONENTS_PATH}"
-
-    component_fn: Callable[..., Component] = field(
-        doc="The function that creates the component.", default=Component.create
-    )
-
-    props: dict[str, Any] = field(
-        doc="The props of the component.", default_factory=dict
-    )
-
-    def _post_init(self, **kwargs):
-        """Initialize the custom component.
-
-        Args:
-            **kwargs: The kwargs to pass to the component.
-        """
-        component_fn = kwargs.get("component_fn")
-
-        # Set the props.
-        props_types = typing.get_type_hints(component_fn) if component_fn else {}
-        props = {key: value for key, value in kwargs.items() if key in props_types}
-        kwargs = {key: value for key, value in kwargs.items() if key not in props_types}
-
-        event_types = {
-            key
-            for key in props
-            if (
-                (get_origin((annotation := props_types.get(key))) or annotation)
-                == EventHandler
-            )
-        }
-
-        def get_args_spec(key: str) -> types.ArgsSpec | Sequence[types.ArgsSpec]:
-            type_ = props_types[key]
-
-            return (
-                args[0]
-                if (args := get_args(type_))
-                else (
-                    annotation_args[1]
-                    if get_origin(
-                        annotation := inspect.getfullargspec(component_fn).annotations[
-                            key
-                        ]
-                    )
-                    is typing.Annotated
-                    and (annotation_args := get_args(annotation))
-                    else no_args_event_spec
-                )
-            )
-
-        super()._post_init(
-            event_triggers={
-                key: EventChain.create(
-                    value=props[key],
-                    args_spec=get_args_spec(key),
-                    key=key,
-                )
-                for key in event_types
-            },
-            **kwargs,
-        )
-
-        to_camel_cased_props = {
-            format.to_camel_case(key): None for key in props if key not in event_types
-        }
-        self.get_props = lambda: to_camel_cased_props  # pyright: ignore [reportIncompatibleVariableOverride]
-
-        # Unset the style.
-        self.style = Style()
-
-        # Set the tag to the name of the function.
-        self.tag = format.to_title_case(self.component_fn.__name__)
-
-        for key, value in props.items():
-            # Skip kwargs that are not props.
-            if key not in props_types:
-                continue
-
-            camel_cased_key = format.to_camel_case(key)
-
-            # Get the type based on the annotation.
-            type_ = props_types[key]
-
-            # Handle event chains.
-            if type_ is EventHandler:
-                inspect.getfullargspec(component_fn).annotations[key]
-                self.props[camel_cased_key] = EventChain.create(
-                    value=value, args_spec=get_args_spec(key), key=key
-                )
-                continue
-
-            value = LiteralVar.create(value)
-            self.props[camel_cased_key] = value
-            setattr(self, camel_cased_key, value)
-
-    def __eq__(self, other: Any) -> bool:
-        """Check if the component is equal to another.
-
-        Args:
-            other: The other component.
-
-        Returns:
-            Whether the component is equal to the other.
-        """
-        return isinstance(other, CustomComponent) and self.tag == other.tag
-
-    def __hash__(self) -> int:
-        """Get the hash of the component.
-
-        Returns:
-            The hash of the component.
-        """
-        return hash(self.tag)
-
-    @classmethod
-    def get_props(cls) -> Iterable[str]:
-        """Get the props for the component.
-
-        Returns:
-            The set of component props.
-        """
-        return ()
-
-    @staticmethod
-    def _get_event_spec_from_args_spec(name: str, event: EventChain) -> Callable:
-        """Get the event spec from the args spec.
-
-        Args:
-            name: The name of the event
-            event: The args spec.
-
-        Returns:
-            The event spec.
-        """
-
-        def fn(*args):
-            return run_script(Var(name).to(FunctionVar).call(*args))
-
-        if event.args_spec:
-            arg_spec = (
-                event.args_spec
-                if not isinstance(event.args_spec, Sequence)
-                else event.args_spec[0]
-            )
-            names = inspect.getfullargspec(arg_spec).args
-            fn.__signature__ = inspect.Signature(  # pyright: ignore[reportFunctionMemberAccess]
-                parameters=[
-                    inspect.Parameter(
-                        name=name,
-                        kind=inspect.Parameter.POSITIONAL_ONLY,
-                        annotation=arg._var_type,
-                    )
-                    for name, arg in zip(
-                        names, parse_args_spec(event.args_spec)[0], strict=True
-                    )
-                ]
-            )
-
-        return fn
-
-    def get_prop_vars(self) -> list[Var | Callable]:
-        """Get the prop vars.
-
-        Returns:
-            The prop vars.
-        """
-        return [
-            Var(
-                _js_expr=name + CAMEL_CASE_MEMO_MARKER,
-                _var_type=(prop._var_type if isinstance(prop, Var) else type(prop)),
-            ).guess_type()
-            if isinstance(prop, Var) or not isinstance(prop, EventChain)
-            else CustomComponent._get_event_spec_from_args_spec(
-                name + CAMEL_CASE_MEMO_MARKER, prop
-            )
-            for name, prop in self.props.items()
-        ]
-
-    @functools.cache  # noqa: B019
-    def get_component(self) -> Component:
-        """Render the component.
-
-        Returns:
-            The code to render the component.
-        """
-        component = self.component_fn(*self.get_prop_vars())
-
-        try:
-            from reflex.utils.prerequisites import get_and_validate_app
-
-            style = get_and_validate_app().app.style
-        except Exception:
-            style = {}
-
-        component._add_style_recursive(style)
-        return component
-
-    def _get_all_app_wrap_components(
-        self, *, ignore_ids: set[int] | None = None
-    ) -> dict[tuple[int, str], Component]:
-        """Get the app wrap components for the custom component.
-
-        Args:
-            ignore_ids: A set of IDs to ignore to avoid infinite recursion.
-
-        Returns:
-            The app wrap components.
-        """
-        ignore_ids = ignore_ids or set()
-        component = self.get_component()
-        if id(component) in ignore_ids:
-            return {}
-        ignore_ids.add(id(component))
-        return self.get_component()._get_all_app_wrap_components(ignore_ids=ignore_ids)
-
-
-CUSTOM_COMPONENTS: dict[str, CustomComponent] = {}
-
-
-def _register_custom_component(
-    component_fn: Callable[..., Component],
-):
-    """Register a custom component to be compiled.
-
-    Args:
-        component_fn: The function that creates the component.
-
-    Returns:
-        The custom component.
-
-    Raises:
-        TypeError: If the tag name cannot be determined.
-    """
-    dummy_props = {
-        prop: (
-            Var(
-                "",
-                _var_type=unwrap_var_annotation(annotation),
-            ).guess_type()
-            if not types.safe_issubclass(annotation, EventHandler)
-            else EventSpec(handler=EventHandler(fn=no_args_event_spec))
-        )
-        for prop, annotation in typing.get_type_hints(component_fn).items()
-        if prop != "return"
-    }
-    dummy_component = CustomComponent._create(
-        children=[],
-        component_fn=component_fn,
-        **dummy_props,
-    )
-    if dummy_component.tag is None:
-        msg = f"Could not determine the tag name for {component_fn!r}"
-        raise TypeError(msg)
-    CUSTOM_COMPONENTS[dummy_component.tag] = dummy_component
-    return dummy_component
-
-
-def custom_component(
-    component_fn: Callable[..., Component],
-) -> Callable[..., CustomComponent]:
-    """Create a custom component from a function.
-
-    Args:
-        component_fn: The function that creates the component.
-
-    Returns:
-        The decorated function.
-    """
-
-    @wraps(component_fn)
-    def wrapper(*children, **props) -> CustomComponent:
-        # Remove the children from the props.
-        props.pop("children", None)
-        return CustomComponent._create(
-            children=list(children), component_fn=component_fn, **props
-        )
-
-    # Register this component so it can be compiled.
-    dummy_component = _register_custom_component(component_fn)
-    if tag := dummy_component.tag:
-        object.__setattr__(
-            wrapper,
-            "_as_var",
-            lambda: Var(
-                tag,
-                _var_type=type[Component],
-                _var_data=VarData(
-                    imports={
-                        f"$/{constants.Dirs.UTILS}/components": [ImportVar(tag=tag)],
-                        "@emotion/react": [
-                            ImportVar(tag="jsx"),
-                        ],
-                    }
-                ),
-            ),
-        )
-
-    return wrapper
-
-
-# Alias memo to custom_component.
-memo = custom_component
 
 
 class NoSSRComponent(Component):
