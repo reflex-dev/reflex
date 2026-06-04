@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, TypedDict, cast
 
+from packaging.requirements import Requirement
 from packaging.utils import canonicalize_name
 from reflex_base import constants
 from reflex_base.config import get_config
@@ -217,24 +218,32 @@ def get_reflex_enterprise_version() -> str | None:
 
 
 def get_reflex_package_versions() -> dict[str, str]:
-    """Get the versions of all installed Reflex subpackages.
+    """Get the versions of the installed Reflex subpackages.
 
-    Discovers every installed distribution whose canonical name starts with
-    ``reflex-`` (e.g. ``reflex-base`` and the ``reflex-components-*`` family),
-    mapping each package name to its installed version. The main ``reflex``
-    package is reported separately via ``get_reflex_version``.
+    Reports only the first-party subpackages distributed with Reflex from this
+    repository (``reflex-base``, the ``reflex-components-*`` family and
+    ``reflex-hosting-cli``). The set is derived from the ``reflex``
+    distribution's own declared dependencies, so unrelated third-party
+    ``reflex-*`` packages a user may have installed are never reported. The main
+    ``reflex`` package is reported separately via ``get_reflex_version``.
 
     Returns:
         A mapping of Reflex subpackage name to installed version, sorted by name.
     """
+    try:
+        requirements = importlib.metadata.requires("reflex") or ()
+    except importlib.metadata.PackageNotFoundError:
+        return {}
+
     versions: dict[str, str] = {}
-    for dist in importlib.metadata.distributions():
-        name = dist.name
-        if not name:
+    for requirement in requirements:
+        name = canonicalize_name(Requirement(requirement).name)
+        if not name.startswith("reflex-"):
             continue
-        canonical = canonicalize_name(name)
-        if canonical.startswith("reflex-"):
-            versions.setdefault(canonical, dist.version)
+        try:
+            versions[name] = importlib.metadata.version(name)
+        except importlib.metadata.PackageNotFoundError:
+            continue
     return dict(sorted(versions.items()))
 
 
