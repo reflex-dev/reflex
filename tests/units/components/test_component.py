@@ -1,3 +1,4 @@
+import copy
 from contextlib import nullcontext
 from dataclasses import dataclass
 from typing import Any, ClassVar
@@ -2263,3 +2264,33 @@ def test_component_equality_handles_var_fields():
     dict_a = VarProbe.create(meta={"k": VarState.text})
     dict_b = VarProbe.create(meta={"k": VarState.text})
     assert dict_a == dict_b
+
+
+def test_deepcopy_drops_stale_render_cache() -> None:
+    """A deep-copied component must re-render after its children are mutated.
+
+    ``render()`` memoizes ``_cached_render_result``. The compiler deep-copies
+    app-wrap components and rebinds their ``children`` (e.g. in
+    ``App._app_root``); if the clone kept the original's cache, the appended
+    child would be silently dropped — the page content ``children`` would
+    never reach the rendered tree and the page would render blank.
+    """
+    original = Fragment.create()
+    original.render()  # populate _cached_render_result with no children
+
+    clone = copy.deepcopy(original)
+    clone.children.append(Bare.create(contents="page-content"))
+
+    assert len(clone.render()["children"]) == 1
+    # The original must be untouched (independent deep copy).
+    assert original.render()["children"] == []
+
+
+def test_deepcopy_produces_independent_children() -> None:
+    """Deep copy must not share the ``children`` list with the original."""
+    original = Fragment.create(Bare.create(contents="a"))
+    clone = copy.deepcopy(original)
+    clone.children.append(Bare.create(contents="b"))
+
+    assert len(original.children) == 1
+    assert len(clone.children) == 2

@@ -1,10 +1,12 @@
 import dataclasses
 from collections.abc import Sequence
+from typing import Any
 
 import pytest
+from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import GenericType
-from reflex_base.vars.base import Var
-from reflex_base.vars.object import LiteralObjectVar, ObjectVar
+from reflex_base.vars.base import Var, VarData
+from reflex_base.vars.object import LiteralObjectVar, ObjectVar, RestProp
 from reflex_base.vars.sequence import ArrayVar
 from typing_extensions import assert_type
 
@@ -164,3 +166,46 @@ def test_typing() -> None:
     _ = assert_type(list_var, ArrayVar[Sequence[Base]])
     list_var_0 = list_var[0]
     _ = assert_type(list_var_0, ObjectVar[Base])
+
+
+def test_rest_prop_merge_with_dict_preserves_type_and_spreads():
+    """`RestProp.merge` accepts a dict, spreads both, and stays a RestProp.
+
+    The result must remain a `RestProp` so a memo body can keep forwarding it
+    (e.g. `rest.merge({...})` passed positionally still lifts to a `{...}` spread).
+    """
+    rest = RestProp(_js_expr="rest", _var_type=dict[str, Any])
+
+    # A plain mapping merges like an object var (the signature accepts Mapping).
+    merged = rest.merge({"color": "red"})
+
+    assert isinstance(merged, RestProp)
+    assert merged._var_type == dict[str, Any]
+    assert str(merged) == '({...rest, ...({ ["color"] : "red" })})'
+
+
+def test_rest_prop_merge_with_object_var():
+    """`RestProp.merge` spreads another object Var after the rest props."""
+    rest = RestProp(_js_expr="rest", _var_type=dict[str, Any])
+    other = Var(_js_expr="extra", _var_type=dict).to(ObjectVar)
+
+    merged = rest.merge(other)
+
+    assert isinstance(merged, RestProp)
+    assert str(merged) == "({...rest, ...extra})"
+
+
+def test_rest_prop_merge_propagates_var_data():
+    """`RestProp.merge` carries the merged object's VarData (deps/imports)."""
+    rest = RestProp(_js_expr="rest", _var_type=dict[str, Any])
+    other = Var(
+        _js_expr="extra",
+        _var_type=dict,
+        _var_data=VarData(imports={"some-lib": [ImportVar(tag="thing")]}),
+    ).to(ObjectVar)
+
+    merged = rest.merge(other)
+
+    var_data = merged._get_all_var_data()
+    assert var_data is not None
+    assert "some-lib" in dict(var_data.imports)

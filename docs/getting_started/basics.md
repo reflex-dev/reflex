@@ -405,7 +405,6 @@ You've got the core pieces — components, state, events, compile-time vs. runti
 
 - [Dashboard tutorial](/docs/getting-started/dashboard-tutorial) — a data app with tables, forms, and state.
 - [Chatapp tutorial](/docs/getting-started/chatapp-tutorial) — streaming AI responses end-to-end.
-- [Open-source templates](/docs/getting-started/open-source-templates) — full apps to fork.
 ```
 
 ```md alert info

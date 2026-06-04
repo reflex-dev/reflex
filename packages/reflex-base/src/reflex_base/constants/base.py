@@ -101,8 +101,6 @@ class Reflex(SimpleNamespace):
     # The root directory of the reflex library.
     ROOT_DIR = Path(__file__).parents[1]
 
-    RELEASES_URL = "https://api.github.com/repos/reflex-dev/templates/releases"
-
     # The reflex stylesheet language supported
     STYLESHEETS_SUPPORTED = ["css", "sass", "scss"]
 
@@ -122,14 +120,6 @@ class Templates(SimpleNamespace):
 
     # The AI template
     AI = "ai"
-
-    # The option for the user to choose a remote template.
-    CHOOSE_TEMPLATES = "choose-templates"
-
-    # The URL to find reflex templates.
-    REFLEX_TEMPLATES_URL = (
-        "https://reflex.dev/docs/getting-started/open-source-templates/"
-    )
 
     # The reflex.build frontend host
     REFLEX_BUILD_FRONTEND = "https://build.reflex.dev"
