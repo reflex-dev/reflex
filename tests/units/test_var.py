@@ -12,6 +12,7 @@ from reflex_base.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENIN
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.utils.exceptions import (
     PrimitiveUnserializableToJSONError,
+    ReflexError,
     UntypedComputedVarError,
 )
 from reflex_base.utils.imports import ImportVar
@@ -21,7 +22,9 @@ from reflex_base.vars.base import (
     ComputedVar,
     LiteralVar,
     Var,
+    _decode_var_immutable,
     computed_var,
+    insert_app_wraps,
     var_operation,
     var_operation_return,
 )
@@ -1919,6 +1922,117 @@ def test_var_data_hooks():
 def test_var_data_with_hooks_value():
     var_data = VarData(hooks={"what": VarData(hooks={"whot": VarData(hooks="whott")})})
     assert var_data == VarData(hooks=["whott", "whot", "what"])
+
+
+def test_var_data_app_wraps_merge():
+    """Var-declared app_wraps merge and dedupe by the compiler registry key."""
+    wrapper_a = rx.fragment()
+    wrapper_b = rx.fragment()
+
+    vd_a = VarData(app_wraps=((10, wrapper_a),))
+    vd_b = VarData(app_wraps=((20, wrapper_b),))
+    vd_dup = VarData(app_wraps=((10, wrapper_a),))
+
+    merged = VarData.merge(vd_a, vd_b, vd_dup)
+    assert merged is not None
+    assert (10, wrapper_a) in merged.app_wraps
+    assert (20, wrapper_b) in merged.app_wraps
+    assert len(merged.app_wraps) == 2
+
+    # Equal wrappers at the same priority/tag dedupe even when they are fresh
+    # instances (wrapper_a and wrapper_b are both empty, hence equal).
+    vd_same_key = VarData(app_wraps=((10, wrapper_b),))
+    merged_same_key = VarData.merge(vd_a, vd_same_key)
+    assert merged_same_key is not None
+    assert merged_same_key.app_wraps == ((10, wrapper_a),)
+
+    # Same component at a different priority is a distinct entry.
+    vd_alt = VarData(app_wraps=((30, wrapper_a),))
+    merged_alt = VarData.merge(vd_a, vd_alt)
+    assert merged_alt is not None
+    assert len(merged_alt.app_wraps) == 2
+
+    # An empty VarData is falsy; one with app_wraps is truthy.
+    assert not VarData()
+    assert VarData(app_wraps=((10, wrapper_a),))
+
+
+def test_insert_app_wraps():
+    """The shared app-wrap primitive dedupes equal wraps and rejects conflicts."""
+    # Same tag ("Fragment") and priority; a/dup are equal, b is unequal.
+    wrap_a = rx.fragment(class_name="a")
+    wrap_a_dup = rx.fragment(class_name="a")
+    wrap_b = rx.fragment(class_name="b")
+
+    # Equal wraps at one key collapse to a single entry.
+    target: dict[tuple[int, str], rx.Component] = {}
+    insert_app_wraps(target, [(10, wrap_a), (10, wrap_a_dup)])
+    assert target == {(10, "Fragment"): wrap_a}
+
+    # A different wrapper at the same key is a conflict.
+    with pytest.raises(ReflexError, match="Conflicting app wraps"):
+        insert_app_wraps(target, [(10, wrap_b)])
+
+    # ``existing`` is consulted but never written: equal is skipped...
+    fresh: dict[tuple[int, str], rx.Component] = {}
+    insert_app_wraps(fresh, [(10, wrap_a_dup)], existing=target)
+    assert fresh == {}
+    # ...and a conflict against ``existing`` still raises.
+    with pytest.raises(ReflexError, match="Conflicting app wraps"):
+        insert_app_wraps({}, [(10, wrap_b)], existing=target)
+
+    # A different priority is a distinct slot.
+    insert_app_wraps(target, [(20, wrap_b)])
+    assert target[20, "Fragment"] is wrap_b
+
+
+def test_var_data_merge_raises_on_conflicting_app_wraps():
+    """The merge walk surfaces a conflict instead of silently keeping the first."""
+    # Same tag ("Fragment") and priority, unequal wrappers — a real conflict.
+    wrap_a = rx.fragment(class_name="a")
+    wrap_b = rx.fragment(class_name="b")
+
+    with pytest.raises(ReflexError, match="Conflicting app wraps"):
+        VarData.merge(
+            VarData(app_wraps=((10, wrap_a),)),
+            VarData(app_wraps=((10, wrap_b),)),
+        )
+
+
+def test_var_data_identity_hashes_component_metadata():
+    """VarData hashes component metadata without hashing components directly."""
+    wrapper_a = rx.fragment()
+    wrapper_b = rx.fragment()
+
+    base = VarData(hooks="useFoo")
+    wrap_with_a = VarData(hooks="useFoo", app_wraps=((10, wrapper_a),))
+    wrap_with_b = VarData(hooks="useFoo", app_wraps=((10, wrapper_b),))
+    component_with_a = VarData(hooks="useFoo", components=(wrapper_a,))
+    component_with_b = VarData(hooks="useFoo", components=(wrapper_b,))
+
+    assert base != wrap_with_a
+    assert wrap_with_a == wrap_with_b
+    assert hash(wrap_with_a) == hash(wrap_with_b)
+    assert component_with_a != component_with_b
+
+
+def test_var_hash_keeps_app_wrap_metadata_distinct():
+    """Formatted Var decode keeps app_wrap metadata when JS identity matches."""
+    wrapper = rx.fragment()
+    var_with_wrap = Var(
+        _js_expr="same",
+        _var_type=str,
+        _var_data=VarData(app_wraps=((10, wrapper),)),
+    )
+    plain_var = Var(_js_expr="same", _var_type=str, _var_data=VarData())
+
+    decoded_var_data, decoded_js_expr = _decode_var_immutable(
+        f"{var_with_wrap}{plain_var}"
+    )
+
+    assert decoded_js_expr == "samesame"
+    assert decoded_var_data is not None
+    assert decoded_var_data.app_wraps == ((10, wrapper),)
 
 
 def test_str_var_in_components(mocker: MockerFixture):
