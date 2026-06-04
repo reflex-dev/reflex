@@ -367,7 +367,7 @@ name = "Miscellaneous"
 showcontent = true
 
 [tool.uv]
-required-version = ">=0.10"
+required-version = ">=0.9.17"
 exclude-newer = "7 days"
 
 [tool.uv.sources]
