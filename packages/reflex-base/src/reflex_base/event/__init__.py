@@ -471,27 +471,36 @@ class EventHandler(EventActionsMixin):
             raise EventHandlerTypeError(msg)
 
         fn_args = fn_args[: len(args)] + list(kwargs)
-
-        fn_args = (Var(_js_expr=arg) for arg in fn_args)
+        event_args = [*args, *kwargs.values()]
 
         # Construct the payload.
-        values = []
-        for arg in [*args, *kwargs.values()]:
+        payload = []
+        upload_event_spec = None
+        for fn_arg, arg in zip(fn_args, event_args, strict=False):
             # Special case for file uploads.
             if isinstance(arg, (FileUpload, UploadFilesChunk)):
-                return arg.as_event_spec(handler=self)
+                if upload_event_spec is not None:
+                    msg = (
+                        f"Event handler {self.fn.__name__} received multiple file "
+                        "upload arguments."
+                    )
+                    raise EventHandlerTypeError(msg)
+                upload_event_spec = arg.as_event_spec(handler=self)
+                continue
 
             # Otherwise, convert to JSON.
             try:
-                values.append(LiteralVar.create(arg))
+                payload.append((Var(_js_expr=fn_arg), LiteralVar.create(arg)))
             except TypeError as e:
                 msg = f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
                 raise EventHandlerTypeError(msg) from e
-        payload = tuple(zip(fn_args, values, strict=False))
+
+        if upload_event_spec is not None:
+            return upload_event_spec.with_args(upload_event_spec.args + tuple(payload))
 
         # Return the event spec.
         return EventSpec(
-            handler=self, args=payload, event_actions=self.event_actions.copy()
+            handler=self, args=tuple(payload), event_actions=self.event_actions.copy()
         )
 
 

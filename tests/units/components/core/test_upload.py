@@ -42,6 +42,10 @@ class UploadStateTest(State):
     async def upload_alias_handler(self, uploads: list[rx.UploadFile]):
         """Handle uploaded files with a non-default parameter name."""
 
+    @event
+    async def upload_with_field(self, files: list[rx.UploadFile], field: str):
+        """Handle uploaded files for a specific field."""
+
 
 class StreamingUploadStateTest(State):
     """Test state for streaming uploads."""
@@ -220,6 +224,21 @@ def test_upload_files_event_spec_carries_upload_provider_app_wrap():
         priority == 5 and wrapper.tag == "UploadFilesProvider"
         for priority, wrapper in var_data.app_wraps
     )
+
+
+def test_upload_files_preserves_bound_event_args():
+    field = Var(_js_expr="field", _var_type=str)
+    spec = cast(
+        EventSpec,
+        UploadStateTest.upload_with_field(
+            cast(Any, rx.upload_files(upload_id="foo_id")),
+            cast(Any, field),
+        ),
+    )
+    arg_values = {arg[0]._js_expr: arg[1]._js_expr for arg in spec.args}
+
+    assert arg_values["field"] == "field"
+    assert isinstance(Upload.create(id="foo_id", on_drop=spec), Upload)
 
 
 def test_styled_upload_create():
