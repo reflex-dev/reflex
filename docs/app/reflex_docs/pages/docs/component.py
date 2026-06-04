@@ -593,7 +593,7 @@ def generate_props(
                 return False
 
         line_class = "font-mono text-sm whitespace-pre"
-        kw_class = "text-violet-11"
+        kw_class = "text-primary-11"
         str_class = "text-orange-11"
         bool_class = "text-blue-11"
         prop_name_class = "text-secondary-12"
@@ -799,7 +799,7 @@ def generate_event_triggers(
             rx.link(
                 "See the full list of default event triggers",
                 href="https://reflex.dev/docs/api-reference/event-triggers/",
-                class_name="text-violet-11 font-base",
+                class_name="text-primary-11 font-base",
                 is_external=True,
             ),
             class_name="py-2 overflow-x-auto justify-start flex flex-col gap-4",
@@ -814,7 +814,7 @@ def generate_event_triggers(
         rx.link(
             "See the full list of default event triggers",
             href="https://reflex.dev/docs/api-reference/event-triggers/",
-            class_name="text-violet-11 font-base",
+            class_name="text-primary-11 font-base",
             is_external=True,
         ),
         rx.scroll_area(

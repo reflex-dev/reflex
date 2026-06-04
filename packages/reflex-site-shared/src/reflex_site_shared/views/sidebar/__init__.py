@@ -66,7 +66,7 @@ def drawer_item(text: str, url: str) -> rx.Component:
         href=url,
         underline="none",
         color="var(--secondary-9)",
-        class_name="flex justify-center items-center border-secondary-4 px-4 py-[0.875rem] border-t-0 border-b border-solid w-full font-small hover:!text-violet-9 border-x-0",
+        class_name="flex justify-center items-center border-secondary-4 px-4 py-[0.875rem] border-t-0 border-b border-solid w-full font-small hover:!text-primary-9 border-x-0",
     )
 
 

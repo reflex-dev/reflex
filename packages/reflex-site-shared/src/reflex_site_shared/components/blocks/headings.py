@@ -130,13 +130,13 @@ class HeadingLink(rx.link.__self__):
             rx.icon(
                 tag="link",
                 size=18,
-                class_name="!text-violet-11 invisible transition-[visibility_0.075s_ease-out] group-hover:visible mt-"
+                class_name="!text-primary-11 invisible transition-[visibility_0.075s_ease-out] group-hover:visible mt-"
                 + mt,
             ),
             underline="none",
             href=href,
             on_click=lambda: rx.set_clipboard(href),
-            class_name="flex flex-row items-center gap-2 hover:!text-violet-11 cursor-pointer mb-3 transition-colors group text-secondary-12 ",
+            class_name="flex flex-row items-center gap-2 hover:!text-primary-11 cursor-pointer mb-3 transition-colors group text-secondary-12 ",
         )
 
 

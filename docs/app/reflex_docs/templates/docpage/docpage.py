@@ -154,7 +154,7 @@ def thumb_card(score: int, icon: str, label: str) -> rx.Component:
         on_click=FeedbackState.set_score(score),
         class_name=rx.cond(
             FeedbackState.score == score,
-            "flex h-9 items-center justify-center gap-2 rounded-md border border-violet-6 bg-violet-3 px-3 text-sm font-medium text-violet-11 transition-colors",
+            "flex h-9 items-center justify-center gap-2 rounded-md border border-primary-6 bg-primary-3 px-3 text-sm font-medium text-primary-11 transition-colors",
             "flex h-9 items-center justify-center gap-2 rounded-md border border-secondary-5 bg-secondary-1 px-3 text-sm font-medium text-secondary-9 transition-colors hover:bg-secondary-3 hover:text-secondary-11",
         ),
     )
@@ -178,7 +178,7 @@ def feedback_choice_button(label: str, icon: str, score: int, class_name: str):
         class_name=rx.cond(
             active,
             ui.cn(
-                "border-violet-6 bg-violet-3 text-violet-11 shadow-none",
+                "border-primary-6 bg-primary-3 text-primary-11 shadow-none",
                 class_name,
             ),
             ui.cn(

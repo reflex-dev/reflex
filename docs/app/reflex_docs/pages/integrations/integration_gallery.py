@@ -19,7 +19,7 @@ FilterOptions = [
 
 
 def integration_filter_button(data: dict):
-    active_pill = "border border-violet-8 bg-violet-3 hover:bg-violet-3 !text-violet-10"
+    active_pill = "border border-primary-8 bg-primary-3 hover:bg-primary-3 !text-primary-10"
 
     return ui.button(
         ui.icon(icon=data["icon"]),

@@ -13,7 +13,7 @@ def newsletter_input() -> rx.Component:
                     rx.icon(
                         tag="circle-check",
                         size=16,
-                        class_name="!text-violet-9",
+                        class_name="!text-primary-9",
                     ),
                     rx.text(
                         "Thanks for subscribing!",

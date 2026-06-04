@@ -89,7 +89,7 @@ def enterprise_component_grid():
                         rx.link(
                             comp[0],
                             href=comp[1],
-                            class_name="font-small text-secondary-11 hover:!text-violet-9 transition-color w-fit",
+                            class_name="font-small text-secondary-11 hover:!text-primary-9 transition-color w-fit",
                         )
                         for comp in section["components"]
                     ],
