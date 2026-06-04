@@ -370,6 +370,30 @@ showcontent = true
 required-version = ">=0.9.17"
 exclude-newer = "7 days"
 
+# Internal Reflex packages release in lockstep and are routinely pinned (>=) at a version
+# published within the exclude-newer window; disable the floor for them so resolution
+# always sees their latest release. The floor still applies to third-party dependencies.
+# Add any new internal package that is published and pinned as a (build or runtime)
+# dependency here.
+[tool.uv.exclude-newer-package]
+hatch-reflex-pyi = false
+reflex = false
+reflex-base = false
+reflex-components-code = false
+reflex-components-core = false
+reflex-components-dataeditor = false
+reflex-components-gridjs = false
+reflex-components-internal = false
+reflex-components-lucide = false
+reflex-components-markdown = false
+reflex-components-moment = false
+reflex-components-plotly = false
+reflex-components-radix = false
+reflex-components-react-player = false
+reflex-components-recharts = false
+reflex-components-sonner = false
+reflex-hosting-cli = false
+
 [tool.uv.sources]
 hatch-reflex-pyi.workspace = true
 reflex-base.workspace = true
