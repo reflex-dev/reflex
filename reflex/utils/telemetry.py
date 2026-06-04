@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, TypedDict, cast
 
+from packaging.utils import canonicalize_name
 from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.environment import environment
@@ -215,6 +216,28 @@ def get_reflex_enterprise_version() -> str | None:
         return None
 
 
+def get_reflex_package_versions() -> dict[str, str]:
+    """Get the versions of all installed Reflex subpackages.
+
+    Discovers every installed distribution whose canonical name starts with
+    ``reflex-`` (e.g. ``reflex-base`` and the ``reflex-components-*`` family),
+    mapping each package name to its installed version. The main ``reflex``
+    package is reported separately via ``get_reflex_version``.
+
+    Returns:
+        A mapping of Reflex subpackage name to installed version, sorted by name.
+    """
+    versions: dict[str, str] = {}
+    for dist in importlib.metadata.distributions():
+        name = dist.name
+        if not name:
+            continue
+        canonical = canonicalize_name(name)
+        if canonical.startswith("reflex-"):
+            versions.setdefault(canonical, dist.version)
+    return dict(sorted(versions.items()))
+
+
 def _raise_on_missing_project_hash() -> bool:
     """Check if an error should be raised when project hash is missing.
 
@@ -241,6 +264,7 @@ class _Properties(TypedDict):
     node_version: str | None
     bun_version: str | None
     reflex_enterprise_version: str | None
+    reflex_package_version: dict[str, str]
     cpu_count: int
     cpu_info: dict
 
@@ -282,6 +306,7 @@ def _get_event_defaults() -> _DefaultEvent | None:
             str(bun_version) if (bun_version := get_bun_version()) else None
         ),
         "reflex_enterprise_version": get_reflex_enterprise_version(),
+        "reflex_package_version": get_reflex_package_versions(),
         "cpu_count": get_cpu_count(),
         "cpu_info": dataclasses.asdict(cpuinfo) if cpuinfo else {},
     }

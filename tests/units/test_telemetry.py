@@ -27,6 +27,7 @@ def event_defaults(mocker: MockerFixture) -> dict:
             "node_version": None,
             "bun_version": None,
             "reflex_enterprise_version": None,
+            "reflex_package_version": {},
             "cpu_count": 4,
             "memory": 8192,
             "cpu_info": {},
@@ -68,6 +69,43 @@ def test_telemetry():
 def test_disable():
     """Test that disabling telemetry works."""
     assert not telemetry._send("test", telemetry_enabled=False)
+
+
+def test_get_reflex_package_versions_real_environment():
+    """The installed reflex subpackages are discovered with string versions."""
+    versions = telemetry.get_reflex_package_versions()
+
+    assert isinstance(versions, dict)
+    # reflex-base is a hard dependency, so it is always installed in the env.
+    assert "reflex-base" in versions
+    # Only reflex subpackages are reported, each with a string version.
+    for name, value in versions.items():
+        assert name.startswith("reflex-")
+        assert isinstance(value, str)
+    # The main reflex package is reported separately via get_reflex_version.
+    assert "reflex" not in versions
+
+
+def test_get_reflex_package_versions_filters_and_normalizes(mocker: MockerFixture):
+    """Only reflex subpackages are reported, canonicalized and de-duplicated."""
+    distributions = [
+        SimpleNamespace(name="reflex", version="0.8.0"),
+        SimpleNamespace(name="reflex-base", version="0.9.4"),
+        SimpleNamespace(name="Reflex_Components_Radix", version="0.9.2"),
+        SimpleNamespace(name="reflex-enterprise", version="1.2.3"),
+        SimpleNamespace(name="httpx", version="0.27.0"),
+        SimpleNamespace(name="reflexion", version="9.9.9"),
+        SimpleNamespace(name=None, version="0.0.0"),
+        # Duplicate distribution: the first one discovered wins.
+        SimpleNamespace(name="reflex-base", version="0.0.0"),
+    ]
+    mocker.patch("importlib.metadata.distributions", return_value=iter(distributions))
+
+    assert telemetry.get_reflex_package_versions() == {
+        "reflex-base": "0.9.4",
+        "reflex-components-radix": "0.9.2",
+        "reflex-enterprise": "1.2.3",
+    }
 
 
 @pytest.mark.parametrize(
