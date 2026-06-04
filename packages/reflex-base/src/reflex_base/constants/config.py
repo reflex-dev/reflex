@@ -65,6 +65,13 @@ class RequirementsTxt(SimpleNamespace):
     DEFAULTS_STUB = f"{Reflex.MODULE_NAME}=="
 
 
+class UvLock(SimpleNamespace):
+    """uv.lock constants."""
+
+    # The uv lockfile.
+    FILE = "uv.lock"
+
+
 class DefaultPorts(SimpleNamespace):
     """Default port constants."""
 

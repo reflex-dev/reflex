@@ -1,12 +1,6 @@
 ---
 components:
   - rx.form
-  - rx.form.root
-  - rx.form.field
-  - rx.form.control
-  - rx.form.label
-  - rx.form.message
-  - rx.form.submit
 
 FormRoot: |
   lambda **props: rx.form.root(

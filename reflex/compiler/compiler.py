@@ -10,12 +10,16 @@ from typing import TYPE_CHECKING, Any
 
 from reflex_base import constants
 from reflex_base.components.component import (
-    CUSTOM_COMPONENTS,
     BaseComponent,
     Component,
     ComponentStyle,
-    CustomComponent,
     evaluate_style_namespaces,
+)
+from reflex_base.components.memo import (
+    MEMOS,
+    MemoComponentDefinition,
+    MemoDefinition,
+    MemoFunctionDefinition,
 )
 from reflex_base.config import get_config
 from reflex_base.constants.compiler import PageNames, ResetStylesheet
@@ -34,12 +38,7 @@ from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 
 from reflex.compiler import templates, utils
 from reflex.compiler.plugins import default_page_plugins
-from reflex.experimental.memo import (
-    EXPERIMENTAL_MEMOS,
-    ExperimentalMemoComponentDefinition,
-    ExperimentalMemoDefinition,
-    ExperimentalMemoFunctionDefinition,
-)
+from reflex.compiler.plugins.builtin import collect_var_app_wraps_in_subtree
 from reflex.state import BaseState, code_uses_state_contexts
 from reflex.utils import console, frontend_skeleton, path_ops, prerequisites
 from reflex.utils.exec import get_compile_context, is_prod_mode
@@ -393,56 +392,29 @@ def _compile_component(component: Component) -> str:
 
 
 def _compile_memo_components(
-    components: Iterable[CustomComponent],
-    experimental_memos: Iterable[ExperimentalMemoDefinition] = (),
+    memos: Iterable[MemoDefinition] = (),
 ) -> tuple[list[tuple[str, str]], dict[str, list[ImportVar]]]:
-    """Compile each memo/custom-component as its own module plus an index.
+    """Compile each memo as its own module.
 
     Each memo lands in ``.web/<components>/<name>.jsx`` with only the imports
-    it actually uses. Experimental memo wrappers declare their ``library`` as
-    that per-memo file path so page-side imports resolve directly to the
+    it actually uses. Memo wrappers declare their ``library`` as that
+    per-memo file path so page-side imports resolve directly to the
     individual module.
 
-    The ``$/utils/components`` index only re-exports the legacy
-    ``@rx.memo`` custom components, which are the ones app-level code
-    (``root.jsx``) imports by name. Keeping experimental memos out of the
-    index is what lets root's ``import * as utils_components`` avoid
-    transitively dragging every page-specific memo into the always-loaded
-    chunk — the tree-shaking win of per-memo files relies on that.
-
     Args:
-        components: The components to compile.
-        experimental_memos: The experimental memos to compile.
+        memos: The memos to compile.
 
     Returns:
-        A list of ``(path, code)`` pairs to write — one per memo plus one
-        index — and the aggregated imports across all memo modules.
+        A list of ``(path, code)`` pairs to write — one per memo — and the
+        aggregated imports across all memo modules.
     """
     per_memo_files: list[tuple[str, str]] = []
-    # Only legacy custom components go through the index: they are the ones
-    # root.jsx/custom code imports by name from ``$/utils/components``.
-    # Experimental memos declare their library per-file (see
-    # ``_get_experimental_memo_component_class``) so pages import them
-    # directly and the index stays small.
-    index_entries: list[tuple[str, str]] = []
     aggregate_imports: dict[str, list[ImportVar]] = {}
 
     base_dir = utils.get_memo_components_dir()
 
-    for component in components:
-        component_render, component_imports = utils.compile_custom_component(component)
-        name = component_render["name"]
-        code, file_imports = _compile_single_memo_component(
-            component_render, component_imports
-        )
-        path = _memo_component_file_path(base_dir, name)
-        specifier = _memo_component_index_specifier(name)
-        per_memo_files.append((path, code))
-        index_entries.append((name, specifier))
-        _extend_imports_in_place(aggregate_imports, file_imports)
-
-    for memo in experimental_memos:
-        if isinstance(memo, ExperimentalMemoComponentDefinition):
+    for memo in memos:
+        if isinstance(memo, MemoComponentDefinition):
             memo_render, memo_imports = utils.compile_experimental_component_memo(memo)
             name = memo_render["name"]
             code, file_imports = _compile_single_memo_component(
@@ -451,7 +423,7 @@ def _compile_memo_components(
             path = _memo_component_file_path(base_dir, name)
             per_memo_files.append((path, code))
             _extend_imports_in_place(aggregate_imports, file_imports)
-        elif isinstance(memo, ExperimentalMemoFunctionDefinition):
+        elif isinstance(memo, MemoFunctionDefinition):
             memo_render, memo_imports = utils.compile_experimental_function_memo(memo)
             name = memo_render["name"]
             code, file_imports = _compile_single_memo_function(
@@ -461,9 +433,7 @@ def _compile_memo_components(
             per_memo_files.append((path, code))
             _extend_imports_in_place(aggregate_imports, file_imports)
 
-    index_path = utils.get_components_path()
-    index_code = templates.memo_index_template(index_entries)
-    return [(index_path, index_code), *per_memo_files], aggregate_imports
+    return per_memo_files, aggregate_imports
 
 
 def _compile_single_memo_component(
@@ -677,20 +647,18 @@ def compile_page_from_context(page_ctx: PageContext) -> tuple[str, str]:
 
 
 def compile_memo_components(
-    components: Iterable[CustomComponent],
-    experimental_memos: Iterable[ExperimentalMemoDefinition] = (),
+    memos: Iterable[MemoDefinition] = (),
 ) -> tuple[list[tuple[str, str]], dict[str, list[ImportVar]]]:
-    """Compile the custom components into one module per memo plus an index.
+    """Compile the memos into one module per memo.
 
     Args:
-        components: The custom components to compile.
-        experimental_memos: The experimental memos to compile.
+        memos: The memos to compile.
 
     Returns:
-        A list of ``(path, code)`` pairs (one per memo module and one index)
-        alongside the aggregated imports across all memo modules.
+        A list of ``(path, code)`` pairs (one per memo module) alongside the
+        aggregated imports across all memo modules.
     """
-    return _compile_memo_components(components, experimental_memos)
+    return _compile_memo_components(memos)
 
 
 def purge_web_pages_dir():
@@ -943,10 +911,10 @@ def _resolve_app_wrap_components(
         app_wrappers[200, "StrictMode"] = StrictMode.create()
 
     if (toaster := app.toaster) is not None:
-        from reflex_base.components.component import memo
+        from reflex_base.components.memo import memo
 
         @memo
-        def memoized_toast_provider():
+        def memoized_toast_provider() -> Component:
             return toaster
 
         app_wrappers[44, "ToasterProvider"] = Fragment.create(memoized_toast_provider())
@@ -956,6 +924,21 @@ def _resolve_app_wrap_components(
             component = app_wrap(app._state is not None)
             if component is not None:
                 app_wrappers[key] = component
+
+    # The page collector only walks pages, but app-wrap components have their
+    # own subtrees (e.g. ``ErrorBoundary``'s fallback render). Surface their
+    # Var-declared ``app_wraps`` here, fixpoint-iterating because newly added
+    # wraps may themselves contain further declarations.
+    pending: list[Component] = list(app_wrappers.values())
+    while pending:
+        next_pending: list[Component] = []
+        for wrapper in pending:
+            before = set(app_wrappers)
+            collect_var_app_wraps_in_subtree(app_wrappers, wrapper)
+            next_pending.extend(
+                app_wrappers[key] for key in app_wrappers.keys() - before
+            )
+        pending = next_pending
 
     return app_wrappers
 
@@ -992,8 +975,13 @@ def compile_app(
     prerender_routes: bool = False,
     dry_run: bool = False,
     use_rich: bool = True,
-) -> None:
-    """Compile an app using the compiler plugin pipeline."""
+) -> bool:
+    """Compile an app using the compiler plugin pipeline.
+
+    Returns:
+        ``True`` when a real frontend compile ran, ``False`` when the call
+        short-circuited (backend-only paths that only re-evaluate pages).
+    """
     from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
     from reflex_base.utils.exceptions import ReflexRuntimeError
 
@@ -1010,7 +998,7 @@ def compile_app(
                 console.debug(f"BE Evaluating stateful page: {route}")
                 app._compile_page(route, save_page=False)
         app._add_optional_endpoints()
-        return
+        return False
 
     if constants.Page404.SLUG not in app._unevaluated_pages:
         app.add_page(route=constants.Page404.SLUG)
@@ -1026,7 +1014,7 @@ def compile_app(
 
         app._write_stateful_pages_marker()
         app._add_optional_endpoints()
-        return
+        return False
 
     progress = (
         Progress(
@@ -1122,10 +1110,9 @@ def compile_app(
     all_imports = utils.merge_imports(all_imports, app_root._get_all_imports())
 
     memo_component_files, memo_components_imports = compile_memo_components(
-        dict.fromkeys(CUSTOM_COMPONENTS.values()),
         (
-            *tuple(EXPERIMENTAL_MEMOS.values()),
-            *tuple(compile_ctx.auto_memo_components.values()),
+            *MEMOS.values(),
+            *compile_ctx.auto_memo_components.values(),
         ),
     )
     compile_results.extend(memo_component_files)
@@ -1220,7 +1207,7 @@ def compile_app(
     progress.stop()
 
     if dry_run:
-        return
+        return True
 
     with console.timing("Install Frontend Packages"):
         app._get_frontend_packages(all_imports)
@@ -1239,27 +1226,27 @@ def compile_app(
             if page_file.is_file() and page_file not in keep_files:
                 page_file.unlink()
 
+    frontend_skeleton.update_entry_client()
+
     output_mapping: dict[Path, str] = {}
     for output_path, code in compile_results:
         path = utils.resolve_path_of_web_dir(output_path)
         if path in output_mapping:
             console.warn(
-                f"Path {path} has two different outputs. The first one will be used."
+                f"Path {path} has two different outputs. The last one will be used."
             )
-        else:
-            output_mapping[path] = code
+        output_mapping[path] = code
 
     for plugin in config.plugins:
         for static_file_path, content in plugin.get_static_assets():
             path = utils.resolve_path_of_web_dir(static_file_path)
             if path in output_mapping:
                 console.warn(
-                    f"Plugin {plugin.__class__.__name__} is trying to write to {path} but it already exists. The plugin file will be ignored."
+                    f"Plugin {plugin.__class__.__name__} is overwriting existing files at {path}."
                 )
-            else:
-                output_mapping[path] = (
-                    content.decode("utf-8") if isinstance(content, bytes) else content
-                )
+            output_mapping[path] = (
+                content.decode("utf-8") if isinstance(content, bytes) else content
+            )
 
     for plugin_name, file_path, modify_fn in modify_files_tasks:
         path = utils.resolve_path_of_web_dir(file_path)
@@ -1275,3 +1262,5 @@ def compile_app(
     with console.timing("Write to Disk"):
         for output_path, code in output_mapping.items():
             utils.write_file(output_path, code)
+
+    return True

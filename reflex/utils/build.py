@@ -16,13 +16,19 @@ from reflex.utils.exec import is_in_app_harness
 
 def set_env_json():
     """Write the upload url to a REFLEX_JSON."""
+    config = get_config()
+    env: dict[str, object] = {
+        **{endpoint.name: endpoint.get_url() for endpoint in constants.Endpoint},
+        "TRANSPORT": config.transport,
+        "TEST_MODE": is_in_app_harness(),
+    }
+    for plugin in config.plugins:
+        contribution = plugin.update_env_json()
+        if contribution:
+            env.update(contribution)
     path_ops.update_json_file(
         str(prerequisites.get_web_dir() / constants.Dirs.ENV_JSON),
-        {
-            **{endpoint.name: endpoint.get_url() for endpoint in constants.Endpoint},
-            "TRANSPORT": get_config().transport,
-            "TEST_MODE": is_in_app_harness(),
-        },
+        env,
     )
 
 
@@ -187,6 +193,43 @@ def _duplicate_index_html_to_parent_directory(directory: Path):
             _duplicate_index_html_to_parent_directory(child)
 
 
+def _compress_static_output(directory: Path, formats: tuple[str, ...]) -> None:
+    """Run the shared frontend compressor against the final static output tree.
+
+    Args:
+        directory: The static output directory.
+        formats: The configured frontend compression formats.
+
+    Raises:
+        SystemExit: If no JavaScript runtime is available or compression fails.
+    """
+    if not formats:
+        return
+
+    web_dir = prerequisites.get_web_dir().resolve()
+    runtime = path_ops.get_node_path() or path_ops.get_bun_path()
+    if runtime is None:
+        console.error("Node.js or Bun is required to compress the exported frontend.")
+        raise SystemExit(1)
+
+    result = processes.new_process(
+        [
+            runtime,
+            web_dir / "compress-static.js",
+            directory.resolve(),
+            *formats,
+        ],
+        cwd=web_dir,
+        shell=constants.IS_WINDOWS,
+        run=True,
+    )
+    if result.returncode != 0:
+        console.error(
+            "Failed to compress the exported frontend. Please run with --loglevel debug for more information."
+        )
+        raise SystemExit(1)
+
+
 def build():
     """Build the app for deployment.
 
@@ -226,30 +269,36 @@ def build():
             "Failed to build the frontend. Please run with --loglevel debug for more information.",
         )
         raise SystemExit(1)
-    _duplicate_index_html_to_parent_directory(wdir / constants.Dirs.STATIC)
+    config = get_config()
+    static_dir = wdir / constants.Dirs.STATIC
 
-    spa_fallback = wdir / constants.Dirs.STATIC / constants.ReactRouter.SPA_FALLBACK
+    _duplicate_index_html_to_parent_directory(static_dir)
+
+    for plugin in config.plugins:
+        plugin.post_build(static_dir=static_dir)
+
+    spa_fallback = static_dir / constants.ReactRouter.SPA_FALLBACK
     if not spa_fallback.exists():
-        spa_fallback = wdir / constants.Dirs.STATIC / "index.html"
+        spa_fallback = static_dir / "index.html"
 
     if spa_fallback.exists():
-        path_ops.cp(
-            spa_fallback,
-            wdir / constants.Dirs.STATIC / "404.html",
-        )
+        path_ops.cp(spa_fallback, static_dir / "404.html")
 
-    config = get_config()
+    _compress_static_output(
+        static_dir,
+        tuple(config.frontend_compression_formats),
+    )
 
     if frontend_path := config.frontend_path.strip("/"):
         # Create a subdirectory that matches the configured frontend_path.
         frontend_path = PosixPath(frontend_path)
         first_part = frontend_path.parts[0]
-        for child in list((wdir / constants.Dirs.STATIC).iterdir()):
+        for child in list(static_dir.iterdir()):
             if child.is_dir() and child.name == first_part:
                 continue
             path_ops.mv(
                 child,
-                wdir / constants.Dirs.STATIC / frontend_path / child.name,
+                static_dir / frontend_path / child.name,
             )
 
 

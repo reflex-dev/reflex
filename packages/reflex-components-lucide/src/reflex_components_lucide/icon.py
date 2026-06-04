@@ -6,7 +6,7 @@ from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.sequence import LiteralStringVar, StringVar
 
-LUCIDE_LIBRARY = "lucide-react@1.8.0"
+LUCIDE_LIBRARY = "lucide-react@1.14.0"
 
 
 class LucideIconComponent(Component):
@@ -207,6 +207,7 @@ LUCIDE_ICON_LIST = [
     "arrow_up",
     "arrows_up_from_line",
     "asterisk",
+    "astroid",  # codespell:ignore
     "at_sign",
     "atom",
     "audio_lines",
@@ -270,6 +271,7 @@ LUCIDE_ICON_LIST = [
     "beef",
     "beer_off",
     "beer",
+    "bell_check",
     "bell_dot",
     "bell_electric",
     "bell_minus",
@@ -796,6 +798,7 @@ LUCIDE_ICON_LIST = [
     "fold_horizontal",
     "fold_vertical",
     "folder_archive",
+    "folder_bookmark",
     "folder_check",
     "folder_clock",
     "folder_closed",
@@ -930,6 +933,7 @@ LUCIDE_ICON_LIST = [
     "heart_off",
     "heart_plus",
     "heart_pulse",
+    "heart_x",
     "heart",
     "heater",
     "helicopter",
@@ -998,6 +1002,7 @@ LUCIDE_ICON_LIST = [
     "laugh",
     "layers_2",
     "layers_3",
+    "layers_minus",
     "layers_plus",
     "layers",
     "layout_dashboard",
@@ -1360,6 +1365,7 @@ LUCIDE_ICON_LIST = [
     "remove_formatting",
     "repeat_1",
     "repeat_2",
+    "repeat_off",
     "repeat",
     "replace_all",
     "replace",
@@ -1664,6 +1670,7 @@ LUCIDE_ICON_LIST = [
     "ticket",
     "tickets_plane",
     "tickets",
+    "timeline",
     "timer_off",
     "timer_reset",
     "timer",
@@ -1784,7 +1791,9 @@ LUCIDE_ICON_LIST = [
     "watch",
     "waves_arrow_down",
     "waves_arrow_up",
+    "waves_horizontal",
     "waves_ladder",
+    "waves_vertical",
     "waves",
     "waypoints",
     "webcam",

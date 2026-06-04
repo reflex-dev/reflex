@@ -500,6 +500,77 @@ def test_deploy_non_interactive_export_failure(
     watch_deployment.assert_not_called()
 
 
+def test_deploy_envfile_missing_python_dotenv_exits(
+    mocker: MockerFixture,
+    mock_export_fn: MagicMock,
+):
+    """Deploy should exit when --envfile is used without python-dotenv."""
+    import builtins
+
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_authenticated_client",
+        return_value=hosting.AuthenticatedClient(
+            token="fake-token", validated_data={"foo": "bar"}
+        ),
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.validate_deployment_args",
+        return_value="success",
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_selected_project",
+        return_value="fake-project",
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.search_app",
+        return_value={
+            "name": "fake-app",
+            "id": "fake-id",
+            "project_id": "fake-project",
+        },
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_hostname",
+        return_value={"hostname": "fake-hostname", "server": "fake-server"},
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_project",
+    )
+    create_deployment = mocker.patch(
+        "reflex_cli.utils.hosting.create_deployment",
+        return_value={"deployment_id": "fake-deployment-id"},
+    )
+    watch_deployment = mocker.patch(
+        "reflex_cli.utils.hosting.watch_deployment_status",
+        return_value={"status": "ready"},
+    )
+    console_error = mocker.patch("reflex_cli.utils.console.error")
+
+    real_import = builtins.__import__
+
+    def _mock_import(name: str, *args, **kwargs):
+        if name == "dotenv":
+            raise ImportError
+        return real_import(name, *args, **kwargs)
+
+    mocker.patch("builtins.__import__", side_effect=_mock_import)
+
+    with pytest.raises(click.exceptions.Exit):
+        cli.deploy(
+            app_name="fake-app",
+            export_fn=mock_export_fn,
+            interactive=False,
+            envfile=".env",
+        )
+
+    console_error.assert_any_call(
+        """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.0.1"`."""
+    )
+    mock_export_fn.assert_not_called()
+    create_deployment.assert_not_called()
+    watch_deployment.assert_not_called()
+
+
 def test_deploy_non_interactive_with_invalid_project(mocker: MockFixture):
     mocker.patch(
         "reflex_cli.utils.hosting.get_authenticated_client",
@@ -647,3 +718,329 @@ def test_deploy_create_deployment_multiple_apps_interactive(
             token="fake-token", validated_data={"foo": "bar"}
         ),
     )
+
+
+def _common_deploy_mocks(
+    mocker: MockerFixture, *, selected_project: str | None = None
+) -> None:
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_authenticated_client",
+        return_value=hosting.AuthenticatedClient(
+            token="fake-token", validated_data={"user_id": "user-uuid"}
+        ),
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_selected_project",
+        return_value=selected_project,
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_hostname",
+        return_value={"hostname": "fake-hostname", "server": "fake-server"},
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.validate_deployment_args", return_value="success"
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.create_deployment",
+        return_value={"deployment_id": "fake-deployment-id"},
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.watch_deployment_status",
+        return_value={"status": "ready"},
+    )
+
+
+def test_deploy_interactive_existing_app_uses_embedded_project_name(
+    mocker: MockerFixture,
+    mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+):
+    _common_deploy_mocks(mocker)
+    mocker.patch(
+        "reflex_cli.utils.hosting.search_app",
+        return_value={
+            "name": "fake-app",
+            "id": "fake-id",
+            "project_id": "real-project-id",
+            "project": {"id": "real-project-id", "name": "RealProject"},
+        },
+    )
+    get_project = mocker.patch(
+        "reflex_cli.utils.hosting.get_project", side_effect=AssertionError
+    )
+    console_ask = mocker.patch("reflex_cli.utils.console.ask", return_value="y")
+
+    cli.deploy(app_name="fake-app", export_fn=mock_export_fn, interactive=True)
+
+    get_project.assert_not_called()
+    prompts = [call.args[0] for call in console_ask.call_args_list]
+    deploy_prompt = next(p for p in prompts if p.startswith("Deploy to app"))
+    assert "RealProject" in deploy_prompt
+
+
+def test_deploy_interactive_new_app_resolved_project_reuses_validation(
+    mocker: MockerFixture,
+    mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+):
+    _common_deploy_mocks(mocker)
+    mocker.patch("reflex_cli.utils.hosting.search_app", return_value=None)
+    mocker.patch(
+        "reflex_cli.utils.hosting.search_project",
+        return_value={"id": "chosen-project-id", "name": "ChosenProject"},
+    )
+    get_project = mocker.patch(
+        "reflex_cli.utils.hosting.get_project",
+        return_value={"id": "chosen-project-id", "name": "ChosenProject"},
+    )
+    create_app = mocker.patch(
+        "reflex_cli.utils.hosting.create_app",
+        return_value={
+            "name": "fake-app",
+            "id": "fake-id",
+            "project_id": "chosen-project-id",
+        },
+    )
+    console_ask = mocker.patch("reflex_cli.utils.console.ask", return_value="y")
+
+    cli.deploy(
+        app_name="fake-app",
+        export_fn=mock_export_fn,
+        project_name="ChosenProject",
+        interactive=True,
+    )
+
+    get_project.assert_called_once_with(
+        "chosen-project-id",
+        client=hosting.AuthenticatedClient(
+            token="fake-token", validated_data={"user_id": "user-uuid"}
+        ),
+    )
+    create_app.assert_called_once()
+    create_prompt = next(
+        call.args[0]
+        for call in console_ask.call_args_list
+        if call.args and call.args[0].startswith("Create and deploy")
+    )
+    assert "ChosenProject" in create_prompt
+
+
+def test_deploy_interactive_new_app_non_default_project_shows_name(
+    mocker: MockerFixture,
+    mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+):
+    _common_deploy_mocks(mocker, selected_project="default-project-id")
+    mocker.patch("reflex_cli.utils.hosting.search_app", return_value=None)
+    mocker.patch(
+        "reflex_cli.utils.hosting.search_project",
+        return_value={"id": "other-project-id", "name": "OtherProject"},
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_project",
+        return_value={"id": "other-project-id", "name": "OtherProject"},
+    )
+    create_app = mocker.patch(
+        "reflex_cli.utils.hosting.create_app",
+        return_value={
+            "name": "fake-app",
+            "id": "fake-id",
+            "project_id": "other-project-id",
+        },
+    )
+    console_ask = mocker.patch("reflex_cli.utils.console.ask", return_value="y")
+
+    cli.deploy(
+        app_name="fake-app",
+        export_fn=mock_export_fn,
+        project_name="OtherProject",
+        interactive=True,
+    )
+
+    create_app.assert_called_once()
+    create_prompt = next(
+        call.args[0]
+        for call in console_ask.call_args_list
+        if call.args and call.args[0].startswith("Create and deploy")
+    )
+    assert "OtherProject" in create_prompt
+
+
+def test_deploy_interactive_existing_app_without_project_dict_falls_back_to_id(
+    mocker: MockerFixture,
+    mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+):
+    _common_deploy_mocks(mocker)
+    mocker.patch(
+        "reflex_cli.utils.hosting.search_app",
+        return_value={
+            "name": "fake-app",
+            "id": "fake-id",
+            "project_id": "lone-project-id",
+        },
+    )
+    mocker.patch("reflex_cli.utils.hosting.get_project")
+    console_ask = mocker.patch("reflex_cli.utils.console.ask", return_value="y")
+
+    cli.deploy(app_name="fake-app", export_fn=mock_export_fn, interactive=True)
+
+    deploy_prompt = next(
+        call.args[0]
+        for call in console_ask.call_args_list
+        if call.args and call.args[0].startswith("Deploy to app")
+    )
+    assert "lone-project-id" in deploy_prompt
+
+
+def test_deploy_interactive_existing_app_user_declines_exits_cleanly(
+    mocker: MockerFixture,
+    mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+):
+    _common_deploy_mocks(mocker)
+    mocker.patch(
+        "reflex_cli.utils.hosting.search_app",
+        return_value={
+            "name": "fake-app",
+            "id": "fake-id",
+            "project_id": "real-project-id",
+            "project": {"id": "real-project-id", "name": "RealProject"},
+        },
+    )
+    mocker.patch("reflex_cli.utils.hosting.get_project")
+    create_deployment = mocker.patch("reflex_cli.utils.hosting.create_deployment")
+    mocker.patch("reflex_cli.utils.console.ask", return_value="n")
+
+    with pytest.raises(click.exceptions.Exit) as exc_info:
+        cli.deploy(app_name="fake-app", export_fn=mock_export_fn, interactive=True)
+
+    assert exc_info.value.exit_code == 0
+    create_deployment.assert_not_called()
+
+
+def test_deploy_interactive_new_app_user_declines_create_exits_cleanly(
+    mocker: MockerFixture,
+    mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+):
+    _common_deploy_mocks(mocker)
+    mocker.patch("reflex_cli.utils.hosting.search_app", return_value=None)
+    mocker.patch(
+        "reflex_cli.utils.hosting.search_project",
+        return_value={"id": "chosen-project-id", "name": "ChosenProject"},
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_project",
+        return_value={"id": "chosen-project-id", "name": "ChosenProject"},
+    )
+    create_app = mocker.patch("reflex_cli.utils.hosting.create_app")
+    create_deployment = mocker.patch("reflex_cli.utils.hosting.create_deployment")
+    mocker.patch("reflex_cli.utils.console.ask", side_effect=["y", "n"])
+
+    with pytest.raises(click.exceptions.Exit) as exc_info:
+        cli.deploy(
+            app_name="fake-app",
+            export_fn=mock_export_fn,
+            project_name="ChosenProject",
+            interactive=True,
+        )
+
+    assert exc_info.value.exit_code == 0
+    create_app.assert_not_called()
+    create_deployment.assert_not_called()
+
+
+def test_deploy_interactive_get_project_failure_exits_before_prompting(
+    mocker: MockerFixture,
+    mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+):
+    _common_deploy_mocks(mocker)
+    mocker.patch(
+        "reflex_cli.utils.hosting.search_project",
+        return_value={"id": "broken-project-id", "name": "BrokenProject"},
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_project",
+        side_effect=httpx.HTTPStatusError(
+            "boom",
+            request=mocker.Mock(),
+            response=mocker.Mock(json=lambda: {"detail": "bad project"}),
+        ),
+    )
+    search_app = mocker.patch("reflex_cli.utils.hosting.search_app")
+    create_app = mocker.patch("reflex_cli.utils.hosting.create_app")
+    console_ask = mocker.patch("reflex_cli.utils.console.ask")
+
+    with pytest.raises(click.exceptions.Exit) as exc_info:
+        cli.deploy(
+            app_name="fake-app",
+            export_fn=mock_export_fn,
+            project_name="BrokenProject",
+            interactive=True,
+        )
+
+    assert exc_info.value.exit_code == 1
+    console_ask.assert_not_called()
+    search_app.assert_not_called()
+    create_app.assert_not_called()
+
+
+def test_deploy_interactive_new_app_no_selected_project_shows_default_name(
+    mocker: MockerFixture,
+    mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+):
+    _common_deploy_mocks(mocker)
+    mocker.patch("reflex_cli.utils.hosting.search_app", return_value=None)
+    get_project = mocker.patch(
+        "reflex_cli.utils.hosting.get_project",
+        return_value={"id": "user-uuid", "name": "MyPersonalProject"},
+    )
+    create_app = mocker.patch(
+        "reflex_cli.utils.hosting.create_app",
+        return_value={
+            "name": "fake-app",
+            "id": "fake-id",
+            "project_id": "user-uuid",
+        },
+    )
+    console_ask = mocker.patch("reflex_cli.utils.console.ask", return_value="y")
+
+    cli.deploy(app_name="fake-app", export_fn=mock_export_fn, interactive=True)
+
+    get_project.assert_called_once_with(
+        "user-uuid",
+        client=hosting.AuthenticatedClient(
+            token="fake-token", validated_data={"user_id": "user-uuid"}
+        ),
+    )
+    create_app.assert_called_once()
+    create_prompt = next(
+        call.args[0]
+        for call in console_ask.call_args_list
+        if call.args and call.args[0].startswith("Create and deploy")
+    )
+    assert "MyPersonalProject" in create_prompt
+
+
+def test_deploy_empty_project_in_config_is_not_forwarded_to_create_app(
+    mocker: MockerFixture,
+    mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+):
+    from reflex_cli.core.config import Config
+
+    _common_deploy_mocks(mocker)
+    mocker.patch(
+        "reflex_cli.utils.hosting.read_config",
+        return_value=Config(name="fake-app", project="   "),
+    )
+    mocker.patch("reflex_cli.utils.hosting.search_app", return_value=None)
+    get_project = mocker.patch("reflex_cli.utils.hosting.get_project")
+    create_app = mocker.patch(
+        "reflex_cli.utils.hosting.create_app",
+        return_value={
+            "name": "fake-app",
+            "id": "fake-id",
+            "project_id": "user-uuid",
+        },
+    )
+
+    cli.deploy(app_name="fake-app", export_fn=mock_export_fn, interactive=False)
+
+    get_project.assert_not_called()
+    create_app.assert_called_once()
+    assert create_app.call_args.kwargs.get("project_id") is None

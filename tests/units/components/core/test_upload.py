@@ -2,6 +2,7 @@ from typing import Any, cast
 
 import pytest
 from reflex_base.event import EventChain, EventHandler, EventSpec, parse_args_spec
+from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_components_core.core.upload import (
     GhostUpload,
@@ -197,6 +198,28 @@ def test_upload_button_handlers_allow_custom_param_names():
     chunk_arg_names = [arg[0]._js_expr for arg in chunk_event.args]
     assert chunk_event.client_handler_name == "uploadFiles"
     assert chunk_arg_names[:3] == ["files", "stream", "upload_param_name"]
+
+
+def test_upload_files_event_spec_carries_upload_provider_app_wrap():
+    """Upload button event specs carry UploadFilesProvider through VarData."""
+    button = rx.button(
+        "Upload",
+        on_click=UploadStateTest.drop_handler(
+            cast(Any, rx.upload_files(upload_id="foo_id"))
+        ),
+    )
+    chain = cast(EventChain, button.event_triggers["on_click"])
+    upload_event = cast(EventSpec, chain.events[0])
+
+    var_data = VarData.merge(
+        *(arg_value._get_all_var_data() for _, arg_value in upload_event.args)
+    )
+
+    assert var_data is not None
+    assert any(
+        priority == 5 and wrapper.tag == "UploadFilesProvider"
+        for priority, wrapper in var_data.app_wraps
+    )
 
 
 def test_styled_upload_create():

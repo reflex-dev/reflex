@@ -18,6 +18,7 @@ from typing import (
     NoReturn,
     Protocol,
     TypeVar,
+    Union,
     get_args,
     get_origin,
     get_type_hints,
@@ -28,7 +29,7 @@ from typing_extensions import Self, TypeAliasType, TypedDict, TypeVarTuple, Unpa
 
 from reflex_base import constants
 from reflex_base.components.field import BaseField
-from reflex_base.constants.compiler import CompileVars, Hooks, Imports
+from reflex_base.constants.compiler import CompileVars, Imports
 from reflex_base.utils import format
 from reflex_base.utils.decorator import once
 from reflex_base.utils.exceptions import (
@@ -54,6 +55,7 @@ from reflex_base.vars.function import (
     FunctionVar,
     VarOperationCall,
 )
+from reflex_base.vars.number import ternary_operation
 from reflex_base.vars.object import ObjectVar
 
 if TYPE_CHECKING:
@@ -1078,14 +1080,14 @@ class FileUpload:
         """
         from reflex_components_core.core.upload import (
             DEFAULT_UPLOAD_ID,
-            upload_files_context_var_data,
+            get_upload_files_context_var_data,
         )
 
         upload_id = self.upload_id if self.upload_id is not None else DEFAULT_UPLOAD_ID
         upload_files_var = Var(
             _js_expr="filesById",
             _var_type=dict[str, Any],
-            _var_data=VarData.merge(upload_files_context_var_data),
+            _var_data=VarData.merge(get_upload_files_context_var_data()),
         ).to(ObjectVar)[LiteralVar.create(upload_id)]
         spec_args = [
             (
@@ -2076,6 +2078,59 @@ def call_event_fn(
     # while keeping other scalar values for validation below.
     out = list(out) if isinstance(out, (list, tuple)) else [out]
 
+    def _dispatch_mixed_event_var(event_like_var: Var) -> FunctionVar:
+        """Wrap a mixed event-like Var into a callable frontend dispatcher.
+
+        Args:
+            event_like_var: A Var that may resolve to either an EventSpec-like object
+                or a callable frontend function at runtime.
+
+        Returns:
+            A FunctionVar that dispatches runtime values as frontend calls or
+            backend addEvents queueing.
+        """
+        alias_name = "__event_or_fn"
+        alias_var = Var(_js_expr=alias_name)
+        rest_args = Var(_js_expr="args")
+        spread_args = Var(_js_expr="...args")
+
+        is_function = Var(
+            _js_expr=f'typeof {alias_name} === "function"',
+            _var_type=bool,
+        )
+        # Lazy import: state_context → component → event (this module).
+        from reflex_base.components.state_context import get_event_app_wraps
+
+        add_events = FunctionStringVar.create(
+            CompileVars.ADD_EVENTS,
+            _var_data=VarData(
+                imports=Imports.EVENTS,
+                app_wraps=get_event_app_wraps(),
+            ),
+        )
+        dispatch_expr = ternary_operation(
+            is_function,
+            alias_var.to(FunctionVar).call(spread_args),
+            add_events.call(
+                LiteralVar.create([alias_var]),
+                rest_args,
+                _EMPTY_EVENT_ACTIONS,
+            ),
+        )
+        body = Var(
+            _js_expr=f"const {alias_name} = {event_like_var!s}; return {dispatch_expr!s};",
+            _var_data=VarData.merge(
+                event_like_var._get_all_var_data(),
+                dispatch_expr._get_all_var_data(),
+            ),
+        )
+        return ArgsFunctionOperation.create(
+            args_names=(),
+            return_expr=body,
+            rest="args",
+            explicit_return=True,
+        ).to(FunctionVar)
+
     # Convert any event specs to event specs.
     events = []
     for e in out:
@@ -2086,6 +2141,14 @@ def call_event_fn(
         if isinstance(e, EventChain):
             # Nested EventChain is treated like a FunctionVar.
             e = Var.create(e)
+
+        if (
+            isinstance(e, Var)
+            and not isinstance(e, (EventVar, FunctionVar))
+            and get_origin(e._var_type) in (Union, types.UnionType)
+            and typehint_issubclass(e._var_type, EventSpec | Callable)
+        ):
+            e = _dispatch_mixed_event_var(e)
 
         # Make sure the event spec is valid.
         if not isinstance(e, (EventSpec, FunctionVar, EventVar)):
@@ -2358,11 +2421,14 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
             arg_def_expr = Var(_js_expr="args")
 
         if value.invocation is None:
+            # Lazy import: state_context → component → event (this module).
+            from reflex_base.components.state_context import get_event_app_wraps
+
             invocation = FunctionStringVar.create(
                 CompileVars.ADD_EVENTS,
                 _var_data=VarData(
                     imports=Imports.EVENTS,
-                    hooks={Hooks.EVENTS: None},
+                    app_wraps=get_event_app_wraps(),
                 ),
             )
         else:
@@ -2403,11 +2469,14 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
                 _js_expr=f"{{{''.join(f'{statement};' for statement in statements)}}}",
             )
             if value.event_actions:
+                # Lazy import: state_context → component → event (this module).
+                from reflex_base.components.state_context import get_event_app_wraps
+
                 apply_event_actions = FunctionStringVar.create(
                     CompileVars.APPLY_EVENT_ACTIONS,
                     _var_data=VarData(
                         imports=Imports.EVENTS,
-                        hooks={Hooks.EVENTS: None},
+                        app_wraps=get_event_app_wraps(),
                     ),
                 )
                 return_expr = apply_event_actions.call(

@@ -199,7 +199,7 @@ def app_root_template(
     return f"""
 {imports_str}
 {dynamic_imports_str}
-import {{ EventLoopProvider, StateProvider, defaultColorMode }} from "$/utils/context";
+import {{ defaultColorMode }} from "$/utils/context";
 import {{ ThemeProvider }} from '$/utils/react-theme';
 import {{ Layout as AppLayout }} from './_document';
 import {{ Outlet }} from 'react-router';
@@ -207,13 +207,7 @@ import {{ Outlet }} from 'react-router';
 
 {custom_code_str}
 
-function AppWrap({{children}}) {{
-{_render_hooks(hooks)}
-return ({_RenderUtils.render(render)})
-}}
-
-
-export function Layout({{children}}) {{
+function ReflexProviders({{children}}) {{
   useEffect(() => {{
     // Make contexts and state objects available globally for dynamic eval'd components
     let windowImports = {{
@@ -222,15 +216,26 @@ export function Layout({{children}}) {{
     window["__reflex"] = windowImports;
   }}, []);
 
-  return jsx(AppLayout, {{}},
-    jsx(ThemeProvider, {{defaultTheme: defaultColorMode, attribute: "class"}},
-      jsx(StateProvider, {{}},
-        jsx(EventLoopProvider, {{}},
-          jsx(AppWrap, {{}}, children)
-        )
-      )
-    )
+  return jsx(ThemeProvider, {{defaultTheme: defaultColorMode, attribute: "class"}},
+    jsx(AppWrap, {{}}, children)
   );
+}}
+
+
+function AppWrap({{children}}) {{
+{_render_hooks(hooks)}
+return ({_RenderUtils.render(render)})
+}}
+
+export function Layout({{children}}) {{
+  return jsx(AppLayout, {{}}, jsx(ReflexProviders, {{}}, children));
+}}
+
+// Used by entry.client.js when mount_target is configured: skips the document
+// shell (which renders react-router's <Meta>/<Scripts>/<Links> and requires a
+// framework router context) but keeps the runtime providers.
+export function EmbedLayout({{children}}) {{
+  return jsx(ReflexProviders, {{}}, children);
 }}
 
 export default function App() {{
@@ -363,6 +368,24 @@ export const clientStorage = {"{}" if client_storage is None else orjson_dumps(c
 
 export const isDevMode = {orjson_dumps(is_dev_mode)};
 
+// Module-level event dispatchers populated by ``EventLoopProvider`` on each
+// render. Components reach addEvents/connectErrors via this import instead of
+// hoisting ``useContext(EventLoopContext)`` so JSX literals (e.g.
+// ``ErrorBoundary.onError``) constructed in any JS scope can dispatch events
+// without depending on lexical hook hoisting.
+let _addEventsImpl = (events, args, event_actions) => {{
+  console.warn("addEvents called before EventLoopProvider mounted", events);
+}};
+let _connectErrorsImpl = [];
+
+export function addEvents(events, args, event_actions) {{
+  return _addEventsImpl(events, args, event_actions);
+}}
+
+export function getConnectErrors() {{
+  return _connectErrorsImpl;
+}}
+
 export function UploadFilesProvider({{ children }}) {{
   const [filesById, setFilesById] = useState({{}})
   refs["__clear_selected_files"] = (id) => setFilesById(filesById => {{
@@ -393,14 +416,19 @@ export function ClientSide(component) {{
 
 export function EventLoopProvider({{ children }}) {{
   const dispatch = useContext(DispatchContext)
-  const [addEvents, connectErrors] = useEventLoop(
+  const [addEventsLocal, connectErrors] = useEventLoop(
     dispatch,
     initialEvents,
     clientStorage,
   )
+  // Populate the module-level dispatchers so JSX literals constructed
+  // outside the React-tree path (e.g. ``ErrorBoundary.onError``) can call
+  // ``addEvents`` without needing the events hook hoisted in their scope.
+  _addEventsImpl = addEventsLocal;
+  _connectErrorsImpl = connectErrors;
   return createElement(
     EventLoopContext.Provider,
-    {{ value: [addEvents, connectErrors] }},
+    {{ value: [addEventsLocal, connectErrors] }},
     children
   );
 }}
@@ -773,22 +801,6 @@ def memo_single_function_template(
 
 export const {function["name"]} = {function["function"]};
 """
-
-
-def memo_index_template(reexports: Iterable[tuple[str, str]]) -> str:
-    """Template for the memo index module that re-exports every memo file.
-
-    Args:
-        reexports: Iterable of ``(export_name, relative_module_specifier)``.
-
-    Returns:
-        The rendered index module code.
-    """
-    lines = [
-        f'export {{ {export_name} }} from "{specifier}";'
-        for export_name, specifier in reexports
-    ]
-    return "\n".join(lines) + "\n"
 
 
 def styles_template(stylesheets: list[str]) -> str:

@@ -139,6 +139,7 @@ def _compile_app(*, avoid_dirty_check: bool = True):
     kwargs = {
         "check_if_schema_up_to_date": True,
         "prerender_routes": exec.should_prerender_routes(),
+        "trigger": "initial",
     }
 
     # Granian fails if the app is already imported.
@@ -485,7 +486,7 @@ def compile(dry: bool, rich: bool):
         _init(name=get_config().app_name)
     get_config(reload=True)
     starting_time = time.monotonic()
-    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich)
+    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger="cli_compile")
     elapsed_time = time.monotonic() - starting_time
     console.success(f"App compiled successfully in {elapsed_time:.3f} seconds.")
 
@@ -597,12 +598,24 @@ def login():
 
     check_version()
 
-    validated_info = hosting_cli.login()
-    if validated_info is not None:
+    if (validated_info := hosting_cli.login()) and (
+        user_uuid := validated_info.get("user_id")
+    ):
         _skip_compile()  # Allow running outside of an app dir
         from reflex.utils import telemetry
 
-        telemetry.send("login", user_uuid=validated_info.get("user_id"))
+        set_props = {}
+        if user_email := validated_info.get("email"):
+            set_props["email"] = user_email
+        if user_tier := validated_info.get("tier"):
+            set_props["tier"] = user_tier
+        telemetry.send(
+            "login",
+            properties={
+                "$set": set_props,
+                "user_uuid": user_uuid,
+            },
+        )
 
 
 @cli.command()
