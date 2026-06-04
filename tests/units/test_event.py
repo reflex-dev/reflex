@@ -18,7 +18,7 @@ from reflex_base.event import (
 )
 from reflex_base.utils import format
 from reflex_base.utils.exceptions import EventHandlerValueError
-from reflex_base.vars.base import Field, LiteralVar, Var, VarData, field
+from reflex_base.vars.base import Field, LiteralVar, Var, field
 
 import reflex as rx
 from reflex.state import BaseState
@@ -501,10 +501,21 @@ def test_event_var_data():
     )._get_all_var_data()
     assert chain_var_data is not None
 
-    assert chain_var_data == VarData(
-        imports=Imports.EVENTS,
-        hooks={Hooks.EVENTS: None},
-    )
+    # Imports include EVENTS (which now imports module-level ``addEvents``)
+    # and the state/event-loop providers ride along as app_wraps so the
+    # compiler can mount them in the app root. ``addEvents`` reaches its
+    # call sites through the import, not a hoisted hook, so ``hooks`` is
+    # empty here. Compare structurally — providers are fresh instances per
+    # call, so identity-based VarData equality wouldn't match.
+    assert dict(chain_var_data.imports) == {
+        k: tuple(v) for k, v in Imports.EVENTS.items()
+    }
+    assert chain_var_data.hooks == ()
+    assert sorted(p for p, _ in chain_var_data.app_wraps) == [90, 100]
+    assert {wrapper.tag for _, wrapper in chain_var_data.app_wraps} == {
+        "StateProvider",
+        "EventLoopProvider",
+    }
 
 
 def test_event_chain_statement_block_preserves_nested_var_data():
@@ -530,7 +541,11 @@ def test_event_chain_statement_block_preserves_nested_var_data():
     assert chain_var_data.state == x_var_data.state
     assert chain_var_data.field_name == x_var_data.field_name
     assert x_var_data.hooks[0] in chain_var_data.hooks
-    assert Hooks.EVENTS in chain_var_data.hooks
+    # ``addEvents`` is reached via module-level import, so the events hook
+    # is no longer hoisted on event-chain VarData. State/event-loop providers
+    # ride on ``app_wraps`` to surface in the app root when needed.
+    assert Hooks.EVENTS not in chain_var_data.hooks
+    assert sorted(p for p, _ in chain_var_data.app_wraps) == [90, 100]
 
 
 def test_event_bound_method() -> None:
@@ -851,6 +866,50 @@ def test_event_chain_create_lambda_allows_conditional_mixed_function_and_event()
     assert isinstance(chain, EventChain)
     assert "Timeout reached!" in rendered
     assert "addEvents(" in rendered
+
+
+def test_event_chain_mixed_dispatch_reaches_addevents_via_module_import():
+    """The mixed function/event dispatcher must not emit a stale events hook.
+
+    ``Imports.EVENTS`` no longer imports ``EventLoopContext``; the mixed
+    dispatcher reaches the module-level ``addEvents`` instead. Emitting the
+    legacy ``const [addEvents, connectErrors] = useContext(EventLoopContext)``
+    hook here would render a component that throws ``ReferenceError:
+    EventLoopContext is not defined``. State/event-loop providers ride along
+    on ``app_wraps``.
+    """
+
+    class MixedState(BaseState):
+        @event
+        def do_a_thing(self, value: str):
+            pass
+
+    log_after_timeout = make_timeout_logger()
+
+    def return_conditional_mixed(v: Var[Any]) -> Any:
+        return rx.cond(
+            v == "foo",
+            log_after_timeout.partial("Input was foo!"),
+            MixedState.do_a_thing(v.to(str)),
+        )
+
+    chain = EventChain.create(
+        cast(LambdaEventCallback[Any], return_conditional_mixed),
+        args_spec=lambda e: [e],
+    )
+    var_data = LiteralVar.create(chain)._get_all_var_data()
+    assert var_data is not None
+
+    hook_text = "\n".join(str(hook) for hook in var_data.hooks)
+    assert "EventLoopContext" not in hook_text
+
+    imported = {tag.tag for _lib, tags in var_data.imports for tag in tags}
+    assert "addEvents" in imported
+
+    assert {wrapper.tag for _, wrapper in var_data.app_wraps} >= {
+        "StateProvider",
+        "EventLoopProvider",
+    }
 
 
 def test_event_chain_create_lambda_rejects_non_union_callable_var():

@@ -32,12 +32,3 @@ def reflex_build_redirect() -> None:
     from reflex_base import constants
 
     open_browser(urlsplit(constants.Templates.REFLEX_BUILD_FRONTEND_WITH_REFERRER))
-
-
-def reflex_templates():
-    """Open the browser window to reflex.build/templates."""
-    from urllib.parse import urlsplit
-
-    from reflex_base import constants
-
-    open_browser(urlsplit(constants.Templates.REFLEX_TEMPLATES_URL))

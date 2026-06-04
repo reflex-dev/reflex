@@ -39,6 +39,7 @@ from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 
 from reflex.compiler import templates, utils
 from reflex.compiler.plugins import default_page_plugins
+from reflex.compiler.plugins.builtin import collect_var_app_wraps_in_subtree
 from reflex.state import BaseState, code_uses_state_contexts
 from reflex.utils import console, frontend_skeleton, path_ops, prerequisites
 from reflex.utils.exec import get_compile_context, is_prod_mode
@@ -924,6 +925,21 @@ def _resolve_app_wrap_components(
             component = app_wrap(app._state is not None)
             if component is not None:
                 app_wrappers[key] = component
+
+    # The page collector only walks pages, but app-wrap components have their
+    # own subtrees (e.g. ``ErrorBoundary``'s fallback render). Surface their
+    # Var-declared ``app_wraps`` here, fixpoint-iterating because newly added
+    # wraps may themselves contain further declarations.
+    pending: list[Component] = list(app_wrappers.values())
+    while pending:
+        next_pending: list[Component] = []
+        for wrapper in pending:
+            before = set(app_wrappers)
+            collect_var_app_wraps_in_subtree(app_wrappers, wrapper)
+            next_pending.extend(
+                app_wrappers[key] for key in app_wrappers.keys() - before
+            )
+        pending = next_pending
 
     return app_wrappers
 

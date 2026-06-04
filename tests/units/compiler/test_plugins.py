@@ -11,6 +11,7 @@ from reflex_base.components.component import (
     ComponentStyle,
     field,
 )
+from reflex_base.constants.compiler import Hooks
 from reflex_base.plugins import (
     BaseContext,
     CompileContext,
@@ -22,6 +23,7 @@ from reflex_base.plugins import (
 )
 from reflex_base.plugins.base import HookOrder
 from reflex_base.utils import format as format_utils
+from reflex_base.utils.exceptions import ReflexError
 from reflex_base.utils.imports import ImportVar, collapse_imports, merge_imports
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
@@ -767,6 +769,119 @@ def test_default_collector_matches_legacy_collectors() -> None:
         page_ctx.app_wrap_components.keys()
         == component._get_all_app_wrap_components().keys()
     )
+
+
+class StubVarProvider(Component):
+    tag = "StubVarProvider"
+    library = "stub-provider-lib"
+
+
+class DirectEventsHookComponent(Component):
+    tag = "DirectEventsHookComponent"
+    library = "direct-events-hook-lib"
+
+    def add_hooks(self) -> list[str]:
+        """Add the shared event-loop hook directly.
+
+        Returns:
+            A list with just the events hook.
+        """
+        return [Hooks.EVENTS]
+
+
+def test_default_collector_collects_var_app_wraps() -> None:
+    """A Var with app_wraps in its VarData injects the wrapper into the page registry."""
+    provider = StubVarProvider.create()
+    var_with_wrap = LiteralVar.create("hello")._replace(
+        merge_var_data=VarData(app_wraps=((50, provider),))
+    )
+
+    component = RootComponent.create(
+        ChildComponent.create(id=var_with_wrap),
+    )
+
+    page_ctx = collect_page_context(
+        component,
+        plugins=(DefaultCollectorPlugin(),),
+    )
+
+    assert (50, "StubVarProvider") in page_ctx.app_wrap_components
+    assert page_ctx.app_wrap_components[50, "StubVarProvider"] is provider
+    # Existing component-declared wraps are still collected.
+    assert (10, "Wrap") in page_ctx.app_wrap_components
+
+
+def test_default_collector_dedupes_var_app_wraps_against_component_wraps() -> None:
+    """A Var-declared wrap with the same (priority, name) as a Component-declared one defers."""
+    component_wrap = WrapperComponent.create()
+    var_wrap = WrapperComponent.create()
+    var_with_wrap = LiteralVar.create("dup")._replace(
+        merge_var_data=VarData(app_wraps=((10, var_wrap),))
+    )
+
+    class RootWithSameWrap(Component):
+        tag = "RootWithSameWrap"
+        library = "root-with-same-wrap-lib"
+
+        @staticmethod
+        def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
+            return {(10, "WrapperComponent"): component_wrap}
+
+    component = RootWithSameWrap.create(
+        ChildComponent.create(id=var_with_wrap),
+    )
+
+    page_ctx = collect_page_context(
+        component,
+        plugins=(DefaultCollectorPlugin(),),
+    )
+
+    # Component-declared wrap wins because it's collected first; var wrap is skipped.
+    assert page_ctx.app_wrap_components[10, "WrapperComponent"] is component_wrap
+
+
+def test_default_collector_raises_on_conflicting_var_app_wraps() -> None:
+    """The page walk surfaces a conflict between two Var-declared wraps."""
+    # Same tag/priority, unequal wrappers, on two Vars of one component.
+    wrap_a = WrapperComponent.create(class_name="a")
+    wrap_b = WrapperComponent.create(class_name="b")
+    var_a = LiteralVar.create("a")._replace(
+        merge_var_data=VarData(app_wraps=((10, wrap_a),))
+    )
+    var_b = LiteralVar.create("b")._replace(
+        merge_var_data=VarData(app_wraps=((10, wrap_b),))
+    )
+
+    component = RootComponent.create(ChildComponent.create(id=var_a, class_name=var_b))
+
+    with pytest.raises(ReflexError, match="Conflicting app wraps"):
+        collect_page_context(component, plugins=(DefaultCollectorPlugin(),))
+
+
+def test_default_collector_collects_direct_events_hook_app_wraps() -> None:
+    """Direct ``Hooks.EVENTS`` users collect the state/event providers."""
+    page_ctx = collect_page_context(
+        DirectEventsHookComponent.create(),
+        plugins=(DefaultCollectorPlugin(),),
+    )
+
+    assert (100, "StateProvider") in page_ctx.app_wrap_components
+    assert (90, "EventLoopProvider") in page_ctx.app_wrap_components
+
+
+def test_default_collector_collects_var_events_hook_app_wraps() -> None:
+    """Vars with raw ``Hooks.EVENTS`` metadata collect fresh event providers."""
+    var_with_events_hook = LiteralVar.create("hello")._replace(
+        merge_var_data=VarData(hooks={Hooks.EVENTS: None})
+    )
+
+    page_ctx = collect_page_context(
+        RootComponent.create(ChildComponent.create(id=var_with_events_hook)),
+        plugins=(DefaultCollectorPlugin(),),
+    )
+
+    assert (100, "StateProvider") in page_ctx.app_wrap_components
+    assert (90, "EventLoopProvider") in page_ctx.app_wrap_components
 
 
 def test_default_collector_collects_nested_prop_tree_custom_code_without_recursion() -> (
