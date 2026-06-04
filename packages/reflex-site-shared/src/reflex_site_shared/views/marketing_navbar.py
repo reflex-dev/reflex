@@ -196,7 +196,7 @@ def products_ship_column_body() -> rx.Component:
         ),
         rx.el.div(
             rx.image(
-                src=f"{REFLEX_ASSETS_CDN}landing/features/{rx.color_mode_cond('light', 'dark')}/ship_navbar_3.svg",
+                src=f"{REFLEX_ASSETS_CDN}landing/features/{rx.color_mode_cond('light', 'dark')}/ship_navbar_4.svg",
                 alt="Deploy, monitor & scale",
                 loading="lazy",
                 class_name="h-auto w-full max-w-full object-cover",
@@ -397,7 +397,7 @@ def blog_item(post: BlogPostDict) -> rx.Component:
             ),
             rx.image(
                 src=f"{REFLEX_ASSETS_CDN}common/{rx.color_mode_cond('light', 'dark')}/squares_blog.svg",
-                class_name="pointer-events-none",
+                class_name="pointer-events-none dark:opacity-50",
                 alt="Squares Blog",
             ),
             class_name="flex flex-row items-center justify-start gap-6",
