@@ -73,6 +73,7 @@ def MemoApp():
                 value=formatted_price,
                 id="summary-card",
                 class_name="forwarded-summary-card",
+                font_weight="bold",
             ),
         )
 
@@ -120,6 +121,8 @@ def test_memo_app(memo_app: AppHarness):
 
     summary_card = driver.find_element(By.ID, "summary-card")
     assert "forwarded-summary-card" in (summary_card.get_attribute("class") or "")
+    # CSS props forwarded through `rx.RestProp` are applied as styles (ENG-9676).
+    assert summary_card.value_of_css_property("font-weight") == "700"
     assert driver.find_element(By.ID, "summary-title").text == "Current Price"
     assert (
         driver.find_element(By.ID, "summary-child").text
