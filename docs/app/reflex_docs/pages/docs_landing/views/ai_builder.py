@@ -72,24 +72,24 @@ def card(
     return rx.el.div(
         rx.el.span(
             "Enterprise-only",
-            class_name="text-m-slate-12 dark:text-m-slate-3 text-xs font-medium bg-m-slate-1 dark:bg-m-slate-11 px-2.5 h-7 absolute top-0 right-0 border-b border-l rounded-bl-lg border-m-slate-4 dark:border-m-slate-9 flex justify-center items-center",
+            class_name="text-secondary-12 text-xs font-medium bg-secondary-1 px-2.5 h-7 absolute top-0 right-0 border-b border-l rounded-bl-lg border-secondary-4 flex justify-center items-center",
         )
         if enteprise_only
         else None,
         rx.el.div(
             rx.el.span(
                 title,
-                class_name="text-m-slate-12 dark:text-m-slate-3 text-xl font-[575]",
+                class_name="text-secondary-12 text-xl font-[575]",
             ),
             rx.el.span(
                 description,
-                class_name="text-m-slate-7 dark:text-m-slate-6 text-sm font-[475]",
+                class_name="text-secondary-11 text-sm font-[475]",
             ),
             class_name="flex flex-col gap-2 p-8",
         ),
         content,
         rx.el.a(href=href, class_name="absolute inset-0"),
-        class_name="flex flex-col bg-white/96 dark:bg-m-slate-11 backdrop-blur-[16px] rounded-xl relative cursor-pointer transition-colors overflow-hidden shadow-[0_0_0_1px_rgba(0,0,0,0.04),0_12px_24px_0_rgba(0,0,0,0.08),0_1px_1px_0_rgba(0,0,0,0.01),0_4px_8px_0_rgba(0,0,0,0.03)] dark:shadow-none dark:border-t  dark:border-m-slate-9",
+        class_name="flex flex-col bg-secondary-1/96 backdrop-blur-[16px] rounded-xl relative cursor-pointer transition-colors overflow-hidden shadow-[0_0_0_1px_rgba(0,0,0,0.04),0_12px_24px_0_rgba(0,0,0,0.08),0_1px_1px_0_rgba(0,0,0,0.01),0_4px_8px_0_rgba(0,0,0,0.03)] dark:shadow-none dark:border dark:border-secondary-4",
     )
 
 
@@ -105,7 +105,7 @@ def integration_icon_marquee(integration_name: str) -> rx.Component:
         ),
         ui.avatar.fallback(
             integration_name[0],
-            class_name="text-m-slate-12 dark:text-m-slate-3 text-base font-semibold uppercase size-full",
+            class_name="text-secondary-12 text-base font-semibold uppercase size-full",
             unstyled=True,
         ),
         unstyled=True,
@@ -122,7 +122,7 @@ def integrations_marquee() -> rx.Component:
         marquee(
             *[integration_icon_marquee(name) for name in reversed(integration_names)],
             direction="left",
-            gradient_color="light-dark(rgba(255, 255, 255, 0.96), var(--m-slate-11))",
+            gradient_color="light-dark(rgba(255, 255, 255, 0.96), var(--secondary-1))",
             class_name="h-auto w-full overflow-hidden",
             gradient_width=65,
             speed=25,
@@ -131,7 +131,7 @@ def integrations_marquee() -> rx.Component:
         marquee(
             *[integration_icon_marquee(name) for name in integration_names],
             direction="right",
-            gradient_color="light-dark(rgba(255, 255, 255, 0.96), var(--m-slate-11))",
+            gradient_color="light-dark(rgba(255, 255, 255, 0.96), var(--secondary-1))",
             class_name="h-auto w-full overflow-hidden",
             gradient_width=65,
             speed=25,
@@ -147,11 +147,11 @@ def ai_builder_section() -> rx.Component:
             rx.el.div(
                 rx.el.h2(
                     "AI Builder",
-                    class_name="text-m-slate-12 dark:text-m-slate-3 text-3xl font-[575]",
+                    class_name="text-secondary-12 text-3xl font-[575]",
                 ),
                 rx.el.p(
                     "Learn how to build applications with Reflex AI.",
-                    class_name="text-m-slate-7 dark:text-m-slate-6 text-sm font-[475]",
+                    class_name="text-secondary-11 text-sm font-[475]",
                 ),
                 class_name="flex flex-col gap-4",
             ),
@@ -160,7 +160,7 @@ def ai_builder_section() -> rx.Component:
                     title="Getting Started",
                     description="A comprehensive guide to working effectively with AI Builder. The key to success is clarity, structure, and iteration.",
                     content=rx.image(
-                        src=f"{REFLEX_ASSETS_CDN}docs/{rx.color_mode_cond('light', 'dark')}/getting_started.svg",
+                        src=f"{REFLEX_ASSETS_CDN}docs/{rx.color_mode_cond('light', 'dark')}/getting_started_1.svg",
                         class_name="w-full h-auto pb-8",
                     ),
                     href=ai_builder_pages.overview.best_practices.path,
@@ -175,7 +175,7 @@ def ai_builder_section() -> rx.Component:
                     title="MCP",
                     description="The Reflex Model Context Protocol (MCP) provides AI assistants and coding tools with structured access to Reflex documentation and component information.",
                     content=rx.image(
-                        src=f"{REFLEX_ASSETS_CDN}docs/{rx.color_mode_cond('light', 'dark')}/mcp.svg",
+                        src=f"{REFLEX_ASSETS_CDN}docs/{rx.color_mode_cond('light', 'dark')}/mcp_1.svg",
                         class_name="w-full h-auto -mt-4",
                     ),
                     href=ai_builder_pages.integrations.mcp_overview.path,
@@ -185,5 +185,5 @@ def ai_builder_section() -> rx.Component:
             ),
             class_name="flex flex-col gap-10 max-lg:text-center relative max-w-(--landing-layout-max-width) mx-auto",
         ),
-        class_name="bg-gradient-to-b from-white-1 to-m-slate-1 dark:from-m-slate-11 dark:to-m-slate-12 w-full lg:pt-24 lg:pb-24 pb-10 max-xl:px-6 max-lg:pt-10",
+        class_name="bg-gradient-to-b from-secondary-2 to-secondary-1 w-full lg:pt-24 lg:pb-24 pb-10 max-xl:px-6 max-lg:pt-10",
     )

@@ -136,7 +136,7 @@ class HeadingLink(rx.link.__self__):
             underline="none",
             href=href,
             on_click=lambda: rx.set_clipboard(href),
-            class_name="flex flex-row items-center gap-2 hover:!text-violet-11 cursor-pointer mb-3 transition-colors group text-m-slate-12 dark:text-m-slate-3 ",
+            class_name="flex flex-row items-center gap-2 hover:!text-violet-11 cursor-pointer mb-3 transition-colors group text-secondary-12 ",
         )
 
 

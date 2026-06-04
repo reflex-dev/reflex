@@ -73,29 +73,29 @@ def enterprise_component_grid():
                 rx.link(
                     rx.el.h1(
                         section["title"],
-                        class_name="font-large text-slate-12",
+                        class_name="font-large text-secondary-12",
                     ),
-                    rx.icon("arrow_up_right", size=16, class_name="text-slate-11"),
+                    rx.icon("arrow_up_right", size=16, class_name="text-secondary-11"),
                     href=section["link"],
                     underline="none",
-                    class_name="px-4 py-2 bg-slate-1 hover:bg-slate-3 transition-bg flex flex-row justify-between items-center !text-slate-12",
+                    class_name="px-4 py-2 bg-secondary-1 hover:bg-secondary-3 transition-bg flex flex-row justify-between items-center !text-secondary-12",
                 ),
                 rx.text(
                     section["description"],
-                    class_name="px-4 py-2 font-small text-slate-9 border-t border-slate-5",
+                    class_name="px-4 py-2 font-small text-secondary-9 border-t border-secondary-5",
                 ),
                 rx.box(
                     *[
                         rx.link(
                             comp[0],
                             href=comp[1],
-                            class_name="font-small text-slate-11 hover:!text-violet-9 transition-color w-fit",
+                            class_name="font-small text-secondary-11 hover:!text-violet-9 transition-color w-fit",
                         )
                         for comp in section["components"]
                     ],
-                    class_name="flex flex-col gap-2.5 px-4 py-2 border-t border-slate-5",
+                    class_name="flex flex-col gap-2.5 px-4 py-2 border-t border-secondary-5",
                 ),
-                class_name="flex flex-col border border-slate-5 rounded-xl bg-slate-2 shadow-large overflow-hidden",
+                class_name="flex flex-col border border-secondary-5 rounded-xl bg-secondary-2 shadow-large overflow-hidden",
             )
         )
 

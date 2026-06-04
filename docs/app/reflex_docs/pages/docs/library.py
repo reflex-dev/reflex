@@ -49,12 +49,12 @@ def component_grid():
                 rx.link(
                     rx.el.h1(
                         get_display_name(category),
-                        class_name="font-large text-slate-12",
+                        class_name="font-large text-secondary-12",
                     ),
-                    get_icon("new_tab", class_name="text-slate-11 [&>svg]:size-4"),
+                    get_icon("new_tab", class_name="text-secondary-11 [&>svg]:size-4"),
                     href=f"/library/{prefix.strip('/') + '/' if prefix.strip('/') else ''}{category.lower()}",
                     underline="none",
-                    class_name="px-4 py-2 bg-slate-1 hover:bg-slate-3 transition-bg flex flex-row justify-between items-center !text-slate-12",
+                    class_name="px-4 py-2 bg-secondary-1 hover:bg-secondary-3 transition-bg flex flex-row justify-between items-center !text-secondary-12",
                 ),
                 rx.box(
                     *[
@@ -65,15 +65,15 @@ def component_grid():
                                 clist=c,
                                 prefix=prefix,
                             ),
-                            class_name="font-small text-slate-11 hover:!text-violet-9 transition-color w-fit",
+                            class_name="font-small text-secondary-11 hover:!text-violet-9 transition-color w-fit",
                         )
                         for c in get_components_for_category(
                             category, components[category]
                         )
                     ],
-                    class_name="flex flex-col gap-2.5 px-4 py-2 border-t border-slate-5",
+                    class_name="flex flex-col gap-2.5 px-4 py-2 border-t border-secondary-5",
                 ),
-                class_name="flex flex-col border border-slate-5 rounded-xl bg-slate-2 shadow-large overflow-hidden",
+                class_name="flex flex-col border border-secondary-5 rounded-xl bg-secondary-2 shadow-large overflow-hidden",
             )
             for category in components
         ]

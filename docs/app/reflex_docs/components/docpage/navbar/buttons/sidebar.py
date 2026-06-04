@@ -18,9 +18,9 @@ def social_menu_item(
         "discord": "Join Reflex Discord community",
     }
     return rx.link(
-        get_icon(icon=icon, class_name="!text-slate-9"),
-        class_name="flex justify-center items-center gap-2 hover:bg-slate-3 px-4 py-[0.875rem] w-full h-[47px] transition-bg overflow-hidden"
-        + (" border-slate-4 border-x border-solid border-y-0" if border else ""),
+        get_icon(icon=icon, class_name="!text-secondary-9"),
+        class_name="flex justify-center items-center gap-2 hover:bg-secondary-3 px-4 py-[0.875rem] w-full h-[47px] transition-bg overflow-hidden"
+        + (" border-secondary-4 border-x border-solid border-y-0" if border else ""),
         href=url,
         is_external=True,
         custom_attrs={"aria-label": aria_labels.get(icon, f"Visit {icon}")},
@@ -36,7 +36,7 @@ def drawer_socials() -> rx.Component:
             border=True,
         ),
         social_menu_item("discord", DISCORD_URL),
-        class_name="flex flex-row items-center border-slate-4 border-y-0 !border-b w-full",
+        class_name="flex flex-row items-center border-secondary-4 border-y-0 !border-b w-full",
     )
 
 
@@ -47,8 +47,8 @@ def drawer_item(text: str, url: str) -> rx.Component:
         text,
         href=url,
         underline="none",
-        color="var(--c-slate-9)",
-        class_name="flex justify-center items-center border-slate-4 px-4 py-[0.875rem] border-t-0 border-b border-solid w-full font-small hover:!text-violet-9 border-x-0",
+        color="var(--secondary-9)",
+        class_name="flex justify-center items-center border-secondary-4 px-4 py-[0.875rem] border-t-0 border-b border-solid w-full font-small hover:!text-violet-9 border-x-0",
     )
 
 
@@ -72,20 +72,20 @@ def navbar_sidebar_drawer(trigger) -> rx.Component:
                     rx.el.button(
                         rx.color_mode.icon(
                             light_component=rx.icon(
-                                "sun", size=16, class_name="!text-slate-9"
+                                "sun", size=16, class_name="!text-secondary-9"
                             ),
                             dark_component=rx.icon(
-                                "moon", size=16, class_name="!text-slate-9"
+                                "moon", size=16, class_name="!text-secondary-9"
                             ),
                         ),
                         on_click=toggle_color_mode,
                         class_name="flex flex-row justify-center items-center px-3 py-0.5 w-full h-[47px]",
                         custom_attrs={"aria-label": "Toggle color mode"},
                     ),
-                    class_name="flex flex-col items-center dark:bg-m-slate-12 bg-m-slate-1 w-full h-full",
+                    class_name="flex flex-col items-center bg-secondary-1 w-full h-full",
                 ),
                 class_name=ui.cn(
-                    "dark:!bg-m-slate-12 !bg-m-slate-1 w-full h-full !outline-none",
+                    "!bg-secondary-1 w-full h-full !outline-none",
                     rx.cond(
                         HostingBannerState.is_banner_visible,
                         "!top-[137px]",
@@ -110,7 +110,7 @@ def docs_sidebar_drawer(sidebar: rx.Component, trigger) -> rx.Component:
                 rx.box(
                     rx.drawer.close(
                         rx.box(
-                            class_name="absolute left-1/2 transform -translate-x-1/2 top-[-12px] flex-shrink-0 bg-slate-9 rounded-full w-[96px] h-[5px]",
+                            class_name="absolute left-1/2 transform -translate-x-1/2 top-[-12px] flex-shrink-0 bg-secondary-9 rounded-full w-[96px] h-[5px]",
                         ),
                         as_child=True,
                     ),
