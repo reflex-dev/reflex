@@ -5,10 +5,12 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import dataclasses
+import json
 from collections import deque
 from collections.abc import AsyncGenerator, AsyncIterator, MutableMapping
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, BinaryIO, cast
+from urllib.parse import unquote
 
 from python_multipart.multipart import MultipartParser, parse_options_header
 from reflex_base.utils import exceptions
@@ -424,6 +426,25 @@ def _require_upload_headers(request: Request) -> tuple[str, str]:
     return token, handler
 
 
+def _extra_upload_args(request: Request) -> dict[str, Any]:
+    """Decode extra bound handler args sent alongside an upload.
+
+    Uploads travel over a dedicated REST endpoint, so any args bound to the
+    handler (e.g. ``State.on_drop(rx.upload_files(...), field)``) are forwarded
+    as a URL-encoded JSON header rather than the normal event payload.
+
+    Args:
+        request: The incoming upload request.
+
+    Returns:
+        The decoded extra args, or an empty mapping if none were sent.
+    """
+    encoded = request.headers.get("reflex-event-args")
+    if not encoded:
+        return {}
+    return json.loads(unquote(encoded))
+
+
 async def _upload_buffered_file(
     request: Request,
     app: App,
@@ -447,6 +468,7 @@ async def _upload_buffered_file(
     except ClientDisconnect:
         return Response()
 
+    extra_args = _extra_upload_args(request)
     form_data_closed = False
 
     async def _close_form_data() -> None:
@@ -481,7 +503,7 @@ async def _upload_buffered_file(
 
         return Event(
             name=handler_name,
-            payload={handler_upload_param[0]: file_uploads},
+            payload={**extra_args, handler_upload_param[0]: file_uploads},
         )
 
     event: Event | None = None
@@ -555,7 +577,7 @@ async def _upload_chunk_file(
     chunk_iter = UploadChunkIterator(maxsize=8)
     event = Event(
         name=handler_name,
-        payload={handler_upload_param[0]: chunk_iter},
+        payload={**_extra_upload_args(request), handler_upload_param[0]: chunk_iter},
     )
     task_future = await app.event_processor.enqueue(token, event)
 

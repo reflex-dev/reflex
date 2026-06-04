@@ -8,8 +8,9 @@ import env from "$/env.json";
  * @param handler The handler to use.
  * @param upload_id The upload id to use.
  * @param on_upload_progress The function to call on upload progress.
- * @param socket the websocket connection
  * @param extra_headers Extra headers to send with the request.
+ * @param extra_args Extra bound handler args to forward to the backend handler.
+ * @param socket the websocket connection
  * @param refs The refs object to store the abort controller in.
  * @param getBackendURL Function to get the backend URL.
  * @param getToken Function to get the Reflex token.
@@ -22,6 +23,7 @@ export const uploadFiles = async (
   upload_id,
   on_upload_progress,
   extra_headers,
+  extra_args,
   socket,
   refs,
   getBackendURL,
@@ -147,6 +149,13 @@ export const uploadFiles = async (
     xhr.open("POST", getBackendURL(env.UPLOAD));
     xhr.setRequestHeader("Reflex-Client-Token", getToken());
     xhr.setRequestHeader("Reflex-Event-Handler", handler);
+    if (extra_args && Object.keys(extra_args).length > 0) {
+      // URL-encode the JSON so arbitrary values are safe in a single HTTP header.
+      xhr.setRequestHeader(
+        "Reflex-Event-Args",
+        encodeURIComponent(JSON.stringify(extra_args)),
+      );
+    }
     for (const [key, value] of Object.entries(extra_headers || {})) {
       xhr.setRequestHeader(key, value);
     }

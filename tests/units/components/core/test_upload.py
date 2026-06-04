@@ -46,6 +46,12 @@ class UploadStateTest(State):
     async def upload_with_field(self, files: list[rx.UploadFile], field: str):
         """Handle uploaded files for a specific field."""
 
+    @event
+    async def upload_with_reserved_arg(
+        self, files: list[rx.UploadFile], upload_id: str
+    ):
+        """Handle uploaded files with a bound arg that shadows a reserved key."""
+
 
 class StreamingUploadStateTest(State):
     """Test state for streaming uploads."""
@@ -226,6 +232,12 @@ def test_upload_files_event_spec_carries_upload_provider_app_wrap():
     )
 
 
+# Matches UPLOAD_EVENT_ARG_NAMES_KEY in reflex_base.event and the web template.
+# The constant isn't part of the module's public import surface (event/__init__.py
+# proxies attribute access through EventNamespace), so it's mirrored here.
+UPLOAD_EVENT_ARG_NAMES_KEY = "__reflex_event_arg_names"
+
+
 def test_upload_files_preserves_bound_event_args():
     field = Var(_js_expr="field", _var_type=str)
     spec = cast(
@@ -237,8 +249,32 @@ def test_upload_files_preserves_bound_event_args():
     )
     arg_values = {arg[0]._js_expr: arg[1]._js_expr for arg in spec.args}
 
+    # The bound arg stays a flat payload entry (keyed by its param name) and is
+    # advertised in the manifest so the client knows to forward it.
     assert arg_values["field"] == "field"
+    assert "field" in arg_values[UPLOAD_EVENT_ARG_NAMES_KEY]
     assert isinstance(Upload.create(id="foo_id", on_drop=spec), Upload)
+
+
+def test_upload_files_multiple_upload_args_raises():
+    from reflex_base.utils.exceptions import EventHandlerTypeError
+
+    with pytest.raises(EventHandlerTypeError, match="multiple file upload arguments"):
+        UploadStateTest.upload_with_field(
+            cast(Any, rx.upload_files(upload_id="foo_id")),
+            cast(Any, rx.upload_files(upload_id="bar_id")),
+        )
+
+
+def test_upload_files_bound_arg_reserved_name_raises():
+    """A bound arg sharing a reserved upload key name is rejected at build time."""
+    from reflex_base.utils.exceptions import EventHandlerTypeError
+
+    with pytest.raises(EventHandlerTypeError, match="reserved upload argument"):
+        UploadStateTest.upload_with_reserved_arg(
+            cast(Any, rx.upload_files(upload_id="foo_id")),
+            cast(Any, Var(_js_expr="some_id", _var_type=str)),
+        )
 
 
 def test_styled_upload_create():

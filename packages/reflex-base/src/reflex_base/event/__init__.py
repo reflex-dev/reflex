@@ -179,6 +179,13 @@ BACKGROUND_TASK_MARKER = "_reflex_background_task"
 EVENT_ACTIONS_MARKER = "_rx_event_actions"
 UPLOAD_FILES_CLIENT_HANDLER = "uploadFiles"
 
+# Payload key listing the names of the extra bound handler args in an upload
+# event. Uploads use a REST endpoint instead of the socket; the args stay flat
+# (so event-arg validation still sees them) and this manifest tells the client
+# uploadFiles handler which ones to forward, without it hardcoding the reserved
+# upload keys. Kept in sync with the matching literal in the web template.
+UPLOAD_EVENT_ARG_NAMES_KEY = "__reflex_event_arg_names"
+
 
 def _handler_name(handler: "EventHandler") -> str:
     """Get a stable fully qualified handler name for errors.
@@ -477,7 +484,9 @@ class EventHandler(EventActionsMixin):
         payload = []
         upload_event_spec = None
         for fn_arg, arg in zip(fn_args, event_args, strict=False):
-            # Special case for file uploads.
+            # Special case for file uploads. The upload arg takes its own
+            # positional slot so the remaining args stay aligned with fn_args,
+            # but its parameter name is re-derived server-side in as_event_spec.
             if isinstance(arg, (FileUpload, UploadFilesChunk)):
                 if upload_event_spec is not None:
                     msg = (
@@ -496,7 +505,30 @@ class EventHandler(EventActionsMixin):
                 raise EventHandlerTypeError(msg) from e
 
         if upload_event_spec is not None:
-            return upload_event_spec.with_args(upload_event_spec.args + tuple(payload))
+            if not payload:
+                return upload_event_spec
+            # The extra bound args share the flat payload with the synthetic
+            # upload args, so reject names that would clobber a reserved upload
+            # key (files, upload_id, extra_headers, ...).
+            payload_names = [name._js_expr for name, _ in payload]
+            reserved = {name._js_expr for name, _ in upload_event_spec.args}
+            clash = next((name for name in payload_names if name in reserved), None)
+            if clash is not None:
+                msg = (
+                    f"Event handler {self.fn.__name__} argument {clash!r} conflicts "
+                    "with a reserved upload argument."
+                )
+                raise EventHandlerTypeError(msg)
+            # The client uploadFiles handler forwards exactly the args named here,
+            # so it never has to know the reserved upload keys.
+            return upload_event_spec.with_args((
+                *upload_event_spec.args,
+                *payload,
+                (
+                    Var(_js_expr=UPLOAD_EVENT_ARG_NAMES_KEY),
+                    LiteralVar.create(payload_names),
+                ),
+            ))
 
         # Return the event spec.
         return EventSpec(
