@@ -8,6 +8,7 @@ import multiprocessing
 import os
 import platform
 import sys
+import uuid
 import warnings
 from contextlib import suppress
 from datetime import datetime, timezone
@@ -232,8 +233,8 @@ def _raise_on_missing_project_hash() -> bool:
 class _Properties(TypedDict):
     """Properties type for telemetry."""
 
-    distinct_id: int
-    distinct_app_id: NotRequired[int]
+    distinct_id: str
+    distinct_app_id: NotRequired[str]
     user_os: str
     user_os_detail: str
     reflex_version: str
@@ -259,6 +260,29 @@ class _Event(_DefaultEvent):
     timestamp: str
 
 
+def _encode_distinct_id(value: int) -> str:
+    """Encode a 128-bit telemetry identifier as a canonical UUID string.
+
+    Historically ``distinct_id`` and ``distinct_app_id`` were sent as raw
+    128-bit integers. PostHog coerces large JSON numbers to floats, silently
+    discarding all but ~16 significant digits, so distinct installs or apps can
+    collapse onto the same truncated value and have their events correlated.
+
+    A UUID carries the same 128 bits, so the hex string is sent losslessly while
+    remaining the *same value* as the legacy integer
+    (``uuid.UUID(int=value).int == value``). Deriving the UUID from the existing
+    identifier — rather than minting a fresh one — keeps an installation's new
+    events linkable to its pre-migration history.
+
+    Args:
+        value: The stored 128-bit identifier.
+
+    Returns:
+        The identifier encoded as a UUID hex string.
+    """
+    return str(uuid.UUID(int=value))
+
+
 def _get_event_defaults() -> _DefaultEvent | None:
     """Get the default event data.
 
@@ -270,7 +294,7 @@ def _get_event_defaults() -> _DefaultEvent | None:
         return None
     cpuinfo = get_cpu_info()
     properties: _Properties = {
-        "distinct_id": installation_id,
+        "distinct_id": _encode_distinct_id(installation_id),
         "user_os": get_os(),
         "user_os_detail": get_detailed_platform_str(),
         "reflex_version": get_reflex_version(),
@@ -288,7 +312,7 @@ def _get_event_defaults() -> _DefaultEvent | None:
     if (
         project_hash := get_project_hash(raise_on_fail=_raise_on_missing_project_hash())
     ) is not None:
-        properties["distinct_app_id"] = project_hash
+        properties["distinct_app_id"] = _encode_distinct_id(project_hash)
 
     return {
         "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",

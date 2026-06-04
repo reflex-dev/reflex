@@ -7,10 +7,10 @@ import importlib
 import importlib.metadata
 import inspect
 import json
-import random
 import re
 import sys
 import typing
+import uuid
 from datetime import datetime
 from os import getcwd
 from pathlib import Path
@@ -603,7 +603,10 @@ def ensure_reflex_installation_id() -> int | None:
                 #     - content not parseable as an int
 
         if installation_id is None:
-            installation_id = random.getrandbits(128)
+            # Generate a uuid4 and persist its 128-bit integer form. Storing the
+            # int keeps the file readable by older Reflex versions; telemetry
+            # re-encodes it as the canonical UUID string before sending.
+            installation_id = uuid.uuid4().int
             installation_id_file.write_text(str(installation_id))
     except Exception as e:
         console.debug(f"Failed to ensure reflex installation id: {e}")

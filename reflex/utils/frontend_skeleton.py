@@ -1,7 +1,7 @@
 """This module provides utility functions to initialize the frontend skeleton."""
 
 import json
-import random
+import uuid
 from pathlib import Path
 
 from reflex_base import constants
@@ -498,8 +498,9 @@ def init_reflex_json(project_hash: int | None):
     if project_hash is not None:
         console.debug(f"Project hash is already set to {project_hash}.")
     else:
-        # Get a random project hash.
-        project_hash = random.getrandbits(128)
+        # Generate a uuid4 and persist its 128-bit integer form. Telemetry
+        # re-encodes it as the canonical UUID string before sending.
+        project_hash = uuid.uuid4().int
         console.debug(f"Setting project hash to {project_hash}.")
 
     # Write the hash and version to the reflex json file.

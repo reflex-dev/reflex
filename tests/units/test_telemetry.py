@@ -1,3 +1,4 @@
+import uuid
 from types import SimpleNamespace
 
 import pytest
@@ -18,8 +19,10 @@ def event_defaults(mocker: MockerFixture) -> dict:
     defaults = {
         "api_key": "test_api_key",
         "properties": {
-            "distinct_id": 12345,
-            "distinct_app_id": 78285505863498957834586115958872998605,
+            # Post-conversion defaults carry UUID-string identifiers (the hex
+            # forms of 12345 and 78285505863498957834586115958872998605).
+            "distinct_id": "00000000-0000-0000-0000-000000003039",
+            "distinct_app_id": "3ae53d70-56b0-b52a-f645-37040fb802cd",
             "user_os": "Test OS",
             "user_os_detail": "Mocked Platform",
             "reflex_version": "0.8.0",
@@ -336,3 +339,94 @@ def test_prepare_event_properties_override_kwargs(event_defaults):
     assert event is not None
     props: dict = event["properties"]  # pyright: ignore[reportAssignmentType]
     assert props["template"] == "from-properties"
+
+
+def test_encode_distinct_id_round_trips_losslessly():
+    """A legacy 128-bit integer id encodes to UUID without losing precision."""
+    legacy_id = 78285505863498957834586115958872998605
+    encoded = telemetry._encode_distinct_id(legacy_id)
+
+    assert isinstance(encoded, str)
+    assert encoded == str(uuid.UUID(int=legacy_id))
+    # Full 128-bit fidelity is preserved, unlike the old float-truncated int.
+    assert uuid.UUID(encoded).int == legacy_id
+
+
+def test_encode_distinct_id_handles_uuid4_int_form():
+    """A freshly generated uuid4 round-trips through its integer storage form."""
+    generated = uuid.uuid4()
+    assert telemetry._encode_distinct_id(generated.int) == str(generated)
+
+
+def test_encode_distinct_id_pads_small_values():
+    """Small integers still encode to a valid, zero-padded UUID string."""
+    encoded = telemetry._encode_distinct_id(12345)
+    assert encoded == "00000000-0000-0000-0000-000000003039"
+    assert uuid.UUID(encoded).int == 12345
+
+
+@pytest.fixture
+def stub_event_default_sources(mocker: MockerFixture):
+    """Stub the slow/host-specific inputs of ``_get_event_defaults``.
+
+    Returns:
+        A callable ``configure(installation_id, project_hash)`` that sets the
+        stored identifier values feeding the default event payload.
+    """
+    mocker.patch.object(telemetry, "get_cpu_info", return_value=None)
+    mocker.patch.object(telemetry, "get_node_version", return_value=None)
+    mocker.patch.object(telemetry, "get_bun_version", return_value=None)
+
+    def configure(*, installation_id: int | None, project_hash: int | None) -> None:
+        mocker.patch.object(
+            telemetry, "ensure_reflex_installation_id", return_value=installation_id
+        )
+        mocker.patch.object(telemetry, "get_project_hash", return_value=project_hash)
+
+    return configure
+
+
+def test_get_event_defaults_encodes_ids_as_uuid_strings(stub_event_default_sources):
+    """distinct_id and distinct_app_id are sent as lossless UUID strings.
+
+    Regression: previously these were raw 128-bit ints that PostHog truncated
+    to floats, collapsing distinct installs/apps onto one identifier.
+    """
+    installation_id = 0xDEADBEEFDEADBEEFDEADBEEFDEADBEEF
+    project_hash = 78285505863498957834586115958872998605
+    stub_event_default_sources(
+        installation_id=installation_id, project_hash=project_hash
+    )
+
+    defaults = telemetry._get_event_defaults()
+
+    assert defaults is not None
+    props: dict = defaults["properties"]  # pyright: ignore[reportAssignmentType]
+    assert isinstance(props["distinct_id"], str)
+    assert isinstance(props["distinct_app_id"], str)
+    assert props["distinct_id"] == str(uuid.UUID(int=installation_id))
+    assert props["distinct_app_id"] == str(uuid.UUID(int=project_hash))
+    # Continuity: each encoded id decodes back to the original integer value.
+    assert uuid.UUID(props["distinct_id"]).int == installation_id
+    assert uuid.UUID(props["distinct_app_id"]).int == project_hash
+
+
+def test_get_event_defaults_omits_distinct_app_id_without_project_hash(
+    stub_event_default_sources,
+):
+    """No distinct_app_id is emitted when the project hash is unavailable."""
+    stub_event_default_sources(installation_id=12345, project_hash=None)
+
+    defaults = telemetry._get_event_defaults()
+
+    assert defaults is not None
+    assert "distinct_app_id" not in defaults["properties"]
+    assert defaults["properties"]["distinct_id"] == str(uuid.UUID(int=12345))
+
+
+def test_get_event_defaults_returns_none_without_installation_id(
+    stub_event_default_sources,
+):
+    """A missing installation id short-circuits defaults (unchanged contract)."""
+    stub_event_default_sources(installation_id=None, project_hash=12345)
+    assert telemetry._get_event_defaults() is None
