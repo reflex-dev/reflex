@@ -1,6 +1,5 @@
 import importlib.metadata
 import uuid
-
 from types import SimpleNamespace
 
 import pytest
