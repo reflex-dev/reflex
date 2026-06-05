@@ -495,6 +495,7 @@ def init_reflex_json(project_hash: int | None):
     Args:
         project_hash: The app hash.
     """
+    reflex_json: dict[str, object] = {"version": constants.Reflex.VERSION}
     if project_hash is not None:
         console.debug(f"Project hash is already set to {project_hash}.")
     else:
@@ -502,10 +503,11 @@ def init_reflex_json(project_hash: int | None):
         # re-encodes it as the canonical UUID string before sending.
         project_hash = uuid.uuid4().int
         console.debug(f"Setting project hash to {project_hash}.")
+        # A brand-new project is UUID-native, so it never reported a legacy
+        # numeric distinct_id to alias; mark the alias as handled up front. The
+        # reuse branch leaves the flag untouched (the merging write preserves it).
+        reflex_json["alias_created"] = True
 
     # Write the hash and version to the reflex json file.
-    reflex_json = {
-        "version": constants.Reflex.VERSION,
-        "project_hash": project_hash,
-    }
+    reflex_json["project_hash"] = project_hash
     path_ops.update_json_file(get_web_dir() / constants.Reflex.JSON, reflex_json)

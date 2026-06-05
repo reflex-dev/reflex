@@ -430,3 +430,98 @@ def test_get_event_defaults_returns_none_without_installation_id(
     """A missing installation id short-circuits defaults (unchanged contract)."""
     stub_event_default_sources(installation_id=None, project_hash=12345)
     assert telemetry._get_event_defaults() is None
+
+
+@pytest.fixture(autouse=True)
+def _reset_alias_guard():
+    """Reset the per-process alias guard so each test starts fresh."""
+    telemetry._legacy_alias_attempted = False
+    yield
+    telemetry._legacy_alias_attempted = False
+
+
+def test_maybe_alias_sends_create_alias_when_unflagged(mocker: MockerFixture):
+    """An un-flagged reflex.json triggers a $create_alias and sets the flag."""
+    mocker.patch.object(telemetry, "get_alias_created", return_value=False)
+    mocker.patch.object(telemetry, "ensure_reflex_installation_id", return_value=12345)
+    set_flag = mocker.patch.object(telemetry, "set_alias_created")
+    send_mock = mocker.patch.object(telemetry, "send")
+
+    telemetry._maybe_alias_legacy_distinct_id(telemetry_enabled=True)
+
+    send_mock.assert_called_once_with(
+        "$create_alias", True, properties={"alias": 12345}
+    )
+    set_flag.assert_called_once()
+
+
+def test_maybe_alias_skips_when_already_created(mocker: MockerFixture):
+    """A flag already set means no alias event and no rewrite."""
+    mocker.patch.object(telemetry, "get_alias_created", return_value=True)
+    send_mock = mocker.patch.object(telemetry, "send")
+    set_flag = mocker.patch.object(telemetry, "set_alias_created")
+
+    telemetry._maybe_alias_legacy_distinct_id(telemetry_enabled=True)
+
+    send_mock.assert_not_called()
+    set_flag.assert_not_called()
+
+
+def test_maybe_alias_skips_without_reflex_json(mocker: MockerFixture):
+    """No reflex.json (None) means nowhere to persist the flag, so skip."""
+    mocker.patch.object(telemetry, "get_alias_created", return_value=None)
+    send_mock = mocker.patch.object(telemetry, "send")
+    set_flag = mocker.patch.object(telemetry, "set_alias_created")
+
+    telemetry._maybe_alias_legacy_distinct_id(telemetry_enabled=True)
+
+    send_mock.assert_not_called()
+    set_flag.assert_not_called()
+
+
+def test_maybe_alias_skips_when_telemetry_disabled(mocker: MockerFixture):
+    """Disabled telemetry sends nothing and leaves the persistent flag unset."""
+    get_alias = mocker.patch.object(telemetry, "get_alias_created")
+    send_mock = mocker.patch.object(telemetry, "send")
+
+    telemetry._maybe_alias_legacy_distinct_id(telemetry_enabled=False)
+
+    get_alias.assert_not_called()
+    send_mock.assert_not_called()
+
+
+def test_maybe_alias_runs_at_most_once_per_process(mocker: MockerFixture):
+    """The guard prevents a second alias attempt within the same process."""
+    mocker.patch.object(telemetry, "get_alias_created", return_value=False)
+    mocker.patch.object(telemetry, "ensure_reflex_installation_id", return_value=7)
+    mocker.patch.object(telemetry, "set_alias_created")
+    send_mock = mocker.patch.object(telemetry, "send")
+
+    telemetry._maybe_alias_legacy_distinct_id(telemetry_enabled=True)
+    telemetry._maybe_alias_legacy_distinct_id(telemetry_enabled=True)
+
+    send_mock.assert_called_once()
+
+
+def test_maybe_alias_create_alias_payload(
+    event_defaults, httpx_post, mocker: MockerFixture
+):
+    """The posted $create_alias pairs the new UUID distinct_id with the legacy int."""
+    mocker.patch.object(telemetry, "get_alias_created", return_value=False)
+    mocker.patch.object(telemetry, "set_alias_created")
+    legacy_id = 78285505863498957834586115958872998605
+    mocker.patch.object(
+        telemetry, "ensure_reflex_installation_id", return_value=legacy_id
+    )
+
+    telemetry._maybe_alias_legacy_distinct_id(telemetry_enabled=True)
+
+    httpx_post.assert_called_once()
+    payload = httpx_post.call_args.kwargs["json"]
+    assert payload["event"] == "$create_alias"
+    props = payload["properties"]
+    # The legacy integer is sent at full precision so PostHog re-coerces it to
+    # the same lossy float as the historic events and merges the two persons.
+    assert props["alias"] == legacy_id
+    # distinct_id is the new UUID-string identity (from the event defaults).
+    assert props["distinct_id"] == event_defaults["properties"]["distinct_id"]

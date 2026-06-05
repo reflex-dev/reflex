@@ -24,7 +24,12 @@ from typing_extensions import NotRequired
 
 from reflex.utils import console, processes
 from reflex.utils.js_runtimes import get_bun_version, get_node_version
-from reflex.utils.prerequisites import ensure_reflex_installation_id, get_project_hash
+from reflex.utils.prerequisites import (
+    ensure_reflex_installation_id,
+    get_alias_created,
+    get_project_hash,
+    set_alias_created,
+)
 
 UTC = timezone.utc
 POSTHOG_API_URL: str = "https://app.posthog.com/capture/"
@@ -426,6 +431,59 @@ def _send(
 
 background_tasks = set()
 
+_legacy_alias_attempted = False
+
+
+def _maybe_alias_legacy_distinct_id(telemetry_enabled: bool | None) -> None:
+    """Link the legacy numeric distinct_id to its UUID form, once per install.
+
+    Older Reflex versions reported ``distinct_id`` as a 128-bit integer, which
+    PostHog stored as a lossy float. Now that the same value is sent as a UUID
+    string (see ``_encode_distinct_id``), the two PostHog identities must be
+    merged so an installation's history stays on a single person. PostHog does
+    this through a one-time ``$create_alias`` event.
+
+    A flag in ``reflex.json`` records that the attempt was made. The flag is set
+    even when the alias does not match — the legacy id is lossy, so PostHog may
+    silently drop it — to avoid resending on every run. ``reflex.json`` merges
+    unknown keys on write, so the flag survives Reflex downgrades and upgrades.
+
+    Args:
+        telemetry_enabled: Whether telemetry is enabled (resolved from the config
+            when None).
+    """
+    global _legacy_alias_attempted
+    if _legacy_alias_attempted:
+        return
+
+    with suppress(Exception):
+        if telemetry_enabled is None:
+            telemetry_enabled = get_config().telemetry_enabled
+        if not telemetry_enabled:
+            # Don't latch: a later enabled send in this process should retry.
+            return
+
+        # Latch before the alias send below (which re-enters send()) so it cannot
+        # recurse and so the attempt happens at most once per process.
+        _legacy_alias_attempted = True
+
+        alias_created = get_alias_created()
+        # None: no reflex.json, so nowhere to persist the flag -> skip.
+        # True: already handled (or a UUID-native project) -> skip.
+        if alias_created is None or alias_created:
+            return
+
+        if (installation_id := ensure_reflex_installation_id()) is None:
+            return
+
+        # distinct_id is the UUID form (set by get_event_defaults); send the
+        # legacy integer as ``alias`` so PostHog coerces it to the same float as
+        # the historic events and merges the two persons.
+        send("$create_alias", telemetry_enabled, properties={"alias": installation_id})
+
+        # Record the attempt regardless of outcome; we must not retry every run.
+        set_alias_created()
+
 
 def send(
     event: str,
@@ -443,6 +501,7 @@ def send(
             properties. Preferred over ``kwargs`` for new events.
         kwargs: Additional data to send with the event.
     """
+    _maybe_alias_legacy_distinct_id(telemetry_enabled)
 
     async def async_send(  # noqa: RUF029
         event: str,

@@ -14,7 +14,7 @@ from reflex_base.utils.decorator import cached_procedure
 
 from reflex.reflex import cli
 from reflex.testing import chdir
-from reflex.utils import frontend_skeleton, js_runtimes
+from reflex.utils import frontend_skeleton, js_runtimes, prerequisites
 from reflex.utils.frontend_skeleton import (
     _compile_vite_config,
     _update_react_router_config,
@@ -1372,3 +1372,61 @@ app = rx.App()
 app.add_page(index)
 """
     )
+
+
+def test_get_alias_created_missing_file(tmp_path, monkeypatch: pytest.MonkeyPatch):
+    """A missing reflex.json yields None (nowhere to persist the flag)."""
+    monkeypatch.setattr(prerequisites, "get_web_dir", lambda: tmp_path)
+    assert prerequisites.get_alias_created() is None
+
+
+def test_get_alias_created_absent_flag(tmp_path, monkeypatch: pytest.MonkeyPatch):
+    """An existing reflex.json without the flag yields False."""
+    monkeypatch.setattr(prerequisites, "get_web_dir", lambda: tmp_path)
+    (tmp_path / constants.Reflex.JSON).write_text('{"project_hash": 5}')
+    assert prerequisites.get_alias_created() is False
+
+
+def test_get_alias_created_flag_set(tmp_path, monkeypatch: pytest.MonkeyPatch):
+    """A set flag yields True."""
+    monkeypatch.setattr(prerequisites, "get_web_dir", lambda: tmp_path)
+    (tmp_path / constants.Reflex.JSON).write_text('{"alias_created": true}')
+    assert prerequisites.get_alias_created() is True
+
+
+def test_set_alias_created_merges_and_preserves(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+):
+    """Setting the flag preserves existing keys (downgrade/upgrade safety)."""
+    monkeypatch.setattr(prerequisites, "get_web_dir", lambda: tmp_path)
+    json_file = tmp_path / constants.Reflex.JSON
+    json_file.write_text('{"version": "0.1.0", "project_hash": 5}')
+
+    prerequisites.set_alias_created()
+
+    data = json.loads(json_file.read_text())
+    assert data["alias_created"] is True
+    assert data["project_hash"] == 5
+    assert data["version"] == "0.1.0"
+
+
+def test_init_reflex_json_presets_alias_for_new_project(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+):
+    """A brand-new project is marked alias-handled so no alias event is sent."""
+    _patch_web_dir(monkeypatch, tmp_path)
+    frontend_skeleton.init_reflex_json(project_hash=None)
+    data = json.loads((tmp_path / constants.Reflex.JSON).read_text())
+    assert data["alias_created"] is True
+    assert "project_hash" in data
+
+
+def test_init_reflex_json_keeps_existing_project_unflagged(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+):
+    """Reusing an existing hash does not preset the flag (legacy project)."""
+    _patch_web_dir(monkeypatch, tmp_path)
+    frontend_skeleton.init_reflex_json(project_hash=12345)
+    data = json.loads((tmp_path / constants.Reflex.JSON).read_text())
+    assert "alias_created" not in data
+    assert data["project_hash"] == 12345

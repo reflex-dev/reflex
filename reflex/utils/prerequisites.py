@@ -511,6 +511,37 @@ def get_project_hash(raise_on_fail: bool = False) -> int | None:
     return data.get("project_hash")
 
 
+def get_alias_created() -> bool | None:
+    """Read the telemetry distinct_id alias flag from the reflex.json file.
+
+    The flag records whether the one-time PostHog ``$create_alias`` event that
+    links an installation's legacy numeric ``distinct_id`` to its UUID form has
+    already been handled (either sent, or skipped for a UUID-native project).
+
+    Returns:
+        The flag value, or None when reflex.json is missing or unreadable (i.e.
+        there is nowhere to persist the flag).
+    """
+    json_file = get_web_dir() / constants.Reflex.JSON
+    if not json_file.exists():
+        return None
+    with contextlib.suppress(Exception):
+        return bool(json.loads(json_file.read_text()).get("alias_created", False))
+    return None
+
+
+def set_alias_created():
+    """Record in reflex.json that the telemetry distinct_id alias was handled.
+
+    The write merges into the existing file, so ``project_hash``/``version`` are
+    preserved; likewise an older Reflex version rewriting reflex.json keeps this
+    flag, so it survives downgrades and upgrades.
+    """
+    path_ops.update_json_file(
+        get_web_dir() / constants.Reflex.JSON, {"alias_created": True}
+    )
+
+
 def check_running_mode(frontend: bool, backend: bool) -> RunningMode:
     """Check if the app is running in frontend or backend mode.
 
