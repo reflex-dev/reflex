@@ -70,5 +70,8 @@ def test_build_entrypoint_does_not_touch_pyi_hashes(tmp_path: Path):
 
     # The stub must have been generated for the wheel...
     assert (pkg / "widget.pyi").exists()
+    # ...the empty __init__.py yields no stub and must not crash the scan
+    # (inspect.getsource raises OSError for an empty file on Python < 3.13)...
+    assert not (pkg / "__init__.pyi").exists()
     # ...but the hash registry must be byte-for-byte untouched.
     assert hashes_file.read_text() == original_text

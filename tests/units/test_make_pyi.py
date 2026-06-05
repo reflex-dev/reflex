@@ -313,3 +313,26 @@ def test_check_flag_fails_on_stale(tmp_path, monkeypatch):
     with pytest.raises(SystemExit) as exc_info:
         make_pyi.main(["--check"])
     assert exc_info.value.code == 1
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["--check", "--force"],
+        ["--check", "reflex/components/radix"],
+    ],
+)
+def test_check_rejects_regeneration_flags(argv, capsys):
+    """`--check` cannot be combined with --force or explicit targets.
+
+    Both would silently be ignored by the early `--check` return, so argparse
+    rejects the combination (exit code 2) instead of doing the wrong thing.
+
+    Args:
+        argv: A mutually-exclusive argument combination.
+        capsys: The pytest stdout/stderr capture fixture.
+    """
+    with pytest.raises(SystemExit) as exc_info:
+        make_pyi.main(argv)
+    assert exc_info.value.code == 2
+    assert "--check cannot be combined" in capsys.readouterr().err

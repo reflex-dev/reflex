@@ -1583,18 +1583,22 @@ def _scan_file(module_path: Path) -> tuple[str, str] | None:
     if not class_names and not is_init_file:
         return None
 
+    try:
+        source = _get_source(module)
+    except OSError:
+        # A module with no retrievable source (e.g. an empty __init__.py) has
+        # nothing to stub. inspect.getsource raises OSError for an empty file on
+        # Python < 3.13 but returns "" on 3.13+; normalize both to "no stub".
+        return None
+
     if is_init_file:
-        new_tree = InitStubGenerator(module, class_names).visit(
-            ast.parse(_get_source(module))
-        )
+        new_tree = InitStubGenerator(module, class_names).visit(ast.parse(source))
         init_imports = _get_init_lazy_imports(module, new_tree)
         if not init_imports:
             return None
         content_hash = _write_pyi_file(module_path, init_imports)
     else:
-        new_tree = StubGenerator(module, class_names).visit(
-            ast.parse(_get_source(module))
-        )
+        new_tree = StubGenerator(module, class_names).visit(ast.parse(source))
         content_hash = _write_pyi_file(module_path, ast.unparse(new_tree))
     return str(module_path.with_suffix(".pyi").resolve()), content_hash
 

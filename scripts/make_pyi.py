@@ -209,6 +209,11 @@ def main(argv: list[str] | None = None) -> None:
     )
     args = parser.parse_args(argv)
 
+    # --check only validates the registry and exits; combining it with --force or
+    # explicit targets (which regenerate) would silently ignore one of them.
+    if args.check and (args.force or args.targets):
+        parser.error("--check cannot be combined with --force or explicit targets")
+
     if args.check:
         stale = _stale_hash_entries()
         if stale:
