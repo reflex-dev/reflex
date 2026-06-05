@@ -511,35 +511,43 @@ def get_project_hash(raise_on_fail: bool = False) -> int | None:
     return data.get("project_hash")
 
 
-def get_alias_created() -> bool | None:
-    """Read the telemetry distinct_id alias flag from the reflex.json file.
+_DISTINCT_ID_SEMANTICS_VERSION = "0.9.5"
 
-    The flag records whether the one-time PostHog ``$create_alias`` event that
-    links an installation's legacy numeric ``distinct_id`` to its UUID form has
-    already been handled (either sent, or skipped for a UUID-native project).
+
+def _installation_id_semantics_file() -> Path:
+    """Return the path of the telemetry distinct_id semantics marker file.
 
     Returns:
-        The flag value, or None when reflex.json is missing or unreadable (i.e.
-        there is nowhere to persist the flag).
+        The marker path, next to the installation id in the Reflex dir.
     """
-    json_file = get_web_dir() / constants.Reflex.JSON
-    if not json_file.exists():
-        return None
+    return environment.REFLEX_DIR.get() / "installation_id_semantics"
+
+
+def has_uuid_distinct_id_semantics() -> bool:
+    """Return whether this installation uses UUID telemetry distinct_id semantics.
+
+    The marker is written for brand-new installs (by
+    ``ensure_reflex_installation_id``) and after a legacy install attempts to
+    alias its numeric distinct_id to the UUID form, so its absence identifies an
+    as-yet-unmigrated legacy installation.
+
+    Returns:
+        True if the per-installation semantics marker file exists.
+    """
+    return _installation_id_semantics_file().exists()
+
+
+def mark_uuid_distinct_id_semantics():
+    """Record that this installation uses UUID telemetry distinct_id semantics.
+
+    The marker lives next to the installation id in the Reflex dir, so it is
+    per-machine (like the id itself) rather than per-app. Failures are ignored:
+    the marker is best-effort and a missing one only triggers a later retry.
+    """
     with contextlib.suppress(Exception):
-        return bool(json.loads(json_file.read_text()).get("alias_created", False))
-    return None
-
-
-def set_alias_created():
-    """Record in reflex.json that the telemetry distinct_id alias was handled.
-
-    The write merges into the existing file, so ``project_hash``/``version`` are
-    preserved; likewise an older Reflex version rewriting reflex.json keeps this
-    flag, so it survives downgrades and upgrades.
-    """
-    path_ops.update_json_file(
-        get_web_dir() / constants.Reflex.JSON, {"alias_created": True}
-    )
+        marker = _installation_id_semantics_file()
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text(_DISTINCT_ID_SEMANTICS_VERSION)
 
 
 def check_running_mode(frontend: bool, backend: bool) -> RunningMode:
@@ -639,6 +647,9 @@ def ensure_reflex_installation_id() -> int | None:
             # re-encodes it as the canonical UUID string before sending.
             installation_id = uuid.uuid4().int
             installation_id_file.write_text(str(installation_id))
+            # A freshly generated id is UUID-native, so record the new semantics
+            # up front; there is no legacy numeric id for telemetry to alias.
+            mark_uuid_distinct_id_semantics()
     except Exception as e:
         console.debug(f"Failed to ensure reflex installation id: {e}")
         return None

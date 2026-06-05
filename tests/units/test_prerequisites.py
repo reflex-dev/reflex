@@ -1,6 +1,7 @@
 import json
 import shutil
 import tempfile
+import uuid
 from collections.abc import Callable, Generator
 from dataclasses import dataclass
 from pathlib import Path
@@ -1374,59 +1375,50 @@ app.add_page(index)
     )
 
 
-def test_get_alias_created_missing_file(tmp_path, monkeypatch: pytest.MonkeyPatch):
-    """A missing reflex.json yields None (nowhere to persist the flag)."""
-    monkeypatch.setattr(prerequisites, "get_web_dir", lambda: tmp_path)
-    assert prerequisites.get_alias_created() is None
-
-
-def test_get_alias_created_absent_flag(tmp_path, monkeypatch: pytest.MonkeyPatch):
-    """An existing reflex.json without the flag yields False."""
-    monkeypatch.setattr(prerequisites, "get_web_dir", lambda: tmp_path)
-    (tmp_path / constants.Reflex.JSON).write_text('{"project_hash": 5}')
-    assert prerequisites.get_alias_created() is False
-
-
-def test_get_alias_created_flag_set(tmp_path, monkeypatch: pytest.MonkeyPatch):
-    """A set flag yields True."""
-    monkeypatch.setattr(prerequisites, "get_web_dir", lambda: tmp_path)
-    (tmp_path / constants.Reflex.JSON).write_text('{"alias_created": true}')
-    assert prerequisites.get_alias_created() is True
-
-
-def test_set_alias_created_merges_and_preserves(
+def test_has_uuid_distinct_id_semantics_absent(
     tmp_path, monkeypatch: pytest.MonkeyPatch
 ):
-    """Setting the flag preserves existing keys (downgrade/upgrade safety)."""
-    monkeypatch.setattr(prerequisites, "get_web_dir", lambda: tmp_path)
-    json_file = tmp_path / constants.Reflex.JSON
-    json_file.write_text('{"version": "0.1.0", "project_hash": 5}')
-
-    prerequisites.set_alias_created()
-
-    data = json.loads(json_file.read_text())
-    assert data["alias_created"] is True
-    assert data["project_hash"] == 5
-    assert data["version"] == "0.1.0"
+    """No marker file means the install has not adopted UUID semantics."""
+    monkeypatch.setenv("REFLEX_DIR", str(tmp_path))
+    assert prerequisites.has_uuid_distinct_id_semantics() is False
 
 
-def test_init_reflex_json_presets_alias_for_new_project(
+def test_mark_uuid_distinct_id_semantics_writes_marker(
     tmp_path, monkeypatch: pytest.MonkeyPatch
 ):
-    """A brand-new project is marked alias-handled so no alias event is sent."""
-    _patch_web_dir(monkeypatch, tmp_path)
-    frontend_skeleton.init_reflex_json(project_hash=None)
-    data = json.loads((tmp_path / constants.Reflex.JSON).read_text())
-    assert data["alias_created"] is True
-    assert "project_hash" in data
+    """Marking creates the per-install marker file with the semantics version."""
+    monkeypatch.setenv("REFLEX_DIR", str(tmp_path))
+
+    prerequisites.mark_uuid_distinct_id_semantics()
+
+    assert prerequisites.has_uuid_distinct_id_semantics() is True
+    marker = tmp_path / "installation_id_semantics"
+    assert marker.read_text() == prerequisites._DISTINCT_ID_SEMANTICS_VERSION
 
 
-def test_init_reflex_json_keeps_existing_project_unflagged(
+def test_ensure_installation_id_marks_new_install(
     tmp_path, monkeypatch: pytest.MonkeyPatch
 ):
-    """Reusing an existing hash does not preset the flag (legacy project)."""
-    _patch_web_dir(monkeypatch, tmp_path)
-    frontend_skeleton.init_reflex_json(project_hash=12345)
-    data = json.loads((tmp_path / constants.Reflex.JSON).read_text())
-    assert "alias_created" not in data
-    assert data["project_hash"] == 12345
+    """A brand-new installation id is generated and marked UUID-native."""
+    monkeypatch.setenv("REFLEX_DIR", str(tmp_path))
+    assert prerequisites.has_uuid_distinct_id_semantics() is False
+
+    install_id = prerequisites.ensure_reflex_installation_id()
+
+    assert install_id is not None
+    # The id is a uuid4 persisted as its integer form.
+    assert uuid.UUID(int=install_id).version == 4
+    assert prerequisites.has_uuid_distinct_id_semantics() is True
+
+
+def test_ensure_installation_id_keeps_legacy_install_unmarked(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+):
+    """An existing legacy id is read and left unmarked, so telemetry will alias it."""
+    monkeypatch.setenv("REFLEX_DIR", str(tmp_path))
+    (tmp_path / "installation_id").write_text("12345")
+
+    install_id = prerequisites.ensure_reflex_installation_id()
+
+    assert install_id == 12345
+    assert prerequisites.has_uuid_distinct_id_semantics() is False

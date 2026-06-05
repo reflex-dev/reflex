@@ -26,9 +26,9 @@ from reflex.utils import console, processes
 from reflex.utils.js_runtimes import get_bun_version, get_node_version
 from reflex.utils.prerequisites import (
     ensure_reflex_installation_id,
-    get_alias_created,
     get_project_hash,
-    set_alias_created,
+    has_uuid_distinct_id_semantics,
+    mark_uuid_distinct_id_semantics,
 )
 
 UTC = timezone.utc
@@ -443,10 +443,10 @@ def _maybe_alias_legacy_distinct_id(telemetry_enabled: bool | None) -> None:
     merged so an installation's history stays on a single person. PostHog does
     this through a one-time ``$create_alias`` event.
 
-    A flag in ``reflex.json`` records that the attempt was made. The flag is set
-    even when the alias does not match — the legacy id is lossy, so PostHog may
-    silently drop it — to avoid resending on every run. ``reflex.json`` merges
-    unknown keys on write, so the flag survives Reflex downgrades and upgrades.
+    A per-machine marker file (next to the installation id) records that the
+    install uses the new semantics. The marker is written even when the alias
+    does not match — the legacy id is lossy, so PostHog may silently drop it — to
+    avoid resending on every run.
 
     Args:
         telemetry_enabled: Whether telemetry is enabled (resolved from the config
@@ -467,13 +467,11 @@ def _maybe_alias_legacy_distinct_id(telemetry_enabled: bool | None) -> None:
         # recurse and so the attempt happens at most once per process.
         _legacy_alias_attempted = True
 
-        alias_created = get_alias_created()
-        # None: no reflex.json, so nowhere to persist the flag -> skip.
-        # True: already handled (or a UUID-native project) -> skip.
-        if alias_created is None or alias_created:
-            return
-
+        # Resolve the installation id first: a brand-new install is created and
+        # marked UUID-native by this call, so the marker check then skips it.
         if (installation_id := ensure_reflex_installation_id()) is None:
+            return
+        if has_uuid_distinct_id_semantics():
             return
 
         # distinct_id is the UUID form (set by get_event_defaults); send the
@@ -481,8 +479,9 @@ def _maybe_alias_legacy_distinct_id(telemetry_enabled: bool | None) -> None:
         # the historic events and merges the two persons.
         send("$create_alias", telemetry_enabled, properties={"alias": installation_id})
 
-        # Record the attempt regardless of outcome; we must not retry every run.
-        set_alias_created()
+        # Record the new semantics regardless of outcome; we must not retry every
+        # run even if the lossy legacy id failed to match.
+        mark_uuid_distinct_id_semantics()
 
 
 def send(
