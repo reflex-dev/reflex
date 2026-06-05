@@ -5,9 +5,12 @@
 # requirements, so a fresh `uv sync` + test run fails out of the box. This hook
 # reconciles the environment with the repo on every web session start:
 #
-#   1. uv: the image ships an older uv than tool.uv.required-version in
-#      pyproject.toml. The astral.sh installer and `uv self update` are
-#      blocked / GitHub-rate-limited here, so we upgrade from PyPI instead.
+#   1. uv: the repo pins tool.uv.required-version in pyproject.toml. The web
+#      image usually already has a compatible uv installed (e.g. in
+#      /usr/local/bin), but an older standalone build can sit ahead of it on
+#      PATH. We pick whichever installed uv meets the requirement and put it
+#      first; only if none qualifies do we install one from PyPI (the astral.sh
+#      installer and `uv self update` are blocked / GitHub-rate-limited here).
 #   2. Python: the baked uv (see #1) predates Python 3.14.0 final, so its
 #      bundled release manifest only knows 3.14 prereleases -- a bare `uv sync`
 #      with it resolves .python-version=3.14 to a release candidate whose
@@ -28,19 +31,40 @@ fi
 
 cd "$CLAUDE_PROJECT_DIR"
 
-# 1. Ensure uv meets the repo's required-version. pip is a near-instant no-op
-#    when the constraint is already satisfied, and installs from PyPI otherwise
-#    (the astral.sh installer and `uv self update` are blocked here).
+# 1. Make a uv satisfying the repo's required-version the first thing on PATH.
+#    Prefer an already-installed compatible uv (the web image usually has one);
+#    only install from PyPI if none qualifies. We search PATH first, then a few
+#    well-known locations in case the on-PATH uv is an older standalone build.
 req="$(sed -n 's/^[[:space:]]*required-version[[:space:]]*=[[:space:]]*"[^0-9]*\([0-9][0-9.]*\).*/\1/p' pyproject.toml | head -n1)"
-python3 -m pip install --user --quiet --root-user-action=ignore "uv${req:+>=$req}"
 
-# pip --user installs land in ~/.local/bin; make sure they win over the baked uv,
-# both for the rest of this script and -- via CLAUDE_ENV_FILE -- for the session's
-# later commands, which otherwise wouldn't see this PATH change once we exit.
-export PATH="$HOME/.local/bin:$PATH"
+uv_satisfies() {  # $1=uv binary; true if its version >= $req (or no req parsed)
+  local v
+  v="$("$1" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n1)"
+  [ -n "$v" ] || return 1
+  [ -z "$req" ] && return 0
+  [ "$(printf '%s\n%s\n' "$req" "$v" | sort -V | head -n1)" = "$req" ]
+}
+
+uv_dir=""
+for cand in $(command -v -a uv 2>/dev/null) /usr/local/bin/uv /usr/bin/uv "$HOME/.local/bin/uv"; do
+  if [ -x "$cand" ] && uv_satisfies "$cand"; then
+    uv_dir="$(cd "$(dirname "$cand")" && pwd)"
+    break
+  fi
+done
+
+if [ -z "$uv_dir" ]; then
+  python3 -m pip install --user --quiet --root-user-action=ignore "uv${req:+>=$req}"
+  uv_dir="$HOME/.local/bin"
+fi
+
+# Put the chosen uv first on PATH for the rest of this script and -- via
+# CLAUDE_ENV_FILE -- for the session's later commands, which otherwise wouldn't
+# see this change once we exit.
+export PATH="$uv_dir:$PATH"
 hash -r 2>/dev/null || true
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$CLAUDE_ENV_FILE"
+  printf 'export PATH="%s:$PATH"\n' "$uv_dir" >> "$CLAUDE_ENV_FILE"
 fi
 
 # 2. Ensure a stable interpreter matching .python-version is installed, so sync
