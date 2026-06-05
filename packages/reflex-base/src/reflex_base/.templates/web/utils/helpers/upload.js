@@ -76,6 +76,13 @@ export const uploadFiles = async (
   const controller = new AbortController();
   const formdata = new FormData();
 
+  // Bound handler args are sent as a JSON form field that must precede the
+  // files, so the streaming chunk parser reads it before the first file part.
+  // Field name kept in sync with UPLOAD_EVENT_ARGS_FIELD in _upload.py.
+  if (extra_args && Object.keys(extra_args).length > 0) {
+    formdata.append("__reflex_event_args", JSON.stringify(extra_args));
+  }
+
   // Add the token and handler to the file name.
   files.forEach((file) => {
     formdata.append("files", file, file.path || file.name);
@@ -149,13 +156,6 @@ export const uploadFiles = async (
     xhr.open("POST", getBackendURL(env.UPLOAD));
     xhr.setRequestHeader("Reflex-Client-Token", getToken());
     xhr.setRequestHeader("Reflex-Event-Handler", handler);
-    if (extra_args && Object.keys(extra_args).length > 0) {
-      // URL-encode the JSON so arbitrary values are safe in a single HTTP header.
-      xhr.setRequestHeader(
-        "Reflex-Event-Args",
-        encodeURIComponent(JSON.stringify(extra_args)),
-      );
-    }
     for (const [key, value] of Object.entries(extra_headers || {})) {
       xhr.setRequestHeader(key, value);
     }

@@ -1,12 +1,19 @@
+import asyncio
+import io
 import json
 from typing import Any, cast
-from urllib.parse import quote
 
 import pytest
 from reflex_base.event import EventChain, EventHandler, EventSpec, parse_args_spec
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
-from reflex_components_core.core._upload import _extra_upload_args
+from reflex_components_core.core._upload import (
+    UPLOAD_EVENT_ARGS_FIELD,
+    UploadChunkIterator,
+    _buffered_upload_args,
+    _decode_event_args,
+    _UploadChunkMultipartParser,
+)
 from reflex_components_core.core.upload import (
     GhostUpload,
     StyledUpload,
@@ -16,8 +23,10 @@ from reflex_components_core.core.upload import (
     cancel_upload,
     get_upload_url,
 )
+from starlette.datastructures import FormData, Headers
+from starlette.datastructures import UploadFile as StarletteUploadFile
 from starlette.exceptions import HTTPException
-from starlette.requests import Request
+from starlette.formparsers import MultiPartException
 
 import reflex as rx
 from reflex import event
@@ -282,51 +291,177 @@ def test_upload_files_bound_arg_reserved_name_raises():
         )
 
 
-@pytest.fixture
-def upload_request():
-    """Build an upload request carrying a given reflex-event-args header value.
+def test_decode_event_args_decodes_json_object():
+    assert _decode_event_args(json.dumps({"field": "value"})) == {"field": "value"}
+
+
+def test_decode_event_args_missing_returns_empty():
+    assert _decode_event_args(None) == {}
+    assert _decode_event_args("") == {}
+
+
+@pytest.mark.parametrize("encoded", ["[1, 2, 3]", '"foo"', "42", "null"])
+def test_decode_event_args_non_object_raises(encoded):
+    """A field encoding valid JSON that is not an object is a bad request."""
+    with pytest.raises(HTTPException) as exc_info:
+        _decode_event_args(encoded)
+    assert exc_info.value.status_code == 400
+
+
+def test_decode_event_args_malformed_json_raises():
+    """A field that is not valid JSON is a bad request, not a 500."""
+    with pytest.raises(HTTPException) as exc_info:
+        _decode_event_args("{not json")
+    assert exc_info.value.status_code == 400
+
+
+def test_buffered_upload_args_decodes_text_field():
+    form = FormData([(UPLOAD_EVENT_ARGS_FIELD, json.dumps({"field": "value"}))])
+    assert _buffered_upload_args(form) == {"field": "value"}
+
+
+def test_buffered_upload_args_missing_returns_empty():
+    assert _buffered_upload_args(FormData([])) == {}
+
+
+def test_buffered_upload_args_file_rejected():
+    """A file smuggled under the args field name is a bad request, not no-args."""
+    upload = StarletteUploadFile(file=io.BytesIO(b"{}"), filename="args.json")
+    form = FormData([(UPLOAD_EVENT_ARGS_FIELD, upload)])
+    with pytest.raises(HTTPException) as exc_info:
+        _buffered_upload_args(form)
+    assert exc_info.value.status_code == 400
+
+
+def _multipart_body(
+    boundary: str, *, args: str | None = None, file_first: bool = False
+) -> bytes:
+    """Build a multipart upload body, optionally with a bound-args field.
+
+    Args:
+        boundary: The multipart boundary token.
+        args: The raw bound-args field value, or ``None`` to omit it.
+        file_first: Place the file part before the args field (contract violation).
 
     Returns:
-        A factory taking the header value (or ``None`` to omit the header).
+        The encoded multipart body.
+    """
+    args_part = (
+        f"--{boundary}\r\n"
+        'Content-Disposition: form-data; name="__reflex_event_args"\r\n\r\n'
+        f"{args}\r\n"
+        if args is not None
+        else ""
+    )
+    file_part = (
+        f"--{boundary}\r\n"
+        'Content-Disposition: form-data; name="files"; filename="a.txt"\r\n'
+        "Content-Type: text/plain\r\n\r\n"
+        "hello\r\n"
+    )
+    parts = [file_part, args_part] if file_first else [args_part, file_part]
+    return ("".join(parts) + f"--{boundary}--\r\n").encode()
+
+
+async def _run_chunk_parser(
+    body: bytes, boundary: str, *, charset: str | None = None
+) -> tuple[str | None, list[bytes]]:
+    """Drive the streaming chunk parser over a multipart body.
+
+    Args:
+        body: The multipart request body.
+        boundary: The multipart boundary token.
+        charset: Optional charset to advertise in the request Content-Type.
+
+    Returns:
+        The raw args field passed to dispatch and the file chunk payloads.
     """
 
-    def _build(header_value: str | None) -> Request:
-        headers = (
-            [(b"reflex-event-args", header_value.encode())]
-            if header_value is not None
-            else []
-        )
-        return Request({"type": "http", "headers": headers})
+    async def _stream():
+        # Deliver in two writes so dispatch fires between parser.write calls.
+        mid = len(body) // 2
+        for piece in (body[:mid], body[mid:]):
+            await asyncio.sleep(0)
+            yield piece
 
-    return _build
+    args_received: asyncio.Queue[str | None] = asyncio.Queue()
 
+    async def _on_args_ready(raw: str | None) -> None:
+        await args_received.put(raw)
 
-def test_extra_upload_args_decodes_json_object(upload_request):
-    request = upload_request(quote(json.dumps({"field": "value"})))
-    assert _extra_upload_args(request) == {"field": "value"}
+    content_type = f"multipart/form-data; boundary={boundary}"
+    if charset is not None:
+        content_type += f"; charset={charset}"
 
-
-def test_extra_upload_args_missing_header_returns_empty(upload_request):
-    assert _extra_upload_args(upload_request(None)) == {}
-    assert _extra_upload_args(upload_request("")) == {}
-
-
-@pytest.mark.parametrize(
-    "header_value",
-    [quote("[1, 2, 3]"), quote('"foo"'), quote("42"), quote("null")],
-)
-def test_extra_upload_args_non_object_raises(upload_request, header_value):
-    """A header encoding valid JSON that is not an object is a bad request."""
-    with pytest.raises(HTTPException) as exc_info:
-        _extra_upload_args(upload_request(header_value))
-    assert exc_info.value.status_code == 400
+    chunk_iter = UploadChunkIterator(maxsize=8)
+    parser = _UploadChunkMultipartParser(
+        headers=Headers({"content-type": content_type}),
+        stream=_stream(),
+        chunk_iter=chunk_iter,
+        on_args_ready=_on_args_ready,
+    )
+    await parser.parse()
+    await chunk_iter.finish()
+    chunks = [chunk.data async for chunk in chunk_iter]
+    return await args_received.get(), chunks
 
 
-def test_extra_upload_args_malformed_json_raises(upload_request):
-    """A header that is not valid JSON is a bad request, not a 500."""
-    with pytest.raises(HTTPException) as exc_info:
-        _extra_upload_args(upload_request(quote("{not json")))
-    assert exc_info.value.status_code == 400
+async def test_chunk_parser_captures_bound_args_before_file():
+    """The streaming parser captures the leading args field and emits the file."""
+    raw, chunks = await _run_chunk_parser(
+        _multipart_body("BOUNDARY", args='{"field": "value"}'), "BOUNDARY"
+    )
+    assert _decode_event_args(raw) == {"field": "value"}
+    assert b"".join(chunks) == b"hello"
+
+
+async def test_chunk_parser_without_args_dispatches_empty():
+    """A streaming upload with no args field still dispatches (with empty args)."""
+    raw, chunks = await _run_chunk_parser(_multipart_body("BOUNDARY"), "BOUNDARY")
+    assert _decode_event_args(raw) == {}
+    assert b"".join(chunks) == b"hello"
+
+
+async def test_chunk_parser_bogus_charset_does_not_crash():
+    """A bogus request charset must fall back, not raise LookupError -> 500."""
+    raw, chunks = await _run_chunk_parser(
+        _multipart_body("BOUNDARY", args='{"field": "value"}'),
+        "BOUNDARY",
+        charset="bogus-cs",
+    )
+    assert _decode_event_args(raw) == {"field": "value"}
+    assert b"".join(chunks) == b"hello"
+
+
+async def test_chunk_parser_args_after_file_rejected():
+    """Bound args sent after a file part are rejected, not silently dropped."""
+    body = _multipart_body("BOUNDARY", args='{"field": "value"}', file_first=True)
+    with pytest.raises(MultiPartException):
+        await _run_chunk_parser(body, "BOUNDARY")
+
+
+async def test_chunk_parser_args_as_file_rejected():
+    """A file under the args field name is rejected, not treated as a phantom file."""
+    body = (
+        b"--BOUNDARY\r\n"
+        b'Content-Disposition: form-data; name="__reflex_event_args"; '
+        b'filename="args.json"\r\n'
+        b"Content-Type: application/json\r\n\r\n"
+        b'{"field": "value"}\r\n'
+        b"--BOUNDARY--\r\n"
+    )
+    with pytest.raises(MultiPartException):
+        await _run_chunk_parser(body, "BOUNDARY")
+
+
+async def test_chunk_parser_oversized_args_rejected(monkeypatch):
+    """An oversized bound-args field is rejected instead of buffered unbounded."""
+    monkeypatch.setattr(
+        "reflex_components_core.core._upload.MAX_UPLOAD_EVENT_ARGS_BYTES", 8
+    )
+    body = _multipart_body("BOUNDARY", args='{"field": "much too long to fit"}')
+    with pytest.raises(MultiPartException):
+        await _run_chunk_parser(body, "BOUNDARY")
 
 
 def test_styled_upload_create():
