@@ -28,34 +28,11 @@ fi
 
 cd "$CLAUDE_PROJECT_DIR"
 
-# 1. Upgrade uv if it's below the repo's required-version.
-need_uv="$(python3 - <<'PY'
-import re, shutil, subprocess
-from pathlib import Path
-
-req = "0"
-m = re.search(r'required-version\s*=\s*"[><=~ ]*([0-9][0-9.]*)"', Path("pyproject.toml").read_text())
-if m:
-    req = m.group(1)
-
-cur = "0"
-if shutil.which("uv"):
-    out = subprocess.run(["uv", "--version"], capture_output=True, text=True).stdout
-    mm = re.search(r"(\d+\.\d+\.\d+)", out)
-    if mm:
-        cur = mm.group(1)
-
-def tup(v):
-    return tuple(int(x) for x in v.split("."))
-
-print("yes" if tup(cur) < tup(req) else "no")
-PY
-)"
-
-if [ "$need_uv" = "yes" ]; then
-  echo "Upgrading uv to satisfy required-version..."
-  python3 -m pip install --user --upgrade --quiet uv
-fi
+# 1. Ensure uv meets the repo's required-version. pip is a near-instant no-op
+#    when the constraint is already satisfied, and installs from PyPI otherwise
+#    (the astral.sh installer and `uv self update` are blocked here).
+req="$(sed -n 's/^[[:space:]]*required-version[[:space:]]*=[[:space:]]*"[^0-9]*\([0-9][0-9.]*\).*/\1/p' pyproject.toml | head -n1)"
+python3 -m pip install --user --quiet --root-user-action=ignore "uv${req:+>=$req}"
 
 # pip --user installs land in ~/.local/bin; make sure they win over the baked uv.
 export PATH="$HOME/.local/bin:$PATH"
