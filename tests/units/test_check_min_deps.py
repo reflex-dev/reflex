@@ -110,3 +110,208 @@ def test_pyright_errors_delta_cancels_shared_noise():
 
     new = minimum.keys() - baseline.keys()
     assert new == {("/abs/foo.py", 50, 0, "model_dump is unknown")}
+
+
+@pytest.mark.parametrize(
+    ("requirement", "name", "is_dev"),
+    [
+        ("reflex-base >= 0.9.4", "reflex-base", False),
+        ("reflex-base >= 0.9.5.dev1", "reflex-base", True),
+        ("reflex-base>=0.9.5.dev1,<0.10", "reflex-base", True),
+        ("pydantic >=2.12.0,<3.0", "pydantic", False),
+        ("psutil >=7.0.0,<8.0; sys_platform == 'win32'", "psutil", False),
+        ("granian[reload] >=2.5.5", "granian", False),
+        ("granian[reload] >=2.5.5.dev0", "granian", True),
+        # Name canonicalization (PEP 503) is handled by packaging.
+        ("python_multipart >= 0.0.21", "python-multipart", False),
+        ("ruamel.yaml >=0.18", "ruamel-yaml", False),
+        ("foo ==1.0dev", "foo", True),
+        ("foo ==1.0-dev2", "foo", True),
+        ("foo ===1.0.dev1", "foo", True),
+        ("foo >1.0.dev1", "foo", True),
+        # A dev release only counts as a lower bound; upper-bound and exclusion clauses are
+        # still resolvable from PyPI and must not be flagged.
+        ("reflex-base >=1.0,!=2.0.dev1", "reflex-base", False),
+        ("foo >=1.0,<2.0.dev3", "foo", False),
+        ("foo <2.0.dev3", "foo", False),
+        ("foo <=1.0.dev1", "foo", False),
+        ("foo !=1.2.dev3", "foo", False),
+        # A prefix match (``==1.2.*``) has no concrete version and is not a dev pin.
+        ("foo ==1.2.*", "foo", False),
+        # A direct URL reference carries no version specifier.
+        ("foo @ https://example.dev/foo.whl", "foo", False),
+        ("bar", "bar", False),
+        ("pkg ~=1.2.3.dev4", "pkg", True),
+        # An unparsable requirement yields an empty name and is not a dev pin.
+        ("not a requirement!!", "", False),
+    ],
+)
+def test_parse_requirement(requirement: str, name: str, is_dev: bool):
+    assert check_min_deps._parse_requirement(requirement) == (name, is_dev)
+
+
+def test_published_dependencies_includes_core_and_optional_groups():
+    project = {
+        "dependencies": ["a >= 1", "b >= 2"],
+        "optional-dependencies": {"x": ["c >= 3"], "y": ["d >= 4"]},
+    }
+    assert check_min_deps._published_dependencies(project) == [
+        "a >= 1",
+        "b >= 2",
+        "c >= 3",
+        "d >= 4",
+    ]
+
+
+def test_published_dependencies_empty_project():
+    assert check_min_deps._published_dependencies({}) == []
+
+
+def test_workspace_package_dirs_maps_dist_names_to_dirs():
+    dirs = check_min_deps._workspace_package_dirs()
+    assert dirs["reflex"] == check_min_deps.REPO_ROOT
+    assert dirs["reflex-base"] == check_min_deps.REPO_ROOT / "packages" / "reflex-base"
+    # External (non-workspace) dependencies are not present.
+    assert "pydantic" not in dirs
+
+
+def test_local_dev_sources_selects_only_dev_pinned_workspace_members():
+    dirs = check_min_deps._workspace_package_dirs()
+    project = {
+        "dependencies": [
+            "reflex-base >= 0.9.5.dev1",  # workspace + dev -> included
+            "pydantic >= 2.12.0",  # external -> excluded
+            "reflex-components-lucide >= 0.9.0",  # workspace, non-dev -> excluded
+            "reflex-base >= 0.9.5.dev1",  # duplicate -> deduped
+        ],
+        "optional-dependencies": {
+            "x": ["reflex-components-radix >= 0.9.2.dev1"],  # dev pin in optional group
+        },
+    }
+    assert check_min_deps._local_dev_sources(project, dirs) == (
+        dirs["reflex-base"],
+        dirs["reflex-components-radix"],
+    )
+
+
+def test_local_dev_sources_ignores_dev_pinned_non_workspace_dep():
+    dirs = check_min_deps._workspace_package_dirs()
+    # An external package's dev pin cannot be served locally, so it is not selected.
+    project = {"dependencies": ["somethirdparty >= 1.0.dev1"]}
+    assert check_min_deps._local_dev_sources(project, dirs) == ()
+
+
+def test_discover_packages_records_local_dev_sources():
+    for package in check_min_deps.discover_packages():
+        assert isinstance(package.local_dev_sources, tuple)
+        for source in package.local_dev_sources:
+            assert (source / "pyproject.toml").is_file()
+
+
+def test_resolve_and_check_appends_local_dev_sources_as_editables(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    captured: list[list[str]] = []
+
+    class _Done:
+        returncode = 0
+        stdout = '{"generalDiagnostics": []}'
+
+    def fake_run(cmd: list[str], **kwargs: object) -> _Done:
+        captured.append([str(c) for c in cmd])
+        return _Done()
+
+    monkeypatch.setattr(check_min_deps, "_run", fake_run)
+    dev_source = check_min_deps.REPO_ROOT / "packages" / "reflex-base"
+    package = check_min_deps.Package(
+        name="reflex",
+        project_dir=check_min_deps.REPO_ROOT,
+        source_dir=check_min_deps.REPO_ROOT / "reflex",
+        extras=(),
+        local_dev_sources=(dev_source,),
+    )
+
+    errors, _ = check_min_deps._resolve_and_check(
+        package, "3.12", tmp_path / "venv", tmp_path / "cfg.json", lowest=True
+    )
+
+    assert errors == {}
+    install = next(c for c in captured if c[:3] == ["uv", "pip", "install"])
+    # PyPI is still forced for every non-dev dependency...
+    assert "--no-sources" in install
+    assert install[install.index("--resolution") + 1] == "lowest-direct"
+    # ...but the dev-pinned sibling is provided editable from its local checkout.
+    assert install.count("-e") == 2
+    assert str(dev_source) in install
+
+
+def _write_pyproject(path: Path, dependencies: list[str], optional: str = "") -> Path:
+    path.mkdir(parents=True, exist_ok=True)
+    pyproject = path / "pyproject.toml"
+    deps = ", ".join(f'"{dep}"' for dep in dependencies)
+    pyproject.write_text(
+        f'[project]\nname = "demo"\ndependencies = [{deps}]\n{optional}'
+    )
+    return pyproject
+
+
+def test_check_dev_pins_passes_when_no_dev_pins(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    pyproject = _write_pyproject(tmp_path, ["reflex-base >= 0.9.4", "pydantic >= 2.12"])
+    monkeypatch.setattr(
+        check_min_deps, "_workspace_pyprojects", lambda: iter([("demo", pyproject)])
+    )
+    assert check_min_deps.check_dev_pins([]) == 0
+
+
+def test_check_dev_pins_fails_and_reports_only_dev_pins(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+):
+    pyproject = _write_pyproject(
+        tmp_path, ["reflex-base >= 0.9.5.dev1", "pydantic >= 2.12.0"]
+    )
+    monkeypatch.setattr(
+        check_min_deps, "_workspace_pyprojects", lambda: iter([("demo", pyproject)])
+    )
+
+    assert check_min_deps.check_dev_pins([]) == 1
+    out = capsys.readouterr().out
+    assert "reflex-base >= 0.9.5.dev1" in out
+    assert "pydantic" not in out  # the non-dev pin is not flagged
+
+
+def test_check_dev_pins_detects_dev_pin_in_optional_group(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    pyproject = _write_pyproject(
+        tmp_path,
+        [],
+        optional='[project.optional-dependencies]\nextra = ["sibling >= 1.0.dev3"]\n',
+    )
+    monkeypatch.setattr(
+        check_min_deps, "_workspace_pyprojects", lambda: iter([("demo", pyproject)])
+    )
+    assert check_min_deps.check_dev_pins([]) == 1
+
+
+def test_check_dev_pins_unknown_package_returns_error(
+    capsys: pytest.CaptureFixture[str],
+):
+    assert check_min_deps.check_dev_pins(["does-not-exist"]) == 1
+    assert "unknown package" in capsys.readouterr().out
+
+
+def test_check_dev_pins_scopes_to_named_package(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    clean = _write_pyproject(tmp_path / "clean", ["reflex-base >= 0.9.4"])
+    dirty = _write_pyproject(tmp_path / "dirty", ["reflex-base >= 0.9.5.dev1"])
+    monkeypatch.setattr(
+        check_min_deps,
+        "_workspace_pyprojects",
+        lambda: iter([("clean", clean), ("dirty", dirty)]),
+    )
+    # Scoped to the clean package, the dirty package's dev pin is not consulted.
+    assert check_min_deps.check_dev_pins(["clean"]) == 0
+    assert check_min_deps.check_dev_pins(["dirty"]) == 1
