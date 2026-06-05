@@ -6,7 +6,6 @@ from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 
 from reflex.app import UnevaluatedPage
 from reflex.compiler import compiler
-from reflex.compiler.compiler import _compile_page
 from reflex.compiler.plugins import DefaultCollectorPlugin, default_page_plugins
 from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
 
@@ -18,9 +17,9 @@ def import_templates():
     import reflex.compiler.templates  # noqa: F401
 
 
-def _compile_single_pass_page_ctx(component: Component) -> PageContext:
-    # The single-pass compiler mutates the tree in place when it inserts memo
-    # wrappers, so benchmark iterations need an isolated copy of the input.
+def _compile_page_context(component: Component) -> PageContext:
+    # The compiler mutates the tree in place when it inserts memo wrappers, so
+    # benchmark iterations need an isolated copy of the input.
     component = copy.deepcopy(component)
     page_ctx = PageContext(
         name="benchmark",
@@ -43,8 +42,8 @@ def _compile_single_pass_page_ctx(component: Component) -> PageContext:
     return page_ctx
 
 
-def _get_imports_single_pass(component: Component) -> dict:
-    """Collect only imports via a single-pass walk — comparable to _get_all_imports.
+def _collect_imports(component: Component) -> dict:
+    """Collect only imports via a single walk of the component tree.
 
     Returns:
         The collapsed import dict for the page.
@@ -68,8 +67,8 @@ def _get_imports_single_pass(component: Component) -> dict:
     return page_ctx.frontend_imports
 
 
-def _compile_page_single_pass(component: Component) -> str:
-    page_ctx = _compile_single_pass_page_ctx(component)
+def _compile_page(component: Component) -> str:
+    page_ctx = _compile_page_context(component)
     page_ctx.frontend_imports = page_ctx.merged_imports(collapse=True)
     return compiler.compile_page_from_context(page_ctx)[1]
 
@@ -91,19 +90,13 @@ def _compile_page_full_context(unevaluated_page) -> str:
     return output_code
 
 
-def test_compile_page(evaluated_page: Component, benchmark: BenchmarkFixture):
-    import_templates()
-
-    benchmark(lambda: _compile_page(evaluated_page))
-
-
-def test_compile_page_single_pass(
+def test_compile_page(
     evaluated_page: Component,
     benchmark: BenchmarkFixture,
 ):
     import_templates()
 
-    benchmark(lambda: _compile_page_single_pass(evaluated_page))
+    benchmark(lambda: _compile_page(evaluated_page))
 
 
 def test_compile_page_full_context(
@@ -119,25 +112,22 @@ def test_get_all_imports(evaluated_page: Component, benchmark: BenchmarkFixture)
     benchmark(lambda: evaluated_page._get_all_imports())
 
 
-def test_get_all_imports_single_pass(
+def test_collect_imports(
     evaluated_page: Component,
     benchmark: BenchmarkFixture,
 ):
-    benchmark(lambda: _get_imports_single_pass(evaluated_page))
+    benchmark(lambda: _collect_imports(evaluated_page))
 
 
-def test_compile_single_pass_all_artifacts(
+def test_compile_all_artifacts(
     evaluated_page: Component,
     benchmark: BenchmarkFixture,
 ):
-    """Full single-pass collecting all artifacts (imports, hooks, code, app_wrap).
+    """Compile a page collecting every artifact (imports, hooks, code, app_wrap).
 
-    This is the fair comparison for the total work the old multi-pass approach
-    did across _get_all_imports + _get_all_hooks + _get_all_custom_code +
-    _get_all_app_wrap_components.
+    Exercises the full single walk of the component tree that produces imports,
+    hooks, custom code, and app_wrap components together.
     """
     benchmark(
-        lambda: _compile_single_pass_page_ctx(evaluated_page).merged_imports(
-            collapse=True
-        )
+        lambda: _compile_page_context(evaluated_page).merged_imports(collapse=True)
     )
