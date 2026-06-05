@@ -39,3 +39,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - run: uv run pre-commit run --all-files --show-diff-on-failure
+      # Partial/explicit-target generator runs merge into pyi_hashes.json rather
+      # than pruning, so a deleted component can leave a stale entry behind. Fail
+      # the build if any entry references a .py source that no longer exists.
+      - run: uv run --no-sync python scripts/make_pyi.py --check
