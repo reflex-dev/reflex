@@ -31,6 +31,7 @@ publish pipeline to keep ``*.dev`` pins out of released package metadata).
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
+#     "packaging",
 #     "tomli; python_version < '3.11'",
 # ]
 # ///
@@ -39,7 +40,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import subprocess
 import sys
 import tempfile
@@ -47,6 +47,10 @@ from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
+
+from packaging.requirements import InvalidRequirement, Requirement
+from packaging.utils import canonicalize_name
+from packaging.version import InvalidVersion, Version
 
 if sys.version_info >= (3, 11):
     import tomllib
@@ -69,48 +73,45 @@ SKIP_PACKAGES = frozenset({
     "reflex-site-shared",
 })
 
-# Leading distribution name (and optional ``[extras]``) of a PEP 508 requirement.
-_REQUIREMENT_NAME = re.compile(r"\s*([A-Za-z0-9._-]+)\s*(?:\[[^\]]*\])?")
-
-# A PEP 440 development-release segment within a version specifier: a digit, an optional
-# ``.``/``-``/``_`` separator, then ``dev`` (e.g. ``0.9.5.dev1``, ``1.0dev``, ``1.0-dev0``).
-# Anchoring on a preceding digit keeps it from matching a stray ``dev`` (such as a ``.dev``
-# URL host); it is only ever matched against the version-specifier region of a requirement,
-# never the package name or the environment marker.
-_DEV_RELEASE = re.compile(r"[0-9][._-]?dev", re.IGNORECASE)
-
-
-def _normalize_name(name: str) -> str:
-    """Normalize a distribution name to its PEP 503 canonical form.
-
-    Args:
-        name: A distribution name as written in a requirement or ``[project].name``.
-
-    Returns:
-        The lowercased name with runs of ``-``, ``_`` and ``.`` collapsed to a single ``-``.
-    """
-    return re.sub(r"[-_.]+", "-", name).lower()
+# PEP 440 operators that establish a version floor the resolved version must meet or match.
+# A development release under one of these is an unpublished *minimum*; the same release under
+# an upper-bound (``<``, ``<=``) or exclusion (``!=``) operator (e.g. ``!=2.0.dev1``) leaves
+# the requirement resolvable from PyPI, so it must not count as a dev pin.
+_LOWER_BOUND_OPERATORS = frozenset({"===", "==", "~=", ">=", ">"})
 
 
 def _parse_requirement(requirement: str) -> tuple[str, bool]:
-    """Split a PEP 508 requirement into its name and whether its lower bound is a dev release.
+    """Split a PEP 508 requirement into its canonical name and whether it dev-pins its floor.
+
+    Uses ``packaging`` to parse the requirement and its version specifiers rather than ad hoc
+    string handling, so name normalization, extras, markers and PEP 440 version semantics are
+    all handled by the standard implementation.
 
     Args:
         requirement: A dependency string such as ``"reflex-base >= 0.9.5.dev1"``.
 
     Returns:
-        A ``(normalized_name, is_dev_pinned)`` tuple. ``is_dev_pinned`` is ``True`` when the
-        requirement's version specifier references a development release, which by convention
-        is not published to PyPI.
+        A ``(canonical_name, is_dev_pinned)`` tuple. ``is_dev_pinned`` is ``True`` only when a
+        development release (unpublished by convention) appears as a lower bound — under a
+        ``>=``, ``>``, ``==``, ``===`` or ``~=`` operator. A dev release in an upper-bound or
+        ``!=`` clause (e.g. ``reflex-base >=1.0,!=2.0.dev1``) stays resolvable from PyPI and
+        does not count. An unparseable requirement is reported as ``("", False)``.
     """
-    match = _REQUIREMENT_NAME.match(requirement)
-    if not match:
+    try:
+        parsed = Requirement(requirement)
+    except InvalidRequirement:
         return "", False
-    name = _normalize_name(match.group(1))
-    specifier = requirement[match.end() :].split(";", 1)[0]
-    if specifier.lstrip().startswith("@"):  # direct URL reference, not a version pin
-        return name, False
-    return name, bool(_DEV_RELEASE.search(specifier))
+    name = canonicalize_name(parsed.name)
+    for specifier in parsed.specifier:
+        if specifier.operator not in _LOWER_BOUND_OPERATORS:
+            continue
+        try:
+            if Version(specifier.version).is_devrelease:
+                return name, True
+        except InvalidVersion:
+            # A prefix match such as ``==1.2.*`` has no concrete version to inspect.
+            continue
+    return name, False
 
 
 @dataclass(frozen=True)
@@ -203,7 +204,7 @@ def _workspace_package_dirs() -> dict[str, Path]:
     for _, project_file in _workspace_pyprojects():
         name = _load_pyproject(project_file).get("project", {}).get("name")
         if name:
-            dirs[_normalize_name(name)] = project_file.parent
+            dirs[canonicalize_name(name)] = project_file.parent
     return dirs
 
 

@@ -113,20 +113,6 @@ def test_pyright_errors_delta_cancels_shared_noise():
 
 
 @pytest.mark.parametrize(
-    ("raw", "expected"),
-    [
-        ("reflex-base", "reflex-base"),
-        ("python_multipart", "python-multipart"),
-        ("Typing_Extensions", "typing-extensions"),
-        ("ruamel.yaml", "ruamel-yaml"),
-        ("Foo__Bar.Baz", "foo-bar-baz"),
-    ],
-)
-def test_normalize_name(raw: str, expected: str):
-    assert check_min_deps._normalize_name(raw) == expected
-
-
-@pytest.mark.parametrize(
     ("requirement", "name", "is_dev"),
     [
         ("reflex-base >= 0.9.4", "reflex-base", False),
@@ -136,13 +122,28 @@ def test_normalize_name(raw: str, expected: str):
         ("psutil >=7.0.0,<8.0; sys_platform == 'win32'", "psutil", False),
         ("granian[reload] >=2.5.5", "granian", False),
         ("granian[reload] >=2.5.5.dev0", "granian", True),
+        # Name canonicalization (PEP 503) is handled by packaging.
         ("python_multipart >= 0.0.21", "python-multipart", False),
+        ("ruamel.yaml >=0.18", "ruamel-yaml", False),
         ("foo ==1.0dev", "foo", True),
         ("foo ==1.0-dev2", "foo", True),
-        # A ".dev" URL host is a direct reference, not a development-release version pin.
+        ("foo ===1.0.dev1", "foo", True),
+        ("foo >1.0.dev1", "foo", True),
+        # A dev release only counts as a lower bound; upper-bound and exclusion clauses are
+        # still resolvable from PyPI and must not be flagged.
+        ("reflex-base >=1.0,!=2.0.dev1", "reflex-base", False),
+        ("foo >=1.0,<2.0.dev3", "foo", False),
+        ("foo <2.0.dev3", "foo", False),
+        ("foo <=1.0.dev1", "foo", False),
+        ("foo !=1.2.dev3", "foo", False),
+        # A prefix match (``==1.2.*``) has no concrete version and is not a dev pin.
+        ("foo ==1.2.*", "foo", False),
+        # A direct URL reference carries no version specifier.
         ("foo @ https://example.dev/foo.whl", "foo", False),
         ("bar", "bar", False),
         ("pkg ~=1.2.3.dev4", "pkg", True),
+        # An unparseable requirement yields an empty name and is not a dev pin.
+        ("not a requirement!!", "", False),
     ],
 )
 def test_parse_requirement(requirement: str, name: str, is_dev: bool):

@@ -53,7 +53,7 @@ jobs:
       - name: Reject development-release dependency pins
         env:
           PACKAGE: ${{ steps.parse.outputs.package }}
-        run: uv run --no-project python scripts/check_min_deps.py --check-dev-pins "$PACKAGE"
+        run: uv run --with packaging --no-project python scripts/check_min_deps.py --check-dev-pins "$PACKAGE"
 
       - name: Pin reflex-base to exact version
         if: steps.parse.outputs.package == 'reflex'
