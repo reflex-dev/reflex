@@ -95,7 +95,7 @@ def _parse_requirement(requirement: str) -> tuple[str, bool]:
         development release (unpublished by convention) appears as a lower bound — under a
         ``>=``, ``>``, ``==``, ``===`` or ``~=`` operator. A dev release in an upper-bound or
         ``!=`` clause (e.g. ``reflex-base >=1.0,!=2.0.dev1``) stays resolvable from PyPI and
-        does not count. An unparseable requirement is reported as ``("", False)``.
+        does not count. An unparsable requirement is reported as ``("", False)``.
     """
     try:
         parsed = Requirement(requirement)

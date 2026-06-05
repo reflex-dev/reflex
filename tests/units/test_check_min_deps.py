@@ -142,7 +142,7 @@ def test_pyright_errors_delta_cancels_shared_noise():
         ("foo @ https://example.dev/foo.whl", "foo", False),
         ("bar", "bar", False),
         ("pkg ~=1.2.3.dev4", "pkg", True),
-        # An unparseable requirement yields an empty name and is not a dev pin.
+        # An unparsable requirement yields an empty name and is not a dev pin.
         ("not a requirement!!", "", False),
     ],
 )
