@@ -139,6 +139,7 @@ def get_sidebar_items_backend():
             children=[
                 vars.base_vars,
                 vars.computed_vars,
+                vars.hybrid_properties,
                 vars.var_operations,
                 vars.custom_vars,
             ],
