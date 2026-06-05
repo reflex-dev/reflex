@@ -42,18 +42,30 @@ class HybridProperty(property):
 
     @override
     def __get__(self, instance: Any, owner: type | None = None, /) -> Any:
-        """Get the value of the property. If the property is not bound to an instance return a frontend Var.
+        """Get the value of the property.
+
+        On an instance, return the getter's value. At the class level, return a
+        frontend Var only when accessed on a state (whose class attributes are
+        vars); on any other class there is no var context, so return the
+        descriptor itself, like a normal property. Note that var access on a
+        nested object (e.g. ``State.info.a_b``) does not go through ``__get__`` —
+        it is resolved by ``ObjectVar.__getattr__`` via ``_get_var``.
 
         Args:
             instance: The instance of the class accessing this property.
             owner: The class that this descriptor is attached to.
 
         Returns:
-            The value of the property or a frontend Var.
+            The property value, a frontend Var, or the descriptor itself.
         """
         if instance is not None:
             return super().__get__(instance, owner)
-        return self._get_var(owner)
+        if isinstance(owner, type):
+            from reflex.state import BaseState
+
+            if issubclass(owner, BaseState):
+                return self._get_var(owner)
+        return self
 
     def var(self, func: Callable[[Any], Var]) -> Self:
         """Set the (optional) var function for the property.

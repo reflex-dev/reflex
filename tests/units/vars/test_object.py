@@ -220,6 +220,45 @@ def test_hybrid_property_missing_attribute_still_raises() -> None:
         _ = ObjectState.dataclass.does_not_exist
 
 
+def test_hybrid_property_class_access_on_non_state_returns_descriptor() -> None:
+    """Class-level access on a non-state (not via an object var) returns the descriptor.
+
+    Only a state exposes a hybrid property as a frontend var at the class level, since
+    its class attributes are vars. On a plain class accessed directly there is no var
+    context, so it behaves like a normal property and returns the descriptor itself.
+    """
+    from reflex_base.vars.hybrid_property import HybridProperty
+
+    @dataclasses.dataclass
+    class Info:
+        a: str
+        b: str
+
+        @hybrid_property
+        def a_b(self) -> str:
+            return f"{self.a} - {self.b}"
+
+    # Direct class-level access yields the descriptor, not a var or a default-based value.
+    assert isinstance(Info.a_b, HybridProperty)
+    # Instance access still returns the computed backend value.
+    assert Info(a="1", b="2").a_b == "1 - 2"
+
+
+def test_hybrid_property_class_access_on_state_returns_var() -> None:
+    """Class-level access on a state still resolves to a frontend var (not the descriptor)."""
+    from reflex_base.vars.hybrid_property import HybridProperty
+
+    class HybridState(rx.State):
+        value: str = "v"
+
+        @hybrid_property
+        def shout(self) -> str:
+            return self.value
+
+    assert not isinstance(HybridState.shout, HybridProperty)
+    assert isinstance(Var.create(HybridState.shout), Var)
+
+
 def test_typing() -> None:
     # Bare
     var = ObjectState.bare.to(ObjectVar)
