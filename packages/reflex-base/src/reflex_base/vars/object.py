@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import collections.abc
 import dataclasses
+import inspect
 import typing
 from collections.abc import Mapping
 from importlib.util import find_spec
@@ -330,6 +331,16 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
         var_type = types.value_inside_optional(var_type)
 
         fixed_type = get_origin(var_type) or var_type
+
+        if isinstance(fixed_type, type):
+            from .hybrid_property import HybridProperty
+
+            # A HybridProperty on the underlying type resolves to a frontend Var with
+            # this object var substituted as `self`, so e.g. `State.info.a_b` uses the
+            # same Var-access semantics as accessing the hybrid property directly.
+            descriptor = inspect.getattr_static(fixed_type, name, None)
+            if isinstance(descriptor, HybridProperty):
+                return descriptor._get_var(self)
 
         if (
             is_typeddict(fixed_type)
