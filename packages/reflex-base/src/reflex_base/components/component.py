@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import copy
 import dataclasses
 import enum
 import functools
@@ -319,6 +320,15 @@ class BaseComponentMeta(FieldBasedMeta, ABCMeta):
                 namespace[field_name] = field_
 
 
+_COMPILE_CACHE_ATTRS = (
+    "_cached_render_result",
+    "_vars_cache",
+    "_imports_cache",
+    "_hooks_internal_cache",
+    "_get_component_prop_property",
+)
+
+
 class BaseComponent(metaclass=BaseComponentMeta):
     """The base class for all Reflex components.
 
@@ -386,16 +396,36 @@ class BaseComponent(metaclass=BaseComponentMeta):
         new._clear_compile_caches()
         return new
 
+    def __deepcopy__(self, memo: dict[int, Any]) -> BaseComponent:
+        """Return a deep copy suitable for compile-time mutation.
+
+        Like :meth:`__copy__`, the clone exists for the compiler to mutate
+        (e.g. rebinding ``children`` while assembling the app-wrap chain in
+        ``App._app_root``), so the render-path caches populated on the
+        original are not carried over — otherwise ``render()`` on the mutated
+        clone would return the pre-mutation result. Unlike ``__copy__``,
+        nested mutable containers are deep-copied so the clone is fully
+        independent of the original.
+
+        Args:
+            memo: The deepcopy memo mapping object ids to their copies.
+
+        Returns:
+            A deep-copied instance with compile-time caches dropped.
+        """
+        new = self.__class__.__new__(self.__class__)
+        memo[id(self)] = new
+        new_dict = vars(new)
+        for key, value in vars(self).items():
+            if key in _COMPILE_CACHE_ATTRS:
+                continue
+            new_dict[key] = copy.deepcopy(value, memo)
+        return new
+
     def _clear_compile_caches(self) -> None:
         """Clear cached render/compiler artifacts after compile-time mutation."""
         attrs = cast("dict[str, Any]", vars(self))
-        for attr in (
-            "_cached_render_result",
-            "_vars_cache",
-            "_imports_cache",
-            "_hooks_internal_cache",
-            "_get_component_prop_property",
-        ):
+        for attr in _COMPILE_CACHE_ATTRS:
             attrs.pop(attr, None)
 
     def __eq__(self, value: Any) -> bool:
@@ -2014,14 +2044,16 @@ class Component(BaseComponent, ABC):
     def _get_events_hooks(self) -> dict[str, VarData | None]:
         """Get the hooks required by events referenced in this component.
 
+        Always empty: ``addEvents`` is reached via the module-level import
+        in ``Imports.EVENTS``, so events need no in-scope hook. The state/
+        event-loop providers they still depend on are mounted as app wraps
+        instead — carried on the event invocation's ``VarData.app_wraps``
+        and via :meth:`_get_event_app_wraps`.
+
         Returns:
-            The hooks for the events.
+            An empty dict.
         """
-        return (
-            {Hooks.EVENTS: VarData(position=Hooks.HookPosition.INTERNAL)}
-            if self.event_triggers
-            else {}
-        )
+        return {}
 
     def _get_hooks_internal(self) -> dict[str, VarData | None]:
         """Get the React hooks for this component managed by the framework.
@@ -2175,6 +2207,35 @@ class Component(BaseComponent, ABC):
             The app wrap components.
         """
         return {}
+
+    def _get_event_app_wraps(self) -> dict[tuple[int, str], Component]:
+        """Return state/event-loop providers required by event triggers.
+
+        A component with event triggers calls ``addEvents`` at runtime,
+        which only does anything if ``StateProvider`` (supplies the
+        dispatch context) and ``EventLoopProvider`` (runs the websocket)
+        are mounted as ancestors. ``addEvents`` now comes from a
+        module-level import rather than an in-scope hook, so nothing drags
+        those providers into the tree on its own — this method requests
+        them explicitly as app wraps.
+
+        Kept separate from :meth:`_get_app_wrap_components` because
+        subclasses override that method to add their own app wraps; folding
+        these in would let such an override silently drop them.
+
+        Returns:
+            The state/event-loop provider entries (empty if no event
+            triggers are bound).
+        """
+        if not self.event_triggers:
+            return {}
+        # Lazy import: state_context imports from this module.
+        from reflex_base.components.state_context import get_event_app_wraps
+
+        return {
+            (priority, provider.tag or type(provider).__name__): provider
+            for priority, provider in get_event_app_wraps()
+        }
 
     def _get_all_app_wrap_components(
         self, *, ignore_ids: set[int] | None = None

@@ -364,6 +364,29 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
 class RestProp(ObjectVar[dict[str, Any]]):
     """A special object var representing forwarded rest props."""
 
+    def merge(self, other: ObjectVar | Mapping[str, Any]):
+        """Merge another object into these RestProps.
+
+        Args:
+            other: The other object (or plain mapping) to merge.
+
+        Returns:
+            The merged RestProp-typed value.
+        """
+        other_var = (
+            other
+            if isinstance(other, ObjectVar)
+            else LiteralVar.create(other).to(ObjectVar)
+        )
+        merged_var = object_merge_operation(self, other_var)
+        return type(self)(
+            _js_expr=str(merged_var),
+            _var_type=self._var_type,
+            _var_data=VarData.merge(
+                self._get_all_var_data(), merged_var._get_all_var_data()
+            ),
+        )
+
 
 @dataclasses.dataclass(
     eq=False,
