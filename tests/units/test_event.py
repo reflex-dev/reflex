@@ -1,11 +1,13 @@
 import json
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, cast
 
 import pytest
 from reflex_base.constants.compiler import Hooks, Imports
 from reflex_base.event import (
     BACKGROUND_TASK_MARKER,
+    EXECUTOR_MARKER,
     Event,
     EventChain,
     EventChainVar,
@@ -706,11 +708,51 @@ def test_event_decorator_backward_compatibility():
     assert isinstance(old_handler, EventHandler)
     assert old_handler.event_actions == {}
     assert not hasattr(old_handler.fn, BACKGROUND_TASK_MARKER)  # pyright: ignore [reportAttributeAccessIssue]
+    assert old_handler.executor is None
+    assert not hasattr(old_handler.fn, EXECUTOR_MARKER)  # pyright: ignore [reportAttributeAccessIssue]
 
     # Old background parameter should work unchanged
     bg_handler = MyTestState.handle_old_background
     assert bg_handler.event_actions == {}
     assert hasattr(bg_handler.fn, BACKGROUND_TASK_MARKER)  # pyright: ignore [reportAttributeAccessIssue]
+
+
+def test_event_decorator_with_executor():
+    """Test that the @rx.event decorator accepts a custom executor."""
+    custom_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="rx_test")
+    try:
+
+        class MyTestState(BaseState):
+            @event(executor=custom_executor)
+            def handle_with_executor(self):
+                pass
+
+            @event
+            def handle_default_executor(self):
+                pass
+
+            @event(executor=custom_executor, throttle=300)
+            def handle_combined(self):
+                pass
+
+        # Custom executor should be exposed via the handler.
+        with_executor = MyTestState.handle_with_executor
+        assert isinstance(with_executor, EventHandler)
+        assert with_executor.executor is custom_executor
+        assert getattr(with_executor.fn, EXECUTOR_MARKER) is custom_executor
+
+        # No executor specified - handler exposes None.
+        default_handler = MyTestState.handle_default_executor
+        assert isinstance(default_handler, EventHandler)
+        assert default_handler.executor is None
+
+        # Combined with other event actions.
+        combined = MyTestState.handle_combined
+        assert isinstance(combined, EventHandler)
+        assert combined.executor is custom_executor
+        assert combined.event_actions == {"throttle": 300}
+    finally:
+        custom_executor.shutdown(wait=False)
 
 
 def test_event_var_in_rx_cond():

@@ -2,6 +2,7 @@
 
 import asyncio
 import contextlib
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 import pytest
@@ -11,7 +12,7 @@ from reflex_base.event.processor.event_processor import (
     QueueShutDown,
     _stream_queue_until_done,
 )
-from reflex_base.registry import RegistrationContext
+from reflex_base.registry import RegisteredEventHandler, RegistrationContext
 
 from reflex.event import Event, EventHandler
 
@@ -735,3 +736,99 @@ async def test_stream_queue_until_done_handles_concurrent_put_and_completion():
 
     collected = [v async for v in _stream_queue_until_done(queue, _watcher())]
     assert collected == [99]
+
+
+def _make_registered_handler(handler: EventHandler) -> RegisteredEventHandler:
+    """Build a RegisteredEventHandler around a bare EventHandler for testing.
+
+    Args:
+        handler: The EventHandler to wrap.
+
+    Returns:
+        A RegisteredEventHandler with empty states.
+    """
+    return RegisteredEventHandler(handler=handler, states=())
+
+
+def test_get_executor_for_uses_handler_executor():
+    """A handler with its own executor wins over the processor default."""
+    handler_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="rx_test")
+    default_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="rx_test")
+    try:
+
+        def _sync_handler():
+            pass
+
+        _sync_handler._reflex_event_executor = handler_executor  # type: ignore[attr-defined]
+        processor = EventProcessor(default_executor=default_executor)
+        chosen = processor.get_executor_for(
+            _make_registered_handler(EventHandler(fn=_sync_handler))
+        )
+        assert chosen is handler_executor
+        # Did not touch the default - still owned externally.
+        assert processor.default_executor is default_executor
+        assert processor._owns_default_executor is False
+    finally:
+        handler_executor.shutdown(wait=False)
+        default_executor.shutdown(wait=False)
+
+
+def test_get_executor_for_lazily_creates_default():
+    """When no executor is set, the processor lazily creates and owns one."""
+
+    def _sync_handler():
+        pass
+
+    processor = EventProcessor()
+    assert processor.default_executor is None
+    chosen = processor.get_executor_for(
+        _make_registered_handler(EventHandler(fn=_sync_handler))
+    )
+    assert chosen is processor.default_executor
+    assert processor._owns_default_executor is True
+    # Second call returns the same lazy instance.
+    assert (
+        processor.get_executor_for(
+            _make_registered_handler(EventHandler(fn=_sync_handler))
+        )
+        is chosen
+    )
+    # Shut it down ourselves since we never started the processor.
+    chosen.shutdown(wait=False)
+
+
+async def test_stop_shuts_down_owned_default_executor(processor: EventProcessor):
+    """After stop(), a lazily-created default executor is shut down and cleared.
+
+    Args:
+        processor: The event processor fixture.
+    """
+    processor.configure()
+    async with processor:
+        executor = processor.get_executor_for(
+            _make_registered_handler(EventHandler(fn=_noop_handler))
+        )
+        assert processor._owns_default_executor is True
+    # The owned executor is released on stop().
+    assert processor.default_executor is None
+    assert processor._owns_default_executor is False
+    # The reference we held is no longer accepting tasks.
+    with pytest.raises(RuntimeError):
+        executor.submit(lambda: None)
+
+
+async def test_stop_does_not_shutdown_externally_provided_executor():
+    """Externally provided executors are left alone on stop()."""
+    external = ThreadPoolExecutor(max_workers=1, thread_name_prefix="rx_test")
+    try:
+        processor = EventProcessor(
+            default_executor=external, graceful_shutdown_timeout=1
+        )
+        processor.configure()
+        async with processor:
+            pass
+        # Still set, still usable.
+        assert processor.default_executor is external
+        external.submit(lambda: None).result(timeout=1)
+    finally:
+        external.shutdown(wait=False)

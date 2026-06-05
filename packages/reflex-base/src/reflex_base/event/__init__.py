@@ -8,6 +8,7 @@ import types
 import warnings
 from base64 import b64encode
 from collections.abc import Callable, Mapping, Sequence
+from concurrent.futures import Executor
 from functools import lru_cache, partial
 from typing import (
     TYPE_CHECKING,
@@ -177,6 +178,7 @@ _IMMUTABLE_PAYLOAD_TYPES = (
 
 BACKGROUND_TASK_MARKER = "_reflex_background_task"
 EVENT_ACTIONS_MARKER = "_rx_event_actions"
+EXECUTOR_MARKER = "_reflex_event_executor"
 UPLOAD_FILES_CLIENT_HANDLER = "uploadFiles"
 
 
@@ -425,6 +427,16 @@ class EventHandler(EventActionsMixin):
             True if the event handler is marked as a background task.
         """
         return getattr(self.fn, BACKGROUND_TASK_MARKER, False)
+
+    @property
+    def executor(self) -> Executor | None:
+        """The executor to run a non-async handler in, if any.
+
+        Returns:
+            The executor specified via ``@rx.event(executor=...)`` or
+            ``None`` if no executor was specified.
+        """
+        return getattr(self.fn, EXECUTOR_MARKER, None)
 
     def __call__(self, *args: Any, **kwargs: Any) -> "EventSpec":
         """Pass arguments to the handler to get an event spec.
@@ -2698,6 +2710,7 @@ class EventNamespace:
     # Constants
     BACKGROUND_TASK_MARKER = BACKGROUND_TASK_MARKER
     EVENT_ACTIONS_MARKER = EVENT_ACTIONS_MARKER
+    EXECUTOR_MARKER = EXECUTOR_MARKER
     _EVENT_FIELDS = _EVENT_FIELDS
     FORM_DATA = FORM_DATA
     upload_files = upload_files
@@ -2726,6 +2739,7 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
+        executor: Executor | None = None,
     ) -> (
         "Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]]"
     ): ...
@@ -2741,6 +2755,7 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
+        executor: Executor | None = None,
     ) -> EventCallback[Unpack[P]]: ...
 
     def __new__(
@@ -2753,6 +2768,7 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
+        executor: Executor | None = None,
     ) -> (
         EventCallback[Unpack[P]]
         | Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]]
@@ -2767,6 +2783,9 @@ class EventNamespace:
             throttle: Throttle the event handler to limit calls (in milliseconds).
             debounce: Debounce the event handler to delay calls (in milliseconds).
             temporal: Whether the event should be dropped when the backend is down.
+            executor: The executor to run a non-async handler in. If omitted,
+                the EventProcessor's default thread pool is used. Ignored for
+                async (coroutine or async-generator) handlers.
 
         Returns:
             The wrapped function.
@@ -2813,6 +2832,8 @@ class EventNamespace:
                     msg = "Background task must be async function or generator."
                     raise TypeError(msg)
                 setattr(func, BACKGROUND_TASK_MARKER, True)
+            if executor is not None:
+                setattr(func, EXECUTOR_MARKER, executor)
             if getattr(func, "__name__", "").startswith("_"):
                 msg = "Event handlers cannot be private."
                 raise ValueError(msg)

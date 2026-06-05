@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 import dataclasses
 import functools
 import inspect
 import warnings
 from collections.abc import Mapping, Sequence
+from concurrent.futures import Executor
 from enum import Enum
 from importlib.util import find_spec
 from typing import TYPE_CHECKING, Any
@@ -202,11 +204,44 @@ async def chain_updates(
         await ctx.enqueue(*(e for e in fixed_events if not e.name.startswith("_")))
 
 
+@dataclasses.dataclass(frozen=True, slots=True)
+class _GeneratorStep:
+    """One step of advancing a sync generator across the executor boundary.
+
+    ``StopIteration`` cannot be propagated out of an executor — the executor
+    re-raises it as ``RuntimeError`` and ``StopIteration.value`` (the
+    generator's return value) is discarded. This wrapper captures both
+    "yielded a value" and "generator returned" outcomes in a plain result
+    that crosses the boundary cleanly.
+    """
+
+    value: Any = None
+    done: bool = False
+
+
+def _next_or_done(generator: Any) -> _GeneratorStep:
+    """Advance a generator one step.
+
+    Args:
+        generator: The sync generator to advance.
+
+    Returns:
+        A ``_GeneratorStep`` carrying either the next yielded value, or the
+        generator's return value with ``done=True`` when the generator is
+        exhausted.
+    """
+    try:
+        return _GeneratorStep(value=next(generator))
+    except StopIteration as si:
+        return _GeneratorStep(value=si.value, done=True)
+
+
 async def process_event(
     handler: EventHandler,
     payload: dict,
     state: BaseState | StateProxy,
     root_state: BaseState,
+    executor: Executor | None = None,
 ):
     """Process event.
 
@@ -215,6 +250,10 @@ async def process_event(
         payload: The event payload.
         state: State to process the handler.
         root_state: The root state of the app, used for emitting deltas.
+        executor: The executor to run a non-async handler in. Async handlers
+            run on the asyncio loop and ignore this argument. If None, sync
+            handlers run inline on the asyncio loop (matching pre-executor
+            behavior).
 
     Raises:
         ValueError: If a string value is received for an int or float type and cannot be converted.
@@ -237,7 +276,16 @@ async def process_event(
     if inspect.iscoroutinefunction(fn.func):
         events = await fn(**payload)
 
-    # Handle regular functions.
+    # Handle async generators - the function itself returns synchronously
+    # (yielding an async generator object); only the body iteration is async.
+    elif inspect.isasyncgenfunction(fn.func):
+        events = fn(**payload)
+
+    # Handle regular functions - run off the asyncio loop when an executor
+    # is configured so blocking calls in user code don't stall the loop.
+    elif executor is not None:
+        loop = asyncio.get_running_loop()
+        events = await loop.run_in_executor(executor, functools.partial(fn, **payload))
     else:
         events = fn(**payload)
     # Handle async generators.
@@ -248,18 +296,21 @@ async def process_event(
 
     # Handle regular generators.
     elif inspect.isgenerator(events):
-        try:
-            while True:
-                await chain_updates(
-                    next(events), root_state=root_state, handler_name=handler_name
-                )
-        except StopIteration as si:
-            # the "return" value of the generator is not available
-            # in the loop, we must catch StopIteration to access it
-            if si.value is not None:
-                await chain_updates(
-                    si.value, root_state=root_state, handler_name=handler_name
-                )
+        loop = asyncio.get_running_loop() if executor is not None else None
+        while True:
+            if loop is not None:
+                step = await loop.run_in_executor(executor, _next_or_done, events)
+            else:
+                step = _next_or_done(events)
+            if step.done:
+                if step.value is not None:
+                    await chain_updates(
+                        step.value, root_state=root_state, handler_name=handler_name
+                    )
+                break
+            await chain_updates(
+                step.value, root_state=root_state, handler_name=handler_name
+            )
         await chain_updates(None, root_state=root_state, handler_name=handler_name)
 
     # Handle regular event chains.
@@ -365,6 +416,7 @@ class BaseStateEventProcessor(EventProcessor):
                     payload=event.payload,
                     state=substate,
                     root_state=root_state,
+                    executor=self.get_executor_for(registered_handler),
                 )
                 return
         # Otherwise drop the state lock and start processing the background task with a proxy state.
@@ -373,6 +425,7 @@ class BaseStateEventProcessor(EventProcessor):
             state=StateProxy(substate),
             payload=event.payload,
             root_state=root_state,
+            executor=self.get_executor_for(registered_handler),
         )
 
     async def _handle_backend_exception(

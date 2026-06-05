@@ -32,6 +32,7 @@ from reflex_base.environment import PerformanceMode, environment
 from reflex_base.event import (
     BACKGROUND_TASK_MARKER,
     EVENT_ACTIONS_MARKER,
+    EXECUTOR_MARKER,
     Event,
     EventHandler,
     EventSpec,
@@ -741,6 +742,8 @@ class BaseState(EvenMoreBasicBaseState):
         # Preserve event_actions from @rx.event decorator
         if event_actions := getattr(fn, EVENT_ACTIONS_MARKER, None):
             object.__setattr__(newfn, EVENT_ACTIONS_MARKER, event_actions)
+        if executor := getattr(fn, EXECUTOR_MARKER, None):
+            object.__setattr__(newfn, EXECUTOR_MARKER, executor)
         return newfn
 
     @staticmethod
