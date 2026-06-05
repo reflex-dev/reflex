@@ -5,13 +5,13 @@ import os
 import time
 import uuid
 from collections.abc import AsyncGenerator
-from typing import Any
+from typing import Any, cast
 
 import pytest
 import pytest_asyncio
 
 from reflex.istate.manager.redis import StateManagerRedis
-from reflex.istate.manager.token import BaseStateToken
+from reflex.istate.manager.token import BaseStateToken, StateToken
 from reflex.state import BaseState
 from tests.units.mock_redis import mock_redis, real_redis
 
@@ -113,6 +113,75 @@ async def test_basic_get_set(
     await state_manager_redis.set_state(
         BaseStateToken(ident=token, cls=root_state), fresh_state
     )
+
+
+def test_redis_cluster_keys_share_hash_tag(root_state: type[RedisTestState]):
+    """Test Redis Cluster keys use one hash tag per logical token.
+
+    Args:
+        root_state: The root state class.
+    """
+    state_manager = StateManagerRedis(redis=mock_redis(), redis_cluster=True)
+    token = BaseStateToken(ident="client-token", cls=root_state)
+    substate_token = token.with_cls(SubState1)
+
+    state_key = state_manager._state_key(token)
+    substate_key = state_manager._state_key(substate_token)
+    lock_key = state_manager._lock_key(token).decode()
+    waiter_key = (state_manager._lock_key(token) + b"_waiters").decode()
+
+    hash_tag = state_key.split("}:", 1)[0]
+    assert hash_tag.startswith("{")
+    assert substate_key.startswith(f"{hash_tag}}}:")
+    assert lock_key.startswith(f"{hash_tag}}}:")
+    assert waiter_key.startswith(f"{hash_tag}}}:")
+    assert state_key.endswith(str(token))
+    assert substate_key.endswith(str(substate_token))
+    assert lock_key.endswith(f"{token.lock_key}_lock")
+    assert waiter_key.endswith(f"{token.lock_key}_lock_waiters")
+    assert (
+        state_manager._logical_lock_key(state_manager._lock_key(token))
+        == token.lock_key
+    )
+
+
+async def test_redis_cluster_get_set_uses_tagged_keys(
+    root_state: type[RedisTestState],
+):
+    """Test Redis Cluster mode tags Redis keys without changing logical token strings.
+
+    Args:
+        root_state: The root state class.
+    """
+    redis = mock_redis()
+    state_manager = StateManagerRedis(redis=redis, redis_cluster=True)
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    state = root_state()
+    state.foo = "cluster"
+
+    await state_manager.set_state(token, state)
+    stored_key = state_manager._state_key(token).encode()
+
+    assert stored_key in redis._internals["keys"]  # pyright: ignore[reportAttributeAccessIssue]
+    assert str(token).encode() not in redis._internals["keys"]  # pyright: ignore[reportAttributeAccessIssue]
+
+    restored = cast(RedisTestState, await state_manager.get_state(token))
+    assert restored.foo == "cluster"
+    assert str(token) == f"{token.ident}_{root_state.get_full_name()}"
+
+
+async def test_redis_cluster_non_base_state_token_uses_tagged_keys():
+    """Test Redis Cluster mode tags non-BaseState token keys too."""
+    redis = mock_redis()
+    state_manager = StateManagerRedis(redis=redis, redis_cluster=True)
+    token = StateToken(ident="plain-token", cls=dict)
+    value = {"ok": True}
+
+    await state_manager.set_state(token, value)
+
+    assert state_manager._state_key(token).encode() in redis._internals["keys"]  # pyright: ignore[reportAttributeAccessIssue]
+    assert str(token).encode() not in redis._internals["keys"]  # pyright: ignore[reportAttributeAccessIssue]
+    assert await state_manager.get_state(token) == value
 
 
 async def test_modify(

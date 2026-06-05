@@ -171,6 +171,7 @@ class BaseConfig:
         frontend_compression_formats: Pre-compressed frontend asset formats to generate for production builds. Supported values are "gzip", "brotli", and "zstd". Use an empty list to disable build-time pre-compression.
         frontend_packages: Additional frontend packages to install.
         state_manager_mode: Indicate which type of state manager to use.
+        redis_cluster: Whether Redis connections target a Redis Cluster and need hash-tagged keys.
         redis_lock_expiration: Maximum expiration lock time for redis state manager.
         redis_lock_warning_threshold: Maximum lock time before warning for redis state manager.
         redis_token_expiration: Token expiration time for redis state manager.
@@ -233,6 +234,8 @@ class BaseConfig:
     frontend_packages: list[str] = dataclasses.field(default_factory=list)
 
     state_manager_mode: constants.StateManagerMode = constants.StateManagerMode.DISK
+
+    redis_cluster: bool = False
 
     redis_lock_expiration: int = constants.Expiration.LOCK
 
@@ -315,7 +318,7 @@ class Config(BaseConfig):
     - **Server**: `frontend_port`, `backend_port`, `api_url`, `cors_allowed_origins`
     - **Database**: `db_url`, `async_db_url`, `redis_url`
     - **Frontend**: `frontend_packages`, `react_strict_mode`, `frontend_compression_formats`
-    - **State Management**: `state_manager_mode`, `state_auto_setters`
+    - **State Management**: `state_manager_mode`, `redis_cluster`, `state_auto_setters`
     - **Plugins**: `plugins`, `disable_plugins`
 
     See the [configuration docs](https://reflex.dev/docs/advanced-onboarding/configuration) for complete details on all available options.

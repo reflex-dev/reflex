@@ -51,6 +51,8 @@ def test_set_app_name(base_config_values):
         ("REFLEX_BACKEND_HOST", "127.0.0.1"),
         ("REFLEX_DB_URL", "postgresql://user:pass@localhost:5432/db"),
         ("REFLEX_REDIS_URL", "redis://localhost:6379"),
+        ("REFLEX_REDIS_CLUSTER", False),
+        ("REFLEX_REDIS_CLUSTER", True),
         ("REFLEX_TELEMETRY_ENABLED", False),
         ("REFLEX_TELEMETRY_ENABLED", True),
     ],

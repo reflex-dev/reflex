@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, ClassVar
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.state import StateUpdate
 from reflex.utils import console, prerequisites
+from reflex.utils.redis_keys import format_redis_key, logical_redis_key
 from reflex.utils.tasks import ensure_task
 
 if TYPE_CHECKING:
@@ -197,6 +198,7 @@ class RedisTokenManager(LocalTokenManager):
 
         config = get_config()
         self.token_expiration = config.redis_token_expiration
+        self.redis_cluster = config.redis_cluster
 
         # Pub/sub tasks for handling sockets owned by other instances.
         self._socket_record_task: asyncio.Task | None = None
@@ -211,7 +213,33 @@ class RedisTokenManager(LocalTokenManager):
         Returns:
             Redis key following Reflex conventions: token_manager_socket_record_{token}
         """
-        return f"{self._token_socket_record_prefix}{token}"
+        return format_redis_key(
+            f"{self._token_socket_record_prefix}{token}",
+            cluster=self.redis_cluster,
+            slot_key=token,
+        )
+
+    def _get_redis_key_pattern(self) -> str:
+        """Get Redis key pattern for token mapping keys.
+
+        Returns:
+            Redis key pattern for token mapping keys.
+        """
+        key_pattern = f"{self._token_socket_record_prefix}*"
+        return f"{{*}}:{key_pattern}" if self.redis_cluster else key_pattern
+
+    def _token_from_redis_key(self, redis_key: str) -> str:
+        """Extract a client token from a Redis token mapping key.
+
+        Args:
+            redis_key: The Redis key for a token mapping.
+
+        Returns:
+            The client token.
+        """
+        return logical_redis_key(redis_key).removeprefix(
+            self._token_socket_record_prefix
+        )
 
     async def enumerate_tokens(self) -> AsyncIterator[str]:
         """Iterate over all tokens in the system.
@@ -221,11 +249,11 @@ class RedisTokenManager(LocalTokenManager):
         """
         cursor = 0
         while scan_result := await self.redis.scan(
-            cursor=cursor, match=self._get_redis_key("*")
+            cursor=cursor, match=self._get_redis_key_pattern()
         ):
             cursor = int(scan_result[0])
             for key in scan_result[1]:
-                yield key.decode().replace(self._token_socket_record_prefix, "")
+                yield self._token_from_redis_key(key.decode())
             if not cursor:
                 break
 
@@ -248,17 +276,19 @@ class RedisTokenManager(LocalTokenManager):
 
     async def _subscribe_socket_record_updates(self) -> None:
         """Subscribe to Redis keyspace notifications for socket record updates."""
-        await StateManagerRedis(redis=self.redis)._enable_keyspace_notifications()
+        await StateManagerRedis(
+            redis=self.redis, redis_cluster=self.redis_cluster
+        )._enable_keyspace_notifications()
         redis_db = self.redis.get_connection_kwargs().get("db", 0)
 
         async with self.redis.pubsub() as pubsub:
             await pubsub.psubscribe(
-                f"__keyspace@{redis_db}__:{self._get_redis_key('*')}"
+                f"__keyspace@{redis_db}__:{self._get_redis_key_pattern()}"
             )
             async for message in pubsub.listen():
                 if message["type"] == "pmessage":
                     key = message["channel"].split(b":", 1)[1].decode()
-                    token = key.replace(self._token_socket_record_prefix, "")
+                    token = self._token_from_redis_key(key)
 
                     if token not in self.token_to_socket:
                         # We don't know about this token, skip
@@ -357,8 +387,7 @@ class RedisTokenManager(LocalTokenManager):
             # Clean up local dicts (always do this)
             await super().disconnect_token(token, sid)
 
-    @staticmethod
-    def _get_lost_and_found_key(instance_id: str) -> str:
+    def _get_lost_and_found_key(self, instance_id: str) -> str:
         """Get the Redis key for lost and found deltas for an instance.
 
         Args:
@@ -367,7 +396,11 @@ class RedisTokenManager(LocalTokenManager):
         Returns:
             The Redis key for lost and found deltas.
         """
-        return f"token_manager_lost_and_found_{instance_id}"
+        return format_redis_key(
+            f"token_manager_lost_and_found_{instance_id}",
+            cluster=self.redis_cluster,
+            slot_key=instance_id,
+        )
 
     async def _subscribe_lost_and_found_updates(
         self,

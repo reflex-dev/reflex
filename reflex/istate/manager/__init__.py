@@ -85,6 +85,7 @@ class StateManager(ABC):
                 return StateManagerRedis(
                     redis=redis,
                     token_expiration=config.redis_token_expiration,
+                    redis_cluster=config.redis_cluster,
                     lock_expiration=config.redis_lock_expiration,
                     lock_warning_threshold=config.redis_lock_warning_threshold,
                 )
