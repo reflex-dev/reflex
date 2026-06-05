@@ -31,10 +31,10 @@ fi
 
 cd "$CLAUDE_PROJECT_DIR"
 
-# 1. Make a uv satisfying the repo's required-version the first thing on PATH.
-#    Prefer an already-installed compatible uv (the web image usually has one);
-#    only install from PyPI if none qualifies. We search PATH first, then a few
-#    well-known locations in case the on-PATH uv is an older standalone build.
+# 1. Put a uv satisfying the repo's required-version in ~/.local/bin and front-load
+#    that dir, leaving the system PATH order untouched. Symlink a compatible uv if
+#    one exists elsewhere; only pip-install when none is found.
+local_bin="$HOME/.local/bin"
 req="$(sed -n 's/^[[:space:]]*required-version[[:space:]]*=[[:space:]]*"[^0-9]*\([0-9][0-9.]*\).*/\1/p' pyproject.toml | head -n1)"
 
 uv_satisfies() {  # $1=uv binary; true if its version >= $req (or no req parsed)
@@ -45,27 +45,21 @@ uv_satisfies() {  # $1=uv binary; true if its version >= $req (or no req parsed)
   [ "$(printf '%s\n%s\n' "$req" "$v" | sort -V | head -n1)" = "$req" ]
 }
 
-uv_dir=""
-for cand in $(command -v -a uv 2>/dev/null) /usr/local/bin/uv /usr/bin/uv "$HOME/.local/bin/uv"; do
-  if [ -x "$cand" ] && uv_satisfies "$cand"; then
-    uv_dir="$(cd "$(dirname "$cand")" && pwd)"
-    break
-  fi
-done
-
-if [ -z "$uv_dir" ]; then
-  python3 -m pip install --user --quiet --root-user-action=ignore "uv${req:+>=$req}"
-  uv_dir="$HOME/.local/bin"
-fi
-
-# Put the chosen uv first on PATH for the rest of this script and -- via
-# CLAUDE_ENV_FILE -- for the session's later commands, which otherwise wouldn't
-# see this change once we exit.
-export PATH="$uv_dir:$PATH"
-hash -r 2>/dev/null || true
+# Front-load ~/.local/bin here and -- via CLAUDE_ENV_FILE -- for later commands.
+export PATH="$local_bin:$PATH"
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  printf 'export PATH="%s:$PATH"\n' "$uv_dir" >> "$CLAUDE_ENV_FILE"
+  echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$CLAUDE_ENV_FILE"
 fi
+
+if ! uv_satisfies "$local_bin/uv"; then
+  mkdir -p "$local_bin"
+  for cand in $(type -aP uv 2>/dev/null) /usr/local/bin/uv /usr/bin/uv; do
+    uv_satisfies "$cand" && ln -sf "$cand" "$local_bin/uv" && break
+  done
+  uv_satisfies "$local_bin/uv" ||
+    python3 -m pip install --user --quiet --root-user-action=ignore "uv${req:+>=$req}"
+fi
+hash -r 2>/dev/null || true
 
 # 2. Ensure a stable interpreter matching .python-version is installed, so sync
 #    doesn't fall back to the pre-baked prerelease.
