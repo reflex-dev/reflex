@@ -8,11 +8,13 @@
 #   1. uv: the image ships an older uv than tool.uv.required-version in
 #      pyproject.toml. The astral.sh installer and `uv self update` are
 #      blocked / GitHub-rate-limited here, so we upgrade from PyPI instead.
-#   2. Python: the image pre-installs a 3.14 prerelease whose typing._eval_type
-#      signature is incompatible with the pinned pydantic (breaks every import).
-#      `uv sync` would reuse that prerelease since it's the only installed match
-#      for .python-version. `uv python install` excludes prereleases, so it
-#      fetches the stable patch; once present, sync prefers it over the rc.
+#   2. Python: the baked uv (see #1) predates Python 3.14.0 final, so its
+#      bundled release manifest only knows 3.14 prereleases -- a bare `uv sync`
+#      with it resolves .python-version=3.14 to a release candidate whose
+#      typing._eval_type signature is incompatible with the pinned pydantic
+#      (breaks every import). Upgrading uv first fixes the manifest; we then run
+#      `uv python install` (which excludes prereleases) as a guard so sync can't
+#      reuse a prerelease that an earlier stale-uv sync may have already fetched.
 #   3. git tags: web clones are shallow with no tags, so Reflex's VCS-derived
 #      version resolves to 0.0.0 and trips downstream version gates (e.g.
 #      reflex-hosting-cli rejects it). Fetching tags lets the version compute.
