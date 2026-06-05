@@ -34,9 +34,14 @@ cd "$CLAUDE_PROJECT_DIR"
 req="$(sed -n 's/^[[:space:]]*required-version[[:space:]]*=[[:space:]]*"[^0-9]*\([0-9][0-9.]*\).*/\1/p' pyproject.toml | head -n1)"
 python3 -m pip install --user --quiet --root-user-action=ignore "uv${req:+>=$req}"
 
-# pip --user installs land in ~/.local/bin; make sure they win over the baked uv.
+# pip --user installs land in ~/.local/bin; make sure they win over the baked uv,
+# both for the rest of this script and -- via CLAUDE_ENV_FILE -- for the session's
+# later commands, which otherwise wouldn't see this PATH change once we exit.
 export PATH="$HOME/.local/bin:$PATH"
 hash -r 2>/dev/null || true
+if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
+  echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$CLAUDE_ENV_FILE"
+fi
 
 # 2. Ensure a stable interpreter matching .python-version is installed, so sync
 #    doesn't fall back to the pre-baked prerelease.
@@ -46,7 +51,11 @@ uv python install
 #    still get a best-effort sync).
 git fetch --tags --quiet || true
 
-# 4. Install all workspace dependencies (uses .python-version).
-uv sync
+# 4. Install all workspace dependencies (uses .python-version). Don't let a
+#    transient sync failure (e.g. a flaky network) abort startup -- the container
+#    should still come up so the session can retry sync manually.
+if ! uv sync; then
+  echo "WARNING: 'uv sync' failed; the environment may be incomplete. Re-run 'uv sync' once any transient issue clears." >&2
+fi
 
 echo "Environment ready: uv $(uv --version), Python $(uv run python --version 2>/dev/null), reflex $(uv run python -c 'import importlib.metadata as m; print(m.version("reflex"))' 2>/dev/null || echo '?')"
