@@ -49,6 +49,17 @@ class GitIgnore(SimpleNamespace):
     }
 
 
+class AgentsMd(SimpleNamespace):
+    """AGENTS.md constants."""
+
+    # The AGENTS.md file written to the app root.
+    FILE = Path("AGENTS.md")
+    # The canonical AGENTS.md maintained in the reflex-dev/agent-skills repo.
+    CANONICAL_URL = (
+        "https://raw.githubusercontent.com/reflex-dev/agent-skills/main/AGENTS.md"
+    )
+
+
 class PyprojectToml(SimpleNamespace):
     """Pyproject.toml constants."""
 

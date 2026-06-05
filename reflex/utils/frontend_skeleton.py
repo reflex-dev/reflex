@@ -11,7 +11,7 @@ from reflex_base.plugins.embed import get_embed_plugin
 
 from reflex.compiler import templates
 from reflex.compiler.utils import write_file
-from reflex.utils import console, path_ops
+from reflex.utils import console, net, path_ops
 from reflex.utils.prerequisites import get_project_hash, get_web_dir
 from reflex.utils.registry import get_npm_registry
 
@@ -41,6 +41,37 @@ def initialize_gitignore(
     gitignore_file.touch(exist_ok=True)
     console.debug(f"Creating {gitignore_file}")
     gitignore_file.write_text("\n".join(files_to_ignore) + "\n")
+
+
+def initialize_agents_md(
+    agents_file: Path = constants.AgentsMd.FILE,
+    url: str = constants.AgentsMd.CANONICAL_URL,
+):
+    """Write the AGENTS.md for AI coding agents, fetched from the canonical repo.
+
+    Does not overwrite an existing file so a user's customizations are preserved.
+    Aborts if the canonical file cannot be fetched.
+
+    Args:
+        agents_file: The AGENTS.md file to create in the app root.
+        url: The canonical AGENTS.md to download.
+    """
+    if agents_file.exists():
+        console.debug(f"{agents_file} already exists, skipping.")
+        return
+
+    import httpx
+
+    console.debug(f"Fetching {url}")
+    try:
+        response = net.get(url, timeout=5)
+        response.raise_for_status()
+    except httpx.HTTPError as e:
+        console.error(f"Failed to fetch AGENTS.md from {url} due to {e}.")
+        raise SystemExit(1) from None
+
+    console.debug(f"Creating {agents_file}")
+    agents_file.write_text(response.text)
 
 
 def _read_dependency_file(file_path: Path) -> tuple[str | None, str | None]:

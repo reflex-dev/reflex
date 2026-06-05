@@ -17,7 +17,15 @@ The [reflex-dev/agent-skills](https://github.com/reflex-dev/agent-skills) reposi
 
 ## Installation
 
-Download the template into your project root, next to `rxconfig.py`:
+The fastest way is to scaffold it as part of a new app. Pass `--agents` to `reflex init` and Reflex writes a starter `AGENTS.md` into the project root alongside `rxconfig.py`:
+
+```bash
+reflex init --agents
+```
+
+An existing `AGENTS.md` is never overwritten, so it is safe to re-run.
+
+To add the template to an existing project, download it into the project root, next to `rxconfig.py`:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/reflex-dev/agent-skills/main/AGENTS.md -o AGENTS.md

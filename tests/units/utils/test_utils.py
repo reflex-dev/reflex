@@ -421,6 +421,46 @@ def test_initialize_non_existent_gitignore(
     assert set(file_content) - expected == set()
 
 
+def test_initialize_agents_md_fetches_canonical(tmp_path, mocker):
+    """Test that AGENTS.md is fetched from the canonical repo when absent."""
+    agents_file = tmp_path / "AGENTS.md"
+    response = mocker.Mock()
+    response.text = "# canonical agents"
+    get = mocker.patch("reflex.utils.net.get", return_value=response)
+
+    frontend_skeleton.initialize_agents_md(
+        agents_file=agents_file, url="http://x/AGENTS.md"
+    )
+
+    get.assert_called_once_with("http://x/AGENTS.md", timeout=5)
+    assert agents_file.read_text() == "# canonical agents"
+
+
+def test_initialize_agents_md_preserves_existing(tmp_path, mocker):
+    """Test that an existing AGENTS.md is never overwritten or re-fetched."""
+    agents_file = tmp_path / "AGENTS.md"
+    agents_file.write_text("custom content")
+    get = mocker.patch("reflex.utils.net.get")
+
+    frontend_skeleton.initialize_agents_md(agents_file=agents_file)
+
+    assert agents_file.read_text() == "custom content"
+    get.assert_not_called()
+
+
+def test_initialize_agents_md_aborts_on_fetch_failure(tmp_path, mocker):
+    """Test that a failed fetch aborts init without leaving a partial file."""
+    import httpx
+
+    agents_file = tmp_path / "AGENTS.md"
+    mocker.patch("reflex.utils.net.get", side_effect=httpx.ConnectError("boom"))
+
+    with pytest.raises(SystemExit):
+        frontend_skeleton.initialize_agents_md(agents_file=agents_file)
+
+    assert not agents_file.exists()
+
+
 def test_initialize_requirements_txt_skips_when_pyproject_exists(tmp_path):
     """Test that pyproject-based apps do not get a requirements.txt file."""
     pyproject_file = tmp_path / "pyproject.toml"
