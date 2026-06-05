@@ -10,8 +10,9 @@
 #      blocked / GitHub-rate-limited here, so we upgrade from PyPI instead.
 #   2. Python: the image pre-installs a 3.14 prerelease whose typing._eval_type
 #      signature is incompatible with the pinned pydantic (breaks every import).
-#      We install the stable interpreter and pass it to uv explicitly so it
-#      doesn't fall back to the prerelease.
+#      `uv sync` would reuse that prerelease since it's the only installed match
+#      for .python-version. `uv python install` excludes prereleases, so it
+#      fetches the stable patch; once present, sync prefers it over the rc.
 #   3. git tags: web clones are shallow with no tags, so Reflex's VCS-derived
 #      version resolves to 0.0.0 and trips downstream version gates (e.g.
 #      reflex-hosting-cli rejects it). Fetching tags lets the version compute.
@@ -24,8 +25,6 @@ if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
 fi
 
 cd "$CLAUDE_PROJECT_DIR"
-
-PY_VERSION="3.14.5"
 
 # 1. Upgrade uv if it's below the repo's required-version.
 need_uv="$(python3 - <<'PY'
@@ -60,14 +59,15 @@ fi
 export PATH="$HOME/.local/bin:$PATH"
 hash -r 2>/dev/null || true
 
-# 2. Ensure the stable interpreter is available.
-uv python install "$PY_VERSION"
+# 2. Ensure a stable interpreter matching .python-version is installed, so sync
+#    doesn't fall back to the pre-baked prerelease.
+uv python install
 
 # 3. Fetch tags so the dynamic version resolves (ignore failures; offline runs
 #    still get a best-effort sync).
 git fetch --tags --quiet || true
 
-# 4. Install all workspace dependencies against the stable interpreter.
-uv sync --python "$PY_VERSION"
+# 4. Install all workspace dependencies (uses .python-version).
+uv sync
 
-echo "Environment ready: uv $(uv --version), Python $PY_VERSION, reflex $(uv run python -c 'import importlib.metadata as m; print(m.version("reflex"))' 2>/dev/null || echo '?')"
+echo "Environment ready: uv $(uv --version), Python $(uv run python --version 2>/dev/null), reflex $(uv run python -c 'import importlib.metadata as m; print(m.version("reflex"))' 2>/dev/null || echo '?')"
