@@ -1,3 +1,4 @@
+import importlib.metadata
 from types import SimpleNamespace
 
 import pytest
@@ -27,6 +28,7 @@ def event_defaults(mocker: MockerFixture) -> dict:
             "node_version": None,
             "bun_version": None,
             "reflex_enterprise_version": None,
+            "reflex_package_version": {},
             "cpu_count": 4,
             "memory": 8192,
             "cpu_info": {},
@@ -68,6 +70,73 @@ def test_telemetry():
 def test_disable():
     """Test that disabling telemetry works."""
     assert not telemetry._send("test", telemetry_enabled=False)
+
+
+def test_get_reflex_package_versions_real_environment():
+    """The first-party reflex subpackages are discovered with string versions."""
+    versions = telemetry.get_reflex_package_versions()
+
+    assert isinstance(versions, dict)
+    # reflex-base is a declared dependency, so it is always installed in the env.
+    assert "reflex-base" in versions
+    # Only reflex subpackages are reported, each with a string version.
+    for name, value in versions.items():
+        assert name.startswith("reflex-")
+        assert isinstance(value, str)
+    # The main reflex package is reported separately via get_reflex_version.
+    assert "reflex" not in versions
+
+
+def test_get_reflex_package_versions_reports_only_first_party(mocker: MockerFixture):
+    """Only reflex's own subpackage dependencies are reported, by installed version.
+
+    Third-party ``reflex-*`` packages a user happens to have installed are not in
+    reflex's declared dependencies, so they must never be reported.
+    """
+    mocker.patch(
+        "importlib.metadata.requires",
+        return_value=[
+            "reflex-base>=0.9.4",
+            "reflex-components-radix>=0.9.2",
+            "reflex-hosting-cli>=0.1.66",
+            "httpx<1.0,>=0.26",
+            'pydantic>=2.12.0; extra == "db"',
+        ],
+    )
+    installed = {
+        "reflex-base": "0.9.4",
+        "reflex-components-radix": "0.9.2",
+        # reflex-hosting-cli is a declared dependency but is not installed here.
+        "httpx": "0.27.0",
+        "pydantic": "2.12.0",
+        # A third-party reflex-* package installed separately by the user.
+        "reflex-enterprise": "1.2.3",
+    }
+
+    def fake_version(name: str) -> str:
+        try:
+            return installed[name]
+        except KeyError as exc:
+            raise importlib.metadata.PackageNotFoundError(name) from exc
+
+    mocker.patch("importlib.metadata.version", side_effect=fake_version)
+
+    assert telemetry.get_reflex_package_versions() == {
+        "reflex-base": "0.9.4",
+        "reflex-components-radix": "0.9.2",
+    }
+
+
+def test_get_reflex_package_versions_handles_missing_reflex_metadata(
+    mocker: MockerFixture,
+):
+    """An empty dict is returned when the reflex distribution metadata is absent."""
+    mocker.patch(
+        "importlib.metadata.requires",
+        side_effect=importlib.metadata.PackageNotFoundError,
+    )
+
+    assert telemetry.get_reflex_package_versions() == {}
 
 
 @pytest.mark.parametrize(

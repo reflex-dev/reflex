@@ -14,6 +14,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, TypedDict, cast
 
+from packaging.requirements import Requirement
+from packaging.utils import canonicalize_name
 from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.environment import environment
@@ -215,6 +217,36 @@ def get_reflex_enterprise_version() -> str | None:
         return None
 
 
+def get_reflex_package_versions() -> dict[str, str]:
+    """Get the versions of the installed Reflex subpackages.
+
+    Reports only the first-party subpackages distributed with Reflex from this
+    repository (``reflex-base``, the ``reflex-components-*`` family and
+    ``reflex-hosting-cli``). The set is derived from the ``reflex``
+    distribution's own declared dependencies, so unrelated third-party
+    ``reflex-*`` packages a user may have installed are never reported. The main
+    ``reflex`` package is reported separately via ``get_reflex_version``.
+
+    Returns:
+        A mapping of Reflex subpackage name to installed version, sorted by name.
+    """
+    try:
+        requirements = importlib.metadata.requires("reflex") or ()
+    except importlib.metadata.PackageNotFoundError:
+        return {}
+
+    versions: dict[str, str] = {}
+    for requirement in requirements:
+        name = canonicalize_name(Requirement(requirement).name)
+        if not name.startswith("reflex-"):
+            continue
+        try:
+            versions[name] = importlib.metadata.version(name)
+        except importlib.metadata.PackageNotFoundError:
+            continue
+    return dict(sorted(versions.items()))
+
+
 def _raise_on_missing_project_hash() -> bool:
     """Check if an error should be raised when project hash is missing.
 
@@ -241,6 +273,7 @@ class _Properties(TypedDict):
     node_version: str | None
     bun_version: str | None
     reflex_enterprise_version: str | None
+    reflex_package_version: dict[str, str]
     cpu_count: int
     cpu_info: dict
 
@@ -282,6 +315,7 @@ def _get_event_defaults() -> _DefaultEvent | None:
             str(bun_version) if (bun_version := get_bun_version()) else None
         ),
         "reflex_enterprise_version": get_reflex_enterprise_version(),
+        "reflex_package_version": get_reflex_package_versions(),
         "cpu_count": get_cpu_count(),
         "cpu_info": dataclasses.asdict(cpuinfo) if cpuinfo else {},
     }
