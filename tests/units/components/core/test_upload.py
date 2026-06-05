@@ -1,9 +1,12 @@
+import json
 from typing import Any, cast
+from urllib.parse import quote
 
 import pytest
 from reflex_base.event import EventChain, EventHandler, EventSpec, parse_args_spec
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
+from reflex_components_core.core._upload import _extra_upload_args
 from reflex_components_core.core.upload import (
     GhostUpload,
     StyledUpload,
@@ -13,6 +16,8 @@ from reflex_components_core.core.upload import (
     cancel_upload,
     get_upload_url,
 )
+from starlette.exceptions import HTTPException
+from starlette.requests import Request
 
 import reflex as rx
 from reflex import event
@@ -275,6 +280,53 @@ def test_upload_files_bound_arg_reserved_name_raises():
             cast(Any, rx.upload_files(upload_id="foo_id")),
             cast(Any, Var(_js_expr="some_id", _var_type=str)),
         )
+
+
+@pytest.fixture
+def upload_request():
+    """Build an upload request carrying a given reflex-event-args header value.
+
+    Returns:
+        A factory taking the header value (or ``None`` to omit the header).
+    """
+
+    def _build(header_value: str | None) -> Request:
+        headers = (
+            [(b"reflex-event-args", header_value.encode())]
+            if header_value is not None
+            else []
+        )
+        return Request({"type": "http", "headers": headers})
+
+    return _build
+
+
+def test_extra_upload_args_decodes_json_object(upload_request):
+    request = upload_request(quote(json.dumps({"field": "value"})))
+    assert _extra_upload_args(request) == {"field": "value"}
+
+
+def test_extra_upload_args_missing_header_returns_empty(upload_request):
+    assert _extra_upload_args(upload_request(None)) == {}
+    assert _extra_upload_args(upload_request("")) == {}
+
+
+@pytest.mark.parametrize(
+    "header_value",
+    [quote("[1, 2, 3]"), quote('"foo"'), quote("42"), quote("null")],
+)
+def test_extra_upload_args_non_object_raises(upload_request, header_value):
+    """A header encoding valid JSON that is not an object is a bad request."""
+    with pytest.raises(HTTPException) as exc_info:
+        _extra_upload_args(upload_request(header_value))
+    assert exc_info.value.status_code == 400
+
+
+def test_extra_upload_args_malformed_json_raises(upload_request):
+    """A header that is not valid JSON is a bad request, not a 500."""
+    with pytest.raises(HTTPException) as exc_info:
+        _extra_upload_args(upload_request(quote("{not json")))
+    assert exc_info.value.status_code == 400
 
 
 def test_styled_upload_create():

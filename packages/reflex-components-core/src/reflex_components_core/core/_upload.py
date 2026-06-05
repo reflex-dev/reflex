@@ -438,11 +438,25 @@ def _extra_upload_args(request: Request) -> dict[str, Any]:
 
     Returns:
         The decoded extra args, or an empty mapping if none were sent.
+
+    Raises:
+        HTTPException: If the header is present but not a valid JSON object.
     """
     encoded = request.headers.get("reflex-event-args")
     if not encoded:
         return {}
-    return json.loads(unquote(encoded))
+    try:
+        decoded = json.loads(unquote(encoded))
+    except json.JSONDecodeError as exc:
+        raise HTTPException(
+            status_code=400, detail="Malformed reflex-event-args header."
+        ) from exc
+    if not isinstance(decoded, dict):
+        raise HTTPException(
+            status_code=400,
+            detail="reflex-event-args header must encode a JSON object.",
+        )
+    return decoded
 
 
 async def _upload_buffered_file(
@@ -463,12 +477,13 @@ async def _upload_buffered_file(
 
     from reflex.state import StateUpdate
 
+    extra_args = _extra_upload_args(request)
+
     try:
         form_data = await request.form()
     except ClientDisconnect:
         return Response()
 
-    extra_args = _extra_upload_args(request)
     form_data_closed = False
 
     async def _close_form_data() -> None:
