@@ -934,7 +934,7 @@ def multi_docs(
 
     active_class_name = "font-small bg-secondary-2 p-2 text-secondary-11 rounded-xl shadow-large w-28 cursor-default border border-secondary-4 text-center"
 
-    non_active_class_name = "font-small w-28 transition-color hover:text-secondary-11 text-secondary-11 p-2 text-center"
+    non_active_class_name = "font-small w-28 transition-color hover:text-secondary-12 text-secondary-11 p-2 text-center"
 
     def links(current_page, ll_doc_exists, path):
         path = str(path).rstrip("/")
