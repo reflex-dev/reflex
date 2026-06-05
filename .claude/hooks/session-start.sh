@@ -2,22 +2,22 @@
 # SessionStart hook for Claude Code on the web.
 #
 # The web container image is baked with tools that predate this repo's current
-# requirements, so a fresh `uv sync` + test run fails out of the box. This hook
-# reconciles the environment with the repo on every web session start:
+# requirements, so a later `uv sync` + test run fails out of the box. This hook
+# reconciles the environment with the repo on every web session start (it does
+# not sync dependencies -- that cost is paid on the first 'uv run'/'uv sync'):
 #
-#   1. uv: the repo pins tool.uv.required-version in pyproject.toml. The web
-#      image usually already has a compatible uv installed (e.g. in
-#      /usr/local/bin), but an older standalone build can sit ahead of it on
-#      PATH. We pick whichever installed uv meets the requirement and put it
-#      first; only if none qualifies do we install one from PyPI (the astral.sh
-#      installer and `uv self update` are blocked / GitHub-rate-limited here).
-#   2. Python: the baked uv (see #1) predates Python 3.14.0 final, so its
-#      bundled release manifest only knows 3.14 prereleases -- a bare `uv sync`
-#      with it resolves .python-version=3.14 to a release candidate whose
+#   1. uv: the repo pins tool.uv.required-version in pyproject.toml. If the uv on
+#      PATH is older, pip-install a satisfying one for --user (into ~/.local/bin,
+#      assumed already on PATH); the astral.sh installer and `uv self update` are
+#      blocked / GitHub-rate-limited here.
+#   2. Python: an older uv (see #1) predates Python 3.14.0 final, so its bundled
+#      release manifest only knows 3.14 prereleases -- a bare `uv sync` with it
+#      resolves .python-version=3.14 to a release candidate whose
 #      typing._eval_type signature is incompatible with the pinned pydantic
 #      (breaks every import). Upgrading uv first fixes the manifest; we then run
-#      `uv python install` (which excludes prereleases) as a guard so sync can't
-#      reuse a prerelease that an earlier stale-uv sync may have already fetched.
+#      `uv python install` (which excludes prereleases) as a guard so a later
+#      sync can't reuse a prerelease that an earlier stale-uv run may have
+#      already fetched.
 #   3. git tags: web clones are shallow with no tags, so Reflex's VCS-derived
 #      version resolves to 0.0.0 and trips downstream version gates (e.g.
 #      reflex-hosting-cli rejects it). Fetching tags lets the version compute.
@@ -53,14 +53,10 @@ fi
 uv python install
 
 # 3. Fetch tags so the dynamic version resolves (ignore failures; offline runs
-#    still get a best-effort sync).
+#    still compute a best-effort version).
 git fetch --tags --quiet || true
 
-# 4. Install all workspace dependencies (uses .python-version). Don't let a
-#    transient sync failure (e.g. a flaky network) abort startup -- the container
-#    should still come up so the session can retry sync manually.
-if ! uv sync; then
-  echo "WARNING: 'uv sync' failed; the environment may be incomplete. Re-run 'uv sync' once any transient issue clears." >&2
-fi
-
-echo "Environment ready: uv $(uv --version), Python $(uv run python --version 2>/dev/null), reflex $(uv run python -c 'import importlib.metadata as m; print(m.version("reflex"))' 2>/dev/null || echo '?')"
+# Dependencies are intentionally not synced here -- the first 'uv run'/'uv sync'
+# (e.g. running tests or an app) installs them, so sessions that don't touch the
+# code don't pay that cost.
+echo "Environment ready: uv $(uv --version). Dependencies install on first 'uv sync' / 'uv run'."
