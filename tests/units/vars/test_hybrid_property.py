@@ -1,0 +1,81 @@
+"""Unit tests for reflex_base.vars.hybrid_property."""
+
+import pytest
+from reflex_base.utils.exceptions import HybridPropertyError
+
+import reflex as rx
+from reflex.experimental import hybrid_property
+from reflex.vars import Var
+
+
+def test_hybrid_property_getter_backend_var_access_raises():
+    """A hybrid property getter that reads a backend var raises when its frontend var is built."""
+
+    class GetterBackendState(rx.State):
+        name: str = "pub"
+        _secret: str = "hidden"
+
+        @hybrid_property
+        def leaky(self) -> str:
+            return f"{self.name}-{self._secret}"
+
+    with pytest.raises(HybridPropertyError, match="_secret"):
+        _ = GetterBackendState.leaky
+
+
+def test_hybrid_property_var_fn_backend_var_access_raises():
+    """A hybrid property whose custom .var function reads a backend var raises."""
+
+    class VarFnBackendState(rx.State):
+        name: str = "pub"
+        _secret: str = "hidden"
+
+        @hybrid_property
+        def value(self) -> str:
+            return self.name
+
+        @value.var
+        def value(cls) -> Var[str]:
+            return cls._secret  # pyright: ignore[reportReturnType]
+
+    with pytest.raises(HybridPropertyError, match="_secret"):
+        _ = VarFnBackendState.value
+
+
+def test_hybrid_property_frontend_var_access_ok():
+    """A hybrid property reading only frontend vars builds the expected frontend var."""
+
+    class FrontendOnlyState(rx.State):
+        first: str = "a"
+        last: str = "b"
+
+        @hybrid_property
+        def full(self) -> str:
+            return f"{self.first} {self.last}"
+
+    assert str(Var.create(FrontendOnlyState.full)) == str(
+        Var.create(f"{FrontendOnlyState.first} {FrontendOnlyState.last}")
+    )
+
+
+def test_hybrid_property_on_object_var_not_guarded():
+    """The guard is State-only; underscore fields on an object var are not affected.
+
+    Underscore-field serialization on dataclasses/models is a separate concern, so a
+    hybrid property accessed through an object var must not raise here.
+    """
+    from dataclasses import dataclass
+
+    @dataclass
+    class Info:
+        a: str
+        _internal: str = "x"
+
+        @hybrid_property
+        def combined(self) -> str:
+            return f"{self.a}-{self._internal}"
+
+    class ObjVarState(rx.State):
+        info: Info = Info(a="a")
+
+    assert isinstance(Var.create(ObjVarState.info.combined), Var)
