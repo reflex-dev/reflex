@@ -682,6 +682,18 @@ export const connect = async (
   socket.current.on("event", async (update) => {
     if (update.delta && Object.keys(update.delta).length > 0) {
       for (const substate in update.delta) {
+        if (typeof dispatch[substate] !== "function") {
+          // The frontend bundle has no reducer for this substate. This can
+          // happen when the compiled frontend and the backend disagree on a
+          // dynamically-created state name (e.g. ComponentState). Skip it
+          // instead of crashing the whole event loop with "X is not a function".
+          console.warn(
+            `Received a delta for unknown state "${substate}"; ignoring it. ` +
+              `This usually means the frontend was built against a different ` +
+              `set of states than the backend is serving.`,
+          );
+          continue;
+        }
         dispatch[substate](update.delta[substate]);
         // handle events waiting for `is_hydrated`
         if (
