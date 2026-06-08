@@ -718,3 +718,30 @@ def test_send_suppresses_worker_errors(mocker: MockerFixture):
     # Neither queuing the event nor draining the failed job may raise.
     telemetry.send("run-prod", telemetry_enabled=True)
     telemetry._flush()
+
+
+def test_flush_returns_true_when_queue_drains(mocker: MockerFixture):
+    """``_flush`` reports success once the queued work has been processed."""
+    mocker.patch.object(telemetry, "_maybe_alias_legacy_distinct_id")
+    mocker.patch.object(telemetry, "_send", return_value=True)
+
+    telemetry.send("run-dev", telemetry_enabled=True)
+
+    assert telemetry._flush() is True
+
+
+def test_flush_returns_false_when_worker_does_not_drain_in_time():
+    """``_flush`` reports failure when the queue cannot drain within the timeout.
+
+    A blocking job occupies the single worker so the flush sentinel cannot run;
+    the bounded wait must surface the incomplete drain rather than swallow it.
+    """
+    release = threading.Event()
+    # Bound the worker's wait so a failing assertion can never wedge the shared
+    # executor (and the autouse drain fixture) indefinitely.
+    blocker = telemetry._get_telemetry_executor().submit(release.wait, 10)
+    try:
+        assert telemetry._flush(timeout=0.05) is False
+    finally:
+        release.set()
+        blocker.result(timeout=5)

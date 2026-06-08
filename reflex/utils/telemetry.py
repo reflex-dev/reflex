@@ -520,7 +520,7 @@ def _submit(fn: Callable[..., Any], /, *args, **kwargs) -> None:
         _get_telemetry_executor().submit(_run_suppressed, fn, *args, **kwargs)
 
 
-def _flush(timeout: float | None = None) -> None:
+def _flush(timeout: float | None = None) -> bool:
     """Block until telemetry queued before this call has been processed.
 
     The executor has a single worker draining a FIFO queue, so waiting on a
@@ -531,11 +531,18 @@ def _flush(timeout: float | None = None) -> None:
     Args:
         timeout: Maximum number of seconds to wait, or ``None`` to wait
             indefinitely.
+
+    Returns:
+        ``True`` if the queue drained (or no worker was ever started),
+        ``False`` if the wait timed out before the queue emptied.
     """
     if _executor is None:
-        return
-    with suppress(Exception):
+        return True
+    try:
         _executor.submit(lambda: None).result(timeout)
+    except Exception:
+        return False
+    return True
 
 
 _legacy_alias_attempted = False
