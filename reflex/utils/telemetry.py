@@ -1,6 +1,5 @@
 """Anonymous telemetry for Reflex."""
 
-import asyncio
 import dataclasses
 import importlib.metadata
 import json
@@ -8,8 +7,10 @@ import multiprocessing
 import os
 import platform
 import sys
+import threading
 import uuid
-import warnings
+from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
 from datetime import datetime, timezone
 from pathlib import Path
@@ -463,7 +464,79 @@ def _send(
     return False
 
 
-background_tasks = set()
+_executor_lock = threading.Lock()
+_executor: ThreadPoolExecutor | None = None
+
+
+def _get_telemetry_executor() -> ThreadPoolExecutor:
+    """Return the process-wide, lazily-created telemetry executor.
+
+    A single-worker thread pool runs all telemetry collection and delivery off
+    the caller's thread — in particular the asyncio event loop, which the
+    blocking syscalls, subprocess calls and synchronous HTTP request used to
+    gather and post an event would otherwise stall. The pool's queue serializes
+    events through the one worker, and the interpreter drains it at exit via
+    ``concurrent.futures``' atexit handler.
+
+    Returns:
+        The shared single-worker telemetry executor.
+    """
+    global _executor
+    if _executor is None:
+        with _executor_lock:
+            if _executor is None:
+                _executor = ThreadPoolExecutor(
+                    max_workers=1, thread_name_prefix="reflex-telemetry"
+                )
+    return _executor
+
+
+def _run_suppressed(fn: Callable[..., Any], /, *args, **kwargs) -> None:
+    """Run ``fn`` in the worker thread, never letting a failure escape.
+
+    Telemetry must never break the app, so any error (including a failed send)
+    is reported at debug level and otherwise discarded.
+
+    Args:
+        fn: The callable to run.
+        args: Positional arguments forwarded to ``fn``.
+        kwargs: Keyword arguments forwarded to ``fn``.
+    """
+    try:
+        fn(*args, **kwargs)
+    except Exception as err:
+        console.debug(f"Failed to process telemetry event: {err}")
+
+
+def _submit(fn: Callable[..., Any], /, *args, **kwargs) -> None:
+    """Queue telemetry work on the background executor, swallowing all errors.
+
+    Args:
+        fn: The callable to run in the telemetry worker thread.
+        args: Positional arguments forwarded to ``fn``.
+        kwargs: Keyword arguments forwarded to ``fn``.
+    """
+    with suppress(Exception):
+        _get_telemetry_executor().submit(_run_suppressed, fn, *args, **kwargs)
+
+
+def _flush(timeout: float | None = None) -> None:
+    """Block until telemetry queued before this call has been processed.
+
+    The executor has a single worker draining a FIFO queue, so waiting on a
+    sentinel submitted now guarantees every previously-queued event has been
+    handled. Intended for tests and best-effort shutdown; ordinary call sites
+    fire and forget.
+
+    Args:
+        timeout: Maximum number of seconds to wait, or ``None`` to wait
+            indefinitely.
+    """
+    if _executor is None:
+        return
+    with suppress(Exception):
+        _executor.submit(lambda: None).result(timeout)
+
 
 _legacy_alias_attempted = False
 
@@ -527,6 +600,12 @@ def send(
 ):
     """Send anonymous telemetry for Reflex.
 
+    The event is collected and delivered on a dedicated single-worker thread
+    pool, so neither the data gathering (blocking syscalls and subprocess calls)
+    nor the synchronous HTTP request blocks the caller — in particular the
+    asyncio event loop serving a running app. Delivery is best-effort: any
+    failure is suppressed and never surfaces to the caller.
+
     Args:
         event: The event name.
         telemetry_enabled: Whether to send the telemetry (If None, get from config).
@@ -534,28 +613,37 @@ def send(
             properties. Preferred over ``kwargs`` for new events.
         kwargs: Additional data to send with the event.
     """
+    with suppress(Exception):
+        if telemetry_enabled is None:
+            telemetry_enabled = get_config().telemetry_enabled
+        # Only spin up the worker pool when there is actually something to send.
+        if telemetry_enabled:
+            _submit(
+                _process_event,
+                event,
+                telemetry_enabled,
+                properties=properties,
+                **kwargs,
+            )
+
+
+def _process_event(
+    event: str,
+    telemetry_enabled: bool,
+    *,
+    properties: dict[str, Any] | None = None,
+    **kwargs,
+) -> None:
+    """Collect and deliver a single telemetry event from the worker thread.
+
+    Args:
+        event: The event name.
+        telemetry_enabled: Whether telemetry is enabled.
+        properties: Structured payload merged into the event properties.
+        kwargs: Additional allow-listed event data.
+    """
     _maybe_alias_legacy_distinct_id(telemetry_enabled)
-
-    async def async_send(  # noqa: RUF029
-        event: str,
-        telemetry_enabled: bool | None,
-        properties: dict[str, Any] | None,
-        **kwargs,
-    ):
-        return _send(event, telemetry_enabled, properties=properties, **kwargs)
-
-    try:
-        # Within an event loop context, send the event asynchronously.
-        task = asyncio.create_task(
-            async_send(event, telemetry_enabled, properties, **kwargs),
-            name=f"reflex_send_telemetry_event|{event}",
-        )
-        background_tasks.add(task)
-        task.add_done_callback(background_tasks.discard)
-    except RuntimeError:
-        # If there is no event loop, send the event synchronously.
-        warnings.filterwarnings("ignore", category=RuntimeWarning)
-        _send(event, telemetry_enabled, properties=properties, **kwargs)
+    _send(event, telemetry_enabled, properties=properties, **kwargs)
 
 
 def send_error(error: Exception, context: str):

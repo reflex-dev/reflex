@@ -1,4 +1,6 @@
+import asyncio
 import importlib.metadata
+import threading
 import uuid
 from types import SimpleNamespace
 
@@ -7,6 +9,22 @@ from packaging.version import parse as parse_python_version
 from pytest_mock import MockerFixture
 
 from reflex.utils import telemetry
+
+
+@pytest.fixture(autouse=True)
+def _drain_telemetry_executor():
+    """Drain any queued telemetry work so jobs never leak across tests.
+
+    Most tests mock ``telemetry.send`` and never touch the worker pool, but the
+    ones exercising the real ``send`` path enqueue work on the shared executor.
+    Flushing on teardown keeps a slow or failed job from running against the
+    next test's mocks.
+
+    Yields:
+        Control to the test, flushing the telemetry executor afterwards.
+    """
+    yield
+    telemetry._flush()
 
 
 @pytest.fixture
@@ -587,6 +605,8 @@ def test_maybe_alias_create_alias_payload(
     )
 
     telemetry._maybe_alias_legacy_distinct_id(telemetry_enabled=True)
+    # The $create_alias is now sent on the telemetry worker thread; wait for it.
+    telemetry._flush()
 
     httpx_post.assert_called_once()
     payload = httpx_post.call_args.kwargs["json"]
@@ -597,3 +617,104 @@ def test_maybe_alias_create_alias_payload(
     assert props["alias"] == legacy_id
     # distinct_id is the new UUID-string identity (from the event defaults).
     assert props["distinct_id"] == event_defaults["properties"]["distinct_id"]
+
+
+def test_telemetry_executor_is_lazy_and_single_worker():
+    """The telemetry executor is created once and runs exactly one worker."""
+    executor = telemetry._get_telemetry_executor()
+    # Cached: repeated lookups return the same lazily-created pool.
+    assert executor is telemetry._get_telemetry_executor()
+    assert executor._max_workers == 1
+
+
+def test_process_event_aliases_then_sends(mocker: MockerFixture):
+    """``_process_event`` runs the alias migration before delivering the event."""
+    alias = mocker.patch.object(telemetry, "_maybe_alias_legacy_distinct_id")
+    send = mocker.patch.object(telemetry, "_send")
+
+    telemetry._process_event("init", True, properties={"x": 1}, template="t")
+
+    alias.assert_called_once_with(True)
+    send.assert_called_once_with("init", True, properties={"x": 1}, template="t")
+
+
+def test_send_disabled_does_not_submit(mocker: MockerFixture):
+    """Disabled telemetry queues no work and never spins up the worker pool."""
+    submit = mocker.patch.object(telemetry, "_submit")
+
+    telemetry.send("run-dev", telemetry_enabled=False)
+
+    submit.assert_not_called()
+
+
+def test_send_resolves_enabled_from_config(
+    mocker: MockerFixture, patch_telemetry_config
+):
+    """With ``telemetry_enabled`` unspecified, ``send`` consults the config."""
+    submit = mocker.patch.object(telemetry, "_submit")
+
+    patch_telemetry_config(enabled=False)
+    telemetry.send("run-dev")
+    submit.assert_not_called()
+
+    patch_telemetry_config(enabled=True)
+    telemetry.send("run-dev")
+    submit.assert_called_once()
+
+
+def test_send_processes_event_off_caller_thread(mocker: MockerFixture):
+    """``send`` collects and delivers the event on the worker, not the caller.
+
+    Regression for #6618: telemetry collection (blocking syscalls/subprocess)
+    and the synchronous HTTP post previously ran on the caller's thread — and,
+    inside an event loop, on the loop thread via a task that never awaited —
+    blocking the event loop. The work must now happen on a separate thread.
+    """
+    mocker.patch.object(telemetry, "_maybe_alias_legacy_distinct_id")
+    seen: dict[str, threading.Thread] = {}
+
+    def record(*_args, **_kwargs) -> bool:
+        seen["thread"] = threading.current_thread()
+        return True
+
+    mocker.patch.object(telemetry, "_send", side_effect=record)
+
+    telemetry.send("run-dev", telemetry_enabled=True)
+    telemetry._flush()
+
+    assert seen["thread"] is not threading.current_thread()
+    assert seen["thread"] is not threading.main_thread()
+
+
+async def test_send_within_event_loop_runs_off_loop_thread(mocker: MockerFixture):
+    """Inside a running event loop, ``send`` offloads work to the worker thread.
+
+    This is the core scenario from #6618: at runtime ``send`` is called from the
+    asyncio event loop (e.g. backend error telemetry), and the blocking work
+    must not execute on the loop thread.
+    """
+    loop_thread = threading.current_thread()
+    mocker.patch.object(telemetry, "_maybe_alias_legacy_distinct_id")
+    seen: dict[str, threading.Thread] = {}
+
+    def record(*_args, **_kwargs) -> bool:
+        seen["thread"] = threading.current_thread()
+        return True
+
+    mocker.patch.object(telemetry, "_send", side_effect=record)
+
+    telemetry.send("error", telemetry_enabled=True)
+    # Wait for the worker without blocking the event loop ourselves.
+    await asyncio.to_thread(telemetry._flush)
+
+    assert seen["thread"] is not loop_thread
+
+
+def test_send_suppresses_worker_errors(mocker: MockerFixture):
+    """A failed telemetry send is swallowed and never reaches the caller."""
+    mocker.patch.object(telemetry, "_maybe_alias_legacy_distinct_id")
+    mocker.patch.object(telemetry, "_send", side_effect=RuntimeError("boom"))
+
+    # Neither queuing the event nor draining the failed job may raise.
+    telemetry.send("run-prod", telemetry_enabled=True)
+    telemetry._flush()
