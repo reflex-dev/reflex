@@ -49,6 +49,33 @@ def test_static_icon_import_path(tag):
     assert import_var.is_default
 
 
+# Literal expected paths — independent of LUCIDE_ICON_FILENAME_OVERRIDE and the
+# kebab helper — so a typo in an override value (the hand-maintained, drift-prone
+# part) is actually caught instead of being mirrored on both sides of the assert.
+# The override file names were verified to exist under lucide-react's
+# dist/esm/icons; the plain entries spot-check the default kebab conversion.
+@pytest.mark.parametrize(
+    ("tag", "expected_path"),
+    [
+        ("fingerprint", "/dist/esm/icons/fingerprint-pattern.mjs"),
+        ("grid_2x_2", "/dist/esm/icons/grid-2x2.mjs"),
+        ("grid_2x_2_check", "/dist/esm/icons/grid-2x2-check.mjs"),
+        ("grid_2x_2_plus", "/dist/esm/icons/grid-2x2-plus.mjs"),
+        ("grid_2x_2_x", "/dist/esm/icons/grid-2x2-x.mjs"),
+        ("grid_3x_3", "/dist/esm/icons/grid-3x3.mjs"),
+        # grid_3x2 is NOT an override — its kebab file name already matches.
+        ("grid_3x2", "/dist/esm/icons/grid-3x2.mjs"),
+        ("wifi_off", "/dist/esm/icons/wifi-off.mjs"),
+        ("circle_help", "/dist/esm/icons/circle-help.mjs"),
+        ("activity", "/dist/esm/icons/activity.mjs"),
+    ],
+)
+def test_static_icon_import_path_literal(tag, expected_path):
+    """Spot-check concrete import paths, especially the file-name overrides."""
+    (import_var,) = _lucide_imports(Icon.create(tag))
+    assert import_var.package_path == expected_path
+
+
 def test_dynamic_icon_uses_dynamic_module():
     """Var-tagged icons still resolve through lucide-react/dynamic.mjs."""
     icon = Icon.create(Var("state_icon").to(str))

@@ -1868,9 +1868,9 @@ LUCIDE_ICON_MAPPING_OVERRIDE = {
 
 # For deep per-icon imports, the kebab-case icon name must match Lucide's own
 # file name under dist/esm/icons. These are the entries where the default
-# kebab conversion doesn't (verified against the full LUCIDE_ICON_LIST): the
-# digit-x-digit names gain a stray hyphen, and "fingerprint" is an alias of the
-# "fingerprint-pattern" module.
+# kebab conversion doesn't produce the correct file name (verified against the
+# full LUCIDE_ICON_LIST): the digit-x-digit names gain a stray hyphen, and
+# "fingerprint" is an alias of the "fingerprint-pattern" module.
 LUCIDE_ICON_FILENAME_OVERRIDE = {
     "fingerprint": "fingerprint-pattern",
     "grid_2x_2": "grid-2x2",
