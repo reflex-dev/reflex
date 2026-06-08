@@ -382,6 +382,25 @@ def test_compile_app_root_omits_radix_window_library_by_default():
     assert "@radix-ui/themes" not in code
 
 
+def test_compile_app_root_omits_hydrate_fallback_by_default():
+    """Apps without a hydrate_fallback should not export a HydrateFallback."""
+    reset_bundled_libraries()
+
+    _, code = compiler.compile_app_root(rx.el.div("hello"))
+
+    assert "HydrateFallback" not in code
+
+
+def test_compile_app_root_with_hydrate_fallback_exports_hydrate_fallback():
+    """A hydrate_fallback should be emitted as the HydrateFallback export."""
+    reset_bundled_libraries()
+
+    _, code = compiler.compile_app_root(rx.el.div("hello"), rx.el.div("loading..."))
+
+    assert "export function HydrateFallback()" in code
+    assert "loading..." in code
+
+
 def test_compile_app_root_includes_radix_window_library_when_bundled():
     """Bundled Radix libraries should be exposed to window.__reflex."""
     reset_bundled_libraries()

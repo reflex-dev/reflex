@@ -2199,6 +2199,169 @@ def test_compile_without_radix_components_skips_radix_plugin(
     mock_deprecate.assert_not_called()
 
 
+def test_compile_hydrate_fallback_emits_hydrate_fallback(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """A hydrate_fallback should compile into the root HydrateFallback export."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+
+    app.hydrate_fallback = rx.el.div("Hydrating...")
+    app.add_page(lambda: rx.el.div("Index"), route="/")
+    app._compile()
+
+    app_root = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+
+    assert "export function HydrateFallback()" in app_root
+    assert "Hydrating..." in app_root
+
+
+def _example_hydrate_fallback() -> rx.Component:
+    """Hydrate fallback component referenced by dotted import path in tests.
+
+    Returns:
+        A simple fallback component.
+    """
+    return rx.el.div("Fallback from config...")
+
+
+def test_compile_hydrate_fallback_from_config(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """The hydrate_fallback config (env-settable) should define the HydrateFallback."""
+    conf = rx.Config(
+        app_name="testing",
+        hydrate_fallback="tests.units.test_app._example_hydrate_fallback",
+    )
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+
+    app.add_page(lambda: rx.el.div("Index"), route="/")
+    app._compile()
+
+    app_root = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+
+    assert "export function HydrateFallback()" in app_root
+    assert "Fallback from config..." in app_root
+
+
+def test_app_hydrate_fallback_takes_precedence_over_config(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """App.hydrate_fallback should win over the hydrate_fallback config."""
+    conf = rx.Config(
+        app_name="testing",
+        hydrate_fallback="tests.units.test_app._example_hydrate_fallback",
+    )
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+
+    app.hydrate_fallback = rx.el.div("Fallback from app...")
+    app.add_page(lambda: rx.el.div("Index"), route="/")
+    app._compile()
+
+    app_root = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+
+    assert "Fallback from app..." in app_root
+    assert "Fallback from config..." not in app_root
+
+
+def test_resolve_import_path_resolves_nested_attribute():
+    """A dotted path should resolve to the attribute of its nested module."""
+    from reflex_components_radix.themes.components.button import button
+
+    from reflex.app import _resolve_import_path
+
+    resolved = _resolve_import_path(
+        "reflex_components_radix.themes.components.button.button"
+    )
+
+    assert resolved is button
+
+
+def test_resolve_import_path_raises_for_missing_module():
+    """An unresolvable path should raise (caller handles the failure)."""
+    from reflex.app import _resolve_import_path
+
+    with pytest.raises(ModuleNotFoundError):
+        _resolve_import_path("nonexistent_module.does_not_exist")
+
+
+def test_component_from_import_path_resolves_callable():
+    """A dotted path to a component callable should resolve to a component."""
+    from reflex_components_core.base.fragment import Fragment
+    from reflex_components_core.el.elements.typography import Div
+
+    from reflex.app import _component_from_import_path
+
+    component = _component_from_import_path(
+        "tests.units.test_app._example_hydrate_fallback", "hydrate_fallback"
+    )
+
+    assert isinstance(component, Fragment)
+    assert isinstance(component.children[0], Div)
+
+
+def test_component_from_import_path_resolves_nested_module():
+    """A multi-segment module path should resolve via importlib, not the top package."""
+    from reflex_components_core.base.fragment import Fragment
+    from reflex_components_radix.themes.components.button import Button
+
+    from reflex.app import _component_from_import_path
+
+    # The callable lives in a deeply nested module; ``__import__`` would have
+    # returned the top-level package instead of this submodule.
+    component = _component_from_import_path(
+        "reflex_components_radix.themes.components.button.button",
+        "extra_overlay_function",
+    )
+
+    assert isinstance(component, Fragment)
+    assert isinstance(component.children[0], Button)
+
+
+def test_component_from_import_path_invalid_returns_none(mocker: MockerFixture):
+    """An unresolvable path should be logged and return None instead of raising."""
+    from reflex.app import _component_from_import_path
+
+    mocker.patch("reflex.compiler.utils.save_error", return_value="/tmp/error.log")
+    mock_error = mocker.patch("reflex_base.utils.console.error")
+
+    component = _component_from_import_path(
+        "nonexistent_module.does_not_exist", "hydrate_fallback"
+    )
+
+    assert component is None
+    mock_error.assert_called_once()
+
+
+def test_component_from_import_path_non_callable_returns_none(mocker: MockerFixture):
+    """A path resolving to a non-callable attribute should return None."""
+    from reflex.app import _component_from_import_path
+
+    mocker.patch("reflex.compiler.utils.save_error", return_value="/tmp/error.log")
+    mock_error = mocker.patch("reflex_base.utils.console.error")
+
+    # ``reflex.constants`` is a module, not a callable returning a component.
+    component = _component_from_import_path("reflex.constants", "hydrate_fallback")
+
+    assert component is None
+    mock_error.assert_called_once()
+
+
 def test_compile_with_radix_component_auto_enables_radix_plugin(
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,

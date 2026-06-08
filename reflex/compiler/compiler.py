@@ -127,11 +127,12 @@ def _normalize_library_name(lib: str) -> str:
     return lib.replace("$/", "").replace("@", "").replace("/", "_").replace("-", "_")
 
 
-def _compile_app(app_root: Component) -> str:
+def _compile_app(app_root: Component, hydrate_fallback: Component | None = None) -> str:
     """Compile the app template component.
 
     Args:
         app_root: The app root to compile.
+        hydrate_fallback: The component shown while hydrating, or None for no fallback.
 
     Returns:
         The compiled app.
@@ -147,13 +148,29 @@ def _compile_app(app_root: Component) -> str:
     app_root_imports = app_root._get_all_imports()
     _apply_common_imports(app_root_imports)
 
+    custom_codes = list(app_root._get_all_custom_code())
+    dynamic_imports = set(app_root._get_all_dynamic_imports())
+
+    hydrate_fallback_render = None
+    hydrate_fallback_hooks = None
+    if hydrate_fallback is not None:
+        app_root_imports = utils.merge_imports(
+            app_root_imports, hydrate_fallback._get_all_imports()
+        )
+        custom_codes.extend(hydrate_fallback._get_all_custom_code())
+        dynamic_imports |= hydrate_fallback._get_all_dynamic_imports()
+        hydrate_fallback_render = hydrate_fallback.render()
+        hydrate_fallback_hooks = hydrate_fallback._get_all_hooks()
+
     return templates.app_root_template(
         imports=utils.compile_imports(app_root_imports),
-        custom_codes=app_root._get_all_custom_code(),
+        custom_codes=custom_codes,
         hooks=app_root._get_all_hooks(),
         window_libraries=window_libraries_deduped,
         render=app_root.render(),
-        dynamic_imports=app_root._get_all_dynamic_imports(),
+        dynamic_imports=dynamic_imports,
+        hydrate_fallback_render=hydrate_fallback_render,
+        hydrate_fallback_hooks=hydrate_fallback_hooks,
     )
 
 
@@ -544,11 +561,14 @@ def compile_document_root(
     return output_path, code
 
 
-def compile_app_root(app_root: Component) -> tuple[str, str]:
+def compile_app_root(
+    app_root: Component, hydrate_fallback: Component | None = None
+) -> tuple[str, str]:
     """Compile the app root.
 
     Args:
         app_root: The app root component to compile.
+        hydrate_fallback: The component shown while hydrating, or None for no fallback.
 
     Returns:
         The path and code of the compiled app wrapper.
@@ -559,7 +579,7 @@ def compile_app_root(app_root: Component) -> tuple[str, str]:
     )
 
     # Compile the document root.
-    code = _compile_app(app_root)
+    code = _compile_app(app_root, hydrate_fallback)
     return output_path, code
 
 
@@ -1111,6 +1131,13 @@ def compile_app(
     app_root = app._app_root(app_wrappers)
     all_imports = utils.merge_imports(all_imports, app_root._get_all_imports())
 
+    hydrate_fallback = app._resolve_hydrate_fallback()
+    if hydrate_fallback is not None:
+        hydrate_fallback._add_style_recursive(app.style)
+        all_imports = utils.merge_imports(
+            all_imports, hydrate_fallback._get_all_imports()
+        )
+
     memo_component_files, memo_components_imports = compile_memo_components(
         (
             *MEMOS.values(),
@@ -1203,7 +1230,7 @@ def compile_app(
     )
     progress.advance(task)
 
-    compile_results.append(compile_app_root(app_root))
+    compile_results.append(compile_app_root(app_root, hydrate_fallback))
     progress.advance(task)
 
     progress.stop()
