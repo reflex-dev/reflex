@@ -45,7 +45,7 @@
   "packages/reflex-components-plotly/src/reflex_components_plotly/plotly.pyi": "91e956633778c6992f04940c69ff7140",
   "packages/reflex-components-radix/src/reflex_components_radix/__init__.pyi": "19216eb3618f68c8a76e5e43801cf4af",
   "packages/reflex-components-radix/src/reflex_components_radix/primitives/__init__.pyi": "5404a8da97e8b5129133d7f300e3f642",
-  "packages/reflex-components-radix/src/reflex_components_radix/primitives/accordion.pyi": "e8ef2b44f2afe3e9b8d678d523673882",
+  "packages/reflex-components-radix/src/reflex_components_radix/primitives/accordion.pyi": "1c9c5b191a7ac3dc71f4338cb158d56f",
   "packages/reflex-components-radix/src/reflex_components_radix/primitives/base.pyi": "e779c6739baee98c8a588768a88de45a",
   "packages/reflex-components-radix/src/reflex_components_radix/primitives/dialog.pyi": "ffb06f3aa8722c2345a952869118e224",
   "packages/reflex-components-radix/src/reflex_components_radix/primitives/drawer.pyi": "cc724f697e62efba294e19b58c6f1bd8",
