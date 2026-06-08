@@ -14,7 +14,7 @@
   "packages/reflex-components-core/src/reflex_components_core/base/strict_mode.pyi": "8ee129808abb4389cbd77a1736190eae",
   "packages/reflex-components-core/src/reflex_components_core/core/__init__.pyi": "dd5142b3c9087bf2bf22651adf6f2724",
   "packages/reflex-components-core/src/reflex_components_core/core/auto_scroll.pyi": "918dfad4d5925addd0f741e754b3b076",
-  "packages/reflex-components-core/src/reflex_components_core/core/banner.pyi": "6040fbada9b96c55637a9c8cc21a5e10",
+  "packages/reflex-components-core/src/reflex_components_core/core/banner.pyi": "f463995f28f9e86247d8a8371e2984c0",
   "packages/reflex-components-core/src/reflex_components_core/core/clipboard.pyi": "e3950e0963a6d04299ff58294687e407",
   "packages/reflex-components-core/src/reflex_components_core/core/debounce.pyi": "58138b5f1d5901839729d839620ea4da",
   "packages/reflex-components-core/src/reflex_components_core/core/helmet.pyi": "7fd81a99bde5b0ff94bb52523597fd5c",
