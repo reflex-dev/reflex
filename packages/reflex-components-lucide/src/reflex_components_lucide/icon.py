@@ -22,6 +22,10 @@ class Icon(LucideIconComponent):
 
     size: Var[int] = field(doc="The size of the icon in pixels.")
 
+    # Deep-import subpath into lucide-react for this icon (e.g.
+    # "/dist/esm/icons/wifi-off.mjs"). Set during ``create``; not a rendered prop.
+    _import_path: str = field(default="")
+
     @classmethod
     def create(cls, *children, **props) -> Component:
         """Initialize the Icon component.
@@ -83,7 +87,34 @@ class Icon(LucideIconComponent):
 
         props["tag"] = LUCIDE_ICON_MAPPING_OVERRIDE.get(tag, format.to_title_case(tag))
         props["alias"] = f"Lucide{props['tag']}"
+        file_name = LUCIDE_ICON_FILENAME_OVERRIDE.get(tag, format.to_kebab_case(tag))
+        props["_import_path"] = f"/dist/esm/icons/{file_name}.mjs"
         return super().create(**props)
+
+    def _get_imports(self):
+        """Emit a deep per-icon import instead of a lucide-react barrel import.
+
+        Importing a static icon by name from the ``lucide-react`` barrel pulls
+        the whole library into the dev module graph once ``DynamicIcon`` (which
+        imports ``lucide-react/dynamic.mjs``) is also present, flooding the page
+        with a request per icon. A deep default import from the icon's own
+        module avoids this and is lucide's recommended form.
+
+        Returns:
+            The imports needed by the component.
+        """
+        imports_ = super()._get_imports()
+        if self.library and self._import_path:
+            imports_.pop(self.library, None)
+            imports_[LUCIDE_LIBRARY] = [
+                ImportVar(
+                    self.tag,
+                    is_default=True,
+                    alias=self.alias,
+                    package_path=self._import_path,
+                )
+            ]
+        return imports_
 
 
 class DynamicIcon(LucideIconComponent):
@@ -1833,4 +1864,18 @@ LUCIDE_ICON_LIST = [
 LUCIDE_ICON_MAPPING_OVERRIDE = {
     "grid_3x2": "Grid3x2Icon",
     "fingerprint": "FingerprintPattern",
+}
+
+# For deep per-icon imports, the kebab-case icon name must match Lucide's own
+# file name under dist/esm/icons. These are the entries where the default
+# kebab conversion doesn't (verified against the full LUCIDE_ICON_LIST): the
+# digit-x-digit names gain a stray hyphen, and "fingerprint" is an alias of the
+# "fingerprint-pattern" module.
+LUCIDE_ICON_FILENAME_OVERRIDE = {
+    "fingerprint": "fingerprint-pattern",
+    "grid_2x_2": "grid-2x2",
+    "grid_2x_2_check": "grid-2x2-check",
+    "grid_2x_2_plus": "grid-2x2-plus",
+    "grid_2x_2_x": "grid-2x2-x",
+    "grid_3x_3": "grid-3x3",
 }
