@@ -4582,7 +4582,8 @@ async def test_get_var_value(
     with pytest.raises(UnretrievableVarValueError):
         await state.get_var_value(TestState.num1 + TestState.num2)
     with pytest.raises(UnretrievableVarValueError):
-        await state.get_var_value(TestState.array[0])
+        # array[0] is a Var operation at runtime, though statically typed as the element.
+        await state.get_var_value(TestState.array[0])  # pyright: ignore[reportArgumentType]
     with pytest.raises(UnretrievableVarValueError):
         await state.get_var_value(TestState.mapping["a"])
 
