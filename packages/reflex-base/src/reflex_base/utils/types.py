@@ -35,6 +35,7 @@ from typing import get_origin as get_origin_og
 from typing import get_type_hints as get_type_hints_og
 
 from typing_extensions import Self as Self
+from typing_extensions import TypeAliasType
 from typing_extensions import override as override
 
 from reflex_base import constants
@@ -143,13 +144,16 @@ ArgsSpec = (
     | _ArgsSpec7
 )
 
-Scope = MutableMapping[str, Any]
-Message = MutableMapping[str, Any]
+# Defined via TypeAliasType so the alias name survives type introspection
+# (e.g. get_type_hints) instead of expanding to its full definition; docs render
+# the short name. Reverting to plain assignment would regress that display.
+Scope = TypeAliasType("Scope", MutableMapping[str, Any])
+Message = TypeAliasType("Message", MutableMapping[str, Any])
 
-Receive = Callable[[], Awaitable[Message]]
-Send = Callable[[Message], Awaitable[None]]
+Receive = TypeAliasType("Receive", Callable[[], Awaitable[Message]])
+Send = TypeAliasType("Send", Callable[[Message], Awaitable[None]])
 
-ASGIApp = Callable[[Scope, Receive, Send], Awaitable[None]]
+ASGIApp = TypeAliasType("ASGIApp", Callable[[Scope, Receive, Send], Awaitable[None]])
 
 PrimitiveToAnnotation = {
     list: List,  # noqa: UP006
