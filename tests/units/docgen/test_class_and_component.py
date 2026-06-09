@@ -22,7 +22,7 @@ from reflex_docgen import (
     generate_documentation,
     get_component_event_handlers,
 )
-from reflex_docgen._class import _format_signature, _optional_from_string
+from reflex_docgen._class import _format_annotation, _format_signature
 from typing_extensions import TypeAliasType
 
 
@@ -536,9 +536,9 @@ def test_method_signatures_are_readable():
         ("SomeAlias | None", "Optional[SomeAlias]"),
     ],
 )
-def test_optional_from_string(annotation, expected):
+def test_format_annotation_from_string(annotation, expected):
     """Forward-ref unions normalize to Optional[...] wherever None sits, top-level only."""
-    assert _optional_from_string(annotation) == expected
+    assert _format_annotation(annotation) == expected
 
 
 def test_signature_renders_each_annotation_independently():

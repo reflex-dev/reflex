@@ -100,18 +100,6 @@ def _parse_docstring_attributes(cls: type) -> dict[str, str]:
     }
 
 
-def _literal_value(value: Any) -> str:
-    """Return a readable display value for a Literal option.
-
-    Args:
-        value: The literal option value.
-
-    Returns:
-        The display string for the value.
-    """
-    return f'"{value}"' if isinstance(value, str) else repr(value)
-
-
 def _type_name(type_: Any) -> str:
     """Return the short, unqualified name for a leaf type.
 
@@ -148,7 +136,8 @@ def format_type(type_: Any) -> str:
     args = get_args(type_)
 
     if origin is Literal:
-        return f"Literal[{', '.join(_literal_value(arg) for arg in args)}]"
+        values = [f'"{arg}"' if isinstance(arg, str) else repr(arg) for arg in args]
+        return f"Literal[{', '.join(values)}]"
     if is_union(type_):
         members = [arg for arg in args if arg is not type(None)]
         rendered = " | ".join(format_type(arg) for arg in members)
@@ -169,15 +158,6 @@ def format_type(type_: Any) -> str:
     return _type_name(type_)
 
 
-_EMPTY_FACTORY_DISPLAY = {
-    dict: "{}",
-    list: "[]",
-    set: "set()",
-    tuple: "()",
-    frozenset: "frozenset()",
-}
-
-
 def _format_default(value: Any, *, is_factory: bool) -> str | None:
     """Return a stable, readable display for a field default, or None to omit it.
 
@@ -192,10 +172,9 @@ def _format_default(value: Any, *, is_factory: bool) -> str | None:
     Returns:
         A display string, or None when the default is opaque (e.g. a lambda).
     """
-    if is_factory:
-        literal = _EMPTY_FACTORY_DISPLAY.get(value)
-        if literal is not None:
-            return literal
+    # An empty-collection factory renders as its literal (``list`` -> ``[]``).
+    if is_factory and value in (dict, list, set, tuple, frozenset):
+        return repr(value())
     if isinstance(value, type):
         return value.__name__
     if callable(value):
@@ -357,25 +336,6 @@ _QUALIFIED_NAME = re.compile(
 )
 
 
-def _strip_module_qualifiers(annotation: str) -> str:
-    """Collapse dotted module paths in a forward-ref string to bare names.
-
-    Mirrors what format_type does for resolved types: ``contextlib.AbstractContextManager``
-    becomes ``AbstractContextManager``. Names inside quoted Literal values are
-    preserved.
-
-    Args:
-        annotation: The annotation string.
-
-    Returns:
-        The annotation with module qualifiers removed.
-    """
-    return _QUALIFIED_NAME.sub(
-        lambda match: match.group(1) if match.group(1) is not None else match.group(2),
-        annotation,
-    )
-
-
 def _split_top_level_union(annotation: str) -> list[str]:
     """Split a forward-ref annotation into its top-level ``|`` union members.
 
@@ -403,35 +363,16 @@ def _split_top_level_union(annotation: str) -> list[str]:
     return members
 
 
-def _optional_from_string(annotation: str) -> str:
-    """Rewrite a forward-ref union containing ``None`` as Optional[...].
-
-    Method-parameter annotations referencing a TYPE_CHECKING-only name cannot be
-    resolved to real types, so they are rendered from the forward-ref string
-    directly. When the top-level union includes ``None`` in any position, the
-    remaining members are wrapped in Optional[...] so optionality reads the same
-    way format_type renders it. ``None`` nested inside a subscript is left alone.
-
-    Args:
-        annotation: The annotation string.
-
-    Returns:
-        The annotation, with top-level ``None`` rewritten as Optional[...].
-    """
-    members = _split_top_level_union(annotation)
-    if len(members) > 1 and "None" in members:
-        inner = " | ".join(member for member in members if member != "None")
-        return f"Optional[{inner}]"
-    return annotation
-
-
 def _format_annotation(annotation: Any) -> str:
     """Render a parameter or return annotation as a concise type string.
 
     Real type objects go through format_type. Forward-ref strings (from
     ``from __future__ import annotations``) keep the author's readable names
-    rather than expanding aliases, with module qualifiers stripped and
-    optionality normalized to match format_type's output.
+    rather than expanding aliases: module qualifiers are stripped (matching
+    format_type) and a top-level ``None`` is rewritten as Optional[...]. This is
+    done on the string, not by resolving it, so a TYPE_CHECKING-only name in one
+    member does not poison the rest. ``None`` nested inside a subscript is left
+    alone, and dotted values inside quoted Literals are preserved.
 
     Args:
         annotation: The annotation, either a real type or a forward-ref string.
@@ -439,9 +380,17 @@ def _format_annotation(annotation: Any) -> str:
     Returns:
         The rendered annotation string.
     """
-    if isinstance(annotation, str):
-        return _optional_from_string(_strip_module_qualifiers(annotation))
-    return format_type(annotation)
+    if not isinstance(annotation, str):
+        return format_type(annotation)
+
+    stripped = _QUALIFIED_NAME.sub(
+        lambda m: m.group(1) if m.group(1) is not None else m.group(2), annotation
+    )
+    members = _split_top_level_union(stripped)
+    if len(members) > 1 and "None" in members:
+        inner = " | ".join(member for member in members if member != "None")
+        return f"Optional[{inner}]"
+    return stripped
 
 
 def _format_signature(fn: Any) -> str:
