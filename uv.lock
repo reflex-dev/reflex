@@ -23,6 +23,7 @@ reflex-components-sonner = false
 hatch-reflex-pyi = false
 reflex-components-gridjs = false
 reflex = false
+reflex-enterprise = false
 reflex-components-code = false
 reflex-components-recharts = false
 reflex-components-core = false
@@ -3841,7 +3842,7 @@ requires-dist = [
     { name = "reflex", editable = "." },
     { name = "reflex-components-internal", editable = "packages/reflex-components-internal" },
     { name = "reflex-docgen", editable = "packages/reflex-docgen" },
-    { name = "reflex-enterprise" },
+    { name = "reflex-enterprise", specifier = ">=0.9.0.post1" },
     { name = "reflex-hosting-cli", editable = "packages/reflex-hosting-cli" },
     { name = "reflex-integrations-docs", editable = "packages/integrations-docs" },
     { name = "reflex-pyplot" },
@@ -3868,7 +3869,7 @@ source = { editable = "docs/package" }
 
 [[package]]
 name = "reflex-enterprise"
-version = "0.7.0.post1"
+version = "0.9.0.post1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "asgiproxy" },
@@ -3877,9 +3878,9 @@ dependencies = [
     { name = "psutil" },
     { name = "reflex", extra = ["db"] },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/17/5e/386cda3b7bd54aba75267f52fa32f93766bf9973382a6dec384b83779493/reflex_enterprise-0.7.0.post1.tar.gz", hash = "sha256:cc23343bd0d8b2d5ed45a0c551ca0b833c735125a855a74cae608ef39be94ccf", size = 396669, upload-time = "2026-04-21T17:36:43.127Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f6/51/77a3a97de2466fd66d0e78ea644e4e7793604afe01fd81c8f2383a88e22e/reflex_enterprise-0.9.0.post1.tar.gz", hash = "sha256:dc40120fecff5c5ba6d1471b7c7cbb56db8596305a83a34142cc810bde3cd5f1", size = 431732, upload-time = "2026-06-09T20:10:58.083Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5e/02/b45cdf9a9322ae0c1f31ca51736f70b2508e05339149153c6e902d609651/reflex_enterprise-0.7.0.post1-py3-none-any.whl", hash = "sha256:bc510d05a4bc8abe26ab4d02e1f06e82af4d255ea29209d620c8d3d662c8a203", size = 219320, upload-time = "2026-04-21T17:36:44.379Z" },
+    { url = "https://files.pythonhosted.org/packages/bc/55/01983923203174b8e3adf1cb702f62785bef30735c2d81f3c8e67ae60639/reflex_enterprise-0.9.0.post1-py3-none-any.whl", hash = "sha256:0bc2d2d92ba79a7620d4e1fcf6bc609c791f3eba5c6c051daf65fb41921d1634", size = 233834, upload-time = "2026-06-09T20:10:56.82Z" },
 ]
 
 [[package]]

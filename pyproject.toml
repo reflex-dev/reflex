@@ -392,6 +392,7 @@ reflex-components-radix = false
 reflex-components-react-player = false
 reflex-components-recharts = false
 reflex-components-sonner = false
+reflex-enterprise = false
 reflex-hosting-cli = false
 
 [tool.uv.sources]
