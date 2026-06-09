@@ -2199,11 +2199,25 @@ def test_compile_without_radix_components_skips_radix_plugin(
     mock_deprecate.assert_not_called()
 
 
+def _hydrate_fallback_module(web_dir: Path) -> Path:
+    """Path to the compiled HydrateFallback memo module under a web dir.
+
+    Args:
+        web_dir: The app's compiled web directory.
+
+    Returns:
+        The path to the HydrateFallback memo module.
+    """
+    return (
+        web_dir / constants.Dirs.COMPONENTS_PATH / f"HydrateFallback{constants.Ext.JSX}"
+    )
+
+
 def test_compile_hydrate_fallback_emits_hydrate_fallback(
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
 ):
-    """A hydrate_fallback should compile into the root HydrateFallback export."""
+    """A hydrate_fallback should compile to a memo module re-exported by root.jsx."""
     conf = rx.Config(app_name="testing")
     mocker.patch("reflex_base.config._get_config", return_value=conf)
     app, web_dir = compilable_app
@@ -2216,9 +2230,11 @@ def test_compile_hydrate_fallback_emits_hydrate_fallback(
     app_root = (
         web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
     ).read_text()
-
-    assert "export function HydrateFallback()" in app_root
-    assert "Hydrating..." in app_root
+    assert (
+        "export { HydrateFallback as HydrateFallback } "
+        'from "$/utils/components/HydrateFallback";' in app_root
+    )
+    assert "Hydrating..." in _hydrate_fallback_module(web_dir).read_text()
 
 
 def _example_hydrate_fallback() -> rx.Component:
@@ -2249,9 +2265,8 @@ def test_compile_hydrate_fallback_from_config(
     app_root = (
         web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
     ).read_text()
-
-    assert "export function HydrateFallback()" in app_root
-    assert "Fallback from config..." in app_root
+    assert 'from "$/utils/components/HydrateFallback";' in app_root
+    assert "Fallback from config..." in _hydrate_fallback_module(web_dir).read_text()
 
 
 def test_app_hydrate_fallback_takes_precedence_over_config(
@@ -2271,12 +2286,9 @@ def test_app_hydrate_fallback_takes_precedence_over_config(
     app.add_page(lambda: rx.el.div("Index"), route="/")
     app._compile()
 
-    app_root = (
-        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
-    ).read_text()
-
-    assert "Fallback from app..." in app_root
-    assert "Fallback from config..." not in app_root
+    fallback_module = _hydrate_fallback_module(web_dir).read_text()
+    assert "Fallback from app..." in fallback_module
+    assert "Fallback from config..." not in fallback_module
 
 
 def test_resolve_import_path_resolves_nested_attribute():

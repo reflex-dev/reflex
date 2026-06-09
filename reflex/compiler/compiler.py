@@ -21,6 +21,7 @@ from reflex_base.components.memo import (
     MemoComponentDefinition,
     MemoDefinition,
     MemoFunctionDefinition,
+    create_component_memo,
 )
 from reflex_base.config import get_config
 from reflex_base.constants.compiler import PageNames, ResetStylesheet
@@ -127,12 +128,15 @@ def _normalize_library_name(lib: str) -> str:
     return lib.replace("$/", "").replace("@", "").replace("/", "_").replace("-", "_")
 
 
-def _compile_app(app_root: Component, hydrate_fallback: Component | None = None) -> str:
+def _compile_app(
+    app_root: Component, hydrate_fallback_export: str | None = None
+) -> str:
     """Compile the app template component.
 
     Args:
         app_root: The app root to compile.
-        hydrate_fallback: The component shown while hydrating, or None for no fallback.
+        hydrate_fallback_export: The exported name of the hydrate-fallback memo
+            component to re-export as ``HydrateFallback``, or None for no fallback.
 
     Returns:
         The compiled app.
@@ -148,29 +152,14 @@ def _compile_app(app_root: Component, hydrate_fallback: Component | None = None)
     app_root_imports = app_root._get_all_imports()
     _apply_common_imports(app_root_imports)
 
-    custom_codes = list(app_root._get_all_custom_code())
-    dynamic_imports = set(app_root._get_all_dynamic_imports())
-
-    hydrate_fallback_render = None
-    hydrate_fallback_hooks = None
-    if hydrate_fallback is not None:
-        app_root_imports = utils.merge_imports(
-            app_root_imports, hydrate_fallback._get_all_imports()
-        )
-        custom_codes.extend(hydrate_fallback._get_all_custom_code())
-        dynamic_imports |= hydrate_fallback._get_all_dynamic_imports()
-        hydrate_fallback_render = hydrate_fallback.render()
-        hydrate_fallback_hooks = hydrate_fallback._get_all_hooks()
-
     return templates.app_root_template(
         imports=utils.compile_imports(app_root_imports),
-        custom_codes=custom_codes,
+        custom_codes=app_root._get_all_custom_code(),
         hooks=app_root._get_all_hooks(),
         window_libraries=window_libraries_deduped,
         render=app_root.render(),
-        dynamic_imports=dynamic_imports,
-        hydrate_fallback_render=hydrate_fallback_render,
-        hydrate_fallback_hooks=hydrate_fallback_hooks,
+        dynamic_imports=app_root._get_all_dynamic_imports(),
+        hydrate_fallback_export=hydrate_fallback_export,
     )
 
 
@@ -562,13 +551,14 @@ def compile_document_root(
 
 
 def compile_app_root(
-    app_root: Component, hydrate_fallback: Component | None = None
+    app_root: Component, hydrate_fallback_export: str | None = None
 ) -> tuple[str, str]:
     """Compile the app root.
 
     Args:
         app_root: The app root component to compile.
-        hydrate_fallback: The component shown while hydrating, or None for no fallback.
+        hydrate_fallback_export: The exported name of the hydrate-fallback memo
+            component to re-export as ``HydrateFallback``, or None for no fallback.
 
     Returns:
         The path and code of the compiled app wrapper.
@@ -579,7 +569,7 @@ def compile_app_root(
     )
 
     # Compile the document root.
-    code = _compile_app(app_root, hydrate_fallback)
+    code = _compile_app(app_root, hydrate_fallback_export)
     return output_path, code
 
 
@@ -1132,11 +1122,18 @@ def compile_app(
     all_imports = utils.merge_imports(all_imports, app_root._get_all_imports())
 
     hydrate_fallback = app._resolve_hydrate_fallback()
+    hydrate_fallback_export = None
     if hydrate_fallback is not None:
         hydrate_fallback._add_style_recursive(app.style)
-        all_imports = utils.merge_imports(
-            all_imports, hydrate_fallback._get_all_imports()
+        # Compile the fallback through the memo pipeline so it lands in its own
+        # JS module; root.jsx then re-exports it as HydrateFallback.
+        hydrate_fallback_definition = create_component_memo(
+            hydrate_fallback, "hydrate_fallback"
         )
+        compile_ctx.auto_memo_components[hydrate_fallback_definition.export_name] = (
+            hydrate_fallback_definition
+        )
+        hydrate_fallback_export = hydrate_fallback_definition.export_name
 
     memo_component_files, memo_components_imports = compile_memo_components(
         (
@@ -1230,7 +1227,7 @@ def compile_app(
     )
     progress.advance(task)
 
-    compile_results.append(compile_app_root(app_root, hydrate_fallback))
+    compile_results.append(compile_app_root(app_root, hydrate_fallback_export))
     progress.advance(task)
 
     progress.stop()

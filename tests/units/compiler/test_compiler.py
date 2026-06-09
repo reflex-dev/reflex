@@ -392,13 +392,15 @@ def test_compile_app_root_omits_hydrate_fallback_by_default():
 
 
 def test_compile_app_root_with_hydrate_fallback_exports_hydrate_fallback():
-    """A hydrate_fallback should be emitted as the HydrateFallback export."""
+    """A hydrate_fallback memo export should be re-exported as HydrateFallback."""
     reset_bundled_libraries()
 
-    _, code = compiler.compile_app_root(rx.el.div("hello"), rx.el.div("loading..."))
+    _, code = compiler.compile_app_root(rx.el.div("hello"), "MyFallback")
 
-    assert "export function HydrateFallback()" in code
-    assert "loading..." in code
+    assert (
+        "export { MyFallback as HydrateFallback } "
+        'from "$/utils/components/MyFallback";' in code
+    )
 
 
 def test_compile_app_root_includes_radix_window_library_when_bundled():
