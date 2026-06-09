@@ -2300,6 +2300,14 @@ def test_resolve_import_path_raises_for_missing_module():
         _resolve_import_path("nonexistent_module.does_not_exist")
 
 
+def test_resolve_import_path_raises_for_single_segment():
+    """A path without a dot should raise a descriptive error, not an opaque one."""
+    from reflex.app import _resolve_import_path
+
+    with pytest.raises(ValueError, match="expected a dotted"):
+        _resolve_import_path("mymodule")
+
+
 def test_component_from_import_path_resolves_callable():
     """A dotted path to a component callable should resolve to a component."""
     from reflex_components_core.base.fragment import Fragment

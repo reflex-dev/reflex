@@ -173,8 +173,17 @@ def _resolve_import_path(import_path: str) -> Any:
 
     Returns:
         The object referenced by the import path.
+
+    Raises:
+        ValueError: If the path has no dot separating the module from the attribute.
     """
     module, _, attribute_name = import_path.rpartition(".")
+    if not module:
+        msg = (
+            f"Invalid import path {import_path!r}: expected a dotted "
+            "'module.attribute' path (e.g. 'my_app.components.loading')."
+        )
+        raise ValueError(msg)
     return getattr(importlib.import_module(module), attribute_name)
 
 
@@ -1180,6 +1189,11 @@ class App(MiddlewareMixin, LifespanMixin):
         The App-level ``hydrate_fallback`` takes precedence; otherwise the
         ``hydrate_fallback`` config (settable via ``REFLEX_HYDRATE_FALLBACK``)
         is resolved from its dotted import path.
+
+        Error handling differs between the two by design: an App-level callable
+        that raises propagates (fail fast, like ``add_page``), since it was
+        passed explicitly in code; the config/env path degrades gracefully (logs
+        and returns None) as it is ambient deployment configuration.
 
         Returns:
             The resolved hydrate fallback component, or None if none is configured.
