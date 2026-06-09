@@ -1,6 +1,7 @@
 import json
 import shutil
 import tempfile
+import uuid
 from collections.abc import Callable, Generator
 from dataclasses import dataclass
 from pathlib import Path
@@ -14,7 +15,7 @@ from reflex_base.utils.decorator import cached_procedure
 
 from reflex.reflex import cli
 from reflex.testing import chdir
-from reflex.utils import frontend_skeleton, js_runtimes
+from reflex.utils import frontend_skeleton, js_runtimes, prerequisites
 from reflex.utils.frontend_skeleton import (
     _compile_vite_config,
     _update_react_router_config,
@@ -1372,3 +1373,52 @@ app = rx.App()
 app.add_page(index)
 """
     )
+
+
+def test_has_uuid_distinct_id_semantics_absent(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+):
+    """No marker file means the install has not adopted UUID semantics."""
+    monkeypatch.setenv("REFLEX_DIR", str(tmp_path))
+    assert prerequisites.has_uuid_distinct_id_semantics() is False
+
+
+def test_mark_uuid_distinct_id_semantics_writes_marker(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+):
+    """Marking creates the per-install marker file with the semantics version."""
+    monkeypatch.setenv("REFLEX_DIR", str(tmp_path))
+
+    prerequisites.mark_uuid_distinct_id_semantics()
+
+    assert prerequisites.has_uuid_distinct_id_semantics() is True
+    marker = tmp_path / "installation_id_semantics"
+    assert marker.read_text() == prerequisites._DISTINCT_ID_SEMANTICS_VERSION
+
+
+def test_ensure_installation_id_marks_new_install(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+):
+    """A brand-new installation id is generated and marked UUID-native."""
+    monkeypatch.setenv("REFLEX_DIR", str(tmp_path))
+    assert prerequisites.has_uuid_distinct_id_semantics() is False
+
+    install_id = prerequisites.ensure_reflex_installation_id()
+
+    assert install_id is not None
+    # The id is a uuid4 persisted as its integer form.
+    assert uuid.UUID(int=install_id).version == 4
+    assert prerequisites.has_uuid_distinct_id_semantics() is True
+
+
+def test_ensure_installation_id_keeps_legacy_install_unmarked(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+):
+    """An existing legacy id is read and left unmarked, so telemetry will alias it."""
+    monkeypatch.setenv("REFLEX_DIR", str(tmp_path))
+    (tmp_path / "installation_id").write_text("12345")
+
+    install_id = prerequisites.ensure_reflex_installation_id()
+
+    assert install_id == 12345
+    assert prerequisites.has_uuid_distinct_id_semantics() is False
