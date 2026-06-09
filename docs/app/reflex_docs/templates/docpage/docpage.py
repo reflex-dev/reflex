@@ -361,9 +361,7 @@ def docpage_footer(path: rx.Var[str]) -> rx.Component:
                     [
                         footer_link("Home", "/"),
                         footer_link("Blog", "/blog"),
-                        footer_link(
-                            "Changelog", "https://github.com/reflex-dev/reflex/releases"
-                        ),
+                        footer_link("Changelog", "/changelog/"),
                     ],
                 ),
                 footer_link_flex(

@@ -2,7 +2,7 @@
 
 import os
 
-CHANGELOG_URL = "https://github.com/reflex-dev/reflex/releases"
+CHANGELOG_URL = "https://reflex.dev/docs/changelog/"
 CONTRIBUTING_URL = "https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md"
 DISCUSSIONS_URL = "https://github.com/orgs/reflex-dev/discussions"
 GITHUB_STARS = 28000

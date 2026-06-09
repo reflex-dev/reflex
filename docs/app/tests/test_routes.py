@@ -28,6 +28,18 @@ def test_unique_routes(routes_fixture):
     print(f"Test passed. All {len(paths)} routes are unique.")
 
 
+def test_changelog_routes(routes_fixture):
+    """Every discovered package changelog is served under /changelog/."""
+    from reflex_docs.pages.docs import changelog_packages
+
+    paths = {route.path for route in routes_fixture if route.path}
+
+    assert changelog_packages["reflex"] == "/changelog/"
+    assert "/changelog/reflex-base/" in paths
+    for changelog_route in changelog_packages.values():
+        assert changelog_route in paths
+
+
 def test_ai_builder_routes_use_ai_prefix(routes_fixture):
     paths = {route.path for route in routes_fixture if route.path}
 
