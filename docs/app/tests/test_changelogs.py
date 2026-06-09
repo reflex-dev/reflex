@@ -111,6 +111,25 @@ def test_find_distribution_changelog_found(tmp_path, monkeypatch):
     assert find_distribution_changelog(ENTERPRISE_PACKAGE) == changelog
 
 
+def test_find_distribution_changelog_prefers_shallowest_record(tmp_path, monkeypatch):
+    """Vendored changelogs deeper in the tree don't shadow the package one."""
+    vendored = tmp_path / "reflex_enterprise" / "vendor" / "lib" / "CHANGELOG.md"
+    vendored.parent.mkdir(parents=True)
+    vendored.write_text("# Vendored\n")
+    changelog = tmp_path / "reflex_enterprise" / "CHANGELOG.md"
+    changelog.write_text("# Changelog\n")
+    files = [
+        PurePosixPath("reflex_enterprise/vendor/lib/CHANGELOG.md"),
+        PurePosixPath("reflex_enterprise/CHANGELOG.md"),
+    ]
+    monkeypatch.setattr(
+        "reflex_docs.changelogs.distribution",
+        lambda package: _FakeDist(files, tmp_path),
+    )
+
+    assert find_distribution_changelog(ENTERPRISE_PACKAGE) == changelog
+
+
 def test_find_distribution_changelog_no_file_records(monkeypatch):
     """Distributions without file records (files is None) are skipped."""
     monkeypatch.setattr(

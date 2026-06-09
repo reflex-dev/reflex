@@ -47,11 +47,13 @@ def find_distribution_changelog(package: str) -> Path | None:
         dist = distribution(package)
     except PackageNotFoundError:
         return None
-    for file in dist.files or ():
-        if file.name == "CHANGELOG.md":
-            path = Path(str(dist.locate_file(file)))
-            if path.is_file():
-                return path
+    candidates = [file for file in dist.files or () if file.name == "CHANGELOG.md"]
+    # Prefer the shallowest record — a wheel may also vendor third-party
+    # changelogs deeper in its tree.
+    for file in sorted(candidates, key=lambda file: len(file.parts)):
+        path = Path(str(dist.locate_file(file)))
+        if path.is_file():
+            return path
     return None
 
 
