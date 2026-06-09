@@ -2205,3 +2205,11 @@
         @apply isolate bg-secondary-1 font-sans antialiased;
     }
 }
+
+#ph-conversations-widget-container button[aria-label^="Open chat"] {
+    display: none !important;
+}
+
+#ph-conversations-widget-container button[aria-label^="Open chat"]+div {
+    display: none !important;
+}
