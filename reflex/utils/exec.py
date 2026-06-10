@@ -505,6 +505,7 @@ def get_reload_paths() -> Sequence[Path]:
     )
 
     if override_dirs:
+        console.debug(f"Reload paths (override): {list(map(str, override_dirs))}")
         return override_dirs
 
     config = get_config()
