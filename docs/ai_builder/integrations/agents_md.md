@@ -23,7 +23,7 @@ The [reflex-dev/agent-skills](https://github.com/reflex-dev/agent-skills) reposi
 reflex init
 ```
 
-The Reflex-provided content sits between `reflex managed` begin/end markers. Anything you add outside the markers is preserved when init refreshes the managed section, and a pre-existing `AGENTS.md` without markers is never touched, so it is safe to re-run.
+The Reflex-provided content sits between `reflex managed` begin/end markers. Anything you add outside the markers is preserved when init refreshes the managed section, so it is safe to re-run. If a pre-existing `AGENTS.md` has no markers, the managed section is added at the top and your content is kept below it. For Claude Code users, init also creates a `CLAUDE.md` importing `AGENTS.md` (or updates an existing one that doesn't reference it).
 
 To add the template to an existing project, download it into the project root, next to `rxconfig.py`:
 
