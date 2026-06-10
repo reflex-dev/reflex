@@ -105,8 +105,29 @@ async def real_base_state_processor(
     await state_manager.close()
 
 
-async def test_rehydrate_sets_is_hydrated_on_fresh_token(
+@pytest.fixture
+def wired_app(
     app_module_mock,
+    real_base_state_processor: BaseStateEventProcessor,
+) -> App:
+    """An App registered as the app module's app and sharing the processor's state manager.
+
+    Args:
+        app_module_mock: The mock app module fixture.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+
+    Returns:
+        The wired App instance.
+    """
+    OnLoadInternalState._app_ref = None
+    app = app_module_mock.app = App()
+    assert real_base_state_processor._root_context is not None
+    app._state_manager = real_base_state_processor._root_context.state_manager
+    return app
+
+
+async def test_rehydrate_sets_is_hydrated_on_fresh_token(
+    wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,
     emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
     token: str,
@@ -119,7 +140,7 @@ async def test_rehydrate_sets_is_hydrated_on_fresh_token(
     hydrate sets is_hydrated=True directly.
 
     Args:
-        app_module_mock: The mock app module fixture.
+        wired_app: The App wired to the processor's state manager.
         real_base_state_processor: The unmocked BaseStateEventProcessor.
         emitted_deltas: List to capture emitted deltas.
         token: The client token.
@@ -129,11 +150,6 @@ async def test_rehydrate_sets_is_hydrated_on_fresh_token(
         @event
         def noop(self):
             pass
-
-    OnLoadInternalState._app_ref = None
-    app = app_module_mock.app = App()
-    assert real_base_state_processor._root_context is not None
-    app._state_manager = real_base_state_processor._root_context.state_manager
 
     async with real_base_state_processor as processor:
         await processor.enqueue(
@@ -155,7 +171,7 @@ async def test_rehydrate_sets_is_hydrated_on_fresh_token(
 
 
 async def test_preprocess_update_routes_frontend_events_to_client(
-    app_module_mock,
+    wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,
     emitted_events: list[tuple[str, tuple[Event, ...]]],
     token: str,
@@ -169,7 +185,7 @@ async def test_preprocess_update_routes_frontend_events_to_client(
     of enqueued on the backend queue (where they raise ``KeyError``).
 
     Args:
-        app_module_mock: The mock app module fixture.
+        wired_app: The App wired to the processor's state manager.
         real_base_state_processor: The unmocked BaseStateEventProcessor.
         emitted_events: List to capture events emitted to the client.
         token: The client token.
@@ -189,15 +205,10 @@ async def test_preprocess_update_routes_frontend_events_to_client(
                 ])
             )
 
-    OnLoadInternalState._app_ref = None
-    app = app_module_mock.app = App()
-    app.add_middleware(BlockingMiddleware())
-    processor = real_base_state_processor
-    processor.middleware = app
-    assert processor._root_context is not None
-    app._state_manager = processor._root_context.state_manager
+    wired_app.add_middleware(BlockingMiddleware())
+    real_base_state_processor.middleware = wired_app
 
-    async with processor as p:
+    async with real_base_state_processor as p:
         await p.enqueue(token, Event.from_event_type(GatedState.do_thing())[0])
         await p.join(1)
 

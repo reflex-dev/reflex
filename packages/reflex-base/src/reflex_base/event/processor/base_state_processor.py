@@ -173,11 +173,16 @@ async def _route_events(ctx: EventContext, events: Sequence[Event]) -> None:
         ctx: The event context to emit/enqueue through.
         events: The events to route.
     """
-    # Frontend events.
-    if frontend_events := [e for e in events if e.name.startswith("_")]:
+    frontend_events: list[Event] = []
+    backend_events: list[Event] = []
+    for ev in events:
+        if ev.name.startswith("_"):
+            frontend_events.append(ev)
+        else:
+            backend_events.append(ev)
+    if frontend_events:
         await ctx.emit_event(*frontend_events)
-    # Backend events.
-    if backend_events := [e for e in events if not e.name.startswith("_")]:
+    if backend_events:
         await ctx.enqueue(*backend_events)
 
 
