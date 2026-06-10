@@ -7,7 +7,7 @@
       "dependencies": {
         "@base-ui/react": "1.5.0",
         "@glideapps/glide-data-grid": "6.0.3",
-        "@hugeicons/core-free-icons": "4.1.1",
+        "@hugeicons/core-free-icons": "4.2.0",
         "@hugeicons/react": "1.1.6",
         "@inkeep/cxkit-react": "0.5.115",
         "@mantine/core": "8.3.9",
@@ -257,7 +257,7 @@
 
     "@glideapps/glide-data-grid": ["@glideapps/glide-data-grid@6.0.3", "", { "dependencies": { "@linaria/react": "^4.5.3", "canvas-hypertxt": "^1.0.3", "react-number-format": "^5.0.0" }, "peerDependencies": { "lodash": "^4.17.19", "marked": "^4.0.10", "react": "^16.12.0 || 17.x || 18.x", "react-dom": "^16.12.0 || 17.x || 18.x", "react-responsive-carousel": "^3.2.7" } }, "sha512-YXKggiNOaEemf0jP0jORq2EQKz+zXms+6mGzZc+q0mLMjmgzzoGLOQC1uYcynXSj1R61bd27JcPFsoH+Gj37Vg=="],
 
-    "@hugeicons/core-free-icons": ["@hugeicons/core-free-icons@4.1.1", "", {}, "sha512-teqIBvPHl90ygIwKyJwTxOH8aNp1X1PjDTcMvLkEwdPxPD+8mssrZ5kXKIAJJFYPsz69a8LYQY0UPid4PAdavg=="],
+    "@hugeicons/core-free-icons": ["@hugeicons/core-free-icons@4.2.0", "", {}, "sha512-V1G/Ph9TbmEow+pKnupZRWQjdORR/TGGr3JVRZOWkomdJ/5N6GgLuKPgBDs7G0kZ0//9LL34AGOUzWe3K+umNA=="],
 
     "@hugeicons/react": ["@hugeicons/react@1.1.6", "", { "peerDependencies": { "react": ">=16.0.0" } }, "sha512-c2LhXJMAW5wN1pC/smBXG0YPqUON6ceR/ZdXHCjEI9KvB+hjtqYjmzIxok5hAQOeXGz0WtORgCQMzqewFKAZwg=="],
 
