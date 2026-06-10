@@ -422,14 +422,15 @@ def test_initialize_non_existent_gitignore(
 
 
 def test_initialize_agents_md_fetches_canonical(tmp_path, mocker):
-    """Test that AGENTS.md is fetched and written inside markers when absent."""
+    """Test that AGENTS.md is fetched and a CLAUDE.md bridge is created when absent."""
     agents_file = tmp_path / "AGENTS.md"
+    claude_file = tmp_path / "CLAUDE.md"
     response = mocker.Mock()
     response.text = "# canonical agents"
     get = mocker.patch("reflex.utils.net.get", return_value=response)
 
     frontend_skeleton.initialize_agents_md(
-        agents_file=agents_file, url="http://x/AGENTS.md"
+        agents_file=agents_file, claude_file=claude_file, url="http://x/AGENTS.md"
     )
 
     get.assert_called_once_with("http://x/AGENTS.md", timeout=5)
@@ -438,18 +439,66 @@ def test_initialize_agents_md_fetches_canonical(tmp_path, mocker):
         "# canonical agents\n"
         f"{constants.AgentsMd.END_MARKER}\n"
     )
+    assert claude_file.read_text() == "@AGENTS.md\n"
 
 
-def test_initialize_agents_md_preserves_unmanaged_existing(tmp_path, mocker):
-    """Test that an existing AGENTS.md without markers is never touched or re-fetched."""
+def test_initialize_agents_md_prepends_to_unmanaged_existing(tmp_path, mocker):
+    """Test that the managed section is prepended to an existing file without markers."""
     agents_file = tmp_path / "AGENTS.md"
-    agents_file.write_text("custom content")
-    get = mocker.patch("reflex.utils.net.get")
+    agents_file.write_text("custom content\n")
+    response = mocker.Mock()
+    response.text = "canonical content"
+    mocker.patch("reflex.utils.net.get", return_value=response)
 
-    frontend_skeleton.initialize_agents_md(agents_file=agents_file)
+    frontend_skeleton.initialize_agents_md(
+        agents_file=agents_file, claude_file=tmp_path / "CLAUDE.md"
+    )
 
-    assert agents_file.read_text() == "custom content"
-    get.assert_not_called()
+    assert agents_file.read_text() == (
+        f"{constants.AgentsMd.BEGIN_MARKER}\n"
+        "canonical content\n"
+        f"{constants.AgentsMd.END_MARKER}\n\n"
+        "custom content\n"
+    )
+
+
+@pytest.mark.parametrize(
+    "malformed",
+    [
+        f"user notes\n{constants.AgentsMd.END_MARKER}\nstale\n{constants.AgentsMd.BEGIN_MARKER}\nmore notes\n",
+        f"user notes\n{constants.AgentsMd.BEGIN_MARKER}\nunclosed\n",
+        f"user notes\n{constants.AgentsMd.END_MARKER}\norphaned\n",
+    ],
+)
+def test_initialize_agents_md_repairs_malformed_markers(tmp_path, mocker, malformed):
+    """Test that out-of-order or unpaired markers are dropped and the section prepended.
+
+    Args:
+        tmp_path: pytest temporary directory fixture.
+        mocker: pytest-mock fixture.
+        malformed: An AGENTS.md body with an invalid marker arrangement.
+    """
+    agents_file = tmp_path / "AGENTS.md"
+    agents_file.write_text(malformed)
+    response = mocker.Mock()
+    response.text = "canonical content"
+    mocker.patch("reflex.utils.net.get", return_value=response)
+
+    frontend_skeleton.initialize_agents_md(
+        agents_file=agents_file, claude_file=tmp_path / "CLAUDE.md"
+    )
+
+    content = agents_file.read_text()
+    managed = (
+        f"{constants.AgentsMd.BEGIN_MARKER}\n"
+        "canonical content\n"
+        f"{constants.AgentsMd.END_MARKER}"
+    )
+    assert content.startswith(managed + "\n")
+    rest = content.removeprefix(managed)
+    assert constants.AgentsMd.BEGIN_MARKER not in rest
+    assert constants.AgentsMd.END_MARKER not in rest
+    assert "user notes" in rest
 
 
 def test_initialize_agents_md_refreshes_managed_section(tmp_path, mocker):
@@ -466,7 +515,9 @@ def test_initialize_agents_md_refreshes_managed_section(tmp_path, mocker):
     response.text = "new canonical content"
     mocker.patch("reflex.utils.net.get", return_value=response)
 
-    frontend_skeleton.initialize_agents_md(agents_file=agents_file)
+    frontend_skeleton.initialize_agents_md(
+        agents_file=agents_file, claude_file=tmp_path / "CLAUDE.md"
+    )
 
     assert agents_file.read_text() == (
         "# my project notes\n\n"
@@ -478,17 +529,112 @@ def test_initialize_agents_md_refreshes_managed_section(tmp_path, mocker):
 
 
 def test_initialize_agents_md_warns_on_fetch_failure(tmp_path, mocker):
-    """Test that a failed fetch warns without aborting or leaving a partial file."""
+    """Test that a failed fetch warns without writing AGENTS.md or the bridge."""
     import httpx
 
     agents_file = tmp_path / "AGENTS.md"
+    claude_file = tmp_path / "CLAUDE.md"
     mocker.patch("reflex.utils.net.get", side_effect=httpx.ConnectError("boom"))
     warn = mocker.patch("reflex.utils.console.warn")
 
-    frontend_skeleton.initialize_agents_md(agents_file=agents_file)
+    frontend_skeleton.initialize_agents_md(
+        agents_file=agents_file, claude_file=claude_file
+    )
 
     warn.assert_called_once()
     assert not agents_file.exists()
+    assert not claude_file.exists()
+
+
+def test_initialize_agents_md_skips_bridge_when_claude_imports_agents(tmp_path, mocker):
+    """Test that a CLAUDE.md importing AGENTS.md is left untouched."""
+    agents_file = tmp_path / "AGENTS.md"
+    claude_file = tmp_path / "CLAUDE.md"
+    claude_file.write_text("@AGENTS.md\n\n# my claude notes\n")
+    response = mocker.Mock()
+    response.text = "canonical content"
+    mocker.patch("reflex.utils.net.get", return_value=response)
+
+    frontend_skeleton.initialize_agents_md(
+        agents_file=agents_file, claude_file=claude_file
+    )
+
+    assert claude_file.read_text() == "@AGENTS.md\n\n# my claude notes\n"
+    assert "canonical content" in agents_file.read_text()
+
+
+def test_initialize_agents_md_targets_claude_without_import(tmp_path, mocker):
+    """Test that the managed section goes into a CLAUDE.md lacking the import."""
+    agents_file = tmp_path / "AGENTS.md"
+    claude_file = tmp_path / "CLAUDE.md"
+    claude_file.write_text("# my claude notes\n")
+    response = mocker.Mock()
+    response.text = "canonical content"
+    mocker.patch("reflex.utils.net.get", return_value=response)
+
+    frontend_skeleton.initialize_agents_md(
+        agents_file=agents_file, claude_file=claude_file
+    )
+
+    assert claude_file.read_text() == (
+        f"{constants.AgentsMd.BEGIN_MARKER}\n"
+        "canonical content\n"
+        f"{constants.AgentsMd.END_MARKER}\n\n"
+        "# my claude notes\n"
+    )
+    assert not agents_file.exists()
+
+
+def test_initialize_agents_md_targets_both_when_agents_exists(tmp_path, mocker):
+    """Test that both files are managed when CLAUDE.md lacks the import but AGENTS.md exists."""
+    agents_file = tmp_path / "AGENTS.md"
+    agents_file.write_text(
+        f"{constants.AgentsMd.BEGIN_MARKER}\n"
+        "old content\n"
+        f"{constants.AgentsMd.END_MARKER}\n\n"
+        "# agents notes\n"
+    )
+    claude_file = tmp_path / "CLAUDE.md"
+    claude_file.write_text("# my claude notes\n")
+    response = mocker.Mock()
+    response.text = "canonical content"
+    mocker.patch("reflex.utils.net.get", return_value=response)
+
+    frontend_skeleton.initialize_agents_md(
+        agents_file=agents_file, claude_file=claude_file
+    )
+
+    managed = (
+        f"{constants.AgentsMd.BEGIN_MARKER}\n"
+        "canonical content\n"
+        f"{constants.AgentsMd.END_MARKER}"
+    )
+    assert agents_file.read_text() == f"{managed}\n\n# agents notes\n"
+    assert claude_file.read_text() == f"{managed}\n\n# my claude notes\n"
+
+
+def test_initialize_agents_md_handles_symlinked_claude(tmp_path, mocker):
+    """Test that a CLAUDE.md symlinked to AGENTS.md is managed as one file."""
+    agents_file = tmp_path / "AGENTS.md"
+    agents_file.write_text("shared notes\n")
+    claude_file = tmp_path / "CLAUDE.md"
+    claude_file.symlink_to(agents_file)
+    response = mocker.Mock()
+    response.text = "canonical content"
+    mocker.patch("reflex.utils.net.get", return_value=response)
+
+    frontend_skeleton.initialize_agents_md(
+        agents_file=agents_file, claude_file=claude_file
+    )
+
+    assert claude_file.is_symlink()
+    assert agents_file.read_text() == (
+        f"{constants.AgentsMd.BEGIN_MARKER}\n"
+        "canonical content\n"
+        f"{constants.AgentsMd.END_MARKER}\n\n"
+        "shared notes\n"
+    )
+    assert claude_file.read_text() == agents_file.read_text()
 
 
 def test_initialize_requirements_txt_skips_when_pyproject_exists(tmp_path):

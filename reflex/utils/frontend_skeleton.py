@@ -45,24 +45,39 @@ def initialize_gitignore(
 
 def initialize_agents_md(
     agents_file: Path = constants.AgentsMd.FILE,
+    claude_file: Path = constants.AgentsMd.CLAUDE_FILE,
     url: str = constants.AgentsMd.CANONICAL_URL,
 ):
     """Write or refresh the Reflex-managed section of AGENTS.md.
 
     The canonical content is wrapped in begin/end markers; user content outside
-    the markers is preserved on refresh. An existing file without markers is
-    never touched. A failed fetch is a warning, not an error, so init still
-    succeeds offline.
+    the markers is preserved on refresh. If an existing file has no valid
+    begin/end pair (markers missing, unpaired, or out of order), stray markers
+    are dropped and the managed section is prepended. A failed fetch is a
+    warning, not an error, so init still succeeds offline.
+
+    Claude Code reads CLAUDE.md rather than AGENTS.md, so: if CLAUDE.md is
+    missing, a one-line bridge importing AGENTS.md is created; if it is the
+    same file as AGENTS.md (symlink) or already imports it, AGENTS.md is
+    managed as usual; otherwise the managed section goes into CLAUDE.md
+    directly (and also into AGENTS.md if it already exists), leaving the
+    user's content otherwise untouched.
 
     Args:
         agents_file: The AGENTS.md file to create or refresh in the app root.
+        claude_file: The CLAUDE.md file bridging AGENTS.md for Claude Code.
         url: The canonical AGENTS.md to download.
     """
     begin, end = constants.AgentsMd.BEGIN_MARKER, constants.AgentsMd.END_MARKER
-    existing = agents_file.read_text() if agents_file.exists() else None
-    if existing is not None and (begin not in existing or end not in existing):
-        console.debug(f"{agents_file} has no managed section, skipping.")
-        return
+    targets = [agents_file]
+    claude_exists = claude_file.exists()
+    write_claude_bridge = not claude_exists and not claude_file.is_symlink()
+    if (
+        claude_exists
+        and not (agents_file.exists() and claude_file.samefile(agents_file))
+        and constants.AgentsMd.CLAUDE_IMPORT not in claude_file.read_text()
+    ):
+        targets = [agents_file, claude_file] if agents_file.exists() else [claude_file]
 
     import httpx
 
@@ -75,15 +90,28 @@ def initialize_agents_md(
         return
 
     managed = f"{begin}\n{response.text.strip()}\n{end}"
-    if existing is None:
-        content = managed + "\n"
-    else:
-        before, _, rest = existing.partition(begin)
-        after = rest.partition(end)[2]
-        content = before + managed + after
-
-    console.debug(f"Creating {agents_file}")
-    agents_file.write_text(content)
+    for target in targets:
+        existing = target.read_text() if target.exists() else None
+        if existing is None:
+            content = managed + "\n"
+        else:
+            begin_idx = existing.find(begin)
+            end_idx = (
+                existing.find(end, begin_idx + len(begin)) if begin_idx != -1 else -1
+            )
+            if end_idx != -1:
+                content = (
+                    existing[:begin_idx] + managed + existing[end_idx + len(end) :]
+                )
+            else:
+                # No valid begin..end pair: drop stray markers and prepend the section.
+                remainder = existing.replace(begin, "").replace(end, "").strip("\n")
+                content = managed + (f"\n\n{remainder}\n" if remainder else "\n")
+        console.debug(f"Creating {target}")
+        target.write_text(content)
+    if write_claude_bridge:
+        console.debug(f"Creating {claude_file}")
+        claude_file.write_text(f"{constants.AgentsMd.CLAUDE_IMPORT}\n")
 
 
 def _read_dependency_file(file_path: Path) -> tuple[str | None, str | None]:
