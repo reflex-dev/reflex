@@ -12,11 +12,13 @@ from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.registry import RegistrationContext
 
+import reflex as rx
 from reflex import event
 from reflex.app import App
 from reflex.event import Event
 from reflex.istate.manager.memory import StateManagerMemory
-from reflex.state import OnLoadInternalState, State
+from reflex.middleware.middleware import Middleware
+from reflex.state import OnLoadInternalState, State, StateUpdate
 
 
 @pytest.fixture
@@ -150,3 +152,55 @@ async def test_rehydrate_sets_is_hydrated_on_fresh_token(
     assert len(hydrated_deltas) >= 1, (
         f"Expected at least one delta with is_hydrated=True, got deltas: {emitted_deltas}"
     )
+
+
+async def test_preprocess_update_routes_frontend_events_to_client(
+    app_module_mock,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_events: list[tuple[str, tuple[Event, ...]]],
+    token: str,
+):
+    """Frontend-only events in a middleware preprocess update reach the client.
+
+    Regression: a blocking middleware (e.g. an auth gate) returns a
+    ``StateUpdate`` whose events are frontend specs like ``rx.toast``
+    (``_call_function``) or ``rx.redirect`` (``_redirect``). Those have no
+    registered backend handler, so they must be emitted to the client instead
+    of enqueued on the backend queue (where they raise ``KeyError``).
+
+    Args:
+        app_module_mock: The mock app module fixture.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_events: List to capture events emitted to the client.
+        token: The client token.
+    """
+
+    class GatedState(State):
+        @event
+        def do_thing(self):
+            pass
+
+    class BlockingMiddleware(Middleware):
+        async def preprocess(self, app, state, event) -> StateUpdate:
+            return StateUpdate(
+                events=Event.from_event_type([
+                    rx.toast("Action not allowed"),
+                    rx.redirect("/login"),
+                ])
+            )
+
+    OnLoadInternalState._app_ref = None
+    app = app_module_mock.app = App()
+    app.add_middleware(BlockingMiddleware())
+    processor = real_base_state_processor
+    processor.middleware = app
+    assert processor._root_context is not None
+    app._state_manager = processor._root_context.state_manager
+
+    async with processor as p:
+        await p.enqueue(token, Event.from_event_type(GatedState.do_thing())[0])
+        await p.join(1)
+
+    client_event_names = {e.name for _, events in emitted_events for e in events}
+    assert "_call_function" in client_event_names
+    assert "_redirect" in client_event_names

@@ -21,7 +21,7 @@ from reflex_base.registry import RegisteredEventHandler
 from reflex_base.utils.format import format_event_handler
 
 if TYPE_CHECKING:
-    from reflex.event import EventHandler, EventSpec
+    from reflex.event import Event, EventHandler, EventSpec
     from reflex.state import BaseState
 
 
@@ -163,6 +163,24 @@ def _transform_event_payload(
     return transformed
 
 
+async def _route_events(ctx: EventContext, events: Sequence[Event]) -> None:
+    """Emit frontend events to the client and queue backend events.
+
+    Events whose name starts with ``_`` are frontend-only specs (e.g.
+    ``_redirect``, ``_call_function``) with no registered backend handler.
+
+    Args:
+        ctx: The event context to emit/enqueue through.
+        events: The events to route.
+    """
+    # Frontend events.
+    if frontend_events := [e for e in events if e.name.startswith("_")]:
+        await ctx.emit_event(*frontend_events)
+    # Backend events.
+    if backend_events := [e for e in events if not e.name.startswith("_")]:
+        await ctx.enqueue(*backend_events)
+
+
 async def chain_updates(
     events: EventSpec | list[EventSpec] | None,
     handler_name: str,
@@ -195,11 +213,7 @@ async def chain_updates(
     if fixed_events := Event.from_event_type(
         _check_valid_yield(events, handler_name=handler_name),
     ):
-        # Frontend events.
-        if frontend_events := [e for e in fixed_events if e.name.startswith("_")]:
-            await ctx.emit_event(*frontend_events)
-        # Backend events.
-        await ctx.enqueue(*(e for e in fixed_events if not e.name.startswith("_")))
+        await _route_events(ctx, fixed_events)
 
 
 async def process_event(
@@ -348,7 +362,7 @@ class BaseStateEventProcessor(EventProcessor):
                 if update.delta:
                     await ctx.emit_delta(update.delta)
                 if update.events:
-                    await ctx.enqueue(*update.events)
+                    await _route_events(ctx, update.events)
                 return
 
             # Get the event's substate.
