@@ -35,7 +35,7 @@
         "lucide-react": "1.14.0",
         "mergician": "v2.0.2",
         "moment": "2.30.1",
-        "moment-timezone": "^0.6.2",
+        "moment-timezone": "0.6.2",
         "plotly.js": "3.5.1",
         "react": "19.2.6",
         "react-colorful": "5.7.0",
