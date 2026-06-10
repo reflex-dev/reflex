@@ -55,9 +55,9 @@ class AgentsMd(SimpleNamespace):
     # The AGENTS.md file written to the app root.
     FILE = Path("AGENTS.md")
     # The canonical AGENTS.md maintained in the reflex-dev/agent-skills repo.
-    # TEMPORARY: pointing at the aditya/agentsmd branch (PR #13) instead of main.
-    # Revert to .../agent-skills/main/AGENTS.md once that PR merges.
-    CANONICAL_URL = "https://raw.githubusercontent.com/reflex-dev/agent-skills/aditya/agentsmd/AGENTS.md"
+    CANONICAL_URL = (
+        "https://raw.githubusercontent.com/reflex-dev/agent-skills/main/AGENTS.md"
+    )
     # Markers delimiting the Reflex-managed section; user content outside them is preserved.
     BEGIN_MARKER = "<!-- reflex managed begin (do not edit inside this block; add custom content outside the markers) -->"
     END_MARKER = "<!-- reflex managed end -->"
