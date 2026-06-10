@@ -13,7 +13,7 @@ You're likely here to build a Reflex app for someone. Reflex does **not** behave
 - Use the [Reflex MCP server](/docs/ai-builder/integrations/mcp-overview) (`https://build.reflex.dev/mcp`) for live component/prop lookup so you don't hallucinate APIs. *(MCP access is an enterprise feature.)*
 - Run `uv run reflex --version` and trust the live docs for that version over memory.
 
-**Drop a rules file in the project root** (`AGENTS.md`, or `CLAUDE.md`/`.cursorrules` for your tool) so these conventions persist across your session — a starter is below.
+**Drop a rules file in the project root** (`AGENTS.md`, or `CLAUDE.md`/`.cursorrules` for your tool) so these conventions persist across your session — `reflex init` writes a starter `AGENTS.md` for you by default, and a minimal fallback is below.
 ```
 
 Starter rules file:

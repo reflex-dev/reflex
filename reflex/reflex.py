@@ -90,7 +90,7 @@ def _init(
     # Initialize the .gitignore.
     frontend_skeleton.initialize_gitignore()
 
-    # Optionally write a sample AGENTS.md for AI coding agents.
+    # Write or refresh the AGENTS.md for AI coding agents.
     if agents:
         frontend_skeleton.initialize_agents_md()
 
@@ -128,9 +128,9 @@ def _init(
     help="Use AI to create the initial template. Cannot be used with existing app or `--template` option.",
 )
 @click.option(
-    "--agents",
-    is_flag=True,
-    help="Write a sample AGENTS.md to guide AI coding agents working in the app.",
+    "--agents/--no-agents",
+    default=True,
+    help="Write an AGENTS.md to guide AI coding agents working in the app (enabled by default).",
 )
 def init(
     name: str,

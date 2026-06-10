@@ -47,17 +47,21 @@ def initialize_agents_md(
     agents_file: Path = constants.AgentsMd.FILE,
     url: str = constants.AgentsMd.CANONICAL_URL,
 ):
-    """Write the AGENTS.md for AI coding agents, fetched from the canonical repo.
+    """Write or refresh the Reflex-managed section of AGENTS.md.
 
-    Does not overwrite an existing file so a user's customizations are preserved.
-    Aborts if the canonical file cannot be fetched.
+    The canonical content is wrapped in begin/end markers; user content outside
+    the markers is preserved on refresh. An existing file without markers is
+    never touched. A failed fetch is a warning, not an error, so init still
+    succeeds offline.
 
     Args:
-        agents_file: The AGENTS.md file to create in the app root.
+        agents_file: The AGENTS.md file to create or refresh in the app root.
         url: The canonical AGENTS.md to download.
     """
-    if agents_file.exists():
-        console.debug(f"{agents_file} already exists, skipping.")
+    begin, end = constants.AgentsMd.BEGIN_MARKER, constants.AgentsMd.END_MARKER
+    existing = agents_file.read_text() if agents_file.exists() else None
+    if existing is not None and (begin not in existing or end not in existing):
+        console.debug(f"{agents_file} has no managed section, skipping.")
         return
 
     import httpx
@@ -67,11 +71,19 @@ def initialize_agents_md(
         response = net.get(url, timeout=5)
         response.raise_for_status()
     except httpx.HTTPError as e:
-        console.error(f"Failed to fetch AGENTS.md from {url} due to {e}.")
-        raise SystemExit(1) from None
+        console.warn(f"Failed to fetch AGENTS.md from {url} due to {e}. Skipping.")
+        return
+
+    managed = f"{begin}\n{response.text.strip()}\n{end}"
+    if existing is None:
+        content = managed + "\n"
+    else:
+        before, _, rest = existing.partition(begin)
+        after = rest.partition(end)[2]
+        content = before + managed + after
 
     console.debug(f"Creating {agents_file}")
-    agents_file.write_text(response.text)
+    agents_file.write_text(content)
 
 
 def _read_dependency_file(file_path: Path) -> tuple[str | None, str | None]:

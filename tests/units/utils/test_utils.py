@@ -422,7 +422,7 @@ def test_initialize_non_existent_gitignore(
 
 
 def test_initialize_agents_md_fetches_canonical(tmp_path, mocker):
-    """Test that AGENTS.md is fetched from the canonical repo when absent."""
+    """Test that AGENTS.md is fetched and written inside markers when absent."""
     agents_file = tmp_path / "AGENTS.md"
     response = mocker.Mock()
     response.text = "# canonical agents"
@@ -433,11 +433,15 @@ def test_initialize_agents_md_fetches_canonical(tmp_path, mocker):
     )
 
     get.assert_called_once_with("http://x/AGENTS.md", timeout=5)
-    assert agents_file.read_text() == "# canonical agents"
+    assert agents_file.read_text() == (
+        f"{constants.AgentsMd.BEGIN_MARKER}\n"
+        "# canonical agents\n"
+        f"{constants.AgentsMd.END_MARKER}\n"
+    )
 
 
-def test_initialize_agents_md_preserves_existing(tmp_path, mocker):
-    """Test that an existing AGENTS.md is never overwritten or re-fetched."""
+def test_initialize_agents_md_preserves_unmanaged_existing(tmp_path, mocker):
+    """Test that an existing AGENTS.md without markers is never touched or re-fetched."""
     agents_file = tmp_path / "AGENTS.md"
     agents_file.write_text("custom content")
     get = mocker.patch("reflex.utils.net.get")
@@ -448,16 +452,42 @@ def test_initialize_agents_md_preserves_existing(tmp_path, mocker):
     get.assert_not_called()
 
 
-def test_initialize_agents_md_aborts_on_fetch_failure(tmp_path, mocker):
-    """Test that a failed fetch aborts init without leaving a partial file."""
+def test_initialize_agents_md_refreshes_managed_section(tmp_path, mocker):
+    """Test that only the marked section is refreshed, preserving user content."""
+    agents_file = tmp_path / "AGENTS.md"
+    agents_file.write_text(
+        "# my project notes\n\n"
+        f"{constants.AgentsMd.BEGIN_MARKER}\n"
+        "old canonical content\n"
+        f"{constants.AgentsMd.END_MARKER}\n\n"
+        "more user notes\n"
+    )
+    response = mocker.Mock()
+    response.text = "new canonical content"
+    mocker.patch("reflex.utils.net.get", return_value=response)
+
+    frontend_skeleton.initialize_agents_md(agents_file=agents_file)
+
+    assert agents_file.read_text() == (
+        "# my project notes\n\n"
+        f"{constants.AgentsMd.BEGIN_MARKER}\n"
+        "new canonical content\n"
+        f"{constants.AgentsMd.END_MARKER}\n\n"
+        "more user notes\n"
+    )
+
+
+def test_initialize_agents_md_warns_on_fetch_failure(tmp_path, mocker):
+    """Test that a failed fetch warns without aborting or leaving a partial file."""
     import httpx
 
     agents_file = tmp_path / "AGENTS.md"
     mocker.patch("reflex.utils.net.get", side_effect=httpx.ConnectError("boom"))
+    warn = mocker.patch("reflex.utils.console.warn")
 
-    with pytest.raises(SystemExit):
-        frontend_skeleton.initialize_agents_md(agents_file=agents_file)
+    frontend_skeleton.initialize_agents_md(agents_file=agents_file)
 
+    warn.assert_called_once()
     assert not agents_file.exists()
 
 
