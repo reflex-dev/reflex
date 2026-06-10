@@ -500,6 +500,13 @@ def get_reload_paths() -> Sequence[Path]:
     Raises:
         RuntimeError: If the `__init__.py` file is found in the app root directory.
     """
+    override_dirs = tuple(
+        map(Path.absolute, environment.REFLEX_HOT_RELOAD_OVERRIDE_PATHS.get())
+    )
+
+    if override_dirs:
+        return override_dirs
+
     config = get_config()
     reload_paths = [Path.cwd()]
     app_module = config.module
