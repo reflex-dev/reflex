@@ -4,7 +4,7 @@
 
 - Allow access to State from `app_wrap` components ([#6651](https://github.com/reflex-dev/reflex/issues/6651))
 
-## v0.9.5.post2 (2026-06-10)
+## v0.9.5.post1 (2026-06-10)
 
 ### Bug Fixes
 
