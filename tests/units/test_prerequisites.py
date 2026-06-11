@@ -446,7 +446,7 @@ def test_install_frontend_packages_skips_unpinned_already_in_package_json(
 ):
     """An unpinned package already in package.json is not re-added."""
     env = install_packages_env
-    env.web_package_json.write_text(
+    env.root_package_json.write_text(
         json.dumps({"dependencies": {"already-installed": "2.3.4"}})
     )
     calls = _record_calls(env)
@@ -466,7 +466,7 @@ def test_install_frontend_packages_skips_unpinned_dev_dep_already_in_package_jso
 ):
     """An unpinned dev dep already in package.json is not re-added."""
     env = install_packages_env
-    env.web_package_json.write_text(
+    env.root_package_json.write_text(
         json.dumps({
             "devDependencies": {
                 "already-dev": "1.2.3",
@@ -498,7 +498,7 @@ def test_install_frontend_packages_unpinned_already_present_makes_no_add_call(
 ):
     """If every requested unpinned package is already present, no add call runs."""
     env = install_packages_env
-    env.web_package_json.write_text(
+    env.root_package_json.write_text(
         json.dumps({"dependencies": {"some-pkg": "1.0.0", "@scope/pkg": "2.0.0"}})
     )
     calls = _record_calls(env)
@@ -514,7 +514,7 @@ def test_install_frontend_packages_moves_misplaced_unpinned_dep_to_deps(
 ):
     """A regular dep currently sitting under devDependencies gets relocated."""
     env = install_packages_env
-    env.web_package_json.write_text(
+    env.root_package_json.write_text(
         json.dumps({"devDependencies": {"some-pkg": "1.2.3"}})
     )
     calls = _record_calls(env)
@@ -538,7 +538,9 @@ def test_install_frontend_packages_moves_misplaced_unpinned_dev_dep_to_dev(
 ):
     """A dev dep currently sitting under dependencies gets relocated."""
     env = install_packages_env
-    env.web_package_json.write_text(json.dumps({"dependencies": {"some-dev": "1.2.3"}}))
+    env.root_package_json.write_text(
+        json.dumps({"dependencies": {"some-dev": "1.2.3"}})
+    )
 
     class FakePlugin:
         def get_frontend_dependencies(self):
@@ -571,7 +573,7 @@ def test_install_frontend_packages_moves_misplaced_pinned_framework_dep(
     """A framework dep listed in the wrong section gets relocated and re-pinned."""
     env = install_packages_env
     monkeypatch.setattr(constants.PackageJson, "DEPENDENCIES", {"react": "19.2.5"})
-    env.web_package_json.write_text(
+    env.root_package_json.write_text(
         json.dumps({"devDependencies": {"react": "18.0.0"}})
     )
     calls = _record_calls(env)
@@ -648,7 +650,7 @@ def test_install_frontend_packages_conflict_with_misplaced_existing_entry(
 ):
     """A conflicting name currently in devDeps is removed and re-added to deps."""
     env = install_packages_env
-    env.web_package_json.write_text(
+    env.root_package_json.write_text(
         json.dumps({"devDependencies": {"shared-pkg": "1.0.0"}})
     )
 
@@ -680,7 +682,7 @@ def test_install_frontend_packages_does_not_move_correctly_placed_packages(
 ):
     """Packages already in the right section trigger no remove/add."""
     env = install_packages_env
-    env.web_package_json.write_text(
+    env.root_package_json.write_text(
         json.dumps({
             "dependencies": {"regular": "1.0.0"},
             "devDependencies": {"dev-only": "2.0.0"},
@@ -868,7 +870,7 @@ def test_install_frontend_packages_removes_stale_dependencies(
     install_packages_env: InstallPackagesEnv,
 ):
     env = install_packages_env
-    env.web_package_json.write_text(
+    env.root_package_json.write_text(
         json.dumps({
             "dependencies": {
                 "still-needed": "1.0.0",
@@ -895,7 +897,7 @@ def test_install_frontend_packages_no_remove_when_all_needed(
     install_packages_env: InstallPackagesEnv,
 ):
     env = install_packages_env
-    env.web_package_json.write_text(
+    env.root_package_json.write_text(
         json.dumps({"dependencies": {"keep-me": "1.0.0"}, "devDependencies": {}})
     )
     calls = _record_calls(env)
@@ -913,7 +915,7 @@ def test_install_frontend_packages_keeps_framework_deps_during_remove(
     env = install_packages_env
     monkeypatch.setattr(constants.PackageJson, "DEPENDENCIES", {"react": "19.2.5"})
     monkeypatch.setattr(constants.PackageJson, "DEV_DEPENDENCIES", {"vite": "8.0.9"})
-    env.web_package_json.write_text(
+    env.root_package_json.write_text(
         json.dumps({
             "dependencies": {"react": "19.2.5", "stale-dep": "1.0.0"},
             "devDependencies": {"vite": "8.0.9"},

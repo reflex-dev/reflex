@@ -271,6 +271,7 @@ LOCKFILE_NAMES: tuple[str, ...] = (
     constants.Bun.LOCKFILE_PATH,
     constants.Node.LOCKFILE_PATH,
 )
+NO_PRUNE_LOCKFILE_NAMES: tuple[str, ...] = (constants.PackageJson.PATH,)
 
 
 def get_root_lockfile_path(filename: str) -> Path:
@@ -297,40 +298,20 @@ def get_web_lockfile_path(filename: str) -> Path:
     return get_web_dir() / filename
 
 
-def get_root_package_json_path() -> Path:
-    """Get the persisted package.json path in the app root.
-
-    Stored alongside the lockfiles inside ``reflex.lock/`` so resolved
-    dependency pins survive a fresh ``reflex init``.
-
-    Returns:
-        The persisted package.json path in the app root.
-    """
-    return Path.cwd() / constants.Bun.ROOT_LOCKFILE_DIR / constants.PackageJson.PATH
-
-
-def get_web_package_json_path() -> Path:
-    """Get the package.json path in the .web directory.
-
-    Returns:
-        The package.json path in the .web directory.
-    """
-    return get_web_dir() / constants.PackageJson.PATH
-
-
-def _copy_if_exists(src: Path, dest: Path) -> bool:
+def _copy_if_exists(src: Path, dest: Path, prune: bool = True) -> bool:
     """Copy ``src`` to ``dest`` (creating ``dest`` parents as needed).
 
     Args:
         src: The source file. If absent, ``dest`` is removed when present.
         dest: The destination file.
+        prune: Remove destination file that does not exist in source.
 
     Returns:
         True if ``dest``'s effective contents changed (created from absence,
         overwritten with different bytes, or removed because ``src`` is gone).
     """
     if not src.exists():
-        if dest.exists():
+        if dest.exists() and prune:
             console.debug(f"Removing stale {dest}")
             path_ops.rm(dest)
             return True
@@ -346,11 +327,12 @@ def _copy_if_exists(src: Path, dest: Path) -> bool:
     return changed
 
 
-def sync_root_lockfile_to_web(filename: str) -> bool:
+def sync_root_lockfile_to_web(filename: str, prune: bool = True) -> bool:
     """Mirror a single persisted lockfile into ``.web``.
 
     Args:
         filename: The lockfile basename.
+        prune: Remove destination file that does not exist in source.
 
     Returns:
         True if ``.web``'s copy was meaningfully changed (overwritten with
@@ -359,7 +341,7 @@ def sync_root_lockfile_to_web(filename: str) -> bool:
         cache could exist yet.
     """
     return _copy_if_exists(
-        get_root_lockfile_path(filename), get_web_lockfile_path(filename)
+        get_root_lockfile_path(filename), get_web_lockfile_path(filename), prune=prune
     )
 
 
@@ -370,7 +352,9 @@ def sync_root_lockfiles_to_web() -> bool:
         True if any ``.web`` lockfile was meaningfully changed.
     """
     # Materialize results so every lockfile is synced
-    changed = [sync_root_lockfile_to_web(name) for name in LOCKFILE_NAMES]
+    changed = [sync_root_lockfile_to_web(name) for name in LOCKFILE_NAMES] + [
+        sync_root_lockfile_to_web(name, prune=False) for name in NO_PRUNE_LOCKFILE_NAMES
+    ]
     return any(changed)
 
 
@@ -391,25 +375,8 @@ def sync_web_lockfile_to_root(filename: str):
 
 def sync_web_lockfiles_to_root():
     """Persist every ``.web`` lockfile back to the app root."""
-    for name in LOCKFILE_NAMES:
+    for name in LOCKFILE_NAMES + NO_PRUNE_LOCKFILE_NAMES:
         sync_web_lockfile_to_root(name)
-
-
-def sync_web_package_json_to_root():
-    """Persist the resolved .web package.json back to the app root.
-
-    Captures the dependency pins produced by ``bun add`` so the next
-    ``reflex init`` can restore them as the starting point for the new
-    package.json.
-    """
-    web_package_json_path = get_web_package_json_path()
-    if not web_package_json_path.exists():
-        return
-
-    root_package_json_path = get_root_package_json_path()
-    path_ops.mkdir(root_package_json_path.parent)
-    console.debug(f"Copying {web_package_json_path} to {root_package_json_path}")
-    path_ops.cp(web_package_json_path, root_package_json_path)
 
 
 def _read_persisted_package_json() -> dict:
@@ -419,7 +386,7 @@ def _read_persisted_package_json() -> dict:
         The parsed JSON object, or an empty dict if the file is missing or
         cannot be parsed.
     """
-    root_package_json_path = get_root_package_json_path()
+    root_package_json_path = get_root_lockfile_path(constants.PackageJson.PATH)
     if not root_package_json_path.exists():
         return {}
     try:
@@ -446,6 +413,7 @@ def initialize_web_directory():
 
     console.debug("Initializing the web directory.")
     initialize_package_json()
+    sync_web_lockfiles_to_root()
 
     console.debug("Initializing the bun config file.")
     initialize_bun_config()
