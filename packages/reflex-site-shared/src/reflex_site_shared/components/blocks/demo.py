@@ -23,7 +23,7 @@ def docdemobox(*children, **props) -> rx.Component:
     return rx.box(
         *children,
         **props,
-        class_name="flex flex-col p-6 rounded-xl overflow-x-auto border border-slate-4 bg-slate-2 items-center justify-center w-full",
+        class_name="flex flex-col p-6 rounded-xl overflow-x-auto border border-secondary-4 bg-secondary-2 items-center justify-center w-full",
     )
 
 
@@ -151,7 +151,7 @@ def docgraphing(
     return rx.box(
         rx.flex(
             comp,
-            class_name="w-full flex flex-col p-6 rounded-xl overflow-x-auto border border-slate-4 bg-slate-2 items-center justify-center",
+            class_name="w-full flex flex-col p-6 rounded-xl overflow-x-auto border border-secondary-4 bg-secondary-2 items-center justify-center",
         ),
         rx.tabs.root(
             rx.tabs.list(

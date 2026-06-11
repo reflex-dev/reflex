@@ -113,6 +113,48 @@ _var_subclasses: list[VarSubclassEntry] = []
 _var_literal_subclasses: list[tuple[type[LiteralVar], VarSubclassEntry]] = []
 
 
+_AppWrap = TypeVar("_AppWrap", bound="BaseComponent")
+
+
+def insert_app_wraps(
+    target: dict[tuple[int, str], _AppWrap],
+    sources: Iterable[tuple[int, _AppWrap]],
+    *,
+    existing: Mapping[tuple[int, str], _AppWrap] | None = None,
+) -> None:
+    """Merge app-wrap requests into ``target`` keyed by ``(priority, tag)``.
+
+    App wraps model a set of required wrapper roles: at most one wrapper per
+    ``(priority, tag)``. Requests resolving to an equal wrapper are deduped;
+    two different wrappers claiming one role is a conflict and raises. This is
+    the single place that rule lives, shared by ``VarData.merge`` (within one
+    Var) and the compiler's page-wide collection.
+
+    Args:
+        target: Registry that receives newly seen wraps.
+        sources: ``(priority, wrapper)`` requests to merge in.
+        existing: Already-committed wraps to dedupe against without writing,
+            letting callers collect only the wraps they newly contribute.
+
+    Raises:
+        ReflexError: If two different wrappers claim one ``(priority, tag)``.
+    """
+    for priority, wrapper in sources:
+        key = (priority, wrapper.tag or type(wrapper).__name__)
+        seen = existing.get(key) if existing is not None else None
+        if seen is None:
+            seen = target.get(key)
+        if seen is not None:
+            if seen != wrapper:
+                msg = (
+                    f"Conflicting app wraps for {key!r}: two different "
+                    "components claim the same (priority, tag) slot."
+                )
+                raise exceptions.ReflexError(msg)
+            continue
+        target[key] = wrapper
+
+
 @dataclasses.dataclass(
     eq=True,
     frozen=True,
@@ -141,6 +183,12 @@ class VarData:
     # Components that are part of this var
     components: tuple[BaseComponent, ...] = dataclasses.field(default_factory=tuple)
 
+    # App-level wrapper components this var requires when used (priority, component).
+    # Higher priority wraps further out, matching Component._get_app_wrap_components semantics.
+    app_wraps: tuple[tuple[int, BaseComponent], ...] = dataclasses.field(
+        default_factory=tuple
+    )
+
     def __init__(
         self,
         state: str = "",
@@ -150,6 +198,7 @@ class VarData:
         deps: list[Var] | None = None,
         position: Hooks.HookPosition | None = None,
         components: Iterable[BaseComponent] | None = None,
+        app_wraps: Iterable[tuple[int, BaseComponent]] | None = None,
     ):
         """Initialize the var data.
 
@@ -161,6 +210,7 @@ class VarData:
             deps: Dependencies of the var for useCallback.
             position: Position of the hook in the component.
             components: Components that are part of this var.
+            app_wraps: App-level wrapper components this var requires when used.
         """
         if isinstance(hooks, str):
             hooks = [hooks]
@@ -176,6 +226,7 @@ class VarData:
         object.__setattr__(self, "deps", tuple(deps or []))
         object.__setattr__(self, "position", position or None)
         object.__setattr__(self, "components", tuple(components or []))
+        object.__setattr__(self, "app_wraps", tuple(app_wraps or []))
 
         if hooks and any(hooks.values()):
             # Merge our dependencies first, so they can be referenced.
@@ -188,6 +239,7 @@ class VarData:
                 object.__setattr__(self, "deps", merged_var_data.deps)
                 object.__setattr__(self, "position", merged_var_data.position)
                 object.__setattr__(self, "components", merged_var_data.components)
+                object.__setattr__(self, "app_wraps", merged_var_data.app_wraps)
 
     def old_school_imports(self) -> ImportDict:
         """Return the imports as a mutable dict.
@@ -259,6 +311,10 @@ class VarData:
             component for var_data in all_var_datas for component in var_data.components
         )
 
+        app_wraps: dict[tuple[int, str], BaseComponent] = {}
+        for var_data in all_var_datas:
+            insert_app_wraps(app_wraps, var_data.app_wraps)
+
         return VarData(
             state=state,
             field_name=field_name,
@@ -267,6 +323,9 @@ class VarData:
             deps=deps,
             position=position,
             components=components,
+            app_wraps=tuple(
+                (priority, wrapper) for (priority, _tag), wrapper in app_wraps.items()
+            ),
         )
 
     def __bool__(self) -> bool:
@@ -283,7 +342,57 @@ class VarData:
             or self.deps
             or self.position
             or self.components
+            or self.app_wraps
         )
+
+    def _identity_key(self) -> tuple:
+        """Return a hashable key for ``__eq__`` and ``__hash__``.
+
+        ``components`` and ``app_wraps`` hold ``BaseComponent`` instances whose
+        ``__eq__`` override drops the default hash. Use component identity for
+        embedded components because they can contribute hooks/imports, and use
+        the compiler's app-wrap registry key for wrappers so fresh provider
+        instances with the same role still compare equal. App wraps are a set
+        of required roles, so a ``frozenset`` keeps identity insensitive to the
+        order vars happened to merge in (``a + b`` and ``b + a`` stay equal).
+
+        Returns:
+            A hashable tuple uniquely identifying this VarData.
+        """
+        return (
+            self.state,
+            self.field_name,
+            self.imports,
+            self.hooks,
+            self.deps,
+            self.position,
+            tuple(id(component) for component in self.components),
+            frozenset(
+                (priority, component.tag or type(component).__name__)
+                for priority, component in self.app_wraps
+            ),
+        )
+
+    def __eq__(self, other: object) -> bool:
+        """Compare two VarData by render-time identity.
+
+        Args:
+            other: The value to compare against.
+
+        Returns:
+            True if ``other`` is a VarData with matching render-time fields.
+        """
+        if not isinstance(other, VarData):
+            return NotImplemented
+        return self._identity_key() == other._identity_key()
+
+    def __hash__(self) -> int:
+        """Hash consistent with ``__eq__``.
+
+        Returns:
+            A hash over render-time fields and hashable component metadata.
+        """
+        return hash(self._identity_key())
 
     @classmethod
     def from_state(cls, state: type[BaseState] | str, field_name: str = "") -> VarData:
@@ -296,6 +405,8 @@ class VarData:
         Returns:
             The var with the set state.
         """
+        # Lazy import: state_context imports VarData from this module.
+        from reflex_base.components.state_context import get_event_app_wraps
         from reflex_base.utils import format
 
         state_name = state if isinstance(state, str) else state.get_full_name()
@@ -311,6 +422,9 @@ class VarData:
                 f"$/{constants.Dirs.CONTEXTS_PATH}": [ImportVar(tag="StateContexts")],
                 "react": [ImportVar(tag="useContext")],
             },
+            # State Vars read ``StateContexts``/``EventLoopContext``, so the
+            # providers must enclose every component that uses them.
+            app_wraps=get_event_app_wraps(),
         )
 
 

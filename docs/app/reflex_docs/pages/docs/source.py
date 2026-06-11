@@ -9,7 +9,7 @@ from reflex_docs.docgen_pipeline import render_markdown
 from reflex_docs.templates.docpage import h1_comp, h2_comp
 
 table_header_class_name = (
-    "font-small text-slate-12 text-normal w-auto justify-start pl-4 font-bold"
+    "font-small text-secondary-12 text-normal w-auto justify-start pl-4 font-bold"
 )
 
 
@@ -42,7 +42,7 @@ def format_fields(
                         ),
                         rx.table.cell(
                             render_markdown(field.description or ""),
-                            class_name="font-small text-slate-11",
+                            class_name="font-small text-secondary-11",
                         ),
                     )
                     for field in fields
@@ -73,7 +73,7 @@ def format_methods(methods: tuple[MethodDocumentation, ...]) -> rx.Component:
                     rx.table.cell(
                         method.description or "",
                         white_space="normal",
-                        class_name="font-small text-slate-11 text-nowrap",
+                        class_name="font-small text-secondary-11 text-nowrap",
                     ),
                 )
                 for method in methods

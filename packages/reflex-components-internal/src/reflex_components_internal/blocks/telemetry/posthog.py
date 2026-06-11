@@ -173,6 +173,17 @@ def track_newsletter_posthog_subscription(
     return _capture_posthog_person_event("newsletter_subscribed", props, {"email"})
 
 
+def track_newsletter_posthog_submission(
+    form_data: dict[str, Any],
+) -> rx.event.EventSpec:
+    """Capture a newsletter_signup event in PostHog.
+
+    Returns:
+        Event that runs PostHog capture in the browser.
+    """
+    return _track_form_posthog("newsletter_signup", form_data, _COMMON_KEYS)
+
+
 def get_posthog_trackers(
     project_id: str,
     api_host: str = POSTHOG_API_HOST,
@@ -188,10 +199,11 @@ def get_posthog_trackers(
     Returns:
         rx.Component: Script component needed for PostHog tracking
     """
-    return rx.script(
+    return rx.el.script(
         POSTHOG_SCRIPT_TEMPLATE.format(
             project_id=project_id,
             api_host=api_host,
             ui_host=ui_host,
-        )
+        ),
+        type="module",
     )
