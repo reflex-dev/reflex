@@ -169,6 +169,7 @@ def app_root_template(
     window_libraries: list[tuple[str, str]],
     render: dict[str, Any],
     dynamic_imports: set[str],
+    hydrate_fallback_export: str | None = None,
 ):
     """Template for the App root.
 
@@ -179,12 +180,20 @@ def app_root_template(
         window_libraries: The list of window libraries.
         render: The dictionary of render functions.
         dynamic_imports: The set of dynamic imports.
+        hydrate_fallback_export: The exported name of the hydrate-fallback memo module to re-export as ``HydrateFallback``, or None for no fallback.
 
     Returns:
         Rendered App root component as string.
     """
     imports_str = "\n".join([_RenderUtils.get_import(mod) for mod in imports])
     dynamic_imports_str = "\n".join(dynamic_imports)
+
+    hydrate_fallback_str = ""
+    if hydrate_fallback_export is not None:
+        hydrate_fallback_str = (
+            f"export {{ {hydrate_fallback_export} as HydrateFallback }} "
+            f'from "$/{constants.Dirs.COMPONENTS_PATH}/{hydrate_fallback_export}";'
+        )
 
     custom_code_str = "\n".join(custom_codes)
 
@@ -242,7 +251,7 @@ export function EmbedLayout({{children}}) {{
 export default function App() {{
   return jsx(Outlet, {{}});
 }}
-
+{hydrate_fallback_str}
 """
 
 
