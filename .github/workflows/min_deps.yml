@@ -37,7 +37,7 @@ jobs:
         with:
           python-version: "3.14"
       - id: list
-        run: echo "packages=$(uv run --no-project python scripts/check_min_deps.py --list)" >> "$GITHUB_OUTPUT"
+        run: echo "packages=$(uv run --with packaging --no-project python scripts/check_min_deps.py --list)" >> "$GITHUB_OUTPUT"
 
   check:
     needs: discover
