@@ -21,6 +21,7 @@ from reflex_base.components.memo import (
     MemoComponentDefinition,
     MemoDefinition,
     MemoFunctionDefinition,
+    create_component_memo,
 )
 from reflex_base.config import get_config
 from reflex_base.constants.compiler import PageNames, ResetStylesheet
@@ -39,6 +40,8 @@ from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 
 from reflex.compiler import templates, utils
 from reflex.compiler.plugins import default_page_plugins
+from reflex.compiler.plugins.builtin import collect_var_app_wraps_in_subtree
+from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
 from reflex.state import BaseState, code_uses_state_contexts
 from reflex.utils import console, frontend_skeleton, path_ops, prerequisites
 from reflex.utils.exec import get_compile_context, is_prod_mode
@@ -126,11 +129,15 @@ def _normalize_library_name(lib: str) -> str:
     return lib.replace("$/", "").replace("@", "").replace("/", "_").replace("-", "_")
 
 
-def _compile_app(app_root: Component) -> str:
+def _compile_app(
+    app_root: Component, hydrate_fallback_export: str | None = None
+) -> str:
     """Compile the app template component.
 
     Args:
         app_root: The app root to compile.
+        hydrate_fallback_export: The exported name of the hydrate-fallback memo
+            component to re-export as ``HydrateFallback``, or None for no fallback.
 
     Returns:
         The compiled app.
@@ -153,6 +160,7 @@ def _compile_app(app_root: Component) -> str:
         window_libraries=window_libraries_deduped,
         render=app_root.render(),
         dynamic_imports=app_root._get_all_dynamic_imports(),
+        hydrate_fallback_export=hydrate_fallback_export,
     )
 
 
@@ -543,11 +551,15 @@ def compile_document_root(
     return output_path, code
 
 
-def compile_app_root(app_root: Component) -> tuple[str, str]:
+def compile_app_root(
+    app_root: Component, hydrate_fallback_export: str | None = None
+) -> tuple[str, str]:
     """Compile the app root.
 
     Args:
         app_root: The app root component to compile.
+        hydrate_fallback_export: The exported name of the hydrate-fallback memo
+            component to re-export as ``HydrateFallback``, or None for no fallback.
 
     Returns:
         The path and code of the compiled app wrapper.
@@ -558,7 +570,7 @@ def compile_app_root(app_root: Component) -> tuple[str, str]:
     )
 
     # Compile the document root.
-    code = _compile_app(app_root)
+    code = _compile_app(app_root, hydrate_fallback_export)
     return output_path, code
 
 
@@ -925,7 +937,61 @@ def _resolve_app_wrap_components(
             if component is not None:
                 app_wrappers[key] = component
 
+    # The page collector only walks pages, but app-wrap components have their
+    # own subtrees (e.g. ``ErrorBoundary``'s fallback render). Surface their
+    # Var-declared ``app_wraps`` here, fixpoint-iterating because newly added
+    # wraps may themselves contain further declarations.
+    pending: list[Component] = list(app_wrappers.values())
+    while pending:
+        next_pending: list[Component] = []
+        for wrapper in pending:
+            before = set(app_wrappers)
+            collect_var_app_wraps_in_subtree(app_wrappers, wrapper)
+            next_pending.extend(
+                app_wrappers[key] for key in app_wrappers.keys() - before
+            )
+        pending = next_pending
+
     return app_wrappers
+
+
+def _memoize_stateful_app_wraps(
+    app_root: Component,
+    compile_context: CompileContext,
+) -> Component:
+    """Extract stateful app wraps from the app root into memo components.
+
+    The app root compiles outside the page plugin pipeline, so hooks from
+    every wrap in the chain hoist into the single generated ``AppWrap``
+    function — above the ``StateProvider`` rendered in that same function,
+    where a state ``useContext`` can never resolve. Walking the assembled
+    chain with the auto-memoize plugin moves each stateful wrap (and any
+    stateful descendant) into its own memo module, which renders below the
+    provider — the same treatment page trees get.
+
+    Args:
+        app_root: The assembled app-wrap chain from ``App._app_root``.
+        compile_context: The active compile context; generated memo
+            definitions are registered on ``auto_memo_components``.
+
+    Returns:
+        The app root with stateful wraps replaced by memo wrappers.
+    """
+    hooks = CompilerHooks(plugins=(MemoizeStatefulPlugin(),))
+    page_context = PageContext(
+        name="app_root",
+        route=constants.PageNames.APP_ROOT,
+        root_component=app_root,
+    )
+    compiled_root = hooks.compile_component(
+        app_root,
+        page_context=page_context,
+        compile_context=compile_context,
+    )
+    if not isinstance(compiled_root, Component):
+        msg = "Compiled app root must be a Component."
+        raise TypeError(msg)
+    return compiled_root
 
 
 def _resolve_radix_themes_plugin(
@@ -1092,8 +1158,22 @@ def compile_app(
     progress.advance(task)
 
     app_wrappers = _resolve_app_wrap_components(app, compile_ctx.app_wrap_components)
-    app_root = app._app_root(app_wrappers)
+    app_root = _memoize_stateful_app_wraps(app._app_root(app_wrappers), compile_ctx)
     all_imports = utils.merge_imports(all_imports, app_root._get_all_imports())
+
+    hydrate_fallback = app._resolve_hydrate_fallback()
+    hydrate_fallback_export = None
+    if hydrate_fallback is not None:
+        hydrate_fallback._add_style_recursive(app.style)
+        # Compile the fallback through the memo pipeline so it lands in its own
+        # JS module; root.jsx then re-exports it as HydrateFallback.
+        hydrate_fallback_definition = create_component_memo(
+            hydrate_fallback, "hydrate_fallback"
+        )
+        compile_ctx.auto_memo_components[hydrate_fallback_definition.export_name] = (
+            hydrate_fallback_definition
+        )
+        hydrate_fallback_export = hydrate_fallback_definition.export_name
 
     memo_component_files, memo_components_imports = compile_memo_components(
         (
@@ -1187,7 +1267,7 @@ def compile_app(
     )
     progress.advance(task)
 
-    compile_results.append(compile_app_root(app_root))
+    compile_results.append(compile_app_root(app_root, hydrate_fallback_export))
     progress.advance(task)
 
     progress.stop()
