@@ -1008,6 +1008,11 @@ def test_string_operations():
     assert str(basic_string.upper()) == '"Hello, World!".toUpperCase()'
     assert str(basic_string.strip()) == '"Hello, World!".trim()'
     assert str(basic_string.rstrip()) == '"Hello, World!".trimEnd()'
+    assert str(basic_string.lstrip("!H")) == 'pyLstrip("Hello, World!", "!H")'
+    assert str(basic_string.strip("!H")) == 'pyStrip("Hello, World!", "!H")'
+    assert str(basic_string.rstrip("!H")) == 'pyRstrip("Hello, World!", "!H")'
+    chars_var = Var(_js_expr="state.chars").to(str)
+    assert str(basic_string.strip(chars_var)) == 'pyStrip("Hello, World!", state.chars)'
     assert str(basic_string.contains("World")) == '"Hello, World!".includes("World")'
     assert (
         str(basic_string.split(" ").join(",")) == '"Hello, World!".split(" ").join(",")'

@@ -14,15 +14,17 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar, get_args, overload
 from typing_extensions import TypeVar as TypingExtensionsTypeVar
 
 from reflex_base import constants
-from reflex_base.constants.base import REFLEX_VAR_OPENING_TAG
+from reflex_base.constants.base import REFLEX_VAR_OPENING_TAG, Dirs
 from reflex_base.utils import types
 from reflex_base.utils.exceptions import VarTypeError
+from reflex_base.utils.imports import ImportDict, ImportVar
 from reflex_base.utils.types import GenericType, get_origin
 
 from .base import (
     CachedVarOperation,
     CustomVarOperationReturn,
     LiteralVar,
+    NoneVar,
     Var,
     VarData,
     _global_vars,
@@ -1005,18 +1007,40 @@ def string_capitalize_operation(string: StringVar[Any]):
     )
 
 
+_PY_STRIP_IMPORT: ImportDict = {
+    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="pyStrip")],
+}
+
+_PY_LSTRIP_IMPORT: ImportDict = {
+    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="pyLstrip")],
+}
+
+_PY_RSTRIP_IMPORT: ImportDict = {
+    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="pyRstrip")],
+}
+
+
 @var_operation
 def string_strip_operation(
     string: StringVar[Any],
     chars: StringVar[Any] | str | None = None,
 ):
-    """Strip a string."""
-    if str(chars) == "null":
+    """Strip whitespace or the given characters from both ends of a string.
+
+    Args:
+        string: The string to strip.
+        chars: The set of characters to remove. If None, strip whitespace.
+
+    Returns:
+        The stripped string.
+    """
+    if isinstance(chars, NoneVar):
         return var_operation_return(js_expression=f"{string}.trim()", var_type=str)
 
     return var_operation_return(
-        js_expression=f"{string}.replace(/^[{chars}]+|[{chars}]+$/g, '')",
+        js_expression=f"pyStrip({string}, {chars})",
         var_type=str,
+        var_data=VarData(imports=_PY_STRIP_IMPORT),
     )
 
 
@@ -1025,13 +1049,22 @@ def string_lstrip_operation(
     string: StringVar[Any],
     chars: StringVar[Any] | str | None = None,
 ):
-    """Left strip a string."""
-    if str(chars) == "null":
+    """Strip whitespace or the given characters from the start of a string.
+
+    Args:
+        string: The string to strip.
+        chars: The set of characters to remove. If None, strip whitespace.
+
+    Returns:
+        The stripped string.
+    """
+    if isinstance(chars, NoneVar):
         return var_operation_return(js_expression=f"{string}.trimStart()", var_type=str)
 
     return var_operation_return(
-        js_expression=f"{string}.replace(/^[{chars}]+/, '')",
+        js_expression=f"pyLstrip({string}, {chars})",
         var_type=str,
+        var_data=VarData(imports=_PY_LSTRIP_IMPORT),
     )
 
 
@@ -1040,13 +1073,22 @@ def string_rstrip_operation(
     string: StringVar[Any],
     chars: StringVar[Any] | str | None = None,
 ):
-    """Right strip a string."""
-    if str(chars) == "null":
+    """Strip whitespace or the given characters from the end of a string.
+
+    Args:
+        string: The string to strip.
+        chars: The set of characters to remove. If None, strip whitespace.
+
+    Returns:
+        The stripped string.
+    """
+    if isinstance(chars, NoneVar):
         return var_operation_return(js_expression=f"{string}.trimEnd()", var_type=str)
 
     return var_operation_return(
-        js_expression=f"{string}.replace(/[{chars}]+$/, '')",
+        js_expression=f"pyRstrip({string}, {chars})",
         var_type=str,
+        var_data=VarData(imports=_PY_RSTRIP_IMPORT),
     )
 
 
