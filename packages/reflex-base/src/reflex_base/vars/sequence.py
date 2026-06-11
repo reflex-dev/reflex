@@ -24,7 +24,6 @@ from .base import (
     CachedVarOperation,
     CustomVarOperationReturn,
     LiteralVar,
-    NoneVar,
     Var,
     VarData,
     _global_vars,
@@ -1034,9 +1033,6 @@ def string_strip_operation(
     Returns:
         The stripped string.
     """
-    if isinstance(chars, NoneVar):
-        return var_operation_return(js_expression=f"{string}.trim()", var_type=str)
-
     return var_operation_return(
         js_expression=f"pyStrip({string}, {chars})",
         var_type=str,
@@ -1058,9 +1054,6 @@ def string_lstrip_operation(
     Returns:
         The stripped string.
     """
-    if isinstance(chars, NoneVar):
-        return var_operation_return(js_expression=f"{string}.trimStart()", var_type=str)
-
     return var_operation_return(
         js_expression=f"pyLstrip({string}, {chars})",
         var_type=str,
@@ -1082,9 +1075,6 @@ def string_rstrip_operation(
     Returns:
         The stripped string.
     """
-    if isinstance(chars, NoneVar):
-        return var_operation_return(js_expression=f"{string}.trimEnd()", var_type=str)
-
     return var_operation_return(
         js_expression=f"pyRstrip({string}, {chars})",
         var_type=str,
