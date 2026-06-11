@@ -390,8 +390,16 @@ export const applyEvent = async (event, socket, navigate, params) => {
     Object.keys(event.router_data).length === 0
   ) {
     const loc = locationRef.current ?? window.location;
-    const search = loc.search ?? "";
-    const hash = loc.hash ?? "";
+    // React Router's location (mirrored in locationRef) does not observe direct
+    // window.history.pushState/replaceState calls (e.g. via rx.call_script), so
+    // read the live query string and hash to keep router_data in sync. The
+    // pathname stays basename-relative (from React Router) so the backend's
+    // frontend_path prefix is not applied twice. In embed mode the host page's
+    // window.location is unrelated to the in-widget memory router, so use the
+    // mirrored location there.
+    const liveLoc = env.MOUNT_TARGET ? loc : window.location;
+    const search = liveLoc.search ?? "";
+    const hash = liveLoc.hash ?? "";
     event.router_data = {
       pathname: loc.pathname,
       asPath: loc.pathname + search + hash,

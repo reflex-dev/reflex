@@ -115,6 +115,7 @@ DEFAULT_IMPORTS = {
         "EventHandler",
         "EventSpec",
         "EventType",
+        "FORM_SUBMIT_MAPPING",
         "KeyInputInfo",
         "PointerEventInfo",
     ],
@@ -631,6 +632,7 @@ def _extract_class_props_as_ast_nodes(
                 or name in all_props
                 or name in event_triggers
                 or get_origin(value) is ClassVar
+                or name.startswith("_")
             ):
                 continue
             all_props.add(name)

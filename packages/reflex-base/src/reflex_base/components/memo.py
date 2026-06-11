@@ -1738,6 +1738,32 @@ def create_passthrough_component_memo(
     return _create_component_wrapper(definition), definition
 
 
+def create_component_memo(component: Component, name: str) -> MemoComponentDefinition:
+    """Create an unregistered component memo that renders a standalone component.
+
+    Unlike `create_passthrough_component_memo`, the memo body renders the full
+    component (no `{children}` hole), so it works where the memo is referenced
+    without children — e.g. re-exported as a route's `HydrateFallback`. Register
+    the returned definition (e.g. in `CompileContext.auto_memo_components`) so it
+    compiles to its own JS module under `$/{components}/{export_name}`.
+
+    Args:
+        component: The component to render in the memo body.
+        name: The Python name used to derive the exported React component name.
+
+    Returns:
+        The component memo definition.
+    """
+
+    def snapshot() -> Component:
+        return component
+
+    snapshot.__name__ = name
+    snapshot.__qualname__ = name
+    snapshot.__module__ = __name__
+    return _create_component_definition(snapshot, Component)
+
+
 _MemoVarT = TypeVar("_MemoVarT")
 
 
@@ -1889,6 +1915,7 @@ __all__ = [
     "MemoComponentDefinition",
     "MemoDefinition",
     "MemoFunctionDefinition",
+    "create_component_memo",
     "create_passthrough_component_memo",
     "memo",
 ]

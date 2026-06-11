@@ -17,7 +17,15 @@ The [reflex-dev/agent-skills](https://github.com/reflex-dev/agent-skills) reposi
 
 ## Installation
 
-Download the template into your project root, next to `rxconfig.py`:
+`reflex init` writes a starter `AGENTS.md` into the project root alongside `rxconfig.py` by default (pass `--no-agents` to opt out):
+
+```bash
+reflex init
+```
+
+The Reflex-provided content sits between `reflex managed` begin/end markers. Anything you add outside the markers is preserved when init refreshes the managed section, so it is safe to re-run. If a pre-existing `AGENTS.md` has no markers, the managed section is added at the top and your content is kept below it. For Claude Code users, init also creates a `CLAUDE.md` importing `AGENTS.md` (or updates an existing one that doesn't reference it).
+
+To add the template to an existing project, download it into the project root, next to `rxconfig.py`:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/reflex-dev/agent-skills/main/AGENTS.md -o AGENTS.md
@@ -63,7 +71,9 @@ Keep entries short and imperative — assistants follow concise, direct instruct
 
 ## Keeping Files Updated
 
-Reflex evolves quickly. If you used `curl` to download the template, re-run the same command to refresh it:
+Reflex evolves quickly. If `reflex init` created your `AGENTS.md`, re-running `reflex init` refreshes the content between the managed markers while preserving everything you added outside them.
+
+If you used `curl` to download the template, re-run the same command to refresh it (note this replaces the whole file):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/reflex-dev/agent-skills/main/AGENTS.md -o AGENTS.md

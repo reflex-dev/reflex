@@ -47,6 +47,14 @@ jobs:
           TAG: ${{ github.event.release.tag_name || inputs.tag }}
         run: bash .github/scripts/publish/parse_tag.sh
 
+      # A *.dev dependency pin references an unpublished version, so it must never reach
+      # released package metadata. Scoped to the package being published so a dependency
+      # can still be released while dependents temporarily dev-pin it.
+      - name: Reject development-release dependency pins
+        env:
+          PACKAGE: ${{ steps.parse.outputs.package }}
+        run: uv run --with packaging --no-project python scripts/check_min_deps.py --check-dev-pins "$PACKAGE"
+
       - name: Pin reflex-base to exact version
         if: steps.parse.outputs.package == 'reflex'
         env:
