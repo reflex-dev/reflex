@@ -3,6 +3,7 @@
 import json
 import uuid
 from pathlib import Path
+from typing import Literal
 
 from reflex_base import constants
 from reflex_base.config import Config, get_config
@@ -11,7 +12,7 @@ from reflex_base.plugins.embed import get_embed_plugin
 
 from reflex.compiler import templates
 from reflex.compiler.utils import write_file
-from reflex.utils import console, path_ops
+from reflex.utils import console, net, path_ops
 from reflex.utils.prerequisites import get_project_hash, get_web_dir
 from reflex.utils.registry import get_npm_registry
 
@@ -41,6 +42,119 @@ def initialize_gitignore(
     gitignore_file.touch(exist_ok=True)
     console.debug(f"Creating {gitignore_file}")
     gitignore_file.write_text("\n".join(files_to_ignore) + "\n")
+
+
+AgentsMdAction = Literal["managed", "bridge"]
+
+
+def _plan_agents_md(
+    agents_file: Path, claude_file: Path
+) -> list[tuple[Path, AgentsMdAction]]:
+    """Decide which files receive the managed section or the CLAUDE.md bridge.
+
+    Claude Code reads CLAUDE.md rather than AGENTS.md, so: if CLAUDE.md is
+    missing, AGENTS.md is managed and a bridge importing it is planned; if
+    CLAUDE.md is the same file as AGENTS.md (symlink) or already imports it,
+    only AGENTS.md is managed; otherwise CLAUDE.md is managed directly, along
+    with AGENTS.md if it already exists.
+
+    Args:
+        agents_file: The AGENTS.md file in the app root.
+        claude_file: The CLAUDE.md file in the app root.
+
+    Returns:
+        (file, action) pairs to apply in order.
+    """
+    if not claude_file.exists():
+        plan: list[tuple[Path, AgentsMdAction]] = [(agents_file, "managed")]
+        # A broken symlink gets no bridge; writing it would create the target.
+        if not claude_file.is_symlink():
+            plan.append((claude_file, "bridge"))
+        return plan
+    if (
+        agents_file.exists() and claude_file.samefile(agents_file)
+    ) or constants.AgentsMd.CLAUDE_IMPORT in claude_file.read_text():
+        return [(agents_file, "managed")]
+    if agents_file.exists():
+        return [(agents_file, "managed"), (claude_file, "managed")]
+    return [(claude_file, "managed")]
+
+
+def _apply_agents_md_action(
+    file: Path, action: AgentsMdAction, managed_agents_md_text: str
+):
+    """Apply a planned AGENTS.md action to a file.
+
+    For "managed", the marker-wrapped section replaces the existing valid
+    begin..end span; if the file has no valid pair (markers missing, unpaired,
+    or out of order), stray markers are dropped and the section is prepended,
+    preserving user content. For "bridge", the one-line import is written.
+
+    Args:
+        file: The file to write.
+        action: The action to apply.
+        managed_agents_md_text: The marker-wrapped canonical content.
+    """
+    begin, end = constants.AgentsMd.BEGIN_MARKER, constants.AgentsMd.END_MARKER
+    if action == "bridge":
+        content = f"{constants.AgentsMd.CLAUDE_IMPORT}\n"
+    elif not file.exists():
+        content = managed_agents_md_text + "\n"
+    else:
+        existing = file.read_text()
+        begin_idx = existing.find(begin)
+        end_idx = existing.find(end, begin_idx + len(begin)) if begin_idx != -1 else -1
+        if end_idx != -1:
+            content = (
+                existing[:begin_idx]
+                + managed_agents_md_text
+                + existing[end_idx + len(end) :]
+            )
+        else:
+            # No valid begin..end pair: drop stray markers and prepend the section.
+            remainder = existing.replace(begin, "").replace(end, "").strip("\n")
+            content = managed_agents_md_text + (
+                f"\n\n{remainder}\n" if remainder else "\n"
+            )
+    console.debug(f"Creating {file}")
+    file.write_text(content)
+
+
+def initialize_agents_md(
+    agents_file: Path = constants.AgentsMd.FILE,
+    claude_file: Path = constants.AgentsMd.CLAUDE_FILE,
+    url: str = constants.AgentsMd.CANONICAL_URL,
+):
+    """Write or refresh the Reflex-managed section of AGENTS.md and CLAUDE.md.
+
+    Fetches the canonical content, then applies the plan from
+    _plan_agents_md() to each file. A failed fetch is a warning, not an
+    error, so init still succeeds offline.
+
+    Args:
+        agents_file: The AGENTS.md file to create or refresh in the app root.
+        claude_file: The CLAUDE.md file bridging AGENTS.md for Claude Code.
+        url: The canonical AGENTS.md to download.
+    """
+    plan = _plan_agents_md(agents_file, claude_file)
+
+    import httpx
+
+    console.debug(f"Fetching {url}")
+    try:
+        response = net.get(url, timeout=5)
+        response.raise_for_status()
+    except httpx.HTTPError as e:
+        console.warn(f"Failed to fetch AGENTS.md from {url} due to {e}. Skipping.")
+        return
+
+    managed_agents_md_text = (
+        f"{constants.AgentsMd.BEGIN_MARKER}\n"
+        f"{response.text.strip()}\n"
+        f"{constants.AgentsMd.END_MARKER}"
+    )
+    for file, action in plan:
+        _apply_agents_md_action(file, action, managed_agents_md_text)
 
 
 def _read_dependency_file(file_path: Path) -> tuple[str | None, str | None]:
