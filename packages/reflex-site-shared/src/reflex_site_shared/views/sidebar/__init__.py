@@ -473,7 +473,7 @@ def navbar_sidebar_drawer(trigger: rx.Component) -> rx.Component:
                     "!bg-secondary-1 w-full !outline-none",
                     rx.cond(
                         HostingBannerState.is_banner_visible,
-                        drawer_top_offset(137),
+                        drawer_top_offset(136),
                         drawer_top_offset(77),
                     ),
                 ),
@@ -504,9 +504,9 @@ def docs_sidebar_drawer(sidebar: rx.Component, trigger: rx.Component) -> rx.Comp
                         as_child=True,
                     ),
                     sidebar,
-                    class_name="relative flex flex-col w-full",
+                    class_name="relative flex flex-col w-full flex-1 min-h-0",
                 ),
-                class_name="!top-[4rem] flex-col !bg-secondary-1 rounded-[24px_24px_0px_0px] w-full h-full !outline-none",
+                class_name="!top-[4rem] flex-col !bg-secondary-1 rounded-[24px_24px_0px_0px] w-full h-[calc(100dvh-4rem)] min-h-0 !outline-none",
             ),
         ),
     )
