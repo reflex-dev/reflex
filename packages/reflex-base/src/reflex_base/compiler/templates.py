@@ -515,6 +515,7 @@ def package_json_template(
     dependencies: dict[str, str],
     dev_dependencies: dict[str, str],
     overrides: dict[str, str],
+    **additional_keys: Any,
 ):
     """Template for package.json.
 
@@ -523,17 +524,21 @@ def package_json_template(
         dependencies: The dependencies to include in the package.json file.
         dev_dependencies: The devDependencies to include in the package.json file.
         overrides: The overrides to include in the package.json file.
+        additional_keys: Additional keys to include in the package.json file.
 
     Returns:
         Rendered package.json content as string.
     """
+    # Ensure "type" is not duplicated since it's always set to "module"
+    additional_keys.pop("type", None)
     return json.dumps({
-        "name": "reflex",
+        "name": additional_keys.pop("name", "reflex"),
         "type": "module",
         "scripts": scripts,
         "dependencies": dependencies,
         "devDependencies": dev_dependencies,
         "overrides": overrides,
+        **additional_keys,
     })
 
 

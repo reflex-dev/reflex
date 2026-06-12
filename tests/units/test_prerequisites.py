@@ -446,7 +446,7 @@ def test_install_frontend_packages_skips_unpinned_already_in_package_json(
 ):
     """An unpinned package already in package.json is not re-added."""
     env = install_packages_env
-    env.web_package_json.write_text(
+    env.root_package_json.write_text(
         json.dumps({"dependencies": {"already-installed": "2.3.4"}})
     )
     calls = _record_calls(env)
@@ -466,7 +466,7 @@ def test_install_frontend_packages_skips_unpinned_dev_dep_already_in_package_jso
 ):
     """An unpinned dev dep already in package.json is not re-added."""
     env = install_packages_env
-    env.web_package_json.write_text(
+    env.root_package_json.write_text(
         json.dumps({
             "devDependencies": {
                 "already-dev": "1.2.3",
@@ -498,7 +498,7 @@ def test_install_frontend_packages_unpinned_already_present_makes_no_add_call(
 ):
     """If every requested unpinned package is already present, no add call runs."""
     env = install_packages_env
-    env.web_package_json.write_text(
+    env.root_package_json.write_text(
         json.dumps({"dependencies": {"some-pkg": "1.0.0", "@scope/pkg": "2.0.0"}})
     )
     calls = _record_calls(env)
@@ -514,7 +514,7 @@ def test_install_frontend_packages_moves_misplaced_unpinned_dep_to_deps(
 ):
     """A regular dep currently sitting under devDependencies gets relocated."""
     env = install_packages_env
-    env.web_package_json.write_text(
+    env.root_package_json.write_text(
         json.dumps({"devDependencies": {"some-pkg": "1.2.3"}})
     )
     calls = _record_calls(env)
@@ -538,7 +538,9 @@ def test_install_frontend_packages_moves_misplaced_unpinned_dev_dep_to_dev(
 ):
     """A dev dep currently sitting under dependencies gets relocated."""
     env = install_packages_env
-    env.web_package_json.write_text(json.dumps({"dependencies": {"some-dev": "1.2.3"}}))
+    env.root_package_json.write_text(
+        json.dumps({"dependencies": {"some-dev": "1.2.3"}})
+    )
 
     class FakePlugin:
         def get_frontend_dependencies(self):
@@ -571,7 +573,7 @@ def test_install_frontend_packages_moves_misplaced_pinned_framework_dep(
     """A framework dep listed in the wrong section gets relocated and re-pinned."""
     env = install_packages_env
     monkeypatch.setattr(constants.PackageJson, "DEPENDENCIES", {"react": "19.2.5"})
-    env.web_package_json.write_text(
+    env.root_package_json.write_text(
         json.dumps({"devDependencies": {"react": "18.0.0"}})
     )
     calls = _record_calls(env)
@@ -648,7 +650,7 @@ def test_install_frontend_packages_conflict_with_misplaced_existing_entry(
 ):
     """A conflicting name currently in devDeps is removed and re-added to deps."""
     env = install_packages_env
-    env.web_package_json.write_text(
+    env.root_package_json.write_text(
         json.dumps({"devDependencies": {"shared-pkg": "1.0.0"}})
     )
 
@@ -680,7 +682,7 @@ def test_install_frontend_packages_does_not_move_correctly_placed_packages(
 ):
     """Packages already in the right section trigger no remove/add."""
     env = install_packages_env
-    env.web_package_json.write_text(
+    env.root_package_json.write_text(
         json.dumps({
             "dependencies": {"regular": "1.0.0"},
             "devDependencies": {"dev-only": "2.0.0"},
@@ -816,7 +818,7 @@ def test_compile_package_json_recovers_dependencies(tmp_path, monkeypatch):
 
     assert rendered["dependencies"] == {"react": "19.2.5"}
     assert rendered["devDependencies"] == {"vite": "8.0.9"}
-    assert rendered["overrides"] == {"cookie": "1.1.1"}
+    assert rendered["overrides"] == {"old-override": "1.0", "cookie": "1.1.1"}
     assert rendered["scripts"]["dev"] == constants.PackageJson.Commands.DEV
     assert rendered["scripts"]["export"] == constants.PackageJson.Commands.EXPORT
     assert rendered["scripts"]["old"] == "x"
@@ -864,11 +866,97 @@ def test_compile_package_json_preserves_user_scripts(tmp_path):
     assert rendered["scripts"]["export"] == constants.PackageJson.Commands.EXPORT
 
 
+def test_compile_package_json_preserves_user_overrides(tmp_path, monkeypatch):
+    """User-added overrides survive init; framework overrides win conflicts."""
+    root_pkg = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR / constants.PackageJson.PATH
+    root_pkg.parent.mkdir(parents=True, exist_ok=True)
+    root_pkg.write_text(
+        json.dumps({
+            "overrides": {
+                "user-pkg": "2.0.0",
+                "cookie": "0.0.1",
+            },
+        })
+    )
+    monkeypatch.setattr(
+        constants.PackageJson,
+        "OVERRIDES",
+        {"cookie": "1.1.1"},
+    )
+
+    with chdir(tmp_path):
+        rendered = json.loads(frontend_skeleton._compile_package_json())
+
+    assert rendered["overrides"] == {"user-pkg": "2.0.0", "cookie": "1.1.1"}
+
+
+def test_compile_package_json_preserves_additional_fields(tmp_path):
+    """Persisted fields beyond the framework-managed ones pass through as-is."""
+    root_pkg = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR / constants.PackageJson.PATH
+    root_pkg.parent.mkdir(parents=True, exist_ok=True)
+    root_pkg.write_text(
+        json.dumps({
+            "name": "my-app",
+            "type": "commonjs",
+            "packageManager": "bun@1.2.0",
+            "engines": {"node": ">=20"},
+            "lint-staged": {"*.js": "eslint"},
+            "scripts": {"custom": "echo hi"},
+            "dependencies": {"react": "19.2.5"},
+        })
+    )
+
+    with chdir(tmp_path):
+        rendered = json.loads(frontend_skeleton._compile_package_json())
+
+    assert rendered["name"] == "my-app"
+    # "type" is framework-owned and always reset to "module".
+    assert rendered["type"] == "module"
+    assert rendered["packageManager"] == "bun@1.2.0"
+    assert rendered["engines"] == {"node": ">=20"}
+    assert rendered["lint-staged"] == {"*.js": "eslint"}
+    assert rendered["scripts"]["custom"] == "echo hi"
+    assert rendered["dependencies"] == {"react": "19.2.5"}
+
+
+def test_compile_package_json_null_fields(tmp_path):
+    """Explicit JSON null values for managed fields fall back to empty dicts."""
+    root_pkg = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR / constants.PackageJson.PATH
+    root_pkg.parent.mkdir(parents=True, exist_ok=True)
+    root_pkg.write_text(
+        '{"scripts": null, "dependencies": null, '
+        '"devDependencies": null, "overrides": null}'
+    )
+
+    with chdir(tmp_path):
+        rendered = json.loads(frontend_skeleton._compile_package_json())
+
+    assert rendered["dependencies"] == {}
+    assert rendered["devDependencies"] == {}
+    assert rendered["overrides"] == constants.PackageJson.OVERRIDES
+    assert rendered["scripts"]["dev"] == constants.PackageJson.Commands.DEV
+
+
+@pytest.mark.parametrize("content", ["[]", '"not-an-object"', "42"])
+def test_compile_package_json_non_object_root(tmp_path, content):
+    """A persisted package.json whose root is not an object is ignored."""
+    root_pkg = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR / constants.PackageJson.PATH
+    root_pkg.parent.mkdir(parents=True, exist_ok=True)
+    root_pkg.write_text(content)
+
+    with chdir(tmp_path):
+        rendered = json.loads(frontend_skeleton._compile_package_json())
+
+    assert rendered["dependencies"] == {}
+    assert rendered["devDependencies"] == {}
+    assert rendered["overrides"] == constants.PackageJson.OVERRIDES
+
+
 def test_install_frontend_packages_removes_stale_dependencies(
     install_packages_env: InstallPackagesEnv,
 ):
     env = install_packages_env
-    env.web_package_json.write_text(
+    env.root_package_json.write_text(
         json.dumps({
             "dependencies": {
                 "still-needed": "1.0.0",
@@ -895,7 +983,7 @@ def test_install_frontend_packages_no_remove_when_all_needed(
     install_packages_env: InstallPackagesEnv,
 ):
     env = install_packages_env
-    env.web_package_json.write_text(
+    env.root_package_json.write_text(
         json.dumps({"dependencies": {"keep-me": "1.0.0"}, "devDependencies": {}})
     )
     calls = _record_calls(env)
@@ -913,7 +1001,7 @@ def test_install_frontend_packages_keeps_framework_deps_during_remove(
     env = install_packages_env
     monkeypatch.setattr(constants.PackageJson, "DEPENDENCIES", {"react": "19.2.5"})
     monkeypatch.setattr(constants.PackageJson, "DEV_DEPENDENCIES", {"vite": "8.0.9"})
-    env.web_package_json.write_text(
+    env.root_package_json.write_text(
         json.dumps({
             "dependencies": {"react": "19.2.5", "stale-dep": "1.0.0"},
             "devDependencies": {"vite": "8.0.9"},
