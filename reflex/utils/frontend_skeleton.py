@@ -383,19 +383,26 @@ def _read_persisted_package_json() -> dict:
     """Read the persisted package.json from the app root.
 
     Returns:
-        The parsed JSON object, or an empty dict if the file is missing or
-        cannot be parsed.
+        The parsed JSON object, or an empty dict if the file is missing,
+        cannot be parsed, or is not a JSON object.
     """
     root_package_json_path = get_root_lockfile_path(constants.PackageJson.PATH)
     if not root_package_json_path.exists():
         return {}
     try:
-        return json.loads(root_package_json_path.read_text())
+        parsed = json.loads(root_package_json_path.read_text())
     except (json.JSONDecodeError, OSError) as e:
         console.warn(
             f"Failed to read {root_package_json_path}: {e}; starting with empty dependency lists."
         )
         return {}
+    if not isinstance(parsed, dict):
+        console.warn(
+            f"Expected {root_package_json_path} to contain a JSON object, "
+            f"got {type(parsed).__name__}; starting with empty dependency lists."
+        )
+        return {}
+    return parsed
 
 
 def initialize_web_directory():
@@ -487,26 +494,31 @@ def _compile_package_json():
     ``reflex.lock/package.json`` (when present) so resolved version pins
     survive a fresh ``reflex init``. User-added ``scripts`` are preserved;
     only the framework-owned ``dev`` and ``export`` entries are refreshed
-    from constants. ``overrides`` are always refreshed. The framework-managed
-    entries in ``constants.PackageJson.DEPENDENCIES`` / ``DEV_DEPENDENCIES``
-    are added later at install time via ``bun add`` so they pick up strict
-    pins.
+    from constants. User-added ``overrides`` are kept, with the
+    framework-owned entries refreshed on top. Any other persisted fields
+    (e.g. ``packageManager``, ``engines``) are passed through unchanged.
+    The framework-managed entries in ``constants.PackageJson.DEPENDENCIES``
+    / ``DEV_DEPENDENCIES`` are added later at install time via ``bun add``
+    so they pick up strict pins.
 
     Returns:
         Rendered package.json content as string.
     """
     persisted = _read_persisted_package_json()
-    persisted_scripts = persisted.get("scripts") or {}
     scripts = {
-        **persisted_scripts,
+        **(persisted.pop("scripts", None) or {}),
         "dev": constants.PackageJson.Commands.DEV,
         "export": constants.PackageJson.Commands.EXPORT,
     }
     return templates.package_json_template(
         scripts=scripts,
-        dependencies=persisted.get("dependencies") or {},
-        dev_dependencies=persisted.get("devDependencies") or {},
-        overrides=constants.PackageJson.OVERRIDES,
+        dependencies=persisted.pop("dependencies", None) or {},
+        dev_dependencies=persisted.pop("devDependencies", None) or {},
+        overrides={
+            **(persisted.pop("overrides", None) or {}),
+            **constants.PackageJson.OVERRIDES,
+        },
+        **persisted,
     )
 
 

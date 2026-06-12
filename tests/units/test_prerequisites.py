@@ -818,7 +818,7 @@ def test_compile_package_json_recovers_dependencies(tmp_path, monkeypatch):
 
     assert rendered["dependencies"] == {"react": "19.2.5"}
     assert rendered["devDependencies"] == {"vite": "8.0.9"}
-    assert rendered["overrides"] == {"cookie": "1.1.1"}
+    assert rendered["overrides"] == {"old-override": "1.0", "cookie": "1.1.1"}
     assert rendered["scripts"]["dev"] == constants.PackageJson.Commands.DEV
     assert rendered["scripts"]["export"] == constants.PackageJson.Commands.EXPORT
     assert rendered["scripts"]["old"] == "x"
@@ -864,6 +864,92 @@ def test_compile_package_json_preserves_user_scripts(tmp_path):
     assert rendered["scripts"]["custom"] == "echo hi"
     assert rendered["scripts"]["dev"] == constants.PackageJson.Commands.DEV
     assert rendered["scripts"]["export"] == constants.PackageJson.Commands.EXPORT
+
+
+def test_compile_package_json_preserves_user_overrides(tmp_path, monkeypatch):
+    """User-added overrides survive init; framework overrides win conflicts."""
+    root_pkg = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR / constants.PackageJson.PATH
+    root_pkg.parent.mkdir(parents=True, exist_ok=True)
+    root_pkg.write_text(
+        json.dumps({
+            "overrides": {
+                "user-pkg": "2.0.0",
+                "cookie": "0.0.1",
+            },
+        })
+    )
+    monkeypatch.setattr(
+        constants.PackageJson,
+        "OVERRIDES",
+        {"cookie": "1.1.1"},
+    )
+
+    with chdir(tmp_path):
+        rendered = json.loads(frontend_skeleton._compile_package_json())
+
+    assert rendered["overrides"] == {"user-pkg": "2.0.0", "cookie": "1.1.1"}
+
+
+def test_compile_package_json_preserves_additional_fields(tmp_path):
+    """Persisted fields beyond the framework-managed ones pass through as-is."""
+    root_pkg = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR / constants.PackageJson.PATH
+    root_pkg.parent.mkdir(parents=True, exist_ok=True)
+    root_pkg.write_text(
+        json.dumps({
+            "name": "my-app",
+            "type": "commonjs",
+            "packageManager": "bun@1.2.0",
+            "engines": {"node": ">=20"},
+            "lint-staged": {"*.js": "eslint"},
+            "scripts": {"custom": "echo hi"},
+            "dependencies": {"react": "19.2.5"},
+        })
+    )
+
+    with chdir(tmp_path):
+        rendered = json.loads(frontend_skeleton._compile_package_json())
+
+    assert rendered["name"] == "my-app"
+    # "type" is framework-owned and always reset to "module".
+    assert rendered["type"] == "module"
+    assert rendered["packageManager"] == "bun@1.2.0"
+    assert rendered["engines"] == {"node": ">=20"}
+    assert rendered["lint-staged"] == {"*.js": "eslint"}
+    assert rendered["scripts"]["custom"] == "echo hi"
+    assert rendered["dependencies"] == {"react": "19.2.5"}
+
+
+def test_compile_package_json_null_fields(tmp_path):
+    """Explicit JSON null values for managed fields fall back to empty dicts."""
+    root_pkg = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR / constants.PackageJson.PATH
+    root_pkg.parent.mkdir(parents=True, exist_ok=True)
+    root_pkg.write_text(
+        '{"scripts": null, "dependencies": null, '
+        '"devDependencies": null, "overrides": null}'
+    )
+
+    with chdir(tmp_path):
+        rendered = json.loads(frontend_skeleton._compile_package_json())
+
+    assert rendered["dependencies"] == {}
+    assert rendered["devDependencies"] == {}
+    assert rendered["overrides"] == constants.PackageJson.OVERRIDES
+    assert rendered["scripts"]["dev"] == constants.PackageJson.Commands.DEV
+
+
+@pytest.mark.parametrize("content", ["[]", '"not-an-object"', "42"])
+def test_compile_package_json_non_object_root(tmp_path, content):
+    """A persisted package.json whose root is not an object is ignored."""
+    root_pkg = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR / constants.PackageJson.PATH
+    root_pkg.parent.mkdir(parents=True, exist_ok=True)
+    root_pkg.write_text(content)
+
+    with chdir(tmp_path):
+        rendered = json.loads(frontend_skeleton._compile_package_json())
+
+    assert rendered["dependencies"] == {}
+    assert rendered["devDependencies"] == {}
+    assert rendered["overrides"] == constants.PackageJson.OVERRIDES
 
 
 def test_install_frontend_packages_removes_stale_dependencies(
