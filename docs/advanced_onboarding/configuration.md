@@ -46,7 +46,7 @@ See the [CLI reference](/docs/api-reference/cli) for all the arguments available
 
 ## Frontend Inspector
 
-For mapping rendered DOM nodes back to the Python source that produced them, see the [Frontend Inspector](/docs/advanced_onboarding/frontend_inspector) page. Enable it by adding `rx.plugins.FrontendInspectorPlugin()` to `plugins` in your `rxconfig.py`.
+For mapping rendered DOM nodes back to the Python source that produced them, see the [Frontend Inspector](/docs/advanced-onboarding/frontend-inspector) page. Enable it by adding `rx.plugins.FrontendInspectorPlugin()` to `plugins` in your `rxconfig.py`.
 
 ## Customizable App Data Directory
 
