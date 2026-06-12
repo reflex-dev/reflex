@@ -415,7 +415,12 @@ def test_memo_nonkey_base_prop_dropped_from_render_without_rest():
     component.class_name = Var.create("leaks")  # set past the call-site gate
 
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
-    code = next(c for path, c in files if path.endswith("Dropper.jsx"))
+    segments = memo_paths.module_to_mirrored_segments(__name__)
+    assert segments is not None
+    exp_path = memo_paths.mirrored_jsx_path(Path(".web"), segments)
+    code = next(
+        c for path, c in files if path == exp_path.with_suffix(".jsx").as_posix()
+    )
     # No rest capture, and the root Box gets an empty props object.
     assert "...rest" not in code
     assert "className" not in code
@@ -435,7 +440,12 @@ def test_memo_base_props_forward_to_root_via_rest_prop():
     assert isinstance(component, MemoComponent)
 
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
-    code = next(c for path, c in files if path.endswith("RestCard.jsx"))
+    segments = memo_paths.module_to_mirrored_segments(__name__)
+    assert segments is not None
+    exp_path = memo_paths.mirrored_jsx_path(Path(".web"), segments)
+    code = next(
+        c for path, c in files if path == exp_path.with_suffix(".jsx").as_posix()
+    )
     # Undeclared props are captured in ``...rest`` and spread onto the root, so
     # ``className``/``id`` actually reach the rendered element.
     assert "...rest" in code
