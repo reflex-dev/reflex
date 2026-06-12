@@ -584,6 +584,75 @@ class TestDisablePlugins:
         assert any(isinstance(p, SitemapPlugin) for p in config.plugins)
 
 
+class TestFrontendInspectorPlugin:
+    """Tests for ``FrontendInspectorPlugin`` lifecycle and gating."""
+
+    def test_plugin_defaults(self):
+        """Default shortcut and editor match the documented values."""
+        plugin = rx.plugins.FrontendInspectorPlugin()
+        assert plugin.shortcut == "alt+x"
+        assert plugin.editor == ""
+
+    def test_config_init_does_not_mutate_global_state(
+        self, monkeypatch: pytest.MonkeyPatch
+    ):
+        """Constructing the plugin is declarative; runtime state is untouched.
+
+        Runtime state is flipped later by ``start_compile`` (called from the
+        compile path). This protects tests and parallel callers from
+        order-dependent leakage.
+        """
+        from reflex_base.inspector import state as inspector_state
+
+        monkeypatch.setenv("REFLEX_ENV_MODE", Env.DEV.value)
+        inspector_state.set_enabled(False)
+        rx.plugins.FrontendInspectorPlugin()
+        assert inspector_state.is_enabled() is False
+
+    def test_active_gating_re_reads_env_mode(self, monkeypatch: pytest.MonkeyPatch):
+        """The active gate re-reads ``REFLEX_ENV_MODE`` at every call.
+
+        Regression: ``reflex export --env prod`` constructs ``Config()`` under
+        dev and only flips ``REFLEX_ENV_MODE`` later. The plugin must observe
+        the flipped env at emission time, not at construction time.
+        """
+        plugin = rx.plugins.FrontendInspectorPlugin()
+
+        monkeypatch.setenv("REFLEX_ENV_MODE", Env.DEV.value)
+        assert plugin.get_frontend_development_dependencies()
+
+        monkeypatch.setenv("REFLEX_ENV_MODE", Env.PROD.value)
+        assert plugin.get_frontend_development_dependencies() == []
+
+    def test_start_compile_syncs_state_and_resets(
+        self, monkeypatch: pytest.MonkeyPatch
+    ):
+        """``start_compile`` flips the runtime flag and clears stale captures."""
+        from reflex_base.inspector import capture as inspector_capture
+        from reflex_base.inspector import state as inspector_state
+
+        plugin = rx.plugins.FrontendInspectorPlugin()
+        app = rx.App()
+
+        monkeypatch.setenv("REFLEX_ENV_MODE", Env.DEV.value)
+        inspector_capture._REGISTRY[999] = inspector_capture.SourceInfo(
+            file="/leftover.py", line=1, column=1, component="Stale"
+        )
+        baseline = len(app.head_components)
+        plugin.start_compile(app=app)
+        assert inspector_state.is_enabled() is True
+        assert inspector_capture.snapshot() == {}
+        assert len(app.head_components) == baseline + 2
+
+        # Calling again on the same app is idempotent.
+        plugin.start_compile(app=app)
+        assert len(app.head_components) == baseline + 2
+
+        monkeypatch.setenv("REFLEX_ENV_MODE", Env.PROD.value)
+        plugin.start_compile(app=app)
+        assert inspector_state.is_enabled() is False
+
+
 def test_plugins_instance_passthrough():
     """A Plugin instance is kept as-is (issue #6440)."""
     instance = SitemapPlugin()

@@ -9,6 +9,7 @@ import os
 import shutil
 import sys
 import time
+from collections.abc import Callable
 from pathlib import Path
 from types import FrameType, ModuleType
 
@@ -270,21 +271,14 @@ def _exclude_paths_from_frame_info() -> list[Path]:
     import socketio
     import typing_extensions
 
-    import reflex_base
-
-    try:
-        import reflex as rx
-    except ImportError:
-        rx = None
+    from reflex_base.utils import frames
 
     # Exclude utility modules that should never be the source of deprecated reflex usage.
     exclude_modules: list[ModuleType | None] = [
         click,
-        rx,
         typing_extensions,
         socketio,
         granian,
-        reflex_base,
     ]
 
     modules_paths = [file for m in exclude_modules if m and (file := m.__file__)] + [
@@ -296,6 +290,7 @@ def _exclude_paths_from_frame_info() -> list[Path]:
         p.parent.resolve() if (p := Path(file)).name == "__init__.py" else p.resolve()
         for file in modules_paths
     ]
+    exclude_roots.extend(frames.discover_framework_roots())
     # Specifically exclude the reflex cli module.
     if reflex_bin := shutil.which(b"reflex"):
         exclude_roots.append(Path(reflex_bin.decode()))
@@ -303,15 +298,20 @@ def _exclude_paths_from_frame_info() -> list[Path]:
     return exclude_roots
 
 
-def _get_first_non_framework_frame() -> FrameType | None:
-    exclude_roots = _exclude_paths_from_frame_info()
+@once
+def _console_framework_frame_predicate() -> Callable[[str], bool]:
+    from reflex_base.utils import frames
 
-    frame = inspect.currentframe()
-    while frame := frame and frame.f_back:
-        frame_path = Path(inspect.getfile(frame)).resolve()
-        if not any(frame_path.is_relative_to(root) for root in exclude_roots):
-            break
-    return frame
+    return frames.make_framework_frame_predicate(_exclude_paths_from_frame_info)
+
+
+def _get_first_non_framework_frame() -> FrameType | None:
+    from reflex_base.utils import frames
+
+    starting = inspect.currentframe()
+    return frames.walk_to_first_non_framework_frame(
+        starting.f_back if starting else None, _console_framework_frame_predicate()
+    )
 
 
 def deprecate(

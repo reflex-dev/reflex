@@ -29,6 +29,7 @@ def get_sidebar_items_learn():
                 advanced_onboarding.how_reflex_works,
                 advanced_onboarding.configuration,
                 advanced_onboarding.code_structure,
+                advanced_onboarding.frontend_inspector,
             ],
         ),
     ]

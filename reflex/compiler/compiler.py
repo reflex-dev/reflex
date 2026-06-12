@@ -1068,6 +1068,9 @@ def compile_app(
         app._add_optional_endpoints()
         return False
 
+    for plugin in config.plugins:
+        plugin.start_compile(app=app)
+
     progress = (
         Progress(
             *Progress.get_default_columns()[:-1],
