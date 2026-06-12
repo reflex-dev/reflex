@@ -537,6 +537,23 @@ def test_memo_uses_first_call_value_type_for_missing_param_annotation():
     assert isinstance(component, MemoComponent)
 
 
+def test_memo_uses_var_runtime_value_type_for_missing_param_annotation():
+    """Component memos should infer missing parameter types from runtime Vars."""
+
+    @rx.memo
+    def user_card(user) -> rx.Component:
+        return rx.box(
+            rx.heading(user["name"]),
+            rx.text(user["email"]),
+        )
+
+    component = user_card(
+        user=Var.create({"name": "Ada", "email": "ada@example.com"}),
+    )
+
+    assert isinstance(component, MemoComponent)
+
+
 def test_memo_warns_on_missing_return_annotation():
     """A missing return annotation should default to ``rx.Component`` with a warning."""
     with patch.object(console, "deprecate") as mock_deprecate:
