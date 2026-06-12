@@ -433,7 +433,7 @@ def drawer_footer() -> rx.Component:
     )
 
 
-def drawer_top_offset(top_px: int) -> str:
+def drawer_top_offset(top_px: int | float) -> str:
     """Class that anchors the drawer below the navbar and fills the rest of the viewport.
 
     Returns:
@@ -473,7 +473,7 @@ def navbar_sidebar_drawer(trigger: rx.Component) -> rx.Component:
                     "!bg-secondary-1 w-full !outline-none",
                     rx.cond(
                         HostingBannerState.is_banner_visible,
-                        drawer_top_offset(136),
+                        drawer_top_offset(136.5),
                         drawer_top_offset(77),
                     ),
                 ),
