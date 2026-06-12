@@ -529,9 +529,8 @@ def package_json_template(
     Returns:
         Rendered package.json content as string.
     """
-    additional_keys.pop(
-        "type", None
-    )  # Ensure "type" is not duplicated since it's always set to "module"
+    # Ensure "type" is not duplicated since it's always set to "module"
+    additional_keys.pop("type", None)
     return json.dumps({
         "name": additional_keys.pop("name", "reflex"),
         "type": "module",
