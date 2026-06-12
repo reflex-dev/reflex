@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import reflex as rx
 import reflex_components_internal as ui
-from reflex_site_shared.styles.colors import c_color
 
 from .sidebar_items.ai import (
     ai_builder_integrations,
@@ -130,7 +129,7 @@ def sidebar_leaf(
             rx.cond(
                 is_active,
                 rx.el.div(
-                    class_name="absolute left-0 top-1/2 -translate-y-1/2 w-full h-8 rounded-lg bg-m-slate-2 dark:bg-slate-3 z-[-1]",
+                    class_name="absolute left-0 top-1/2 -translate-y-1/2 w-full h-8 rounded-lg bg-secondary-3 z-[-1]",
                 ),
                 rx.fragment(),
             ),
@@ -174,13 +173,13 @@ def sidebar_leaf_outer(
             rx.flex(
                 rx.text(
                     item_names,
-                    color=rx.cond(is_active, c_color("violet", 9), c_color("slate", 9)),
-                    _hover={
-                        "color": c_color("slate", 11),
-                    },
                     margin="0.5em 0.5em 0.2em 0.5em",
                     width="100%",
-                    class_name="m-0 transition-color",
+                    class_name=rx.cond(
+                        is_active,
+                        "m-0 transition-color text-primary-10",
+                        "m-0 transition-color text-secondary-11 hover:text-secondary-12",
+                    ),
                 ),
             ),
             href=item_link,
@@ -235,11 +234,11 @@ def sidebar_item_comp(
                     "ArrowDown01Icon",
                     class_name="size-4 group-open/details:rotate-180 transition-transform",
                 ),
-                class_name="!px-0 m-0 flex items-center justify-start !ml-[2.5rem] !bg-transparent !hover:bg-transparent !py-1 !pr-0 w-[calc(100%-2.5rem)] !text-m-slate-7 hover:!text-m-slate-11 dark:hover:!text-m-slate-5 dark:!text-m-slate-6 transition-color group xl:max-w-[14rem] cursor-pointer list-none [&::-webkit-details-marker]:hidden [&::marker]:hidden",
+                class_name="!px-0 m-0 flex items-center justify-start !ml-[2.5rem] !bg-transparent !hover:bg-transparent !py-1 !pr-0 w-[calc(100%-2.5rem)] !text-secondary-11 hover:!text-secondary-12 transition-color group xl:max-w-[14rem] cursor-pointer list-none [&::-webkit-details-marker]:hidden [&::marker]:hidden",
             ),
             rx.el.ul(
                 rx.el.li(
-                    class_name=f"m-0 p-0 absolute {child_guide_left_class} top-0 bottom-0 w-px bg-m-slate-4 dark:bg-m-slate-9 z-[-1] pointer-events-none !rounded-none list-none",
+                    class_name=f"m-0 p-0 absolute {child_guide_left_class} top-0 bottom-0 w-px bg-secondary-4 z-[-1] pointer-events-none !rounded-none list-none",
                 ),
                 *[
                     sidebar_item_comp(
@@ -358,7 +357,7 @@ def sidebar_category(
             rx.cond(
                 active,
                 rx.el.div(
-                    class_name="absolute left-0 top-1/2 -translate-y-1/2 w-full h-8 rounded-lg bg-m-slate-2 dark:bg-slate-3 z-[-1]",
+                    class_name="absolute left-0 top-1/2 -translate-y-1/2 w-full h-8 rounded-lg bg-secondary-3 z-[-1]",
                 ),
                 rx.fragment(),
             ),
@@ -373,7 +372,7 @@ def sidebar_category(
                 ),
                 class_name=ui.cn(
                     "cursor-pointer flex flex-row justify-start items-center gap-2.5 ml-[3rem] text-sm text-secondary-11 hover:text-secondary-12 h-8",
-                    rx.cond(active, "text-slate-12", ""),
+                    rx.cond(active, "text-primary-10 hover:text-primary-10", ""),
                 ),
             ),
             href=url,
@@ -398,7 +397,7 @@ def create_sidebar_section(
         rx.link(
             rx.el.h2(
                 section_title,
-                class_name="m-0 font-mono text-m-slate-12 dark:text-m-slate-3 hover:text-primary-10 dark:hover:text-primary-9 uppercase text-[0.8125rem] leading-6 font-medium",
+                class_name="m-0 font-mono text-secondary-12 hover:text-primary-10 dark:hover:text-primary-9 uppercase text-[0.8125rem] leading-6 font-medium",
             ),
             underline="none",
             href=section_url,
@@ -628,15 +627,15 @@ def sidebar_comp(
                     rx.icon("atom", size=16),  # pyright: ignore [reportCallIssue]
                     rx.el.h5(
                         "Custom Components",
-                        class_name="font-smbold text-[0.875rem] text-slate-12 leading-5 tracking-[-0.01313rem] transition-color",
+                        class_name="font-smbold text-[0.875rem] text-secondary-12 leading-5 tracking-[-0.01313rem] transition-color",
                     ),
-                    class_name="flex flex-row items-center gap-3 text-slate-12",
+                    class_name="flex flex-row items-center gap-3 text-secondary-12",
                 ),
                 rx.text(  # pyright: ignore [reportCallIssue]
                     "See what components people have made with Reflex!",
-                    class_name="font-small text-slate-9",
+                    class_name="font-small text-secondary-11",
                 ),
-                class_name="flex flex-col gap-2 border-slate-5 bg-slate-1 hover:bg-slate-3 shadow-large px-3.5 py-2 border rounded-xl transition-bg",
+                class_name="flex flex-col gap-2 border-secondary-5 bg-secondary-1 hover:bg-secondary-3 shadow-large px-3.5 py-2 border rounded-xl transition-bg",
             ),
             underline="none",
             href=custom_components.path,

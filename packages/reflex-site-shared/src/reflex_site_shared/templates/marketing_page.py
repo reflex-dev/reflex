@@ -85,7 +85,7 @@ def marketing_page(
                         ),
                     ),
                 ),
-                class_name="flex flex-col w-full justify-center items-center relative dark:bg-m-slate-12 bg-m-slate-1",
+                class_name="flex flex-col w-full justify-center items-center relative bg-secondary-1",
             )
 
         return Route(

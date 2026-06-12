@@ -499,7 +499,7 @@ def docs_sidebar_drawer(sidebar: rx.Component, trigger: rx.Component) -> rx.Comp
                 rx.el.div(
                     rx.drawer.close(
                         rx.el.div(
-                            class_name="absolute left-1/2 transform -translate-x-1/2 top-[-12px] flex-shrink-0 bg-slate-9 rounded-full w-[96px] h-[5px]",
+                            class_name="absolute left-1/2 transform -translate-x-1/2 top-[-12px] flex-shrink-0 bg-secondary-9 rounded-full w-[96px] h-[5px]",
                         ),
                         as_child=True,
                     ),

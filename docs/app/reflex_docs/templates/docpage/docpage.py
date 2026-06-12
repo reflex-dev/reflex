@@ -115,7 +115,7 @@ def social_menu_item(icon: str, url: str, name: str) -> rx.Component:
             get_icon(icon, class_name="shrink-0"),
             variant="ghost",
             size="icon-sm",
-            class_name="text-m-slate-7 dark:text-m-slate-6",
+            class_name="text-secondary-11",
             native_button=False,
         ),
         href=url,
@@ -154,8 +154,8 @@ def thumb_card(score: int, icon: str, label: str) -> rx.Component:
         on_click=FeedbackState.set_score(score),
         class_name=rx.cond(
             FeedbackState.score == score,
-            "flex h-9 items-center justify-center gap-2 rounded-md border border-violet-6 bg-violet-3 px-3 text-sm font-medium text-violet-11 transition-colors",
-            "flex h-9 items-center justify-center gap-2 rounded-md border border-slate-5 bg-slate-1 px-3 text-sm font-medium text-slate-9 transition-colors hover:bg-slate-3 hover:text-slate-11",
+            "flex h-9 items-center justify-center gap-2 rounded-md border border-primary-6 bg-primary-3 px-3 text-sm font-medium text-primary-11 transition-colors",
+            "flex h-9 items-center justify-center gap-2 rounded-md border border-secondary-5 bg-secondary-1 px-3 text-sm font-medium text-secondary-9 transition-colors hover:bg-secondary-3 hover:text-secondary-11",
         ),
     )
 
@@ -178,11 +178,11 @@ def feedback_choice_button(label: str, icon: str, score: int, class_name: str):
         class_name=rx.cond(
             active,
             ui.cn(
-                "border-violet-6 bg-violet-3 text-violet-11 shadow-none",
+                "border-primary-6 bg-primary-3 text-primary-11 shadow-none",
                 class_name,
             ),
             ui.cn(
-                "border-slate-5 bg-slate-1 text-slate-9 shadow-large hover:bg-slate-3 hover:text-slate-11",
+                "border-secondary-5 bg-secondary-1 text-secondary-9 shadow-large hover:bg-secondary-3 hover:text-secondary-11",
                 class_name,
             ),
         ),
@@ -268,7 +268,7 @@ def feedback_button_toc() -> rx.Component:
             size="sm",
             type="button",
             on_click=FeedbackState.set_score(1),
-            class_name="justify-start pl-0 text-m-slate-7 dark:text-m-slate-6",
+            class_name="justify-start pl-0 text-secondary-11",
         ),
         content=feedback_content(),
     )
@@ -289,7 +289,7 @@ def copy_to_markdown(text: rx.Var[str]) -> rx.Component:
         type="button",
         size="sm",
         variant="ghost",
-        class_name="justify-start pl-0 text-m-slate-7 dark:text-m-slate-6",
+        class_name="justify-start pl-0 text-secondary-11",
         on_click=[
             rx.call_function(copied.set_value(True)),
             rx.set_clipboard(text),
@@ -305,7 +305,7 @@ def ask_ai_chat() -> rx.Component:
             "Ask AI about this page",
             size="sm",
             variant="ghost",
-            class_name="justify-start pl-0 text-m-slate-7 dark:text-m-slate-6",
+            class_name="justify-start pl-0 text-secondary-11",
             native_button=False,
         ),
         to="/ai/integrations/mcp-overview/",
@@ -317,7 +317,7 @@ def link_pill(text: str, href: str) -> rx.Component:
         text,
         href=href,
         underline="none",
-        class_name="lg:flex hidden flex-row justify-center items-center gap-2 lg:border-slate-5 bg-slate-3 lg:bg-slate-1 hover:bg-slate-3 shadow-none lg:shadow-large px-3 py-0.5 lg:border lg:border-solid border-none rounded-lg lg:rounded-full w-auto font-small font-small text-slate-9 !hover:text-slate-11 hover:!text-slate-9 truncate whitespace-nowrap transition-bg transition-color cursor-pointer",
+        class_name="lg:flex hidden flex-row justify-center items-center gap-2 lg:border-secondary-5 bg-secondary-3 lg:bg-secondary-1 hover:bg-secondary-3 shadow-none lg:shadow-large px-3 py-0.5 lg:border lg:border-solid border-none rounded-lg lg:rounded-full w-auto font-small font-small text-secondary-9 !hover:text-secondary-11 hover:!text-secondary-9 truncate whitespace-nowrap transition-bg transition-color cursor-pointer",
     )
 
 
@@ -330,10 +330,10 @@ def docpage_footer(path: rx.Var[str]) -> rx.Component:
             rx.box(
                 rx.text(
                     "Did you find this useful?",
-                    class_name="font-small text-slate-11 lg:text-slate-9 whitespace-nowrap",
+                    class_name="font-small text-secondary-11 lg:text-secondary-9 whitespace-nowrap",
                 ),
                 feedback_button(),
-                class_name="flex lg:flex-row flex-col items-center gap-3 lg:gap-4 bg-slate-3 lg:bg-transparent p-4 lg:p-0 rounded-lg w-full",
+                class_name="flex lg:flex-row flex-col items-center gap-3 lg:gap-4 bg-secondary-3 lg:bg-transparent p-4 lg:p-0 rounded-lg w-full",
             ),
             rx.box(
                 link_pill(
@@ -352,7 +352,7 @@ def docpage_footer(path: rx.Var[str]) -> rx.Component:
                 ),
                 class_name="lg:flex hidden flex-row items-center gap-2 w-auto",
             ),
-            class_name="flex flex-row justify-center lg:justify-between items-center border-slate-4 border-y-0 lg:border-y pt-0 lg:pt-8 pb-6 lg:pb-8 w-full",
+            class_name="flex flex-row justify-center lg:justify-between items-center border-secondary-4 border-y-0 lg:border-y pt-0 lg:pt-8 pb-6 lg:pb-8 w-full",
         ),
         rx.box(
             rx.box(
@@ -393,7 +393,7 @@ def docpage_footer(path: rx.Var[str]) -> rx.Component:
             rx.el.div(
                 rx.text(
                     f"Copyright © {datetime.now().year} Pynecone, Inc.",
-                    class_name="font-small text-slate-9",
+                    class_name="font-small text-secondary-9",
                 ),
                 server_status(StatusState.status),
                 class_name="flex flex-row items-center gap-4 justify-between w-full",
@@ -414,7 +414,7 @@ def _copy_page_menu_item(
     row = rx.el.div(
         rx.el.div(
             icon,
-            class_name="flex size-8 items-center justify-center rounded-md border border-slate-5 bg-secondary-2 text-secondary-11 shrink-0",
+            class_name="flex size-8 items-center justify-center rounded-md border border-secondary-5 bg-secondary-2 text-secondary-11 shrink-0",
         ),
         rx.el.div(
             rx.el.div(
@@ -706,7 +706,7 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
         label = to_title_case(to_snake_case(segment), sep=" ")
         label = _BREADCRUMB_LABEL_OVERRIDES.get(label, label)
         base_class = ui.cn(
-            "min-h-8 flex items-center text-sm font-[525] text-m-slate-12 dark:text-m-slate-3 last:text-m-slate-7 dark:last:text-m-slate-6",
+            "min-h-8 flex items-center text-sm font-[525] text-secondary-12 last:text-secondary-11",
             "truncate" if i == len(segments) - 1 else "",
         )
 
@@ -733,13 +733,13 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
             breadcrumbs.append(
                 ui.icon(
                     "ArrowRight01Icon",
-                    class_name="lg:flex hidden dark:text-m-slate-6 text-m-slate-7 size-4",
+                    class_name="lg:flex hidden text-secondary-11 size-4",
                 ),
             )
             breadcrumbs.append(
                 rx.text(
                     "/",
-                    class_name="font-sm dark:text-m-slate-6 text-m-slate-7 lg:hidden flex",
+                    class_name="font-sm text-secondary-11 lg:hidden flex",
                 )
             )
     from reflex_site_shared.views.hosting_banner import HostingBannerState
@@ -761,12 +761,12 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
             ui.icon(
                 "ArrowDown01Icon",
                 size=14,
-                class_name="!text-slate-9 lg:hidden flex",
+                class_name="!text-secondary-9 lg:hidden flex",
             ),
             class_name="flex flex-row items-center gap-2 lg:p-0 p-[0.563rem]",
         ),
         class_name=ui.cn(
-            "relative z-10 flex flex-row justify-between items-center gap-4 lg:gap-0 border-slate-4 bg-slate-1 mt-[139px] lg:p-0 border-b lg:border-none w-full max-lg:py-2",
+            "relative z-10 flex flex-row justify-between items-center gap-4 lg:gap-0 border-secondary-4 mt-[139px] lg:p-0 border-b lg:border-none w-full max-lg:py-2",
             rx.cond(
                 HostingBannerState.is_banner_visible,
                 "lg:mt-[139px]",
@@ -850,9 +850,11 @@ def docpage(
                             ),
                             underline="none",
                             href=prev.link,
-                            class_name="py-0.5 lg:py-0 rounded-lg lg:w-auto font-small text-slate-9 hover:!text-slate-11 transition-color",
+                            class_name="py-0.5 lg:py-0 rounded-lg lg:w-auto font-small text-secondary-9 hover:!text-secondary-11 transition-color",
                         ),
-                        rx.text(next_prev_name, class_name="font-smbold text-slate-12"),
+                        rx.text(
+                            next_prev_name, class_name="font-smbold text-secondary-12"
+                        ),
                         class_name="flex flex-col justify-start gap-1",
                     )
                 )
@@ -872,9 +874,11 @@ def docpage(
                             ),
                             underline="none",
                             href=next.link,
-                            class_name="py-0.5 lg:py-0 rounded-lg lg:w-auto font-small text-slate-9 hover:!text-slate-11 transition-color",
+                            class_name="py-0.5 lg:py-0 rounded-lg lg:w-auto font-small text-secondary-9 hover:!text-secondary-11 transition-color",
                         ),
-                        rx.text(next_prev_name, class_name="font-smbold text-slate-12"),
+                        rx.text(
+                            next_prev_name, class_name="font-smbold text-secondary-12"
+                        ),
                         class_name="flex flex-col justify-start gap-1 items-end",
                     )
                 )
@@ -905,8 +909,8 @@ def docpage(
                     rx.box(
                         sidebar,
                         class_name=(
-                            "w-[19.5rem] shrink-0 hidden lg:block z-10 border-r border-m-slate-4 dark:border-m-slate-10 sticky left-0 "
-                            "before:content-[''] before:absolute before:top-0 before:bottom-0 before:right-0 before:w-[100vw] before:bg-white-1 dark:before:bg-secondary-2 before:-z-10 "
+                            "w-[19.5rem] shrink-0 hidden lg:block z-10 border-r border-secondary-4 sticky left-0 "
+                            "before:content-[''] before:absolute before:top-0 before:bottom-0 before:right-0 before:w-[100vw] before:bg-white-1 before:-z-10 "
                             + rx.cond(
                                 HostingBannerState.is_banner_visible,
                                 " top-[113px] h-[calc(100vh-113px)]",
@@ -951,10 +955,10 @@ def docpage(
                                     rx.icon(
                                         "align-left",
                                         size=14,
-                                        class_name="dark:text-m-slate-3 text-m-slate-12",
+                                        class_name="text-secondary-12",
                                     ),
                                     "On This Page",
-                                    class_name="text-sm h-8 flex items-center gap-1.5 justify-start font-[525] dark:text-m-slate-3 text-m-slate-12",
+                                    class_name="text-sm h-8 flex items-center gap-1.5 justify-start font-[525] text-secondary-12",
                                 ),
                                 rx.el.ul(
                                     *[
@@ -962,7 +966,7 @@ def docpage(
                                             rx.el.li(
                                                 rx.el.a(
                                                     text,
-                                                    class_name="text-sm font-[525] text-m-slate-7 dark:text-m-slate-6 pl-4 py-1 hover:text-m-slate-9 dark:hover:text-m-slate-5 transition-colors line-clamp-2",
+                                                    class_name="text-sm font-[525] text-secondary-11 pl-4 py-1 hover:text-secondary-12 transition-colors line-clamp-2",
                                                     href=path
                                                     + "#"
                                                     + text.lower().replace(" ", "-"),
@@ -973,7 +977,7 @@ def docpage(
                                                 rx.el.li(
                                                     rx.el.a(
                                                         text,
-                                                        class_name="text-sm font-[525] text-m-slate-7 dark:text-m-slate-6 pl-4 py-1 hover:text-m-slate-9 dark:hover:text-m-slate-5 transition-colors line-clamp-2",
+                                                        class_name="text-sm font-[525] text-secondary-11 pl-4 py-1 hover:text-secondary-12 transition-colors line-clamp-2",
                                                         href=path
                                                         + "#"
                                                         + text.lower().replace(
@@ -985,7 +989,7 @@ def docpage(
                                                 else rx.el.li(
                                                     rx.el.a(
                                                         text,
-                                                        class_name="text-sm font-[525] text-m-slate-7 dark:text-m-slate-6 pl-8 py-1 hover:text-m-slate-9 dark:hover:text-m-slate-5 transition-colors line-clamp-2",
+                                                        class_name="text-sm font-[525] text-secondary-11 pl-8 py-1 hover:text-secondary-12 transition-colors line-clamp-2",
                                                         href=path
                                                         + "#"
                                                         + text.lower().replace(
@@ -998,7 +1002,7 @@ def docpage(
                                         for level, text in toc
                                     ],
                                     id="toc-navigation",
-                                    class_name="flex flex-col gap-y-1 list-none shadow-[1.5px_0_0_0_var(--m-slate-4)_inset] dark:shadow-[1.5px_0_0_0_var(--m-slate-9)_inset] max-h-[60vh] overflow-y-auto scroll-mask-y-10 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
+                                    class_name="flex flex-col gap-y-1 list-none shadow-[1.5px_0_0_0_var(--secondary-4)_inset] max-h-[60vh] overflow-y-auto scroll-mask-y-10 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
                                 ),
                                 rx.el.div(
                                     feedback_button_toc(),
@@ -1025,7 +1029,7 @@ def docpage(
                     ),
                     class_name="flex justify-center mx-auto mt-0 max-w-[108rem] h-full min-h-screen w-full",
                 ),
-                class_name="flex flex-col justify-center bg-m-slate-1 dark:bg-m-slate-12 w-full relative",
+                class_name="flex flex-col justify-center bg-secondary-1 w-full relative",
                 on_mount=rx.call_script(right_sidebar_item_highlight()),
             )
 
@@ -1073,7 +1077,7 @@ def hover_item(component: rx.Component, component_str: str) -> rx.Component:
                     class_name="flex-1 font-small truncate",
                 ),
                 on_click=rx.set_clipboard(component_str),
-                class_name="flex flex-row items-center gap-1.5 border-slate-5 bg-slate-1 hover:bg-slate-3 shadow-small pr-1.5 border rounded-md w-full max-w-[300px] text-slate-11 transition-bg cursor-pointer",
+                class_name="flex flex-row items-center gap-1.5 border-secondary-5 bg-secondary-1 hover:bg-secondary-3 shadow-small pr-1.5 border rounded-md w-full max-w-[300px] text-secondary-11 transition-bg cursor-pointer",
             ),
         ),
     )
@@ -1157,7 +1161,7 @@ def style_grid(
         rx.grid(
             rx.text("", size="5"),
             *[
-                rx.text(variant, class_name=text_cn + " text-slate-11")
+                rx.text(variant, class_name=text_cn + " text-secondary-11")
                 for variant in variants
             ],
             rx.text(
@@ -1194,7 +1198,7 @@ def style_grid(
                 )
                 for variant in variants
             ],
-            rx.text("Gray", class_name=text_cn + " text-slate-11"),
+            rx.text("Gray", class_name=text_cn + " text-secondary-11"),
             *[
                 hover_item(
                     component=used_component(
@@ -1226,7 +1230,7 @@ def style_grid(
             ],
             (
                 rx.fragment(
-                    rx.text("Disabled", class_name=text_cn + " text-slate-11"),
+                    rx.text("Disabled", class_name=text_cn + " text-secondary-11"),
                     *[
                         hover_item(
                             component=used_component(
@@ -1273,7 +1277,7 @@ def style_grid(
                             rx.icon(
                                 "check",
                                 size=15,
-                                class_name="top-1/2 left-1/2 absolute text-gray-12 transform -translate-x-1/2 -translate-y-1/2"
+                                class_name="top-1/2 left-1/2 absolute text-secondary-12 transform -translate-x-1/2 -translate-y-1/2"
                                 + rx.cond(
                                     RadixDocState.color == color,
                                     " block",
@@ -1285,7 +1289,7 @@ def style_grid(
                             class_name="relative rounded-md cursor-pointer shrink-0 size-[30px]"
                             + rx.cond(
                                 RadixDocState.color == color,
-                                " border-2 border-gray-12",
+                                " border-2 border-secondary-12",
                                 "",
                             ),
                         )
@@ -1296,5 +1300,5 @@ def style_grid(
                 ),
             ),
         ),
-        class_name="flex flex-col justify-center items-center gap-6 border-slate-4 bg-slate-2 mb-4 p-6 border rounded-xl",
+        class_name="flex flex-col justify-center items-center gap-6 border-secondary-4 bg-secondary-2 mb-4 p-6 border rounded-xl",
     )
