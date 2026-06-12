@@ -529,7 +529,9 @@ def compile_experimental_function_memo(
         A tuple of the compiled function definition and its imports.
     """
     imports: ParsedImportDict = {}
-    if var_data := definition.function._get_all_var_data():
+    # Reading ``.function`` evaluates a deferred function-memo body on first use.
+    function = definition.function
+    if var_data := function._get_all_var_data():
         # Per-file memo modules live at ``$/utils/components/<name>``; strip
         # only a self-import to this function memo's own module.
         self_module = f"$/{constants.Dirs.COMPONENTS_PATH}/{definition.python_name}"
@@ -543,7 +545,7 @@ def compile_experimental_function_memo(
         {
             "kind": "function",
             "name": definition.python_name,
-            "function": str(definition.function),
+            "function": str(function),
         },
         imports,
     )

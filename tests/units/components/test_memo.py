@@ -12,6 +12,7 @@ import pytest
 from reflex_base.components.component import Component
 from reflex_base.components.memo import (
     _SPECS,
+    EMPTY_VAR_COMPONENT,
     MEMOS,
     MemoComponent,
     MemoComponentDefinition,
@@ -19,7 +20,9 @@ from reflex_base.components.memo import (
     MemoParam,
     MemoParamKind,
     _analyze_params,
+    _LazyBody,
     _MemoCallBinding,
+    _strip_optional,
 )
 from reflex_base.event import EventChain, EventHandler, no_args_event_spec
 from reflex_base.style import Style
@@ -184,6 +187,37 @@ def test_component_returning_memo_with_only_rest():
     assert "({," not in code
 
 
+def test_component_memo_rest_prop_merge_is_forwarded_as_rest_prop():
+    """A merged ``RestProp`` stays a ``RestProp``.
+
+    Passing ``rest.merge({...})`` to another component must lift it onto that
+    component's ``special_props`` (a JSX spread), exactly like the bare ``rest``
+    — not render it as a literal child.
+    """
+
+    @rx.memo
+    def primary_button(rest: rx.RestProp, *, label: rx.Var[str]) -> rx.Component:
+        return rx.button(label, rest.merge({"className": "btn"}))
+
+    definition = MEMOS["PrimaryButton"]
+    assert isinstance(definition, MemoComponentDefinition)
+
+    # The merged value is accepted as a RestProp: lifted onto special_props
+    # rather than wrapped as a child.
+    merged_specials = [
+        prop
+        for prop in definition.component.special_props
+        if isinstance(prop, rx.RestProp)
+    ]
+    assert len(merged_specials) == 1
+    assert "...rest" in str(merged_specials[0])
+
+    files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
+    code = "\n".join(c for _, c in files)
+    # Spread into the button props, not emitted as a jsx child.
+    assert '{...({...rest, ...({ ["className"] : "btn" })})}' in code
+
+
 def test_var_returning_memo_with_only_rest():
     """Var-returning memos with only RestProp should emit valid JS (#6443)."""
 
@@ -224,13 +258,253 @@ def test_var_returning_memo_with_children_and_rest():
     assert "export const label_slot = (({children, label, ...rest}) => label);" in code
 
 
-def test_memo_requires_var_annotations():
-    """Memos should reject non-Var annotations on parameters."""
-    with pytest.raises(TypeError, match="must be annotated"):
+def test_memo_munges_legacy_bare_type_param():
+    """Legacy bare-type params should coerce to ``rx.Var[...]`` with a warning."""
+    with patch.object(console, "deprecate") as mock_deprecate:
 
         @rx.memo
         def bad_annotation(value: int) -> rx.Var[str]:
             return rx.Var.create("x")
+
+    mock_deprecate.assert_called_once()
+    kwargs = mock_deprecate.call_args.kwargs
+    assert "bad_annotation" in kwargs["feature_name"]
+    assert "`value`" in kwargs["reason"]
+
+    definition = MEMOS["bad_annotation"]
+    assert isinstance(definition, MemoFunctionDefinition)
+    (value_param,) = definition.params
+    assert value_param.kind is MemoParamKind.VALUE
+    # The bare ``int`` annotation is coerced into ``Var[int]``.
+    assert value_param.annotation == rx.Var[int]
+
+
+def test_memo_munges_legacy_bare_type_params_for_component():
+    """Component memos coerce legacy bare-type params and keep their defaults."""
+    with patch.object(console, "deprecate") as mock_deprecate:
+
+        @rx.memo
+        def legacy_card(title: str, count: int = 3) -> rx.Component:
+            return rx.box(rx.heading(title), rx.text(count))
+
+    mock_deprecate.assert_called_once()
+    reason = mock_deprecate.call_args.kwargs["reason"]
+    assert "`title`" in reason
+    assert "`count`" in reason
+
+    definition = MEMOS["LegacyCard"]
+    assert isinstance(definition, MemoComponentDefinition)
+    assert {p.name: p.kind for p in definition.params} == {
+        "title": MemoParamKind.VALUE,
+        "count": MemoParamKind.VALUE,
+    }
+    count_param = next(p for p in definition.params if p.name == "count")
+    assert count_param.default == 3
+
+    # The munged props bind at instantiation; ``count`` falls back to its default.
+    component = legacy_card(title="Hi")
+    assert isinstance(component, MemoComponent)
+
+
+def test_memo_does_not_warn_for_event_handler_param():
+    """``rx.EventHandler`` params are recognized and must not be munged/warned."""
+    with patch.object(console, "deprecate") as mock_deprecate:
+
+        @rx.memo
+        def eh_only(event: rx.EventHandler) -> rx.Component:
+            return rx.button("click", on_click=event())
+
+    mock_deprecate.assert_not_called()
+
+
+def test_memo_component_forwards_key_without_rest():
+    """``key`` passes through a ``RestProp``-less memo and reaches the element.
+
+    ``key`` is the one base ``Component`` prop that takes effect without an
+    ``rx.RestProp``: React consumes it at the reconciliation layer, so the
+    legacy custom-component use case (notably setting ``key`` under
+    ``rx.foreach``) keeps working. It is set as a real base field while a
+    deprecation warning points at ``rx.RestProp``. Props that only matter once
+    spread onto the rendered root (``id``, ``class_name``, ...) are *not*
+    forwardable here — see ``test_memo_nonkey_base_props_require_rest_prop``.
+    """
+
+    @rx.memo
+    def keyed_card(title: rx.Var[str]) -> rx.Component:
+        return rx.text(title)
+
+    with patch.object(console, "deprecate") as mock_deprecate:
+        component = keyed_card(title="hi", key="row-1")
+
+    mock_deprecate.assert_called_once()
+    feature_name = mock_deprecate.call_args.kwargs["feature_name"]
+    assert "keyed_card" in feature_name
+    assert "`key`" in feature_name
+
+    assert isinstance(component, MemoComponent)
+    # ``key`` lands as a real base field, not as a declared memo prop ...
+    assert component.key == "row-1"
+    assert component.get_props() == ("title",)
+    # ... and reaches the rendered element, where React reads it for list
+    # reconciliation.
+    assert 'key:"row-1"' in component.render()["props"]
+
+
+def test_memo_component_key_deprecation_warns_once_across_instances():
+    """Repeated ``key=`` instantiations warn once, without re-walking the stack.
+
+    Under ``rx.foreach`` a keyed memo is instantiated once per row. The warning
+    is deduped, but ``console.deprecate`` walks and path-resolves the call stack
+    *before* its dedupe check, so an ungated call site would pay that walk on
+    every row. The wrapper gates the call so only the first row reaches
+    ``console.deprecate`` at all.
+    """
+
+    @rx.memo
+    def row_card(title: rx.Var[str]) -> rx.Component:
+        return rx.text(title)
+
+    with patch.object(console, "deprecate") as mock_deprecate:
+        for i in range(5):
+            row_card(title="hi", key=f"row-{i}")
+
+    mock_deprecate.assert_called_once()
+
+
+def test_memo_nonkey_base_props_require_rest_prop():
+    """Non-``key`` base props raise without a ``RestProp`` rather than silently dropping.
+
+    Without a ``RestProp`` the compiled memo function destructures only its
+    declared params and emits no ``...rest`` spread, so ``id``/``class_name``/
+    ``style``/``custom_attrs``/``ref`` set on the wrapper never reach the
+    rendered root — they would be silently discarded. Reject them and point at
+    ``rx.RestProp``, which genuinely forwards them (see
+    ``test_memo_base_props_forward_to_root_via_rest_prop``).
+    """
+
+    @rx.memo
+    def plain_card(title: rx.Var[str]) -> rx.Component:
+        return rx.text(title)
+
+    for prop, value in (
+        ("id", "card-id"),
+        ("class_name", "c"),
+        ("style", {"color": "red"}),
+        ("custom_attrs", {"data-x": "y"}),
+        ("ref", "myref"),
+    ):
+        with pytest.raises(TypeError, match=f"does not accept prop `{prop}`"):
+            plain_card(title="hi", **{prop: value})
+
+
+def test_memo_nonkey_base_prop_dropped_from_render_without_rest():
+    """Guard the *reason* non-``key`` base props are rejected: they don't render.
+
+    Bypass the call-site gate by setting ``class_name`` directly on a built memo
+    wrapper, then compile. The base prop shows up on the page-level element but
+    the memo's own function body neither destructures nor spreads it onto the
+    root — proving a ``RestProp``-less memo cannot forward it, which is why the
+    call site rejects it.
+    """
+
+    @rx.memo
+    def dropper(title: rx.Var[str]) -> rx.Component:
+        return rx.box(rx.text(title))
+
+    component = dropper(title="hi")
+    component.class_name = Var.create("leaks")  # set past the call-site gate
+
+    files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
+    code = next(c for path, c in files if path.endswith("Dropper.jsx"))
+    # No rest capture, and the root Box gets an empty props object.
+    assert "...rest" not in code
+    assert "className" not in code
+
+
+def test_memo_base_props_forward_to_root_via_rest_prop():
+    """With an ``rx.RestProp``, base props reach the rendered root via JS ``...rest``.
+
+    This is the supported forwarding path the rejection message points users at.
+    """
+
+    @rx.memo
+    def rest_card(rest: rx.RestProp, *, title: rx.Var[str]) -> rx.Component:
+        return rx.box(rx.text(title), rest)
+
+    component = rest_card(title="hi", class_name="c", id="card-id")
+    assert isinstance(component, MemoComponent)
+
+    files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
+    code = next(c for path, c in files if path.endswith("RestCard.jsx"))
+    # Undeclared props are captured in ``...rest`` and spread onto the root, so
+    # ``className``/``id`` actually reach the rendered element.
+    assert "...rest" in code
+    assert "{...rest}" in code
+
+
+def test_memo_component_still_rejects_unknown_props_without_rest():
+    """Props that are not base ``Component`` fields still raise without a ``RestProp``."""
+
+    @rx.memo
+    def plain_card(title: rx.Var[str]) -> rx.Component:
+        return rx.text(title)
+
+    with pytest.raises(TypeError, match="does not accept prop `bogus`"):
+        plain_card(title="hi", bogus="x")
+
+
+def test_memo_component_rejects_unknown_even_alongside_base_props():
+    """A genuinely-unknown prop raises even when a base prop is also present."""
+
+    @rx.memo
+    def mixed_card(title: rx.Var[str]) -> rx.Component:
+        return rx.text(title)
+
+    with pytest.raises(TypeError, match="does not accept prop `bogus`"):
+        mixed_card(title="hi", key="row-1", bogus="x")
+
+
+def test_memo_component_rejects_structural_base_fields_without_rest():
+    """Identity/internal base fields (``tag``, ``library``, ...) are not forwardable.
+
+    Overriding them would corrupt the memo's render, so they keep raising like
+    any other unknown prop rather than passing through.
+    """
+
+    @rx.memo
+    def struct_card(title: rx.Var[str]) -> rx.Component:
+        return rx.text(title)
+
+    for prop in ("tag", "library", "event_triggers", "special_props"):
+        with pytest.raises(TypeError, match=f"does not accept prop `{prop}`"):
+            struct_card(title="hi", **{prop: "x"})
+
+
+def test_analyze_params_strict_mode_rejects_bare_type():
+    """Strict callers (``defaulted_params=None``) must still reject bare types."""
+
+    def bare(value: int) -> rx.Component:
+        return rx.text("x")
+
+    with pytest.raises(TypeError, match="must be annotated"):
+        _analyze_params(bare, for_component=True)
+
+
+def test_is_memo_annotation_recognizes_supported_kinds():
+    """``_is_memo_annotation`` gates which annotations are coerced to ``Var``."""
+    from reflex_base.components.memo import _is_memo_annotation
+
+    assert _is_memo_annotation(rx.Var[int]) is True
+    assert _is_memo_annotation(rx.RestProp) is True
+    assert _is_memo_annotation(rx.EventHandler) is True
+    assert (
+        _is_memo_annotation(rx.EventHandler[rx.event.passthrough_event_spec(str)])
+        is True
+    )
+    # Legacy bare types are not recognized -> they get munged + warned.
+    assert _is_memo_annotation(int) is False
+    assert _is_memo_annotation(str) is False
+    assert _is_memo_annotation(list[str]) is False
 
 
 def test_memo_warns_on_missing_param_annotation():
@@ -261,16 +535,139 @@ def test_memo_warns_on_missing_return_annotation():
     assert "return annotation" in kwargs["reason"]
 
 
-def test_memo_warning_suggests_inferred_return_type():
-    """The warning should surface the inferred public qualname of the body's return."""
+def test_memo_warning_suggests_component_return():
+    """A missing return annotation warns with a constant `-> rx.Component` hint.
+
+    The suggestion no longer inspects the body's return value, so the warning
+    fires eagerly at decoration time even though the body itself runs lazily.
+    """
+    evaluated = []
     with patch.object(console, "deprecate") as mock_deprecate:
 
         @rx.memo
         def fragment_memo():
+            evaluated.append(1)
             return rx.fragment(rx.text("x"))
 
+    mock_deprecate.assert_called_once()
     reason = mock_deprecate.call_args.kwargs["reason"]
-    assert "-> rx.Fragment" in reason
+    assert "-> rx.Component" in reason
+    # Emitting the warning did not require evaluating the body.
+    assert evaluated == []
+
+
+def test_memo_component_body_not_evaluated_until_used():
+    """A component memo's body must not run until the wrapper is instantiated."""
+    evaluated = []
+
+    @rx.memo
+    def lazy_box(value: rx.Var[str]) -> rx.Component:
+        evaluated.append(1)
+        return rx.box(value)
+
+    # Decoration registers the memo without running the body.
+    assert "LazyBox" in MEMOS
+    assert evaluated == []
+
+    # First instantiation triggers a single evaluation...
+    component = lazy_box(value="hi")
+    assert isinstance(component, MemoComponent)
+    assert evaluated == [1]
+
+    # ...and subsequent uses reuse the cached body.
+    lazy_box(value="bye")
+    assert evaluated == [1]
+
+
+def test_memo_function_body_not_evaluated_until_compiled():
+    """A var memo's body must not run at decoration or when merely called."""
+    evaluated = []
+
+    @rx.memo
+    def lazy_join(value: rx.Var[str]) -> rx.Var[str]:
+        evaluated.append(1)
+        return value
+
+    assert "lazy_join" in MEMOS
+    assert evaluated == []
+
+    # Calling a function memo references the imported var, not the body.
+    lazy_join(value=Var(_js_expr="x", _var_type=str))
+    assert evaluated == []
+
+    # The compiler (reading ``.function``) triggers a single evaluation.
+    definition = MEMOS["lazy_join"]
+    assert isinstance(definition, MemoFunctionDefinition)
+    _ = definition.function
+    assert evaluated == [1]
+    _ = definition.function
+    assert evaluated == [1]
+
+
+def test_lazy_body_placeholder_stands_in_for_reentrant_read():
+    """A re-entrant read returns the placeholder, then caches the real body."""
+    cell: _LazyBody[str]
+    seen = []
+
+    def thunk() -> str:
+        seen.append(cell.get())  # re-enters while the thunk is running
+        return "real"
+
+    cell = _LazyBody(thunk, placeholder="placeholder")
+    assert cell.get() == "real"
+    assert seen == ["placeholder"]
+    # Cached afterwards; the thunk does not run again (``seen`` stays unchanged).
+    assert cell.get() == "real"
+    assert seen == ["placeholder"]
+
+
+def test_lazy_body_reentrant_read_without_placeholder_raises():
+    """A placeholder-less body that re-enters its own evaluation fails loudly."""
+    cell: _LazyBody[str]
+
+    def thunk() -> str:
+        return cell.get()
+
+    cell = _LazyBody(thunk)
+    with pytest.raises(RuntimeError, match="Re-entrant"):
+        cell.get()
+
+
+@pytest.mark.parametrize(
+    ("attr_name", "expected_type", "expected_render"),
+    [
+        ("EMPTY_VAR_STR", str, '""'),
+        ("EMPTY_VAR_INT", int, "0"),
+        ("EMPTY_VAR_COMPONENT", Component, "(jsx(Fragment, ({})))"),
+    ],
+)
+def test_empty_var_sentinels_are_public_typed_vars(
+    attr_name: str, expected_type: type, expected_render: str
+):
+    """`rx.EMPTY_VAR_*` defaults are public, correctly-typed empty Vars.
+
+    These back the documented `rx.Var[...]` memo prop defaults;
+    `EMPTY_VAR_COMPONENT` lives in `memo` (not `component`) to avoid a circular
+    import, but must still be reachable as `rx.EMPTY_VAR_COMPONENT`.
+    """
+    sentinel = getattr(rx, attr_name)
+    assert isinstance(sentinel, Var)
+    assert sentinel._var_type is expected_type
+    assert str(sentinel) == expected_render
+
+
+def test_empty_var_component_default_for_memo_children_slot():
+    """`EMPTY_VAR_COMPONENT` works as the default for a memo `children` slot."""
+
+    @rx.memo
+    def slot(
+        children: rx.Var[rx.Component] = EMPTY_VAR_COMPONENT,
+    ) -> rx.Component:
+        return rx.box(children)
+
+    # Omitting children falls back to the empty-component default.
+    assert isinstance(slot(), MemoComponent)
+    assert isinstance(slot(rx.text("hi")), MemoComponent)
 
 
 def test_memo_warns_once_when_return_and_param_both_missing():
@@ -439,29 +836,39 @@ def test_var_memo_rejects_invalid_positional_usage():
 
 
 def test_var_returning_memo_rejects_hooks():
-    """Var-returning memos should reject hook-bearing expressions."""
-    with pytest.raises(TypeError, match="cannot depend on hooks"):
+    """Var-returning memos should reject hook-bearing expressions (lazily)."""
 
-        @rx.memo
-        def bad_hook(value: rx.Var[str]) -> rx.Var[str]:
-            return Var(
-                _js_expr="value",
-                _var_type=str,
-                _var_data=VarData(hooks={"const badHook = 1": None}),
-            )
+    @rx.memo
+    def bad_hook(value: rx.Var[str]) -> rx.Var[str]:
+        return Var(
+            _js_expr="value",
+            _var_type=str,
+            _var_data=VarData(hooks={"const badHook = 1": None}),
+        )
+
+    # Decoration defers the body; reading ``.function`` surfaces the error.
+    definition = MEMOS["bad_hook"]
+    assert isinstance(definition, MemoFunctionDefinition)
+    with pytest.raises(TypeError, match="cannot depend on hooks"):
+        _ = definition.function
 
 
 def test_var_returning_memo_rejects_non_bundled_imports():
-    """Var-returning memos should reject non-bundled imports."""
-    with pytest.raises(TypeError, match="not bundled"):
+    """Var-returning memos should reject non-bundled imports (lazily)."""
 
-        @rx.memo
-        def bad_import(value: rx.Var[str]) -> rx.Var[str]:
-            return Var(
-                _js_expr="value",
-                _var_type=str,
-                _var_data=VarData(imports={"some-lib": [ImportVar(tag="x")]}),
-            )
+    @rx.memo
+    def bad_import(value: rx.Var[str]) -> rx.Var[str]:
+        return Var(
+            _js_expr="value",
+            _var_type=str,
+            _var_data=VarData(imports={"some-lib": [ImportVar(tag="x")]}),
+        )
+
+    # Decoration defers the body; reading ``.function`` surfaces the error.
+    definition = MEMOS["bad_import"]
+    assert isinstance(definition, MemoFunctionDefinition)
+    with pytest.raises(TypeError, match="not bundled"):
+        _ = definition.function
 
 
 def test_compile_memo_components_includes_functions_and_components():
@@ -528,7 +935,7 @@ def test_compile_memo_components_falls_back_when_no_source_module():
         python_name="legacy_memo",
         params=(),
         export_name="LegacyMemo",
-        component=rx.fragment(),
+        _component=_LazyBody.ready(rx.fragment()),
         passthrough_hole_child=None,
     )
 
@@ -551,7 +958,7 @@ def test_compile_memo_components_extends_imports_without_remerging(
             python_name=f"memo_{idx}",
             params=(),
             export_name=f"Memo{idx}",
-            component=rx.fragment(),
+            _component=_LazyBody.ready(rx.fragment()),
             passthrough_hole_child=None,
         )
         for idx in range(5)
@@ -631,6 +1038,7 @@ def test_compile_experimental_component_memo_does_not_mutate_definition(
 
     definition = MEMOS["Wrapper"]
     assert isinstance(definition, MemoComponentDefinition)
+    # Reading ``.component`` triggers the deferred body evaluation.
     assert definition.component.style == Style()
 
     monkeypatch.setattr(
@@ -794,6 +1202,41 @@ def test_component_memo_rejects_event_handler_with_default():
             event: rx.EventHandler[rx.event.passthrough_event_spec(str)] = None,  # pyright: ignore[reportArgumentType]
         ) -> rx.Component:
             return rx.button("hi")
+
+
+def test_strip_optional_unwraps_none_union():
+    """`_strip_optional` collapses a ``X | None`` union to ``X``; any other
+    annotation passes through unchanged.
+    """
+    assert _strip_optional(int | None) is int
+    var = rx.Var[str]
+    assert _strip_optional(var) is var
+
+
+def test_analyze_params_unwraps_optional_event_handler_default(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Regression: on Python 3.10 ``get_type_hints`` rewrites ``event: EH = None``
+    to ``Optional[EH]``. With that shim active, ``_analyze_params`` must still see
+    the ``EventHandler`` underneath and reject the default (it silently passed on
+    3.10 before the fix, since ``Optional[...]`` is not recognized as an EH).
+
+    Force the shim on so this exercises the path on every Python version, not
+    only the <=3.10 interpreters that actually wrap the annotation.
+    """
+    monkeypatch.setattr(
+        "reflex_base.components.memo._GET_TYPE_HINTS_WRAPS_NONE_DEFAULT", True
+    )
+
+    def fn(event=None) -> rx.Component:
+        return rx.button("hi")
+
+    # Python <=3.10 wraps a ``= None`` param into a union with ``None`` (its
+    # ``get_type_hints`` adds ``Optional``); the ``EventHandler`` underneath
+    # must still be recognized so the default is rejected.
+    wrapped_hints = {"event": EventHandler | None}
+    with pytest.raises(TypeError, match="default"):
+        _analyze_params(fn, for_component=True, hints=wrapped_hints)
 
 
 def test_component_memo_rejects_event_handler_named_children():

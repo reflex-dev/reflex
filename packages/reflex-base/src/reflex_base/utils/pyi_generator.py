@@ -115,6 +115,7 @@ DEFAULT_IMPORTS = {
         "EventHandler",
         "EventSpec",
         "EventType",
+        "FORM_SUBMIT_MAPPING",
         "KeyInputInfo",
         "PointerEventInfo",
     ],
@@ -631,6 +632,7 @@ def _extract_class_props_as_ast_nodes(
                 or name in all_props
                 or name in event_triggers
                 or get_origin(value) is ClassVar
+                or name.startswith("_")
             ):
                 continue
             all_props.add(name)
@@ -1583,18 +1585,22 @@ def _scan_file(module_path: Path) -> tuple[str, str] | None:
     if not class_names and not is_init_file:
         return None
 
+    try:
+        source = _get_source(module)
+    except OSError:
+        # A module with no retrievable source (e.g. an empty __init__.py) has
+        # nothing to stub. inspect.getsource raises OSError for an empty file on
+        # Python < 3.13 but returns "" on 3.13+; normalize both to "no stub".
+        return None
+
     if is_init_file:
-        new_tree = InitStubGenerator(module, class_names).visit(
-            ast.parse(_get_source(module))
-        )
+        new_tree = InitStubGenerator(module, class_names).visit(ast.parse(source))
         init_imports = _get_init_lazy_imports(module, new_tree)
         if not init_imports:
             return None
         content_hash = _write_pyi_file(module_path, init_imports)
     else:
-        new_tree = StubGenerator(module, class_names).visit(
-            ast.parse(_get_source(module))
-        )
+        new_tree = StubGenerator(module, class_names).visit(ast.parse(source))
         content_hash = _write_pyi_file(module_path, ast.unparse(new_tree))
     return str(module_path.with_suffix(".pyi").resolve()), content_hash
 
@@ -1657,6 +1663,7 @@ class PyiGenerator:
         targets: list,
         changed_files: list[Path] | None = None,
         use_json: bool = False,
+        prune_stale: bool = False,
     ):
         """Scan all targets for class inheriting Component and generate the .pyi files.
 
@@ -1664,6 +1671,12 @@ class PyiGenerator:
             targets: the list of file/folders to scan.
             changed_files (optional): the list of changed files since the last run.
             use_json: whether to use json to store the hashes.
+            prune_stale: when writing the hashes (``use_json``), replace the whole
+                registry with just the freshly-scanned entries, dropping any entry
+                that was not scanned. Only safe when ``targets`` covers every
+                tracked ``.pyi`` file (a full regeneration); otherwise the scanned
+                hashes are merged into the existing registry so unrelated entries
+                are preserved.
         """
         file_targets = []
         for target in targets:
@@ -1713,7 +1726,7 @@ class PyiGenerator:
             subprocess.run(["ruff", "check", "--fix", *file_paths])
 
         if use_json:
-            if file_paths and changed_files is None:
+            if file_paths and prune_stale:
                 file_paths = list(map(Path, file_paths))
                 top_dir = file_paths[0].parent
                 for file_path in file_paths:
@@ -1793,4 +1806,9 @@ if __name__ == "__main__":
     logging.getLogger("blib2to3.pgen2.driver").setLevel(logging.INFO)
 
     gen = PyiGenerator()
-    gen.scan_all(args.targets, None, use_json=True)
+    # This entrypoint is used by the build hooks to emit .pyi stubs into the
+    # wheel. It must NOT update pyi_hashes.json: a build only scans a single
+    # package, and a json update would replace the whole registry with just
+    # that package's entries, wiping every unrelated hash. Hash management is
+    # owned solely by scripts/make_pyi.py (the update-pyi-files pre-commit job).
+    gen.scan_all(args.targets, None, use_json=False)

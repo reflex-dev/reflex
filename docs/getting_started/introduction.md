@@ -109,7 +109,7 @@ def tabs():
             value="tab3",
             class_name="pt-4",
         ),
-        class_name="text-slate-12 font-normal",
+        class_name="text-secondary-12 font-normal",
         default_value="tab1",
         value=IntroTabsState.value,
         on_change=lambda x: IntroTabsState.change_value(x),
@@ -183,7 +183,7 @@ app.add_page(index)""",
     ),
     class_name=(
         "w-full flex flex-col overflow-hidden rounded-xl border "
-        "border-slate-4 bg-slate-2 py-1"
+        "border-secondary-4 bg-secondary-2 py-1"
     ),
 )
 ```
@@ -284,4 +284,4 @@ Create the app and register the page at the base route.
 - [Reflex Cloud](/docs/hosting/deploy-quick-start/) — one-command deploy.
 ```
 
-Browse our [open-source templates](/docs/getting-started/open-source-templates/), or press `Cmd+K` / `Ctrl+K` to search the docs.
+Press `Cmd+K` / `Ctrl+K` to search the docs.

@@ -59,6 +59,7 @@ from reflex_base.vars.base import (
     ComputedVar,
     DynamicRouteVar,
     EvenMoreBasicBaseState,
+    ToOperation,
     Var,
     computed_var,
     dispatch,
@@ -1747,8 +1748,18 @@ class BaseState(EvenMoreBasicBaseState):
         ) is not unset and not isinstance(var_value, Var):
             return var_value  # pyright: ignore [reportReturnType]
 
-        var_data = var._get_all_var_data()
-        if var_data is None or not var_data.state:
+        # Unwrap any cast wrappers and resolve via the underlying var's *own*
+        # var data, not the recursive _get_all_var_data(). For an operation or
+        # derived var (e.g. State.a + State.b or State.items[0]), the recursive
+        # merge back-fills state/field_name from the first operand, which would
+        # make us silently return that operand's value instead of the operation's
+        # result. Only a plain field or computed var reference carries
+        # state + field_name on its own var data.
+        inner_var = var
+        while isinstance(inner_var, ToOperation):
+            inner_var = inner_var._original
+        var_data = inner_var._var_data
+        if var_data is None or not var_data.state or not var_data.field_name:
             msg = f"Unable to retrieve value for {var._js_expr}: not associated with any state."
             raise UnretrievableVarValueError(msg)
         # Fastish case: this var belongs to this state

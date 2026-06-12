@@ -75,6 +75,19 @@ class LeafComponent(Component):
     _memoization_mode = MemoizationMode(recursive=False)
 
 
+class SnapshotWithSlot(Component):
+    tag = "SnapshotWithSlot"
+    library = "snapshot-with-slot-lib"
+    _memoization_mode = MemoizationMode(recursive=False)
+
+    slot: Component | None = component_field(default=None)
+
+
+class MemoAppWrapProvider(Component):
+    tag = "MemoAppWrapProvider"
+    library = "memo-app-wrap-provider-lib"
+
+
 class ChildrenViaProp(Component):
     """Stub mirroring ``CodeBlock`` — injects its content as ``children`` prop."""
 
@@ -237,6 +250,40 @@ def test_memoize_wrapper_deduped_across_repeated_subtrees() -> None:
     assert (page_ctx.output_code or "").count(
         f'import {{{wrapper_tag}}} from "$/utils/components/{wrapper_tag}"'
     ) == 1
+
+
+def test_passthrough_memo_collects_var_app_wraps_from_replaced_component() -> None:
+    """Var app_wraps on passthrough-memoized components survive replacement."""
+    provider = MemoAppWrapProvider.create()
+    stateful_var_with_wrap = LiteralVar.create("needs-wrap")._replace(
+        merge_var_data=VarData(
+            hooks={"useNeedsWrap": None},
+            app_wraps=((70, provider),),
+        )
+    )
+
+    _ctx, page_ctx = _compile_single_page(
+        lambda: WithProp.create(label=stateful_var_with_wrap)
+    )
+
+    assert (70, "MemoAppWrapProvider") in page_ctx.app_wrap_components
+
+
+def test_snapshot_memo_collects_var_app_wraps_from_prop_components() -> None:
+    """Snapshot memo boundaries collect app_wraps buried in prop components."""
+    provider = MemoAppWrapProvider.create()
+    var_with_wrap = LiteralVar.create("needs-wrap")._replace(
+        merge_var_data=VarData(app_wraps=((70, provider),))
+    )
+
+    _ctx, page_ctx = _compile_single_page(
+        lambda: SnapshotWithSlot.create(
+            STATE_VAR,
+            slot=WithProp.create(label=var_with_wrap),
+        )
+    )
+
+    assert (70, "MemoAppWrapProvider") in page_ctx.app_wrap_components
 
 
 def test_memoize_wrappers_distinct_for_different_on_mount() -> None:
@@ -1479,19 +1526,19 @@ def test_snapshot_boundary_with_event_trigger_descendant_is_wrapped() -> None:
     )
 
 
-def test_snapshot_boundary_with_no_arg_event_handler_descendant_is_wrapped() -> None:
-    """A boundary whose descendant has on_click without arg vars still wraps.
+def test_snapshot_boundary_with_no_arg_event_handler_descendant_not_wrapped() -> None:
+    """A boundary whose descendant has only a no-arg on_click is not wrapped.
 
-    No-arg handlers (``on_click=State.ping``) contribute to the page only
-    via the descendant's ``event_triggers`` and ``_get_events_hooks`` — the
-    per-Var subtree scan misses them. The reactive-data check must also
-    inspect ``event_triggers`` directly so the boundary wraps and the
-    callback's ``useCallback`` lands inside the snapshot body.
+    No-arg handlers (``on_click=State.ping``) surface only through the
+    descendant's ``event_triggers`` and reach ``addEvents`` via a
+    module-level import rather than a hoisted hook. The inline callback
+    carries no reactive data and never drives a re-render, so the boundary
+    gains nothing from memoization and is left to render in the page module.
     """
     inner = Plain.create()
     inner.event_triggers["on_click"] = Var(_js_expr="evt")
     boundary = LeafComponent.create(inner)
-    assert _should_memoize(boundary)
+    assert not _should_memoize(boundary)
 
 
 def test_title_with_stateful_var_child_does_not_wrap_bare_independently() -> None:
