@@ -41,6 +41,7 @@ from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from reflex.compiler import templates, utils
 from reflex.compiler.plugins import default_page_plugins
 from reflex.compiler.plugins.builtin import collect_var_app_wraps_in_subtree
+from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
 from reflex.state import BaseState, code_uses_state_contexts
 from reflex.utils import console, frontend_skeleton, path_ops, prerequisites
 from reflex.utils.exec import get_compile_context, is_prod_mode
@@ -954,6 +955,45 @@ def _resolve_app_wrap_components(
     return app_wrappers
 
 
+def _memoize_stateful_app_wraps(
+    app_root: Component,
+    compile_context: CompileContext,
+) -> Component:
+    """Extract stateful app wraps from the app root into memo components.
+
+    The app root compiles outside the page plugin pipeline, so hooks from
+    every wrap in the chain hoist into the single generated ``AppWrap``
+    function — above the ``StateProvider`` rendered in that same function,
+    where a state ``useContext`` can never resolve. Walking the assembled
+    chain with the auto-memoize plugin moves each stateful wrap (and any
+    stateful descendant) into its own memo module, which renders below the
+    provider — the same treatment page trees get.
+
+    Args:
+        app_root: The assembled app-wrap chain from ``App._app_root``.
+        compile_context: The active compile context; generated memo
+            definitions are registered on ``auto_memo_components``.
+
+    Returns:
+        The app root with stateful wraps replaced by memo wrappers.
+    """
+    hooks = CompilerHooks(plugins=(MemoizeStatefulPlugin(),))
+    page_context = PageContext(
+        name="app_root",
+        route=constants.PageNames.APP_ROOT,
+        root_component=app_root,
+    )
+    compiled_root = hooks.compile_component(
+        app_root,
+        page_context=page_context,
+        compile_context=compile_context,
+    )
+    if not isinstance(compiled_root, Component):
+        msg = "Compiled app root must be a Component."
+        raise TypeError(msg)
+    return compiled_root
+
+
 def _resolve_radix_themes_plugin(
     app: App,
     plugins: Sequence[Plugin],
@@ -1118,7 +1158,7 @@ def compile_app(
     progress.advance(task)
 
     app_wrappers = _resolve_app_wrap_components(app, compile_ctx.app_wrap_components)
-    app_root = app._app_root(app_wrappers)
+    app_root = _memoize_stateful_app_wraps(app._app_root(app_wrappers), compile_ctx)
     all_imports = utils.merge_imports(all_imports, app_root._get_all_imports())
 
     hydrate_fallback = app._resolve_hydrate_fallback()

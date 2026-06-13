@@ -63,9 +63,9 @@ def code_block(code: str, language: str):
                     ),
                     class_name=(
                         "list-none cursor-pointer text-center text-sm font-medium "
-                        "text-[var(--c-slate-11)] hover:text-[var(--c-slate-12)] "
+                        "text-[var(--secondary-11)] hover:text-[var(--secondary-12)] "
                         "pt-12 pb-3 rounded-b-xl "
-                        "bg-gradient-to-t from-[var(--c-slate-2)] from-55% to-transparent "
+                        "bg-gradient-to-t from-[var(--secondary-2)] from-55% to-transparent "
                         "group-open/details:pt-3 group-open/details:bg-none "
                         "[&::-webkit-details-marker]:hidden [&::marker]:hidden"
                     ),
@@ -74,7 +74,7 @@ def code_block(code: str, language: str):
             ),
             class_name=(
                 "relative max-h-[400px] overflow-hidden mt-4 mb-4 rounded-xl "
-                "border border-[var(--c-slate-4)] bg-[var(--c-slate-2)] "
+                "border border-[var(--secondary-4)] bg-[var(--secondary-2)] "
                 "[&_.code-block]:!border-0 "
                 "has-[details[open]]:max-h-none"
             ),

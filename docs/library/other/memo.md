@@ -130,7 +130,7 @@ def card(
     return rx.box(
         rx.heading(title),
         children,
-        class_name="border border-slate-5 rounded-lg p-4",
+        class_name="border border-secondary-5 rounded-lg p-4",
     )
 
 

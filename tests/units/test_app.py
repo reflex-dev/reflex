@@ -6,6 +6,7 @@ import contextvars
 import functools
 import io
 import json
+import re
 import unittest.mock
 import uuid
 from collections.abc import Generator
@@ -42,7 +43,11 @@ import reflex as rx
 from reflex import AdminDash, constants
 from reflex._upload import upload
 from reflex.app import App, ComponentCallable
-from reflex.compiler.compiler import _compile_app, _resolve_app_wrap_components
+from reflex.compiler.compiler import (
+    _compile_app,
+    _memoize_stateful_app_wraps,
+    _resolve_app_wrap_components,
+)
 from reflex.compiler.plugins import default_page_plugins
 from reflex.environment import environment
 from reflex.istate.data import RouterData
@@ -2067,6 +2072,24 @@ EVENT_LOOP_CONTEXT_HOOK = (
 )
 
 
+def _find_error_boundary_memo_tag(app_root_code: str) -> str:
+    """Extract the memoized default-ErrorBoundary wrapper tag from app-root JS.
+
+    The default ``ErrorBoundary`` app wrap carries an ``on_error`` trigger, so
+    the app-root memoize pass extracts it into its own memo module; the
+    wrapper tag embeds a content hash of the memo body.
+
+    Args:
+        app_root_code: The generated app-root source.
+
+    Returns:
+        The memo wrapper tag.
+    """
+    match = re.search(r"Errorboundary_errorboundary_[0-9a-f]{32}", app_root_code)
+    assert match is not None, "memoized ErrorBoundary tag not found in app root"
+    return match.group()
+
+
 def compile_page_context_for_app_wraps(component: Component):
     """Compile one component through the page plugin pipeline.
 
@@ -2104,8 +2127,9 @@ def compile_app_root_from_page_wraps(
     Returns:
         The generated app root source.
     """
-    app_root = app._app_root(
-        _resolve_app_wrap_components(app, page_app_wrap_components)
+    app_root = _memoize_stateful_app_wraps(
+        app._app_root(_resolve_app_wrap_components(app, page_app_wrap_components)),
+        CompileContext(pages=[], hooks=CompilerHooks()),
     )
     return _compile_app(app_root)
 
@@ -2139,22 +2163,21 @@ def test_app_wrap_compile_theme(
     # module-level callable (see ``$/utils/context``) so no
     # ``useContext(EventLoopContext)`` hoist is needed; the events hook
     # block is empty. State/event-loop providers ride along as the highest
-    # collected app wraps, ahead of ErrorBoundary etc.
+    # collected app wraps, ahead of the (memoized) ErrorBoundary etc.
     function_app_definition = app_js_contents[
         app_js_contents.index("function AppWrap") : app_js_contents.index(
             "export function Layout"
         )
     ].strip()
+    error_boundary_tag = _find_error_boundary_memo_tag(function_app_definition)
     expected = (
         "function AppWrap({children}) {\n\n\n\n\n"
         "return ("
         + ("jsx(StrictMode,{}," if react_strict_mode else "")
         + "jsx(StateProvider,{},"
         + "jsx(EventLoopProvider,{},"
-        + "jsx(ErrorBoundary,{"
-        """fallbackRender:((event_args) => (jsx("div", ({css:({ ["height"] : "100%", ["width"] : "100%", ["position"] : "absolute", ["backgroundColor"] : "#fff", ["color"] : "#000", ["display"] : "flex", ["alignItems"] : "center", ["justifyContent"] : "center" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "0.5rem", ["maxWidth"] : "min(80ch, 90vw)", ["borderRadius"] : "0.25rem", ["padding"] : "1rem" })}), (jsx("div", ({css:({ ["opacity"] : "0.5", ["display"] : "flex", ["gap"] : "4vmin", ["alignItems"] : "center" })}), (jsx("svg", ({className:"lucide lucide-frown-icon lucide-frown",fill:"none",stroke:"currentColor","stroke-linecap":"round","stroke-linejoin":"round","stroke-width":"2",viewBox:"0 0 24 24",width:"25vmin",xmlns:"http://www.w3.org/2000/svg"}), (jsx("circle", ({cx:"12",cy:"12",r:"10"}))), (jsx("path", ({d:"M16 16s-1.5-2-4-2-4 2-4 2"}))), (jsx("line", ({x1:"9",x2:"9.01",y1:"9",y2:"9"}))), (jsx("line", ({x1:"15",x2:"15.01",y1:"9",y2:"9"}))))), (jsx("h2", ({css:({ ["fontSize"] : "5vmin", ["fontWeight"] : "bold" })}), "An error occurred while rendering this page.")))), (jsx("p", ({css:({ ["opacity"] : "0.75", ["marginBlock"] : "1rem" })}), "This is an error with the application itself. Refreshing the page might help.")), (jsx("div", ({css:({ ["width"] : "100%", ["background"] : "color-mix(in srgb, currentColor 5%, transparent)", ["maxHeight"] : "15rem", ["overflow"] : "auto", ["borderRadius"] : "0.4rem" })}), (jsx("div", ({css:({ ["padding"] : "0.5rem" })}), (jsx("pre", ({css:({ ["wordBreak"] : "break-word", ["whiteSpace"] : "pre-wrap" })}), event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack)))))), (jsx("button", ({css:({ ["padding"] : "0.35rem 1.35rem", ["marginBlock"] : "0.5rem", ["marginInlineStart"] : "auto", ["background"] : "color-mix(in srgb, currentColor 15%, transparent)", ["borderRadius"] : "0.4rem", ["width"] : "fit-content", ["&:hover"] : ({ ["background"] : "color-mix(in srgb, currentColor 25%, transparent)" }), ["&:active"] : ({ ["background"] : "color-mix(in srgb, currentColor 35%, transparent)" }) }),onClick:((_e) => (addEvents([(ReflexEvent("_call_function", ({ ["function"] : (() => (navigator?.["clipboard"]?.["writeText"](event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack))), ["callback"] : null }), ({  })))], [_e], ({  }))))}), "Copy")), (jsx("hr", ({css:({ ["borderColor"] : "currentColor", ["opacity"] : "0.25" })}))), (jsx(ReactRouterLink, ({to:"https://reflex.dev"}), (jsx("div", ({css:({ ["display"] : "flex", ["alignItems"] : "baseline", ["justifyContent"] : "center", ["fontFamily"] : "monospace", ["--default-font-family"] : "monospace", ["gap"] : "0.5rem" })}), "Built with ", (jsx("svg", ({"aria-label":"Reflex",css:({ ["fill"] : "currentColor" }),height:"12",role:"img",width:"56",xmlns:"http://www.w3.org/2000/svg"}), (jsx("path", ({d:"M0 11.5999V0.399902H8.96V4.8799H6.72V2.6399H2.24V4.8799H6.72V7.1199H2.24V11.5999H0ZM6.72 11.5999V7.1199H8.96V11.5999H6.72Z"}))), (jsx("path", ({d:"M11.2 11.5999V0.399902H17.92V2.6399H13.44V4.8799H17.92V7.1199H13.44V9.3599H17.92V11.5999H11.2Z"}))), (jsx("path", ({d:"M20.16 11.5999V0.399902H26.88V2.6399H22.4V4.8799H26.88V7.1199H22.4V11.5999H20.16Z"}))), (jsx("path", ({d:"M29.12 11.5999V0.399902H31.36V9.3599H35.84V11.5999H29.12Z"}))), (jsx("path", ({d:"M38.08 11.5999V0.399902H44.8V2.6399H40.32V4.8799H44.8V7.1199H40.32V9.3599H44.8V11.5999H38.08Z"}))), (jsx("path", ({d:"M47.04 4.8799V0.399902H49.28V4.8799H47.04ZM53.76 4.8799V0.399902H56V4.8799H53.76ZM49.28 7.1199V4.8799H53.76V7.1199H49.28ZM47.04 11.5999V7.1199H49.28V11.5999H47.04ZM53.76 11.5999V7.1199H56V11.5999H53.76Z"}))), (jsx("title", ({}), "Reflex"))))))))))))),"""
-        """onError:((_error, _info) => (addEvents([(ReflexEvent("reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception", ({ ["info"] : ((((_error?.["name"]+": ")+_error?.["message"])+"\\n")+_error?.["stack"]), ["component_stack"] : _info?.["componentStack"] }), ({  })))], [_error, _info], ({  }))))"""
-        + "},"
+        + f"jsx({error_boundary_tag},{{}},"
+        # ErrorBoundary memoized: on_error trigger -> own memo module.
         + "jsx(RadixThemesColorModeProvider,{},"
         + "jsx(Fragment,{},"
         + "jsx(MemoizedToastProvider,{},),"
@@ -2168,6 +2191,16 @@ def test_app_wrap_compile_theme(
         + ")\n}"
     )
     assert expected.split(",") == function_app_definition.split(",")
+    # The extracted ErrorBoundary memo module carries the fallback render and
+    # the memoized ``onError`` handler instead of the AppWrap chain.
+    memo_contents = (
+        web_dir
+        / constants.Dirs.UTILS
+        / constants.PageNames.COMPONENTS
+        / f"{error_boundary_tag}{constants.Ext.JSX}"
+    ).read_text()
+    assert "fallbackRender" in memo_contents
+    assert "handle_frontend_exception" in memo_contents
 
 
 def test_compile_without_radix_components_skips_radix_plugin(
@@ -2521,6 +2554,48 @@ def test_compile_writes_upload_files_provider_app_wrap(
     assert "UploadFilesProvider" in root_contents
 
 
+def test_stateful_app_wrap_is_memoized(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+) -> None:
+    """Stateful app wraps compile into their own memo modules.
+
+    The ``AppWrap`` function body also renders the ``StateProvider`` context
+    provider, so a state hook hoisted into ``AppWrap`` can never resolve its
+    context. The auto-memoize pass must extract state-bearing app wraps into
+    their own memo components, which render below the provider in the React
+    tree.
+    """
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+
+    class AppWrapState(State):
+        banner: str = "hello"
+
+    app.extra_app_wraps[50, "StatefulBanner"] = lambda _: rx.el.div(AppWrapState.banner)
+    app.add_page(rx.box("Index"), route="/")
+    app._compile()
+
+    root_contents = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+    app_wrap_fn = root_contents[root_contents.index("function AppWrap") :]
+    # No state hooks may remain in the AppWrap function body.
+    assert "useContext(StateContexts" not in app_wrap_fn
+    # The route children still flow through the (memoized) wrap chain, which
+    # renders inside the state provider.
+    assert "jsx(StateProvider" in app_wrap_fn
+    assert "children" in app_wrap_fn[app_wrap_fn.index("jsx(StateProvider") :]
+
+    # The extracted memo module carries the state hook instead.
+    memo_dir = web_dir / constants.Dirs.UTILS / constants.PageNames.COMPONENTS
+    assert any(
+        "useContext(StateContexts" in memo_file.read_text()
+        for memo_file in memo_dir.glob(f"*{constants.Ext.JSX}")
+    )
+
+
 def test_app_wrap_event_hook_requires_state_providers(mocker: MockerFixture) -> None:
     """App-root chain components with event triggers pull state/event providers.
 
@@ -2756,6 +2831,7 @@ def test_app_wrap_priority(
             "export function Layout"
         )
     ].strip()
+    error_boundary_tag = _find_error_boundary_memo_tag(function_app_definition)
     expected = (
         "function AppWrap({children}) {\n\n\n\n\n"
         "return ("
@@ -2763,10 +2839,8 @@ def test_app_wrap_priority(
         + "jsx(StateProvider,{},"
         + "jsx(RadixThemesBox,{},"
         + "jsx(EventLoopProvider,{},"
-        + "jsx(ErrorBoundary,{"
-        """fallbackRender:((event_args) => (jsx("div", ({css:({ ["height"] : "100%", ["width"] : "100%", ["position"] : "absolute", ["backgroundColor"] : "#fff", ["color"] : "#000", ["display"] : "flex", ["alignItems"] : "center", ["justifyContent"] : "center" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "0.5rem", ["maxWidth"] : "min(80ch, 90vw)", ["borderRadius"] : "0.25rem", ["padding"] : "1rem" })}), (jsx("div", ({css:({ ["opacity"] : "0.5", ["display"] : "flex", ["gap"] : "4vmin", ["alignItems"] : "center" })}), (jsx("svg", ({className:"lucide lucide-frown-icon lucide-frown",fill:"none",stroke:"currentColor","stroke-linecap":"round","stroke-linejoin":"round","stroke-width":"2",viewBox:"0 0 24 24",width:"25vmin",xmlns:"http://www.w3.org/2000/svg"}), (jsx("circle", ({cx:"12",cy:"12",r:"10"}))), (jsx("path", ({d:"M16 16s-1.5-2-4-2-4 2-4 2"}))), (jsx("line", ({x1:"9",x2:"9.01",y1:"9",y2:"9"}))), (jsx("line", ({x1:"15",x2:"15.01",y1:"9",y2:"9"}))))), (jsx("h2", ({css:({ ["fontSize"] : "5vmin", ["fontWeight"] : "bold" })}), "An error occurred while rendering this page.")))), (jsx("p", ({css:({ ["opacity"] : "0.75", ["marginBlock"] : "1rem" })}), "This is an error with the application itself. Refreshing the page might help.")), (jsx("div", ({css:({ ["width"] : "100%", ["background"] : "color-mix(in srgb, currentColor 5%, transparent)", ["maxHeight"] : "15rem", ["overflow"] : "auto", ["borderRadius"] : "0.4rem" })}), (jsx("div", ({css:({ ["padding"] : "0.5rem" })}), (jsx("pre", ({css:({ ["wordBreak"] : "break-word", ["whiteSpace"] : "pre-wrap" })}), event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack)))))), (jsx("button", ({css:({ ["padding"] : "0.35rem 1.35rem", ["marginBlock"] : "0.5rem", ["marginInlineStart"] : "auto", ["background"] : "color-mix(in srgb, currentColor 15%, transparent)", ["borderRadius"] : "0.4rem", ["width"] : "fit-content", ["&:hover"] : ({ ["background"] : "color-mix(in srgb, currentColor 25%, transparent)" }), ["&:active"] : ({ ["background"] : "color-mix(in srgb, currentColor 35%, transparent)" }) }),onClick:((_e) => (addEvents([(ReflexEvent("_call_function", ({ ["function"] : (() => (navigator?.["clipboard"]?.["writeText"](event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack))), ["callback"] : null }), ({  })))], [_e], ({  }))))}), "Copy")), (jsx("hr", ({css:({ ["borderColor"] : "currentColor", ["opacity"] : "0.25" })}))), (jsx(ReactRouterLink, ({to:"https://reflex.dev"}), (jsx("div", ({css:({ ["display"] : "flex", ["alignItems"] : "baseline", ["justifyContent"] : "center", ["fontFamily"] : "monospace", ["--default-font-family"] : "monospace", ["gap"] : "0.5rem" })}), "Built with ", (jsx("svg", ({"aria-label":"Reflex",css:({ ["fill"] : "currentColor" }),height:"12",role:"img",width:"56",xmlns:"http://www.w3.org/2000/svg"}), (jsx("path", ({d:"M0 11.5999V0.399902H8.96V4.8799H6.72V2.6399H2.24V4.8799H6.72V7.1199H2.24V11.5999H0ZM6.72 11.5999V7.1199H8.96V11.5999H6.72Z"}))), (jsx("path", ({d:"M11.2 11.5999V0.399902H17.92V2.6399H13.44V4.8799H17.92V7.1199H13.44V9.3599H17.92V11.5999H11.2Z"}))), (jsx("path", ({d:"M20.16 11.5999V0.399902H26.88V2.6399H22.4V4.8799H26.88V7.1199H22.4V11.5999H20.16Z"}))), (jsx("path", ({d:"M29.12 11.5999V0.399902H31.36V9.3599H35.84V11.5999H29.12Z"}))), (jsx("path", ({d:"M38.08 11.5999V0.399902H44.8V2.6399H40.32V4.8799H44.8V7.1199H40.32V9.3599H44.8V11.5999H38.08Z"}))), (jsx("path", ({d:"M47.04 4.8799V0.399902H49.28V4.8799H47.04ZM53.76 4.8799V0.399902H56V4.8799H53.76ZM49.28 7.1199V4.8799H53.76V7.1199H49.28ZM47.04 11.5999V7.1199H49.28V11.5999H47.04ZM53.76 11.5999V7.1199H56V11.5999H53.76Z"}))), (jsx("title", ({}), "Reflex"))))))))))))),"""
-        """onError:((_error, _info) => (addEvents([(ReflexEvent("reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception", ({ ["info"] : ((((_error?.["name"]+": ")+_error?.["message"])+"\\n")+_error?.["stack"]), ["component_stack"] : _info?.["componentStack"] }), ({  })))], [_error, _info], ({  }))))"""
-        + "},"
+        + f"jsx({error_boundary_tag},{{}},"
+        # ErrorBoundary memoized: on_error trigger -> own memo module.
         + 'jsx(RadixThemesText,{as:"p"},'
         + "jsx(RadixThemesColorModeProvider,{},"
         + "jsx(Fragment,{},"

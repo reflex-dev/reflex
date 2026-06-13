@@ -428,6 +428,12 @@ export const applyEvent = async (event, socket, navigate, params) => {
  */
 export const applyRestEvent = async (event, socket, navigate, params) => {
   if (event.handler === "uploadFiles") {
+    // The compiled event names its extra bound handler args; collect just those
+    // so they reach the backend handler (no need to know the reserved keys).
+    const extra_args = {};
+    for (const name of event.payload.__reflex_event_arg_names ?? []) {
+      extra_args[name] = event.payload[name];
+    }
     // Start upload, but do not wait for it, which would block other events.
     uploadFiles(
       event.name,
@@ -435,6 +441,7 @@ export const applyRestEvent = async (event, socket, navigate, params) => {
       event.payload.upload_id,
       event.payload.on_upload_progress,
       event.payload.extra_headers,
+      extra_args,
       socket,
       refs,
       getBackendURL,

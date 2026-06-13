@@ -77,7 +77,7 @@ rx.el.table(
                 class_name="px-6 py-3 text-left text-sm font-semibold text-secondary-12 text-nowrap",
             ),
         ),
-        class_name="bg-slate-2",
+        class_name="bg-secondary-2",
     ),
     rx.el.tbody(
         *[
@@ -85,7 +85,7 @@ rx.el.table(
                 rx.el.td(
                     rx.el.div(
                         region,
-                        class_name="h-5 rounded-md border justify-start items-center inline-flex bg-slate-1 text-xs font-medium shrink-0 px-1.5 w-fit text-slate-12 border-slate-6",
+                        class_name="h-5 rounded-md border justify-start items-center inline-flex bg-secondary-1 text-xs font-medium shrink-0 px-1.5 w-fit text-secondary-12 border-secondary-6",
                     ),
                     class_name="px-6 py-3",
                 ),
@@ -98,15 +98,15 @@ rx.el.table(
                         REGIONS_DICT[region],
                         class_name="flex flex-row items-center gap-2",
                     ),
-                    class_name="px-6 py-3 text-sm font-medium text-slate-9",
+                    class_name="px-6 py-3 text-sm font-medium text-secondary-9",
                 ),
-                class_name="even:bg-slate-2 odd:bg-slate-1 hover:bg-secondary-3",
+                class_name="even:bg-secondary-2 odd:bg-secondary-1 hover:bg-secondary-3",
             )
             for region in REGIONS_DICT.keys()
         ],
-        class_name="divide-y divide-slate-4",
+        class_name="divide-y divide-secondary-4",
     ),
-    class_name="w-full table-fixed rounded-xl overflow-hidden divide-y divide-slate-4",
+    class_name="w-full table-fixed rounded-xl overflow-hidden divide-y divide-secondary-4",
 )
 ```
 

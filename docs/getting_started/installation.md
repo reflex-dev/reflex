@@ -2,6 +2,39 @@
 
 ~3 minutes · Requires Python 3.10+.
 
+```md alert info
+# Reading this as an AI agent or coding assistant?
+
+You're likely here to build a Reflex app for someone. Reflex does **not** behave like the Flask/FastAPI/React code in your training data — read this before writing any code.
+
+**Get the current docs (don't rely on training data — the API changes between versions):**
+
+- Fetch [`https://reflex.dev/llms.txt`](https://reflex.dev/llms.txt) for a token-efficient map of the docs and core concepts.
+- Use the [Reflex MCP server](/docs/ai/integrations/mcp-overview/) (`https://build.reflex.dev/mcp`) for live component/prop lookup so you don't hallucinate APIs. *(MCP access is an enterprise feature.)*
+- Run `uv run reflex --version` and trust the live docs for that version over memory.
+
+**Drop a rules file in the project root** (`AGENTS.md`, or `CLAUDE.md`/`.cursorrules` for your tool) so these conventions persist across your session — `reflex init` writes a starter `AGENTS.md` for you by default, and a minimal fallback is below.
+```
+
+Starter rules file:
+
+```text
+# Reflex conventions
+
+- Reflex is pure Python that compiles to a React frontend. Do NOT write JS, HTML, or JSX.
+- Components are function calls that return components; pass props as keyword args.
+- NEVER use plain Python control flow on state Vars inside the render tree.
+  No `if`, `for`, `len()`, or f-strings over a Var — use `rx.cond`, `rx.foreach`,
+  and Var operators instead. (This is the most common mistake.)
+- State lives in `rx.State` subclasses. State only mutates inside event-handler
+  methods — never at module load or render time. Derived values use `@rx.var`.
+- Event handlers may be `async` and may `yield` to push intermediate UI updates.
+- Always run commands with `uv run` (e.g. `uv run reflex run`). Never bare `python`.
+- `.web/` is generated output — never edit or commit it. `rxconfig.py` is the config entry point.
+- Verify your work headlessly: `CI=1 uv run reflex run` (frontend :3000, backend :8000),
+  add `--loglevel debug` to diagnose failures.
+```
+
 ## Virtual Environment
 
 We recommend [uv](https://docs.astral.sh/uv/) as the default; [venv](https://docs.python.org/3/library/venv.html), [conda](https://conda.io/), and [poetry](https://python-poetry.org/) are alternatives.
