@@ -520,6 +520,12 @@ def _run_initial_install(primary_package_manager: str, env: dict) -> None:
             recovery_process,
         )
         if recovery_process.returncode != 0:
+            root_dir = Path.cwd() / constants.Bun.ROOT_LOCKFILE_DIR
+            console.error(
+                "Failed to regenerate the frontend lockfile. Delete the "
+                f"[bold]{root_dir}[/bold] directory and rerun so Reflex "
+                "regenerates it from scratch."
+            )
             raise SystemExit(1)
         return
 

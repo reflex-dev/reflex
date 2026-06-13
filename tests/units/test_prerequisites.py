@@ -1136,6 +1136,37 @@ def test_run_initial_install_repairs_frozen_lockfile_mismatch(monkeypatch, capsy
 
 
 @pytest.mark.usefixtures("install_packages_env")
+def test_run_initial_install_failed_recovery_has_actionable_message(
+    monkeypatch, capsys
+):
+    """A failed mismatch recovery tells the user how to regenerate from scratch."""
+
+    class _FakeProcess:
+        returncode = 1
+
+    monkeypatch.setattr(
+        js_runtimes.processes,
+        "new_process",
+        lambda *args, **kwargs: _FakeProcess(),
+    )
+    monkeypatch.setattr(
+        js_runtimes.processes,
+        "show_status",
+        lambda message, process, suppress_errors=False: [
+            "error: lockfile had changes, but lockfile is frozen\n",
+        ],
+    )
+
+    with pytest.raises(SystemExit):
+        js_runtimes._run_initial_install("bun", env={})
+
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
+    assert "Failed to regenerate" in output
+    assert constants.Bun.ROOT_LOCKFILE_DIR in output
+
+
+@pytest.mark.usefixtures("install_packages_env")
 def test_run_initial_install_other_error_replays_logs(monkeypatch, capsys):
     """Non-frozen-lockfile failures replay the captured logs."""
 
