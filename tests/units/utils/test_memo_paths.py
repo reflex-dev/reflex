@@ -37,20 +37,20 @@ def test_capture_source_module_filters_missing():
 
 
 def test_module_to_mirrored_segments_module():
-    spec = importlib.util.find_spec("reflex.experimental.memo")
+    spec = importlib.util.find_spec("reflex.app")
     # Ensure the test runs against a real, non-package module.
     assert spec is not None
     assert spec.origin
     assert not spec.origin.endswith("__init__.py")
-    segments = memo_paths.module_to_mirrored_segments("reflex.experimental.memo")
-    assert segments == ("reflex", "experimental", "memo")
+    segments = memo_paths.module_to_mirrored_segments("reflex.app")
+    assert segments == ("reflex", "app")
 
 
 def test_module_to_mirrored_segments_package_appends_index():
-    # `reflex.experimental` is a package — its __init__.py origin should
+    # `reflex.components` is a package — its __init__.py origin should
     # cause an "index" segment to be appended.
-    segments = memo_paths.module_to_mirrored_segments("reflex.experimental")
-    assert segments == ("reflex", "experimental", "index")
+    segments = memo_paths.module_to_mirrored_segments("reflex.components")
+    assert segments == ("reflex", "components", "index")
 
 
 def test_module_to_mirrored_segments_unsafe_segment_rejected():
