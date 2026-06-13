@@ -215,13 +215,10 @@ def test_walk_states_skips_framework_internal_substates():
 
 def test_memo_wrapper_class_records_wrapped_component_type():
     """The dynamic memo subclass exposes the user-authored component class."""
-    import importlib
-
+    from reflex_base.components.memo import _get_memo_component_class
     from reflex_components_radix.themes.components.button import Button
 
-    memo_module = importlib.import_module("reflex.experimental.memo")
-
-    wrapper_cls = memo_module._get_memo_component_class(
+    wrapper_cls = _get_memo_component_class(
         "Button_button_deadbeefcafebabe",
         Button,
     )
