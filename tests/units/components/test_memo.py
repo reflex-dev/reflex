@@ -552,6 +552,8 @@ def test_memo_uses_var_runtime_value_type_for_missing_param_annotation():
     )
 
     assert isinstance(component, MemoComponent)
+    assert isinstance(component.user, Var)
+    assert component.user._var_type is dict
 
 
 def test_memo_warns_on_missing_return_annotation():
