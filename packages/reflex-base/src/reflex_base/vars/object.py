@@ -331,6 +331,17 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
 
         fixed_type = get_origin(var_type) or var_type
 
+        if isinstance(fixed_type, type):
+            from .hybrid_property import HybridProperty
+
+            # A HybridProperty on the underlying type resolves to a frontend Var with
+            # this object var substituted as `self` (e.g. `State.info.a_b`). Class-level
+            # access returns the descriptor itself (it only yields a var on a state), so a
+            # plain `getattr` surfaces it without the cost of `inspect.getattr_static`.
+            descriptor = getattr(fixed_type, name, None)
+            if isinstance(descriptor, HybridProperty):
+                return descriptor._get_var(self)
+
         if (
             is_typeddict(fixed_type)
             or (
