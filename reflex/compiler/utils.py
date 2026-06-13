@@ -5,9 +5,12 @@ from __future__ import annotations
 import asyncio
 import concurrent.futures
 import copy
+import json
 import operator
+import os
+import tempfile
 import traceback
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
 from typing import Any, TypedDict
@@ -22,7 +25,7 @@ from reflex_base.components.memo import (
 )
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.style import Style
-from reflex_base.utils import format, imports
+from reflex_base.utils import format, imports, memo_paths
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
 from reflex_base.vars.base import Field, Var, VarData
 from reflex_base.vars.function import DestructuredArg
@@ -755,6 +758,19 @@ def get_memo_components_dir() -> str:
     )
 
 
+def get_memo_module_path(segments: tuple[str, ...]) -> str:
+    """Get the on-disk path for a memo module mirrored from a Python module.
+
+    Args:
+        segments: Mirrored path segments produced by
+            :func:`reflex_base.utils.memo_paths.module_to_mirrored_segments`.
+
+    Returns:
+        The absolute path the compiler should write the combined memo file to.
+    """
+    return str(memo_paths.mirrored_jsx_path(get_web_dir(), segments))
+
+
 def add_meta(
     page: Component,
     title: str,
@@ -817,6 +833,99 @@ def write_file(path: str | Path, code: str):
     if path.exists() and path.read_text(encoding="utf-8") == code:
         return
     path.write_text(code, encoding="utf-8")
+
+
+_MEMO_MANIFEST_FILENAME = ".memo-manifest.json"
+
+
+def _read_memo_manifest(web_dir: Path) -> set[str]:
+    """Read the previous compile's memo file manifest.
+
+    Args:
+        web_dir: The project's ``.web`` directory.
+
+    Returns:
+        The set of paths (relative to ``.web``) recorded by the previous
+        compile, or an empty set if the manifest is absent or invalid.
+    """
+    manifest_path = web_dir / _MEMO_MANIFEST_FILENAME
+    if not manifest_path.exists():
+        return set()
+    try:
+        data = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return set()
+    if not isinstance(data, list):
+        return set()
+    return {entry for entry in data if isinstance(entry, str)}
+
+
+def _write_memo_manifest(web_dir: Path, relative_paths: set[str]) -> None:
+    """Atomically write the new memo file manifest.
+
+    Args:
+        web_dir: The project's ``.web`` directory.
+        relative_paths: Paths emitted this run, relative to ``.web``.
+    """
+    manifest_path = web_dir / _MEMO_MANIFEST_FILENAME
+    web_dir.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(
+        prefix=".memo-manifest.", suffix=".json.tmp", dir=str(web_dir)
+    )
+    # Close the raw fd immediately and reopen the file by path. Wrapping the
+    # fd via os.fdopen() would leak it if the wrap itself raised.
+    os.close(fd)
+    tmp_path = Path(tmp_name)
+    try:
+        with tmp_path.open("w", encoding="utf-8") as fh:
+            json.dump(sorted(relative_paths), fh)
+        tmp_path.replace(manifest_path)
+    except Exception:
+        # Best-effort cleanup; manifest write is recoverable on the next run.
+        tmp_path.unlink(missing_ok=True)
+        raise
+
+
+def prune_stale_memo_files(emitted_paths: Iterable[str | Path]) -> None:
+    """Delete memo files written previously that this compile no longer emits.
+
+    Only paths that appear in the previous manifest are considered for
+    deletion — never a fresh filesystem walk — so files this code did not
+    emit are never touched. Empty parent directories created by mirrored
+    output are removed up to (but not including) the ``.web`` root.
+
+    Args:
+        emitted_paths: Absolute (or ``.web``-relative) paths the current
+            compile produced for the memo pipeline.
+    """
+    web_dir = get_web_dir()
+
+    emitted_relative: set[str] = set()
+    for path in emitted_paths:
+        absolute = Path(path)
+        if not absolute.is_absolute():
+            absolute = web_dir / absolute
+        try:
+            relative = absolute.relative_to(web_dir)
+        except ValueError:
+            continue
+        emitted_relative.add(str(relative).replace(os.sep, "/"))
+
+    previous = _read_memo_manifest(web_dir)
+    for relative in previous - emitted_relative:
+        target = web_dir / relative
+        if target.is_file():
+            target.unlink()
+            parent = target.parent
+            while parent != web_dir and parent.is_relative_to(web_dir):
+                try:
+                    parent.rmdir()
+                except OSError:
+                    break
+                parent = parent.parent
+
+    if emitted_relative != previous:
+        _write_memo_manifest(web_dir, emitted_relative)
 
 
 def empty_dir(path: str | Path, keep_files: list[str] | None = None):

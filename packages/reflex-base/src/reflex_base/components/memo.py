@@ -39,7 +39,7 @@ from reflex_base.constants.compiler import (
 )
 from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER
 from reflex_base.event import EventChain, EventHandler, no_args_event_spec, run_script
-from reflex_base.utils import console, format
+from reflex_base.utils import console, format, memo_paths
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import safe_issubclass, typehint_issubclass
 from reflex_base.vars import VarData
@@ -253,6 +253,11 @@ class MemoDefinition:
     fn: Callable[..., Any]
     python_name: str
     params: tuple[MemoParam, ...]
+    # The user-app Python module that defined this memo. When set, the memo's
+    # compiled JSX is emitted to a path mirroring that module and the page-side
+    # import resolves there instead of the legacy per-name ``utils/components``
+    # path. ``kw_only`` so subclasses can keep their own required fields.
+    source_module: str | None = dataclasses.field(default=None, kw_only=True)
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -346,6 +351,7 @@ class MemoComponent(Component):
 def _get_memo_component_class(
     export_name: str,
     wrapped_component_type: type[Component] = Component,
+    source_module: str | None = None,
 ) -> type[MemoComponent]:
     """Get the component subclass for a memo export.
 
@@ -360,18 +366,24 @@ def _get_memo_component_class(
         wrapped_component_type: The class of the component being memoized.
             Defaults to ``Component`` for memos that don't wrap a user
             component (e.g. function memos, raw passthroughs).
+        source_module: The user-app Python module that defined this memo. When
+            set, the wrapper imports from a path mirroring that module instead
+            of the legacy per-name path under ``utils/components``.
 
     Returns:
         A cached component subclass with the tag set at class definition time.
     """
+    # With a source module the memo is grouped into a file mirroring its
+    # Python module; otherwise each memo gets its own per-file module so Vite
+    # has distinct module boundaries per memo, enabling code-split by page.
+    library = (
+        memo_paths.library_specifier_for(source_module)
+        or f"$/{constants.Dirs.COMPONENTS_PATH}/{export_name}"
+    )
     attrs: dict[str, Any] = {
         "__module__": __name__,
         "tag": export_name,
-        # Point each memo at its own per-file module so pages import directly
-        # from ``$/utils/components/<name>`` rather than through the index.
-        # Per-file import paths give Vite distinct module boundaries per
-        # memo, enabling actual code-split by page.
-        "library": f"$/{constants.Dirs.COMPONENTS_PATH}/{export_name}",
+        "library": library,
         "_wrapped_component_type": wrapped_component_type,
     }
     if (
@@ -627,42 +639,54 @@ def _get_rest_param(params: tuple[MemoParam, ...]) -> MemoParam | None:
     return next((p for p in params if p.kind is MemoParamKind.REST), None)
 
 
-def _imported_function_var(name: str, return_type: Any) -> FunctionVar:
+def _imported_function_var(
+    name: str, return_type: Any, source_module: str | None = None
+) -> FunctionVar:
     """Create the imported FunctionVar for a memo.
 
     Args:
         name: The exported function name.
         return_type: The return type of the function.
+        source_module: The user-app Python module that defined the memo. When
+            set, the import resolves to the mirrored module file instead of the
+            legacy per-name path.
 
     Returns:
         The imported FunctionVar.
     """
+    library = (
+        memo_paths.library_specifier_for(source_module)
+        or f"$/{constants.Dirs.COMPONENTS_PATH}/{name}"
+    )
     return FunctionStringVar.create(
         name,
         _var_type=ReflexCallable[Any, return_type],
-        _var_data=VarData(
-            imports={
-                f"$/{constants.Dirs.COMPONENTS_PATH}/{name}": [ImportVar(tag=name)]
-            }
-        ),
+        _var_data=VarData(imports={library: [ImportVar(tag=name)]}),
     )
 
 
-def _component_import_var(name: str) -> Var:
+def _component_import_var(name: str, source_module: str | None = None) -> Var:
     """Create the imported component var for a memo component.
 
     Args:
         name: The exported component name.
+        source_module: The user-app Python module that defined the memo. When
+            set, the import resolves to the mirrored module file instead of the
+            legacy per-name path.
 
     Returns:
         The component var.
     """
+    library = (
+        memo_paths.library_specifier_for(source_module)
+        or f"$/{constants.Dirs.COMPONENTS_PATH}/{name}"
+    )
     return Var(
         name,
         _var_type=type[Component],
         _var_data=VarData(
             imports={
-                f"$/{constants.Dirs.COMPONENTS_PATH}/{name}": [ImportVar(tag=name)],
+                library: [ImportVar(tag=name)],
                 "@emotion/react": [ImportVar(tag="jsx")],
             }
         ),
@@ -1311,12 +1335,14 @@ def _evaluate_function_body(
 def _create_component_definition(
     fn: Callable[..., Any],
     return_annotation: Any,
+    source_module: str | None = None,
 ) -> MemoComponentDefinition:
     """Create a definition for a component-returning memo.
 
     Args:
         fn: The function to analyze.
         return_annotation: The return annotation.
+        source_module: The user-app Python module that defined the memo.
 
     Returns:
         The component memo definition.
@@ -1329,6 +1355,7 @@ def _create_component_definition(
         fn=fn,
         python_name=fn.__name__,
         params=params,
+        source_module=source_module,
         export_name=format.to_title_case(fn.__name__),
         _component=_LazyBody.ready(_evaluate_component_body(fn, params)),
     )
@@ -1594,7 +1621,9 @@ class _MemoComponentWrapper:
         # Reading ``component`` materializes the deferred body, so ``type(...)``
         # reflects the real wrapped class rather than the placeholder.
         return _get_memo_component_class(
-            definition.export_name, type(definition.component)
+            definition.export_name,
+            type(definition.component),
+            definition.source_module,
         )._create(
             children=list(children),
             memo_definition=definition,
@@ -1608,7 +1637,9 @@ class _MemoComponentWrapper:
         Returns:
             The imported component var.
         """
-        return _component_import_var(self._definition.export_name)
+        return _component_import_var(
+            self._definition.export_name, self._definition.source_module
+        )
 
 
 def _create_function_wrapper(
@@ -1641,6 +1672,7 @@ def _create_component_wrapper(
 
 def create_passthrough_component_memo(
     component: Component,
+    source_module: str | None = None,
 ) -> tuple[
     Callable[..., MemoComponent],
     MemoComponentDefinition,
@@ -1659,6 +1691,8 @@ def create_passthrough_component_memo(
 
     Args:
         component: The component to wrap.
+        source_module: The user-app Python module that triggered creation of
+            this memo (typically the page that contained the wrapped subtree).
 
     Returns:
         The callable memo wrapper and its component definition.
@@ -1726,7 +1760,7 @@ def create_passthrough_component_memo(
     passthrough.__qualname__ = passthrough.__name__
     passthrough.__module__ = __name__
 
-    definition = _create_component_definition(passthrough, Component)
+    definition = _create_component_definition(passthrough, Component, source_module)
     replacements: dict[str, Any] = {}
     if definition.export_name != tag:
         replacements["export_name"] = tag
@@ -1871,6 +1905,8 @@ def memo(fn: Callable[..., Any]) -> _MemoComponentWrapper | _MemoFunctionWrapper
         defaulted_params=defaulted_params,
     )
 
+    source_module = memo_paths.capture_source_module(fn)
+
     if missing_return or defaulted_params:
         _warn_missing_annotations(fn.__name__, missing_return, defaulted_params)
 
@@ -1885,6 +1921,7 @@ def memo(fn: Callable[..., Any]) -> _MemoComponentWrapper | _MemoFunctionWrapper
             fn=fn,
             python_name=fn.__name__,
             params=params,
+            source_module=source_module,
             export_name=format.to_title_case(fn.__name__),
             _component=_LazyBody(
                 lambda: _evaluate_component_body(fn, params),
@@ -1897,9 +1934,12 @@ def memo(fn: Callable[..., Any]) -> _MemoComponentWrapper | _MemoFunctionWrapper
             fn=fn,
             python_name=fn.__name__,
             params=params,
+            source_module=source_module,
             _function=_LazyBody(lambda: _evaluate_function_body(fn, params)),
             imported_var=_imported_function_var(
-                fn.__name__, _annotation_inner_type(return_annotation)
+                fn.__name__,
+                _annotation_inner_type(return_annotation),
+                source_module=source_module,
             ),
         )
         wrapper = _create_function_wrapper(definition)

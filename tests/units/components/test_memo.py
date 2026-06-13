@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import inspect
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import patch
@@ -25,7 +26,7 @@ from reflex_base.components.memo import (
 )
 from reflex_base.event import EventChain, EventHandler, no_args_event_spec
 from reflex_base.style import Style
-from reflex_base.utils import console
+from reflex_base.utils import console, memo_paths
 from reflex_base.utils import format as format_utils
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars import VarData
@@ -414,7 +415,12 @@ def test_memo_nonkey_base_prop_dropped_from_render_without_rest():
     component.class_name = Var.create("leaks")  # set past the call-site gate
 
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
-    code = next(c for path, c in files if path.endswith("Dropper.jsx"))
+    segments = memo_paths.module_to_mirrored_segments(__name__)
+    assert segments is not None
+    exp_path = memo_paths.mirrored_jsx_path(Path(".web"), segments)
+    code = next(
+        c for path, c in files if path == exp_path.with_suffix(".jsx").as_posix()
+    )
     # No rest capture, and the root Box gets an empty props object.
     assert "...rest" not in code
     assert "className" not in code
@@ -434,7 +440,12 @@ def test_memo_base_props_forward_to_root_via_rest_prop():
     assert isinstance(component, MemoComponent)
 
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
-    code = next(c for path, c in files if path.endswith("RestCard.jsx"))
+    segments = memo_paths.module_to_mirrored_segments(__name__)
+    assert segments is not None
+    exp_path = memo_paths.mirrored_jsx_path(Path(".web"), segments)
+    code = next(
+        c for path, c in files if path == exp_path.with_suffix(".jsx").as_posix()
+    )
     # Undeclared props are captured in ``...rest`` and spread onto the root, so
     # ``className``/``id`` actually reach the rendered element.
     assert "...rest" in code
@@ -891,6 +902,56 @@ def test_compile_memo_components_includes_functions_and_components():
     assert "export const TextWrapper = memo(" in code
     assert "export const format_price =" in code
     assert "export const MyCard = memo(" in code
+
+
+def test_compile_memo_components_groups_by_source_module():
+    """Memos sharing a source module are concatenated into one mirrored file."""
+
+    @rx.memo
+    def grouped_first(title: rx.Var[str]) -> rx.Component:
+        return rx.text(title)
+
+    @rx.memo
+    def grouped_second(title: rx.Var[str]) -> rx.Component:
+        return rx.heading(title)
+
+    definition = MEMOS["GroupedFirst"]
+    assert definition.source_module is not None
+    segments = memo_paths.module_to_mirrored_segments(definition.source_module)
+    assert segments is not None
+
+    files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
+    expected_suffix = Path(*segments).with_suffix(".jsx").as_posix()
+
+    grouped_files = [
+        (path, code)
+        for path, code in files
+        if Path(path).as_posix().endswith("/" + expected_suffix)
+    ]
+    assert len(grouped_files) == 1
+    code = grouped_files[0][1]
+    assert "export const GroupedFirst = memo(" in code
+    assert "export const GroupedSecond = memo(" in code
+    # The merged module must carry imports its memos use, not just the
+    # framework-level ones added by the compiler.
+    assert "RadixThemesText" in code
+    assert "RadixThemesHeading" in code
+
+
+def test_compile_memo_components_falls_back_when_no_source_module():
+    """Memos with no source module emit to the legacy per-name path."""
+    legacy_definition = MemoComponentDefinition(
+        fn=lambda: None,
+        python_name="legacy_memo",
+        params=(),
+        export_name="LegacyMemo",
+        _component=_LazyBody.ready(rx.fragment()),
+        passthrough_hole_child=None,
+    )
+
+    files, _ = compiler.compile_memo_components((legacy_definition,))
+    paths = [Path(path).as_posix() for path, _ in files]
+    assert any(path.endswith("utils/components/LegacyMemo.jsx") for path in paths)
 
 
 def test_compile_memo_components_extends_imports_without_remerging(
@@ -1431,8 +1492,16 @@ def test_self_referencing_component_memo():
     assert isinstance(definition, MemoComponentDefinition)
 
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
+    # The memo mirrors to its source module's combined file (named after the
+    # module, not the memo), so look it up by that path rather than a per-name
+    # ``RecursiveBox.jsx``.
+    segments = memo_paths.module_to_mirrored_segments(definition.source_module)
+    assert segments is not None
+    expected_suffix = Path(*segments).with_suffix(".jsx").as_posix()
     body_source = next(
-        code for path, code in files if path.endswith("RecursiveBox.jsx")
+        code
+        for path, code in files
+        if Path(path).as_posix().endswith("/" + expected_suffix)
     )
     # ``>= 2``: once for the export, once for the recursive foreach call site.
     assert body_source.count("RecursiveBox") >= 2

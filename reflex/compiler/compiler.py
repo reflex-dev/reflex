@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import collections
+import dataclasses
 import json
 import sys
 from collections.abc import Callable, Iterable, Sequence
@@ -29,6 +31,7 @@ from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
 from reflex_base.style import SYSTEM_COLOR_MODE
+from reflex_base.utils import memo_paths
 from reflex_base.utils.exceptions import ReflexError
 from reflex_base.utils.format import to_title_case
 from reflex_base.utils.imports import ImportVar
@@ -399,49 +402,113 @@ def _compile_component(component: Component) -> str:
     return templates.component_template(component=component)
 
 
+@dataclasses.dataclass
+class _MemoGroup:
+    """Accumulator for memos that share a mirrored output path."""
+
+    components: list[dict] = dataclasses.field(default_factory=list)
+    functions: list[dict] = dataclasses.field(default_factory=list)
+    imports: dict[str, list[ImportVar]] = dataclasses.field(default_factory=dict)
+    dynamic_imports: list[str] = dataclasses.field(default_factory=list)
+    custom_code: list[str] = dataclasses.field(default_factory=list)
+
+    def add_component(
+        self, render: dict, memo_imports: dict[str, list[ImportVar]]
+    ) -> None:
+        self.components.append(render)
+        _extend_imports_in_place(self.imports, memo_imports)
+        self.dynamic_imports.extend(sorted(render.get("dynamic_imports", []) or []))
+        self.custom_code.extend(render.get("custom_code", []) or [])
+
+    def add_function(
+        self, render: dict, memo_imports: dict[str, list[ImportVar]]
+    ) -> None:
+        self.functions.append(render)
+        _extend_imports_in_place(self.imports, memo_imports)
+
+
 def _compile_memo_components(
     memos: Iterable[MemoDefinition] = (),
 ) -> tuple[list[tuple[str, str]], dict[str, list[ImportVar]]]:
-    """Compile each memo as its own module.
+    """Compile memos grouped by their source module's mirrored output path.
 
-    Each memo lands in ``.web/<components>/<name>.jsx`` with only the imports
-    it actually uses. Memo wrappers declare their ``library`` as that
-    per-memo file path so page-side imports resolve directly to the
-    individual module.
+    Memos that captured a user-app source module land in a single combined
+    file at ``.web/<mirrored>/<segments>.jsx`` so the page-side import surface
+    matches the source layout. Memos without a source module keep the legacy
+    behavior — one file per memo at ``.web/utils/components/<name>.jsx`` that
+    page-side code imports directly.
 
     Args:
         memos: The memos to compile.
 
     Returns:
-        A list of ``(path, code)`` pairs to write — one per memo — and the
-        aggregated imports across all memo modules.
+        A list of ``(path, code)`` pairs to write and the aggregated imports
+        across all memo modules.
     """
-    per_memo_files: list[tuple[str, str]] = []
+    output_files: list[tuple[str, str]] = []
     aggregate_imports: dict[str, list[ImportVar]] = {}
+    legacy_files: list[tuple[str, str]] = []
+    legacy_base_dir = utils.get_memo_components_dir()
+    groups: collections.defaultdict[tuple[str, ...], _MemoGroup] = (
+        collections.defaultdict(_MemoGroup)
+    )
 
-    base_dir = utils.get_memo_components_dir()
+    def _emit_legacy_component(render: dict, render_imports: dict) -> None:
+        code, file_imports = _compile_single_memo_component(render, render_imports)
+        name = render["name"]
+        legacy_files.append((_memo_component_file_path(legacy_base_dir, name), code))
+        _extend_imports_in_place(aggregate_imports, file_imports)
+
+    def _emit_legacy_function(render: dict, render_imports: dict) -> None:
+        code, file_imports = _compile_single_memo_function(render, render_imports)
+        legacy_files.append((
+            _memo_component_file_path(legacy_base_dir, render["name"]),
+            code,
+        ))
+        _extend_imports_in_place(aggregate_imports, file_imports)
 
     for memo in memos:
         if isinstance(memo, MemoComponentDefinition):
             memo_render, memo_imports = utils.compile_experimental_component_memo(memo)
-            name = memo_render["name"]
-            code, file_imports = _compile_single_memo_component(
-                memo_render, memo_imports
-            )
-            path = _memo_component_file_path(base_dir, name)
-            per_memo_files.append((path, code))
-            _extend_imports_in_place(aggregate_imports, file_imports)
+            segments = memo_paths.module_to_mirrored_segments(memo.source_module)
+            if segments is None:
+                _emit_legacy_component(memo_render, memo_imports)
+            else:
+                groups[segments].add_component(memo_render, memo_imports)
         elif isinstance(memo, MemoFunctionDefinition):
             memo_render, memo_imports = utils.compile_experimental_function_memo(memo)
-            name = memo_render["name"]
-            code, file_imports = _compile_single_memo_function(
-                memo_render, memo_imports
-            )
-            path = _memo_component_file_path(base_dir, name)
-            per_memo_files.append((path, code))
-            _extend_imports_in_place(aggregate_imports, file_imports)
+            segments = memo_paths.module_to_mirrored_segments(memo.source_module)
+            if segments is None:
+                _emit_legacy_function(memo_render, memo_imports)
+            else:
+                groups[segments].add_function(memo_render, memo_imports)
 
-    return per_memo_files, aggregate_imports
+    framework_imports: dict[str, list[ImportVar]] = {
+        "react": [ImportVar(tag="memo")],
+        f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
+    }
+    if groups:
+        _extend_imports_in_place(aggregate_imports, framework_imports)
+        _apply_common_imports(aggregate_imports)
+
+    for segments, group in groups.items():
+        merged_imports = utils.merge_imports(framework_imports, group.imports)
+        _apply_common_imports(merged_imports)
+        # Strip self-imports — when memos in this group reference each other,
+        # their compiled imports point at this group's own mirrored specifier.
+        # Importing from the same file would shadow the module's own exports.
+        merged_imports.pop(memo_paths.mirrored_library_specifier(segments), None)
+        code = templates.memo_components_template(
+            imports=utils.compile_imports(merged_imports),
+            components=group.components,
+            functions=group.functions,
+            dynamic_imports=sorted(set(group.dynamic_imports)),
+            custom_codes=list(dict.fromkeys(group.custom_code)),
+        )
+        output_files.append((utils.get_memo_module_path(segments), code))
+        _extend_imports_in_place(aggregate_imports, group.imports)
+
+    return [*legacy_files, *output_files], aggregate_imports
 
 
 def _compile_single_memo_component(
@@ -1170,9 +1237,9 @@ def compile_app(
         hydrate_fallback_definition = create_component_memo(
             hydrate_fallback, "hydrate_fallback"
         )
-        compile_ctx.auto_memo_components[hydrate_fallback_definition.export_name] = (
-            hydrate_fallback_definition
-        )
+        compile_ctx.auto_memo_components[
+            hydrate_fallback_definition.export_name, None
+        ] = hydrate_fallback_definition
         hydrate_fallback_export = hydrate_fallback_definition.export_name
 
     memo_component_files, memo_components_imports = compile_memo_components(
@@ -1183,6 +1250,7 @@ def compile_app(
     )
     compile_results.extend(memo_component_files)
     all_imports = utils.merge_imports(all_imports, memo_components_imports)
+    utils.prune_stale_memo_files(path for path, _ in memo_component_files)
     progress.advance(task)
 
     compile_results.append(
