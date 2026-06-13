@@ -1096,32 +1096,43 @@ def test_install_frontend_packages_does_not_fall_back(
 
 
 @pytest.mark.usefixtures("install_packages_env")
-def test_run_initial_install_frozen_lockfile_error_helpful_message(monkeypatch, capsys):
-    """A frozen-lockfile mismatch surfaces a 'delete reflex.lock/package.json' hint."""
+def test_run_initial_install_repairs_frozen_lockfile_mismatch(monkeypatch, capsys):
+    """A frozen-lockfile mismatch retries without freezing the lockfile."""
 
     class _FakeProcess:
-        returncode = 1
+        def __init__(self, returncode):
+            self.returncode = returncode
+
+    calls = []
+    processes = iter((_FakeProcess(1), _FakeProcess(0)))
+
+    def new_process(args, **kwargs):
+        calls.append(args)
+        return next(processes)
 
     monkeypatch.setattr(
         js_runtimes.processes,
         "new_process",
-        lambda *args, **kwargs: _FakeProcess(),
+        new_process,
     )
     monkeypatch.setattr(
         js_runtimes.processes,
         "show_status",
-        lambda message, process, suppress_errors=False: [
-            "error: lockfile had changes, but lockfile is frozen\n",
-        ],
+        lambda message, process, suppress_errors=False: (
+            ["error: lockfile had changes, but lockfile is frozen\n"]
+            if process.returncode
+            else []
+        ),
     )
 
-    with pytest.raises(SystemExit):
-        js_runtimes._run_initial_install("bun", env={})
+    js_runtimes._run_initial_install("bun", env={})
 
     captured = capsys.readouterr()
     output = captured.out + captured.err
     assert "out of sync" in output
-    assert constants.Bun.ROOT_LOCKFILE_DIR in output
+    assert len(calls) == 2
+    assert "--frozen-lockfile" in calls[0]
+    assert "--frozen-lockfile" not in calls[1]
 
 
 @pytest.mark.usefixtures("install_packages_env")
