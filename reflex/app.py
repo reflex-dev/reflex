@@ -17,6 +17,7 @@ import traceback
 import urllib.parse
 from collections.abc import (
     AsyncIterator,
+    Awaitable,
     Callable,
     Collection,
     Coroutine,
@@ -777,6 +778,13 @@ class App(MiddlewareMixin, LifespanMixin):
             health,
             methods=["GET"],
         )
+        if environment.REFLEX_JIT.get() and not is_prod_mode():
+            # Dev JIT: lets a deferred route's stub request its real compilation.
+            self._api.add_route(
+                config.prepend_backend_path("/_jit/compile"),
+                jit_compile(self),
+                methods=["GET"],
+            )
 
     def _add_optional_endpoints(self):
         """Add optional api endpoints (_upload)."""
@@ -1518,6 +1526,31 @@ def ping(_request: Request) -> Response:
         The response.
     """
     return JSONResponse("pong")
+
+
+def jit_compile(app: App) -> Callable[[Request], Awaitable[Response]]:
+    """Build the dev-only JIT on-demand page compile endpoint.
+
+    Args:
+        app: The app whose deferred routes are compiled on demand.
+
+    Returns:
+        A Starlette endpoint that compiles the requested route to disk.
+    """
+
+    async def _jit_compile(request: Request) -> Response:
+        route = request.query_params.get("route")
+        if route is None:
+            return JSONResponse({"error": "missing route"}, status_code=400)
+        from reflex.compiler import compiler
+
+        try:
+            await asyncio.to_thread(compiler.compile_route_jit, app, route)
+        except ValueError:
+            return JSONResponse({"error": f"unknown route {route!r}"}, status_code=404)
+        return JSONResponse({"compiled": route})
+
+    return _jit_compile
 
 
 async def health(_request: Request) -> JSONResponse:

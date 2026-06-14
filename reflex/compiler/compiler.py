@@ -980,6 +980,48 @@ def _resolve_radix_themes_plugin(
     return plugin_chain, radix_plugin
 
 
+def _jit_stub_code(route: str) -> str:
+    """Build a placeholder route module that compiles its real page on first load.
+
+    Used by dev-only JIT mode: deferred routes get this stub at boot so React
+    Router's filesystem scan sees them. When the browser first renders the stub,
+    it asks the backend to compile the route, which overwrites this file with the
+    real page; Vite's file watcher then hot-reloads the real module.
+
+    Args:
+        route: The route this stub stands in for.
+
+    Returns:
+        The JSX source for the stub route module.
+    """
+    route_literal = json.dumps(route)
+    return (
+        'import env from "$/env.json";\n'
+        'import { getBackendURL } from "$/utils/state";\n'
+        'import { createElement, useEffect, useState } from "react";\n'
+        "\n"
+        "export default function Component() {\n"
+        "  const [error, setError] = useState(null);\n"
+        "  useEffect(() => {\n"
+        "    const url = getBackendURL(env.PING);\n"
+        '    url.pathname = "/_jit/compile";\n'
+        f'    url.search = "?route=" + encodeURIComponent({route_literal});\n'
+        "    fetch(url.toString())\n"
+        '      .then((r) => {\n'
+        '        if (!r.ok) throw new Error("compile failed: " + r.status);\n'
+        "        window.location.reload();\n"
+        "      })\n"
+        "      .catch((e) => setError(String(e)));\n"
+        "  }, []);\n"
+        '  return createElement(\n'
+        '    "div",\n'
+        '    { style: { padding: 20, fontFamily: "monospace" } },\n'
+        '    error ? "JIT compile error: " + error : "Compiling this page\\u2026",\n'
+        "  );\n"
+        "}\n"
+    )
+
+
 def compile_app(
     app: App,
     *,
@@ -1018,6 +1060,32 @@ def compile_app(
     app.style = evaluate_style_namespaces(app.style)
     config = get_config()
 
+    # Dev-only JIT: compile only the app shell + stateful pages at boot, and emit
+    # a stub for every other route (compiled on first request). Requires the
+    # stateful-pages marker; without it we can't know which pages must be
+    # evaluated up front, so fall back to a full compile (which writes the marker).
+    jit_boot_routes: set[str] | None = None
+    jit_deferred_routes: list[str] = []
+    if environment.REFLEX_JIT.get() and not is_prod_mode() and should_compile:
+        stateful_pages_marker = backend_dir / constants.Dirs.STATEFUL_PAGES
+        if stateful_pages_marker.exists():
+            with stateful_pages_marker.open("r") as file:
+                jit_boot_routes = set(json.load(file))
+            jit_boot_routes.add(constants.Page404.SLUG)
+            jit_deferred_routes = [
+                route
+                for route in app._unevaluated_pages
+                if route not in jit_boot_routes
+            ]
+            console.info(
+                f"JIT: compiling {len(app._unevaluated_pages) - len(jit_deferred_routes)} "
+                f"boot pages, deferring {len(jit_deferred_routes)} to first request."
+            )
+        else:
+            console.warn(
+                "JIT: no stateful-pages marker yet; doing a full compile to build it."
+            )
+
     if not should_compile and not dry_run:
         with console.timing("Evaluate Pages (Backend)"):
             for route in app._unevaluated_pages:
@@ -1051,7 +1119,11 @@ def compile_app(
     task = progress.add_task("Compiling:", total=base_total)
     compile_ctx = CompileContext(
         app=app,
-        pages=list(app._unevaluated_pages.values()),
+        pages=[
+            page
+            for route, page in app._unevaluated_pages.items()
+            if jit_boot_routes is None or route in jit_boot_routes
+        ],
         hooks=CompilerHooks(
             plugins=default_page_plugins(style=app.style, plugins=compiler_plugins)
         ),
@@ -1097,6 +1169,13 @@ def compile_app(
         for page_ctx in compile_ctx.compiled_pages.values()
         if page_ctx.output_path is not None and page_ctx.output_code is not None
     ]
+
+    # JIT: emit a stub for each deferred route so the filesystem route scan sees
+    # it; the stub compiles the real page on first request.
+    compile_results.extend(
+        (utils.get_page_path(route), _jit_stub_code(route))
+        for route in jit_deferred_routes
+    )
 
     # Reinitialize vite config in case runtime options have changed.
     compile_results.append((
@@ -1290,3 +1369,52 @@ def compile_app(
             utils.write_file(output_path, code)
 
     return True
+
+
+def compile_route_jit(app: App, route: str) -> None:
+    """Compile a single deferred route to disk on demand (dev JIT mode).
+
+    Evaluates and renders just this page plus its memo modules and writes the
+    files, overwriting the boot-time stub. Vite's file watcher then hot-reloads
+    the real module. Other routes are left untouched.
+
+    Args:
+        app: The app instance.
+        route: The route to compile.
+
+    Raises:
+        ValueError: If the route is not a registered page.
+    """
+    if route not in app._unevaluated_pages:
+        msg = f"Unknown route for JIT compile: {route!r}"
+        raise ValueError(msg)
+
+    config = get_config()
+    compiler_plugins, _ = _resolve_radix_themes_plugin(app, config.plugins)
+    compile_ctx = CompileContext(
+        app=app,
+        pages=[app._unevaluated_pages[route]],
+        hooks=CompilerHooks(
+            plugins=default_page_plugins(style=app.style, plugins=compiler_plugins)
+        ),
+    )
+    with console.timing(f"JIT compile {route}"), compile_ctx:
+        compile_ctx.compile()
+
+    results: list[tuple[str, str]] = [
+        (page_ctx.output_path, page_ctx.output_code)
+        for page_ctx in compile_ctx.compiled_pages.values()
+        if page_ctx.output_path is not None and page_ctx.output_code is not None
+    ]
+    memo_component_files, _ = compile_memo_components(
+        (*MEMOS.values(), *compile_ctx.auto_memo_components.values()),
+    )
+    results.extend(memo_component_files)
+
+    for output_path, code in results:
+        utils.write_file(utils.resolve_path_of_web_dir(output_path), code)
+
+    for compiled_route, page_ctx in compile_ctx.compiled_pages.items():
+        if isinstance(page_ctx.root_component, Component):
+            app._pages[compiled_route] = page_ctx.root_component
+    app._stateful_pages.update(compile_ctx.stateful_routes)

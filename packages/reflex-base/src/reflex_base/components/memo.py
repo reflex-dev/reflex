@@ -1708,32 +1708,33 @@ def create_passthrough_component_memo(
         object.__setattr__(new_component, "_get_all_refs", component._get_all_refs)
         return new_component
 
-    # Evaluate once to compute the tag from the rendered memo body shape.
-    # ``_create_component_definition`` will evaluate again internally; the
-    # second pass overwrites ``captured_hole_child`` but the captured value
-    # is identical.
+    # Evaluate the memo body once: the same compiled body computes the tag hash
+    # and becomes the definition's body, so neither ``_analyze_params`` nor the
+    # body function runs a second time. ``passthrough`` is deterministic, so the
+    # single ``captured_hole_child`` is the value both passes would have produced.
     params = _analyze_params(passthrough, for_component=True)
-    preview = _normalize_component_return(_evaluate_memo_function(passthrough, params))
-    if preview is None:
+    body = _normalize_component_return(_evaluate_memo_function(passthrough, params))
+    if body is None:
         msg = (
             "`create_passthrough_component_memo` requires a component that "
             "normalizes to `rx.Component`."
         )
         raise TypeError(msg)
-    tag = preview._compute_memo_tag()
+    body = _lift_rest_props(body)
+    tag = body._compute_memo_tag()
 
     passthrough.__name__ = format.to_snake_case(tag)
     passthrough.__qualname__ = passthrough.__name__
     passthrough.__module__ = __name__
 
-    definition = _create_component_definition(passthrough, Component)
-    replacements: dict[str, Any] = {}
-    if definition.export_name != tag:
-        replacements["export_name"] = tag
-    if captured_hole_child:
-        replacements["passthrough_hole_child"] = captured_hole_child[0]
-    if replacements:
-        definition = dataclasses.replace(definition, **replacements)
+    definition = MemoComponentDefinition(
+        fn=passthrough,
+        python_name=passthrough.__name__,
+        params=params,
+        export_name=tag,
+        _component=_LazyBody.ready(body),
+        passthrough_hole_child=captured_hole_child[0] if captured_hole_child else None,
+    )
 
     return _create_component_wrapper(definition), definition
 

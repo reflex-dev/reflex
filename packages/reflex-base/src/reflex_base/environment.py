@@ -611,6 +611,11 @@ class EnvironmentVariables:
     # If this env var is set to "yes", App.compile will be a no-op
     REFLEX_SKIP_COMPILE: EnvVar[bool] = env_var(False, internal=True)
 
+    # Dev-only just-in-time page compilation: at boot, only the app shell and
+    # stateful pages are compiled; every other route gets a lightweight stub that
+    # compiles its real page on first request. Never set in prod.
+    REFLEX_JIT: EnvVar[bool] = env_var(False)
+
     # Inherited by uvicorn/granian reload workers so the backend can distinguish
     # dev reload-capable worker boots from other backend starts. Never set in prod.
     REFLEX_DEV_BACKEND_RELOAD_ACTIVE: EnvVar[bool] = env_var(False, internal=True)
