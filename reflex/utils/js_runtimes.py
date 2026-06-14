@@ -459,21 +459,19 @@ def _is_bun_package_manager(package_manager: str) -> bool:
 
 
 def _run_initial_install(primary_package_manager: str, env: dict) -> None:
-    """Run the initial frozen-lockfile install with a friendly recovery hint.
+    """Run the initial frozen-lockfile install and repair a mismatched Bun lock.
 
     bun reports ``error: lockfile had changes, but lockfile is frozen`` when
-    the persisted lockfile cannot satisfy the recovered package.json. When
-    that happens, point the user at ``reflex.lock/package.json`` so they can
-    delete it and let Reflex regenerate the dep set from scratch on the
-    next run.
+    the persisted lockfile cannot satisfy the recovered package.json. Retry
+    that specific failure without ``--frozen-lockfile`` so Bun reconciles the
+    pair; the successful install flow then persists both files together.
 
     Args:
         primary_package_manager: Path to the package manager executable.
         env: Extra environment variables for the subprocess.
 
     Raises:
-        SystemExit: If the install fails. The exit message tells the user
-            how to recover from a frozen-lockfile mismatch when applicable.
+        SystemExit: If the install or mismatch recovery fails.
     """
     install_args = [
         primary_package_manager,
@@ -499,14 +497,37 @@ def _run_initial_install(primary_package_manager: str, env: dict) -> None:
     if process.returncode == 0:
         return
 
-    if any("lockfile had changes, but lockfile is frozen" in line for line in logs):
-        root_dir = Path.cwd() / constants.Bun.ROOT_LOCKFILE_DIR
-        console.error(
+    if _is_bun_package_manager(primary_package_manager) and any(
+        "lockfile had changes, but lockfile is frozen" in line for line in logs
+    ):
+        console.warn(
             "The persisted lockfile is out of sync with the recovered "
-            f"package.json. Delete the [bold]{root_dir}[/bold] directory "
-            "and rerun so Reflex regenerates it from scratch."
+            "package.json. Regenerating the lockfile."
         )
-        raise SystemExit(1)
+        recovery_args = [
+            primary_package_manager,
+            "install",
+            "--legacy-peer-deps",
+        ]
+        recovery_process = processes.new_process(
+            processes.get_command_with_loglevel(recovery_args),
+            cwd=get_web_dir(),
+            shell=constants.IS_WINDOWS,
+            env=env,
+        )
+        processes.show_status(
+            "Regenerating frontend lockfile",
+            recovery_process,
+        )
+        if recovery_process.returncode != 0:
+            root_dir = Path.cwd() / constants.Bun.ROOT_LOCKFILE_DIR
+            console.error(
+                "Failed to regenerate the frontend lockfile. Delete the "
+                f"[bold]{root_dir}[/bold] directory and rerun so Reflex "
+                "regenerates it from scratch."
+            )
+            raise SystemExit(1)
+        return
 
     # Replay captured logs so the user can diagnose other failures (mirrors
     # show_status's default error path, which we suppressed above).
