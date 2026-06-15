@@ -1,8 +1,9 @@
 """Mirror user-app Python module paths into the compiler's ``.web`` output.
 
 The compiler uses these helpers to write each memo's compiled JSX to a path
-that mirrors its Python source module, instead of bundling everything into
-``.web/utils/components.jsx``. This module owns the small set of helpers that:
+under ``.web/app_components/`` that mirrors its Python source module, instead of
+bundling everything into one file. This module owns the small set of helpers
+that:
 
 - Read ``fn.__module__`` and reject framework / synthetic modules.
 - Walk the live frame stack as a fallback for entry points that don't take a
@@ -20,27 +21,22 @@ import sys
 from collections.abc import Callable
 from pathlib import Path
 
-# Modules whose names start with one of these prefixes are treated as
-# framework code and never mirrored. Mirroring them would emit ``.web/reflex/...``
-# files for memos defined inside the framework's own component packages.
-_FRAMEWORK_MODULE_PREFIXES = (
-    "reflex.",
-    "reflex_base.",
-    "reflex_components_",
-    "reflex_site_shared.",
-    "reflex_hosting_cli.",
-    "reflex_docgen.",
-)
+from reflex_base.constants.base import Dirs
 
-# Bare module names that are treated as framework. Prefix matches above use
-# trailing dots, so the bare ``reflex`` package itself is matched here.
-_FRAMEWORK_MODULE_NAMES = frozenset({
+# Framework packages: a memo defined in one of these (the package itself or any
+# submodule below it) is never mirrored, so we don't emit ``.web/reflex/...``
+# files for memos defined inside the framework's own component packages.
+_FRAMEWORK_PACKAGES = (
     "reflex",
     "reflex_base",
     "reflex_site_shared",
     "reflex_hosting_cli",
     "reflex_docgen",
-})
+)
+
+# Bare-name prefixes matched against the whole module name (no dot boundary),
+# covering families of framework packages such as ``reflex_components_radix``.
+_FRAMEWORK_NAME_PREFIXES = ("reflex_components_",)
 
 
 def _is_framework_module(module_name: str) -> bool:
@@ -53,9 +49,12 @@ def _is_framework_module(module_name: str) -> bool:
         True if the module is part of the framework and should not be
         mirrored under ``.web/``.
     """
-    if module_name in _FRAMEWORK_MODULE_NAMES:
+    if module_name.startswith(_FRAMEWORK_NAME_PREFIXES):
         return True
-    return module_name.startswith(_FRAMEWORK_MODULE_PREFIXES)
+    return any(
+        module_name == pkg or module_name.startswith(pkg + ".")
+        for pkg in _FRAMEWORK_PACKAGES
+    )
 
 
 def capture_source_module(fn: Callable | None) -> str | None:
@@ -70,8 +69,8 @@ def capture_source_module(fn: Callable | None) -> str | None:
         fn: The user callable whose definition module is wanted.
 
     Returns:
-        The dotted module name to mirror under ``.web/``, or ``None`` to fall
-        back to the legacy un-mirrored output path.
+        The dotted module name to mirror under ``.web/app_components/``, or
+        ``None`` to fall back to the per-name un-mirrored output path.
     """
     if fn is None:
         return None
@@ -119,6 +118,19 @@ def resolve_user_module_from_frame(skip: int = 0) -> str | None:
     return None
 
 
+# Reserved device names on Windows. A file named like one of these (in any
+# case, with or without an extension) can't be created normally, so modules
+# with such a segment fall back to the un-mirrored output path.
+_WINDOWS_RESERVED_NAMES = frozenset({
+    "con",
+    "prn",
+    "aux",
+    "nul",
+    *(f"com{i}" for i in range(1, 10)),
+    *(f"lpt{i}" for i in range(1, 10)),
+})
+
+
 def _segment_is_safe(segment: str) -> bool:
     """Whether ``segment`` is a path-safe Python identifier-like fragment.
 
@@ -131,7 +143,13 @@ def _segment_is_safe(segment: str) -> bool:
     """
     if not segment or segment in {".", ".."}:
         return False
-    return not any(ch in segment for ch in ("/", "\\", ":", "\0"))
+    if any(ch in segment for ch in ("/", "\\", ":", "\0")):
+        return False
+    # Windows silently strips trailing dots/spaces and reserves device names,
+    # either of which breaks the module<->file path correspondence there.
+    if segment != segment.rstrip(". "):
+        return False
+    return segment.casefold() not in _WINDOWS_RESERVED_NAMES
 
 
 def module_to_mirrored_segments(module_name: str | None) -> tuple[str, ...] | None:
@@ -146,9 +164,9 @@ def module_to_mirrored_segments(module_name: str | None) -> tuple[str, ...] | No
         module_name: The dotted Python module name. ``None`` short-circuits.
 
     Returns:
-        A tuple of safe path segments to join under ``.web/``, or ``None`` if
-        the module name is missing, contains unsafe segments, or cannot be
-        resolved as a package vs. module.
+        A tuple of safe path segments to join under ``.web/app_components/``, or
+        ``None`` if the module name is missing, contains unsafe segments, or
+        cannot be resolved as a package vs. module.
     """
     if not module_name:
         return None
@@ -196,6 +214,10 @@ def library_specifier_for(source_module: str | None) -> str | None:
 def mirrored_jsx_path(web_dir: Path, segments: tuple[str, ...]) -> Path:
     """Build the absolute ``.jsx`` path under ``web_dir`` for ``segments``.
 
+    Mirrored memos live under the reserved ``app_components/`` subdirectory so a
+    user module path can never collide with framework output (e.g. a memo in
+    module ``app.root`` would otherwise overwrite ``.web/app/root.jsx``).
+
     Args:
         web_dir: The project's ``.web`` directory.
         segments: Mirrored path segments from
@@ -204,13 +226,15 @@ def mirrored_jsx_path(web_dir: Path, segments: tuple[str, ...]) -> Path:
     Returns:
         The absolute path the compiler should write the memo module to.
     """
-    return web_dir.joinpath(*segments).with_suffix(".jsx")
+    return web_dir.joinpath(Dirs.APP_COMPONENTS, *segments).with_suffix(".jsx")
 
 
 def mirrored_library_specifier(segments: tuple[str, ...]) -> str:
     """Build the ``$/...`` import specifier for mirrored ``segments``.
 
-    The specifier has no extension; Vite resolves the ``.jsx`` automatically.
+    The specifier has no extension; Vite resolves the ``.jsx`` automatically. It
+    mirrors :func:`mirrored_jsx_path`, including the reserved ``app_components/``
+    subdirectory.
 
     Args:
         segments: Mirrored path segments from
@@ -220,4 +244,37 @@ def mirrored_library_specifier(segments: tuple[str, ...]) -> str:
         A ``$/`` prefixed module specifier suitable for use as a
         ``Component.library`` value.
     """
-    return "$/" + "/".join(segments)
+    return "$/" + "/".join((Dirs.APP_COMPONENTS, *segments))
+
+
+def unmirrored_library_specifier(name: str) -> str:
+    """Build the ``$/...`` import specifier for an un-mirrorable memo.
+
+    Memos that can't be mirrored to a user module (framework components,
+    ``__main__``, unsafe names) get one file per memo under the reserved
+    ``app_components/_internal/`` subdirectory.
+
+    Args:
+        name: The memo's export name.
+
+    Returns:
+        A ``$/`` prefixed module specifier suitable for use as a
+        ``Component.library`` value.
+    """
+    return f"$/{Dirs.APP_COMPONENTS_INTERNAL}/{name}"
+
+
+def library_for(source_module: str | None, name: str) -> str:
+    """Return the library specifier a memo should import from.
+
+    Mirrors ``source_module`` when it can be safely mirrored, otherwise falls
+    back to the per-name ``app_components/_internal/<name>`` path.
+
+    Args:
+        source_module: The dotted module name a memo was defined in.
+        name: The memo's export name, used for the un-mirrored fallback.
+
+    Returns:
+        A ``$/`` prefixed module specifier for the memo's compiled output.
+    """
+    return library_specifier_for(source_module) or unmirrored_library_specifier(name)

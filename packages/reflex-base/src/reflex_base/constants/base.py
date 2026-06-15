@@ -32,8 +32,6 @@ class Dirs(SimpleNamespace):
     UTILS = "utils"
     # The name of the state file.
     STATE_PATH = UTILS + "/state"
-    # The name of the components file.
-    COMPONENTS_PATH = UTILS + "/components"
     # The name of the contexts file.
     CONTEXTS_PATH = UTILS + "/context"
     # The name of the output directory.
@@ -48,6 +46,14 @@ class Dirs(SimpleNamespace):
     PAGES = "app"
     # The name of the routes directory.
     ROUTES = "routes"
+    # Subdirectory holding memo modules mirrored from user Python modules,
+    # kept separate from framework output so user module paths can't collide.
+    APP_COMPONENTS = "app_components"
+    # Reserved subdir for memos that can't be mirrored to a user module
+    # (framework components, ``__main__``, unsafe names). The leading underscore
+    # keeps it clear of mirrored user-module trees, since top-level Python
+    # packages conventionally never start with ``_``.
+    APP_COMPONENTS_INTERNAL = APP_COMPONENTS + "/_internal"
     # The name of the env json file.
     ENV_JSON = "env.json"
     # The name of the reflex json file.

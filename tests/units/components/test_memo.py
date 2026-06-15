@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import inspect
-from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import patch
@@ -28,6 +27,7 @@ from reflex_base.event import EventChain, EventHandler, no_args_event_spec
 from reflex_base.style import Style
 from reflex_base.utils import console, memo_paths
 from reflex_base.utils import format as format_utils
+from reflex_base.utils.exceptions import ReflexError
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars import VarData
 from reflex_base.vars.base import Var
@@ -417,10 +417,8 @@ def test_memo_nonkey_base_prop_dropped_from_render_without_rest():
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
     segments = memo_paths.module_to_mirrored_segments(__name__)
     assert segments is not None
-    exp_path = memo_paths.mirrored_jsx_path(Path(".web"), segments)
-    code = next(
-        c for path, c in files if path == exp_path.with_suffix(".jsx").as_posix()
-    )
+    exp_path = compiler_utils.get_memo_module_path(segments)
+    code = next(c for path, c in files if path == exp_path)
     # No rest capture, and the root Box gets an empty props object.
     assert "...rest" not in code
     assert "className" not in code
@@ -442,10 +440,8 @@ def test_memo_base_props_forward_to_root_via_rest_prop():
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
     segments = memo_paths.module_to_mirrored_segments(__name__)
     assert segments is not None
-    exp_path = memo_paths.mirrored_jsx_path(Path(".web"), segments)
-    code = next(
-        c for path, c in files if path == exp_path.with_suffix(".jsx").as_posix()
-    )
+    exp_path = compiler_utils.get_memo_module_path(segments)
+    code = next(c for path, c in files if path == exp_path)
     # Undeclared props are captured in ``...rest`` and spread onto the root, so
     # ``className``/``id`` actually reach the rendered element.
     assert "...rest" in code
@@ -921,13 +917,9 @@ def test_compile_memo_components_groups_by_source_module():
     assert segments is not None
 
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
-    expected_suffix = Path(*segments).with_suffix(".jsx").as_posix()
+    exp_path = compiler_utils.get_memo_module_path(segments)
 
-    grouped_files = [
-        (path, code)
-        for path, code in files
-        if Path(path).as_posix().endswith("/" + expected_suffix)
-    ]
+    grouped_files = [(path, code) for path, code in files if path == exp_path]
     assert len(grouped_files) == 1
     code = grouped_files[0][1]
     assert "export const GroupedFirst = memo(" in code
@@ -950,8 +942,76 @@ def test_compile_memo_components_falls_back_when_no_source_module():
     )
 
     files, _ = compiler.compile_memo_components((legacy_definition,))
-    paths = [Path(path).as_posix() for path, _ in files]
-    assert any(path.endswith("utils/components/LegacyMemo.jsx") for path in paths)
+    exp_path = compiler._memo_component_file_path(
+        compiler_utils.get_memo_components_dir(), "LegacyMemo"
+    )
+    assert any(path == exp_path for path, _ in files)
+
+
+def test_compile_memo_components_rejects_collision_with_reserved_internal_dir():
+    """A user module mirroring into the reserved internal dir fails loudly.
+
+    A module whose first segment matches the reserved ``_internal`` directory
+    would mirror on top of the per-memo files emitted there, so compilation
+    must raise rather than silently clobber output.
+    """
+    definition = MemoComponentDefinition(
+        fn=lambda: None,
+        python_name="collides",
+        params=(),
+        export_name="Collides",
+        _component=_LazyBody.ready(rx.fragment()),
+        passthrough_hole_child=None,
+        source_module="_internal.collides",
+    )
+
+    with pytest.raises(ReflexError, match="reserved"):
+        compiler.compile_memo_components((definition,))
+
+
+def test_compile_memo_components_rejects_single_segment_internal_module():
+    """A top-level module literally named ``_internal`` is also rejected.
+
+    The guard must catch the single-segment case (mirroring to
+    ``app_components/_internal.jsx``), not just multi-segment ``_internal.x``.
+    """
+    definition = MemoComponentDefinition(
+        fn=lambda: None,
+        python_name="thing",
+        params=(),
+        export_name="Thing",
+        _component=_LazyBody.ready(rx.fragment()),
+        passthrough_hole_child=None,
+        source_module="_internal",
+    )
+
+    with pytest.raises(ReflexError, match="reserved"):
+        compiler.compile_memo_components((definition,))
+
+
+def test_compile_memo_components_rejects_case_insensitive_path_collision():
+    """Two modules whose mirrored paths differ only by case fail loudly.
+
+    On case-insensitive filesystems (macOS/Windows) both would resolve to one
+    file, silently overwriting one memo module with the other.
+    """
+
+    def _definition(export_name: str, source_module: str) -> MemoComponentDefinition:
+        return MemoComponentDefinition(
+            fn=lambda: None,
+            python_name=export_name.lower(),
+            params=(),
+            export_name=export_name,
+            _component=_LazyBody.ready(rx.fragment()),
+            passthrough_hole_child=None,
+            source_module=source_module,
+        )
+
+    with pytest.raises(ReflexError, match="case"):
+        compiler.compile_memo_components((
+            _definition("Upper", "casecollide.Widget"),
+            _definition("Lower", "casecollide.widget"),
+        ))
 
 
 def test_compile_memo_components_extends_imports_without_remerging(
@@ -1497,18 +1557,70 @@ def test_self_referencing_component_memo():
     # ``RecursiveBox.jsx``.
     segments = memo_paths.module_to_mirrored_segments(definition.source_module)
     assert segments is not None
-    expected_suffix = Path(*segments).with_suffix(".jsx").as_posix()
-    body_source = next(
-        code
-        for path, code in files
-        if Path(path).as_posix().endswith("/" + expected_suffix)
-    )
+    exp_path = compiler_utils.get_memo_module_path(segments)
+    body_source = next(code for path, code in files if path == exp_path)
     # ``>= 2``: once for the export, once for the recursive foreach call site.
     assert body_source.count("RecursiveBox") >= 2
 
     instance = recursive_box(items=Var(_js_expr="items", _var_type=list[int]))
     assert isinstance(instance, MemoComponent)
     assert type(instance).tag == "RecursiveBox"
+
+
+def test_self_referencing_memo_omits_self_import_from_aggregate():
+    """A self-importing memo must not leak its own specifier into the aggregate.
+
+    The mirrored module specifier a memo uses to reference itself must be
+    stripped from the aggregate import set returned to the frontend-package scan.
+    """
+
+    @rx.memo
+    def recursive_card(items: rx.Var[list[int]]) -> rx.Component:
+        return rx.box(rx.foreach(items, lambda item: recursive_card(items=items)))
+
+    definition = MEMOS["RecursiveCard"]
+    segments = memo_paths.module_to_mirrored_segments(definition.source_module)
+    assert segments is not None
+    self_specifier = memo_paths.mirrored_library_specifier(segments)
+
+    _, aggregate_imports = compiler.compile_memo_components((definition,))
+    assert self_specifier not in aggregate_imports
+
+
+def test_reset_memo_component_classes_recomputes_stale_library(monkeypatch):
+    """Resetting the class cache re-resolves a memo's library.
+
+    A module that flips to a package across hot-reload compiles keeps its name
+    but gains an ``index`` segment; without a reset the cached wrapper class
+    would keep serving the pre-flip specifier.
+    """
+    from reflex_base.components.memo import (
+        _get_memo_component_class,
+        reset_memo_component_classes,
+    )
+
+    reset_memo_component_classes()
+    monkeypatch.setattr(
+        memo_paths, "module_to_mirrored_segments", lambda module: ("pkgflip",)
+    )
+    flat = _get_memo_component_class("Flip", source_module="pkgflip")
+    assert flat.library == "$/app_components/pkgflip"
+
+    # The module is now a package: same name, segments gain ``index``.
+    monkeypatch.setattr(
+        memo_paths, "module_to_mirrored_segments", lambda module: ("pkgflip", "index")
+    )
+    # Stale until the cache is cleared.
+    assert (
+        _get_memo_component_class("Flip", source_module="pkgflip").library
+        == "$/app_components/pkgflip"
+    )
+    reset_memo_component_classes()
+    assert (
+        _get_memo_component_class("Flip", source_module="pkgflip").library
+        == "$/app_components/pkgflip/index"
+    )
+    reset_memo_component_classes()
 
 
 def test_self_referencing_var_memo():

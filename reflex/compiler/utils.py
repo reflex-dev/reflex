@@ -423,10 +423,10 @@ def compile_experimental_component_memo(
         dynamic_imports = render._get_all_dynamic_imports()
         all_imports = render._get_all_imports()
 
-    # Each memo lives in ``web/utils/components/<name>.jsx`` and is imported
-    # from ``$/utils/components/<name>``. Strip a self-import so a memo body
-    # that references the wrapper's own module specifier doesn't recurse.
-    self_module = f"$/{constants.Dirs.COMPONENTS_PATH}/{definition.export_name}"
+    # Each un-mirrored memo lives in ``web/app_components/_internal/<name>.jsx``
+    # and is imported from ``$/app_components/_internal/<name>``. Strip a
+    # self-import so a memo body that references its own specifier doesn't recurse.
+    self_module = memo_paths.unmirrored_library_specifier(definition.export_name)
     imports: ParsedImportDict = {
         lib: fields for lib, fields in all_imports.items() if lib != self_module
     }
@@ -532,9 +532,9 @@ def compile_experimental_function_memo(
     # Reading ``.function`` evaluates a deferred function-memo body on first use.
     function = definition.function
     if var_data := function._get_all_var_data():
-        # Per-file memo modules live at ``$/utils/components/<name>``; strip
-        # only a self-import to this function memo's own module.
-        self_module = f"$/{constants.Dirs.COMPONENTS_PATH}/{definition.python_name}"
+        # Per-file memo modules live at ``$/app_components/_internal/<name>``;
+        # strip only a self-import to this function memo's own module.
+        self_module = memo_paths.unmirrored_library_specifier(definition.python_name)
         imports = {
             lib: list(fields)
             for lib, fields in dict(var_data.imports).items()
@@ -751,11 +751,9 @@ def get_memo_components_dir() -> str:
 
     Returns:
         The directory used for per-memo ``.jsx`` modules. Pages import each
-        wrapper directly from ``$/utils/components/<name>``.
+        wrapper directly from ``$/app_components/_internal/<name>``.
     """
-    return str(
-        get_web_dir() / constants.Dirs.UTILS / constants.PageNames.COMPONENTS,
-    )
+    return str(get_web_dir() / constants.Dirs.APP_COMPONENTS_INTERNAL)
 
 
 def get_memo_module_path(segments: tuple[str, ...]) -> str:

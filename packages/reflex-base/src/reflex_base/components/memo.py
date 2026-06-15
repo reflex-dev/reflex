@@ -255,8 +255,9 @@ class MemoDefinition:
     params: tuple[MemoParam, ...]
     # The user-app Python module that defined this memo. When set, the memo's
     # compiled JSX is emitted to a path mirroring that module and the page-side
-    # import resolves there instead of the legacy per-name ``utils/components``
-    # path. ``kw_only`` so subclasses can keep their own required fields.
+    # import resolves there instead of the per-name
+    # ``app_components/_internal/<name>`` path used for memos that can't be
+    # mirrored. ``kw_only`` so subclasses can keep their own required fields.
     source_module: str | None = dataclasses.field(default=None, kw_only=True)
 
 
@@ -305,7 +306,7 @@ class MemoComponentDefinition(MemoDefinition):
 class MemoComponent(Component):
     """A rendered instance of a memo component."""
 
-    library = f"$/{constants.Dirs.COMPONENTS_PATH}"
+    library = f"$/{constants.Dirs.APP_COMPONENTS_INTERNAL}"
     _memoization_mode = MemoizationMode(disposition=MemoizationDisposition.NEVER)
 
     # The user-authored component class this wrapper stands in for. Populated
@@ -368,7 +369,7 @@ def _get_memo_component_class(
             component (e.g. function memos, raw passthroughs).
         source_module: The user-app Python module that defined this memo. When
             set, the wrapper imports from a path mirroring that module instead
-            of the legacy per-name path under ``utils/components``.
+            of the per-name ``app_components/_internal/<name>`` path.
 
     Returns:
         A cached component subclass with the tag set at class definition time.
@@ -376,10 +377,7 @@ def _get_memo_component_class(
     # With a source module the memo is grouped into a file mirroring its
     # Python module; otherwise each memo gets its own per-file module so Vite
     # has distinct module boundaries per memo, enabling code-split by page.
-    library = (
-        memo_paths.library_specifier_for(source_module)
-        or f"$/{constants.Dirs.COMPONENTS_PATH}/{export_name}"
-    )
+    library = memo_paths.library_for(source_module, export_name)
     attrs: dict[str, Any] = {
         "__module__": __name__,
         "tag": export_name,
@@ -398,6 +396,18 @@ def _get_memo_component_class(
         (MemoComponent,),
         attrs,
     )
+
+
+def reset_memo_component_classes() -> None:
+    """Clear the cached memo wrapper classes.
+
+    Called at the start of each compile so a memo's ``library`` is recomputed
+    from the current module layout. Without this, a module that switches to a
+    package (or back) between hot-reload compiles would keep serving the
+    library specifier resolved on the first compile, pointing pages at an
+    output path the compiler no longer writes.
+    """
+    _get_memo_component_class.cache_clear()
 
 
 MEMOS: dict[str, MemoDefinition] = {}
@@ -649,15 +659,12 @@ def _imported_function_var(
         return_type: The return type of the function.
         source_module: The user-app Python module that defined the memo. When
             set, the import resolves to the mirrored module file instead of the
-            legacy per-name path.
+            per-name ``app_components/_internal/<name>`` path.
 
     Returns:
         The imported FunctionVar.
     """
-    library = (
-        memo_paths.library_specifier_for(source_module)
-        or f"$/{constants.Dirs.COMPONENTS_PATH}/{name}"
-    )
+    library = memo_paths.library_for(source_module, name)
     return FunctionStringVar.create(
         name,
         _var_type=ReflexCallable[Any, return_type],
@@ -672,15 +679,12 @@ def _component_import_var(name: str, source_module: str | None = None) -> Var:
         name: The exported component name.
         source_module: The user-app Python module that defined the memo. When
             set, the import resolves to the mirrored module file instead of the
-            legacy per-name path.
+            per-name ``app_components/_internal/<name>`` path.
 
     Returns:
         The component var.
     """
-    library = (
-        memo_paths.library_specifier_for(source_module)
-        or f"$/{constants.Dirs.COMPONENTS_PATH}/{name}"
-    )
+    library = memo_paths.library_for(source_module, name)
     return Var(
         name,
         _var_type=type[Component],

@@ -10,7 +10,7 @@ see the original components and collect their imports/hooks as usual.
 Each unique subtree shape contributes:
 
 - One generated experimental memo component definition, compiled into its own
-  per-memo module at ``$/utils/components/<name>``.
+  per-memo module at ``$/app_components/_internal/<name>``.
 - ``useCallback`` hook lines for each non-lifecycle event trigger, emitted into
   the generated memo body so handler hooks stay inside that rendering domain.
 
