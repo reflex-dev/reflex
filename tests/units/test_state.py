@@ -4005,6 +4005,129 @@ config = rx.Config(
         assert "setvar" in TestState.event_handlers
 
 
+def test_state_defined_in_rxconfig_does_not_crash(tmp_path):
+    """A State subclass defined in rxconfig.py must not crash config loading.
+
+    Regression: _init_var read get_config().state_auto_setters at class-creation
+    time, which re-entered config loading while rxconfig was still importing and
+    raised AttributeError because the rxconfig module had no `config` attribute
+    yet.
+    """
+    proj_root = tmp_path / "project1"
+    proj_root.mkdir()
+
+    config_string = """
+import reflex as rx
+
+
+class RxconfigDefinedState(rx.State):
+    n: int = 0
+
+
+config = rx.Config(
+    app_name="project1",
+)
+"""
+
+    (proj_root / "rxconfig.py").write_text(dedent(config_string))
+
+    with chdir(proj_root):
+        # Must not raise (previously raised AttributeError mid-import).
+        reflex_base.config.get_config(reload=True)
+        del sys.modules[constants.Config.MODULE]
+
+
+def test_state_in_rxconfig_honors_env_auto_setters(tmp_path, monkeypatch):
+    """A State defined in rxconfig.py (pre-config) honors REFLEX_STATE_AUTO_SETTERS.
+
+    During rxconfig import the Config does not exist yet, so the cached value is
+    unset and get_state_auto_setters falls back to the env var.
+    """
+    # Simulate a fresh process where no Config has been built yet.
+    monkeypatch.setattr(reflex_base.config, "_state_auto_setters", None)
+    monkeypatch.setenv("REFLEX_STATE_AUTO_SETTERS", "true")
+
+    proj_root = tmp_path / "project1"
+    proj_root.mkdir()
+    config_string = """
+import reflex as rx
+
+
+class RxconfigEnvSetterState(rx.State):
+    n: int = 0
+
+
+config = rx.Config(app_name="project1")
+"""
+    (proj_root / "rxconfig.py").write_text(dedent(config_string))
+
+    with chdir(proj_root):
+        reflex_base.config.get_config(reload=True)
+        state_cls = sys.modules[constants.Config.MODULE].RxconfigEnvSetterState
+        assert "set_n" in state_cls.event_handlers
+        del sys.modules[constants.Config.MODULE]
+
+
+def test_state_in_rxconfig_defaults_to_no_auto_setters(tmp_path, monkeypatch):
+    """A State defined in rxconfig.py gets no auto-setters by default (pre-config)."""
+    monkeypatch.setattr(reflex_base.config, "_state_auto_setters", None)
+    monkeypatch.delenv("REFLEX_STATE_AUTO_SETTERS", raising=False)
+
+    proj_root = tmp_path / "project1"
+    proj_root.mkdir()
+    config_string = """
+import reflex as rx
+
+
+class RxconfigNoSetterState(rx.State):
+    n: int = 0
+
+
+config = rx.Config(app_name="project1")
+"""
+    (proj_root / "rxconfig.py").write_text(dedent(config_string))
+
+    with chdir(proj_root):
+        reflex_base.config.get_config(reload=True)
+        state_cls = sys.modules[constants.Config.MODULE].RxconfigNoSetterState
+        assert list(state_cls.event_handlers) == ["setvar"]
+        del sys.modules[constants.Config.MODULE]
+
+
+def test_state_auto_setters_cache_tracks_reload(tmp_path):
+    """The cached state_auto_setters value follows config reloads (no stale flag)."""
+    proj_root = tmp_path / "project1"
+    proj_root.mkdir()
+    rxconfig_path = proj_root / "rxconfig.py"
+    off_config = """
+import reflex as rx
+config = rx.Config(app_name="project1", state_auto_setters=False)
+"""
+    on_config = """
+import reflex as rx
+config = rx.Config(app_name="project1", state_auto_setters=True)
+"""
+
+    with chdir(proj_root):
+        rxconfig_path.write_text(dedent(off_config))
+        reflex_base.config.get_config(reload=True)
+        from reflex.state import State
+
+        class ReloadOffState(State):
+            num: int = 0
+
+        assert list(ReloadOffState.event_handlers) == ["setvar"]
+
+        rxconfig_path.write_text(dedent(on_config))
+        reflex_base.config.get_config(reload=True)
+
+        class ReloadOnState(State):
+            num: int = 0
+
+        assert "set_num" in ReloadOnState.event_handlers
+        del sys.modules[constants.Config.MODULE]
+
+
 class MixinState(State, mixin=True):
     """A mixin state for testing."""
 

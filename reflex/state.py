@@ -1139,7 +1139,7 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             VarTypeError: if the variable has an incorrect type
         """
-        from reflex_base.config import get_config
+        from reflex_base.config import get_state_auto_setters
         from reflex_base.utils.exceptions import VarTypeError
 
         if not types.is_valid_var_type(prop._var_type):
@@ -1151,7 +1151,7 @@ class BaseState(EvenMoreBasicBaseState):
             )
             raise VarTypeError(msg)
         cls._set_var(name, prop)
-        if cls.is_user_defined() and get_config().state_auto_setters is True:
+        if cls.is_user_defined() and get_state_auto_setters() is True:
             cls._create_setter(name, prop)
         cls._set_default_value(name, prop)
 
