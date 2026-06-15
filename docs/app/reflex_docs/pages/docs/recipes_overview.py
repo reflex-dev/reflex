@@ -32,27 +32,27 @@ def component_grid():
                 rx.box(
                     rx.el.h1(
                         rx.utils.format.to_title_case(category),
-                        class_name="font-large text-slate-12",
+                        class_name="font-large text-secondary-12",
                     ),
                     rx.icon(
                         icons.get(category, "shapes"),
                         size=18,
-                        class_name="!text-slate-9",
+                        class_name="!text-secondary-9",
                     ),
-                    class_name="px-4 py-2 flex flex-row !text-slate-12 gap-3 items-center justify-between",
+                    class_name="px-4 py-2 flex flex-row !text-secondary-12 gap-3 items-center justify-between",
                 ),
                 rx.box(
                     *[
                         rx.link(
                             format_titles(c),
                             href=get_component_link(category, c),
-                            class_name="font-small text-slate-11 hover:!text-violet-9 transition-color w-fit",
+                            class_name="font-small text-secondary-11 hover:!text-primary-9 transition-color w-fit",
                         )
                         for c in recipes_list[category]
                     ],
-                    class_name="flex flex-col gap-3 px-4 py-2 border-t border-slate-5",
+                    class_name="flex flex-col gap-3 px-4 py-2 border-t border-secondary-5",
                 ),
-                class_name="flex flex-col border border-slate-5 rounded-xl bg-slate-2 shadow-large overflow-hidden",
+                class_name="flex flex-col border border-secondary-5 rounded-xl bg-secondary-2 shadow-large overflow-hidden",
             )
         )
 
@@ -65,13 +65,13 @@ def info_card(title, content):
     return rx.box(
         rx.el.h2(
             title,
-            class_name="font-md-smbold text-slate-12",
+            class_name="font-md-smbold text-secondary-12",
         ),
         rx.text(
             content,
-            class_name="font-small text-slate-11",
+            class_name="font-small text-secondary-11",
         ),
-        class_name="flex flex-col border gap-2 border-slate-5 rounded-xl bg-slate-1 shadow-large overflow-hidden px-4 py-2",
+        class_name="flex flex-col border gap-2 border-secondary-5 rounded-xl bg-secondary-1 shadow-large overflow-hidden px-4 py-2",
     )
 
 
