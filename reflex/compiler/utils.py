@@ -893,18 +893,16 @@ def prune_stale_memo_files(emitted_paths: Iterable[str | Path]) -> None:
     output are removed up to (but not including) the ``.web`` root.
 
     Args:
-        emitted_paths: Absolute (or ``.web``-relative) paths the current
-            compile produced for the memo pipeline.
+        emitted_paths: Paths the current compile produced for the memo
+            pipeline, as built by joining :func:`get_web_dir` (so they share
+            its prefix — relative by default, absolute when overridden).
     """
     web_dir = get_web_dir()
 
     emitted_relative: set[str] = set()
     for path in emitted_paths:
-        absolute = Path(path)
-        if not absolute.is_absolute():
-            absolute = web_dir / absolute
         try:
-            relative = absolute.relative_to(web_dir)
+            relative = Path(path).relative_to(web_dir)
         except ValueError:
             continue
         emitted_relative.add(str(relative).replace(os.sep, "/"))
