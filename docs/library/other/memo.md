@@ -115,6 +115,32 @@ def primary_button(
     return rx.button(label, rest.merge({"class_name": class_name}))
 ```
 
+### Limitation: props consumed at build time
+
+`rx.RestProp` forwards props to the rendered element at **runtime**, so it can only carry props the element itself understands — real component props and CSS props. It **cannot** carry a prop that the target component's `create()` consumes at **build time** to decide what gets rendered.
+
+The memo body runs once, when the app compiles — before any caller has passed a value. A value sent later through `rest` arrives only in the browser, after the target's `create()` has already run, so it never reaches that code. It is then emitted as a plain prop or as CSS and silently has no effect. Build-time props include `is_external` on `rx.link` (it selects a router link), the `tag` on `rx.icon` (it picks which icon to import), and any custom `create()` that consumes a keyword to reshape its output.
+
+To forward such a prop, give it its own `rx.Var[...]` parameter and place it in the body yourself instead of routing it through `rest`:
+
+```python
+class CustomText(rx.el.Span):
+    @classmethod
+    def create(cls, *children, prefix: rx.Var[str] | str = "", **props) -> rx.Component:
+        return super().create(prefix, *children, **props)
+
+
+# `prefix` is consumed by `create`, so it cannot arrive through `rest`.
+# Declaring it as a parameter lets the memo body pass it to `create` itself.
+@rx.memo
+def styled_text(rest: rx.RestProp, *, prefix: rx.Var[str]) -> rx.Component:
+    return CustomText.create("Foo", rest, prefix=prefix)
+
+
+def index():
+    return styled_text(prefix="P: ", class_name="c")
+```
+
 
 ## Accepting Children
 

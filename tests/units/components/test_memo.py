@@ -99,7 +99,9 @@ def test_component_returning_memo_with_children_and_rest():
 
     assert isinstance(component, MemoComponent)
     assert len(component.children) == 2
-    assert component.get_props() == ("title", "foo")
+    # `foo` is not a field of the rest target (`Box`), so it is routed into
+    # `css` just like `rx.box(foo="extra")` would; `className` is a base field.
+    assert component.get_props() == ("title", "css")
     assert type(component) is type(component_again)
     assert type(component).tag == "MyCard"
     assert type(component).get_fields()["tag"].default == "MyCard"
@@ -107,7 +109,7 @@ def test_component_returning_memo_with_children_and_rest():
     rendered = component.render()
     assert rendered["name"] == "MyCard"
     assert 'title:"Hello"' in rendered["props"]
-    assert 'foo:"extra"' in rendered["props"]
+    assert 'css:({ ["foo"] : "extra" })' in rendered["props"]
     assert 'className:"extra"' in rendered["props"]
 
     definition = MEMOS["MyCard"]
@@ -439,6 +441,45 @@ def test_memo_base_props_forward_to_root_via_rest_prop():
     # ``className``/``id`` actually reach the rendered element.
     assert "...rest" in code
     assert "{...rest}" in code
+
+
+def test_memo_css_props_forwarded_via_rest_prop_become_css():
+    """CSS props forwarded through an ``rx.RestProp`` compile to ``css`` (ENG-9676).
+
+    A normal component folds any kwarg that is not a declared field of the target
+    into emotion ``css``. A memo forwarding via ``rx.RestProp`` must do the same:
+    ``font_weight`` is not a ``Text`` field, so it has to reach the root as ``css``
+    rather than a raw ``fontWeight`` plain prop the target silently drops.
+    """
+
+    @rx.memo
+    def styled_text(rest: rx.RestProp) -> rx.Component:
+        return rx.text("Foo", rest)
+
+    rendered = str(styled_text(font_weight="bold", class_name="c"))
+    # Matches the shape of `rx.text("Bar", font_weight="bold")`.
+    assert "css:" in rendered
+    assert '["fontWeight"] : "bold"' in rendered
+    # Not forwarded as a plain prop the target would ignore.
+    assert 'fontWeight:"bold"' not in rendered
+    # A genuine base `Component` field stays a normal plain prop.
+    assert 'className:"c"' in rendered
+
+
+def test_memo_rest_prop_keeps_real_target_props_as_props():
+    """A prop that IS a declared field of the rest target stays a plain prop (ENG-9676).
+
+    Guards the shadowing case: ``weight`` is a real ``Text`` prop, so it must be
+    forwarded normally and never reclassified into ``css``.
+    """
+
+    @rx.memo
+    def styled_text(rest: rx.RestProp) -> rx.Component:
+        return rx.text("Foo", rest)
+
+    rendered = str(styled_text(weight="bold"))
+    assert 'weight:"bold"' in rendered
+    assert "css:" not in rendered
 
 
 def test_memo_component_still_rejects_unknown_props_without_rest():
@@ -1364,11 +1405,15 @@ def test_bind_children_and_rest_are_noops_at_the_param_level():
     assert binding._event_triggers == {}
 
 
-def test_take_rest_sweeps_unconsumed_keys_into_camel_cased_dict():
-    """binding.take_rest collects every leftover kwarg not on the Component."""
-    binding = _MemoCallBinding({"foo_bar": "x", "class_name": "y"})
-    rest = binding.take_rest(component_fields={})
-    assert set(rest) == {"fooBar", "className"}
+def test_take_rest_forwards_target_fields_and_routes_remainder_to_css():
+    """take_rest forwards declared target fields and sweeps the rest into ``css``.
+
+    Keys that are fields of the rest target are forwarded as camelCased plain
+    props; everything else is a CSS prop, collected under a single ``css`` key.
+    """
+    binding = _MemoCallBinding({"foo_bar": "x", "font_weight": "bold"})
+    rest = binding.take_rest(component_fields={}, rest_target_fields={"foo_bar"})
+    assert set(rest) == {"fooBar", "css"}
     assert binding.raw_kwargs == {}
 
 
