@@ -21,8 +21,11 @@ def test_capture_source_module_returns_user_module():
     assert "test_memo_paths" in captured
 
 
-def test_capture_source_module_filters_framework():
-    assert memo_paths.capture_source_module(memo_paths.capture_source_module) is None
+def test_capture_source_module_mirrors_framework_module():
+    # Framework-defined callables now mirror to their real module name rather
+    # than being routed into the shared un-mirrored fallback file.
+    captured = memo_paths.capture_source_module(memo_paths.capture_source_module)
+    assert captured == "reflex_base.utils.memo_paths"
 
 
 def test_capture_source_module_filters_main():
@@ -80,17 +83,28 @@ def test_segment_is_safe_rejects_trailing_dot_or_space():
 
 
 def test_is_framework_module_covers_packages_and_prefixes():
+    # The predicate still recognizes framework packages, but now only steers the
+    # frame-walk fallback (resolve_user_module_from_frame), not mirroring.
+    assert memo_paths._is_framework_module("reflex")
+    assert memo_paths._is_framework_module("reflex.app")
+    assert memo_paths._is_framework_module("reflex_base")
+    # The reflex_components_* family matches by prefix.
+    assert memo_paths._is_framework_module("reflex_components_radix")
+    # A module that merely starts with "reflex" but isn't a framework package.
+    assert not memo_paths._is_framework_module("reflexion.pages")
+
+
+def test_capture_source_module_no_longer_filters_framework():
     def _fn_in(module: str):
         return type("F", (), {"__module__": module})
 
-    # The package itself and its submodules are framework.
-    assert memo_paths.capture_source_module(_fn_in("reflex")) is None
-    assert memo_paths.capture_source_module(_fn_in("reflex.app")) is None
-    assert memo_paths.capture_source_module(_fn_in("reflex_base")) is None
-    # The reflex_components_* family matches by prefix.
-    assert memo_paths.capture_source_module(_fn_in("reflex_components_radix")) is None
-    # A user module that merely starts with "reflex" but isn't a framework
-    # package is still mirrored.
+    # Framework modules are captured and mirrored to their real package name.
+    assert memo_paths.capture_source_module(_fn_in("reflex.app")) == "reflex.app"
+    assert (
+        memo_paths.capture_source_module(_fn_in("reflex_components_radix"))
+        == "reflex_components_radix"
+    )
+    # User modules are captured unchanged.
     assert (
         memo_paths.capture_source_module(_fn_in("reflexion.pages")) == "reflexion.pages"
     )
@@ -101,13 +115,10 @@ def test_library_for_mirrors_or_falls_back():
         memo_paths.library_for("counter_app.ui", "Button")
         == "$/app_components/counter_app/ui"
     )
-    # No source module → per-name internal path.
-    assert memo_paths.library_for(None, "Button") == "$/app_components/_internal/Button"
-    # Unsafe module → per-name internal path.
-    assert (
-        memo_paths.library_for("bad..name", "Button")
-        == "$/app_components/_internal/Button"
-    )
+    # No source module → per-name fallback path.
+    assert memo_paths.library_for(None, "Button") == "$/utils/components/Button"
+    # Unsafe module → per-name fallback path.
+    assert memo_paths.library_for("bad..name", "Button") == "$/utils/components/Button"
 
 
 def test_module_to_mirrored_segments_none():

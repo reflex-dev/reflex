@@ -1176,7 +1176,7 @@ def test_compile_context_memoize_wrappers_registers_shared_subtree_tag() -> None
     # Each page imports the generated experimental memo component.
     page_a_code = compile_ctx.compiled_pages["/a"].output_code or ""
     assert (
-        f'import {{{wrapper_tag}}} from "$/app_components/_internal/{wrapper_tag}"'
+        f'import {{{wrapper_tag}}} from "$/utils/components/{wrapper_tag}"'
         in page_a_code
     )
     assert f"jsx({wrapper_tag}," in page_a_code

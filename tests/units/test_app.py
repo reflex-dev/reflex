@@ -2195,7 +2195,7 @@ def test_app_wrap_compile_theme(
     # the memoized ``onError`` handler instead of the AppWrap chain.
     memo_contents = (
         web_dir
-        / constants.Dirs.APP_COMPONENTS_INTERNAL
+        / constants.Dirs.COMPONENTS_PATH
         / f"{error_boundary_tag}{constants.Ext.JSX}"
     ).read_text()
     assert "fallbackRender" in memo_contents
@@ -2241,9 +2241,7 @@ def _hydrate_fallback_module(web_dir: Path) -> Path:
         The path to the HydrateFallback memo module.
     """
     return (
-        web_dir
-        / constants.Dirs.APP_COMPONENTS_INTERNAL
-        / f"HydrateFallback{constants.Ext.JSX}"
+        web_dir / constants.Dirs.COMPONENTS_PATH / f"HydrateFallback{constants.Ext.JSX}"
     )
 
 
@@ -2266,7 +2264,7 @@ def test_compile_hydrate_fallback_emits_hydrate_fallback(
     ).read_text()
     assert (
         "export { HydrateFallback as HydrateFallback } "
-        'from "$/app_components/_internal/HydrateFallback";' in app_root
+        'from "$/utils/components/HydrateFallback";' in app_root
     )
     assert "Hydrating..." in _hydrate_fallback_module(web_dir).read_text()
 
@@ -2299,7 +2297,7 @@ def test_compile_hydrate_fallback_from_config(
     app_root = (
         web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
     ).read_text()
-    assert 'from "$/app_components/_internal/HydrateFallback";' in app_root
+    assert 'from "$/utils/components/HydrateFallback";' in app_root
     assert "Fallback from config..." in _hydrate_fallback_module(web_dir).read_text()
 
 
@@ -2513,7 +2511,7 @@ def test_compile_writes_app_wrap_memo_components(
     compilable_app: tuple[App, Path],
     mocker,
 ) -> None:
-    """App-wrap memo components are emitted as per-memo modules."""
+    """App-wrap memo components mirror to their defining module's output file."""
     conf = rx.Config(app_name="testing")
     mocker.patch("reflex_base.config._get_config", return_value=conf)
     app, web_dir = compilable_app
@@ -2521,12 +2519,17 @@ def test_compile_writes_app_wrap_memo_components(
     app.add_page(rx.box("Index"), route="/")
     app._compile()
 
-    # Per-memo modules live under .web/app_components/; each memo wrapper
-    # declares its ``library`` as the per-memo file path, so pages import it
-    # directly.
-    memo_dir = web_dir / constants.Dirs.APP_COMPONENTS_INTERNAL
-    assert (memo_dir / f"DefaultOverlayComponents{constants.Ext.JSX}").exists()
-    assert (memo_dir / f"MemoizedToastProvider{constants.Ext.JSX}").exists()
+    # The overlay/toast app wraps are framework ``@memo`` functions, so they
+    # mirror to their defining module under .web/app_components/ (rather than a
+    # shared file). Their export must land in some mirrored module there.
+    memo_sources = "\n".join(
+        path.read_text()
+        for path in (web_dir / constants.Dirs.APP_COMPONENTS).rglob(
+            f"*{constants.Ext.JSX}"
+        )
+    )
+    assert "export const DefaultOverlayComponents = memo" in memo_sources
+    assert "export const MemoizedToastProvider = memo" in memo_sources
 
 
 def test_compile_dry_run_does_not_prune_or_write_manifest(
@@ -2543,7 +2546,7 @@ def test_compile_dry_run_does_not_prune_or_write_manifest(
 
     # Seed a stale memo file plus a manifest entry that a real compile would
     # prune (it is no longer emitted).
-    stale_rel = f"{constants.Dirs.APP_COMPONENTS_INTERNAL}/Stale{constants.Ext.JSX}"
+    stale_rel = f"{constants.Dirs.COMPONENTS_PATH}/Stale{constants.Ext.JSX}"
     stale = web_dir / stale_rel
     stale.parent.mkdir(parents=True, exist_ok=True)
     stale.write_text("// stale", encoding="utf-8")
@@ -2620,7 +2623,7 @@ def test_stateful_app_wrap_is_memoized(
     assert "children" in app_wrap_fn[app_wrap_fn.index("jsx(StateProvider") :]
 
     # The extracted memo module carries the state hook instead.
-    memo_dir = web_dir / constants.Dirs.APP_COMPONENTS_INTERNAL
+    memo_dir = web_dir / constants.Dirs.COMPONENTS_PATH
     assert any(
         "useContext(StateContexts" in memo_file.read_text()
         for memo_file in memo_dir.glob(f"*{constants.Ext.JSX}")

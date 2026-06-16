@@ -399,7 +399,7 @@ def test_compile_app_root_with_hydrate_fallback_exports_hydrate_fallback():
 
     assert (
         "export { MyFallback as HydrateFallback } "
-        'from "$/app_components/_internal/MyFallback";' in code
+        'from "$/utils/components/MyFallback";' in code
     )
 
 

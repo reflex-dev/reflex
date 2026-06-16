@@ -423,9 +423,9 @@ def compile_experimental_component_memo(
         dynamic_imports = render._get_all_dynamic_imports()
         all_imports = render._get_all_imports()
 
-    # Each un-mirrored memo lives in ``web/app_components/_internal/<name>.jsx``
-    # and is imported from ``$/app_components/_internal/<name>``. Strip a
-    # self-import so a memo body that references its own specifier doesn't recurse.
+    # Each un-mirrored memo lives in ``web/utils/components/<name>.jsx`` and is
+    # imported from ``$/utils/components/<name>``. Strip a self-import so a memo
+    # body that references its own specifier doesn't recurse.
     self_module = memo_paths.unmirrored_library_specifier(definition.export_name)
     imports: ParsedImportDict = {
         lib: fields for lib, fields in all_imports.items() if lib != self_module
@@ -532,7 +532,7 @@ def compile_experimental_function_memo(
     # Reading ``.function`` evaluates a deferred function-memo body on first use.
     function = definition.function
     if var_data := function._get_all_var_data():
-        # Per-file memo modules live at ``$/app_components/_internal/<name>``;
+        # Un-mirrored per-file memo modules live at ``$/utils/components/<name>``;
         # strip only a self-import to this function memo's own module.
         self_module = memo_paths.unmirrored_library_specifier(definition.python_name)
         imports = {
@@ -747,13 +747,13 @@ def get_context_path() -> str:
 
 
 def get_memo_components_dir() -> str:
-    """Get the directory that holds per-memo module files.
+    """Get the directory that holds un-mirrored per-memo module files.
 
     Returns:
-        The directory used for per-memo ``.jsx`` modules. Pages import each
-        wrapper directly from ``$/app_components/_internal/<name>``.
+        The directory used for memos that can't be mirrored to a source module.
+        Pages import each wrapper directly from ``$/utils/components/<name>``.
     """
-    return str(get_web_dir() / constants.Dirs.APP_COMPONENTS_INTERNAL)
+    return str(get_web_dir() / constants.Dirs.COMPONENTS_PATH)
 
 
 def get_memo_module_path(segments: tuple[str, ...]) -> str:
@@ -899,13 +899,12 @@ def prune_stale_memo_files(emitted_paths: Iterable[str | Path]) -> None:
     """
     web_dir = get_web_dir()
 
-    emitted_relative: set[str] = set()
-    for path in emitted_paths:
-        try:
-            relative = Path(path).relative_to(web_dir)
-        except ValueError:
-            continue
-        emitted_relative.add(str(relative).replace(os.sep, "/"))
+    # Emitted paths are built by joining ``web_dir`` (see Args), so each is
+    # always under it — no need to guard ``relative_to``.
+    emitted_relative = {
+        str(Path(path).relative_to(web_dir)).replace(os.sep, "/")
+        for path in emitted_paths
+    }
 
     previous = _read_memo_manifest(web_dir)
     for relative in previous - emitted_relative:

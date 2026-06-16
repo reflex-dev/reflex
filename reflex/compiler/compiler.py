@@ -438,12 +438,11 @@ def _compile_memo_components(
 ) -> tuple[list[tuple[str, str]], dict[str, list[ImportVar]]]:
     """Compile memos grouped by their source module's mirrored output path.
 
-    Memos that captured a user-app source module land in a single combined
-    file at ``.web/app_components/<segments>.jsx`` so the page-side import
-    surface matches the source layout. Memos that can't be mirrored (framework
-    components, ``__main__``, unsafe module names) get one file per memo at
-    ``.web/app_components/_internal/<name>.jsx`` that page-side code imports
-    directly.
+    Memos that captured a source module land in a single combined file at
+    ``.web/app_components/<segments>.jsx`` so the page-side import surface
+    matches the source layout. Memos that can't be mirrored (``__main__``,
+    unsafe module names) fall back to one file per memo at
+    ``.web/utils/components/<name>.jsx`` that page-side code imports directly.
 
     Args:
         memos: The memos to compile.
@@ -456,9 +455,6 @@ def _compile_memo_components(
     aggregate_imports: dict[str, list[ImportVar]] = {}
     unmirrored_files: list[tuple[str, str]] = []
     unmirrored_base_dir = utils.get_memo_components_dir()
-    # The subdirectory under ``app_components/`` that holds un-mirrored per-memo
-    # files; a user module must never mirror into it (see the collision check).
-    internal_subdir = constants.Dirs.APP_COMPONENTS_INTERNAL.rsplit("/", 1)[-1]
     groups: collections.defaultdict[tuple[str, ...], _MemoGroup] = (
         collections.defaultdict(_MemoGroup)
     )
@@ -506,17 +502,6 @@ def _compile_memo_components(
     for segments, group in groups.items():
         module_path = utils.get_memo_module_path(segments)
         module_name = ".".join(segments)
-        # A user module that mirrors into the reserved internal directory would
-        # overwrite the per-memo files emitted there. Fail loudly rather than
-        # silently clobbering output.
-        if segments[0] == internal_subdir:
-            msg = (
-                f"Memoized component module {module_name!r} mirrors into "
-                f"Reflex's reserved {constants.Dirs.APP_COMPONENTS_INTERNAL!r} "
-                f"memo output directory. Rename the source module so its "
-                f"top-level package is not {internal_subdir!r}."
-            )
-            raise ReflexError(msg)
         case_key = module_path.casefold()
         if (clash := claimed_paths.get(case_key)) is not None:
             msg = (

@@ -5,10 +5,11 @@ under ``.web/app_components/`` that mirrors its Python source module, instead of
 bundling everything into one file. This module owns the small set of helpers
 that:
 
-- Read ``fn.__module__`` and reject framework / synthetic modules.
+- Read ``fn.__module__``, rejecting only synthetic modules (``__main__``,
+  missing). Framework modules mirror to their real package name like any other.
 - Walk the live frame stack as a fallback for entry points that don't take a
   user-supplied callable (notably ``app.add_page(component)`` with a Component
-  instance).
+  instance), skipping framework frames to reach the real user module.
 - Translate a dotted Python module name into mirrored JSX path segments and
   the corresponding ``$/...`` library specifier consumed by the import system.
 """
@@ -23,9 +24,10 @@ from pathlib import Path
 
 from reflex_base.constants.base import Dirs
 
-# Framework packages: a memo defined in one of these (the package itself or any
-# submodule below it) is never mirrored, so we don't emit ``.web/reflex/...``
-# files for memos defined inside the framework's own component packages.
+# Framework packages, used only to steer the frame-walk fallback
+# (:func:`resolve_user_module_from_frame`) past framework frames to the real
+# user module. Memos defined in these packages still mirror to their real
+# package name like any other module.
 _FRAMEWORK_PACKAGES = (
     "reflex",
     "reflex_base",
@@ -42,12 +44,14 @@ _FRAMEWORK_NAME_PREFIXES = ("reflex_components_",)
 def _is_framework_module(module_name: str) -> bool:
     """Whether ``module_name`` belongs to the framework itself.
 
+    Used only by :func:`resolve_user_module_from_frame` to skip framework
+    frames; framework modules are otherwise mirrored like any user module.
+
     Args:
         module_name: The dotted module name.
 
     Returns:
-        True if the module is part of the framework and should not be
-        mirrored under ``.web/``.
+        True if the module is part of the framework.
     """
     if module_name.startswith(_FRAMEWORK_NAME_PREFIXES):
         return True
@@ -62,11 +66,12 @@ def capture_source_module(fn: Callable | None) -> str | None:
 
     Reads ``fn.__module__`` directly — Python sets this on every function
     definition, and it survives re-exports, decorators that ``functools.wraps``
-    correctly, and aliasing. Returns ``None`` for ``__main__``, missing
-    modules, and framework modules.
+    correctly, and aliasing. Returns ``None`` only for ``__main__`` and missing
+    modules, which have no stable path to mirror; framework modules mirror to
+    their real package name like any other.
 
     Args:
-        fn: The user callable whose definition module is wanted.
+        fn: The callable whose definition module is wanted.
 
     Returns:
         The dotted module name to mirror under ``.web/app_components/``, or
@@ -76,8 +81,6 @@ def capture_source_module(fn: Callable | None) -> str | None:
         return None
     module_name = getattr(fn, "__module__", None)
     if not module_name or module_name == "__main__":
-        return None
-    if _is_framework_module(module_name):
         return None
     return module_name
 
@@ -193,24 +196,6 @@ def module_to_mirrored_segments(module_name: str | None) -> tuple[str, ...] | No
     return tuple(segments)
 
 
-def library_specifier_for(source_module: str | None) -> str | None:
-    """Return the ``$/...`` import specifier mirroring ``source_module``, or None.
-
-    Args:
-        source_module: The dotted module name a memo was defined in.
-
-    Returns:
-        The ``$/<segments>`` specifier, or ``None`` if no source module was
-        captured or it can't be safely mirrored.
-    """
-    if source_module is None:
-        return None
-    segments = module_to_mirrored_segments(source_module)
-    if segments is None:
-        return None
-    return mirrored_library_specifier(segments)
-
-
 def mirrored_jsx_path(web_dir: Path, segments: tuple[str, ...]) -> Path:
     """Build the absolute ``.jsx`` path under ``web_dir`` for ``segments``.
 
@@ -250,9 +235,9 @@ def mirrored_library_specifier(segments: tuple[str, ...]) -> str:
 def unmirrored_library_specifier(name: str) -> str:
     """Build the ``$/...`` import specifier for an un-mirrorable memo.
 
-    Memos that can't be mirrored to a user module (framework components,
-    ``__main__``, unsafe names) get one file per memo under the reserved
-    ``app_components/_internal/`` subdirectory.
+    Memos that can't be mirrored to a source module (``__main__``, unsafe
+    names) get one file per memo under ``utils/components/`` — the legacy
+    per-name layout.
 
     Args:
         name: The memo's export name.
@@ -261,14 +246,14 @@ def unmirrored_library_specifier(name: str) -> str:
         A ``$/`` prefixed module specifier suitable for use as a
         ``Component.library`` value.
     """
-    return f"$/{Dirs.APP_COMPONENTS_INTERNAL}/{name}"
+    return f"$/{Dirs.COMPONENTS_PATH}/{name}"
 
 
 def library_for(source_module: str | None, name: str) -> str:
     """Return the library specifier a memo should import from.
 
     Mirrors ``source_module`` when it can be safely mirrored, otherwise falls
-    back to the per-name ``app_components/_internal/<name>`` path.
+    back to the per-name ``utils/components/<name>`` path.
 
     Args:
         source_module: The dotted module name a memo was defined in.
@@ -277,4 +262,8 @@ def library_for(source_module: str | None, name: str) -> str:
     Returns:
         A ``$/`` prefixed module specifier for the memo's compiled output.
     """
-    return library_specifier_for(source_module) or unmirrored_library_specifier(name)
+    if source_module is not None:
+        segments = module_to_mirrored_segments(source_module)
+        if segments is not None:
+            return mirrored_library_specifier(segments)
+    return unmirrored_library_specifier(name)

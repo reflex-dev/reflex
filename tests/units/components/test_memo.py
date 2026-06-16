@@ -948,32 +948,12 @@ def test_compile_memo_components_falls_back_when_no_source_module():
     assert any(path == exp_path for path, _ in files)
 
 
-def test_compile_memo_components_rejects_collision_with_reserved_internal_dir():
-    """A user module mirroring into the reserved internal dir fails loudly.
+def test_compile_memo_components_mirrors_underscore_module_without_error():
+    """A module named ``_internal`` mirrors normally — no reserved-name restriction.
 
-    A module whose first segment matches the reserved ``_internal`` directory
-    would mirror on top of the per-memo files emitted there, so compilation
-    must raise rather than silently clobber output.
-    """
-    definition = MemoComponentDefinition(
-        fn=lambda: None,
-        python_name="collides",
-        params=(),
-        export_name="Collides",
-        _component=_LazyBody.ready(rx.fragment()),
-        passthrough_hole_child=None,
-        source_module="_internal.collides",
-    )
-
-    with pytest.raises(ReflexError, match="reserved"):
-        compiler.compile_memo_components((definition,))
-
-
-def test_compile_memo_components_rejects_single_segment_internal_module():
-    """A top-level module literally named ``_internal`` is also rejected.
-
-    The guard must catch the single-segment case (mirroring to
-    ``app_components/_internal.jsx``), not just multi-segment ``_internal.x``.
+    There is no reserved memo output directory anymore, so a developer is free
+    to name a package ``_internal``; it simply mirrors to
+    ``app_components/_internal/...`` like any other module.
     """
     definition = MemoComponentDefinition(
         fn=lambda: None,
@@ -982,11 +962,12 @@ def test_compile_memo_components_rejects_single_segment_internal_module():
         export_name="Thing",
         _component=_LazyBody.ready(rx.fragment()),
         passthrough_hole_child=None,
-        source_module="_internal",
+        source_module="_internal.widgets",
     )
 
-    with pytest.raises(ReflexError, match="reserved"):
-        compiler.compile_memo_components((definition,))
+    files, _ = compiler.compile_memo_components((definition,))
+    exp_path = compiler_utils.get_memo_module_path(("_internal", "widgets"))
+    assert any(path == exp_path for path, _ in files)
 
 
 def test_compile_memo_components_rejects_case_insensitive_path_collision():

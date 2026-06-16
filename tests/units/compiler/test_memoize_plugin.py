@@ -220,10 +220,7 @@ def test_memoize_wrapper_uses_memo_component_and_call_site() -> None:
     wrapper_tag = next(iter(ctx.memoize_wrappers))
     assert (wrapper_tag, None) in ctx.auto_memo_components
     output = page_ctx.output_code or ""
-    assert (
-        f'import {{{wrapper_tag}}} from "$/app_components/_internal/{wrapper_tag}"'
-        in output
-    )
+    assert f'import {{{wrapper_tag}}} from "$/utils/components/{wrapper_tag}"' in output
     assert f"jsx({wrapper_tag}," in (page_ctx.output_code or "")
     assert f"const {wrapper_tag} = memo" not in output
 
@@ -251,7 +248,7 @@ def test_memoize_wrapper_deduped_across_repeated_subtrees() -> None:
     wrapper_tag = next(iter(ctx.memoize_wrappers))
     assert list(ctx.auto_memo_components) == [(wrapper_tag, None)]
     assert (page_ctx.output_code or "").count(
-        f'import {{{wrapper_tag}}} from "$/app_components/_internal/{wrapper_tag}"'
+        f'import {{{wrapper_tag}}} from "$/utils/components/{wrapper_tag}"'
     ) == 1
 
 
@@ -674,7 +671,7 @@ def test_shared_subtree_across_pages_uses_same_tag() -> None:
     assert list(ctx.auto_memo_components) == [(tag, None)]
     for route in ("/a", "/b"):
         output = ctx.compiled_pages[route].output_code or ""
-        assert f'import {{{tag}}} from "$/app_components/_internal/{tag}"' in output
+        assert f'import {{{tag}}} from "$/utils/components/{tag}"' in output
         assert f"jsx({tag}," in output
 
 
@@ -779,7 +776,7 @@ def test_shared_parent_instance_across_pages_preserves_original() -> None:
     tag = next(iter(ctx.memoize_wrappers))
     for route in ("/a", "/b"):
         output = ctx.compiled_pages[route].output_code or ""
-        assert f'import {{{tag}}} from "$/app_components/_internal/{tag}"' in output, (
+        assert f'import {{{tag}}} from "$/utils/components/{tag}"' in output, (
             f"route {route} missing memo tag import"
         )
         assert f"jsx({tag}," in output, f"route {route} does not render the memo tag"
@@ -824,7 +821,7 @@ def test_shared_nested_parent_mirroring_common_elements_preserves_original() -> 
     tag = next(iter(ctx.memoize_wrappers))
     for route in ("/a", "/b", "/c"):
         output = ctx.compiled_pages[route].output_code or ""
-        assert f'import {{{tag}}} from "$/app_components/_internal/{tag}"' in output
+        assert f'import {{{tag}}} from "$/utils/components/{tag}"' in output
         assert f"jsx({tag}," in output
 
 
@@ -2283,11 +2280,11 @@ def test_restricted_content_element_with_id_and_stateful_child_still_memoizes() 
 
 
 def test_each_memo_wrapper_emits_one_component_module_file() -> None:
-    """Every wrapper tag corresponds to exactly one ``app_components/_internal/{tag}.jsx`` file.
+    """Every wrapper tag corresponds to exactly one ``utils/components/{tag}.jsx`` file.
 
-    Locks the per-wrapper file invariant: ``compile_memo_components`` must
-    emit one module per wrapper (plus the shared index), so that React can
-    code-split per wrapper. A wrapper without a file (or a file without a
+    Locks the per-wrapper file invariant for un-mirrored memos:
+    ``compile_memo_components`` must emit one module per wrapper, so that React
+    can code-split per wrapper. A wrapper without a file (or a file without a
     wrapper) would mean broken imports at runtime.
     """
     from reflex.compiler.compiler import compile_memo_components
@@ -2305,7 +2302,7 @@ def test_each_memo_wrapper_emits_one_component_module_file() -> None:
     component_module_names = {
         Path(path).name
         for path, _ in memo_files
-        if Path(path).parent.name == "_internal"
+        if Path(path).parent.name == "components"
     }
     expected = {f"{tag}.jsx" for tag in ctx.memoize_wrappers}
     assert component_module_names == expected, (

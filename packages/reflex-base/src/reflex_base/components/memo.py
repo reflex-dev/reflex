@@ -253,11 +253,11 @@ class MemoDefinition:
     fn: Callable[..., Any]
     python_name: str
     params: tuple[MemoParam, ...]
-    # The user-app Python module that defined this memo. When set, the memo's
-    # compiled JSX is emitted to a path mirroring that module and the page-side
-    # import resolves there instead of the per-name
-    # ``app_components/_internal/<name>`` path used for memos that can't be
-    # mirrored. ``kw_only`` so subclasses can keep their own required fields.
+    # The Python module that defined this memo. When set, the memo's compiled
+    # JSX is emitted to a path mirroring that module and the page-side import
+    # resolves there instead of the per-name ``utils/components/<name>`` path
+    # used for memos that can't be mirrored. ``kw_only`` so subclasses can keep
+    # their own required fields.
     source_module: str | None = dataclasses.field(default=None, kw_only=True)
 
 
@@ -306,7 +306,7 @@ class MemoComponentDefinition(MemoDefinition):
 class MemoComponent(Component):
     """A rendered instance of a memo component."""
 
-    library = f"$/{constants.Dirs.APP_COMPONENTS_INTERNAL}"
+    library = f"$/{constants.Dirs.COMPONENTS_PATH}"
     _memoization_mode = MemoizationMode(disposition=MemoizationDisposition.NEVER)
 
     # The user-authored component class this wrapper stands in for. Populated
@@ -369,7 +369,7 @@ def _get_memo_component_class(
             component (e.g. function memos, raw passthroughs).
         source_module: The user-app Python module that defined this memo. When
             set, the wrapper imports from a path mirroring that module instead
-            of the per-name ``app_components/_internal/<name>`` path.
+            of the per-name ``utils/components/<name>`` path.
 
     Returns:
         A cached component subclass with the tag set at class definition time.
@@ -657,9 +657,9 @@ def _imported_function_var(
     Args:
         name: The exported function name.
         return_type: The return type of the function.
-        source_module: The user-app Python module that defined the memo. When
-            set, the import resolves to the mirrored module file instead of the
-            per-name ``app_components/_internal/<name>`` path.
+        source_module: The Python module that defined the memo. When set, the
+            import resolves to the mirrored module file instead of the per-name
+            ``utils/components/<name>`` path.
 
     Returns:
         The imported FunctionVar.
@@ -677,9 +677,9 @@ def _component_import_var(name: str, source_module: str | None = None) -> Var:
 
     Args:
         name: The exported component name.
-        source_module: The user-app Python module that defined the memo. When
-            set, the import resolves to the mirrored module file instead of the
-            per-name ``app_components/_internal/<name>`` path.
+        source_module: The Python module that defined the memo. When set, the
+            import resolves to the mirrored module file instead of the per-name
+            ``utils/components/<name>`` path.
 
     Returns:
         The component var.
