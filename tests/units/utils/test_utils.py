@@ -817,9 +817,9 @@ def test_is_prod_mode() -> None:
     assert not utils_exec.is_prod_mode()
 
 
-def test_dev_build_env_is_not_prod_mode() -> None:
-    """dev-build is a development mode, so is_prod_mode must stay False."""
-    environment.REFLEX_ENV_MODE.set(constants.Env.DEV_BUILD)
+def test_preview_env_is_not_prod_mode() -> None:
+    """Preview is a development mode, so is_prod_mode must stay False."""
+    environment.REFLEX_ENV_MODE.set(constants.Env.PREVIEW)
     try:
         assert not utils_exec.is_prod_mode()
     finally:
@@ -830,7 +830,7 @@ def test_dev_build_env_is_not_prod_mode() -> None:
     ("value", "expected"),
     [
         ("dev", constants.Env.DEV),
-        ("dev-build", constants.Env.DEV_BUILD),
+        ("preview", constants.Env.PREVIEW),
         ("prod", constants.Env.PROD),
     ],
 )

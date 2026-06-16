@@ -716,12 +716,12 @@ class App(MiddlewareMixin, LifespanMixin):
             trigger=trigger,
         )
 
-        # In dev-build mode the frontend is served as a mounted static bundle rather
+        # In preview mode the frontend is served as a mounted static bundle rather
         # than by the Vite dev server, so each hot reload must re-run the frontend
         # build against the freshly compiled output.
         if (
             trigger == "hot_reload"
-            and environment.REFLEX_ENV_MODE.get() == constants.Env.DEV_BUILD
+            and environment.REFLEX_ENV_MODE.get() == constants.Env.PREVIEW
             and environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.get()
         ):
             from reflex.utils import build

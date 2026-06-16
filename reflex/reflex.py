@@ -224,8 +224,8 @@ def _run_dev(
                 exec.kill(exec.frontend_process.pid)
 
 
-def _run_dev_build(running_mode: constants.RunningMode, port: int, host: str):
-    """Run the app in dev-build mode.
+def _run_preview(running_mode: constants.RunningMode, port: int, host: str):
+    """Run the app in preview mode.
 
     Like dev mode, but instead of running the Vite dev server it serves a freshly
     built (un-minified) frontend bundle mounted into the backend on a single port.
@@ -251,7 +251,7 @@ def _run_dev_build(running_mode: constants.RunningMode, port: int, host: str):
         build.setup_frontend_prod(Path.cwd())
 
     # Post a telemetry event.
-    telemetry.send("run-dev-build")
+    telemetry.send("run-preview")
 
     # Display custom message when there is a keyboard interrupt.
     atexit.register(processes.atexit_handler)
@@ -324,7 +324,7 @@ def _run(
         console.error("Cannot specify --backend-port when not running backend.")
         raise SystemExit(1)
     if (
-        env in (constants.Env.PROD, constants.Env.DEV_BUILD)
+        env in (constants.Env.PROD, constants.Env.PREVIEW)
         and frontend_port
         and backend_port
         and frontend_port != backend_port
@@ -341,12 +341,12 @@ def _run(
     # Set env mode in the environment
     environment.REFLEX_ENV_MODE.set(env)
 
-    # Dev-build serves a real (but readable) frontend bundle: disable JS/CSS
+    # Preview serves a real (but readable) frontend bundle: disable JS/CSS
     # minification by default for readable output and to speed up rebuilds.
     # Sourcemaps are left off (the default) since un-minified output is already
     # debuggable, and autoprefixer is skipped (vendor prefixes are unnecessary for
     # local dev). All remain overridable via the corresponding env vars.
-    if env == constants.Env.DEV_BUILD:
+    if env == constants.Env.PREVIEW:
         if not environment.VITE_MINIFY.is_set():
             environment.VITE_MINIFY.set(False)
         if not environment.REFLEX_NO_AUTOPREFIXER.is_set():
@@ -432,8 +432,8 @@ def _run(
             auto_increment=requested_port is None,
         )
 
-        if env == constants.Env.DEV_BUILD:
-            _run_dev_build(running_mode, port, backend_host)
+        if env == constants.Env.PREVIEW:
+            _run_preview(running_mode, port, backend_host)
         else:
             _run_prod(running_mode, port, backend_host)
 
@@ -445,7 +445,7 @@ def _run(
     type=click.Choice([e.value for e in constants.Env], case_sensitive=False),
     default=constants.Env.DEV.value,
     help=(
-        "The environment to run the app in. 'dev-build' hot reloads like 'dev' but "
+        "The environment to run the app in. 'preview' hot reloads like 'dev' but "
         "serves a freshly built, un-minified frontend bundle instead of the Vite dev server."
     ),
 )
