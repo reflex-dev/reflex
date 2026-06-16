@@ -1,6 +1,6 @@
 export default {
   plugins: {
     "postcss-import": {},
-    autoprefixer: {},
+    autoprefixer: process.env.REFLEX_NO_AUTOPREFIXER ? false : {},
   },
 };

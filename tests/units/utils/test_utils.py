@@ -815,3 +815,54 @@ def test_is_prod_mode() -> None:
     assert utils_exec.is_prod_mode()
     environment.REFLEX_ENV_MODE.set(None)
     assert not utils_exec.is_prod_mode()
+
+
+def test_dev_build_env_is_not_prod_mode() -> None:
+    """dev-build is a development mode, so is_prod_mode must stay False."""
+    environment.REFLEX_ENV_MODE.set(constants.Env.DEV_BUILD)
+    try:
+        assert not utils_exec.is_prod_mode()
+    finally:
+        environment.REFLEX_ENV_MODE.set(None)
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("dev", constants.Env.DEV),
+        ("dev-build", constants.Env.DEV_BUILD),
+        ("prod", constants.Env.PROD),
+    ],
+)
+def test_env_enum_roundtrip(value: str, expected: constants.Env) -> None:
+    """Each env string maps to the matching Env member (used by the run CLI)."""
+    assert constants.Env(value) is expected
+
+
+@pytest.mark.parametrize("minify", [True, False])
+def test_vite_config_template_minify(minify: bool) -> None:
+    """The vite config template emits the requested build.minify value."""
+    from reflex.compiler import templates as compiler_templates
+
+    config = compiler_templates.vite_config_template(
+        base="/",
+        hmr=True,
+        force_full_reload=False,
+        experimental_hmr=False,
+        sourcemap=False,
+        minify=minify,
+    )
+    expected = "true" if minify else "false"
+    assert f"minify: {expected}," in config
+    # CSS minification follows the JS minify flag.
+    assert f"cssMinify: {expected}," in config
+
+
+@pytest.mark.parametrize("minify", [True, False])
+def test_compile_vite_config_reads_minify_env(
+    minify: bool, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """_compile_vite_config threads the VITE_MINIFY env var into the template."""
+    monkeypatch.setenv(environment.VITE_MINIFY.name, "true" if minify else "false")
+    config = frontend_skeleton._compile_vite_config(prerequisites.get_config())
+    assert f"minify: {'true' if minify else 'false'}," in config
