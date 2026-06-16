@@ -25,10 +25,17 @@ from pathlib import Path
 
 from reflex_base.constants.base import Dirs
 
-# Framework packages, used only to steer the frame-walk fallback
-# (:func:`resolve_user_module_from_frame`) past framework frames to the real
-# user module. Memos defined in these packages still mirror to their real
-# package name like any other module.
+# Framework packages, matched by exact name or dotted-prefix, used only to steer
+# the frame-walk fallback (:func:`resolve_user_module_from_frame`) past framework
+# frames to the real user module. Memos defined in these packages still mirror to
+# their real package name like any other module.
+#
+# Matched by exact name plus a dot boundary rather than a bare prefix so a
+# developer's own package can't be mistaken for the framework — notably the
+# ``reflex_components_*`` family is *not* listed: that's the convention community
+# component libraries follow, none of them wrap ``add_page`` (the only thing the
+# frame walk skips), and if one did we'd want its memos mirrored to its real
+# package name anyway.
 _FRAMEWORK_PACKAGES = (
     "reflex",
     "reflex_base",
@@ -36,10 +43,6 @@ _FRAMEWORK_PACKAGES = (
     "reflex_hosting_cli",
     "reflex_docgen",
 )
-
-# Bare-name prefixes matched against the whole module name (no dot boundary),
-# covering families of framework packages such as ``reflex_components_radix``.
-_FRAMEWORK_NAME_PREFIXES = ("reflex_components_",)
 
 
 def _is_framework_module(module_name: str) -> bool:
@@ -54,8 +57,6 @@ def _is_framework_module(module_name: str) -> bool:
     Returns:
         True if the module is part of the framework.
     """
-    if module_name.startswith(_FRAMEWORK_NAME_PREFIXES):
-        return True
     return any(
         module_name == pkg or module_name.startswith(pkg + ".")
         for pkg in _FRAMEWORK_PACKAGES

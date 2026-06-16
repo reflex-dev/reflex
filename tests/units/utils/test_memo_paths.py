@@ -82,14 +82,17 @@ def test_segment_is_safe_rejects_trailing_dot_or_space():
     assert not memo_paths._segment_is_safe("trailing ")
 
 
-def test_is_framework_module_covers_packages_and_prefixes():
-    # The predicate still recognizes framework packages, but now only steers the
-    # frame-walk fallback (resolve_user_module_from_frame), not mirroring.
+def test_is_framework_module_covers_only_exact_packages():
+    # The predicate recognizes framework packages by exact name or dot boundary,
+    # but now only steers the frame-walk fallback (resolve_user_module_from_frame),
+    # not mirroring.
     assert memo_paths._is_framework_module("reflex")
     assert memo_paths._is_framework_module("reflex.app")
     assert memo_paths._is_framework_module("reflex_base")
-    # The reflex_components_* family matches by prefix.
-    assert memo_paths._is_framework_module("reflex_components_radix")
+    # The reflex_components_* family is the convention community component
+    # libraries follow, so it is NOT treated as framework — those modules mirror
+    # to their real package name like any other.
+    assert not memo_paths._is_framework_module("reflex_components_radix")
     # A module that merely starts with "reflex" but isn't a framework package.
     assert not memo_paths._is_framework_module("reflexion.pages")
 
