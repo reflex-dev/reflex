@@ -726,7 +726,14 @@ class App(MiddlewareMixin, LifespanMixin):
         ):
             from reflex.utils import build
 
-            build.build()
+            # A build failure (e.g. a bad import in user code) must not take the
+            # backend down: keep serving the previous build until the next save.
+            try:
+                build.build()
+            except (Exception, SystemExit) as exc:
+                console.error(
+                    f"Frontend build failed; serving the previous build. {exc}"
+                )
 
         config = get_config()
 

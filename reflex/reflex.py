@@ -251,7 +251,7 @@ def _run_dev_build(running_mode: constants.RunningMode, port: int, host: str):
         build.setup_frontend_prod(Path.cwd())
 
     # Post a telemetry event.
-    telemetry.send("run-dev")
+    telemetry.send("run-dev-build")
 
     # Display custom message when there is a keyboard interrupt.
     atexit.register(processes.atexit_handler)
