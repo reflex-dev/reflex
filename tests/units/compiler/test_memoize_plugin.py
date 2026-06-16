@@ -21,6 +21,7 @@ from reflex_base.components.memoize_helpers import (
 )
 from reflex_base.constants.compiler import MemoizationDisposition, MemoizationMode
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
+from reflex_base.utils import memo_paths
 from reflex_base.vars import VarData
 from reflex_base.vars.base import Field, LiteralVar, Var, field
 from reflex_components_core.base.bare import Bare
@@ -713,14 +714,18 @@ def test_shared_subtree_in_distinct_source_modules_emits_per_module() -> None:
         (tag, "memo_collision_test.module_b"),
     }
 
+    # Each module emits and imports the tag under a per-module symbol so the
+    # two pages never collide on a shared JS identifier.
+    symbol_a = memo_paths.mirrored_symbol(tag, "memo_collision_test.module_a")
+    symbol_b = memo_paths.mirrored_symbol(tag, "memo_collision_test.module_b")
     page_a_output = ctx.compiled_pages["/a"].output_code or ""
     page_b_output = ctx.compiled_pages["/b"].output_code or ""
     assert (
-        f'import {{{tag}}} from "$/app_components/memo_collision_test/module_a"'
+        f'import {{{symbol_a}}} from "$/app_components/memo_collision_test/module_a"'
         in page_a_output
     )
     assert (
-        f'import {{{tag}}} from "$/app_components/memo_collision_test/module_b"'
+        f'import {{{symbol_b}}} from "$/app_components/memo_collision_test/module_b"'
         in page_b_output
     )
 
@@ -738,8 +743,8 @@ def test_shared_subtree_in_distinct_source_modules_emits_per_module() -> None:
     matched_b = find_emitted("memo_collision_test/module_b.jsx")
     assert matched_a is not None, f"missing module_a memo file in {sorted(emitted)}"
     assert matched_b is not None, f"missing module_b memo file in {sorted(emitted)}"
-    assert f"export const {tag} = memo" in matched_a
-    assert f"export const {tag} = memo" in matched_b
+    assert f"export const {symbol_a} = memo" in matched_a
+    assert f"export const {symbol_b} = memo" in matched_b
 
 
 def test_shared_parent_instance_across_pages_preserves_original() -> None:

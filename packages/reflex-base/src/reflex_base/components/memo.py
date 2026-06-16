@@ -377,10 +377,10 @@ def _get_memo_component_class(
     # With a source module the memo is grouped into a file mirroring its
     # Python module; otherwise each memo gets its own per-file module so Vite
     # has distinct module boundaries per memo, enabling code-split by page.
-    library = memo_paths.library_for(source_module, export_name)
+    library, symbol = memo_paths.library_and_symbol(source_module, export_name)
     attrs: dict[str, Any] = {
         "__module__": __name__,
-        "tag": export_name,
+        "tag": symbol,
         "library": library,
         "_wrapped_component_type": wrapped_component_type,
     }
@@ -392,7 +392,7 @@ def _get_memo_component_class(
             wrapped_component_type._get_app_wrap_components
         )
     return type(
-        f"MemoComponent_{export_name}",
+        f"MemoComponent_{symbol}",
         (MemoComponent,),
         attrs,
     )
@@ -410,21 +410,25 @@ def reset_memo_component_classes() -> None:
     _get_memo_component_class.cache_clear()
 
 
-MEMOS: dict[str, MemoDefinition] = {}
+MEMOS: dict[tuple[str, str | None], MemoDefinition] = {}
 
 
-def _memo_registry_key(definition: MemoDefinition) -> str:
+def _memo_registry_key(definition: MemoDefinition) -> tuple[str, str | None]:
     """Get the registry key for a memo.
+
+    The key pairs the compiled name with the source module: two memos with the
+    same name in different modules compile to distinct files (and distinct JS
+    symbols), so they must register as separate entries rather than colliding.
 
     Args:
         definition: The memo definition.
 
     Returns:
-        The registry key for the memo.
+        The ``(name, source_module)`` registry key for the memo.
     """
     if isinstance(definition, MemoComponentDefinition):
-        return definition.export_name
-    return definition.python_name
+        return definition.export_name, definition.source_module
+    return definition.python_name, definition.source_module
 
 
 def _is_memo_reregistration(
@@ -462,10 +466,10 @@ def _register_memo_definition(definition: MemoDefinition) -> None:
         not _is_memo_reregistration(existing, definition)
     ):
         msg = (
-            f"Memo name collision for `{key}`: "
+            f"Memo name collision for `{key[0]}`: "
             f"`{existing.fn.__module__}.{existing.python_name}` and "
             f"`{definition.fn.__module__}.{definition.python_name}` both compile "
-            "to the same memo name."
+            "to the same memo name in the same module."
         )
         raise ValueError(msg)
 
@@ -664,11 +668,11 @@ def _imported_function_var(
     Returns:
         The imported FunctionVar.
     """
-    library = memo_paths.library_for(source_module, name)
+    library, symbol = memo_paths.library_and_symbol(source_module, name)
     return FunctionStringVar.create(
-        name,
+        symbol,
         _var_type=ReflexCallable[Any, return_type],
-        _var_data=VarData(imports={library: [ImportVar(tag=name)]}),
+        _var_data=VarData(imports={library: [ImportVar(tag=symbol)]}),
     )
 
 
@@ -684,13 +688,13 @@ def _component_import_var(name: str, source_module: str | None = None) -> Var:
     Returns:
         The component var.
     """
-    library = memo_paths.library_for(source_module, name)
+    library, symbol = memo_paths.library_and_symbol(source_module, name)
     return Var(
-        name,
+        symbol,
         _var_type=type[Component],
         _var_data=VarData(
             imports={
-                library: [ImportVar(tag=name)],
+                library: [ImportVar(tag=symbol)],
                 "@emotion/react": [ImportVar(tag="jsx")],
             }
         ),

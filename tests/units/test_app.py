@@ -26,7 +26,7 @@ from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
-from reflex_base.utils import console, exceptions, format
+from reflex_base.utils import console, exceptions, format, memo_paths
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import computed_var
 from reflex_components_core.base.bare import Bare
@@ -42,7 +42,7 @@ from starlette_admin.auth import AuthProvider
 import reflex as rx
 from reflex import AdminDash, constants
 from reflex._upload import upload
-from reflex.app import App, ComponentCallable
+from reflex.app import App, ComponentCallable, default_overlay_component
 from reflex.compiler.compiler import (
     _compile_app,
     _memoize_stateful_app_wraps,
@@ -2090,6 +2090,25 @@ def _find_error_boundary_memo_tag(app_root_code: str) -> str:
     return match.group()
 
 
+def _find_mirrored_memo_symbol(app_root_code: str, name: str) -> str:
+    """Extract a mirrored memo's per-module JS symbol from app-root JS.
+
+    Framework ``@memo`` overlay wraps mirror to their defining module, so their
+    bare export name (e.g. ``DefaultOverlayComponents``) gains a short
+    per-module hash suffix in the compiled output.
+
+    Args:
+        app_root_code: The generated app-root source.
+        name: The memo's bare export name.
+
+    Returns:
+        The mirrored symbol the memo is referenced under in the output.
+    """
+    match = re.search(rf"{re.escape(name)}_[0-9a-f]{{8}}", app_root_code)
+    assert match is not None, f"mirrored memo symbol for {name!r} not found in app root"
+    return match.group()
+
+
 def compile_page_context_for_app_wraps(component: Component):
     """Compile one component through the page plugin pipeline.
 
@@ -2170,6 +2189,12 @@ def test_app_wrap_compile_theme(
         )
     ].strip()
     error_boundary_tag = _find_error_boundary_memo_tag(function_app_definition)
+    toast_provider_tag = _find_mirrored_memo_symbol(
+        function_app_definition, "MemoizedToastProvider"
+    )
+    overlay_tag = _find_mirrored_memo_symbol(
+        function_app_definition, "DefaultOverlayComponents"
+    )
     expected = (
         "function AppWrap({children}) {\n\n\n\n\n"
         "return ("
@@ -2180,10 +2205,10 @@ def test_app_wrap_compile_theme(
         # ErrorBoundary memoized: on_error trigger -> own memo module.
         + "jsx(RadixThemesColorModeProvider,{},"
         + "jsx(Fragment,{},"
-        + "jsx(MemoizedToastProvider,{},),"
+        + f"jsx({toast_provider_tag},{{}},),"
         + "jsx(RadixThemesTheme,{accentColor:\"plum\",css:{...theme.styles.global[':root'], ...theme.styles.global.body}},"
         + "jsx(Fragment,{},"
-        + "jsx(DefaultOverlayComponents,{},),"
+        + f"jsx({overlay_tag},{{}},),"
         + "jsx(Fragment,{},"
         + "children"
         + "))))))))"
@@ -2528,8 +2553,16 @@ def test_compile_writes_app_wrap_memo_components(
             f"*{constants.Ext.JSX}"
         )
     )
-    assert "export const DefaultOverlayComponents = memo" in memo_sources
-    assert "export const MemoizedToastProvider = memo" in memo_sources
+    # Each overlay memo mirrors to its defining module, so its export carries a
+    # per-module symbol derived from that module.
+    overlay_symbol = memo_paths.mirrored_symbol(
+        "DefaultOverlayComponents", default_overlay_component.__module__
+    )
+    toast_symbol = memo_paths.mirrored_symbol(
+        "MemoizedToastProvider", _compile_app.__module__
+    )
+    assert f"export const {overlay_symbol} = memo" in memo_sources
+    assert f"export const {toast_symbol} = memo" in memo_sources
 
 
 def test_compile_dry_run_does_not_prune_or_write_manifest(
@@ -2866,6 +2899,12 @@ def test_app_wrap_priority(
         )
     ].strip()
     error_boundary_tag = _find_error_boundary_memo_tag(function_app_definition)
+    toast_provider_tag = _find_mirrored_memo_symbol(
+        function_app_definition, "MemoizedToastProvider"
+    )
+    overlay_tag = _find_mirrored_memo_symbol(
+        function_app_definition, "DefaultOverlayComponents"
+    )
     expected = (
         "function AppWrap({children}) {\n\n\n\n\n"
         "return ("
@@ -2878,10 +2917,10 @@ def test_app_wrap_priority(
         + 'jsx(RadixThemesText,{as:"p"},'
         + "jsx(RadixThemesColorModeProvider,{},"
         + "jsx(Fragment,{},"
-        + "jsx(MemoizedToastProvider,{},),"
+        + f"jsx({toast_provider_tag},{{}},),"
         + "jsx(Fragment2,{},"
         + "jsx(Fragment,{},"
-        + "jsx(DefaultOverlayComponents,{},),"
+        + f"jsx({overlay_tag},{{}},),"
         + "jsx(Fragment,{},"
         + "children"
         + "))))))))))"

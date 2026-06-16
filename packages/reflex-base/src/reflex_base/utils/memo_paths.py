@@ -16,6 +16,7 @@ that:
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import inspect
 import sys
@@ -267,3 +268,49 @@ def library_for(source_module: str | None, name: str) -> str:
         if segments is not None:
             return mirrored_library_specifier(segments)
     return unmirrored_library_specifier(name)
+
+
+def mirrored_symbol(name: str, source_module: str) -> str:
+    """Return the unique JS symbol a mirrored memo exports and imports under.
+
+    Two memos with the same ``name`` in different modules must compile to
+    different JS symbols, or a page importing both hits a tag collision. The
+    output file already mirrors ``source_module``; this gives the symbol the
+    same per-module uniqueness by appending a short hash of the full dotted
+    module name. The hash is taken over the dotted name rather than the mirrored
+    segments so it stays injective: ``a.b`` and ``a_b`` collapse to the same
+    segments but hash differently.
+
+    Args:
+        name: The memo's clean export name (e.g. ``MyWidget``).
+        source_module: The dotted Python module the memo was defined in.
+
+    Returns:
+        A valid JS identifier unique to ``(name, source_module)``.
+    """
+    suffix = hashlib.sha1(source_module.encode()).hexdigest()[:8]
+    return f"{name}_{suffix}"
+
+
+def library_and_symbol(source_module: str | None, name: str) -> tuple[str, str]:
+    """Return the library specifier and JS symbol a memo compiles to.
+
+    Mirrors :func:`library_for` but also returns the symbol, computing the
+    mirrored segments once so the library and the symbol can never disagree
+    about whether the module is mirrorable.
+
+    Args:
+        source_module: The dotted module name a memo was defined in.
+        name: The memo's export name.
+
+    Returns:
+        A ``(library, symbol)`` pair. For an un-mirrorable memo the symbol is
+        ``name`` unchanged and the library is the per-name fallback path.
+    """
+    if source_module is not None:
+        segments = module_to_mirrored_segments(source_module)
+        if segments is not None:
+            return mirrored_library_specifier(segments), mirrored_symbol(
+                name, source_module
+            )
+    return unmirrored_library_specifier(name), name

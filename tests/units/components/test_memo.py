@@ -53,17 +53,18 @@ def test_var_returning_memo():
     price = Var(_js_expr="price", _var_type=int)
     currency = Var(_js_expr="currency", _var_type=str)
 
+    sym = memo_paths.mirrored_symbol("format_price", __name__)
     assert (
         str(format_price(amount=price, currency=currency))
-        == "(format_price(price, currency))"
+        == f"({sym}(price, currency))"
     )
     assert (
         str(format_price.call(amount=price, currency=currency))
-        == "(format_price(price, currency))"
+        == f"({sym}(price, currency))"
     )
     assert isinstance(format_price._as_var(), FunctionVar)
 
-    definition = MEMOS["format_price"]
+    definition = MEMOS["format_price", __name__]
     assert isinstance(definition, MemoFunctionDefinition)
     assert (
         str(definition.function) == '((amount, currency) => ((currency+": $")+amount))'
@@ -98,26 +99,28 @@ def test_component_returning_memo_with_children_and_rest():
     )
     component_again = my_card(title="World")
 
+    sym = memo_paths.mirrored_symbol("MyCard", __name__)
     assert isinstance(component, MemoComponent)
     assert len(component.children) == 2
     assert component.get_props() == ("title", "foo")
     assert type(component) is type(component_again)
-    assert type(component).tag == "MyCard"
-    assert type(component).get_fields()["tag"].default == "MyCard"
+    assert type(component).tag == sym
+    assert type(component).get_fields()["tag"].default == sym
 
     rendered = component.render()
-    assert rendered["name"] == "MyCard"
+    assert rendered["name"] == sym
     assert 'title:"Hello"' in rendered["props"]
     assert 'foo:"extra"' in rendered["props"]
     assert 'className:"extra"' in rendered["props"]
 
-    definition = MEMOS["MyCard"]
+    definition = MEMOS["MyCard", __name__]
     assert isinstance(definition, MemoComponentDefinition)
     assert any(str(prop) == "rest" for prop in definition.component.special_props)
 
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
     code = "\n".join(c for _, c in files)
-    assert "export const MyCard = memo(({children, title:title" in code
+    assert f"export const {sym} = memo(" in code
+    assert "({children, title:title" in code
     assert "...rest" in code
     assert "jsx(RadixThemesBox,{...rest}" in code
 
@@ -133,15 +136,17 @@ def test_component_returning_memo_accepts_component_var_result():
     ) -> rx.Var[rx.Component]:
         return rx.cond(show, first, second)
 
-    definition = MEMOS["ConditionalSlot"]
+    definition = MEMOS["ConditionalSlot", __name__]
     assert isinstance(definition, MemoComponentDefinition)
     assert definition.component.render() == {
         "contents": "(showRxMemo ? firstRxMemo : secondRxMemo)"
     }
 
+    sym = memo_paths.mirrored_symbol("ConditionalSlot", __name__)
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
     code = "\n".join(c for _, c in files)
-    assert "export const ConditionalSlot = memo(({show:showRxMemo" in code
+    assert f"export const {sym} = memo(" in code
+    assert "({show:showRxMemo" in code
     assert "(showRxMemo ? firstRxMemo : secondRxMemo)" in code
 
 
@@ -163,10 +168,11 @@ def test_var_returning_memo_with_rest_props():
     assert '["color"] : "red"' in str(merged)
     assert '["className"] : "primary"' in str(merged)
 
+    sym = memo_paths.mirrored_symbol("merge_styles", __name__)
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
     code = "\n".join(c for _, c in files)
     assert (
-        "export const merge_styles = (({base, ...overrides}) => ({...base, ...overrides}));"
+        f"export const {sym} = (({{base, ...overrides}}) => ({{...base, ...overrides}}));"
         in code
     )
 
@@ -199,7 +205,7 @@ def test_component_memo_rest_prop_merge_is_forwarded_as_rest_prop():
     def primary_button(rest: rx.RestProp, *, label: rx.Var[str]) -> rx.Component:
         return rx.button(label, rest.merge({"className": "btn"}))
 
-    definition = MEMOS["PrimaryButton"]
+    definition = MEMOS["PrimaryButton", __name__]
     assert isinstance(definition, MemoComponentDefinition)
 
     # The merged value is accepted as a RestProp: lifted onto special_props
@@ -253,9 +259,10 @@ def test_var_returning_memo_with_children_and_rest():
     assert '["children"]' in str(rendered)
     assert '["className"] : "slot"' in str(rendered)
 
+    sym = memo_paths.mirrored_symbol("label_slot", __name__)
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
     code = "\n".join(c for _, c in files)
-    assert "export const label_slot = (({children, label, ...rest}) => label);" in code
+    assert f"export const {sym} = (({{children, label, ...rest}}) => label);" in code
 
 
 def test_memo_munges_legacy_bare_type_param():
@@ -271,7 +278,7 @@ def test_memo_munges_legacy_bare_type_param():
     assert "bad_annotation" in kwargs["feature_name"]
     assert "`value`" in kwargs["reason"]
 
-    definition = MEMOS["bad_annotation"]
+    definition = MEMOS["bad_annotation", __name__]
     assert isinstance(definition, MemoFunctionDefinition)
     (value_param,) = definition.params
     assert value_param.kind is MemoParamKind.VALUE
@@ -292,7 +299,7 @@ def test_memo_munges_legacy_bare_type_params_for_component():
     assert "`title`" in reason
     assert "`count`" in reason
 
-    definition = MEMOS["LegacyCard"]
+    definition = MEMOS["LegacyCard", __name__]
     assert isinstance(definition, MemoComponentDefinition)
     assert {p.name: p.kind for p in definition.params} == {
         "title": MemoParamKind.VALUE,
@@ -572,7 +579,7 @@ def test_memo_component_body_not_evaluated_until_used():
         return rx.box(value)
 
     # Decoration registers the memo without running the body.
-    assert "LazyBox" in MEMOS
+    assert ("LazyBox", __name__) in MEMOS
     assert evaluated == []
 
     # First instantiation triggers a single evaluation...
@@ -594,7 +601,7 @@ def test_memo_function_body_not_evaluated_until_compiled():
         evaluated.append(1)
         return value
 
-    assert "lazy_join" in MEMOS
+    assert ("lazy_join", __name__) in MEMOS
     assert evaluated == []
 
     # Calling a function memo references the imported var, not the body.
@@ -602,7 +609,7 @@ def test_memo_function_body_not_evaluated_until_compiled():
     assert evaluated == []
 
     # The compiler (reading ``.function``) triggers a single evaluation.
-    definition = MEMOS["lazy_join"]
+    definition = MEMOS["lazy_join", __name__]
     assert isinstance(definition, MemoFunctionDefinition)
     _ = definition.function
     assert evaluated == [1]
@@ -704,7 +711,7 @@ def test_memo_defaults_children_to_var_component():
 
     mock_deprecate.assert_called_once()
 
-    definition = MEMOS["SoftChildren"]
+    definition = MEMOS["SoftChildren", __name__]
     assert isinstance(definition, MemoComponentDefinition)
     (children_param,) = definition.params
     assert children_param.name == "children"
@@ -760,7 +767,7 @@ def test_memo_rejects_component_and_function_name_collision():
     def foo_bar() -> rx.Component:
         return rx.box()
 
-    assert "FooBar" in MEMOS
+    assert ("FooBar", __name__) in MEMOS
 
     with pytest.raises(ValueError, match=r"name collision.*FooBar"):
 
@@ -781,6 +788,36 @@ def test_memo_rejects_component_export_name_collision():
         @rx.memo
         def foo__bar() -> rx.Component:
             return rx.box()
+
+
+def test_same_module_same_name_shadow_is_last_wins():
+    """Two memos sharing a name in one module: the later definition wins.
+
+    This is plain Python shadowing — a second ``def`` of the same name rebinds
+    the module global — and the registry follows suit rather than erroring,
+    because a genuine shadow is indistinguishable from a hot-reload
+    re-registration (same type/python_name/module/qualname). The factory builds
+    two distinct function objects with identical identity metadata, exactly as
+    two module-level ``def shadow`` would.
+    """
+
+    def _make_shadow(marker: str):
+        def shadow() -> rx.Component:
+            return rx.text(marker)
+
+        return shadow
+
+    rx.memo(_make_shadow("first-shadow-body"))
+    rx.memo(_make_shadow("second-shadow-body"))
+
+    shadow_keys = [k for k in MEMOS if isinstance(k, tuple) and k[0] == "Shadow"]
+    assert len(shadow_keys) == 1
+
+    definition = MEMOS["Shadow", __name__]
+    files, _ = compiler.compile_memo_components((definition,))
+    code = "\n".join(c for _, c in files)
+    assert "second-shadow-body" in code
+    assert "first-shadow-body" not in code
 
 
 def test_memo_rejects_varargs():
@@ -853,7 +890,7 @@ def test_var_returning_memo_rejects_hooks():
         )
 
     # Decoration defers the body; reading ``.function`` surfaces the error.
-    definition = MEMOS["bad_hook"]
+    definition = MEMOS["bad_hook", __name__]
     assert isinstance(definition, MemoFunctionDefinition)
     with pytest.raises(TypeError, match="cannot depend on hooks"):
         _ = definition.function
@@ -871,7 +908,7 @@ def test_var_returning_memo_rejects_non_bundled_imports():
         )
 
     # Decoration defers the body; reading ``.function`` surfaces the error.
-    definition = MEMOS["bad_import"]
+    definition = MEMOS["bad_import", __name__]
     assert isinstance(definition, MemoFunctionDefinition)
     with pytest.raises(TypeError, match="not bundled"):
         _ = definition.function
@@ -895,9 +932,12 @@ def test_compile_memo_components_includes_functions_and_components():
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
     code = "\n".join(c for _, c in files)
 
-    assert "export const TextWrapper = memo(" in code
-    assert "export const format_price =" in code
-    assert "export const MyCard = memo(" in code
+    text_wrapper_sym = memo_paths.mirrored_symbol("TextWrapper", __name__)
+    format_price_sym = memo_paths.mirrored_symbol("format_price", __name__)
+    my_card_sym = memo_paths.mirrored_symbol("MyCard", __name__)
+    assert f"export const {text_wrapper_sym} = memo(" in code
+    assert f"export const {format_price_sym} =" in code
+    assert f"export const {my_card_sym} = memo(" in code
 
 
 def test_compile_memo_components_groups_by_source_module():
@@ -911,7 +951,7 @@ def test_compile_memo_components_groups_by_source_module():
     def grouped_second(title: rx.Var[str]) -> rx.Component:
         return rx.heading(title)
 
-    definition = MEMOS["GroupedFirst"]
+    definition = MEMOS["GroupedFirst", __name__]
     assert definition.source_module is not None
     segments = memo_paths.module_to_mirrored_segments(definition.source_module)
     assert segments is not None
@@ -922,8 +962,10 @@ def test_compile_memo_components_groups_by_source_module():
     grouped_files = [(path, code) for path, code in files if path == exp_path]
     assert len(grouped_files) == 1
     code = grouped_files[0][1]
-    assert "export const GroupedFirst = memo(" in code
-    assert "export const GroupedSecond = memo(" in code
+    first_sym = memo_paths.mirrored_symbol("GroupedFirst", __name__)
+    second_sym = memo_paths.mirrored_symbol("GroupedSecond", __name__)
+    assert f"export const {first_sym} = memo(" in code
+    assert f"export const {second_sym} = memo(" in code
     # The merged module must carry imports its memos use, not just the
     # framework-level ones added by the compiler.
     assert "RadixThemesText" in code
@@ -1072,7 +1114,7 @@ def test_experimental_component_memo_get_imports():
 
     assert "inner" not in experimental_component._get_all_imports()
 
-    definition = MEMOS["Wrapper"]
+    definition = MEMOS["Wrapper", __name__]
     assert isinstance(definition, MemoComponentDefinition)
     _, imports = compiler_utils.compile_experimental_component_memo(definition)
     assert "inner" in imports
@@ -1087,7 +1129,7 @@ def test_compile_experimental_component_memo_does_not_mutate_definition(
     def wrapper() -> rx.Component:
         return rx.box("hi")
 
-    definition = MEMOS["Wrapper"]
+    definition = MEMOS["Wrapper", __name__]
     assert isinstance(definition, MemoComponentDefinition)
     # Reading ``.component`` triggers the deferred body evaluation.
     assert definition.component.style == Style()
@@ -1162,7 +1204,7 @@ def test_component_memo_accepts_event_handler():
             rx.input(on_change=event),
         )
 
-    definition = MEMOS["EhMemo"]
+    definition = MEMOS["EhMemo", __name__]
     assert isinstance(definition, MemoComponentDefinition)
     event_param = next(p for p in definition.params if p.name == "event")
     assert event_param.kind is MemoParamKind.EVENT_TRIGGER
@@ -1177,7 +1219,7 @@ def test_component_memo_accepts_bare_event_handler():
     def bare_eh_memo(event: rx.EventHandler) -> rx.Component:
         return rx.button("click", on_click=event())
 
-    definition = MEMOS["BareEhMemo"]
+    definition = MEMOS["BareEhMemo", __name__]
     assert isinstance(definition, MemoComponentDefinition)
     event_param = next(p for p in definition.params if p.name == "event")
     assert event_param.kind is MemoParamKind.EVENT_TRIGGER
@@ -1528,8 +1570,8 @@ def test_self_referencing_component_memo():
             rx.foreach(items, lambda item: recursive_box(items=items)),
         )
 
-    assert "RecursiveBox" in MEMOS
-    definition = MEMOS["RecursiveBox"]
+    assert ("RecursiveBox", __name__) in MEMOS
+    definition = MEMOS["RecursiveBox", __name__]
     assert isinstance(definition, MemoComponentDefinition)
 
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
@@ -1545,7 +1587,7 @@ def test_self_referencing_component_memo():
 
     instance = recursive_box(items=Var(_js_expr="items", _var_type=list[int]))
     assert isinstance(instance, MemoComponent)
-    assert type(instance).tag == "RecursiveBox"
+    assert type(instance).tag == memo_paths.mirrored_symbol("RecursiveBox", __name__)
 
 
 def test_self_referencing_memo_omits_self_import_from_aggregate():
@@ -1559,7 +1601,7 @@ def test_self_referencing_memo_omits_self_import_from_aggregate():
     def recursive_card(items: rx.Var[list[int]]) -> rx.Component:
         return rx.box(rx.foreach(items, lambda item: recursive_card(items=items)))
 
-    definition = MEMOS["RecursiveCard"]
+    definition = MEMOS["RecursiveCard", __name__]
     segments = memo_paths.module_to_mirrored_segments(definition.source_module)
     assert segments is not None
     self_specifier = memo_paths.mirrored_library_specifier(segments)
@@ -1612,7 +1654,7 @@ def test_self_referencing_var_memo():
         recurse = cast("rx.vars.NumberVar[int]", recursive_count(n=n - 1))
         return cast("rx.Var[int]", rx.cond(n.bool(), n + recurse, 0))
 
-    definition = MEMOS["recursive_count"]
+    definition = MEMOS["recursive_count", __name__]
     assert isinstance(definition, MemoFunctionDefinition)
     assert "recursive_count" in str(definition.function)
 

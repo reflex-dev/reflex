@@ -449,7 +449,9 @@ def compile_experimental_component_memo(
     return (
         {
             "kind": "component",
-            "name": definition.export_name,
+            "name": memo_paths.library_and_symbol(
+                definition.source_module, definition.export_name
+            )[1],
             "signature": DestructuredArg(
                 fields=tuple(signature_fields),
                 rest=rest_param.placeholder_name if rest_param is not None else None,
@@ -544,7 +546,9 @@ def compile_experimental_function_memo(
     return (
         {
             "kind": "function",
-            "name": definition.python_name,
+            "name": memo_paths.library_and_symbol(
+                definition.source_module, definition.python_name
+            )[1],
             "function": str(function),
         },
         imports,
