@@ -1413,7 +1413,13 @@ def _path_to_module_name(path: Path) -> str:
     return _relative_to_pwd(path).with_suffix("").as_posix().replace("/", ".")
 
 
-def _write_pyi_file(module_path: Path, source: str) -> str:
+def _write_pyi_file(module_path: Path, source: str) -> None:
+    """Write the .pyi stub next to its source module.
+
+    Args:
+        module_path: The path of the source .py module.
+        source: The generated stub source, without the header.
+    """
     relpath = str(_relative_to_pwd(module_path)).replace("\\", "/")
     pyi_content = (
         "\n".join([
@@ -1429,7 +1435,6 @@ def _write_pyi_file(module_path: Path, source: str) -> str:
     pyi_path = module_path.with_suffix(".pyi")
     pyi_path.write_text(pyi_content)
     logger.info(f"Wrote {relpath}")
-    return md5(pyi_content.encode()).hexdigest()
 
 
 # Mapping from component subpackage name to its target Python package.
@@ -1561,14 +1566,14 @@ def _get_init_lazy_imports(mod: ModuleType, new_tree: ast.AST):
     return text
 
 
-def _scan_file(module_path: Path) -> tuple[str, str] | None:
+def _scan_file(module_path: Path) -> str | None:
     """Process a single Python file and generate its .pyi stub.
 
     Args:
         module_path: Path to the Python source file.
 
     Returns:
-        Tuple of (pyi_path, content_hash) or None if no stub needed.
+        The path of the written .pyi file, or None if no stub is needed.
     """
     module_import = _path_to_module_name(module_path)
     module = importlib.import_module(module_import)
@@ -1598,11 +1603,11 @@ def _scan_file(module_path: Path) -> tuple[str, str] | None:
         init_imports = _get_init_lazy_imports(module, new_tree)
         if not init_imports:
             return None
-        content_hash = _write_pyi_file(module_path, init_imports)
+        _write_pyi_file(module_path, init_imports)
     else:
         new_tree = StubGenerator(module, class_names).visit(ast.parse(source))
-        content_hash = _write_pyi_file(module_path, ast.unparse(new_tree))
-    return str(module_path.with_suffix(".pyi").resolve()), content_hash
+        _write_pyi_file(module_path, ast.unparse(new_tree))
+    return str(module_path.with_suffix(".pyi").resolve())
 
 
 class PyiGenerator:
@@ -1610,10 +1615,9 @@ class PyiGenerator:
     generate the appropriate stub.
     """
 
-    modules: list = []
-    root: str = ""
-    current_module: Any = {}
-    written_files: list[tuple[str, str]] = []
+    def __init__(self) -> None:
+        """Initialize the generator with no written .pyi files."""
+        self.written_files: list[str] = []
 
     def _scan_files(self, files: list[Path]):
         max_workers = min(multiprocessing.cpu_count() or 1, len(files), 8)
@@ -1715,19 +1719,22 @@ class PyiGenerator:
 
         self._scan_files(file_targets)
 
-        file_paths, hashes = (
-            [f[0] for f in self.written_files],
-            [f[1] for f in self.written_files],
-        )
+        file_paths = self.written_files
 
         # Fix generated pyi files with ruff.
         if file_paths:
             subprocess.run(["ruff", "format", *file_paths])
             subprocess.run(["ruff", "check", "--fix", *file_paths])
 
-        if use_json:
-            if file_paths and prune_stale:
-                file_paths = list(map(Path, file_paths))
+        if use_json and file_paths:
+            file_paths = list(map(Path, file_paths))
+            # Hash only after ruff post-processing, so the registry reflects the
+            # final on-disk content rather than the intermediate generator output.
+            hashes = [
+                md5(file_path.read_text().encode()).hexdigest()
+                for file_path in file_paths
+            ]
+            if prune_stale:
                 top_dir = file_paths[0].parent
                 for file_path in file_paths:
                     file_parent = file_path.parent
@@ -1765,8 +1772,7 @@ class PyiGenerator:
                         )
                         + "\n",
                     )
-            elif file_paths:
-                file_paths = list(map(Path, file_paths))
+            else:
                 pyi_hashes_parent = file_paths[0].parent
                 while (
                     not pyi_hashes_parent.samefile(pyi_hashes_parent.parent)
@@ -1778,7 +1784,7 @@ class PyiGenerator:
                 if pyi_hashes_file.exists():
                     pyi_hashes = json.loads(pyi_hashes_file.read_text())
                     for file_path, hashed_content in zip(
-                        file_paths, hashes, strict=False
+                        file_paths, hashes, strict=True
                     ):
                         formatted_path = file_path.relative_to(
                             pyi_hashes_parent

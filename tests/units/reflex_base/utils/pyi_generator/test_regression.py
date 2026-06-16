@@ -72,7 +72,7 @@ def _run_generator() -> dict[Path, str]:
     gen = PyiGenerator()
     gen.scan_all([str(DATASET_DIR)])
 
-    pyi_paths = [Path(pyi_str) for pyi_str, _hash in gen.written_files]
+    pyi_paths = [Path(pyi_str) for pyi_str in gen.written_files]
     try:
         results: dict[Path, str] = {}
         for pyi_path in pyi_paths:
