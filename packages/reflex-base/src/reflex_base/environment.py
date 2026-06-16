@@ -692,9 +692,8 @@ class EnvironmentVariables:
     # Whether to minify the frontend build output. Disabled by preview mode for readable bundles.
     VITE_MINIFY: EnvVar[bool] = env_var(True)
 
-    # Read by the generated postcss.config.js to skip autoprefixer. Set by preview
-    # mode to speed up rebuilds (vendor prefixes are unnecessary for local dev).
-    REFLEX_NO_AUTOPREFIXER: EnvVar[bool] = env_var(False, internal=True)
+    # Read by the generated postcss.config.js to skip autoprefixer in preview mode.
+    REFLEX_NO_AUTOPREFIXER: EnvVar[bool] = env_var(False)
 
     # Whether to enable SSR for the frontend.
     REFLEX_SSR: EnvVar[bool] = env_var(True)
