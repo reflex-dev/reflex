@@ -46,5 +46,5 @@ def docs_landing() -> rx.Component:
             ),
             class_name="flex flex-col w-full relative h-full justify-center items-center",
         ),
-        class_name="flex flex-col w-full justify-center items-center relative dark:bg-m-slate-12 bg-m-slate-1",
+        class_name="flex flex-col w-full justify-center items-center relative bg-secondary-1",
     )
