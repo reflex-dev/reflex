@@ -12,7 +12,7 @@ resolution-markers = [
 ]
 
 [options]
-exclude-newer = "2026-06-10T15:54:16.096363395Z"
+exclude-newer = "2026-06-10T17:37:25.376078257Z"
 exclude-newer-span = "P7D"
 
 [options.exclude-newer-package]
@@ -3520,7 +3520,7 @@ requires-dist = [
     { name = "packaging", specifier = ">=24.2,<27" },
     { name = "psutil", marker = "sys_platform == 'win32'", specifier = ">=7.0.0,<8.0" },
     { name = "pydantic", marker = "extra == 'db'", specifier = ">=2.12.0,<3.0" },
-    { name = "python-multipart", specifier = ">=0.0.30,<1.0" },
+    { name = "python-multipart", specifier = ">=0.0.32,<1.0" },
     { name = "python-socketio", specifier = ">=5.12.0,<6.0" },
     { name = "redis", specifier = ">=6.4,<8.0" },
     { name = "reflex-base", editable = "packages/reflex-base" },

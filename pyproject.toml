@@ -25,7 +25,7 @@ dependencies = [
   "httpx >=0.26,<1.0",
   "packaging >=24.2,<27",
   "psutil >=7.0.0,<8.0; sys_platform == 'win32'",
-  "python-multipart >=0.0.30,<1.0",
+  "python-multipart >=0.0.32,<1.0",
   "python-socketio >=5.12.0,<6.0",
   "redis >=6.4,<8.0",
   "rich >=13,<16",
