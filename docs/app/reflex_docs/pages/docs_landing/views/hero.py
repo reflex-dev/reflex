@@ -12,17 +12,17 @@ def hero() -> rx.Component:
         rx.el.div(
             rx.el.p(
                 "About Reflex",
-                class_name="text-sm font-[525] text-primary-10 dark:text-m-slate-6",
+                class_name="text-sm font-[525] text-primary-10 dark:text-secondary-11",
             ),
             rx.el.h1(
                 "Reflex Documentation",
-                class_name="text-m-slate-12 dark:text-m-slate-3 lg:text-5xl text-3xl font-[575] lg:text-nowrap",
+                class_name="text-secondary-12 lg:text-5xl text-3xl font-[575] lg:text-nowrap",
             ),
             rx.el.p(
                 "Get up and running with Reflex in minutes. A complete set ",
                 rx.el.br(class_name="max-lg:hidden"),
                 " of resources to build, deploy, and scale your application. ",
-                class_name="text-base text-m-slate-7 dark:text-m-slate-6 font-[475]",
+                class_name="text-base text-secondary-11 font-[475]",
             ),
             rx.el.a(
                 button(
@@ -48,7 +48,7 @@ def hero() -> rx.Component:
             rx.image(
                 alt="Squares Docs Logo",
                 custom_attrs={"fetchPriority": "high"},
-                src=f"{REFLEX_ASSETS_CDN}common/{rx.color_mode_cond('light', 'dark')}/squares_docs_logo.svg",
+                src=f"{REFLEX_ASSETS_CDN}common/{rx.color_mode_cond('light', 'dark')}/squares_docs_logo_1.svg",
                 class_name="pointer-events-none h-auto w-auto lg:absolute max-lg:hidden",
             ),
             class_name=ui.cn(

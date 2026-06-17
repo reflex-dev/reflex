@@ -4575,6 +4575,21 @@ async def test_get_var_value(
         "b": [4, 5, 6],
     }
 
+    # Regression for https://github.com/reflex-dev/reflex/issues/6629: a Var
+    # operation / derived var (arithmetic, indexed or item access) must not
+    # silently return the value of its first constituent field. Such vars have
+    # no retrievable value, so raise instead of returning a plausible-but-wrong one.
+    with pytest.raises(UnretrievableVarValueError):
+        await state.get_var_value(TestState.num1 + TestState.num2)
+    with pytest.raises(UnretrievableVarValueError):
+        # array[0] is a Var operation at runtime, though statically typed as the element.
+        await state.get_var_value(TestState.array[0])  # pyright: ignore[reportArgumentType]
+    with pytest.raises(UnretrievableVarValueError):
+        await state.get_var_value(TestState.mapping["a"])
+
+    # Computed vars are derived but state-bound, so they remain resolvable.
+    assert await state.get_var_value(TestState.sum) == pytest.approx(42 + 3.15)
+
 
 @pytest.mark.asyncio
 async def test_get_var_value_async_computed_var(
