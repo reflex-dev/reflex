@@ -132,21 +132,37 @@ def install_packages_env(
         yield env
 
 
-@pytest.fixture
-def _stub_skeleton_initializers(monkeypatch):
-    """Stub the frontend_skeleton initialize_* helpers to no-ops."""
-    for name in (
-        "initialize_package_json",
-        "initialize_bun_config",
-        "initialize_npmrc",
-        "update_react_router_config",
-        "initialize_vite_config",
-    ):
-        monkeypatch.setattr(frontend_skeleton, name, lambda: None)
+_SKELETON_INITIALIZERS = (
+    "initialize_package_json",
+    "initialize_bun_config",
+    "initialize_npmrc",
+    "update_react_router_config",
+    "initialize_vite_config",
+)
+
+
+def _stub_skeleton_initializers_except(
+    monkeypatch: pytest.MonkeyPatch, keep: tuple[str, ...] = ()
+):
+    """Stub the frontend_skeleton initialize_* helpers to no-ops, except ``keep``.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+        keep: Initializer names to leave running for real.
+    """
+    for name in _SKELETON_INITIALIZERS:
+        if name not in keep:
+            monkeypatch.setattr(frontend_skeleton, name, lambda: None)
     monkeypatch.setattr(frontend_skeleton, "get_project_hash", lambda: None)
     monkeypatch.setattr(
         frontend_skeleton, "init_reflex_json", lambda project_hash: None
     )
+
+
+@pytest.fixture
+def _stub_skeleton_initializers(monkeypatch):
+    """Stub the frontend_skeleton initialize_* helpers to no-ops."""
+    _stub_skeleton_initializers_except(monkeypatch)
 
 
 @pytest.mark.parametrize(
@@ -239,6 +255,83 @@ def test_initialize_web_directory_restores_root_bun_lock(tmp_path, monkeypatch):
         frontend_skeleton.initialize_web_directory()
 
     assert (web_dir / constants.Bun.LOCKFILE_PATH).read_text() == "root-lock"
+
+
+def test_initialize_web_directory_persists_package_json_to_root(tmp_path, monkeypatch):
+    """initialize_web_directory persists the compiled package.json back to root."""
+    template_dir = tmp_path / "template"
+    template_dir.mkdir()
+    (template_dir / ".gitignore").write_text(".web\n")
+    monkeypatch.setattr(
+        frontend_skeleton.constants.Templates.Dirs, "WEB_TEMPLATE", template_dir
+    )
+
+    web_dir = tmp_path / constants.Dirs.WEB
+    _patch_web_dir(monkeypatch, web_dir)
+
+    # Stub every initializer except package.json so only its round-trip runs.
+    _stub_skeleton_initializers_except(monkeypatch, keep=("initialize_package_json",))
+
+    # A user override persisted in reflex.lock/package.json should round-trip.
+    root_pkg = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR / constants.PackageJson.PATH
+    root_pkg.parent.mkdir(parents=True, exist_ok=True)
+    root_pkg.write_text(json.dumps({"overrides": {"user-pkg": "2.0.0"}}))
+
+    with chdir(tmp_path):
+        frontend_skeleton.initialize_web_directory()
+
+    web_pkg = web_dir / constants.PackageJson.PATH
+    # The compiled .web/package.json is persisted back to reflex.lock verbatim.
+    assert root_pkg.read_text() == web_pkg.read_text()
+    assert json.loads(root_pkg.read_text())["overrides"]["user-pkg"] == "2.0.0"
+
+
+def test_sync_root_lockfile_to_web_prune_false_preserves_web_copy(
+    tmp_path, monkeypatch
+):
+    """prune=False keeps the .web copy when the root copy is absent; prune=True removes it."""
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    _patch_web_dir(monkeypatch, web_dir)
+    web_pkg = web_dir / constants.PackageJson.PATH
+    web_pkg.write_text('{"name": "reflex"}')
+
+    with chdir(tmp_path):
+        # No root copy exists, so prune=False must not delete the .web copy.
+        assert (
+            frontend_skeleton.sync_root_lockfile_to_web(
+                constants.PackageJson.PATH, prune=False
+            )
+            is False
+        )
+        assert web_pkg.read_text() == '{"name": "reflex"}'
+
+        # The default (prune=True) removes the orphaned .web copy.
+        assert (
+            frontend_skeleton.sync_root_lockfile_to_web(constants.PackageJson.PATH)
+            is True
+        )
+        assert not web_pkg.exists()
+
+
+def test_sync_root_lockfiles_to_web_keeps_web_package_json(tmp_path, monkeypatch):
+    """package.json (NO_PRUNE) survives an absent root copy while lockfiles prune."""
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    _patch_web_dir(monkeypatch, web_dir)
+
+    # .web has a package.json (e.g. from the template) but no root counterpart.
+    web_pkg = web_dir / constants.PackageJson.PATH
+    web_pkg.write_text('{"name": "reflex"}')
+    # A stale .web lockfile with no root counterpart should be pruned.
+    web_lock = web_dir / constants.Bun.LOCKFILE_PATH
+    web_lock.write_text("stale-lock")
+
+    with chdir(tmp_path):
+        frontend_skeleton.sync_root_lockfiles_to_web()
+
+    assert web_pkg.read_text() == '{"name": "reflex"}'
+    assert not web_lock.exists()
 
 
 def test_install_frontend_packages_syncs_root_bun_lock(
