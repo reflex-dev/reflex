@@ -76,28 +76,63 @@ class ClassDocumentation:
     methods: tuple[MethodDocumentation, ...] = ()
 
 
-def _parse_docstring_attributes(cls: type) -> dict[str, str]:
-    """Parse an Attributes section from a class docstring using griffe.
+def _parse_docstring_sections(cls: type) -> list[Any]:
+    """Parse a class docstring into griffe sections.
+
+    Parsing once lets the description and the Attributes mapping be derived from the
+    same result instead of re-parsing the docstring for each.
 
     Args:
         cls: The class whose docstring to parse.
 
     Returns:
-        A mapping from attribute name to description string.
+        The parsed docstring sections, or an empty list when there is no docstring.
     """
     from griffe import Docstring, Parser  # provided by griffelib
 
     doc = cls.__doc__
     if not doc:
-        return {}
+        return []
 
-    parsed = Docstring(inspect.cleandoc(doc)).parse(Parser.auto)
+    return Docstring(inspect.cleandoc(doc)).parse(Parser.auto)
+
+
+def _attributes_from_sections(sections: list[Any]) -> dict[str, str]:
+    """Extract the Attributes section as a name-to-description mapping.
+
+    Args:
+        sections: The parsed docstring sections.
+
+    Returns:
+        A mapping from attribute name to description string.
+    """
     return {
         attr.name: attr.description
-        for section in parsed
+        for section in sections
         if section.kind.value == "attributes"
         for attr in section.value
     }
+
+
+def _description_from_sections(sections: list[Any]) -> str | None:
+    """Join the prose body of a docstring, excluding the Attributes section.
+
+    The Attributes section is rendered separately as a fields table, so keeping it in
+    the description would duplicate every attribute as body text. Griffe splits the
+    docstring into sections; the free-text sections (summary, detail, code blocks) are
+    the prose body. Documented classes use Google-style ``Attributes:`` plus inline
+    fenced code (kept as text), so no other section kind appears in practice.
+
+    Args:
+        sections: The parsed docstring sections.
+
+    Returns:
+        The prose description, or None if there is no prose.
+    """
+    text = "\n\n".join(
+        section.value for section in sections if section.kind.value == "text"
+    )
+    return text or None
 
 
 def _type_name(type_: Any) -> str:
@@ -237,17 +272,19 @@ def _build_field_documentation(
     )
 
 
-def _get_dataclass_fields(cls: type) -> tuple[FieldDocumentation, ...]:
+def _get_dataclass_fields(
+    cls: type, docstring_attrs: dict[str, str]
+) -> tuple[FieldDocumentation, ...]:
     """Extract fields from a dataclass.
 
     Args:
         cls: The dataclass to extract fields from.
+        docstring_attrs: Attribute descriptions from the class docstring.
 
     Returns:
         A tuple of FieldDocumentation objects.
     """
     hints = get_type_hints(cls, include_extras=True)
-    docstring_attrs = _parse_docstring_attributes(cls)
     result = []
     for f in dataclasses.fields(cls):
         hint = hints.get(f.name, f.type)
@@ -269,17 +306,19 @@ def _get_dataclass_fields(cls: type) -> tuple[FieldDocumentation, ...]:
     return tuple(result)
 
 
-def _get_state_fields(cls: BaseStateMeta) -> tuple[FieldDocumentation, ...]:
+def _get_state_fields(
+    cls: BaseStateMeta, docstring_attrs: dict[str, str]
+) -> tuple[FieldDocumentation, ...]:
     """Extract instance fields from an rx.State subclass via __fields__.
 
     Args:
         cls: The class to extract fields from.
+        docstring_attrs: Attribute descriptions from the class docstring.
 
     Returns:
         A tuple of FieldDocumentation objects.
     """
     hints = get_type_hints(cls, include_extras=True)
-    docstring_attrs = _parse_docstring_attributes(cls)
     fields_dict = cls.__fields__
     result = []
     for name, field in fields_dict.items():
@@ -301,11 +340,14 @@ def _get_state_fields(cls: BaseStateMeta) -> tuple[FieldDocumentation, ...]:
     return tuple(result)
 
 
-def _get_class_vars(cls: type) -> tuple[FieldDocumentation, ...]:
+def _get_class_vars(
+    cls: type, docstring_attrs: dict[str, str]
+) -> tuple[FieldDocumentation, ...]:
     """Extract class variables from __class_vars__.
 
     Args:
         cls: The class to extract class variables from.
+        docstring_attrs: Attribute descriptions from the class docstring.
 
     Returns:
         A tuple of FieldDocumentation objects.
@@ -315,7 +357,6 @@ def _get_class_vars(cls: type) -> tuple[FieldDocumentation, ...]:
         return ()
 
     hints = get_type_hints(cls, include_extras=True)
-    docstring_attrs = _parse_docstring_attributes(cls)
     result = []
     for name in class_vars:
         hint = hints.get(name, type(None))
@@ -513,16 +554,18 @@ def generate_class_documentation(cls: type) -> ClassDocumentation:
         The generated documentation for the class.
     """
     try:
-        description = inspect.cleandoc(cls.__doc__) if cls.__doc__ else None
+        sections = _parse_docstring_sections(cls)
+        description = _description_from_sections(sections)
+        docstring_attrs = _attributes_from_sections(sections)
 
         if dataclasses.is_dataclass(cls):
-            fields = _get_dataclass_fields(cls)
+            fields = _get_dataclass_fields(cls, docstring_attrs)
         elif isinstance(cls, BaseStateMeta):
-            fields = _get_state_fields(cls)
+            fields = _get_state_fields(cls, docstring_attrs)
         else:
             fields = ()
 
-        class_fields = _get_class_vars(cls)
+        class_fields = _get_class_vars(cls, docstring_attrs)
         methods = _get_methods(cls)
 
         return ClassDocumentation(

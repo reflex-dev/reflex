@@ -1,7 +1,6 @@
 """Tests for reflex-docgen."""
 
 import dataclasses
-import inspect
 import sys
 from collections.abc import Callable
 from importlib.util import find_spec
@@ -233,11 +232,42 @@ def test_dataclass_methods():
 
 
 def test_dataclass_class_name_and_description():
-    """Name matches module.qualname and description matches cleandoc."""
+    """Name matches module.qualname; description is the prose body sans Attributes section."""
     doc = generate_class_documentation(_SampleDataclass)
     assert doc.name == f"{_SampleDataclass.__module__}.{_SampleDataclass.__qualname__}"
-    assert _SampleDataclass.__doc__ is not None
-    assert doc.description == inspect.cleandoc(_SampleDataclass.__doc__)
+    # The Attributes section is rendered as a fields table, so it is stripped from the
+    # prose description to avoid duplicating every attribute as body text.
+    assert doc.description == "A sample dataclass for testing."
+
+
+def test_class_description_excludes_attributes_section():
+    """The class description omits the Attributes section, which renders as a fields table.
+
+    Regression: the Attributes block was rendered both as body text and in the fields
+    table, duplicating every attribute description on the API reference page.
+    """
+    doc = generate_class_documentation(_SampleDataclass)
+    assert doc.description is not None
+    assert "Attributes:" not in doc.description
+    assert "The name of the item." not in doc.description
+    assert "A list of items." not in doc.description
+
+
+def test_class_description_keeps_prose_and_code_blocks():
+    """Stripping the Attributes section preserves the prose body but not the attribute text."""
+    import reflex as rx
+
+    doc = generate_class_documentation(rx.App)
+    assert doc.description is not None
+    # A fenced code example from the docstring body is retained.
+    assert "```python" in doc.description
+    assert "Attributes:" not in doc.description
+    # An attribute shown in the fields table must not be duplicated in the prose. Pull
+    # the description from the parsed field so the check can't pass vacuously if the
+    # attribute is renamed or reworded (next() raises instead).
+    sio = next(f for f in doc.fields if f.name == "sio")
+    assert sio.description
+    assert sio.description not in doc.description
 
 
 def test_string_annotations_resolve():
