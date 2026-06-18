@@ -11,6 +11,7 @@ from reflex_site_shared.constants import (
     CHANGELOG_URL,
     DISCORD_URL,
     GITHUB_URL,
+    REFLEX_BUILD_LOGIN_URL,
     REFLEX_BUILD_URL,
 )
 from reflex_site_shared.views.hosting_banner import HostingBannerState
@@ -425,7 +426,7 @@ def drawer_footer() -> rx.Component:
                 native_button=False,
                 class_name="w-full",
             ),
-            href=REFLEX_BUILD_URL,
+            href=REFLEX_BUILD_LOGIN_URL,
             target="_blank",
             class_name="block w-full",
         ),
