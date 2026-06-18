@@ -31,14 +31,14 @@ The command zips your app source, skipping dependency and build directories (`.w
 
 ## Reading the Results
 
-Findings are printed grouped and sorted by severity:
+Findings are printed sorted by severity:
 
 - **CRITICAL**: fix immediately.
 - **HIGH**: serious; fix soon.
 - **MEDIUM**: should be addressed.
 - **LOW**: minor issues and recommendations.
 
-Each finding shows the rule that triggered, its category, the file and line, a description, and a recommended fix. If nothing is found, the command reports a clean review.
+Each finding shows the rule that triggered, its category, the file and line, and a description. A recommended fix is included when available. If nothing is found, the command reports a clean review.
 
 ## Failing on Severity
 
