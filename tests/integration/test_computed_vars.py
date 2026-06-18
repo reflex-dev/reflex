@@ -232,6 +232,10 @@ async def test_computed_vars(
 
     special_floats = driver.find_element(By.ID, "special_floats")
     assert special_floats
+
+    # Compatibility contract for non-finite floats:
+    # Python NaN/±Infinity values should sync to the frontend and render as the
+    # corresponding JavaScript values instead of being converted to null or strings.
     assert special_floats.text == "42.9, NaN, Infinity, -Infinity"
 
     increment = driver.find_element(By.ID, "increment")

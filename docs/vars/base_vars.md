@@ -45,6 +45,14 @@ In this example `ticker` and `price` are base vars in the app, which can be modi
 Vars are used to communicate between the frontend and backend. They must be primitive Python types, Plotly figures, Pandas dataframes, or [a custom defined type](/docs/vars/custom-vars).
 ```
 
+```md alert info
+# Non-finite float values
+
+Python float values such as `float("nan")`, `float("inf")`, and `float("-inf")`
+are synchronized with compatibility handling. On the frontend, they are represented
+as the corresponding JavaScript values: `NaN`, `Infinity`, and `-Infinity`.
+```
+
 ## Accessing state variables on different pages
 
 State is just a python class and so can be defined on one page and then imported and used on another. Below we define `TickerState` class on the page `state.py` and then import it and use it on the page `index.py`.
