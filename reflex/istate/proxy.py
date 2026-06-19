@@ -30,6 +30,10 @@ if TYPE_CHECKING:
 T_STATE = TypeVar("T_STATE", bound="BaseState")
 T = TypeVar("T")
 
+# Cached filename of the dataclasses module, used to detect reads originating
+# from `dataclasses.asdict`/`astuple` internals on the proxy read hot-path.
+_DATACLASSES_FILE = dataclasses.__file__
+
 
 class StateProxy(wrapt.ObjectProxy):
     """Proxy of a state instance to control mutability of vars for a background task.
@@ -500,10 +504,12 @@ class MutableProxy(wrapt.ObjectProxy):
         # internal code, for example `asdict` or `astuple`.
         frame = inspect.currentframe()
         for _ in range(5):
-            # Why not `inspect.stack()` -- this is much faster!
+            # Why not `inspect.stack()` -- this is much faster! And reading
+            # `f_code.co_filename` directly avoids the type-dispatch overhead of
+            # `inspect.getfile()`, which dominates this per-element read hot-path.
             if not (frame := frame and frame.f_back):
                 break
-            if inspect.getfile(frame) == dataclasses.__file__:
+            if frame.f_code.co_filename == _DATACLASSES_FILE:
                 return True
         return False
 

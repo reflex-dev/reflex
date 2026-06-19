@@ -45,15 +45,17 @@ With Databricks, your app can:
 There are two methods to authenticate your app with Databricks: using interactive U2M **OAuth** or via registered M2M **Service Principal**. Choose one of the methods below to obtain the necessary credentials.
 
 
----md tabs
+`````md tabs
 
---tab OAuth with Databricks
+## OAuth with Databricks
+
 #### Interactive Login with your Databricks Account
 
 If your workspace administrator has already added Reflex as a Connected App in your Databricks workspace, you should see a "Login with Databricks" button after entering your DATABRICKS_HOST.
 
---
---tab Service Principal
+
+## Service Principal
+
 #### M2M Service Principal (DATABRICKS_CLIENT_ID and DATABRICKS_CLIENT_SECRET)
 
 - Open the dropdown in the top right corner and select **Manage Account**.
@@ -84,9 +86,7 @@ If your workspace administrator has already added Reflex as a Connected App in y
 
 ![databricks_integration_oauth_7.webp](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_integration_oauth_7.webp)
 
---
-
----
+`````
 
 
 
