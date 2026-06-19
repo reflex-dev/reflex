@@ -1,10 +1,16 @@
 """Tests for reflex_site_shared.integrations URL helpers."""
 
+import re
+from pathlib import Path
+
+import integrations_docs
 import pytest
 from reflex_site_shared.integrations import (
     RAW_DOC_IMAGES_PREFIX,
     rewrite_integration_doc_images_in_source,
 )
+
+DOC_IMAGES_DIR = Path(integrations_docs.__file__).parent / "images" / "docs"
 
 
 @pytest.fixture(autouse=True)
@@ -32,3 +38,30 @@ def test_rewrite_source_without_doc_images_unchanged() -> None:
         "![aws](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/logos/light/aws.svg)\n"
     )
     assert rewrite_integration_doc_images_in_source(source) == source
+
+
+def test_doc_image_references_exist_locally() -> None:
+    """Every screenshot URL in the docs must resolve to a local image, since the rewrite serves it locally."""
+    missing = [
+        f"{md.name}: {image_name}"
+        for md in sorted(integrations_docs.DOCS_DIR.glob("*.md"))
+        for image_name in re.findall(
+            re.escape(RAW_DOC_IMAGES_PREFIX) + r"([^)\s]+)", md.read_text()
+        )
+        if not (DOC_IMAGES_DIR / image_name).is_file()
+    ]
+    assert not missing, f"docs reference images missing from images/docs/: {missing}"
+
+
+def test_doc_image_references_use_image_syntax() -> None:
+    """Screenshot URLs must use ![alt](url) image syntax, not a [!alt](url) link typo."""
+    malformed = [
+        md.name
+        for md in sorted(integrations_docs.DOCS_DIR.glob("*.md"))
+        if re.search(
+            r"(?<!!)\[[^\]]*\]\(" + re.escape(RAW_DOC_IMAGES_PREFIX), md.read_text()
+        )
+    ]
+    assert not malformed, (
+        f"docs embed screenshots as links instead of images: {malformed}"
+    )

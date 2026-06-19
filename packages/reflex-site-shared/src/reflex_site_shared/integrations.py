@@ -98,8 +98,7 @@ def get_integration_logo_url(
 def rewrite_integration_doc_images_in_source(source: str) -> str:
     """Rewrite raw GitHub integrations-docs screenshot URLs in a markdown source to local URLs.
 
-    Operates on the raw markdown text before parsing, so it is renderer-agnostic and can be
-    used by any docs pipeline (reflex_docgen, flexdown, etc.).
+    Operates on the raw markdown text before parsing.
 
     Args:
         source: The markdown document source.
