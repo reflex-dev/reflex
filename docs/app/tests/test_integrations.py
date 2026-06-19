@@ -5,14 +5,13 @@ from pathlib import Path
 
 import integrations_docs
 import pytest
-from reflex_base import constants
 from reflex_site_shared.integrations import (
     RAW_DOC_IMAGES_PREFIX,
+    _integrations_doc_images_url,
     rewrite_integration_doc_images_in_source,
 )
 
 DOC_IMAGES_DIR = Path(integrations_docs.__file__).parent / "images" / "docs"
-LOCAL_DOCS_PREFIX = f"/{constants.Dirs.EXTERNAL_APP_ASSETS}/integrations_docs/docs/"
 
 
 @pytest.fixture(autouse=True)
@@ -29,9 +28,10 @@ def test_rewrite_source_replaces_all_doc_image_urls() -> None:
         f"![two]({RAW_DOC_IMAGES_PREFIX}descope.webp)\n"
     )
     rewritten = rewrite_integration_doc_images_in_source(source)
+    local_prefix = _integrations_doc_images_url()
     assert RAW_DOC_IMAGES_PREFIX not in rewritten
-    assert f"({LOCAL_DOCS_PREFIX}okta_auth_1.png)" in rewritten
-    assert f"({LOCAL_DOCS_PREFIX}descope.webp)" in rewritten
+    assert f"({local_prefix}okta_auth_1.png)" in rewritten
+    assert f"({local_prefix}descope.webp)" in rewritten
 
 
 def test_rewrite_source_without_doc_images_unchanged() -> None:
