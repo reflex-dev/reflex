@@ -39,6 +39,7 @@ from .base import (
     var_operation,
     var_operation_return,
 )
+from .hybrid_property import HybridProperty
 from .number import BooleanVar, NumberVar, raise_unsupported_operand_types
 from .sequence import ArrayVar, LiteralArrayVar, StringVar
 
@@ -331,23 +332,27 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
 
         fixed_type = get_origin(var_type) or var_type
 
-        if (
-            is_typeddict(fixed_type)
-            or (
-                isinstance(fixed_type, type)
-                and not safe_issubclass(fixed_type, Mapping)
-            )
-            or (fixed_type in types.UnionTypes)
-        ):
+        if isinstance(fixed_type, type) and not safe_issubclass(fixed_type, Mapping):
+            # Resolve the raw descriptor once and reuse it. A HybridProperty resolves to a
+            # frontend Var with this object var substituted as `self` (e.g. `State.info.a_b`);
+            # any other descriptor is passed to `get_attribute_access_type` so the class
+            # lookup is not repeated.
+            descriptor = types.get_attribute_descriptor(fixed_type, name)
+            if isinstance(descriptor, HybridProperty):
+                return descriptor._get_var(self)
+            attribute_type = get_attribute_access_type(var_type, name, descriptor)
+        elif is_typeddict(fixed_type) or fixed_type in types.UnionTypes:
             attribute_type = get_attribute_access_type(var_type, name)
-            if attribute_type is None:
-                msg = (
-                    f"The State var `{self!s}` of type {escape(str(self._var_type))} has no attribute '{name}' or may have been annotated "
-                    f"wrongly."
-                )
-                raise VarAttributeError(msg)
-            return ObjectItemOperation.create(self, name, attribute_type).guess_type()
-        return ObjectItemOperation.create(self, name).guess_type()
+        else:
+            return ObjectItemOperation.create(self, name).guess_type()
+
+        if attribute_type is None:
+            msg = (
+                f"The State var `{self!s}` of type {escape(str(self._var_type))} has no attribute '{name}' or may have been annotated "
+                f"wrongly."
+            )
+            raise VarAttributeError(msg)
+        return ObjectItemOperation.create(self, name, attribute_type).guess_type()
 
     def contains(self, key: Var | Any) -> BooleanVar:
         """Check if the object contains a key.

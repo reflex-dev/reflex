@@ -11,6 +11,7 @@ JOBS_BOARD_URL = "https://www.ycombinator.com/companies/reflex/jobs"
 REFLEX_ASSETS_CDN = "https://web.reflex-assets.dev/"
 SCREENSHOT_BUCKET = "https://pub-c14a5dcf674640a6b73fded32bad72ca.r2.dev/"
 REFLEX_BUILD_URL = os.getenv("REFLEX_BUILD_URL", "https://build.reflex.dev/")
+REFLEX_BUILD_LOGIN_URL = f"{REFLEX_BUILD_URL.rstrip('/')}/login"
 PIP_URL = "https://pypi.org/project/reflex"
 GITHUB_URL = "https://github.com/reflex-dev/reflex"
 LINKEDIN_URL = "https://www.linkedin.com/company/reflex-dev"
