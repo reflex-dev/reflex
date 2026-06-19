@@ -5,12 +5,14 @@ from pathlib import Path
 
 import integrations_docs
 import pytest
+from reflex_base import constants
 from reflex_site_shared.integrations import (
     RAW_DOC_IMAGES_PREFIX,
     rewrite_integration_doc_images_in_source,
 )
 
 DOC_IMAGES_DIR = Path(integrations_docs.__file__).parent / "images" / "docs"
+LOCAL_DOCS_PREFIX = f"/{constants.Dirs.EXTERNAL_APP_ASSETS}/integrations_docs/docs/"
 
 
 @pytest.fixture(autouse=True)
@@ -20,6 +22,7 @@ def _backend_only(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_rewrite_source_replaces_all_doc_image_urls() -> None:
+    """Every raw GitHub doc-image URL in the source is rewritten to its local asset URL."""
     source = (
         f"![one]({RAW_DOC_IMAGES_PREFIX}okta_auth_1.png)\n"
         f"text\n"
@@ -27,11 +30,12 @@ def test_rewrite_source_replaces_all_doc_image_urls() -> None:
     )
     rewritten = rewrite_integration_doc_images_in_source(source)
     assert RAW_DOC_IMAGES_PREFIX not in rewritten
-    assert "(/external/integrations_docs/docs/okta_auth_1.png)" in rewritten
-    assert "(/external/integrations_docs/docs/descope.webp)" in rewritten
+    assert f"({LOCAL_DOCS_PREFIX}okta_auth_1.png)" in rewritten
+    assert f"({LOCAL_DOCS_PREFIX}descope.webp)" in rewritten
 
 
 def test_rewrite_source_without_doc_images_unchanged() -> None:
+    """Source without any raw GitHub doc-image URL is returned unchanged."""
     source = (
         "# Title\n\n"
         "![logo](https://example.com/logo.svg)\n"
