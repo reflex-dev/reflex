@@ -11,7 +11,10 @@ Examples:
 """
 
 WHITELISTED_PAGES = [
-    # "/getting-started/introduction",
+    # Auth docs preview — matches all 5 pages under /enterprise/auth/ by prefix,
+    # plus the enterprise overview landing page so navigation into the section works.
+    "/enterprise/auth",
+    "/enterprise/overview",
 ]
 
 

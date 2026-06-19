@@ -34,6 +34,31 @@ def get_sidebar_items_enterprise_usage():
                 ),
             ],
         ),
+        SideBarItem(
+            names="Authentication",
+            children=[
+                SideBarItem(
+                    names="Overview",
+                    link=enterprise.auth.overview.path,
+                ),
+                SideBarItem(
+                    names="Secure by Default",
+                    link=enterprise.auth.secure_by_default.path,
+                ),
+                SideBarItem(
+                    names="OIDC Providers",
+                    link=enterprise.auth.providers.path,
+                ),
+                SideBarItem(
+                    names="Customizing the Auth Pages",
+                    link=enterprise.auth.custom_pages.path,
+                ),
+                SideBarItem(
+                    names="Testing Guarded Code",
+                    link=enterprise.auth.testing.path,
+                ),
+            ],
+        ),
     ]
 
 

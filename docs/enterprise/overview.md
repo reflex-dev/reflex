@@ -62,6 +62,48 @@ categories_data = [
         ],
     },
     {
+        "category": "Authentication",
+        "description": "OIDC authentication with a secure-by-default model",
+        "count": 5,
+        "components": [
+            {
+                "feature": "AuthPlugin",
+                "description": "OIDC (OpenID Connect) authentication with secure-by-default protection",
+                "cloud_tier": "Enterprise",
+                "self_hosted_tier": "Enterprise",
+                "link": "/docs/enterprise/auth/overview",
+            },
+            {
+                "feature": "Secure by Default",
+                "description": "Pages, event handlers, fields, and computed vars require login unless opted out",
+                "cloud_tier": "Enterprise",
+                "self_hosted_tier": "Enterprise",
+                "link": "/docs/enterprise/auth/secure-by-default",
+            },
+            {
+                "feature": "OIDC Providers",
+                "description": "Built-in generic OIDC provider plus named and multi-provider setups",
+                "cloud_tier": "Enterprise",
+                "self_hosted_tier": "Enterprise",
+                "link": "/docs/enterprise/auth/providers",
+            },
+            {
+                "feature": "Custom Auth Pages",
+                "description": "Replace the rendered login, callback, and logout pages",
+                "cloud_tier": "Enterprise",
+                "self_hosted_tier": "Enterprise",
+                "link": "/docs/enterprise/auth/custom-pages",
+            },
+            {
+                "feature": "Testing",
+                "description": "Exercise guarded surfaces with an injected user via auth_as",
+                "cloud_tier": "Enterprise",
+                "self_hosted_tier": "Enterprise",
+                "link": "/docs/enterprise/auth/testing",
+            },
+        ],
+    },
+    {
         "category": "AGGrid and AGChart",
         "description": "Advanced data visualization and grid components",
         "count": 2,
