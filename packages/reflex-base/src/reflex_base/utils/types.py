@@ -410,7 +410,32 @@ def get_property_hint(attr: Any | None) -> GenericType | None:
     return hints.get("return", None)
 
 
-def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None:
+_NO_DESCRIPTOR: Any = object()
+
+
+def get_attribute_descriptor(cls: GenericType, name: str) -> Any:
+    """Resolve the raw class attribute for ``name`` without raising.
+
+    Centralizes the lookup ``get_attribute_access_type`` performs so a caller that also
+    needs the descriptor itself (e.g. to detect a property-like class such as
+    ``HybridProperty``) can share one lookup instead of repeating it.
+
+    Args:
+        cls: The class to read the attribute from.
+        name: The attribute name.
+
+    Returns:
+        The resolved attribute/descriptor, or ``None`` if it is absent.
+    """
+    try:
+        return getattr(cls, name, None)
+    except NotImplementedError:
+        return None
+
+
+def get_attribute_access_type(
+    cls: GenericType, name: str, descriptor: Any = _NO_DESCRIPTOR
+) -> GenericType | None:
     """Check if an attribute can be accessed on the cls and return its type.
 
     Supports pydantic models, unions, and annotated attributes on rx.Model.
@@ -418,14 +443,17 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
     Args:
         cls: The class to check.
         name: The name of the attribute to check.
+        descriptor: A pre-resolved descriptor for ``name`` on ``cls`` (from
+            ``get_attribute_descriptor``); resolved here when not provided.
 
     Returns:
         The type of the attribute, if accessible, or None
     """
-    try:
-        attr = getattr(cls, name, None)
-    except NotImplementedError:
-        attr = None
+    attr = (
+        get_attribute_descriptor(cls, name)
+        if descriptor is _NO_DESCRIPTOR
+        else descriptor
+    )
 
     if hint := get_property_hint(attr):
         return hint
