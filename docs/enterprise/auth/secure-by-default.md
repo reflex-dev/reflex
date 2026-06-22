@@ -290,8 +290,9 @@ from reflex_enterprise.auth import User
 ```
 
 **Frontend Vars** — embed these class-level descriptors directly in components.
-They resolve against the *first* configured provider and are typed `str | None`
-(`undefined` on the frontend):
+They bind to `AuthUserState`, populated after login by whichever provider
+authenticated the user, so they are correct in single- and multi-provider setups
+alike. Each is typed `str` (empty `""` until login):
 
 | Attribute | Value |
 | --- | --- |

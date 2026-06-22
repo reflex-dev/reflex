@@ -80,11 +80,11 @@ enforcement model and check-function signatures.
 
 ## Reading the current user
 
-`reflex_enterprise.auth.User` is a facade over the active provider for reading
-the current user. Its class-level Vars (`User.name`, `User.email`, and the rest)
-embed directly in components, each typed `str | None`. Inside an event handler,
-`await User.current()` returns the current user's `OIDCUserInfo` dict (or `None`
-when anonymous):
+`reflex_enterprise.auth.User` is the app-facing handle on the current user. Its
+class-level Vars — `User.name`, `User.email`, `User.sub`, `User.picture` — embed
+directly in components (`rx.text(User.name)`, `rx.avatar(src=User.picture)`).
+Inside an event handler, `await User.current()` returns the user's `OIDCUserInfo`
+dict (or `None` when anonymous):
 
 ```python
 import reflex as rx
@@ -99,9 +99,7 @@ class DemoState(rx.State):
         return rx.toast(f"Hello {user.get('name') or user.get('sub')}!")
 ```
 
-In components, render the Vars directly, e.g. `rx.text(User.name)` or
-`rx.avatar(src=User.picture)`. See
-[secure-by-default](/docs/enterprise/auth/secure-by-default/) for more on the
+See [secure-by-default](/docs/enterprise/auth/secure-by-default/) for the full
 `User` facade and how protected values are delivered after login.
 
 ## Learn more

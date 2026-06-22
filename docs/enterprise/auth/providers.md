@@ -191,6 +191,12 @@ the offending providers. Set a provider-specific `{PROVIDER}_*` variable
 (e.g. `OKTA_ISSUER_URI`, `AZURE_ISSUER_URI`) for each.
 ```
 
+Reading the user is provider-agnostic: `User.name` / `.email` / `.sub` /
+`.picture` bind to `AuthUserState`, which is populated by whichever provider
+completes login, so they render correctly no matter which button the visitor
+clicked. To branch on the provider, read `AuthUserState.provider_name` in a
+component or `await User.current_provider()` in an event handler.
+
 ## Customizing claims
 
 `OIDCUserInfo` is a `TypedDict` (`total=False`) with a single `sub` key; it is a
