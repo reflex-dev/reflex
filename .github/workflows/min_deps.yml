@@ -1,0 +1,64 @@
+name: check-min-deps
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.id || github.sha }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: ["main"]
+    paths-ignore:
+      - "**/*.md"
+  pull_request:
+    branches: ["main"]
+    paths-ignore:
+      - "**/*.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # Single-source the list of checkable packages from the script so the matrix
+  # below stays in sync as packages are added or removed.
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.list.outputs.packages }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: "3.14"
+      - id: list
+        run: echo "packages=$(uv run --with packaging --no-project python scripts/check_min_deps.py --list)" >> "$GITHUB_OUTPUT"
+
+  check:
+    needs: discover
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ${{ fromJSON(needs.discover.outputs.packages) }}
+        python-version: ["3.10", "3.14"]
+    steps:
+      # fetch-tags/fetch-depth are required: each package is built editable via
+      # uv-dynamic-versioning, which derives the version from git tags/history.
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: ${{ matrix.python-version }}
+          run-uv-sync: true
+      - name: Check minimum declared dependency versions
+        run: uv run --no-sync python scripts/check_min_deps.py --python "${{ matrix.python-version }}" "${{ matrix.package }}"

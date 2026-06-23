@@ -9,8 +9,17 @@ from reflex_components_internal.utils.twmerge import cn
 LEMCAL_DEMO_URL = "https://app.lemcal.com/@alek/reflex-demo-call"
 
 
+def lemcal_script(**props) -> rx.Component:
+    """Return the Lemcal integrations script tag."""
+    return rx.script(
+        src="https://cdn.lemcal.com/lemcal-integrations.min.js",
+        defer=True,
+        **props,
+    )
+
+
 @rx.memo
-def lemcal_booking_calendar():
+def lemcal_booking_calendar() -> rx.Component:
     """Return the Lemcal booking calendar."""
     return rx.fragment(
         rx.el.div(
@@ -28,15 +37,6 @@ def lemcal_booking_calendar():
             ),
         ),
         lemcal_script(),
-    )
-
-
-def lemcal_script(**props) -> rx.Component:
-    """Return the Lemcal integrations script tag."""
-    return rx.script(
-        src="https://cdn.lemcal.com/lemcal-integrations.min.js",
-        defer=True,
-        **props,
     )
 
 

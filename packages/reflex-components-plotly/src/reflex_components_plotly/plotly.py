@@ -72,7 +72,7 @@ class Plotly(NoSSRComponent):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js@3.5.0"]
+    lib_dependencies: list[str] = ["plotly.js@3.5.1"]
 
     tag = "Plot"
 
@@ -385,7 +385,7 @@ class PlotlyBasic(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-basic-dist-min@3.5.0"]
+    lib_dependencies: list[str] = ["plotly.js-basic-dist-min@3.5.1"]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the plotly basic component.
@@ -411,7 +411,7 @@ class PlotlyCartesian(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-cartesian-dist-min@3.5.0"]
+    lib_dependencies: list[str] = ["plotly.js-cartesian-dist-min@3.5.1"]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the plotly cartesian component.
@@ -437,7 +437,7 @@ class PlotlyGeo(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-geo-dist-min@3.5.0"]
+    lib_dependencies: list[str] = ["plotly.js-geo-dist-min@3.5.1"]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the plotly geo component.
@@ -463,7 +463,7 @@ class PlotlyGl3d(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-gl3d-dist-min@3.5.0"]
+    lib_dependencies: list[str] = ["plotly.js-gl3d-dist-min@3.5.1"]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the plotly 3d component.
@@ -489,7 +489,7 @@ class PlotlyGl2d(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-gl2d-dist-min@3.5.0"]
+    lib_dependencies: list[str] = ["plotly.js-gl2d-dist-min@3.5.1"]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the plotly 2d component.
@@ -515,7 +515,7 @@ class PlotlyMapbox(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-mapbox-dist-min@3.5.0"]
+    lib_dependencies: list[str] = ["plotly.js-mapbox-dist-min@3.5.1"]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the plotly mapbox component.
@@ -541,7 +541,7 @@ class PlotlyFinance(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-finance-dist-min@3.5.0"]
+    lib_dependencies: list[str] = ["plotly.js-finance-dist-min@3.5.1"]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the plotly finance component.
@@ -567,7 +567,7 @@ class PlotlyStrict(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-strict-dist-min@3.5.0"]
+    lib_dependencies: list[str] = ["plotly.js-strict-dist-min@3.5.1"]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the plotly strict component.

@@ -140,9 +140,9 @@ _ALL_COMPONENTS_MAPPING: lazy_loader.SubmodAttrsType = {
     "reflex_base.components.component": [
         "Component",
         "NoSSRComponent",
-        "memo",
         "ComponentNamespace",
     ],
+    "reflex_base.components.memo": ["memo", "EMPTY_VAR_COMPONENT"],
     "reflex_components_core.el.elements.media": ["image"],
     "reflex_components_lucide": ["icon"],
     **_COMPONENTS_BASE_MAPPING,
@@ -235,7 +235,7 @@ _MAPPING: lazy_loader.SubmodAttrsType = {
     "utils.imports": ["ImportDict", "ImportVar"],
     "utils.misc": ["run_in_thread"],
     "utils.serializers": ["serializer"],
-    "vars": ["Var", "field", "Field", "RestProp"],
+    "vars": ["Var", "field", "Field", "RestProp", "EMPTY_VAR_STR", "EMPTY_VAR_INT"],
 }
 
 _SUBMODULES: set[str] = {

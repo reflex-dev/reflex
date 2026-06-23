@@ -12,7 +12,7 @@ from reflex_components_internal.components.icons.others import arrow_svg
 LiteralSide = Literal["top", "right", "bottom", "left", "inline-end", "inline-start"]
 LiteralAlign = Literal["start", "center", "end"]
 LiteralPositionMethod = Literal["absolute", "fixed"]
-LiteralTrackCursorAxis = Literal["none", "bottom", "x", "y"]
+LiteralTrackCursorAxis = Literal["none", "x", "y", "both"]
 
 
 # Constants for default class names

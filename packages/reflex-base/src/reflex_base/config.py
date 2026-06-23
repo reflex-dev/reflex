@@ -168,6 +168,7 @@ class BaseConfig:
         cors_allowed_origins: Comma separated list of origins that are allowed to connect to the backend API.
         vite_allowed_hosts: Allowed hosts for the Vite dev server. Set to True to allow all hosts, or provide a list of hostnames (e.g. ["myservice.local"]) to allow specific ones. Prevents 403 errors in Docker, Codespaces, reverse proxies, etc.
         react_strict_mode: Whether to use React strict mode.
+        frontend_compression_formats: Pre-compressed frontend asset formats to generate for production builds. Supported values are "gzip", "brotli", and "zstd". Use an empty list to disable build-time pre-compression.
         frontend_packages: Additional frontend packages to install.
         state_manager_mode: Indicate which type of state manager to use.
         redis_lock_expiration: Maximum expiration lock time for redis state manager.
@@ -178,6 +179,7 @@ class BaseConfig:
         show_built_with_reflex: Whether to display the sticky "Built with Reflex" badge on all pages.
         is_reflex_cloud: Whether the app is running in the reflex cloud environment.
         extra_overlay_function: Extra overlay function to run after the app is built. Formatted such that `from path_0.path_1... import path[-1]`, and calling it with no arguments would work. For example, "reflex_components_moment.moment".
+        hydrate_fallback: Function returning the component shown while the page is hydrating (React Router's HydrateFallback), used when App.hydrate_fallback is not set. Formatted such that `from path_0.path_1... import path[-1]`, and calling it with no arguments would work. For example, "my_app.components.loading".
         plugins: List of plugins to use in the app.
         disable_plugins: List of plugin types to disable in the app.
         transport: The transport method for client-server communication.
@@ -224,6 +226,11 @@ class BaseConfig:
 
     react_strict_mode: bool = True
 
+    frontend_compression_formats: Annotated[
+        list[str],
+        SequenceOptions(delimiter=",", strip=True),
+    ] = dataclasses.field(default_factory=lambda: ["gzip"])
+
     frontend_packages: list[str] = dataclasses.field(default_factory=list)
 
     state_manager_mode: constants.StateManagerMode = constants.StateManagerMode.DISK
@@ -248,6 +255,8 @@ class BaseConfig:
     is_reflex_cloud: bool = False
 
     extra_overlay_function: str | None = None
+
+    hydrate_fallback: str | None = None
 
     plugins: list[Plugin] = dataclasses.field(default_factory=list)
 
@@ -308,7 +317,7 @@ class Config(BaseConfig):
     - **App Settings**: `app_name`, `loglevel`, `telemetry_enabled`
     - **Server**: `frontend_port`, `backend_port`, `api_url`, `cors_allowed_origins`
     - **Database**: `db_url`, `async_db_url`, `redis_url`
-    - **Frontend**: `frontend_packages`, `react_strict_mode`
+    - **Frontend**: `frontend_packages`, `react_strict_mode`, `frontend_compression_formats`
     - **State Management**: `state_manager_mode`, `state_auto_setters`
     - **Plugins**: `plugins`, `disable_plugins`
 
@@ -347,6 +356,11 @@ class Config(BaseConfig):
         env_kwargs = self.update_from_env()
         for key, env_value in env_kwargs.items():
             setattr(self, key, env_value)
+
+        self._normalize_frontend_compression_formats()
+
+        # Normalize route prefixes to ensure they start with a slash.
+        self._normalize_paths()
 
         # Normalize plugins: auto-instantiate Plugin subclasses, reject bad values.
         self._normalize_plugins()
@@ -453,6 +467,37 @@ class Config(BaseConfig):
                     f"reflex.Config.disable_plugins should contain Plugin subclasses, but got {entry!r}.",
                 )
         self.disable_plugins = normalized
+
+    def _normalize_frontend_compression_formats(self):
+        """Normalize and validate configured frontend compression formats.
+
+        Raises:
+            ConfigError: If an unsupported format name is configured.
+        """
+        supported = {"brotli", "gzip", "zstd"}
+        normalized: list[str] = []
+        seen: set[str] = set()
+        for format_name in self.frontend_compression_formats:
+            name = format_name.strip().lower()
+            if not name or name in seen:
+                continue
+            if name not in supported:
+                msg = (
+                    f"frontend_compression_formats contains unsupported format "
+                    f"{format_name!r}. Expected one of: {', '.join(sorted(supported))}."
+                )
+                raise ConfigError(msg)
+            normalized.append(name)
+            seen.add(name)
+        self.frontend_compression_formats = normalized
+
+    def _normalize_paths(self):
+        """Ensure frontend and backend paths start with a slash if provided."""
+        if self.frontend_path and not self.frontend_path.startswith("/"):
+            self.frontend_path = f"/{self.frontend_path}"
+
+        if self.backend_path and not self.backend_path.startswith("/"):
+            self.backend_path = f"/{self.backend_path}"
 
     def _add_builtin_plugins(self):
         """Add the builtin plugins to the config."""

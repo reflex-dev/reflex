@@ -1,6 +1,7 @@
 """This module provides utilities for managing JavaScript runtimes like Node.js and Bun."""
 
 import functools
+import json
 import os
 import tempfile
 from collections.abc import Sequence
@@ -91,15 +92,40 @@ def npm_escape_hatch() -> bool:
     return environment.REFLEX_USE_NPM.get()
 
 
+def _persisted_lockfile_implies_npm() -> bool:
+    """Whether the persisted lockfiles imply the project is npm-managed.
+
+    A project is treated as npm-managed when ``reflex.lock/`` carries an
+    npm lockfile but no bun lockfile, so committing only ``package-lock.json``
+    is enough to opt in without setting ``REFLEX_USE_NPM=1``.
+
+    Returns:
+        Whether the persisted state implies npm.
+    """
+    root_dir = Path.cwd() / constants.Bun.ROOT_LOCKFILE_DIR
+    return (root_dir / constants.Node.LOCKFILE_PATH).exists() and not (
+        root_dir / constants.Bun.LOCKFILE_PATH
+    ).exists()
+
+
 def prefer_npm_over_bun() -> bool:
     """Check if npm should be preferred over bun.
+
+    Order of precedence:
+      1. Windows + OneDrive — always npm (bun is broken there).
+      2. ``REFLEX_USE_NPM`` set — honor the explicit value.
+      3. Persisted lockfile state — implicit npm if only a npm lock is
+         present in ``reflex.lock/``.
 
     Returns:
         If npm should be preferred over bun.
     """
-    return npm_escape_hatch() or (
-        constants.IS_WINDOWS and windows_check_onedrive_in_path()
-    )
+    if constants.IS_WINDOWS and windows_check_onedrive_in_path():
+        return True
+    explicit = environment.REFLEX_USE_NPM.getenv()
+    if explicit is not None:
+        return explicit
+    return _persisted_lockfile_implies_npm()
 
 
 def get_nodejs_compatible_package_managers(
@@ -362,34 +388,208 @@ def _frontend_packages_cache_path() -> Path:
     return get_web_dir() / "reflex.install_frontend_packages.cached"
 
 
-def _sync_root_bun_lock_for_frontend_install():
-    """Sync the canonical bun.lock into .web and invalidate the install cache when needed."""
-    root_bun_lock_path = frontend_skeleton.get_root_bun_lock_path()
-    web_bun_lock_path = frontend_skeleton.get_web_bun_lock_path()
-    cache_file = _frontend_packages_cache_path()
-
-    if not root_bun_lock_path.exists():
-        if web_bun_lock_path.exists():
-            frontend_skeleton.sync_root_bun_lock_to_web()
-            if cache_file.exists():
-                path_ops.rm(cache_file)
-        return
-
-    if not web_bun_lock_path.exists():
-        frontend_skeleton.sync_root_bun_lock_to_web()
-        return
-
-    if web_bun_lock_path.read_bytes() != root_bun_lock_path.read_bytes():
-        frontend_skeleton.sync_root_bun_lock_to_web()
+def _sync_root_lockfiles_for_frontend_install():
+    """Sync persisted lockfiles into .web and invalidate the install cache when needed."""
+    if frontend_skeleton.sync_root_lockfiles_to_web():
+        cache_file = _frontend_packages_cache_path()
         if cache_file.exists():
             path_ops.rm(cache_file)
 
 
+def _extract_package_name(package_spec: str) -> str:
+    """Strip any version suffix from a ``bun add``-style spec.
+
+    Handles plain (``react``), pinned (``react@1.2.3``), scoped
+    (``@scope/pkg``), and pinned-scoped (``@scope/pkg@1.2.3``) forms.
+
+    Args:
+        package_spec: The spec to parse.
+
+    Returns:
+        The bare package name.
+    """
+    if package_spec.startswith("@"):
+        idx = package_spec.find("@", 1)
+        return package_spec if idx == -1 else package_spec[:idx]
+    return package_spec.split("@", 1)[0]
+
+
+def _existing_web_package_sections() -> tuple[set[str], set[str]]:
+    """Return packages currently declared in .web/package.json by section.
+
+    Reads ``.web/package.json``'s ``dependencies`` and ``devDependencies``
+    separately so callers can detect packages declared in the wrong
+    section. ``overrides`` are excluded because they reference transitive
+    deps.
+
+    Returns:
+        A tuple ``(deps, dev_deps)`` of bare package names. Both empty if
+        the file is missing or unreadable.
+    """
+    web_pkg_json_path = frontend_skeleton.get_web_package_json_path()
+    if not web_pkg_json_path.exists():
+        return set(), set()
+    try:
+        data = json.loads(web_pkg_json_path.read_text())
+    except (json.JSONDecodeError, OSError) as e:
+        console.warn(
+            f"Failed to read {web_pkg_json_path}: {e}; skipping existing package check."
+        )
+        return set(), set()
+    return (
+        set(data.get("dependencies") or {}),
+        set(data.get("devDependencies") or {}),
+    )
+
+
+def _is_bun_package_manager(package_manager: str) -> bool:
+    """Whether the given package manager path refers to bun.
+
+    bun-specific CLI flags (``--frozen-lockfile``, ``--only-missing``) are
+    not understood by npm and will fail outright on upcoming npm versions
+    that reject unknown options, so callers gate those flags on this check.
+
+    Args:
+        package_manager: Path or bare name of the package manager executable.
+
+    Returns:
+        Whether the executable is bun.
+    """
+    return Path(package_manager).stem.lower() == "bun"
+
+
+def _run_initial_install(primary_package_manager: str, env: dict) -> None:
+    """Run the initial frozen-lockfile install with a friendly recovery hint.
+
+    bun reports ``error: lockfile had changes, but lockfile is frozen`` when
+    the persisted lockfile cannot satisfy the recovered package.json. When
+    that happens, point the user at ``reflex.lock/package.json`` so they can
+    delete it and let Reflex regenerate the dep set from scratch on the
+    next run.
+
+    Args:
+        primary_package_manager: Path to the package manager executable.
+        env: Extra environment variables for the subprocess.
+
+    Raises:
+        SystemExit: If the install fails. The exit message tells the user
+            how to recover from a frozen-lockfile mismatch when applicable.
+    """
+    install_args = [
+        primary_package_manager,
+        "install",
+        "--legacy-peer-deps",
+    ]
+    if _is_bun_package_manager(primary_package_manager):
+        # ``--frozen-lockfile`` is bun-only; npm ignores it today and the
+        # next major rejects unknown flags outright.
+        install_args.append("--frozen-lockfile")
+    args = processes.get_command_with_loglevel(install_args)
+    process = processes.new_process(
+        args,
+        cwd=get_web_dir(),
+        shell=constants.IS_WINDOWS,
+        env=env,
+    )
+    logs = processes.show_status(
+        "Installing base frontend packages",
+        process,
+        suppress_errors=True,
+    )
+    if process.returncode == 0:
+        return
+
+    if any("lockfile had changes, but lockfile is frozen" in line for line in logs):
+        root_dir = Path.cwd() / constants.Bun.ROOT_LOCKFILE_DIR
+        console.error(
+            "The persisted lockfile is out of sync with the recovered "
+            f"package.json. Delete the [bold]{root_dir}[/bold] directory "
+            "and rerun so Reflex regenerates it from scratch."
+        )
+        raise SystemExit(1)
+
+    # Replay captured logs so the user can diagnose other failures (mirrors
+    # show_status's default error path, which we suppressed above).
+    for line in logs:
+        console.error(line, end="")
+    console.error("\nRun with [bold]--loglevel debug[/bold] for the full log.")
+    raise SystemExit(1)
+
+
+def _has_version_specifier(package_spec: str) -> bool:
+    """Check whether a package spec already includes a version specifier.
+
+    Treats a package as pinned if it contains an ``@`` after the first
+    character (so scoped packages like ``@scope/pkg`` are unpinned, while
+    ``@scope/pkg@1.2.3`` is pinned).
+
+    Args:
+        package_spec: The package spec to inspect.
+
+    Returns:
+        Whether the spec carries a version specifier.
+    """
+    return "@" in package_spec[1:]
+
+
+def _split_by_version_specifier(
+    packages: set[str],
+) -> tuple[set[str], set[str]]:
+    """Partition packages into pinned and unpinned sets.
+
+    Args:
+        packages: Package specs to partition.
+
+    Returns:
+        A tuple ``(pinned, unpinned)`` of disjoint package sets.
+    """
+    pinned: set[str] = set()
+    unpinned: set[str] = set()
+    for package in packages:
+        if _has_version_specifier(package):
+            pinned.add(package)
+        else:
+            unpinned.add(package)
+    return pinned, unpinned
+
+
+def _pinned_args_from_constants(deps: dict[str, str]) -> set[str]:
+    """Render constants-style dep dicts as ``name@version`` add args.
+
+    Args:
+        deps: Mapping of package name to version string.
+
+    Returns:
+        Set of ``name@version`` specs.
+    """
+    return {f"{name}@{version}" for name, version in deps.items()}
+
+
+def _frontend_packages_cache_payload(
+    packages: set[str],
+    config: Config,
+    install_package_managers: Sequence[str],
+) -> str:
+    """Cache fingerprint for frontend package installs.
+
+    Args:
+        packages: Custom packages requested by the caller.
+        config: The active Reflex config.
+        install_package_managers: The package manager paths in priority order.
+
+    Returns:
+        Stable fingerprint string for the cached procedure.
+    """
+    return (
+        f"{sorted(packages)!r},{config.json()},{list(install_package_managers)!r},"
+        f"{sorted(constants.PackageJson.DEPENDENCIES.items())!r},"
+        f"{sorted(constants.PackageJson.DEV_DEPENDENCIES.items())!r}"
+    )
+
+
 @cached_procedure(
     cache_file_path=_frontend_packages_cache_path,
-    payload_fn=lambda packages, config, install_package_managers: (
-        f"{sorted(packages)!r},{config.json()},{list(install_package_managers)!r}"
-    ),
+    payload_fn=_frontend_packages_cache_payload,
 )
 def _install_frontend_packages(
     packages: set[str],
@@ -398,13 +598,32 @@ def _install_frontend_packages(
 ):
     """Installs the base and custom frontend packages.
 
+    Resolution rules:
+      * Framework deps in :attr:`constants.PackageJson.DEPENDENCIES` and
+        :attr:`constants.PackageJson.DEV_DEPENDENCIES` always carry version
+        specifiers and are added with strict pins so they overwrite any
+        existing entry in package.json.
+      * Plugin/custom packages with explicit version specifiers are also
+        added with strict pins.
+      * Plugin/custom packages without version specifiers are skipped
+        entirely if package.json already declares them in the correct
+        section, so previously resolved pins are preserved across runs
+        without relying on package-manager-specific flags. Otherwise they
+        are added without a version so the manager picks one.
+      * Packages declared in the wrong section (e.g. a regular dep
+        listed under ``devDependencies``) are removed first and re-added
+        so they land in the section the framework/plugin/import-graph
+        actually intends.
+
     Args:
-        packages: A list of package names to be installed.
-        config: The config object.
-        install_package_managers: The package managers available for install.
+        packages: Custom packages requested by the caller (from
+            ``Config.frontend_packages`` and inferred component imports).
+        config: The active Reflex config.
+        install_package_managers: The package manager paths in priority
+            order (primary plus fallbacks).
 
     Example:
-        >>> install_frontend_packages(["react", "react-dom"], get_config())
+        >>> install_frontend_packages({"react", "react-dom"}, get_config())
     """
     env = (
         {
@@ -415,44 +634,118 @@ def _install_frontend_packages(
     )
 
     primary_package_manager = install_package_managers[0]
-    fallbacks = install_package_managers[1:]
 
+    # No fallback to a different package manager: switching mid-flow could
+    # bypass the persisted lockfile (e.g. on a package-integrity failure
+    # the alternate manager would happily fetch a new version), defeating
+    # the whole point of pinning. A failure here must surface as a failure.
     run_package_manager = functools.partial(
         processes.run_process_with_fallbacks,
-        fallbacks=fallbacks,
+        fallbacks=None,
         analytics_enabled=True,
         cwd=get_web_dir(),
         shell=constants.IS_WINDOWS,
         env=env,
     )
 
-    run_package_manager(
-        [primary_package_manager, "install", "--legacy-peer-deps"],
-        show_status_message="Installing base frontend packages",
-    )
-
+    # Resolve plugin-contributed deps up front so we know the full needed
+    # set before deciding which entries in package.json are stale.
     development_deps: set[str] = set()
     for plugin in config.plugins:
         development_deps.update(plugin.get_frontend_development_dependencies())
         packages.update(plugin.get_frontend_dependencies())
 
-    if development_deps:
+    wanted_dep_names = set(constants.PackageJson.DEPENDENCIES.keys()) | {
+        _extract_package_name(p) for p in packages
+    }
+    # If the same package is requested as both a regular and a development
+    # dependency (e.g. two plugins disagree on the section), prefer the
+    # regular-dep section. This keeps the placement deterministic instead
+    # of depending on the order the package manager processes the two
+    # add calls.
+    wanted_dev_dep_names = (
+        set(constants.PackageJson.DEV_DEPENDENCIES.keys())
+        | {_extract_package_name(p) for p in development_deps}
+    ) - wanted_dep_names
+    needed_names = wanted_dep_names | wanted_dev_dep_names
+
+    existing_deps, existing_dev_deps = _existing_web_package_sections()
+    existing_names = existing_deps | existing_dev_deps
+
+    # Drop deps lingering in package.json that no component, plugin, or
+    # framework constant calls for anymore, plus any package declared in
+    # the wrong section. bun and npm both update the existing entry
+    # in-place on a re-add and won't move it across sections, so misplaced
+    # entries must be removed first to land in the correct one.
+    stale_packages = existing_names - needed_names
+    misplaced_in_dev = (wanted_dep_names & existing_dev_deps) - existing_deps
+    misplaced_in_deps = (wanted_dev_dep_names & existing_deps) - existing_dev_deps
+    to_remove = stale_packages | misplaced_in_dev | misplaced_in_deps
+    if to_remove:
+        run_package_manager(
+            [
+                primary_package_manager,
+                "remove",
+                "--legacy-peer-deps",
+                *sorted(to_remove),
+            ],
+            show_status_message="Removing unused frontend packages",
+        )
+
+    # Install against the recovered lockfile so its pins are honored
+    # before any further mutation.
+    if any(
+        frontend_skeleton.get_web_lockfile_path(name).exists()
+        for name in frontend_skeleton.LOCKFILE_NAMES
+    ):
+        _run_initial_install(primary_package_manager, env)
+
+    pinned_packages, unpinned_packages = _split_by_version_specifier(packages)
+    pinned_dev_deps, unpinned_dev_deps = _split_by_version_specifier(development_deps)
+
+    # Skip unpinned entries that already appear in the correct section so
+    # the package manager doesn't churn the previously resolved version.
+    # Misplaced entries fall through here and get re-added (after the
+    # remove step above) into the right section. This replaces bun's
+    # ``--only-missing`` flag with package-manager-agnostic logic that
+    # also works on npm.
+    new_unpinned_packages = unpinned_packages - existing_deps
+    new_unpinned_dev_deps = unpinned_dev_deps - existing_dev_deps
+
+    deps_to_add = (
+        _pinned_args_from_constants(constants.PackageJson.DEPENDENCIES)
+        | pinned_packages
+        | new_unpinned_packages
+    )
+    deps_names_to_add = {_extract_package_name(p) for p in deps_to_add}
+    dev_deps_to_add = {
+        spec
+        for spec in (
+            _pinned_args_from_constants(constants.PackageJson.DEV_DEPENDENCIES)
+            | pinned_dev_deps
+            | new_unpinned_dev_deps
+        )
+        if _extract_package_name(spec) not in deps_names_to_add
+    }
+
+    # Add dev dependencies first so that any subsequent regular-dep add
+    # for an overlapping name lands in ``dependencies`` regardless of
+    # whether the package manager moves entries between sections.
+    if dev_deps_to_add:
         run_package_manager(
             [
                 primary_package_manager,
                 "add",
                 "--legacy-peer-deps",
                 "-d",
-                *development_deps,
+                *dev_deps_to_add,
             ],
             show_status_message="Installing frontend development dependencies",
         )
-
-    # Install custom packages defined in frontend_packages
-    if packages:
+    if deps_to_add:
         run_package_manager(
-            [primary_package_manager, "add", "--legacy-peer-deps", *packages],
-            show_status_message="Installing frontend packages from config and components",
+            [primary_package_manager, "add", "--legacy-peer-deps", *deps_to_add],
+            show_status_message="Installing frontend packages",
         )
 
 
@@ -461,6 +754,7 @@ def install_frontend_packages(packages: set[str], config: Config):
     install_package_managers = tuple(
         get_nodejs_compatible_package_managers(raise_on_none=True)
     )
-    _sync_root_bun_lock_for_frontend_install()
+    _sync_root_lockfiles_for_frontend_install()
     _install_frontend_packages(set(packages), config, install_package_managers)
-    frontend_skeleton.sync_web_bun_lock_to_root()
+    frontend_skeleton.sync_web_lockfiles_to_root()
+    frontend_skeleton.sync_web_package_json_to_root()

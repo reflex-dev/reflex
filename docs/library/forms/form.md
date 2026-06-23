@@ -1,12 +1,6 @@
 ---
 components:
   - rx.form
-  - rx.form.root
-  - rx.form.field
-  - rx.form.control
-  - rx.form.label
-  - rx.form.message
-  - rx.form.submit
 
 FormRoot: |
   lambda **props: rx.form.root(
@@ -174,6 +168,114 @@ If you need these controls to be passed in the form data even when their values 
 
 ```md video https://youtube.com/embed/ITOZkzjtjUA?start=5287&end=6040
 # Video: Forms
+```
+
+## Validating Form Data with a TypedDict
+
+The `on_submit` handler usually receives the form data as a plain `dict`, which
+means accessing a field is untyped (`form_data["email"]` returns `Any`) and a
+typo in a `name` goes unnoticed until runtime.
+
+Instead, you can annotate the handler's parameter with a
+[`TypedDict`](https://docs.python.org/3/library/typing.html#typing.TypedDict).
+This gives you typed, autocompleted access to each field inside the handler, and
+Reflex validates the form **at compile time**: every required key of the
+`TypedDict` must have a matching form control. If a required field has no
+control with that `name` (or `id`), Reflex raises an `EventHandlerValueError`
+before the app starts, pointing out exactly which fields are missing.
+
+```python demo exec
+from typing import TypedDict
+
+from typing_extensions import NotRequired
+
+
+class ContactForm(TypedDict):
+    first_name: str
+    last_name: str
+    email: str
+    message: NotRequired[str]  # optional field
+
+
+class TypedFormState(rx.State):
+    form_data: ContactForm | None = None
+
+    @rx.event
+    def handle_submit(self, form_data: ContactForm):
+        """Handle the form submit."""
+        # form_data is typed: editors autocomplete the keys below.
+        self.form_data = form_data
+
+
+def typed_form_example():
+    return rx.vstack(
+        rx.form(
+            rx.vstack(
+                rx.input(placeholder="First Name", name="first_name"),
+                rx.input(placeholder="Last Name", name="last_name"),
+                rx.input(placeholder="Email", name="email", type="email"),
+                rx.text_area(placeholder="Message", name="message"),
+                rx.button("Submit", type="submit"),
+            ),
+            on_submit=TypedFormState.handle_submit,
+            reset_on_submit=True,
+        ),
+        rx.divider(),
+        rx.heading("Results"),
+        rx.text(TypedFormState.form_data.to_string()),
+    )
+```
+
+### Required and optional fields
+
+By default every key declared in a `TypedDict` is **required** and must be
+backed by a form control. Mark a field as optional with `NotRequired` (or by
+inheriting from a `total=False` base) so Reflex won't require a matching
+control:
+
+```python
+from typing import TypedDict
+
+from typing_extensions import NotRequired
+
+
+class ContactForm(TypedDict):
+    name: str  # required: a control named "name" must exist
+    email: str  # required: a control named "email" must exist
+    message: NotRequired[str]  # optional: no control required
+```
+
+If a required field is missing, creating the form fails fast with a message that
+lists the expected, missing, and matching fields:
+
+```python
+class SignupForm(TypedDict):
+    username: str
+    email: str
+
+
+class SignupState(rx.State):
+    @rx.event
+    def handle_submit(self, form_data: SignupForm): ...
+
+
+# Raises EventHandlerValueError: the form has no control named "email".
+rx.form(
+    rx.input(name="username"),
+    rx.button("Submit", type="submit"),
+    on_submit=SignupState.handle_submit,
+)
+```
+
+```md alert info
+# When is validation skipped?
+
+The check only runs when the form fields are statically known. It is
+automatically skipped when control `name`/`id` values are dynamic (for example,
+built with `rx.foreach`), or when the form has an `id` (since controls can be
+associated from elsewhere via the HTML `form` attribute). In those cases the
+`TypedDict` still provides typed access inside the handler. At runtime
+`form_data` is always a regular dictionary.
 ```
 
 ## Dynamic Forms

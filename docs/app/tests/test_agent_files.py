@@ -19,7 +19,7 @@ from agent_files._plugin import (
 def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
     """The docs mount exposes public-root llms.txt as /docs/llms.txt."""
     monkeypatch.setattr(
-        "reflex_base.config.get_config",
+        "agent_files._plugin.get_config",
         lambda: SimpleNamespace(
             deploy_url="https://reflex.dev",
             frontend_path="/docs",
@@ -128,7 +128,7 @@ def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
 def test_generate_markdown_file_content_adds_agent_directive(monkeypatch, tmp_path):
     """Generated markdown pages advertise the docs index and markdown access."""
     monkeypatch.setattr(
-        "reflex_base.config.get_config",
+        "agent_files._plugin.get_config",
         lambda: SimpleNamespace(
             deploy_url="http://localhost:3000",
             frontend_path="/docs",
@@ -162,7 +162,7 @@ def test_generate_markdown_file_content_appends_component_props_table(
 ):
     """Component docs markdown includes generated API reference props tables."""
     monkeypatch.setattr(
-        "reflex_base.config.get_config",
+        "agent_files._plugin.get_config",
         lambda: SimpleNamespace(
             deploy_url="https://reflex.dev",
             frontend_path="/docs",
@@ -218,7 +218,7 @@ def test_generate_markdown_file_content_appends_component_props_table(
 def test_generate_dynamic_api_reference_files(monkeypatch):
     """Dynamic API reference pages have generated markdown assets."""
     monkeypatch.setattr(
-        "reflex_base.config.get_config",
+        "agent_files._plugin.get_config",
         lambda: SimpleNamespace(
             deploy_url="https://reflex.dev",
             frontend_path="/docs",
@@ -274,7 +274,7 @@ def test_generate_dynamic_api_reference_files(monkeypatch):
 def test_generate_llms_full_txt_stitches_markdown_docs(monkeypatch, tmp_path):
     """llms-full.txt contains full Markdown page bodies with source URLs."""
     monkeypatch.setattr(
-        "reflex_base.config.get_config",
+        "agent_files._plugin.get_config",
         lambda: SimpleNamespace(
             deploy_url="https://reflex.dev",
             frontend_path="/docs",

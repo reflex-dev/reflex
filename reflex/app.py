@@ -7,6 +7,7 @@ import contextlib
 import copy
 import dataclasses
 import functools
+import importlib
 import inspect
 import json
 import operator
@@ -42,7 +43,8 @@ from reflex_base.event import (
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
 from reflex_base.registry import RegistrationContext
-from reflex_base.utils import console
+from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
+from reflex_base.utils import console, memo_paths
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
 from reflex_components_core.base.error_boundary import ErrorBoundary
@@ -70,6 +72,7 @@ from reflex.admin import AdminDash
 from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
 from reflex.compiler import compiler
 from reflex.compiler.compiler import readable_name_from_component
+from reflex.istate.data import RouterData
 from reflex.istate.manager import StateManager, StateModificationContext
 from reflex.istate.manager.token import BaseStateToken
 from reflex.page import DECORATED_PAGES
@@ -78,15 +81,17 @@ from reflex.route import (
     replace_brackets_with_keywords,
     verify_route_validity,
 )
-from reflex.state import (
-    BaseState,
-    RouterData,
-    State,
-    StateUpdate,
-    all_base_state_classes,
+from reflex.state import BaseState, State, StateUpdate, all_base_state_classes
+from reflex.utils import (
+    codespaces,
+    exceptions,
+    format,
+    js_runtimes,
+    prerequisites,
+    telemetry_accounting,
 )
-from reflex.utils import codespaces, exceptions, format, js_runtimes, prerequisites
 from reflex.utils.exec import (
+    get_backend_compile_trigger,
     get_compile_context,
     is_prod_mode,
     is_testing_env,
@@ -156,32 +161,72 @@ def default_backend_exception_handler(exception: Exception) -> EventSpec:
     )
 
 
+def _resolve_import_path(import_path: str) -> Any:
+    """Resolve a dotted import path to the object it refers to.
+
+    The path is split on the final dot: everything before it is imported as a
+    module, and the final segment is read as an attribute of that module
+    (``from path_0.path_1... import path[-1]``).
+
+    Args:
+        import_path: The dotted import path (e.g. "my_app.components.loading").
+
+    Returns:
+        The object referenced by the import path.
+
+    Raises:
+        ValueError: If the path has no dot separating the module from the attribute.
+    """
+    module, _, attribute_name = import_path.rpartition(".")
+    if not module:
+        msg = (
+            f"Invalid import path {import_path!r}: expected a dotted "
+            "'module.attribute' path (e.g. 'my_app.components.loading')."
+        )
+        raise ValueError(msg)
+    return getattr(importlib.import_module(module), attribute_name)
+
+
+def _component_from_import_path(
+    import_path: str, feature_name: str
+) -> Component | None:
+    """Resolve a dotted import path and render its callable into a component.
+
+    The final segment of the path must be a no-arg callable returning a component.
+
+    Args:
+        import_path: The dotted import path to the component callable.
+        feature_name: The config name to reference in the error message on failure.
+
+    Returns:
+        The resolved component, or None if it could not be loaded.
+    """
+    try:
+        component = Fragment.create(_resolve_import_path(import_path)())
+        component._get_all_imports()
+    except Exception as e:
+        from reflex.compiler.utils import save_error
+
+        log_path = save_error(e)
+
+        console.error(
+            f"Error loading {feature_name} {import_path}. Error saved to {log_path}"
+        )
+        return None
+
+    return component
+
+
 def extra_overlay_function() -> Component | None:
     """Extra overlay function to add to the overlay component.
 
     Returns:
         The extra overlay function.
     """
-    config = get_config()
-
-    extra_config = config.extra_overlay_function
-    config_overlay = None
+    extra_config = get_config().extra_overlay_function
     if extra_config:
-        module, _, function_name = extra_config.rpartition(".")
-        try:
-            module = __import__(module)
-            config_overlay = Fragment.create(getattr(module, function_name)())
-            config_overlay._get_all_imports()
-        except Exception as e:
-            from reflex.compiler.utils import save_error
-
-            log_path = save_error(e)
-
-            console.error(
-                f"Error loading extra_overlay_function {extra_config}. Error saved to {log_path}"
-            )
-
-    return config_overlay
+        return _component_from_import_path(extra_config, "extra_overlay_function")
+    return None
 
 
 def default_overlay_component() -> Component:
@@ -190,9 +235,9 @@ def default_overlay_component() -> Component:
     Returns:
         The default overlay component, which is a connection banner/toaster set.
     """
-    from reflex_base.components.component import memo
+    from reflex_base.components.memo import memo
 
-    def default_overlay_components():
+    def default_overlay_components() -> Component:
         return Fragment.create(
             connection_pulser(),
             connection_toaster(),
@@ -238,6 +283,7 @@ class UnevaluatedPage:
     on_load: EventType[()] | None = None
     meta: Sequence[Mapping[str, Any] | Component] = ()
     context: Mapping[str, Any] = dataclasses.field(default_factory=dict)
+    _source_module: str | None = None
 
     def merged_with(self, other: UnevaluatedPage) -> UnevaluatedPage:
         """Merge the other page into this one.
@@ -256,6 +302,9 @@ class UnevaluatedPage:
             else other.description,
             on_load=self.on_load if self.on_load is not None else other.on_load,
             context=self.context if self.context is not None else other.context,
+            _source_module=self._source_module
+            if self._source_module is not None
+            else other._source_module,
         )
 
 
@@ -281,8 +330,8 @@ class App(MiddlewareMixin, LifespanMixin):
     ```
 
     Attributes:
-        theme: Deprecated legacy shortcut for configuring the app-level Radix theme.
-        style: The [global style](https://reflex.dev/docs/styling/overview/#global-styles}) for the app.
+        theme: Deprecated legacy shortcut for configuring the app-level Radix [theme](https://reflex.dev/docs/styling/theming/).
+        style: The [global style](https://reflex.dev/docs/styling/overview/#global-styles) for the app.
         stylesheets: A list of URLs to [stylesheets](https://reflex.dev/docs/styling/custom-stylesheets/) to include in the app.
         reset_style: Whether to include CSS reset for margin and padding. Defaults to True.
         app_wraps: App wraps to be applied to the whole app. Expected to be a dictionary of (order, name) to a function that takes whether the state is enabled and optionally returns a component.
@@ -291,12 +340,12 @@ class App(MiddlewareMixin, LifespanMixin):
         sio: The Socket.IO AsyncServer instance.
         html_lang: The language to add to the html root tag of every page.
         html_custom_attrs: Attributes to add to the html root tag of every page.
-        enable_state: Whether to enable state for the app. If False, the app will not use state.
+        enable_state: Whether to enable [state](https://reflex.dev/docs/state/overview/) for the app. If False, the app will not use state.
         admin_dash: Admin dashboard to view and manage the database.
-        frontend_exception_handler: Frontend error handler function.
-        backend_exception_handler: Backend error handler function.
-        toaster: Put the toast provider in the app wrap.
-        api_transformer: Transform the ASGI app before running it.
+        frontend_exception_handler: Frontend [error handler](https://reflex.dev/docs/utility-methods/exception-handlers/) function.
+        backend_exception_handler: Backend [error handler](https://reflex.dev/docs/utility-methods/exception-handlers/) function.
+        toaster: Put the [toast](https://reflex.dev/docs/library/overlay/toast/) provider in the app wrap.
+        api_transformer: One or more transforms applied to the backend ASGI app before it runs — mount a FastAPI/Starlette app or wrap it in ASGI middleware. See the [API Transformer docs](https://reflex.dev/docs/api-routes/overview/) for examples.
     """
 
     theme: Component | None = dataclasses.field(default=None)
@@ -384,6 +433,8 @@ class App(MiddlewareMixin, LifespanMixin):
     ] = default_backend_exception_handler
 
     toaster: Component | None = dataclasses.field(default_factory=toast.provider)
+
+    hydrate_fallback: Component | ComponentCallable | None = None
 
     api_transformer: (
         Sequence[Callable[[ASGIApp], ASGIApp] | Starlette]
@@ -662,7 +713,10 @@ class App(MiddlewareMixin, LifespanMixin):
         # rx.asset(shared=True) symlink re-creation doesn't trigger further reloads.
         remove_stale_external_asset_symlinks()
 
-        self._compile(prerender_routes=should_prerender_routes())
+        self._compile(
+            prerender_routes=should_prerender_routes(),
+            trigger=get_backend_compile_trigger(),
+        )
 
         config = get_config()
 
@@ -864,6 +918,13 @@ class App(MiddlewareMixin, LifespanMixin):
         # Check if the route given is valid
         verify_route_validity(route)
 
+        if isinstance(component, Callable):
+            source_module = memo_paths.capture_source_module(component)
+        else:
+            # The user passed a pre-built Component instance — fall back to
+            # walking the call stack from add_page's caller.
+            source_module = memo_paths.resolve_user_module_from_frame(skip=1)
+
         unevaluated_page = UnevaluatedPage(
             component=component,
             route=route,
@@ -873,6 +934,7 @@ class App(MiddlewareMixin, LifespanMixin):
             on_load=on_load,
             meta=meta,
             context=context or {},
+            _source_module=source_module,
         )
 
         if route in self._unevaluated_pages:
@@ -900,7 +962,8 @@ class App(MiddlewareMixin, LifespanMixin):
         # Setup dynamic args for the route.
         # this state assignment is only required for tests using the deprecated state kwarg for App
         state = self._state or State
-        state.setup_dynamic_args(get_route_args(route))
+        route_args = get_route_args(route)
+        state.setup_dynamic_args(route_args)
 
         self._load_events[route] = (
             (on_load if isinstance(on_load, list) else [on_load])
@@ -1049,12 +1112,11 @@ class App(MiddlewareMixin, LifespanMixin):
         dependencies = constants.PackageJson.DEPENDENCIES
         dev_dependencies = constants.PackageJson.DEV_DEPENDENCIES
         page_imports = {
-            i
-            for i, tags in imports.items()
-            if i not in dependencies
-            and i not in dev_dependencies
-            and not any(i.startswith(prefix) for prefix in ["/", "$/", "."])
-            and i != ""
+            package_name
+            for import_name, tags in imports.items()
+            if (package_name := self._get_frontend_package_name(import_name))
+            and package_name not in dependencies
+            and package_name not in dev_dependencies
             and any(tag.install for tag in tags)
         }
         pinned = {i.rpartition("@")[0] for i in page_imports if "@" in i}
@@ -1071,6 +1133,48 @@ class App(MiddlewareMixin, LifespanMixin):
             filtered_frontend_packages.append(package)
         page_imports.update(filtered_frontend_packages)
         js_runtimes.install_frontend_packages(page_imports, get_config())
+
+    @staticmethod
+    def _get_frontend_package_name(import_name: str) -> str | None:
+        """Resolve the npm package name to install for a library import path.
+
+        Args:
+            import_name: The import path key used in component imports.
+
+        Returns:
+            The package name that should be installed, including pinned version when
+            available, or None when the import does not represent an installable npm package.
+        """
+        if import_name == "" or any(
+            import_name.startswith(prefix) for prefix in ("/", "$/", ".")
+        ):
+            return None
+        if import_name.startswith(("https://", "http://")):
+            return import_name
+
+        library_name = format.format_library_name(import_name)
+        if library_name.startswith("@"):
+            scope, slash, package_and_path = library_name.partition("/")
+            package_name = (
+                f"{scope}/{package_and_path.split('/', maxsplit=1)[0]}"
+                if slash and package_and_path
+                else library_name
+            )
+        else:
+            package_name = library_name.split("/", maxsplit=1)[0]
+
+        if import_name.startswith(f"{library_name}@"):
+            version_and_maybe_subpath = import_name[len(library_name) + 1 :]
+            version, slash, _ = version_and_maybe_subpath.partition("/")
+            if slash and ":" not in version:
+                return f"{package_name}@{version}"
+            if package_name == library_name:
+                return import_name
+            return f"{package_name}@{version_and_maybe_subpath}"
+
+        if package_name == library_name:
+            return import_name
+        return package_name
 
     def _app_root(self, app_wrappers: dict[tuple[int, str], Component]) -> Component:
         for component in tuple(app_wrappers.values()):
@@ -1089,6 +1193,32 @@ class App(MiddlewareMixin, LifespanMixin):
             root,
         )
         return root
+
+    def _resolve_hydrate_fallback(self) -> Component | None:
+        """Resolve the component shown while the page is hydrating.
+
+        The App-level ``hydrate_fallback`` takes precedence; otherwise the
+        ``hydrate_fallback`` config (settable via ``REFLEX_HYDRATE_FALLBACK``)
+        is resolved from its dotted import path.
+
+        Error handling differs between the two by design: an App-level callable
+        that raises propagates (fail fast, like ``add_page``), since it was
+        passed explicitly in code; the config/env path degrades gracefully (logs
+        and returns None) as it is ambient deployment configuration.
+
+        Returns:
+            The resolved hydrate fallback component, or None if none is configured.
+        """
+        from reflex.compiler.compiler import into_component
+
+        if self.hydrate_fallback is not None:
+            return into_component(self.hydrate_fallback)
+        hydrate_fallback_config = get_config().hydrate_fallback
+        if hydrate_fallback_config:
+            return _component_from_import_path(
+                hydrate_fallback_config, "hydrate_fallback"
+            )
+        return None
 
     def _should_compile(self) -> bool:
         """Check if the app should be compiled.
@@ -1113,10 +1243,10 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def _setup_sticky_badge(self):
         """Add the sticky badge to the app."""
-        from reflex_base.components.component import memo
+        from reflex_base.components.memo import memo
 
         @memo
-        def memoized_badge():
+        def memoized_badge() -> Component:
             sticky_badge = sticky()
             sticky_badge._add_style_recursive({})
             return sticky_badge
@@ -1167,6 +1297,7 @@ class App(MiddlewareMixin, LifespanMixin):
         prerender_routes: bool = False,
         dry_run: bool = False,
         use_rich: bool = True,
+        trigger: CompileTrigger | None = None,
     ):
         """Compile the app and output it to the pages folder.
 
@@ -1174,17 +1305,39 @@ class App(MiddlewareMixin, LifespanMixin):
             prerender_routes: Whether to prerender the routes.
             dry_run: Whether to compile the app without saving it.
             use_rich: Whether to use rich progress bars.
+            trigger: Label identifying what initiated this compile. Recorded
+                on the ``compile`` telemetry event.
 
         Raises:
             ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
             FileNotFoundError: When a plugin requires a file that does not exist.
         """
-        compiler.compile_app(
-            self,
-            prerender_routes=prerender_routes,
-            dry_run=dry_run,
-            use_rich=use_rich,
-        )
+        ctx = TelemetryContext.start(trigger=trigger)
+        if ctx is None:
+            compiler.compile_app(
+                self,
+                prerender_routes=prerender_routes,
+                dry_run=dry_run,
+                use_rich=use_rich,
+            )
+            return
+
+        with ctx:
+            did_real_compile = False
+            try:
+                did_real_compile = compiler.compile_app(
+                    self,
+                    prerender_routes=prerender_routes,
+                    dry_run=dry_run,
+                    use_rich=use_rich,
+                )
+            except Exception as exc:
+                ctx.set_exception(exc)
+                did_real_compile = True
+                raise
+            finally:
+                if did_real_compile:
+                    telemetry_accounting.record_compile(self, ctx)
 
     def _write_stateful_pages_marker(self):
         """Write list of routes that create dynamic states for the backend to use later."""
@@ -1522,10 +1675,7 @@ class EventNamespace(AsyncNamespace):
         ):
             if isinstance(self._token_manager, RedisTokenManager):
                 # The socket belongs to another instance of the app, send it to the lost and found.
-                if not await self._token_manager.emit_lost_and_found(token, update):
-                    console.warn(
-                        f"Failed to send delta to lost and found for client {token!r}"
-                    )
+                await self._token_manager.emit_lost_and_found(token, update)
             else:
                 # If the socket record is None, we are not connected to a client. Prevent sending
                 # updates to all clients.

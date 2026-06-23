@@ -42,6 +42,17 @@ export const refs = {};
 // Array holding pending events to be processed.
 const event_queue = [];
 
+// Mirrors the data router's location so applyEvent can populate router_data
+// with the in-widget URL. In embed mode the host page's window.location is
+// unrelated to the Reflex route, so the backend's on_load and dynamic-route
+// matching rely on this ref instead. Updated by useEventLoop once mounted;
+// pre-seeded in embed mode with the memory router's initial path (see
+// initialEntries in entry.client.embed.js) so events dispatched before the
+// first effect commit don't briefly fall back to the host page's URL.
+const locationRef = {
+  current: env.MOUNT_TARGET ? { pathname: "/", search: "", hash: "" } : null,
+};
+
 /**
  * Generate a UUID (Used for session tokens).
  * Taken from: https://stackoverflow.com/questions/105034/how-do-i-create-a-guid-uuid
@@ -378,16 +389,23 @@ export const applyEvent = async (event, socket, navigate, params) => {
     event.router_data === undefined ||
     Object.keys(event.router_data).length === 0
   ) {
-    // Since we don't have router directly, we need to get info from our hooks
+    const loc = locationRef.current ?? window.location;
+    // React Router's location (mirrored in locationRef) does not observe direct
+    // window.history.pushState/replaceState calls (e.g. via rx.call_script), so
+    // read the live query string and hash to keep router_data in sync. The
+    // pathname stays basename-relative (from React Router) so the backend's
+    // frontend_path prefix is not applied twice. In embed mode the host page's
+    // window.location is unrelated to the in-widget memory router, so use the
+    // mirrored location there.
+    const liveLoc = env.MOUNT_TARGET ? loc : window.location;
+    const search = liveLoc.search ?? "";
+    const hash = liveLoc.hash ?? "";
     event.router_data = {
-      pathname: window.location.pathname,
-      asPath:
-        window.location.pathname +
-        window.location.search +
-        window.location.hash,
+      pathname: loc.pathname,
+      asPath: loc.pathname + search + hash,
     };
     const query = {
-      ...Object.fromEntries(new URLSearchParams(window.location.search)),
+      ...Object.fromEntries(new URLSearchParams(search)),
       ...params.current,
     };
     if (query && Object.keys(query).length > 0) {
@@ -410,6 +428,12 @@ export const applyEvent = async (event, socket, navigate, params) => {
  */
 export const applyRestEvent = async (event, socket, navigate, params) => {
   if (event.handler === "uploadFiles") {
+    // The compiled event names its extra bound handler args; collect just those
+    // so they reach the backend handler (no need to know the reserved keys).
+    const extra_args = {};
+    for (const name of event.payload.__reflex_event_arg_names ?? []) {
+      extra_args[name] = event.payload[name];
+    }
     // Start upload, but do not wait for it, which would block other events.
     uploadFiles(
       event.name,
@@ -417,6 +441,7 @@ export const applyRestEvent = async (event, socket, navigate, params) => {
       event.payload.upload_id,
       event.payload.on_upload_progress,
       event.payload.extra_headers,
+      extra_args,
       socket,
       refs,
       getBackendURL,
@@ -608,16 +633,21 @@ export const connect = async (
 
   const disconnectTrigger = (event) => {
     if (socket.current?.connected) {
-      console.log("Disconnect websocket on unload");
+      console.log("Disconnect websocket on page navigation");
       socket.current.disconnect();
     }
   };
 
   const pagehideHandler = (event) => {
-    if (event.persisted && socket.current?.connected) {
-      console.log("Disconnect backend before bfcache on navigation");
-      socket.current.disconnect();
+    if (!socket.current?.connected) {
+      return;
     }
+    if (event.persisted) {
+      console.log("Disconnect backend before bfcache on navigation");
+    } else {
+      console.log("Disconnect websocket on pagehide");
+    }
+    socket.current.disconnect();
   };
 
   // Once the socket is open, hydrate the page.
@@ -626,7 +656,6 @@ export const connect = async (
     setConnectErrors([]);
     window.addEventListener("pagehide", pagehideHandler);
     window.addEventListener("beforeunload", disconnectTrigger);
-    window.addEventListener("unload", disconnectTrigger);
     if (socket.current.rehydrate) {
       socket.current.rehydrate = false;
       queueEvents(initialEvents(), socket, true, navigate, params);
@@ -656,7 +685,6 @@ export const connect = async (
     socket.current.wait_connect = false;
     const try_reconnect =
       reason !== "io server disconnect" && reason !== "io client disconnect";
-    window.removeEventListener("unload", disconnectTrigger);
     window.removeEventListener("beforeunload", disconnectTrigger);
     window.removeEventListener("pagehide", pagehideHandler);
     if (try_reconnect) {
@@ -903,6 +931,10 @@ export const useEventLoop = (
     }
   }, [paramsR]);
 
+  useEffect(() => {
+    locationRef.current = location;
+  }, [location]);
+
   const ensureSocketConnected = useCallback(async () => {
     if (!mounted.current) {
       // During hot reload, some components may still have a reference to
@@ -1124,6 +1156,28 @@ export const isTrue = (val) => {
 export const isNotNullOrUndefined = (val) => {
   return (val ?? undefined) !== undefined;
 };
+
+/***
+ * Python-semantics OR: returns `a` if python-truthy, else evaluates and returns `b`.
+ * `b` is a thunk so it is only evaluated when needed, preserving short-circuit.
+ * @template A
+ * @template B
+ * @param {A} a The left-hand value.
+ * @param {() => B} b Thunk producing the right-hand value.
+ * @returns {A | B} `a` if python-truthy, otherwise the result of `b()`.
+ */
+export const pyOr = (a, b) => (isTrue(a) ? a : b());
+
+/***
+ * Python-semantics AND: returns `a` if python-falsy, else evaluates and returns `b`.
+ * `b` is a thunk so it is only evaluated when needed, preserving short-circuit.
+ * @template A
+ * @template B
+ * @param {A} a The left-hand value.
+ * @param {() => B} b Thunk producing the right-hand value.
+ * @returns {A | B} `a` if python-falsy, otherwise the result of `b()`.
+ */
+export const pyAnd = (a, b) => (isTrue(a) ? b() : a);
 
 /**
  * Get the value from a ref.

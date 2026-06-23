@@ -1078,6 +1078,20 @@ def select_project(project: str, token: str | None = None) -> str:
     return f"{project} is now selected."
 
 
+def normalize_project_id(value: Any) -> str | None:
+    """Normalize a project ID value, treating empty/whitespace strings and non-strings as None.
+
+    Args:
+        value: The raw project ID value from config, CLI args, or hosting.json.
+
+    Returns:
+        The stripped project ID, or None if the value is missing or blank.
+    """
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    return None
+
+
 def get_selected_project() -> str | None:
     """Retrieve the currently selected project ID.
 
@@ -1088,10 +1102,10 @@ def get_selected_project() -> str | None:
     try:
         with constants.Hosting.HOSTING_JSON.open() as config_file:
             hosting_config = json.load(config_file)
-            return hosting_config.get("project")
+            return normalize_project_id(hosting_config.get("project"))
     except Exception as ex:
         console.debug(
-            f"Unable to fetch token from {constants.Hosting.HOSTING_JSON} due to: {ex}"
+            f"Unable to read selected project from {constants.Hosting.HOSTING_JSON} due to: {ex}"
         )
     return None
 
@@ -1439,6 +1453,135 @@ def create_deployment(
             return "deployment failed: internal server error"
         else:
             return f"deployment failed: {ex_details}"
+    return response.json()
+
+
+class SecurityReviewError(ResponseError):
+    """Raised when a security review request fails."""
+
+
+_SECURITY_REVIEW_PREFIX = "/api/v1/agents/security-review"
+
+
+def _security_review_detail(response: Any) -> str:
+    """Extract a human-readable ``detail`` from a failed review response.
+
+    Args:
+        response: The error response from the security review API.
+
+    Returns:
+        The server-provided detail, or a generic fallback if the body is not
+        a JSON object with a ``detail`` field.
+
+    """
+    try:
+        return str(response.json()["detail"])
+    except (ValueError, TypeError, KeyError):
+        return "internal server error"
+
+
+def submit_security_review(zip_bytes: bytes, client: AuthenticatedClient) -> str:
+    """Submit a zipped app for security review.
+
+    Uploads the archive straight to object storage via a presigned URL, then
+    submits the stored object for review.
+
+    Args:
+        zip_bytes: The zipped app source to review.
+        client: The authenticated client.
+
+    Returns:
+        The id of the submitted job, to be polled with ``get_security_review``.
+
+    Raises:
+        NotAuthenticatedError: If the token is not valid.
+        SecurityReviewError: If any step of the submission fails.
+
+    """
+    import httpx
+
+    if not isinstance(client, AuthenticatedClient):
+        raise NotAuthenticatedError("not authenticated")
+
+    auth = authorization_header(client.token)
+
+    # 1. Ask the API for a presigned URL to upload the archive directly.
+    upload_url_response = httpx.post(
+        urljoin(
+            constants.Hosting.HOSTING_SERVICE,
+            f"{_SECURITY_REVIEW_PREFIX}/jobs/upload-url",
+        ),
+        json={"content_length": len(zip_bytes), "content_type": "application/zip"},
+        headers=auth,
+        timeout=constants.Hosting.TIMEOUT,
+    )
+    try:
+        upload_url_response.raise_for_status()
+    except httpx.HTTPStatusError as ex:
+        raise SecurityReviewError(_security_review_detail(ex.response)) from ex
+    upload = upload_url_response.json()
+
+    # 2. Upload the bytes to storage. The presigned URL pins the content length
+    #    and type, so send the returned headers verbatim and let httpx derive
+    #    Content-Length from the body — setting it manually breaks the signature.
+    put_response = httpx.put(
+        upload["url"],
+        content=zip_bytes,
+        headers=upload.get("headers", {}),
+        timeout=120,
+    )
+    try:
+        put_response.raise_for_status()
+    except httpx.HTTPStatusError as ex:
+        raise SecurityReviewError("failed to upload app source for review") from ex
+
+    # 3. Submit the uploaded object for review.
+    response = httpx.post(
+        urljoin(constants.Hosting.HOSTING_SERVICE, f"{_SECURITY_REVIEW_PREFIX}/jobs"),
+        json={"key": upload["key"]},
+        headers=auth,
+        timeout=constants.Hosting.TIMEOUT,
+    )
+    try:
+        response.raise_for_status()
+    except httpx.HTTPStatusError as ex:
+        raise SecurityReviewError(_security_review_detail(ex.response)) from ex
+    return response.json()["job_id"]
+
+
+def get_security_review(job_id: str, client: AuthenticatedClient) -> dict[str, Any]:
+    """Poll a previously submitted security review job.
+
+    Args:
+        job_id: The id returned by ``submit_security_review``.
+        client: The authenticated client.
+
+    Returns:
+        The job status payload: ``status`` is one of ``pending``, ``complete``
+        or ``error``; ``result`` holds the review once ``complete``.
+
+    Raises:
+        NotAuthenticatedError: If the token is not valid.
+        SecurityReviewError: If the server returns an error.
+
+    """
+    import httpx
+
+    if not isinstance(client, AuthenticatedClient):
+        raise NotAuthenticatedError("not authenticated")
+
+    response = httpx.get(
+        urljoin(
+            constants.Hosting.HOSTING_SERVICE,
+            f"{_SECURITY_REVIEW_PREFIX}/jobs/{job_id}",
+        ),
+        headers=authorization_header(client.token),
+        timeout=constants.Hosting.TIMEOUT,
+    )
+    try:
+        response.raise_for_status()
+    except httpx.HTTPStatusError as ex:
+        raise SecurityReviewError(_security_review_detail(ex.response)) from ex
     return response.json()
 
 
@@ -1970,13 +2113,17 @@ def authenticate_on_browser() -> tuple[str, dict[str, Any]]:
         constants.Hosting.HOSTING_SERVICE_UI, f"/cli/login?request_id={request_id}"
     )
 
-    console.print(f"Opening {auth_url} ...")
-
     if not is_valid_url(constants.Hosting.HOSTING_SERVICE_UI):
         console.error(
             f"Invalid hosting URL: {constants.Hosting.HOSTING_SERVICE_UI}. Ensure the URL is in the correct format and includes a valid scheme"
         )
         raise click.exceptions.Exit(1)
+
+    console.print(
+        f"Opening {auth_url} ... By connecting your account, you agree to "
+        "Reflex Cloud [Terms of Service] and [Privacy Policy].",
+        markup=False,
+    )
 
     if not webbrowser.open(auth_url):
         console.warn(

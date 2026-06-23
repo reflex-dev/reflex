@@ -18,17 +18,25 @@ from typing import (
     NoReturn,
     Protocol,
     TypeVar,
+    Union,
     get_args,
     get_origin,
     get_type_hints,
     overload,
 )
 
-from typing_extensions import Self, TypeAliasType, TypedDict, TypeVarTuple, Unpack
+from typing_extensions import (
+    Self,
+    TypeAliasType,
+    TypedDict,
+    TypeVarTuple,
+    Unpack,
+    is_typeddict,
+)
 
 from reflex_base import constants
 from reflex_base.components.field import BaseField
-from reflex_base.constants.compiler import CompileVars, Hooks, Imports
+from reflex_base.constants.compiler import CompileVars, Imports
 from reflex_base.utils import format
 from reflex_base.utils.decorator import once
 from reflex_base.utils.exceptions import (
@@ -54,10 +62,13 @@ from reflex_base.vars.function import (
     FunctionVar,
     VarOperationCall,
 )
+from reflex_base.vars.number import ternary_operation
 from reflex_base.vars.object import ObjectVar
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
+
+    BASE_STATE = TypeVar("BASE_STATE", bound=BaseState)
 
 
 @dataclasses.dataclass(
@@ -176,6 +187,13 @@ _IMMUTABLE_PAYLOAD_TYPES = (
 BACKGROUND_TASK_MARKER = "_reflex_background_task"
 EVENT_ACTIONS_MARKER = "_rx_event_actions"
 UPLOAD_FILES_CLIENT_HANDLER = "uploadFiles"
+
+# Payload key listing the names of the extra bound handler args in an upload
+# event. Uploads use a REST endpoint instead of the socket; the args stay flat
+# (so event-arg validation still sees them) and this manifest tells the client
+# uploadFiles handler which ones to forward, without it hardcoding the reserved
+# upload keys. Kept in sync with the matching literal in the web template.
+UPLOAD_EVENT_ARG_NAMES_KEY = "__reflex_event_arg_names"
 
 
 def _handler_name(handler: "EventHandler") -> str:
@@ -469,27 +487,61 @@ class EventHandler(EventActionsMixin):
             raise EventHandlerTypeError(msg)
 
         fn_args = fn_args[: len(args)] + list(kwargs)
-
-        fn_args = (Var(_js_expr=arg) for arg in fn_args)
+        event_args = [*args, *kwargs.values()]
 
         # Construct the payload.
-        values = []
-        for arg in [*args, *kwargs.values()]:
-            # Special case for file uploads.
+        payload = []
+        upload_event_spec = None
+        for fn_arg, arg in zip(fn_args, event_args, strict=False):
+            # Special case for file uploads. The upload arg takes its own
+            # positional slot so the remaining args stay aligned with fn_args,
+            # but its parameter name is re-derived server-side in as_event_spec.
             if isinstance(arg, (FileUpload, UploadFilesChunk)):
-                return arg.as_event_spec(handler=self)
+                if upload_event_spec is not None:
+                    msg = (
+                        f"Event handler {self.fn.__name__} received multiple file "
+                        "upload arguments."
+                    )
+                    raise EventHandlerTypeError(msg)
+                upload_event_spec = arg.as_event_spec(handler=self)
+                continue
 
             # Otherwise, convert to JSON.
             try:
-                values.append(LiteralVar.create(arg))
+                payload.append((Var(_js_expr=fn_arg), LiteralVar.create(arg)))
             except TypeError as e:
                 msg = f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
                 raise EventHandlerTypeError(msg) from e
-        payload = tuple(zip(fn_args, values, strict=False))
+
+        if upload_event_spec is not None:
+            if not payload:
+                return upload_event_spec
+            # The extra bound args share the flat payload with the synthetic
+            # upload args, so reject names that would clobber a reserved upload
+            # key (files, upload_id, extra_headers, ...).
+            payload_names = [name._js_expr for name, _ in payload]
+            reserved = {name._js_expr for name, _ in upload_event_spec.args}
+            clash = next((name for name in payload_names if name in reserved), None)
+            if clash is not None:
+                msg = (
+                    f"Event handler {self.fn.__name__} argument {clash!r} conflicts "
+                    "with a reserved upload argument."
+                )
+                raise EventHandlerTypeError(msg)
+            # The client uploadFiles handler forwards exactly the args named here,
+            # so it never has to know the reserved upload keys.
+            return upload_event_spec.with_args((
+                *upload_event_spec.args,
+                *payload,
+                (
+                    Var(_js_expr=UPLOAD_EVENT_ARG_NAMES_KEY),
+                    LiteralVar.create(payload_names),
+                ),
+            ))
 
         # Return the event spec.
         return EventSpec(
-            handler=self, args=payload, event_actions=self.event_actions.copy()
+            handler=self, args=tuple(payload), event_actions=self.event_actions.copy()
         )
 
 
@@ -837,6 +889,7 @@ def checked_input_event(e: ObjectVar[JavascriptInputEvent]) -> tuple[Var[bool]]:
 
 
 FORM_DATA = Var(_js_expr="form_data")
+FORM_SUBMIT_MAPPING = TypeVar("FORM_SUBMIT_MAPPING", bound=Mapping[str, Any])
 
 
 def on_submit_event() -> tuple[Var[dict[str, Any]]]:
@@ -1078,14 +1131,14 @@ class FileUpload:
         """
         from reflex_components_core.core.upload import (
             DEFAULT_UPLOAD_ID,
-            upload_files_context_var_data,
+            get_upload_files_context_var_data,
         )
 
         upload_id = self.upload_id if self.upload_id is not None else DEFAULT_UPLOAD_ID
         upload_files_var = Var(
             _js_expr="filesById",
             _var_type=dict[str, Any],
-            _var_data=VarData.merge(upload_files_context_var_data),
+            _var_data=VarData.merge(get_upload_files_context_var_data()),
         ).to(ObjectVar)[LiteralVar.create(upload_id)]
         spec_args = [
             (
@@ -1706,6 +1759,37 @@ def _values_returned_from_event(event_spec_annotations: list[Any]) -> list[Any]:
     ]
 
 
+def _is_on_submit_mapping_event_arg_compatible_with_typed_dict(
+    provided_event_arg_type: Any,
+    callback_param_type: Any,
+    key: str,
+) -> bool:
+    """Check whether an on_submit mapping payload can satisfy a TypedDict callback.
+
+    This keeps the compatibility relaxation scoped to form submission payloads
+    rather than applying to unrelated mapping-based event triggers.
+
+    Args:
+        provided_event_arg_type: The type produced by the event trigger.
+        callback_param_type: The callback parameter annotation.
+        key: The event trigger key being validated.
+
+    Returns:
+        Whether the provided event payload should be treated as compatible.
+    """
+    if key != constants.EventTriggers.ON_SUBMIT or not is_typeddict(
+        callback_param_type
+    ):
+        return False
+
+    mapping_type = get_origin(provided_event_arg_type) or provided_event_arg_type
+    if not safe_issubclass(mapping_type, Mapping):
+        return False
+
+    key_type = get_args(provided_event_arg_type)[:1]
+    return not key_type or typehint_issubclass(key_type[0], str)
+
+
 def _check_event_args_subclass_of_callback(
     callback_params_names: list[str],
     provided_event_types: list[Any],
@@ -1747,15 +1831,18 @@ def _check_event_args_subclass_of_callback(
                 continue
 
             type_match_found.setdefault(arg, False)
+            callback_param_type = callback_param_name_to_type[arg]
 
             try:
                 compare_result = typehint_issubclass(
-                    args_types_without_vars[i], callback_param_name_to_type[arg]
+                    args_types_without_vars[i], callback_param_type
+                ) or _is_on_submit_mapping_event_arg_compatible_with_typed_dict(
+                    args_types_without_vars[i], callback_param_type, key
                 )
             except TypeError as te:
                 callback_name_context = f" of {callback_name}" if callback_name else ""
                 key_context = f" for {key}" if key else ""
-                msg = f"Could not compare types {args_types_without_vars[i]} and {callback_param_name_to_type[arg]} for argument {arg}{callback_name_context}{key_context}."
+                msg = f"Could not compare types {args_types_without_vars[i]} and {callback_param_type} for argument {arg}{callback_name_context}{key_context}."
                 raise TypeError(msg) from te
 
             if compare_result:
@@ -1767,7 +1854,7 @@ def _check_event_args_subclass_of_callback(
             )
             delayed_exceptions.append(
                 EventHandlerArgTypeMismatchError(
-                    f"Event handler {key} expects {args_types_without_vars[i]} for argument {arg} but got {callback_param_name_to_type[arg]}{as_annotated_in} instead."
+                    f"Event handler {key} expects {args_types_without_vars[i]} for argument {arg} but got {callback_param_type}{as_annotated_in} instead."
                 )
             )
 
@@ -2076,6 +2163,59 @@ def call_event_fn(
     # while keeping other scalar values for validation below.
     out = list(out) if isinstance(out, (list, tuple)) else [out]
 
+    def _dispatch_mixed_event_var(event_like_var: Var) -> FunctionVar:
+        """Wrap a mixed event-like Var into a callable frontend dispatcher.
+
+        Args:
+            event_like_var: A Var that may resolve to either an EventSpec-like object
+                or a callable frontend function at runtime.
+
+        Returns:
+            A FunctionVar that dispatches runtime values as frontend calls or
+            backend addEvents queueing.
+        """
+        alias_name = "__event_or_fn"
+        alias_var = Var(_js_expr=alias_name)
+        rest_args = Var(_js_expr="args")
+        spread_args = Var(_js_expr="...args")
+
+        is_function = Var(
+            _js_expr=f'typeof {alias_name} === "function"',
+            _var_type=bool,
+        )
+        # Lazy import: state_context → component → event (this module).
+        from reflex_base.components.state_context import get_event_app_wraps
+
+        add_events = FunctionStringVar.create(
+            CompileVars.ADD_EVENTS,
+            _var_data=VarData(
+                imports=Imports.EVENTS,
+                app_wraps=get_event_app_wraps(),
+            ),
+        )
+        dispatch_expr = ternary_operation(
+            is_function,
+            alias_var.to(FunctionVar).call(spread_args),
+            add_events.call(
+                LiteralVar.create([alias_var]),
+                rest_args,
+                _EMPTY_EVENT_ACTIONS,
+            ),
+        )
+        body = Var(
+            _js_expr=f"const {alias_name} = {event_like_var!s}; return {dispatch_expr!s};",
+            _var_data=VarData.merge(
+                event_like_var._get_all_var_data(),
+                dispatch_expr._get_all_var_data(),
+            ),
+        )
+        return ArgsFunctionOperation.create(
+            args_names=(),
+            return_expr=body,
+            rest="args",
+            explicit_return=True,
+        ).to(FunctionVar)
+
     # Convert any event specs to event specs.
     events = []
     for e in out:
@@ -2086,6 +2226,14 @@ def call_event_fn(
         if isinstance(e, EventChain):
             # Nested EventChain is treated like a FunctionVar.
             e = Var.create(e)
+
+        if (
+            isinstance(e, Var)
+            and not isinstance(e, (EventVar, FunctionVar))
+            and get_origin(e._var_type) in (Union, types.UnionType)
+            and typehint_issubclass(e._var_type, EventSpec | Callable)
+        ):
+            e = _dispatch_mixed_event_var(e)
 
         # Make sure the event spec is valid.
         if not isinstance(e, (EventSpec, FunctionVar, EventVar)):
@@ -2358,11 +2506,14 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
             arg_def_expr = Var(_js_expr="args")
 
         if value.invocation is None:
+            # Lazy import: state_context → component → event (this module).
+            from reflex_base.components.state_context import get_event_app_wraps
+
             invocation = FunctionStringVar.create(
                 CompileVars.ADD_EVENTS,
                 _var_data=VarData(
                     imports=Imports.EVENTS,
-                    hooks={Hooks.EVENTS: None},
+                    app_wraps=get_event_app_wraps(),
                 ),
             )
         else:
@@ -2403,11 +2554,14 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
                 _js_expr=f"{{{''.join(f'{statement};' for statement in statements)}}}",
             )
             if value.event_actions:
+                # Lazy import: state_context → component → event (this module).
+                from reflex_base.components.state_context import get_event_app_wraps
+
                 apply_event_actions = FunctionStringVar.create(
                     CompileVars.APPLY_EVENT_ACTIONS,
                     _var_data=VarData(
                         imports=Imports.EVENTS,
-                        hooks={Hooks.EVENTS: None},
+                        app_wraps=get_event_app_wraps(),
                     ),
                 )
                 return_expr = apply_event_actions.call(
@@ -2581,10 +2735,6 @@ EventType = TypeAliasType(
 if TYPE_CHECKING:
     from reflex.state import BaseState
 
-    BASE_STATE = TypeVar("BASE_STATE", bound=BaseState)
-else:
-    BASE_STATE = TypeVar("BASE_STATE")
-
 
 class EventNamespace:
     """A namespace for event related classes."""
@@ -2631,6 +2781,7 @@ class EventNamespace:
     EVENT_ACTIONS_MARKER = EVENT_ACTIONS_MARKER
     _EVENT_FIELDS = _EVENT_FIELDS
     FORM_DATA = FORM_DATA
+    FORM_SUBMIT_MAPPING = FORM_SUBMIT_MAPPING
     upload_files = upload_files
     upload_files_chunk = upload_files_chunk
     stop_propagation = stop_propagation
@@ -2664,7 +2815,7 @@ class EventNamespace:
     @overload
     def __new__(
         cls,
-        func: Callable[[BASE_STATE, Unpack[P]], Any],
+        func: "Callable[[BASE_STATE, Unpack[P]], Any]",
         *,
         background: bool | None = None,
         stop_propagation: bool | None = None,
@@ -2676,7 +2827,7 @@ class EventNamespace:
 
     def __new__(
         cls,
-        func: Callable[[BASE_STATE, Unpack[P]], Any] | None = None,
+        func: "Callable[[BASE_STATE, Unpack[P]], Any] | None" = None,
         *,
         background: bool | None = None,
         stop_propagation: bool | None = None,
@@ -2684,10 +2835,7 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
-    ) -> (
-        EventCallback[Unpack[P]]
-        | Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]]
-    ):
+    ) -> "EventCallback[Unpack[P]] | Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]]":
         """Wrap a function to be used as an event.
 
         Args:
@@ -2735,7 +2883,7 @@ class EventNamespace:
             return event_actions
 
         def wrapper(
-            func: Callable[[BASE_STATE, Unpack[P]], T],
+            func: "Callable[[BASE_STATE, Unpack[P]], T]",
         ) -> EventCallback[Unpack[P]]:
             if background is True:
                 if not inspect.iscoroutinefunction(
