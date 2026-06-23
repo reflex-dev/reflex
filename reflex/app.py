@@ -1399,7 +1399,19 @@ class App(MiddlewareMixin, LifespanMixin):
             token = BaseStateToken.from_legacy_token(token, root_state=self._state)
 
         # Ensure Reflex contexts are available (e.g. when called from an API route).
-        with self.set_contexts():
+        with self.set_contexts(), contextlib.ExitStack() as rebind:
+            # Rebind the EventContext to the token being modified so consumers
+            # running inside (delta resolution, computed vars) observe this token
+            # rather than the event context the caller inherited -- e.g. the
+            # shared-state fan-out runs in a task that copied the triggering
+            # event's context for a different client. No-op without an EventContext.
+            try:
+                forked_context = EventContext.get().fork(token=token.ident)
+            except LookupError:
+                pass
+            else:
+                reset_token = EventContext.set(forked_context)
+                rebind.callback(EventContext.reset, reset_token)
             # Get exclusive access to the state.
             async with self.state_manager.modify_state_with_links(
                 token, previous_dirty_vars=previous_dirty_vars, **context
