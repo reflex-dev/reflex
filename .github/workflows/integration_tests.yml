@@ -150,7 +150,7 @@ jobs:
 
       - name: Install reflex-docs dependencies
         working-directory: ./docs/app
-        run: sfw uv sync
+        run: sfw uv sync --frozen
 
       - name: Init Website for reflex-docs
         working-directory: ./docs/app
@@ -160,6 +160,10 @@ jobs:
           # Verify sfw wrappers are on PATH
           which npm && npm -v
           uv run --active --no-sync bash scripts/integration.sh ./docs/app prod
+
+      - name: Validate /docs links against generated sitemap
+        working-directory: ./docs/app
+        run: uv run --active --no-sync pytest --runxfail tests/test_doc_links.py -v
 
       - name: Upload Socket.dev Firewall report
         if: always()

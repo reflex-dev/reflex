@@ -6,7 +6,7 @@ import reflex as rx
 image_style = {
     "width": "400px",
     "border_radius": "12px",
-    "border": "1px solid var(--c-slate-5)",
+    "border": "1px solid var(--secondary-5)",
 }
 ```
 

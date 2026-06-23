@@ -19,8 +19,9 @@ def glow() -> rx.Component:
     )
 
 
-POST_LINK = "https://www.producthunt.com/products/reflex-5?launch=reflex-7"
-BLOG_LINK = "/blog/on-premises-deployment"
+AGENT_TOOLKIT_EARLY_ACCESS_URL = (
+    "https://us.posthog.com/external_surveys/019e669c-939f-0000-a8b1-0aaceee08e3b"
+)
 
 # October 25, 2025 12:01 AM PDT (UTC-7) = October 25, 2025 07:01 AM UTC
 DEADLINE = datetime.datetime(2025, 10, 25, 7, 1, tzinfo=datetime.UTC)
@@ -44,8 +45,8 @@ class HostingBannerState(rx.State):
             self.show_banner = True
 
     @rx.event
-    def show_blog_banner(self):
-        """Show the on-premises blog banner."""
+    def show_agent_toolkit_banner(self):
+        """Show the Agent Toolkit launch banner."""
         self.show_banner = True
 
     @rx.var
@@ -105,25 +106,25 @@ def hosting_banner() -> rx.Component:
                             # Header text with responsive spans
                             rx.el.span(
                                 "New",
-                                class_name="items-center font-[525] px-2.5 h-7 rounded-lg text-sm text-m-slate-3 z-[1] max-lg:hidden lg:inline-flex border border-white/16",
+                                class_name="items-center font-[525] px-2.5 h-7 rounded-lg text-sm text-white z-[1] max-lg:hidden lg:inline-flex border border-white/16",
                             ),
                             rx.el.span(
-                                "Reflex Build On-Prem: A Secure Builder Running in Your Environment",
+                                "Reflex Agent Toolkit is launching",
                                 rx.el.span(
-                                    ". Learn more",
-                                    class_name="lg:hidden text-m-slate-6 dark:text-m-slate-2",
+                                    ". Get early access",
+                                    class_name="lg:hidden text-white/70",
                                 ),
-                                class_name="text-m-slate-3 font-[525] text-sm lg:text-nowrap inline-block",
+                                class_name="text-white font-[525] text-sm lg:text-nowrap inline-block",
                             ),
                             rx.el.span(
                                 class_name="w-px h-7 bg-gradient-to-b from-transparent via-white/24 to-transparent max-lg:hidden",
                             ),
                             ui.button(
-                                "Learn more",
+                                "Get early access",
                                 ui.icon("ArrowRight01Icon"),
                                 variant="ghost-highlight",
                                 size="xs",
-                                aria_label="Learn more",
+                                aria_label="Get early access to Reflex Agent Toolkit",
                                 class_name="max-lg:hidden text-white hover:text-primary-10",
                             ),
                             class_name="flex flex-row items-center md:gap-4 gap-2",
@@ -135,7 +136,7 @@ def hosting_banner() -> rx.Component:
                         ),
                         class_name="flex flex-row items-center relative",
                     ),
-                    href=BLOG_LINK,
+                    href=AGENT_TOOLKIT_EARLY_ACCESS_URL,
                     class_name="flex justify-start md:justify-center md:col-start-2 max-w-[73rem]",
                 ),
                 rx.el.button(
@@ -144,11 +145,11 @@ def hosting_banner() -> rx.Component:
                     ),
                     aria_label="Close banner",
                     type="button",
-                    class_name="cursor-pointer hover:text-m-slate-5 transition-colors text-m-slate-3 z-10 size-10 flex items-center justify-center shrink-0 md:col-start-3 justify-self-end ml-auto",
+                    class_name="cursor-pointer hover:text-white/80 transition-colors text-white z-10 size-10 flex items-center justify-center shrink-0 md:col-start-3 justify-self-end ml-auto",
                     on_click=HostingBannerState.hide_banner,
                 ),
-                class_name="px-5 lg:px-0 w-screen min-h-[2rem] lg:h-10 flex md:grid md:grid-cols-[1fr_auto_1fr] items-center bg-m-slate-12 dark:bg-[#6550B9] gap-4 overflow-hidden relative lg:py-0 py-2 max-w-full group",
+                class_name="px-5 lg:px-0 w-screen min-h-[2rem] lg:h-10 flex md:grid md:grid-cols-[1fr_auto_1fr] items-center bg-secondary-12 dark:bg-[#6550B9] gap-4 overflow-hidden relative lg:py-0 py-2 max-w-full group",
             ),
         ),
-        on_mount=HostingBannerState.show_blog_banner,
+        on_mount=HostingBannerState.show_agent_toolkit_banner,
     )

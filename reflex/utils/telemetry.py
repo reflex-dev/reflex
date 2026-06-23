@@ -5,20 +5,33 @@ import dataclasses
 import importlib.metadata
 import json
 import multiprocessing
+import os
 import platform
+import sys
+import uuid
 import warnings
 from contextlib import suppress
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, TypedDict, cast
 
+from packaging.requirements import Requirement
+from packaging.utils import canonicalize_name
 from reflex_base import constants
+from reflex_base.config import get_config
 from reflex_base.environment import environment
 from reflex_base.utils.decorator import once, once_unless_none
 from reflex_base.utils.exceptions import ReflexError
+from typing_extensions import NotRequired
 
 from reflex.utils import console, processes
 from reflex.utils.js_runtimes import get_bun_version, get_node_version
-from reflex.utils.prerequisites import ensure_reflex_installation_id, get_project_hash
+from reflex.utils.prerequisites import (
+    ensure_reflex_installation_id,
+    get_project_hash,
+    has_uuid_distinct_id_semantics,
+    mark_uuid_distinct_id_semantics,
+)
 
 UTC = timezone.utc
 POSTHOG_API_URL: str = "https://app.posthog.com/capture/"
@@ -166,6 +179,38 @@ def get_cpu_count() -> int:
     return multiprocessing.cpu_count()
 
 
+def is_in_virtualenv() -> bool:
+    """Whether the current Python is running inside a virtual environment.
+
+    Returns:
+        True if a virtual environment appears to be active.
+    """
+    if sys.prefix != sys.base_prefix:
+        return True
+    return bool(os.environ.get("VIRTUAL_ENV"))
+
+
+def get_init_environment() -> dict[str, bool]:
+    """Return Python tooling flags for the current working directory.
+
+    Returns:
+        A dict with ``in_virtualenv``, ``has_pyproject_toml``,
+        ``has_requirements_txt``, ``has_uv_lock`` and ``has_reflex_lock``
+        boolean flags, or an empty dict when telemetry is disabled (so the
+        filesystem stats are skipped when their results would be discarded).
+    """
+    if not get_config().telemetry_enabled:
+        return {}
+
+    return {
+        "in_virtualenv": is_in_virtualenv(),
+        "has_pyproject_toml": Path(constants.PyprojectToml.FILE).exists(),
+        "has_requirements_txt": Path(constants.RequirementsTxt.FILE).exists(),
+        "has_uv_lock": Path(constants.UvLock.FILE).exists(),
+        "has_reflex_lock": Path(constants.Bun.ROOT_LOCKFILE_DIR).is_dir(),
+    }
+
+
 def get_reflex_enterprise_version() -> str | None:
     """Get the version of reflex-enterprise if installed.
 
@@ -176,6 +221,36 @@ def get_reflex_enterprise_version() -> str | None:
         return importlib.metadata.version("reflex-enterprise")
     except importlib.metadata.PackageNotFoundError:
         return None
+
+
+def get_reflex_package_versions() -> dict[str, str]:
+    """Get the versions of the installed Reflex subpackages.
+
+    Reports only the first-party subpackages distributed with Reflex from this
+    repository (``reflex-base``, the ``reflex-components-*`` family and
+    ``reflex-hosting-cli``). The set is derived from the ``reflex``
+    distribution's own declared dependencies, so unrelated third-party
+    ``reflex-*`` packages a user may have installed are never reported. The main
+    ``reflex`` package is reported separately via ``get_reflex_version``.
+
+    Returns:
+        A mapping of Reflex subpackage name to installed version, sorted by name.
+    """
+    try:
+        requirements = importlib.metadata.requires("reflex") or ()
+    except importlib.metadata.PackageNotFoundError:
+        return {}
+
+    versions: dict[str, str] = {}
+    for requirement in requirements:
+        name = canonicalize_name(Requirement(requirement).name)
+        if not name.startswith("reflex-"):
+            continue
+        try:
+            versions[name] = importlib.metadata.version(name)
+        except importlib.metadata.PackageNotFoundError:
+            continue
+    return dict(sorted(versions.items()))
 
 
 def _raise_on_missing_project_hash() -> bool:
@@ -195,8 +270,8 @@ def _raise_on_missing_project_hash() -> bool:
 class _Properties(TypedDict):
     """Properties type for telemetry."""
 
-    distinct_id: int
-    distinct_app_id: int
+    distinct_id: str
+    distinct_app_id: NotRequired[str]
     user_os: str
     user_os_detail: str
     reflex_version: str
@@ -204,6 +279,7 @@ class _Properties(TypedDict):
     node_version: str | None
     bun_version: str | None
     reflex_enterprise_version: str | None
+    reflex_package_version: dict[str, str]
     cpu_count: int
     cpu_info: dict
 
@@ -222,42 +298,64 @@ class _Event(_DefaultEvent):
     timestamp: str
 
 
+def _encode_distinct_id(value: int) -> str:
+    """Encode a 128-bit telemetry identifier as a canonical UUID string.
+
+    Historically ``distinct_id`` and ``distinct_app_id`` were sent as raw
+    128-bit integers. PostHog coerces large JSON numbers to floats, silently
+    discarding all but ~16 significant digits, so distinct installs or apps can
+    collapse onto the same truncated value and have their events correlated.
+
+    A UUID carries the same 128 bits, so the hex string is sent losslessly while
+    remaining the *same value* as the legacy integer
+    (``uuid.UUID(int=value).int == value``). Deriving the UUID from the existing
+    identifier — rather than minting a fresh one — keeps an installation's new
+    events linkable to its pre-migration history.
+
+    Args:
+        value: The stored 128-bit identifier.
+
+    Returns:
+        The identifier encoded as a UUID hex string.
+    """
+    return str(uuid.UUID(int=value))
+
+
 def _get_event_defaults() -> _DefaultEvent | None:
     """Get the default event data.
 
     Returns:
         The default event data.
     """
-    installation_id = ensure_reflex_installation_id()
-    project_hash = get_project_hash(raise_on_fail=_raise_on_missing_project_hash())
-
-    if installation_id is None or project_hash is None:
-        console.debug(
-            f"Could not get installation_id or project_hash: {installation_id}, {project_hash}"
-        )
+    if (installation_id := ensure_reflex_installation_id()) is None:
+        console.debug("Could not get installation_id")
         return None
-
     cpuinfo = get_cpu_info()
+    properties: _Properties = {
+        "distinct_id": _encode_distinct_id(installation_id),
+        "user_os": get_os(),
+        "user_os_detail": get_detailed_platform_str(),
+        "reflex_version": get_reflex_version(),
+        "python_version": get_python_version(),
+        "node_version": (
+            str(node_version) if (node_version := get_node_version()) else None
+        ),
+        "bun_version": (
+            str(bun_version) if (bun_version := get_bun_version()) else None
+        ),
+        "reflex_enterprise_version": get_reflex_enterprise_version(),
+        "reflex_package_version": get_reflex_package_versions(),
+        "cpu_count": get_cpu_count(),
+        "cpu_info": dataclasses.asdict(cpuinfo) if cpuinfo else {},
+    }
+    if (
+        project_hash := get_project_hash(raise_on_fail=_raise_on_missing_project_hash())
+    ) is not None:
+        properties["distinct_app_id"] = _encode_distinct_id(project_hash)
 
     return {
         "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
-        "properties": {
-            "distinct_id": installation_id,
-            "distinct_app_id": project_hash,
-            "user_os": get_os(),
-            "user_os_detail": get_detailed_platform_str(),
-            "reflex_version": get_reflex_version(),
-            "python_version": get_python_version(),
-            "node_version": (
-                str(node_version) if (node_version := get_node_version()) else None
-            ),
-            "bun_version": (
-                str(bun_version) if (bun_version := get_bun_version()) else None
-            ),
-            "reflex_enterprise_version": get_reflex_enterprise_version(),
-            "cpu_count": get_cpu_count(),
-            "cpu_info": dataclasses.asdict(cpuinfo) if cpuinfo else {},
-        },
+        "properties": properties,
     }
 
 
@@ -349,8 +447,6 @@ def _send(
     properties: dict[str, Any] | None = None,
     **kwargs,
 ) -> bool:
-    from reflex_base.config import get_config
-
     # Get the telemetry_enabled from the config if it is not specified.
     if telemetry_enabled is None:
         telemetry_enabled = get_config().telemetry_enabled
@@ -369,6 +465,58 @@ def _send(
 
 background_tasks = set()
 
+_legacy_alias_attempted = False
+
+
+def _maybe_alias_legacy_distinct_id(telemetry_enabled: bool | None) -> None:
+    """Link the legacy numeric distinct_id to its UUID form, once per install.
+
+    Older Reflex versions reported ``distinct_id`` as a 128-bit integer, which
+    PostHog stored as a lossy float. Now that the same value is sent as a UUID
+    string (see ``_encode_distinct_id``), the two PostHog identities must be
+    merged so an installation's history stays on a single person. PostHog does
+    this through a one-time ``$create_alias`` event.
+
+    A per-machine marker file (next to the installation id) records that the
+    install uses the new semantics. The marker is written even when the alias
+    does not match — the legacy id is lossy, so PostHog may silently drop it — to
+    avoid resending on every run.
+
+    Args:
+        telemetry_enabled: Whether telemetry is enabled (resolved from the config
+            when None).
+    """
+    global _legacy_alias_attempted
+    if _legacy_alias_attempted:
+        return
+
+    with suppress(Exception):
+        if telemetry_enabled is None:
+            telemetry_enabled = get_config().telemetry_enabled
+        if not telemetry_enabled:
+            # Don't latch: a later enabled send in this process should retry.
+            return
+
+        # Latch before the alias send below (which re-enters send()) so it cannot
+        # recurse and so the attempt happens at most once per process.
+        _legacy_alias_attempted = True
+
+        # Resolve the installation id first: a brand-new install is created and
+        # marked UUID-native by this call, so the marker check then skips it.
+        if (installation_id := ensure_reflex_installation_id()) is None:
+            return
+        if has_uuid_distinct_id_semantics():
+            return
+
+        # distinct_id is the UUID form (set by get_event_defaults); send the
+        # legacy integer as ``alias`` so PostHog coerces it to the same float as
+        # the historic events and merges the two persons.
+        send("$create_alias", telemetry_enabled, properties={"alias": installation_id})
+
+        # Record the new semantics regardless of outcome; we must not retry every
+        # run even if the lossy legacy id failed to match.
+        mark_uuid_distinct_id_semantics()
+
 
 def send(
     event: str,
@@ -386,6 +534,7 @@ def send(
             properties. Preferred over ``kwargs`` for new events.
         kwargs: Additional data to send with the event.
     """
+    _maybe_alias_legacy_distinct_id(telemetry_enabled)
 
     async def async_send(  # noqa: RUF029
         event: str,

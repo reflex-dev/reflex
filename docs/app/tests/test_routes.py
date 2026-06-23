@@ -1,12 +1,8 @@
 """Integration tests for all routes in Reflex."""
 
-import sys
 from collections import Counter
-from pathlib import Path
 
 import pytest
-
-sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 
 @pytest.fixture

@@ -4,21 +4,22 @@ import reflex as rx
 
 # Memo
 
-The `memo` decorator is used to optimize component rendering by memoizing components that don't need to be re-rendered. This is particularly useful for expensive components that depend on specific props and don't need to be re-rendered when other state changes in your application.
+The `@rx.memo` decorator turns a function into a memoized React component. The compiler emits the function as its own module, and React's `memo` only re-renders it when its declared props change. Reach for it when a subtree is expensive to render and depends on a narrow slice of state.
 
 ## Requirements
 
-When using `rx.memo`, you must follow these requirements:
+Every parameter must be annotated with `rx.Var[...]` or `rx.RestProp`. The compiler reads those annotations to generate prop names, prop forwarding, and the JS function signature.
 
-1. **Type all arguments**: All arguments to a memoized component must have type annotations.
-2. **Use keyword arguments**: When calling a memoized component, you must use keyword arguments (not positional arguments).
+1. **`rx.Var[T]` for props** — annotate each prop as `rx.Var[T]` where `T` is the prop's runtime type (`str`, `int`, a TypedDict, etc.). Inside the function body, the parameter is a `Var` you compose into the rendered tree.
+2. **`rx.RestProp` for spread props** — at most one parameter may be annotated as `rx.RestProp`, which forwards unrecognized kwargs through to the rendered root.
+3. **`rx.Var[rx.Component]` for slot children** — a parameter named `children` annotated as `rx.Var[rx.Component]` accepts children rendered by the caller.
+4. **Keyword arguments at the call site** — pass props by name, not by position.
+
+Defaults need to be `rx.Var` values. For the common empty cases use the module-level constants `rx.EMPTY_VAR_STR` (an empty string), `rx.EMPTY_VAR_INT` (zero), and `rx.EMPTY_VAR_COMPONENT` (an empty component): `class_name: rx.Var[str] = rx.EMPTY_VAR_STR` falls back to `""` when the caller omits the prop, and `children: rx.Var[rx.Component] = rx.EMPTY_VAR_COMPONENT` makes a slot optional.
 
 ## Basic Usage
 
-When you wrap a component function with `@rx.memo`, the component will only re-render when its props change. This helps improve performance by preventing unnecessary re-renders.
-
 ```python
-# Define a state class to track count
 class DemoState(rx.State):
     count: int = 0
 
@@ -27,150 +28,172 @@ class DemoState(rx.State):
         self.count += 1
 
 
-# Define a memoized component
 @rx.memo
-def expensive_component(label: str) -> rx.Component:
+def expensive_component(label: rx.Var[str]) -> rx.Component:
     return rx.vstack(
         rx.heading(label),
-        rx.text("This component only re-renders when props change!"),
+        rx.text("This component only re-renders when props change."),
         rx.divider(),
     )
 
 
-# Use the memoized component in your app
 def index():
     return rx.vstack(
-        rx.heading("Memo Example"),
-        rx.text("Count: 0"),  # This will update with state.count
+        rx.text(f"Count: {DemoState.count}"),
         rx.button("Increment", on_click=DemoState.increment),
-        rx.divider(),
-        expensive_component(label="Memoized Component"),  # Must use keyword arguments
-        spacing="4",
-        padding="4",
-        border_radius="md",
-        border="1px solid #eaeaea",
+        expensive_component(label="Memoized Component"),
     )
 ```
 
-In this example, the `expensive_component` will only re-render when the `label` prop changes, not when the `count` state changes.
-
-## With Event Handlers
-
-You can also use `rx.memo` with components that have event handlers:
-
-```python
-# Define a state class to track clicks
-class ButtonState(rx.State):
-    clicks: int = 0
-
-    @rx.event
-    def increment(self):
-        self.clicks += 1
-
-
-# Define a memoized button component
-@rx.memo
-def my_button(text: str, on_click: rx.EventHandler) -> rx.Component:
-    return rx.button(text, on_click=on_click)
-
-
-# Use the memoized button in your app
-def index():
-    return rx.vstack(
-        rx.text("Clicks: 0"),  # This will update with state.clicks
-        my_button(text="Click me", on_click=ButtonState.increment),
-        spacing="4",
-    )
-```
+`expensive_component` re-renders only when `label` changes — bumping `DemoState.count` does not invalidate it.
 
 ## With State Variables
 
-When used with state variables, memoized components will only re-render when the specific state variables they depend on change:
+Props can be ordinary Vars. The memoized component re-renders when those Vars change:
 
 ```python
-# Define a state class with multiple variables
 class AppState(rx.State):
     name: str = "World"
-    count: int = 0
-
-    @rx.event
-    def increment(self):
-        self.count += 1
-
-    @rx.event
-    def set_name(self, name: str):
-        self.name = name
 
 
-# Define a memoized greeting component
 @rx.memo
-def greeting(name: str) -> rx.Component:
-    return rx.heading("Hello, " + name)  # Will display the name prop
+def greeting(name: rx.Var[str]) -> rx.Component:
+    return rx.heading("Hello, " + name)
 
 
-# Use the memoized component with state variables
 def index():
     return rx.vstack(
-        greeting(name=AppState.name),  # Must use keyword arguments
-        rx.text("Count: 0"),  # Will display the count
-        rx.button("Increment Count", on_click=AppState.increment),
-        rx.input(
-            placeholder="Enter your name",
-            on_change=AppState.set_name,
-            value="World",  # Will be bound to AppState.name
-        ),
-        spacing="4",
+        greeting(name=AppState.name),
+        rx.input(value=AppState.name, on_change=AppState.set_name),
     )
 ```
 
-## Advanced Event Handler Example
+## Forwarding Props with `rx.RestProp`
 
-You can also pass arguments to event handlers in memoized components:
+Use `rx.RestProp` to accept and forward arbitrary props (think `...rest` in JSX). Useful for thin wrappers that re-style a primitive without redeclaring every prop.
 
 ```python
-# Define a state class to track messages
-class MessageState(rx.State):
-    message: str = ""
-
-    @rx.event
-    def set_message(self, text: str):
-        self.message = text
-
-
-# Define a memoized component with event handlers that pass arguments
 @rx.memo
-def action_buttons(
-    on_action: rx.EventHandler[rx.event.passthrough_event_spec(str)],
+def primary_button(
+    rest: rx.RestProp,
+    *,
+    label: rx.Var[str],
 ) -> rx.Component:
-    return rx.hstack(
-        rx.button("Save", on_click=on_action("Saved!")),
-        rx.button("Delete", on_click=on_action("Deleted!")),
-        rx.button("Cancel", on_click=on_action("Cancelled!")),
-        spacing="2",
-    )
+    return rx.button(label, rest, class_name="bg-primary-9 text-white")
 
 
-# Use the memoized component with event handlers
 def index():
-    return rx.vstack(
-        rx.text("Status: "),  # Will display the message
-        action_buttons(on_action=MessageState.set_message),
-        spacing="4",
+    return primary_button(
+        label="Save",
+        on_click=rx.console_log("clicked"),
+        id="save",
     )
 ```
+
+At most one `rx.RestProp` parameter is allowed per memo.
+
+The `rest` parameter should be treated as an opaque value and passed
+positionally to any component which will use it.
+
+You may use the `.merge` var operation to combine the arbitrary props with
+another object Var or python dict. The memo body can read placeholders like
+`rest.get("class_name", "")`, but the actual value will be unavailable at
+compile time, so you can't branch on it or do python operations with the values,
+only var operations which will be translated to Javascript expressions.
+
+The same example as above, but now allowing the caller to optionally pass a
+`class_name` that gets merged with the default styles:
+
+```python
+@rx.memo
+def primary_button(
+    rest: rx.RestProp,
+    *,
+    label: rx.Var[str],
+) -> rx.Component:
+    class_name = rest.get("class_name", "") + " bg-primary-9 text-white"
+    return rx.button(label, rest.merge({"class_name": class_name}))
+```
+
+
+## Accepting Children
+
+Declare a parameter named `children` typed as `rx.Var[rx.Component]` to receive a child subtree.
+
+```python
+@rx.memo
+def card(
+    children: rx.Var[rx.Component],
+    *,
+    title: rx.Var[str],
+) -> rx.Component:
+    return rx.box(
+        rx.heading(title),
+        children,
+        class_name="border border-secondary-5 rounded-lg p-4",
+    )
+
+
+def index():
+    return card(
+        rx.text("Body copy goes here."),
+        title="Memoized card",
+    )
+```
+
+## Returning a `Var` Instead of a Component
+
+A memo function can return `rx.Var[T]` instead of `rx.Component`. The compiler emits a plain JavaScript function and the call site is just a `Var` you can compose into the page.
+
+```python
+class PriceState(rx.State):
+    amount: int = 100
+    currency: str = "USD"
+
+
+@rx.memo
+def format_price(amount: rx.Var[int], currency: rx.Var[str]) -> rx.Var[str]:
+    return currency.to(str) + ": $" + amount.to(str)
+
+
+def index():
+    formatted = format_price(amount=PriceState.amount, currency=PriceState.currency)
+    return rx.vstack(
+        rx.text(formatted),
+    )
+```
+
+The body of a `Var`-returning memo runs at compile time and is restricted to Var operations — no hooks, no Python branching on the Vars.
 
 ## Performance Considerations
 
-Use `rx.memo` for:
+Reach for `rx.memo` when:
 
-- Components with expensive rendering logic
-- Components that render the same result given the same props
-- Components that re-render too often due to parent component updates
+- The component is expensive to render.
+- Its output is a stable function of a small set of props.
+- A frequently-updating ancestor would otherwise force it to re-render.
 
-Avoid using `rx.memo` for:
+Skip it when:
 
-- Simple components where the memoization overhead might exceed the performance gain
-- Components that almost always receive different props on re-render
+- The component is cheap and the bookkeeping is not worth it.
+- The props change on every render anyway — memo never gets to short-circuit.
+
+## Migrating from the Old `rx.memo`
+
+The previous `rx.memo` accepted plain-typed arguments (`def card(title: str)`). The new one requires `rx.Var[...]`. To migrate:
+
+```python
+# Before
+@rx.memo
+def card(title: str) -> rx.Component: ...
+
+
+# After
+@rx.memo
+def card(title: rx.Var[str]) -> rx.Component: ...
+```
+
+The old `rx._x.memo` alias still resolves to the new memo and prints a one-time `was promoted to rx.memo` notice.
 
 ## API Reference
 
@@ -180,8 +203,8 @@ Avoid using `rx.memo` for:
 rx.memo(component_fn)
 ```
 
-Decorates a function that returns a Reflex component so it can be reused as a memoized component. The function arguments must be type annotated, and memoized components should be called with keyword arguments.
+Wraps a function whose parameters are all `rx.Var[...]` or `rx.RestProp`. Returns a callable that constructs the memoized component (or a `Var` if the function's return annotation is `rx.Var[T]`).
 
 | Argument | Type | Description |
 | --- | --- | --- |
-| `component_fn` | `Callable[..., rx.Component]` | Function that returns the component to memoize. |
+| `component_fn` | `Callable[..., rx.Component \| rx.Var]` | The function to memoize. All parameters must be `rx.Var[...]` or `rx.RestProp`. |
