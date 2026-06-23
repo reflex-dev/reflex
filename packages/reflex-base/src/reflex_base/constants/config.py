@@ -49,6 +49,22 @@ class GitIgnore(SimpleNamespace):
     }
 
 
+class AgentsMd(SimpleNamespace):
+    """AGENTS.md constants."""
+
+    # The AGENTS.md file written to the app root.
+    FILE = Path("AGENTS.md")
+    # The CLAUDE.md bridge file; Claude Code reads CLAUDE.md rather than AGENTS.md.
+    CLAUDE_FILE = Path("CLAUDE.md")
+    # Import line that pulls AGENTS.md into CLAUDE.md.
+    CLAUDE_IMPORT = "@AGENTS.md"
+    # The canonical AGENTS.md maintained in the reflex-dev/agent-skills repo.
+    CANONICAL_URL = "https://raw.githubusercontent.com/reflex-dev/agent-skills/aditya/agentsmd/AGENTS.md"
+    # Markers delimiting the Reflex-managed section; user content outside them is preserved.
+    BEGIN_MARKER = "<!-- reflex managed begin (do not edit inside this block; add custom content outside the markers) -->"
+    END_MARKER = "<!-- reflex managed end -->"
+
+
 class PyprojectToml(SimpleNamespace):
     """Pyproject.toml constants."""
 

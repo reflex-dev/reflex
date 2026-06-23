@@ -1128,34 +1128,6 @@
     --color-bronze-a10: var(--bronze-a10);
     --color-bronze-a11: var(--bronze-a11);
     --color-bronze-a12: var(--bronze-a12);
-    /* Marketing Colors */
-    --color-m-slate-1: var(--m-slate-1);
-    --color-m-slate-2: var(--m-slate-2);
-    --color-m-slate-3: var(--m-slate-3);
-    --color-m-slate-4: var(--m-slate-4);
-    --color-m-slate-5: var(--m-slate-5);
-    --color-m-slate-6: var(--m-slate-6);
-    --color-m-slate-7: var(--m-slate-7);
-    --color-m-slate-8: var(--m-slate-8);
-    --color-m-slate-9: var(--m-slate-9);
-    --color-m-slate-10: var(--m-slate-10);
-    --color-m-slate-11: var(--m-slate-11);
-    --color-m-slate-12: var(--m-slate-12);
-    --color-m-slate-13: var(--m-slate-13);
-    --color-m-slate-14: var(--m-slate-14);
-    --color-m-slate-15: var(--m-slate-15);
-    --color-m-violet-1: var(--m-violet-1);
-    --color-m-violet-2: var(--m-violet-2);
-    --color-m-violet-3: var(--m-violet-3);
-    --color-m-violet-4: var(--m-violet-4);
-    --color-m-violet-5: var(--m-violet-5);
-    --color-m-violet-6: var(--m-violet-6);
-    --color-m-violet-7: var(--m-violet-7);
-    --color-m-violet-8: var(--m-violet-8);
-    --color-m-violet-9: var(--m-violet-9);
-    --color-m-violet-10: var(--m-violet-10);
-    --color-m-violet-11: var(--m-violet-11);
-    --color-m-violet-12: var(--m-violet-12);
 
     /* Font */
     --font-sans: var(--font-instrument-sans);
@@ -1179,7 +1151,7 @@
     --shadow-button-outline: var(--shadow-button-outline-adaptive);
     --shadow-card-xs-no-left: var(--shadow-card-xs-no-left-adaptive);
     --shadow-card-small: var(--shadow-card-small-adaptive);
-    --shadow-card-dark: 0 0 0 1px var(--m-slate-9, #2A3037);
+    --shadow-card-dark: 0 0 0 1px var(--secondary-4);
     --text-xs: 0.8125rem;
     --text-xs--line-height: 1.25rem;
     --text-sm: 0.875rem;
@@ -1659,7 +1631,7 @@
     ::before,
     ::backdrop,
     ::file-selector-button {
-        border-color: var(--c-slate-3, currentColor);
+        border-color: var(--secondary-3, currentColor);
     }
 
     body {
@@ -1680,11 +1652,11 @@
     }
 
     .gradient-heading {
-        @apply inline-block bg-clip-text bg-gradient-to-r from-slate-12 to-slate-11 w-full text-transparent text-center text-balance;
+        @apply inline-block bg-clip-text bg-gradient-to-r from-secondary-12 to-secondary-11 w-full text-transparent text-center text-balance;
     }
 
     .table-header {
-        @apply justify-start pl-4 w-auto font-bold text-slate-12 text-sm;
+        @apply justify-start pl-4 w-auto font-bold text-secondary-12 text-sm;
     }
 }
 
@@ -1709,11 +1681,11 @@
         font-weight: 400;
         line-height: normal;
         letter-spacing: -0.00406rem;
-        color: var(--c-slate-11);
-        background-color: var(--c-slate-3);
+        color: var(--secondary-11);
+        background-color: var(--secondary-3);
         border-radius: 0.25rem;
         border-width: 1px;
-        border-color: var(--c-slate-4);
+        border-color: var(--secondary-4);
         /* padding: 0rem 0.125rem 0rem 0.125rem; */
     }
 
@@ -1775,9 +1747,9 @@
         padding: 1.75rem !important;
         /* max-height: 350px !important; */
         border-radius: 0.75rem !important;
-        border: 1px solid var(--c-slate-4);
-        background: var(--c-slate-2);
-        color: var(--c-slate-12) !important;
+        border: 1px solid var(--secondary-4);
+        background: var(--secondary-2);
+        color: var(--secondary-12) !important;
         resize: none !important;
         outline: none !important;
         scrollbar-width: thin !important;
@@ -1808,7 +1780,7 @@
         font-size: 0.875rem !important;
         font-weight: 400 !important;
         line-height: 1.5rem !important;
-        color: var(--c-slate-12) !important;
+        color: var(--secondary-12) !important;
         background-color: transparent !important;
     }
 
@@ -1818,7 +1790,7 @@
         font-size: 0.875rem !important;
         font-weight: 400 !important;
         line-height: 1.5rem !important;
-        color: var(--c-slate-12) !important;
+        color: var(--secondary-12) !important;
         background-color: transparent !important;
     }
 
@@ -1842,7 +1814,7 @@
         gap: 0.375rem !important;
         font-size: 0.8125rem !important;
         font-weight: 500 !important;
-        color: var(--c-slate-11) !important;
+        color: var(--secondary-11) !important;
         top: 8px !important;
         right: 12px !important;
         padding: 6px 8px !important;
@@ -1862,13 +1834,13 @@
 
     .code-block button:hover,
     .code-block>button:hover {
-        background: var(--c-slate-3) !important;
-        background-color: var(--c-slate-3) !important;
+        background: var(--secondary-3) !important;
+        background-color: var(--secondary-3) !important;
     }
 
 
     .tab-style {
-        color: var(--c-slate-9);
+        color: var(--secondary-9);
         cursor: pointer;
         padding: 0.25em 0.5em;
         font-size: 0.9rem;
@@ -1881,7 +1853,7 @@
         display: inline-flex !important;
         gap: 2px !important;
         padding: 4px !important;
-        background: var(--c-slate-3) !important;
+        background: var(--secondary-3) !important;
         border-radius: 10px !important;
         border-bottom: none !important;
         box-shadow: none !important;
@@ -1904,7 +1876,7 @@
         padding: 8px 16px !important;
         font-size: 0.9375rem !important;
         font-weight: 450 !important;
-        color: var(--c-slate-11) !important;
+        color: var(--secondary-11) !important;
         border-radius: 7px !important;
         cursor: pointer;
         white-space: nowrap;
@@ -1930,7 +1902,7 @@
     }
 
     .pill-tab:hover {
-        color: var(--c-slate-11) !important;
+        color: var(--secondary-11) !important;
         background: transparent !important;
     }
 
@@ -1944,10 +1916,10 @@
 
     .pill-tab[data-state='active'],
     .pill-tab[data-state='active']:hover {
-        color: var(--c-slate-12) !important;
+        color: var(--secondary-12) !important;
         font-weight: 500 !important;
-        background: var(--c-slate-1) !important;
-        background-color: var(--c-slate-1) !important;
+        background: var(--secondary-1) !important;
+        background-color: var(--secondary-1) !important;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
     }
 
@@ -1961,7 +1933,7 @@
     }
 
     .tab-style:hover {
-        color: var(--c-slate-11);
+        color: var(--secondary-11);
     }
 
     .hover-card-shadow:hover {
@@ -1973,8 +1945,8 @@
     }
 
     :where(.dark, .dark *) .hover-card-shadow:hover {
-        background: var(--m-slate-10, #21252B);
-        box-shadow: 0 0 0 1px var(--m-slate-9, #2A3037);
+        background: var(--secondary-3);
+        box-shadow: 0 0 0 1px var(--secondary-4);
     }
 
     .navbar-shadow {
@@ -1982,7 +1954,7 @@
     }
 
     :where(.dark, .dark *) .navbar-shadow {
-        box-shadow: 0 0 0 1px var(--m-slate-9, #2A3037);
+        box-shadow: 0 0 0 1px var(--secondary-4);
     }
 
     .tab-style[data-state='active'] {
@@ -1990,7 +1962,7 @@
     }
 
     .tab-style:not([data-state='active']) {
-        color: var(--c-slate-12);
+        color: var(--secondary-12);
     }
 
     .demo-code-block {
@@ -1998,7 +1970,7 @@
         height: auto !important;
         margin: 0 !important;
         background: transparent !important;
-        color: var(--c-slate-9) !important;
+        color: var(--secondary-9) !important;
         resize: none !important;
         outline: none !important;
         scrollbar-width: thin !important;
@@ -2033,7 +2005,7 @@
         font-weight: 400 !important;
         line-height: 150% !important;
         letter-spacing: -0.01219rem !important;
-        color: var(--c-slate-12) !important;
+        color: var(--secondary-12) !important;
         background-color: transparent !important;
     }
 
@@ -2204,4 +2176,12 @@
     body {
         @apply isolate bg-secondary-1 font-sans antialiased;
     }
+}
+
+#ph-conversations-widget-container button[aria-label^="Open chat"] {
+    display: none !important;
+}
+
+#ph-conversations-widget-container button[aria-label^="Open chat"]+div {
+    display: none !important;
 }

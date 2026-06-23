@@ -6,6 +6,7 @@ import contextvars
 import functools
 import io
 import json
+import re
 import unittest.mock
 import uuid
 from collections.abc import Generator
@@ -22,13 +23,15 @@ from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
+from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
-from reflex_base.utils import console, exceptions, format
+from reflex_base.utils import console, exceptions, format, memo_paths
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import computed_var
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
+from reflex_components_core.core.upload import selected_files
 from reflex_components_radix.themes.typography.text import Text
 from starlette.applications import Starlette
 from starlette.datastructures import FormData, Headers, UploadFile
@@ -39,7 +42,13 @@ from starlette_admin.auth import AuthProvider
 import reflex as rx
 from reflex import AdminDash, constants
 from reflex._upload import upload
-from reflex.app import App, ComponentCallable
+from reflex.app import App, ComponentCallable, default_overlay_component
+from reflex.compiler.compiler import (
+    _compile_app,
+    _memoize_stateful_app_wraps,
+    _resolve_app_wrap_components,
+)
+from reflex.compiler.plugins import default_page_plugins
 from reflex.environment import environment
 from reflex.istate.data import RouterData
 from reflex.istate.manager.disk import StateManagerDisk
@@ -2020,11 +2029,15 @@ async def test_process_events(
 
 
 @pytest.fixture
-def compilable_app(tmp_path: Path) -> Generator[tuple[App, Path], None, None]:
+def compilable_app(
+    tmp_path: Path,
+    forked_registration_context: RegistrationContext,
+) -> Generator[tuple[App, Path], None, None]:
     """Fixture for an app that can be compiled.
 
     Args:
         tmp_path: Temporary path.
+        forked_registration_context: Isolated state/event registration context.
 
     Yields:
         Tuple containing (app instance, Path to ".web" directory)
@@ -2047,10 +2060,97 @@ module.exports = {
 };
 """,
     )
+    reload_state_module(__name__)
     app = App(theme=None)
     app._get_frontend_packages = unittest.mock.Mock()
     with chdir(app_path):
         yield app, web_dir
+
+
+EVENT_LOOP_CONTEXT_HOOK = (
+    "const [addEvents, connectErrors] = useContext(EventLoopContext);"
+)
+
+
+def _find_error_boundary_memo_tag(app_root_code: str) -> str:
+    """Extract the memoized default-ErrorBoundary wrapper tag from app-root JS.
+
+    The default ``ErrorBoundary`` app wrap carries an ``on_error`` trigger, so
+    the app-root memoize pass extracts it into its own memo module; the
+    wrapper tag embeds a content hash of the memo body.
+
+    Args:
+        app_root_code: The generated app-root source.
+
+    Returns:
+        The memo wrapper tag.
+    """
+    match = re.search(r"Errorboundary_errorboundary_[0-9a-f]{32}", app_root_code)
+    assert match is not None, "memoized ErrorBoundary tag not found in app root"
+    return match.group()
+
+
+def _find_mirrored_memo_symbol(app_root_code: str, name: str) -> str:
+    """Extract a mirrored memo's per-module JS symbol from app-root JS.
+
+    Framework ``@memo`` overlay wraps mirror to their defining module, so their
+    bare export name (e.g. ``DefaultOverlayComponents``) gains a short
+    per-module hash suffix in the compiled output.
+
+    Args:
+        app_root_code: The generated app-root source.
+        name: The memo's bare export name.
+
+    Returns:
+        The mirrored symbol the memo is referenced under in the output.
+    """
+    match = re.search(rf"{re.escape(name)}_[0-9a-f]{{8}}", app_root_code)
+    assert match is not None, f"mirrored memo symbol for {name!r} not found in app root"
+    return match.group()
+
+
+def compile_page_context_for_app_wraps(component: Component):
+    """Compile one component through the page plugin pipeline.
+
+    Args:
+        component: The page root component to compile.
+
+    Returns:
+        The compiled page context.
+    """
+    page_ctx = PageContext(name="page", route="/page", root_component=component)
+    page_hooks = CompilerHooks(plugins=default_page_plugins(style=None))
+    compile_ctx = CompileContext(pages=[], hooks=page_hooks)
+
+    with compile_ctx, page_ctx:
+        page_ctx.root_component = page_hooks.compile_component(
+            page_ctx.root_component,
+            page_context=page_ctx,
+            compile_context=compile_ctx,
+        )
+        page_hooks.compile_page(page_ctx, compile_context=compile_ctx)
+
+    return page_ctx
+
+
+def compile_app_root_from_page_wraps(
+    app: App,
+    page_app_wrap_components: dict[tuple[int, str], Component],
+) -> str:
+    """Render app-root code from an app and pre-collected page app wraps.
+
+    Args:
+        app: The app whose root wrapper chain should be compiled.
+        page_app_wrap_components: The app wraps collected from page compilation.
+
+    Returns:
+        The generated app root source.
+    """
+    app_root = _memoize_stateful_app_wraps(
+        app._app_root(_resolve_app_wrap_components(app, page_app_wrap_components)),
+        CompileContext(pages=[], hooks=CompilerHooks()),
+    )
+    return _compile_app(app_root)
 
 
 @pytest.mark.parametrize(
@@ -2078,33 +2178,53 @@ def test_app_wrap_compile_theme(
     app_js_contents = (
         web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
     ).read_text()
+    # AppWrap renders the entire chain in its body. ``addEvents`` is now a
+    # module-level callable (see ``$/utils/context``) so no
+    # ``useContext(EventLoopContext)`` hoist is needed; the events hook
+    # block is empty. State/event-loop providers ride along as the highest
+    # collected app wraps, ahead of the (memoized) ErrorBoundary etc.
     function_app_definition = app_js_contents[
         app_js_contents.index("function AppWrap") : app_js_contents.index(
             "export function Layout"
         )
     ].strip()
-
+    error_boundary_tag = _find_error_boundary_memo_tag(function_app_definition)
+    toast_provider_tag = _find_mirrored_memo_symbol(
+        function_app_definition, "MemoizedToastProvider"
+    )
+    overlay_tag = _find_mirrored_memo_symbol(
+        function_app_definition, "DefaultOverlayComponents"
+    )
     expected = (
-        "function AppWrap({children}) {\n"
-        "const [addEvents, connectErrors] = useContext(EventLoopContext);\n\n\n\n"
+        "function AppWrap({children}) {\n\n\n\n\n"
         "return ("
         + ("jsx(StrictMode,{}," if react_strict_mode else "")
-        + "jsx(ErrorBoundary,{"
-        """fallbackRender:((event_args) => (jsx("div", ({css:({ ["height"] : "100%", ["width"] : "100%", ["position"] : "absolute", ["backgroundColor"] : "#fff", ["color"] : "#000", ["display"] : "flex", ["alignItems"] : "center", ["justifyContent"] : "center" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "0.5rem", ["maxWidth"] : "min(80ch, 90vw)", ["borderRadius"] : "0.25rem", ["padding"] : "1rem" })}), (jsx("div", ({css:({ ["opacity"] : "0.5", ["display"] : "flex", ["gap"] : "4vmin", ["alignItems"] : "center" })}), (jsx("svg", ({className:"lucide lucide-frown-icon lucide-frown",fill:"none",stroke:"currentColor","stroke-linecap":"round","stroke-linejoin":"round","stroke-width":"2",viewBox:"0 0 24 24",width:"25vmin",xmlns:"http://www.w3.org/2000/svg"}), (jsx("circle", ({cx:"12",cy:"12",r:"10"}))), (jsx("path", ({d:"M16 16s-1.5-2-4-2-4 2-4 2"}))), (jsx("line", ({x1:"9",x2:"9.01",y1:"9",y2:"9"}))), (jsx("line", ({x1:"15",x2:"15.01",y1:"9",y2:"9"}))))), (jsx("h2", ({css:({ ["fontSize"] : "5vmin", ["fontWeight"] : "bold" })}), "An error occurred while rendering this page.")))), (jsx("p", ({css:({ ["opacity"] : "0.75", ["marginBlock"] : "1rem" })}), "This is an error with the application itself. Refreshing the page might help.")), (jsx("div", ({css:({ ["width"] : "100%", ["background"] : "color-mix(in srgb, currentColor 5%, transparent)", ["maxHeight"] : "15rem", ["overflow"] : "auto", ["borderRadius"] : "0.4rem" })}), (jsx("div", ({css:({ ["padding"] : "0.5rem" })}), (jsx("pre", ({css:({ ["wordBreak"] : "break-word", ["whiteSpace"] : "pre-wrap" })}), event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack)))))), (jsx("button", ({css:({ ["padding"] : "0.35rem 1.35rem", ["marginBlock"] : "0.5rem", ["marginInlineStart"] : "auto", ["background"] : "color-mix(in srgb, currentColor 15%, transparent)", ["borderRadius"] : "0.4rem", ["width"] : "fit-content", ["&:hover"] : ({ ["background"] : "color-mix(in srgb, currentColor 25%, transparent)" }), ["&:active"] : ({ ["background"] : "color-mix(in srgb, currentColor 35%, transparent)" }) }),onClick:((_e) => (addEvents([(ReflexEvent("_call_function", ({ ["function"] : (() => (navigator?.["clipboard"]?.["writeText"](event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack))), ["callback"] : null }), ({  })))], [_e], ({  }))))}), "Copy")), (jsx("hr", ({css:({ ["borderColor"] : "currentColor", ["opacity"] : "0.25" })}))), (jsx(ReactRouterLink, ({to:"https://reflex.dev"}), (jsx("div", ({css:({ ["display"] : "flex", ["alignItems"] : "baseline", ["justifyContent"] : "center", ["fontFamily"] : "monospace", ["--default-font-family"] : "monospace", ["gap"] : "0.5rem" })}), "Built with ", (jsx("svg", ({"aria-label":"Reflex",css:({ ["fill"] : "currentColor" }),height:"12",role:"img",width:"56",xmlns:"http://www.w3.org/2000/svg"}), (jsx("path", ({d:"M0 11.5999V0.399902H8.96V4.8799H6.72V2.6399H2.24V4.8799H6.72V7.1199H2.24V11.5999H0ZM6.72 11.5999V7.1199H8.96V11.5999H6.72Z"}))), (jsx("path", ({d:"M11.2 11.5999V0.399902H17.92V2.6399H13.44V4.8799H17.92V7.1199H13.44V9.3599H17.92V11.5999H11.2Z"}))), (jsx("path", ({d:"M20.16 11.5999V0.399902H26.88V2.6399H22.4V4.8799H26.88V7.1199H22.4V11.5999H20.16Z"}))), (jsx("path", ({d:"M29.12 11.5999V0.399902H31.36V9.3599H35.84V11.5999H29.12Z"}))), (jsx("path", ({d:"M38.08 11.5999V0.399902H44.8V2.6399H40.32V4.8799H44.8V7.1199H40.32V9.3599H44.8V11.5999H38.08Z"}))), (jsx("path", ({d:"M47.04 4.8799V0.399902H49.28V4.8799H47.04ZM53.76 4.8799V0.399902H56V4.8799H53.76ZM49.28 7.1199V4.8799H53.76V7.1199H49.28ZM47.04 11.5999V7.1199H49.28V11.5999H47.04ZM53.76 11.5999V7.1199H56V11.5999H53.76Z"}))), (jsx("title", ({}), "Reflex"))))))))))))),"""
-        """onError:((_error, _info) => (addEvents([(ReflexEvent("reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception", ({ ["info"] : ((((_error?.["name"]+": ")+_error?.["message"])+"\\n")+_error?.["stack"]), ["component_stack"] : _info?.["componentStack"] }), ({  })))], [_error, _info], ({  }))))"""
-        + "},"
+        + "jsx(StateProvider,{},"
+        + "jsx(EventLoopProvider,{},"
+        + f"jsx({error_boundary_tag},{{}},"
+        # ErrorBoundary memoized: on_error trigger -> own memo module.
         + "jsx(RadixThemesColorModeProvider,{},"
         + "jsx(Fragment,{},"
-        + "jsx(MemoizedToastProvider,{},),"
+        + f"jsx({toast_provider_tag},{{}},),"
         + "jsx(RadixThemesTheme,{accentColor:\"plum\",css:{...theme.styles.global[':root'], ...theme.styles.global.body}},"
         + "jsx(Fragment,{},"
-        + "jsx(DefaultOverlayComponents,{},),"
+        + f"jsx({overlay_tag},{{}},),"
         + "jsx(Fragment,{},"
         + "children"
-        "))))))" + (")" if react_strict_mode else "") + ")"
-        "\n}"
+        + "))))))))"
+        + (")" if react_strict_mode else "")
+        + ")\n}"
     )
     assert expected.split(",") == function_app_definition.split(",")
+    # The extracted ErrorBoundary memo module carries the fallback render and
+    # the memoized ``onError`` handler instead of the AppWrap chain.
+    memo_contents = (
+        web_dir
+        / constants.Dirs.COMPONENTS_PATH
+        / f"{error_boundary_tag}{constants.Ext.JSX}"
+    ).read_text()
+    assert "fallbackRender" in memo_contents
+    assert "handle_frontend_exception" in memo_contents
 
 
 def test_compile_without_radix_components_skips_radix_plugin(
@@ -2134,6 +2254,189 @@ def test_compile_without_radix_components_skips_radix_plugin(
     assert "@radix-ui/themes/styles.css" not in root_stylesheet
     assert "RadixThemesTheme" not in app_root
     mock_deprecate.assert_not_called()
+
+
+def _hydrate_fallback_module(web_dir: Path) -> Path:
+    """Path to the compiled HydrateFallback memo module under a web dir.
+
+    Args:
+        web_dir: The app's compiled web directory.
+
+    Returns:
+        The path to the HydrateFallback memo module.
+    """
+    return (
+        web_dir / constants.Dirs.COMPONENTS_PATH / f"HydrateFallback{constants.Ext.JSX}"
+    )
+
+
+def test_compile_hydrate_fallback_emits_hydrate_fallback(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """A hydrate_fallback should compile to a memo module re-exported by root.jsx."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+
+    app.hydrate_fallback = rx.el.div("Hydrating...")
+    app.add_page(lambda: rx.el.div("Index"), route="/")
+    app._compile()
+
+    app_root = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+    assert (
+        "export { HydrateFallback as HydrateFallback } "
+        'from "$/utils/components/HydrateFallback";' in app_root
+    )
+    assert "Hydrating..." in _hydrate_fallback_module(web_dir).read_text()
+
+
+def _example_hydrate_fallback() -> rx.Component:
+    """Hydrate fallback component referenced by dotted import path in tests.
+
+    Returns:
+        A simple fallback component.
+    """
+    return rx.el.div("Fallback from config...")
+
+
+def test_compile_hydrate_fallback_from_config(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """The hydrate_fallback config (env-settable) should define the HydrateFallback."""
+    conf = rx.Config(
+        app_name="testing",
+        hydrate_fallback="tests.units.test_app._example_hydrate_fallback",
+    )
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+
+    app.add_page(lambda: rx.el.div("Index"), route="/")
+    app._compile()
+
+    app_root = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+    assert 'from "$/utils/components/HydrateFallback";' in app_root
+    assert "Fallback from config..." in _hydrate_fallback_module(web_dir).read_text()
+
+
+def test_app_hydrate_fallback_takes_precedence_over_config(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """App.hydrate_fallback should win over the hydrate_fallback config."""
+    conf = rx.Config(
+        app_name="testing",
+        hydrate_fallback="tests.units.test_app._example_hydrate_fallback",
+    )
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+
+    app.hydrate_fallback = rx.el.div("Fallback from app...")
+    app.add_page(lambda: rx.el.div("Index"), route="/")
+    app._compile()
+
+    fallback_module = _hydrate_fallback_module(web_dir).read_text()
+    assert "Fallback from app..." in fallback_module
+    assert "Fallback from config..." not in fallback_module
+
+
+def test_resolve_import_path_resolves_nested_attribute():
+    """A dotted path should resolve to the attribute of its nested module."""
+    from reflex_components_radix.themes.components.button import button
+
+    from reflex.app import _resolve_import_path
+
+    resolved = _resolve_import_path(
+        "reflex_components_radix.themes.components.button.button"
+    )
+
+    assert resolved is button
+
+
+def test_resolve_import_path_raises_for_missing_module():
+    """An unresolvable path should raise (caller handles the failure)."""
+    from reflex.app import _resolve_import_path
+
+    with pytest.raises(ModuleNotFoundError):
+        _resolve_import_path("nonexistent_module.does_not_exist")
+
+
+def test_resolve_import_path_raises_for_single_segment():
+    """A path without a dot should raise a descriptive error, not an opaque one."""
+    from reflex.app import _resolve_import_path
+
+    with pytest.raises(ValueError, match="expected a dotted"):
+        _resolve_import_path("mymodule")
+
+
+def test_component_from_import_path_resolves_callable():
+    """A dotted path to a component callable should resolve to a component."""
+    from reflex_components_core.base.fragment import Fragment
+    from reflex_components_core.el.elements.typography import Div
+
+    from reflex.app import _component_from_import_path
+
+    component = _component_from_import_path(
+        "tests.units.test_app._example_hydrate_fallback", "hydrate_fallback"
+    )
+
+    assert isinstance(component, Fragment)
+    assert isinstance(component.children[0], Div)
+
+
+def test_component_from_import_path_resolves_nested_module():
+    """A multi-segment module path should resolve via importlib, not the top package."""
+    from reflex_components_core.base.fragment import Fragment
+    from reflex_components_radix.themes.components.button import Button
+
+    from reflex.app import _component_from_import_path
+
+    # The callable lives in a deeply nested module; ``__import__`` would have
+    # returned the top-level package instead of this submodule.
+    component = _component_from_import_path(
+        "reflex_components_radix.themes.components.button.button",
+        "extra_overlay_function",
+    )
+
+    assert isinstance(component, Fragment)
+    assert isinstance(component.children[0], Button)
+
+
+def test_component_from_import_path_invalid_returns_none(mocker: MockerFixture):
+    """An unresolvable path should be logged and return None instead of raising."""
+    from reflex.app import _component_from_import_path
+
+    mocker.patch("reflex.compiler.utils.save_error", return_value="/tmp/error.log")
+    mock_error = mocker.patch("reflex_base.utils.console.error")
+
+    component = _component_from_import_path(
+        "nonexistent_module.does_not_exist", "hydrate_fallback"
+    )
+
+    assert component is None
+    mock_error.assert_called_once()
+
+
+def test_component_from_import_path_non_callable_returns_none(mocker: MockerFixture):
+    """A path resolving to a non-callable attribute should return None."""
+    from reflex.app import _component_from_import_path
+
+    mocker.patch("reflex.compiler.utils.save_error", return_value="/tmp/error.log")
+    mock_error = mocker.patch("reflex_base.utils.console.error")
+
+    # ``reflex.constants`` is a module, not a callable returning a component.
+    component = _component_from_import_path("reflex.constants", "hydrate_fallback")
+
+    assert component is None
+    mock_error.assert_called_once()
 
 
 def test_compile_with_radix_component_auto_enables_radix_plugin(
@@ -2233,7 +2536,7 @@ def test_compile_writes_app_wrap_memo_components(
     compilable_app: tuple[App, Path],
     mocker,
 ) -> None:
-    """App-wrap memo components are emitted as per-memo modules."""
+    """App-wrap memo components mirror to their defining module's output file."""
     conf = rx.Config(app_name="testing")
     mocker.patch("reflex_base.config._get_config", return_value=conf)
     app, web_dir = compilable_app
@@ -2241,12 +2544,55 @@ def test_compile_writes_app_wrap_memo_components(
     app.add_page(rx.box("Index"), route="/")
     app._compile()
 
-    # Per-memo modules live under .web/utils/components/; each memo wrapper
-    # declares its ``library`` as the per-memo file path, so pages import it
-    # directly.
-    memo_dir = web_dir / constants.Dirs.UTILS / constants.PageNames.COMPONENTS
-    assert (memo_dir / f"DefaultOverlayComponents{constants.Ext.JSX}").exists()
-    assert (memo_dir / f"MemoizedToastProvider{constants.Ext.JSX}").exists()
+    # The overlay/toast app wraps are framework ``@memo`` functions, so they
+    # mirror to their defining module under .web/app_components/ (rather than a
+    # shared file). Their export must land in some mirrored module there.
+    memo_sources = "\n".join(
+        path.read_text()
+        for path in (web_dir / constants.Dirs.APP_COMPONENTS).rglob(
+            f"*{constants.Ext.JSX}"
+        )
+    )
+    # Each overlay memo mirrors to its defining module, so its export carries a
+    # per-module symbol derived from that module.
+    overlay_symbol = memo_paths.mirrored_symbol(
+        "DefaultOverlayComponents", default_overlay_component.__module__
+    )
+    toast_symbol = memo_paths.mirrored_symbol(
+        "MemoizedToastProvider", _compile_app.__module__
+    )
+    assert f"export const {overlay_symbol} = memo" in memo_sources
+    assert f"export const {toast_symbol} = memo" in memo_sources
+
+
+def test_compile_dry_run_does_not_prune_or_write_manifest(
+    compilable_app: tuple[App, Path],
+    mocker,
+) -> None:
+    """A ``--dry`` compile must not delete memo files or rewrite the manifest."""
+    from reflex.compiler import utils as compiler_utils
+
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+    app.add_page(rx.box("Index"), route="/")
+
+    # Seed a stale memo file plus a manifest entry that a real compile would
+    # prune (it is no longer emitted).
+    stale_rel = f"{constants.Dirs.COMPONENTS_PATH}/Stale{constants.Ext.JSX}"
+    stale = web_dir / stale_rel
+    stale.parent.mkdir(parents=True, exist_ok=True)
+    stale.write_text("// stale", encoding="utf-8")
+    manifest = web_dir / compiler_utils._MEMO_MANIFEST_FILENAME
+    manifest.write_text(json.dumps([stale_rel]), encoding="utf-8")
+    manifest_before = manifest.read_text(encoding="utf-8")
+
+    app._compile(dry_run=True)
+
+    assert stale.exists(), "dry run must not delete stale memo files"
+    assert manifest.read_text(encoding="utf-8") == manifest_before, (
+        "dry run must not rewrite the memo manifest"
+    )
 
 
 def test_compile_writes_upload_files_provider_app_wrap(
@@ -2273,6 +2619,228 @@ def test_compile_writes_upload_files_provider_app_wrap(
     root_contents = root_js.read_text()
 
     assert "UploadFilesProvider" in root_contents
+
+
+def test_stateful_app_wrap_is_memoized(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+) -> None:
+    """Stateful app wraps compile into their own memo modules.
+
+    The ``AppWrap`` function body also renders the ``StateProvider`` context
+    provider, so a state hook hoisted into ``AppWrap`` can never resolve its
+    context. The auto-memoize pass must extract state-bearing app wraps into
+    their own memo components, which render below the provider in the React
+    tree.
+    """
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+
+    class AppWrapState(State):
+        banner: str = "hello"
+
+    app.extra_app_wraps[50, "StatefulBanner"] = lambda _: rx.el.div(AppWrapState.banner)
+    app.add_page(rx.box("Index"), route="/")
+    app._compile()
+
+    root_contents = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+    app_wrap_fn = root_contents[root_contents.index("function AppWrap") :]
+    # No state hooks may remain in the AppWrap function body.
+    assert "useContext(StateContexts" not in app_wrap_fn
+    # The route children still flow through the (memoized) wrap chain, which
+    # renders inside the state provider.
+    assert "jsx(StateProvider" in app_wrap_fn
+    assert "children" in app_wrap_fn[app_wrap_fn.index("jsx(StateProvider") :]
+
+    # The extracted memo module carries the state hook instead.
+    memo_dir = web_dir / constants.Dirs.COMPONENTS_PATH
+    assert any(
+        "useContext(StateContexts" in memo_file.read_text()
+        for memo_file in memo_dir.glob(f"*{constants.Ext.JSX}")
+    )
+
+
+def test_app_wrap_event_hook_requires_state_providers(mocker: MockerFixture) -> None:
+    """App-root chain components with event triggers pull state/event providers.
+
+    The default error boundary's fallback render contains a Copy button.
+    The button has an ``on_click`` handler, so the page collector pulls
+    ``StateProvider`` and ``EventLoopProvider`` into the app root via the
+    event-trigger app-wrap path. ``addEvents`` itself reaches its call
+    sites through the module-level import — no ``useContext`` hoist.
+    """
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app = App(theme=None, enable_state=False)
+
+    root_contents = compile_app_root_from_page_wraps(app, {})
+
+    assert EVENT_LOOP_CONTEXT_HOOK not in root_contents
+    assert "jsx(StateProvider" in root_contents
+    assert "jsx(EventLoopProvider" in root_contents
+
+
+def test_event_provider_app_wrap_order(mocker: MockerFixture) -> None:
+    """StateProvider wraps EventLoopProvider, and both wrap AppWrap."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    page_ctx = compile_page_context_for_app_wraps(
+        rx.button("ping", on_click=rx.console_log("ping"))
+    )
+    app = App(theme=None, enable_state=False)
+
+    root_contents = compile_app_root_from_page_wraps(app, page_ctx.app_wrap_components)
+
+    # The provider chain is rendered inside the ``AppWrap`` function body;
+    # ``ReflexProviders`` references ``jsx(AppWrap, {}, children)`` earlier in
+    # the file, so scope the search to the chain to avoid matching that.
+    chain = root_contents[root_contents.index("function AppWrap({children})") :]
+    state_index = chain.index("jsx(StateProvider")
+    event_loop_index = chain.index("jsx(EventLoopProvider")
+    children_index = chain.rindex("children")
+    assert state_index < event_loop_index < children_index
+
+
+def test_minimal_static_app_wrap_omits_state_providers(
+    mocker: MockerFixture,
+) -> None:
+    """An app-root chain with no event/state hooks avoids state providers."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app = App(theme=None, enable_state=False)
+    app.app_wraps = {}
+    app.extra_app_wraps = {}
+    app.toaster = None
+
+    root_contents = compile_app_root_from_page_wraps(app, {})
+
+    assert EVENT_LOOP_CONTEXT_HOOK not in root_contents
+    assert "jsx(StateProvider" not in root_contents
+    assert "jsx(EventLoopProvider" not in root_contents
+
+
+def test_event_triggers_collect_state_providers_via_var_app_wrap() -> None:
+    """A component with event triggers collects ``StateProvider`` and
+    ``EventLoopProvider`` into the page-level app_wrap registry through the
+    Var-driven path attached to ``Hooks.EVENTS``.
+
+    Uses the page-walk pipeline directly (not ``app._compile()``) so the
+    assertion is robust against ``rx.State`` registration leaks between
+    tests in this file.
+    """
+    component = rx.button("ping", on_click=rx.console_log("ping"))
+
+    page_ctx = PageContext(name="page", route="/page", root_component=component)
+    page_hooks = CompilerHooks(plugins=default_page_plugins(style=None))
+    compile_ctx = CompileContext(pages=[], hooks=page_hooks)
+
+    with compile_ctx, page_ctx:
+        page_ctx.root_component = page_hooks.compile_component(
+            page_ctx.root_component,
+            page_context=page_ctx,
+            compile_context=compile_ctx,
+        )
+        page_hooks.compile_page(page_ctx, compile_context=compile_ctx)
+
+    keys = page_ctx.app_wrap_components.keys()
+    # ``from_state`` priorities: StateProvider outer (100), EventLoopProvider
+    # inner (90). Both must be present whenever a component carries event
+    # triggers, since the ``useContext(EventLoopContext)`` hook hoisted at
+    # ``AppWrap`` level requires both providers as React-tree ancestors.
+    assert (100, "StateProvider") in keys
+    assert (90, "EventLoopProvider") in keys
+
+
+def test_no_event_triggers_omits_state_providers() -> None:
+    """A static page with no event triggers does not pull state providers in.
+
+    Validates that the migration is *conditional* — apps that don't use
+    state machinery don't pay for unused providers in the app root.
+    """
+    component = rx.text("hello")
+
+    page_ctx = PageContext(name="page", route="/page", root_component=component)
+    page_hooks = CompilerHooks(plugins=default_page_plugins(style=None))
+    compile_ctx = CompileContext(pages=[], hooks=page_hooks)
+
+    with compile_ctx, page_ctx:
+        page_ctx.root_component = page_hooks.compile_component(
+            page_ctx.root_component,
+            page_context=page_ctx,
+            compile_context=compile_ctx,
+        )
+        page_hooks.compile_page(page_ctx, compile_context=compile_ctx)
+
+    keys = page_ctx.app_wrap_components.keys()
+    assert (100, "StateProvider") not in keys
+    assert (90, "EventLoopProvider") not in keys
+
+
+def test_compile_writes_upload_files_provider_via_var_app_wrap(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+) -> None:
+    """A page that uses ``selected_files`` *without* an Upload component still
+    pulls the UploadFilesProvider in via the Var-declared app_wrap path.
+    """
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, web_dir = compilable_app
+
+    app.add_page(
+        lambda: rx.text(selected_files("custom-id").to_string()),
+        route="/",
+    )
+    app._compile()
+
+    root_js = web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    root_contents = root_js.read_text()
+    assert "UploadFilesProvider" in root_contents
+
+
+def test_selected_files_collects_upload_provider_without_upload_component() -> None:
+    """``selected_files`` alone pulls in UploadFilesProvider."""
+    page_ctx = compile_page_context_for_app_wraps(
+        rx.text(selected_files("custom-id").to_string())
+    )
+
+    assert (5, "UploadFilesProvider") in page_ctx.app_wrap_components
+    assert (100, "StateProvider") not in page_ctx.app_wrap_components
+    assert (90, "EventLoopProvider") not in page_ctx.app_wrap_components
+
+
+def test_no_upload_usage_omits_upload_provider() -> None:
+    """A page that never references upload Vars omits ``UploadFilesProvider``.
+
+    The provider rides only on ``selected_files`` / ``upload_files`` Var data
+    (or an ``Upload`` component). A page that uses state and events but no
+    upload must not pull it into the registry — the complement of
+    :func:`test_selected_files_collects_upload_provider_without_upload_component`.
+    """
+    page_ctx = compile_page_context_for_app_wraps(
+        rx.button("ping", on_click=rx.console_log("ping"))
+    )
+    keys = page_ctx.app_wrap_components.keys()
+
+    # Event triggers pull in the state/event providers...
+    assert (100, "StateProvider") in keys
+    assert (90, "EventLoopProvider") in keys
+    # ...but nothing references upload, so its provider stays out.
+    assert (5, "UploadFilesProvider") not in keys
+
+
+def test_upload_root_collects_upload_and_event_providers() -> None:
+    """Upload root requires both upload context and event-loop providers."""
+    page_ctx = compile_page_context_for_app_wraps(
+        rx.upload.root(rx.button("Select file"))
+    )
+
+    assert (5, "UploadFilesProvider") in page_ctx.app_wrap_components
+    assert (100, "StateProvider") in page_ctx.app_wrap_components
+    assert (90, "EventLoopProvider") in page_ctx.app_wrap_components
 
 
 @pytest.mark.parametrize(
@@ -2322,32 +2890,42 @@ def test_app_wrap_priority(
     app_js_contents = (
         web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
     ).read_text()
+    # AppWrap renders the priority-ordered chain inside its body.
+    # ``addEvents`` is reached via module-level import so the events hook
+    # block is empty.
     function_app_definition = app_js_contents[
         app_js_contents.index("function AppWrap") : app_js_contents.index(
             "export function Layout"
         )
     ].strip()
-
+    error_boundary_tag = _find_error_boundary_memo_tag(function_app_definition)
+    toast_provider_tag = _find_mirrored_memo_symbol(
+        function_app_definition, "MemoizedToastProvider"
+    )
+    overlay_tag = _find_mirrored_memo_symbol(
+        function_app_definition, "DefaultOverlayComponents"
+    )
     expected = (
-        "function AppWrap({children}) {\n"
-        "const [addEvents, connectErrors] = useContext(EventLoopContext);\n\n\n\n"
+        "function AppWrap({children}) {\n\n\n\n\n"
         "return ("
         + ("jsx(StrictMode,{}," if react_strict_mode else "")
+        + "jsx(StateProvider,{},"
         + "jsx(RadixThemesBox,{},"
-        "jsx(ErrorBoundary,{"
-        """fallbackRender:((event_args) => (jsx("div", ({css:({ ["height"] : "100%", ["width"] : "100%", ["position"] : "absolute", ["backgroundColor"] : "#fff", ["color"] : "#000", ["display"] : "flex", ["alignItems"] : "center", ["justifyContent"] : "center" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "0.5rem", ["maxWidth"] : "min(80ch, 90vw)", ["borderRadius"] : "0.25rem", ["padding"] : "1rem" })}), (jsx("div", ({css:({ ["opacity"] : "0.5", ["display"] : "flex", ["gap"] : "4vmin", ["alignItems"] : "center" })}), (jsx("svg", ({className:"lucide lucide-frown-icon lucide-frown",fill:"none",stroke:"currentColor","stroke-linecap":"round","stroke-linejoin":"round","stroke-width":"2",viewBox:"0 0 24 24",width:"25vmin",xmlns:"http://www.w3.org/2000/svg"}), (jsx("circle", ({cx:"12",cy:"12",r:"10"}))), (jsx("path", ({d:"M16 16s-1.5-2-4-2-4 2-4 2"}))), (jsx("line", ({x1:"9",x2:"9.01",y1:"9",y2:"9"}))), (jsx("line", ({x1:"15",x2:"15.01",y1:"9",y2:"9"}))))), (jsx("h2", ({css:({ ["fontSize"] : "5vmin", ["fontWeight"] : "bold" })}), "An error occurred while rendering this page.")))), (jsx("p", ({css:({ ["opacity"] : "0.75", ["marginBlock"] : "1rem" })}), "This is an error with the application itself. Refreshing the page might help.")), (jsx("div", ({css:({ ["width"] : "100%", ["background"] : "color-mix(in srgb, currentColor 5%, transparent)", ["maxHeight"] : "15rem", ["overflow"] : "auto", ["borderRadius"] : "0.4rem" })}), (jsx("div", ({css:({ ["padding"] : "0.5rem" })}), (jsx("pre", ({css:({ ["wordBreak"] : "break-word", ["whiteSpace"] : "pre-wrap" })}), event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack)))))), (jsx("button", ({css:({ ["padding"] : "0.35rem 1.35rem", ["marginBlock"] : "0.5rem", ["marginInlineStart"] : "auto", ["background"] : "color-mix(in srgb, currentColor 15%, transparent)", ["borderRadius"] : "0.4rem", ["width"] : "fit-content", ["&:hover"] : ({ ["background"] : "color-mix(in srgb, currentColor 25%, transparent)" }), ["&:active"] : ({ ["background"] : "color-mix(in srgb, currentColor 35%, transparent)" }) }),onClick:((_e) => (addEvents([(ReflexEvent("_call_function", ({ ["function"] : (() => (navigator?.["clipboard"]?.["writeText"](event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack))), ["callback"] : null }), ({  })))], [_e], ({  }))))}), "Copy")), (jsx("hr", ({css:({ ["borderColor"] : "currentColor", ["opacity"] : "0.25" })}))), (jsx(ReactRouterLink, ({to:"https://reflex.dev"}), (jsx("div", ({css:({ ["display"] : "flex", ["alignItems"] : "baseline", ["justifyContent"] : "center", ["fontFamily"] : "monospace", ["--default-font-family"] : "monospace", ["gap"] : "0.5rem" })}), "Built with ", (jsx("svg", ({"aria-label":"Reflex",css:({ ["fill"] : "currentColor" }),height:"12",role:"img",width:"56",xmlns:"http://www.w3.org/2000/svg"}), (jsx("path", ({d:"M0 11.5999V0.399902H8.96V4.8799H6.72V2.6399H2.24V4.8799H6.72V7.1199H2.24V11.5999H0ZM6.72 11.5999V7.1199H8.96V11.5999H6.72Z"}))), (jsx("path", ({d:"M11.2 11.5999V0.399902H17.92V2.6399H13.44V4.8799H17.92V7.1199H13.44V9.3599H17.92V11.5999H11.2Z"}))), (jsx("path", ({d:"M20.16 11.5999V0.399902H26.88V2.6399H22.4V4.8799H26.88V7.1199H22.4V11.5999H20.16Z"}))), (jsx("path", ({d:"M29.12 11.5999V0.399902H31.36V9.3599H35.84V11.5999H29.12Z"}))), (jsx("path", ({d:"M38.08 11.5999V0.399902H44.8V2.6399H40.32V4.8799H44.8V7.1199H40.32V9.3599H44.8V11.5999H38.08Z"}))), (jsx("path", ({d:"M47.04 4.8799V0.399902H49.28V4.8799H47.04ZM53.76 4.8799V0.399902H56V4.8799H53.76ZM49.28 7.1199V4.8799H53.76V7.1199H49.28ZM47.04 11.5999V7.1199H49.28V11.5999H47.04ZM53.76 11.5999V7.1199H56V11.5999H53.76Z"}))), (jsx("title", ({}), "Reflex"))))))))))))),"""
-        """onError:((_error, _info) => (addEvents([(ReflexEvent("reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception", ({ ["info"] : ((((_error?.["name"]+": ")+_error?.["message"])+"\\n")+_error?.["stack"]), ["component_stack"] : _info?.["componentStack"] }), ({  })))], [_error, _info], ({  }))))"""
-        + "},"
+        + "jsx(EventLoopProvider,{},"
+        + f"jsx({error_boundary_tag},{{}},"
+        # ErrorBoundary memoized: on_error trigger -> own memo module.
         + 'jsx(RadixThemesText,{as:"p"},'
         + "jsx(RadixThemesColorModeProvider,{},"
         + "jsx(Fragment,{},"
-        + "jsx(MemoizedToastProvider,{},),"
+        + f"jsx({toast_provider_tag},{{}},),"
         + "jsx(Fragment2,{},"
         + "jsx(Fragment,{},"
-        + "jsx(DefaultOverlayComponents,{},),"
+        + f"jsx({overlay_tag},{{}},),"
         + "jsx(Fragment,{},"
         + "children"
-        ")))))))" + (")" if react_strict_mode else "") + "))\n}"
+        + "))))))))))"
+        + (")" if react_strict_mode else "")
+        + ")\n}"
     )
     assert expected.split(",") == function_app_definition.split(",")
 
