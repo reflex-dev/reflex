@@ -1087,6 +1087,40 @@ def test_match_stateful_condition_memoizes_whole_match_and_stateful_branch() -> 
     assert any("withprop" in tag.lower() for tag in wrapper_tags)
 
 
+def test_match_literal_subject_stateful_condition_is_memoized() -> None:
+    """Match with a literal subject and a state Var in a case condition is memoized.
+
+    The case-condition Vars (not just the subject) must count toward Match's
+    statefulness. Otherwise the compiled ``switch`` references the substate
+    context variable without a ``useContext`` binding, raising
+    ``ReferenceError: Can't find variable`` at render. Regression test.
+    """
+
+    def page() -> Component:
+        comp = rx.match(
+            True,
+            (
+                SpecialFormMemoState.value == "a",
+                WithProp.create(label=LiteralVar.create("A")),
+            ),
+            (
+                SpecialFormMemoState.value == "b",
+                WithProp.create(label=LiteralVar.create("B")),
+            ),
+            WithProp.create(label=LiteralVar.create("default")),
+        )
+        assert isinstance(comp, Component)
+        return comp
+
+    ctx, _page_ctx = _compile_single_page(page)
+    wrapper_tags = tuple(ctx.memoize_wrappers)
+    assert any("match" in tag.lower() for tag in wrapper_tags), (
+        "Match with a state Var in a case condition (and a literal subject) "
+        "must be memoized so the condition's useContext binding is emitted; "
+        f"got wrappers: {list(wrapper_tags)}"
+    )
+
+
 def test_cond_stateful_branch_component_renders_via_memoized_wrapper() -> None:
     """Components inside Cond branches must render via their memo wrappers.
 
