@@ -13,8 +13,9 @@ from reflex_base.components.component import (
     field,
 )
 from reflex_base.components.memoize_helpers import get_memoized_event_triggers
+from reflex_base.components.state_context import get_event_app_wraps
 from reflex_base.constants import Dirs
-from reflex_base.constants.compiler import Hooks, Imports
+from reflex_base.constants.compiler import Imports
 from reflex_base.environment import environment
 from reflex_base.event import (
     CallableEventSpec,
@@ -46,15 +47,29 @@ from reflex_components_core.el.elements.typography import Div
 
 DEFAULT_UPLOAD_ID: str = "default"
 
-upload_files_context_var_data: VarData = VarData(
-    imports={
-        "react": "useContext",
-        f"$/{Dirs.CONTEXTS_PATH}": "UploadFilesContext",
-    },
-    hooks={
-        "const [filesById, setFilesById] = useContext(UploadFilesContext);": None,
-    },
-)
+
+def get_upload_files_context_var_data() -> VarData:
+    """Build the VarData for vars reading the upload-files React context.
+
+    Defined as a function (not a module-level value) because it references
+    ``UploadFilesProvider``, which is declared further down in this module.
+    Returns a fresh instance per call so render-cache state can't leak
+    across compile runs via ``copy.deepcopy``.
+
+    Returns:
+        A new VarData carrying the upload-context import, hook, and the
+        ``UploadFilesProvider`` app_wrap declaration.
+    """
+    return VarData(
+        imports={
+            "react": "useContext",
+            f"$/{Dirs.CONTEXTS_PATH}": "UploadFilesContext",
+        },
+        hooks={
+            "const [filesById, setFilesById] = useContext(UploadFilesContext);": None,
+        },
+        app_wraps=((5, UploadFilesProvider.create()),),
+    )
 
 
 def upload_file(id_: str | Var[str] = DEFAULT_UPLOAD_ID) -> Var:
@@ -81,7 +96,7 @@ def upload_file(id_: str | Var[str] = DEFAULT_UPLOAD_ID) -> Var:
         _js_expr=var_name,
         _var_type=EventChain,
         _var_data=VarData.merge(
-            upload_files_context_var_data, id_var._get_all_var_data()
+            get_upload_files_context_var_data(), id_var._get_all_var_data()
         ),
     )
 
@@ -100,7 +115,7 @@ def selected_files(id_: str | Var[str] = DEFAULT_UPLOAD_ID) -> Var:
         _js_expr=f"(filesById[{id_var!s}] ? filesById[{id_var!s}].map((f) => f.name) : [])",
         _var_type=list[str],
         _var_data=VarData.merge(
-            upload_files_context_var_data, id_var._get_all_var_data()
+            get_upload_files_context_var_data(), id_var._get_all_var_data()
         ),
     ).guess_type()
 
@@ -384,7 +399,7 @@ class Upload(MemoizationLeaf):
         var_data = VarData.merge(
             VarData(
                 imports=Imports.EVENTS,
-                hooks={Hooks.EVENTS: None},
+                app_wraps=get_event_app_wraps(),
             ),
             use_dropzone_arguments._get_all_var_data(),
             VarData(
@@ -441,12 +456,6 @@ class Upload(MemoizationLeaf):
             placeholder = placeholders[0]
             return (arg_value[0], placeholder)
         return arg_value
-
-    @staticmethod
-    def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
-        return {
-            (5, "UploadFilesProvider"): UploadFilesProvider.create(),
-        }
 
 
 class StyledUpload(Upload):

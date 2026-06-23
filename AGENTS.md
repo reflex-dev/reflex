@@ -19,6 +19,8 @@ uv run pytest tests/integration                                  # integration t
 uv run ruff check .                                              # lint
 uv run ruff format .                                             # format
 uv run pyright reflex tests                                      # type check
+uv run python scripts/check_min_deps.py                          # validate each package's declared minimum dep versions (pyright in isolated min-version envs; *.dev pins resolve from the local workspace, all other deps from PyPI)
+uv run python scripts/check_min_deps.py --check-dev-pins [pkg]    # publish gate: fail if pkg (default: all) declares an unpublishable *.dev dependency pin
 uv run python scripts/make_pyi.py                                # regenerate .pyi stubs
 uv run pre-commit run --all-files                                # all pre-commit hooks
 ```

@@ -13,7 +13,7 @@ rx.el.div(
         width="100%",
         height="400px",
     ),
-    class_name="p-1 my-4 rounded-lg bg-slate-5",
+    class_name="p-1 my-4 rounded-lg bg-secondary-5",
 )
 ```
 

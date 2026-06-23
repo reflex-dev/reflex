@@ -1,0 +1,41 @@
+name: docs tests
+
+on:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - 'docs/**'
+      - 'packages/reflex-components-core/src/reflex_components_core/core/upload.py'
+      - '.github/workflows/docs_tests.yml'
+  push:
+    branches: ["main"]
+    paths:
+      - 'docs/**'
+      - 'packages/reflex-components-core/src/reflex_components_core/core/upload.py'
+      - '.github/workflows/docs_tests.yml'
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  docs-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: "3.12"
+          run-uv-sync: true
+          working-directory: ./docs/app
+      - name: Run docs app tests
+        working-directory: ./docs/app
+        run: uv run --no-sync pytest tests/ -v

@@ -31,7 +31,6 @@ DEFAULT_BUNDLED_LIBRARIES = [
     "@emotion/react",
     f"$/{constants.Dirs.UTILS}/context",
     f"$/{constants.Dirs.UTILS}/state",
-    f"$/{constants.Dirs.UTILS}/components",
 ]
 bundled_libraries = list(DEFAULT_BUNDLED_LIBRARIES)
 

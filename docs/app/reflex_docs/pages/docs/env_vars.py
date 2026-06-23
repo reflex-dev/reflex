@@ -80,19 +80,19 @@ class EnvVarDocs:
                     rx.table.row(
                         rx.table.column_header_cell(
                             "Name",
-                            class_name="font-small text-slate-12 text-normal w-[20%] justify-start pl-4 font-bold",
+                            class_name="font-small text-secondary-12 text-normal w-[20%] justify-start pl-4 font-bold",
                         ),
                         rx.table.column_header_cell(
                             "Type",
-                            class_name="font-small text-slate-12 text-normal w-[15%] justify-start pl-4 font-bold",
+                            class_name="font-small text-secondary-12 text-normal w-[15%] justify-start pl-4 font-bold",
                         ),
                         rx.table.column_header_cell(
                             "Default",
-                            class_name="font-small text-slate-12 text-normal w-[15%] justify-start pl-4 font-bold",
+                            class_name="font-small text-secondary-12 text-normal w-[15%] justify-start pl-4 font-bold",
                         ),
                         rx.table.column_header_cell(
                             "Description",
-                            class_name="font-small text-slate-12 text-normal w-[50%] justify-start pl-4 font-bold",
+                            class_name="font-small text-secondary-12 text-normal w-[50%] justify-start pl-4 font-bold",
                         ),
                     )
                 ),
@@ -120,7 +120,7 @@ class EnvVarDocs:
                             ),
                             rx.table.cell(
                                 render_markdown(cls.get_env_var_docstring(name) or ""),
-                                class_name="font-small text-slate-11 w-[50%]",
+                                class_name="font-small text-secondary-11 w-[50%]",
                             ),
                         )
                         for name, var in env_vars
