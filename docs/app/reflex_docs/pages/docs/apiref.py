@@ -15,7 +15,7 @@ modules = [
     rx.event.Event,
     rx.event.EventHandler,
     rx.event.EventSpec,
-    rx.Model,
+    # rx.Model excluded: deprecated in 0.9.2, removed in 1.0.
     # rx.testing.AppHarness,
     StateManager,
     # rx.state.BaseState,
