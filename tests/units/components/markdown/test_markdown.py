@@ -1,6 +1,8 @@
 import pytest
-from reflex_base.components.component import Component, memo
+from reflex_base.components.component import Component
+from reflex_base.components.memo import memo
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
+from reflex_base.utils import memo_paths
 from reflex_base.vars.base import Var
 from reflex_components_code.code import CodeBlock
 from reflex_components_code.shiki_code_block import ShikiHighLevelCodeBlock
@@ -13,6 +15,10 @@ from reflex_components_radix.themes.typography.heading import Heading
 import reflex as rx
 from reflex.compiler import compiler
 from reflex.compiler.plugins import default_page_plugins
+
+# The ``code_block`` memo built by ``syntax_highlighter_memoized_component`` is
+# defined in this module, so it compiles to a per-module-unique symbol.
+_CODE_BLOCK_MEMO_SYM = memo_paths.mirrored_symbol("CodeBlock", __name__)
 
 
 class CustomMarkdownComponent(Component, MarkdownComponentMap):
@@ -42,7 +48,7 @@ class CustomMarkdownComponent(Component, MarkdownComponentMap):
 
 def syntax_highlighter_memoized_component(codeblock: type[Component]):
     @memo
-    def code_block(code: str, language: str):
+    def code_block(code: Var[str], language: Var[str]) -> Component:
         return Box.create(
             codeblock.create(
                 code,
@@ -175,12 +181,16 @@ def test_create_map_fn_var_subclass(cls, fn_body, fn_args, explicit_return, expe
         (
             "pre",
             {"pre": syntax_highlighter_memoized_component(CodeBlock)},
-            r"""(({node, ...rest}) => { const {node: childNode, className, children: components, ...props} = rest.children.props; const children = String(Array.isArray(components) ? components.join('\n') : components).replace(/\n$/, ''); const match = (className || '').match(/language-(?<lang>.*)/); let _language = match ? match[1] : ''; ;             return jsx(CodeBlock,{code:children,language:_language,...props},);         })""",
+            r"""(({node, ...rest}) => { const {node: childNode, className, children: components, ...props} = rest.children.props; const children = String(Array.isArray(components) ? components.join('\n') : components).replace(/\n$/, ''); const match = (className || '').match(/language-(?<lang>.*)/); let _language = match ? match[1] : ''; ;             return jsx("""
+            + _CODE_BLOCK_MEMO_SYM
+            + r""",{code:children,language:_language,...props},);         })""",
         ),
         (
             "pre",
             {"pre": syntax_highlighter_memoized_component(ShikiHighLevelCodeBlock)},
-            r"""(({node, ...rest}) => { const {node: childNode, className, children: components, ...props} = rest.children.props; const children = String(Array.isArray(components) ? components.join('\n') : components).replace(/\n$/, ''); const match = (className || '').match(/language-(?<lang>.*)/); let _language = match ? match[1] : ''; ;             return jsx(CodeBlock,{code:children,language:_language,...props},);         })""",
+            r"""(({node, ...rest}) => { const {node: childNode, className, children: components, ...props} = rest.children.props; const children = String(Array.isArray(components) ? components.join('\n') : components).replace(/\n$/, ''); const match = (className || '').match(/language-(?<lang>.*)/); let _language = match ? match[1] : ''; ;             return jsx("""
+            + _CODE_BLOCK_MEMO_SYM
+            + r""",{code:children,language:_language,...props},);         })""",
         ),
     ],
 )
@@ -222,7 +232,7 @@ def _compile_page_output(root: Component) -> str:
         hooks.compile_page(page_ctx, compile_context=compile_ctx)
         _, page_code = compiler.compile_page_from_context(page_ctx)
         memo_files, _ = compiler.compile_memo_components(
-            (), compile_ctx.auto_memo_components.values()
+            compile_ctx.auto_memo_components.values()
         )
     return "\n".join([page_code, *(code for _, code in memo_files)])
 

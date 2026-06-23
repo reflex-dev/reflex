@@ -179,6 +179,7 @@ class BaseConfig:
         show_built_with_reflex: Whether to display the sticky "Built with Reflex" badge on all pages.
         is_reflex_cloud: Whether the app is running in the reflex cloud environment.
         extra_overlay_function: Extra overlay function to run after the app is built. Formatted such that `from path_0.path_1... import path[-1]`, and calling it with no arguments would work. For example, "reflex_components_moment.moment".
+        hydrate_fallback: Function returning the component shown while the page is hydrating (React Router's HydrateFallback), used when App.hydrate_fallback is not set. Formatted such that `from path_0.path_1... import path[-1]`, and calling it with no arguments would work. For example, "my_app.components.loading".
         plugins: List of plugins to use in the app.
         disable_plugins: List of plugin types to disable in the app.
         transport: The transport method for client-server communication.
@@ -254,6 +255,8 @@ class BaseConfig:
     is_reflex_cloud: bool = False
 
     extra_overlay_function: str | None = None
+
+    hydrate_fallback: str | None = None
 
     plugins: list[Plugin] = dataclasses.field(default_factory=list)
 

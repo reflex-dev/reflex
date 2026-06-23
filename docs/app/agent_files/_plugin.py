@@ -686,7 +686,7 @@ def generate_dynamic_api_reference_files() -> tuple[tuple[Path, str], ...]:
         rx.event.Event,
         rx.event.EventHandler,
         rx.event.EventSpec,
-        rx.Model,
+        # rx.Model excluded: deprecated in 0.9.2, removed in 1.0.
         StateManager,
         rx.State,
         ImportVar,

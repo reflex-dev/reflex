@@ -130,13 +130,13 @@ class HeadingLink(rx.link.__self__):
             rx.icon(
                 tag="link",
                 size=18,
-                class_name="!text-violet-11 invisible transition-[visibility_0.075s_ease-out] group-hover:visible mt-"
+                class_name="!text-primary-11 invisible transition-[visibility_0.075s_ease-out] group-hover:visible mt-"
                 + mt,
             ),
             underline="none",
             href=href,
             on_click=lambda: rx.set_clipboard(href),
-            class_name="flex flex-row items-center gap-2 hover:!text-violet-11 cursor-pointer mb-3 transition-colors group text-m-slate-12 dark:text-m-slate-3 ",
+            class_name="flex flex-row items-center gap-2 hover:!text-primary-11 cursor-pointer mb-3 transition-colors group text-secondary-12 ",
         )
 
 
@@ -144,7 +144,7 @@ h_comp_common = HeadingLink.create
 
 
 @rx.memo
-def h1_comp(text: str) -> rx.Component:
+def h1_comp(text: rx.Var[str]) -> rx.Component:
     """H1 comp.
 
     Returns:
@@ -158,7 +158,7 @@ def h1_comp(text: str) -> rx.Component:
 
 
 @rx.memo
-def h1_comp_xd(text: str) -> rx.Component:
+def h1_comp_xd(text: rx.Var[str]) -> rx.Component:
     """H1 comp xd.
 
     Returns:
@@ -172,7 +172,7 @@ def h1_comp_xd(text: str) -> rx.Component:
 
 
 @rx.memo
-def h2_comp(text: str) -> rx.Component:
+def h2_comp(text: rx.Var[str]) -> rx.Component:
     """H2 comp.
 
     Returns:
@@ -187,7 +187,7 @@ def h2_comp(text: str) -> rx.Component:
 
 
 @rx.memo
-def h2_comp_xd(text: str) -> rx.Component:
+def h2_comp_xd(text: rx.Var[str]) -> rx.Component:
     """H2 comp xd.
 
     Returns:
@@ -202,7 +202,7 @@ def h2_comp_xd(text: str) -> rx.Component:
 
 
 @rx.memo
-def h3_comp(text: str) -> rx.Component:
+def h3_comp(text: rx.Var[str]) -> rx.Component:
     """H3 comp.
 
     Returns:
@@ -217,7 +217,7 @@ def h3_comp(text: str) -> rx.Component:
 
 
 @rx.memo
-def h3_comp_xd(text: str) -> rx.Component:
+def h3_comp_xd(text: rx.Var[str]) -> rx.Component:
     """H3 comp xd.
 
     Returns:
@@ -232,7 +232,7 @@ def h3_comp_xd(text: str) -> rx.Component:
 
 
 @rx.memo
-def h4_comp(text: str) -> rx.Component:
+def h4_comp(text: rx.Var[str]) -> rx.Component:
     """H4 comp.
 
     Returns:
@@ -247,7 +247,7 @@ def h4_comp(text: str) -> rx.Component:
 
 
 @rx.memo
-def h4_comp_xd(text: str) -> rx.Component:
+def h4_comp_xd(text: rx.Var[str]) -> rx.Component:
     """H4 comp xd.
 
     Returns:
@@ -262,7 +262,7 @@ def h4_comp_xd(text: str) -> rx.Component:
 
 
 @rx.memo
-def img_comp_xd(src: str) -> rx.Component:
+def img_comp_xd(src: rx.Var[str]) -> rx.Component:
     """Img comp xd.
 
     Returns:
