@@ -14,4 +14,4 @@ def get_leadpipe_trackers() -> rx.Component:
     Returns:
         rx.Component: The Leadpipe script component.
     """
-    return rx.el.script(src=LEADPIPE_SCRIPT_URL, async_=True)
+    return rx.script(src=LEADPIPE_SCRIPT_URL)
