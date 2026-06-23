@@ -13,6 +13,7 @@ from reflex_site_shared.constants import (
     GITHUB_STARS,
     GITHUB_URL,
     REFLEX_ASSETS_CDN,
+    REFLEX_BUILD_LOGIN_URL,
     REFLEX_BUILD_URL,
 )
 from reflex_site_shared.views.sidebar import navbar_sidebar_button
@@ -772,23 +773,22 @@ def navigation_menu() -> rx.Component:
                         variant="outline",
                         native_button=False,
                     ),
-                    href=REFLEX_BUILD_URL,
+                    href=REFLEX_BUILD_LOGIN_URL,
                     target="_blank",
                 ),
-                class_name="xl:flex hidden",
                 custom_attrs={"role": "menuitem"},
             ),
             ui.navigation_menu.item(
                 demo_form_dialog(
                     trigger=marketing_button(
-                        rx.el.span("Book a Demo", class_name="max-xl:hidden"),
-                        rx.el.span("Demo", class_name="xl:hidden"),
+                        "Book a Demo",
                         size="sm",
                         variant="primary",
                         class_name="whitespace-nowrap",
                         native_button=False,
                     ),
                 ),
+                class_name="max-xl:hidden",
                 unstyled=True,
                 custom_attrs={"role": "menuitem"},
             ),
