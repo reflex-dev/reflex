@@ -90,6 +90,10 @@ class Plotly(NoSSRComponent):
 
     config: Var[dict] = field(doc="The config of the graph.")
 
+    locale: Var[str] = field(
+        doc="The locale code used for Plotly formatting and modebar labels."
+    )
+
     use_resize_handler: Var[bool] = field(
         default=LiteralVar.create(True),
         doc="If true, the graph will resize when the window is resized.",
@@ -175,16 +179,23 @@ class Plotly(NoSSRComponent):
         doc="Fired when a hovered element is no longer hovered."
     )
 
-    def add_imports(self) -> dict[str, str]:
+    def add_imports(self) -> ImportDict:
         """Add imports for the plotly component.
 
         Returns:
             The imports for the plotly component.
         """
-        return {
+        imports: ImportDict = {
             # For merging plotly data/layout/templates.
-            "mergician@v2.0.2": "mergician"
+            "mergician@v2.0.2": "mergician",
         }
+        if self.locale is not None:
+            # For locale dictionaries injected into plot config.locales.
+            imports["plotly.js-locales@3.5.0"] = ImportVar(
+                tag="plotlyLocales",
+                is_default=True,
+            )
+        return imports
 
     def add_custom_code(self) -> list[str]:
         """Add custom codes for processing the plotly points data.
@@ -192,7 +203,7 @@ class Plotly(NoSSRComponent):
         Returns:
             Custom code snippets for the module level.
         """
-        return [
+        codes = [
             "const removeUndefined = (obj) => {Object.keys(obj).forEach(key => obj[key] === undefined && delete obj[key]); return obj}",
             """
 const extractPoints = (points) => {
@@ -224,6 +235,45 @@ const extractPoints = (points) => {
 }
 """,
         ]
+        if self.locale is not None:
+            codes.append("""
+const _rxResolvePlotlyLocaleData = (plotlyLocales, locale) => {
+    if (locale === undefined || locale === null) return null;
+    const localeString = String(locale).trim();
+    if (localeString === "") return null;
+
+    const normalizedLocale = localeString.toLowerCase().replace(/_/g, "-");
+    const localesObject = plotlyLocales?.default ?? plotlyLocales;
+    if (!localesObject || typeof localesObject !== "object") return null;
+
+    return (
+        localesObject[normalizedLocale] ??
+        localesObject[normalizedLocale.split("-")[0]] ??
+        null
+    );
+}
+
+const _rxGetPlotlyLocaleConfig = (config, locale, plotlyLocales) => {
+    const localeData = _rxResolvePlotlyLocaleData(plotlyLocales, locale);
+    if (!localeData) {
+        if (locale === undefined || locale === null || String(locale).trim() === "") {
+            return config;
+        }
+        return { ...config, locale: String(locale) };
+    }
+
+    const localeName = localeData?.name ?? String(locale);
+    return {
+        ...config,
+        locale: localeName,
+        locales: {
+            ...(config?.locales ?? {}),
+            [localeName]: localeData,
+        },
+    };
+}
+""")
+        return codes
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -251,7 +301,7 @@ const extractPoints = (points) => {
 
     def _exclude_props(self) -> set[str]:
         # These props are handled specially in the _render function
-        return {"data", "layout", "template"}
+        return {"data", "layout", "template", "locale"}
 
     def _render(self):
         tag = super()._render()
@@ -284,6 +334,16 @@ const extractPoints = (points) => {
                     # Spread the figure dict over props, nothing to merge.
                     Var(_js_expr=str(figure)),
                 ]
+            )
+        if self.locale is not None:
+            config = self.config if self.config is not None else LiteralVar.create({})
+            tag = tag.set(
+                props={
+                    **tag.props,
+                    "config": Var(
+                        _js_expr=f"_rxGetPlotlyLocaleConfig({config!s},{self.locale!s},plotlyLocales)"
+                    ),
+                },
             )
         return tag
 
@@ -327,7 +387,7 @@ class PlotlyBasic(Plotly):
 
     lib_dependencies: list[str] = ["plotly.js-basic-dist-min@3.5.1"]
 
-    def add_imports(self) -> ImportDict | list[ImportDict]:
+    def add_imports(self) -> ImportDict:
         """Add imports for the plotly basic component.
 
         Returns:
@@ -353,7 +413,7 @@ class PlotlyCartesian(Plotly):
 
     lib_dependencies: list[str] = ["plotly.js-cartesian-dist-min@3.5.1"]
 
-    def add_imports(self) -> ImportDict | list[ImportDict]:
+    def add_imports(self) -> ImportDict:
         """Add imports for the plotly cartesian component.
 
         Returns:
@@ -379,7 +439,7 @@ class PlotlyGeo(Plotly):
 
     lib_dependencies: list[str] = ["plotly.js-geo-dist-min@3.5.1"]
 
-    def add_imports(self) -> ImportDict | list[ImportDict]:
+    def add_imports(self) -> ImportDict:
         """Add imports for the plotly geo component.
 
         Returns:
@@ -405,7 +465,7 @@ class PlotlyGl3d(Plotly):
 
     lib_dependencies: list[str] = ["plotly.js-gl3d-dist-min@3.5.1"]
 
-    def add_imports(self) -> ImportDict | list[ImportDict]:
+    def add_imports(self) -> ImportDict:
         """Add imports for the plotly 3d component.
 
         Returns:
@@ -431,7 +491,7 @@ class PlotlyGl2d(Plotly):
 
     lib_dependencies: list[str] = ["plotly.js-gl2d-dist-min@3.5.1"]
 
-    def add_imports(self) -> ImportDict | list[ImportDict]:
+    def add_imports(self) -> ImportDict:
         """Add imports for the plotly 2d component.
 
         Returns:
@@ -457,7 +517,7 @@ class PlotlyMapbox(Plotly):
 
     lib_dependencies: list[str] = ["plotly.js-mapbox-dist-min@3.5.1"]
 
-    def add_imports(self) -> ImportDict | list[ImportDict]:
+    def add_imports(self) -> ImportDict:
         """Add imports for the plotly mapbox component.
 
         Returns:
@@ -483,7 +543,7 @@ class PlotlyFinance(Plotly):
 
     lib_dependencies: list[str] = ["plotly.js-finance-dist-min@3.5.1"]
 
-    def add_imports(self) -> ImportDict | list[ImportDict]:
+    def add_imports(self) -> ImportDict:
         """Add imports for the plotly finance component.
 
         Returns:
@@ -509,7 +569,7 @@ class PlotlyStrict(Plotly):
 
     lib_dependencies: list[str] = ["plotly.js-strict-dist-min@3.5.1"]
 
-    def add_imports(self) -> ImportDict | list[ImportDict]:
+    def add_imports(self) -> ImportDict:
         """Add imports for the plotly strict component.
 
         Returns:
