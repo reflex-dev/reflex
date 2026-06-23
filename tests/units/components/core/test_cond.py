@@ -185,13 +185,16 @@ def test_cond_assert_types() -> None:
     # literal str, literal str -> Var[Literal[...]]
     _ = assert_type(cond(True, "hello", "world"), Var[Literal["hello", "world"]])
 
+    # non-string T, T -> Var[T] (only literal strings get the narrowing overloads)
+    _ = assert_type(cond(True, 1, 2), Var[int])
+
     # T, U -> Var[T | U]
     _ = assert_type(cond(True, "hello", 3), Var[str | int])
 
-    # literal str, literal Var[str] -> Var[Literal[...]]
+    # literal str, Var[Literal[...]] -> Var[Literal[...]]
     _ = assert_type(cond(True, "hello", literal_var_str), Var[Literal["hello", "a"]])
 
-    # literal Var[str], literal str -> Var[Literal[...]]
+    # Var[Literal[...]], literal str -> Var[Literal[...]]
     _ = assert_type(cond(True, literal_var_str, "world"), Var[Literal["a", "world"]])
 
     # literal str, Var[U] -> Var[Literal[...] | U]
