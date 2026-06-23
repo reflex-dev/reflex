@@ -272,7 +272,7 @@ def get_var_for_field(cls: type[BaseState], name: str, f: Field) -> Var:
 # inclusion can only be decided asynchronously be deferred into the delta as a
 # coroutine and then omitted post-hoc. Compared by identity (the object itself is
 # the contract); never serialized into a delta sent to the client.
-_DROP_FROM_DELTA: Any = object()
+_DROP_FROM_DELTA: Final = object()
 
 
 async def _resolve_delta(delta: Delta) -> Delta:
