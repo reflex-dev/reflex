@@ -44,7 +44,7 @@ from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
 from reflex_base.registry import RegistrationContext
 from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
-from reflex_base.utils import console
+from reflex_base.utils import console, memo_paths
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
 from reflex_components_core.base.error_boundary import ErrorBoundary
@@ -283,6 +283,7 @@ class UnevaluatedPage:
     on_load: EventType[()] | None = None
     meta: Sequence[Mapping[str, Any] | Component] = ()
     context: Mapping[str, Any] = dataclasses.field(default_factory=dict)
+    _source_module: str | None = None
 
     def merged_with(self, other: UnevaluatedPage) -> UnevaluatedPage:
         """Merge the other page into this one.
@@ -301,6 +302,9 @@ class UnevaluatedPage:
             else other.description,
             on_load=self.on_load if self.on_load is not None else other.on_load,
             context=self.context if self.context is not None else other.context,
+            _source_module=self._source_module
+            if self._source_module is not None
+            else other._source_module,
         )
 
 
@@ -326,8 +330,8 @@ class App(MiddlewareMixin, LifespanMixin):
     ```
 
     Attributes:
-        theme: Deprecated legacy shortcut for configuring the app-level Radix theme.
-        style: The [global style](https://reflex.dev/docs/styling/overview/#global-styles}) for the app.
+        theme: Deprecated legacy shortcut for configuring the app-level Radix [theme](https://reflex.dev/docs/styling/theming/).
+        style: The [global style](https://reflex.dev/docs/styling/overview/#global-styles) for the app.
         stylesheets: A list of URLs to [stylesheets](https://reflex.dev/docs/styling/custom-stylesheets/) to include in the app.
         reset_style: Whether to include CSS reset for margin and padding. Defaults to True.
         app_wraps: App wraps to be applied to the whole app. Expected to be a dictionary of (order, name) to a function that takes whether the state is enabled and optionally returns a component.
@@ -336,13 +340,12 @@ class App(MiddlewareMixin, LifespanMixin):
         sio: The Socket.IO AsyncServer instance.
         html_lang: The language to add to the html root tag of every page.
         html_custom_attrs: Attributes to add to the html root tag of every page.
-        enable_state: Whether to enable state for the app. If False, the app will not use state.
+        enable_state: Whether to enable [state](https://reflex.dev/docs/state/overview/) for the app. If False, the app will not use state.
         admin_dash: Admin dashboard to view and manage the database.
-        frontend_exception_handler: Frontend error handler function.
-        backend_exception_handler: Backend error handler function.
-        toaster: Put the toast provider in the app wrap.
-        api_transformer: Transform the ASGI app before running it.
-        hydrate_fallback: Component to render while the page is hydrating (React Router's HydrateFallback). Takes precedence over the hydrate_fallback config (REFLEX_HYDRATE_FALLBACK).
+        frontend_exception_handler: Frontend [error handler](https://reflex.dev/docs/utility-methods/exception-handlers/) function.
+        backend_exception_handler: Backend [error handler](https://reflex.dev/docs/utility-methods/exception-handlers/) function.
+        toaster: Put the [toast](https://reflex.dev/docs/library/overlay/toast/) provider in the app wrap.
+        api_transformer: One or more transforms applied to the backend ASGI app before it runs — mount a FastAPI/Starlette app or wrap it in ASGI middleware. See the [API Transformer docs](https://reflex.dev/docs/api-routes/overview/) for examples.
     """
 
     theme: Component | None = dataclasses.field(default=None)
@@ -915,6 +918,13 @@ class App(MiddlewareMixin, LifespanMixin):
         # Check if the route given is valid
         verify_route_validity(route)
 
+        if isinstance(component, Callable):
+            source_module = memo_paths.capture_source_module(component)
+        else:
+            # The user passed a pre-built Component instance — fall back to
+            # walking the call stack from add_page's caller.
+            source_module = memo_paths.resolve_user_module_from_frame(skip=1)
+
         unevaluated_page = UnevaluatedPage(
             component=component,
             route=route,
@@ -924,6 +934,7 @@ class App(MiddlewareMixin, LifespanMixin):
             on_load=on_load,
             meta=meta,
             context=context or {},
+            _source_module=source_module,
         )
 
         if route in self._unevaluated_pages:

@@ -32,7 +32,8 @@ class Dirs(SimpleNamespace):
     UTILS = "utils"
     # The name of the state file.
     STATE_PATH = UTILS + "/state"
-    # The name of the components file.
+    # The name of the components file, where memos that can't be mirrored to a
+    # user module (``__main__``, unsafe names) get one file per memo.
     COMPONENTS_PATH = UTILS + "/components"
     # The name of the contexts file.
     CONTEXTS_PATH = UTILS + "/context"
@@ -48,6 +49,10 @@ class Dirs(SimpleNamespace):
     PAGES = "app"
     # The name of the routes directory.
     ROUTES = "routes"
+    # Subdirectory holding memo modules mirrored from their defining Python
+    # module, kept separate from other ``.web`` output so a mirrored module
+    # path can't collide with framework files (e.g. ``app/``, ``utils/``).
+    APP_COMPONENTS = "app_components"
     # The name of the env json file.
     ENV_JSON = "env.json"
     # The name of the reflex json file.
