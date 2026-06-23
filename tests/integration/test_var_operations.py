@@ -47,6 +47,9 @@ def VarOperations():
         str_var2: rx.Field[str] = rx.field("second")
         str_var3: rx.Field[str] = rx.field("ThIrD")
         str_var4: rx.Field[str] = rx.field("a long string")
+        str_var5: rx.Field[str] = rx.field(" spaced ")
+        str_var6: rx.Field[str] = rx.field("-^[a]^-stripped-^[a]^-")
+        strip_chars: rx.Field[str] = rx.field("-^[]a")
         dict1: rx.Field[dict[int, int]] = rx.field({1: 2})
         dict2: rx.Field[dict[int, int]] = rx.field({3: 4})
         html_str: rx.Field[str] = rx.field("<div>hello</div>")
@@ -565,6 +568,24 @@ def VarOperations():
             rx.text(VarOperationState.str_var3.lower(), id="str_lower"),
             rx.text(VarOperationState.str_var3.upper(), id="str_upper"),
             rx.text(VarOperationState.str_var4.split(" ").to_string(), id="str_split"),
+            rx.text(VarOperationState.str_var5.strip().to_string(), id="str_strip"),
+            rx.text(VarOperationState.str_var5.lstrip().to_string(), id="str_lstrip"),
+            rx.text(VarOperationState.str_var5.rstrip().to_string(), id="str_rstrip"),
+            rx.text(VarOperationState.str_var6.strip("-^[]a"), id="str_strip_chars"),
+            rx.text(VarOperationState.str_var6.lstrip("-^[]a"), id="str_lstrip_chars"),
+            rx.text(VarOperationState.str_var6.rstrip("-^[]a"), id="str_rstrip_chars"),
+            rx.text(
+                VarOperationState.str_var6.strip(VarOperationState.strip_chars),
+                id="str_strip_chars_var",
+            ),
+            rx.text(
+                VarOperationState.str_var6.lstrip(VarOperationState.strip_chars),
+                id="str_lstrip_chars_var",
+            ),
+            rx.text(
+                VarOperationState.str_var6.rstrip(VarOperationState.strip_chars),
+                id="str_rstrip_chars_var",
+            ),
             rx.text(VarOperationState.list3.join(""), id="list_join"),
             rx.text(VarOperationState.list3.join(","), id="list_join_comma"),
             # Index from an op var
@@ -938,6 +959,15 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("str_lower", "third"),
         ("str_upper", "THIRD"),
         ("str_split", '["a","long","string"]'),
+        ("str_strip", '"spaced"'),
+        ("str_lstrip", '"spaced "'),
+        ("str_rstrip", '" spaced"'),
+        ("str_strip_chars", "stripped"),
+        ("str_lstrip_chars", "stripped-^[a]^-"),
+        ("str_rstrip_chars", "-^[a]^-stripped"),
+        ("str_strip_chars_var", "stripped"),
+        ("str_lstrip_chars_var", "stripped-^[a]^-"),
+        ("str_rstrip_chars_var", "-^[a]^-stripped"),
         # str, int
         ("str_mult_int", "firstfirstfirstfirstfirst"),
         ("str_and_int", "5"),
