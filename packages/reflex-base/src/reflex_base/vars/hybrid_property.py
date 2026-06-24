@@ -112,9 +112,8 @@ class HybridProperty(property):
             from reflex.state import BaseState
 
             if issubclass(owner, BaseState):
-                # On a state, build the frontend var, but guard against reading a
-                # backend (underscore) var — that would silently bake a server-only
-                # value into the frontend instead of producing a reactive var.
+                if not owner.backend_vars:
+                    return self._get_var(owner)
                 property_name = (
                     self.fget.__name__ if self.fget is not None else "hybrid_property"
                 )
@@ -124,14 +123,19 @@ class HybridProperty(property):
     def var(self, func: Callable[[Any], Var]) -> Self:
         """Set the (optional) var function for the property.
 
+        Returns a new HybridProperty with the same getter/setter/deleter so
+        that each class gets its own descriptor — matching how property.setter
+        behaves and preventing shared-mixin mutation across subclasses.
+
         Args:
             func: The var function to set.
 
         Returns:
-            The property instance with the var function set.
+            A new property instance with the var function set.
         """
-        self._var = func
-        return self
+        new = type(self)(self.fget, self.fset, self.fdel, self.__doc__)
+        new._var = func
+        return new
 
 
 hybrid_property = HybridProperty

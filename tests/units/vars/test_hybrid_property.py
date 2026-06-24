@@ -58,6 +58,36 @@ def test_hybrid_property_frontend_var_access_ok():
     )
 
 
+def test_hybrid_property_var_returns_new_descriptor():
+    """var() must return a new descriptor, not mutate self, so mixin inheritance is safe."""
+
+    class Mixin:
+        @hybrid_property
+        def full(self) -> str:
+            return ""
+
+    original = Mixin.__dict__["full"]
+
+    class StateA(Mixin, rx.State):
+        first: str = "a"
+        last: str = "b"
+
+        @Mixin.full.var
+        def full(cls) -> Var:
+            return cls.first  # pyright: ignore[reportReturnType]
+
+    class StateB(Mixin, rx.State):
+        first: str = "x"
+        last: str = "y"
+
+    # var() must have produced a new object
+    assert StateA.__dict__["full"] is not original
+    # The mixin's descriptor must be unmodified
+    assert original._var is None
+    # StateB inherits the unmodified descriptor — no _var leak
+    assert StateB.__dict__.get("full") is None or StateB.__dict__["full"]._var is None
+
+
 def test_hybrid_property_on_object_var_not_guarded():
     """The guard is State-only; underscore fields on an object var are not affected.
 
