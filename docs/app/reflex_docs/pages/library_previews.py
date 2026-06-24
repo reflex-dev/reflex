@@ -71,12 +71,12 @@ def component_card(name: str, link: str, section: str) -> rx.Component:
             rx.box(
                 rx.text(
                     get_display_name(name),
-                    class_name="truncate font-base text-slate-12",
+                    class_name="truncate font-base text-secondary-12",
                 ),
-                rx.icon("chevron-right", size=14, class_name="!text-slate-9"),
+                rx.icon("chevron-right", size=14, class_name="!text-secondary-9"),
                 class_name="bottom-0 absolute flex flex-row justify-between w-full px-4 py-2 items-center",
             ),
-            class_name="rounded-xl border overflow-hidden relative box-border shadow-large bg-slate-2 hover:bg-slate-3 transition-bg border-slate-5",
+            class_name="rounded-xl border overflow-hidden relative box-border shadow-large bg-secondary-2 hover:bg-secondary-3 transition-bg border-secondary-5",
         ),
         href=link,
     )

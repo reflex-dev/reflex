@@ -428,6 +428,12 @@ export const applyEvent = async (event, socket, navigate, params) => {
  */
 export const applyRestEvent = async (event, socket, navigate, params) => {
   if (event.handler === "uploadFiles") {
+    // The compiled event names its extra bound handler args; collect just those
+    // so they reach the backend handler (no need to know the reserved keys).
+    const extra_args = {};
+    for (const name of event.payload.__reflex_event_arg_names ?? []) {
+      extra_args[name] = event.payload[name];
+    }
     // Start upload, but do not wait for it, which would block other events.
     uploadFiles(
       event.name,
@@ -435,6 +441,7 @@ export const applyRestEvent = async (event, socket, navigate, params) => {
       event.payload.upload_id,
       event.payload.on_upload_progress,
       event.payload.extra_headers,
+      extra_args,
       socket,
       refs,
       getBackendURL,
@@ -1171,6 +1178,56 @@ export const pyOr = (a, b) => (isTrue(a) ? a : b());
  * @returns {A | B} `a` if python-falsy, otherwise the result of `b()`.
  */
 export const pyAnd = (a, b) => (isTrue(a) ? b() : a);
+
+/***
+ * Python-semantics str.lstrip: remove leading characters in the given set.
+ * @param {string} s The string to strip.
+ * @param {string?} chars Characters to remove; null/undefined strips whitespace.
+ * @returns {string} The stripped string.
+ */
+export const pyLstrip = (s, chars) => {
+  if (chars == null) return s.trimStart();
+  const charSet = new Set(chars);
+  let start = 0;
+  while (start < s.length) {
+    const cp = String.fromCodePoint(s.codePointAt(start));
+    if (!charSet.has(cp)) break;
+    start += cp.length;
+  }
+  return s.slice(start);
+};
+
+/***
+ * Python-semantics str.rstrip: remove trailing characters in the given set.
+ * @param {string} s The string to strip.
+ * @param {string?} chars Characters to remove; null/undefined strips whitespace.
+ * @returns {string} The stripped string.
+ */
+export const pyRstrip = (s, chars) => {
+  if (chars == null) return s.trimEnd();
+  const charSet = new Set(chars);
+  let end = s.length;
+  while (end > 0) {
+    // step back over a full code point (surrogate pairs are 2 units wide)
+    let cp = s[end - 1];
+    if (end > 1) {
+      const pair = String.fromCodePoint(s.codePointAt(end - 2));
+      if (pair.length === 2) cp = pair;
+    }
+    if (!charSet.has(cp)) break;
+    end -= cp.length;
+  }
+  return s.slice(0, end);
+};
+
+/***
+ * Python-semantics str.strip: remove leading and trailing characters in the given set.
+ * @param {string} s The string to strip.
+ * @param {string?} chars Characters to remove; null/undefined strips whitespace.
+ * @returns {string} The stripped string.
+ */
+export const pyStrip = (s, chars) =>
+  chars == null ? s.trim() : pyRstrip(pyLstrip(s, chars), chars);
 
 /**
  * Get the value from a ref.

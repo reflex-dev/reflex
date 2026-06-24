@@ -21,20 +21,20 @@ keywords = ["web", "framework"]
 requires-python = ">=3.10,<4.0"
 dependencies = [
   "click >=8.2",
-  "granian[reload] >=2.5.5",
+  "granian[reload] >=2.7.4",
   "httpx >=0.26,<1.0",
   "packaging >=24.2,<27",
   "psutil >=7.0.0,<8.0; sys_platform == 'win32'",
-  "python-multipart >=0.0.20,<1.0",
+  "python-multipart >=0.0.32,<1.0",
   "python-socketio >=5.12.0,<6.0",
   "redis >=6.4,<8.0",
   "rich >=13,<16",
-  "starlette >=0.47.0",
+  "starlette >=1.3.1",
   "typing_extensions >=4.13.0",
   "wrapt >=1.17.0,<3.0",
-  "reflex-base >= 0.9.4",
+  "reflex-base >= 0.9.5",
   "reflex-components-code >= 0.9.0",
-  "reflex-components-core >= 0.9.0",
+  "reflex-components-core >= 0.9.5",
   "reflex-components-dataeditor >= 0.9.0",
   "reflex-components-gridjs >= 0.9.0",
   "reflex-components-lucide >= 0.9.0",
@@ -394,6 +394,9 @@ reflex-components-recharts = false
 reflex-components-sonner = false
 reflex-enterprise = false
 reflex-hosting-cli = false
+# Security fix (CVE-2026-54283 form() DoS) shipped in starlette 1.3.1; exempt so the
+# pinned floor resolves before it ages out of the exclude-newer window.
+starlette = false
 
 [tool.uv.sources]
 hatch-reflex-pyi.workspace = true
