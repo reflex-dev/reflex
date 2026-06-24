@@ -53,7 +53,7 @@ def _inherited_variant_selector(
 class AccordionComponent(RadixPrimitiveComponent):
     """Base class for all @radix-ui/accordion components."""
 
-    library = "@radix-ui/react-accordion@1.2.12"
+    library = "@radix-ui/react-accordion@1.2.14"
 
     color_scheme: Var[LiteralAccentColor] = field(
         doc="The color scheme of the component."
