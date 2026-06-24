@@ -35,6 +35,26 @@ def line_chart():
     )
 ```
 
+## Locale Configuration
+
+Use `locale` to localize Plotly number/date formatting and modebar labels:
+
+```python demo exec
+df = px.data.gapminder().query("country=='Canada'")
+fig = px.line(df, x="year", y="lifeExp", title="Life expectancy in Canada")
+
+
+def localized_line_chart():
+    return rx.center(
+        rx.plotly(
+            data=fig,
+            locale="de",
+        ),
+    )
+```
+
+You can still pass `config`; when both are provided, `locale=` is applied as the final locale value.
+
 ## 3D graphing example
 
 Let's create a 3D surface plot of Mount Bruno. This is a slightly more complicated example, but it wraps in Reflex using the same method. In fact, you can wrap any figure using the same approach.

@@ -330,8 +330,8 @@ class App(MiddlewareMixin, LifespanMixin):
     ```
 
     Attributes:
-        theme: Deprecated legacy shortcut for configuring the app-level Radix theme.
-        style: The [global style](https://reflex.dev/docs/styling/overview/#global-styles}) for the app.
+        theme: Deprecated legacy shortcut for configuring the app-level Radix [theme](https://reflex.dev/docs/styling/theming/).
+        style: The [global style](https://reflex.dev/docs/styling/overview/#global-styles) for the app.
         stylesheets: A list of URLs to [stylesheets](https://reflex.dev/docs/styling/custom-stylesheets/) to include in the app.
         reset_style: Whether to include CSS reset for margin and padding. Defaults to True.
         app_wraps: App wraps to be applied to the whole app. Expected to be a dictionary of (order, name) to a function that takes whether the state is enabled and optionally returns a component.
@@ -340,13 +340,12 @@ class App(MiddlewareMixin, LifespanMixin):
         sio: The Socket.IO AsyncServer instance.
         html_lang: The language to add to the html root tag of every page.
         html_custom_attrs: Attributes to add to the html root tag of every page.
-        enable_state: Whether to enable state for the app. If False, the app will not use state.
+        enable_state: Whether to enable [state](https://reflex.dev/docs/state/overview/) for the app. If False, the app will not use state.
         admin_dash: Admin dashboard to view and manage the database.
-        frontend_exception_handler: Frontend error handler function.
-        backend_exception_handler: Backend error handler function.
-        toaster: Put the toast provider in the app wrap.
-        api_transformer: Transform the ASGI app before running it.
-        hydrate_fallback: Component to render while the page is hydrating (React Router's HydrateFallback). Takes precedence over the hydrate_fallback config (REFLEX_HYDRATE_FALLBACK).
+        frontend_exception_handler: Frontend [error handler](https://reflex.dev/docs/utility-methods/exception-handlers/) function.
+        backend_exception_handler: Backend [error handler](https://reflex.dev/docs/utility-methods/exception-handlers/) function.
+        toaster: Put the [toast](https://reflex.dev/docs/library/overlay/toast/) provider in the app wrap.
+        api_transformer: One or more transforms applied to the backend ASGI app before it runs — mount a FastAPI/Starlette app or wrap it in ASGI middleware. See the [API Transformer docs](https://reflex.dev/docs/api-routes/overview/) for examples.
     """
 
     theme: Component | None = dataclasses.field(default=None)

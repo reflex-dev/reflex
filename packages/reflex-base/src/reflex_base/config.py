@@ -392,6 +392,11 @@ class Config(BaseConfig):
         self._non_default_attributes = set(kwargs.keys())
         self._replace_defaults(**kwargs)
 
+        # Publish for State-class creation so it never re-enters get_config()
+        # (which AttributeErrors if a State is defined while rxconfig.py is mid-import).
+        global _state_auto_setters
+        _state_auto_setters = self.state_auto_setters
+
         if (
             self.state_manager_mode == constants.StateManagerMode.REDIS
             and not self.redis_url
@@ -738,6 +743,28 @@ def _get_config() -> Config:
 
 # Protect sys.path from concurrent modification
 _config_lock = threading.RLock()
+
+# Cached state_auto_setters so State-class creation never re-enters get_config().
+_state_auto_setters: bool | None = None
+
+
+def get_state_auto_setters() -> bool:
+    """Return whether state auto-setters are enabled, without importing rxconfig.
+
+    Reads the value cached when the Config was built. Before any Config exists
+    (e.g. a State defined inside rxconfig.py during its import), falls back to the
+    REFLEX_STATE_AUTO_SETTERS env var, then the default (False). This never calls
+    get_config() or imports rxconfig, so it cannot re-enter config loading.
+
+    Returns:
+        Whether state auto-setters are enabled.
+    """
+    if _state_auto_setters is not None:
+        return _state_auto_setters
+    env_val = os.environ.get(Config._prefixes[0] + "STATE_AUTO_SETTERS")
+    if env_val and env_val.strip():
+        return interpret_env_var_value(env_val, bool, "state_auto_setters")
+    return False
 
 
 def get_config(reload: bool = False) -> Config:
