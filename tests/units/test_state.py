@@ -5021,3 +5021,18 @@ async def test_resolve_delta_pops_subdict_emptied_by_drops():
     delta = {"s1": {"only": _coro(_DROP_FROM_DELTA)}, "s2": {"keep": 1}}
     resolved = await _resolve_delta(delta)
     assert resolved == {"s2": {"keep": 1}}
+
+
+async def test_resolve_delta_pops_subdict_when_all_keys_drop():
+    """A subdict is removed when multiple coroutines all resolve to _DROP_FROM_DELTA."""
+    from reflex.state import _DROP_FROM_DELTA, _resolve_delta
+
+    async def _coro(value):  # noqa: RUF029 - a trivial coroutine value for the delta
+        return value
+
+    delta = {
+        "s1": {"a": _coro(_DROP_FROM_DELTA), "b": _coro(_DROP_FROM_DELTA)},
+        "s2": {"keep": 1},
+    }
+    resolved = await _resolve_delta(delta)
+    assert resolved == {"s2": {"keep": 1}}
