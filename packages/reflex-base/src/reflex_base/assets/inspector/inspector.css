@@ -1,0 +1,61 @@
+/* Reflex frontend inspector — dev-only overlay styles. */
+
+#__reflex_inspector_outline {
+  position: fixed;
+  pointer-events: none;
+  z-index: 2147483646;
+  border: 2px solid #4f8cff;
+  background: rgba(79, 140, 255, 0.08);
+  border-radius: 2px;
+  transition: top 60ms linear, left 60ms linear, width 60ms linear, height 60ms linear;
+  display: none;
+}
+
+#__reflex_inspector_label {
+  position: fixed;
+  pointer-events: none;
+  z-index: 2147483647;
+  background: #111827;
+  color: #f9fafb;
+  font: 500 12px/1.4 "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  display: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+#__reflex_inspector_label .__reflex_inspector_chain {
+  color: #9ca3af;
+  margin-right: 6px;
+}
+
+#__reflex_inspector_label .__reflex_inspector_file {
+  color: #93c5fd;
+}
+
+#__reflex_inspector_toggle {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 2147483647;
+  background: #111827;
+  color: #f9fafb;
+  border: 1px solid #374151;
+  border-radius: 999px;
+  font: 500 12px/1 "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  padding: 8px 12px;
+  cursor: pointer;
+  opacity: 0.65;
+  transition: opacity 120ms ease;
+}
+
+#__reflex_inspector_toggle:hover {
+  opacity: 1;
+}
+
+#__reflex_inspector_toggle[data-active="true"] {
+  background: #4f8cff;
+  border-color: #4f8cff;
+  opacity: 1;
+}

@@ -57,6 +57,12 @@ class PreCompileContext(CommonContext):
     unevaluated_pages: Sequence["UnevaluatedPage"]
 
 
+class StartCompileContext(CommonContext):
+    """Context for start-compile hooks."""
+
+    app: "App"
+
+
 class PostCompileContext(CommonContext):
     """Context for post-compile hooks."""
 
@@ -104,6 +110,19 @@ class Plugin:
             A list of packages required by the plugin.
         """
         return []
+
+    def start_compile(self, **context: Unpack[StartCompileContext]) -> None:
+        """Lifecycle hook fired before pages are evaluated.
+
+        Use this to flip runtime state that must be set before user code in
+        ``add_page`` callbacks runs, or to mutate the ``App`` (e.g. extend
+        ``app.head_components``) before ``compile_document_root`` is called.
+        ``pre_compile`` runs *after* page evaluation and is too late for
+        either job.
+
+        Args:
+            context: The context for the plugin.
+        """
 
     def get_static_assets(
         self, **context: Unpack[CommonContext]

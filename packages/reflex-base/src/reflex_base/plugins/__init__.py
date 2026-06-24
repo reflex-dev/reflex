@@ -18,6 +18,7 @@ from .compiler import (
     PageDefinition,
 )
 from .embed import EmbedPlugin
+from .frontend_inspector import FrontendInspectorPlugin
 from .sitemap import SitemapPlugin
 from .tailwind_v3 import TailwindV3Plugin
 from .tailwind_v4 import TailwindV4Plugin
@@ -29,6 +30,7 @@ __all__ = [
     "CompilerHooks",
     "ComponentAndChildren",
     "EmbedPlugin",
+    "FrontendInspectorPlugin",
     "PageContext",
     "PageDefinition",
     "Plugin",
