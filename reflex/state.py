@@ -21,6 +21,7 @@ from typing import (
     Any,
     BinaryIO,
     ClassVar,
+    Final,
     ParamSpec,
     TypeVar,
     get_type_hints,
