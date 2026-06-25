@@ -5108,3 +5108,54 @@ def test_descriptor_overrides_inherited_descriptor():
     parent_deps = ParentDescState._var_dependencies.get("_shared", set())
     assert (ChildDescState.get_full_name(), "child_view") in child_deps
     assert (ParentDescState.get_full_name(), "parent_view") in parent_deps
+
+
+async def test_resolve_delta_awaits_coroutines_and_keeps_plain_values():
+    """_resolve_delta awaits coroutine values and leaves plain values untouched."""
+    from reflex.state import _resolve_delta
+
+    async def _coro(value):  # noqa: RUF029 - a trivial coroutine value for the delta
+        return value
+
+    delta = {"s1": {"a": _coro(1), "b": 2}}
+    resolved = await _resolve_delta(delta)
+    assert resolved == {"s1": {"a": 1, "b": 2}}
+
+
+async def test_resolve_delta_drops_keys_resolving_to_sentinel():
+    """A coroutine resolving to _DROP_FROM_DELTA removes its key from the delta."""
+    from reflex.state import _DROP_FROM_DELTA, _resolve_delta
+
+    async def _coro(value):  # noqa: RUF029 - a trivial coroutine value for the delta
+        return value
+
+    delta = {"s1": {"gone": _coro(_DROP_FROM_DELTA), "stay": _coro("kept"), "plain": 3}}
+    resolved = await _resolve_delta(delta)
+    assert resolved == {"s1": {"stay": "kept", "plain": 3}}
+
+
+async def test_resolve_delta_pops_subdict_emptied_by_drops():
+    """A state subdict left empty after dropping all its keys is removed entirely."""
+    from reflex.state import _DROP_FROM_DELTA, _resolve_delta
+
+    async def _coro(value):  # noqa: RUF029 - a trivial coroutine value for the delta
+        return value
+
+    delta = {"s1": {"only": _coro(_DROP_FROM_DELTA)}, "s2": {"keep": 1}}
+    resolved = await _resolve_delta(delta)
+    assert resolved == {"s2": {"keep": 1}}
+
+
+async def test_resolve_delta_pops_subdict_when_all_keys_drop():
+    """A subdict is removed when multiple coroutines all resolve to _DROP_FROM_DELTA."""
+    from reflex.state import _DROP_FROM_DELTA, _resolve_delta
+
+    async def _coro(value):  # noqa: RUF029 - a trivial coroutine value for the delta
+        return value
+
+    delta = {
+        "s1": {"a": _coro(_DROP_FROM_DELTA), "b": _coro(_DROP_FROM_DELTA)},
+        "s2": {"keep": 1},
+    }
+    resolved = await _resolve_delta(delta)
+    assert resolved == {"s2": {"keep": 1}}
