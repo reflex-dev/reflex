@@ -45,6 +45,20 @@ A note on evidence quality (unchanged): CURRENT-COMPILER/RUFF findings were spot
 
 ---
 
+## North star — compile `docs/app` through the Rust compiler (acceptance target)
+
+The first concrete goal is the real docs site (`docs/app`, 79 files / 11.6k LOC, markdown-heavy, stateful, custom `rxe.App` + Tailwind/Sitemap/AgentFiles plugins) — not toy components. Measured surface (static scan of the app's own code; the private packages it imports add more): dominated by `rx.box` (137), `rx.el.div` (96), `rx.text` (53), `rx.fragment` (35), **`rx.cond` (49 — Cond is on the critical path)**, `rx.el.span/p/a/ul/li/h1/h2/button`, `rx.link`, `rx.icon`, `rx.code`, `rx.image`; `rx.foreach` present; **6 `rx.State` subclasses / 8 event triggers** (stay Python); **0 custom `Component` subclasses in app code**. Concentrated hard parts: radix theming (`rx.box`→classes via `add_style`), `rx.markdown`, and Cond/Foreach lowering.
+
+**Environment note:** the docs app pulls private packages (`reflex-enterprise`, `reflex-site-shared`, `reflex-integrations-docs`, `reflex-components-internal`, `reflex-pyplot`) absent from the dev sandbox, so the full in-process compile runs in the maintainer env. The audit harness `experimental/reflex-compiler-core/audit_app.py` runs there and produces both deliverables below.
+
+**Stage A — codegen correctness on the real app (no component porting).** *Implemented.* `render_dict_to_js` consumes the existing `Component.render()` dict and emits JS for all five shapes (element/bare/cond/iterable/match), verified byte-identical to `_RenderUtils` on element/cond/foreach/match/nested trees. **Exit:** `audit_app.py` reports `diverged == 0` across all docs-app pages — Rust reproduces the app's full output (markdown-produced dicts included) — and emits the component histogram. Near-0 perf (reads Python dicts); this is the codegen backend proven on the real app, plus the Stage-B work-list.
+
+**Stage B — native construction, purity-gated (the perf win).** Port the histogram-ranked types (elements + radix layout + Cond/Iterable) so the tree is built via `make_node` (GIL-pure, Revision 2) instead of `Component.create`; generate the prop/style/field-order registry from the Python class defs (closes the ordering gap). **Exit per ported type:** §5.7 purity gate (GIL-released render + profiler 0 + fallback 0) **and** byte-identical output. **Milestone exit:** the docs app compiles with the fallback count driven to a small *declared* allowlist (e.g. `markdown` may stay a leaf initially) and a measured per-page speedup. State/events remain Python leaves throughout.
+
+Sequencing: Stage A is the cheap, high-confidence foundation (one function, runs today on any app); Stage B grinds down the histogram, each step purity-verified to have actually moved work to Rust rather than wrapping Python.
+
+---
+
 ## 1. Thesis verdict
 
 **The user is right about *where* the only legitimate Rust play lives (build-time, not runtime) and right about the *shape* of the solution (compile structure once, call Python only at dynamic leaves). The user is wrong, and so was my original draft, to treat the size of the win as established. The win is real in kind but unquantified in magnitude, and three existing mitigations in the codebase shrink the available headroom. Funding must be gated on a measurement, not on this thesis.**

@@ -313,6 +313,121 @@ fn render_to_js_pure(py: Python<'_>, handle: &Bound<'_, NodeHandle>) -> PyResult
         .map_err(PyRuntimeError::new_err)
 }
 
+// --- Slice 0: render an existing Python render-dict to JS (no component port) ---
+//
+// Consumes the dict produced by `Component.render()` and emits the JS string,
+// mirroring `_RenderUtils.render` for all five shapes. Works on ANY app's
+// output (incl. cond/foreach/match/markdown-produced dicts) without porting
+// components, so it can be diffed byte-for-byte against the Python compiler on
+// every page of a real app. This is the codegen-correctness foundation; it
+// reads Python data structures, so it is NOT GIL-pure (that is the make_node
+// path's job).
+
+fn dict_get<'py>(d: &Bound<'py, PyDict>, key: &str) -> PyResult<Option<Bound<'py, PyAny>>> {
+    d.get_item(key)
+}
+
+fn render_dict(py: Python<'_>, component: &Bound<'_, PyAny>) -> PyResult<String> {
+    if let Ok(s) = component.downcast::<PyString>() {
+        let v = s.extract::<String>()?;
+        return Ok(if v.is_empty() { "null".to_string() } else { v });
+    }
+    let d = component.downcast::<PyDict>()?;
+    if d.contains("iterable")? {
+        return render_iterable(py, d);
+    }
+    if d.contains("match_cases")? {
+        return render_match(py, d);
+    }
+    if d.contains("cond_state")? {
+        return render_condition(py, d);
+    }
+    if let Some(contents) = dict_get(d, "contents")? {
+        if !contents.is_none() {
+            let v = contents.extract::<String>()?;
+            return Ok(if v.is_empty() { "null".to_string() } else { v });
+        }
+    }
+    render_tag(py, d)
+}
+
+fn render_tag(py: Python<'_>, d: &Bound<'_, PyDict>) -> PyResult<String> {
+    // name = component.get("name") or "Fragment"
+    let name = match dict_get(d, "name")? {
+        Some(n) if n.is_truthy()? => n.extract::<String>()?,
+        _ => "Fragment".to_string(),
+    };
+    let props: Vec<String> = match dict_get(d, "props")? {
+        Some(p) => p.extract()?,
+        None => Vec::new(),
+    };
+    let mut rendered: Vec<String> = Vec::new();
+    if let Some(children) = dict_get(d, "children")? {
+        for child in children.try_iter()? {
+            let child = child?;
+            if child.is_truthy()? {
+                rendered.push(render_dict(py, &child)?);
+            }
+        }
+    }
+    Ok(format!(
+        "jsx({},{{{}}},{})",
+        name,
+        props.join(","),
+        rendered.join(",")
+    ))
+}
+
+fn render_condition(py: Python<'_>, d: &Bound<'_, PyDict>) -> PyResult<String> {
+    let cond: String = dict_get(d, "cond_state")?.unwrap().extract()?;
+    let t = render_dict(py, &dict_get(d, "true_value")?.unwrap())?;
+    let f = render_dict(py, &dict_get(d, "false_value")?.unwrap())?;
+    Ok(format!("({cond}?({t}):({f}))"))
+}
+
+fn render_iterable(py: Python<'_>, d: &Bound<'_, PyDict>) -> PyResult<String> {
+    let iterable: String = dict_get(d, "iterable_state")?.unwrap().extract()?;
+    let arg_name: String = dict_get(d, "arg_name")?.unwrap().extract()?;
+    let arg_index: String = dict_get(d, "arg_index")?.unwrap().extract()?;
+    let mut children = String::new();
+    if let Some(ch) = dict_get(d, "children")? {
+        for child in ch.try_iter()? {
+            children.push_str(&render_dict(py, &child?)?);
+        }
+    }
+    Ok(format!(
+        "Array.prototype.map.call({iterable} ?? [],(({arg_name},{arg_index})=>({children})))"
+    ))
+}
+
+fn render_match(py: Python<'_>, d: &Bound<'_, PyDict>) -> PyResult<String> {
+    let cond: String = dict_get(d, "cond")?.unwrap().extract()?;
+    let mut cases_code = String::new();
+    for case in dict_get(d, "match_cases")?.unwrap().try_iter()? {
+        let case = case?;
+        let conditions = case.get_item(0)?;
+        let return_value = case.get_item(1)?;
+        for condition in conditions.try_iter()? {
+            let c: String = condition?.extract()?;
+            cases_code.push_str(&format!("    case JSON.stringify({c}):\n"));
+        }
+        cases_code.push_str(&format!(
+            "      return {};\n      break;\n",
+            render_dict(py, &return_value)?
+        ));
+    }
+    let default = render_dict(py, &dict_get(d, "default")?.unwrap())?;
+    Ok(format!(
+        "(() => {{\n  switch (JSON.stringify({cond})) {{\n{cases_code}    default:\n      return {default};\n      break;\n  }}\n}})()"
+    ))
+}
+
+/// Render an existing Python render-dict (from `Component.render()`) to JS.
+#[pyfunction]
+fn render_dict_to_js(py: Python<'_>, component: &Bound<'_, PyAny>) -> PyResult<String> {
+    render_dict(py, component)
+}
+
 /// Enable/disable strict purity mode (any Python fallback becomes an error).
 #[pyfunction]
 fn set_strict(value: bool) {
@@ -336,6 +451,7 @@ fn reflex_compiler_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<NodeHandle>()?;
     m.add_function(wrap_pyfunction!(make_node, m)?)?;
     m.add_function(wrap_pyfunction!(render_to_js, m)?)?;
+    m.add_function(wrap_pyfunction!(render_dict_to_js, m)?)?;
     m.add_function(wrap_pyfunction!(render_to_js_pure, m)?)?;
     m.add_function(wrap_pyfunction!(set_strict, m)?)?;
     m.add_function(wrap_pyfunction!(py_fallback_count, m)?)?;
