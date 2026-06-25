@@ -108,7 +108,40 @@ camelCases, adds the `id`-derived `ref`, and sorts — no per-component
 field-order table is needed. The registry therefore only needs `{tag, kind}`
 (plus a style mapping for radix, next).
 
-## Three levels of native-ness (and how the gate tells them apart)
+## Compiling a real app, not just micro-benchmarks (`compile_app_demo.py`)
+
+The benchmarks measure construction + render — the dominant per-node CPU cost.
+But "compiling an app" is `compile_app`, which per page does:
+
+1. **build** the component tree — `Component.create` today; native `make` (Stage B)
+2. `component.render()` → render dict — Python (dict construction)
+3. **aggregate** imports / hooks / custom-code / dynamic-imports — four recursive
+   tree walks (`_get_all_*`), Python today
+4. **codegen** the dict → JSX string — `_RenderUtils.render` → **native (Stage A)**
+5. `page_template(...)` assembles the full module (imports + hooks + JSX) — Python
+6. `context.js` initial state — Python (runs user `State.dict()`); stays Python
+7. write `.web/` files — Python, content-addressed; stays Python
+
+`compile_app_demo.py` compiles a **real page** (state, event handler, cond,
+state-var props) through the actual pipeline (`compiler._compile_page`) with
+step 4 swapped to `render_dict_to_js`, and asserts the **full page module is
+byte-identical** to the stock compiler:
+
+```
+import {Fragment,useContext,useEffect,useRef} from "react"
+import {ReflexEvent,applyEventActions,isTrue,refs} from "$/utils/state"
+...
+export default function Component() {
+const ref_root = useRef(null); refs["ref_root"] = ref_root;
+const ...s = useContext(StateContexts...)
+  return ( jsx("div",{className:"container",id:"root",ref:ref_root}, ...) )   <- JSX by Rust
+}
+=> full page module byte-identical (stock vs Rust codegen): True
+```
+
+So a real app compiles end-to-end with the Rust codegen by integrating at that
+one call. Steps 2 and 3 are the remaining build-time CPU to move native (the IR
++ aggregation slice); steps 6–7 stay Python by design.
 
 1. **Build-native** — element built via `make`; renders GIL-released. Gold.
 2. **Codegen-native only** — a Python construct (cond/foreach/custom component)
