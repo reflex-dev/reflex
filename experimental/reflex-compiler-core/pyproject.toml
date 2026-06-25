@@ -1,0 +1,13 @@
+[build-system]
+requires = ["maturin>=1.5,<2"]
+build-backend = "maturin"
+
+[project]
+name = "reflex-compiler-core"
+version = "0.0.1"
+description = "Proving slice for a Rust-native Reflex component compiler core."
+requires-python = ">=3.9"
+classifiers = ["Programming Language :: Rust"]
+
+[tool.maturin]
+features = ["pyo3/extension-module"]

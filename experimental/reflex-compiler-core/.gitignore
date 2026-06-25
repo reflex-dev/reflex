@@ -1,0 +1,4 @@
+/target
+*.so
+Cargo.lock
+uv.lock

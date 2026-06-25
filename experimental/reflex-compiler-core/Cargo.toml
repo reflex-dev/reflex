@@ -1,0 +1,16 @@
+[package]
+name = "reflex-compiler-core"
+version = "0.0.1"
+edition = "2021"
+description = "Proving slice: build Reflex component nodes natively in Rust, bypassing Python Component instantiation."
+
+[lib]
+name = "reflex_compiler_core"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.25", features = ["extension-module", "abi3-py39"] }
+
+[profile.release]
+lto = true
+codegen-units = 1
