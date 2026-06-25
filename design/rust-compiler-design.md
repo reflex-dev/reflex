@@ -390,6 +390,16 @@ def test_rust_matches_python(spec):
 
 Two snapshot systems (insta `.snap` Rust; pytest oracle Python) over one corpus is a drift vector. **One harness owns fixture discovery** and asserts every fixture has **both** a Rust `.snap` and a Python-oracle result, with orphan/stale detection across **both** (not just inline tests). Prefer driving the Python oracle from the same `datatest` discovery so a fixture cannot be accepted on one side while stale on the other. Acceptance stays `cargo insta review`; the Python oracle is assertion-based against the canonicalized output (no second snapshot store).
 
+### 5.7 Purity enforcement — golden output is necessary but NOT sufficient
+
+A byte-identical snapshot does not prove the work was done in Rust: a path can pass it by delegating to Python (`render_py_leaf`) and matching strings. Output equality and *native execution* are separate properties and must be tested separately, or "ported" silently becomes "wrapped." Every component/path claimed native carries a **purity contract**, enforced by three layers (the first two do not trust the Rust code's self-report) — all implemented and demonstrated in the proving slice (`experimental/reflex-compiler-core`, `validate.py`):
+
+1. **Structural (GIL-released):** the native render runs inside `Python::allow_threads`, which hands the closure no `Python` token and rejects GIL-bound captures (`Py<T>` is `Ungil`, `Bound`/`Python` are not). Such code *cannot* call Python — if it returns, zero Python executed. A node that needs Python errors instead of falling back. This is a compile/runtime-enforced guarantee, not a convention.
+2. **External profiler:** `sys.setprofile` counts real Python function entries during a render. Native → 0; each fallback → many. Independent of what the Rust code reports.
+3. **Fallback ledger + strict mode:** a global counter records every Python crossing; strict mode turns any crossing on a "native" path into a hard error; CI fails if a ported component's fallback count is non-zero. No silent fallbacks (the "no silent caps" rule applied to the Rust/Python boundary).
+
+**CI gate:** for the set of components a phase claims to have ported, build a tree of *only* those and assert `render_to_js_pure` succeeds **and** profiler Python-calls == 0 **and** fallback count == 0. Run the perf benchmark in strict mode so a regression to Python fallback surfaces as an error or a collapsed speedup, never as a passing string match. Measured demo: a native tree proves 0/0 and renders GIL-released; a tree with one Python-component leaf is blocked structurally, shows 515 Python calls, and is rejected by strict mode.
+
 ---
 
 ## 6. Roadmap

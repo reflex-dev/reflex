@@ -55,6 +55,36 @@ construction + render          473.44 ms     14.80 ms     32.0x
   includes the PyO3 marshalling crossing on every node (an honest measurement).
 - The fallback bridge to real Python components is byte-identical too.
 
+## Purity validation — proving the work is native, not a Python wrapper
+
+The central risk of this whole effort: an implementation can make the
+equivalence tests pass by quietly delegating to Python (`render_py_leaf`) and
+string-matching the output. It *looks* ported; nothing moved. `validate.py`
+enforces three layers — the first two do **not** trust the Rust code's
+self-report:
+
+1. **Structural (strongest):** `render_to_js_pure` runs with the GIL released
+   (`Python::allow_threads`). That region is handed no `Python` token and
+   rejects GIL-bound captures, so it *cannot* call Python. If it returns a
+   string, zero Python executed. If the tree needs Python, it errors instead of
+   silently falling back.
+2. **External profiler:** `sys.setprofile` counts real Python function entries
+   during a render. Native render → 0; every fallback → many (515 in the demo).
+3. **Self-reported ledger:** `set_strict(True)` turns any fallback into a hard
+   error; `py_fallback_count()` gives graded coverage for CI.
+
+```
+uv run python experimental/reflex-compiler-core/validate.py
+tree                    structural  py_calls  fallbacks     verdict
+pure (all native)           native         0          0    NATIVE ✓
+cheat (python leaf)        BLOCKED       515          1  FALLBACK ✗
+```
+
+**The CI gate:** build a tree of *only* the components claimed native and assert
+`render_to_js_pure` succeeds **and** `py_calls == 0` **and** `fallbacks == 0`.
+If a future change sneaks a Python fallback into a "ported" path, the gate fails
+automatically — you cannot pass it by matching strings.
+
 ## Known gap (deliberately not solved here)
 
 Multi-prop **ordering**: the Python path emits props in component
