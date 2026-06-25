@@ -8,6 +8,43 @@ A note on evidence quality (unchanged): CURRENT-COMPILER/RUFF findings were spot
 
 ---
 
+## Revision 2 — The seam is the factory call, not the frozen tree (empirical correction)
+
+> **This supersedes the PyO3 seam in §2.1 and the adoption plan in §3.5 / §4.** §1 (thesis), §5 (golden strategy) and Appendix A (pydantic-core, now the literal blueprint) stand and are *strengthened* by this revision; §6's roadmap re-anchors on the new Phase-0 benchmark below.
+
+**Why the original seam was wrong (measured, then confirmed in code).** Prior experiments moving the *post-build* work to Rust showed the time difference vanish. The reason: the dominant compile cost is per-component **instantiation**, which happens *before* any freeze. Each `X.create()` runs `_post_init` (`component.py:969`) → `get_fields`/`get_props`/`get_event_triggers`, then **per prop** `LiteralVar.create(value)` (`:1024`) + `satisfies_type_hint` (`:1036`), **per event** `EventChain.create` (`:1051`), on top of the pydantic-style model machinery — multiplied by every node, every page, every hot reload. Any design that builds the Python `Component` tree and *then* hands Rust a frozen spec has already paid the entire bill; the freeze only *adds* cost and the downstream Rust work saves a non-dominant fraction. **Therefore the Python `Component` object must never be instantiated for built-ins.**
+
+**Corrected seam: `rx.box(*children, **props)` *is* the PyO3 boundary.**
+- The Python factory shim is ~3 lines: it carries only static, class-level metadata (`type_id`, tag, the prop-kind table) and calls `make_node(type_id, child_handles, props)`.
+- Rust allocates the node in an arena and returns a cheap `NodeHandle` (a PyO3 class wrapping `NodeId(u32)`). No `_post_init`, no pydantic, no per-node Python model.
+- The component tree lives in the Rust arena from the first call; "page evaluation" runs `index()` once and returns the root handle.
+
+**Prop split — this is where the win actually lives:**
+- **Literal props** (`bg="red"`, `width=4`, `is_open=True`): passed as raw scalars; **Rust renders them straight to JS** and stores them. `LiteralVar.create` is *never called* — removing a Var allocation per literal prop, i.e. most props on most nodes. Rust owns a bounded, golden-testable `literal_to_js` (scalars/collections/color/datetime/None).
+- **Var props** (`value=State.x`): the Var stays a Python object (the Var algebra stays Python — exactly Appendix A's verified leaf principle). Rust extracts and stores `(js_expr, VarData)`. Var creation only fires for genuinely state-bound props (the minority).
+- **Event props** (`on_click=State.h`): Python resolves to an event ref and keeps the callable for the server; Rust stores the ref. `EventChain.create` shrinks to ref-capture.
+- **Classification** (which bucket a kwarg is in) needs per-component metadata. That metadata is **code-generated once from the existing Python class definitions** into a Rust registry — the true role of `schema/nodes.toml` (§2.4): it now describes *components*, source-of-truth still the Python classes + `.pyi`.
+
+**What stays Python (now the *only* per-node Python):** Vars/`_js_expr`/VarData, event-handler bodies, computed vars, initial state — attached to Rust nodes *by reference*. This is "attach the python function to the rust struct so we can call user overrides," which is pydantic-core's `func: Py<PyAny>` captured into the Rust validator verbatim (App. A.4).
+
+**Custom & overriding components = the leaf-callback fallback (what makes this shippable).** A user `class MyThing(Component)` overriding `render`/`add_style`/`add_imports` cannot be a pure registry node. It stays a Python object, attached as a `PyComponentLeaf(handle)`; Rust calls back into Python for its render dict during codegen — pydantic-core's `FunctionWrapValidator` exactly (App. A.4). Built-ins take the fast path; custom/overriding components take the slow path. The honest, measurable boundary: built-in-heavy apps (layouts, tables, the radix set) get the win; custom-heavy apps don't. Handles must bridge both directions (a Rust fast-node can hold Python-leaf children and vice-versa).
+
+**Typed props / IDE support must not regress.** The `.pyi` stubs keep their fully-typed per-component signatures (autocomplete unchanged); only the *body* routes to `make_node`. The stub generator already owns these signatures — it now emits thin typed wrappers over the generic factory.
+
+**Plugins on the Rust tree (largest remaining surface — sequence last).** Theme injection, markdown wrapping, and auto-memoize currently mutate Python Components; they must operate on Rust nodes via an exposed mutation API (insert wrapper, add import/hook, mark memo). Simple plugins port directly; auto-memoize is involved. Until ported, the plugin pass can still run over `PyComponentLeaf`-wrapped nodes (correctness over speed). This gates the "full compile in Rust" milestone.
+
+**The proving slice (replaces Slice 0 — and measures the thing that matters):**
+1. Three built-ins: `box`, `text`, `heading`.
+2. Implement `make_node` + `literal_to_js` + `NodeHandle` composition + render to today's JSX string, with Var/event props passed through; everything else falls back to the Python path (mixed tree).
+3. **Benchmark `rx.box()`-fast vs `Box.create()` on a synthetic ~10k-node tree, end-to-end incl. PyO3 marshalling.** *This* is the Phase-0 gate (it replaces the old aggregation profile). If `make_node` is not decisively faster than `_post_init` per node, the approach is wrong — and we learn it in days, not quarters.
+
+**Golden tests for this model (the rest of §5 stands):**
+- `literal_to_js` gets an exhaustive snapshot suite diffed against Python `str(LiteralVar.create(x))` — highest silent-divergence risk, cheapest to cover.
+- Differential oracle compares **mixed trees** (Rust-fast + Python-leaf) against the all-Python tree, byte-identical after canonical ordering (§5.2).
+- One fast/slow **equivalence** fixture per built-in: `make_node(BOX, …)` output ≡ `Box.create(…).render()`. This contract is what lets a component graduate from slow path to fast path.
+
+---
+
 ## 1. Thesis verdict
 
 **The user is right about *where* the only legitimate Rust play lives (build-time, not runtime) and right about the *shape* of the solution (compile structure once, call Python only at dynamic leaves). The user is wrong, and so was my original draft, to treat the size of the win as established. The win is real in kind but unquantified in magnitude, and three existing mitigations in the codebase shrink the available headroom. Funding must be gated on a measurement, not on this thesis.**
