@@ -284,6 +284,7 @@ def prefix(
 categories = {
     "login": prefix(REFLEX_PREFIX, ["login", "logout"]),
     "deploy": prefix(REFLEX_PREFIX, ["deploy"]),
+    "scan": prefix(REFLEX_CLOUD_PREFIX, ["scan"]),
     "apps": prefix(
         REFLEX_CLOUD_PREFIX + " apps",
         [

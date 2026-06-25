@@ -14,7 +14,6 @@ def get_sidebar_items_learn():
                 getting_started.introduction,
                 getting_started.basics,
                 getting_started.project_structure,
-                getting_started.open_source_templates,
             ],
         ),
         create_item(
@@ -233,6 +232,7 @@ def get_sidebar_items_hosting():
                 hosting.custom_domains,
                 hosting.config_file,
                 hosting.tokens,
+                hosting.security_scan,
                 hosting.deploy_with_github_actions,
             ],
         ),
@@ -249,6 +249,7 @@ def get_sidebar_items_hosting():
             children=[
                 hosting.self_hosting,
                 hosting.databricks,
+                hosting.bring_your_own_cloud,
                 hosting.deploy_to_gcp,
             ],
         ),

@@ -34,7 +34,7 @@ Video and streaming inputs are not yet supported.
 3. Click the `deploy` button, select `Images` and then select `Integrate with my app or website`.
 4. Copy the `workspace_name` and `workflow_id` from the provided code snippet.
 
-[!Roboflow](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/roboflow.webp)
+![Roboflow](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/roboflow.webp)
 
 ## Step 3: Configure the Integration in Your App
 

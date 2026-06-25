@@ -5,6 +5,7 @@ from typing import Any
 
 from reflex_base.components.memo import memo as _memo
 from reflex_base.utils.console import warn
+from reflex_base.vars.hybrid_property import hybrid_property as hybrid_property
 from reflex_components_code.shiki_code_block import code_block as code_block
 
 from reflex.utils.misc import run_in_thread
@@ -71,4 +72,5 @@ _x = ExperimentalNamespace(
     client_state=ClientStateVar.create,
     hooks=hooks,
     code_block=code_block,
+    hybrid_property=hybrid_property,
 )

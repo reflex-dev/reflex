@@ -1,6 +1,7 @@
+import copy
 from contextlib import nullcontext
 from dataclasses import dataclass
-from typing import Any, ClassVar
+from typing import Any, ClassVar, TypedDict
 
 import pytest
 from reflex_base.components.component import Component, field
@@ -837,6 +838,34 @@ def test_component_event_trigger_arbitrary_args():
             }
 
     C1.create(on_foo=C1State.mock_handler)
+
+
+def test_non_submit_mapping_events_do_not_accept_typed_dict_handlers():
+    """TypedDict relaxation should stay scoped to form submission handlers."""
+
+    class Payload(TypedDict):
+        email: str
+
+    class C1State(BaseState):
+        def mock_handler(self, payload: Payload):
+            """Mock handler."""
+
+    def on_foo_spec(payload: Var[dict[str, int]]) -> tuple[Var[dict[str, int]]]:
+        return (payload,)
+
+    class C1(Component):
+        library = "/local"
+        tag = "C1"
+
+        @classmethod
+        def get_event_triggers(cls) -> dict[str, Any]:
+            return {
+                **super().get_event_triggers(),
+                "on_foo": on_foo_spec,
+            }
+
+    with pytest.raises(EventHandlerArgTypeMismatchError):
+        C1.create(on_foo=C1State.mock_handler)
 
 
 def test_invalid_event_handler_args(component2, test_state: type[TestState]):
@@ -2263,3 +2292,33 @@ def test_component_equality_handles_var_fields():
     dict_a = VarProbe.create(meta={"k": VarState.text})
     dict_b = VarProbe.create(meta={"k": VarState.text})
     assert dict_a == dict_b
+
+
+def test_deepcopy_drops_stale_render_cache() -> None:
+    """A deep-copied component must re-render after its children are mutated.
+
+    ``render()`` memoizes ``_cached_render_result``. The compiler deep-copies
+    app-wrap components and rebinds their ``children`` (e.g. in
+    ``App._app_root``); if the clone kept the original's cache, the appended
+    child would be silently dropped — the page content ``children`` would
+    never reach the rendered tree and the page would render blank.
+    """
+    original = Fragment.create()
+    original.render()  # populate _cached_render_result with no children
+
+    clone = copy.deepcopy(original)
+    clone.children.append(Bare.create(contents="page-content"))
+
+    assert len(clone.render()["children"]) == 1
+    # The original must be untouched (independent deep copy).
+    assert original.render()["children"] == []
+
+
+def test_deepcopy_produces_independent_children() -> None:
+    """Deep copy must not share the ``children`` list with the original."""
+    original = Fragment.create(Bare.create(contents="a"))
+    clone = copy.deepcopy(original)
+    clone.children.append(Bare.create(contents="b"))
+
+    assert len(original.children) == 1
+    assert len(clone.children) == 2

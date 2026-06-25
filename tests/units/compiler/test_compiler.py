@@ -382,6 +382,27 @@ def test_compile_app_root_omits_radix_window_library_by_default():
     assert "@radix-ui/themes" not in code
 
 
+def test_compile_app_root_omits_hydrate_fallback_by_default():
+    """Apps without a hydrate_fallback should not export a HydrateFallback."""
+    reset_bundled_libraries()
+
+    _, code = compiler.compile_app_root(rx.el.div("hello"))
+
+    assert "HydrateFallback" not in code
+
+
+def test_compile_app_root_with_hydrate_fallback_exports_hydrate_fallback():
+    """A hydrate_fallback memo export should be re-exported as HydrateFallback."""
+    reset_bundled_libraries()
+
+    _, code = compiler.compile_app_root(rx.el.div("hello"), "MyFallback")
+
+    assert (
+        "export { MyFallback as HydrateFallback } "
+        'from "$/utils/components/MyFallback";' in code
+    )
+
+
 def test_compile_app_root_includes_radix_window_library_when_bundled():
     """Bundled Radix libraries are exposed to window.__reflex via named imports
     derived from the app's actual static usage (so Rolldown can tree-shake).
@@ -395,7 +416,9 @@ def test_compile_app_root_includes_radix_window_library_when_bundled():
         window_library_imports = compiler.collect_window_library_imports([
             {"@radix-ui/themes@3.3.0": [ImportVar(tag="Theme")]},
         ])
-        _, code = compiler.compile_app_root(rx.el.div("hello"), window_library_imports)
+        _, code = compiler.compile_app_root(
+            rx.el.div("hello"), window_library_imports=window_library_imports
+        )
 
         assert (
             'import { Theme as __reflex_radix_ui_themes_Theme } from "@radix-ui/themes";'

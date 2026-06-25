@@ -213,7 +213,10 @@ def state_tracking_example():
 
 ### Dynamic Lists with Drag and Drop
 
-Create dynamic draggable lists using `rx.foreach`:
+Create dynamic draggable lists using `rx.foreach`. Always pass a stable item
+identifier as the `key` prop to the outermost component rendered by the foreach
+to ensure item identity is trackable as the item in the underlying list is
+rearranged.
 
 ```python demo exec
 import dataclasses
@@ -293,7 +296,10 @@ def droppable_list(title: str, items: list[ListItem], list_id: str):
         rx.vstack(
             rx.text(title, weight="bold", size="5"),
             rx.vstack(
-                rx.foreach(items, lambda item, index: draggable_list_item(item=item)),
+                rx.foreach(
+                    items,
+                    lambda item, index: draggable_list_item(item=item, key=item.id),
+                ),
                 spacing="2",
                 min_height="200px",
                 width="100%",
