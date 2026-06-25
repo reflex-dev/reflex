@@ -1,3 +1,20 @@
+## v0.9.6 (2026-06-25)
+
+### Features
+
+- Auto-memoized (`rx.memo`) components now compile to `.web/app_components/` output paths that mirror their defining Python source module (using the real package name, including framework packages) instead of being bundled into a single shared `components.jsx`. The compiler's auto-memo registry is scoped per source module, so identical-rendering subtrees in different modules each emit their own output instead of one silently overwriting another, hot-reloads of a module refresh the correct output, and stale memo files are cleaned up when their source changes. Memos whose module can't be mirrored (`__main__`, unsafe names) fall back to one file per memo at `.web/utils/components/<name>.jsx`. Each mirrored memo's generated export name also carries a stable per-module suffix, so two memos that share a name in different modules compile to distinct symbols and can be used together on one page without colliding. ([#6457](https://github.com/reflex-dev/reflex/issues/6457))
+- `rx._x.hybrid_property` now works on dataclasses, pydantic models and SQLAlchemy models, not just `State` classes. Accessing the property through an object var on the frontend (e.g. `State.info.a_b`) renders it as a var, using the same code you already use on the backend. ([#6617](https://github.com/reflex-dev/reflex/issues/6617))
+- `reflex init` now writes a Reflex-managed section into `AGENTS.md` (fetched from the canonical source and delimited by markers that preserve surrounding user content), and bridges it for Claude Code by creating a `CLAUDE.md` importing `@AGENTS.md` — or, if a `CLAUDE.md` exists without the import, managing the section there directly. ([#6620](https://github.com/reflex-dev/reflex/issues/6620))
+- `rx._x.hybrid_property` now raises a clear error when its frontend logic reads a backend (underscore-prefixed) state var, instead of silently baking the var's server-side default into the frontend. Reference a regular var, or provide a separate frontend implementation with `@<name>.var`. ([#6621](https://github.com/reflex-dev/reflex/issues/6621))
+
+### Bug Fixes
+
+- Sync `reflex.lock/package.json` to `.web/package.json` before installing packages to ensure lock file and package.json are aligned. ([#6658](https://github.com/reflex-dev/reflex/issues/6658))
+- Avoid re-entering config loading when a `State` subclass is defined in `rxconfig.py`. ([#6662](https://github.com/reflex-dev/reflex/issues/6662))
+- Raise minimum dependency versions to pull in security fixes: `starlette>=1.3.1` (Host-header path poisoning, `request.form()` DoS, and UNC-path SSRF), `python-multipart>=0.0.32` (quadratic-time querystring DoS, unbounded header field size, and negative `Content-Length` buffering in `parse_form`), and `granian>=2.7.4` (WSGI and WebSocket header-panic DoS). ([#6665](https://github.com/reflex-dev/reflex/issues/6665))
+- Fixed `modify_state` to rebind `EventContext.token` to the token being modified, so delta resolution and computed vars inside shared-state fan-out tasks observe the correct client token rather than the triggering event's inherited context. ([#6673](https://github.com/reflex-dev/reflex/issues/6673))
+
+
 ## v0.9.5.post2 (2026-06-10)
 
 ### Bug Fixes
