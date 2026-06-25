@@ -57,6 +57,10 @@ def get_sidebar_items_enterprise_usage():
                     names="Testing Guarded Code",
                     link=enterprise.auth.testing.path,
                 ),
+                SideBarItem(
+                    names="Deploying to Production",
+                    link=enterprise.auth.deployment.path,
+                ),
             ],
         ),
     ]

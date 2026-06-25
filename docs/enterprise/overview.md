@@ -64,7 +64,7 @@ categories_data = [
     {
         "category": "Authentication",
         "description": "OIDC authentication with a secure-by-default model",
-        "count": 5,
+        "count": 6,
         "components": [
             {
                 "feature": "AuthPlugin",
@@ -96,10 +96,17 @@ categories_data = [
             },
             {
                 "feature": "Testing",
-                "description": "Exercise guarded surfaces with an injected user via auth_as",
+                "description": "Unit-test authorization checks and exercise the full OIDC flow against a mock IdP",
                 "cloud_tier": "Enterprise",
                 "self_hosted_tier": "Enterprise",
                 "link": "/docs/enterprise/auth/testing",
+            },
+            {
+                "feature": "Deploying to Production",
+                "description": "HTTPS and cookie requirements, the exact redirect URI, reverse proxies, and a troubleshooting reference",
+                "cloud_tier": "Enterprise",
+                "self_hosted_tier": "Enterprise",
+                "link": "/docs/enterprise/auth/deployment",
             },
         ],
     },
