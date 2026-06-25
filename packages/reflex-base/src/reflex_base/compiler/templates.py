@@ -166,6 +166,21 @@ export function Layout({{children}}) {{
 _JS_IDENTIFIER_RE = re.compile(r"^[A-Za-z_$][\w$]*$")
 
 
+def _all_valid_js_identifiers(names: Iterable[str]) -> bool:
+    """Check whether every name can be emitted as a named import.
+
+    Named imports must be valid JS identifiers; if any name isn't (e.g. a
+    subpath export like ``foo/bar``), the caller falls back to a star import.
+
+    Args:
+        names: The export names to validate.
+
+    Returns:
+        Whether all names are valid JS identifiers.
+    """
+    return all(_JS_IDENTIFIER_RE.match(name) is not None for name in names)
+
+
 def _normalize_window_lib_alias(lib: str) -> str:
     """Produce a JS identifier from a library path by stripping ``$/`` and ``@`` and replacing ``/ - .`` with ``_``.
 
@@ -213,7 +228,7 @@ def _render_window_reflex_block(
     entries: list[str] = []
     for lib, names in window_library_imports.items():
         alias = f"__reflex_{_normalize_window_lib_alias(lib)}"
-        if names is None or any(not _JS_IDENTIFIER_RE.match(n) for n in names):
+        if names is None or not _all_valid_js_identifiers(names):
             import_lines.append(f'import * as {alias} from "{lib}";')
             entries.append(f'      "{lib}": {alias},')
         else:

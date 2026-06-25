@@ -113,8 +113,12 @@ def load_dynamic_serializer():
         component_imports = component._get_all_imports()
         compiler._apply_common_imports(component_imports)
 
-        for lib, ivs in component_imports.items():
-            named = {iv for iv in ivs if iv.tag and not iv.is_default}
+        for lib, import_vars in component_imports.items():
+            named = {
+                import_var
+                for import_var in import_vars
+                if import_var.tag and not import_var.is_default
+            }
             if named:
                 dynamic_component_imports.setdefault(lib, set()).update(named)
 
