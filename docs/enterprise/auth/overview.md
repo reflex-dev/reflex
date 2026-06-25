@@ -200,7 +200,9 @@ def header() -> rx.Component:
 4. The user is redirected back to `redirect_to`. Protected fields, vars, pages,
    and handlers now resolve against the authenticated user.
 5. `/logout` clears the session — tokens and the protected surface of every
-   state — and chains the provider's logout.
+   state — and chains the provider's logout. A CSRF guard blocks cross-site
+   logout requests (see
+   [secure by default](/docs/enterprise/auth/secure-by-default/#logout-is-protected-against-csrf)).
 
 ## Learn more
 

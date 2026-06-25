@@ -16,7 +16,7 @@ plugin-owned, so you never reimplement it.
 | --- | --- | --- | --- |
 | `login_endpoint` | `/login` | Renders the login palette / starts the OIDC redirect. | `login_page` |
 | `auth_callback_endpoint` | `/callback` | CSRF (OAuth `state`) check + authorization-code token exchange, then redirect back. | `callback_page` |
-| `logout_endpoint` | `/logout` | Dispatches the active provider's logout. | `logout_page` |
+| `logout_endpoint` | `/logout` | Dispatches the active provider's logout; a CSRF guard blocks cross-site logout (see [secure by default](/docs/enterprise/auth/secure-by-default/#logout-is-protected-against-csrf)). | `logout_page` |
 | `forbidden_endpoint` | `/forbidden` | Shown when an authenticated user lacks permission to view a page. | `forbidden_page` |
 
 The routes themselves are configurable through `login_endpoint`,
