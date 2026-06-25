@@ -48,6 +48,10 @@ config = rxe.Config(
 )
 ```
 
+With the `OIDC_*` variables set, the app imports and compiles even before the IdP
+is reachable — the issuer is contacted only when a user logs in (OIDC discovery),
+so placeholder values are enough for local builds and CI.
+
 **2. Use `rxe.App()`** (not `rx.App()`) in your app module:
 
 ```python

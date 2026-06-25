@@ -19,7 +19,7 @@ provider when the wiring itself is what you want to test.
 
 ```md alert info
 # Run these under pytest
-The snippets construct `AuthUserState()` directly, which Reflex permits only in a test environment (it keys off pytest being active) — so run them with `pytest`, not a bare script. Async-check tests use [`pytest-asyncio`](https://pypi.org/project/pytest-asyncio/) (`uv add --dev pytest-asyncio`); the `@pytest.mark.asyncio` marker shown below works whether or not your project sets `asyncio_mode = "auto"`.
+The snippets construct `AuthUserState()` directly, which Reflex permits only in a test environment (it keys off pytest being active) — so run them with `pytest`, not a bare script, from your project's `tests/` directory. Async-check tests use [`pytest-asyncio`](https://pypi.org/project/pytest-asyncio/) (`uv add --dev pytest-asyncio`); the `@pytest.mark.asyncio` marker shown below works whether or not your project sets `asyncio_mode = "auto"` in `pyproject.toml`.
 ```
 
 ## A check is just a function
@@ -36,8 +36,8 @@ def is_staff(ctx: VarAuthContext) -> bool:
 ```
 
 To test it, build a context around an `AuthUserState` carrying the claims you
-want, and call the check. `AuthUserState` (exported as `User`) holds the claims
-in `_userinfo`:
+want, and call the check. Set the claims on the private `_userinfo` attribute;
+the check reads them back through the public `userinfo` property:
 
 ```python
 from reflex_enterprise.auth import AuthUserState, VarAuthContext
@@ -173,10 +173,38 @@ def mock_idp():
                 os.environ[key] = value
 ```
 
-Then drive the app's real `/login`, `/callback`, and `/logout` pages with your
-browser-automation harness of choice, logging in as one of the users you defined.
-`oidc-provider-mock` also ships a CLI if you prefer to run the IdP as a standalone
-server for manual local testing.
+The login flow is browser-driven — redirects, cookies, and websocket state — so
+exercise it the way Reflex tests any app: with `AppHarness` (from
+`reflex.testing`) and a browser driver such as Playwright. With the `mock_idp`
+fixture above active (so `OIDC_*` point at the mock), drive the auth-specific
+steps and assert a protected value is delivered:
+
+```python
+import re
+
+from playwright.sync_api import Page, expect
+
+
+def test_login_delivers_protected_value(auth_app, page: Page):
+    base = auth_app.frontend_url.rstrip("/")
+    # A protected page bounces an anonymous visitor to /login.
+    page.goto(f"{base}/dashboard")
+    page.wait_for_url(re.compile(r"/login"))
+    # Click the app's login button (labelled "Login with {display_name()}"). This
+    # does not authenticate — it starts the OIDC redirect to the IdP's authorize page.
+    page.get_by_role("button", name="Login with Generic").click()
+    # Authorize on the IdP. oidc-provider-mock authorizes with one passwordless
+    # click per predefined user; a real IdP shows its own login/consent form here.
+    page.locator('button[name="sub"][value="user-1"]').click()
+    # Control returns to the app; the callback exchanges tokens and the
+    # protected value is now delivered.
+    page.wait_for_url(lambda url: url.startswith(base) and "callback" not in url)
+    expect(page.get_by_text("Ada Lovelace")).to_be_visible()
+```
+
+The `auth_app` fixture starts your app under `AppHarness` with `mock_idp` active;
+`page` is the standard Playwright fixture. `oidc-provider-mock` also ships a CLI
+if you prefer to run the IdP standalone for manual local testing.
 
 ```md alert info
 # Test the check directly first; the mock IdP when you're testing the wiring

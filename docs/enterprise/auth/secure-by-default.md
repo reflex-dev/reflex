@@ -294,9 +294,10 @@ class DemoState(rx.State):
 
 ## Authorization checks
 
-For finer-grained control than "any authenticated user," pass a **callable** as
-`auth=`. A check is a function that receives a single **context object** and
-returns a bool (or an awaitable of one):
+For finer-grained control than "any authenticated user," attach a **callable**
+`auth=` check to the specific events, vars, or fields that need it. A check is a
+function that receives a single **context object** and returns a bool (or an
+awaitable of one):
 
 ```python
 def check(ctx) -> bool: ...  # sync
