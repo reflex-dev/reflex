@@ -10,14 +10,7 @@ Examples:
 - Incorrect: WHITELISTED_PAGES = ["/getting-started/introduction/"]
 """
 
-WHITELISTED_PAGES = [
-    # Auth docs preview — the "/enterprise/auth" prefix matches all 6 pages under
-    # /enterprise/auth/ (overview, secure-by-default, providers, custom-pages,
-    # testing, deployment), plus the enterprise overview landing page so
-    # navigation into the section works.
-    "/enterprise/auth",
-    "/enterprise/overview",
-]
+WHITELISTED_PAGES = []
 
 
 def _check_whitelisted_path(path: str):
