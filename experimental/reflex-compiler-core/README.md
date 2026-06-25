@@ -85,19 +85,49 @@ cheat (python leaf)        BLOCKED       515          1  FALLBACK ✗
 If a future change sneaks a Python fallback into a "ported" path, the gate fails
 automatically — you cannot pass it by matching strings.
 
-## Known gap (deliberately not solved here)
+## Stage B — registry-driven native elements (`stage_b.py`)
 
-Multi-prop **ordering**: the Python path emits props in component
-field-definition order (e.g. `className,id`); this slice preserves user-kwarg
-order (`id,className`). Values, refs, and camelCasing all match. Closing this
-needs the per-component field-order table — i.e. the code-generated component
-registry the design calls for (source of truth: the existing Python class
-definitions + `.pyi`). Single-prop nodes and the benchmark match exactly.
+`register_component(name, tag, is_element)` registers a component with the Rust
+core; `make(name, children, props)` is one generic factory that builds any
+registered type natively. `fastnodes.el.div/span/...` are the `rx.el.*` set
+registered this way. Verified byte-identical to `Component.create` +
+`_RenderUtils` across multi-prop, `id`→`ref`, nesting, and native-parent +
+cond/foreach-child trees, and purity-gated.
 
-## What this slice does NOT cover (next steps)
+```
+uv run python experimental/reflex-compiler-core/stage_b.py
+equivalence:  multi-prop sort / id->ref / nested / cond child / foreach child  all OK
+purity:       pure element tree -> BUILD-NATIVE (GIL-pure, 0 fallbacks)
+              tree with cond    -> codegen-native, construction still Python (GIL-pure=False, 1 fallback)
+benchmark:    ~12000 element nodes, construction  slow 122ms  fast 10ms  ~12x
+```
 
-- The component registry (prop kind/order metadata) generated from Python classes.
-- Var props (state-bound) carrying `(js_expr, VarData)` across the seam.
-- Event props beyond capture; the plugin pass operating on Rust nodes.
+**The "ordering gap" is solved, and simpler than expected.** Reflex's
+`format_props` *sorts* props by their (camelCased) key, so the fast path just
+camelCases, adds the `id`-derived `ref`, and sorts — no per-component
+field-order table is needed. The registry therefore only needs `{tag, kind}`
+(plus a style mapping for radix, next).
+
+## Three levels of native-ness (and how the gate tells them apart)
+
+1. **Build-native** — element built via `make`; renders GIL-released. Gold.
+2. **Codegen-native only** — a Python construct (cond/foreach/custom component)
+   is pre-rendered to its dict at build (`RawDict`); codegen runs natively over
+   the dict (0 Python at render) but construction stayed in Python, so it fails
+   the GIL-pure render and counts on the ledger.
+3. **(removed)** — there is no longer a render-time `_RenderUtils` callback.
+
+Output equality can't distinguish 1 from 2 (both emit identical JS), which is
+exactly why the GIL-pure structural gate + build-time ledger exist.
+
+## What this does NOT cover yet (next steps toward docs/app)
+
+- **Radix components** (`rx.box/text/flex/...`, the #1 by frequency): same
+  registry, but need the JS tag + `add_style` (theme prop → class) mapping
+  generated from the Python class.
+- **Native Cond/Iterable construction** (so cond/foreach become build-native,
+  not just codegen-native) — requires reading the Var `_js_expr` at build.
+- Var props (state-bound) carrying `(js_expr, VarData)`; event props; the
+  plugin pass on Rust nodes.
 - Collection/color/datetime literals in `literal_to_js`.
-- Packaging (wheel matrix / abi3 distribution) and the import-guard fallback.
+- Packaging (wheel matrix / abi3) and the import-guard fallback.

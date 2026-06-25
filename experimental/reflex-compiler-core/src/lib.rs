@@ -13,25 +13,46 @@
 //! rendered by calling back into Reflex's `_RenderUtils` — the pydantic-core
 //! `FunctionWrapValidator` fallback pattern.
 
-use pyo3::exceptions::PyRuntimeError;
+use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyBool, PyDict, PyFloat, PyInt, PyList, PyString};
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::{OnceLock, RwLock};
 
 /// Strict purity mode. When on, any Python-component fallback is a hard error
 /// instead of a silent delegation — so a "ported" component cannot quietly
 /// regress to calling Python and still pass a string-equality test.
 static STRICT: AtomicBool = AtomicBool::new(false);
 
-/// Count of Python-component fallbacks since the last reset (the "cheat
-/// ledger"). A genuinely-native render leaves this at 0.
+/// Count of non-native subtrees since the last reset (the "cheat ledger"). A
+/// fully native build leaves this at 0. Incremented whenever a child cannot be
+/// built natively and is captured as a pre-rendered dict instead.
 static PY_FALLBACKS: AtomicUsize = AtomicUsize::new(0);
 
-/// A child of a Rust node: either another Rust node (the fast path) or an
-/// opaque Python component leaf (the fallback bridge).
+/// Component registry: name -> how to build its node natively. Populated from
+/// the Python class definitions by `register_component` (the code-generated
+/// registry the design calls for). This is what closes the prop-ordering gap
+/// and lets one generic factory cover every registered component.
+struct CompSpec {
+    /// JS tag/identifier. Elements are JSON-quoted ("div"); imported components
+    /// are bare identifiers.
+    tag: String,
+    is_element: bool,
+}
+
+static REGISTRY: OnceLock<RwLock<HashMap<String, CompSpec>>> = OnceLock::new();
+
+fn registry() -> &'static RwLock<HashMap<String, CompSpec>> {
+    REGISTRY.get_or_init(|| RwLock::new(HashMap::new()))
+}
+
+/// A child of a Rust node: another native node, or a non-native subtree kept as
+/// a pre-rendered Python dict (codegen still runs natively over the dict; only
+/// the *construction* stayed in Python — distinct from full native).
 enum RChild {
     Node(RNode),
-    Py(Py<PyAny>),
+    RawDict(Py<PyAny>),
 }
 
 /// A native component node. Mirrors the two render-dict shapes this slice
@@ -135,8 +156,67 @@ fn literal_to_js(value: &Bound<'_, PyAny>) -> PyResult<String> {
     )))
 }
 
-/// Build a native node from raw props + children. This is the PyO3 seam that
-/// replaces `Component.create` for fast-path components.
+/// Convert children (NodeHandles, text, or non-native components) into RChild.
+/// A non-native child is rendered to its dict now (build-time Python) and kept
+/// for native codegen; it counts against the fallback ledger and is refused in
+/// strict mode.
+fn build_children(children: &Bound<'_, PyList>) -> PyResult<Vec<RChild>> {
+    let mut out: Vec<RChild> = Vec::with_capacity(children.len());
+    for item in children.iter() {
+        if let Ok(mut handle) = item.extract::<PyRefMut<NodeHandle>>() {
+            if let Some(node) = handle.inner.take() {
+                out.push(RChild::Node(node));
+            }
+            continue;
+        }
+        if let Ok(s) = item.downcast::<PyString>() {
+            out.push(RChild::Node(RNode::Bare {
+                contents: json_quote(&s.extract::<String>()?),
+            }));
+            continue;
+        }
+        PY_FALLBACKS.fetch_add(1, Ordering::Relaxed);
+        if STRICT.load(Ordering::Relaxed) {
+            return Err(PyRuntimeError::new_err(
+                "strict purity mode: a non-native child subtree was encountered \
+                 (component not built via the native registry)",
+            ));
+        }
+        out.push(RChild::RawDict(item.call_method0("render")?.unbind()));
+    }
+    Ok(out)
+}
+
+/// Resolve the `id` -> `ref` prop (Element behavior) for a literal-string id.
+fn ref_for(props: &Bound<'_, PyDict>) -> PyResult<Option<String>> {
+    if let Some(v) = props.get_item("id")? {
+        if let Ok(s) = v.downcast::<PyString>() {
+            return Ok(Some(format_ref(&s.extract::<String>()?)));
+        }
+    }
+    Ok(None)
+}
+
+/// Emit `key:value` prop fragments: camelCase each key, render each literal
+/// value, add the `id`-derived `ref`, then sort by key — matching Reflex's
+/// `format_props` (which sorts the camelCased keys). This single rule replaces
+/// any per-component field-order table.
+fn emit_props(props: &Bound<'_, PyDict>) -> PyResult<Vec<String>> {
+    let mut pairs: Vec<(String, String)> = Vec::with_capacity(props.len() + 1);
+    for (k, v) in props.iter() {
+        let key_owned: String = k.extract()?;
+        let norm = key_owned.strip_suffix('_').unwrap_or(&key_owned);
+        pairs.push((to_camel_case(norm), literal_to_js(&v)?));
+    }
+    if let Some(r) = ref_for(props)? {
+        pairs.push(("ref".to_string(), r));
+    }
+    pairs.sort_by(|a, b| a.0.cmp(&b.0));
+    Ok(pairs.into_iter().map(|(k, v)| format!("{k}:{v}")).collect())
+}
+
+/// Low-level node builder: emits props in the order passed (no registry). Used
+/// by hand-written shims and as the primitive under the registry-driven `make`.
 #[pyfunction]
 fn make_node(
     tag: &str,
@@ -149,73 +229,58 @@ fn make_node(
     } else {
         tag.to_string()
     };
-
-    let mut prop_strs: Vec<String> = Vec::with_capacity(props.len());
-    let mut ref_prop: Option<String> = None;
-
-    for (k, v) in props.iter() {
-        let key_owned: String = k.extract()?;
-        let key = key_owned.strip_suffix('_').unwrap_or(&key_owned);
-        // A literal string `id` adds a `ref:ref_<id>` prop (Element behavior).
-        if key == "id" {
-            if let Ok(s) = v.downcast::<PyString>() {
-                ref_prop = Some(format_ref(&s.extract::<String>()?));
-            }
-        }
-        prop_strs.push(format!("{}:{}", to_camel_case(key), literal_to_js(&v)?));
-    }
-    if let Some(r) = ref_prop {
-        prop_strs.push(format!("ref:{r}"));
-    }
-
-    let mut child_nodes: Vec<RChild> = Vec::with_capacity(children.len());
-    for item in children.iter() {
-        // Fast-path child: another NodeHandle — move its subtree into us.
-        if let Ok(mut handle) = item.extract::<PyRefMut<NodeHandle>>() {
-            if let Some(node) = handle.inner.take() {
-                child_nodes.push(RChild::Node(node));
-            }
-            continue;
-        }
-        // Literal text child -> bare node.
-        if let Ok(s) = item.downcast::<PyString>() {
-            child_nodes.push(RChild::Node(RNode::Bare {
-                contents: json_quote(&s.extract::<String>()?),
-            }));
-            continue;
-        }
-        // Anything else is a real Python component: keep as an opaque leaf and
-        // render it via callback at codegen time (the fallback bridge).
-        child_nodes.push(RChild::Py(item.unbind()));
-    }
-
     Ok(NodeHandle {
         inner: Some(RNode::Element {
             name,
-            props: prop_strs,
-            children: child_nodes,
+            props: emit_props(props)?,
+            children: build_children(children)?,
         }),
     })
 }
 
-/// Render a Python-component leaf by calling back into Reflex's `_RenderUtils`.
-/// Every call is recorded in the fallback ledger; in strict mode it is refused.
-fn render_py_leaf(py: Python<'_>, obj: &Py<PyAny>) -> PyResult<String> {
-    PY_FALLBACKS.fetch_add(1, Ordering::Relaxed);
-    if STRICT.load(Ordering::Relaxed) {
-        return Err(PyRuntimeError::new_err(
-            "strict purity mode: render hit a Python-component fallback — this \
-             node was NOT rendered natively in Rust",
-        ));
-    }
-    let templates = py.import("reflex_base.compiler.templates")?;
-    let render_utils = templates.getattr("_RenderUtils")?;
-    let render_dict = obj.call_method0(py, "render")?;
-    let js = render_utils.call_method1("render", (render_dict,))?;
-    js.extract()
+/// Register a component so `make` can build it natively (name -> tag + kind).
+#[pyfunction]
+fn register_component(name: &str, tag: &str, is_element: bool) {
+    registry().write().unwrap().insert(
+        name.to_string(),
+        CompSpec {
+            tag: tag.to_string(),
+            is_element,
+        },
+    );
 }
 
-/// Lower a node to its JSX-call string, mirroring `_RenderUtils.render`.
+/// Registry-driven node builder: resolve the tag/kind from the registry, emit
+/// sorted props, build children. One generic factory for every registered type.
+#[pyfunction]
+fn make(
+    name: &str,
+    children: &Bound<'_, PyList>,
+    props: &Bound<'_, PyDict>,
+) -> PyResult<NodeHandle> {
+    let display_name = {
+        let reg = registry().read().unwrap();
+        let spec = reg
+            .get(name)
+            .ok_or_else(|| PyValueError::new_err(format!("component '{name}' is not registered")))?;
+        if spec.is_element {
+            json_quote(&spec.tag)
+        } else {
+            spec.tag.clone()
+        }
+    };
+    Ok(NodeHandle {
+        inner: Some(RNode::Element {
+            name: display_name,
+            props: emit_props(props)?,
+            children: build_children(children)?,
+        }),
+    })
+}
+
+/// Lower a node to its JSX-call string, mirroring `_RenderUtils.render`. A
+/// `RawDict` child is rendered by the native dict renderer (no Python executes;
+/// reading the dict needs the GIL, so this is not GIL-pure — see the pure path).
 fn render_rnode(py: Python<'_>, node: &RNode) -> PyResult<String> {
     match node {
         RNode::Bare { contents } => Ok(if contents.is_empty() {
@@ -232,7 +297,7 @@ fn render_rnode(py: Python<'_>, node: &RNode) -> PyResult<String> {
             for c in children {
                 let s = match c {
                     RChild::Node(n) => render_rnode(py, n)?,
-                    RChild::Py(obj) => render_py_leaf(py, obj)?,
+                    RChild::RawDict(obj) => render_dict(py, obj.bind(py))?,
                 };
                 if !s.is_empty() {
                     rendered.push(s);
@@ -276,10 +341,10 @@ fn render_rnode_pure(node: &RNode) -> Result<String, String> {
             for c in children {
                 let s = match c {
                     RChild::Node(n) => render_rnode_pure(n)?,
-                    RChild::Py(_) => {
+                    RChild::RawDict(_) => {
                         return Err(
-                            "pure render hit a Python-component leaf — the work was \
-                             NOT done natively in Rust (a fallback would be required)"
+                            "pure render hit a non-native subtree — its construction \
+                             stayed in Python (codegen-native but not build-native)"
                                 .to_string(),
                         )
                     }
@@ -450,6 +515,8 @@ fn reset_fallback_count() {
 fn reflex_compiler_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<NodeHandle>()?;
     m.add_function(wrap_pyfunction!(make_node, m)?)?;
+    m.add_function(wrap_pyfunction!(make, m)?)?;
+    m.add_function(wrap_pyfunction!(register_component, m)?)?;
     m.add_function(wrap_pyfunction!(render_to_js, m)?)?;
     m.add_function(wrap_pyfunction!(render_dict_to_js, m)?)?;
     m.add_function(wrap_pyfunction!(render_to_js_pure, m)?)?;
