@@ -7,6 +7,7 @@
 ### Bug Fixes
 
 - Stop warning when a non-built-in plugin is listed in `disable_plugins`, so config can opt out of an env-provided plugin without a spurious warning. ([#6685](https://github.com/reflex-dev/reflex/issues/6685))
+- Improve error message when plugin spec from environment cannot be used. ([#6685](https://github.com/reflex-dev/reflex/issues/6685))
 
 
 ## v0.9.6 (2026-06-25)
