@@ -615,3 +615,88 @@ def test_plugins_class_requiring_args_raises_config_error():
 
     with pytest.raises(ConfigError, match="NeedsArgs"):
         rx.Config(app_name="test", plugins=[NeedsArgs])  # pyright: ignore[reportArgumentType]
+
+
+# Module-level plugins so REFLEX_EXTRA_PLUGINS can resolve them by import path.
+class ExtraPluginA(Plugin):
+    """First plugin used to exercise REFLEX_EXTRA_PLUGINS."""
+
+
+class ExtraPluginB(Plugin):
+    """Second plugin used to exercise REFLEX_EXTRA_PLUGINS."""
+
+
+_EXTRA_PLUGIN_A = "tests.units.test_config.ExtraPluginA"
+_EXTRA_PLUGIN_B = "tests.units.test_config.ExtraPluginB"
+
+
+def test_extra_plugins_appends_single_plugin(monkeypatch: pytest.MonkeyPatch):
+    """A single extra plugin is appended to the plugins list."""
+    monkeypatch.setenv("REFLEX_EXTRA_PLUGINS", _EXTRA_PLUGIN_A)
+    config = rx.Config(app_name="test")
+    assert any(isinstance(p, ExtraPluginA) for p in config.plugins)
+
+
+def test_extra_plugins_appends_multiple_plugins(monkeypatch: pytest.MonkeyPatch):
+    """Multiple colon-separated extra plugins are all appended."""
+    monkeypatch.setenv("REFLEX_EXTRA_PLUGINS", f"{_EXTRA_PLUGIN_A}:{_EXTRA_PLUGIN_B}")
+    config = rx.Config(app_name="test")
+    assert any(isinstance(p, ExtraPluginA) for p in config.plugins)
+    assert any(isinstance(p, ExtraPluginB) for p in config.plugins)
+
+
+def test_extra_plugins_preserves_config_plugins(monkeypatch: pytest.MonkeyPatch):
+    """Extra plugins are appended without replacing plugins from the config."""
+    monkeypatch.setenv("REFLEX_EXTRA_PLUGINS", _EXTRA_PLUGIN_B)
+    instance = ExtraPluginA()
+    config = rx.Config(app_name="test", plugins=[instance])
+    # The config-provided instance is preserved...
+    assert instance in config.plugins
+    # ...and the extra plugin from the env var is appended.
+    assert any(isinstance(p, ExtraPluginB) for p in config.plugins)
+
+
+def test_extra_plugins_unset_appends_nothing(monkeypatch: pytest.MonkeyPatch):
+    """When unset, no extra plugins leak into the plugins list."""
+    monkeypatch.delenv("REFLEX_EXTRA_PLUGINS", raising=False)
+    config = rx.Config(app_name="test")
+    assert not any(isinstance(p, (ExtraPluginA, ExtraPluginB)) for p in config.plugins)
+
+
+def test_extra_plugins_does_not_duplicate_existing_type(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """An extra plugin whose type is already configured is not added twice."""
+    monkeypatch.setenv("REFLEX_EXTRA_PLUGINS", _EXTRA_PLUGIN_A)
+    config = rx.Config(app_name="test", plugins=[ExtraPluginA()])
+    instances = [p for p in config.plugins if isinstance(p, ExtraPluginA)]
+    assert len(instances) == 1
+
+
+def test_extra_plugins_respects_disable_plugins(monkeypatch: pytest.MonkeyPatch):
+    """An extra plugin disabled via disable_plugins is not appended."""
+    monkeypatch.setenv("REFLEX_EXTRA_PLUGINS", _EXTRA_PLUGIN_A)
+    config = rx.Config(app_name="test", disable_plugins=[ExtraPluginA])
+    assert not any(isinstance(p, ExtraPluginA) for p in config.plugins)
+
+
+def test_extra_plugins_does_not_replace_like_reflex_plugins(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """REFLEX_PLUGINS replaces config plugins, unlike REFLEX_EXTRA_PLUGINS."""
+    monkeypatch.setenv("REFLEX_PLUGINS", _EXTRA_PLUGIN_A)
+    config = rx.Config(app_name="test", plugins=[ExtraPluginB()])
+    # The config plugin is dropped by the REFLEX_PLUGINS replacement.
+    assert not any(isinstance(p, ExtraPluginB) for p in config.plugins)
+    assert any(isinstance(p, ExtraPluginA) for p in config.plugins)
+
+
+def test_extra_plugins_appends_on_top_of_reflex_plugins(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """REFLEX_EXTRA_PLUGINS appends on top of the REFLEX_PLUGINS replacement."""
+    monkeypatch.setenv("REFLEX_PLUGINS", _EXTRA_PLUGIN_A)
+    monkeypatch.setenv("REFLEX_EXTRA_PLUGINS", _EXTRA_PLUGIN_B)
+    config = rx.Config(app_name="test", plugins=[SitemapPlugin()])
+    assert any(isinstance(p, ExtraPluginA) for p in config.plugins)
+    assert any(isinstance(p, ExtraPluginB) for p in config.plugins)

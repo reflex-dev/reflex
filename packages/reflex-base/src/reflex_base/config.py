@@ -368,6 +368,10 @@ class Config(BaseConfig):
         # Normalize disable_plugins: convert strings and Plugin subclasses to instances.
         self._normalize_disable_plugins()
 
+        # Append any plugins declared via the REFLEX_EXTRA_PLUGINS env var (honoring
+        # disable_plugins, which is normalized above).
+        self._add_extra_plugins()
+
         # Add builtin plugins if not disabled.
         if not self._skip_plugins_checks:
             self._add_builtin_plugins()
@@ -436,6 +440,27 @@ class Config(BaseConfig):
                 )
                 raise ConfigError(msg)
         self.plugins = normalized
+
+    def _add_extra_plugins(self):
+        """Append plugins declared via the ``REFLEX_EXTRA_PLUGINS`` env var.
+
+        Unlike ``REFLEX_PLUGINS``, which *replaces* ``plugins`` entirely, this env
+        var appends to the existing list so plugins configured in ``rxconfig.py``
+        are preserved. Each entry is a fully qualified import path and is resolved
+        to a Plugin instance by the env var machinery. An entry is skipped when a
+        plugin of the same type is already present (so a plugin is never run twice)
+        or when its type is listed in ``disable_plugins`` (so config can opt out of
+        an env-provided plugin).
+        """
+        for plugin in environment.REFLEX_EXTRA_PLUGINS.get():
+            if any(isinstance(plugin, disabled) for disabled in self.disable_plugins):
+                console.debug(
+                    f"Skipping REFLEX_EXTRA_PLUGINS entry {type(plugin).__name__!r} "
+                    "because its type is listed in disable_plugins.",
+                )
+                continue
+            if not any(isinstance(existing, type(plugin)) for existing in self.plugins):
+                self.plugins.append(plugin)
 
     def _normalize_disable_plugins(self):
         """Normalize disable_plugins list entries to Plugin subclasses.

@@ -710,6 +710,10 @@ class EnvironmentVariables:
     # How long to opportunistically hold the redis lock in milliseconds (must be less than the token expiration).
     REFLEX_OPLOCK_HOLD_TIME_MS: EnvVar[int] = env_var(0)
 
+    # Extra plugins to append to the config's plugins list. Fully qualified
+    # import paths separated by a colon.
+    REFLEX_EXTRA_PLUGINS: EnvVar[list[Plugin]] = env_var([])
+
 
 environment = EnvironmentVariables()
 
