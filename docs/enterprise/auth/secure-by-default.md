@@ -18,8 +18,7 @@ Secure-by-default only applies when your app uses `rxe.App()` (not `rx.App()`) a
 
 ## The `auth=` value
 
-Every `rxe.*` wrapper and the plugin-wide default take the same `auth=`
-argument:
+`auth=` accepts three kinds of value:
 
 | `auth=` value | Meaning |
 | --- | --- |
@@ -28,8 +27,8 @@ argument:
 | a callable check | An authorization check that runs **only after** authentication succeeds. A truthy result allows; a falsey result or a raised exception denies. |
 
 The four wrappers are exported at top level: `rxe.page`, `rxe.event`,
-`rxe.field`, and `rxe.var`. Pages take `auth` as a **bool only**; event handlers,
-fields, and computed vars also accept a callable check.
+`rxe.field`, and `rxe.var`. `rxe.event`, `rxe.field`, and `rxe.var` accept all
+three values. `rxe.page` takes a **bool only**.
 
 ### The global default
 
