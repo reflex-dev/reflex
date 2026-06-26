@@ -222,8 +222,23 @@ def extract_doc_description(
     if not markdown_text:
         return None
     try:
+        text = markdown_text
+        # Handle a leading YAML frontmatter block (--- ... ---): prefer an
+        # explicit description field, otherwise strip the entire block so its
+        # key:value lines (title:, tags:, ...) don't leak into the description.
+        frontmatter = re.match(r"﻿?\s*---\r?\n(.*?)\r?\n---\r?\n", text, flags=re.DOTALL)
+        if frontmatter:
+            for fm_line in frontmatter.group(1).splitlines():
+                key_value = re.match(
+                    r"\s*(?:meta_description|description)\s*:\s*(\S.*)", fm_line
+                )
+                if key_value:
+                    value = key_value.group(1).strip().strip("\"'")
+                    if len(value) >= 20:
+                        return value
+            text = text[frontmatter.end() :]
         # Drop fenced code blocks (```...```), including ```python exec blocks.
-        text = re.sub(r"```.*?```", "", markdown_text, flags=re.DOTALL)
+        text = re.sub(r"```.*?```", "", text, flags=re.DOTALL)
         para_lines: list[str] = []
         skip_prefixes = (
             "#",

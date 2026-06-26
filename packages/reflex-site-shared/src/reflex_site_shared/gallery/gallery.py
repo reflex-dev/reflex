@@ -163,6 +163,7 @@ def extended_gallery_grid_item(
                 rx.el.div(
                     rx.image(
                         src=app_image,
+                        alt=f"{app_name} app preview",
                         class_name="group-hover:scale-105 duration-200 ease-out object-center object-cover absolute inset-0 size-full blur-in transition-all z-10",
                     ),
                     rx.el.div(
