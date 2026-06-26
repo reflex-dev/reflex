@@ -237,9 +237,7 @@ def extract_doc_description(
             "* ",
             "rx.",
             "```",
-            "1.",
-            "2.",
-            "3.",
+            *(f"{n}." for n in range(1, 10)),
         )
         for raw in text.splitlines():
             line = raw.strip()

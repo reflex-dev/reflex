@@ -1064,8 +1064,11 @@ def docpage(
                 if category
                 else f"{title} · Reflex Docs"
             )
+            fallback = f"{title} · Reflex Docs"
             seo_title = (
-                with_category if len(with_category) <= 60 else f"{title} · Reflex Docs"
+                with_category
+                if len(with_category) <= 60
+                else (fallback if len(fallback) <= 60 else title)
             )
 
         # Always provide a non-empty, page-specific meta description. Real
