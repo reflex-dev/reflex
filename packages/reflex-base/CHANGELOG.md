@@ -1,3 +1,14 @@
+## v0.9.6.post1 (2026-06-26)
+
+### Features
+
+- Added the `REFLEX_EXTRA_PLUGINS` environment variable, a colon-separated list of fully qualified plugin import paths appended to the config's `plugins` list. Unlike `REFLEX_PLUGINS`, which replaces the list entirely, this preserves plugins configured in `rxconfig.py`; an entry is skipped when a plugin of the same type is already present or when its type is listed in `disable_plugins`. ([#6685](https://github.com/reflex-dev/reflex/issues/6685))
+
+### Bug Fixes
+
+- Stop warning when a non-built-in plugin is listed in `disable_plugins`, so config can opt out of an env-provided plugin without a spurious warning. ([#6685](https://github.com/reflex-dev/reflex/issues/6685))
+
+
 ## v0.9.6 (2026-06-25)
 
 ### Features
