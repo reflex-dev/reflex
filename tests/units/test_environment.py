@@ -129,17 +129,17 @@ class TestInterpretFunctions:
         assert "Failed to import module" in result.error
 
     def test_interpret_plugin_env_missing_class(self):
-        """Test plugin interpretation with missing class returns an _InvalidPlugin."""
+        """A missing attribute returns an _InvalidPlugin recording the lookup failure."""
         result = interpret_plugin_env(
             "tests.units.test_environment.NonExistentPlugin", "TEST_FIELD"
         )
         assert isinstance(result, _InvalidPlugin)
-        assert "Invalid plugin class" in result.error
+        assert "Failed to get plugin class" in result.error
 
     def test_interpret_plugin_env_invalid_class(self):
-        """Test plugin interpretation with invalid class returns an _InvalidPlugin."""
+        """An existing non-Plugin class returns an _InvalidPlugin."""
         result = interpret_plugin_env(
-            "tests.units.test_environment.TestEnum", "TEST_FIELD"
+            "tests.units.test_environment._TestEnum", "TEST_FIELD"
         )
         assert isinstance(result, _InvalidPlugin)
         assert "Invalid plugin class" in result.error
@@ -178,10 +178,10 @@ class TestInterpretFunctions:
             interpret_plugin_class_env("non.existent.module.Plugin", "TEST_FIELD")
 
     def test_interpret_plugin_class_env_invalid_class(self):
-        """Test plugin class interpretation with invalid class."""
+        """Test plugin class interpretation with an existing non-Plugin class."""
         with pytest.raises(EnvironmentVarValueError, match="Invalid plugin class"):
             interpret_plugin_class_env(
-                "tests.units.test_environment.TestEnum", "TEST_FIELD"
+                "tests.units.test_environment._TestEnum", "TEST_FIELD"
             )
 
     def test_interpret_enum_env_valid(self):
