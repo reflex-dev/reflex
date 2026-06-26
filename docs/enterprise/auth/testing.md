@@ -9,23 +9,23 @@ _New in reflex-enterprise v0.9.1._
 When the [AuthPlugin](/docs/enterprise/auth/overview/) is enabled, every
 non-exempt page, event handler, base field, and computed var is
 [secure by default](/docs/enterprise/auth/secure-by-default/). The logic worth
-testing is almost always your **authorization checks** — the `auth=<callable>`
-functions that decide who may see a value or run a handler.
+testing is usually the `auth=<callable>` authorization checks that decide who
+may see a value or run a handler.
 
 Because a check is an ordinary function that takes a context object and returns a
-bool, you can test it directly with no network, no IdP, and no browser. This page
-shows that, then covers exercising the **full** OIDC flow against a local mock
-provider when the wiring itself is what you want to test.
+bool, you can test it directly with no network, IdP, or browser. Use a local
+mock provider when the OIDC wiring itself is under test.
 
 ```md alert info
 # Run these under pytest
-The snippets construct `AuthUserState()` directly, which Reflex permits only in a test environment (it keys off pytest being active) — so run them with `pytest`, not a bare script, from your project's `tests/` directory. Async-check tests use [`pytest-asyncio`](https://pypi.org/project/pytest-asyncio/) (`uv add --dev pytest-asyncio`); the `@pytest.mark.asyncio` marker shown below works whether or not your project sets `asyncio_mode = "auto"` in `pyproject.toml`.
+The snippets construct `AuthUserState()` directly, which Reflex permits only in a pytest environment. Run them with `pytest`, not as standalone scripts. Async-check tests use [`pytest-asyncio`](https://pypi.org/project/pytest-asyncio/) (`uv add --dev pytest-asyncio`); the `@pytest.mark.asyncio` marker shown below works whether or not your project sets `asyncio_mode = "auto"` in `pyproject.toml`.
 ```
 
-## A check is just a function
+## A check is a function
 
 An authorization check receives a single context object and returns a bool (or an
-awaitable of one). It reads the user's claims off `ctx.auth_user_state.userinfo`:
+awaitable of one). It reads the user's claims from
+`ctx.auth_user_state.userinfo`:
 
 ```python
 from reflex_enterprise.auth import VarAuthContext
@@ -35,8 +35,8 @@ def is_staff(ctx: VarAuthContext) -> bool:
     return "staff" in (ctx.auth_user_state.userinfo.get("groups") or [])
 ```
 
-To test it, build a context around an `AuthUserState` carrying the claims you
-want, and call the check. Set the claims on the private `_userinfo` attribute;
+To test it, build a context around an `AuthUserState` carrying the claims for
+that case, and call the check. Set the claims on the private `_userinfo` attribute;
 the check reads them back through the public `userinfo` property:
 
 ```python
@@ -60,8 +60,8 @@ def test_is_staff_denies_non_member():
     assert is_staff(_ctx({"sub": "u2", "groups": ["guests"]})) is False
 ```
 
-The context classes are all exported from `reflex_enterprise.auth`. Build the one
-that matches the surface your check guards:
+The context classes are exported from `reflex_enterprise.auth`. Build the one
+that matches the guarded surface:
 
 | Context | Construct as |
 | --- | --- |
@@ -69,21 +69,18 @@ that matches the surface your check guards:
 | `EventAuthContext` | `EventAuthContext(auth_user_state=user, event_handler=None, payload={})` |
 | `PageAuthContext` | `PageAuthContext(auth_user_state=user)` |
 
-A check typed with the `AuthContext` union works on any surface, so you can test
-it through whichever context is simplest to build (usually `VarAuthContext`).
+A check typed with the `AuthContext` union works on any surface. Test it through
+the simplest matching context, usually `VarAuthContext`.
 
 ```md alert info
 # A check never runs for an anonymous caller
-The plugin resolves authentication *before* any check, so `ctx.auth_user_state`
-is always a logged-in user inside a check. You don't need to test the
-"anonymous" case at the check level — that's an authentication failure (a login
-redirect), handled before the check runs.
+The plugin resolves authentication before any check. `ctx.auth_user_state` is always a logged-in user inside a check. Test anonymous behavior at the protected surface level, not in the check function.
 ```
 
 ## Async checks
 
-An `async` check that only reads `ctx.auth_user_state.userinfo` is tested exactly
-the same way — just `await` it:
+Async checks are tested the same way. Pass the claims into the test context and
+await the check:
 
 ```python
 import pytest
@@ -94,38 +91,14 @@ async def test_async_check():
     assert await my_async_check(_ctx({"sub": "u1", "groups": ["admins"]})) is True
 ```
 
-An async check that reaches **other state** — `await ctx.auth_user_state.get_state(OtherState)`,
-a database, or a remote authorization service — needs a live state tree, so it
-isn't unit-testable through a hand-built context alone. Two good options:
-
-1. **Factor the decision into a pure function** of the inputs and unit-test that.
-   Keep the check a thin adapter:
-
-   ```python
-   def user_may_access(groups: list[str], admin_group: str) -> bool:
-       """Pure policy — trivially unit-testable with plain values."""
-       return admin_group in groups
-
-
-   async def is_org_admin(ctx) -> bool:
-       policy = await ctx.auth_user_state.get_state(PolicyState)
-       return user_may_access(
-           ctx.auth_user_state.userinfo.get("groups") or [],
-           policy.admin_group,
-       )
-   ```
-
-   Then `assert user_may_access(["admins"], "admins") is True` covers the logic
-   with no framework objects at all.
-
-2. **Exercise it end-to-end** against a mock IdP (below), which builds the real
-   state tree.
+Use the mock IdP flow below when the OIDC wiring itself or live Reflex state is
+under test.
 
 ## End-to-end against a mock IdP
 
-To exercise the **full** OIDC flow — the login redirect, the `/callback` token
-exchange, JWKS validation, the userinfo fetch, and async checks that touch real
-state — run your app against a local mock identity provider.
+To exercise the OIDC flow, including the login redirect, `/callback` token
+exchange, JWKS validation, userinfo fetch, and async checks that touch real
+state, run the app against a local mock identity provider.
 
 [`oidc-provider-mock`](https://pypi.org/project/oidc-provider-mock/) is a small
 OIDC server that runs in-process. Add it as a dev dependency:
@@ -135,8 +108,8 @@ uv add --dev oidc-provider-mock
 ```
 
 Run it on a background thread and point the `OIDC_*` env vars at it before the
-app starts. It accepts any client credentials by default (no registration) and
-issues refresh tokens, so the fixture is short:
+app starts. It accepts any client credentials by default and issues refresh
+tokens:
 
 ```python
 import os
@@ -149,13 +122,13 @@ from oidc_provider_mock import User, run_server_in_thread
 def mock_idp():
     """Run a local mock OIDC IdP and point the OIDC_* env vars at it."""
     env = {
-        # Lets the mock IdP (authlib, server-side) serve OAuth over plain HTTP —
-        # redundant for a localhost issuer, needed for a non-localhost HTTP host.
+        # Lets the mock IdP (authlib, server-side) serve OAuth over plain HTTP.
+        # Redundant for a localhost issuer, needed for a non-localhost HTTP host.
         "AUTHLIB_INSECURE_TRANSPORT": "1",
         "OIDC_CLIENT_ID": "test-client",
         "OIDC_CLIENT_SECRET": "test-secret",
     }
-    # Save and restore so the test run doesn't leak OIDC_* into other tests.
+    # Save and restore to avoid leaking OIDC_* into other tests.
     saved = {key: os.environ.get(key) for key in [*env, "OIDC_ISSUER_URI"]}
     os.environ.update(env)
     users = [
@@ -173,11 +146,10 @@ def mock_idp():
                 os.environ[key] = value
 ```
 
-The login flow is browser-driven — redirects, cookies, and websocket state — so
-exercise it the way Reflex tests any app: with `AppHarness` (from
-`reflex.testing`) and a browser driver such as Playwright. With the `mock_idp`
-fixture above active (so `OIDC_*` point at the mock), drive the auth-specific
-steps and assert a protected value is delivered:
+The login flow is browser-driven: redirects, cookies, and websocket state.
+Exercise it with `AppHarness` (from `reflex.testing`) and a browser driver such
+as Playwright. With the `mock_idp` fixture above active, drive the auth-specific
+steps and assert that a protected value is delivered:
 
 ```python
 import re
@@ -190,8 +162,8 @@ def test_login_delivers_protected_value(auth_app, page: Page):
     # A protected page bounces an anonymous visitor to /login.
     page.goto(f"{base}/dashboard")
     page.wait_for_url(re.compile(r"/login"))
-    # Click the app's login button (labelled "Login with {display_name()}"). This
-    # does not authenticate — it starts the OIDC redirect to the IdP's authorize page.
+    # Click the app's login button (labelled "Login with {display_name()}").
+    # This starts the OIDC redirect to the IdP's authorize page.
     page.get_by_role("button", name="Login with Generic").click()
     # Authorize on the IdP. oidc-provider-mock authorizes with one passwordless
     # click per predefined user; a real IdP shows its own login/consent form here.
@@ -204,15 +176,17 @@ def test_login_delivers_protected_value(auth_app, page: Page):
 
 The `auth_app` fixture starts your app under `AppHarness` with `mock_idp` active;
 `page` is the standard Playwright fixture. `oidc-provider-mock` also ships a CLI
-if you prefer to run the IdP standalone for manual local testing.
+for standalone manual testing.
 
 ```md alert info
 # Test the check directly first; the mock IdP when you're testing the wiring
-Calling the check with a hand-built context is faster and needs no server — reach for it in the common case. Use `oidc-provider-mock` only when the OIDC wiring itself (redirect, callback, token exchange, refresh) or an async check that touches live state is what's under test.
+Calling the check with a hand-built context is faster and needs no server. Use `oidc-provider-mock` when the OIDC wiring itself (redirect, callback, token exchange, refresh) or an async check that touches live state is under test.
 ```
 
 ## Related
 
-- [Secure by default](/docs/enterprise/auth/secure-by-default/) — the `auth=` wrappers, the context objects, and the enforcement semantics the tests exercise.
-- [Overview](/docs/enterprise/auth/overview/) — enable the plugin and read the current user.
-- [Providers](/docs/enterprise/auth/providers/) — the providers the mock IdP stands in for.
+- [Secure by default](/docs/enterprise/auth/secure-by-default/): `auth=`,
+  context objects, and enforcement semantics.
+- [Overview](/docs/enterprise/auth/overview/): plugin setup and current-user
+  access.
+- [Providers](/docs/enterprise/auth/providers/): provider configuration.

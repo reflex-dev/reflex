@@ -7,15 +7,16 @@ _New in reflex-enterprise v0.9.1._
 # Authentication Overview
 
 `rxe.AuthPlugin` adds [OIDC](https://openid.net/developers/how-connect-works/)
-(OpenID Connect) authentication to your Reflex app with a **secure-by-default**
-model. Drop the plugin into `rxe.Config(plugins=[...])`, point it at an identity
-provider with three environment variables, and every page, event handler, base
-field, and computed var in your app requires a logged-in user — until you
-explicitly opt a surface out.
+(OpenID Connect) authentication to Reflex apps. Add the plugin to
+`rxe.Config(plugins=[...])`, set the provider environment variables, and use
+`rxe.App()`.
 
-The plugin runs the real OIDC Authorization Code + PKCE flow against your
-identity provider (IdP) and auto-registers friendly `/login`, `/logout`,
-`/callback`, and `/forbidden` routes, so you never reimplement the protocol.
+By default, every page, event handler, base field, and computed var requires an
+authenticated user. Use `auth=False` for surfaces that should be public.
+
+The plugin runs the OIDC Authorization Code + PKCE flow against your identity
+provider (IdP) and registers `/login`, `/logout`, `/callback`, and `/forbidden`
+routes.
 
 ```md alert warning
 # Requirements
@@ -48,9 +49,9 @@ config = rxe.Config(
 )
 ```
 
-With the `OIDC_*` variables set, the app imports and compiles even before the IdP
-is reachable — the issuer is contacted only when a user logs in (OIDC discovery),
-so placeholder values are enough for local builds and CI.
+With the `OIDC_*` variables set, the app imports and compiles before the IdP is
+reachable. OIDC discovery runs only when a user logs in. Placeholder values are
+enough for local builds and CI.
 
 **2. Use `rxe.App()`** (not `rx.App()`) in your app module:
 
@@ -62,16 +63,16 @@ app = rxe.App()
 
 **3. Register the redirect URI with your IdP.** Add the plugin's
 `auth_callback_endpoint` (`/callback` by default) as an allowed redirect URI in
-your identity provider's client settings. Register the **full** URL (scheme +
-host + path) for each environment — the most common setup error is
+your identity provider's client settings. Register the **full** URL (scheme,
+host, and path) for each environment. A mismatched value produces
 `redirect_uri_mismatch`; see
-[deploying to production](/docs/enterprise/auth/deployment/) for the exact value
-to register.
+[deploying to production](/docs/enterprise/auth/deployment/) for the exact
+callback URL.
 
-That's it. With the `OIDC_*` variables set you need **no provider code** — the
-plugin defaults to a built-in `GenericOIDCAuthState` that reads those three
-variables. See [providers](/docs/enterprise/auth/providers/) for named and
-multi-provider setups.
+With the `OIDC_*` variables set, no provider class is required. The plugin uses
+the built-in `GenericOIDCAuthState`, which reads those variables. See
+[providers](/docs/enterprise/auth/providers/) for named and multi-provider
+setups.
 
 ## The four protected surfaces
 
@@ -85,10 +86,9 @@ has its own opt-out and its own behavior when a caller is not allowed:
 | Base fields (`rxe.field` / plain `rx.field`) | withheld until login | replaced with its declared default | `rxe.field(default, auth=False)` or `auth=<check>` |
 | Computed vars (`@rxe.var`) | withheld until login | replaced with its `initial_value` (dropped if it has none) | `@rxe.var(auth=False)` or `auth=<check>` |
 
-`auth=True` is the secure default on every surface, so a plain `rx.field(...)` or
-a bare `@rxe.var` on one of your state classes is **already** protected. You
-don't mark things protected — they start protected, and you open up the
-surfaces that should be public.
+`auth=True` is the default on every surface. A plain `rx.field(...)` or a bare
+`@rxe.var` on one of your state classes is already protected. Use `auth=False`
+only for public surfaces.
 
 ```python
 import reflex as rx
@@ -96,10 +96,10 @@ import reflex_enterprise as rxe
 
 
 class DashboardState(rx.State):
-    # Protected by default — withheld from the client until the user logs in.
+    # Protected by default; withheld from the client until login.
     revenue: rx.Field[float] = rx.field(0.0)
 
-    # Explicitly public — always sent to the client.
+    # Public; always sent to the client.
     theme: rx.Field[str] = rxe.field("light", auth=False)
 
     @rxe.event  # default auth=True: anonymous callers are redirected to /login
@@ -115,9 +115,9 @@ enforcement model, the four `auth=` wrappers, and authorization check functions.
 
 ## Reading the current user
 
-`reflex_enterprise.auth.User` is the app-facing handle on the current user (an
-alias of `AuthUserState`). Its class-level Vars embed directly in components and
-are populated after login by whichever provider authenticated the user:
+`reflex_enterprise.auth.User` is an alias of
+`reflex_enterprise.auth.AuthUserState`. Use its class-level Vars directly in
+components. They are populated by the provider that authenticated the user:
 
 ```python
 import reflex as rx
@@ -150,30 +150,27 @@ class GreetState(rx.State):
         return rx.toast(f"Hello {user.get('name') or user.get('sub')}!")
 ```
 
-The full `User` facade — frontend Vars, `current()`, and `current_provider()` —
-is documented in
-[secure by default](/docs/enterprise/auth/secure-by-default/#reading-the-current-user).
+See [reading the current user](/docs/enterprise/auth/secure-by-default/#reading-the-current-user)
+for the full `User` API, including frontend Vars, `current()`, and
+`current_provider()`.
 
 ## Signing out
 
-There is no logout-button helper. Sign the user out either by linking to the
-`/logout` route — which dispatches the active provider's logout — or by binding
-the provider's `redirect_to_logout` event directly:
+There is no logout-button helper. Sign the user out by linking to `/logout` or
+by binding the provider's `redirect_to_logout` event directly:
 
 ```python
 import reflex as rx
 from reflex_enterprise.auth import GenericOIDCAuthState
 
-# Either link to the logout route…
+# Either link to the logout route.
 rx.link("Sign out", href="/logout")
 
-# …or bind the provider's logout event.
+# Or bind the provider's logout event.
 rx.button("Sign out", on_click=GenericOIDCAuthState.redirect_to_logout)
 ```
 
-A canonical header that links to `/login` when anonymous and to `/logout` once a
-user is signed in, completing the `User.provider_name` pattern from
-[secure by default](/docs/enterprise/auth/secure-by-default/#reading-the-current-user):
+Example header:
 
 ```python
 import reflex as rx
@@ -182,7 +179,7 @@ from reflex_enterprise.auth import User
 
 def header() -> rx.Component:
     return rx.cond(
-        User.provider_name != "",
+        User.sub != "",
         rx.hstack(
             rx.text(f"Signed in as {User.name}"),
             rx.link("Sign out", href="/logout"),
@@ -194,7 +191,7 @@ def header() -> rx.Component:
 ## How a login flows end to end
 
 1. An anonymous visitor hits a protected page (or calls a protected handler) and
-   is redirected to `/login`, with the page they wanted preserved as a
+   is redirected to `/login`, with the requested page preserved as a
    `redirect_to` query parameter.
 2. `/login` renders a button per configured provider. The visitor clicks one and
    is sent to the IdP's authorization endpoint (Authorization Code + PKCE).
@@ -203,25 +200,21 @@ def header() -> rx.Component:
    them in secure cookies.
 4. The user is redirected back to `redirect_to`. Protected fields, vars, pages,
    and handlers now resolve against the authenticated user.
-5. `/logout` clears the session — tokens and the protected surface of every
-   state — and chains the provider's logout. A CSRF guard blocks cross-site
-   logout requests (see
+5. `/logout` clears tokens, resets the protected surface of every state, and
+   chains the provider's logout. A CSRF guard blocks cross-site logout requests
+   (see
    [secure by default](/docs/enterprise/auth/secure-by-default/#logout-is-protected-against-csrf)).
 
-## Learn more
+## Related
 
-- [Secure by default](/docs/enterprise/auth/secure-by-default/) — the
-  enforcement model, the four `auth=` wrappers, sync and async authorization
-  checks, and the `User` facade.
-- [Providers](/docs/enterprise/auth/providers/) — the built-in
-  `GenericOIDCAuthState`, naming your own provider, OIDC environment variables,
-  scopes and refresh tokens, and multi-provider setups.
-- [Custom pages](/docs/enterprise/auth/custom-pages/) — replacing the rendered
-  `/login`, `/callback`, `/logout`, and `/forbidden` components with your own
-  builders.
-- [Testing](/docs/enterprise/auth/testing/) — unit-testing authorization checks
-  and exercising the full OIDC flow against a mock IdP.
-- [Deploying to production](/docs/enterprise/auth/deployment/) — HTTPS/cookies,
-  the exact redirect URI, reverse proxies, and a troubleshooting reference.
-- [Enterprise overview](/docs/enterprise/overview/) — the rest of
-  reflex-enterprise.
+- [Secure by default](/docs/enterprise/auth/secure-by-default/): enforcement,
+  `auth=`, authorization checks, and the `User` facade.
+- [Providers](/docs/enterprise/auth/providers/): provider classes, environment
+  variables, scopes, and multi-provider setups.
+- [Custom pages](/docs/enterprise/auth/custom-pages/): custom `/login`,
+  `/callback`, `/logout`, and `/forbidden` components.
+- [Testing](/docs/enterprise/auth/testing/): authorization checks and mock-IdP
+  integration tests.
+- [Deploying to production](/docs/enterprise/auth/deployment/): HTTPS, callback
+  URLs, reverse proxies, and troubleshooting.
+- [Enterprise overview](/docs/enterprise/overview/): other Enterprise features.

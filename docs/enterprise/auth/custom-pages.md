@@ -6,15 +6,13 @@ _New in reflex-enterprise v0.9.1._
 
 # Customizing the Auth Pages
 
-`rxe.AuthPlugin` registers four friendly routes and owns their **wiring**. You
-can replace the **rendered component** on each route, but the real OIDC flow
-itself — the login button's redirect (via `get_login_button`), the callback's
-`on_load` token exchange, and the logout's `on_load` dispatch — stays
-plugin-owned, so you never reimplement it.
+`rxe.AuthPlugin` registers four auth routes and owns their protocol wiring. The
+component rendered on each route is customizable; the OIDC redirect, callback
+token exchange, and logout dispatch remain plugin-owned.
 
 | Endpoint | Default route | Plugin-owned wiring | Builder |
 | --- | --- | --- | --- |
-| `login_endpoint` | `/login` | Renders the login palette / starts the OIDC redirect. | `login_page` |
+| `login_endpoint` | `/login` | Renders the login palette and starts the OIDC redirect. | `login_page` |
 | `auth_callback_endpoint` | `/callback` | CSRF (OAuth `state`) check + authorization-code token exchange, then redirect back. | `callback_page` |
 | `logout_endpoint` | `/logout` | Dispatches the active provider's logout; a CSRF guard blocks cross-site logout (see [secure by default](/docs/enterprise/auth/secure-by-default/#logout-is-protected-against-csrf)). | `logout_page` |
 | `forbidden_endpoint` | `/forbidden` | Shown when an authenticated user lacks permission to view a page. | `forbidden_page` |
@@ -40,7 +38,7 @@ arguments**:
 | `providers` | `Sequence[type[OIDCAuthState]]` | The resolved provider state classes. |
 | `plugin` | `AuthPlugin` | The plugin instance. |
 
-Name the entries you need and add `**context` to ignore the rest:
+Name the required entries and add `**context` to ignore the rest:
 
 ```python
 import reflex as rx
@@ -49,16 +47,18 @@ import reflex as rx
 def custom_login_page(providers, **context) -> rx.Component: ...
 ```
 
-A builder may also take all of it with `**context` only. The same contract
+A builder may also accept only `**context`. The same contract
 applies to the login, callback, logout, and forbidden builders.
 
 ## A custom login page
 
-The login builder wraps each provider's `get_login_button(*children)` so the real
-OIDC redirect wiring is unchanged — only the surrounding layout is yours. Loop
-over `providers` and pass the clickable element you want as the button's
-children. `provider.display_name()` returns a pretty name (the provider's
-`__provider__` title-cased by default):
+In most apps, send users to `/login`. Customize `login_page` when the default
+login buttons need a different layout.
+
+Call each provider's `get_login_button(*children)` and pass the clickable
+element as children. This preserves the OIDC redirect wiring and the iframe
+popup listener. `provider.display_name()` returns the provider label; by default
+it is the title-cased `__provider__` value:
 
 ```python
 import reflex as rx
@@ -80,19 +80,16 @@ def custom_login_page(providers, **context) -> rx.Component:
     )
 ```
 
-With two or more providers this naturally renders one button per provider — a
-login palette where the visitor picks an identity provider.
-
-Wrapping `provider.get_login_button()` also preserves the iframe/popup message
-listener it mounts — see "Running inside an iframe" in
-[providers](/docs/enterprise/auth/providers/).
+With two or more providers, render one `get_login_button()` per provider. See
+[running inside an iframe](/docs/enterprise/auth/providers/#running-inside-an-iframe)
+for the popup flow requirement.
 
 ## Custom callback and logout pages
 
 The callback and logout routes only show an interstitial while their
 plugin-owned `on_load` runs. Reuse `providers[0].get_authentication_loading_page()`,
 which already shows the validating and redirecting states as the exchange (or
-logout) proceeds — and an error view if it fails (see
+logout) proceeds, plus an error view if it fails (see
 [auth-failure UX and troubleshooting](#auth-failure-ux-and-troubleshooting)):
 
 ```python
@@ -113,16 +110,15 @@ def custom_logout_page(providers, **context) -> rx.Component:
     return providers[0].get_authentication_loading_page()
 ```
 
-Wrap that view in your own layout to brand the interstitial — for example a
-centered card with a heading above the loading view.
+Wrap that view in an app-specific layout when the interstitial needs branding.
 
 ## Auth-failure UX and troubleshooting
 
 When a token exchange or validation fails, `get_authentication_loading_page()`
 swaps its spinner for an error view: a user-facing message plus an **error ID**
 (a per-flow UUID) the user can hand to support. The same failure is logged on the
-backend at `ERROR` level, prefixed `<client_token> [txid=<id>]` — emitted even
-when the app configures no logging — so the ID the user sees greps straight to
+backend at `ERROR` level, prefixed `<client_token> [txid=<id>]`. The log entry
+is emitted even when the app configures no logging. Use the displayed ID to find
 the matching server log.
 
 ```md alert info
@@ -130,8 +126,8 @@ the matching server log.
 When a user reports a failed login, search the backend logs for `[txid=...]` with the ID they were shown.
 ```
 
-The page builders do **not** take an error override — `default_callback_page`
-just calls `get_authentication_loading_page()`. There are two real ways to
+The page builders do **not** take an error override. `default_callback_page`
+calls `get_authentication_loading_page()`. There are two supported ways to
 customize the failure UI:
 
 **1. Override the state classmethods.** Subclass your provider state and override
@@ -155,7 +151,7 @@ class MyProviderState(GenericOIDCAuthState):
 
 **2. Hand-write a page reading the public vars.** `has_error`,
 `user_error_message`, and `last_error_txid` are public Vars on the provider state,
-so a custom callback or logout builder can branch on them directly:
+A custom callback or logout builder can branch on them directly:
 
 ```python
 import reflex as rx
@@ -180,9 +176,9 @@ def custom_callback_page(providers, **context) -> rx.Component:
 ## A custom forbidden page
 
 `/forbidden` is shown when an **authenticated** user tries to load a page they
-aren't authorized to view — i.e. the global default `AuthPlugin(auth=...)` is a
-callable check that the user fails on a page load. It's a normal page with no
-plugin-owned `on_load`, so it's the most freely customizable:
+are not authorized to view. This happens when the global default
+`AuthPlugin(auth=...)` is a callable check that fails on a page load. The
+forbidden page has no plugin-owned `on_load`.
 
 ```python
 import reflex as rx
@@ -192,7 +188,7 @@ def custom_forbidden_page(**context) -> rx.Component:
     return rx.center(
         rx.vstack(
             rx.heading("403", size="8"),
-            rx.text("You don't have access to that page."),
+            rx.text("Access denied."),
             rx.link("Back to home", href="/"),
             spacing="3",
             align="center",
@@ -203,15 +199,15 @@ def custom_forbidden_page(**context) -> rx.Component:
 
 ```md alert info
 # When does the forbidden page appear?
-Only on a **page** load that an authenticated user fails (a callable global default). Failed event-handler checks show an `"Action not allowed"` toast, and failed field/var checks simply withhold the value — neither navigates to `/forbidden`. See [authentication vs authorization](/docs/enterprise/auth/secure-by-default/#authentication-vs-authorization).
+Only on a **page** load that an authenticated user fails through a callable global default. Failed event-handler checks show an `"Action not allowed"` toast. Failed field and var checks withhold the value. Neither navigates to `/forbidden`. See [authentication vs authorization](/docs/enterprise/auth/secure-by-default/#authentication-vs-authorization).
 ```
 
 ## Wiring them up
 
 Pass the builders to the plugin in `rxconfig.py` as **import-path strings**
 (`"module.function"`). The builder modules import `reflex_enterprise`, which loads
-`rxconfig` at import time, so importing them in `rxconfig.py` would re-enter the
-config; the plugin resolves the strings lazily at compile time instead:
+`rxconfig` at import time. Importing them directly in `rxconfig.py` would
+re-enter the config. Import-path strings are resolved lazily at compile time:
 
 ```python
 import reflex_enterprise as rxe
@@ -231,7 +227,7 @@ config = rxe.Config(
 
 ```md alert info
 # Strings in rxconfig, callables elsewhere
-The import-path string is only required because of the rxconfig re-entry. Where the builder is already importable, you can pass the callable directly: `login_page=custom_login_page`.
+The import-path string is only required in `rxconfig.py`. Where the builder is already importable, pass the callable directly: `login_page=custom_login_page`.
 ```
 
 ## Defaults
@@ -244,10 +240,10 @@ Omit a builder and the plugin falls back to its defaults from
 | `login_page` | `default_login_page` | One `provider.get_login_button()` per provider. |
 | `callback_page` | `default_callback_page` | `providers[0].get_authentication_loading_page()`. |
 | `logout_page` | `default_logout_page` | `providers[0].get_authentication_loading_page()`. |
-| `forbidden_page` | `default_forbidden_page` | A 403 "you don't have permission" view. |
+| `forbidden_page` | `default_forbidden_page` | A 403 access denied view. |
 
-The defaults take the same keyword context, so a custom builder may call one to
-wrap the default content in its own layout:
+The defaults take the same keyword context. A custom builder may call a default
+builder and wrap the returned content:
 
 ```python
 import reflex as rx
@@ -260,6 +256,8 @@ def custom_login_page(providers, **context) -> rx.Component:
 
 ## Related
 
-- [Providers](/docs/enterprise/auth/providers/) — configure the identity providers the login page renders buttons for.
-- [Secure by default](/docs/enterprise/auth/secure-by-default/) — how the rest of the app is protected, and when `/forbidden` is shown.
-- [Testing](/docs/enterprise/auth/testing/) — verify guarded surfaces.
+- [Providers](/docs/enterprise/auth/providers/): identity provider
+  configuration.
+- [Secure by default](/docs/enterprise/auth/secure-by-default/): protected
+  surfaces and `/forbidden` behavior.
+- [Testing](/docs/enterprise/auth/testing/): guarded-surface tests.

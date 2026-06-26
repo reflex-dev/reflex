@@ -29,7 +29,7 @@ For more information on the badge, visit [Built with Reflex](/docs/enterprise/bu
 
 `reflex-enterprise` must be installed alongside `reflex` to access the enterprise features.
 
-You can install it from pypi with the following command:
+Install it from PyPI:
 
 ```bash
 pip install reflex-enterprise
@@ -338,11 +338,12 @@ grid
 
 ## Usage of reflex_enterprise.
 
-Using `rxe.App` as your `app` is required to use any of the components provided by the enterprise package, as well as config options provided by `rxe.Config`.
+Use `rxe.App` as your `app` to enable Enterprise components and `rxe.Config`
+options.
 
 ### In the main file
 
-Instead of the usual `rx.App()` to create your app, use the following:
+Create the app with `rxe.App()`:
 ```python
 import reflex_enterprise as rxe
 
@@ -354,6 +355,6 @@ app = rxe.App()
 import reflex_enterprise as rxe
 config = rxe.Config(
     app_name="MyApp",
-    ... # you can pass all rx.Config arguments as well as the one specific to rxe.Config
+    ... # accepts rx.Config arguments plus rxe.Config options
 )
 ```
