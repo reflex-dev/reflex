@@ -444,14 +444,14 @@ class Config(BaseConfig):
                         f"instantiated and may require arguments; pass an instance "
                         f"instead, e.g. plugins=[{entry.__name__}(...)]."
                     )
-                    raise ConfigError(msg) from exc
+                    raise InvalidPluginConfigError(msg) from exc
             else:
                 msg = (
                     f"reflex.Config.plugins must contain Plugin instances, but got "
                     f"{entry!r} of type {type(entry).__name__}. "
                     f"Pass an instance, e.g. plugins=[SitemapPlugin()]."
                 )
-                raise ConfigError(msg)
+                raise InvalidPluginConfigError(msg)
         if invalid:
             details = ", ".join(p.describe() for p in invalid)
             msg = (
