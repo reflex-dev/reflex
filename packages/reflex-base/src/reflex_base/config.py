@@ -548,13 +548,6 @@ class Config(BaseConfig):
                         "Please remove it from the `plugins` list in your config inside of `rxconfig.py`.",
                     )
 
-        for disabled_plugin in self.disable_plugins:
-            if disabled_plugin not in _PLUGINS_ENABLED_BY_DEFAULT:
-                console.warn(
-                    f"`{disabled_plugin!r}` is disabled in the config, but it is not a built-in plugin. "
-                    "Please remove it from the `disable_plugins` list in your config inside of `rxconfig.py`.",
-                )
-
     @classmethod
     def class_fields(cls) -> set[str]:
         """Get the fields of the config class.

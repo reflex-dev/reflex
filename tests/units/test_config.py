@@ -583,6 +583,22 @@ class TestDisablePlugins:
         config = rx.Config(app_name="test")
         assert any(isinstance(p, SitemapPlugin) for p in config.plugins)
 
+    def test_disable_non_builtin_plugin_does_not_warn(self, mocker: MockerFixture):
+        """Disabling a non-builtin plugin emits no warning.
+
+        Non-builtin plugins (e.g. ones added via REFLEX_EXTRA_PLUGINS) can be
+        disabled through this same mechanism, so disabling a plugin that is not
+        enabled-by-default must not warn.
+        """
+
+        class CustomPlugin(Plugin): ...
+
+        warn = mocker.patch("reflex_base.config.console.warn")
+        rx.Config(app_name="test", disable_plugins=[CustomPlugin])
+        assert not any(
+            "not a built-in plugin" in str(call.args[0]) for call in warn.call_args_list
+        )
+
 
 def test_plugins_instance_passthrough():
     """A Plugin instance is kept as-is (issue #6440)."""
