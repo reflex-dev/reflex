@@ -148,10 +148,21 @@ for route in routes:
             meta = list(route.meta) if route.meta is not None else []
         meta.append({"name": "theme-color", "content": route.background_color})
 
+        # Reflex's compiler always renders exactly one og:image from add_page's
+        # `image` kwarg (defaulting to the favicon). Pass the real preview as
+        # `image` and drop og:image from the meta list, so the page has a single
+        # og:image (the preview) rather than the favicon default + the preview.
+        meta = [
+            m
+            for m in meta
+            if not (isinstance(m, dict) and m.get("property") == "og:image")
+        ]
+
         page_args = {
             "component": route.component,
             "route": route.path,
             "title": route.title,
+            "image": image_url,
             "meta": meta,
             "on_load": route.on_load,
         }
