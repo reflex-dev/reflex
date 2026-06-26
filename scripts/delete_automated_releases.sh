@@ -11,6 +11,13 @@
 # it (pip installs, changelog links, etc.) -- is left untouched, because we
 # never pass `gh release delete --cleanup-tag`.
 #
+# Scope: top-level reflex releases -- the main package's bare "vX.Y.Z" tags, as
+# opposed to "<pkg>-v..." sub-package tags -- are KEPT in full when they are NOT
+# pre-releases, since those finalized core releases are the canonical entries on
+# the Releases page. Their pre-release (alpha) counterparts (e.g. v0.9.4a1) and
+# every sub-package release (reflex-base-v..., reflex-components-*-v..., etc.)
+# are still removed.
+#
 # Usage:
 #   scripts/delete_automated_releases.sh                  # dry run: list matches, delete nothing
 #   scripts/delete_automated_releases.sh --apply          # delete (asks for confirmation once)
@@ -72,12 +79,19 @@ for p in "${PREFIXES[@]}"; do
   enc=$(jq -cn --arg s "$p" '$s')
   select_expr+="${select_expr:+ or }(.body | startswith($enc))"
 done
-match_filter="select(.body != null and ($select_expr))"
+
+# A release is eligible for deletion when its body matches a prefix, UNLESS it is
+# a top-level reflex release (bare "vX.Y.Z" tag, i.e. the main package rather
+# than a "<pkg>-v..." sub-package) that is not a pre-release -- those finalized
+# core entries are kept. test("^v[0-9]") matches only the main package's tags.
+keep_toplevel='(.tag_name | test("^v[0-9]")) and (.prerelease == false)'
+match_filter="select(.body != null and ($select_expr)) | select(($keep_toplevel) | not)"
 
 echo "Repository : $REPO"
 echo "Matching   : body starts with one of:"
 for p in "${PREFIXES[@]}"; do echo "               - \"$p\""; done
-echo "Tags        : preserved (releases deleted without --cleanup-tag)"
+echo "Keeping    : top-level non-pre-release reflex (vX.Y.Z) entries, e.g. v0.9.5"
+echo "Tags       : preserved (releases deleted without --cleanup-tag)"
 echo
 
 # Discover matching releases across all pages. gh applies --jq per page when
@@ -109,14 +123,18 @@ fi
 
 if [[ "$apply" != true ]]; then
   echo
+  if [[ "$assume_yes" == true ]]; then
+    echo "Note: --yes has no effect without --apply."
+  fi
   echo "Dry run -- no releases were deleted. Re-run with --apply to delete them."
   exit 0
 fi
 
 # Back up the full matching release objects before deleting, so the entries can
 # be inspected (or recreated) later. --paginate emits one array per page; merge
-# them with a local 'jq -s add'.
-backup="automated-releases-backup-${REPO//\//-}.json"
+# them with a local 'jq -s add'. The timestamp keeps each run's backup distinct
+# so retrying after a partial failure never clobbers an earlier backup.
+backup="automated-releases-backup-${REPO//\//-}-$(date +%Y%m%d-%H%M%S).json"
 echo
 echo "Backing up matching releases to $backup ..."
 gh api "repos/$REPO/releases" --paginate --jq "[.[] | $match_filter]" | jq -s 'add' >"$backup"
