@@ -15,6 +15,7 @@ from reflex_base.environment import (
     ExistingPath,
     PerformanceMode,
     SequenceOptions,
+    _InvalidPlugin,
     _load_dotenv_from_files,
     _paths_from_env_files,
     _paths_from_environment,
@@ -37,6 +38,18 @@ from reflex_base.utils.exceptions import EnvironmentVarValueError
 
 class TestPlugin(Plugin):
     """Test plugin for testing purposes."""
+
+
+class NeedsArgsPlugin(Plugin):
+    """Test plugin whose constructor requires arguments (cannot auto-instantiate)."""
+
+    def __init__(self, required):
+        """Initialize, requiring an argument.
+
+        Args:
+            required: A required positional argument.
+        """
+        self.required = required
 
 
 class _TestEnum(enum.Enum):
@@ -103,26 +116,49 @@ class TestInterpretFunctions:
         assert isinstance(result, TestPlugin)
 
     def test_interpret_plugin_env_invalid_format(self):
-        """Test plugin interpretation with invalid format."""
-        with pytest.raises(EnvironmentVarValueError, match="Invalid plugin value"):
-            interpret_plugin_env("invalid_format", "TEST_FIELD")
+        """Test plugin interpretation with invalid format returns an _InvalidPlugin."""
+        result = interpret_plugin_env("invalid_format", "TEST_FIELD")
+        assert isinstance(result, _InvalidPlugin)
+        assert result.spec == "invalid_format"
+        assert "Invalid plugin value" in result.error
 
     def test_interpret_plugin_env_import_error(self):
-        """Test plugin interpretation with import error."""
-        with pytest.raises(EnvironmentVarValueError, match="Failed to import module"):
-            interpret_plugin_env("non.existent.module.Plugin", "TEST_FIELD")
+        """Test plugin interpretation with import error returns an _InvalidPlugin."""
+        result = interpret_plugin_env("non.existent.module.Plugin", "TEST_FIELD")
+        assert isinstance(result, _InvalidPlugin)
+        assert "Failed to import module" in result.error
 
     def test_interpret_plugin_env_missing_class(self):
-        """Test plugin interpretation with missing class."""
-        with pytest.raises(EnvironmentVarValueError, match="Invalid plugin class"):
-            interpret_plugin_env(
-                "tests.units.test_environment.NonExistentPlugin", "TEST_FIELD"
-            )
+        """Test plugin interpretation with missing class returns an _InvalidPlugin."""
+        result = interpret_plugin_env(
+            "tests.units.test_environment.NonExistentPlugin", "TEST_FIELD"
+        )
+        assert isinstance(result, _InvalidPlugin)
+        assert "Invalid plugin class" in result.error
 
     def test_interpret_plugin_env_invalid_class(self):
-        """Test plugin interpretation with invalid class."""
-        with pytest.raises(EnvironmentVarValueError, match="Invalid plugin class"):
-            interpret_plugin_env("tests.units.test_environment.TestEnum", "TEST_FIELD")
+        """Test plugin interpretation with invalid class returns an _InvalidPlugin."""
+        result = interpret_plugin_env(
+            "tests.units.test_environment.TestEnum", "TEST_FIELD"
+        )
+        assert isinstance(result, _InvalidPlugin)
+        assert "Invalid plugin class" in result.error
+
+    def test_interpret_plugin_env_instantiation_error(self):
+        """A plugin whose constructor fails returns an _InvalidPlugin, not a raise."""
+        result = interpret_plugin_env(
+            "tests.units.test_environment.NeedsArgsPlugin", "TEST_FIELD"
+        )
+        assert isinstance(result, _InvalidPlugin)
+        assert "failed to instantiate" in result.error
+
+    def test_interpret_plugin_env_valid_does_not_return_invalid(self):
+        """A valid plugin spec still returns a real instance, never an _InvalidPlugin."""
+        result = interpret_plugin_env(
+            "tests.units.test_environment.TestPlugin", "TEST_FIELD"
+        )
+        assert isinstance(result, TestPlugin)
+        assert not isinstance(result, _InvalidPlugin)
 
     def test_interpret_plugin_class_env_valid(self):
         """Test plugin class interpretation returns the class, not an instance."""
@@ -203,6 +239,26 @@ class TestInterpretEnvVarValue:
             "TEST_FIELD",
         )
         assert result is TestPlugin
+
+    def test_interpret_plugin_class_invalid_returns_invalid_plugin(self):
+        """Test type[Plugin] interpretation returns _InvalidPlugin on a bad path."""
+        result = interpret_env_var_value(
+            "non.existent.module.Plugin",
+            type[Plugin],
+            "TEST_FIELD",
+        )
+        assert isinstance(result, _InvalidPlugin)
+        assert "Failed to import module" in result.error
+
+    def test_interpret_plugin_list_collects_invalid_per_entry(self):
+        """A bad entry in a list[type[Plugin]] becomes _InvalidPlugin, not a raise."""
+        result = interpret_env_var_value(
+            "tests.units.test_environment.TestPlugin:bad.path.Plugin",
+            list[type[Plugin]],
+            "TEST_FIELD",
+        )
+        assert result[0] is TestPlugin
+        assert isinstance(result[1], _InvalidPlugin)
 
     def test_interpret_list(self):
         """Test list interpretation."""

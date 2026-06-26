@@ -146,6 +146,29 @@ def interpret_path_env(value: str, field_name: str) -> Path:
     return Path(value)
 
 
+@dataclasses.dataclass
+class _InvalidPlugin(Plugin):
+    """Placeholder for a plugin spec that could not be resolved or instantiated.
+
+    Returned by the plugin env-var interpreters instead of raising, so a single
+    bad entry does not abort interpretation of an entire plugin list. ``Config``
+    inspects the resulting list and either raises ``ConfigError`` (for
+    ``Config.plugins`` / ``REFLEX_PLUGINS``) or warns and drops the entry (for
+    ``REFLEX_EXTRA_PLUGINS`` and ``disable_plugins``).
+    """
+
+    spec: str
+    error: str
+
+    def describe(self) -> str:
+        """Describe the failed plugin spec for warning/error messages.
+
+        Returns:
+            A string combining the import path and the recorded error.
+        """
+        return f"{self.spec!r} ({self.error})"
+
+
 def interpret_plugin_class_env(value: str, field_name: str) -> type[Plugin]:
     """Interpret an environment variable value as a Plugin subclass.
 
@@ -190,24 +213,29 @@ def interpret_plugin_env(value: str, field_name: str) -> Plugin:
     """Interpret a plugin environment variable value.
 
     Resolves a fully qualified import path and returns an instance of the Plugin.
+    On failure (bad import path or instantiation error) an ``_InvalidPlugin``
+    recording the error is returned instead of raising, so callers can decide
+    whether a bad entry is fatal.
 
     Args:
         value: The environment variable value (e.g. "reflex.plugins.sitemap.SitemapPlugin").
         field_name: The field name.
 
     Returns:
-        An instance of the Plugin subclass.
-
-    Raises:
-        EnvironmentVarValueError: If the value is invalid.
+        An instance of the Plugin subclass, or an ``_InvalidPlugin`` on failure.
     """
-    plugin_class = interpret_plugin_class_env(value, field_name)
+    try:
+        plugin_class = interpret_plugin_class_env(value, field_name)
+    except EnvironmentVarValueError as e:
+        return _InvalidPlugin(spec=value, error=str(e))
 
     try:
         return plugin_class()
     except Exception as e:
-        msg = f"Failed to instantiate plugin {plugin_class.__name__!r} for {field_name}: {e}"
-        raise EnvironmentVarValueError(msg) from e
+        return _InvalidPlugin(
+            spec=value,
+            error=f"failed to instantiate plugin {plugin_class.__name__!r}: {e}",
+        )
 
 
 def interpret_enum_env(value: str, field_type: GenericType, field_name: str) -> Any:
@@ -310,7 +338,10 @@ def interpret_env_var_value(
             and isinstance(type_args[0], type)
             and issubclass(type_args[0], Plugin)
         ):
-            return interpret_plugin_class_env(value, field_name)
+            try:
+                return interpret_plugin_class_env(value, field_name)
+            except EnvironmentVarValueError as e:
+                return _InvalidPlugin(spec=value, error=str(e))
     if get_origin(field_type) is Literal:
         literal_values = get_args(field_type)
         for literal_value in literal_values:
@@ -710,9 +741,11 @@ class EnvironmentVariables:
     # How long to opportunistically hold the redis lock in milliseconds (must be less than the token expiration).
     REFLEX_OPLOCK_HOLD_TIME_MS: EnvVar[int] = env_var(0)
 
-    # Extra plugins to append to the config's plugins list. Fully qualified
-    # import paths separated by a colon.
-    REFLEX_EXTRA_PLUGINS: EnvVar[list[Plugin]] = env_var([])
+    # Extra plugins to append to the config's plugins list (unlike REFLEX_PLUGINS,
+    # which replaces them). Fully qualified import paths separated by a colon.
+    # Resolved to classes here; Config instantiates them only after the
+    # disable/dedupe checks pass, so a disabled plugin is never instantiated.
+    REFLEX_EXTRA_PLUGINS: EnvVar[list[type[Plugin]]] = env_var([])
 
 
 environment = EnvironmentVariables()
