@@ -24,7 +24,7 @@ from reflex_docs.views.docs_navbar import docs_navbar
         title="Reflex Documentation - Build Web Apps in Pure Python",
         description="Reflex documentation: tutorials, API reference, and guides for building full-stack Python web apps. Get started in minutes.",
         image=f"{REFLEX_ASSETS_CDN}previews/index_preview.webp",
-        url="https://reflex.dev/docs",
+        url="https://reflex.dev/docs/",
     ),
 )
 def docs_landing() -> rx.Component:

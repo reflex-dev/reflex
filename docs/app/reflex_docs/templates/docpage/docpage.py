@@ -782,6 +782,7 @@ def docpage(
     right_sidebar: bool = True,
     page_title: str | None = None,
     pseudo_right_bar: bool = False,
+    description: str | None = None,
 ):
     """A template that most pages on the reflex.dev site should use.
 
@@ -793,6 +794,9 @@ def docpage(
         right_sidebar: Whether to show the right sidebar.
         page_title: The full title to set for the page. If None, defaults to `{title} · Reflex Docs`.
         pseudo_right_bar: Whether to show a pseudo right sidebar (empty space).
+        description: The meta description for the page. If None, a descriptive
+            fallback derived from the page title is used so the page always has
+            a non-empty, page-specific meta description.
 
     Returns:
         A wrapper function that returns the full webpage.
@@ -1033,23 +1037,49 @@ def docpage(
                 on_mount=rx.call_script(right_sidebar_item_highlight()),
             )
 
-        components = path.split("/")
+        # Section is the first path segment (these routes are mounted under
+        # /docs at runtime, so the path itself has no "docs" prefix).
+        segments = [c for c in path.split("/") if c]
+        section = segments[0] if len(segments) > 1 else None
         category = (
-            " ".join(
-                word.capitalize() for word in components[2].replace("-", " ").split()
-            )
-            if len(components) > 2
+            " ".join(word.capitalize() for word in section.replace("-", " ").split())
+            if section
             else None
         )
+        # Drop the section if it just repeats the page title (avoids titles like
+        # "Introduction · Introduction · Reflex Docs").
+        if category and category.lower() == title.lower():
+            category = None
+
+        # Build a descriptive, length-appropriate <title>. Nested docs pages
+        # previously used the bare title (e.g. "Styling"), which is too short
+        # for search engines; suffix the section and site so every doc title is
+        # unique and substantial, dropping the section if it would push the
+        # title past the ~60 char SERP truncation point.
         if page_title:
-            return Route(
-                path=path,
-                title=page_title,
-                component=wrapper,
+            seo_title = page_title
+        else:
+            with_category = (
+                f"{title} · {category} · Reflex Docs"
+                if category
+                else f"{title} · Reflex Docs"
             )
+            seo_title = (
+                with_category if len(with_category) <= 60 else f"{title} · Reflex Docs"
+            )
+
+        # Always provide a non-empty, page-specific meta description. Real
+        # descriptions come from the doc (see make_docpage); otherwise fall back
+        # to a concise, title-derived sentence so the page is never description-less.
+        seo_description = description or (
+            f"{title} — Reflex docs. Reflex is the open-source Python framework "
+            "for building full-stack web apps and internal tools."
+        )
+
         return Route(
             path=path,
-            title=f"{title} · Reflex Docs" if category is None else title,
+            title=seo_title,
+            description=seo_description,
             component=wrapper,
         )
 
