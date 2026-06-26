@@ -197,7 +197,7 @@ def interpret_plugin_class_env(value: str, field_name: str) -> type[Plugin]:
         raise EnvironmentVarValueError(msg) from e
 
     try:
-        plugin_class = getattr(module, plugin_name, None)
+        plugin_class = getattr(module, plugin_name)
     except Exception as e:
         msg = f"Failed to get plugin class {plugin_name!r} from module {import_path!r} for {field_name}: {e}"
         raise EnvironmentVarValueError(msg) from e
