@@ -25,9 +25,6 @@ The auth plugin ships with `reflex-enterprise` (v0.9.1+). Your app **must** use 
 
 ## Quickstart
 
-There are three steps: install the plugin, configure a provider, and use
-`rxe.App()`.
-
 **1. Add `rxe.AuthPlugin()` to `rxconfig.py`** and configure your OIDC provider
 through the `OIDC_*` environment variables:
 
@@ -69,15 +66,14 @@ host, and path) for each environment. A mismatched value produces
 [deploying to production](/docs/enterprise/auth/deployment/) for the exact
 callback URL.
 
-With the `OIDC_*` variables set, no provider class is required. The plugin uses
-the built-in `GenericOIDCAuthState`, which reads those variables. See
+You don't need to write a provider class. The plugin uses the built-in
+`GenericOIDCAuthState`, which reads those variables. See
 [providers](/docs/enterprise/auth/providers/) for named and multi-provider
 setups.
 
 ## The four protected surfaces
 
-Once the plugin is active, four kinds of surface are protected by default. Each
-has its own opt-out and its own behavior when a caller is not allowed:
+Once active, the plugin protects four kinds of surface by default:
 
 | Surface | Default | How it's withheld | Opt out / gate |
 | --- | --- | --- | --- |
@@ -86,9 +82,8 @@ has its own opt-out and its own behavior when a caller is not allowed:
 | Base fields (`rxe.field` / plain `rx.field`) | withheld until login | replaced with its declared default | `rxe.field(default, auth=False)` or `auth=<check>` |
 | Computed vars (`@rxe.var`) | withheld until login | replaced with its `initial_value` (dropped if it has none) | `@rxe.var(auth=False)` or `auth=<check>` |
 
-`auth=True` is the default on every surface. A plain `rx.field(...)` or a bare
-`@rxe.var` on one of your state classes is already protected. Use `auth=False`
-only for public surfaces.
+`auth=True` is the default everywhere, so a plain `rx.field(...)` or bare
+`@rxe.var` is already protected. Set `auth=False` to make a surface public.
 
 ```python
 import reflex as rx
