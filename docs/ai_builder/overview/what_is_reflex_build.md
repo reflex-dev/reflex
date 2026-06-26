@@ -130,7 +130,7 @@ def _docs_app_section_features_small_screen(feature: dict):
     return rx.el.div(
         rx.image(
             src=feature["img"],
-            alt='Reflex Build feature illustration',
+            alt="Reflex Build feature illustration",
             class_name="rounded-md h-auto",
             border=f"0.81px solid {rx.color('slate', 5)}",
         ),
@@ -180,7 +180,7 @@ def _docs_app_sections():
         rx.el.div(
             rx.image(
                 src=features_data[0]["img"],
-                alt='Reflex Build feature illustration',
+                alt="Reflex Build feature illustration",
                 class_name="rounded-md h-auto",
                 border=f"0.81px solid {rx.color('slate', 5)}",
             ),

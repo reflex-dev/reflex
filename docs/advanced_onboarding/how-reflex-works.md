@@ -55,7 +55,10 @@ The diagram below provides a detailed overview of how a Reflex app works. We'll 
 
 ```python eval
 rx.el.a(
-    rx.image(src="https://web.reflex-assets.dev/other/architecture.webp", alt='Reflex app architecture diagram'),
+    rx.image(
+        src="https://web.reflex-assets.dev/other/architecture.webp",
+        alt="Reflex app architecture diagram",
+    ),
     href="https://web.reflex-assets.dev/other/architecture.webp",
     target="_blank",
 )

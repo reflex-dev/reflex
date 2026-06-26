@@ -11,7 +11,8 @@ To view the app logs follow the arrow in the image below and press on the `Logs`
 ```python eval
 rx.image(
     src="https://web.reflex-assets.dev/other/view_logs.webp",
-    alt='Viewing app logs in Reflex Cloud', padding_bottom="20px"
+    alt="Viewing app logs in Reflex Cloud",
+    padding_bottom="20px",
 )
 ```
 
@@ -25,7 +26,10 @@ rx.image(
 To view the deployment history follow the arrow in the image below and press on the `Deployments`.
 
 ```python eval
-rx.image(src="https://web.reflex-assets.dev/other/view_deployment_logs.webp", alt='Viewing deployment logs in Reflex Cloud')
+rx.image(
+    src="https://web.reflex-assets.dev/other/view_deployment_logs.webp",
+    alt="Viewing deployment logs in Reflex Cloud",
+)
 ```
 
 This brings you to the page below where you can see the deployment history of your app. Click on deployment you wish to explore further.
@@ -33,7 +37,7 @@ This brings you to the page below where you can see the deployment history of yo
 ```python eval
 rx.image(
     src="https://web.reflex-assets.dev/other/view_deployment_logs_2.webp",
-    alt='Deployment logs and history in Reflex Cloud',
+    alt="Deployment logs and history in Reflex Cloud",
     padding_bottom="20px",
 )
 ```
@@ -46,5 +50,8 @@ rx.image(
 This brings you to the page below where you can view the deployment logs of your app by clicking the `Build logs` dropdown.
 
 ```python eval
-rx.image(src="https://web.reflex-assets.dev/other/view_deployment_logs_3.webp", alt='CLI command to view deployment history')
+rx.image(
+    src="https://web.reflex-assets.dev/other/view_deployment_logs_3.webp",
+    alt="CLI command to view deployment history",
+)
 ```

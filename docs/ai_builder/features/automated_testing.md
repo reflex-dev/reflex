@@ -16,7 +16,7 @@ rx.el.div(
             "https://web.reflex-assets.dev/ai_builder/features/test_light.webp",
             "https://web.reflex-assets.dev/ai_builder/features/test_dark.webp",
         ),
-        alt='Automated testing in Reflex AI Builder',
+        alt="Automated testing in Reflex AI Builder",
         class_name="rounded-md h-auto",
         border=f"0.81px solid {rx.color('slate', 5)}",
     ),

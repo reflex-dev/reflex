@@ -73,6 +73,9 @@ def clipboard_image_example():
             rx.input(placeholder="Paste Image (prevent default)"),
             on_paste=ClipboardPasteImageState.on_paste.prevent_default,
         ),
-        rx.image(src=ClipboardPasteImageState.last_image_uri, alt='Image pasted from clipboard'),
+        rx.image(
+            src=ClipboardPasteImageState.last_image_uri,
+            alt="Image pasted from clipboard",
+        ),
     )
 ```

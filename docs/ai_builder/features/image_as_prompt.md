@@ -15,7 +15,7 @@ Below is an image showing how to upload an image to the AI Builder, you can clic
 rx.el.div(
     rx.image(
         src="https://web.reflex-assets.dev/ai_builder/image_upload.avif",
-        alt='Using an image as a prompt in Reflex AI Builder',
+        alt="Using an image as a prompt in Reflex AI Builder",
         class_name="rounded-md h-auto",
         border=f"0.81px solid {rx.color('slate', 5)}",
     ),

@@ -86,7 +86,7 @@ def sidebar() -> rx.Component:
                 rx.hstack(
                     rx.image(
                         src="https://web.reflex-assets.dev/other/logo.jpg",
-                        alt='Reflex logo',
+                        alt="Reflex logo",
                         width="2.25em",
                         height="auto",
                         border_radius="25%",
@@ -188,7 +188,7 @@ def sidebar_bottom_profile() -> rx.Component:
                 rx.hstack(
                     rx.image(
                         src="https://web.reflex-assets.dev/other/logo.jpg",
-                        alt='Reflex logo',
+                        alt="Reflex logo",
                         width="2.25em",
                         height="auto",
                         border_radius="25%",

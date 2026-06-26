@@ -226,8 +226,20 @@ def extract_doc_description(
         text = re.sub(r"```.*?```", "", markdown_text, flags=re.DOTALL)
         para_lines: list[str] = []
         skip_prefixes = (
-            "#", ">", "---", "import ", "from ", "|", "<", "- ", "* ", "rx.",
-            "```", "1.", "2.", "3.",
+            "#",
+            ">",
+            "---",
+            "import ",
+            "from ",
+            "|",
+            "<",
+            "- ",
+            "* ",
+            "rx.",
+            "```",
+            "1.",
+            "2.",
+            "3.",
         )
         for raw in text.splitlines():
             line = raw.strip()

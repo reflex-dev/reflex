@@ -32,7 +32,7 @@ import reflex as rx
 rx.el.div(
     rx.image(
         src="https://web.reflex-assets.dev/ai_builder/add_images_to_assets.avif",
-        alt='Uploading an image to app assets in Reflex AI Builder',
+        alt="Uploading an image to app assets in Reflex AI Builder",
         class_name="rounded-md h-auto",
         border=f"0.81px solid {rx.color('slate', 5)}",
     ),

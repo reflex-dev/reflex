@@ -90,7 +90,7 @@ class TopBannerSignup(rx.ComponentState):
             rx.flex(
                 rx.image(
                     src="https://web.reflex-assets.dev/other/logo.jpg",
-                    alt='Reflex logo',
+                    alt="Reflex logo",
                     width="2em",
                     height="auto",
                     border_radius="25%",

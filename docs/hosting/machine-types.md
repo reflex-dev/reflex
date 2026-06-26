@@ -14,7 +14,8 @@ To scale your VM in the Cloud UI, click on the `Settings` tab in the Cloud UI on
 ```python eval
 rx.image(
     src="https://web.reflex-assets.dev/other/scaling_vms.webp",
-    alt='Selecting machine types for scaling VMs', padding_bottom="20px"
+    alt="Selecting machine types for scaling VMs",
+    padding_bottom="20px",
 )
 ```
 

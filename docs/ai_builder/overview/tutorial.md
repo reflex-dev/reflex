@@ -33,7 +33,7 @@ import reflex as rx
 rx.el.div(
     rx.image(
         src="https://web.reflex-assets.dev/ai_builder/overview/tutorial_1_light.avif",
-        alt='Creating a dashboard in Reflex AI Builder',
+        alt="Creating a dashboard in Reflex AI Builder",
         class_name="rounded-md h-auto",
         border=f"0.81px solid {rx.color('slate', 5)}",
     ),
@@ -56,7 +56,7 @@ Your dashboard now becomes much more useful with real-time filtering. Users can 
 rx.el.div(
     rx.image(
         src="https://web.reflex-assets.dev/ai_builder/overview/tutorial_2_light.avif",
-        alt='Adding interactive filtering in Reflex AI Builder',
+        alt="Adding interactive filtering in Reflex AI Builder",
         class_name="rounded-md h-auto",
         border=f"0.81px solid {rx.color('slate', 5)}",
     ),
@@ -81,7 +81,7 @@ Your app now has full CRUD capability for employee records. The modal form provi
 rx.el.div(
     rx.image(
         src="https://web.reflex-assets.dev/ai_builder/overview/tutorial_3_light.avif",
-        alt='Enabling data entry in Reflex AI Builder',
+        alt="Enabling data entry in Reflex AI Builder",
         class_name="rounded-md h-auto",
         border=f"0.81px solid {rx.color('slate', 5)}",
     ),
@@ -106,7 +106,7 @@ Your app now has proper navigation between the dashboard and chat functionality.
 rx.el.div(
     rx.image(
         src="https://web.reflex-assets.dev/ai_builder/overview/tutorial_4_light.avif",
-        alt='Building a multi-page app in Reflex AI Builder',
+        alt="Building a multi-page app in Reflex AI Builder",
         class_name="rounded-md h-auto",
         border=f"0.81px solid {rx.color('slate', 5)}",
     ),

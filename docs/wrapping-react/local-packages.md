@@ -29,7 +29,9 @@ class Hello(rx.Component):
         return rx.hstack(
             rx.image(
                 src=rx.asset("wave.svg", shared=True),
-                alt='Wave SVG asset', width="50px", height="50px"
+                alt="Wave SVG asset",
+                width="50px",
+                height="50px",
             ),
             rx.heading("Hello ", *children),
             **props,

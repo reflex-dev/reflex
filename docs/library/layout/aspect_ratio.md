@@ -73,7 +73,7 @@ rx.flex(
             rx.aspect_ratio(
                 rx.image(
                     src="https://web.reflex-assets.dev/other/logo.jpg",
-                    alt='Reflex logo',
+                    alt="Reflex logo",
                     width="100%",
                     height="100%",
                 ),

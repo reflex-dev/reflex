@@ -56,7 +56,7 @@ To scale your app to multiple regions in the Cloud UI, click on the `Settings` t
 ```python eval
 rx.image(
     src="https://web.reflex-assets.dev/other/scaling_regions.webp",
-    alt='Selecting deployment regions for scaling',
+    alt="Selecting deployment regions for scaling",
     padding_bottom="20px",
 )
 ```
@@ -96,7 +96,7 @@ rx.el.table(
                     rx.el.div(
                         rx.image(
                             src=f"https://build.reflex.dev/flags/{COUNTRIES_CODES[region]}.svg",
-                            alt='Region country flag',
+                            alt="Region country flag",
                             class_name="rounded-[2px] mr-2 w-5 h-4",
                         ),
                         REGIONS_DICT[region],

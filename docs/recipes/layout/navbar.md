@@ -28,7 +28,7 @@ def navbar() -> rx.Component:
                 rx.hstack(
                     rx.image(
                         src="https://web.reflex-assets.dev/other/logo.jpg",
-                        alt='Reflex logo',
+                        alt="Reflex logo",
                         width="2.25em",
                         height="auto",
                         border_radius="25%",
@@ -53,7 +53,7 @@ def navbar() -> rx.Component:
                 rx.hstack(
                     rx.image(
                         src="https://web.reflex-assets.dev/other/logo.jpg",
-                        alt='Reflex logo',
+                        alt="Reflex logo",
                         width="2em",
                         height="auto",
                         border_radius="25%",
@@ -98,7 +98,7 @@ def navbar_dropdown() -> rx.Component:
                 rx.hstack(
                     rx.image(
                         src="https://web.reflex-assets.dev/other/logo.jpg",
-                        alt='Reflex logo',
+                        alt="Reflex logo",
                         width="2.25em",
                         height="auto",
                         border_radius="25%",
@@ -138,7 +138,7 @@ def navbar_dropdown() -> rx.Component:
                 rx.hstack(
                     rx.image(
                         src="https://web.reflex-assets.dev/other/logo.jpg",
-                        alt='Reflex logo',
+                        alt="Reflex logo",
                         width="2em",
                         height="auto",
                         border_radius="25%",
@@ -187,7 +187,7 @@ def navbar_searchbar() -> rx.Component:
                 rx.hstack(
                     rx.image(
                         src="https://web.reflex-assets.dev/other/logo.jpg",
-                        alt='Reflex logo',
+                        alt="Reflex logo",
                         width="2.25em",
                         height="auto",
                         border_radius="25%",
@@ -211,7 +211,7 @@ def navbar_searchbar() -> rx.Component:
                 rx.hstack(
                     rx.image(
                         src="https://web.reflex-assets.dev/other/logo.jpg",
-                        alt='Reflex logo',
+                        alt="Reflex logo",
                         width="2em",
                         height="auto",
                         border_radius="25%",
@@ -262,7 +262,7 @@ def navbar_icons() -> rx.Component:
                 rx.hstack(
                     rx.image(
                         src="https://web.reflex-assets.dev/other/logo.jpg",
-                        alt='Reflex logo',
+                        alt="Reflex logo",
                         width="2.25em",
                         height="auto",
                         border_radius="25%",
@@ -286,7 +286,7 @@ def navbar_icons() -> rx.Component:
                 rx.hstack(
                     rx.image(
                         src="https://web.reflex-assets.dev/other/logo.jpg",
-                        alt='Reflex logo',
+                        alt="Reflex logo",
                         width="2em",
                         height="auto",
                         border_radius="25%",
@@ -331,7 +331,7 @@ def navbar_buttons() -> rx.Component:
                 rx.hstack(
                     rx.image(
                         src="https://web.reflex-assets.dev/other/logo.jpg",
-                        alt='Reflex logo',
+                        alt="Reflex logo",
                         width="2.25em",
                         height="auto",
                         border_radius="25%",
@@ -361,7 +361,7 @@ def navbar_buttons() -> rx.Component:
                 rx.hstack(
                     rx.image(
                         src="https://web.reflex-assets.dev/other/logo.jpg",
-                        alt='Reflex logo',
+                        alt="Reflex logo",
                         width="2em",
                         height="auto",
                         border_radius="25%",
@@ -409,7 +409,7 @@ def navbar_user() -> rx.Component:
                 rx.hstack(
                     rx.image(
                         src="https://web.reflex-assets.dev/other/logo.jpg",
-                        alt='Reflex logo',
+                        alt="Reflex logo",
                         width="2.25em",
                         height="auto",
                         border_radius="25%",
@@ -445,7 +445,7 @@ def navbar_user() -> rx.Component:
                 rx.hstack(
                     rx.image(
                         src="https://web.reflex-assets.dev/other/logo.jpg",
-                        alt='Reflex logo',
+                        alt="Reflex logo",
                         width="2em",
                         height="auto",
                         border_radius="25%",
