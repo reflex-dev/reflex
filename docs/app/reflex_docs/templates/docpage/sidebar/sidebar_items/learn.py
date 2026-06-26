@@ -232,6 +232,7 @@ def get_sidebar_items_hosting():
                 hosting.custom_domains,
                 hosting.config_file,
                 hosting.tokens,
+                hosting.security_scan,
                 hosting.deploy_with_github_actions,
             ],
         ),

@@ -33,13 +33,13 @@ class OTPFieldBaseComponent(BaseUIComponent):
     @property
     def import_var(self):
         """Return the import variable for the OTP field component."""
-        return ImportVar(tag="OTPFieldPreview", package_path="", install=False)
+        return ImportVar(tag="OTPField", package_path="", install=False)
 
 
 class OTPFieldRoot(OTPFieldBaseComponent):
     """Container that manages state for one-time password entry across multiple slots. Renders a div."""
 
-    tag = "OTPFieldPreview.Root"
+    tag = "OTPField.Root"
 
     # The number of input slots. Required.
     length: Var[int]
@@ -107,7 +107,7 @@ class OTPFieldRoot(OTPFieldBaseComponent):
 class OTPFieldInput(OTPFieldBaseComponent):
     """An individual character slot. Renders an input element."""
 
-    tag = "OTPFieldPreview.Input"
+    tag = "OTPField.Input"
 
     # The render prop
     render_: Var[Component]
@@ -127,7 +127,7 @@ class OTPFieldInput(OTPFieldBaseComponent):
 class OTPFieldSeparator(OTPFieldBaseComponent):
     """A visual or semantic divider between input groups. Renders a div."""
 
-    tag = "OTPFieldPreview.Separator"
+    tag = "OTPField.Separator"
 
     # The separator orientation. Defaults to "horizontal".
     orientation: Var[LiteralOrientation]

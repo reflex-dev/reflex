@@ -404,6 +404,15 @@ def create_sidebar_section(
             class_name="h-8 mb-2 flex items-center justify-start ml-[2.5rem]",
         ),
         rx.el.ul(
+            *(
+                [
+                    rx.el.li(
+                        class_name="m-0 p-0 absolute left-[3rem] top-0 bottom-0 w-px bg-secondary-4 z-[-1] pointer-events-none !rounded-none list-none",
+                    )
+                ]
+                if connected_line
+                else []
+            ),
             *[
                 sidebar_item_comp(
                     item_index=item_index,
@@ -415,7 +424,7 @@ def create_sidebar_section(
             ],
             class_name=ui.cn(
                 "m-0 ml-0 p-0 pl-0 w-full !bg-transparent !shadow-none rounded-[0px] flex flex-col list-none",
-                "gap-0" if connected_line else "gap-1",
+                "gap-0 relative" if connected_line else "gap-1",
             ),
         ),
         class_name="m-0 p-0 flex flex-col items-start ml-0 w-full list-none",

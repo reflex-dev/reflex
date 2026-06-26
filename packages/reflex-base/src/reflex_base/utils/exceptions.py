@@ -284,3 +284,7 @@ class InvalidLockWarningThresholdError(ReflexError):
 
 class UnretrievableVarValueError(ReflexError):
     """Raised when the value of a var is not retrievable."""
+
+
+class HybridPropertyError(ReflexError):
+    """Raised when a hybrid property is misused while building its frontend var."""
