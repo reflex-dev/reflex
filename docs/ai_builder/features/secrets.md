@@ -11,6 +11,7 @@ def render_image():
     return rx.el.div(
         rx.image(
             src="https://web.reflex-assets.dev/ai_builder/features/secrets_light.avif",
+            alt='Adding secrets in Reflex AI Builder',
             class_name="rounded-md h-auto",
             border=f"0.81px solid {rx.color('slate', 5)}",
         ),
@@ -49,6 +50,7 @@ import reflex as rx
 rx.el.div(
     rx.image(
         src="https://web.reflex-assets.dev/ai_builder/features/secret_bulk_light.avif",
+        alt='Adding secrets in bulk with the raw editor',
         class_name="rounded-md h-auto",
         border=f"0.81px solid {rx.color('slate', 5)}",
     ),

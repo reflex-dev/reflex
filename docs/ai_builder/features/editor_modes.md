@@ -11,6 +11,7 @@ def render_image():
     return rx.el.div(
         rx.image(
             src="https://web.reflex-assets.dev/ai_builder/features/diff_light.avif",
+            alt='Reflex AI Builder editor diff view',
             class_name="rounded-md h-auto",
             border=f"0.81px solid {rx.color('slate', 5)}",
         ),

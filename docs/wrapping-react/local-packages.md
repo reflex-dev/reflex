@@ -28,7 +28,8 @@ class Hello(rx.Component):
         props.setdefault("align", "center")
         return rx.hstack(
             rx.image(
-                src=rx.asset("wave.svg", shared=True), width="50px", height="50px"
+                src=rx.asset("wave.svg", shared=True),
+                alt='Wave SVG asset', width="50px", height="50px"
             ),
             rx.heading("Hello ", *children),
             **props,

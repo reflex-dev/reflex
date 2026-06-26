@@ -5,7 +5,7 @@ components:
 Inset: |
   lambda **props: rx.card(
       rx.inset(
-          rx.image(src="https://web.reflex-assets.dev/other/reflex_banner.png", height="auto"),
+          rx.image(src="https://web.reflex-assets.dev/other/reflex_banner.png", alt='Reflex banner image', height="auto"),
           **props,
       ),
       width="500px",
@@ -29,6 +29,7 @@ rx.card(
     rx.inset(
         rx.image(
             src="https://web.reflex-assets.dev/other/reflex_banner.png",
+            alt='Reflex banner image',
             width="100%",
             height="auto",
         ),
@@ -54,6 +55,7 @@ rx.card(
     rx.inset(
         rx.image(
             src="https://web.reflex-assets.dev/other/reflex_banner.png",
+            alt='Reflex banner image',
             width="100%",
             height="auto",
         ),

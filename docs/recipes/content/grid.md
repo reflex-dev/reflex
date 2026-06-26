@@ -38,6 +38,7 @@ rx.grid(
             rx.inset(
                 rx.image(
                     src="https://web.reflex-assets.dev/other/reflex_banner.png",
+                    alt='Reflex banner image',
                     width="100%",
                     height="auto",
                 ),
