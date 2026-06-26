@@ -287,7 +287,7 @@ def footer_index(
                         footer_link_flex(
                             "Resources",
                             [
-                                footer_link("Blog", "/blog"),
+                                footer_link("Blog", "/blog/"),
                                 footer_link("Templates", "/templates"),
                                 footer_link(
                                     "Integrations",
@@ -313,7 +313,7 @@ def footer_index(
                         footer_link_flex(
                             "Developers",
                             [
-                                footer_link("Documentation", "/docs"),
+                                footer_link("Documentation", "/docs/"),
                                 footer_link("Changelog", CHANGELOG_URL),
                                 footer_link("Common Errors", "/errors"),
                             ],

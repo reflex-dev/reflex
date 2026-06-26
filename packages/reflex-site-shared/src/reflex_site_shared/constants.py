@@ -17,7 +17,9 @@ GITHUB_URL = "https://github.com/reflex-dev/reflex"
 LINKEDIN_URL = "https://www.linkedin.com/company/reflex-dev"
 OLD_GITHUB_URL = "https://github.com/pynecone-io/pynecone"
 GITHUB_DISCUSSIONS_URL = "https://github.com/orgs/reflex-dev/discussions"
-FORUM_URL = "https://forum.reflex.dev"
+# forum.reflex.dev permanently redirects (301) to GitHub Discussions; link
+# directly to avoid the redirect hop on every page that references the forum.
+FORUM_URL = GITHUB_DISCUSSIONS_URL
 TWITTER_URL = "https://twitter.com/getreflex"
 DISCORD_URL = "https://discord.gg/T5WSbC2YtQ"
 ROADMAP_URL = "https://github.com/reflex-dev/reflex/issues/2727"

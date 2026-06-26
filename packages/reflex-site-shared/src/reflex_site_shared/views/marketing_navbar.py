@@ -594,7 +594,7 @@ def resources_blog_column() -> rx.Component:
         rx.el.elements.a(
             "Read All in Blog",
             ui.icon("ArrowRight01Icon", class_name="size-4 shrink-0"),
-            href="/blog",
+            href="/blog/",
             class_name="text-secondary-12 text-sm font-[525] flex items-center gap-1.5 hover:text-primary-10 dark:hover:text-primary-9 mt-auto pt-3",
         ),
         on_mount=RecentBlogsState.fetch_recent_blogs,
