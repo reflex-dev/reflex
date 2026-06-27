@@ -611,6 +611,11 @@ class EnvironmentVariables:
     # If this env var is set to "yes", App.compile will be a no-op
     REFLEX_SKIP_COMPILE: EnvVar[bool] = env_var(False, internal=True)
 
+    # Experimental: skip the frontend compile when the app source is unchanged
+    # since the last successful compile (content-aware, persistent). See
+    # reflex/compiler/page_cache.py.
+    REFLEX_PERSISTENT_COMPILE_CACHE: EnvVar[bool] = env_var(False)
+
     # Inherited by uvicorn/granian reload workers so the backend can distinguish
     # dev reload-capable worker boots from other backend starts. Never set in prod.
     REFLEX_DEV_BACKEND_RELOAD_ACTIVE: EnvVar[bool] = env_var(False, internal=True)

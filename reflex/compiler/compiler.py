@@ -1138,6 +1138,26 @@ def compile_app(
         app._add_optional_endpoints()
         return False
 
+    # Experimental persistent compile cache: if the app source is unchanged
+    # since the last successful compile, skip the frontend compile and reuse the
+    # existing .web output (still evaluate pages for the backend). Off unless
+    # REFLEX_PERSISTENT_COMPILE_CACHE is set.
+    compile_fingerprint: str | None = None
+    if not dry_run and environment.REFLEX_PERSISTENT_COMPILE_CACHE.get():
+        from reflex.compiler import page_cache
+
+        compile_fingerprint = page_cache.app_source_fingerprint()
+        if page_cache.is_unchanged(compile_fingerprint):
+            console.debug(
+                "persistent compile cache: source unchanged; skipping frontend compile"
+            )
+            with console.timing("Evaluate Pages (Backend)"):
+                for route in app._unevaluated_pages:
+                    app._compile_page(route, save_page=False)
+            app._write_stateful_pages_marker()
+            app._add_optional_endpoints()
+            return False
+
     progress = (
         Progress(
             *Progress.get_default_columns()[:-1],
@@ -1406,5 +1426,10 @@ def compile_app(
     with console.timing("Write to Disk"):
         for output_path, code in output_mapping.items():
             utils.write_file(output_path, code)
+
+    if compile_fingerprint is not None:
+        from reflex.compiler import page_cache
+
+        page_cache.record(compile_fingerprint)
 
     return True
