@@ -31,7 +31,7 @@ class DemoState(rx.State):
 @rx.memo
 def expensive_component(label: rx.Var[str]) -> rx.Component:
     return rx.vstack(
-        rx.heading(label),
+        rx.heading(label, as_="h2"),
         rx.text("This component only re-renders when props change."),
         rx.divider(),
     )
@@ -58,7 +58,7 @@ class AppState(rx.State):
 
 @rx.memo
 def greeting(name: rx.Var[str]) -> rx.Component:
-    return rx.heading("Hello, " + name)
+    return rx.heading("Hello, " + name, as_="h2")
 
 
 def index():
@@ -128,7 +128,7 @@ def card(
     title: rx.Var[str],
 ) -> rx.Component:
     return rx.box(
-        rx.heading(title),
+        rx.heading(title, as_="h2"),
         children,
         class_name="border border-secondary-5 rounded-lg p-4",
     )

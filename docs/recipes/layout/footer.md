@@ -70,7 +70,7 @@ def footer() -> rx.Component:
                             height="auto",
                             border_radius="25%",
                         ),
-                        rx.heading("Reflex", size="7", weight="bold"),
+                        rx.heading("Reflex", as_="h2", size="7", weight="bold"),
                         align_items="center",
                     ),
                     rx.text(

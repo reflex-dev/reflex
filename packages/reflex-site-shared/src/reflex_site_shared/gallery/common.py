@@ -100,6 +100,7 @@ def integration_image(integration: str, class_name: str = ""):
                 get_integration_logo_url(integration, "light"),
                 get_integration_logo_url(integration, "dark"),
             ),
+            alt=f"{integration} logo",
             unstyled=True,
             class_name="size-full",
         ),

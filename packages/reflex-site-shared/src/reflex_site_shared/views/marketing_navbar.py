@@ -479,7 +479,7 @@ def case_studies_column() -> rx.Component:
                 class_name="relative z-10",
             ),
             rx.el.elements.a(
-                href="/customers",
+                href="/customers/",
                 class_name="absolute inset-0",
                 custom_attrs={"aria-label": "View Autodesk case study"},
             ),
@@ -687,8 +687,8 @@ def resources_content() -> rx.Component:
                             solutions_column(
                                 "Learn",
                                 [
-                                    ("Documentation", "File02Icon", "/docs"),
-                                    ("Templates", "Layout02Icon", "/templates"),
+                                    ("Documentation", "File02Icon", "/docs/"),
+                                    ("Templates", "Layout02Icon", "/templates/"),
                                     ("Changelog", "Clock02Icon", CHANGELOG_URL),
                                 ],
                             ),
@@ -739,7 +739,7 @@ def navigation_menu() -> rx.Component:
                         variant="ghost",
                         native_button=False,
                     ),
-                    href="/pricing",
+                    href="/pricing/",
                 ),
                 class_name="xl:flex hidden px-1",
                 custom_attrs={"role": "menuitem"},
@@ -751,7 +751,7 @@ def navigation_menu() -> rx.Component:
                         size="sm",
                         variant="ghost",
                     ),
-                    href="/docs",
+                    href="/docs/",
                 ),
                 class_name="xl:flex hidden px-1",
                 custom_attrs={"role": "menuitem"},

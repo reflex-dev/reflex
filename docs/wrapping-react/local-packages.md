@@ -33,12 +33,12 @@ class Hello(rx.Component):
                 width="50px",
                 height="50px",
             ),
-            rx.heading("Hello ", *children),
+            rx.heading("Hello ", *children, as_="h2"),
             **props,
         )
 ```
 
-# Local Components
+## Local Components
 
 You can also wrap components that you have written yourself. For local components (when the code source is directly in the project), we recommend putting it beside the files that is wrapping it.
 
@@ -104,7 +104,7 @@ simpler or more performant when implemented directly in Javascript, such as:
   - For application-specific use, it may be easier to wrap a local component that
     provides the needed subset of the library's functionality in a simpler API for use in Reflex.
 
-# Local Packages
+## Local Packages
 
 If the component is part of a local package, available on Github, or
 downloadable via a web URL, it can also be wrapped in Reflex. Specify the path

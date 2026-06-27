@@ -252,10 +252,10 @@ def resources_panel() -> rx.Component:
         drawer_card(
             drawer_category(
                 "Learn",
-                drawer_panel_item(nav_icon("File02Icon"), "Documentation", "/docs"),
-                drawer_panel_item(nav_icon("Layout02Icon"), "Templates", "/templates"),
+                drawer_panel_item(nav_icon("File02Icon"), "Documentation", "/docs/"),
+                drawer_panel_item(nav_icon("Layout02Icon"), "Templates", "/templates/"),
                 drawer_panel_item(nav_icon("Clock02Icon"), "Changelog", CHANGELOG_URL),
-                drawer_panel_item(nav_icon("News01Icon"), "Blog", "/blog"),
+                drawer_panel_item(nav_icon("News01Icon"), "Blog", "/blog/"),
             ),
             drawer_category(
                 "Agent onboarding",
@@ -349,7 +349,7 @@ def solutions_panel() -> rx.Component:
             drawer_panel_item(
                 custom_nav_icon("feather_pen"),
                 "Read customer stories",
-                "/customers",
+                "/customers/",
             ),
             demo_form_dialog(
                 trigger=rx.el.div(
@@ -463,8 +463,8 @@ def navbar_sidebar_drawer(trigger: rx.Component) -> rx.Component:
                         drawer_collapsible("Resources", resources_panel()),
                         drawer_collapsible("Solutions", solutions_panel()),
                         drawer_link("Enterprise", "/docs/enterprise/overview/"),
-                        drawer_link("Pricing", "/pricing"),
-                        drawer_link("Docs", "/docs"),
+                        drawer_link("Pricing", "/pricing/"),
+                        drawer_link("Docs", "/docs/"),
                         class_name="flex flex-col flex-1 w-full overflow-y-auto min-h-0",
                     ),
                     drawer_footer(),

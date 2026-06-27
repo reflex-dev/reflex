@@ -33,7 +33,7 @@ def navbar() -> rx.Component:
                         height="auto",
                         border_radius="25%",
                     ),
-                    rx.heading("Reflex", size="7", weight="bold"),
+                    rx.heading("Reflex", as_="h2", size="7", weight="bold"),
                     align_items="center",
                 ),
                 rx.hstack(
@@ -58,7 +58,7 @@ def navbar() -> rx.Component:
                         height="auto",
                         border_radius="25%",
                     ),
-                    rx.heading("Reflex", size="6", weight="bold"),
+                    rx.heading("Reflex", as_="h2", size="6", weight="bold"),
                     align_items="center",
                 ),
                 rx.menu.root(
@@ -103,7 +103,7 @@ def navbar_dropdown() -> rx.Component:
                         height="auto",
                         border_radius="25%",
                     ),
-                    rx.heading("Reflex", size="7", weight="bold"),
+                    rx.heading("Reflex", as_="h2", size="7", weight="bold"),
                     align_items="center",
                 ),
                 rx.hstack(
@@ -143,7 +143,7 @@ def navbar_dropdown() -> rx.Component:
                         height="auto",
                         border_radius="25%",
                     ),
-                    rx.heading("Reflex", size="6", weight="bold"),
+                    rx.heading("Reflex", as_="h2", size="6", weight="bold"),
                     align_items="center",
                 ),
                 rx.menu.root(
@@ -192,7 +192,7 @@ def navbar_searchbar() -> rx.Component:
                         height="auto",
                         border_radius="25%",
                     ),
-                    rx.heading("Reflex", size="7", weight="bold"),
+                    rx.heading("Reflex", as_="h2", size="7", weight="bold"),
                     align_items="center",
                 ),
                 rx.input(
@@ -216,7 +216,7 @@ def navbar_searchbar() -> rx.Component:
                         height="auto",
                         border_radius="25%",
                     ),
-                    rx.heading("Reflex", size="6", weight="bold"),
+                    rx.heading("Reflex", as_="h2", size="6", weight="bold"),
                     align_items="center",
                 ),
                 rx.input(
@@ -267,7 +267,7 @@ def navbar_icons() -> rx.Component:
                         height="auto",
                         border_radius="25%",
                     ),
-                    rx.heading("Reflex", size="7", weight="bold"),
+                    rx.heading("Reflex", as_="h2", size="7", weight="bold"),
                     align_items="center",
                 ),
                 rx.hstack(
@@ -291,7 +291,7 @@ def navbar_icons() -> rx.Component:
                         height="auto",
                         border_radius="25%",
                     ),
-                    rx.heading("Reflex", size="6", weight="bold"),
+                    rx.heading("Reflex", as_="h2", size="6", weight="bold"),
                     align_items="center",
                 ),
                 rx.menu.root(
@@ -336,7 +336,7 @@ def navbar_buttons() -> rx.Component:
                         height="auto",
                         border_radius="25%",
                     ),
-                    rx.heading("Reflex", size="7", weight="bold"),
+                    rx.heading("Reflex", as_="h2", size="7", weight="bold"),
                     align_items="center",
                 ),
                 rx.hstack(
@@ -366,7 +366,7 @@ def navbar_buttons() -> rx.Component:
                         height="auto",
                         border_radius="25%",
                     ),
-                    rx.heading("Reflex", size="6", weight="bold"),
+                    rx.heading("Reflex", as_="h2", size="6", weight="bold"),
                     align_items="center",
                 ),
                 rx.menu.root(
@@ -414,7 +414,7 @@ def navbar_user() -> rx.Component:
                         height="auto",
                         border_radius="25%",
                     ),
-                    rx.heading("Reflex", size="7", weight="bold"),
+                    rx.heading("Reflex", as_="h2", size="7", weight="bold"),
                     align_items="center",
                 ),
                 rx.hstack(
@@ -450,7 +450,7 @@ def navbar_user() -> rx.Component:
                         height="auto",
                         border_radius="25%",
                     ),
-                    rx.heading("Reflex", size="6", weight="bold"),
+                    rx.heading("Reflex", as_="h2", size="6", weight="bold"),
                     align_items="center",
                 ),
                 rx.menu.root(
