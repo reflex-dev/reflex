@@ -69,6 +69,12 @@ The docs app runs in-sandbox by installing its three in-repo deps (`reflex-site-
 
 Conclusion confirmed on the real app: **Salsa-style per-page caching makes incremental builds scale with #changed pages, not project size** — pure Python, the automatic generalization of `whitelist.py`, covering full/CI builds. The cold build (35.6 s) is unchanged — that is the only place per-node speed (construction caching, then Rust/mypyc) still matters. Real cache correctness requires dependency-correct fingerprints (a page's doc file + module + shared templates/sidebar; adding/removing a page invalidates the nav on all pages).
 
+### Correct caching, measured (`real_docs_cache_spike.py`)
+
+The shippable design is a **two-tier key, provably non-stale**: `key(page) = (page_fingerprint, shared_epoch)` where `shared_epoch = hash(state schema + shared templates + reflex/compiler version)`. A page is served only if both match; any shared/state change bumps the epoch → **every page invalidates → no page can be served stale.** No dependency graph, no early cutoff. Measured on the docs app: edit-one-page **629×**, no-change **33,000×**, and a simulated state-schema change recompiled all 391 with **0 pages served stale**.
+
+**Component reuse is large and is the cold-build lever.** Across the 391 pages there are **253,902 subtrees but only 69,199 unique — 72.7% are structurally identical duplicates** (shared chrome + repeated doc structure). Page caching cannot touch this (it helps only *unchanged* pages); a content-addressed component cache could skip those duplicate compiles **even on a cold build**, which is exactly what benefits few-page / heavy-page apps. Caveat: realizing it needs a cache key computable **before** full render (key on *how* a subtree is built — function + args — not the post-render deterministic hash, which already costs the render you're trying to skip), plus handling per-page-varying subtrees (e.g. the active-item sidebar). `rx.memo` is **not** this — it is a compile *cost* (deepcopy + deterministic hash, `compiler/utils.py:423`, `component.py:613`) that emits React runtime memoization.
+
 ---
 
 ## 1. Thesis verdict
