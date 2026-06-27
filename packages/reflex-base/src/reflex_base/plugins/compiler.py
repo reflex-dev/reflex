@@ -800,6 +800,7 @@ class CompileContext(BaseContext):
         """
         from reflex.compiler import compiler
         from reflex.state import all_base_state_classes
+        from reflex_base.vars.base import reset_unique_variable_names
 
         self.ensure_context_attached()
         self.compiled_pages.clear()
@@ -808,6 +809,11 @@ class CompileContext(BaseContext):
         self.stateful_routes.clear()
         self.memoize_wrappers.clear()
         self.auto_memo_components.clear()
+
+        # Reset the deterministic ref-name generator so a second in-process
+        # compile reproduces the same auto-generated names as the first (these
+        # names feed auto-memo content hashes, so drift breaks reproducibility).
+        reset_unique_variable_names()
 
         for page in self.pages:
             page_fn = page.component
