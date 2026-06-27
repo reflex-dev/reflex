@@ -33,6 +33,7 @@ from reflex.utils import prerequisites
 
 if TYPE_CHECKING:
     from reflex_base.components.component import BaseComponent
+    from reflex_base.plugins import PageContext
 
 #: Source extensions whose content affects the compiled output.
 SOURCE_SUFFIXES = (".py", ".md", ".mdx")
@@ -134,10 +135,114 @@ def record(fingerprint: str) -> None:
         pass  # best-effort: a cache write failure must never break the build.
 
 
-# --- Tier 2 building blocks (not yet wired): per-page hybrid keys ------------
-# key(page) = (page_source_fingerprint, used_state_versions, global_epoch).
-# Realizing per-page partial rebuild also needs to cache each page's
-# contribution to the app-wide aggregates (imports / app root / memo dedup).
+# --- Tier 2: in-process per-page cache --------------------------------------
+# Per-page key = (page-module source fingerprint, shared fingerprint). Fine on
+# the page's own source (the frequent dev edit -> only that page misses); coarse
+# on everything shared (state, shared components, config, reflex version ->
+# every page misses). Contributions to the app-wide aggregates include live
+# Python objects (root_component, memo defs), so the store is in-process only.
+
+
+def _module_file(component: object) -> Path | None:
+    import sys
+
+    mod = sys.modules.get(getattr(component, "__module__", "") or "")
+    file = getattr(mod, "__file__", None)
+    return Path(file) if file else None
+
+
+def page_module_files(components: object) -> set[Path]:
+    """Resolve the set of module files that define the given page components.
+
+    Args:
+        components: An iterable of page component callables/objects.
+
+    Returns:
+        The set of resolved module file paths.
+    """
+    files = set()
+    for comp in components:  # type: ignore[attr-defined]
+        f = _module_file(comp)
+        if f is not None:
+            files.add(f.resolve())
+    return files
+
+
+def shared_fingerprint(page_files: set[Path], root: Path | None = None) -> str:
+    """Hash all source EXCEPT the given page-module files, plus the Reflex version.
+
+    Changing any shared file (state, shared component, config) bumps this and
+    invalidates every page; editing a single page module does not.
+
+    Args:
+        page_files: Page-module files to exclude (they're keyed per page).
+        root: Project root to scan. Defaults to cwd.
+
+    Returns:
+        A hex digest of the shared inputs.
+    """
+    root = (root or Path.cwd()).resolve()
+    hasher = hashlib.sha256()
+    hasher.update(f"reflex={_reflex_version()}\x1f".encode())
+    for path in _iter_source_files(root):
+        if path.resolve() in page_files:
+            continue
+        try:
+            digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        except OSError:
+            continue
+        hasher.update(f"{path.relative_to(root).as_posix()}={digest}\x1f".encode())
+    return hasher.hexdigest()
+
+
+def page_key(component: object, shared_fp: str) -> str:
+    """Hybrid per-page key: this page's source + the shared fingerprint.
+
+    Args:
+        component: The page component or factory callable.
+        shared_fp: The current shared fingerprint.
+
+    Returns:
+        A hex digest identifying this page's compiled output inputs.
+    """
+    return _sha(page_source_fingerprint(component), shared_fp)
+
+
+#: In-process store: route -> (page_key, cached PageContext, is_stateful).
+_PAGE_STORE: dict[str, tuple[str, PageContext, bool]] = {}
+
+
+def get_cached_page(route: str, key: str) -> tuple[PageContext, bool] | None:
+    """Return ``(PageContext, is_stateful)`` for ``route`` iff its key matches.
+
+    Args:
+        route: The page route.
+        key: The current hybrid key to validate against.
+
+    Returns:
+        The cached page context and its stateful flag, or None on miss.
+    """
+    entry = _PAGE_STORE.get(route)
+    if entry is not None and entry[0] == key:
+        return entry[1], entry[2]
+    return None
+
+
+def store_page(route: str, key: str, page_ctx: PageContext, is_stateful: bool) -> None:
+    """Record a freshly-compiled page context under its key.
+
+    Args:
+        route: The page route.
+        key: The hybrid key it was compiled under.
+        page_ctx: The compiled PageContext to cache.
+        is_stateful: Whether the page registered new state during evaluation.
+    """
+    _PAGE_STORE[route] = (key, page_ctx, is_stateful)
+
+
+def clear_page_store() -> None:
+    """Drop all in-process per-page cache entries."""
+    _PAGE_STORE.clear()
 
 
 def page_source_fingerprint(component: BaseComponent | object) -> str:

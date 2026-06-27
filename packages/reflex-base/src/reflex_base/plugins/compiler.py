@@ -690,6 +690,12 @@ class PageContext(BaseContext):
     output_path: str | None = None
     output_code: str | None = None
     source_module: str | None = None
+    # Auto-memo components first registered while compiling THIS page, keyed by
+    # ``(tag, source_module)``. Lets an incremental cache attribute memo
+    # contributions per page so a skipped page can re-register them.
+    memo_contributions: dict[tuple[str, str | None], Any] = dataclasses.field(
+        default_factory=dict
+    )
     # Stack of ``id(component)`` for components whose subtree is
     # memoize-suppressed. Populated by ``MemoizeStatefulPlugin`` when it
     # encounters a ``MemoizationLeaf``-style snapshot boundary and popped on
@@ -836,6 +842,7 @@ class CompileContext(BaseContext):
             self.compiled_pages.values(),
             strict=True,
         ):
+            memo_before = set(self.auto_memo_components)
             with page_ctx:
                 page_ctx.root_component = self.hooks.compile_component(
                     page_ctx.root_component,
@@ -848,6 +855,12 @@ class CompileContext(BaseContext):
                     compile_context=self,
                     **kwargs,
                 )
+            # Attribute newly-registered auto-memo components to this page.
+            page_ctx.memo_contributions = {
+                key: value
+                for key, value in self.auto_memo_components.items()
+                if key not in memo_before
+            }
 
             page_ctx.frontend_imports = page_ctx.merged_imports(collapse=True)
             self.all_imports = merge_imports(

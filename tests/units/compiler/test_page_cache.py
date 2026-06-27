@@ -65,3 +65,42 @@ def test_record_and_is_unchanged(tmp_path, monkeypatch):
     page_cache.record(fp)
     assert page_cache.is_unchanged(fp) is True
     assert page_cache.is_unchanged("different") is False
+
+
+def _dummy_page():  # a page-like callable defined in this module
+    return None
+
+
+def test_page_module_files_resolves(tmp_path):
+    files = page_cache.page_module_files([_dummy_page])
+    assert any(p.name == "test_page_cache.py" for p in files)
+
+
+def test_shared_fingerprint_excludes_page_files(tmp_path):
+    (tmp_path / "page.py").write_text("PAGE = 1\n")
+    (tmp_path / "shared.py").write_text("SHARED = 1\n")
+    page_files = {(tmp_path / "page.py").resolve()}
+    fp = page_cache.shared_fingerprint(page_files, root=tmp_path)
+    # editing the excluded page file does NOT change the shared fingerprint
+    (tmp_path / "page.py").write_text("PAGE = 2\n")
+    assert page_cache.shared_fingerprint(page_files, root=tmp_path) == fp
+    # editing a shared file DOES
+    (tmp_path / "shared.py").write_text("SHARED = 2\n")
+    assert page_cache.shared_fingerprint(page_files, root=tmp_path) != fp
+
+
+def test_page_key_varies_with_shared():
+    k = page_cache.page_key(_dummy_page, "sharedA")
+    assert page_cache.page_key(_dummy_page, "sharedA") == k  # stable
+    assert page_cache.page_key(_dummy_page, "sharedB") != k  # shared change
+
+
+def test_page_store_roundtrip():
+    page_cache.clear_page_store()
+    sentinel = object()
+    assert page_cache.get_cached_page("/x", "k1") is None
+    page_cache.store_page("/x", "k1", sentinel, True)
+    assert page_cache.get_cached_page("/x", "k1") == (sentinel, True)
+    assert page_cache.get_cached_page("/x", "different") is None  # key mismatch
+    page_cache.clear_page_store()
+    assert page_cache.get_cached_page("/x", "k1") is None

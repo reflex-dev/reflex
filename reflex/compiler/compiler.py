@@ -1183,9 +1183,32 @@ def compile_app(
     base_total = (len(app._unevaluated_pages) * 2) + fixed_steps + len(config.plugins)
     progress.start()
     task = progress.add_task("Compiling:", total=base_total)
+    all_pages = list(app._unevaluated_pages.values())
+
+    # Tier 2: in-process per-page cache. Reuse the compiled context of pages
+    # whose hybrid key (own source + shared fingerprint) is unchanged; compile
+    # only the rest, then re-merge cached pages' contributions into the
+    # app-wide aggregates. In-process only (contributions hold live objects).
+    tier2 = compile_fingerprint is not None  # set iff the flag is on (and not dry_run)
+    page_keys: dict[str, str] = {}
+    hit_routes: list[str] = []
+    if tier2:
+        from reflex.compiler import page_cache
+
+        page_files = page_cache.page_module_files(p.component for p in all_pages)
+        shared_fp = page_cache.shared_fingerprint(page_files)
+        for page in all_pages:
+            page_keys[page.route] = page_cache.page_key(page.component, shared_fp)
+            if (
+                page_cache.get_cached_page(page.route, page_keys[page.route])
+                is not None
+            ):
+                hit_routes.append(page.route)
+
+    hit_set = set(hit_routes)
     compile_ctx = CompileContext(
         app=app,
-        pages=list(app._unevaluated_pages.values()),
+        pages=[p for p in all_pages if p.route not in hit_set],
         hooks=CompilerHooks(
             plugins=default_page_plugins(style=app.style, plugins=compiler_plugins)
         ),
@@ -1196,6 +1219,43 @@ def compile_app(
             evaluate_progress=lambda: progress.advance(task),
             render_progress=lambda: progress.advance(task),
         )
+
+    if tier2:
+        from reflex.compiler import page_cache
+
+        # Cache freshly-compiled (miss) pages with their stateful flag.
+        for route in list(compile_ctx.compiled_pages):
+            page_cache.store_page(
+                route,
+                page_keys[route],
+                compile_ctx.compiled_pages[route],
+                route in compile_ctx.stateful_routes,
+            )
+        # Re-merge cached (hit) pages' contributions into the aggregates.
+        for route in hit_routes:
+            cached = page_cache.get_cached_page(route, page_keys[route])
+            if cached is None:  # defensive: evicted concurrently
+                continue
+            page_ctx, is_stateful = cached
+            compile_ctx.compiled_pages[route] = page_ctx
+            compile_ctx.all_imports = utils.merge_imports(
+                compile_ctx.all_imports, page_ctx.frontend_imports
+            )
+            compile_ctx.app_wrap_components.update(page_ctx.app_wrap_components)
+            compile_ctx.auto_memo_components.update(page_ctx.memo_contributions)
+            if is_stateful:
+                compile_ctx.stateful_routes[route] = None
+        # Restore deterministic page order (route order of the app).
+        compile_ctx.compiled_pages = {
+            p.route: compile_ctx.compiled_pages[p.route]
+            for p in all_pages
+            if p.route in compile_ctx.compiled_pages
+        }
+        if hit_routes:
+            console.debug(
+                f"persistent compile cache: reused {len(hit_routes)} page(s), "
+                f"recompiled {len(all_pages) - len(hit_routes)}"
+            )
 
     for route, page_ctx in compile_ctx.compiled_pages.items():
         app._check_routes_conflict(route)
