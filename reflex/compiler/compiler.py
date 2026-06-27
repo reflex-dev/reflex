@@ -8,6 +8,7 @@ import json
 import sys
 from collections.abc import Callable, Iterable, Sequence
 from inspect import getmodule
+from itertools import chain
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -18,6 +19,7 @@ from reflex_base.components.component import (
     ComponentStyle,
     evaluate_style_namespaces,
 )
+from reflex_base.components.dynamic import bundled_libraries, dynamic_component_imports
 from reflex_base.components.memo import (
     MEMOS,
     MemoComponentDefinition,
@@ -34,7 +36,7 @@ from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plug
 from reflex_base.style import SYSTEM_COLOR_MODE
 from reflex_base.utils import memo_paths
 from reflex_base.utils.exceptions import ReflexError
-from reflex_base.utils.format import to_title_case
+from reflex_base.utils.format import format_library_name, to_title_case
 from reflex_base.utils.imports import ABSOLUTE_IMPORT_PREFIXES, ImportVar
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_components_core.base.app_wrap import AppWrap
@@ -50,8 +52,6 @@ from reflex.state import BaseState, code_uses_state_contexts
 from reflex.utils import console, frontend_skeleton, path_ops, prerequisites
 from reflex.utils.exec import get_compile_context, is_prod_mode
 from reflex.utils.prerequisites import get_web_dir
-
-RADIX_THEMES_STYLESHEET = "@radix-ui/themes/styles.css"
 
 
 def _set_progress_total(
@@ -115,22 +115,68 @@ def _compile_document_root(root: Component) -> str:
     )
 
 
-def _normalize_library_name(lib: str) -> str:
-    """Normalize the library name.
+# Path-like prefixes mark Reflex-controlled internal modules (e.g. "$/utils/...");
+# the rest are external npm libraries where star imports defeat tree-shaking.
+_INTERNAL_LIB_PREFIXES = ("$/", "/", ".")
+
+# Runtime-eval'd dynamic components reach for ``window.__reflex.react`` and
+# ``window.__reflex['@emotion/react']`` as if they were the whole module
+# (``state.js`` aliases ``window.React = window.__reflex.react``). Tree-shaking
+# these to the host app's static surface drops APIs that user custom_code or
+# third-party libraries may legitimately read at runtime, so always star-import.
+_ALWAYS_STAR_IMPORT_LIBS = frozenset({"react", "@emotion/react"})
+
+
+def collect_window_library_imports(
+    import_sources: Iterable[dict[str, list[ImportVar]]],
+) -> dict[str, set[str] | None]:
+    """Build the ``window.__reflex`` surface for runtime-eval'd code.
+
+    Each bundled library gets either a set of named exports (for external libs,
+    collected from the app's actual static usage so Rolldown can tree-shake) or
+    ``None`` (for internal Reflex modules, which use a star import).
+
+    External library tags come from two sources: (1) static page / app-root
+    imports, and (2) tags captured during compile-time serialization of
+    dynamic Component values (Component-typed state field defaults, computed
+    Component vars evaluated when generating the initial state) -- see
+    ``reflex_base.components.dynamic.dynamic_component_imports``.
+
+    Takes an iterable of import dicts (one per page / app_root / memo group)
+    rather than a pre-merged dict so callers don't have to fold the same
+    library's named exports across sources before calling.
 
     Args:
-        lib: The library name to normalize.
+        import_sources: One import dict per source (page, app_root, etc).
 
     Returns:
-        The normalized library name.
+        Mapping from library path to either the set of named exports to expose
+        (external libs) or None (internal libs, use star import).
     """
-    if lib == "react":
-        return "React"
-    return lib.replace("$/", "").replace("@", "").replace("/", "_").replace("-", "_")
+    per_lib_tags: dict[str, set[str]] = {}
+    for source in chain(import_sources, (dynamic_component_imports,)):
+        for imported_lib, import_vars in source.items():
+            key = format_library_name(imported_lib)
+            for iv in import_vars:
+                if iv.tag and not iv.is_default:
+                    per_lib_tags.setdefault(key, set()).add(iv.tag)
+
+    result: dict[str, set[str] | None] = {}
+    for lib in bundled_libraries:
+        if lib.startswith(_INTERNAL_LIB_PREFIXES) or lib in _ALWAYS_STAR_IMPORT_LIBS:
+            result[lib] = None
+            continue
+        tags = per_lib_tags.get(lib)
+        if tags:
+            result[lib] = tags
+    return result
 
 
 def _compile_app(
-    app_root: Component, hydrate_fallback_export: str | None = None
+    app_root: Component,
+    hydrate_fallback_export: str | None = None,
+    window_library_imports: dict[str, set[str] | None] | None = None,
+    app_root_imports: dict[str, list[ImportVar]] | None = None,
 ) -> str:
     """Compile the app template component.
 
@@ -138,26 +184,24 @@ def _compile_app(
         app_root: The app root to compile.
         hydrate_fallback_export: The exported name of the hydrate-fallback memo
             component to re-export as ``HydrateFallback``, or None for no fallback.
+        window_library_imports: Per-library named-export surface to expose on
+            ``window.__reflex`` for dynamic components. Empty/None skips the
+            bootstrap entirely.
+        app_root_imports: Precomputed result of ``app_root._get_all_imports()``;
+            pass it to avoid a second full-tree walk on the hot path.
 
     Returns:
         The compiled app.
     """
-    from reflex_base.components.dynamic import bundled_libraries
-
-    window_libraries = [
-        (_normalize_library_name(name), name) for name in bundled_libraries
-    ]
-
-    window_libraries_deduped = list(dict.fromkeys(window_libraries))
-
-    app_root_imports = app_root._get_all_imports()
+    if app_root_imports is None:
+        app_root_imports = app_root._get_all_imports()
     _apply_common_imports(app_root_imports)
 
     return templates.app_root_template(
         imports=utils.compile_imports(app_root_imports),
         custom_codes=app_root._get_all_custom_code(),
         hooks=app_root._get_all_hooks(),
-        window_libraries=window_libraries_deduped,
+        window_library_imports=window_library_imports or {},
         render=app_root.render(),
         dynamic_imports=app_root._get_all_dynamic_imports(),
         hydrate_fallback_export=hydrate_fallback_export,
@@ -622,7 +666,10 @@ def compile_document_root(
 
 
 def compile_app_root(
-    app_root: Component, hydrate_fallback_export: str | None = None
+    app_root: Component,
+    hydrate_fallback_export: str | None = None,
+    window_library_imports: dict[str, set[str] | None] | None = None,
+    app_root_imports: dict[str, list[ImportVar]] | None = None,
 ) -> tuple[str, str]:
     """Compile the app root.
 
@@ -630,17 +677,25 @@ def compile_app_root(
         app_root: The app root component to compile.
         hydrate_fallback_export: The exported name of the hydrate-fallback memo
             component to re-export as ``HydrateFallback``, or None for no fallback.
+        window_library_imports: Per-library named-export surface for
+            ``window.__reflex`` (see ``collect_window_library_imports``). Pass
+            ``None`` to skip emitting ``window.__reflex`` entirely.
+        app_root_imports: Precomputed ``app_root._get_all_imports()``; reused
+            from the caller to avoid a second tree walk.
 
     Returns:
         The path and code of the compiled app wrapper.
     """
-    # Get the path for the output file.
     output_path = str(
         get_web_dir() / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
     )
 
-    # Compile the document root.
-    code = _compile_app(app_root, hydrate_fallback_export)
+    code = _compile_app(
+        app_root,
+        hydrate_fallback_export=hydrate_fallback_export,
+        window_library_imports=window_library_imports,
+        app_root_imports=app_root_imports,
+    )
     return output_path, code
 
 
@@ -1103,9 +1158,14 @@ def compile_app(
         ``True`` when a real frontend compile ran, ``False`` when the call
         short-circuited (backend-only paths that only re-evaluate pages).
     """
-    from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
+    from reflex_base.components.dynamic import (
+        bundle_library,
+        reset_bundled_libraries,
+        reset_dynamic_component_imports,
+    )
     from reflex_base.utils.exceptions import ReflexRuntimeError
 
+    reset_dynamic_component_imports()
     app._apply_decorated_pages()
     app._pages = {}
 
@@ -1233,7 +1293,8 @@ def compile_app(
 
     app_wrappers = _resolve_app_wrap_components(app, compile_ctx.app_wrap_components)
     app_root = _memoize_stateful_app_wraps(app._app_root(app_wrappers), compile_ctx)
-    all_imports = utils.merge_imports(all_imports, app_root._get_all_imports())
+    app_root_imports = app_root._get_all_imports()
+    all_imports = utils.merge_imports(all_imports, app_root_imports)
 
     hydrate_fallback = app._resolve_hydrate_fallback()
     hydrate_fallback_export = None
@@ -1341,7 +1402,20 @@ def compile_app(
     )
     progress.advance(task)
 
-    compile_results.append(compile_app_root(app_root, hydrate_fallback_export))
+    window_library_imports = collect_window_library_imports(
+        chain(
+            (app_root_imports,),
+            (p.frontend_imports for p in compile_ctx.compiled_pages.values()),
+        )
+    )
+    compile_results.append(
+        compile_app_root(
+            app_root,
+            hydrate_fallback_export=hydrate_fallback_export,
+            window_library_imports=window_library_imports,
+            app_root_imports=app_root_imports,
+        )
+    )
     progress.advance(task)
 
     progress.stop()

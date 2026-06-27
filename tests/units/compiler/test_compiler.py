@@ -404,15 +404,27 @@ def test_compile_app_root_with_hydrate_fallback_exports_hydrate_fallback():
 
 
 def test_compile_app_root_includes_radix_window_library_when_bundled():
-    """Bundled Radix libraries should be exposed to window.__reflex."""
+    """Bundled Radix libraries are exposed to window.__reflex via named imports
+    derived from the app's actual static usage (so Rolldown can tree-shake).
+    """
+    from reflex_base.utils.imports import ImportVar
+
     reset_bundled_libraries()
     try:
         bundle_library("@radix-ui/themes@3.3.0")
 
-        _, code = compiler.compile_app_root(rx.el.div("hello"))
+        window_library_imports = compiler.collect_window_library_imports([
+            {"@radix-ui/themes@3.3.0": [ImportVar(tag="Theme")]},
+        ])
+        _, code = compiler.compile_app_root(
+            rx.el.div("hello"), window_library_imports=window_library_imports
+        )
 
-        assert 'import * as radix_ui_themes from "@radix-ui/themes";' in code
-        assert '"@radix-ui/themes": radix_ui_themes' in code
+        assert (
+            'import { Theme as __reflex_radix_ui_themes_Theme } from "@radix-ui/themes";'
+            in code
+        )
+        assert '"@radix-ui/themes": { Theme: __reflex_radix_ui_themes_Theme }' in code
     finally:
         reset_bundled_libraries()
 
@@ -444,6 +456,89 @@ def test_compile_nonexistent_stylesheet(tmp_path, mocker: MockerFixture):
 
     with pytest.raises(FileNotFoundError):
         compiler.compile_root_stylesheet(stylesheets)
+
+
+@pytest.fixture
+def _isolate_dynamic_imports():
+    """Reset window-import state so each test sees only its own bundled libs."""
+    from reflex_base.components.dynamic import reset_dynamic_component_imports
+
+    reset_dynamic_component_imports()
+    reset_bundled_libraries()
+    bundle_library("@radix-ui/themes@3.3.0")
+    yield
+    reset_dynamic_component_imports()
+    reset_bundled_libraries()
+
+
+@pytest.mark.usefixtures("_isolate_dynamic_imports")
+def test_collect_window_library_imports_internal_modules_always_star_imported():
+    """Internal Reflex modules map to None (star import) so dynamic components
+    and plugins reading ``window.__reflex`` find what they need even when the
+    app has no static external references.
+    """
+    result = compiler.collect_window_library_imports([{}])
+    assert result["$/utils/state"] is None
+    assert "@radix-ui/themes" not in result
+
+
+@pytest.mark.usefixtures("_isolate_dynamic_imports")
+def test_collect_window_library_imports_external_lib_uses_named_imports():
+    """External libraries on ``window.__reflex`` use named imports so Rolldown
+    can tree-shake unused exports.
+    """
+    sources = [
+        {"$/utils/state": [ImportVar(tag="evalReactComponent")]},
+        {
+            "@radix-ui/themes@3.3.0": [
+                ImportVar(tag="Theme"),
+                ImportVar(tag="Button"),
+            ]
+        },
+    ]
+    result = compiler.collect_window_library_imports(sources)
+    assert result["@radix-ui/themes"] == {"Theme", "Button"}
+
+
+@pytest.mark.usefixtures("_isolate_dynamic_imports")
+def test_collect_window_library_imports_unions_dynamic_component_tags():
+    """Tags captured during dynamic-Component serialization are unioned into
+    the named-import surface so runtime-eval'd code finds them on
+    ``window.__reflex``.
+    """
+    from reflex_base.components.dynamic import dynamic_component_imports
+
+    sources = [{"@radix-ui/themes@3.3.0": [ImportVar(tag="Theme")]}]
+    dynamic_component_imports["@radix-ui/themes@3.3.0"] = {ImportVar(tag="Flex")}
+
+    result = compiler.collect_window_library_imports(sources)
+    assert result["@radix-ui/themes"] == {"Theme", "Flex"}
+
+
+@pytest.mark.usefixtures("_isolate_dynamic_imports")
+def test_collect_window_library_imports_react_is_always_star_imported():
+    """``react`` and ``@emotion/react`` must expose the full module on
+    ``window.__reflex`` -- ``state.js`` aliases ``window.React`` to
+    ``window.__reflex.react``, and runtime code may legitimately read APIs
+    the host app didn't statically import.
+    """
+    sources = [{"react": [ImportVar(tag="useState")]}]
+    result = compiler.collect_window_library_imports(sources)
+    assert result["react"] is None
+    assert result["@emotion/react"] is None
+
+
+def test_render_window_reflex_block_falls_back_to_star_for_invalid_tag():
+    """If any declared tag isn't a valid JS identifier, the library falls back
+    to a star import rather than emit ``import { Foo.Bar as ... }`` (SyntaxError).
+    """
+    from reflex_base.compiler.templates import _render_window_reflex_block
+
+    import_block, _ = _render_window_reflex_block({
+        "@some/lib": {"Foo.Bar"},
+    })
+    assert "Foo.Bar" not in import_block
+    assert 'import * as __reflex_some_lib from "@some/lib";' in import_block
 
 
 def test_create_document_root():
