@@ -9,11 +9,14 @@ store. This tier persists each page's *serializable* contribution to disk so the
 fresh worker can reuse it.
 
 **What is persisted** (``.web/reflex_compile_cache.json``): per page, its source
-fingerprint, the state files it uses (+ their hashes), its rendered ``output_code``
-and path, its ``frontend_imports`` (``ImportVar`` is a frozen dataclass of
-primitives), the rendered memo files it owns, its app-wrap key-set, and whether
-evaluating it registered new state. App-wide: the shared fingerprint, the
-fine-grained state hashes, the reflex version, and the merged imports.
+fingerprint, its rendered ``output_code`` and path, its ``frontend_imports``
+(``ImportVar`` is a frozen dataclass of primitives), its app-wrap key-set, and
+whether evaluating it registered new state. App-wide: the shared fingerprint, the
+fine-grained state hashes, the reflex version, and the merged imports. The
+manifest deliberately stores **no rendered memo files**: a hit page's memo files
+are already on disk from the prior compile, and a miss page re-renders its own on
+recompile — so writing the manifest is just string/key serialization, never a
+second memo render.
 
 **The fast path** (``try_incremental_rebuild``). On a fresh compile it reuses the
 manifest only when the global inputs match (reflex version, route set, shared
@@ -139,10 +142,8 @@ def write_manifest(
         root: Project root for fingerprinting. Defaults to cwd.
     """
     try:
-        from reflex.compiler import compiler
-
         page_files = page_cache.page_module_files(p.component for p in pages)
-        state_index, fine_state_files = page_cache.state_dependency_index(root)
+        _, fine_state_files = page_cache.state_dependency_index(root)
         shared_fp = page_cache.shared_fingerprint(page_files | fine_state_files, root)
         state_hashes = page_cache.file_hashes(fine_state_files)
 
@@ -155,25 +156,13 @@ def write_manifest(
                 or page_ctx.output_path is None
             ):
                 return  # incomplete compile -> do not write a partial manifest
-            memo_defs = list(page_ctx.memo_contributions.values())
-            memo_files, memo_imports = compiler.compile_memo_components(memo_defs)
-            used = page_cache.used_state_files(
-                page_ctx.output_code,
-                [m.component for m in memo_defs],
-                state_index,
-            )
             pages_data[page.route] = {
                 "page_source_fp": page_cache.page_source_fingerprint(page.component),
-                "used_state_hashes": {
-                    str(f): state_hashes[str(f)] for f in used if str(f) in state_hashes
-                },
                 "output_path": page_ctx.output_path,
                 "output_code": page_ctx.output_code,
                 "frontend_imports": _serialize_imports(page_ctx.frontend_imports),
                 "app_wrap_keys": _wrap_key_strs(page_ctx.app_wrap_components.keys()),
                 "is_stateful": page.route in compile_ctx.stateful_routes,
-                "memo_files": [[p, c] for p, c in memo_files],
-                "memo_imports": _serialize_imports(memo_imports),
             }
 
         manifest = {
@@ -276,7 +265,7 @@ def try_incremental_rebuild(
     pages = list(app._unevaluated_pages.values())
     routes = {p.route for p in pages}
     page_files = page_cache.page_module_files(p.component for p in pages)
-    state_index, fine_state_files = page_cache.state_dependency_index(root)
+    _, fine_state_files = page_cache.state_dependency_index(root)
     shared_fp = page_cache.shared_fingerprint(page_files | fine_state_files, root)
     state_hashes = page_cache.file_hashes(fine_state_files)
 
@@ -384,7 +373,7 @@ def try_incremental_rebuild(
     frontend_skeleton.update_entry_client()
 
     # Refresh the manifest for the next process.
-    _update_manifest_for_misses(manifest, miss_ctx, miss_pages, state_index, root)
+    _update_manifest_for_misses(manifest, miss_ctx, miss_pages)
 
     with contextlib.suppress(Exception):
         page_cache.record(page_cache.app_source_fingerprint(root))
@@ -400,8 +389,6 @@ def _update_manifest_for_misses(
     manifest: dict[str, Any],
     miss_ctx: CompileContext | None,
     miss_pages: Sequence[PageDefinition],
-    state_index: dict[str, Path],
-    root: Path | None,
 ) -> None:
     """Update the on-disk manifest entries for the recompiled pages.
 
@@ -409,37 +396,20 @@ def _update_manifest_for_misses(
         manifest: The loaded manifest (mutated and rewritten).
         miss_ctx: The compile context of the recompiled pages, if any.
         miss_pages: The recompiled page definitions.
-        state_index: The state-context identifier -> file index.
-        root: Project root. Defaults to cwd.
     """
     if miss_ctx is None or not miss_pages:
         return
     try:
-        from reflex.compiler import compiler
-
-        state_hashes = manifest.get("state_hashes", {})
         all_imports = _deserialize_imports(manifest["all_imports"])
         for page in miss_pages:
             page_ctx = miss_ctx.compiled_pages[page.route]
-            memo_defs = list(page_ctx.memo_contributions.values())
-            memo_files, memo_imports = compiler.compile_memo_components(memo_defs)
-            used = page_cache.used_state_files(
-                page_ctx.output_code or "",
-                [m.component for m in memo_defs],
-                state_index,
-            )
             manifest["pages"][page.route] = {
                 "page_source_fp": page_cache.page_source_fingerprint(page.component),
-                "used_state_hashes": {
-                    str(f): state_hashes[str(f)] for f in used if str(f) in state_hashes
-                },
                 "output_path": page_ctx.output_path,
                 "output_code": page_ctx.output_code,
                 "frontend_imports": _serialize_imports(page_ctx.frontend_imports),
                 "app_wrap_keys": _wrap_key_strs(page_ctx.app_wrap_components.keys()),
                 "is_stateful": page.route in miss_ctx.stateful_routes,
-                "memo_files": [[p, c] for p, c in memo_files],
-                "memo_imports": _serialize_imports(memo_imports),
             }
             all_imports = merge_imports(all_imports, page_ctx.frontend_imports)
         manifest["all_imports"] = _serialize_imports(all_imports)

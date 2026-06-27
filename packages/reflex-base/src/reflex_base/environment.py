@@ -621,11 +621,6 @@ class EnvironmentVariables:
     # mismatch. Doubles compile time; for validating the cache on an app.
     REFLEX_COMPILE_CACHE_VERIFY: EnvVar[bool] = env_var(False)
 
-    # Experimental: memoize construction of fully-static (literal-only) component
-    # subtrees during a compile, so shared chrome (footer, nav, layout shells) is
-    # built once and reused. In-process only. See reflex/compiler/component_cache.py.
-    REFLEX_COMPONENT_CACHE: EnvVar[bool] = env_var(False)
-
     # Experimental: persist each page's compiled output to disk so a fresh
     # compile process (e.g. a reflex-run hot-reload worker) can recompile only
     # the pages whose source changed. See reflex/compiler/disk_cache.py.
