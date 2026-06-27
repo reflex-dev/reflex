@@ -954,7 +954,7 @@ def compile_unevaluated_page(
             meta_args["description"] = page.description
 
         # Add meta information to the component.
-        utils.add_meta(
+        component = utils.add_meta(
             component,
             **meta_args,
         )

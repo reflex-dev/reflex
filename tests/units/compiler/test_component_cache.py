@@ -179,6 +179,36 @@ def test_end_to_end_shared_chrome_is_byte_identical():
     assert cached == clean
 
 
+def _identical_static_page() -> Component:
+    return rx.el.article(rx.el.h1("Shared title"), rx.el.p("identical body"))
+
+
+def test_shared_identical_page_tree_does_not_duplicate_meta():
+    """Regression: two routes with byte-identical static bodies share the cached
+    page tree AND the wrapper, so the per-page metadata injection must not
+    accumulate <title>/<meta> onto the shared instance.
+    """
+    pages = [
+        _FakePage(route="/x", component=_identical_static_page),
+        _FakePage(route="/y", component=_identical_static_page),
+    ]
+    clean = _compile_pages(pages)
+
+    component_cache.reset()
+    component_cache.install()
+    try:
+        cached = _compile_pages(pages)
+    finally:
+        component_cache.uninstall()
+
+    # The identical body is reused across the two routes.
+    assert component_cache.STATS["hits"] > 0
+    # No accumulation: identical to the uncached compile, one <title> per page.
+    assert cached == clean
+    for code in cached.values():
+        assert code.count('jsx("title"') == 1
+
+
 def test_reset_clears_state():
     component_cache.reset()
     component_cache.install()

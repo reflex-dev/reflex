@@ -801,10 +801,14 @@ def add_meta(
         children.append(Description.create(content=description))
     children.append(Image.create(content=image))
 
-    page.children.extend(children)
-    page.children.extend(meta_tags)
-
-    return page
+    # Own-before-mutate: the page root may be a shared instance (the construction
+    # cache reuses identical static subtrees across pages), so build a fresh copy
+    # with the metadata appended instead of mutating ``children`` in place —
+    # otherwise repeated reuse accumulates duplicate <title>/<meta> tags.
+    new_page = copy.copy(page)
+    new_page.children = [*page.children, *children, *meta_tags]
+    new_page._clear_compile_caches()
+    return new_page
 
 
 def resolve_path_of_web_dir(path: str | Path) -> Path:
