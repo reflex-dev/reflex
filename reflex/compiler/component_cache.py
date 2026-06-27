@@ -25,11 +25,16 @@ constant Var** and **every child is cacheable**; anything with a state-bound Var
 an event handler, or a component-valued prop yields no signature and is built
 normally — i.e. dynamic subtrees are simply re-built.
 
-**Safety.** A reused subtree is shared across pages, but Reflex's compile
-pipeline clones-before-mutate via ``PageContext.own()`` (designed for exactly
-this cross-route sharing), so per-page styling/event mutation lands on clones,
-not the shared original. ``REFLEX_COMPILE_CACHE_VERIFY`` proves the output
-matches a full (uncached) compile and falls back on any mismatch.
+**Safety — NOT yet sound on its own; requires verify mode.** A reused subtree
+is shared across pages on the assumption that the pipeline clones-before-mutate
+via ``PageContext.own()``. Measuring on the real docs app refuted that: the
+head-injection pass mutates a shared subtree (the redirect ``<head>`` fragment)
+**in place**, bypassing ``own()``, so a fragment reused across N pages
+accumulates N copies of its children. Until every child mutation in the compile
+pipeline goes through ``own()``, this cache **must** run with
+``REFLEX_COMPILE_CACHE_VERIFY`` — which compiles both ways, byte-compares, and
+falls back to the full (uncached) result on any mismatch. Measured cold-build
+upside when correct: ~1.5x; do not enable unguarded.
 
 In-process only (caches live ``Component`` objects); reset per compile.
 """
