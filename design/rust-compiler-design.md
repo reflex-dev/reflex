@@ -57,6 +57,18 @@ The first concrete goal is the real docs site (`docs/app`, 79 files / 11.6k LOC,
 
 Sequencing: Stage A is the cheap, high-confidence foundation (one function, runs today on any app); Stage B grinds down the histogram, each step purity-verified to have actually moved work to Rust rather than wrapping Python.
 
+### Measured on the real docs app (pure-Python caching, no Rust)
+
+The docs app runs in-sandbox by installing its three in-repo deps (`reflex-site-shared`, `reflex-components-internal`, `integrations-docs`) + public PyPI deps, and stubbing the two not in the repo (`reflex-enterprise` → `rx.App`, `reflex-pyplot`). 417 routes register; 391 compile (the 26 `enterprise/*` pages need real `reflex-enterprise`). Harness: `experimental/reflex-compiler-core/real_docs_salsa.py`.
+
+| Operation | Time | Speedup |
+|---|---|---|
+| Cold build (391 pages) | 35.6 s | 1× (~104 ms/page) |
+| Rebuild, no change | 0.7 ms | ~48,000× |
+| Rebuild, edit 1 page | 65 ms | ~549× |
+
+Conclusion confirmed on the real app: **Salsa-style per-page caching makes incremental builds scale with #changed pages, not project size** — pure Python, the automatic generalization of `whitelist.py`, covering full/CI builds. The cold build (35.6 s) is unchanged — that is the only place per-node speed (construction caching, then Rust/mypyc) still matters. Real cache correctness requires dependency-correct fingerprints (a page's doc file + module + shared templates/sidebar; adding/removing a page invalidates the nav on all pages).
+
 ---
 
 ## 1. Thesis verdict
