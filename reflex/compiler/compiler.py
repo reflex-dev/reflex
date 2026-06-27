@@ -1243,6 +1243,25 @@ def compile_app(
             app._add_optional_endpoints()
             return False
 
+    compiler_plugins, radix_themes_plugin = _resolve_radix_themes_plugin(
+        app,
+        config.plugins,
+    )
+
+    # Experimental disk compile cache: in a fresh process, recompile only the
+    # pages whose source changed and reuse the rest from the on-disk manifest.
+    # Falls back to a full compile on any unsafe condition.
+    disk_cache_on = not dry_run and environment.REFLEX_DISK_COMPILE_CACHE.get()
+    if disk_cache_on:
+        from reflex.compiler import disk_cache
+
+        if disk_cache.try_incremental_rebuild(
+            app,
+            compiler_plugins=compiler_plugins,
+            prerender_routes=prerender_routes,
+        ):
+            return True
+
     progress = (
         Progress(
             *Progress.get_default_columns()[:-1],
@@ -1253,10 +1272,6 @@ def compile_app(
         else console.PoorProgress()
     )
     fixed_steps = 7
-    compiler_plugins, radix_themes_plugin = _resolve_radix_themes_plugin(
-        app,
-        config.plugins,
-    )
     reset_bundled_libraries()
     # Drop cached memo wrapper classes so each compile recomputes a memo's
     # ``library`` from the current module layout (handles a module flipping to
@@ -1638,5 +1653,10 @@ def compile_app(
         from reflex.compiler import page_cache
 
         page_cache.record(compile_fingerprint)
+
+    if disk_cache_on:
+        from reflex.compiler import disk_cache
+
+        disk_cache.write_manifest(compile_ctx, all_pages)
 
     return True

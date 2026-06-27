@@ -626,6 +626,11 @@ class EnvironmentVariables:
     # built once and reused. In-process only. See reflex/compiler/component_cache.py.
     REFLEX_COMPONENT_CACHE: EnvVar[bool] = env_var(False)
 
+    # Experimental: persist each page's compiled output to disk so a fresh
+    # compile process (e.g. a reflex-run hot-reload worker) can recompile only
+    # the pages whose source changed. See reflex/compiler/disk_cache.py.
+    REFLEX_DISK_COMPILE_CACHE: EnvVar[bool] = env_var(False)
+
     # Inherited by uvicorn/granian reload workers so the backend can distinguish
     # dev reload-capable worker boots from other backend starts. Never set in prod.
     REFLEX_DEV_BACKEND_RELOAD_ACTIVE: EnvVar[bool] = env_var(False, internal=True)
