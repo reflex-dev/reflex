@@ -1090,6 +1090,91 @@ def _resolve_radix_themes_plugin(
     return plugin_chain, radix_plugin
 
 
+def _normalize_imports_for_compare(all_imports: Any) -> dict[str, list[str]]:
+    """Render an import dict to a comparable, order-independent form.
+
+    Args:
+        all_imports: The parsed import dict to normalize.
+
+    Returns:
+        A mapping of library to its sorted, stringified import fields.
+    """
+    return {
+        lib: sorted(str(v) for v in fields) for lib, fields in all_imports.items()
+    }
+
+
+def _diff_compile_contexts(incremental: CompileContext, full: CompileContext) -> list[str]:
+    """Return the aggregate fields where the two compile contexts diverge.
+
+    Args:
+        incremental: The cache-assisted compile context.
+        full: A no-cache full compile of the same app.
+
+    Returns:
+        A list of human-readable divergence labels (empty when identical).
+    """
+    diffs: list[str] = []
+    inc_pages = {r: pc.output_code for r, pc in incremental.compiled_pages.items()}
+    full_pages = {r: pc.output_code for r, pc in full.compiled_pages.items()}
+    if inc_pages.keys() != full_pages.keys():
+        diffs.append(f"routes:{sorted(set(inc_pages) ^ set(full_pages))}")
+    diffs.extend(
+        f"page:{r}"
+        for r in inc_pages.keys() & full_pages.keys()
+        if inc_pages[r] != full_pages[r]
+    )
+    if _normalize_imports_for_compare(
+        incremental.all_imports
+    ) != _normalize_imports_for_compare(full.all_imports):
+        diffs.append("all_imports")
+    if sorted(map(str, incremental.auto_memo_components)) != sorted(
+        map(str, full.auto_memo_components)
+    ):
+        diffs.append("auto_memo_components")
+    if sorted(incremental.stateful_routes) != sorted(full.stateful_routes):
+        diffs.append("stateful_routes")
+    if sorted(map(str, incremental.app_wrap_components)) != sorted(
+        map(str, full.app_wrap_components)
+    ):
+        diffs.append("app_wrap_components")
+    return diffs
+
+
+def _full_compile_context(
+    app: App, compiler_plugins: Sequence[Plugin]
+) -> CompileContext:
+    """Compile every page with no cache reuse (for verify-mode comparison).
+
+    Resets the shared bundling/memo globals first so it starts from the same
+    clean state the primary compile did.
+
+    Args:
+        app: The app to compile.
+        compiler_plugins: The resolved compiler plugins.
+
+    Returns:
+        A fully compiled context over all pages.
+    """
+    from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
+
+    reset_bundled_libraries()
+    reset_memo_component_classes()
+    for plugin in compiler_plugins:
+        for dependency in plugin.get_frontend_dependencies():
+            bundle_library(dependency)
+    ctx = CompileContext(
+        app=app,
+        pages=list(app._unevaluated_pages.values()),
+        hooks=CompilerHooks(
+            plugins=default_page_plugins(style=app.style, plugins=compiler_plugins)
+        ),
+    )
+    with ctx:
+        ctx.compile()
+    return ctx
+
+
 def compile_app(
     app: App,
     *,
@@ -1256,6 +1341,27 @@ def compile_app(
                 f"persistent compile cache: reused {len(hit_routes)} page(s), "
                 f"recompiled {len(all_pages) - len(hit_routes)}"
             )
+
+        # Verify mode: prove the cache-assisted output matches a full compile,
+        # and fall back to the full result on any divergence so a merge bug can
+        # never ship. Doubles compile time; opt-in for validation.
+        if hit_routes and environment.REFLEX_COMPILE_CACHE_VERIFY.get():
+            from reflex.compiler import page_cache
+
+            full_ctx = _full_compile_context(app, compiler_plugins)
+            diffs = _diff_compile_contexts(compile_ctx, full_ctx)
+            if diffs:
+                console.warn(
+                    "compile cache verify FAILED "
+                    f"({len(diffs)} divergence(s): {diffs[:8]}); using the full "
+                    "compile and clearing the page cache."
+                )
+                page_cache.clear_page_store()
+                compile_ctx = full_ctx
+            else:
+                console.debug(
+                    "compile cache verify: incremental output matches full compile"
+                )
 
     for route, page_ctx in compile_ctx.compiled_pages.items():
         app._check_routes_conflict(route)

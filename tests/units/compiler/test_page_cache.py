@@ -104,3 +104,41 @@ def test_page_store_roundtrip():
     assert page_cache.get_cached_page("/x", "different") is None  # key mismatch
     page_cache.clear_page_store()
     assert page_cache.get_cached_page("/x", "k1") is None
+
+
+def _fake_ctx(pages, imports=None, memo=None, stateful=None, wraps=None):
+    from types import SimpleNamespace
+
+    return SimpleNamespace(
+        compiled_pages={r: SimpleNamespace(output_code=c) for r, c in pages.items()},
+        all_imports=imports or {},
+        auto_memo_components=memo or {},
+        stateful_routes=stateful or {},
+        app_wrap_components=wraps or {},
+    )
+
+
+def test_verify_diff_identical():
+    from reflex.compiler import compiler
+
+    a = _fake_ctx({"/": "CODE", "/x": "Y"})
+    b = _fake_ctx({"/": "CODE", "/x": "Y"})
+    assert compiler._diff_compile_contexts(a, b) == []
+
+
+def test_verify_diff_detects_page_change():
+    from reflex.compiler import compiler
+
+    a = _fake_ctx({"/": "OLD"})
+    b = _fake_ctx({"/": "NEW"})
+    assert "page:/" in compiler._diff_compile_contexts(a, b)
+
+
+def test_verify_diff_detects_missing_route_and_memo():
+    from reflex.compiler import compiler
+
+    a = _fake_ctx({"/": "C"}, memo={("Memo", None): 1})
+    b = _fake_ctx({"/": "C", "/x": "C"}, memo={})
+    diffs = compiler._diff_compile_contexts(a, b)
+    assert any(d.startswith("routes:") for d in diffs)
+    assert "auto_memo_components" in diffs
