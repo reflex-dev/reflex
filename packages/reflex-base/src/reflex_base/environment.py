@@ -621,6 +621,11 @@ class EnvironmentVariables:
     # mismatch. Doubles compile time; for validating the cache on an app.
     REFLEX_COMPILE_CACHE_VERIFY: EnvVar[bool] = env_var(False)
 
+    # Experimental: memoize construction of fully-static (literal-only) component
+    # subtrees during a compile, so shared chrome (footer, nav, layout shells) is
+    # built once and reused. In-process only. See reflex/compiler/component_cache.py.
+    REFLEX_COMPONENT_CACHE: EnvVar[bool] = env_var(False)
+
     # Inherited by uvicorn/granian reload workers so the backend can distinguish
     # dev reload-capable worker boots from other backend starts. Never set in prod.
     REFLEX_DEV_BACKEND_RELOAD_ACTIVE: EnvVar[bool] = env_var(False, internal=True)

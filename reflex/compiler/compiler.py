@@ -1308,11 +1308,26 @@ def compile_app(
         ),
     )
 
-    with console.timing("Compile pages"), compile_ctx:
-        compile_ctx.compile(
-            evaluate_progress=lambda: progress.advance(task),
-            render_progress=lambda: progress.advance(task),
-        )
+    from reflex.compiler import component_cache
+
+    component_cache_on = not dry_run and environment.REFLEX_COMPONENT_CACHE.get()
+    if component_cache_on:
+        component_cache.reset()
+        component_cache.install()
+    try:
+        with console.timing("Compile pages"), compile_ctx:
+            compile_ctx.compile(
+                evaluate_progress=lambda: progress.advance(task),
+                render_progress=lambda: progress.advance(task),
+            )
+    finally:
+        if component_cache_on:
+            component_cache.uninstall()
+            console.debug(
+                "component cache: "
+                f"{component_cache.STATS['hits']} hit(s), "
+                f"{component_cache.STATS['builds']} build(s)"
+            )
 
     if tier2:
         from reflex.compiler import page_cache
@@ -1364,26 +1379,30 @@ def compile_app(
                 f"recompiled {len(all_pages) - len(hit_routes)}"
             )
 
-        # Verify mode: prove the cache-assisted output matches a full compile,
-        # and fall back to the full result on any divergence so a merge bug can
-        # never ship. Doubles compile time; opt-in for validation.
-        if hit_routes and environment.REFLEX_COMPILE_CACHE_VERIFY.get():
-            from reflex.compiler import page_cache
+    # Verify mode: prove the cache-assisted output matches a full compile, and
+    # fall back to the full result on any divergence so a cache bug can never
+    # ship. Covers both the per-page (tier 2) cache and the component cache. The
+    # full compile runs after the component cache is uninstalled, so it is
+    # genuinely uncached. Doubles compile time; opt-in for validation.
+    if (
+        hit_routes or component_cache_on
+    ) and environment.REFLEX_COMPILE_CACHE_VERIFY.get():
+        from reflex.compiler import page_cache
 
-            full_ctx = _full_compile_context(app, compiler_plugins)
-            diffs = _diff_compile_contexts(compile_ctx, full_ctx)
-            if diffs:
-                console.warn(
-                    "compile cache verify FAILED "
-                    f"({len(diffs)} divergence(s): {diffs[:8]}); using the full "
-                    "compile and clearing the page cache."
-                )
-                page_cache.clear_page_store()
-                compile_ctx = full_ctx
-            else:
-                console.debug(
-                    "compile cache verify: incremental output matches full compile"
-                )
+        full_ctx = _full_compile_context(app, compiler_plugins)
+        diffs = _diff_compile_contexts(compile_ctx, full_ctx)
+        if diffs:
+            console.warn(
+                "compile cache verify FAILED "
+                f"({len(diffs)} divergence(s): {diffs[:8]}); using the full "
+                "compile and clearing the page cache."
+            )
+            page_cache.clear_page_store()
+            compile_ctx = full_ctx
+        else:
+            console.debug(
+                "compile cache verify: incremental output matches full compile"
+            )
 
     for route, page_ctx in compile_ctx.compiled_pages.items():
         app._check_routes_conflict(route)
