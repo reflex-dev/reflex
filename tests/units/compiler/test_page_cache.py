@@ -76,34 +76,68 @@ def test_page_module_files_resolves(tmp_path):
     assert any(p.name == "test_page_cache.py" for p in files)
 
 
-def test_shared_fingerprint_excludes_page_files(tmp_path):
+def test_shared_fingerprint_excludes_files(tmp_path):
     (tmp_path / "page.py").write_text("PAGE = 1\n")
     (tmp_path / "shared.py").write_text("SHARED = 1\n")
-    page_files = {(tmp_path / "page.py").resolve()}
-    fp = page_cache.shared_fingerprint(page_files, root=tmp_path)
-    # editing the excluded page file does NOT change the shared fingerprint
+    exclude = {(tmp_path / "page.py").resolve()}
+    fp = page_cache.shared_fingerprint(exclude, root=tmp_path)
+    # editing an excluded (page/state) file does NOT change the shared fingerprint
     (tmp_path / "page.py").write_text("PAGE = 2\n")
-    assert page_cache.shared_fingerprint(page_files, root=tmp_path) == fp
-    # editing a shared file DOES
+    assert page_cache.shared_fingerprint(exclude, root=tmp_path) == fp
+    # editing a non-excluded shared file DOES
     (tmp_path / "shared.py").write_text("SHARED = 2\n")
-    assert page_cache.shared_fingerprint(page_files, root=tmp_path) != fp
+    assert page_cache.shared_fingerprint(exclude, root=tmp_path) != fp
 
 
-def test_page_key_varies_with_shared():
-    k = page_cache.page_key(_dummy_page, "sharedA")
-    assert page_cache.page_key(_dummy_page, "sharedA") == k  # stable
-    assert page_cache.page_key(_dummy_page, "sharedB") != k  # shared change
+def test_used_state_files_from_output_and_memos(tmp_path):
+    from types import SimpleNamespace
+
+    sfile = (tmp_path / "state.py").resolve()
+    mfile = (tmp_path / "mstate.py").resolve()
+    id_to_file = {
+        "reflex___state____state____app_____s": sfile,
+        "reflex___state____state____app_____m": mfile,
+    }
+    out = 'jsx("div",{},reflex___state____state____app_____s.x_rx_state_)'
+    assert page_cache.used_state_files(out, [], id_to_file) == {sfile}
+    assert page_cache.used_state_files("no state", [], id_to_file) == set()
+    # state hidden inside an auto-memoized component is still captured
+    memo = SimpleNamespace(
+        render=lambda: {"contents": "reflex___state____state____app_____m.y_rx_state_"}
+    )
+    assert page_cache.used_state_files(out, [memo], id_to_file) == {sfile, mfile}
+    # un-introspectable memo -> conservative (all fine files)
+    boom = SimpleNamespace(render=lambda: (_ for _ in ()).throw(RuntimeError()))
+    assert page_cache.used_state_files(out, [boom], id_to_file) == {sfile, mfile}
 
 
-def test_page_store_roundtrip():
+def test_validate_page_fine_grained_state(tmp_path):
     page_cache.clear_page_store()
-    sentinel = object()
-    assert page_cache.get_cached_page("/x", "k1") is None
-    page_cache.store_page("/x", "k1", sentinel, True)
-    assert page_cache.get_cached_page("/x", "k1") == (sentinel, True)
-    assert page_cache.get_cached_page("/x", "different") is None  # key mismatch
+    ctx = object()
+    sf = "/proj/state.py"
+    # page used state file sf at hash H1
+    page_cache.store_page("/x", "psrc", "shared", {sf: "H1"}, ctx, True)
+    # all unchanged -> hit
+    assert page_cache.validate_page("/x", "psrc", "shared", {sf: "H1"}) == (ctx, True)
+    # the used state file changed -> miss
+    assert page_cache.validate_page("/x", "psrc", "shared", {sf: "H2"}) is None
+    # page source changed -> miss
+    assert page_cache.validate_page("/x", "other", "shared", {sf: "H1"}) is None
+    # coarse shared changed -> miss
+    assert page_cache.validate_page("/x", "psrc", "other", {sf: "H1"}) is None
+
+
+def test_validate_page_ignores_unused_state(tmp_path):
     page_cache.clear_page_store()
-    assert page_cache.get_cached_page("/x", "k1") is None
+    ctx = object()
+    # page depends on NO state files
+    page_cache.store_page("/x", "psrc", "shared", {}, ctx, False)
+    # some OTHER state file changed -> page is still a hit (it doesn't use it)
+    assert page_cache.validate_page(
+        "/x", "psrc", "shared", {"/proj/other_state.py": "Z"}
+    ) == (ctx, False)
+    page_cache.clear_page_store()
+    assert page_cache.validate_page("/x", "psrc", "shared", {}) is None
 
 
 def _fake_ctx(pages, imports=None, memo=None, stateful=None, wraps=None):

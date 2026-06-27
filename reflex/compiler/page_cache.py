@@ -11,20 +11,24 @@ makes "nothing changed" rebuilds — re-run, restart, an unchanged CI job — ne
 free, *content-aware* (today's ``_should_compile`` is only a manual
 nocompile-file check).
 
-**Correctness.** The fingerprint hashes *all* source that affects output, so any
-edit — a page, a shared component, a state class, ``rxconfig.py`` — changes it
-and forces a full recompile. There is no stale output and no per-page partial
-skip, deliberately: the compile produces app-wide aggregates (imports, the app
-root, memo dedup) from all pages at once, so a correct per-page partial rebuild
-must additionally cache each page's contribution to those aggregates. That is
-the documented follow-up; the per-page hybrid-key helpers below
-(``page_source_fingerprint``, ``state_versions``) are the building blocks for it.
+**Tier 2: in-process per-page cache.** Each page is validated against three
+inputs: its own module source (fine — only the edited page misses), the coarse
+``shared_fingerprint`` of everything shared except page and pure-state files
+(template/component/config edits → all miss), and the content hashes of the
+*fine-grained state files* it actually references (a pure-state-module edit
+invalidates only the pages that use that state — see ``state_dependency_index``
+and ``validate_page``). Cached pages' contributions are re-merged into the
+app-wide aggregates by ``compile_app``; the store holds live objects
+(``PageContext``), so it is in-process only. ``REFLEX_COMPILE_CACHE_VERIFY``
+proves the cache-assisted output matches a full compile and falls back on any
+mismatch.
 """
 
 from __future__ import annotations
 
 import contextlib
 import hashlib
+import re
 from importlib import metadata
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -43,6 +47,9 @@ _SKIP_DIRS = {".web", ".venv", "venv", "node_modules", "__pycache__", ".git", "a
 
 #: Where the fingerprint of the last successful compile is stored.
 _FINGERPRINT_FILE = "compile_fingerprint.txt"
+
+#: Matches a JS state-context identifier in compiled page output.
+STATE_CONTEXT_RE = re.compile(r"reflex___state[A-Za-z0-9_]+")
 
 
 def _sha(*parts: bytes | str) -> str:
@@ -168,24 +175,26 @@ def page_module_files(components: object) -> set[Path]:
     return files
 
 
-def shared_fingerprint(page_files: set[Path], root: Path | None = None) -> str:
-    """Hash all source EXCEPT the given page-module files, plus the Reflex version.
+def shared_fingerprint(exclude_files: set[Path], root: Path | None = None) -> str:
+    """Hash all source EXCEPT ``exclude_files``, plus the Reflex version.
 
-    Changing any shared file (state, shared component, config) bumps this and
-    invalidates every page; editing a single page module does not.
+    ``exclude_files`` is the page-module files (keyed per page) plus the
+    fine-grained state files (versioned per file). Editing any *other* shared
+    file (template, shared component, config) bumps this and invalidates every
+    page; editing a page module or a pure state file does not.
 
     Args:
-        page_files: Page-module files to exclude (they're keyed per page).
+        exclude_files: Resolved files handled per-page (not via this fingerprint).
         root: Project root to scan. Defaults to cwd.
 
     Returns:
-        A hex digest of the shared inputs.
+        A hex digest of the coarse shared inputs.
     """
     root = (root or Path.cwd()).resolve()
     hasher = hashlib.sha256()
     hasher.update(f"reflex={_reflex_version()}\x1f".encode())
     for path in _iter_source_files(root):
-        if path.resolve() in page_files:
+        if path.resolve() in exclude_files:
             continue
         try:
             digest = hashlib.sha256(path.read_bytes()).hexdigest()
@@ -195,54 +204,115 @@ def shared_fingerprint(page_files: set[Path], root: Path | None = None) -> str:
     return hasher.hexdigest()
 
 
-def page_key(component: object, shared_fp: str) -> str:
-    """Hybrid per-page key: this page's source + the shared fingerprint.
+def _subclasses(root_cls: type) -> list[type]:
+    seen: set[type] = set()
+    out: list[type] = []
+    stack = [root_cls]
+    while stack:
+        cls = stack.pop()
+        if cls in seen:
+            continue
+        seen.add(cls)
+        out.append(cls)
+        stack.extend(cls.__subclasses__())
+    return out
+
+
+def state_dependency_index(
+    root: Path | None = None,
+) -> tuple[dict[str, Path], set[Path]]:
+    """Build the state-context -> file index for fine-grained invalidation.
+
+    A page references the JS state-context identifier
+    ``format_state_name(state.get_full_name())`` in its output; mapping that to
+    the state's module file lets a state edit invalidate only its dependents.
+    Only *pure* state modules under ``root`` (no Component defined in them) are
+    fine-grained; mixed state/component modules stay coarse (in the shared
+    fingerprint) so a component edit there is never missed.
 
     Args:
-        component: The page component or factory callable.
-        shared_fp: The current shared fingerprint.
+        root: Project root. Defaults to cwd.
 
     Returns:
-        A hex digest identifying this page's compiled output inputs.
+        ``(identifier_to_file, fine_state_files)``.
     """
-    return _sha(page_source_fingerprint(component), shared_fp)
+    root = (root or Path.cwd()).resolve()
+    from reflex_base.components.component import Component
+    from reflex_base.utils import format as fmt
+
+    from reflex.state import BaseState
+
+    def under_root(comp: object) -> Path | None:
+        f = _module_file(comp)
+        if f is None:
+            return None
+        rf = f.resolve()
+        return rf if root in rf.parents else None
+
+    component_files = {rf for cls in _subclasses(Component) if (rf := under_root(cls))}
+    id_to_file: dict[str, Path] = {}
+    state_files: set[Path] = set()
+    for cls in _subclasses(BaseState):
+        rf = under_root(cls)
+        if rf is None:
+            continue
+        with contextlib.suppress(Exception):
+            id_to_file[fmt.format_state_name(cls.get_full_name())] = rf
+            state_files.add(rf)
+    fine = state_files - component_files
+    return {i: f for i, f in id_to_file.items() if f in fine}, fine
 
 
-#: In-process store: route -> (page_key, cached PageContext, is_stateful).
-_PAGE_STORE: dict[str, tuple[str, PageContext, bool]] = {}
-
-
-def get_cached_page(route: str, key: str) -> tuple[PageContext, bool] | None:
-    """Return ``(PageContext, is_stateful)`` for ``route`` iff its key matches.
+def file_hashes(files: set[Path]) -> dict[str, str]:
+    """Map each file (as a string) to a hash of its current content.
 
     Args:
-        route: The page route.
-        key: The current hybrid key to validate against.
+        files: The files to hash.
 
     Returns:
-        The cached page context and its stateful flag, or None on miss.
+        A mapping of file path string to content hash.
     """
-    entry = _PAGE_STORE.get(route)
-    if entry is not None and entry[0] == key:
-        return entry[1], entry[2]
-    return None
+    out: dict[str, str] = {}
+    for f in files:
+        with contextlib.suppress(OSError):
+            out[str(f)] = hashlib.sha256(f.read_bytes()).hexdigest()
+    return out
 
 
-def store_page(route: str, key: str, page_ctx: PageContext, is_stateful: bool) -> None:
-    """Record a freshly-compiled page context under its key.
+def used_state_files(
+    output_code: str,
+    memo_components: object,
+    id_to_file: dict[str, Path],
+) -> set[Path]:
+    """Return the fine-grained state files a compiled page depends on.
+
+    Stateful subtrees are auto-memoized into separate components, so a page's
+    own ``output_code`` may not name the state it uses — the state lives in the
+    memo components it *owns* (its ``memo_contributions``). Each stateful memo
+    is owned by exactly one page, which regenerates it whenever it recompiles,
+    so scanning ``output_code`` plus the page's own memo components captures the
+    full dependency set. If a memo can't be introspected, depend on every fine
+    state file (conservative — never stale).
 
     Args:
-        route: The page route.
-        key: The hybrid key it was compiled under.
-        page_ctx: The compiled PageContext to cache.
-        is_stateful: Whether the page registered new state during evaluation.
+        output_code: The page's compiled JS.
+        memo_components: The page's own memo component subtrees (renderable).
+        id_to_file: The state-context identifier -> file index.
+
+    Returns:
+        The set of fine-grained state files this page depends on.
     """
-    _PAGE_STORE[route] = (key, page_ctx, is_stateful)
-
-
-def clear_page_store() -> None:
-    """Drop all in-process per-page cache entries."""
-    _PAGE_STORE.clear()
+    chunks = [output_code or ""]
+    try:
+        chunks.extend(str(comp.render()) for comp in memo_components)  # type: ignore[attr-defined]
+    except Exception:
+        return set(id_to_file.values())  # conservative: depend on all
+    found: set[Path] = set()
+    for chunk in chunks:
+        for ident in STATE_CONTEXT_RE.findall(chunk):
+            if ident in id_to_file:
+                found.add(id_to_file[ident])
+    return found
 
 
 def page_source_fingerprint(component: BaseComponent | object) -> str:
@@ -270,35 +340,70 @@ def page_source_fingerprint(component: BaseComponent | object) -> str:
     return _sha(*parts)
 
 
-def state_versions() -> dict[str, str]:
-    """Map each state class's full name to a hash of its definition.
+#: route -> (page_source_fp, shared_fp, used_state_hashes, PageContext, is_stateful)
+_PAGE_STORE: dict[str, tuple[str, str, dict[str, str], PageContext, bool]] = {}
 
-    A page's cached entry records which state contexts it used; on the next
-    build a state class whose version changed invalidates only its dependents.
+
+def validate_page(
+    route: str,
+    page_source_fp: str,
+    shared_fp: str,
+    current_state_hashes: dict[str, str],
+) -> tuple[PageContext, bool] | None:
+    """Return the cached page iff all its inputs are unchanged.
+
+    A page is valid when its own source is unchanged, the coarse shared
+    fingerprint is unchanged, and every fine-grained state file it used still
+    hashes the same. A state edit therefore only invalidates pages that use it.
+
+    Args:
+        route: The page route.
+        page_source_fp: The page's current source fingerprint.
+        shared_fp: The current coarse shared fingerprint.
+        current_state_hashes: Current {state file -> hash} for all fine files.
 
     Returns:
-        A mapping of state full name to a hash of its field/method signature.
+        ``(PageContext, is_stateful)`` on a valid hit, else None.
     """
-    from reflex.state import BaseState
+    entry = _PAGE_STORE.get(route)
+    if entry is None:
+        return None
+    stored_src, stored_shared, used_hashes, page_ctx, is_stateful = entry
+    if stored_src != page_source_fp or stored_shared != shared_fp:
+        return None
+    for file, digest in used_hashes.items():
+        if current_state_hashes.get(file) != digest:
+            return None
+    return page_ctx, is_stateful
 
-    versions: dict[str, str] = {}
-    seen = set()
 
-    def visit(cls: type) -> None:
-        if cls in seen:
-            return
-        seen.add(cls)
-        try:
-            fields = sorted(getattr(cls, "get_fields", dict)().keys())
-        except Exception:
-            fields = []
-        methods = sorted(k for k in vars(cls) if callable(vars(cls)[k]))
-        versions[getattr(cls, "get_full_name", lambda: cls.__name__)()] = _sha(
-            cls.__name__, ",".join(fields), ",".join(methods)
-        )
-        for sub in cls.__subclasses__():
-            visit(sub)
+def store_page(
+    route: str,
+    page_source_fp: str,
+    shared_fp: str,
+    used_state_hashes: dict[str, str],
+    page_ctx: PageContext,
+    is_stateful: bool,
+) -> None:
+    """Record a freshly-compiled page with the inputs it depends on.
 
-    with contextlib.suppress(Exception):
-        visit(BaseState)
-    return versions
+    Args:
+        route: The page route.
+        page_source_fp: The page's source fingerprint.
+        shared_fp: The coarse shared fingerprint it compiled under.
+        used_state_hashes: {state file -> hash} for the state it referenced.
+        page_ctx: The compiled PageContext to cache.
+        is_stateful: Whether the page registered new state during evaluation.
+    """
+    _PAGE_STORE[route] = (
+        page_source_fp,
+        shared_fp,
+        used_state_hashes,
+        page_ctx,
+        is_stateful,
+    )
+
+
+def clear_page_store() -> None:
+    """Drop all in-process per-page cache entries."""
+    _PAGE_STORE.clear()

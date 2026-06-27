@@ -1099,12 +1099,12 @@ def _normalize_imports_for_compare(all_imports: Any) -> dict[str, list[str]]:
     Returns:
         A mapping of library to its sorted, stringified import fields.
     """
-    return {
-        lib: sorted(str(v) for v in fields) for lib, fields in all_imports.items()
-    }
+    return {lib: sorted(str(v) for v in fields) for lib, fields in all_imports.items()}
 
 
-def _diff_compile_contexts(incremental: CompileContext, full: CompileContext) -> list[str]:
+def _diff_compile_contexts(
+    incremental: CompileContext, full: CompileContext
+) -> list[str]:
     """Return the aggregate fields where the two compile contexts diverge.
 
     Args:
@@ -1275,17 +1275,26 @@ def compile_app(
     # only the rest, then re-merge cached pages' contributions into the
     # app-wide aggregates. In-process only (contributions hold live objects).
     tier2 = compile_fingerprint is not None  # set iff the flag is on (and not dry_run)
-    page_keys: dict[str, str] = {}
+    page_source_fps: dict[str, str] = {}
+    shared_fp = ""
+    state_hashes: dict[str, str] = {}
+    state_index: dict[str, Any] = {}
     hit_routes: list[str] = []
     if tier2:
         from reflex.compiler import page_cache
 
         page_files = page_cache.page_module_files(p.component for p in all_pages)
-        shared_fp = page_cache.shared_fingerprint(page_files)
+        state_index, fine_state_files = page_cache.state_dependency_index()
+        shared_fp = page_cache.shared_fingerprint(page_files | fine_state_files)
+        state_hashes = page_cache.file_hashes(fine_state_files)
         for page in all_pages:
-            page_keys[page.route] = page_cache.page_key(page.component, shared_fp)
+            page_source_fps[page.route] = page_cache.page_source_fingerprint(
+                page.component
+            )
             if (
-                page_cache.get_cached_page(page.route, page_keys[page.route])
+                page_cache.validate_page(
+                    page.route, page_source_fps[page.route], shared_fp, state_hashes
+                )
                 is not None
             ):
                 hit_routes.append(page.route)
@@ -1308,18 +1317,31 @@ def compile_app(
     if tier2:
         from reflex.compiler import page_cache
 
-        # Cache freshly-compiled (miss) pages with their stateful flag.
+        # Cache freshly-compiled (miss) pages with the state files they used.
         for route in list(compile_ctx.compiled_pages):
+            page_ctx_fresh = compile_ctx.compiled_pages[route]
+            used = page_cache.used_state_files(
+                page_ctx_fresh.output_code or "",
+                [m.component for m in page_ctx_fresh.memo_contributions.values()],
+                state_index,
+            )
+            used_hashes = {
+                str(f): state_hashes[str(f)] for f in used if str(f) in state_hashes
+            }
             page_cache.store_page(
                 route,
-                page_keys[route],
-                compile_ctx.compiled_pages[route],
+                page_source_fps[route],
+                shared_fp,
+                used_hashes,
+                page_ctx_fresh,
                 route in compile_ctx.stateful_routes,
             )
         # Re-merge cached (hit) pages' contributions into the aggregates.
         for route in hit_routes:
-            cached = page_cache.get_cached_page(route, page_keys[route])
-            if cached is None:  # defensive: evicted concurrently
+            cached = page_cache.validate_page(
+                route, page_source_fps[route], shared_fp, state_hashes
+            )
+            if cached is None:  # defensive: invalidated concurrently
                 continue
             page_ctx, is_stateful = cached
             compile_ctx.compiled_pages[route] = page_ctx
