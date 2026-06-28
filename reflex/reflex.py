@@ -207,6 +207,22 @@ def _run_dev(
             running_mode.has_backend(),
         ))
 
+    # When the compile cache is enabled, a persistent warm compile daemon owns
+    # .web regeneration (fork-per-compile, no per-edit cold import) instead of
+    # the backend worker recompiling on every respawn. The backend then only
+    # evaluates pages to register state — REFLEX_SKIP_COMPILE makes it skip the
+    # frontend write, and is inherited by every respawned reload worker.
+    from reflex_base.environment import environment
+
+    if running_mode.has_frontend() and environment.REFLEX_COMPILE_CACHE.get():
+        from reflex.utils import compile_daemon
+
+        commands.append((
+            compile_daemon.run_compile_daemon,
+            exec.should_prerender_routes(),
+        ))
+        environment.REFLEX_SKIP_COMPILE.set(True)
+
     # Start the frontend and backend.
     with processes.run_concurrently_context(*commands):
         # In dev mode, run the backend on the main thread.

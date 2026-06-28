@@ -404,15 +404,6 @@ def try_incremental_rebuild(
     # Refresh the manifest for the next process.
     _update_manifest_for_misses(manifest, miss_ctx, miss_pages)
 
-    if miss_pages:
-        changed = ", ".join(sorted(p.route for p in miss_pages)[:8])
-        if len(miss_pages) > 8:
-            changed += ", ..."
-        console.info(
-            f"Incremental compile: recompiled {len(miss_pages)} page(s) ({changed})."
-        )
-    else:
-        console.info("Incremental compile: no page changed.")
     return True
 
 

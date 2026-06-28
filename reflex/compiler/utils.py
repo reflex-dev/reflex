@@ -838,7 +838,17 @@ def write_file(path: str | Path, code: str):
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.exists() and path.read_text(encoding="utf-8") == code:
         return
-    path.write_text(code, encoding="utf-8")
+    # Write atomically (temp file + os.replace) so a reader watching this tree —
+    # e.g. the vite dev server, or a concurrent compile — never observes a
+    # half-written file, even if the writing process is killed mid-write (the
+    # compile daemon forks throwaway children that may be terminated mid-compile).
+    tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+    try:
+        tmp.write_text(code, encoding="utf-8")
+        tmp.replace(path)
+    finally:
+        if tmp.exists():
+            tmp.unlink(missing_ok=True)
 
 
 _MEMO_MANIFEST_FILENAME = ".memo-manifest.json"
