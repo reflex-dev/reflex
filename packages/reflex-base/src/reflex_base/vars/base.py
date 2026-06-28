@@ -9,6 +9,7 @@ import datetime
 import functools
 import inspect
 import json
+import random
 import re
 import string
 import uuid
@@ -44,7 +45,6 @@ from reflex_base.constants.compiler import Hooks
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.utils import console, exceptions, imports, serializers, types
 from reflex_base.utils.compat import annotations_from_namespace
-from reflex_base.utils.decorator import once
 from reflex_base.utils.exceptions import (
     ComputedVarSignatureError,
     UntypedComputedVarError,
@@ -3211,12 +3211,20 @@ def get_uuid_string_var() -> Var:
 # Set of unique variable names.
 USED_VARIABLES = set()
 
+_UNIQUE_NAME_RNG = random.Random(42)
 
-@once
-def _rng():
-    import random
 
-    return random.Random(42)
+def reset_unique_variable_names() -> None:
+    """Reset the deterministic unique-name generator to its initial state.
+
+    ``get_unique_variable_name`` draws from a seeded RNG and dedups against
+    ``USED_VARIABLES``; both persist process-wide, so a second in-process compile
+    would draw *different* ref names than the first (the RNG state and the used
+    set carry over). Resetting them before each compile makes the generated names
+    reproducible across compiles — names only need to be unique within a compile.
+    """
+    USED_VARIABLES.clear()
+    _UNIQUE_NAME_RNG.seed(42)
 
 
 def get_unique_variable_name() -> str:
@@ -3225,7 +3233,7 @@ def get_unique_variable_name() -> str:
     Returns:
         The unique variable name.
     """
-    name = "".join([_rng().choice(string.ascii_lowercase) for _ in range(8)])
+    name = "".join([_UNIQUE_NAME_RNG.choice(string.ascii_lowercase) for _ in range(8)])
     if name not in USED_VARIABLES:
         USED_VARIABLES.add(name)
         return name

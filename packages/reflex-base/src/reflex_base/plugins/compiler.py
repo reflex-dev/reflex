@@ -6,6 +6,7 @@ import copy
 import dataclasses
 import inspect
 from collections.abc import Callable, Sequence
+from contextlib import AbstractContextManager
 from contextvars import ContextVar, Token
 from types import TracebackType
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol, TypeAlias, TypeVar, cast
@@ -33,6 +34,15 @@ else:
 
 
 _BaseComponentT = TypeVar("_BaseComponentT", bound=BaseComponent)
+
+
+#: Optional per-page source-read recorder, installed by an incremental compile
+#: cache. When set, :meth:`CompileContext.compile` wraps each page's evaluation
+#: in ``page_source_recorder()``; the context manager yields a set that collects
+#: the source files (e.g. markdown/data) read during that page's eval, which is
+#: then stored on the page's ``source_files``. ``None`` (default) disables
+#: recording, so the compile path is unchanged when no cache is active.
+page_source_recorder: Callable[[], AbstractContextManager[set[str]]] | None = None
 
 
 class PageDefinition(Protocol):
@@ -690,6 +700,18 @@ class PageContext(BaseContext):
     output_path: str | None = None
     output_code: str | None = None
     source_module: str | None = None
+    # Source files (e.g. markdown/data) read while evaluating this page, when a
+    # per-page read recorder is installed (see ``page_source_recorder``). Lets an
+    # incremental cache depend on the exact non-import inputs a page consumed, so
+    # editing one page's data invalidates only that page. Empty when no recorder
+    # is active.
+    source_files: set[str] = dataclasses.field(default_factory=set)
+    # Auto-memo components first registered while compiling THIS page, keyed by
+    # ``(tag, source_module)``. Lets an incremental cache attribute memo
+    # contributions per page so a skipped page can re-register them.
+    memo_contributions: dict[tuple[str, str | None], Any] = dataclasses.field(
+        default_factory=dict
+    )
     # Stack of ``id(component)`` for components whose subtree is
     # memoize-suppressed. Populated by ``MemoizeStatefulPlugin`` when it
     # encounters a ``MemoizationLeaf``-style snapshot boundary and popped on
@@ -794,6 +816,7 @@ class CompileContext(BaseContext):
         """
         from reflex.compiler import compiler
         from reflex.state import all_base_state_classes
+        from reflex_base.vars.base import reset_unique_variable_names
 
         self.ensure_context_attached()
         self.compiled_pages.clear()
@@ -803,15 +826,32 @@ class CompileContext(BaseContext):
         self.memoize_wrappers.clear()
         self.auto_memo_components.clear()
 
+        # Reset the deterministic ref-name generator so a second in-process
+        # compile reproduces the same auto-generated names as the first (these
+        # names feed auto-memo content hashes, so drift breaks reproducibility).
+        reset_unique_variable_names()
+
+        recorder = page_source_recorder
         for page in self.pages:
             page_fn = page.component
             n_states_before = len(all_base_state_classes)
-            page_ctx = self.hooks.eval_page(
-                page_fn,
-                page=page,
-                compile_context=self,
-                **kwargs,
-            )
+            if recorder is not None:
+                with recorder() as read_set:
+                    page_ctx = self.hooks.eval_page(
+                        page_fn,
+                        page=page,
+                        compile_context=self,
+                        **kwargs,
+                    )
+                if page_ctx is not None:
+                    page_ctx.source_files = read_set
+            else:
+                page_ctx = self.hooks.eval_page(
+                    page_fn,
+                    page=page,
+                    compile_context=self,
+                    **kwargs,
+                )
             if page_ctx is None:
                 page_name = getattr(page_fn, "__name__", repr(page_fn))
                 msg = (
@@ -836,6 +876,7 @@ class CompileContext(BaseContext):
             self.compiled_pages.values(),
             strict=True,
         ):
+            memo_before = set(self.auto_memo_components)
             with page_ctx:
                 page_ctx.root_component = self.hooks.compile_component(
                     page_ctx.root_component,
@@ -848,6 +889,12 @@ class CompileContext(BaseContext):
                     compile_context=self,
                     **kwargs,
                 )
+            # Attribute newly-registered auto-memo components to this page.
+            page_ctx.memo_contributions = {
+                key: value
+                for key, value in self.auto_memo_components.items()
+                if key not in memo_before
+            }
 
             page_ctx.frontend_imports = page_ctx.merged_imports(collapse=True)
             self.all_imports = merge_imports(
