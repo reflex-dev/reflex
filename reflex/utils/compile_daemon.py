@@ -52,11 +52,16 @@ from reflex_base.environment import environment
 
 from reflex.utils import console
 
-#: Seconds between poll passes over the watched file set.
-_POLL_INTERVAL = 0.25
+#: Seconds between poll passes. Each pass only re-``stat``s the known file set
+#: (cheap), so this can be small for snappy detection of edits to existing files.
+_POLL_INTERVAL = 0.05
 #: After a change is seen, wait this long and re-snapshot so a burst of saves
 #: (e.g. format-on-save touching many files) collapses into a single compile.
-_DEBOUNCE = 0.1
+_DEBOUNCE = 0.05
+#: How often to re-walk the tree (``rglob``) to discover added/removed files.
+#: Between rescans we only ``stat`` the known set; adds are rarer and tolerate a
+#: little latency, so this keeps idle CPU low while polling fast for edits.
+_RESCAN_INTERVAL = 1.0
 #: Watchdog: kill a compile child that runs longer than this (a hung/deadlocked
 #: child must never wedge the daemon). Generous enough for a real full compile.
 _COMPILE_TIMEOUT = 300.0
@@ -369,12 +374,18 @@ def _child_compile(roots: list[Path], prerender_routes: bool) -> None:
     """
     from reflex.utils import prerequisites
 
+    # Timed in three steps so every hot reload reports where it spent its time
+    # (resetting state vs re-importing first-party code vs compiling).
+    t0 = time.perf_counter()
     _reset_first_party(roots)
-    prerequisites.get_compiled_app(
-        reload=False,
-        prerender_routes=prerender_routes,
-        use_rich=True,
-        trigger="hot_reload",
+    t1 = time.perf_counter()
+    app, _ = prerequisites.get_and_validate_app(reload=False)
+    t2 = time.perf_counter()
+    app._compile(prerender_routes=prerender_routes, use_rich=True, trigger="hot_reload")
+    t3 = time.perf_counter()
+    console.info(
+        f"Hot reload {t3 - t0:.2f}s (reset {t1 - t0:.2f}s, "
+        f"reimport {t2 - t1:.2f}s, compile {t3 - t2:.2f}s)"
     )
 
 
@@ -489,7 +500,11 @@ def _serve() -> None:
     # the manifest; recompute only after a compile, not on every poll tick.
     external = _external_dependency_files(roots)
     global_files = _global_files(root)
-    snapshot = _snapshot(_watch_paths(roots, root, external))
+    # `paths` is the watched set, refreshed by an rglob rescan; each tick only
+    # re-stats it (cheap), so the poll can be fast without burning idle CPU.
+    paths = _watch_paths(roots, root, external)
+    snapshot = _snapshot(paths)
+    last_rescan = time.monotonic()
     console.info("Compile daemon ready (warm); watching for changes.")
 
     while True:
@@ -497,7 +512,12 @@ def _serve() -> None:
         # Never outlive reflex-run: if our parent died we were reparented.
         if os.getppid() != parent_pid:
             return
-        current = _snapshot(_watch_paths(roots, root, external))
+        # Cheap stat of the known set every tick; re-walk the tree occasionally
+        # to discover added/removed files.
+        if time.monotonic() - last_rescan >= _RESCAN_INTERVAL:
+            paths = _watch_paths(roots, root, external)
+            last_rescan = time.monotonic()
+        current = _snapshot(paths)
         changed = {
             p
             for p in current.keys() | snapshot.keys()
@@ -525,7 +545,9 @@ def _serve() -> None:
         # a newly-referenced content dir becomes watched.
         external = _external_dependency_files(roots)
         global_files = _global_files(root)
-        snapshot = _snapshot(_watch_paths(roots, root, external))
+        paths = _watch_paths(roots, root, external)
+        snapshot = _snapshot(paths)
+        last_rescan = time.monotonic()
 
 
 def main(argv: list[str] | None = None) -> int:

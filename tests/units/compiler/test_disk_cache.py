@@ -1,7 +1,7 @@
 """Tests for the experimental disk-persisted incremental compile cache."""
 
 import dataclasses
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import Any
 
 from reflex_base.components.component import Component
@@ -44,7 +44,7 @@ def _page_c() -> Component:
     return rx.el.div(rx.el.h1("Page C"), _footer())
 
 
-def _compile(pages: list[_FakePage]) -> CompileContext:
+def _compile(pages: Sequence[Any]) -> CompileContext:
     ctx = CompileContext(
         pages=pages,
         hooks=CompilerHooks(plugins=default_page_plugins()),
@@ -267,14 +267,57 @@ def test_incremental_rebuild_one_miss_writes_only_that_page(tmp_path, monkeypatc
 
     # The edited page was recompiled and written; its content matches a clean
     # compile of that page.
-    out_path = compiler_utils.resolve_path_of_web_dir(
-        ctx.compiled_pages[edited_route].output_path
-    )
+    output_path = ctx.compiled_pages[edited_route].output_path
+    assert output_path is not None
+    out_path = compiler_utils.resolve_path_of_web_dir(output_path)
     assert out_path.exists()
     assert (
         out_path.read_text(encoding="utf-8")
         == ctx.compiled_pages[edited_route].output_code
     )
+
+
+def test_stateful_hit_is_marked_but_not_reevaluated(tmp_path, monkeypatch):
+    """A stateful HIT page is recorded in the marker but never re-evaluated.
+
+    The compile process only produces .web and exits; the serving backend
+    re-evaluates the marked stateful pages itself, so re-evaluating them during
+    the incremental rebuild was pure waste.
+    """
+    import json
+
+    web = tmp_path / ".web"
+    web.mkdir()
+    monkeypatch.setattr(disk_cache.prerequisites, "get_web_dir", lambda: web)
+
+    app = rx.App()
+    app.add_page(_page_a, route="/a")
+    pages = list(app._unevaluated_pages.values())
+    route = pages[0].route
+    ctx = _compile(pages)
+    disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
+    # Mark the page as a stateful HIT page in the manifest.
+    manifest_path = web / disk_cache._MANIFEST_FILE
+    manifest = json.loads(manifest_path.read_text())
+    manifest["pages"][route]["is_stateful"] = True
+    manifest_path.write_text(json.dumps(manifest))
+    _stub_externals(app, monkeypatch)
+
+    reevaluated: list[str] = []
+    monkeypatch.setattr(
+        app, "_compile_page", lambda route, **k: reevaluated.append(route)
+    )
+
+    assert (
+        disk_cache.try_incremental_rebuild(
+            app, compiler_plugins=[], prerender_routes=False, root=tmp_path
+        )
+        is True
+    )
+    # Not re-evaluated...
+    assert reevaluated == []
+    # ...but still recorded as stateful so the backend's marker is complete.
+    assert route in app._stateful_pages
 
 
 def test_load_manifest_rejects_wrong_schema(tmp_path, monkeypatch):

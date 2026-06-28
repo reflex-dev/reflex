@@ -375,18 +375,20 @@ def try_incremental_rebuild(
                 install_imports, page_ctx.frontend_imports, memo_imports
             )
 
-    # Re-register state for stateful hit pages (skipping eval would drop their
-    # state classes); stateless hits need nothing.
+    # Record which routes are stateful — miss pages from this compile, hit pages
+    # from the manifest — so the stateful-pages marker is complete. We do NOT
+    # re-evaluate hit pages to register their state in this process: it only
+    # produces .web and exits (the daemon, the initial compile, and CLI compiles
+    # never serve), and the serving backend re-evaluates the marked stateful
+    # pages itself. Re-evaluating them here re-ran the full render pipeline for
+    # every unchanged stateful page on every edit, for nothing.
     stateful_routes: dict[str, None] = {}
-    with console.timing("Evaluate Pages (Backend)"):
-        for page in pages:
-            if page.route in miss_routes:
-                if miss_ctx is not None and page.route in miss_ctx.stateful_routes:
-                    stateful_routes[page.route] = None
-                continue
-            if manifest["pages"][page.route]["is_stateful"]:
-                app._compile_page(page.route, save_page=False)
+    for page in pages:
+        if page.route in miss_routes:
+            if miss_ctx is not None and page.route in miss_ctx.stateful_routes:
                 stateful_routes[page.route] = None
+        elif manifest["pages"][page.route]["is_stateful"]:
+            stateful_routes[page.route] = None
 
     app._stateful_pages.update(stateful_routes)
     app._write_stateful_pages_marker()
