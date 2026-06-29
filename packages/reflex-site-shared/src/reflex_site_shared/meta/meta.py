@@ -292,7 +292,6 @@ def blog_index_jsonld(posts: list[tuple[str, dict]], url: str) -> rx.Component:
             "position": i + 1,
             "url": f"{REFLEX_DOMAIN_URL.rstrip('/')}/blog/{path}",
             "name": meta.get("title_tag") or meta.get("title", ""),
-            "datePublished": str(meta.get("date", "")),
         }
         for i, (path, meta) in enumerate(posts[:20])
     ]
@@ -367,12 +366,6 @@ def pricing_jsonld(url: str) -> rx.Component:
                         "priceCurrency": "USD",
                         "name": "Free",
                         "availability": "https://schema.org/InStock",
-                    },
-                    {
-                        "@type": "Offer",
-                        "name": "Enterprise",
-                        "description": "Custom enterprise pricing",
-                        "availability": "https://schema.org/PreOrder",
                     },
                 ],
             },

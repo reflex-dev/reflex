@@ -26,7 +26,7 @@ from reflex_docs.docgen_pipeline import (
     render_inline_markdown,
     render_markdown,
 )
-from reflex_docs.templates.docpage import docpage, h1_comp, h2_comp
+from reflex_docs.templates.docpage import docpage, h2_comp
 
 
 def get_code_style(color: str):
@@ -991,7 +991,7 @@ def multi_docs(
             toc.append((2, component_tuple[1]))
         api_ref_section = (
             [
-                h1_comp(text="API Reference"),
+                h2_comp(text="API Reference"),
                 rx.box(*components, class_name="flex flex-col"),
             ]
             if components
@@ -1019,7 +1019,7 @@ def multi_docs(
             toc.append((2, component_tuple[1]))
         api_ref_section = (
             [
-                h1_comp(text="API Reference"),
+                h2_comp(text="API Reference"),
                 rx.box(*ll_components, class_name="flex flex-col"),
             ]
             if ll_components

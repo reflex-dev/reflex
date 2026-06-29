@@ -45,7 +45,7 @@ rx.card(
         rx.flex(
             rx.avatar(src="https://web.reflex-assets.dev/other/reflex_banner.png"),
             rx.box(
-                rx.heading("Quick Start"),
+                rx.heading("Quick Start", as_="h2"),
                 rx.text("Get started with Reflex in 5 minutes."),
             ),
             spacing="2",

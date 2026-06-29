@@ -200,7 +200,7 @@ class DisplayState(rx.State):
 
 def var_value_example():
     return rx.vstack(
-        rx.heading("Get Var Value Example"),
+        rx.heading("Get Var Value Example", as_="h2"),
         rx.hstack(
             # This button calls DisplayState.show_count to display the current count
             rx.button("Get Count Value", on_click=DisplayState.show_count),

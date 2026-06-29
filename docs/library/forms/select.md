@@ -218,7 +218,7 @@ class SelectFormState(rx.State):
 def select_form():
     return rx.card(
         rx.vstack(
-            rx.heading("Order Form", size="4"),
+            rx.heading("Order Form", as_="h2", size="4"),
             rx.form.root(
                 rx.vstack(
                     rx.text("Favorite fruit"),
@@ -243,7 +243,7 @@ def select_form():
             ),
             rx.divider(),
             rx.hstack(
-                rx.heading("Results:"),
+                rx.heading("Results:", as_="h2"),
                 rx.badge(SelectFormState.form_data.to_string()),
             ),
             spacing="3",

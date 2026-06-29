@@ -1,4 +1,5 @@
 import os
+import re
 from collections import defaultdict, namedtuple
 from pathlib import Path
 from types import SimpleNamespace
@@ -194,13 +195,100 @@ def resolve_doc_route(doc: str, title: str) -> ResolvedDoc | None:
     return ResolvedDoc(route=route, display_title=display_title, category=category)
 
 
-def make_docpage(route: str, title: str, doc_virtual: str, render_fn):
+def extract_doc_description(
+    markdown_text: str | None,
+    metadata: dict | None = None,
+    max_len: int = 155,
+) -> str | None:
+    """Derive a meta description for a documentation page.
+
+    Prefers an explicit frontmatter ``meta_description``/``description``;
+    otherwise extracts the first prose paragraph of the markdown body. Returns
+    None if nothing usable is found (callers fall back to a title-based default).
+
+    Args:
+        markdown_text: The raw markdown body of the doc.
+        metadata: Parsed frontmatter, if any.
+        max_len: Soft maximum length for the description.
+
+    Returns:
+        A cleaned, truncated description, or None.
+    """
+    if metadata:
+        for key in ("meta_description", "description"):
+            value = metadata.get(key)
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+    if not markdown_text:
+        return None
+    try:
+        text = markdown_text
+        # Handle a leading YAML frontmatter block (--- ... ---): prefer an
+        # explicit description field, otherwise strip the entire block so its
+        # key:value lines (title:, tags:, ...) don't leak into the description.
+        frontmatter = re.match(r"﻿?\s*---\r?\n(.*?)\r?\n---\r?\n", text, flags=re.DOTALL)
+        if frontmatter:
+            for fm_line in frontmatter.group(1).splitlines():
+                key_value = re.match(
+                    r"\s*(?:meta_description|description)\s*:\s*(\S.*)", fm_line
+                )
+                if key_value:
+                    value = key_value.group(1).strip().strip("\"'")
+                    if len(value) >= 20:
+                        return value
+            text = text[frontmatter.end() :]
+        # Drop fenced code blocks (```...```), including ```python exec blocks.
+        text = re.sub(r"```.*?```", "", text, flags=re.DOTALL)
+        para_lines: list[str] = []
+        skip_prefixes = (
+            "#",
+            ">",
+            "---",
+            "import ",
+            "from ",
+            "|",
+            "<",
+            "- ",
+            "* ",
+            "rx.",
+            "```",
+            *(f"{n}." for n in range(1, 10)),
+        )
+        for raw in text.splitlines():
+            line = raw.strip()
+            if not line:
+                if para_lines:
+                    break
+                continue
+            if line.startswith(skip_prefixes):
+                continue
+            para_lines.append(line)
+        if not para_lines:
+            return None
+        para = " ".join(para_lines)
+        para = re.sub(r"!\[[^\]]*\]\([^)]*\)", "", para)  # images
+        para = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", para)  # links -> text
+        para = re.sub(r"[*_`]+", "", para)  # emphasis / inline code
+        para = re.sub(r"^~?\s*\d+\s*min\s*(?:read)?\s*·?\s*", "", para)  # reading time
+        para = re.sub(r"\s+", " ", para).strip()
+        if len(para) < 20:
+            return None
+        if len(para) > max_len:
+            para = para[:max_len].rsplit(" ", 1)[0].rstrip(",.;:") + "…"
+        return para or None
+    except Exception:
+        return None
+
+
+def make_docpage(
+    route: str, title: str, doc_virtual: str, render_fn, description: str | None = None
+):
     """Wrap a render function as a docpage, setting module metadata."""
     doc_path = Path(doc_virtual)
     render_fn.__module__ = ".".join(doc_path.parts[:-1])
     render_fn.__name__ = doc_path.stem
     render_fn.__qualname__ = doc_path.stem
-    return docpage(set_path=route, t=title)(render_fn)
+    return docpage(set_path=route, t=title, description=description)(render_fn)
 
 
 def handle_library_doc(
@@ -240,9 +328,20 @@ def get_component_docgen(virtual_doc: str, actual_path: str, title: str):
     if virtual_doc.startswith("docs/library"):
         return handle_library_doc(virtual_doc, actual_path, title, resolved)
 
-    def comp(_actual=actual_path, _virtual=virtual_doc):
+    # Read the markdown once and reuse it for both the rendered body and the
+    # meta description, instead of reading the same file twice during compile.
+    try:
+        doc_text: str | None = Path(actual_path).read_text(encoding="utf-8")
+    except Exception:
+        doc_text = None
+
+    def comp(_actual=actual_path, _virtual=virtual_doc, _content=doc_text):
         toc = get_docgen_toc(_actual)
-        doc_content = Path(_actual).read_text(encoding="utf-8")
+        doc_content = (
+            _content
+            if _content is not None
+            else Path(_actual).read_text(encoding="utf-8")
+        )
         body, faq_script = render_docgen_document(
             virtual_filepath=_virtual, actual_filepath=_actual
         )
@@ -250,7 +349,14 @@ def get_component_docgen(virtual_doc: str, actual_path: str, title: str):
             body = rx.fragment(body, faq_script)
         return ((toc, doc_content), body)
 
-    return make_docpage(resolved.route, resolved.display_title, virtual_doc, comp)
+    description = extract_doc_description(doc_text)
+    return make_docpage(
+        resolved.route,
+        resolved.display_title,
+        virtual_doc,
+        comp,
+        description=description,
+    )
 
 
 # Build doc_markdown_sources mapping

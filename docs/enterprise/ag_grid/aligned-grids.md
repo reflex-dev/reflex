@@ -2,6 +2,8 @@
 title: Aligned Grids
 ---
 
+# Aligned Grids
+
 AgGrid provides a way to align multiple grids together. This is useful when you want to display related data in a synchronized manner.
 
 You can do so through the `aligned_grids` prop. This prop takes a list of grid IDs that you want to align.

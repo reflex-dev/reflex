@@ -222,7 +222,7 @@ class DataEditorState_HP(rx.State):
 Here we define a State, as shown below, that allows us to print the location of the cell as a heading when we click on it, using the `on_cell_clicked` `event trigger`. Check out all the other `event triggers` that you can use with datatable at the bottom of this page. We also define a `group` with a label `Data`. This groups all the columns with this `group` label under a larger group `Data` as seen in the table below.
 
 ```python demo box
-rx.heading(DataEditorState_HP.clicked_data)
+rx.heading(DataEditorState_HP.clicked_data, as_="h2")
 ```
 
 ```python demo box

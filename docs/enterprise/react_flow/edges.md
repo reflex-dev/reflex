@@ -95,7 +95,7 @@ edges: list[Edge] = [
 ]
 ```
 
-# Custom Edges
+## Custom Edges
 
 React Flow in Reflex also allows you to define custom edge types. This is useful when you want edges to carry extra functionality (like buttons, labels, or dynamic styling) beyond the default straight or bezier connectors.
 

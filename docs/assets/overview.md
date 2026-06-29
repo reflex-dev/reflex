@@ -31,7 +31,9 @@ assets
 Then you can display it using a `rx.image` component:
 
 ```python demo
-rx.image(src="https://web.reflex-assets.dev/other/Reflex.svg", width="5em")
+rx.image(
+    src="https://web.reflex-assets.dev/other/Reflex.svg", alt="Reflex logo", width="5em"
+)
 ```
 
 ```md alert
@@ -47,7 +49,7 @@ The `rx.asset` function provides a more flexible way to reference assets in your
 Local assets are stored in the app's `assets/` directory and are referenced using `rx.asset`:
 
 ```python demo
-rx.image(src=rx.asset("Reflex.svg"), width="5em")
+rx.image(src=rx.asset("Reflex.svg"), alt="Reflex logo", width="5em")
 ```
 
 #### Shared Assets
@@ -76,7 +78,10 @@ import reflex as rx
 
 # image.png is located in a subfolder next to this Python file
 def my_component_with_image():
-    return rx.image(src=rx.asset("image.png", shared=True, subfolder="images"))
+    return rx.image(
+        src=rx.asset("image.png", shared=True, subfolder="images"),
+        alt="Example image asset",
+    )
 ```
 
 ```md alert
