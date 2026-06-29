@@ -328,9 +328,20 @@ def get_component_docgen(virtual_doc: str, actual_path: str, title: str):
     if virtual_doc.startswith("docs/library"):
         return handle_library_doc(virtual_doc, actual_path, title, resolved)
 
-    def comp(_actual=actual_path, _virtual=virtual_doc):
+    # Read the markdown once and reuse it for both the rendered body and the
+    # meta description, instead of reading the same file twice during compile.
+    try:
+        doc_text: str | None = Path(actual_path).read_text(encoding="utf-8")
+    except Exception:
+        doc_text = None
+
+    def comp(_actual=actual_path, _virtual=virtual_doc, _content=doc_text):
         toc = get_docgen_toc(_actual)
-        doc_content = Path(_actual).read_text(encoding="utf-8")
+        doc_content = (
+            _content
+            if _content is not None
+            else Path(_actual).read_text(encoding="utf-8")
+        )
         body, faq_script = render_docgen_document(
             virtual_filepath=_virtual, actual_filepath=_actual
         )
@@ -338,12 +349,7 @@ def get_component_docgen(virtual_doc: str, actual_path: str, title: str):
             body = rx.fragment(body, faq_script)
         return ((toc, doc_content), body)
 
-    try:
-        description = extract_doc_description(
-            Path(actual_path).read_text(encoding="utf-8")
-        )
-    except Exception:
-        description = None
+    description = extract_doc_description(doc_text)
     return make_docpage(
         resolved.route,
         resolved.display_title,

@@ -278,10 +278,10 @@ def footer_index(
                             "Solutions",
                             [
                                 footer_link("Enterprise", "/use-cases/"),
-                                footer_link("Finance", "/use-cases/finance"),
-                                footer_link("Healthcare", "/use-cases/healthcare"),
-                                footer_link("Consulting", "/use-cases/consulting"),
-                                footer_link("Government", "/use-cases/government"),
+                                footer_link("Finance", "/use-cases/finance/"),
+                                footer_link("Healthcare", "/use-cases/healthcare/"),
+                                footer_link("Consulting", "/use-cases/consulting/"),
+                                footer_link("Government", "/use-cases/government/"),
                             ],
                         ),
                         footer_link_flex(
