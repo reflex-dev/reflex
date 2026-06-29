@@ -1,12 +1,11 @@
-"""Experimental incremental compile cache (flag-gated).
+"""Per-page dependency graph for the incremental compile cache (flag-gated).
 
 Enabled by ``REFLEX_COMPILE_CACHE``. When off (the default), the compiler
 behaves exactly as before.
 
-**In-process per-page cache, with a Salsa-style dependency graph.** Each page
-records the *exact set of source files it actually read*, so a change
-invalidates only the pages that depend on it (not all pages). A page's
-dependency set is the union of:
+**A Salsa-style dependency graph.** Each page records the *exact set of source
+files it actually read*, so a change invalidates only the pages that depend on it
+(not all pages). A page's dependency set is the union of:
 
 - the **transitive first-party ``.py`` import closure** of its defining module
   (``page_py_dependencies`` — captures function-based views and shared helpers
@@ -20,20 +19,20 @@ dependency set is the union of:
   imported),
 - the **fine-grained state files** it references (``used_state_files``).
 
-A page is reused iff every file in its dependency set is byte-unchanged and the
-small genuinely-global ``global_epoch`` (Reflex version + ``rxconfig`` + lockfile)
-is unchanged; adding/removing a route is handled separately (it changes shared
-nav). Per-page dependency sets also track files *outside* the project root (e.g.
-the docs site reads markdown from a sibling directory), so an external-source
-edit still invalidates exactly the dependent pages. Cached pages' contributions
-are re-merged into the app-wide aggregates by ``compile_app``; the store holds
-live objects (``PageContext``), so it is in-process only. The cross-process
-counterpart that survives a hot-reload worker respawn lives in
-``reflex/compiler/disk_cache.py``. ``REFLEX_COMPILE_CACHE_VERIFY`` proves the
-cache-assisted output matches a full compile and falls back on any mismatch —
-the backstop for the residual gaps the static graph cannot see: runtime
-``importlib`` imports and data files read at *module-import* time (outside the
-per-page eval window).
+A page is unchanged iff every file in its dependency set is byte-unchanged and
+the small genuinely-global ``global_epoch`` (Reflex version + ``rxconfig`` +
+lockfile) is unchanged; adding/removing a route is handled separately (it changes
+shared nav). Per-page dependency sets also track files *outside* the project root
+(e.g. the docs site reads markdown from a sibling directory), so an
+external-source edit still invalidates exactly the dependent pages. These content
+hashes and dependency sets are what ``reflex/compiler/disk_cache.py`` persists and
+compares each compile to recompile only the pages whose source changed.
+
+Two residual gaps the static graph cannot see: runtime ``importlib`` imports and
+data files read at *module-import* time (outside the per-page eval window). An
+edit reached only through one of those would not invalidate its page; such
+patterns are rare in page modules, and a global/version change still forces a
+full recompile.
 """
 
 from __future__ import annotations
@@ -643,84 +642,3 @@ def deps_unchanged(
         True iff every dependency file is byte-unchanged.
     """
     return all(hasher(path) == digest for path, digest in dep_hashes.items())
-
-
-def page_source_fingerprint(component: BaseComponent | object) -> str:
-    """Fingerprint a page from its own module source (no build required).
-
-    Args:
-        component: The page component or factory callable.
-
-    Returns:
-        A hex digest of the page's defining module source.
-    """
-    import inspect
-    import sys
-
-    module_name = getattr(component, "__module__", None)
-    parts = [repr(getattr(component, "__qualname__", repr(component)))]
-    mod = sys.modules.get(module_name) if module_name else None
-    file = getattr(mod, "__file__", None)
-    if file and Path(file).exists():
-        with contextlib.suppress(OSError):
-            parts.append(hashlib.sha256(Path(file).read_bytes()).hexdigest())
-    elif callable(component):
-        with contextlib.suppress(OSError, TypeError):
-            parts.append(inspect.getsource(component))
-    return _sha(*parts)
-
-
-#: route -> (global_epoch, dep_hashes, PageContext, is_stateful)
-_PAGE_STORE: dict[str, tuple[str, dict[str, str], PageContext, bool]] = {}
-
-
-def validate_page(
-    route: str,
-    epoch: str,
-    hasher: Callable[[str], str | None],
-) -> tuple[PageContext, bool] | None:
-    """Return the cached page iff its dependency set and the global epoch match.
-
-    A page is valid when the genuinely-global epoch is unchanged and every file
-    in its recorded dependency set is byte-unchanged. Editing a file invalidates
-    exactly the pages whose dependency set contains it.
-
-    Args:
-        route: The page route.
-        epoch: The current global epoch (see :func:`global_epoch`).
-        hasher: A memoized path -> content-hash function (see :func:`make_hasher`).
-
-    Returns:
-        ``(PageContext, is_stateful)`` on a valid hit, else None.
-    """
-    entry = _PAGE_STORE.get(route)
-    if entry is None:
-        return None
-    stored_epoch, dep_hashes, page_ctx, is_stateful = entry
-    if stored_epoch != epoch or not deps_unchanged(dep_hashes, hasher):
-        return None
-    return page_ctx, is_stateful
-
-
-def store_page(
-    route: str,
-    epoch: str,
-    dep_hashes: dict[str, str],
-    page_ctx: PageContext,
-    is_stateful: bool,
-) -> None:
-    """Record a freshly-compiled page with the dependency set it relies on.
-
-    Args:
-        route: The page route.
-        epoch: The global epoch it compiled under.
-        dep_hashes: ``{path: hash}`` for the page's dependency set.
-        page_ctx: The compiled PageContext to cache.
-        is_stateful: Whether the page registered new state during evaluation.
-    """
-    _PAGE_STORE[route] = (epoch, dep_hashes, page_ctx, is_stateful)
-
-
-def clear_page_store() -> None:
-    """Drop all in-process per-page cache entries."""
-    _PAGE_STORE.clear()

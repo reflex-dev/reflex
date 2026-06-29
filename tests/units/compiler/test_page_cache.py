@@ -1,4 +1,4 @@
-"""Tests for the experimental incremental compile cache (in-process page cache)."""
+"""Tests for the per-page dependency graph used by the incremental compile cache."""
 
 from reflex.compiler import page_cache
 
@@ -44,72 +44,3 @@ def test_used_state_files_from_output_and_memos(tmp_path):
     # un-introspectable memo -> conservative (all fine files)
     boom = SimpleNamespace(render=lambda: (_ for _ in ()).throw(RuntimeError()))
     assert page_cache.used_state_files(out, [boom], id_to_file) == {sfile, mfile}
-
-
-def test_validate_page_fine_grained_deps():
-    page_cache.clear_page_store()
-    ctx = object()
-    dep = "/proj/state.py"
-    # page depends on file `dep` at content hash H1, under global epoch "e1"
-    page_cache.store_page("/x", "e1", {dep: "H1"}, ctx, True)
-    # all deps unchanged + epoch matches -> hit
-    assert page_cache.validate_page("/x", "e1", lambda p: {dep: "H1"}.get(p)) == (
-        ctx,
-        True,
-    )
-    # a dependency file changed -> miss
-    assert page_cache.validate_page("/x", "e1", lambda p: {dep: "H2"}.get(p)) is None
-    # the genuinely-global epoch changed -> miss
-    assert page_cache.validate_page("/x", "e2", lambda p: {dep: "H1"}.get(p)) is None
-
-
-def test_validate_page_with_no_deps_only_tracks_epoch():
-    page_cache.clear_page_store()
-    ctx = object()
-    # page depends on NO files
-    page_cache.store_page("/x", "e1", {}, ctx, False)
-    # some unrelated file changed -> page is still a hit (it depends on nothing)
-    assert page_cache.validate_page("/x", "e1", lambda p: "Z") == (ctx, False)
-    # the global epoch changed -> miss
-    assert page_cache.validate_page("/x", "e2", lambda p: "Z") is None
-    # no stored entry -> miss
-    page_cache.clear_page_store()
-    assert page_cache.validate_page("/x", "e1", lambda p: None) is None
-
-
-def _fake_ctx(pages, imports=None, memo=None, stateful=None, wraps=None):
-    from types import SimpleNamespace
-
-    return SimpleNamespace(
-        compiled_pages={r: SimpleNamespace(output_code=c) for r, c in pages.items()},
-        all_imports=imports or {},
-        auto_memo_components=memo or {},
-        stateful_routes=stateful or {},
-        app_wrap_components=wraps or {},
-    )
-
-
-def test_verify_diff_identical():
-    from reflex.compiler import compiler
-
-    a = _fake_ctx({"/": "CODE", "/x": "Y"})
-    b = _fake_ctx({"/": "CODE", "/x": "Y"})
-    assert compiler._diff_compile_contexts(a, b) == []
-
-
-def test_verify_diff_detects_page_change():
-    from reflex.compiler import compiler
-
-    a = _fake_ctx({"/": "OLD"})
-    b = _fake_ctx({"/": "NEW"})
-    assert "page:/" in compiler._diff_compile_contexts(a, b)
-
-
-def test_verify_diff_detects_missing_route_and_memo():
-    from reflex.compiler import compiler
-
-    a = _fake_ctx({"/": "C"}, memo={("Memo", None): 1})
-    b = _fake_ctx({"/": "C", "/x": "C"}, memo={})
-    diffs = compiler._diff_compile_contexts(a, b)
-    assert any(d.startswith("routes:") for d in diffs)
-    assert "auto_memo_components" in diffs

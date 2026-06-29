@@ -1108,91 +1108,6 @@ def _resolve_radix_themes_plugin(
     return plugin_chain, radix_plugin
 
 
-def _normalize_imports_for_compare(all_imports: Any) -> dict[str, list[str]]:
-    """Render an import dict to a comparable, order-independent form.
-
-    Args:
-        all_imports: The parsed import dict to normalize.
-
-    Returns:
-        A mapping of library to its sorted, stringified import fields.
-    """
-    return {lib: sorted(str(v) for v in fields) for lib, fields in all_imports.items()}
-
-
-def _diff_compile_contexts(
-    incremental: CompileContext, full: CompileContext
-) -> list[str]:
-    """Return the aggregate fields where the two compile contexts diverge.
-
-    Args:
-        incremental: The cache-assisted compile context.
-        full: A no-cache full compile of the same app.
-
-    Returns:
-        A list of human-readable divergence labels (empty when identical).
-    """
-    diffs: list[str] = []
-    inc_pages = {r: pc.output_code for r, pc in incremental.compiled_pages.items()}
-    full_pages = {r: pc.output_code for r, pc in full.compiled_pages.items()}
-    if inc_pages.keys() != full_pages.keys():
-        diffs.append(f"routes:{sorted(set(inc_pages) ^ set(full_pages))}")
-    diffs.extend(
-        f"page:{r}"
-        for r in inc_pages.keys() & full_pages.keys()
-        if inc_pages[r] != full_pages[r]
-    )
-    if _normalize_imports_for_compare(
-        incremental.all_imports
-    ) != _normalize_imports_for_compare(full.all_imports):
-        diffs.append("all_imports")
-    if sorted(map(str, incremental.auto_memo_components)) != sorted(
-        map(str, full.auto_memo_components)
-    ):
-        diffs.append("auto_memo_components")
-    if sorted(incremental.stateful_routes) != sorted(full.stateful_routes):
-        diffs.append("stateful_routes")
-    if sorted(map(str, incremental.app_wrap_components)) != sorted(
-        map(str, full.app_wrap_components)
-    ):
-        diffs.append("app_wrap_components")
-    return diffs
-
-
-def _full_compile_context(
-    app: App, compiler_plugins: Sequence[Plugin]
-) -> CompileContext:
-    """Compile every page with no cache reuse (for verify-mode comparison).
-
-    Resets the shared bundling/memo globals first so it starts from the same
-    clean state the primary compile did.
-
-    Args:
-        app: The app to compile.
-        compiler_plugins: The resolved compiler plugins.
-
-    Returns:
-        A fully compiled context over all pages.
-    """
-    from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
-
-    reset_bundled_libraries()
-    reset_memo_component_classes()
-    for plugin in compiler_plugins:
-        for dependency in plugin.get_frontend_dependencies():
-            bundle_library(dependency)
-    ctx = CompileContext(
-        app=app,
-        pages=list(app._unevaluated_pages.values()),
-        hooks=CompilerHooks(
-            plugins=default_page_plugins(style=app.style, plugins=compiler_plugins)
-        ),
-    )
-    with ctx:
-        ctx.compile()
-    return ctx
-
-
 def compile_app(
     app: App,
     *,
@@ -1278,34 +1193,9 @@ def compile_app(
     task = progress.add_task("Compiling:", total=base_total)
     all_pages = list(app._unevaluated_pages.values())
 
-    # In-process per-page cache with a Salsa-style dependency graph. Reuse the
-    # compiled context of pages whose recorded dependency set is byte-unchanged
-    # (and whose global epoch matches); compile only the rest, then re-merge
-    # cached pages' contributions into the app-wide aggregates. In-process only
-    # (contributions hold live objects), so it helps repeat compiles in one
-    # process; cross-process reuse is handled by the disk cache above.
-    in_process_cache = cache_on
-    route_to_component = {p.route: p.component for p in all_pages}
-    state_index: dict[str, Any] = {}
-    epoch = ""
-    hasher: Any = None
-    hit_routes: list[str] = []
-    if in_process_cache:
-        from reflex.compiler import page_cache
-
-        state_index, _ = page_cache.state_dependency_index()
-        epoch = page_cache.global_epoch()
-        hasher = page_cache.make_hasher()
-        hit_routes = [
-            page.route
-            for page in all_pages
-            if page_cache.validate_page(page.route, epoch, hasher) is not None
-        ]
-
-    hit_set = set(hit_routes)
     compile_ctx = CompileContext(
         app=app,
-        pages=[p for p in all_pages if p.route not in hit_set],
+        pages=all_pages,
         hooks=CompilerHooks(
             plugins=default_page_plugins(style=app.style, plugins=compiler_plugins)
         ),
@@ -1316,72 +1206,6 @@ def compile_app(
             evaluate_progress=lambda: progress.advance(task),
             render_progress=lambda: progress.advance(task),
         )
-
-    if in_process_cache:
-        from reflex.compiler import page_cache
-
-        # Cache freshly-compiled (miss) pages with the dependency set they read.
-        for route in list(compile_ctx.compiled_pages):
-            page_ctx_fresh = compile_ctx.compiled_pages[route]
-            dep_hashes = page_cache.page_dependency_hashes(
-                page_ctx_fresh,
-                route_to_component[route],
-                state_index,
-                hasher,
-            )
-            page_cache.store_page(
-                route,
-                epoch,
-                dep_hashes,
-                page_ctx_fresh,
-                route in compile_ctx.stateful_routes,
-            )
-        # Re-merge cached (hit) pages' contributions into the aggregates.
-        for route in hit_routes:
-            cached = page_cache.validate_page(route, epoch, hasher)
-            if cached is None:  # defensive: invalidated concurrently
-                continue
-            page_ctx, is_stateful = cached
-            compile_ctx.compiled_pages[route] = page_ctx
-            compile_ctx.all_imports = utils.merge_imports(
-                compile_ctx.all_imports, page_ctx.frontend_imports
-            )
-            compile_ctx.app_wrap_components.update(page_ctx.app_wrap_components)
-            compile_ctx.auto_memo_components.update(page_ctx.memo_contributions)
-            if is_stateful:
-                compile_ctx.stateful_routes[route] = None
-        # Restore deterministic page order (route order of the app).
-        compile_ctx.compiled_pages = {
-            p.route: compile_ctx.compiled_pages[p.route]
-            for p in all_pages
-            if p.route in compile_ctx.compiled_pages
-        }
-        if hit_routes:
-            console.info(
-                "Incremental compile: recompiled "
-                f"{len(all_pages) - len(hit_routes)} page(s)."
-            )
-
-    # Verify mode: prove the cache-assisted output matches a full compile, and
-    # fall back to the full result on any divergence so a cache bug can never
-    # ship. Doubles compile time; opt-in for validation.
-    if hit_routes and environment.REFLEX_COMPILE_CACHE_VERIFY.get():
-        from reflex.compiler import page_cache
-
-        full_ctx = _full_compile_context(app, compiler_plugins)
-        diffs = _diff_compile_contexts(compile_ctx, full_ctx)
-        if diffs:
-            console.warn(
-                "compile cache verify FAILED "
-                f"({len(diffs)} divergence(s): {diffs[:8]}); using the full "
-                "compile and clearing the page cache."
-            )
-            page_cache.clear_page_store()
-            compile_ctx = full_ctx
-        else:
-            console.debug(
-                "compile cache verify: incremental output matches full compile"
-            )
 
     for route, page_ctx in compile_ctx.compiled_pages.items():
         app._check_routes_conflict(route)

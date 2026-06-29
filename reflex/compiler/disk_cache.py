@@ -2,24 +2,23 @@
 
 Enabled by ``REFLEX_COMPILE_CACHE``. When off (default), nothing changes.
 
-The in-process page cache (``page_cache._PAGE_STORE``) reuses compiled pages
-within one process, so it never fires in the ``reflex run`` edit loop — the
-reloader respawns a fresh worker subprocess on every ``.py`` change, starting
-with an empty in-memory store. This cache persists each page's *serializable*
-contribution to disk so the fresh worker can reuse it.
+In the ``reflex run`` edit loop every compile runs in a fresh process (the warm
+daemon forks a throwaway child per change), so there is no in-memory state to
+reuse across edits. This cache persists the small amount of bookkeeping a fresh
+process needs to recompile only what changed and reuse everything else already
+on disk.
 
 **What is persisted** (``.web/reflex_compile_cache.json``): per page, the
 ``{path: hash}`` of its **dependency set** (the exact source files it read —
 own module, markdown/data, component modules in its tree, and the state files it
-uses; see ``page_cache.page_dependency_hashes``), its rendered ``output_code``
-and path, its ``frontend_imports`` (``ImportVar`` is a frozen dataclass of
-primitives), its app-wrap key-set, and whether evaluating it registered new
-state. App-wide: the genuinely-global ``epoch`` (reflex version +
-config/lockfiles), the reflex version, and the merged imports. The manifest
-deliberately stores **no rendered memo files**: a hit page's memo files are
-already on disk from the prior compile, and a miss page re-renders its own on
-recompile — so writing the manifest is just string/key serialization, never a
-second memo render.
+uses; see ``page_cache.page_dependency_hashes``), its app-wrap key-set, and
+whether evaluating it registered new state. App-wide: the genuinely-global
+``epoch`` (reflex version + config/lockfiles), the reflex version, and the merged
+frontend imports. The manifest stores **no rendered output**: a page's compiled
+``.js`` (and its memo files) already live in ``.web`` from the prior compile — a
+hit reuses those files untouched, a miss rewrites its own — so the manifest is
+pure bookkeeping, never a second render. (This is why it stays small: storing the
+rendered ``output_code`` would balloon it for no gain, as it is never read back.)
 
 **The fast path** (``try_incremental_rebuild``). On a fresh compile it reuses the
 manifest when the global inputs match (reflex version, route set, and the global
@@ -29,19 +28,18 @@ exactly the pages that depend on it, not all of them. The on-disk app-wide files
 (app root, contexts, theme, stylesheet, …) stay valid because the epoch and route
 set are unchanged. Then:
 
-- A *stateless* hit page is skipped entirely (its frontend file is reused and
-  evaluating it would register nothing).
-- A *stateful* hit page is re-evaluated for the backend only (to re-register its
-  state classes), reusing its frontend file. ``is_stateful`` is true exactly
-  when the page's first eval grew the state registry, so this is precisely the
-  set whose state would otherwise go missing.
+- A hit page is left exactly as-is: its frontend ``.js`` is already on disk and
+  is neither rewritten nor re-evaluated.
 - A *miss* page (source changed) is fully recompiled and its files rewritten.
+- Stateful pages are recorded in the stateful-pages marker — misses from this
+  compile, hits from the manifest's ``is_stateful`` flag — so the serving backend
+  (which re-evaluates them to register their state) sees the complete set. This
+  process only writes ``.web`` and exits; it never re-evaluates a hit page.
 
 After recompiling misses, two guards must hold or the whole thing falls back to a
 full compile (return False): each miss page's app-wrap key-set and stateful flag
-must be unchanged (otherwise the reused on-disk app root would be wrong). Any
-state edit, shared-file edit, route add/remove, or version change also falls back
-to a full compile. ``REFLEX_COMPILE_CACHE_VERIFY`` is the backstop for an app.
+must be unchanged (otherwise the reused on-disk app root would be wrong). A route
+add/remove or a global/version change also falls back to a full compile.
 """
 
 from __future__ import annotations
@@ -67,7 +65,7 @@ if TYPE_CHECKING:
     from reflex.app import App
 
 #: Bump when the manifest layout changes (old manifests are then ignored).
-_SCHEMA = 2
+_SCHEMA = 3
 #: Manifest filename under the web directory.
 _MANIFEST_FILE = "reflex_compile_cache.json"
 
@@ -169,9 +167,6 @@ def write_manifest(
                 "dep_hashes": page_cache.page_dependency_hashes(
                     page_ctx, page.component, state_index, hasher, root
                 ),
-                "output_path": page_ctx.output_path,
-                "output_code": page_ctx.output_code,
-                "frontend_imports": _serialize_imports(page_ctx.frontend_imports),
                 "app_wrap_keys": _wrap_key_strs(page_ctx.app_wrap_components.keys()),
                 "is_stateful": page.route in compile_ctx.stateful_routes,
             }
@@ -433,9 +428,6 @@ def _update_manifest_for_misses(
                 "dep_hashes": page_cache.page_dependency_hashes(
                     page_ctx, page.component, state_index, hasher
                 ),
-                "output_path": page_ctx.output_path,
-                "output_code": page_ctx.output_code,
-                "frontend_imports": _serialize_imports(page_ctx.frontend_imports),
                 "app_wrap_keys": _wrap_key_strs(page_ctx.app_wrap_components.keys()),
                 "is_stateful": page.route in miss_ctx.stateful_routes,
             }

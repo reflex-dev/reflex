@@ -131,28 +131,27 @@ def test_write_and_load_manifest(tmp_path, monkeypatch):
     assert manifest is not None
     assert manifest["schema"] == disk_cache._SCHEMA
     assert set(manifest["pages"]) == {"/a", "/b", "/c"}
-    # the cached output is exactly what the compile produced for each page
     for route in ("/a", "/b", "/c"):
-        assert (
-            manifest["pages"][route]["output_code"]
-            == ctx.compiled_pages[route].output_code
-        )
+        entry = manifest["pages"][route]
+        # the manifest is pure bookkeeping: dep set + app-wrap keys + stateful flag
+        assert set(entry) == {"dep_hashes", "app_wrap_keys", "is_stateful"}
         # these static pages register no new state
-        assert manifest["pages"][route]["is_stateful"] is False
-    # imports round-trip cleanly
-    restored = disk_cache._deserialize_imports(
-        manifest["pages"]["/a"]["frontend_imports"]
-    )
-    assert restored == ctx.compiled_pages["/a"].frontend_imports
+        assert entry["is_stateful"] is False
+        # rendered output is never persisted (it already lives in .web, and is
+        # never read back from the manifest) -> keeps the manifest small
+        assert "output_code" not in entry
+        assert "frontend_imports" not in entry
+    # the app-wide merged imports round-trip cleanly
+    restored = disk_cache._deserialize_imports(manifest["all_imports"])
+    assert restored == ctx.all_imports
 
 
 def test_unchanged_pages_compile_identically(tmp_path, monkeypatch):
     """The reuse correctness property: an unchanged page recompiles byte-for-byte.
 
-    The disk cache reuses a hit page's stored ``output_code`` verbatim, so it is
-    correct iff a fresh compile of that page yields identical output. Compile A,
-    B, C; then compile A, B(edited), C; A and C must be byte-identical, and the
-    manifest's cached A/C output must equal the fresh recompile.
+    The disk cache leaves a hit page's already-on-disk ``.web`` file untouched, so
+    reuse is correct iff a fresh compile of that page yields identical output.
+    Compile A, B, C; then compile A, B(edited), C; A and C must be byte-identical.
     """
     web = tmp_path / ".web"
     web.mkdir()
@@ -164,9 +163,6 @@ def test_unchanged_pages_compile_identically(tmp_path, monkeypatch):
         _FakePage(route="/c", component=_page_c),
     ]
     ctx1 = _compile(pages)
-    disk_cache.write_manifest(ctx1, pages, ctx1.all_imports, root=tmp_path)
-    manifest = disk_cache.load_manifest()
-    assert manifest is not None
 
     # "Edit" page B; recompile the whole app cleanly.
     pages_edited = [
@@ -186,13 +182,6 @@ def test_unchanged_pages_compile_identically(tmp_path, monkeypatch):
     # B changed.
     assert (
         ctx2.compiled_pages["/b"].output_code != ctx1.compiled_pages["/b"].output_code
-    )
-    # The cached output we'd reuse for A/C equals a clean recompile of them.
-    assert (
-        manifest["pages"]["/a"]["output_code"] == ctx2.compiled_pages["/a"].output_code
-    )
-    assert (
-        manifest["pages"]["/c"]["output_code"] == ctx2.compiled_pages["/c"].output_code
     )
 
 

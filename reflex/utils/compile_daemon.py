@@ -328,11 +328,10 @@ def _reset_first_party(roots: list[Path]) -> None:
     ):
         cached.cache_clear()
     DECORATED_PAGES.clear()
-    # In-process caches hold live objects from the previous import; drop them so
-    # the fresh compile can't reuse a tree built from now-stale classes. Cross-
-    # compile reuse comes from the on-disk manifest, not these.
+    # The import graph caches each module's parsed import edges; a changed file
+    # may import differently now, so drop it to force a re-parse. Cross-compile
+    # page reuse comes from the on-disk manifest.
     page_cache.clear_import_graph()
-    page_cache.clear_page_store()
     _reset_model_metadata()
 
 

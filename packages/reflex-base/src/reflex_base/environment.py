@@ -613,15 +613,9 @@ class EnvironmentVariables:
 
     # Experimental: incremental compile cache. A fresh compile process (e.g. a
     # reflex-run hot-reload worker) reuses each page's compiled output from an
-    # on-disk manifest and recompiles only the pages whose source changed,
-    # backed by an in-process per-page cache for repeat compiles in one process.
+    # on-disk manifest and recompiles only the pages whose source changed.
     # See reflex/compiler/disk_cache.py and reflex/compiler/page_cache.py.
     REFLEX_COMPILE_CACHE: EnvVar[bool] = env_var(False)
-
-    # When the compile cache reuses pages, also run a full compile and assert
-    # byte-identical output, falling back to the full result on any mismatch.
-    # Doubles compile time; for validating the cache on an app.
-    REFLEX_COMPILE_CACHE_VERIFY: EnvVar[bool] = env_var(False)
 
     # Inherited by uvicorn/granian reload workers so the backend can distinguish
     # dev reload-capable worker boots from other backend starts. Never set in prod.
