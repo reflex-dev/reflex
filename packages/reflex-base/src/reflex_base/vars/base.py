@@ -3217,11 +3217,8 @@ _UNIQUE_NAME_RNG = random.Random(42)
 def reset_unique_variable_names() -> None:
     """Reset the deterministic unique-name generator to its initial state.
 
-    ``get_unique_variable_name`` draws from a seeded RNG and dedups against
-    ``USED_VARIABLES``; both persist process-wide, so a second in-process compile
-    would draw *different* ref names than the first (the RNG state and the used
-    set carry over). Resetting them before each compile makes the generated names
-    reproducible across compiles — names only need to be unique within a compile.
+    Names only need to be unique within one compile, so resetting before each
+    compile makes auto-generated ref names reproducible.
     """
     USED_VARIABLES.clear()
     _UNIQUE_NAME_RNG.seed(42)

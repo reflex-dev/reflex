@@ -15,6 +15,201 @@ def test_global_epoch_tracks_global_files(tmp_path):
     assert page_cache.global_epoch(root=tmp_path) != epoch
 
 
+def test_global_epoch_tracks_app_entrypoint(tmp_path, monkeypatch):
+    """Editing the app entrypoint (theme/app_wraps live there) bumps the epoch.
+
+    App-wide config is configured where ``rx.App`` is built, not in any page's
+    dependency set, so without this an edit to it would leave every page a hit
+    and the reused on-disk app root / contexts / theme stale.
+    """
+    (tmp_path / "rxconfig.py").write_text("config = 1\n")
+    entrypoint = (tmp_path / "myapp.py").resolve()
+    entrypoint.write_text("app = rx.App(theme=light)\n")
+    monkeypatch.setattr(
+        page_cache, "_app_entrypoint_file", lambda root=None: entrypoint
+    )
+    epoch = page_cache.global_epoch(root=tmp_path)
+    # editing the app entrypoint DOES change the epoch
+    entrypoint.write_text("app = rx.App(theme=dark)\n")
+    assert page_cache.global_epoch(root=tmp_path) != epoch
+
+
+def test_app_entrypoint_file_resolution(tmp_path, monkeypatch):
+    import sys
+    from types import ModuleType, SimpleNamespace
+
+    monkeypatch.setattr(
+        "reflex.config.get_config", lambda: SimpleNamespace(module="fake_entry_mod")
+    )
+    mod = ModuleType("fake_entry_mod")
+    monkeypatch.setitem(sys.modules, "fake_entry_mod", mod)
+
+    # no __file__ on the module -> None
+    assert page_cache._app_entrypoint_file(root=tmp_path) is None
+
+    # a file under the project root -> resolved
+    entry = tmp_path / "myapp" / "myapp.py"
+    entry.parent.mkdir()
+    entry.write_text("app = 1\n")
+    mod.__file__ = str(entry)
+    assert page_cache._app_entrypoint_file(root=tmp_path) == entry.resolve()
+
+    # a file outside the project root -> None (not a project input)
+    outside = tmp_path.parent / "elsewhere.py"
+    mod.__file__ = str(outside)
+    assert page_cache._app_entrypoint_file(root=tmp_path) is None
+
+
+def test_app_dependency_files_keeps_config_excludes_pages(tmp_path, monkeypatch):
+    """The entrypoint's config closure, with page modules as traversal barriers.
+
+    entry imports a config-only ``theme.py`` and a page; the page imports a view
+    and (also) theme. The result must keep entry + theme (theme is reached from
+    the entrypoint directly, even though a page imports it too) and exclude the
+    page module and its view (tracked per page).
+    """
+    from types import SimpleNamespace
+
+    entry = tmp_path / "myapp.py"
+    theme = tmp_path / "theme.py"
+    page = tmp_path / "pages" / "index.py"
+    view = tmp_path / "components" / "hero.py"
+    graph = {
+        str(entry): {str(theme), str(page)},
+        str(page): {str(view), str(theme)},
+        str(theme): set(),
+        str(view): set(),
+    }
+    monkeypatch.setattr(page_cache, "_app_entrypoint_file", lambda root=None: entry)
+    monkeypatch.setattr(
+        page_cache,
+        "_loaded_first_party_modules",
+        lambda root: {
+            str(entry): "myapp",
+            str(theme): "theme",
+            str(page): "pages.index",
+            str(view): "components.hero",
+        },
+    )
+    monkeypatch.setattr(
+        page_cache,
+        "_module_import_edges",
+        lambda file, modname, file_to_mod: graph[file],
+    )
+    monkeypatch.setattr(
+        page_cache, "_component_source_files", lambda comp, root: {str(page)}
+    )
+
+    result = page_cache.app_dependency_files(
+        [SimpleNamespace(component=object())], root=tmp_path
+    )
+    assert result == {str(entry), str(theme)}
+
+
+def test_global_epoch_excludes_page_modules(tmp_path, monkeypatch):
+    """A page-module edit keeps the epoch (incremental); an app-config edit bumps it."""
+    from types import SimpleNamespace
+
+    (tmp_path / "rxconfig.py").write_text("c = 1\n")
+    entry = tmp_path / "myapp.py"
+    entry.write_text("app = 1\n")
+    theme = tmp_path / "theme.py"
+    theme.write_text("t = 1\n")
+    page = tmp_path / "index.py"
+    page.write_text("p = 1\n")
+    graph = {str(entry): {str(theme), str(page)}, str(page): set(), str(theme): set()}
+    monkeypatch.setattr(page_cache, "_app_entrypoint_file", lambda root=None: entry)
+    monkeypatch.setattr(
+        page_cache,
+        "_loaded_first_party_modules",
+        lambda root: {
+            str(entry): "myapp",
+            str(theme): "theme",
+            str(page): "index",
+        },
+    )
+    monkeypatch.setattr(
+        page_cache,
+        "_module_import_edges",
+        lambda file, modname, file_to_mod: graph[file],
+    )
+    monkeypatch.setattr(
+        page_cache, "_component_source_files", lambda comp, root: {str(page)}
+    )
+    pages = [SimpleNamespace(component=object())]
+
+    epoch = page_cache.global_epoch(root=tmp_path, pages=pages)
+    # editing a page module does NOT change the epoch (tracked per page instead)
+    page.write_text("p = 2\n")
+    assert page_cache.global_epoch(root=tmp_path, pages=pages) == epoch
+    # editing app-level config the entrypoint imports (theme) DOES
+    theme.write_text("t = 2\n")
+    assert page_cache.global_epoch(root=tmp_path, pages=pages) != epoch
+
+
+def test_global_epoch_hashes_only_app_dependency_closure(tmp_path, monkeypatch):
+    """Unrelated first-party modules do not make the app epoch coarse."""
+    from types import SimpleNamespace
+
+    entry = tmp_path / "myapp.py"
+    theme = tmp_path / "theme.py"
+    unrelated = tmp_path / "unrelated.py"
+    for path, code in (
+        (entry, "import theme\n"),
+        (theme, "t = 1\n"),
+        (unrelated, "x = 1\n"),
+    ):
+        path.write_text(code)
+    graph = {str(entry): {str(theme)}, str(theme): set(), str(unrelated): set()}
+    monkeypatch.setattr(page_cache, "_app_entrypoint_file", lambda root=None: entry)
+    monkeypatch.setattr(
+        page_cache,
+        "_loaded_first_party_modules",
+        lambda root: {
+            str(entry): "myapp",
+            str(theme): "theme",
+            str(unrelated): "unrelated",
+        },
+    )
+    monkeypatch.setattr(
+        page_cache,
+        "_module_import_edges",
+        lambda file, modname, file_to_mod: graph[file],
+    )
+
+    epoch = page_cache.global_epoch(
+        root=tmp_path, pages=[SimpleNamespace(component=object())]
+    )
+    unrelated.write_text("x = 2\n")
+    assert (
+        page_cache.global_epoch(
+            root=tmp_path, pages=[SimpleNamespace(component=object())]
+        )
+        == epoch
+    )
+    theme.write_text("t = 2\n")
+    assert (
+        page_cache.global_epoch(
+            root=tmp_path, pages=[SimpleNamespace(component=object())]
+        )
+        != epoch
+    )
+
+
+def test_app_dependency_files_skips_graph_without_entrypoint(tmp_path, monkeypatch):
+    monkeypatch.setattr(page_cache, "_app_entrypoint_file", lambda root=None: None)
+
+    def fail_loaded_first_party_modules(root):
+        msg = "module map should not be built without an entrypoint"
+        raise AssertionError(msg)
+
+    monkeypatch.setattr(
+        page_cache, "_loaded_first_party_modules", fail_loaded_first_party_modules
+    )
+
+    assert page_cache.app_dependency_files(root=tmp_path) == set()
+
+
 def test_used_state_files_from_output_and_memos(tmp_path):
     from types import SimpleNamespace
 

@@ -1,38 +1,9 @@
-"""Per-page dependency graph for the incremental compile cache (flag-gated).
+"""Per-page dependency discovery for the incremental compile cache.
 
-Enabled by ``REFLEX_COMPILE_CACHE``. When off (the default), the compiler
-behaves exactly as before.
-
-**A Salsa-style dependency graph.** Each page records the *exact set of source
-files it actually read*, so a change invalidates only the pages that depend on it
-(not all pages). A page's dependency set is the union of:
-
-- the **transitive first-party ``.py`` import closure** of its defining module
-  (``page_py_dependencies`` — captures function-based views and shared helpers
-  that never appear as nodes in the rendered tree, e.g. a ``def hero()`` view, so
-  editing one invalidates exactly the pages whose closure imports it),
-- the **source files read while evaluating it** (markdown/data — captured by
-  ``record_reads`` via the per-page read recorder; this is what lets editing one
-  ``.md`` doc page recompile only that page),
-- the **component modules in its rendered tree** (``component_module_files`` —
-  belt-and-suspenders for components injected at runtime rather than statically
-  imported),
-- the **fine-grained state files** it references (``used_state_files``).
-
-A page is unchanged iff every file in its dependency set is byte-unchanged and
-the small genuinely-global ``global_epoch`` (Reflex version + ``rxconfig`` +
-lockfile) is unchanged; adding/removing a route is handled separately (it changes
-shared nav). Per-page dependency sets also track files *outside* the project root
-(e.g. the docs site reads markdown from a sibling directory), so an
-external-source edit still invalidates exactly the dependent pages. These content
-hashes and dependency sets are what ``reflex/compiler/disk_cache.py`` persists and
-compares each compile to recompile only the pages whose source changed.
-
-Two residual gaps the static graph cannot see: runtime ``importlib`` imports and
-data files read at *module-import* time (outside the per-page eval window). An
-edit reached only through one of those would not invalidate its page; such
-patterns are rare in page modules, and a global/version change still forces a
-full recompile.
+Each page records the first-party Python import closure of its page callable,
+files read during page evaluation, component modules in its rendered tree, and
+fine-grained state files it references. ``disk_cache`` persists hashes of that
+set so only pages whose dependencies changed need to be recompiled.
 """
 
 from __future__ import annotations
@@ -41,7 +12,7 @@ import builtins
 import contextlib
 import hashlib
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from contextvars import ContextVar
 from importlib import metadata
 from pathlib import Path
@@ -77,13 +48,9 @@ def _reflex_version() -> str:
         return "unknown"
 
 
-# --- Per-page read tracking (the Salsa "input read" seam) -------------------
 # A page's markdown/data dependencies are read lazily while the page is
-# evaluated (e.g. ``Path(doc).read_text()`` inside the page callable). We record
-# those reads per page so the cache depends on the exact files consumed. Patches
-# are installed once (idempotent) and only record while a recording set is active
-# on the current task (set by ``record_reads``), so the overhead is a contextvar
-# read when no cache is running.
+# evaluated. Track those reads only while ``record_reads`` is active, so the
+# idle overhead is one contextvar read.
 
 _active_reads: ContextVar[set[str] | None] = ContextVar("_active_reads", default=None)
 _patched = False
@@ -188,15 +155,54 @@ def record_reads():
         _active_reads.reset(token)
 
 
-def global_epoch(root: Path | None = None) -> str:
-    """Fingerprint the genuinely-global inputs (Reflex version + config/lockfiles).
+def _app_entrypoint_file(root: Path | None = None) -> Path | None:
+    """Resolve the user's app entrypoint module file (where ``rx.App`` is built).
+
+    App-wide inputs like theme, app wraps, the toaster, stylesheets, and head
+    components are configured here, not in any single page's
+    dependency set. This is the root of :func:`app_dependency_files`, which walks
+    its imports (stopping at page modules) to find the config-only modules whose
+    change must invalidate the reused on-disk app-wide files.
+
+    Args:
+        root: Project root; only a file under it is returned. Defaults to cwd.
+
+    Returns:
+        The resolved entrypoint file path under ``root``, or None if it can't be
+        determined (no app module imported, or it lives outside ``root``).
+    """
+    import sys
+
+    try:
+        from reflex.config import get_config
+
+        module = get_config().module
+    except Exception:
+        return None
+    file = getattr(sys.modules.get(module), "__file__", None)
+    if not file:
+        return None
+    rf = Path(file).resolve()
+    root = (root or Path.cwd()).resolve()
+    return rf if root in rf.parents else None
+
+
+def global_epoch(
+    root: Path | None = None, *, pages: Sequence[object] | None = None
+) -> str:
+    """Fingerprint the genuinely-global inputs.
 
     These can affect every page's output but belong to no single page, so they
-    gate the whole cache rather than any one page's dependency set. Kept small on
-    purpose — per-file edits flow through per-page dependency sets instead.
+    gate the whole cache rather than any one page's dependency set: the Reflex
+    version, the config/lockfiles, and the app-level config files: the app
+    entrypoint module plus the config-only modules it imports (theme, app-wraps,
+    stylesheets, head components; see :func:`app_dependency_files`). Kept small
+    on purpose; per-file edits flow through per-page dependency sets instead.
 
     Args:
         root: Project root. Defaults to cwd.
+        pages: The current page definitions, used as barriers so page modules
+            (tracked per page) are excluded from the app-level config files.
 
     Returns:
         A hex digest of the global inputs.
@@ -209,14 +215,14 @@ def global_epoch(root: Path | None = None) -> str:
             parts.append(f"{name}={hashlib.sha256(path.read_bytes()).hexdigest()}")
         except OSError:
             parts.append(f"{name}=<absent>")
+    # Sorted for a deterministic digest regardless of set iteration order.
+    for path_str in sorted(app_dependency_files(pages, root)):
+        try:
+            digest = hashlib.sha256(Path(path_str).read_bytes()).hexdigest()
+        except OSError:
+            digest = "<absent>"
+        parts.append(f"app:{path_str}={digest}")
     return _sha(*parts)
-
-
-# In-process per-page cache. Each page is keyed by the genuinely-global epoch
-# plus the content hashes of its exact dependency set, so editing one file
-# misses only the pages that depend on it. Contributions to the app-wide
-# aggregates include live Python objects (root_component, memo defs), so the
-# store is in-process only.
 
 
 def _module_file(component: object) -> Path | None:
@@ -232,10 +238,9 @@ def component_module_files(
 ) -> set[Path]:
     """Resolve the first-party module files of every component in a tree.
 
-    Walks the rendered component tree and collects the defining module file of
-    each component class under ``root``. This is the precise, barrel-immune way
-    (vs. static imports) to capture which shared views/templates a page renders:
-    editing one invalidates exactly the pages whose tree contains it.
+    Walks the rendered component tree and collects each component class module
+    under ``root``. This catches component dependencies that static imports may
+    miss.
 
     Args:
         root_component: The page's root component (its rendered tree).
@@ -276,12 +281,36 @@ def _resolve_module_file(name: str) -> str | None:
     return str(Path(file).resolve()) if file else None
 
 
+def _loaded_first_party_modules(root: Path) -> dict[str, str]:
+    """Map first-party module files to module names.
+
+    Args:
+        root: Resolved project root.
+
+    Returns:
+        A mapping of resolved file path -> module name for loaded modules under
+        ``root``.
+    """
+    import sys
+
+    file_to_mod: dict[str, str] = {}
+    for name, mod in list(sys.modules.items()):
+        file = getattr(mod, "__file__", None)
+        if not file:
+            continue
+        rf = Path(file).resolve()
+        if root in rf.parents:
+            file_to_mod[str(rf)] = name
+    return file_to_mod
+
+
 def _import_from_targets(node: object, modname: str) -> list[str]:
     """Resolve a ``from ... import ...`` node to candidate module names.
 
     Handles relative imports via the importing module's package. Returns the
-    base module and each ``base.name`` (a name may be a submodule or an attribute
-    — both candidates are resolved against ``sys.modules`` by the caller).
+    base module and each ``base.name``. A name may be a submodule or an
+    attribute; both candidates are resolved against ``sys.modules`` by the
+    caller.
 
     Args:
         node: An ``ast.ImportFrom`` node.
@@ -304,16 +333,45 @@ def _import_from_targets(node: object, modname: str) -> list[str]:
     return [base, *(f"{base}.{a.name}" for a in node.names)]
 
 
+def _module_import_edges(
+    file: str, modname: str, file_to_mod: dict[str, str]
+) -> set[str]:
+    """Return first-party files imported by one module.
+
+    Args:
+        file: The resolved module file path.
+        modname: The module's dotted name.
+        file_to_mod: Loaded first-party module files.
+
+    Returns:
+        The resolved first-party files imported by ``file``.
+    """
+    import ast
+
+    deps: set[str] = set()
+    try:
+        tree = ast.parse(Path(file).read_bytes())
+    except (OSError, SyntaxError, ValueError):
+        return deps
+    for node in ast.walk(tree):
+        names: list[str] = []
+        if isinstance(node, ast.Import):
+            names = [a.name for a in node.names]
+        elif isinstance(node, ast.ImportFrom):
+            names = _import_from_targets(node, modname)
+        for name in names:
+            target = _resolve_module_file(name)
+            if target is not None and target in file_to_mod:
+                deps.add(target)
+    return deps
+
+
 def build_import_graph(root: Path | None = None) -> dict[str, set[str]]:
     """Build the first-party import graph (file -> files it imports).
 
-    Parses every already-imported first-party module's source for ``import`` and
-    ``from`` statements and resolves them to files under ``root`` via
-    ``sys.modules``. Cached per root for the duration of the process. This is the
-    sound basis for per-page ``.py`` dependencies: a function (e.g. a view like
-    ``hero()``) can only affect a page if its module is transitively imported by
-    the page's module, so it appears in the page's import closure even though it
-    is never a node in the rendered tree.
+    Parses already-imported first-party modules and resolves their imports to
+    files under ``root`` via ``sys.modules``. Cached per root for the duration of
+    the process.
 
     Args:
         root: Project root. Defaults to cwd.
@@ -321,42 +379,16 @@ def build_import_graph(root: Path | None = None) -> dict[str, set[str]]:
     Returns:
         A mapping of resolved file path -> the set of first-party files it imports.
     """
-    import ast
-    import sys
-
     root = (root or Path.cwd()).resolve()
     cached = _import_graph_cache.get(root)
     if cached is not None:
         return cached
 
-    file_to_mod: dict[str, str] = {}
-    for name, mod in list(sys.modules.items()):
-        file = getattr(mod, "__file__", None)
-        if not file:
-            continue
-        rf = Path(file).resolve()
-        if root in rf.parents:
-            file_to_mod[str(rf)] = name
-
-    graph: dict[str, set[str]] = {}
-    for file, modname in file_to_mod.items():
-        deps: set[str] = set()
-        try:
-            tree = ast.parse(Path(file).read_bytes())
-        except (OSError, SyntaxError, ValueError):
-            graph[file] = deps
-            continue
-        for node in ast.walk(tree):
-            names: list[str] = []
-            if isinstance(node, ast.Import):
-                names = [a.name for a in node.names]
-            elif isinstance(node, ast.ImportFrom):
-                names = _import_from_targets(node, modname)
-            for n in names:
-                target = _resolve_module_file(n)
-                if target is not None and target in file_to_mod:
-                    deps.add(target)
-        graph[file] = deps
+    file_to_mod = _loaded_first_party_modules(root)
+    graph = {
+        file: _module_import_edges(file, modname, file_to_mod)
+        for file, modname in file_to_mod.items()
+    }
     _import_graph_cache[root] = graph
     return graph
 
@@ -366,16 +398,41 @@ def clear_import_graph() -> None:
     _import_graph_cache.clear()
 
 
+def _component_source_files(component: object, root: Path) -> set[str]:
+    """The component callable's own defining files under ``root``.
+
+    The callable's *real* code filename (``__code__``, correct even when
+    ``__module__`` was reassigned, as the docs app does for generated pages) plus
+    its module file. These are the roots a page's import closure walks from, and
+    the barriers the app-config walk stops at.
+
+    Args:
+        component: The page component or callable.
+        root: Resolved project root; only files under it are returned.
+
+    Returns:
+        The set of resolved defining file path strings under ``root``.
+    """
+    out: set[str] = set()
+    code = getattr(component, "__code__", None)
+    filename = getattr(code, "co_filename", None)
+    own = _module_file(component)
+    for path in (filename, own):
+        if path:
+            rf = Path(path).resolve()
+            if root in rf.parents:
+                out.add(str(rf))
+    return out
+
+
 def page_py_dependencies(
     component: BaseComponent | object, root: Path | None = None
 ) -> set[str]:
     """Return the transitive first-party ``.py`` files a page's code depends on.
 
-    Starts from the page callable's *real* defining file (``__code__`` filename,
-    which is correct even when ``__module__`` was reassigned, as the docs app does
-    for generated doc pages) plus its module file, and walks the import graph.
-    Captures function-based views and shared helpers that the rendered-tree walk
-    cannot see.
+    Starts from the page callable's code filename plus its module file, then
+    walks the import graph. This captures function-based views and shared
+    helpers that the rendered-tree walk cannot see.
 
     Args:
         component: The page component or callable.
@@ -387,27 +444,65 @@ def page_py_dependencies(
     root = (root or Path.cwd()).resolve()
     graph = build_import_graph(root)
 
-    start: set[str] = set()
-    code = getattr(component, "__code__", None)
-    filename = getattr(code, "co_filename", None)
-    if filename:
-        rf = Path(filename).resolve()
-        if root in rf.parents:
-            start.add(str(rf))
-    own = _module_file(component)
-    if own is not None:
-        rf = own.resolve()
-        if root in rf.parents:
-            start.add(str(rf))
-
     seen: set[str] = set()
-    stack = list(start)
+    stack = list(_component_source_files(component, root))
     while stack:
         cur = stack.pop()
         if cur in seen:
             continue
         seen.add(cur)
         stack.extend(graph.get(cur, ()))
+    return seen
+
+
+def app_dependency_files(
+    pages: Sequence[object] | None = None, root: Path | None = None
+) -> set[str]:
+    """First-party files whose change affects app-level config (not any page).
+
+    Walks the first-party import graph from the app entrypoint
+    (:func:`_app_entrypoint_file`), treating each page-defining module as a
+    barrier (not entered), so the result is the entrypoint plus the config-only
+    modules it imports, such as theme, app-wraps, stylesheets, head components, and
+    never page modules or their deep dependencies, which are tracked per page. A
+    config module shared with a page is still captured (it is reached from the
+    entrypoint directly, not through the barrier).
+
+    These configure the app-wide files an incremental rebuild reuses on disk
+    (app root, contexts, theme, stylesheet), so they are folded into
+    :func:`global_epoch`: editing one forces a full recompile instead of leaving
+    those files stale.
+
+    Args:
+        pages: The current page definitions, used as traversal barriers. When
+            None (no page set available), no barriers apply.
+        root: Project root. Defaults to cwd.
+
+    Returns:
+        The set of resolved app-config dependency file path strings, or empty if
+        the entrypoint can't be resolved.
+    """
+    root = (root or Path.cwd()).resolve()
+    entrypoint = _app_entrypoint_file(root)
+    if entrypoint is None:
+        return set()
+    file_to_mod = _loaded_first_party_modules(root)
+    barriers: set[str] = set()
+    for page in pages or ():
+        barriers |= _component_source_files(getattr(page, "component", None), root)
+
+    start = str(entrypoint)
+    seen = {start}
+    stack = [start]
+    while stack:
+        cur = stack.pop()
+        modname = file_to_mod.get(cur)
+        if modname is None:
+            continue
+        for dep in _module_import_edges(cur, modname, file_to_mod):
+            if dep not in seen and dep not in barriers:
+                seen.add(dep)
+                stack.append(dep)
     return seen
 
 
@@ -500,12 +595,12 @@ def used_state_files(
     """Return the fine-grained state files a compiled page depends on.
 
     Stateful subtrees are auto-memoized into separate components, so a page's
-    own ``output_code`` may not name the state it uses — the state lives in the
-    memo components it *owns* (its ``memo_contributions``). Each stateful memo
+    own ``output_code`` may not name the state it uses; the state lives in the
+    memo components it owns (its ``memo_contributions``). Each stateful memo
     is owned by exactly one page, which regenerates it whenever it recompiles,
     so scanning ``output_code`` plus the page's own memo components captures the
     full dependency set. If a memo can't be introspected, depend on every fine
-    state file (conservative — never stale).
+    state file.
 
     Args:
         output_code: The page's compiled JS.
@@ -606,6 +701,6 @@ def deps_unchanged(
         hasher: A memoized path -> content-hash function.
 
     Returns:
-        True iff every dependency file is byte-unchanged.
+        True if every dependency file is byte-unchanged.
     """
     return all(hasher(path) == digest for path, digest in dep_hashes.items())

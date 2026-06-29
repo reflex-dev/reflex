@@ -1,8 +1,10 @@
 """Tests for the experimental disk-persisted incremental compile cache."""
 
 import dataclasses
+import json
 from collections.abc import Callable, Sequence
-from typing import Any
+from types import SimpleNamespace
+from typing import Any, cast
 
 from reflex_base.components.component import Component
 from reflex_base.plugins import CompileContext, CompilerHooks
@@ -150,7 +152,7 @@ def test_unchanged_pages_compile_identically(tmp_path, monkeypatch):
     """The reuse correctness property: an unchanged page recompiles byte-for-byte.
 
     The disk cache leaves a hit page's already-on-disk ``.web`` file untouched, so
-    reuse is correct iff a fresh compile of that page yields identical output.
+    reuse is correct if a fresh compile of that page yields identical output.
     Compile A, B, C; then compile A, B(edited), C; A and C must be byte-identical.
     """
     web = tmp_path / ".web"
@@ -220,8 +222,6 @@ def test_incremental_rebuild_all_hits(tmp_path, monkeypatch):
 
 
 def test_incremental_rebuild_one_miss_writes_only_that_page(tmp_path, monkeypatch):
-    import json
-
     from reflex.compiler import utils as compiler_utils
 
     web = tmp_path / ".web"
@@ -273,8 +273,6 @@ def test_stateful_hit_is_marked_but_not_reevaluated(tmp_path, monkeypatch):
     re-evaluates the marked stateful pages itself, so re-evaluating them during
     the incremental rebuild was pure waste.
     """
-    import json
-
     web = tmp_path / ".web"
     web.mkdir()
     monkeypatch.setattr(disk_cache.prerequisites, "get_web_dir", lambda: web)
@@ -303,17 +301,38 @@ def test_stateful_hit_is_marked_but_not_reevaluated(tmp_path, monkeypatch):
         )
         is True
     )
-    # Not re-evaluated...
     assert reevaluated == []
-    # ...but still recorded as stateful so the backend's marker is complete.
     assert route in app._stateful_pages
 
 
 def test_load_manifest_rejects_wrong_schema(tmp_path, monkeypatch):
-    import json
-
     web = tmp_path / ".web"
     web.mkdir()
     monkeypatch.setattr(disk_cache.prerequisites, "get_web_dir", lambda: web)
     (web / disk_cache._MANIFEST_FILE).write_text(json.dumps({"schema": 999}))
     assert disk_cache.load_manifest() is None
+
+
+def test_update_manifest_for_misses_keeps_complete_imports(tmp_path, monkeypatch):
+    web = tmp_path / ".web"
+    web.mkdir()
+    monkeypatch.setattr(disk_cache.prerequisites, "get_web_dir", lambda: web)
+    monkeypatch.setattr(
+        page_cache, "state_dependency_index", lambda root=None: ({}, set())
+    )
+    monkeypatch.setattr(page_cache, "page_dependency_hashes", lambda *a, **k: {})
+
+    page = _FakePage(route="/a", component=_page_a)
+    page_ctx = SimpleNamespace(app_wrap_components={}, frontend_imports={})
+    miss_ctx = SimpleNamespace(compiled_pages={"/a": page_ctx}, stateful_routes=set())
+    complete_imports = {"memo-lib": [ImportVar("MemoThing")]}
+    manifest = _manifest({
+        "/a": {"dep_hashes": {}, "app_wrap_keys": [], "is_stateful": False}
+    })
+
+    disk_cache._update_manifest_for_misses(
+        manifest, cast(Any, miss_ctx), [page], complete_imports, root=tmp_path
+    )
+
+    written = json.loads((web / disk_cache._MANIFEST_FILE).read_text())
+    assert disk_cache._deserialize_imports(written["all_imports"]) == complete_imports

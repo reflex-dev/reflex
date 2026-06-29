@@ -1,45 +1,9 @@
-"""Experimental disk-persisted incremental compile cache (flag-gated).
+"""Disk-persisted incremental compile cache for ``REFLEX_COMPILE_CACHE``.
 
-Enabled by ``REFLEX_COMPILE_CACHE``. When off (default), nothing changes.
-
-In the ``reflex run`` edit loop every compile runs in a fresh process (the warm
-daemon forks a throwaway child per change), so there is no in-memory state to
-reuse across edits. This cache persists the small amount of bookkeeping a fresh
-process needs to recompile only what changed and reuse everything else already
-on disk.
-
-**What is persisted** (``.web/reflex_compile_cache.json``): per page, the
-``{path: hash}`` of its **dependency set** (the exact source files it read —
-own module, markdown/data, component modules in its tree, and the state files it
-uses; see ``page_cache.page_dependency_hashes``), its app-wrap key-set, and
-whether evaluating it registered new state. App-wide: the genuinely-global
-``epoch`` (reflex version + config/lockfiles), the reflex version, and the merged
-frontend imports. The manifest stores **no rendered output**: a page's compiled
-``.js`` (and its memo files) already live in ``.web`` from the prior compile — a
-hit reuses those files untouched, a miss rewrites its own — so the manifest is
-pure bookkeeping, never a second render. (This is why it stays small: storing the
-rendered ``output_code`` would balloon it for no gain, as it is never read back.)
-
-**The fast path** (``try_incremental_rebuild``). On a fresh compile it reuses the
-manifest when the global inputs match (reflex version, route set, and the global
-epoch). Each page is then a hit iff **every file in its recorded dependency set
-is byte-unchanged** — so editing one markdown doc or one shared view recompiles
-exactly the pages that depend on it, not all of them. The on-disk app-wide files
-(app root, contexts, theme, stylesheet, …) stay valid because the epoch and route
-set are unchanged. Then:
-
-- A hit page is left exactly as-is: its frontend ``.js`` is already on disk and
-  is neither rewritten nor re-evaluated.
-- A *miss* page (source changed) is fully recompiled and its files rewritten.
-- Stateful pages are recorded in the stateful-pages marker — misses from this
-  compile, hits from the manifest's ``is_stateful`` flag — so the serving backend
-  (which re-evaluates them to register their state) sees the complete set. This
-  process only writes ``.web`` and exits; it never re-evaluates a hit page.
-
-After recompiling misses, two guards must hold or the whole thing falls back to a
-full compile (return False): each miss page's app-wrap key-set and stateful flag
-must be unchanged (otherwise the reused on-disk app root would be wrong). A route
-add/remove or a global/version change also falls back to a full compile.
+The manifest stores only bookkeeping: per-page dependency hashes, app-wrap keys,
+statefulness, and app-wide frontend imports. Rendered files stay in ``.web``.
+When global inputs and routes still match, unchanged pages are reused from disk
+and only dependency-changed pages are recompiled.
 """
 
 from __future__ import annotations
@@ -59,7 +23,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
     from pathlib import Path
 
-    from reflex_base.plugins import PageDefinition
+    from reflex_base.plugins import PageContext, PageDefinition
     from reflex_base.utils.imports import ParsedImportDict
 
     from reflex.app import App
@@ -110,6 +74,37 @@ def _wrap_key_strs(keys: Any) -> list[str]:
     return sorted(f"{p}:{n}" for p, n in keys)
 
 
+def _manifest_page_entry(
+    page_ctx: PageContext,
+    component: Any,
+    state_index: dict[str, Path],
+    hasher: Callable[[str], str | None],
+    *,
+    is_stateful: bool,
+    root: Path | None = None,
+) -> dict[str, Any]:
+    """Build the manifest entry for one compiled page.
+
+    Args:
+        page_ctx: The compiled page context.
+        component: The page component/callable used for dependency discovery.
+        state_index: The state-context identifier -> file index.
+        hasher: A memoized path -> content-hash function.
+        is_stateful: Whether the page registered state during compile.
+        root: Project root for dependency discovery. Defaults to cwd.
+
+    Returns:
+        The JSON-able manifest entry for the page.
+    """
+    return {
+        "dep_hashes": page_cache.page_dependency_hashes(
+            page_ctx, component, state_index, hasher, root
+        ),
+        "app_wrap_keys": _wrap_key_strs(page_ctx.app_wrap_components.keys()),
+        "is_stateful": is_stateful,
+    }
+
+
 def load_manifest() -> dict[str, Any] | None:
     """Load the persisted compile manifest, or None if absent/unusable.
 
@@ -143,7 +138,7 @@ def write_manifest(
         compile_ctx: The completed compile context (all pages compiled).
         pages: The full list of page definitions that were compiled.
         install_imports: The **complete** frontend import set the full compile
-            installed — page imports merged with the app-root (app-wrap, e.g.
+            installed: page imports merged with the app-root (app-wrap, e.g.
             the Toaster/``sonner`` provider) and memo-component imports. An
             incremental rebuild reuses the on-disk app-wide files, so it must
             install from this complete set, not just the per-page union.
@@ -152,7 +147,7 @@ def write_manifest(
     try:
         state_index, _ = page_cache.state_dependency_index(root)
         hasher = page_cache.make_hasher()
-        epoch = page_cache.global_epoch(root)
+        epoch = page_cache.global_epoch(root, pages=pages)
 
         pages_data: dict[str, Any] = {}
         for page in pages:
@@ -163,13 +158,14 @@ def write_manifest(
                 or page_ctx.output_path is None
             ):
                 return  # incomplete compile -> do not write a partial manifest
-            pages_data[page.route] = {
-                "dep_hashes": page_cache.page_dependency_hashes(
-                    page_ctx, page.component, state_index, hasher, root
-                ),
-                "app_wrap_keys": _wrap_key_strs(page_ctx.app_wrap_components.keys()),
-                "is_stateful": page.route in compile_ctx.stateful_routes,
-            }
+            pages_data[page.route] = _manifest_page_entry(
+                page_ctx,
+                page.component,
+                state_index,
+                hasher,
+                is_stateful=page.route in compile_ctx.stateful_routes,
+                root=root,
+            )
 
         manifest = {
             "schema": _SCHEMA,
@@ -195,9 +191,11 @@ def globals_match(
 
     The fast rebuild needs the route set unchanged (adding/removing a route
     changes the shared nav on every page) and the global epoch unchanged (Reflex
-    version + config/lockfiles). Everything else is decided per page via its
-    dependency set, so a shared-component or markdown edit no longer blocks the
-    fast path — only the pages that actually depend on the changed file miss.
+    version + config/lockfiles + the app-level config files: the entrypoint and
+    the theme/app-wrap/stylesheet modules it imports, which configure the app-wide
+    files reused on disk). Everything else is decided per page via its dependency
+    set, so a shared-component or markdown edit no longer blocks the fast path.
+    Only the pages that depend on the changed file miss.
 
     Args:
         manifest: The loaded manifest.
@@ -205,7 +203,7 @@ def globals_match(
         epoch: The current global epoch (see :func:`page_cache.global_epoch`).
 
     Returns:
-        True iff the global inputs match.
+        True if the global inputs match.
     """
     return (
         manifest.get("reflex_version") == page_cache._reflex_version()
@@ -222,7 +220,7 @@ def partition_pages(
     """Return the pages whose dependency set changed since the manifest.
 
     Globals are assumed already matched (see :func:`globals_match`), so a page is
-    a hit iff every file in its recorded dependency set is byte-unchanged.
+    a hit if every file in its recorded dependency set is byte-unchanged.
 
     Args:
         pages: The current page definitions.
@@ -278,7 +276,7 @@ def try_incremental_rebuild(
     pages = list(app._unevaluated_pages.values())
     routes = {p.route for p in pages}
     hasher = page_cache.make_hasher()
-    epoch = page_cache.global_epoch(root)
+    epoch = page_cache.global_epoch(root, pages=pages)
 
     if not globals_match(manifest, routes=routes, epoch=epoch):
         return False
@@ -370,8 +368,8 @@ def try_incremental_rebuild(
                 install_imports, page_ctx.frontend_imports, memo_imports
             )
 
-    # Record which routes are stateful — miss pages from this compile, hit pages
-    # from the manifest — so the stateful-pages marker is complete. We do NOT
+    # Record which routes are stateful: miss pages from this compile, hit pages
+    # from the manifest, so the stateful-pages marker is complete. We do NOT
     # re-evaluate hit pages to register their state in this process: it only
     # produces .web and exits (the daemon, the initial compile, and CLI compiles
     # never serve), and the serving backend re-evaluates the marked stateful
@@ -399,7 +397,7 @@ def try_incremental_rebuild(
     frontend_skeleton.update_entry_client()
 
     # Refresh the manifest for the next process.
-    _update_manifest_for_misses(manifest, miss_ctx, miss_pages)
+    _update_manifest_for_misses(manifest, miss_ctx, miss_pages, install_imports, root)
 
     return True
 
@@ -408,6 +406,8 @@ def _update_manifest_for_misses(
     manifest: dict[str, Any],
     miss_ctx: CompileContext | None,
     miss_pages: Sequence[PageDefinition],
+    all_imports: ParsedImportDict,
+    root: Path | None = None,
 ) -> None:
     """Update the on-disk manifest entries for the recompiled pages.
 
@@ -415,23 +415,24 @@ def _update_manifest_for_misses(
         manifest: The loaded manifest (mutated and rewritten).
         miss_ctx: The compile context of the recompiled pages, if any.
         miss_pages: The recompiled page definitions.
+        all_imports: The complete frontend import set after recompiling misses.
+        root: Project root for dependency discovery. Defaults to cwd.
     """
     if miss_ctx is None or not miss_pages:
         return
     try:
-        state_index, _ = page_cache.state_dependency_index()
+        state_index, _ = page_cache.state_dependency_index(root)
         hasher = page_cache.make_hasher()
-        all_imports = _deserialize_imports(manifest["all_imports"])
         for page in miss_pages:
             page_ctx = miss_ctx.compiled_pages[page.route]
-            manifest["pages"][page.route] = {
-                "dep_hashes": page_cache.page_dependency_hashes(
-                    page_ctx, page.component, state_index, hasher
-                ),
-                "app_wrap_keys": _wrap_key_strs(page_ctx.app_wrap_components.keys()),
-                "is_stateful": page.route in miss_ctx.stateful_routes,
-            }
-            all_imports = merge_imports(all_imports, page_ctx.frontend_imports)
+            manifest["pages"][page.route] = _manifest_page_entry(
+                page_ctx,
+                page.component,
+                state_index,
+                hasher,
+                is_stateful=page.route in miss_ctx.stateful_routes,
+                root=root,
+            )
         manifest["all_imports"] = _serialize_imports(all_imports)
         _manifest_path().write_text(json.dumps(manifest), encoding="utf-8")
     except Exception as exc:  # best-effort

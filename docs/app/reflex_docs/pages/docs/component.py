@@ -975,9 +975,7 @@ def multi_docs(
 
     @docpage(set_path=path, t=title)
     def out():
-        # Built here (page eval) rather than at module import, so importing the
-        # docs tree — and every hot-reload reimport — doesn't construct every
-        # component's prop tables up front; only a compiled page builds its own.
+        # Build prop docs during page eval so imports stay cheap.
         components = [
             component_docs(component_tuple, previews)
             for component_tuple in component_list[1:]

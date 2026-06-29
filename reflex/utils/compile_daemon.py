@@ -1,39 +1,9 @@
-"""Persistent warm compile daemon for fast dev hot reloads (fork-per-compile).
+"""Warm compile daemon for ``REFLEX_COMPILE_CACHE`` dev hot reloads.
 
-Active in ``reflex run`` dev when ``REFLEX_COMPILE_CACHE`` is set. Instead of the
-granian/uvicorn reloader respawning a worker that cold-imports reflex +
-reflex-base + the app's heavy deps (pandas/plotly/…) on every ``.py`` change,
-this daemon imports everything **once** and stays warm. On each source change it
-``fork()``s a throwaway child that:
-
-1. purges the user's first-party modules from ``sys.modules`` and resets the
-   cross-module state/page registries (so it is, for first-party code, a clean
-   interpreter — no stale ``__subclasses__`` zombies, no duplicate-substate
-   shadowing, no ``add_page`` re-registration error);
-2. re-imports the user app fresh (third-party deps stay warm, inherited via
-   copy-on-write fork) and runs ``compiler.compile_app`` with the cache on, which
-   recompiles only the dependency-changed pages via
-   ``disk_cache.try_incremental_rebuild`` — the child *is* the fresh worker that
-   path was built for, but warm;
-3. writes only the changed ``.web`` files (atomically) and ``os._exit``s.
-
-Because every compile runs in a child that is discarded, reload corruption can
-never accumulate: correctness is the same as today's respawn, but the multi-second
-cold import is paid once instead of on every edit.
-
-The daemon owns the file watcher, so it watches exactly what the compiler reads —
-``.py``/``.md``/``.mdx`` under the app source roots **plus** every external/sibling
-content file recorded in the compile manifest's per-page dependency sets (where a
-docs app's markdown lives) plus ``rxconfig``/lockfiles/``assets`` — fixing the
-long-standing gap where markdown edits (and sibling-dir reads) never triggered a
-reload because the reloaders watch only ``*.py`` under the app dir.
-
-The watcher is a single-threaded poll loop on purpose: ``fork()`` from a
-multi-threaded process is unsafe, so the daemon must hold no background threads.
-
-On Windows (no ``os.fork``) each compile runs in a fresh spawned subprocess
-instead — correct, but without copy-on-write warmth (parity with today's latency);
-the watcher/markdown fix applies identically.
+The daemon imports the app once, then compiles each change in an isolated child.
+On POSIX it forks so third-party imports stay warm; otherwise it falls back to a
+fresh subprocess. It also owns the watch loop so markdown and external content
+dependencies recorded in the compile manifest trigger rebuilds.
 """
 
 from __future__ import annotations
@@ -58,7 +28,7 @@ _POLL_INTERVAL = 0.05
 #: After a change is seen, wait this long and re-snapshot so a burst of saves
 #: (e.g. format-on-save touching many files) collapses into a single compile.
 _DEBOUNCE = 0.05
-#: How often to re-walk the tree (``rglob``) to discover added/removed files.
+#: How often to re-walk the tree to discover added/removed files.
 #: Between rescans we only ``stat`` the known set; adds are rarer and tolerate a
 #: little latency, so this keeps idle CPU low while polling fast for edits.
 _RESCAN_INTERVAL = 1.0
@@ -149,14 +119,17 @@ def _iter_source_files(root: Path):
         if root.suffix in _WATCH_SUFFIXES:
             yield root.resolve()
         return
-    for path in root.rglob("*"):
-        if path.is_dir():
-            continue
-        rel_parts = path.relative_to(root).parts[:-1]
-        if any(part in _SKIP_DIRS or part.startswith(".") for part in rel_parts):
-            continue
-        if path.suffix in _WATCH_SUFFIXES:
-            yield path.resolve()
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [
+            name
+            for name in dirnames
+            if name not in _SKIP_DIRS and not name.startswith(".")
+        ]
+        base = Path(dirpath)
+        for name in filenames:
+            path = base / name
+            if path.suffix in _WATCH_SUFFIXES:
+                yield path.resolve()
 
 
 def _external_dependency_files(roots: list[Path]) -> set[Path]:
@@ -164,7 +137,7 @@ def _external_dependency_files(roots: list[Path]) -> set[Path]:
 
     The manifest records each page's full dependency set (own module, markdown,
     component/state modules). Any dependency that lives *outside* the reload
-    roots — e.g. a docs app's markdown in a sibling directory — is invisible to
+    roots, such as a docs app's markdown in a sibling directory, is invisible to
     ``get_reload_paths`` and must be watched explicitly so editing it rebuilds.
 
     Args:
@@ -261,7 +234,7 @@ def _first_party_module_names(roots: list[Path]) -> set[str]:
     """Names of all loaded modules belonging to the user's first-party packages.
 
     First-party top-level package names are inferred from the *regular* modules
-    whose ``__file__`` resolves under a reload root (a plain attribute read — no
+    whose ``__file__`` resolves under a reload root (a plain attribute read, no
     namespace-package ``__path__`` recalculation, which is lazy and would break
     while ``sys.modules`` is being mutated). Every loaded module sharing one of
     those top-level names is then first-party, which captures namespace packages
@@ -293,10 +266,8 @@ def _reset_first_party(roots: list[Path]) -> None:
     """Make this interpreter clean w.r.t. first-party code before re-importing.
 
     Purges the user's first-party modules from ``sys.modules`` and clears the
-    cross-module registries/caches that would otherwise pin the old class
-    objects (the ``__subclasses__`` zombie / duplicate-substate / stale-page
-    hazards). Third-party modules (reflex, reflex-base, pandas, …) are left
-    imported and warm.
+    cross-module registries/caches that would otherwise pin old class objects.
+    Third-party modules are left imported and warm.
 
     Args:
         roots: The resolved reload roots whose modules are first-party.
@@ -365,7 +336,7 @@ def _child_compile(roots: list[Path], prerender_routes: bool) -> None:
     """Reset first-party state, re-import the app fresh, and compile incrementally.
 
     Runs in a forked child (POSIX) or a one-shot subprocess (Windows). Must not
-    return normally on error — the caller maps the exit code to success/failure.
+    return normally on error; the caller maps the exit code to success/failure.
 
     Args:
         roots: The resolved reload roots.
@@ -396,7 +367,7 @@ def _await_child(pid: int) -> bool:
 
     Returns:
         True if it exited 0; False on failure, timeout, or signal (a
-        signal-killed child — e.g. Ctrl-C during shutdown — is a quiet False).
+        signal-killed child, such as Ctrl-C during shutdown, is a quiet False).
     """
     deadline = time.monotonic() + _COMPILE_TIMEOUT
     while True:
@@ -417,7 +388,7 @@ def _can_fork() -> bool:
     """Whether forking is safe right now (POSIX and the process is single-threaded).
 
     Forking a multi-threaded process and then running Python (not exec) inherits
-    locks held by threads that don't exist in the child — a classic deadlock. The
+    locks held by threads that don't exist in the child. The
     user app, imported warm in the parent, may have started a background thread
     at import time, so this is checked per compile.
 
@@ -479,7 +450,7 @@ def _serve() -> None:
 
     # Warm import + initial compile (writes .web + the manifest); keeps the app
     # and its third-party deps resident for copy-on-write children. A failure
-    # here (e.g. the app is mid-edit and broken) must NOT kill the daemon — fall
+    # here (e.g. the app is mid-edit and broken) must NOT kill the daemon; fall
     # through to the watch loop so the next edit that fixes it recompiles.
     try:
         with console.timing("Compile daemon: initial compile"):
@@ -499,7 +470,7 @@ def _serve() -> None:
     # the manifest; recompute only after a compile, not on every poll tick.
     external = _external_dependency_files(roots)
     global_files = _global_files(root)
-    # `paths` is the watched set, refreshed by an rglob rescan; each tick only
+    # `paths` is the watched set, refreshed by a tree rescan; each tick only
     # re-stats it (cheap), so the poll can be fast without burning idle CPU.
     paths = _watch_paths(roots, root, external)
     snapshot = _snapshot(paths)

@@ -168,8 +168,7 @@ def test_reset_model_metadata_allows_table_redefinition():
 def test_reset_first_party_purges_modules_and_registries(tmp_path):
     """``_reset_first_party`` purges first-party modules and clears registries.
 
-    Runs in a forked child so the global-registry reset can't corrupt the test
-    process — exactly how the daemon uses it (a throwaway child per compile).
+    Runs in a forked child so the registry reset cannot affect the test process.
     """
     mod_file = tmp_path / "fp_module.py"
     mod_file.write_text("VALUE = 1\n")

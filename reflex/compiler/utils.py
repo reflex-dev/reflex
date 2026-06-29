@@ -801,10 +801,8 @@ def add_meta(
         children.append(Description.create(content=description))
     children.append(Image.create(content=image))
 
-    # Own-before-mutate: the page root may be a shared instance (the construction
-    # cache reuses identical static subtrees across pages), so build a fresh copy
-    # with the metadata appended instead of mutating ``children`` in place —
-    # otherwise repeated reuse accumulates duplicate <title>/<meta> tags.
+    # Page roots may be shared by the construction cache; copy before appending
+    # metadata so repeated reuse does not accumulate duplicate tags.
     new_page = copy.copy(page)
     new_page.children = [*page.children, *children, *meta_tags]
     new_page._clear_compile_caches()
@@ -838,10 +836,7 @@ def write_file(path: str | Path, code: str):
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.exists() and path.read_text(encoding="utf-8") == code:
         return
-    # Write atomically (temp file + os.replace) so a reader watching this tree —
-    # e.g. the vite dev server, or a concurrent compile — never observes a
-    # half-written file, even if the writing process is killed mid-write (the
-    # compile daemon forks throwaway children that may be terminated mid-compile).
+    # Write atomically so readers never observe a half-written file.
     tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
     try:
         tmp.write_text(code, encoding="utf-8")

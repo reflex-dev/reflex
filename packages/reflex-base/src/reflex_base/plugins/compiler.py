@@ -36,12 +36,7 @@ else:
 _BaseComponentT = TypeVar("_BaseComponentT", bound=BaseComponent)
 
 
-#: Optional per-page source-read recorder, installed by an incremental compile
-#: cache. When set, :meth:`CompileContext.compile` wraps each page's evaluation
-#: in ``page_source_recorder()``; the context manager yields a set that collects
-#: the source files (e.g. markdown/data) read during that page's eval, which is
-#: then stored on the page's ``source_files``. ``None`` (default) disables
-#: recording, so the compile path is unchanged when no cache is active.
+#: Optional recorder for source files read during each page evaluation.
 page_source_recorder: Callable[[], AbstractContextManager[set[str]]] | None = None
 
 
@@ -700,15 +695,9 @@ class PageContext(BaseContext):
     output_path: str | None = None
     output_code: str | None = None
     source_module: str | None = None
-    # Source files (e.g. markdown/data) read while evaluating this page, when a
-    # per-page read recorder is installed (see ``page_source_recorder``). Lets an
-    # incremental cache depend on the exact non-import inputs a page consumed, so
-    # editing one page's data invalidates only that page. Empty when no recorder
-    # is active.
+    # Source files read while evaluating this page, when a recorder is installed.
     source_files: set[str] = dataclasses.field(default_factory=set)
-    # Auto-memo components first registered while compiling THIS page, keyed by
-    # ``(tag, source_module)``. Lets an incremental cache attribute memo
-    # contributions per page so a skipped page can re-register them.
+    # Auto-memo components first registered while compiling this page.
     memo_contributions: dict[tuple[str, str | None], Any] = dataclasses.field(
         default_factory=dict
     )
@@ -826,9 +815,7 @@ class CompileContext(BaseContext):
         self.memoize_wrappers.clear()
         self.auto_memo_components.clear()
 
-        # Reset the deterministic ref-name generator so a second in-process
-        # compile reproduces the same auto-generated names as the first (these
-        # names feed auto-memo content hashes, so drift breaks reproducibility).
+        # Keep generated ref names stable across in-process compiles.
         reset_unique_variable_names()
 
         recorder = page_source_recorder
