@@ -227,23 +227,6 @@ def _module_file(component: object) -> Path | None:
     return Path(file) if file else None
 
 
-def page_module_files(components: object) -> set[Path]:
-    """Resolve the set of module files that define the given page components.
-
-    Args:
-        components: An iterable of page component callables/objects.
-
-    Returns:
-        The set of resolved module file paths.
-    """
-    files = set()
-    for comp in components:  # type: ignore[attr-defined]
-        f = _module_file(comp)
-        if f is not None:
-            files.add(f.resolve())
-    return files
-
-
 def component_module_files(
     root_component: object, root: Path | None = None
 ) -> set[Path]:
@@ -507,22 +490,6 @@ def state_dependency_index(
             state_files.add(rf)
     fine = state_files - component_files
     return {i: f for i, f in id_to_file.items() if f in fine}, fine
-
-
-def file_hashes(files: set[Path]) -> dict[str, str]:
-    """Map each file (as a string) to a hash of its current content.
-
-    Args:
-        files: The files to hash.
-
-    Returns:
-        A mapping of file path string to content hash.
-    """
-    out: dict[str, str] = {}
-    for f in files:
-        with contextlib.suppress(OSError):
-            out[str(f)] = hashlib.sha256(f.read_bytes()).hexdigest()
-    return out
 
 
 def used_state_files(

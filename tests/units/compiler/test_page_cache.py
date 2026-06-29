@@ -15,15 +15,6 @@ def test_global_epoch_tracks_global_files(tmp_path):
     assert page_cache.global_epoch(root=tmp_path) != epoch
 
 
-def _dummy_page():  # a page-like callable defined in this module
-    return None
-
-
-def test_page_module_files_resolves(tmp_path):
-    files = page_cache.page_module_files([_dummy_page])
-    assert any(p.name == "test_page_cache.py" for p in files)
-
-
 def test_used_state_files_from_output_and_memos(tmp_path):
     from types import SimpleNamespace
 
