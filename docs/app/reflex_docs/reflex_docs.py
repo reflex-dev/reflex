@@ -95,6 +95,11 @@ def _canonical_url(path: str) -> str:
     Returns:
         The absolute canonical URL (e.g. ``https://reflex.dev/docs/state/overview/``).
     """
+    # Some routes are registered with a leading-slash-less path (e.g.
+    # docpage("overview/", ...)); normalize so the prefix join can't produce
+    # "/docsoverview/" instead of "/docs/overview/".
+    if not path.startswith("/"):
+        path = "/" + path
     url = REFLEX_DOMAIN_URL.rstrip("/") + _FRONTEND_PATH + path
     return url if url.endswith("/") else url + "/"
 
