@@ -129,6 +129,10 @@ def test_reset_model_metadata_allows_table_redefinition():
     ``Table '...' is already defined``. Run in a fork so clearing the global
     metadata can't affect the test process.
     """
+    # ``rx.Model(table=True)`` needs the SQLModel stack; the db-less unit-test
+    # job uninstalls it, so skip there rather than fail on the first definition.
+    pytest.importorskip("sqlmodel")
+
     read_fd, write_fd = os.pipe()
     pid = os.fork()
     if pid == 0:  # child
