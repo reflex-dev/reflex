@@ -1179,6 +1179,56 @@ export const pyOr = (a, b) => (isTrue(a) ? a : b());
  */
 export const pyAnd = (a, b) => (isTrue(a) ? b() : a);
 
+/***
+ * Python-semantics str.lstrip: remove leading characters in the given set.
+ * @param {string} s The string to strip.
+ * @param {string?} chars Characters to remove; null/undefined strips whitespace.
+ * @returns {string} The stripped string.
+ */
+export const pyLstrip = (s, chars) => {
+  if (chars == null) return s.trimStart();
+  const charSet = new Set(chars);
+  let start = 0;
+  while (start < s.length) {
+    const cp = String.fromCodePoint(s.codePointAt(start));
+    if (!charSet.has(cp)) break;
+    start += cp.length;
+  }
+  return s.slice(start);
+};
+
+/***
+ * Python-semantics str.rstrip: remove trailing characters in the given set.
+ * @param {string} s The string to strip.
+ * @param {string?} chars Characters to remove; null/undefined strips whitespace.
+ * @returns {string} The stripped string.
+ */
+export const pyRstrip = (s, chars) => {
+  if (chars == null) return s.trimEnd();
+  const charSet = new Set(chars);
+  let end = s.length;
+  while (end > 0) {
+    // step back over a full code point (surrogate pairs are 2 units wide)
+    let cp = s[end - 1];
+    if (end > 1) {
+      const pair = String.fromCodePoint(s.codePointAt(end - 2));
+      if (pair.length === 2) cp = pair;
+    }
+    if (!charSet.has(cp)) break;
+    end -= cp.length;
+  }
+  return s.slice(0, end);
+};
+
+/***
+ * Python-semantics str.strip: remove leading and trailing characters in the given set.
+ * @param {string} s The string to strip.
+ * @param {string?} chars Characters to remove; null/undefined strips whitespace.
+ * @returns {string} The stripped string.
+ */
+export const pyStrip = (s, chars) =>
+  chars == null ? s.trim() : pyRstrip(pyLstrip(s, chars), chars);
+
 /**
  * Get the value from a ref.
  * @param ref The ref to get the value from.

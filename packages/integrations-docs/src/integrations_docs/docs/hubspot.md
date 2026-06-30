@@ -14,8 +14,6 @@ The **HubSpot Integration** allows your app to use [HubSpot](https://www.hubspot
 4. Copy the **Access Token** from the Auth tab.
    * **Example:** `pat-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`
 
-[!HubSpot](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/hubspot.webp)
-
 ## Step 2: Configure the Integration in Your App
 
 1. Go to **Integrations → Add HubSpot** in your app settings.  

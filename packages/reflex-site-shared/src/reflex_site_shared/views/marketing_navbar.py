@@ -479,7 +479,7 @@ def case_studies_column() -> rx.Component:
                 class_name="relative z-10",
             ),
             rx.el.elements.a(
-                href="/customers",
+                href="/customers/",
                 class_name="absolute inset-0",
                 custom_attrs={"aria-label": "View Autodesk case study"},
             ),
@@ -594,7 +594,7 @@ def resources_blog_column() -> rx.Component:
         rx.el.elements.a(
             "Read All in Blog",
             ui.icon("ArrowRight01Icon", class_name="size-4 shrink-0"),
-            href="/blog",
+            href="/blog/",
             class_name="text-secondary-12 text-sm font-[525] flex items-center gap-1.5 hover:text-primary-10 dark:hover:text-primary-9 mt-auto pt-3",
         ),
         on_mount=RecentBlogsState.fetch_recent_blogs,
@@ -687,8 +687,8 @@ def resources_content() -> rx.Component:
                             solutions_column(
                                 "Learn",
                                 [
-                                    ("Documentation", "File02Icon", "/docs"),
-                                    ("Templates", "Layout02Icon", "/templates"),
+                                    ("Documentation", "File02Icon", "/docs/"),
+                                    ("Templates", "Layout02Icon", "/templates/"),
                                     ("Changelog", "Clock02Icon", CHANGELOG_URL),
                                 ],
                             ),
@@ -739,7 +739,7 @@ def navigation_menu() -> rx.Component:
                         variant="ghost",
                         native_button=False,
                     ),
-                    href="/pricing",
+                    href="/pricing/",
                 ),
                 class_name="xl:flex hidden px-1",
                 custom_attrs={"role": "menuitem"},
@@ -751,7 +751,7 @@ def navigation_menu() -> rx.Component:
                         size="sm",
                         variant="ghost",
                     ),
-                    href="/docs",
+                    href="/docs/",
                 ),
                 class_name="xl:flex hidden px-1",
                 custom_attrs={"role": "menuitem"},

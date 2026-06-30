@@ -1,3 +1,38 @@
+## v0.9.6.post1 (2026-06-26)
+
+### Features
+
+- Added the `REFLEX_EXTRA_PLUGINS` environment variable, a colon-separated list of fully qualified plugin import paths appended to the config's `plugins` list. Unlike `REFLEX_PLUGINS`, which replaces the list entirely, this preserves plugins configured in `rxconfig.py`; an entry is skipped when a plugin of the same type is already present or when its type is listed in `disable_plugins`. ([#6685](https://github.com/reflex-dev/reflex/issues/6685))
+
+### Bug Fixes
+
+- Stop warning when a non-built-in plugin is listed in `disable_plugins`, so config can opt out of an env-provided plugin without a spurious warning. ([#6685](https://github.com/reflex-dev/reflex/issues/6685))
+- Improve error message when plugin spec from environment cannot be used. ([#6685](https://github.com/reflex-dev/reflex/issues/6685))
+
+
+## v0.9.6 (2026-06-25)
+
+### Features
+
+- `StringVar` now includes `lstrip` and `rstrip` methods. The `strip` method now accepts an optional `chars` argument for consistency with Python’s str API. ([#5417](https://github.com/reflex-dev/reflex/issues/5417))
+- Added `reflex_base.utils.memo_paths`, which translates a memo's Python source module into the mirrored `.web/app_components/` JSX path and `$/...` library specifier used by the compiler. The memo component and compiler plugin now route each memo's compiled output through these helpers so it lands alongside its source module's layout, falling back to the per-name `utils/components/<name>` path when the module can't be mirrored. The helpers also derive a per-module-unique JS symbol for each mirrored memo, and the memo registry is keyed by `(name, source module)` so same-named memos defined in different modules coexist instead of colliding. ([#6457](https://github.com/reflex-dev/reflex/issues/6457))
+- `ObjectVar` attribute access now resolves `HybridProperty` descriptors defined on the underlying type, evaluating the property's frontend logic with the object var substituted as `self`. `HybridProperty` moved to `reflex_base.vars.hybrid_property` (still available as `rx._x.hybrid_property`). ([#6617](https://github.com/reflex-dev/reflex/issues/6617))
+- Add `AgentsMd` constants (canonical URL, managed-section markers, and `CLAUDE.md` bridge) supporting `reflex init` AGENTS.md generation. ([#6620](https://github.com/reflex-dev/reflex/issues/6620))
+- Added `HybridPropertyError`, raised when a hybrid property's frontend logic accesses a backend (underscore-prefixed) var on a state while building its frontend var. ([#6621](https://github.com/reflex-dev/reflex/issues/6621))
+- `package_json_template` accepts `**additional_keys` to include extra fields (e.g. `name`, `packageManager`, `engines`) in the rendered package.json. ([#6658](https://github.com/reflex-dev/reflex/issues/6658))
+
+### Bug Fixes
+
+- Preserve extra bound event arguments when `rx.upload_files` is used in an upload handler. ([#5290](https://github.com/reflex-dev/reflex/issues/5290))
+- Avoid re-entering config loading when a `State` subclass is defined in `rxconfig.py`. ([#6662](https://github.com/reflex-dev/reflex/issues/6662))
+- Bump the bundled `vite` dev dependency to 8.0.16, fixing a `server.fs.deny` bypass on Windows alternate paths (CVE-2026-53571) in the dev server of generated apps. ([#6665](https://github.com/reflex-dev/reflex/issues/6665))
+- `pyi_hashes.json` entries are now computed from the final `.pyi` content after `ruff format` / `ruff check --fix` post-processing, instead of the intermediate generator output. A pyi_generator change that only affects pre-format output no longer flags hash changes for stubs whose final content is identical.
+
+### Miscellaneous
+
+- `Component` gained a private `_get_tag_name()` helper returning the JS expression that references the component's tag (quoted for global-scope DOM tags without a library); `Component._render` and `DebounceInput` now share it instead of duplicating the quoting logic. ([#6637](https://github.com/reflex-dev/reflex/issues/6637))
+
+
 ## v0.9.5 (2026-06-10)
 
 ### Features

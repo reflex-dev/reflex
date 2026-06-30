@@ -161,9 +161,9 @@ The `pre` and `a` tags are special cases. In addition to the `text`, they also r
 
 ````python demo exec
 component_map = {
-    "h1": lambda text: rx.heading(text, size="5", margin_y="1em"),
-    "h2": lambda text: rx.heading(text, size="3", margin_y="1em"),
-    "h3": lambda text: rx.heading(text, size="1", margin_y="1em"),
+    "h1": lambda text: rx.heading(text, as_="h2", size="5", margin_y="1em"),
+    "h2": lambda text: rx.heading(text, as_="h2", size="3", margin_y="1em"),
+    "h3": lambda text: rx.heading(text, as_="h2", size="1", margin_y="1em"),
     "p": lambda text: rx.text(text, color="green", margin_y="1em"),
     "code": lambda text: rx.code(text, color="purple"),
     "pre": lambda text, **props: rx.code_block(

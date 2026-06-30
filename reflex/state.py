@@ -21,6 +21,7 @@ from typing import (
     Any,
     BinaryIO,
     ClassVar,
+    Final,
     ParamSpec,
     TypeVar,
     get_type_hints,
@@ -266,14 +267,25 @@ def get_var_for_field(cls: type[BaseState], name: str, f: Field) -> Var:
     )
 
 
+# Sentinel a delta-value coroutine may resolve to in order to suppress its key:
+# when ``_resolve_delta`` awaits a coroutine value and gets this object back, it
+# drops the key from the delta instead of writing it. Lets a value whose
+# inclusion can only be decided asynchronously be deferred into the delta as a
+# coroutine and then omitted post-hoc. Compared by identity (the object itself is
+# the contract); never serialized into a delta sent to the client.
+_DROP_FROM_DELTA: Final = object()
+
+
 async def _resolve_delta(delta: Delta) -> Delta:
-    """Await all coroutines in the delta.
+    """Await all coroutines in the delta, dropping keys that resolve to the drop sentinel.
 
     Args:
         delta: The delta to process.
 
     Returns:
-        The same delta dict with all coroutines resolved to their return value.
+        The same delta dict with all coroutines resolved to their return value,
+        and any key whose coroutine resolved to ``_DROP_FROM_DELTA`` removed
+        (along with any state subdict left empty by such removals).
     """
     tasks = {}
     for state_name, state_delta in delta.items():
@@ -284,7 +296,13 @@ async def _resolve_delta(delta: Delta) -> Delta:
                     name=f"reflex_resolve_delta|{state_name}|{var_name}|{time.time()}",
                 )
     for (state_name, var_name), task in tasks.items():
-        delta[state_name][var_name] = await task
+        resolved = await task
+        if resolved is _DROP_FROM_DELTA:
+            del delta[state_name][var_name]
+            if not delta[state_name]:
+                del delta[state_name]
+        else:
+            delta[state_name][var_name] = resolved
     return delta
 
 
@@ -1139,7 +1157,7 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             VarTypeError: if the variable has an incorrect type
         """
-        from reflex_base.config import get_config
+        from reflex_base.config import get_state_auto_setters
         from reflex_base.utils.exceptions import VarTypeError
 
         if not types.is_valid_var_type(prop._var_type):
@@ -1151,7 +1169,7 @@ class BaseState(EvenMoreBasicBaseState):
             )
             raise VarTypeError(msg)
         cls._set_var(name, prop)
-        if cls.is_user_defined() and get_config().state_auto_setters is True:
+        if cls.is_user_defined() and get_state_auto_setters() is True:
             cls._create_setter(name, prop)
         cls._set_default_value(name, prop)
 

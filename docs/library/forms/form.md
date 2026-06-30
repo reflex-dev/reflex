@@ -149,7 +149,7 @@ def form_example():
             reset_on_submit=True,
         ),
         rx.divider(),
-        rx.heading("Results"),
+        rx.heading("Results", as_="h2"),
         rx.text(FormState.form_data.to_string()),
     )
 ```
@@ -221,7 +221,7 @@ def typed_form_example():
             reset_on_submit=True,
         ),
         rx.divider(),
-        rx.heading("Results"),
+        rx.heading("Results", as_="h2"),
         rx.text(TypedFormState.form_data.to_string()),
     )
 ```
@@ -335,7 +335,7 @@ def dynamic_form():
             reset_on_submit=True,
         ),
         rx.divider(),
-        rx.heading("Results"),
+        rx.heading("Results", as_="h2"),
         rx.text(DynamicFormState.form_data.to_string()),
     )
 ```

@@ -355,7 +355,7 @@ Access real-time drag/drop state:
 - `is_over`: Boolean indicating if draggable is hovering
 - `can_drop`: Boolean indicating if drop is allowed
 
-# API Reference
+## API Reference
 
 ### rxe.dnd.draggable
 

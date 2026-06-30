@@ -39,7 +39,7 @@ class TextfieldBlur1(rx.State):
 
 def blur_example1():
     return rx.vstack(
-        rx.heading(TextfieldBlur1.text),
+        rx.heading(TextfieldBlur1.text, as_="h2"),
         rx.input(
             rx.input.slot(
                 rx.icon(tag="search"),
@@ -63,7 +63,7 @@ class TextfieldControlled1(rx.State):
 
 def controlled_example1():
     return rx.vstack(
-        rx.heading(TextfieldControlled1.text),
+        rx.heading(TextfieldControlled1.text, as_="h2"),
         rx.input(
             rx.input.slot(
                 rx.icon(tag="search"),

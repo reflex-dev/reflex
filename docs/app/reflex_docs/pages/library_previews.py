@@ -103,7 +103,7 @@ def create_previews(
     @docpage(
         right_sidebar=False,
         set_path=f"/library{prefix.rstrip('/')}/" + path.strip("/") + "/",
-        page_title=component_category + " Library",
+        page_title=component_category + " Component Library · Reflex Docs",
     )
     def page() -> rx.Component:
         from reflex_docs.templates.docpage.sidebar.sidebar_items import (

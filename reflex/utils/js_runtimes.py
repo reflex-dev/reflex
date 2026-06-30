@@ -426,7 +426,9 @@ def _existing_web_package_sections() -> tuple[set[str], set[str]]:
         A tuple ``(deps, dev_deps)`` of bare package names. Both empty if
         the file is missing or unreadable.
     """
-    web_pkg_json_path = frontend_skeleton.get_web_package_json_path()
+    web_pkg_json_path = frontend_skeleton.get_web_lockfile_path(
+        constants.PackageJson.PATH
+    )
     if not web_pkg_json_path.exists():
         return set(), set()
     try:
@@ -757,4 +759,3 @@ def install_frontend_packages(packages: set[str], config: Config):
     _sync_root_lockfiles_for_frontend_install()
     _install_frontend_packages(set(packages), config, install_package_managers)
     frontend_skeleton.sync_web_lockfiles_to_root()
-    frontend_skeleton.sync_web_package_json_to_root()

@@ -55,7 +55,7 @@ def pivot_page():
     )
 ```
 
-# Pivot using State
+## Pivot using State
 
 ```python demo exec
 import pandas as pd

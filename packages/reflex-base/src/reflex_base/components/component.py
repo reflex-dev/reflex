@@ -1175,6 +1175,18 @@ class Component(BaseComponent, ABC):
         """
         return []
 
+    def _get_tag_name(self) -> str:
+        """Get the JS expression used to reference this component's tag.
+
+        Returns:
+            The alias (or tag) identifier, quoted as a string literal when the
+            tag is a global scope element like ``"input"``.
+        """
+        name = (self.tag if not self.alias else self.alias) or ""
+        if self._is_tag_in_global_scope and self.library is None:
+            name = '"' + name + '"'
+        return name
+
     def _render(self, props: dict[str, Any] | None = None) -> Tag:
         """Define how to render the component in React.
 
@@ -1185,13 +1197,8 @@ class Component(BaseComponent, ABC):
             The tag to render.
         """
         # Create the base tag.
-        name = (self.tag if not self.alias else self.alias) or ""
-        if self._is_tag_in_global_scope and self.library is None:
-            name = '"' + name + '"'
-
-        # Create the base tag.
         tag = Tag(
-            name=name,
+            name=self._get_tag_name(),
             special_props=self.special_props.copy(),
         )
 
