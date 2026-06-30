@@ -1,6 +1,35 @@
 """Tests for the per-page dependency graph used by the incremental compile cache."""
 
+import importlib
+import sys
+
 from reflex.compiler import page_cache
+
+
+def _prepare_runtime_module(root, monkeypatch, module_name, *, import_root=None):
+    """Create a temporary module and make it importable.
+
+    Args:
+        root: Directory where the module file is written.
+        monkeypatch: Pytest monkeypatch fixture.
+        module_name: Name of the module to create.
+        import_root: Directory added to ``sys.path``. Defaults to ``root``.
+
+    Returns:
+        The created module file path.
+    """
+    module_file = root / f"{module_name}.py"
+    module_file.write_text("VALUE = 1\n")
+    monkeypatch.syspath_prepend(str(import_root or root))
+    sys.modules.pop(module_name, None)
+    importlib.invalidate_caches()
+    return module_file
+
+
+def _forget_modules(*module_names):
+    """Remove temporary modules imported by a test."""
+    for module_name in module_names:
+        sys.modules.pop(module_name, None)
 
 
 def test_global_epoch_tracks_global_files(tmp_path):
@@ -211,38 +240,27 @@ def test_app_dependency_files_skips_graph_without_entrypoint(tmp_path, monkeypat
 
 
 def test_record_reads_tracks_executed_importlib_import(tmp_path, monkeypatch):
-    import importlib
-    import sys
-
     module_name = "runtime_import_dep_for_page_cache"
-    module_file = tmp_path / f"{module_name}.py"
-    module_file.write_text("VALUE = 1\n")
-    monkeypatch.syspath_prepend(str(tmp_path))
-    monkeypatch.delitem(sys.modules, module_name, raising=False)
-    importlib.invalidate_caches()
+    module_file = _prepare_runtime_module(tmp_path, monkeypatch, module_name)
     page_cache.enable_read_tracking(root=tmp_path)
 
     try:
         with page_cache.record_reads() as reads:
             importlib.import_module(module_name)
     finally:
-        sys.modules.pop(module_name, None)
+        _forget_modules(module_name)
 
     assert str(module_file.resolve()) in reads
 
 
 def test_record_reads_tracks_executed_builtin_import(tmp_path, monkeypatch):
-    import importlib
-    import sys
-
     package = tmp_path / "runtime_import_pkg"
     package.mkdir()
     (package / "__init__.py").write_text("")
     child = package / "child.py"
     child.write_text("VALUE = 1\n")
     monkeypatch.syspath_prepend(str(tmp_path))
-    monkeypatch.delitem(sys.modules, "runtime_import_pkg", raising=False)
-    monkeypatch.delitem(sys.modules, "runtime_import_pkg.child", raising=False)
+    _forget_modules("runtime_import_pkg", "runtime_import_pkg.child")
     importlib.invalidate_caches()
     page_cache.enable_read_tracking(root=tmp_path)
 
@@ -250,22 +268,14 @@ def test_record_reads_tracks_executed_builtin_import(tmp_path, monkeypatch):
         with page_cache.record_reads() as reads:
             __import__("runtime_import_pkg.child")
     finally:
-        sys.modules.pop("runtime_import_pkg", None)
-        sys.modules.pop("runtime_import_pkg.child", None)
+        _forget_modules("runtime_import_pkg", "runtime_import_pkg.child")
 
     assert str(child.resolve()) in reads
 
 
 def test_record_reads_ignores_unexecuted_import(tmp_path, monkeypatch):
-    import importlib
-    import sys
-
     module_name = "uncalled_runtime_import_dep"
-    module_file = tmp_path / f"{module_name}.py"
-    module_file.write_text("VALUE = 1\n")
-    monkeypatch.syspath_prepend(str(tmp_path))
-    monkeypatch.delitem(sys.modules, module_name, raising=False)
-    importlib.invalidate_caches()
+    module_file = _prepare_runtime_module(tmp_path, monkeypatch, module_name)
     page_cache.enable_read_tracking(root=tmp_path)
 
     def import_if_called():
@@ -280,8 +290,6 @@ def test_record_reads_ignores_unexecuted_import(tmp_path, monkeypatch):
 
 
 def test_record_reads_imports_only_project_modules(tmp_path):
-    import importlib
-
     page_cache.enable_read_tracking(root=tmp_path)
 
     with page_cache.record_reads() as reads:
@@ -291,31 +299,26 @@ def test_record_reads_imports_only_project_modules(tmp_path):
 
 
 def test_record_reads_tracks_symlinked_project_import(tmp_path, monkeypatch):
-    import importlib
-    import sys
-
     import pytest
 
     root = tmp_path / "app"
     root.mkdir()
     module_name = "symlinked_runtime_dep"
-    module_file = root / f"{module_name}.py"
-    module_file.write_text("VALUE = 1\n")
     linked_root = tmp_path / "linked_app"
     try:
         linked_root.symlink_to(root, target_is_directory=True)
     except OSError as exc:
         pytest.skip(f"symlinks unavailable: {exc}")
-    monkeypatch.syspath_prepend(str(linked_root))
-    monkeypatch.delitem(sys.modules, module_name, raising=False)
-    importlib.invalidate_caches()
+    module_file = _prepare_runtime_module(
+        root, monkeypatch, module_name, import_root=linked_root
+    )
     page_cache.enable_read_tracking(root=root)
 
     try:
         with page_cache.record_reads() as reads:
             importlib.import_module(module_name)
     finally:
-        sys.modules.pop(module_name, None)
+        _forget_modules(module_name)
 
     assert str(module_file.resolve()) in reads
 

@@ -13,7 +13,6 @@ import contextlib
 import hashlib
 import importlib
 import importlib.util
-import os
 import re
 import sys
 from collections.abc import Callable, Sequence
@@ -59,8 +58,6 @@ def _reflex_version() -> str:
 _active_reads: ContextVar[set[str] | None] = ContextVar("_active_reads", default=None)
 _patched = False
 _recorder_root: Path | None = None
-_recorder_root_str: str | None = None
-_recorder_raw_root_str: str | None = None
 
 #: Path parts that mark a dependency/build location whose reads are never a
 #: page's own source dependency (a change there flows through the version/epoch).
@@ -85,12 +82,11 @@ _CONTENT_SUFFIXES = {
 }
 
 _PYTHON_PREFIXES = tuple(
-    os.path.abspath(os.fsdecode(prefix))  # noqa: PTH100
+    Path(prefix).resolve()
     for prefix in {sys.base_exec_prefix, sys.base_prefix, sys.exec_prefix, sys.prefix}
     if prefix
 )
-_MODULE_FILE_CACHE_MISSING: object = object()
-_module_file_cache: dict[tuple[str, str], str | None] = {}
+_module_file_cache: dict[tuple[Path, str], str | None] = {}
 
 
 def _record_read(path: object) -> None:
@@ -110,8 +106,8 @@ def _record_read(path: object) -> None:
     target.add(str(resolved))
 
 
-def _is_path_within(path: str, root: str) -> bool:
-    """Return whether ``path`` is contained within ``root`` without filesystem IO.
+def _is_inside(path: Path, root: Path) -> bool:
+    """Return whether ``path`` is nested below ``root``.
 
     Args:
         path: Absolute path to test.
@@ -120,17 +116,10 @@ def _is_path_within(path: str, root: str) -> bool:
     Returns:
         True when ``path`` is nested below ``root``.
     """
-    normalized_path = os.path.normcase(path)
-    normalized_root = os.path.normcase(root)
-    if normalized_path == normalized_root:
-        return False
-    try:
-        return os.path.commonpath((normalized_path, normalized_root)) == normalized_root
-    except ValueError:
-        return False
+    return root in path.parents
 
 
-def _is_python_install_path(path: str) -> bool:
+def _is_python_install_file(path: Path) -> bool:
     """Return whether ``path`` is under this interpreter's install roots.
 
     Args:
@@ -139,7 +128,7 @@ def _is_python_install_path(path: str) -> bool:
     Returns:
         True when ``path`` is under the interpreter or virtualenv prefix.
     """
-    return any(_is_path_within(path, prefix) for prefix in _PYTHON_PREFIXES)
+    return any(prefix in path.parents for prefix in _PYTHON_PREFIXES)
 
 
 def _recordable_module_file(file: object) -> str | None:
@@ -152,30 +141,24 @@ def _recordable_module_file(file: object) -> str | None:
         The resolved module file path to record, or None when it is outside the
         project root or otherwise not recordable.
     """
-    root = _recorder_root
-    root_str = _recorder_root_str
-    if root is None or root_str is None:
-        return None
-    if not isinstance(file, (str, bytes, os.PathLike)):
-        return None
     try:
-        raw_path = os.path.abspath(os.fsdecode(file))  # noqa: PTH100
+        path = Path(file).absolute()  # type: ignore[arg-type]
     except (OSError, TypeError, ValueError):
         return None
 
-    cache_key = (root_str, raw_path)
-    cached = _module_file_cache.get(cache_key, _MODULE_FILE_CACHE_MISSING)
-    if cached is not _MODULE_FILE_CACHE_MISSING:
-        return cached if isinstance(cached, str) else None
-
-    path = Path(raw_path)
-    under_project_path = _is_path_within(raw_path, root_str) or (
-        _recorder_raw_root_str is not None
-        and _is_path_within(raw_path, _recorder_raw_root_str)
-    )
     resolved_str = None
+    root = _recorder_root
+    if root is None:
+        return None
+
+    cache_key = (root, str(path))
+    try:
+        return _module_file_cache[cache_key]
+    except KeyError:
+        pass
+
     if not any(part in _EXCLUDE_PARTS for part in path.parts) and (
-        under_project_path or not _is_python_install_path(raw_path)
+        _is_inside(path, root) or not _is_python_install_file(path)
     ):
         try:
             resolved = path.resolve()
@@ -183,22 +166,18 @@ def _recordable_module_file(file: object) -> str | None:
             pass
         else:
             if not any(part in _EXCLUDE_PARTS for part in resolved.parts):
-                resolved_str = str(resolved) if root in resolved.parents else None
+                resolved_str = str(resolved) if _is_inside(resolved, root) else None
     _module_file_cache[cache_key] = resolved_str
     return resolved_str
 
 
-def _record_module_file(module: object, target: set[str] | None = None) -> None:
+def _record_module_file(module: object, target: set[str]) -> None:
     """Record the source file for an imported module, if it has one.
 
     Args:
         module: The imported module object.
-        target: The active read set. Defaults to the current recorder context.
+        target: The active read set.
     """
-    if target is None:
-        target = _active_reads.get()
-    if target is None:
-        return
     file = getattr(module, "__file__", None)
     if not file:
         return
@@ -242,21 +221,17 @@ def _absolute_import_name(
 def _record_imported_modules(
     name: str,
     result: object,
+    target: set[str],
     fromlist: Sequence[str] | None = None,
-    target: set[str] | None = None,
 ) -> None:
     """Record source files for modules imported while a recorder is active.
 
     Args:
         name: The absolute requested module name.
         result: The object returned by ``__import__`` or ``import_module``.
+        target: The active read set.
         fromlist: The ``fromlist`` passed to ``__import__``.
-        target: The active read set. Defaults to the current recorder context.
     """
-    if target is None:
-        target = _active_reads.get()
-    if target is None:
-        return
     _record_module_file(result, target)
     result_id = id(result)
     if (module := sys.modules.get(name)) and id(module) != result_id:
@@ -283,19 +258,11 @@ def enable_read_tracking(root: Path | None = None) -> None:
     Args:
         root: Project root; only reads under it are recorded. Defaults to cwd.
     """
-    global _patched, _recorder_raw_root_str, _recorder_root, _recorder_root_str
-    raw_root = root or Path.cwd()
-    resolved_root = raw_root.resolve()
-    raw_root_str = os.path.abspath(os.fsdecode(raw_root))  # noqa: PTH100
-    if (
-        _recorder_root != resolved_root
-        or _recorder_raw_root_str != raw_root_str
-        or _recorder_root_str != str(resolved_root)
-    ):
+    global _patched, _recorder_root
+    resolved_root = (root or Path.cwd()).resolve()
+    if _recorder_root != resolved_root:
         _module_file_cache.clear()
     _recorder_root = resolved_root
-    _recorder_root_str = str(resolved_root)
-    _recorder_raw_root_str = raw_root_str
 
     from reflex_base.plugins import compiler as _bc
 
@@ -334,14 +301,14 @@ def enable_read_tracking(root: Path | None = None) -> None:
         result = orig_import(name, globals_, locals_, fromlist, level)
         if (target := _active_reads.get()) is not None:
             _record_imported_modules(
-                _absolute_import_name(name, globals_, level), result, fromlist, target
+                _absolute_import_name(name, globals_, level), result, target, fromlist
             )
         return result
 
     def import_module(name: str, package: str | None = None):
         result = orig_import_module(name, package)
         if (target := _active_reads.get()) is not None:
-            _record_imported_modules(result.__name__, result, target=target)
+            _record_imported_modules(result.__name__, result, target)
         return result
 
     Path.read_text = read_text  # type: ignore[method-assign,assignment]
