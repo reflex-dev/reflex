@@ -151,19 +151,21 @@ for the full `User` API, including frontend Vars, `current()`, and
 
 ## Signing out
 
-There is no logout-button helper. Sign the user out by linking to `/logout` or
-by binding the provider's `redirect_to_logout` event directly:
+Sign the user out by linking to `/logout` or by binding the `User.logout` event:
 
 ```python
 import reflex as rx
-from reflex_enterprise.auth import GenericOIDCAuthState
+from reflex_enterprise.auth import User
 
 # Either link to the logout route.
 rx.link("Sign out", href="/logout")
 
-# Or bind the provider's logout event.
-rx.button("Sign out", on_click=GenericOIDCAuthState.redirect_to_logout)
+# Or bind the logout event to any component.
+rx.button("Sign out", on_click=User.logout)
 ```
+
+`User.logout` signs out whichever provider authenticated the current user, so it
+works with multiple providers and does nothing if no one is signed in.
 
 Example header:
 

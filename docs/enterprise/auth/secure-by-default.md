@@ -533,12 +533,14 @@ For backend checks, read the same claims via `await User.current()` or
 [the claims a provider
 returns](/docs/enterprise/auth/providers/#the-claims-a-provider-returns).
 
-**Backend**: call these inside an event handler. Both are async:
+**Backend**: use these inside an event handler. `current()` and
+`current_provider()` are async:
 
 | Call | Returns |
 | --- | --- |
 | `await User.current()` | The current user's `OIDCUserInfo` claims dict for this event, or `None` when anonymous. |
 | `await User.current_provider()` | The provider **class** that actually authenticated this event's user, or `None`. Correct in multi-provider setups. |
+| `User.logout` | Event handler that signs the current user out. Bind it (`on_click=User.logout`) or return it from a handler. Does nothing when anonymous. |
 
 Inside an authorization check, `ctx.auth_user_state.provider` returns the same
 provider class.
