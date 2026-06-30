@@ -15,7 +15,6 @@ Before you reach for this component, consider using Reflex's raw HTML element su
 
 ```python demo
 rx.vstack(
-    rx.html("<h1>Hello World</h1>"),
     rx.html("<h2>Hello World</h2>"),
     rx.html("<h3>Hello World</h3>"),
     rx.html("<h4>Hello World</h4>"),

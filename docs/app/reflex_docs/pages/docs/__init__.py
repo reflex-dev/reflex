@@ -214,18 +214,20 @@ def extract_doc_description(
     Returns:
         A cleaned, truncated description, or None.
     """
+    min_len = 120
     if metadata:
         for key in ("meta_description", "description"):
             value = metadata.get(key)
-            if isinstance(value, str) and value.strip():
+            if isinstance(value, str) and len(value.strip()) >= min_len:
                 return value.strip()
     if not markdown_text:
         return None
     try:
         text = markdown_text
-        # Handle a leading YAML frontmatter block (--- ... ---): prefer an
-        # explicit description field, otherwise strip the entire block so its
-        # key:value lines (title:, tags:, ...) don't leak into the description.
+        # Handle a leading YAML frontmatter block (--- ... ---): use an explicit
+        # description only when it's already long enough; otherwise strip the
+        # block and fall through to the body prose, which is usually richer than
+        # a short frontmatter field.
         frontmatter = re.match(r"﻿?\s*---\r?\n(.*?)\r?\n---\r?\n", text, flags=re.DOTALL)
         if frontmatter:
             for fm_line in frontmatter.group(1).splitlines():
@@ -234,8 +236,9 @@ def extract_doc_description(
                 )
                 if key_value:
                     value = key_value.group(1).strip().strip("\"'")
-                    if len(value) >= 20:
+                    if len(value) >= min_len:
                         return value
+                    break
             text = text[frontmatter.end() :]
         # Drop fenced code blocks (```...```), including ```python exec blocks.
         text = re.sub(r"```.*?```", "", text, flags=re.DOTALL)
@@ -258,7 +261,6 @@ def extract_doc_description(
         # substantial (~120 chars) so a short opening sentence doesn't become a
         # too-short meta description. Stop at the first structural line
         # (heading/list/code) once some prose has been collected.
-        min_len = 120
         for raw in text.splitlines():
             line = raw.strip()
             if not line:
@@ -283,7 +285,10 @@ def extract_doc_description(
             r"^~?\s*\d+\s*min(?:ute)?s?\s*(?:read)?\s*·?\s*", "", para
         )  # leading reading-time marker
         para = re.sub(r"\s+", " ", para).strip()
-        if len(para) < 20:
+        # A result shorter than the target length means the page lacks
+        # substantial body prose; return None so the caller's title-based
+        # fallback (~115 chars) is used instead of a too-short description.
+        if len(para) < min_len:
             return None
         if len(para) > max_len:
             para = para[:max_len].rsplit(" ", 1)[0].rstrip(",.;:") + "…"
