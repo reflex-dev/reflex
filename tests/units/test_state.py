@@ -5006,6 +5006,43 @@ async def test_rebind_mutable_proxy(
         assert state.data["b"] == [2, 3]
 
 
+@pytest.mark.asyncio
+async def test_immutable_mutable_proxy_async_context_manager(
+    token: str, attached_mock_event_context: EventContext
+) -> None:
+    """Mutable state proxies can enter the owning StateProxy context."""
+    state_manager = attached_mock_event_context.state_manager
+
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=MutableProxyState)
+    ) as state:
+        state.router = RouterData.from_router_data({
+            "query": {},
+            "token": token,
+            "sid": "test_sid",
+        })
+        state_proxy = StateProxy(state)
+        data_proxy = state_proxy.data
+
+    assert isinstance(data_proxy, ImmutableMutableProxy)
+    with pytest.raises(ImmutableStateError):
+        data_proxy["a"].append(3)
+
+    async with data_proxy as mutable_data:
+        assert mutable_data is data_proxy
+        data_proxy["a"].append(3)
+        mutable_data["b"].append(4)
+
+    with pytest.raises(ImmutableStateError):
+        data_proxy["a"].append(5)
+
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=MutableProxyState)
+    ) as state:
+        assert state.data["a"] == [1, 3]
+        assert state.data["b"] == [2, 4]
+
+
 def test_override_base_method_skips_event_handler_wrapping():
     """A method marked with __override_base_method__ should not be wrapped as an EventHandler."""
     from reflex.state import _override_base_method

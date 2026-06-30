@@ -467,6 +467,32 @@ class MutableProxy(wrapt.ObjectProxy):
         """
         return f"{type(self).__name__}({self.__wrapped__})"
 
+    async def __aenter__(self) -> Self:
+        """Enter the async context manager protocol through the bound state.
+
+        Returns:
+            This proxy refreshed from the current state field.
+        """
+        state = await self._self_state.__aenter__()
+        try:
+            refreshed_value = getattr(state, self._self_field_name)
+            if isinstance(refreshed_value, MutableProxy):
+                super().__setattr__("__wrapped__", refreshed_value.__wrapped__)
+                self._self_state = refreshed_value._self_state
+                self._self_field_name = refreshed_value._self_field_name
+        except (Exception, asyncio.CancelledError):
+            await self._self_state.__aexit__(*sys.exc_info())
+            raise
+        return self
+
+    async def __aexit__(self, *exc_info: Any) -> None:
+        """Exit the async context manager protocol through the bound state.
+
+        Args:
+            exc_info: The exception info tuple.
+        """
+        await self._self_state.__aexit__(*exc_info)
+
     def _mark_dirty(
         self,
         wrapped: Callable | None = None,
