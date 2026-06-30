@@ -254,13 +254,21 @@ def extract_doc_description(
             "```",
             *(f"{n}." for n in range(1, 10)),
         )
+        # Accumulate prose across paragraph breaks until the description is
+        # substantial (~120 chars) so a short opening sentence doesn't become a
+        # too-short meta description. Stop at the first structural line
+        # (heading/list/code) once some prose has been collected.
+        min_len = 120
         for raw in text.splitlines():
             line = raw.strip()
             if not line:
-                if para_lines:
+                if len(" ".join(para_lines)) >= min_len:
                     break
                 continue
             if line.startswith(skip_prefixes):
+                # Skip structural lines (headings/lists/code markers) but keep
+                # gathering prose from later sections until the description is
+                # long enough — short opening sentences alone are too short.
                 continue
             para_lines.append(line)
         if not para_lines:
@@ -269,7 +277,9 @@ def extract_doc_description(
         para = re.sub(r"!\[[^\]]*\]\([^)]*\)", "", para)  # images
         para = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", para)  # links -> text
         para = re.sub(r"[*_`]+", "", para)  # emphasis / inline code
-        para = re.sub(r"^~?\s*\d+\s*min\s*(?:read)?\s*·?\s*", "", para)  # reading time
+        para = re.sub(
+            r"^~?\s*\d+\s*min(?:ute)?s?\s*(?:read)?\s*·?\s*", "", para
+        )  # leading reading-time marker
         para = re.sub(r"\s+", " ", para).strip()
         if len(para) < 20:
             return None
