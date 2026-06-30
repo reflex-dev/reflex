@@ -5023,23 +5023,39 @@ async def test_immutable_mutable_proxy_async_context_manager(
         })
         state_proxy = StateProxy(state)
         data_proxy = state_proxy.data
+        items_proxy = data_proxy["a"]
 
     assert isinstance(data_proxy, ImmutableMutableProxy)
+    assert isinstance(items_proxy, ImmutableMutableProxy)
     with pytest.raises(ImmutableStateError):
         data_proxy["a"].append(3)
+    with pytest.raises(ImmutableStateError):
+        items_proxy.append(3)
+
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=MutableProxyState)
+    ) as state:
+        state.data["a"].append(2)
 
     async with data_proxy as mutable_data:
         assert mutable_data is data_proxy
         data_proxy["a"].append(3)
         mutable_data["b"].append(4)
 
+    async with items_proxy as mutable_items:
+        assert mutable_items is items_proxy
+        mutable_items.append(5)
+        assert items_proxy.__wrapped__ == [1, 2, 3, 5]
+
     with pytest.raises(ImmutableStateError):
-        data_proxy["a"].append(5)
+        data_proxy["a"].append(6)
+    with pytest.raises(ImmutableStateError):
+        items_proxy.append(6)
 
     async with state_manager.modify_state(
         BaseStateToken(ident=token, cls=MutableProxyState)
     ) as state:
-        assert state.data["a"] == [1, 3]
+        assert state.data["a"] == [1, 2, 3, 5]
         assert state.data["b"] == [2, 4]
 
 

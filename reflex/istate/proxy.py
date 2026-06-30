@@ -12,7 +12,7 @@ import sys
 from collections.abc import Callable, Sequence
 from importlib.util import find_spec
 from types import MethodType
-from typing import TYPE_CHECKING, Any, SupportsIndex, TypeVar
+from typing import TYPE_CHECKING, Any, NoReturn, SupportsIndex, TypeVar
 
 import wrapt
 from reflex_base.event import Event
@@ -446,7 +446,13 @@ class MutableProxy(wrapt.ObjectProxy):
             cls = cls.__dataclass_proxies__[wrapper_cls_name]
         return super().__new__(cls)  # pyright: ignore[reportArgumentType]
 
-    def __init__(self, wrapped: Any, state: BaseState, field_name: str):
+    def __init__(
+        self,
+        wrapped: Any,
+        state: BaseState,
+        field_name: str,
+        path: tuple[tuple[str, Any], ...] | None = None,
+    ):
         """Create a proxy for a mutable object that tracks changes.
 
         Args:
@@ -454,10 +460,13 @@ class MutableProxy(wrapt.ObjectProxy):
             state: The state to mark dirty when the object is changed.
             field_name: The name of the field on the state associated with the
                 wrapped object.
+            path: Access path from the state field to this wrapped object.
         """
         super().__init__(wrapped)
         self._self_state = state
         self._self_field_name = field_name
+        self._self_path = path or ()
+        self._self_actx_state = None
 
     def __repr__(self) -> str:
         """Get the representation of the wrapped object.
@@ -473,17 +482,37 @@ class MutableProxy(wrapt.ObjectProxy):
         Returns:
             This proxy refreshed from the current state field.
         """
-        state = await self._self_state.__aenter__()
+        context_state = self._self_state
+        self._self_actx_state = context_state
+        state = await context_state.__aenter__()
         try:
             refreshed_value = getattr(state, self._self_field_name)
+            for access_kind, access_key in self._self_path:
+                refreshed_value = (
+                    getattr(refreshed_value, access_key)
+                    if access_kind == "attr"
+                    else refreshed_value[access_key]
+                )
             if isinstance(refreshed_value, MutableProxy):
                 super().__setattr__("__wrapped__", refreshed_value.__wrapped__)
                 self._self_state = refreshed_value._self_state
                 self._self_field_name = refreshed_value._self_field_name
+                self._self_path = refreshed_value._self_path
+            else:
+                self._raise_refresh_error()
         except (Exception, asyncio.CancelledError):
-            await self._self_state.__aexit__(*sys.exc_info())
+            await context_state.__aexit__(*sys.exc_info())
+            self._self_actx_state = None
             raise
         return self
+
+    def _raise_refresh_error(self) -> NoReturn:
+        """Raise when this proxy cannot be refreshed from its state field."""
+        msg = (
+            "Unable to refresh mutable proxy from state field "
+            f"`{self._self_field_name}`."
+        )
+        raise RuntimeError(msg)
 
     async def __aexit__(self, *exc_info: Any) -> None:
         """Exit the async context manager protocol through the bound state.
@@ -491,7 +520,11 @@ class MutableProxy(wrapt.ObjectProxy):
         Args:
             exc_info: The exception info tuple.
         """
-        await self._self_state.__aexit__(*exc_info)
+        context_state = self._self_actx_state or self._self_state
+        try:
+            await context_state.__aexit__(*exc_info)
+        finally:
+            self._self_actx_state = None
 
     def _mark_dirty(
         self,
@@ -539,11 +572,14 @@ class MutableProxy(wrapt.ObjectProxy):
                 return True
         return False
 
-    def _wrap_recursive(self, value: Any) -> Any:
+    def _wrap_recursive(
+        self, value: Any, path: tuple[tuple[str, Any], ...] | None = None
+    ) -> Any:
         """Wrap a value recursively if it is mutable.
 
         Args:
             value: The value to wrap.
+            path: Access path from the state field to this wrapped object.
 
         Returns:
             The wrapped value.
@@ -562,6 +598,7 @@ class MutableProxy(wrapt.ObjectProxy):
                 wrapped=value,
                 state=self._self_state,
                 field_name=self._self_field_name,
+                path=path or self._self_path,
             )
         return value
 
@@ -618,10 +655,11 @@ class MutableProxy(wrapt.ObjectProxy):
         if is_mutable_type(type(value)) and __name not in (
             "__wrapped__",
             "_self_state",
+            "_self_path",
             "__dict__",
         ):
             # Recursively wrap mutable attribute values retrieved through this proxy.
-            return self._wrap_recursive(value)
+            return self._wrap_recursive(value, (*self._self_path, ("attr", __name)))
 
         return value
 
@@ -638,7 +676,7 @@ class MutableProxy(wrapt.ObjectProxy):
         if isinstance(key, slice) and isinstance(value, list):
             return [self._wrap_recursive(item) for item in value]
         # Recursively wrap mutable items retrieved through this proxy.
-        return self._wrap_recursive(value)
+        return self._wrap_recursive(value, (*self._self_path, ("item", key)))
 
     def __iter__(self) -> Any:
         """Iterate over the proxied object and return a proxy if mutable.
