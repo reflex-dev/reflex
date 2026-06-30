@@ -266,9 +266,11 @@ def extract_doc_description(
                     break
                 continue
             if line.startswith(skip_prefixes):
-                # Skip structural lines (headings/lists/code markers) but keep
-                # gathering prose from later sections until the description is
-                # long enough — short opening sentences alone are too short.
+                # At a structural line (heading/list/code): stop if we already
+                # have enough prose (so a later section isn't stitched in),
+                # otherwise keep gathering so short openers aren't too short.
+                if len(" ".join(para_lines)) >= min_len:
+                    break
                 continue
             para_lines.append(line)
         if not para_lines:
