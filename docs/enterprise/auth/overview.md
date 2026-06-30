@@ -164,8 +164,9 @@ rx.link("Sign out", href="/logout")
 rx.button("Sign out", on_click=User.logout)
 ```
 
-`User.logout` signs out whichever provider authenticated the current user, so it
-works with multiple providers and does nothing if no one is signed in.
+`User.logout` signs out whichever provider the user logged in with, so it works
+with multiple providers. If no one is signed in there's nothing to sign out, so
+it just sends them back to the home page (`/`).
 
 Example header:
 

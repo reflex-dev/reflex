@@ -540,7 +540,7 @@ returns](/docs/enterprise/auth/providers/#the-claims-a-provider-returns).
 | --- | --- |
 | `await User.current()` | The current user's `OIDCUserInfo` claims dict for this event, or `None` when anonymous. |
 | `await User.current_provider()` | The provider **class** that actually authenticated this event's user, or `None`. Correct in multi-provider setups. |
-| `User.logout` | Event handler that signs the current user out. Bind it (`on_click=User.logout`) or return it from a handler. Does nothing when anonymous. |
+| `User.logout` | Event handler that signs the current user out. Bind it (`on_click=User.logout`) or return it from a handler. Redirects to the home page (`/`) when anonymous. |
 
 Inside an authorization check, `ctx.auth_user_state.provider` returns the same
 provider class.
