@@ -5,10 +5,6 @@ description: Connect Reflex Build to GitLab, Bitbucket, or any Git remote using 
 
 # Connecting to Git Providers
 
-```python exec
-import reflex as rx
-```
-
 Besides the [GitHub integration](/docs/ai/features/connect-to-github/), Reflex Build can sync to any Git remote, including GitLab, Bitbucket, a self-hosted server, or an existing GitHub repository. You connect it with a repository URL and a personal access token, then push and pull the same way you would with GitHub.
 
 ## What You Need
