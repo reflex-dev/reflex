@@ -234,9 +234,9 @@ for the session.
 
 ## Multiple providers
 
-With two or more providers, `/login` shows one login button per provider instead
-of redirecting automatically to a single IdP. The callback resolves the
-**initiating** provider from the OAuth `state` parameter. Logout resolves the
+`/login` shows one login button per provider, including when there is only one —
+it never redirects to an IdP automatically. The callback resolves the
+**initiating** provider from the OAuth `state` parameter; logout resolves the
 **active** provider currently holding tokens.
 
 ```python
