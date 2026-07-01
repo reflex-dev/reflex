@@ -198,17 +198,39 @@ class DatabricksAuthState(OIDCAuthState, rx.State):
 
 ### Reading granted scopes
 
-Every provider exposes a `granted_scopes` Var containing the space-delimited
-scopes the IdP actually granted. Use it to gate optional-scope features at
-runtime:
+Every provider exposes a `granted_scopes` Var holding the space-delimited scopes
+the IdP actually granted. `await User.current_provider()` resolves whichever
+provider authenticated the current user, so derive a computed var on your own
+state that reads the active provider's scopes — then `rx.cond` gates on it,
+regardless of which provider the user logged in with:
+
+```python
+import reflex as rx
+from reflex_enterprise.auth import User
+
+
+class DemoState(rx.State):
+    @rx.var(initial_value=False, auto_deps=False, deps=[])
+    async def has_offline_access(self) -> bool:
+        """Whether the active provider was granted `offline_access`."""
+        provider = await User.current_provider()
+        if provider is None:
+            return False
+        scopes = (await self.get_state(provider)).granted_scopes.split()
+        return "offline_access" in scopes
+```
 
 ```python
 rx.cond(
-    DatabricksAuthState.granted_scopes.contains("offline_access"),
+    DemoState.has_offline_access,
     rx.text("Long-lived session enabled"),
     rx.text("Session ends at token expiry"),
 )
 ```
+
+Granted scopes are fixed once the user logs in, so the var carries no reactive
+dependencies (`auto_deps=False, deps=[]`): it resolves on login and stays stable
+for the session.
 
 ## Multiple providers
 
