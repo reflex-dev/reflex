@@ -17,9 +17,9 @@ rx.heading("The quick brown fox jumps over the lazy dog.", as_="h2")
 
 Use the `as_` prop to change the heading level. This prop is purely semantic and does not change the visual appearance.
 
-```python demo
+```python
 rx.flex(
-    rx.heading("Level 1", as_="h2"),
+    rx.heading("Level 1", as_="h1"),
     rx.heading("Level 2", as_="h2"),
     rx.heading("Level 3", as_="h3"),
     direction="column",

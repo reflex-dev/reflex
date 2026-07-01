@@ -12,9 +12,9 @@ import reflex as rx
 The `rx.markdown` component can be used to render markdown text.
 It is based on [Github Flavored Markdown](https://github.github.com/gfm/).
 
-```python demo
+```python
 rx.vstack(
-    rx.markdown("## Hello World!"),
+    rx.markdown("# Hello World!"),
     rx.markdown("## Hello World!"),
     rx.markdown("### Hello World!"),
     rx.markdown("Support us on [Github](https://github.com/reflex-dev/reflex)."),
