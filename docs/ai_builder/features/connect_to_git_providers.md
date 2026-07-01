@@ -1,11 +1,11 @@
 ---
 tags: DevTools
-description: Connect Reflex Build to GitLab, Bitbucket, or any Git remote using a repository URL and personal access token.
+description: Connect Reflex Build to GitLab, Bitbucket, or any Git remote using a repository URL and fine-grained access token.
 ---
 
 # Connecting to Git Providers
 
-Besides the [GitHub integration](/docs/ai/features/connect-to-github/), Reflex Build can sync to any Git remote, including GitLab, Bitbucket, a self-hosted server, or an existing GitHub repository. You connect it with a repository URL and a personal access token, then push and pull the same way you would with GitHub.
+Besides the [GitHub integration](/docs/ai/features/connect-to-github/), Reflex Build can sync to any Git remote, including GitLab, Bitbucket, a self-hosted server, or an existing GitHub repository. You connect it with a repository URL and a fine-grained access token, then push and pull the same way you would with GitHub.
 
 ## What You Need
 
@@ -13,9 +13,9 @@ To connect, provide:
 
 - **Remote URL**: the HTTPS clone URL of the repository (for example `https://gitlab.com/your-org/your-app.git`).
 - **Branch**: the branch to sync with. Point at an existing branch, or name a new branch for an empty repository.
-- **Personal access token (PAT)**: a token from your provider with permission to read and write the repository. It authenticates pushes and pulls.
+- **Fine-grained access token**: a token from your provider with permission to read and write the repository. It authenticates pushes and pulls.
 
-Unlike the GitHub integration, which each user authorizes with their own account, the PAT is saved as one of the app's secrets (`GIT_PAT_TOKEN`). Anyone working on the app pushes and pulls with that stored token, so use a token whose repository access is appropriate to share with the app's collaborators.
+Unlike the GitHub integration, which each user authorizes with their own account, the token is saved as one of the app's secrets (`GIT_PAT_TOKEN`). Anyone working on the app pushes and pulls with that stored token, so use a token whose repository access is appropriate to share with the app's collaborators.
 
 ## How It Works
 
@@ -24,7 +24,7 @@ The connection tracks two separate repositories: the internal history Reflex Bui
 ## Connecting
 
 1. Open the Git connection dialog in the editor and choose the generic Git option.
-2. Enter the remote URL, the branch, and your personal access token.
+2. Enter the remote URL, the branch, and your fine-grained access token.
 3. Choose whether to pull the remote's files into the editor immediately after connecting.
 
 After connecting, the **Push** and **Pull** actions work the same as with GitHub.
