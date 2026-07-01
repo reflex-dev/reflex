@@ -89,21 +89,36 @@ _PYTHON_PREFIXES = tuple(
 _module_file_cache: dict[tuple[Path, str], str | None] = {}
 
 
+@contextlib.contextmanager
+def _suspend_tracking():
+    """Ignore read/import hooks caused by dependency bookkeeping.
+
+    Yields:
+        None.
+    """
+    token = _active_reads.set(None)
+    try:
+        yield
+    finally:
+        _active_reads.reset(token)
+
+
 def _record_read(path: object) -> None:
     target = _active_reads.get()
     if target is None:
         return
-    try:
-        resolved = Path(path).resolve()  # type: ignore[arg-type]
-    except (OSError, TypeError, ValueError):
-        return
-    if any(part in _EXCLUDE_PARTS for part in resolved.parts):
-        return
-    root = _recorder_root
-    under_root = root is not None and root in resolved.parents
-    if not under_root and resolved.suffix.lower() not in _CONTENT_SUFFIXES:
-        return
-    target.add(str(resolved))
+    with _suspend_tracking():
+        try:
+            resolved = Path(path).resolve()  # type: ignore[arg-type]
+        except (OSError, TypeError, ValueError):
+            return
+        if any(part in _EXCLUDE_PARTS for part in resolved.parts):
+            return
+        root = _recorder_root
+        under_root = root is not None and root in resolved.parents
+        if not under_root and resolved.suffix.lower() not in _CONTENT_SUFFIXES:
+            return
+        target.add(str(resolved))
 
 
 def _is_inside(path: Path, root: Path) -> bool:
@@ -141,34 +156,35 @@ def _recordable_module_file(file: object) -> str | None:
         The resolved module file path to record, or None when it is outside the
         project root or otherwise not recordable.
     """
-    try:
-        path = Path(file).absolute()  # type: ignore[arg-type]
-    except (OSError, TypeError, ValueError):
-        return None
-
-    resolved_str = None
-    root = _recorder_root
-    if root is None:
-        return None
-
-    cache_key = (root, str(path))
-    try:
-        return _module_file_cache[cache_key]
-    except KeyError:
-        pass
-
-    if not any(part in _EXCLUDE_PARTS for part in path.parts) and (
-        _is_inside(path, root) or not _is_python_install_file(path)
-    ):
+    with _suspend_tracking():
         try:
-            resolved = path.resolve()
+            path = Path(file).absolute()  # type: ignore[arg-type]
         except (OSError, TypeError, ValueError):
+            return None
+
+        resolved_str = None
+        root = _recorder_root
+        if root is None:
+            return None
+
+        cache_key = (root, str(path))
+        try:
+            return _module_file_cache[cache_key]
+        except KeyError:
             pass
-        else:
-            if not any(part in _EXCLUDE_PARTS for part in resolved.parts):
-                resolved_str = str(resolved) if _is_inside(resolved, root) else None
-    _module_file_cache[cache_key] = resolved_str
-    return resolved_str
+
+        if not any(part in _EXCLUDE_PARTS for part in path.parts) and (
+            _is_inside(path, root) or not _is_python_install_file(path)
+        ):
+            try:
+                resolved = path.resolve()
+            except (OSError, TypeError, ValueError):
+                pass
+            else:
+                if not any(part in _EXCLUDE_PARTS for part in resolved.parts):
+                    resolved_str = str(resolved) if _is_inside(resolved, root) else None
+        _module_file_cache[cache_key] = resolved_str
+        return resolved_str
 
 
 def _record_module_file(module: object, target: set[str]) -> None:
@@ -301,7 +317,10 @@ def enable_read_tracking(root: Path | None = None) -> None:
         result = orig_import(name, globals_, locals_, fromlist, level)
         if (target := _active_reads.get()) is not None:
             _record_imported_modules(
-                _absolute_import_name(name, globals_, level), result, target, fromlist
+                _absolute_import_name(name, globals_, level),
+                result,
+                target,
+                fromlist,
             )
         return result
 

@@ -2,6 +2,7 @@
 
 import importlib
 import sys
+from pathlib import Path
 
 from reflex.compiler import page_cache
 
@@ -287,6 +288,32 @@ def test_record_reads_ignores_unexecuted_import(tmp_path, monkeypatch):
     assert import_if_called
     assert str(module_file.resolve()) not in reads
     assert module_name not in sys.modules
+
+
+def test_record_reads_no_recursion_when_recorder_import_triggers_import(
+    tmp_path, monkeypatch
+):
+    """Recorder-internal imports must not re-enter dependency tracking."""
+    module_name = "recorder_reentry_dep"
+    module_file = _prepare_runtime_module(tmp_path, monkeypatch, module_name)
+    page_cache.enable_read_tracking(root=tmp_path)
+
+    real_absolute = Path.absolute
+
+    def absolute_with_lazy_import(self: Path):
+        __import__("ntpath")
+        return real_absolute(self)
+
+    monkeypatch.setattr(Path, "absolute", absolute_with_lazy_import)
+
+    try:
+        with page_cache.record_reads() as reads:
+            importlib.import_module(module_name)
+    finally:
+        _forget_modules(module_name)
+
+    assert str(module_file.resolve()) in reads
+    assert not any("ntpath" in read for read in reads)
 
 
 def test_record_reads_imports_only_project_modules(tmp_path):
