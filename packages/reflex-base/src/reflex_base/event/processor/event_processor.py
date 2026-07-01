@@ -124,6 +124,9 @@ class EventProcessor:
     _active_on_load_futures: dict[str, EventFuture] = dataclasses.field(
         default_factory=dict, init=False
     )
+    _active_on_load_tokens: dict[str, str] = dataclasses.field(
+        default_factory=dict, init=False
+    )
     _token_queues: dict[
         str,
         collections.deque[tuple[EventQueueEntry, RegisteredEventHandler]],
@@ -316,6 +319,7 @@ class EventProcessor:
         # Discard any pending per-token queue entries.
         self._token_queues.clear()
         self._active_on_load_futures.clear()
+        self._active_on_load_tokens.clear()
         # Cancel any remaining unresolved futures.
         for future in self._futures.values():
             if not future.done():
@@ -527,9 +531,12 @@ class EventProcessor:
             current: The newly enqueued on_load future.
         """
         previous = self._active_on_load_futures.get(token)
-        if previous is not None and previous is not current and not previous.all_done():
-            previous.cancel()
+        if previous is not None and previous is not current:
+            self._active_on_load_tokens.pop(previous.txid, None)
+            if not previous.all_done():
+                previous.cancel()
         self._active_on_load_futures[token] = current
+        self._active_on_load_tokens[current.txid] = token
 
     def _try_clean_active_on_load_future(self, future: EventFuture) -> None:
         """Remove a completed active on_load future.
@@ -539,9 +546,9 @@ class EventProcessor:
         """
         if not future.all_done():
             return
-        for token, active_future in list(self._active_on_load_futures.items()):
-            if active_future is future:
-                self._active_on_load_futures.pop(token, None)
+        token = self._active_on_load_tokens.pop(future.txid, None)
+        if token is not None and self._active_on_load_futures.get(token) is future:
+            self._active_on_load_futures.pop(token, None)
 
     def _on_future_done(self, future: EventFuture) -> None:  # type: ignore[override]
         """Callback invoked when an enqueued future completes.

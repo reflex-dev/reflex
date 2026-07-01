@@ -488,11 +488,13 @@ async def test_new_on_load_internal_cancels_previous_chain(
 
     processor.configure()
     async with processor as ep:
-        await ep.enqueue(
+        stale = await ep.enqueue(
             token,
             Event(name=on_load_event_name, payload={"value": "stale"}),
         )
         await asyncio.wait_for(stale_started.wait(), timeout=1)
+        assert stale.done()
+        assert not stale.all_done()
 
         current = await ep.enqueue(
             token,
