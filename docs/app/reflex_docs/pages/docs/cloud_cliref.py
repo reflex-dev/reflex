@@ -345,5 +345,8 @@ for module_name, module_value in modules.items():
     docs = generate_docs(module_value)
     title = module_name.replace("_", " ").title()
     page_data = docpage(f"/hosting/cli/{module_name}/", title)(docs)
-    page_data.title = page_data.title.split("·")[0].strip()
+    # Keep the short sidebar/nav label (e.g. "Deploy"), but emit a descriptive
+    # HTML <title> for SEO.
+    page_data.title = title
+    page_data.seo_title = f"{title} · Reflex Cloud CLI Reference · Reflex Docs"
     pages.append(page_data)
