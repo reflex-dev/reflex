@@ -214,18 +214,20 @@ def extract_doc_description(
     Returns:
         A cleaned, truncated description, or None.
     """
+    min_len = 120
     if metadata:
         for key in ("meta_description", "description"):
             value = metadata.get(key)
-            if isinstance(value, str) and value.strip():
+            if isinstance(value, str) and len(value.strip()) >= min_len:
                 return value.strip()
     if not markdown_text:
         return None
     try:
         text = markdown_text
-        # Handle a leading YAML frontmatter block (--- ... ---): prefer an
-        # explicit description field, otherwise strip the entire block so its
-        # key:value lines (title:, tags:, ...) don't leak into the description.
+        # Handle a leading YAML frontmatter block (--- ... ---): use an explicit
+        # description only when it's already long enough; otherwise strip the
+        # block and fall through to the body prose, which is usually richer than
+        # a short frontmatter field.
         frontmatter = re.match(r"﻿?\s*---\r?\n(.*?)\r?\n---\r?\n", text, flags=re.DOTALL)
         if frontmatter:
             for fm_line in frontmatter.group(1).splitlines():
@@ -234,8 +236,11 @@ def extract_doc_description(
                 )
                 if key_value:
                     value = key_value.group(1).strip().strip("\"'")
-                    if len(value) >= 20:
+                    if len(value) >= min_len:
                         return value
+                    # Too short: keep scanning in case a later key
+                    # (e.g. `description:` after a short `meta_description:`)
+                    # holds a long-enough value before falling to body prose.
             text = text[frontmatter.end() :]
         # Drop fenced code blocks (```...```), including ```python exec blocks.
         text = re.sub(r"```.*?```", "", text, flags=re.DOTALL)
@@ -254,13 +259,22 @@ def extract_doc_description(
             "```",
             *(f"{n}." for n in range(1, 10)),
         )
+        # Accumulate prose across paragraph breaks until the description is
+        # substantial (~120 chars) so a short opening sentence doesn't become a
+        # too-short meta description. Stop at the first structural line
+        # (heading/list/code) once some prose has been collected.
         for raw in text.splitlines():
             line = raw.strip()
             if not line:
-                if para_lines:
+                if len(" ".join(para_lines)) >= min_len:
                     break
                 continue
             if line.startswith(skip_prefixes):
+                # At a structural line (heading/list/code): stop if we already
+                # have enough prose (so a later section isn't stitched in),
+                # otherwise keep gathering so short openers aren't too short.
+                if len(" ".join(para_lines)) >= min_len:
+                    break
                 continue
             para_lines.append(line)
         if not para_lines:
@@ -269,9 +283,15 @@ def extract_doc_description(
         para = re.sub(r"!\[[^\]]*\]\([^)]*\)", "", para)  # images
         para = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", para)  # links -> text
         para = re.sub(r"[*_`]+", "", para)  # emphasis / inline code
-        para = re.sub(r"^~?\s*\d+\s*min\s*(?:read)?\s*·?\s*", "", para)  # reading time
+        # Leading reading-time marker ("3 min read", "~3 min ·"). Require a
+        # "read" keyword or a "·" separator so real prose that merely opens with
+        # "<n> minutes …" isn't mistaken for a badge and stripped of its subject.
+        para = re.sub(r"^~?\s*\d+\s*min(?:ute)?s?\s*(?:read\s*·?|·)\s*", "", para)
         para = re.sub(r"\s+", " ", para).strip()
-        if len(para) < 20:
+        # A result shorter than the target length means the page lacks
+        # substantial body prose; return None so the caller's title-based
+        # fallback (~115 chars) is used instead of a too-short description.
+        if len(para) < min_len:
             return None
         if len(para) > max_len:
             para = para[:max_len].rsplit(" ", 1)[0].rstrip(",.;:") + "…"

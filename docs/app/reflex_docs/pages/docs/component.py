@@ -506,6 +506,13 @@ def generate_props(
     }
     skip_props = per_component_skip.get(component.__name__, set())
 
+    # Default props to apply to a component's interactive preview when the user
+    # hasn't overridden them via a control. E.g. rx.heading defaults to <h1>;
+    # force <h2> so the Heading docs page keeps a single (title) <h1> for SEO.
+    preview_prop_defaults = {
+        "Heading": {"as_": "h2"},
+    }
+
     interactive_controls: list[tuple[PropDocumentation, rx.Component]] = []
     if is_interactive:
         for prop in prop_list:
@@ -549,7 +556,10 @@ def generate_props(
 
         else:
             try:
-                comp = rx.vstack(component.create("Preview", **prop_dict))
+                defaults = preview_prop_defaults.get(component.__name__, {})
+                # prop_dict (user-selected controls) wins over defaults.
+                preview_props = {**defaults, **prop_dict}
+                comp = rx.vstack(component.create("Preview", **preview_props))
             except Exception:
                 comp = rx.fragment()
             if "data" in component.__name__.lower():
