@@ -6,6 +6,7 @@ import copy
 import dataclasses
 import inspect
 from collections.abc import Callable, Sequence
+from contextlib import AbstractContextManager
 from contextvars import ContextVar, Token
 from types import TracebackType
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol, TypeAlias, TypeVar, cast
@@ -33,6 +34,10 @@ else:
 
 
 _BaseComponentT = TypeVar("_BaseComponentT", bound=BaseComponent)
+
+
+#: Optional recorder for source files read during each page evaluation.
+page_source_recorder: Callable[[], AbstractContextManager[set[str]]] | None = None
 
 
 class PageDefinition(Protocol):
@@ -690,6 +695,12 @@ class PageContext(BaseContext):
     output_path: str | None = None
     output_code: str | None = None
     source_module: str | None = None
+    # Source files read while evaluating this page, when a recorder is installed.
+    source_files: set[str] = dataclasses.field(default_factory=set)
+    # Auto-memo components first registered while compiling this page.
+    memo_contributions: dict[tuple[str, str | None], Any] = dataclasses.field(
+        default_factory=dict
+    )
     # Stack of ``id(component)`` for components whose subtree is
     # memoize-suppressed. Populated by ``MemoizeStatefulPlugin`` when it
     # encounters a ``MemoizationLeaf``-style snapshot boundary and popped on
@@ -794,6 +805,7 @@ class CompileContext(BaseContext):
         """
         from reflex.compiler import compiler
         from reflex.state import all_base_state_classes
+        from reflex_base.vars.base import reset_unique_variable_names
 
         self.ensure_context_attached()
         self.compiled_pages.clear()
@@ -803,15 +815,30 @@ class CompileContext(BaseContext):
         self.memoize_wrappers.clear()
         self.auto_memo_components.clear()
 
+        # Keep generated ref names stable across in-process compiles.
+        reset_unique_variable_names()
+
+        recorder = page_source_recorder
         for page in self.pages:
             page_fn = page.component
             n_states_before = len(all_base_state_classes)
-            page_ctx = self.hooks.eval_page(
-                page_fn,
-                page=page,
-                compile_context=self,
-                **kwargs,
-            )
+            if recorder is not None:
+                with recorder() as read_set:
+                    page_ctx = self.hooks.eval_page(
+                        page_fn,
+                        page=page,
+                        compile_context=self,
+                        **kwargs,
+                    )
+                if page_ctx is not None:
+                    page_ctx.source_files = read_set
+            else:
+                page_ctx = self.hooks.eval_page(
+                    page_fn,
+                    page=page,
+                    compile_context=self,
+                    **kwargs,
+                )
             if page_ctx is None:
                 page_name = getattr(page_fn, "__name__", repr(page_fn))
                 msg = (
@@ -836,6 +863,7 @@ class CompileContext(BaseContext):
             self.compiled_pages.values(),
             strict=True,
         ):
+            memo_before = set(self.auto_memo_components)
             with page_ctx:
                 page_ctx.root_component = self.hooks.compile_component(
                     page_ctx.root_component,
@@ -848,6 +876,12 @@ class CompileContext(BaseContext):
                     compile_context=self,
                     **kwargs,
                 )
+            # Attribute newly-registered auto-memo components to this page.
+            page_ctx.memo_contributions = {
+                key: value
+                for key, value in self.auto_memo_components.items()
+                if key not in memo_before
+            }
 
             page_ctx.frontend_imports = page_ctx.merged_imports(collapse=True)
             self.all_imports = merge_imports(

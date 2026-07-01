@@ -63,6 +63,24 @@ def _set_progress_total(
     progress.update(task, total=total)
 
 
+def make_compile_progress(use_rich: bool) -> Progress | console.PoorProgress:
+    """Build a compile progress bar.
+
+    Args:
+        use_rich: Whether to use a rich progress bar (else a plain fallback).
+
+    Returns:
+        A progress bar suitable for tracking a compile.
+    """
+    if use_rich:
+        return Progress(
+            *Progress.get_default_columns()[:-1],
+            MofNCompleteColumn(),
+            TimeElapsedColumn(),
+        )
+    return console.PoorProgress()
+
+
 def _apply_common_imports(
     imports: dict[str, list[ImportVar]],
 ):
@@ -954,7 +972,7 @@ def compile_unevaluated_page(
             meta_args["description"] = page.description
 
         # Add meta information to the component.
-        utils.add_meta(
+        component = utils.add_meta(
             component,
             **meta_args,
         )
@@ -1138,20 +1156,30 @@ def compile_app(
         app._add_optional_endpoints()
         return False
 
-    progress = (
-        Progress(
-            *Progress.get_default_columns()[:-1],
-            MofNCompleteColumn(),
-            TimeElapsedColumn(),
-        )
-        if use_rich
-        else console.PoorProgress()
-    )
-    fixed_steps = 7
+    cache_on = not dry_run and environment.REFLEX_COMPILE_CACHE.get()
+
     compiler_plugins, radix_themes_plugin = _resolve_radix_themes_plugin(
         app,
         config.plugins,
     )
+
+    # Experimental incremental compile cache: in a fresh process, recompile only
+    # the pages whose source changed and reuse the rest from the on-disk
+    # manifest. Falls back to a full compile on any unsafe condition.
+    if cache_on:
+        from reflex.compiler import disk_cache, page_cache
+
+        page_cache.enable_read_tracking()
+        if disk_cache.try_incremental_rebuild(
+            app,
+            compiler_plugins=compiler_plugins,
+            prerender_routes=prerender_routes,
+            use_rich=use_rich,
+        ):
+            return True
+
+    progress = make_compile_progress(use_rich)
+    fixed_steps = 7
     reset_bundled_libraries()
     # Drop cached memo wrapper classes so each compile recomputes a memo's
     # ``library`` from the current module layout (handles a module flipping to
@@ -1163,9 +1191,11 @@ def compile_app(
     base_total = (len(app._unevaluated_pages) * 2) + fixed_steps + len(config.plugins)
     progress.start()
     task = progress.add_task("Compiling:", total=base_total)
+    all_pages = list(app._unevaluated_pages.values())
+
     compile_ctx = CompileContext(
         app=app,
-        pages=list(app._unevaluated_pages.values()),
+        pages=all_pages,
         hooks=CompilerHooks(
             plugins=default_page_plugins(style=app.style, plugins=compiler_plugins)
         ),
@@ -1406,5 +1436,10 @@ def compile_app(
     with console.timing("Write to Disk"):
         for output_path, code in output_mapping.items():
             utils.write_file(output_path, code)
+
+    if cache_on:
+        from reflex.compiler import disk_cache
+
+        disk_cache.write_manifest(compile_ctx, all_pages, all_imports)
 
     return True
