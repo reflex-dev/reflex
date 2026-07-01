@@ -181,10 +181,6 @@ def test_get_engine():
     )
 
 
-if TYPE_CHECKING:
-    from starlette_admin.auth import AuthProvider
-
-
 @pytest.fixture
 def test_custom_auth_admin() -> type[AuthProvider]:
     """A default auth provider.
