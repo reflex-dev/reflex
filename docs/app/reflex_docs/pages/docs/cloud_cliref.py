@@ -10,7 +10,7 @@ import reflex as rx
 from reflex.reflex import cli
 
 from reflex_docs.docgen_pipeline import render_markdown
-from reflex_docs.templates.docpage import docpage
+from reflex_docs.templates.docpage import docpage, h1_comp
 
 
 @dataclasses.dataclass(frozen=True)
@@ -334,16 +334,19 @@ for category, commands in categories.items():
     modules[category] = "\n\n".join(docs_list)
 
 
-def generate_docs(source: str):
+def generate_docs(source: str, title: str):
+    # Emit a single page-level <h1> (mirrors the API-reference generator) so the
+    # per-command sections stay <h2> and the page has exactly one <h1> for SEO.
     return rx.box(
+        h1_comp(text=title),
         render_markdown(text=source),
     )
 
 
 pages = []
 for module_name, module_value in modules.items():
-    docs = generate_docs(module_value)
     title = module_name.replace("_", " ").title()
+    docs = generate_docs(module_value, title)
     page_data = docpage(f"/hosting/cli/{module_name}/", title)(docs)
     # Keep the short sidebar/nav label (e.g. "Deploy"), but emit a descriptive
     # HTML <title> for SEO.

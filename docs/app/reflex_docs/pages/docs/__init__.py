@@ -238,7 +238,9 @@ def extract_doc_description(
                     value = key_value.group(1).strip().strip("\"'")
                     if len(value) >= min_len:
                         return value
-                    break
+                    # Too short: keep scanning in case a later key
+                    # (e.g. `description:` after a short `meta_description:`)
+                    # holds a long-enough value before falling to body prose.
             text = text[frontmatter.end() :]
         # Drop fenced code blocks (```...```), including ```python exec blocks.
         text = re.sub(r"```.*?```", "", text, flags=re.DOTALL)
@@ -281,9 +283,10 @@ def extract_doc_description(
         para = re.sub(r"!\[[^\]]*\]\([^)]*\)", "", para)  # images
         para = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", para)  # links -> text
         para = re.sub(r"[*_`]+", "", para)  # emphasis / inline code
-        para = re.sub(
-            r"^~?\s*\d+\s*min(?:ute)?s?\s*(?:read)?\s*·?\s*", "", para
-        )  # leading reading-time marker
+        # Leading reading-time marker ("3 min read", "~3 min ·"). Require a
+        # "read" keyword or a "·" separator so real prose that merely opens with
+        # "<n> minutes …" isn't mistaken for a badge and stripped of its subject.
+        para = re.sub(r"^~?\s*\d+\s*min(?:ute)?s?\s*(?:read\s*·?|·)\s*", "", para)
         para = re.sub(r"\s+", " ", para).strip()
         # A result shorter than the target length means the page lacks
         # substantial body prose; return None so the caller's title-based
