@@ -5035,6 +5035,7 @@ async def test_immutable_mutable_proxy_async_context_manager(
     async with state_manager.modify_state(
         BaseStateToken(ident=token, cls=MutableProxyState)
     ) as state:
+        assert isinstance(state, MutableProxyState)
         state.data["a"].append(2)
 
     async with data_proxy as mutable_data:
@@ -5055,6 +5056,7 @@ async def test_immutable_mutable_proxy_async_context_manager(
     async with state_manager.modify_state(
         BaseStateToken(ident=token, cls=MutableProxyState)
     ) as state:
+        assert isinstance(state, MutableProxyState)
         assert state.data["a"] == [1, 2, 3, 5]
         assert state.data["b"] == [2, 4]
 
