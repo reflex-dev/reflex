@@ -18,7 +18,7 @@ dependencies = [
     "httpx >=0.25.1,<1.0",
     "packaging >=24.2",
     "platformdirs >=3.10.0,<5.0",
-    "rich >=13,<15",
+    "rich >=13,<16",
 ]
 
 [tool.hatch.version]

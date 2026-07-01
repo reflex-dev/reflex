@@ -7,7 +7,7 @@ from reflex.vars import Var
 
 class InkeepSearchBar(rx.NoSSRComponent):
     tag = "InkeepSearchBar"
-    library = "@inkeep/cxkit-react@0.5.115"
+    library = "@inkeep/cxkit-react@0.5.119"
 
 
 class Search(rx.el.Div):

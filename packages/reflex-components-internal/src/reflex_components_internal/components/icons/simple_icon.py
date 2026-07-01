@@ -7,7 +7,7 @@ from reflex.utils.imports import ImportVar
 class SimpleIcon(rx.Component):
     """Simple Icon component wrapper for @icons-pack/react-simple-icons."""
 
-    library = "@icons-pack/react-simple-icons@13.8.0"
+    library = "@icons-pack/react-simple-icons@13.13.0"
 
     tag = "SiReact"
 
