@@ -24,9 +24,11 @@ from reflex_site_shared.views.footer import dark_mode_toggle
 
 _REGISTERED_DOC_ROUTES: set[str] = set()
 
-# Title-cased breadcrumb labels that should be displayed as acronyms.
+# Title-cased breadcrumb labels remapped to their public display names
+# (acronyms, plus renamed sections whose URLs keep a legacy slug).
 _BREADCRUMB_LABEL_OVERRIDES: dict[str, str] = {
     "Ai": "AI",
+    "Ai Onboarding": "Agent Toolkit",
     "Api": "API",
     "Sdk": "SDK",
     "Cli": "CLI",

@@ -259,7 +259,7 @@ def products_build_column_body() -> rx.Component:
                 "Get started with our MCP and Skills.",
                 class_name="text-secondary-11 text-sm font-[475] px-6 pb-6",
             ),
-            href="/docs/ai/integrations/ai-onboarding/",
+            href="/docs/ai/integrations/agent-toolkit/",
             class_name="group flex flex-col gap-2 items-center text-center",
         ),
         class_name="flex flex-col text-center justify-center items-center min-h-[252px]",

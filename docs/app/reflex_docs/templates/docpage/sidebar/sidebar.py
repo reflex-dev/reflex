@@ -6,9 +6,9 @@ import reflex as rx
 import reflex_components_internal as ui
 
 from .sidebar_items.ai import (
+    agent_toolkit_items,
     ai_builder_integrations,
     ai_builder_overview_items,
-    ai_onboarding_items,
     mcp_items,
     skills_items,
 )
@@ -313,7 +313,7 @@ append_to_items(
     + recipes
     + ai_builder_overview_items
     + ai_builder_integrations
-    + ai_onboarding_items
+    + agent_toolkit_items
     + mcp_items
     + skills_items
     + api_reference
@@ -462,7 +462,7 @@ def sidebar_comp(
     recipes_index: rx.vars.ArrayVar[list[int]],
     enterprise_usage_index: rx.vars.ArrayVar[list[int]],
     enterprise_component_index: rx.vars.ArrayVar[list[int]],
-    ai_onboarding_index: rx.vars.ArrayVar[list[int]],
+    agent_toolkit_index: rx.vars.ArrayVar[list[int]],
     mcp_index: rx.vars.ArrayVar[list[int]],
     skills_index: rx.vars.ArrayVar[list[int]],
     ai_builder_overview_index: rx.vars.ArrayVar[list[int]],
@@ -486,7 +486,7 @@ def sidebar_comp(
     is_docs_hosting = url.startswith("/hosting/")
     is_docs_ai_builder = url.startswith("/ai/")
     is_ai_mcp_or_skills = (
-        url.startswith("/ai/integrations/ai-onboarding/")
+        url.startswith("/ai/integrations/agent-toolkit/")
         | url.startswith("/ai/integrations/skills/")
         | url.startswith("/ai/integrations/agents-md/")
         | url.startswith("/ai/integrations/mcp")
@@ -525,8 +525,8 @@ def sidebar_comp(
             ~is_ai_mcp_or_skills,
         ),
         sidebar_category(
-            "MCP/Skills",
-            ai_builder_pages.integrations.ai_onboarding.path,
+            "Agent Toolkit",
+            ai_builder_pages.integrations.agent_toolkit.path,
             "plug",
             is_ai_mcp_or_skills,
         ),
@@ -535,9 +535,9 @@ def sidebar_comp(
     ai_mcp_skills_content = rx.el.ul(
         create_sidebar_section(
             "Overview",
-            ai_builder_pages.integrations.ai_onboarding.path,
-            ai_onboarding_items,
-            ai_onboarding_index,
+            ai_builder_pages.integrations.agent_toolkit.path,
+            agent_toolkit_items,
+            agent_toolkit_index,
             url,
         ),
         create_sidebar_section(
@@ -776,7 +776,7 @@ def sidebar(url=None, width: str = "100%") -> rx.Component:
             enterprise_component_index=calculate_index(
                 enterprise_component_items, normalized_url
             ),
-            ai_onboarding_index=calculate_index(ai_onboarding_items, normalized_url),
+            agent_toolkit_index=calculate_index(agent_toolkit_items, normalized_url),
             ai_builder_overview_index=calculate_index(
                 ai_builder_overview_items, normalized_url
             ),
