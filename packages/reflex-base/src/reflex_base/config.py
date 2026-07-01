@@ -19,6 +19,7 @@ from reflex_base.environment import EnvVar as EnvVar
 from reflex_base.environment import (
     ExistingPath,
     SequenceOptions,
+    _InvalidPlugin,
     _load_dotenv_from_files,
     _paths_from_env_files,
     interpret_env_var_value,
@@ -28,7 +29,7 @@ from reflex_base.environment import environment as environment
 from reflex_base.plugins import Plugin
 from reflex_base.plugins.sitemap import SitemapPlugin
 from reflex_base.utils import console
-from reflex_base.utils.exceptions import ConfigError
+from reflex_base.utils.exceptions import ConfigError, InvalidPluginConfigError
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -368,6 +369,10 @@ class Config(BaseConfig):
         # Normalize disable_plugins: convert strings and Plugin subclasses to instances.
         self._normalize_disable_plugins()
 
+        # Append any plugins declared via the REFLEX_EXTRA_PLUGINS env var (honoring
+        # disable_plugins, which is normalized above).
+        self._add_extra_plugins()
+
         # Add builtin plugins if not disabled.
         if not self._skip_plugins_checks:
             self._add_builtin_plugins()
@@ -392,6 +397,11 @@ class Config(BaseConfig):
         self._non_default_attributes = set(kwargs.keys())
         self._replace_defaults(**kwargs)
 
+        # Publish for State-class creation so it never re-enters get_config()
+        # (which AttributeErrors if a State is defined while rxconfig.py is mid-import).
+        global _state_auto_setters
+        _state_auto_setters = self.state_auto_setters
+
         if (
             self.state_manager_mode == constants.StateManagerMode.REDIS
             and not self.redis_url
@@ -408,10 +418,22 @@ class Config(BaseConfig):
         subclass nor a Plugin instance raises ``ConfigError`` with a message
         that names the offending value, instead of failing later in the
         compiler with a confusing ``TypeError`` about a missing ``self``.
+
+        An ``_InvalidPlugin`` (produced when a ``REFLEX_PLUGINS`` import path
+        cannot be resolved) is fatal here: ``plugins`` is an explicit list of
+        plugins the app needs, so a bad entry raises ``InvalidPluginConfigError``
+        and the app cannot start.
+
+        Raises:
+            ConfigError: If an entry is neither a Plugin instance nor subclass.
+            InvalidPluginConfigError: If an entry could not be loaded.
         """
         normalized: list[Plugin] = []
+        invalid: list[_InvalidPlugin] = []
         for entry in self.plugins:
-            if isinstance(entry, Plugin):
+            if isinstance(entry, _InvalidPlugin):
+                invalid.append(entry)
+            elif isinstance(entry, Plugin):
                 normalized.append(entry)
             elif isinstance(entry, type) and issubclass(entry, Plugin):
                 try:
@@ -422,25 +444,80 @@ class Config(BaseConfig):
                         f"instantiated and may require arguments; pass an instance "
                         f"instead, e.g. plugins=[{entry.__name__}(...)]."
                     )
-                    raise ConfigError(msg) from exc
+                    raise InvalidPluginConfigError(msg) from exc
             else:
                 msg = (
                     f"reflex.Config.plugins must contain Plugin instances, but got "
                     f"{entry!r} of type {type(entry).__name__}. "
                     f"Pass an instance, e.g. plugins=[SitemapPlugin()]."
                 )
-                raise ConfigError(msg)
+                raise InvalidPluginConfigError(msg)
+        if invalid:
+            details = ", ".join(p.describe() for p in invalid)
+            msg = (
+                f"reflex.Config.plugins contains plugin(s) that could not be loaded "
+                f"(check REFLEX_PLUGINS import paths): {details}."
+            )
+            raise InvalidPluginConfigError(msg)
         self.plugins = normalized
+
+    def _add_extra_plugins(self):
+        """Append plugins declared via the ``REFLEX_EXTRA_PLUGINS`` env var.
+
+        Unlike ``REFLEX_PLUGINS``, which *replaces* ``plugins`` entirely, this env
+        var appends to the existing list so plugins configured in ``rxconfig.py``
+        are preserved. Each entry is a fully qualified import path resolved to a
+        Plugin *subclass* (not instantiated by the env machinery). For each class:
+
+        - An invalid import path is warned about and skipped (a bad env entry is
+          never fatal, since the app still has its configured plugins).
+        - A type listed in ``disable_plugins`` is skipped *without* instantiating
+          it, so a disabled plugin never runs its constructor.
+        - A type already present in ``plugins`` is skipped, so a plugin is never
+          run twice.
+        - Otherwise the class is instantiated and appended; a constructor failure
+          is warned about and skipped.
+        """
+        for plugin_class in environment.REFLEX_EXTRA_PLUGINS.get():
+            if isinstance(plugin_class, _InvalidPlugin):
+                console.warn(
+                    f"Ignoring invalid REFLEX_EXTRA_PLUGINS entry {plugin_class.describe()}."
+                )
+                continue
+            if any(
+                issubclass(plugin_class, disabled) for disabled in self.disable_plugins
+            ):
+                console.debug(
+                    f"Skipping REFLEX_EXTRA_PLUGINS entry {plugin_class.__name__!r} "
+                    "because its type is listed in disable_plugins.",
+                )
+                continue
+            if any(isinstance(existing, plugin_class) for existing in self.plugins):
+                continue
+            try:
+                self.plugins.append(plugin_class())
+            except Exception as exc:
+                console.warn(
+                    f"Ignoring REFLEX_EXTRA_PLUGINS entry {plugin_class.__name__!r} "
+                    f"that could not be instantiated: {exc}"
+                )
 
     def _normalize_disable_plugins(self):
         """Normalize disable_plugins list entries to Plugin subclasses.
 
         Handles backward compatibility by converting strings (fully qualified
-        import paths) and Plugin instances to their associated classes.
+        import paths) and Plugin instances to their associated classes. An
+        ``_InvalidPlugin`` (from an unresolvable ``REFLEX_DISABLE_PLUGINS`` import
+        path) is warned about and dropped rather than crashing config load.
         """
         normalized: list[type[Plugin]] = []
         for entry in self.disable_plugins:
-            if isinstance(entry, type) and issubclass(entry, Plugin):
+            if isinstance(entry, _InvalidPlugin):
+                console.warn(
+                    f"Ignoring invalid disable_plugins entry {entry.describe()}. "
+                    "Check the REFLEX_DISABLE_PLUGINS import path(s)."
+                )
+            elif isinstance(entry, type) and issubclass(entry, Plugin):
                 normalized.append(entry)
             elif isinstance(entry, Plugin):
                 normalized.append(type(entry))
@@ -517,13 +594,6 @@ class Config(BaseConfig):
                         f"`{plugin_name}` is disabled in the config, but it is still present in the `plugins` list. "
                         "Please remove it from the `plugins` list in your config inside of `rxconfig.py`.",
                     )
-
-        for disabled_plugin in self.disable_plugins:
-            if disabled_plugin not in _PLUGINS_ENABLED_BY_DEFAULT:
-                console.warn(
-                    f"`{disabled_plugin!r}` is disabled in the config, but it is not a built-in plugin. "
-                    "Please remove it from the `disable_plugins` list in your config inside of `rxconfig.py`.",
-                )
 
     @classmethod
     def class_fields(cls) -> set[str]:
@@ -738,6 +808,28 @@ def _get_config() -> Config:
 
 # Protect sys.path from concurrent modification
 _config_lock = threading.RLock()
+
+# Cached state_auto_setters so State-class creation never re-enters get_config().
+_state_auto_setters: bool | None = None
+
+
+def get_state_auto_setters() -> bool:
+    """Return whether state auto-setters are enabled, without importing rxconfig.
+
+    Reads the value cached when the Config was built. Before any Config exists
+    (e.g. a State defined inside rxconfig.py during its import), falls back to the
+    REFLEX_STATE_AUTO_SETTERS env var, then the default (False). This never calls
+    get_config() or imports rxconfig, so it cannot re-enter config loading.
+
+    Returns:
+        Whether state auto-setters are enabled.
+    """
+    if _state_auto_setters is not None:
+        return _state_auto_setters
+    env_val = os.environ.get(Config._prefixes[0] + "STATE_AUTO_SETTERS")
+    if env_val and env_val.strip():
+        return interpret_env_var_value(env_val, bool, "state_auto_setters")
+    return False
 
 
 def get_config(reload: bool = False) -> Config:

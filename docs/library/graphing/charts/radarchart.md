@@ -124,7 +124,7 @@ def radar_start_end():
     )
 ```
 
-# Dynamic Data
+## Dynamic Data
 
 Chart data tied to a State var causes the chart to automatically update when the
 state changes, providing a nice way to visualize data in response to user

@@ -292,7 +292,6 @@ def blog_index_jsonld(posts: list[tuple[str, dict]], url: str) -> rx.Component:
             "position": i + 1,
             "url": f"{REFLEX_DOMAIN_URL.rstrip('/')}/blog/{path}",
             "name": meta.get("title_tag") or meta.get("title", ""),
-            "datePublished": str(meta.get("date", "")),
         }
         for i, (path, meta) in enumerate(posts[:20])
     ]
@@ -352,29 +351,35 @@ def pricing_jsonld(url: str) -> rx.Component:
                 "@type": "SoftwareApplication",
                 "name": "Reflex",
                 "applicationCategory": "DeveloperApplication",
+                "operatingSystem": "Web",
                 "description": "The platform to build and scale enterprise apps. Python full-stack framework for web apps and internal tools.",
                 "url": url,
+                # Reflex has three pricing tiers (Free $0, Pro $200/mo,
+                # Enterprise custom). Google's SoftwareApplication rich result
+                # requires offers/review/aggregateRating; an AggregateOffer over
+                # the tier price range satisfies it without inventing a rating.
+                "offers": {
+                    "@type": "AggregateOffer",
+                    "priceCurrency": "USD",
+                    "lowPrice": "0",
+                    "highPrice": "200",
+                    "offerCount": "3",
+                    "availability": "https://schema.org/InStock",
+                },
             },
             {
                 "@type": "Product",
                 "name": "Reflex Enterprise Platform",
                 "brand": {"@type": "Brand", "name": "Reflex"},
                 "description": "Enterprise-grade fullstack app building platform with AI-powered code generation in pure Python. Includes dedicated support, SSO, on-prem deployment, and custom SLAs.",
-                "offers": [
-                    {
-                        "@type": "Offer",
-                        "price": "0",
-                        "priceCurrency": "USD",
-                        "name": "Free",
-                        "availability": "https://schema.org/InStock",
-                    },
-                    {
-                        "@type": "Offer",
-                        "name": "Enterprise",
-                        "description": "Custom enterprise pricing",
-                        "availability": "https://schema.org/PreOrder",
-                    },
-                ],
+                "offers": {
+                    "@type": "AggregateOffer",
+                    "priceCurrency": "USD",
+                    "lowPrice": "0",
+                    "highPrice": "200",
+                    "offerCount": "3",
+                    "availability": "https://schema.org/InStock",
+                },
             },
         ],
     }

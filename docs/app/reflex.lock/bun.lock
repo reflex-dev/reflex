@@ -5,7 +5,7 @@
     "": {
       "name": "reflex",
       "dependencies": {
-        "@base-ui/react": "1.5.0",
+        "@base-ui/react": "1.6.0",
         "@glideapps/glide-data-grid": "6.0.3",
         "@hugeicons/core-free-icons": "4.2.0",
         "@hugeicons/react": "1.1.6",
@@ -37,6 +37,7 @@
         "moment": "2.30.1",
         "moment-timezone": "0.6.2",
         "plotly.js": "3.5.1",
+        "plotly.js-locales": "3.5.0",
         "react": "19.2.6",
         "react-colorful": "5.7.0",
         "react-debounce-input": "3.3.0",
@@ -157,9 +158,9 @@
 
     "@babel/types": ["@babel/types@7.29.7", "", { "dependencies": { "@babel/helper-string-parser": "^7.29.7", "@babel/helper-validator-identifier": "^7.29.7" } }, "sha512-4zBIxpPzowiZpusoFkyGVwakdRJUyuH5PxQ/PrqghfdFWWasvnCdPfQXHrenDai+gyLARulZjZowCOj6fjT4pA=="],
 
-    "@base-ui/react": ["@base-ui/react@1.5.0", "", { "dependencies": { "@babel/runtime": "^7.29.2", "@base-ui/utils": "0.2.9", "@floating-ui/react-dom": "^2.1.8", "@floating-ui/utils": "^0.2.11", "use-sync-external-store": "^1.6.0" }, "peerDependencies": { "@date-fns/tz": "^1.2.0", "@types/react": "^17 || ^18 || ^19", "date-fns": "^4.0.0", "react": "^17 || ^18 || ^19", "react-dom": "^17 || ^18 || ^19" }, "optionalPeers": ["@date-fns/tz", "@types/react", "date-fns"] }, "sha512-z1gSAlced1yY+iM+mHDEtIkD8UI3Ebs52MuBPxvV6f5hRutk+xvCH/wuB7hDqDzK9JG5FoMz5nhrqtSs1wjt1A=="],
+    "@base-ui/react": ["@base-ui/react@1.6.0", "", { "dependencies": { "@babel/runtime": "^7.29.2", "@base-ui/utils": "0.3.1", "@floating-ui/react-dom": "^2.1.8", "@floating-ui/utils": "^0.2.11", "use-sync-external-store": "^1.6.0" }, "peerDependencies": { "@date-fns/tz": "^1.2.0", "@types/react": "^17 || ^18 || ^19", "date-fns": "^4.0.0", "react": "^17 || ^18 || ^19", "react-dom": "^17 || ^18 || ^19" }, "optionalPeers": ["@date-fns/tz", "@types/react", "date-fns"] }, "sha512-/jzjTWJYXhRFO45Bev9lc3cHbmjzCMpUqbMZ2AgKy/z25mY9B6shGSNcXcjQar9n5doM0KYW1W8fcFv2jZBuMw=="],
 
-    "@base-ui/utils": ["@base-ui/utils@0.2.9", "", { "dependencies": { "@babel/runtime": "^7.29.2", "@floating-ui/utils": "^0.2.11", "reselect": "^5.1.1", "use-sync-external-store": "^1.6.0" }, "peerDependencies": { "@types/react": "^17 || ^18 || ^19", "react": "^17 || ^18 || ^19", "react-dom": "^17 || ^18 || ^19" }, "optionalPeers": ["@types/react"] }, "sha512-x/PDDCYzoqPpjrdyb3VcyylTI2IjUXEtYDGi5foh7KsnmNJIIaVwA2GLgDH1dps1GgXiJbA60hM+AyuTfQzIvw=="],
+    "@base-ui/utils": ["@base-ui/utils@0.3.1", "", { "dependencies": { "@babel/runtime": "^7.29.2", "@floating-ui/utils": "^0.2.11", "reselect": "^5.2.0", "use-sync-external-store": "^1.6.0" }, "peerDependencies": { "@types/react": "^17 || ^18 || ^19", "react": "^17 || ^18 || ^19", "react-dom": "^17 || ^18 || ^19" }, "optionalPeers": ["@types/react"] }, "sha512-gFFiltORVmW/N6IILTGxizP3PBpVpysqML1ALY5Vk0mH+7faVkCknOU31goYHN5Aoek2dkjxva1XOD2Ce9WuIg=="],
 
     "@choojs/findup": ["@choojs/findup@0.2.1", "", { "dependencies": { "commander": "^2.15.1" }, "bin": { "findup": "bin/findup.js" } }, "sha512-YstAqNb0MCN8PjdLCDfRsBcGVRN41f3vgLvaI0IrIcBp4AqILRSS0DeWNGkicC+f/zRIPJLc+9RURVSepwvfBw=="],
 
@@ -1684,6 +1685,8 @@
     "player.style": ["player.style@0.3.4", "", { "dependencies": { "media-chrome": "~4.19.0" } }, "sha512-5O9bkbq0APQIkhptyZwp0gUgheCeImGPFo4hvPF2M5xBmgsUYzsUPHCfMye2xyeRE1zvQBKtziaC3jPgnHE1tw=="],
 
     "plotly.js": ["plotly.js@3.5.1", "", { "dependencies": { "@plotly/d3": "3.8.2", "@plotly/d3-sankey": "0.7.2", "@plotly/d3-sankey-circular": "0.33.1", "@plotly/mapbox-gl": "1.13.4", "@plotly/regl": "^2.1.2", "@turf/area": "^7.1.0", "@turf/bbox": "^7.1.0", "@turf/centroid": "^7.1.0", "base64-arraybuffer": "^1.0.2", "color-normalize": "1.5.0", "color-rgba": "3.0.0", "country-regex": "^1.1.0", "d3-force": "^1.2.1", "d3-format": "^1.4.5", "d3-geo": "^1.12.1", "d3-geo-projection": "^2.9.0", "d3-hierarchy": "^1.1.9", "d3-interpolate": "^3.0.1", "d3-time": "^1.1.0", "d3-time-format": "^2.2.3", "fast-isnumeric": "^1.1.4", "gl-mat4": "^1.2.0", "gl-text": "^1.4.0", "has-hover": "^1.0.1", "has-passive-events": "^1.0.0", "is-mobile": "^4.0.0", "maplibre-gl": "^4.7.1", "mouse-event-offset": "^3.0.2", "native-promise-only": "^0.8.1", "parse-svg-path": "^0.1.2", "point-in-polygon": "^1.1.0", "polybooljs": "^1.2.2", "probe-image-size": "^7.2.3", "regl-error2d": "^2.0.12", "regl-line2d": "^3.1.3", "regl-scatter2d": "^3.3.1", "regl-splom": "^1.0.14", "strongly-connected-components": "^1.0.1", "svg-path-sdf": "^1.1.3", "tinycolor2": "^1.4.2", "topojson-client": "^3.1.0", "webgl-context": "^2.2.0", "world-calendars": "^1.0.4" } }, "sha512-rUzQ7Q46whi1aWT2JlvKE2dnryNORPrxyy66OGSMXgejK3XgD4ysD9SapMOI1RzzUJyX0KbfVDFcB9/DqOyH9Q=="],
+
+    "plotly.js-locales": ["plotly.js-locales@3.5.0", "", {}, "sha512-fMHyOgOtNQFje2vlKGStghPIiz8RrBri8/w8I/TDZTG1M7jtNA+YB5KE0+ar4lazzb0mOa4uqANc/uM4rDI3Jg=="],
 
     "point-in-polygon": ["point-in-polygon@1.1.0", "", {}, "sha512-3ojrFwjnnw8Q9242TzgXuTD+eKiutbzyslcq1ydfu82Db2y+Ogbmyrkpv0Hgj31qwT3lbS9+QAAO/pIQM35XRw=="],
 

@@ -46,7 +46,7 @@ class VarSelectState(rx.State):
 def var_operations_example():
     return rx.vstack(
         # Using a var operation to concatenate a string with a var.
-        rx.heading("I just bought a bunch of " + VarSelectState.selected),
+        rx.heading("I just bought a bunch of " + VarSelectState.selected, as_="h2"),
         # Using an f-string to interpolate a var.
         rx.text(f"{VarSelectState.selected} is going to the moon!"),
         rx.select(
@@ -117,7 +117,7 @@ class OperState(rx.State):
 
 def var_operation_example():
     return rx.vstack(
-        rx.heading(f"The number: {OperState.number}", size="3"),
+        rx.heading(f"The number: {OperState.number}", as_="h2", size="3"),
         rx.hstack(
             rx.text(
                 "Negated:",
@@ -383,15 +383,15 @@ class ListsState(rx.State):
 def var_list_example():
     return rx.hstack(
         rx.vstack(
-            rx.heading(f"List 1: {ListsState.list_1}", size="3"),
+            rx.heading(f"List 1: {ListsState.list_1}", as_="h2", size="3"),
             rx.text(f"List 1 Contains 3: {ListsState.list_1.contains(3)}"),
         ),
         rx.vstack(
-            rx.heading(f"List 2: {ListsState.list_2}", size="3"),
+            rx.heading(f"List 2: {ListsState.list_2}", as_="h2", size="3"),
             rx.text(f"Reverse List 2: {ListsState.list_2.reverse()}"),
         ),
         rx.vstack(
-            rx.heading(f"List 3: {ListsState.list_3}", size="3"),
+            rx.heading(f"List 3: {ListsState.list_3}", as_="h2", size="3"),
             rx.text(f"List 3 Joins: {ListsState.list_3.join()}"),
         ),
     )
@@ -410,11 +410,11 @@ class StringState(rx.State):
 def var_string_example():
     return rx.hstack(
         rx.vstack(
-            rx.heading(f"List 1: {StringState.string_1}", size="3"),
+            rx.heading(f"List 1: {StringState.string_1}", as_="h2", size="3"),
             rx.text(f"List 1 Lower Case: {StringState.string_1.lower()}"),
         ),
         rx.vstack(
-            rx.heading(f"List 2: {StringState.string_2}", size="3"),
+            rx.heading(f"List 2: {StringState.string_2}", as_="h2", size="3"),
             rx.text(f"List 2 Upper Case: {StringState.string_2.upper()}"),
             rx.text(f"Split String 2: {StringState.string_2.split()}"),
         ),
@@ -588,7 +588,7 @@ class VarNumberState(rx.State):
 
 def var_number_example():
     return rx.vstack(
-        rx.heading(f"The number is {VarNumberState.number}", size="5"),
+        rx.heading(f"The number is {VarNumberState.number}", as_="h2", size="5"),
         # Var operations can be composed for more complex expressions.
         rx.cond(
             VarNumberState.number % 2 == 0,

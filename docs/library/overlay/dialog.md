@@ -169,8 +169,11 @@ class DialogState(rx.State):
 
 def dialog_example():
     return rx.flex(
-        rx.heading(f"Number of times dialog opened or closed: {DialogState.num_opens}"),
-        rx.heading(f"Dialog open: {DialogState.opened}"),
+        rx.heading(
+            f"Number of times dialog opened or closed: {DialogState.num_opens}",
+            as_="h2",
+        ),
+        rx.heading(f"Dialog open: {DialogState.opened}", as_="h2"),
         rx.dialog.root(
             rx.dialog.trigger(rx.button("Open Dialog")),
             rx.dialog.content(

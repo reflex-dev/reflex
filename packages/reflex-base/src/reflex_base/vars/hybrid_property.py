@@ -3,9 +3,54 @@
 from collections.abc import Callable
 from typing import Any
 
+from reflex_base.utils.exceptions import HybridPropertyError
 from reflex_base.utils.types import Self, override
 
 from .base import Var
+
+
+class _StateBackendVarGuard:
+    """Proxy around a state class used while building a hybrid property's frontend var.
+
+    Attribute access is forwarded to the wrapped state class, except for backend
+    (underscore-prefixed) vars, which raise :class:`HybridPropertyError`: backend vars
+    are server-only and cannot be referenced from a hybrid property's frontend logic.
+    """
+
+    def __init__(self, state_cls: Any, property_name: str) -> None:
+        """Initialize the guard.
+
+        Args:
+            state_cls: The state class the hybrid property is defined on.
+            property_name: The name of the hybrid property (for error messages).
+        """
+        self.__state_cls = state_cls
+        self.__property_name = property_name
+
+    def __getattr__(self, name: str) -> Any:
+        """Forward attribute access to the state class, blocking backend vars.
+
+        Args:
+            name: The attribute accessed on the state inside the hybrid property.
+
+        Returns:
+            The class-level value (e.g. a frontend var) from the state.
+
+        Raises:
+            HybridPropertyError: If a backend (underscore-prefixed) var is accessed.
+        """
+        state_cls = self.__state_cls
+        if name in state_cls.backend_vars:
+            msg = (
+                f"Hybrid property '{self.__property_name}' of state "
+                f"'{state_cls.__name__}' accessed backend-only var '{name}' while "
+                f"building its frontend value. Backend vars (prefixed with '_') exist "
+                f"only on the server and cannot be referenced from a hybrid property's "
+                f"frontend logic. Use a regular var, or provide a separate frontend "
+                f"implementation with '@{self.__property_name}.var'."
+            )
+            raise HybridPropertyError(msg)
+        return getattr(state_cls, name)
 
 
 class HybridProperty(property):
@@ -57,6 +102,9 @@ class HybridProperty(property):
 
         Returns:
             The property value, a frontend Var, or the descriptor itself.
+
+        Raises:
+            HybridPropertyError: If the frontend logic reads a backend-only state var.
         """
         if instance is not None:
             return super().__get__(instance, owner)
@@ -64,20 +112,30 @@ class HybridProperty(property):
             from reflex.state import BaseState
 
             if issubclass(owner, BaseState):
-                return self._get_var(owner)
+                if not owner.backend_vars:
+                    return self._get_var(owner)
+                property_name = (
+                    self.fget.__name__ if self.fget is not None else "hybrid_property"
+                )
+                return self._get_var(_StateBackendVarGuard(owner, property_name))
         return self
 
     def var(self, func: Callable[[Any], Var]) -> Self:
         """Set the (optional) var function for the property.
 
+        Returns a new HybridProperty with the same getter/setter/deleter so
+        that each class gets its own descriptor — matching how property.setter
+        behaves and preventing shared-mixin mutation across subclasses.
+
         Args:
             func: The var function to set.
 
         Returns:
-            The property instance with the var function set.
+            A new property instance with the var function set.
         """
-        self._var = func
-        return self
+        new = type(self)(self.fget, self.fset, self.fdel, self.__doc__)
+        new._var = func
+        return new
 
 
 hybrid_property = HybridProperty

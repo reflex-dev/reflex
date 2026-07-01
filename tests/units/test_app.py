@@ -3522,6 +3522,37 @@ def test_set_contexts(
     isolated_context.run(_test)
 
 
+async def test_modify_state_rebinds_event_context_to_token(
+    app_with_processor: App,
+):
+    """modify_state(token) rebinds EventContext.token to the modified token.
+
+    Out-of-band ``modify_state`` (e.g. the shared-state fan-out that recomputes
+    another client's delta) runs in a task that copied the triggering event's
+    EventContext. Without rebinding, code inside (``get_delta``, computed vars)
+    would read the *actor's* token, not the token whose state is being modified.
+    """
+    app_with_processor._state_manager = StateManagerMemory()
+    app_with_processor._event_namespace = AsyncMock()
+    assert app_with_processor._event_processor is not None
+    root_context = app_with_processor._event_processor._root_context
+    assert root_context is not None
+
+    # Simulate the actor (token-A) event context the way the processor sets it
+    # (via ``set``, which the fan-out task then inherits by copying the context).
+    actor_token = EventContext.set(root_context.fork(token="token-A"))
+    try:
+        assert EventContext.get().token == "token-A"
+        async with app_with_processor.modify_state(
+            BaseStateToken(ident="token-B", cls=EmptyState)
+        ):
+            assert EventContext.get().token == "token-B"
+        # The actor's context is restored after modify_state exits.
+        assert EventContext.get().token == "token-A"
+    finally:
+        EventContext.reset(actor_token)
+
+
 def test_set_contexts_no_event_processor(isolated_context: contextvars.Context):
     """When event processor is None, EventContext should not be touched."""
 
