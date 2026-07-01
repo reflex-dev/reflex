@@ -14,7 +14,7 @@ It is based on [Github Flavored Markdown](https://github.github.com/gfm/).
 
 ```python demo
 rx.vstack(
-    rx.markdown("# Hello World!"),
+    rx.markdown("## Hello World!"),
     rx.markdown("## Hello World!"),
     rx.markdown("### Hello World!"),
     rx.markdown("Support us on [Github](https://github.com/reflex-dev/reflex)."),
@@ -127,8 +127,8 @@ how to render the links to those anchors.
 ```python demo
 rx.markdown(
     """
-# Heading 1
-## Heading 2
+## Heading 1
+### Heading 2
 """,
     rehype_plugins=[
         rx.markdown.plugin("rehype-slug@6.0.0", "rehypeSlug"),

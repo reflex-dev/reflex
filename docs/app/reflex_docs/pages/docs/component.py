@@ -549,6 +549,10 @@ def generate_props(
 
         else:
             try:
+                # rx.heading defaults to <h1>; force <h2> for the interactive
+                # preview so the Heading docs page keeps a single (title) <h1>.
+                if component.__name__ == "Heading" and "as_" not in prop_dict:
+                    prop_dict = {**prop_dict, "as_": "h2"}
                 comp = rx.vstack(component.create("Preview", **prop_dict))
             except Exception:
                 comp = rx.fragment()

@@ -19,7 +19,7 @@ Use the `as_` prop to change the heading level. This prop is purely semantic and
 
 ```python demo
 rx.flex(
-    rx.heading("Level 1", as_="h1"),
+    rx.heading("Level 1", as_="h2"),
     rx.heading("Level 2", as_="h2"),
     rx.heading("Level 3", as_="h3"),
     direction="column",
