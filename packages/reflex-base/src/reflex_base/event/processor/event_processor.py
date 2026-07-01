@@ -20,6 +20,7 @@ from typing_extensions import Self
 from reflex.app_mixins.middleware import MiddlewareMixin
 from reflex.istate.manager import StateManager
 from reflex.utils import console
+from reflex_base import constants
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.compat import as_completed
 from reflex_base.event.processor.future import EventFuture
@@ -118,6 +119,9 @@ class EventProcessor:
         default_factory=dict, init=False
     )
     _futures: dict[str, EventFuture] = dataclasses.field(
+        default_factory=dict, init=False
+    )
+    _active_on_load_futures: dict[str, EventFuture] = dataclasses.field(
         default_factory=dict, init=False
     )
     _token_queues: dict[
@@ -311,6 +315,7 @@ class EventProcessor:
             self._queue_task = None
         # Discard any pending per-token queue entries.
         self._token_queues.clear()
+        self._active_on_load_futures.clear()
         # Cancel any remaining unresolved futures.
         for future in self._futures.values():
             if not future.done():
@@ -396,6 +401,8 @@ class EventProcessor:
         # If this context has a parent, register as a child of the parent's future.
         if parent_future is not None:
             parent_future.add_child(tracked)
+        if self._is_on_load_internal_event(event):
+            self._cancel_stale_on_load(token=token, current=tracked)
         await queue.put(EventQueueEntry(event=event, ctx=ev_ctx))
         return tracked
 
@@ -496,8 +503,45 @@ class EventProcessor:
             return
         parent = future.parent
         self._futures.pop(future.txid, None)
+        self._try_clean_active_on_load_future(future)
         if parent is not None and parent.txid:
             self._try_clean_future(parent)
+
+    @staticmethod
+    def _is_on_load_internal_event(event: Event) -> bool:
+        """Check whether an event is the internal page-load dispatcher.
+
+        Args:
+            event: The event to check.
+
+        Returns:
+            True if the event dispatches page on_load handlers.
+        """
+        return event.name.endswith(f".{constants.CompileVars.ON_LOAD_INTERNAL}")
+
+    def _cancel_stale_on_load(self, *, token: str, current: EventFuture) -> None:
+        """Cancel any older on_load chain for the token.
+
+        Args:
+            token: The client token for the page load event.
+            current: The newly enqueued on_load future.
+        """
+        previous = self._active_on_load_futures.get(token)
+        if previous is not None and previous is not current and not previous.all_done():
+            previous.cancel()
+        self._active_on_load_futures[token] = current
+
+    def _try_clean_active_on_load_future(self, future: EventFuture) -> None:
+        """Remove a completed active on_load future.
+
+        Args:
+            future: The future to remove if it is no longer active.
+        """
+        if not future.all_done():
+            return
+        for token, active_future in list(self._active_on_load_futures.items()):
+            if active_future is future:
+                self._active_on_load_futures.pop(token, None)
 
     def _on_future_done(self, future: EventFuture) -> None:  # type: ignore[override]
         """Callback invoked when an enqueued future completes.
