@@ -240,6 +240,84 @@ def test_app_dependency_files_skips_graph_without_entrypoint(tmp_path, monkeypat
     assert page_cache.app_dependency_files(root=tmp_path) == set()
 
 
+def test_app_dependency_files_tracks_dynamic_import_config_read(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+
+    from reflex.utils import prerequisites
+
+    entry = tmp_path / "myapp.py"
+    dynamic = tmp_path / "dynamic_theme.py"
+    config_file = tmp_path / "theme.json"
+    entry.write_text(
+        "import importlib\ntheme = importlib.import_module('dynamic_theme').THEME\n"
+    )
+    dynamic.write_text(
+        "from pathlib import Path\nTHEME = Path('theme.json').read_text()\n"
+    )
+    config_file.write_text('"light"\n')
+    config = SimpleNamespace(
+        module="myapp",
+        app_module=None,
+        _app_name_is_valid=True,
+    )
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.syspath_prepend(str(tmp_path))
+    monkeypatch.setenv("REFLEX_COMPILE_CACHE", "1")
+    monkeypatch.setattr(prerequisites, "get_config", lambda: config)
+    monkeypatch.setattr("reflex.config.get_config", lambda: config)
+    _forget_modules("myapp", "dynamic_theme")
+
+    try:
+        prerequisites.get_app()
+        deps = page_cache.app_dependency_files(root=tmp_path)
+        epoch = page_cache.global_epoch(root=tmp_path)
+
+        config_file.write_text('"dark"\n')
+    finally:
+        _forget_modules("myapp", "dynamic_theme")
+
+    assert str(dynamic.resolve()) in deps
+    assert str(config_file.resolve()) in deps
+    assert page_cache.global_epoch(root=tmp_path) != epoch
+
+
+def test_app_dependency_files_subtracts_pages_from_app_import_reads(
+    tmp_path, monkeypatch
+):
+    from types import SimpleNamespace
+
+    from reflex.utils import prerequisites
+
+    entry = tmp_path / "myapp.py"
+    theme = tmp_path / "theme.py"
+    page = tmp_path / "page.py"
+    view = tmp_path / "view.py"
+    entry.write_text("import theme\nfrom page import index\napp_theme = theme.THEME\n")
+    theme.write_text("THEME = 'light'\n")
+    page.write_text("from view import render\n\ndef index():\n    return render()\n")
+    view.write_text("def render():\n    return 'view'\n")
+    config = SimpleNamespace(
+        module="myapp",
+        app_module=None,
+        _app_name_is_valid=True,
+    )
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.syspath_prepend(str(tmp_path))
+    monkeypatch.setenv("REFLEX_COMPILE_CACHE", "1")
+    monkeypatch.setattr(prerequisites, "get_config", lambda: config)
+    monkeypatch.setattr("reflex.config.get_config", lambda: config)
+    _forget_modules("myapp", "theme", "page", "view")
+
+    try:
+        prerequisites.get_app()
+        pages = [SimpleNamespace(component=sys.modules["page"].index)]
+        deps = page_cache.app_dependency_files(pages, root=tmp_path)
+    finally:
+        _forget_modules("myapp", "theme", "page", "view")
+
+    assert deps == {str(entry.resolve()), str(theme.resolve())}
+
+
 def test_record_reads_tracks_executed_importlib_import(tmp_path, monkeypatch):
     module_name = "runtime_import_dep_for_page_cache"
     module_file = _prepare_runtime_module(tmp_path, monkeypatch, module_name)

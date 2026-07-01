@@ -87,6 +87,7 @@ _PYTHON_PREFIXES = tuple(
     if prefix
 )
 _module_file_cache: dict[tuple[Path, str], str | None] = {}
+_app_import_reads: dict[Path, set[str]] = {}
 
 
 @contextlib.contextmanager
@@ -352,6 +353,29 @@ def record_reads():
         _active_reads.reset(token)
 
 
+@contextlib.contextmanager
+def record_app_import(root: Path | None = None):
+    """Record files read/imported while importing the app module.
+
+    Args:
+        root: Project root. Defaults to cwd.
+
+    Yields:
+        None.
+    """
+    root = (root or Path.cwd()).resolve()
+    recorded: set[str] = set()
+    success = False
+    try:
+        with record_reads() as reads:
+            yield
+            recorded = set(reads)
+            success = True
+    finally:
+        if success:
+            _app_import_reads[root] = recorded
+
+
 def _app_entrypoint_file(root: Path | None = None) -> Path | None:
     """Resolve the user's app entrypoint module file (where ``rx.App`` is built).
 
@@ -583,8 +607,36 @@ def build_import_graph(root: Path | None = None) -> dict[str, set[str]]:
 
 
 def clear_import_graph() -> None:
-    """Drop the cached import graph (e.g. after modules are reloaded)."""
+    """Drop cached import graphs (e.g. after modules are reloaded)."""
     _import_graph_cache.clear()
+    _app_import_reads.clear()
+
+
+def _walk_import_closure(
+    graph: dict[str, set[str]],
+    starts: set[str],
+    barriers: set[str] | None = None,
+) -> set[str]:
+    """Walk a first-party import graph from ``starts``.
+
+    Args:
+        graph: Mapping of source file to imported source files.
+        starts: Source files where traversal begins.
+        barriers: Files included elsewhere and not traversed into.
+
+    Returns:
+        The reachable source files, excluding barriers.
+    """
+    barriers = barriers or set()
+    seen: set[str] = set()
+    stack = list(starts - barriers)
+    while stack:
+        cur = stack.pop()
+        if cur in seen:
+            continue
+        seen.add(cur)
+        stack.extend(dep for dep in graph.get(cur, ()) if dep not in barriers)
+    return seen
 
 
 def _component_source_files(component: object, root: Path) -> set[str]:
@@ -632,16 +684,7 @@ def page_py_dependencies(
     """
     root = (root or Path.cwd()).resolve()
     graph = build_import_graph(root)
-
-    seen: set[str] = set()
-    stack = list(_component_source_files(component, root))
-    while stack:
-        cur = stack.pop()
-        if cur in seen:
-            continue
-        seen.add(cur)
-        stack.extend(graph.get(cur, ()))
-    return seen
+    return _walk_import_closure(graph, _component_source_files(component, root))
 
 
 def app_dependency_files(
@@ -651,11 +694,11 @@ def app_dependency_files(
 
     Walks the first-party import graph from the app entrypoint
     (:func:`_app_entrypoint_file`), treating each page-defining module as a
-    barrier (not entered), so the result is the entrypoint plus the config-only
-    modules it imports, such as theme, app-wraps, stylesheets, head components, and
-    never page modules or their deep dependencies, which are tracked per page. A
-    config module shared with a page is still captured (it is reached from the
-    entrypoint directly, not through the barrier).
+    barrier (not entered), then folds in files read/imported while the app module
+    loaded. Static page dependency closures are removed from that dynamic set so
+    regular page edits still invalidate per-page rather than globally. A config
+    module shared with a page is still captured when it is reached from the
+    entrypoint directly.
 
     These configure the app-wide files an incremental rebuild reuses on disk
     (app root, contexts, theme, stylesheet), so they are folded into
@@ -675,24 +718,18 @@ def app_dependency_files(
     entrypoint = _app_entrypoint_file(root)
     if entrypoint is None:
         return set()
-    file_to_mod = _loaded_first_party_modules(root)
+    graph = build_import_graph(root)
     barriers: set[str] = set()
+    page_deps: set[str] = set()
     for page in pages or ():
-        barriers |= _component_source_files(getattr(page, "component", None), root)
+        starts = _component_source_files(getattr(page, "component", None), root)
+        barriers |= starts
+        page_deps |= _walk_import_closure(graph, starts)
 
     start = str(entrypoint)
-    seen = {start}
-    stack = [start]
-    while stack:
-        cur = stack.pop()
-        modname = file_to_mod.get(cur)
-        if modname is None:
-            continue
-        for dep in _module_import_edges(cur, modname, file_to_mod):
-            if dep not in seen and dep not in barriers:
-                seen.add(dep)
-                stack.append(dep)
-    return seen
+    static_deps = _walk_import_closure(graph, {start}, barriers)
+    dynamic_deps = _app_import_reads.get(root, set()) - page_deps
+    return static_deps | dynamic_deps
 
 
 def make_hasher() -> Callable[[str], str | None]:
