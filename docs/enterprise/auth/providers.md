@@ -428,9 +428,14 @@ class OrgAuthState(OIDCAuthState, rx.State):
         self._org_id = org_id
 ```
 
-The popup/iframe login path sets tokens directly and does **not** route through
-`_set_tokens_payload_from_exchange`. Give the extra `_set_tokens` keyword a
-default (as `org_id=""` above) to keep that path working.
+Under the popup/iframe flow, the popup and opener are separate clients. The popup
+runs the callback and captures the field in its own state, then posts the tokens
+to the opener, which applies them through `on_iframe_auth_success`, not
+`_set_tokens_payload_from_exchange`. Only the posted tokens cross over, so a
+custom field stored on the popup's `self` does not automatically reach the opener.
+
+Give the extra `_set_tokens` keyword a default (as `org_id=""` above) so the
+opener's call works.
 
 ## Migrating from `register_auth_endpoints`
 
