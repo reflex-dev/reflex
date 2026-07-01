@@ -12,7 +12,16 @@ from reflex_docgen.markdown import parse_document
 from reflex_pyplot import pyplot as pyplot
 from reflex_site_shared.route import Route
 
-from reflex_docs.docgen_pipeline import get_docgen_toc, render_docgen_document
+from reflex_docs.changelogs import (
+    changelog_page_title,
+    discover_changelogs,
+    normalize_changelog,
+)
+from reflex_docs.docgen_pipeline import (
+    get_docgen_toc,
+    render_docgen_document,
+    render_markdown_with_toc,
+)
 from reflex_docs.pages.docs.component import multi_docs
 from reflex_docs.pages.library_previews import components_previews_pages
 from reflex_docs.templates.docpage import docpage
@@ -311,6 +320,26 @@ def make_docpage(
     return docpage(set_path=route, t=title, description=description)(render_fn)
 
 
+CHANGELOG_VIRTUAL_PREFIX = "docs/changelog/"
+
+
+def handle_changelog_doc(doc: str, actual_path: str, resolved: ResolvedDoc):
+    """Handle docs/changelog/** docs — package changelogs pulled from outside the docs tree.
+
+    Changelog markdown ships without a meaningful top-level heading, so the
+    canonical page title is normalized in and the table of contents is limited
+    to version headings.
+    """
+
+    def comp(_actual=actual_path, _title=resolved.display_title):
+        source = normalize_changelog(Path(_actual).read_text(encoding="utf-8"), _title)
+        toc, body = render_markdown_with_toc(source)
+        toc = [(level, text) for level, text in toc if level <= 2]
+        return ((toc, source), body)
+
+    return make_docpage(resolved.route, resolved.display_title, doc, comp)
+
+
 def handle_library_doc(
     doc: str,
     actual_path: str,
@@ -348,6 +377,9 @@ def get_component_docgen(virtual_doc: str, actual_path: str, title: str):
     if virtual_doc.startswith("docs/library"):
         return handle_library_doc(virtual_doc, actual_path, title, resolved)
 
+    if virtual_doc.startswith(CHANGELOG_VIRTUAL_PREFIX):
+        return handle_changelog_doc(virtual_doc, actual_path, resolved)
+
     # Read the markdown once and reuse it for both the rendered body and the
     # meta description, instead of reading the same file twice during compile.
     try:
@@ -378,6 +410,22 @@ def get_component_docgen(virtual_doc: str, actual_path: str, title: str):
         description=description,
     )
 
+
+# Package changelogs live outside the docs tree — the towncrier-managed ones
+# at the repo root (CHANGELOG.md and packages/*/CHANGELOG.md) and the
+# reflex-enterprise one inside the installed distribution. Reach up and pull
+# them in as regular docs under docs/changelog/, with the main reflex
+# changelog served at the section index.
+changelog_packages: dict[str, str] = {}  # package name → route
+for _package, _changelog_path in discover_changelogs(_docs_dir.parent).items():
+    _virtual = (
+        f"{CHANGELOG_VIRTUAL_PREFIX}index.md"
+        if _package == "reflex"
+        else f"{CHANGELOG_VIRTUAL_PREFIX}{_package}.md"
+    )
+    all_docs[_virtual] = str(_changelog_path)
+    manual_titles[_virtual] = changelog_page_title(_package)
+    changelog_packages[_package] = doc_route_from_path(_virtual)
 
 # Build doc_markdown_sources mapping
 for _virtual, _actual in all_docs.items():
