@@ -103,6 +103,34 @@ def plotly_heatmap():
     return rx.center(rx.plotly(data=heatmap_fig))
 ```
 
+### Histogram
+
+Create a Plotly histogram with `px.histogram`:
+
+```python demo exec
+hist_data = px.data.tips()
+histogram_fig = px.histogram(
+    hist_data, x="total_bill", nbins=20, title="Distribution of total bills"
+)
+
+
+def plotly_histogram():
+    return rx.center(rx.plotly(data=histogram_fig))
+```
+
+### Box Plot
+
+Create a Plotly box plot with `px.box`:
+
+```python demo exec
+box_data = px.data.tips()
+box_fig = px.box(box_data, x="day", y="total_bill", title="Total bill by day")
+
+
+def plotly_box_plot():
+    return rx.center(rx.plotly(data=box_fig))
+```
+
 ## Locale Configuration
 
 Use `locale` to localize Plotly number/date formatting and modebar labels:
