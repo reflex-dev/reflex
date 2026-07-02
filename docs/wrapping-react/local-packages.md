@@ -6,7 +6,11 @@ title: Wrapping Local Packages
 import reflex as rx
 ```
 
-# Assets
+# Wrapping Local Packages
+
+Not every wrap starts from an npm package: you can wrap React components you wrote yourself — a single local `.jsx` file, or a full local or GitHub-hosted package — along with any assets they depend on.
+
+## Assets
 
 If a wrapped component depends on assets such as images, scripts, or
 stylesheets, these can be kept adjacent to the component code and
@@ -80,8 +84,9 @@ class Hello(rx.Component):
     on_greet: rx.EventHandler[rx.event.passthrough_event_spec(str)]
 
     # Include any related CSS files with rx.asset to ensure they are copied.
+    # (rx.asset returns a path that already starts with "/".)
     def add_imports(self):
-        return {"": f"$/public/{hello_css_path}"}
+        return {"": f"$/public{hello_css_path}"}
 ```
 
 ## Considerations
