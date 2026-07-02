@@ -216,10 +216,12 @@ the `reflex[db]` extra. For the SQLite URL shown above, install `aiosqlite`:
 pip install aiosqlite
 ```
 
-For PostgreSQL, use a URL like `postgresql+asyncpg://...` and install `asyncpg`:
+For PostgreSQL, install `psycopg` (psycopg3), which works as both the sync and
+async driver — so `db_url` and `async_db_url` can share the same
+`postgresql+psycopg://...` scheme:
 
 ```bash
-pip install asyncpg
+pip install "psycopg[binary]"
 ```
 
 The `rx.asession` function returns an async SQLAlchemy session that must be used with an async context manager. Most operations against the `asession` must be awaited.
