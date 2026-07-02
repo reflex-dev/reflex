@@ -3,7 +3,7 @@ components:
   - rx.recharts.ScatterChart
   - rx.recharts.Scatter
 title: Scatter Chart
-meta_description: "Create scatter plots in Python with Reflex. Build interactive Recharts scatter charts with multiple series, custom axes, ranges, and tooltips — all in pure Python, no JavaScript."
+meta_description: "Create scatter plots and bubble charts in Python with Reflex. Build interactive Recharts scatter charts with multiple series, custom axes, sizing, and tooltips — all in pure Python."
 ---
 
 # Scatter Chart
@@ -207,6 +207,36 @@ def scatter_shape():
             ),
         ),
         width="100%",
+    )
+```
+
+## Bubble Chart
+
+Adding an `rx.recharts.z_axis()` turns a scatter chart into a bubble chart: the `z` value of each point controls the bubble size, mapped to a pixel `range`. This lets you encode a third dimension of data alongside the x and y position.
+
+```python demo graphing
+data = [
+    {"x": 100, "y": 200, "z": 200},
+    {"x": 120, "y": 100, "z": 260},
+    {"x": 170, "y": 300, "z": 400},
+    {"x": 140, "y": 250, "z": 280},
+    {"x": 150, "y": 400, "z": 500},
+    {"x": 110, "y": 280, "z": 200},
+]
+
+
+def bubble_chart():
+    return rx.recharts.scatter_chart(
+        rx.recharts.scatter(
+            data=data,
+            fill=rx.color("accent", 8),
+        ),
+        rx.recharts.x_axis(data_key="x", name="x", type_="number"),
+        rx.recharts.y_axis(data_key="y", name="y", type_="number"),
+        rx.recharts.z_axis(data_key="z", range=[60, 400], name="size"),
+        rx.recharts.graphing_tooltip(),
+        width="100%",
+        height=300,
     )
 ```
 
