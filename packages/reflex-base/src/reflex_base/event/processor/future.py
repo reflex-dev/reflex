@@ -31,6 +31,16 @@ class EventFuture(asyncio.Future):
         default_factory=asyncio.get_running_loop, repr=False
     )
 
+    # Whether cancellation should apply to children added after this future is done.
+    _cascade_cancel_requested: bool = dataclasses.field(
+        default=False, init=False, repr=False
+    )
+
+    # Preserve the cancellation message for children attached after cancellation.
+    _cascade_cancel_message: object = dataclasses.field(
+        default=None, init=False, repr=False
+    )
+
     def __post_init__(self) -> None:
         """Call Future.__init__ for the EventFuture."""
         super(EventFuture, self).__init__(loop=self.loop)
@@ -42,12 +52,14 @@ class EventFuture(asyncio.Future):
             child: The child EventFuture to add.
 
         Raises:
-            RuntimeError: If this future is already done.
+            RuntimeError: If this future is already done without a cancellation cascade.
         """
-        if self.done():
+        if self.done() and not self._cascade_cancel_requested:
             msg = "Cannot add a child to an EventFuture that is already done."
             raise RuntimeError(msg)
         self.children.append(child)
+        if self._cascade_cancel_requested:
+            child.cancel(self._cascade_cancel_message)
 
     def all_done(self) -> bool:
         """Check if this future and all descendant futures are done.
@@ -89,6 +101,8 @@ class EventFuture(asyncio.Future):
         Returns:
             True if the future was successfully cancelled.
         """
+        self._cascade_cancel_requested = True
+        self._cascade_cancel_message = msg
         result = super(EventFuture, self).cancel(msg)
         for child in self.children:
             child.cancel(msg)
