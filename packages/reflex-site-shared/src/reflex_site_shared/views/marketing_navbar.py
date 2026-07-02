@@ -824,6 +824,9 @@ def navigation_menu() -> rx.Component:
     )
 
 
+_NAVBAR_WRAPPER_CLASS = "flex flex-col w-full top-0 z-[9999] fixed self-center"
+
+
 @rx.memo
 def _navbar_header() -> rx.Component:
     """Logo and navigation menu, memoized for reuse across pages.
@@ -851,7 +854,7 @@ def _default_marketing_navbar() -> rx.Component:
     return rx.el.div(
         hosting_banner(),
         _navbar_header(),
-        class_name="flex flex-col w-full top-0 z-[9999] fixed self-center",
+        class_name=_NAVBAR_WRAPPER_CLASS,
     )
 
 
@@ -871,5 +874,5 @@ def marketing_navbar(banner: rx.Component | None = None) -> rx.Component:
     return rx.el.div(
         banner,
         _navbar_header(),
-        class_name="flex flex-col w-full top-0 z-[9999] fixed self-center",
+        class_name=_NAVBAR_WRAPPER_CLASS,
     )
