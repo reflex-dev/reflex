@@ -18,6 +18,15 @@ For advanced use cases, please see the
 If you are using a NoSQL database (e.g. MongoDB), you can work with it in Reflex by installing the appropriate Python client library. In this case, Reflex will not provide any ORM features.
 ```
 
+## Installation
+
+The ORM dependencies (SQLAlchemy, SQLModel, and Alembic) are an optional extra.
+Install them with the `db` extra:
+
+```bash
+pip install "reflex[db]"
+```
+
 ## Connecting
 
 Reflex provides a built-in SQLite database for storing and retrieving data.
