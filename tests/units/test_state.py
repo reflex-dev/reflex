@@ -5104,6 +5104,53 @@ async def test_immutable_mutable_proxy_async_context_rejects_iter_proxy(
         assert state.data == [[1, 2]]
 
 
+@pytest.mark.asyncio
+async def test_immutable_mutable_proxy_async_context_recovers_from_enter_failure(
+    token: str,
+    attached_mock_event_context: EventContext,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A failed owning StateProxy enter does not permanently block the proxy."""
+    state_manager = attached_mock_event_context.state_manager
+
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=MutableProxyState)
+    ) as state:
+        state.router = RouterData.from_router_data({
+            "query": {},
+            "token": token,
+            "sid": "test_sid",
+        })
+        state_proxy = StateProxy(state)
+        data_proxy = state_proxy.data
+
+    original_aenter = StateProxy.__aenter__
+    fail_once = True
+
+    async def fail_first_enter(self: StateProxy) -> StateProxy:
+        nonlocal fail_once
+        if fail_once:
+            fail_once = False
+            raise asyncio.CancelledError
+        return await original_aenter(self)
+
+    monkeypatch.setattr(StateProxy, "__aenter__", fail_first_enter)
+
+    with pytest.raises(asyncio.CancelledError):
+        async with data_proxy:
+            pass
+
+    assert data_proxy._self_actx_state is None
+    async with data_proxy as mutable_data:
+        mutable_data["a"].append(2)
+
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=MutableProxyState)
+    ) as state:
+        assert isinstance(state, MutableProxyState)
+        assert state.data["a"] == [1, 2]
+
+
 def test_override_base_method_skips_event_handler_wrapping():
     """A method marked with __override_base_method__ should not be wrapped as an EventHandler."""
     from reflex.state import _override_base_method

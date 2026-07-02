@@ -495,8 +495,10 @@ class MutableProxy(wrapt.ObjectProxy):
             raise RuntimeError(msg)
         context_state = self._self_state
         self._self_actx_state = context_state
-        state = await context_state.__aenter__()
+        aenter_ok = False
         try:
+            state = await context_state.__aenter__()
+            aenter_ok = True
             refreshed_value = getattr(state, self._self_field_name)
             for access_spec in self._self_path:
                 match access_spec:
@@ -516,7 +518,8 @@ class MutableProxy(wrapt.ObjectProxy):
             else:
                 self._raise_refresh_error()
         except (Exception, asyncio.CancelledError):
-            await context_state.__aexit__(*sys.exc_info())
+            if aenter_ok:
+                await context_state.__aexit__(*sys.exc_info())
             self._self_actx_state = None
             raise
         return self
