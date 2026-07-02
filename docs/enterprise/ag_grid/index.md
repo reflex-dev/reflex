@@ -1,7 +1,7 @@
 ---
 title: "AgGrid Overview"
 order: 3
-meta_description: "Use AG Grid in Python with Reflex. Build interactive, enterprise-grade data grids — sorting, filtering, pagination, pivoting, and cell selection — from a pandas DataFrame or Reflex state, no JavaScript required."
+meta_description: "Use AG Grid in Python with Reflex. Build interactive, enterprise-grade data grids with sorting, filtering, pagination, and pivoting — all in pure Python."
 ---
 
 # AG Grid
