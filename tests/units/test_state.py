@@ -4954,6 +4954,12 @@ class MutableProxyState(BaseState):
     data: dict[str, list[int]] = {"a": [1], "b": [2]}
 
 
+class IterableMutableProxyState(BaseState):
+    """A test state with mutable values that can be accessed by iteration."""
+
+    data: list[list[int]] = [[1]]
+
+
 @pytest.mark.asyncio
 async def test_rebind_mutable_proxy(
     token: str, attached_mock_event_context: EventContext
@@ -5027,6 +5033,7 @@ async def test_immutable_mutable_proxy_async_context_manager(
 
     assert isinstance(data_proxy, ImmutableMutableProxy)
     assert isinstance(items_proxy, ImmutableMutableProxy)
+    await data_proxy.__aexit__(None, None, None)
     with pytest.raises(ImmutableStateError):
         data_proxy["a"].append(3)
     with pytest.raises(ImmutableStateError):
@@ -5040,6 +5047,9 @@ async def test_immutable_mutable_proxy_async_context_manager(
 
     async with data_proxy as mutable_data:
         assert mutable_data is data_proxy
+        with pytest.raises(RuntimeError, match="already mutable"):
+            async with data_proxy:
+                pass
         data_proxy["a"].append(3)
         mutable_data["b"].append(4)
 
@@ -5059,6 +5069,39 @@ async def test_immutable_mutable_proxy_async_context_manager(
         assert isinstance(state, MutableProxyState)
         assert state.data["a"] == [1, 2, 3, 5]
         assert state.data["b"] == [2, 4]
+
+
+@pytest.mark.asyncio
+async def test_immutable_mutable_proxy_async_context_rejects_iter_proxy(
+    token: str, attached_mock_event_context: EventContext
+) -> None:
+    """Iteration-sourced mutable proxies fail clearly as async context managers."""
+    state_manager = attached_mock_event_context.state_manager
+
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=IterableMutableProxyState)
+    ) as state:
+        state.router = RouterData.from_router_data({
+            "query": {},
+            "token": token,
+            "sid": "test_sid",
+        })
+        state_proxy = StateProxy(state)
+        [items_proxy] = state_proxy.data
+
+    assert isinstance(items_proxy, ImmutableMutableProxy)
+    with pytest.raises(RuntimeError, match="Unable to refresh mutable proxy"):
+        async with items_proxy:
+            pass
+
+    async with state_proxy:
+        state_proxy.data[0].append(2)
+
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=IterableMutableProxyState)
+    ) as state:
+        assert isinstance(state, IterableMutableProxyState)
+        assert state.data == [[1, 2]]
 
 
 def test_override_base_method_skips_event_handler_wrapping():
