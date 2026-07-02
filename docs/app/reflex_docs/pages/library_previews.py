@@ -103,7 +103,8 @@ def create_previews(
     @docpage(
         right_sidebar=False,
         set_path=f"/library{prefix.rstrip('/')}/" + path.strip("/") + "/",
-        page_title=component_category + " Component Library · Reflex Docs",
+        page_title=f"{get_display_name(component_category)} Component Library · Reflex Docs",
+        description=description,
     )
     def page() -> rx.Component:
         from reflex_docs.templates.docpage.sidebar.sidebar_items import (
@@ -195,7 +196,7 @@ core_components_dict = {
     },
     "tables_and_data_grids": {
         "path": "tables-and-data-grids",
-        "description": "Powerful table components for organizing and displaying data efficiently. Includes versatile options like standard tables, interactive datatables, and editable data grids. Perfect for creating responsive, user-friendly interfaces that present information clearly and allow for easy data manipulation.",
+        "description": "Build tables and data grids in Python with Reflex. Includes a composable table, a searchable and sortable data table for pandas DataFrames, and an editable data grid — perfect for dashboards and data apps, all in pure Python.",
         "component_category": "Tables-And-Data-Grids",
     },
     "typography": {
