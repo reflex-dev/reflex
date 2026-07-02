@@ -20,7 +20,7 @@ If you are using a NoSQL database (e.g. MongoDB), you can work with it in Reflex
 
 ## Installation
 
-The ORM dependencies (SQLAlchemy, SQLModel, and Alembic) are an optional extra.
+The ORM dependencies (SQLModel and Alembic) are an optional extra.
 Install them with the `db` extra:
 
 ```bash

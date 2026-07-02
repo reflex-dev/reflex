@@ -209,9 +209,18 @@ config = rx.Config(
 )
 ```
 
-You must also install the matching async DBAPI driver. For SQLite, install
-`aiosqlite` as shown above; for PostgreSQL, use a URL like
-`postgresql+asyncpg://...` and install `asyncpg`.
+You must also install the matching async DBAPI driver, which is not included in
+the `reflex[db]` extra. For the SQLite URL shown above, install `aiosqlite`:
+
+```bash
+pip install aiosqlite
+```
+
+For PostgreSQL, use a URL like `postgresql+asyncpg://...` and install `asyncpg`:
+
+```bash
+pip install asyncpg
+```
 
 The `rx.asession` function returns an async SQLAlchemy session that must be used with an async context manager. Most operations against the `asession` must be awaited.
 
