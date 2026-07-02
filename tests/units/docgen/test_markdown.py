@@ -125,7 +125,7 @@ def test_meta_description_not_treated_as_preview():
     assert fm is not None
     assert fm.component_previews == ()
     assert fm.title == "Bar Chart"
-    assert fm.metadata["meta_description"].startswith("Create interactive bar")
+    assert str(fm.metadata["meta_description"]).startswith("Create interactive bar")
 
 
 def test_multiple_previews():
