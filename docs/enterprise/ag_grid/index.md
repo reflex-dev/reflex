@@ -1,11 +1,12 @@
 ---
 title: "AgGrid Overview"
 order: 3
+meta_description: "Use AG Grid in Python with Reflex. Build interactive, enterprise-grade data grids — sorting, filtering, pagination, pivoting, and cell selection — from a pandas DataFrame or Reflex state, no JavaScript required."
 ---
 
 # AG Grid
 
-AG Grid is a powerful, feature-rich data grid component that brings enterprise-grade table functionality to your Reflex applications. With support for sorting, filtering, pagination, row selection, and much more, AG Grid transforms how you display and interact with tabular data.
+AG Grid (also written **ag-grid** or **aggrid**) is a powerful, feature-rich React data grid, and Reflex lets you use it entirely in Python — no JavaScript required. It brings enterprise-grade table functionality to your Reflex applications: with support for sorting, filtering, pagination, row selection, pivoting, and much more, AG Grid transforms how you display and interact with tabular data, whether it comes from a pandas DataFrame or your app's state.
 
 [Explore the full AG Grid showcase and examples](https://aggrid.reflex.run/)
 

@@ -1,4 +1,5 @@
 ---
+meta_description: "Define AG Grid columns in Python with Reflex. Configure column definitions — field, header, type, sorting, filtering, width, and formatting — for your data grid, all in pure Python."
 order: 1
 ---
 
