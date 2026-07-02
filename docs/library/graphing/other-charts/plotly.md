@@ -5,7 +5,7 @@ title: Plotly
 meta_description: "Use Plotly in Python with Reflex. The rx.plotly component renders interactive Plotly and Plotly Express figures — line charts, scatter plots, heatmaps, and histograms — in your web app, all in pure Python."
 ---
 
-# Plotly
+# Plotly in Python: Interactive Charts with Reflex
 
 ```python exec
 import reflex as rx
@@ -14,7 +14,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 ```
 
-Plotly is a Python graphing library that can be used to create interactive graphs. Use the `rx.plotly` component to wrap Plotly (and Plotly Express) as a component for use in your web page, all in pure Python. Checkout [Plotly](https://plotly.com/graphing-libraries/) for more information.
+[Plotly](https://plotly.com/graphing-libraries/) is a popular Python graphing library for creating interactive, publication-quality charts. Reflex wraps it with the `rx.plotly` component so you can embed any Plotly or Plotly Express figure — line charts, scatter plots, histograms, heatmaps, or 3D surface plots — directly into a Python web app with no JavaScript. Because Reflex compiles to a full-stack web app, these charts stay interactive in the browser and can update live from your app state.
 
 ```md alert info
 # When integrating Plotly graphs into your UI code, note that the method for displaying the graph differs from a regular Python script. Instead of using `fig.show()`, use `rx.plotly(data=fig)` within your UI code to ensure the graph is properly rendered and displayed within the user interface
