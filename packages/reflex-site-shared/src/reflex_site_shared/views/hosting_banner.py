@@ -5,7 +5,7 @@ import datetime
 import reflex_components_internal as ui
 
 import reflex as rx
-from reflex_site_shared.constants import REFLEX_ASSETS_CDN
+from reflex_site_shared.constants import REFLEX_ASSETS_CDN, REFLEX_BUILD_URL
 
 
 def glow() -> rx.Component:
@@ -19,12 +19,8 @@ def glow() -> rx.Component:
     )
 
 
-AGENT_TOOLKIT_EARLY_ACCESS_URL = (
-    "https://us.posthog.com/external_surveys/019e669c-939f-0000-a8b1-0aaceee08e3b"
-)
-
-# October 25, 2025 12:01 AM PDT (UTC-7) = October 25, 2025 07:01 AM UTC
-DEADLINE = datetime.datetime(2025, 10, 25, 7, 1, tzinfo=datetime.UTC)
+# July 7, 2026 12:01 AM PDT (UTC-7) = July 7, 2026 07:01 AM UTC
+DEADLINE = datetime.datetime(2026, 7, 7, 7, 1, tzinfo=datetime.UTC)
 
 
 class HostingBannerState(rx.State):
@@ -45,8 +41,8 @@ class HostingBannerState(rx.State):
             self.show_banner = True
 
     @rx.event
-    def show_agent_toolkit_banner(self):
-        """Show the Agent Toolkit launch banner."""
+    def show_promo_banner(self):
+        """Show the limited-time Pro promo banner."""
         self.show_banner = True
 
     @rx.var
@@ -105,13 +101,13 @@ def hosting_banner() -> rx.Component:
                         rx.box(
                             # Header text with responsive spans
                             rx.el.span(
-                                "New",
+                                "Limited time",
                                 class_name="items-center font-[525] px-2.5 h-7 rounded-lg text-sm text-white z-[1] max-lg:hidden lg:inline-flex border border-white/16",
                             ),
                             rx.el.span(
-                                "Reflex Agent Toolkit is launching",
+                                "Get Pro for $3 until July 6th",
                                 rx.el.span(
-                                    ". Get early access",
+                                    ". Upgrade now",
                                     class_name="lg:hidden text-white/70",
                                 ),
                                 class_name="text-white font-[525] text-sm lg:text-nowrap inline-block",
@@ -120,11 +116,11 @@ def hosting_banner() -> rx.Component:
                                 class_name="w-px h-7 bg-gradient-to-b from-transparent via-white/24 to-transparent max-lg:hidden",
                             ),
                             ui.button(
-                                "Get early access",
+                                "Upgrade now",
                                 ui.icon("ArrowRight01Icon"),
                                 variant="ghost-highlight",
                                 size="xs",
-                                aria_label="Get early access to Reflex Agent Toolkit",
+                                aria_label="Upgrade to Reflex Pro",
                                 class_name="max-lg:hidden text-white hover:text-primary-10",
                             ),
                             class_name="flex flex-row items-center md:gap-4 gap-2",
@@ -136,7 +132,7 @@ def hosting_banner() -> rx.Component:
                         ),
                         class_name="flex flex-row items-center relative",
                     ),
-                    href=AGENT_TOOLKIT_EARLY_ACCESS_URL,
+                    href=REFLEX_BUILD_URL,
                     class_name="flex justify-start md:justify-center md:col-start-2 max-w-[73rem]",
                 ),
                 rx.el.button(
@@ -151,5 +147,5 @@ def hosting_banner() -> rx.Component:
                 class_name="px-5 lg:px-0 w-screen min-h-[2rem] lg:h-10 flex md:grid md:grid-cols-[1fr_auto_1fr] items-center bg-secondary-12 dark:bg-[#6550B9] gap-4 overflow-hidden relative lg:py-0 py-2 max-w-full group",
             ),
         ),
-        on_mount=HostingBannerState.show_agent_toolkit_banner,
+        on_mount=HostingBannerState.show_promo_banner,
     )
