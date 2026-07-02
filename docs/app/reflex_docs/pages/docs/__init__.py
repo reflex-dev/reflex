@@ -140,6 +140,12 @@ component_list = defaultdict(list)
 recipes_list = defaultdict(list)
 docs_ns = SimpleNamespace()
 
+# Maps a library doc's filename-based key (the first element of its component
+# list, e.g. "areachart") to a human-friendly display title from frontmatter
+# (e.g. "Area Chart"). The sidebar uses this for labels while still deriving the
+# URL from the filename key, so titles read correctly without breaking links.
+library_display_titles: dict[str, str] = {}
+
 doc_markdown_sources: dict[str, str] = {}
 
 
@@ -375,6 +381,10 @@ def handle_library_doc(
         if frontmatter is not None and frontmatter.title
         else resolved.display_title
     )
+    if frontmatter is not None and frontmatter.title:
+        # clist[0] is the filename-based key the sidebar links from; record the
+        # frontmatter title so the sidebar can show it as the label instead.
+        library_display_titles[clist[0]] = display_title
     return multi_docs(
         path=resolved.route,
         virtual_path=doc,
