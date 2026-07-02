@@ -45,6 +45,46 @@ def error():
     )
 ```
 
+## Symmetric and Asymmetric Errors
+
+The `data_key` of an `rx.recharts.error_bar()` points at a field in each data row, and that field controls how far the whisker extends. Use a single number for a **symmetric** error — the same distance above and below the point — or a two-element `[low, high]` list for an **asymmetric** error. In the example above, some rows use `"errorY": 20` (symmetric) while others use `"errorY": [30, 20]` (asymmetric). The `direction` prop (`"x"` or `"y"`) chooses which axis the whisker runs along, so you can show error on one or both axes at once.
+
+## Error Bars on a Line Chart
+
+Error bars aren't limited to scatter charts. Add an `rx.recharts.error_bar()` as a child of an `rx.recharts.line()` to visualize variance or measurement uncertainty on a line chart — useful for time series such as average temperature or benchmark results.
+
+```python demo graphing
+data = [
+    {"month": "Jan", "temp": 7, "error": [2, 3]},
+    {"month": "Feb", "temp": 9, "error": 2},
+    {"month": "Mar", "temp": 12, "error": [3, 2]},
+    {"month": "Apr", "temp": 16, "error": 3},
+    {"month": "May", "temp": 20, "error": [2, 4]},
+    {"month": "Jun", "temp": 24, "error": 3},
+]
+
+
+def line_error():
+    return rx.recharts.line_chart(
+        rx.recharts.line(
+            rx.recharts.error_bar(
+                data_key="error",
+                direction="y",
+                width=4,
+                stroke_width=2,
+                stroke=rx.color("accent", 9),
+            ),
+            data_key="temp",
+            stroke=rx.color("accent", 9),
+        ),
+        rx.recharts.x_axis(data_key="month"),
+        rx.recharts.y_axis(),
+        data=data,
+        width="100%",
+        height=300,
+    )
+```
+
 ## Related Charts
 
 Explore more chart types you can build with Reflex and Recharts in pure Python:
