@@ -11,7 +11,7 @@ This example pulls together everything from the previous pages — `library` and
 
 ## Import
 
-Let's start by importing the library [@xyflow/react](https://www.npmjs.com/package/@xyflow/react). Make a separate file called `reactflow.py` and add the following code:
+Let's start by importing the library [@xyflow/react](https://www.npmjs.com/package/@xyflow/react). Make a separate file called `react_flow.py` and add the following code:
 
 ```python
 import reflex as rx
