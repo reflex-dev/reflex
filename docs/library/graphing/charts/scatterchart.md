@@ -12,7 +12,7 @@ meta_description: "Create scatter plots in Python with Reflex. Build interactive
 import reflex as rx
 ```
 
-Scatter charts in Reflex are built on [Recharts](https://recharts.org/) and created in pure Python. A scatter chart always has two value axes to show one set of numerical data along a horizontal (value) axis and another set of numerical values along a vertical (value) axis. The chart displays points at the intersection of an x and y numerical value, combining these values into single data points.
+Scatter charts in Reflex are built on [Recharts](https://recharts.org/) and created in pure Python. A scatter plot (or scatter chart) always has two value axes to show one set of numerical data along a horizontal (value) axis and another set of numerical values along a vertical (value) axis. The chart displays points at the intersection of an x and y numerical value, combining these values into single data points.
 
 ## Simple Example
 

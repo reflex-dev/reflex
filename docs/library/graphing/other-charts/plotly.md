@@ -2,7 +2,7 @@
 components:
   - rx.plotly
 title: Plotly
-meta_description: "Use Plotly in Python with Reflex. The rx.plotly component renders interactive Plotly and Plotly Express figures in your web app — no JavaScript required, all in pure Python."
+meta_description: "Use Plotly in Python with Reflex. The rx.plotly component renders interactive Plotly and Plotly Express figures — line charts, scatter plots, heatmaps, and histograms — in your web app, all in pure Python."
 ---
 
 # Plotly
