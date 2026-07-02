@@ -196,10 +196,9 @@ Reflex provides an async version of the session function called `rx.asession` fo
 
 ### Configuring the Async Database URL
 
-Unlike `rx.session`, which uses `db_url`, `rx.asession` requires a separate
-`async_db_url` to be set in your `rxconfig.py`. It must point at the same
-database as `db_url` but use an async driver, and calling `rx.asession()`
-without it configured raises an error.
+`rx.asession` needs its own `async_db_url` in `rxconfig.py`. It must point at
+the same database as `db_url` but use an async driver. Calling `rx.asession()`
+when it is unset raises an error.
 
 ```python
 config = rx.Config(
@@ -209,15 +208,15 @@ config = rx.Config(
 )
 ```
 
-You must also install the matching async DBAPI driver, which is not included in
-the `reflex[db]` extra. For the SQLite URL shown above, install `aiosqlite`:
+The matching async DBAPI driver is not part of the `reflex[db]` extra, so
+install it separately. For the SQLite URL above, install `aiosqlite`:
 
 ```bash
 pip install aiosqlite
 ```
 
-For PostgreSQL, install `psycopg` (psycopg3), which works as both the sync and
-async driver — so `db_url` and `async_db_url` can share the same
+For PostgreSQL, install `psycopg` (psycopg3). It works as both the sync and
+async driver, so `db_url` and `async_db_url` can share one
 `postgresql+psycopg://...` scheme:
 
 ```bash
