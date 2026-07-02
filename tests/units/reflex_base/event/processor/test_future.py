@@ -51,13 +51,34 @@ async def test_add_child_to_done_future_raises():  # noqa: RUF029
 
 
 @pytest.mark.asyncio
-async def test_add_child_to_cancelled_future_raises():  # noqa: RUF029
-    """add_child raises RuntimeError if the parent future is cancelled."""
+async def test_add_child_to_cancelled_future_cancels_child():  # noqa: RUF029
+    """add_child immediately cancels children when a cascade was requested."""
     parent = EventFuture(txid="parent")
-    parent.cancel()
+    parent.cancel("stale")
     child = EventFuture(txid="child")
-    with pytest.raises(RuntimeError, match="already done"):
-        parent.add_child(child)
+
+    parent.add_child(child)
+
+    assert parent.children == [child]
+    assert child.cancelled()
+    with pytest.raises(asyncio.CancelledError, match="stale"):
+        child.result()
+
+
+@pytest.mark.asyncio
+async def test_add_child_after_done_parent_cancel_request_cancels_child():  # noqa: RUF029
+    """A late child is cancelled if cascade cancellation was requested after completion."""
+    parent = EventFuture(txid="parent")
+    parent.set_result(None)
+    assert not parent.cancel("stale")
+    child = EventFuture(txid="child")
+
+    parent.add_child(child)
+
+    assert parent.children == [child]
+    assert child.cancelled()
+    with pytest.raises(asyncio.CancelledError, match="stale"):
+        child.result()
 
 
 @pytest.mark.asyncio

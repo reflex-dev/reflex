@@ -5,13 +5,14 @@ import contextlib
 from typing import Any
 
 import pytest
+from reflex_base import constants
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import (
     EventProcessor,
     QueueShutDown,
     _stream_queue_until_done,
 )
-from reflex_base.registry import RegistrationContext
+from reflex_base.registry import RegisteredEventHandler, RegistrationContext
 
 from reflex.event import Event, EventHandler
 
@@ -443,6 +444,65 @@ async def test_error_does_not_stop_queue(
         await ep.enqueue(token, Event.from_event_type(error_event())[0])
         await ep.enqueue(token, Event.from_event_type(logging_event("after_error"))[0])
     assert _CALL_LOG == [{"value": "after_error"}]
+
+
+async def test_new_on_load_internal_cancels_previous_chain(
+    processor: EventProcessor,
+    token: str,
+):
+    """A newer navigation cancels stale on_load work for the same token.
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+    """
+    stale_started = asyncio.Event()
+    on_load_event_name = f"state.{constants.CompileVars.ON_LOAD_INTERNAL}"
+    load_handler_event_name = "state.load_page"
+
+    async def on_load_internal_handler(value: str):
+        ctx = EventContext.get()
+        await ctx.enqueue(Event(name=load_handler_event_name, payload={"value": value}))
+
+    async def load_handler(value: str):
+        if value == "stale":
+            stale_started.set()
+            try:
+                await asyncio.sleep(10)
+            except asyncio.CancelledError:
+                _CALL_LOG.append({"value": "stale_cancelled"})
+                raise
+        _CALL_LOG.append({"value": value})
+
+    registration_context = RegistrationContext.get()
+    registration_context.event_handlers[on_load_event_name] = RegisteredEventHandler(
+        handler=EventHandler(fn=on_load_internal_handler),
+        states=(),
+    )
+    registration_context.event_handlers[load_handler_event_name] = (
+        RegisteredEventHandler(
+            handler=EventHandler(fn=load_handler),
+            states=(),
+        )
+    )
+
+    processor.configure()
+    async with processor as ep:
+        stale = await ep.enqueue(
+            token,
+            Event(name=on_load_event_name, payload={"value": "stale"}),
+        )
+        await asyncio.wait_for(stale_started.wait(), timeout=1)
+        assert stale.done()
+        assert not stale.all_done()
+
+        current = await ep.enqueue(
+            token,
+            Event(name=on_load_event_name, payload={"value": "fresh"}),
+        )
+        await asyncio.wait_for(current.wait_all(), timeout=1)
+
+    assert _CALL_LOG == [{"value": "stale_cancelled"}, {"value": "fresh"}]
 
 
 async def test_chained_event_processed(token: str):
