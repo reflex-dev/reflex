@@ -1,9 +1,10 @@
 ---
+description: Build interactive Plotly charts in pure Python with Reflex. Render line, scatter, histogram, and 3D surface plots as live web components, no JavaScript required.
 components:
   - rx.plotly
 ---
 
-# Plotly
+# Plotly in Python: Interactive Charts with Reflex
 
 ```python exec
 import reflex as rx
@@ -12,15 +13,15 @@ import plotly.express as px
 import plotly.graph_objects as go
 ```
 
-Plotly is a graphing library that can be used to create interactive graphs. Use the rx.plotly component to wrap Plotly as a component for use in your web page. Checkout [Plotly](https://plotly.com/graphing-libraries/) for more information.
+[Plotly](https://plotly.com/graphing-libraries/) is a popular Python graphing library for creating interactive, publication-quality charts. Reflex wraps it with the `rx.plotly` component so you can embed any Plotly figure — line charts, scatter plots, histograms, or 3D surface plots — directly into a Python web app with no JavaScript. Because Reflex compiles to a full-stack web app, these charts stay interactive in the browser and can update live from your app state.
 
 ```md alert info
 # When integrating Plotly graphs into your UI code, note that the method for displaying the graph differs from a regular Python script. Instead of using `fig.show()`, use `rx.plotly(data=fig)` within your UI code to ensure the graph is properly rendered and displayed within the user interface
 ```
 
-## Basic Example
+## Line Chart
 
-Let's create a line graph of life expectancy in Canada.
+Let's start with a basic Plotly line chart of life expectancy in Canada.
 
 ```python demo exec
 import plotly.express as px
@@ -30,6 +31,43 @@ fig = px.line(df, x="year", y="lifeExp", title="Life expectancy in Canada")
 
 
 def line_chart():
+    return rx.center(
+        rx.plotly(data=fig),
+    )
+```
+
+## Scatter Plot
+
+Scatter plots are useful for showing the relationship between two variables. Here we plot the Iris dataset, coloring each point by species.
+
+```python demo exec
+def scatter_plot():
+    df = px.data.iris()
+    fig = px.scatter(
+        df,
+        x="sepal_width",
+        y="sepal_length",
+        color="species",
+        title="Iris sepal dimensions",
+    )
+    return rx.center(
+        rx.plotly(data=fig),
+    )
+```
+
+## Histogram
+
+Histograms show the distribution of a single variable. This example plots the distribution of restaurant bill totals.
+
+```python demo exec
+def histogram():
+    df = px.data.tips()
+    fig = px.histogram(
+        df,
+        x="total_bill",
+        nbins=30,
+        title="Distribution of restaurant bills",
+    )
     return rx.center(
         rx.plotly(data=fig),
     )
@@ -55,7 +93,7 @@ def localized_line_chart():
 
 You can still pass `config`; when both are provided, `locale=` is applied as the final locale value.
 
-## 3D graphing example
+## 3D Surface Plot
 
 Let's create a 3D surface plot of Mount Bruno. This is a slightly more complicated example, but it wraps in Reflex using the same method. In fact, you can wrap any figure using the same approach.
 
