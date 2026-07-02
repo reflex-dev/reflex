@@ -37,6 +37,72 @@ def line_chart():
     )
 ```
 
+## Plotly Express Chart Types
+
+[Plotly Express](https://plotly.com/python/plotly-express/) (`plotly.express`, imported as `px`) builds common chart types in a single line of Python, and every figure renders in Reflex with `rx.plotly`.
+
+### Bar Chart
+
+Create a Plotly Express bar chart with `px.bar`:
+
+```python demo exec
+oceania = px.data.gapminder().query("continent == 'Oceania'")
+bar_fig = px.bar(
+    oceania, x="year", y="pop", color="country", title="Population of Oceania"
+)
+
+
+def plotly_bar_chart():
+    return rx.center(rx.plotly(data=bar_fig))
+```
+
+### Scatter Plot
+
+Create a Plotly scatter plot with `px.scatter`:
+
+```python demo exec
+iris = px.data.iris()
+scatter_fig = px.scatter(
+    iris,
+    x="sepal_width",
+    y="sepal_length",
+    color="species",
+    title="Iris sepal dimensions",
+)
+
+
+def plotly_scatter_plot():
+    return rx.center(rx.plotly(data=scatter_fig))
+```
+
+### Pie Chart
+
+Create a Plotly pie chart with `px.pie`:
+
+```python demo exec
+tips = px.data.tips()
+pie_fig = px.pie(tips, values="tip", names="day", title="Tips by day")
+
+
+def plotly_pie_chart():
+    return rx.center(rx.plotly(data=pie_fig))
+```
+
+### Heatmap
+
+Create a Plotly heatmap with `px.density_heatmap`:
+
+```python demo exec
+tips_data = px.data.tips()
+heatmap_fig = px.density_heatmap(
+    tips_data, x="total_bill", y="tip", title="Bill vs tip density heatmap"
+)
+
+
+def plotly_heatmap():
+    return rx.center(rx.plotly(data=heatmap_fig))
+```
+
 ## Locale Configuration
 
 Use `locale` to localize Plotly number/date formatting and modebar labels:
