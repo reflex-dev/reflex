@@ -1,6 +1,6 @@
 # Styles and Imports
 
-When wrapping a React component, you may need to define styles and imports that are specific to the component. This is done by defining the `add_styles` and `add_imports` methods in your component class.
+When wrapping a React component, you may need to define styles and imports that are specific to the component. This is done by defining the `add_style` and `add_imports` methods in your component class.
 
 ### Imports
 

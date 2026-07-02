@@ -7,11 +7,11 @@ title: Props - Wrapping React
 When wrapping a React component, you want to define the props that will be accepted by the component.
 This is done by defining the props and annotating them with a `rx.Var`.
 
-Broadly, there are three kinds of props you can encounter when wrapping a React component:
+Broadly, there are four kinds of props you can encounter when wrapping a React component:
 
 1. **Simple Props**: These are props that are passed directly to the component. They can be of any type, including strings, numbers, booleans, and even lists or dictionaries.
 2. **Callback Props**: These are props that expect to receive a function. That function will usually be called by the component as a callback. (This is different from event handlers.)
-3. **Component Props**: These are props that expect to receive a components themselves. They can be used to create more complex components by composing them together.
+3. **Component Props**: These are props that expect to receive components themselves. They can be used to create more complex components by composing them together.
 4. **Event Handlers**: These are props that expect to receive a function that will be called when an event occurs. They are defined as `rx.EventHandler` with a signature function to define the spec of the event.
 
 ## Simple Props
@@ -69,19 +69,33 @@ class SimplePropsComponent(MyBaseComponent):
 
 ## Callback Props
 
-Callback props are used to handle events or to pass data back to the parent component. They are defined as `rx.Var` with a type of `FunctionVar` or `Callable`.
+Callback props expect a **function** the library calls on the client — for example a validation predicate (`isValidConnection`), a per-item formatter (`getColor`), or a filter. They are defined as `rx.Var` with a type of `FunctionVar` or `Callable`.
+
+Unlike event handlers, callback props usually must return a value *synchronously*, so they cannot round-trip to a Python event handler. Pass a JavaScript expression instead:
 
 ```python
 from typing import Callable
-from reflex.vars.function import FunctionVar
+from reflex.vars import Var
 
 
 class CallbackPropsComponent(MyBaseComponent):
     """MyComponent."""
 
-    # A callback prop that takes a single argument.
-    callback_props: rx.Var[Callable]
+    # A callback prop, e.g. `(item) => boolean` in the library's docs.
+    item_filter: rx.Var[Callable]
+
+
+callback_component = CallbackPropsComponent.create
+
+
+def index():
+    return callback_component(
+        # A raw JS arrow function, passed via a Var.
+        item_filter=Var(_js_expr="(item) => item.value > 10"),
+    )
 ```
+
+For a friendlier API, you can accept a plain string and convert it in `create()` — see [common pitfalls](/docs/wrapping-react/common-pitfalls/) for this and other callback-prop patterns.
 
 ## Component Props
 
@@ -93,6 +107,12 @@ class ComponentPropsComponent(MyBaseComponent):
 
     # A prop that takes a component as an argument.
     component_props: rx.Var[rx.Component]
+```
+
+```md alert warning
+# Component-map props must be referentially stable.
+
+Some libraries take a *mapping* of names to components (React Flow's `nodeTypes`, editor plugin registries) and require that object to keep the same identity across renders — passing a freshly-created mapping on every render makes the library remount all of its children each time. Emit such mappings as a module-level constant via custom code and pass a reference to it. See [common pitfalls](/docs/wrapping-react/common-pitfalls/) for the full pattern.
 ```
 
 ## Event Handlers
@@ -131,12 +151,14 @@ def custom_spec1(event: ObjectVar[InputEventType]) -> tuple[str, int]:
 
 def custom_spec2(event: ObjectVar[dict]) -> tuple[Var[OutputEventType]]:
     """Custom event spec using ObjectVar with dict as input and custom type as output."""
-    return Var.create(
-        {
-            "baz": event["foo"],
-            "qux": event["bar"],
-        },
-    ).to(OutputEventType)
+    return (
+        Var.create(
+            {
+                "baz": event["foo"],
+                "qux": event["bar"],
+            },
+        ).to(OutputEventType),
+    )
 
 
 class EventHandlerComponent(MyBaseComponent):
@@ -162,8 +184,15 @@ class EventHandlerComponent(MyBaseComponent):
 ```
 
 ```md alert info
-# Custom event specs have a few use case where they are particularly useful. If the event returns non-serializable data, you can filter them out so the event can be sent to the backend. You can also use them to transform the data before sending it to the backend.
+# Custom event specs have a few use cases where they are particularly useful. If the event returns non-serializable data (like a DOM event), you can filter it out so the event can be sent to the backend. You can also use them to transform the data before sending it to the backend.
 ```
+
+Everything an event spec forwards is JSON-serialized and sent over the websocket, so two rules of thumb apply:
+
+- **Never forward DOM events.** Callbacks like `(event, item) => ...` pass a React synthetic event as the first argument — huge, cyclic, and not serializable. Return only the plain-data arguments (or project the fields you need, like `clientX`/`clientY`, into a new object).
+- **Keep payloads minimal.** Forward the smallest structure your handlers need; for high-frequency events, also throttle the handler with [event actions](/docs/events/event-actions/).
+
+Python event handlers may accept **fewer** arguments than the spec provides, so extending a spec with an additional argument is backwards-compatible with existing handlers.
 
 ### Emulating Event Handler Behavior Outside a Component
 

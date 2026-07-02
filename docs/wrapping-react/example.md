@@ -5,51 +5,83 @@ from typing import Any
 
 # Complex Example
 
-In this more complex example we will be wrapping `reactflow` a library for building node based applications like flow charts, diagrams, graphs, etc.
+In this more complex example we will be wrapping [React Flow](https://reactflow.dev), a library for building node-based applications like flow charts, diagrams, and graphs.
+
+This example pulls together everything from the previous pages — `library` and `tag`, props, event handlers, and imports — and adds the patterns that make an interactive wrap work well in practice: client-only rendering, event specs that strip non-serializable payloads, and throttling high-frequency events.
 
 ## Import
 
-Lets start by importing the library [reactflow](https://www.npmjs.com/package/reactflow). Lets make a separate file called `reactflow.py` and add the following code:
+Let's start by importing the library [@xyflow/react](https://www.npmjs.com/package/@xyflow/react). Make a separate file called `reactflow.py` and add the following code:
 
 ```python
 import reflex as rx
-from typing import Any, Dict, List, Union
+from typing import Any
 
 
 class ReactFlowLib(rx.Component):
-    """A component that wraps a react flow lib."""
+    """Shared base for components from @xyflow/react."""
 
-    library = "reactflow"
+    # Pin the version so the wrap only changes when you update it
+    # intentionally. (The legacy `reactflow` package is deprecated —
+    # v12 ships as @xyflow/react.)
+    library = "@xyflow/react@12.11.1"
 
-    def _get_custom_code(self) -> str:
-        return """import 'reactflow/dist/style.css';
-        """
+    def add_imports(self):
+        # React Flow renders unusably without its stylesheet. Importing it
+        # from the component means users of your wrap can't forget it.
+        return {"": ["@xyflow/react/dist/style.css"]}
 ```
 
-Notice we also use the `_get_custom_code` method to import the css file that is needed for the styling of the library.
+Two things to note:
+
+1. The version is **pinned**. This matters extra for wrapped libraries: an unpinned upstream can rename props or components out from under your wrap.
+2. The CSS file is imported via `add_imports` with the empty-string key, as described in [imports and styles](/docs/wrapping-react/imports-and-styles/).
 
 ## Components
 
-For this tutorial we will wrap three components from Reactflow: `ReactFlow`, `Background`, and `Controls`. Lets start with the `ReactFlow` component.
+For this tutorial we will wrap three components from React Flow: `ReactFlow`, `Background`, and `Controls`.
 
-Here we will define the `tag` and the `vars` that we will need to use the component.
+The main `ReactFlow` component measures DOM nodes and uses browser APIs like `ResizeObserver`, so it must only render on the client — we subclass `rx.NoSSRComponent` for it (see [Dynamic Imports](/docs/wrapping-react/library-and-tags/)). The simpler subcomponents can stay as regular components.
 
-For this tutorial we will define `EventHandler` props `on_nodes_change` and `on_connect`, but you can find all the events that the component triggers in the [reactflow docs](https://reactflow.dev/docs/api/react-flow-props/#onnodeschange).
+Here we define the `tag` and the props that we will need. We define `EventHandler` props `on_nodes_change`, `on_connect`, and `on_node_click`; you can find all the events that the component triggers in the [React Flow docs](https://reactflow.dev/api-reference/react-flow).
+
+Each `EventHandler` needs an event spec: a function that maps the arguments the underlying JavaScript callback receives to the payload your Python event handler gets. Two of these callbacks pass plain, JSON-serializable data through unchanged — but `onNodeClick` receives a React synthetic mouse event as its first argument, which is huge, cyclic, and not JSON-serializable. The spec drops it and forwards only the node. Stripping DOM events like this is essential: forwarding them blindly breaks the event at runtime.
 
 ```python
 import reflex as rx
-from typing import Any, Dict, List, Union
+from typing import Any
 
 
 class ReactFlowLib(rx.Component): ...
 
 
-class ReactFlow(ReactFlowLib):
+def connection_spec(
+    connection: rx.Var[dict[str, Any]],
+) -> tuple[rx.Var[dict[str, Any]]]:
+    """(connection) — plain data, pass it through."""
+    return (connection,)
+
+
+def changes_spec(
+    changes: rx.Var[list[dict[str, Any]]],
+) -> tuple[rx.Var[list[dict[str, Any]]]]:
+    """(changes) — a list of diffs, e.g. moved node positions."""
+    return (changes,)
+
+
+def node_click_spec(
+    event: rx.Var[dict[str, Any]], node: rx.Var[dict[str, Any]]
+) -> tuple[rx.Var[dict[str, Any]]]:
+    """(event, node) -> (node) — drop the DOM event, forward the node."""
+    return (node,)
+
+
+class ReactFlow(rx.NoSSRComponent, ReactFlowLib):
     tag = "ReactFlow"
 
-    nodes: rx.Var[List[Dict[str, Any]]]
+    nodes: rx.Var[list[dict[str, Any]]]
 
-    edges: rx.Var[List[Dict[str, Any]]]
+    edges: rx.Var[list[dict[str, Any]]]
 
     fit_view: rx.Var[bool]
 
@@ -57,24 +89,24 @@ class ReactFlow(ReactFlowLib):
 
     nodes_connectable: rx.Var[bool]
 
-    nodes_focusable: rx.Var[bool]
+    on_nodes_change: rx.EventHandler[changes_spec]
 
-    on_nodes_change: rx.EventHandler[lambda e0: [e0]]
+    on_connect: rx.EventHandler[connection_spec]
 
-    on_connect: rx.EventHandler[lambda e0: [e0]]
+    on_node_click: rx.EventHandler[node_click_spec]
 ```
 
-Now lets add the `Background` and `Controls` components. We will also create the components using the `create` method so that we can use them in our app.
+Now let's add the `Background` and `Controls` components and create the convenience functions so that we can use the components in our app.
 
 ```python
 import reflex as rx
-from typing import Any, Dict, List, Union
+from typing import Any
 
 
 class ReactFlowLib(rx.Component): ...
 
 
-class ReactFlow(ReactFlowLib): ...
+class ReactFlow(rx.NoSSRComponent, ReactFlowLib): ...
 
 
 class Background(ReactFlowLib):
@@ -100,16 +132,16 @@ controls = Controls.create
 
 ## Building the App
 
-Now that we have our components lets build the app.
+Now that we have our components, let's build the app.
 
-Lets start by defining the initial nodes and edges that we will use in our app.
+Let's start by defining the initial nodes and edges that we will use in our app.
 
 ```python
 import reflex as rx
 from .react_flow import react_flow, background, controls
 import random
 from collections import defaultdict
-from typing import Any, Dict, List
+from typing import Any
 
 
 initial_nodes = [
@@ -140,14 +172,14 @@ initial_edges = [
 
 Next we will define the state of our app. We have four event handlers: `add_random_node`, `clear_graph`, `on_connect` and `on_nodes_change`.
 
-The `on_nodes_change` event handler is triggered when a node is selected and dragged. This function is used to update the position of a node during dragging. It takes a single argument `node_changes`, which is a list of dictionaries containing various types of metadata. For updating positions, the function specifically processes changes of type `position`.
+The `on_nodes_change` event handler receives the **diff** React Flow computed (a list of change dicts), not the whole graph — while a node is dragged, it fires roughly once per animation frame with `position` changes. We apply the position updates to our state.
 
 ```python
 class State(rx.State):
     """The app state."""
 
-    nodes: List[Dict[str, Any]] = initial_nodes
-    edges: List[Dict[str, Any]] = initial_edges
+    nodes: list[dict[str, Any]] = initial_nodes
+    edges: list[dict[str, Any]] = initial_edges
 
     @rx.event
     def add_random_node(self):
@@ -192,8 +224,8 @@ class State(rx.State):
         })
 
     @rx.event
-    def on_nodes_change(self, node_changes: List[Dict[str, Any]]):
-        # Receives a list of Nodes in case of events like dragging
+    def on_nodes_change(self, node_changes: list[dict[str, Any]]):
+        # Receives a list of changes, e.g. positions while dragging.
         map_id_to_new_position = defaultdict(dict)
 
         # Loop over the changes and store the new position
@@ -208,7 +240,9 @@ class State(rx.State):
                 self.nodes[i]["position"] = new_position
 ```
 
-Now lets define the UI of our app. We will use the `react_flow` component and pass in the `nodes` and `edges` from our state. We will also add the `on_connect` event handler to the `react_flow` component to handle when an edge is connected.
+Now let's define the UI of our app. We will use the `react_flow` component and pass in the `nodes` and `edges` from our state. We will also add the `on_connect` event handler to handle when an edge is connected.
+
+Because the drag stream fires per animation frame, wiring it directly would send dozens of events per second over the websocket and make dragging feel laggy. We throttle it with an [event action](/docs/events/event-actions/): `State.on_nodes_change.throttle(50)` delivers at most one event every 50ms.
 
 ```python
 def index() -> rx.Component:
@@ -218,8 +252,9 @@ def index() -> rx.Component:
             controls(),
             nodes_draggable=True,
             nodes_connectable=True,
-            on_connect=lambda e0: State.on_connect(e0),
-            on_nodes_change=lambda e0: State.on_nodes_change(e0),
+            on_connect=State.on_connect,
+            # Throttle the per-frame drag stream to at most one event per 50ms.
+            on_nodes_change=State.on_nodes_change.throttle(50),
             nodes=State.nodes,
             edges=State.edges,
             fit_view=True,
@@ -241,27 +276,38 @@ app.add_page(index)
 
 ```python exec
 import reflex as rx
-from typing import Any, Dict, List, Union
+from typing import Any
 from collections import defaultdict
 import random
 
 
 class ReactFlowLib(rx.Component):
-    """A component that wraps a react flow lib."""
+    """Shared base for components from @xyflow/react."""
 
-    library = "reactflow"
+    library = "@xyflow/react@12.11.1"
 
-    def _get_custom_code(self) -> str:
-        return """import 'reactflow/dist/style.css';
-        """
+    def add_imports(self):
+        return {"": ["@xyflow/react/dist/style.css"]}
 
 
-class ReactFlow(ReactFlowLib):
+def connection_spec(
+    connection: rx.Var[dict[str, Any]],
+) -> tuple[rx.Var[dict[str, Any]]]:
+    return (connection,)
+
+
+def changes_spec(
+    changes: rx.Var[list[dict[str, Any]]],
+) -> tuple[rx.Var[list[dict[str, Any]]]]:
+    return (changes,)
+
+
+class ReactFlow(rx.NoSSRComponent, ReactFlowLib):
     tag = "ReactFlow"
 
-    nodes: rx.Var[List[Dict[str, Any]]]
+    nodes: rx.Var[list[dict[str, Any]]]
 
-    edges: rx.Var[List[Dict[str, Any]]]
+    edges: rx.Var[list[dict[str, Any]]]
 
     fit_view: rx.Var[bool]
 
@@ -269,11 +315,9 @@ class ReactFlow(ReactFlowLib):
 
     nodes_connectable: rx.Var[bool]
 
-    nodes_focusable: rx.Var[bool]
+    on_nodes_change: rx.EventHandler[changes_spec]
 
-    on_nodes_change: rx.EventHandler[lambda e0: [e0]]
-
-    on_connect: rx.EventHandler[lambda e0: [e0]]
+    on_connect: rx.EventHandler[connection_spec]
 
 
 class Background(ReactFlowLib):
@@ -325,8 +369,8 @@ initial_edges = [
 class ReactFlowState(rx.State):
     """The app state."""
 
-    nodes: List[Dict[str, Any]] = initial_nodes
-    edges: List[Dict[str, Any]] = initial_edges
+    nodes: list[dict[str, Any]] = initial_nodes
+    edges: list[dict[str, Any]] = initial_edges
 
     @rx.event
     def add_random_node(self):
@@ -371,8 +415,8 @@ class ReactFlowState(rx.State):
         })
 
     @rx.event
-    def on_nodes_change(self, node_changes: List[Dict[str, Any]]):
-        # Receives a list of Nodes in case of events like dragging
+    def on_nodes_change(self, node_changes: list[dict[str, Any]]):
+        # Receives a list of changes, e.g. positions while dragging.
         map_id_to_new_position = defaultdict(dict)
 
         # Loop over the changes and store the new position
@@ -396,8 +440,8 @@ rx.vstack(
         controls(),
         nodes_draggable=True,
         nodes_connectable=True,
-        on_connect=lambda e0: ReactFlowState.on_connect(e0),
-        on_nodes_change=lambda e0: ReactFlowState.on_nodes_change(e0),
+        on_connect=ReactFlowState.on_connect,
+        on_nodes_change=ReactFlowState.on_nodes_change.throttle(50),
         nodes=ReactFlowState.nodes,
         edges=ReactFlowState.edges,
         fit_view=True,
@@ -411,3 +455,5 @@ rx.vstack(
     width="100%",
 )
 ```
+
+For a production-quality wrap of an interactive library like this one — including custom node types, connection validation, and calling the library's imperative API from event handlers — see the patterns in [common pitfalls](/docs/wrapping-react/common-pitfalls/).

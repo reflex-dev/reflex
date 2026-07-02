@@ -100,6 +100,7 @@ def get_sidebar_items_frontend():
                 wrapping_react.imports_and_styles,
                 wrapping_react.local_packages,
                 wrapping_react.serializers,
+                wrapping_react.common_pitfalls,
                 wrapping_react.example,
                 wrapping_react.more_wrapping_examples,
             ],

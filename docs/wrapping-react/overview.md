@@ -9,13 +9,13 @@ One of Reflex's most powerful features is the ability to wrap React components a
 
 If you want a specific component for your app but Reflex doesn't provide it, there's a good chance it's available as a React component. Search for it on [npm](https://www.npmjs.com/), and if it's there, you can use it in your Reflex app. You can also create your own local React components and wrap them in Reflex.
 
-Once you wrap your component, you [publish it](/docs/custom-components/overview) to the Reflex library so that others can use it.
+Once you wrap your component, you can [publish it](/docs/custom-components/overview) to the Reflex library so that others can use it.
 
 ## Simple Example
 
 Simple components that don't have any interaction can be wrapped with just a few lines of code.
 
-Below we show how to wrap the [Spline](https://github.com/splinetool/react-spline) library can be used to create 3D scenes and animations.
+Below we show how to wrap the [Spline](https://github.com/splinetool/react-spline) library, which can be used to create 3D scenes and animations.
 
 ```python demo exec
 import reflex as rx
@@ -124,7 +124,7 @@ def index():
 
 ## What Not To Wrap
 
-There are some libraries on npm that are not do not expose React components and therefore are very hard to wrap with Reflex.
+Some libraries on npm do not expose React components and are therefore very hard to wrap with Reflex.
 
 A library like [spline](https://www.npmjs.com/package/@splinetool/runtime) below is going to be difficult to wrap with Reflex because it does not expose a React component.
 
@@ -141,7 +141,7 @@ spline.load('https://prod.spline.design/6Wq1Q7YGyM-iab9i/scene.splinecode');
 
 You should look out for JSX, a syntax extension to JavaScript, which has angle brackets `(<h1>Hello, world!</h1>)`. If you see JSX, it's likely that the library is a React component and can be wrapped with Reflex.
 
-If the library does not expose a react component you need to try and find a JS React wrapper for the library, such as [react-spline](https://www.npmjs.com/package/@splinetool/react-spline).
+If the library does not expose a React component, you need to try and find a React wrapper for the library, such as [react-spline](https://www.npmjs.com/package/@splinetool/react-spline).
 
 ```javascript
 import Spline from "@splinetool/react-spline";

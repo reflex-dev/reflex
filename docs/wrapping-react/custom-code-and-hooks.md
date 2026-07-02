@@ -1,6 +1,6 @@
 # Custom Code and Hooks
 
-When wrapping a React component, you may need to define custom code or hooks that are specific to the component. This is done by defining the `add_custom_code`or `add_hooks` methods in your component class.
+When wrapping a React component, you may need to define custom code or hooks that are specific to the component. This is done by defining the `add_custom_code` or `add_hooks` methods in your component class.
 
 ## Custom Code
 
@@ -113,4 +113,10 @@ export function Div_7178f430b7b371af8a12d8265d65ab9b() {
 
 ```md alert info
 # You can mix custom code and hooks in the same component. Hooks can access a variable defined in the custom code, but custom code cannot access a variable defined in a hook.
+```
+
+```md alert info
+# Custom code is deduplicated per page.
+
+If the same custom-code string is emitted by several component instances, it is only included once in the page. When you *generate* custom code (for example, compiling a component mapping to a module-level constant), derive any generated identifier from a content hash of its definition — identical definitions then share one constant, and the name stays stable across hot reloads.
 ```
