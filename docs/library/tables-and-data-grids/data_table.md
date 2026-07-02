@@ -1,6 +1,7 @@
 ---
 components:
   - rx.data_table
+meta_description: "Display data in an interactive table in Python with Reflex. The rx.data_table component turns a pandas DataFrame into a searchable, sortable, paginated data table — all in pure Python."
 ---
 
 ```python exec
@@ -9,8 +10,8 @@ import reflex as rx
 
 # Data Table
 
-The data table component is a great way to display static data in a table format.
-You can pass in a pandas dataframe to the data prop to create the table.
+Reflex's data table component (`rx.data_table`) is a great way to display static data — such as a pandas DataFrame — as an interactive table in pure Python.
+You can pass a pandas dataframe to the data prop to create the table, with built-in search, sorting, and pagination.
 
 In this example we will read data from a csv file, convert it to a pandas dataframe and display it in a data_table.
 
@@ -68,3 +69,11 @@ def index():
         columns=State.columns,
     )
 ```
+
+## Related
+
+Explore the other ways to work with tabular data in Reflex, all in pure Python:
+
+- [Table](/docs/library/tables-and-data-grids/table)
+- [Data Editor](/docs/library/tables-and-data-grids/data-editor)
+- [Tables and Data Grids](/docs/library/tables-and-data-grids/)

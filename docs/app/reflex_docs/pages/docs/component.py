@@ -930,6 +930,7 @@ def multi_docs(
     component_list: list,
     title: str,
     ll_component_list: list | None = None,
+    description: str | None = None,
 ):
     components = [
         component_docs(component_tuple, previews)
@@ -990,7 +991,7 @@ def multi_docs(
                 )
         return rx.fragment()
 
-    @docpage(set_path=path, t=title)
+    @docpage(set_path=path, t=title, description=description)
     def out():
         toc = get_docgen_toc(actual_path)
         doc_content = Path(actual_path).read_text(encoding="utf-8")
@@ -1018,7 +1019,7 @@ def multi_docs(
             class_name="flex flex-col w-full",
         )
 
-    @docpage(set_path=path + "low", t=title + " (Low Level)")
+    @docpage(set_path=path + "low", t=title + " (Low Level)", description=description)
     def ll():
         ll_virtual = virtual_path.replace(".md", "-ll.md")
         toc = get_docgen_toc(ll_actual_path)
