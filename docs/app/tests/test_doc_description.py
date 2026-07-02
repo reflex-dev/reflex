@@ -65,7 +65,7 @@ def test_metadata_dict_short_description_falls_through_to_body():
     assert result.startswith("5 minutes of configuration")
 
 
-def test_chart_frontmatter_meta_description_from_body():
+def test_chart_frontmatter_meta_description_from_frontmatter():
     """A chart-style frontmatter meta_description is extracted from raw markdown.
 
     Mirrors the graphing docs: a ``components:`` list followed by a long
