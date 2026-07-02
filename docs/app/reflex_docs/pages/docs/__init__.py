@@ -164,6 +164,7 @@ manual_titles = {
     "docs/recipes-overview.md": "Recipes Overview",
     "docs/events/special_events.md": "Special Events Docs",
     "docs/library/graphing/general/tooltip.md": "Graphing Tooltip",
+    "docs/library/graphing/general/index.md": "Charts and Data Visualization",
     "docs/recipes/content/grid.md": "Grid Recipe",
     "docs/hosting/deploy-to-gcp.md": "Deploy to GCP",
 }
@@ -403,7 +404,7 @@ def get_component_docgen(virtual_doc: str, actual_path: str, title: str):
     if resolved is None:
         return None
 
-    if virtual_doc.startswith("docs/library"):
+    if virtual_doc.startswith("docs/library") and not virtual_doc.endswith("/index.md"):
         return handle_library_doc(virtual_doc, actual_path, title, resolved)
 
     if virtual_doc.startswith(CHANGELOG_VIRTUAL_PREFIX):
