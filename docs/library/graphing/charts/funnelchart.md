@@ -15,7 +15,7 @@ rx.toast.provider()
 
 # Funnel Chart
 
-Funnel charts in Reflex are built on [Recharts](https://recharts.org/) and created in pure Python. A funnel chart is a graphical representation used to visualize how data moves through a process. In a funnel chart, the dependent variable’s value diminishes in the subsequent stages of the process. It can be used to demonstrate the flow of users through a business or sales process.
+Funnel charts in Reflex are built on [Recharts](https://recharts.org/), a React charting library, and created in pure Python. A funnel chart is a graphical representation used to visualize how data moves through a process. In a funnel chart, the dependent variable’s value diminishes in the subsequent stages of the process. It can be used to demonstrate the flow of users through a business or sales process.
 
 ## Simple Example
 

@@ -13,7 +13,7 @@ import reflex as rx
 from typing import Any
 ```
 
-Radar charts in Reflex are built on [Recharts](https://recharts.org/) and created in pure Python. A radar chart (also called a spider chart) shows multivariate data of three or more quantitative variables mapped onto an axis.
+Radar charts in Reflex are built on [Recharts](https://recharts.org/), a React charting library, and created in pure Python. A radar chart (also called a spider chart) shows multivariate data of three or more quantitative variables mapped onto an axis.
 
 ## Simple Example
 

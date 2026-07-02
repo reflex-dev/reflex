@@ -13,7 +13,7 @@ import reflex as rx
 import random
 ```
 
-Area charts in Reflex are built on [Recharts](https://recharts.org/) and created in pure Python. A Recharts area chart displays quantitative data using filled areas between a line connecting data points and the axis.
+Area charts in Reflex are built on [Recharts](https://recharts.org/), a React charting library, and created in pure Python. A Recharts area chart displays quantitative data using filled areas between a line connecting data points and the axis.
 
 ## Basic Example
 
@@ -95,9 +95,9 @@ def area_sync():
     )
 ```
 
-## Stacking Charts
+## Stacked Area Chart
 
-The `stack_id` prop allows you to stack multiple graphs on top of each other. In the example, it is set to "1" for both charts, indicating that they should be stacked together. This means that the bars or areas of the charts will be vertically stacked, with the values of each chart contributing to the total height of the stacked areas or bars.
+The `stack_id` prop allows you to stack multiple areas on top of each other, creating a stacked area chart. In the example, it is set to "1" for both charts, indicating that they should be stacked together. This means that the areas of the charts will be vertically stacked, with the values of each chart contributing to the total height of the stacked areas.
 
 This is similar to the `sync_id` prop, but instead of synchronizing the interaction between the charts, it just stacks the charts on top of each other.
 

@@ -3,7 +3,7 @@ components:
   - rx.recharts.BarChart
   - rx.recharts.Bar
 title: Bar Chart
-meta_description: "Create interactive bar charts in Python with Reflex. Build single, stacked, and multi-series Recharts bar charts with custom colors, axes, tooltips, and legends — no JavaScript required."
+meta_description: "Create interactive bar charts in Python with Reflex. Build grouped, stacked, and horizontal Recharts bar charts with custom colors, axes, tooltips, and legends — all in pure Python, no JavaScript."
 ---
 
 # Bar Chart
@@ -13,7 +13,7 @@ import reflex as rx
 import random
 ```
 
-Bar charts in Reflex are built on [Recharts](https://recharts.org/) and let you visualize categorical data in pure Python. A bar chart presents categorical data with rectangular bars whose heights or lengths are proportional to the values that they represent.
+Bar charts in Reflex are built on [Recharts](https://recharts.org/), a React charting library, and let you visualize categorical data in pure Python. A bar chart presents categorical data with rectangular bars whose heights or lengths are proportional to the values that they represent.
 
 For a bar chart we must define an `rx.recharts.bar()` component for each set of values we wish to plot. Each `rx.recharts.bar()` component has a `data_key` which clearly states which variable in our data we are tracking. In this simple example we plot `uv` as a bar against the `name` column which we set as the `data_key` in `rx.recharts.x_axis`.
 
@@ -48,7 +48,7 @@ def bar_simple():
 
 ## Multiple Bars
 
-Multiple bars can be placed on the same `bar_chart`, using multiple `rx.recharts.bar()` components.
+Multiple bars can be placed on the same `bar_chart`, using multiple `rx.recharts.bar()` components. Drawn side by side like this, they form a grouped (or clustered) bar chart.
 
 ```python demo graphing
 data = [
@@ -79,6 +79,43 @@ def bar_double():
         data=data,
         width="100%",
         height=250,
+    )
+```
+
+## Stacked Bar Chart
+
+To build a stacked bar chart, give each `rx.recharts.bar()` the same `stack_id`. Instead of being drawn side by side, the bars are stacked on top of one another, which is ideal for showing part-to-whole composition (also called a segmented bar chart). Set `stack_offset="expand"` on the `bar_chart` to turn it into a 100% stacked bar chart.
+
+```python demo graphing
+data = [
+    {"name": "Page A", "uv": 4000, "pv": 2400, "amt": 2400},
+    {"name": "Page B", "uv": 3000, "pv": 1398, "amt": 2210},
+    {"name": "Page C", "uv": 2000, "pv": 9800, "amt": 2290},
+    {"name": "Page D", "uv": 2780, "pv": 3908, "amt": 2000},
+    {"name": "Page E", "uv": 1890, "pv": 4800, "amt": 2181},
+    {"name": "Page F", "uv": 2390, "pv": 3800, "amt": 2500},
+    {"name": "Page G", "uv": 3490, "pv": 4300, "amt": 2100},
+]
+
+
+def bar_stacked():
+    return rx.recharts.bar_chart(
+        rx.recharts.bar(
+            data_key="uv",
+            stack_id="1",
+            fill=rx.color("accent", 8),
+        ),
+        rx.recharts.bar(
+            data_key="pv",
+            stack_id="1",
+            fill=rx.color("green", 8),
+        ),
+        rx.recharts.x_axis(data_key="name"),
+        rx.recharts.y_axis(),
+        rx.recharts.legend(),
+        data=data,
+        width="100%",
+        height=300,
     )
 ```
 
@@ -191,7 +228,7 @@ def bar_features():
 
 ## Vertical Example
 
-The `layout` prop allows you to set the orientation of the graph to be vertical or horizontal, it is set horizontally by default.
+The `layout` prop allows you to set the orientation of the graph to be vertical or horizontal, it is set horizontally by default. Setting `layout="vertical"` makes the bars run left-to-right, which is how you create a horizontal bar chart in Reflex.
 
 ```md alert info
 # Include margins around your graph to ensure proper spacing and enhance readability. By default, provide margins on all sides of the chart to create a visually appealing and functional representation of your data.

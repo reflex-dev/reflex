@@ -11,7 +11,7 @@ import reflex as rx
 
 # Error Bar
 
-Error bars in Reflex are built on [Recharts](https://recharts.org/) and created in pure Python. An error bar is a graphical representation of the uncertainty or variability of a data point in a chart, depicted as a line extending from the data point parallel to one of the axes. The `data_key`, `width`, `stroke_width`, `stroke`, and `direction` props can be used to customize the appearance and behavior of the error bars, specifying the data source, dimensions, color, and orientation of the error bars.
+Error bars in Reflex are built on [Recharts](https://recharts.org/), a React charting library, and created in pure Python. An error bar is a graphical representation of the uncertainty or variability of a data point in a chart, depicted as a line extending from the data point parallel to one of the axes. The `data_key`, `width`, `stroke_width`, `stroke`, and `direction` props can be used to customize the appearance and behavior of the error bars, specifying the data source, dimensions, color, and orientation of the error bars.
 
 ```python demo graphing
 data = [
