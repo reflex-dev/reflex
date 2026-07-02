@@ -41,15 +41,17 @@ def line_chart():
 Scatter plots are useful for showing the relationship between two variables. Here we plot the Iris dataset, coloring each point by species.
 
 ```python demo exec
+df = px.data.iris()
+fig = px.scatter(
+    df,
+    x="sepal_width",
+    y="sepal_length",
+    color="species",
+    title="Iris sepal dimensions",
+)
+
+
 def scatter_plot():
-    df = px.data.iris()
-    fig = px.scatter(
-        df,
-        x="sepal_width",
-        y="sepal_length",
-        color="species",
-        title="Iris sepal dimensions",
-    )
     return rx.center(
         rx.plotly(data=fig),
     )
@@ -60,14 +62,16 @@ def scatter_plot():
 Histograms show the distribution of a single variable. This example plots the distribution of restaurant bill totals.
 
 ```python demo exec
+df = px.data.tips()
+fig = px.histogram(
+    df,
+    x="total_bill",
+    nbins=30,
+    title="Distribution of restaurant bills",
+)
+
+
 def histogram():
-    df = px.data.tips()
-    fig = px.histogram(
-        df,
-        x="total_bill",
-        nbins=30,
-        title="Distribution of restaurant bills",
-    )
     return rx.center(
         rx.plotly(data=fig),
     )
