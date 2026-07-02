@@ -107,6 +107,27 @@ def test_component_previews():
     assert preview.source.startswith("lambda")
 
 
+def test_meta_description_not_treated_as_preview():
+    """SEO frontmatter keys are excluded from component-preview detection.
+
+    ``meta_description``/``description`` are string-valued frontmatter keys, so
+    without being in the known-keys set they would be misparsed as component
+    preview lambdas. They must be ignored as previews but stay in ``metadata``.
+    """
+    source = (
+        "---\ncomponents:\n  - rx.recharts.BarChart\n"
+        "title: Bar Chart\n"
+        "meta_description: Create interactive bar charts in Python with Reflex.\n"
+        "description: A longer description that also should not become a preview.\n"
+        "---\n# Bar Chart\n"
+    )
+    fm = parse_document(source).frontmatter
+    assert fm is not None
+    assert fm.component_previews == ()
+    assert fm.title == "Bar Chart"
+    assert fm.metadata["meta_description"].startswith("Create interactive bar")
+
+
 def test_multiple_previews():
     """Multiple component preview lambdas are extracted."""
     source = "---\ncomponents:\n  - rx.input\n\nInput: |\n  lambda **props: rx.input(**props)\n\nInputSlot: |\n  lambda **props: rx.input(rx.input.slot(**props))\n---\n# Input\n"

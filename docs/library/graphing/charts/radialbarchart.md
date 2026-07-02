@@ -1,6 +1,8 @@
 ---
 components:
   - rx.recharts.RadialBarChart
+title: Radial Bar Chart
+meta_description: "Create radial bar charts in Python with Reflex. Build circular Recharts radial bar charts with custom colors, angles, and legends — all in pure Python, no JavaScript required."
 ---
 
 # Radial Bar Chart
@@ -8,6 +10,8 @@ components:
 ```python exec
 import reflex as rx
 ```
+
+Radial bar charts in Reflex are built on [Recharts](https://recharts.org/) and created in pure Python. A radial bar chart is a circular visualization where data categories are represented by bars extending outward from a central point, with the length of each bar proportional to its value.
 
 ## Simple Example
 

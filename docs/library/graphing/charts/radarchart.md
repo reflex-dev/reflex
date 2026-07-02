@@ -2,6 +2,8 @@
 components:
   - rx.recharts.RadarChart
   - rx.recharts.Radar
+title: Radar Chart
+meta_description: "Build radar (spider) charts in Python with Reflex. Create interactive Recharts radar charts with multiple series, custom polar axes, legends, and tooltips — all in pure Python."
 ---
 
 # Radar Chart
@@ -11,7 +13,7 @@ import reflex as rx
 from typing import Any
 ```
 
-A radar chart shows multivariate data of three or more quantitative variables mapped onto an axis.
+Radar charts in Reflex are built on [Recharts](https://recharts.org/) and created in pure Python. A radar chart shows multivariate data of three or more quantitative variables mapped onto an axis.
 
 ## Simple Example
 

@@ -63,3 +63,23 @@ def test_metadata_dict_short_description_falls_through_to_body():
     result = extract_doc_description(LONG_PROSE, {"description": "Docs"})
     assert result is not None
     assert result.startswith("5 minutes of configuration")
+
+
+def test_chart_frontmatter_meta_description_from_body():
+    """A chart-style frontmatter meta_description is extracted from raw markdown.
+
+    Mirrors the graphing docs: a ``components:`` list followed by a long
+    ``meta_description``. The list lines must be skipped and the description
+    returned verbatim (not stitched together with body prose).
+    """
+    long_desc = (
+        "Create interactive bar charts in Python with Reflex. Build single, "
+        "stacked, and multi-series Recharts bar charts with custom colors."
+    )
+    source = (
+        "---\ncomponents:\n  - rx.recharts.BarChart\n  - rx.recharts.Bar\n"
+        "title: Bar Chart\n"
+        f"meta_description: {long_desc}\n---\n"
+        "# Bar Chart\n\nBar charts in Reflex are built on Recharts.\n"
+    )
+    assert extract_doc_description(source) == long_desc

@@ -2,6 +2,8 @@
 components:
   - rx.recharts.AreaChart
   - rx.recharts.Area
+title: Area Chart
+meta_description: "Create area charts in Python with Reflex. Build stacked, gradient, and multi-series Recharts area charts with custom axes, tooltips, legends, and colors — all in pure Python."
 ---
 
 # Area Chart
@@ -11,7 +13,7 @@ import reflex as rx
 import random
 ```
 
-A Recharts area chart displays quantitative data using filled areas between a line connecting data points and the axis.
+Area charts in Reflex are built on [Recharts](https://recharts.org/) and created in pure Python. A Recharts area chart displays quantitative data using filled areas between a line connecting data points and the axis.
 
 ## Basic Example
 

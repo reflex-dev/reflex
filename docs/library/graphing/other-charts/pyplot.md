@@ -1,6 +1,8 @@
 ---
 components:
   - pyplot
+title: Pyplot
+meta_description: "Display Matplotlib and pyplot figures in Python with Reflex. The reflex-pyplot component renders any Matplotlib plot in your web app — interactive, dark-mode aware, all in pure Python."
 ---
 
 ```python exec
@@ -15,7 +17,7 @@ from reflex.style import toggle_color_mode
 
 # Pyplot
 
-Pyplot (`reflex-pyplot`) is a graphing library that wraps Matplotlib. Use the `pyplot` component to display any Matplotlib plot in your app. Check out [Matplotlib](https://matplotlib.org/) for more information.
+Pyplot (`reflex-pyplot`) is a graphing library that wraps Matplotlib for use in Reflex. Use the `pyplot` component to display any Matplotlib or `matplotlib.pyplot` plot in your app, all in pure Python. Check out [Matplotlib](https://matplotlib.org/) for more information.
 
 ## Installation
 

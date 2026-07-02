@@ -2,6 +2,8 @@
 components:
   - rx.recharts.BarChart
   - rx.recharts.Bar
+title: Bar Chart
+meta_description: "Create interactive bar charts in Python with Reflex. Build single, stacked, and multi-series Recharts bar charts with custom colors, axes, tooltips, and legends — no JavaScript required."
 ---
 
 # Bar Chart
@@ -11,7 +13,7 @@ import reflex as rx
 import random
 ```
 
-A bar chart presents categorical data with rectangular bars with heights or lengths proportional to the values that they represent.
+Bar charts in Reflex are built on [Recharts](https://recharts.org/) and let you visualize categorical data in pure Python. A bar chart presents categorical data with rectangular bars whose heights or lengths are proportional to the values that they represent.
 
 For a bar chart we must define an `rx.recharts.bar()` component for each set of values we wish to plot. Each `rx.recharts.bar()` component has a `data_key` which clearly states which variable in our data we are tracking. In this simple example we plot `uv` as a bar against the `name` column which we set as the `data_key` in `rx.recharts.x_axis`.
 

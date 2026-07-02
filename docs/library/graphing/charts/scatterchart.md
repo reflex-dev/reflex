@@ -2,6 +2,8 @@
 components:
   - rx.recharts.ScatterChart
   - rx.recharts.Scatter
+title: Scatter Chart
+meta_description: "Create scatter plots in Python with Reflex. Build interactive Recharts scatter charts with multiple series, custom axes, ranges, and tooltips — all in pure Python, no JavaScript."
 ---
 
 # Scatter Chart
@@ -10,7 +12,7 @@ components:
 import reflex as rx
 ```
 
-A scatter chart always has two value axes to show one set of numerical data along a horizontal (value) axis and another set of numerical values along a vertical (value) axis. The chart displays points at the intersection of an x and y numerical value, combining these values into single data points.
+Scatter charts in Reflex are built on [Recharts](https://recharts.org/) and created in pure Python. A scatter chart always has two value axes to show one set of numerical data along a horizontal (value) axis and another set of numerical values along a vertical (value) axis. The chart displays points at the intersection of an x and y numerical value, combining these values into single data points.
 
 ## Simple Example
 

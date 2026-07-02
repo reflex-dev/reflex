@@ -2,6 +2,8 @@
 components:
   - rx.recharts.LineChart
   - rx.recharts.Line
+title: Line Chart
+meta_description: "Build interactive line charts in pure Python with Reflex. Plot single or multi-line Recharts time series with custom axes, tooltips, legends, and styling — no JavaScript needed."
 ---
 
 # Line Chart
@@ -12,7 +14,7 @@ from typing import Any
 import reflex as rx
 ```
 
-A line chart is a type of chart used to show information that changes over time. Line charts are created by plotting a series of several points and connecting them with a straight line.
+Line charts in Reflex are built on [Recharts](https://recharts.org/) and are created in pure Python. A line chart is a type of chart used to show information that changes over time. Line charts are created by plotting a series of several points and connecting them with a straight line.
 
 ## Simple Example
 
