@@ -44,3 +44,11 @@ def error():
         height=300,
     )
 ```
+
+## Related Charts
+
+Explore more chart types you can build with Reflex and Recharts in pure Python:
+
+- [Scatter Chart](/docs/library/graphing/charts/scatterchart)
+- [Line Chart](/docs/library/graphing/charts/linechart)
+- [Bar Chart](/docs/library/graphing/charts/barchart)

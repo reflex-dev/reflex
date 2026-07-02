@@ -78,3 +78,11 @@ def radial_bar_advanced():
         height=300,
     )
 ```
+
+## Related Charts
+
+Explore more chart types you can build with Reflex and Recharts in pure Python:
+
+- [Radar Chart](/docs/library/graphing/charts/radarchart)
+- [Pie Chart](/docs/library/graphing/charts/piechart)
+- [Bar Chart](/docs/library/graphing/charts/barchart)

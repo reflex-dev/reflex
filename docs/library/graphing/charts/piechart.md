@@ -156,3 +156,11 @@ def dynamic_pie_example():
         height="15em",
     )
 ```
+
+## Related Charts
+
+Explore more chart types you can build with Reflex and Recharts in pure Python:
+
+- [Radial Bar Chart](/docs/library/graphing/charts/radialbarchart)
+- [Funnel Chart](/docs/library/graphing/charts/funnelchart)
+- [Bar Chart](/docs/library/graphing/charts/barchart)

@@ -209,3 +209,11 @@ def scatter_shape():
         width="100%",
     )
 ```
+
+## Related Charts
+
+Explore more chart types you can build with Reflex and Recharts in pure Python:
+
+- [Line Chart](/docs/library/graphing/charts/linechart)
+- [Bar Chart](/docs/library/graphing/charts/barchart)
+- [Error Bar](/docs/library/graphing/charts/errorbar)

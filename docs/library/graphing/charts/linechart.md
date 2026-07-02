@@ -197,3 +197,11 @@ def line_dynamic():
 ```
 
 To learn how to use the `sync_id`, `x_axis_id` and `y_axis_id` props check out the of the area chart [documentation](/docs/library/graphing/charts/areachart), where these props are all described with examples.
+
+## Related Charts
+
+Explore more chart types you can build with Reflex and Recharts in pure Python:
+
+- [Area Chart](/docs/library/graphing/charts/areachart)
+- [Bar Chart](/docs/library/graphing/charts/barchart)
+- [Scatter Chart](/docs/library/graphing/charts/scatterchart)

@@ -196,3 +196,11 @@ def radar_dynamic():
         height="15em",
     )
 ```
+
+## Related Charts
+
+Explore more chart types you can build with Reflex and Recharts in pure Python:
+
+- [Radial Bar Chart](/docs/library/graphing/charts/radialbarchart)
+- [Pie Chart](/docs/library/graphing/charts/piechart)
+- [Line Chart](/docs/library/graphing/charts/linechart)
