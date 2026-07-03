@@ -303,6 +303,41 @@ def test_unchanged_pages_compile_identically(tmp_path, monkeypatch):
 _CONTEXTS_STUB = "// contexts stub"
 
 
+_TEST_STATE_MODULES = (__name__, "fp_mod_x")
+
+
+def _scoped_contexts_snapshot(app) -> tuple[dict[str, Any], dict[str, Any]] | None:
+    """A ``_contexts_snapshot`` limited to the states this test file defines.
+
+    Same shape and serialization as the real snapshot, but each test state is
+    compiled standalone instead of walking the whole root state tree, which
+    would pick up unrelated (and sometimes broken) state classes collected
+    from other test modules.
+
+    Args:
+        app: The app being compiled.
+
+    Returns:
+        The (initial state, client storage) mappings for this file's states,
+        or None when the app has no state tree.
+    """
+    if app is None or app._state is None:
+        return None
+    from reflex_base.registry import RegistrationContext
+
+    from reflex.compiler import utils as compiler_utils
+
+    initial: dict[str, Any] = {}
+    storage: dict[str, dict[str, Any]] = {}
+    ctx = RegistrationContext.ensure_context()
+    for cls in list(ctx.base_states.values()):
+        if cls.__module__ in _TEST_STATE_MODULES:
+            initial.update(compiler_utils.compile_state(cls))
+            for kind, entries in compiler_utils.compile_client_storage(cls).items():
+                storage.setdefault(kind, {}).update(entries)
+    return initial, storage
+
+
 def _stub_externals(app, monkeypatch):
     """Stub the side-effecting steps the fast path runs on a real app."""
     import reflex.utils.frontend_skeleton as fs
@@ -318,6 +353,7 @@ def _stub_externals(app, monkeypatch):
         "reflex.compiler.compiler.compile_contexts",
         lambda state, theme: (compiler_utils.get_context_path(), _CONTEXTS_STUB),
     )
+    monkeypatch.setattr(disk_cache, "_contexts_snapshot", _scoped_contexts_snapshot)
     monkeypatch.setattr(fs, "update_react_router_config", lambda **k: None)
     monkeypatch.setattr(fs, "update_entry_client", lambda *a, **k: None)
     monkeypatch.setattr(fs, "initialize_vite_config", lambda: None)
@@ -613,8 +649,9 @@ def test_stateful_miss_with_unchanged_states_reuses_contexts(tmp_path, monkeypat
     stateful_route, hit_route = pages[0].route, pages[1].route
     ctx = _compile(pages, app=app)
     assert stateful_route in ctx.stateful_routes
-    disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
+    # Stub before write_manifest: it fingerprints via the contexts snapshot.
     _stub_externals(app, monkeypatch)
+    disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
 
     manifest_path = web / disk_cache._MANIFEST_FILE
     manifest = json.loads(manifest_path.read_text())
