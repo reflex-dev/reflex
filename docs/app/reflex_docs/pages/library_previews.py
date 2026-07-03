@@ -103,7 +103,8 @@ def create_previews(
     @docpage(
         right_sidebar=False,
         set_path=f"/library{prefix.rstrip('/')}/" + path.strip("/") + "/",
-        page_title=component_category + " Component Library · Reflex Docs",
+        page_title=f"{get_display_name(component_category)} Component Library · Reflex Docs",
+        description=description,
     )
     def page() -> rx.Component:
         from reflex_docs.templates.docpage.sidebar.sidebar_items import (
@@ -195,7 +196,7 @@ core_components_dict = {
     },
     "tables_and_data_grids": {
         "path": "tables-and-data-grids",
-        "description": "Powerful table components for organizing and displaying data efficiently. Includes versatile options like standard tables, interactive datatables, and editable data grids. Perfect for creating responsive, user-friendly interfaces that present information clearly and allow for easy data manipulation.",
+        "description": "Build tables and data grids in Python with Reflex. Includes a composable table, a searchable and sortable data table for pandas DataFrames, and an editable data grid — perfect for dashboards and data apps, all in pure Python.",
         "component_category": "Tables-And-Data-Grids",
     },
     "typography": {
@@ -224,17 +225,17 @@ library_previews = [
 graphing_components_dict = {
     "charts": {
         "path": "charts",
-        "description": "Components for creating various types of charts and graphs. These are useful for data visualization and presenting complex information in an easily understandable format.",
+        "description": "Create interactive charts and graphs in Python with Reflex. Build bar, line, area, pie, scatter, radar, and more chart types on top of Recharts for data visualization — all in pure Python, no JavaScript.",
         "component_category": "Charts",
     },
     "general": {
         "path": "general",
-        "description": "General-purpose graphing components that provide foundational elements for creating custom visualizations. These components offer flexibility and can be combined to create more complex graphical representations.",
+        "description": "General-purpose graphing components — axes, legends, tooltips, grids, and more — for customizing your Python charts and data visualizations in Reflex. Combine them to build clear, interactive charts in pure Python.",
         "component_category": "General",
     },
     "other-charts": {
         "path": "other-charts",
-        "description": "Other graphing components that provide additional functionality and customization options for creating custom visualizations. These components can be used to enhance the graphical representation of data and improve user experience.",
+        "description": "Additional Python charting options in Reflex, including Plotly and Matplotlib (pyplot). Render interactive Plotly Express figures and any Matplotlib plot in your web app — all in pure Python.",
         "component_category": "Other-Charts",
     },
 }

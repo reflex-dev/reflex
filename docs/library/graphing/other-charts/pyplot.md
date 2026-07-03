@@ -1,6 +1,7 @@
 ---
 components:
   - pyplot
+title: Pyplot
 meta_description: "Render interactive Matplotlib charts in a Python web app with Reflex. The pyplot component embeds any matplotlib.pyplot figure — line, bar, scatter, or contour — directly in the browser, with light and dark mode support and no Flask or HTML boilerplate."
 ---
 

@@ -140,6 +140,12 @@ component_list = defaultdict(list)
 recipes_list = defaultdict(list)
 docs_ns = SimpleNamespace()
 
+# Maps a library doc's filename-based key (the first element of its component
+# list, e.g. "areachart") to a human-friendly display title from frontmatter
+# (e.g. "Area Chart"). The sidebar uses this for labels while still deriving the
+# URL from the filename key, so titles read correctly without breaking links.
+library_display_titles: dict[str, str] = {}
+
 doc_markdown_sources: dict[str, str] = {}
 
 
@@ -160,6 +166,14 @@ manual_titles = {
     "docs/library/graphing/general/tooltip.md": "Graphing Tooltip",
     "docs/recipes/content/grid.md": "Grid Recipe",
     "docs/hosting/deploy-to-gcp.md": "Deploy to GCP",
+    "docs/enterprise/ag_grid/index.md": "AG Grid in Python: Interactive Data Grid",
+    "docs/enterprise/ag_grid/column-defs.md": "AG Grid Column Definitions in Python",
+    "docs/enterprise/ag_grid/pivot-mode.md": "AG Grid Pivot Mode in Python",
+    "docs/enterprise/ag_grid/cell-selection.md": "AG Grid Cell Selection in Python",
+    "docs/enterprise/ag_grid/theme.md": "AG Grid Themes in Python",
+    "docs/enterprise/ag_grid/model-wrapper.md": "AG Grid with a Pandas DataFrame in Python",
+    "docs/enterprise/ag_grid/value-transformers.md": "AG Grid Value Transformers in Python",
+    "docs/enterprise/ag_grid/aligned-grids.md": "AG Grid Aligned Grids in Python",
 }
 
 
@@ -357,14 +371,38 @@ def handle_library_doc(
         graphing_components[resolved.category].append(clist)
     else:
         component_list[resolved.category].append(clist)
+    # Library docs render via multi_docs (not make_docpage), so without this
+    # they'd inherit the generic site-wide meta description and a title-cased
+    # filename (e.g. "Barchart"). Derive a page-specific meta description from
+    # the doc's frontmatter/body prose, and prefer an explicit frontmatter
+    # `title:` for a human-friendly, keyword-rich page title.
+    try:
+        source: str | None = Path(actual_path).read_text(encoding="utf-8")
+        document = parse_document(source)
+    except Exception:
+        source, document = None, None
+    frontmatter = document.frontmatter if document is not None else None
+    metadata = dict(frontmatter.metadata) if frontmatter is not None else None
+    description = extract_doc_description(source, metadata) if source else None
+    display_title = (
+        frontmatter.title
+        if frontmatter is not None and frontmatter.title
+        else resolved.display_title
+    )
+    if frontmatter is not None and frontmatter.title:
+        # clist[0] is the filename-based key the sidebar links from; record the
+        # frontmatter title so the sidebar can show it as the label instead.
+        library_display_titles[clist[0]] = display_title
     return multi_docs(
         path=resolved.route,
         virtual_path=doc,
         actual_path=actual_path,
         previews=previews,
         component_list=clist,
-        title=resolved.display_title,
+        title=display_title,
         ll_component_list=ll_clist,
+        description=description,
+        source=source,
     )
 
 
