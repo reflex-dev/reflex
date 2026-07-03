@@ -8,7 +8,9 @@ and only dependency-changed pages are recompiled.
 
 from __future__ import annotations
 
+import contextlib
 import dataclasses
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -16,6 +18,7 @@ from typing import TYPE_CHECKING, Any
 
 from reflex_base import constants
 from reflex_base.plugins import CompileContext, CompilerHooks
+from reflex_base.utils.format import json_dumps
 from reflex_base.utils.imports import ImportVar, merge_imports
 
 from reflex.compiler import page_cache
@@ -23,7 +26,7 @@ from reflex.compiler.plugins import default_page_plugins
 from reflex.utils import console, path_ops, prerequisites
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Callable, Iterable, Sequence
 
     from reflex_base.plugins import PageContext, PageDefinition
     from reflex_base.utils.imports import ParsedImportDict
@@ -31,13 +34,47 @@ if TYPE_CHECKING:
     from reflex.app import App
 
 #: Bump when the manifest layout changes (old manifests are then ignored).
-_SCHEMA = 4
+_SCHEMA = 6
 #: Manifest filename under the web directory.
 _MANIFEST_FILE = "reflex_compile_cache.json"
 
 
 def _manifest_path() -> Path:
     return prerequisites.get_web_dir() / _MANIFEST_FILE
+
+
+def format_path_list(
+    items: Iterable[str], root: Path | None = None, limit: int = 5
+) -> str:
+    """Render a bounded, root-relative summary of a path/label collection.
+
+    Args:
+        items: The paths (or labels) to render.
+        root: When given, paths under it are shown relative to it.
+        limit: Maximum number of entries to show before truncating.
+
+    Returns:
+        A comma-separated summary string, truncated with ``(+N more)``.
+    """
+
+    def rel(item: str) -> str:
+        if root is not None:
+            with contextlib.suppress(ValueError):
+                return str(Path(item).relative_to(root))
+        return item
+
+    shown = sorted(rel(item) for item in items)
+    extra = len(shown) - limit
+    return ", ".join(shown[:limit]) + (f" (+{extra} more)" if extra > 0 else "")
+
+
+def _log_fallback(reason: str) -> None:
+    """Report why the incremental rebuild fell back to a full compile.
+
+    Args:
+        reason: The human-readable fallback reason.
+    """
+    console.info(f"Compile cache: falling back to a full compile — {reason}")
 
 
 def _serialize_imports(imports: ParsedImportDict) -> dict[str, list[dict[str, Any]]]:
@@ -83,6 +120,7 @@ def _manifest_page_entry(
     hasher: Callable[[str], str | None],
     *,
     is_stateful: bool,
+    state_fingerprint: str | None = None,
     root: Path | None = None,
 ) -> dict[str, Any]:
     """Build the manifest entry for one compiled page.
@@ -93,6 +131,8 @@ def _manifest_page_entry(
         state_index: The state-context identifier -> file index.
         hasher: A memoized path -> content-hash function.
         is_stateful: Whether the page registered state during compile.
+        state_fingerprint: Fingerprint of the page's contexts contribution
+            (see ``_contexts_fingerprint``), or None for stateless pages.
         root: Project root for dependency discovery. Defaults to cwd.
 
     Returns:
@@ -104,12 +144,99 @@ def _manifest_page_entry(
         ),
         "app_wrap_keys": _wrap_key_strs(page_ctx.app_wrap_components.keys()),
         "is_stateful": is_stateful,
+        "state_fingerprint": state_fingerprint,
         # Whether the page contributed auto memos: pages sharing a source
         # module share one memo output file, so a memo-contributing hit page
         # must be recompiled alongside a same-module miss (see
         # ``_with_module_siblings``).
         "has_memos": bool(page_ctx.memo_contributions),
     }
+
+
+def _contexts_fingerprint(
+    state_names: Sequence[str],
+    initial_state: dict[str, Any],
+    client_storage: dict[str, dict[str, Any]],
+) -> str:
+    """Fingerprint some states' contribution to the compiled contexts file.
+
+    A state's contribution is exactly its initial-state slice plus its
+    client-storage entries (see ``templates.context_template``), so equal
+    fingerprints mean re-emitting the contexts file would leave these states'
+    entries unchanged.
+
+    Args:
+        state_names: Full names of the states to fingerprint.
+        initial_state: The complete initial-state mapping (full name -> vars).
+        client_storage: The compiled client-storage mapping per storage kind.
+
+    Returns:
+        A stable hash of the states' contexts contribution.
+    """
+    payload = []
+    for name in sorted(state_names):
+        prefix = f"{name}."
+        payload.append((
+            name,
+            initial_state.get(name),
+            {
+                kind: {k: v for k, v in entries.items() if k.startswith(prefix)}
+                for kind, entries in client_storage.items()
+            },
+        ))
+    return hashlib.sha256(json_dumps(payload).encode()).hexdigest()
+
+
+def _contexts_snapshot(
+    app: App | None,
+) -> tuple[dict[str, Any], dict[str, Any]] | None:
+    """Capture the state-tree inputs of the contexts file.
+
+    Args:
+        app: The app being compiled (absent in bare compile contexts).
+
+    Returns:
+        The (initial state, client storage) mappings keyed by state full name,
+        or None when there is no state tree.
+    """
+    if app is None or app._state is None:
+        return None
+    from reflex.compiler import utils as compiler_utils
+
+    return (
+        compiler_utils.compile_state(app._state),
+        compiler_utils.compile_client_storage(app._state),
+    )
+
+
+def _changed_state_config_route(
+    manifest: dict[str, Any],
+    miss_ctx: CompileContext,
+    snapshot: tuple[dict[str, Any], dict[str, Any]] | None,
+) -> str | None:
+    """Find the first recompiled stateful route whose state config changed.
+
+    Compares each stateful miss page's just-evaluated states against the
+    fingerprint recorded in the manifest. Only these pages' states can differ
+    from the on-disk contexts file: hit pages' definitions are unchanged by
+    construction (all their dependency files still match).
+
+    Args:
+        manifest: The loaded compile manifest.
+        miss_ctx: The compile context of the recompiled pages.
+        snapshot: The ``_contexts_snapshot`` of the app, or None when there is
+            no state tree to fingerprint against.
+
+    Returns:
+        The first route requiring a contexts rebuild, or None if none do.
+    """
+    if snapshot is None:
+        return next(iter(miss_ctx.stateful_routes))
+    for route, defined_states in miss_ctx.stateful_routes.items():
+        stored = manifest["pages"].get(route, {}).get("state_fingerprint")
+        if stored != _contexts_fingerprint(defined_states, *snapshot):
+            return route
+    return None
 
 
 def load_manifest() -> dict[str, Any] | None:
@@ -154,7 +281,10 @@ def write_manifest(
     try:
         state_index, _ = page_cache.state_dependency_index(root)
         hasher = page_cache.make_hasher()
-        epoch = page_cache.global_epoch(root, pages=pages)
+        epoch_inputs = page_cache.global_epoch_inputs(root, pages=pages)
+        contexts_snapshot = (
+            _contexts_snapshot(compile_ctx.app) if compile_ctx.stateful_routes else None
+        )
 
         pages_data: dict[str, Any] = {}
         for page in pages:
@@ -165,19 +295,27 @@ def write_manifest(
                 or page_ctx.output_path is None
             ):
                 return  # incomplete compile -> do not write a partial manifest
+            defined_states = compile_ctx.stateful_routes.get(page.route)
             pages_data[page.route] = _manifest_page_entry(
                 page_ctx,
                 page.component,
                 state_index,
                 hasher,
-                is_stateful=page.route in compile_ctx.stateful_routes,
+                is_stateful=defined_states is not None,
+                state_fingerprint=(
+                    _contexts_fingerprint(defined_states, *contexts_snapshot)
+                    if defined_states and contexts_snapshot is not None
+                    else None
+                ),
                 root=root,
             )
 
         manifest = {
             "schema": _SCHEMA,
             "reflex_version": page_cache._reflex_version(),
-            "epoch": epoch,
+            # Per-input digests (not one combined sha) so a later mismatch can
+            # name the exact global input that changed.
+            "epoch_inputs": epoch_inputs,
             "all_imports": _serialize_imports(install_imports),
             "pages": pages_data,
         }
@@ -188,35 +326,54 @@ def write_manifest(
         console.debug(f"disk compile cache: manifest write skipped ({exc!r})")
 
 
-def globals_match(
+def globals_mismatch(
     manifest: dict[str, Any],
     *,
     routes: set[str],
-    epoch: str,
-) -> bool:
-    """Whether the manifest's genuinely-global inputs match the current compile.
+    root: Path | None = None,
+) -> str | None:
+    """Explain why the manifest's global inputs don't match, or None if they do.
 
     The fast rebuild needs the route set unchanged (adding/removing a route
-    changes the shared nav on every page) and the global epoch unchanged (Reflex
+    changes the shared nav on every page) and the global inputs unchanged (Reflex
     version + config/lockfiles + the app-level config files: the entrypoint and
     the theme/app-wrap/stylesheet modules it imports, which configure the app-wide
     files reused on disk). Everything else is decided per page via its dependency
     set, so a shared-component or markdown edit no longer blocks the fast path.
     Only the pages that depend on the changed file miss.
 
+    Global inputs are validated by re-hashing the manifest's *stored* input set
+    (see :func:`page_cache.changed_epoch_inputs`), never by recomputing the set
+    in this process — set membership is only decided when a full compile writes
+    the manifest.
+
     Args:
         manifest: The loaded manifest.
         routes: The current set of page routes.
-        epoch: The current global epoch (see :func:`page_cache.global_epoch`).
+        root: Project root the stored inputs resolve against (also used to
+            shorten paths in the reason). Defaults to cwd.
 
     Returns:
-        True if the global inputs match.
+        A human-readable mismatch reason, or None when the global inputs match.
     """
-    return (
-        manifest.get("reflex_version") == page_cache._reflex_version()
-        and set(manifest.get("pages", {})) == routes
-        and manifest.get("epoch") == epoch
-    )
+    old_version = manifest.get("reflex_version")
+    if old_version != page_cache._reflex_version():
+        return (
+            f"reflex version changed ({old_version} -> {page_cache._reflex_version()})"
+        )
+    old_routes = set(manifest.get("pages", {}))
+    if old_routes != routes:
+        parts = []
+        if added := routes - old_routes:
+            parts.append(f"added {format_path_list(added)}")
+        if removed := old_routes - routes:
+            parts.append(f"removed {format_path_list(removed)}")
+        return f"route set changed ({'; '.join(parts)})"
+    root = (root or Path.cwd()).resolve()
+    if stale := page_cache.changed_epoch_inputs(manifest.get("epoch_inputs", {}), root):
+        labels = {label.removeprefix("app:") for label in stale}
+        return f"global input(s) changed: {format_path_list(labels, root)}"
+    return None
 
 
 def partition_pages(
@@ -378,11 +535,11 @@ def try_incremental_rebuild(
     unsafe to reuse: no/old manifest, a changed global input, a route change, or
     a miss page that altered its app-wrap set or stateful flag.
 
-    App-wide outputs that per-page dependency sets do not cover are always
-    re-emitted rather than tracked: the contexts file (state defaults and
-    client-storage config change with any state module) and the ``assets``
-    copy (assets are excluded from dependency tracking). Both are cheap and
-    idempotent.
+    The ``assets`` copy is excluded from dependency tracking and always re-run
+    (cheap, idempotent). The contexts file is rewritten only when a stateful
+    page missed — and then only after evaluating the stateful hit pages, so the
+    state registry it is compiled from is complete (it must keep the states
+    that only a page's evaluation registers, e.g. exec'd docs demos).
 
     On success, reports (at info level) how many pages were recompiled vs reused
     and, while recompiling, shows a progress bar over the changed pages so a hot
@@ -401,19 +558,33 @@ def try_incremental_rebuild(
     """
     manifest = load_manifest()
     if manifest is None:
+        _log_fallback(
+            "no reusable manifest (first compile, unreadable, or schema changed)"
+        )
         return False
 
     pages = list(app._unevaluated_pages.values())
     routes = {p.route for p in pages}
     hasher = page_cache.make_hasher()
-    epoch = page_cache.global_epoch(root, pages=pages)
 
-    if not globals_match(manifest, routes=routes, epoch=epoch):
+    if (reason := globals_mismatch(manifest, routes=routes, root=root)) is not None:
+        _log_fallback(reason)
         return False
 
+    resolved_root = (root or Path.cwd()).resolve()
     miss_pages = partition_pages(pages, manifest, hasher)
+    changed_files: set[str] = set()
     if miss_pages:
+        # Nearly free: partition_pages already hashed every dependency file
+        # into the memoized hasher.
+        changed_files = _changed_dependency_files(manifest, hasher)
         miss_pages = _with_module_siblings(miss_pages, pages, manifest)
+        console.info(
+            f"Compile cache: recompiling {len(miss_pages)}/{len(pages)} pages; "
+            f"changed file(s): {format_path_list(changed_files, resolved_root)}"
+        )
+    else:
+        console.info(f"Compile cache: reusing all {len(pages)} pages from disk")
     miss_routes = {p.route for p in miss_pages}
 
     # Recompile only the source-changed pages.
@@ -464,14 +635,17 @@ def try_incremental_rebuild(
                 or page_ctx.output_code is None
                 or page_ctx.output_path is None
             ):
+                _log_fallback(f"page {page.route!r} produced no output")
                 return False
             entry = manifest["pages"][page.route]
             if (
                 _wrap_key_strs(page_ctx.app_wrap_components.keys())
                 != entry["app_wrap_keys"]
             ):
+                _log_fallback(f"page {page.route!r} changed its app-wrap set")
                 return False
             if (page.route in miss_ctx.stateful_routes) != entry["is_stateful"]:
+                _log_fallback(f"page {page.route!r} changed statefulness")
                 return False
 
     from reflex.compiler import compiler
@@ -486,6 +660,7 @@ def try_incremental_rebuild(
             output_path = page_ctx.output_path
             output_code = page_ctx.output_code
             if output_path is None or output_code is None:
+                _log_fallback(f"page {page.route!r} lost its output before write")
                 return False
             compiler.utils.write_file(
                 compiler.utils.resolve_path_of_web_dir(output_path),
@@ -497,9 +672,7 @@ def try_incremental_rebuild(
         # with the complete definition set (all recompiled pages' contributions
         # plus the user memos sharing those files or whose module changed).
         memo_files, memo_imports = compiler.compile_memo_components(
-            _complete_memo_defs(
-                memo_contributions, _changed_dependency_files(manifest, hasher)
-            )
+            _complete_memo_defs(memo_contributions, changed_files)
         )
         for mpath, mcode in memo_files:
             compiler.utils.write_file(
@@ -527,24 +700,58 @@ def try_incremental_rebuild(
     app._add_optional_endpoints()
     app._validate_var_dependencies()
 
-    # App-wide outputs that are cheap to re-emit and not gated by the epoch:
-    # contexts (state defaults/client-storage change with any state module,
-    # which per-page dependency sets do not force a regenerate of) and the
-    # assets copy (assets are excluded from dependency tracking entirely).
-    from reflex_components_radix.plugin import RadixThemesPlugin
+    # The contexts file holds EVERY state's defaults/dispatchers, including
+    # states only registered while their page evaluates (exec'd docs demos,
+    # dynamically imported modules). This process evaluated just the miss
+    # pages, so its registry is incomplete; rewriting contexts from it would
+    # drop the hit pages' states and break the frontend's dispatch map. Only a
+    # stateful miss can change state config — and only its OWN states can
+    # differ from the on-disk contexts file, so first fingerprint those
+    # against the manifest: a content-only edit leaves them identical and the
+    # contexts file is reused untouched. Otherwise evaluate the stateful hit
+    # pages (so the registry is complete) and rewrite contexts.
+    contexts_snapshot: tuple[dict[str, Any], dict[str, Any]] | None = None
+    if miss_ctx is not None and miss_ctx.stateful_routes:
+        contexts_snapshot = _contexts_snapshot(app)
+        changed_route = _changed_state_config_route(
+            manifest, miss_ctx, contexts_snapshot
+        )
+        if changed_route is None:
+            console.info(
+                "Compile cache: recompiled pages define unchanged states; "
+                "reusing contexts file"
+            )
+        else:
+            console.info(
+                f"Compile cache: page {changed_route!r} changed its state "
+                "config; rebuilding contexts"
+            )
+            stateful_hits = [
+                route
+                for route, entry in manifest["pages"].items()
+                if entry["is_stateful"] and route not in miss_routes
+            ]
+            with console.timing("Evaluate stateful hit pages (contexts)"):
+                for route in stateful_hits:
+                    app._compile_page(route, save_page=False)
 
-    theme = next(
-        (
-            plugin.get_theme()
-            for plugin in compiler_plugins
-            if isinstance(plugin, RadixThemesPlugin)
-        ),
-        None,
-    )
-    context_path, context_code = compiler.compile_contexts(app._state, theme)
-    compiler.utils.write_file(
-        compiler.utils.resolve_path_of_web_dir(context_path), context_code
-    )
+            from reflex_components_radix.plugin import RadixThemesPlugin
+
+            theme = next(
+                (
+                    plugin.get_theme()
+                    for plugin in compiler_plugins
+                    if isinstance(plugin, RadixThemesPlugin)
+                ),
+                None,
+            )
+            context_path, context_code = compiler.compile_contexts(app._state, theme)
+            compiler.utils.write_file(
+                compiler.utils.resolve_path_of_web_dir(context_path), context_code
+            )
+
+    # The assets copy is cheap, idempotent, and excluded from dependency
+    # tracking entirely, so it is always re-run.
     assets_src = (root or Path.cwd()) / constants.Dirs.APP_ASSETS
     if assets_src.is_dir():
         path_ops.update_directory_tree(
@@ -559,9 +766,17 @@ def try_incremental_rebuild(
         app._get_frontend_packages(install_imports)
     frontend_skeleton.update_react_router_config(prerender_routes=prerender_routes)
     frontend_skeleton.update_entry_client()
+    frontend_skeleton.initialize_vite_config()
 
     # Refresh the manifest for the next process.
-    _update_manifest_for_misses(manifest, miss_ctx, miss_pages, install_imports, root)
+    _update_manifest_for_misses(
+        manifest,
+        miss_ctx,
+        miss_pages,
+        install_imports,
+        root,
+        contexts_snapshot=contexts_snapshot,
+    )
 
     return True
 
@@ -572,6 +787,8 @@ def _update_manifest_for_misses(
     miss_pages: Sequence[PageDefinition],
     all_imports: ParsedImportDict,
     root: Path | None = None,
+    *,
+    contexts_snapshot: tuple[dict[str, Any], dict[str, Any]] | None = None,
 ) -> None:
     """Update the on-disk manifest entries for the recompiled pages.
 
@@ -581,6 +798,8 @@ def _update_manifest_for_misses(
         miss_pages: The recompiled page definitions.
         all_imports: The complete frontend import set after recompiling misses.
         root: Project root for dependency discovery. Defaults to cwd.
+        contexts_snapshot: The app's ``_contexts_snapshot`` for fingerprinting
+            stateful pages, or None when no miss page was stateful.
     """
     if miss_ctx is None or not miss_pages:
         return
@@ -589,12 +808,18 @@ def _update_manifest_for_misses(
         hasher = page_cache.make_hasher()
         for page in miss_pages:
             page_ctx = miss_ctx.compiled_pages[page.route]
+            defined_states = miss_ctx.stateful_routes.get(page.route)
             manifest["pages"][page.route] = _manifest_page_entry(
                 page_ctx,
                 page.component,
                 state_index,
                 hasher,
-                is_stateful=page.route in miss_ctx.stateful_routes,
+                is_stateful=defined_states is not None,
+                state_fingerprint=(
+                    _contexts_fingerprint(defined_states, *contexts_snapshot)
+                    if defined_states and contexts_snapshot is not None
+                    else None
+                ),
                 root=root,
             )
         manifest["all_imports"] = _serialize_imports(all_imports)

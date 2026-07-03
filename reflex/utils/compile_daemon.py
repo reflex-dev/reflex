@@ -265,9 +265,17 @@ def _first_party_module_names(roots: list[Path]) -> set[str]:
 def _reset_first_party(roots: list[Path]) -> None:
     """Make this interpreter clean w.r.t. first-party code before re-importing.
 
-    Purges the user's first-party modules from ``sys.modules`` and clears the
+    Purges the user's first-party modules from ``sys.modules`` and resets the
     cross-module registries/caches that would otherwise pin old class objects.
     Third-party modules are left imported and warm.
+
+    The state registry is reset surgically, not blanket-cleared: a class body
+    in a module that survives the purge (framework internals, installed or
+    workspace packages) never re-executes in this process, so clearing its
+    registration would lose the state from the app's state tree — and from the
+    compiled contexts file — permanently. Those registrations are kept; states
+    from purged modules re-register on re-import, and runtime-created states in
+    ``reflex.istate.dynamic`` re-register when their page re-evaluates.
 
     Args:
         roots: The resolved reload roots whose modules are first-party.
@@ -281,11 +289,19 @@ def _reset_first_party(roots: list[Path]) -> None:
 
     from reflex_base.registry import RegistrationContext
 
+    import reflex.istate.dynamic as istate_dynamic
     from reflex.compiler import page_cache
     from reflex.page import DECORATED_PAGES
     from reflex.state import BaseState, all_base_state_classes
 
     ctx = RegistrationContext.ensure_context()
+    kept = [
+        cls
+        for cls in ctx.base_states.values()
+        if (module_name := getattr(cls, "__module__", None)) is not None
+        and module_name != istate_dynamic.__name__
+        and getattr(sys.modules.get(module_name), "__file__", None) is not None
+    ]
     ctx.base_states.clear()
     ctx.base_state_substates.clear()
     ctx.event_handlers.clear()
@@ -298,6 +314,17 @@ def _reset_first_party(roots: list[Path]) -> None:
         BaseState.get_class_substate,
     ):
         cached.cache_clear()
+    # Locally-defined states are attached to ``reflex.istate.dynamic`` under
+    # collision-suffixed names; with the warm parent's attributes in place,
+    # every re-created state would drift to a new suffix and diverge from the
+    # names the (cold) backend computes. Reset the module so re-created states
+    # get their fresh-process names.
+    for attr in [name for name in vars(istate_dynamic) if not name.startswith("__")]:
+        delattr(istate_dynamic, attr)
+    # Original registration order, so parents always precede their children.
+    for cls in kept:
+        ctx._register_base_state(cls)
+        all_base_state_classes[cls.get_full_name()] = None
     DECORATED_PAGES.clear()
     # The import graph caches each module's parsed import edges; a changed file
     # may import differently now, so drop it to force a re-parse. Cross-compile
@@ -495,6 +522,12 @@ def _serve() -> None:
         }
         if not changed:
             continue
+
+        from reflex.compiler.disk_cache import format_path_list
+
+        console.info(
+            f"Compile daemon: change detected in {format_path_list(map(str, changed), root)}"
+        )
 
         # A change to a genuinely-global input (rxconfig/lockfiles, or a reflex
         # upgrade) can't be applied to the warm parent (it imported the old

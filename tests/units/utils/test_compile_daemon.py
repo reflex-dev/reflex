@@ -4,8 +4,15 @@ import os
 
 import pytest
 
+import reflex as rx
 from reflex.compiler import disk_cache
 from reflex.utils import compile_daemon
+
+
+class _SurvivingModuleState(rx.State):
+    """Module-level state, like one from a non-purged installed package."""
+
+    b: int = 0
 
 
 def test_iter_source_files_picks_content_skips_build_dirs(tmp_path):
@@ -169,6 +176,96 @@ def test_reset_model_metadata_allows_table_redefinition():
 
 
 @pytest.mark.skipif(not hasattr(os, "fork"), reason="requires os.fork (POSIX)")
+def test_reset_first_party_keeps_surviving_module_states(tmp_path):
+    """States from modules that survive the purge stay registered.
+
+    A class body in a non-purged module (framework internals, installed or
+    workspace packages like reflex_site_shared) never re-executes in the child,
+    so dropping its registration loses the state from the app's state tree —
+    and from the compiled contexts file — breaking the frontend's dispatch map.
+    Purged-module states and runtime-created ``reflex.istate.dynamic`` states
+    must still be dropped (they re-register on re-import/re-evaluation), and
+    the dynamic module's attributes must be reset so re-created local states
+    get their deterministic fresh-process names, matching the cold backend.
+    """
+    mod_file = tmp_path / "purged_state_mod.py"
+    mod_file.write_text(
+        "import reflex as rx\n\nclass PurgedState(rx.State):\n    a: int = 0\n"
+    )
+
+    read_fd, write_fd = os.pipe()
+    pid = os.fork()
+    if pid == 0:  # child
+        os.close(read_fd)
+        result = b"E"
+        try:
+            import importlib.util
+            import sys
+
+            import reflex.istate.dynamic as istate_dynamic
+            from reflex.state import State, all_base_state_classes
+
+            spec = importlib.util.spec_from_file_location("purged_state_mod", mod_file)
+            assert spec is not None
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)  # type: ignore[union-attr]
+            sys.modules["purged_state_mod"] = module
+
+            def _local_state() -> type[rx.State]:
+                class LocalState(rx.State):
+                    c: int = 0
+
+                return LocalState
+
+            local_cls = _local_state()
+            assert local_cls.__module__ == istate_dynamic.__name__
+            local_name = local_cls.__name__
+
+            compile_daemon._reset_first_party([tmp_path.resolve()])
+
+            substate_names = {c.__name__ for c in State.get_substates()}
+            surviving_kept = (
+                "_SurvivingModuleState" in substate_names
+                and _SurvivingModuleState.get_full_name() in all_base_state_classes
+            )
+            purged_dropped = (
+                "purged_state_mod" not in sys.modules
+                and "PurgedState" not in substate_names
+            )
+            dynamic_dropped = local_name not in substate_names and not [
+                n for n in vars(istate_dynamic) if not n.startswith("__")
+            ]
+            # A re-created local state gets its original (fresh-process) name,
+            # not a collision-suffixed drift.
+            redefined_deterministic = _local_state().__name__ == local_name
+
+            result = (
+                b"1"
+                if (
+                    surviving_kept
+                    and purged_dropped
+                    and dynamic_dropped
+                    and redefined_deterministic
+                )
+                else b"0"
+            )
+        except Exception:
+            import traceback
+
+            traceback.print_exc()
+        finally:
+            os.write(write_fd, result)
+            os.close(write_fd)
+            os._exit(0)
+
+    os.close(write_fd)
+    out = os.read(read_fd, 1)
+    os.close(read_fd)
+    os.waitpid(pid, 0)
+    assert out == b"1"
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="requires os.fork (POSIX)")
 def test_reset_first_party_purges_modules_and_registries(tmp_path):
     """``_reset_first_party`` purges first-party modules and clears registries.
 
@@ -206,9 +303,11 @@ def test_reset_first_party_purges_modules_and_registries(tmp_path):
             compile_daemon._reset_first_party([tmp_path.resolve()])
 
             purged = "fp_module_under_test" not in sys.modules
+            # The sentinel (a bare object, no surviving module) must be dropped;
+            # real states from surviving modules are kept (see the test above).
             cleared = (
-                not RegistrationContext.ensure_context().base_states
-                and not all_base_state_classes
+                "sentinel" not in RegistrationContext.ensure_context().base_states
+                and "sentinel" not in all_base_state_classes
                 and not DECORATED_PAGES
             )
             result = b"1" if (purged and cleared) else b"0"

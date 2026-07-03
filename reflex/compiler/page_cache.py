@@ -418,10 +418,10 @@ def _app_entrypoint_file(root: Path | None = None) -> Path | None:
     return rf if root in rf.parents else None
 
 
-def global_epoch(
+def global_epoch_inputs(
     root: Path | None = None, *, pages: Sequence[object] | None = None
-) -> str:
-    """Fingerprint the genuinely-global inputs.
+) -> dict[str, str]:
+    """Fingerprint each genuinely-global input individually.
 
     These can affect every page's output but belong to no single page, so they
     gate the whole cache rather than any one page's dependency set: the Reflex
@@ -430,30 +430,91 @@ def global_epoch(
     stylesheets, head components; see :func:`app_dependency_files`). Kept small
     on purpose; per-file edits flow through per-page dependency sets instead.
 
+    Keeping each input's digest separate (rather than one combined sha) lets a
+    mismatch report *which* global input changed.
+
     Args:
         root: Project root. Defaults to cwd.
         pages: The current page definitions, used as barriers so page modules
             (tracked per page) are excluded from the app-level config files.
 
     Returns:
-        A hex digest of the global inputs.
+        A mapping of input label (``reflex``, a global filename, or
+        ``app:<path>``) to its content digest (``<absent>`` if unreadable).
     """
     root = (root or Path.cwd()).resolve()
-    parts: list[str] = [f"reflex={_reflex_version()}"]
+    inputs: dict[str, str] = {"reflex": _reflex_version()}
     for name in _GLOBAL_FILES:
         path = root / name
         try:
-            parts.append(f"{name}={hashlib.sha256(path.read_bytes()).hexdigest()}")
+            inputs[name] = hashlib.sha256(path.read_bytes()).hexdigest()
         except OSError:
-            parts.append(f"{name}=<absent>")
-    # Sorted for a deterministic digest regardless of set iteration order.
-    for path_str in sorted(app_dependency_files(pages, root)):
+            inputs[name] = "<absent>"
+    for path_str in app_dependency_files(pages, root):
         try:
             digest = hashlib.sha256(Path(path_str).read_bytes()).hexdigest()
         except OSError:
             digest = "<absent>"
-        parts.append(f"app:{path_str}={digest}")
-    return _sha(*parts)
+        inputs[f"app:{path_str}"] = digest
+    return inputs
+
+
+def global_epoch(
+    root: Path | None = None, *, pages: Sequence[object] | None = None
+) -> str:
+    """Fingerprint the genuinely-global inputs as one digest.
+
+    Args:
+        root: Project root. Defaults to cwd.
+        pages: The current page definitions (see :func:`global_epoch_inputs`).
+
+    Returns:
+        A hex digest of the global inputs.
+    """
+    # Sorted for a deterministic digest regardless of dict insertion order.
+    return _sha(
+        *(f"{k}={v}" for k, v in sorted(global_epoch_inputs(root, pages=pages).items()))
+    )
+
+
+def changed_epoch_inputs(stored: dict[str, str], root: Path | None = None) -> set[str]:
+    """Return the labels of stored global inputs whose current content differs.
+
+    Validates against the *stored* input set (like :func:`deps_unchanged` does
+    for page deps): membership is decided once, when the manifest is written by
+    a full compile; checking only re-hashes those inputs. Recomputing the set
+    via :func:`global_epoch_inputs` at check time is wrong — it depends on what
+    the current process happened to read/import during app import, which
+    differs between a cold compile and a warm forked reload (unpurged module
+    caches skip re-reads), spuriously invalidating every hot reload.
+
+    Args:
+        stored: The manifest's ``{label: digest}`` global-input map
+            (see :func:`global_epoch_inputs` for the label forms).
+        root: Project root the plain-filename labels resolve against.
+            Defaults to cwd.
+
+    Returns:
+        The labels whose content digest no longer matches.
+    """
+    root = (root or Path.cwd()).resolve()
+    changed: set[str] = set()
+    for label, digest in stored.items():
+        if label == "reflex":
+            current = _reflex_version()
+        else:
+            path = (
+                Path(label.removeprefix("app:"))
+                if label.startswith("app:")
+                else root / label
+            )
+            try:
+                current = hashlib.sha256(path.read_bytes()).hexdigest()
+            except OSError:
+                current = "<absent>"
+        if current != digest:
+            changed.add(label)
+    return changed
 
 
 def _module_file(component: object) -> Path | None:

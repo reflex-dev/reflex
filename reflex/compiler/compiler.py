@@ -1220,7 +1220,7 @@ def compile_app(
             raise TypeError(msg)
         app._pages[route] = page_ctx.root_component
 
-    app._stateful_pages.update(compile_ctx.stateful_routes)
+    app._stateful_pages.update(dict.fromkeys(compile_ctx.stateful_routes))
     app._write_stateful_pages_marker()
     app._add_optional_endpoints()
     app._validate_var_dependencies()

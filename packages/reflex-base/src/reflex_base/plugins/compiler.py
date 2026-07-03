@@ -773,7 +773,9 @@ class CompileContext(BaseContext):
     app_wrap_components: dict[tuple[int, str], Component] = dataclasses.field(
         default_factory=dict
     )
-    stateful_routes: dict[str, None] = dataclasses.field(default_factory=dict)
+    # Routes whose evaluation defined new state classes, mapped to the full
+    # names of the states each page defined.
+    stateful_routes: dict[str, list[str]] = dataclasses.field(default_factory=dict)
     # Auto-memoize wrapper tags seen during the tree walk (populated by
     # ``MemoizeStatefulPlugin``).
     memoize_wrappers: dict[str, None] = dataclasses.field(default_factory=dict)
@@ -851,7 +853,12 @@ class CompileContext(BaseContext):
                 raise RuntimeError(msg)
 
             if len(all_base_state_classes) > n_states_before:
-                self.stateful_routes[page.route] = None
+                # Record which states this page defined (registration order is
+                # insertion order), so the compile cache can fingerprint the
+                # page's contribution to the contexts file.
+                self.stateful_routes[page.route] = list(all_base_state_classes)[
+                    n_states_before:
+                ]
 
             self.compiled_pages[page_ctx.route] = page_ctx
 

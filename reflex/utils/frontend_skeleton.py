@@ -547,8 +547,10 @@ def _compile_vite_config(config: Config):
 
 def initialize_vite_config():
     """Render and write in .web the vite.config.js file using Reflex config."""
-    vite_config_file_path = get_web_dir() / constants.ReactRouter.VITE_CONFIG_FILE
-    vite_config_file_path.write_text(_compile_vite_config(get_config()))
+    write_file(
+        get_web_dir() / constants.ReactRouter.VITE_CONFIG_FILE,
+        _compile_vite_config(get_config()),
+    )
 
 
 def initialize_bun_config():

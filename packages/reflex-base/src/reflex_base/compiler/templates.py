@@ -609,12 +609,39 @@ function fullReload() {{
   }};
 }}
 
+// react-router's HMR client (refresh-utils.mjs enqueueUpdate) throws when an
+// update batch includes a route the browser hasn't loaded, and the throw skips
+// the queue cleanup below it — one edit to any not-currently-open page then
+// poisons HMR until a full page reload. Rewrite the served runtime so unloaded
+// routes keep their manifest metadata update but stay lazy.
+function patchReactRouterHmrRuntime() {{
+  const unloadedRouteThrow = /if\s*\(!imported\)\s*\{{\s*throw\s+Error\([\s\S]*?\);\s*\}}/;
+  return {{
+    name: "reflex-patch-react-router-hmr-runtime",
+    apply: "serve",
+    transform(code, id) {{
+      if (id !== "\0virtual:react-router/hmr-runtime") return;
+      if (!unloadedRouteThrow.test(code)) {{
+        this.warn(
+          "react-router hmr runtime changed; unloaded-route HMR patch skipped",
+        );
+        return;
+      }}
+      return {{
+        code: code.replace(unloadedRouteThrow, "if (!imported) continue;"),
+        map: null,
+      }};
+    }},
+  }};
+}}
+
 export default defineConfig((config) => ({{
   base: "{base}",
   plugins: [
     alwaysUseReactDomServerNode(),
     reactRouter(),
     safariCacheBustPlugin(),
+    patchReactRouterHmrRuntime(),
   ].concat({"[fullReload()]" if force_full_reload else "[]"}),
   build: {{
     sourcemap: {"true" if sourcemap is True else "false" if sourcemap is False else repr(sourcemap)},

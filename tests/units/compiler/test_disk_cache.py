@@ -1,6 +1,8 @@
 """Tests for the experimental disk-persisted incremental compile cache."""
 
 import dataclasses
+import hashlib
+import itertools
 import json
 from collections.abc import Callable, Sequence
 from pathlib import Path
@@ -64,14 +66,37 @@ def _page_c() -> Component:
     return rx.el.div(rx.el.h1("Page C"), _footer())
 
 
-def _compile(pages: Sequence[Any]) -> CompileContext:
+def _compile(pages: Sequence[Any], app: Any = None) -> CompileContext:
     ctx = CompileContext(
+        app=app,
         pages=pages,
         hooks=CompilerHooks(plugins=default_page_plugins()),
     )
     with ctx:
         ctx.compile()
     return ctx
+
+
+def _unregister_state(cls: type[rx.State]) -> None:
+    """Drop a state class from the registries, like the daemon registry reset.
+
+    Lets a page evaluation re-define the same-named class in this process,
+    mirroring what happens in the fork child between hot reloads.
+
+    Args:
+        cls: The state class to unregister.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    from reflex.state import all_base_state_classes
+
+    ctx = RegistrationContext.ensure_context()
+    full_name = cls.get_full_name()
+    ctx.base_states.pop(full_name, None)
+    parent = cls.get_parent_state()
+    if parent is not None:
+        ctx.base_state_substates.get(parent.get_full_name(), set()).discard(cls)
+    all_base_state_classes.pop(full_name, None)
 
 
 def test_imports_round_trip():
@@ -96,7 +121,7 @@ def _manifest(pages: dict[str, dict], **overrides) -> dict:
     base = {
         "schema": disk_cache._SCHEMA,
         "reflex_version": page_cache._reflex_version(),
-        "epoch": "EPOCH",
+        "epoch_inputs": {},
         "all_imports": {},
         "pages": pages,
     }
@@ -104,18 +129,63 @@ def _manifest(pages: dict[str, dict], **overrides) -> dict:
     return base
 
 
-def test_globals_match():
-    m = _manifest({"/a": {}, "/b": {}})
+def test_globals_mismatch_names_the_changed_input(tmp_path):
+    m = _manifest({"/a": {}, "/b": {}}, epoch_inputs={"rxconfig.py": "<absent>"})
     routes = {"/a", "/b"}
-    assert disk_cache.globals_match(m, routes=routes, epoch="EPOCH")
-    # a changed route set -> no match
-    assert not disk_cache.globals_match(m, routes={"/a"}, epoch="EPOCH")
-    # a changed global epoch -> no match
-    assert not disk_cache.globals_match(m, routes=routes, epoch="OTHER")
-    # a stale reflex version -> no match
-    assert not disk_cache.globals_match(
-        {**m, "reflex_version": "0.0.0-old"}, routes=routes, epoch="EPOCH"
+    assert disk_cache.globals_mismatch(m, routes=routes, root=tmp_path) is None
+    # a changed route set -> named added/removed routes
+    reason = disk_cache.globals_mismatch(m, routes={"/a", "/c"}, root=tmp_path)
+    assert reason is not None
+    assert "/c" in reason
+    assert "/b" in reason
+    # a stale reflex version -> named versions
+    reason = disk_cache.globals_mismatch(
+        {**m, "reflex_version": "0.0.0-old"}, routes=routes, root=tmp_path
     )
+    assert reason is not None
+    assert "0.0.0-old" in reason
+
+
+def test_globals_mismatch_validates_stored_inputs_only(tmp_path):
+    """Epoch validation re-hashes the *stored* input set, never a recomputed one.
+
+    ``app_dependency_files`` depends on what the current process happened to
+    read/import during app import, which differs between a cold compile and a
+    warm forked reload (non-purged module caches skip re-reads). Comparing a
+    recomputed set against the stored one therefore mismatched on every hot
+    reload; only stored inputs whose *content* changed may invalidate.
+    """
+    theme = tmp_path / "theme_config.py"
+    theme.write_text("PRIMARY = 'red'")
+    stored = {
+        "reflex": page_cache._reflex_version(),
+        # global files absent from this root at write time and still absent
+        "rxconfig.py": "<absent>",
+        f"app:{theme}": hashlib.sha256(theme.read_bytes()).hexdigest(),
+    }
+    m = _manifest({"/a": {}}, epoch_inputs=stored)
+    # nothing on disk changed -> match, regardless of what a re-recorded
+    # app-import read set would look like in this process
+    assert disk_cache.globals_mismatch(m, routes={"/a"}, root=tmp_path) is None
+    # a stored input's content changed -> mismatch naming that file
+    theme.write_text("PRIMARY = 'blue'")
+    reason = disk_cache.globals_mismatch(m, routes={"/a"}, root=tmp_path)
+    assert reason is not None
+    assert "theme_config.py" in reason
+    # a stored global file appearing counts as a change too
+    theme.write_text("PRIMARY = 'red'")
+    (tmp_path / "rxconfig.py").write_text("import reflex")
+    reason = disk_cache.globals_mismatch(m, routes={"/a"}, root=tmp_path)
+    assert reason is not None
+    assert "rxconfig.py" in reason
+
+
+def test_format_path_list_relativizes_and_truncates():
+    root = Path("/proj")
+    assert disk_cache.format_path_list({"/proj/a.py", "other"}, root) == "a.py, other"
+    many = {f"/proj/{i}.py" for i in range(8)}
+    out = disk_cache.format_path_list(many, root, limit=3)
+    assert out == "0.py, 1.py, 2.py (+5 more)"
 
 
 def test_partition_pages_detects_changed_source():
@@ -156,10 +226,12 @@ def test_write_and_load_manifest(tmp_path, monkeypatch):
             "dep_hashes",
             "app_wrap_keys",
             "is_stateful",
+            "state_fingerprint",
             "has_memos",
         }
         # these static pages register no new state and contribute no memos
         assert entry["is_stateful"] is False
+        assert entry["state_fingerprint"] is None
         assert entry["has_memos"] is False
         # rendered output is never persisted (it already lives in .web, and is
         # never read back from the manifest) -> keeps the manifest small
@@ -227,6 +299,7 @@ def _stub_externals(app, monkeypatch):
     )
     monkeypatch.setattr(fs, "update_react_router_config", lambda **k: None)
     monkeypatch.setattr(fs, "update_entry_client", lambda *a, **k: None)
+    monkeypatch.setattr(fs, "initialize_vite_config", lambda: None)
 
 
 def test_incremental_rebuild_all_hits(tmp_path, monkeypatch):
@@ -334,10 +407,17 @@ def test_stateful_hit_is_marked_but_not_reevaluated(tmp_path, monkeypatch):
     assert route in app._stateful_pages
 
 
-def test_incremental_rebuild_regenerates_contexts(tmp_path, monkeypatch):
-    """State defaults/client-storage are baked into the contexts file and a
-    state-module edit never bumps the epoch, so the incremental path must
-    always re-emit it.
+def test_incremental_rebuild_preserves_contexts_without_stateful_miss(
+    tmp_path, monkeypatch
+):
+    """The contexts file is reused unless a stateful page missed.
+
+    The full compile's contexts file holds every state's defaults, including
+    states only registered while their page evaluates (exec'd demos, dynamic
+    imports). An incremental process that evaluated no stateful pages has an
+    incomplete registry; rewriting contexts from it drops those states and the
+    frontend's dispatch map with them (``dispatch is not a function``). With no
+    stateful miss, no state changed -> the on-disk file must stay untouched.
     """
     from reflex.compiler import utils as compiler_utils
 
@@ -350,16 +430,209 @@ def test_incremental_rebuild_regenerates_contexts(tmp_path, monkeypatch):
     disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
     _stub_externals(app, monkeypatch)
 
+    full_contexts = "// complete contexts from the full compile"
+    out_path = compiler_utils.resolve_path_of_web_dir(compiler_utils.get_context_path())
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(full_contexts, encoding="utf-8")
+
     assert (
         disk_cache.try_incremental_rebuild(
             app, compiler_plugins=[], prerender_routes=False, root=tmp_path
         )
         is True
     )
+    assert out_path.read_text(encoding="utf-8") == full_contexts
 
+
+_state_counter = itertools.count()
+
+
+def _page_s() -> Component:
+    """A page that defines its state during evaluation (like exec'd docs demos).
+
+    Each evaluation defines a fresh uniquely-named state class, so the page is
+    marked stateful and repeated evaluations in one test process don't collide.
+
+    Returns:
+        The page component.
+    """
+    name = f"_ContextsState{next(_state_counter)}"
+    state_cls: Any = type(
+        name,
+        (rx.State,),
+        {"__annotations__": {"value": str}, "value": "", "__module__": __name__},
+    )
+    return rx.el.div(rx.el.p(state_cls.value), _footer())
+
+
+def test_stateful_miss_evaluates_stateful_hits_then_rewrites_contexts(
+    tmp_path, monkeypatch
+):
+    """A stateful miss forces a contexts rewrite from a *complete* registry.
+
+    The stateful hit pages must be evaluated first (registering their
+    evaluation-time states) so the rewritten contexts file keeps every state.
+    """
+    from reflex.compiler import utils as compiler_utils
+
+    web = _use_tmp_web_dir(tmp_path, monkeypatch)
+
+    app = rx.App()
+    app.add_page(_page_s, route="/s")
+    app.add_page(_page_c, route="/c")
+    pages = list(app._unevaluated_pages.values())
+    stateful_route, hit_route = pages[0].route, pages[1].route
+    ctx = _compile(pages)
+    assert stateful_route in ctx.stateful_routes
+    disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
+    _stub_externals(app, monkeypatch)
+
+    # Make the stateful page a miss, and mark the hit page stateful so the
+    # rebuild must re-register its states before compiling contexts.
+    manifest_path = web / disk_cache._MANIFEST_FILE
+    manifest = json.loads(manifest_path.read_text())
+    manifest["pages"][stateful_route]["dep_hashes"] = {
+        str(tmp_path / "view.py"): "stale-hash"
+    }
+    manifest["pages"][hit_route]["is_stateful"] = True
+    manifest_path.write_text(json.dumps(manifest))
+
+    reevaluated: list[str] = []
+    monkeypatch.setattr(
+        app, "_compile_page", lambda route, **k: reevaluated.append(route)
+    )
+
+    assert (
+        disk_cache.try_incremental_rebuild(
+            app, compiler_plugins=[], prerender_routes=False, root=tmp_path
+        )
+        is True
+    )
+    # Only the stateful HIT page is re-evaluated (the miss was compiled in the
+    # miss context); then contexts are rewritten from the complete registry.
+    assert reevaluated == [hit_route]
     out_path = compiler_utils.resolve_path_of_web_dir(compiler_utils.get_context_path())
-    assert out_path.exists()
     assert out_path.read_text(encoding="utf-8") == _CONTEXTS_STUB
+
+
+def test_contexts_fingerprint_sensitivity():
+    initial = {"root.s_one": {"value": ""}, "root.s_two": {"count": 0}}
+    storage = {
+        "cookies": {"root.s_one.token_rx_field_": {"name": "t"}},
+        "local_storage": {},
+        "session_storage": {},
+    }
+    base = disk_cache._contexts_fingerprint(["root.s_one"], initial, storage)
+    # Stable across equal inputs and insensitive to name order.
+    assert disk_cache._contexts_fingerprint(["root.s_one"], dict(initial), storage) == (
+        base
+    )
+    both = disk_cache._contexts_fingerprint(
+        ["root.s_one", "root.s_two"], initial, storage
+    )
+    assert (
+        disk_cache._contexts_fingerprint(["root.s_two", "root.s_one"], initial, storage)
+        == both
+    )
+    # Sensitive to which states, their initial values, and their client storage.
+    assert disk_cache._contexts_fingerprint(["root.s_two"], initial, storage) != base
+    assert (
+        disk_cache._contexts_fingerprint(
+            ["root.s_one"], {"root.s_one": {"value": "x"}}, storage
+        )
+        != base
+    )
+    assert (
+        disk_cache._contexts_fingerprint(
+            ["root.s_one"],
+            initial,
+            {"cookies": {}, "local_storage": {}, "session_storage": {}},
+        )
+        != base
+    )
+
+
+_FP_HOLDER: dict[str, Any] = {}
+
+
+def _page_fp() -> Component:
+    """A stateful page that defines the SAME state class on every evaluation.
+
+    Mirrors a docs page whose exec'd demo code is unchanged between reloads.
+    The previous definition must be unregistered before re-evaluation (the
+    daemon's registry reset does this between hot reloads).
+
+    Returns:
+        The page component.
+    """
+    state_cls: Any = type(
+        "_FixedFpState",
+        (rx.State,),
+        {"__annotations__": {"value": str}, "value": "", "__module__": "fp_mod_x"},
+    )
+    _FP_HOLDER["cls"] = state_cls
+    return rx.el.div(rx.el.p(state_cls.value), _footer())
+
+
+def test_stateful_miss_with_unchanged_states_reuses_contexts(tmp_path, monkeypatch):
+    """A stateful miss whose states are unchanged must not rebuild contexts.
+
+    Most content edits leave the page's evaluation-time states identical, so
+    re-evaluating every stateful hit page just to rewrite an identical contexts
+    file would waste nearly the whole hot reload.
+    """
+    from reflex.compiler import utils as compiler_utils
+
+    web = _use_tmp_web_dir(tmp_path, monkeypatch)
+
+    app = rx.App()
+    app.add_page(_page_fp, route="/s")
+    app.add_page(_page_c, route="/c")
+    pages = list(app._unevaluated_pages.values())
+    stateful_route, hit_route = pages[0].route, pages[1].route
+    ctx = _compile(pages, app=app)
+    assert stateful_route in ctx.stateful_routes
+    disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
+    _stub_externals(app, monkeypatch)
+
+    manifest_path = web / disk_cache._MANIFEST_FILE
+    manifest = json.loads(manifest_path.read_text())
+    stored_fp = manifest["pages"][stateful_route]["state_fingerprint"]
+    assert stored_fp  # the compile recorded the page's state config
+    # Make the stateful page a miss; mark the hit page stateful so a contexts
+    # rebuild (if wrongly triggered) would have to re-evaluate it.
+    manifest["pages"][stateful_route]["dep_hashes"] = {
+        str(tmp_path / "view.py"): "stale-hash"
+    }
+    manifest["pages"][hit_route]["is_stateful"] = True
+    manifest_path.write_text(json.dumps(manifest))
+
+    # The daemon child resets the registry before recompiling; drop the class
+    # so the page's re-evaluation re-defines it identically.
+    _unregister_state(_FP_HOLDER.pop("cls"))
+
+    reevaluated: list[str] = []
+    monkeypatch.setattr(
+        app, "_compile_page", lambda route, **k: reevaluated.append(route)
+    )
+    sentinel = "// pre-existing contexts"
+    out_path = compiler_utils.resolve_path_of_web_dir(compiler_utils.get_context_path())
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(sentinel, encoding="utf-8")
+
+    assert (
+        disk_cache.try_incremental_rebuild(
+            app, compiler_plugins=[], prerender_routes=False, root=tmp_path
+        )
+        is True
+    )
+    # Unchanged state config: no hit re-evaluation, contexts file untouched.
+    assert reevaluated == []
+    assert out_path.read_text(encoding="utf-8") == sentinel
+    # The refreshed manifest records the same fingerprint for the miss page.
+    refreshed = json.loads(manifest_path.read_text())
+    assert refreshed["pages"][stateful_route]["state_fingerprint"] == stored_fp
+    _unregister_state(_FP_HOLDER.pop("cls"))
 
 
 def test_incremental_rebuild_copies_assets(tmp_path, monkeypatch):
@@ -536,7 +809,7 @@ def test_update_manifest_for_misses_keeps_complete_imports(tmp_path, monkeypatch
     page_ctx = SimpleNamespace(
         app_wrap_components={}, frontend_imports={}, memo_contributions={}
     )
-    miss_ctx = SimpleNamespace(compiled_pages={"/a": page_ctx}, stateful_routes=set())
+    miss_ctx = SimpleNamespace(compiled_pages={"/a": page_ctx}, stateful_routes={})
     complete_imports = {"memo-lib": [ImportVar("MemoThing")]}
     manifest = _manifest({
         "/a": {"dep_hashes": {}, "app_wrap_keys": [], "is_stateful": False}
