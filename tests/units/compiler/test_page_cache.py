@@ -352,6 +352,30 @@ def test_record_reads_tracks_executed_builtin_import(tmp_path, monkeypatch):
     assert str(child.resolve()) in reads
 
 
+def test_record_reads_tracks_path_open(tmp_path):
+    """``Path.open`` calls ``io.open`` directly, bypassing the ``builtins.open``
+    patch, so it must be patched itself for data reads to be recorded.
+    """
+    page_cache.enable_read_tracking(root=tmp_path)
+    data = tmp_path / "content.md"
+    data.write_text("hello")
+
+    with page_cache.record_reads() as reads, data.open() as f:
+        f.read()
+
+    assert str(data.resolve()) in reads
+
+
+def test_record_reads_ignores_path_open_writes(tmp_path):
+    page_cache.enable_read_tracking(root=tmp_path)
+    out = tmp_path / "out.md"
+
+    with page_cache.record_reads() as reads, out.open("w") as f:
+        f.write("x")
+
+    assert str(out.resolve()) not in reads
+
+
 def test_record_reads_ignores_unexecuted_import(tmp_path, monkeypatch):
     module_name = "uncalled_runtime_import_dep"
     module_file = _prepare_runtime_module(tmp_path, monkeypatch, module_name)

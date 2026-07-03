@@ -291,9 +291,13 @@ def enable_read_tracking(root: Path | None = None) -> None:
 
     orig_read_text = Path.read_text
     orig_read_bytes = Path.read_bytes
+    orig_path_open = Path.open
     orig_open = builtins.open
     orig_import = builtins.__import__
     orig_import_module = importlib.import_module
+
+    def _is_read_mode(mode: str) -> bool:
+        return "r" in mode and not ("w" in mode or "a" in mode or "x" in mode)
 
     def read_text(self: Path, *args: object, **kwargs: object):
         _record_read(self)
@@ -303,8 +307,15 @@ def enable_read_tracking(root: Path | None = None) -> None:
         _record_read(self)
         return orig_read_bytes(self)
 
+    # ``Path.open`` calls ``io.open`` directly (not ``builtins.open``), so it
+    # needs its own patch for reads through it to be recorded.
+    def path_open(self: Path, mode: str = "r", *args: object, **kwargs: object):
+        if _is_read_mode(mode):
+            _record_read(self)
+        return orig_path_open(self, mode, *args, **kwargs)  # type: ignore[arg-type]
+
     def open_(file: object, mode: str = "r", *args: object, **kwargs: object):
-        if "r" in mode and not ("w" in mode or "a" in mode or "x" in mode):
+        if _is_read_mode(mode):
             _record_read(file)
         return orig_open(file, mode, *args, **kwargs)  # type: ignore[arg-type]
 
@@ -333,6 +344,7 @@ def enable_read_tracking(root: Path | None = None) -> None:
 
     Path.read_text = read_text  # type: ignore[method-assign,assignment]
     Path.read_bytes = read_bytes  # type: ignore[method-assign,assignment]
+    Path.open = path_open  # type: ignore[method-assign,assignment]
     builtins.open = open_  # type: ignore[assignment]
     builtins.__import__ = import_  # type: ignore[assignment]
     importlib.import_module = import_module

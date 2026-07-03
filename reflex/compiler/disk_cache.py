@@ -10,18 +10,20 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import sys
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from reflex_base import constants
 from reflex_base.plugins import CompileContext, CompilerHooks
 from reflex_base.utils.imports import ImportVar, merge_imports
 
 from reflex.compiler import page_cache
 from reflex.compiler.plugins import default_page_plugins
-from reflex.utils import console, prerequisites
+from reflex.utils import console, path_ops, prerequisites
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
-    from pathlib import Path
 
     from reflex_base.plugins import PageContext, PageDefinition
     from reflex_base.utils.imports import ParsedImportDict
@@ -29,7 +31,7 @@ if TYPE_CHECKING:
     from reflex.app import App
 
 #: Bump when the manifest layout changes (old manifests are then ignored).
-_SCHEMA = 3
+_SCHEMA = 4
 #: Manifest filename under the web directory.
 _MANIFEST_FILE = "reflex_compile_cache.json"
 
@@ -102,6 +104,11 @@ def _manifest_page_entry(
         ),
         "app_wrap_keys": _wrap_key_strs(page_ctx.app_wrap_components.keys()),
         "is_stateful": is_stateful,
+        # Whether the page contributed auto memos: pages sharing a source
+        # module share one memo output file, so a memo-contributing hit page
+        # must be recompiled alongside a same-module miss (see
+        # ``_with_module_siblings``).
+        "has_memos": bool(page_ctx.memo_contributions),
     }
 
 
@@ -240,6 +247,123 @@ def partition_pages(
     ]
 
 
+def _with_module_siblings(
+    miss_pages: list[PageDefinition],
+    pages: Sequence[PageDefinition],
+    manifest: dict[str, Any],
+) -> list[PageDefinition]:
+    """Expand the miss set with memo-contributing same-module hit pages.
+
+    Auto-memo output is grouped into one file per source module, so rewriting
+    that file needs the contributions of *all* the module's pages that have
+    any. Hit pages that contributed no memos (per the manifest) have nothing
+    in that file and are left reused.
+
+    Args:
+        miss_pages: The dependency-changed pages.
+        pages: All current page definitions (in compile order).
+        manifest: The loaded manifest.
+
+    Returns:
+        The expanded miss list, in ``pages`` order.
+    """
+    miss_modules = {
+        module
+        for page in miss_pages
+        if (module := getattr(page, "_source_module", None)) is not None
+    }
+    if not miss_modules:
+        return miss_pages
+    miss_routes = {page.route for page in miss_pages}
+    return [
+        page
+        for page in pages
+        if page.route in miss_routes
+        or (
+            getattr(page, "_source_module", None) in miss_modules
+            and manifest["pages"][page.route]["has_memos"]
+        )
+    ]
+
+
+def _changed_dependency_files(
+    manifest: dict[str, Any], hasher: Callable[[str], str | None]
+) -> set[str]:
+    """Return every recorded dependency file whose content changed.
+
+    Args:
+        manifest: The loaded manifest.
+        hasher: A memoized path -> content-hash function.
+
+    Returns:
+        The set of changed dependency file paths.
+    """
+    return {
+        path
+        for entry in manifest["pages"].values()
+        for path, digest in entry["dep_hashes"].items()
+        if hasher(path) != digest
+    }
+
+
+def _module_source_file(module_name: str | None) -> str | None:
+    """Resolve a loaded module's source file path.
+
+    Args:
+        module_name: The dotted module name.
+
+    Returns:
+        The resolved file path string, or None.
+    """
+    file = getattr(sys.modules.get(module_name or ""), "__file__", None)
+    if not file:
+        return None
+    try:
+        return str(Path(file).resolve())
+    except OSError:
+        return None
+
+
+def _complete_memo_defs(
+    contributions: dict[tuple[str, str | None], Any],
+    changed_files: set[str],
+) -> list[Any]:
+    """Return the full definition set for the memo files being rewritten.
+
+    Memo output is grouped one file per source module, so a rewrite must carry
+    every definition landing in that file: user ``@rx.memo`` definitions from
+    the global registry that share a module with a recompiled contribution,
+    plus user memos whose own module file changed (an edited memo body must be
+    re-emitted even though only its importer pages missed).
+
+    Args:
+        contributions: The recompiled pages' auto-memo contributions.
+        changed_files: The dependency files whose content changed.
+
+    Returns:
+        The memo definitions to compile, user memos first (matching the full
+        compile's emit order).
+    """
+    from reflex_base.components.memo import MEMOS
+    from reflex_base.utils import memo_paths
+
+    dirty_segments = {
+        segments
+        for definition in contributions.values()
+        if (
+            segments := memo_paths.module_to_mirrored_segments(definition.source_module)
+        )
+        is not None
+    }
+    user_memos = [
+        memo
+        for memo in MEMOS.values()
+        if memo_paths.module_to_mirrored_segments(memo.source_module) in dirty_segments
+        or _module_source_file(memo.source_module) in changed_files
+    ]
+    return [*user_memos, *contributions.values()]
+
+
 def try_incremental_rebuild(
     app: App,
     *,
@@ -253,6 +377,12 @@ def try_incremental_rebuild(
     Returns False (so the caller does a full compile) whenever anything is
     unsafe to reuse: no/old manifest, a changed global input, a route change, or
     a miss page that altered its app-wrap set or stateful flag.
+
+    App-wide outputs that per-page dependency sets do not cover are always
+    re-emitted rather than tracked: the contexts file (state defaults and
+    client-storage config change with any state module) and the ``assets``
+    copy (assets are excluded from dependency tracking). Both are cheap and
+    idempotent.
 
     On success, reports (at info level) how many pages were recompiled vs reused
     and, while recompiling, shows a progress bar over the changed pages so a hot
@@ -282,6 +412,8 @@ def try_incremental_rebuild(
         return False
 
     miss_pages = partition_pages(pages, manifest, hasher)
+    if miss_pages:
+        miss_pages = _with_module_siblings(miss_pages, pages, manifest)
     miss_routes = {p.route for p in miss_pages}
 
     # Recompile only the source-changed pages.
@@ -347,6 +479,7 @@ def try_incremental_rebuild(
     # Write changed pages + their memo files; reuse everything else on disk.
     install_imports = _deserialize_imports(manifest["all_imports"])
     if miss_ctx is not None:
+        memo_contributions: dict[tuple[str, str | None], Any] = {}
         for page in miss_pages:
             page_ctx = miss_ctx.compiled_pages[page.route]
             # Both are guaranteed non-None by the guard loop above.
@@ -358,15 +491,21 @@ def try_incremental_rebuild(
                 compiler.utils.resolve_path_of_web_dir(output_path),
                 output_code,
             )
-            memo_defs = list(page_ctx.memo_contributions.values())
-            memo_files, memo_imports = compiler.compile_memo_components(memo_defs)
-            for mpath, mcode in memo_files:
-                compiler.utils.write_file(
-                    compiler.utils.resolve_path_of_web_dir(mpath), mcode
-                )
-            install_imports = merge_imports(
-                install_imports, page_ctx.frontend_imports, memo_imports
+            memo_contributions.update(page_ctx.memo_contributions)
+            install_imports = merge_imports(install_imports, page_ctx.frontend_imports)
+        # Memo output files are grouped per source module, so compile them once
+        # with the complete definition set (all recompiled pages' contributions
+        # plus the user memos sharing those files or whose module changed).
+        memo_files, memo_imports = compiler.compile_memo_components(
+            _complete_memo_defs(
+                memo_contributions, _changed_dependency_files(manifest, hasher)
             )
+        )
+        for mpath, mcode in memo_files:
+            compiler.utils.write_file(
+                compiler.utils.resolve_path_of_web_dir(mpath), mcode
+            )
+        install_imports = merge_imports(install_imports, memo_imports)
 
     # Record which routes are stateful: miss pages from this compile, hit pages
     # from the manifest, so the stateful-pages marker is complete. We do NOT
@@ -387,6 +526,31 @@ def try_incremental_rebuild(
     app._write_stateful_pages_marker()
     app._add_optional_endpoints()
     app._validate_var_dependencies()
+
+    # App-wide outputs that are cheap to re-emit and not gated by the epoch:
+    # contexts (state defaults/client-storage change with any state module,
+    # which per-page dependency sets do not force a regenerate of) and the
+    # assets copy (assets are excluded from dependency tracking entirely).
+    from reflex_components_radix.plugin import RadixThemesPlugin
+
+    theme = next(
+        (
+            plugin.get_theme()
+            for plugin in compiler_plugins
+            if isinstance(plugin, RadixThemesPlugin)
+        ),
+        None,
+    )
+    context_path, context_code = compiler.compile_contexts(app._state, theme)
+    compiler.utils.write_file(
+        compiler.utils.resolve_path_of_web_dir(context_path), context_code
+    )
+    assets_src = (root or Path.cwd()) / constants.Dirs.APP_ASSETS
+    if assets_src.is_dir():
+        path_ops.update_directory_tree(
+            src=assets_src,
+            dest=prerequisites.get_web_dir() / constants.Dirs.PUBLIC,
+        )
 
     # Frontend packages + routing scaffolding (cheap, idempotent).
     from reflex.utils import frontend_skeleton
