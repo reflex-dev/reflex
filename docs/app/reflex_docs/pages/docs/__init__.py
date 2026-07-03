@@ -166,6 +166,14 @@ manual_titles = {
     "docs/library/graphing/general/tooltip.md": "Graphing Tooltip",
     "docs/recipes/content/grid.md": "Grid Recipe",
     "docs/hosting/deploy-to-gcp.md": "Deploy to GCP",
+    "docs/enterprise/ag_grid/index.md": "AG Grid in Python: Interactive Data Grid",
+    "docs/enterprise/ag_grid/column-defs.md": "AG Grid Column Definitions in Python",
+    "docs/enterprise/ag_grid/pivot-mode.md": "AG Grid Pivot Mode in Python",
+    "docs/enterprise/ag_grid/cell-selection.md": "AG Grid Cell Selection in Python",
+    "docs/enterprise/ag_grid/theme.md": "AG Grid Themes in Python",
+    "docs/enterprise/ag_grid/model-wrapper.md": "AG Grid with a Pandas DataFrame in Python",
+    "docs/enterprise/ag_grid/value-transformers.md": "AG Grid Value Transformers in Python",
+    "docs/enterprise/ag_grid/aligned-grids.md": "AG Grid Aligned Grids in Python",
 }
 
 
