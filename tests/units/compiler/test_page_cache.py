@@ -352,6 +352,34 @@ def test_record_reads_tracks_executed_builtin_import(tmp_path, monkeypatch):
     assert str(child.resolve()) in reads
 
 
+def test_read_tracking_root_change_invalidates_module_cache(tmp_path, monkeypatch):
+    """Recording a module under one root must not leak into another root.
+
+    The module-file cache is keyed by the raw ``__file__`` value (the hot path
+    for every import statement), so switching recorder roots relies on
+    ``enable_read_tracking`` clearing it.
+    """
+    root_a = tmp_path / "app_a"
+    root_a.mkdir()
+    root_b = tmp_path / "app_b"
+    root_b.mkdir()
+    module_name = "root_change_runtime_dep"
+    module_file = _prepare_runtime_module(root_a, monkeypatch, module_name)
+    page_cache.enable_read_tracking(root=root_a)
+
+    try:
+        with page_cache.record_reads() as reads_a:
+            importlib.import_module(module_name)
+        assert str(module_file.resolve()) in reads_a
+
+        page_cache.enable_read_tracking(root=root_b)
+        with page_cache.record_reads() as reads_b:
+            importlib.import_module(module_name)
+        assert str(module_file.resolve()) not in reads_b
+    finally:
+        _forget_modules(module_name)
+
+
 def test_record_reads_tracks_path_open(tmp_path):
     """``Path.open`` calls ``io.open`` directly, bypassing the ``builtins.open``
     patch, so it must be patched itself for data reads to be recorded.

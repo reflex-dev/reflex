@@ -86,7 +86,9 @@ _PYTHON_PREFIXES = tuple(
     for prefix in {sys.base_exec_prefix, sys.base_prefix, sys.exec_prefix, sys.prefix}
     if prefix
 )
-_module_file_cache: dict[tuple[Path, str], str | None] = {}
+#: Maps a module's raw ``__file__`` value to its recordable resolved path (or
+#: None). Cleared by ``enable_read_tracking`` when the recorder root changes.
+_module_file_cache: dict[object, str | None] = {}
 _app_import_reads: dict[Path, set[str]] = {}
 
 
@@ -157,6 +159,20 @@ def _recordable_module_file(file: object) -> str | None:
         The resolved module file path to record, or None when it is outside the
         project root or otherwise not recordable.
     """
+    root = _recorder_root
+    if root is None:
+        return None
+    # Hot path: every import statement under an active recorder lands here, so
+    # look up the raw ``__file__`` value before any Path construction. Keying
+    # by the raw value is safe because ``enable_read_tracking`` clears the
+    # cache whenever the recorder root changes.
+    try:
+        return _module_file_cache[file]
+    except KeyError:
+        pass
+    except TypeError:
+        return None
+
     with _suspend_tracking():
         try:
             path = Path(file).absolute()  # type: ignore[arg-type]
@@ -164,16 +180,6 @@ def _recordable_module_file(file: object) -> str | None:
             return None
 
         resolved_str = None
-        root = _recorder_root
-        if root is None:
-            return None
-
-        cache_key = (root, str(path))
-        try:
-            return _module_file_cache[cache_key]
-        except KeyError:
-            pass
-
         if not any(part in _EXCLUDE_PARTS for part in path.parts) and (
             _is_inside(path, root) or not _is_python_install_file(path)
         ):
@@ -184,7 +190,7 @@ def _recordable_module_file(file: object) -> str | None:
             else:
                 if not any(part in _EXCLUDE_PARTS for part in resolved.parts):
                     resolved_str = str(resolved) if _is_inside(resolved, root) else None
-        _module_file_cache[cache_key] = resolved_str
+        _module_file_cache[file] = resolved_str
         return resolved_str
 
 

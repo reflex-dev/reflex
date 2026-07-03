@@ -77,8 +77,16 @@ def _log_fallback(reason: str) -> None:
     console.info(f"Compile cache: falling back to a full compile — {reason}")
 
 
+_IMPORT_VAR_FIELDS = tuple(f.name for f in dataclasses.fields(ImportVar))
+
+
 def _serialize_imports(imports: ParsedImportDict) -> dict[str, list[dict[str, Any]]]:
     """Serialize a parsed import dict to JSON-able primitives.
+
+    Duplicates are collapsed in first-seen order (a full docs-app compile
+    accumulates ~107k entries, ~6k unique): the manifest's import set only
+    feeds package installation and later merges, where only the unique set
+    matters, and duplicates bloat the manifest and every pass over it.
 
     Args:
         imports: The parsed import dict to serialize.
@@ -86,7 +94,13 @@ def _serialize_imports(imports: ParsedImportDict) -> dict[str, list[dict[str, An
     Returns:
         A JSON-serializable representation.
     """
-    return {lib: [dataclasses.asdict(iv) for iv in ivs] for lib, ivs in imports.items()}
+    return {
+        lib: [
+            {name: getattr(iv, name) for name in _IMPORT_VAR_FIELDS}
+            for iv in dict.fromkeys(ivs)
+        ]
+        for lib, ivs in imports.items()
+    }
 
 
 def _deserialize_imports(data: dict[str, list[dict[str, Any]]]) -> ParsedImportDict:
@@ -654,6 +668,7 @@ def try_incremental_rebuild(
     install_imports = _deserialize_imports(manifest["all_imports"])
     if miss_ctx is not None:
         memo_contributions: dict[tuple[str, str | None], Any] = {}
+        miss_imports = []
         for page in miss_pages:
             page_ctx = miss_ctx.compiled_pages[page.route]
             # Both are guaranteed non-None by the guard loop above.
@@ -667,7 +682,7 @@ def try_incremental_rebuild(
                 output_code,
             )
             memo_contributions.update(page_ctx.memo_contributions)
-            install_imports = merge_imports(install_imports, page_ctx.frontend_imports)
+            miss_imports.append(page_ctx.frontend_imports)
         # Memo output files are grouped per source module, so compile them once
         # with the complete definition set (all recompiled pages' contributions
         # plus the user memos sharing those files or whose module changed).
@@ -678,7 +693,9 @@ def try_incremental_rebuild(
             compiler.utils.write_file(
                 compiler.utils.resolve_path_of_web_dir(mpath), mcode
             )
-        install_imports = merge_imports(install_imports, memo_imports)
+        # Merge once: re-merging the app-wide set per page re-walks its ~100k
+        # entries each time.
+        install_imports = merge_imports(install_imports, *miss_imports, memo_imports)
 
     # Record which routes are stateful: miss pages from this compile, hit pages
     # from the manifest, so the stateful-pages marker is complete. We do NOT

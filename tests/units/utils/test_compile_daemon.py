@@ -31,6 +31,18 @@ def test_iter_source_files_picks_content_skips_build_dirs(tmp_path):
     assert found == {"page.py", "doc.md", "guide.mdx"}
 
 
+def test_under_roots_matches_only_real_ancestors(tmp_path):
+    root = tmp_path / "app"
+    roots = [root]
+    assert compile_daemon._under_roots(root, roots)
+    assert compile_daemon._under_roots(root / "pages" / "index.py", roots)
+    # A sibling sharing the root's string prefix is NOT under it.
+    assert not compile_daemon._under_roots(tmp_path / "app_extra" / "m.py", roots)
+    assert not compile_daemon._under_roots(tmp_path / "other.py", roots)
+    # The root's own parent is not under it either.
+    assert not compile_daemon._under_roots(tmp_path, roots)
+
+
 def test_external_dependency_files_includes_sibling_markdown(tmp_path, monkeypatch):
     """A page's markdown read from a sibling dir (outside the app root) is watched.
 

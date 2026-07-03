@@ -108,6 +108,25 @@ def test_imports_round_trip():
     assert restored == imports
 
 
+def test_serialize_imports_collapses_duplicates():
+    """The manifest only needs the unique import set, in first-seen order.
+
+    A full docs-app compile accumulates ~107k entries of which ~6k are unique;
+    storing duplicates bloats the manifest and every later merge over it.
+    """
+    use_effect = ImportVar("useEffect")
+    fragment = ImportVar("Fragment", is_default=False)
+    imports = {
+        "react": [use_effect, fragment, use_effect, use_effect, fragment],
+        "@emotion/react": [ImportVar("jsx"), ImportVar("jsx")],
+    }
+    restored = disk_cache._deserialize_imports(disk_cache._serialize_imports(imports))
+    assert restored == {
+        "react": [use_effect, fragment],
+        "@emotion/react": [ImportVar("jsx")],
+    }
+
+
 def test_wrap_key_strs_is_sorted_and_stable():
     keys = [(200, "StrictMode"), (0, "AppWrap"), (45, "ColorMode")]
     assert disk_cache._wrap_key_strs(keys) == [
@@ -237,9 +256,11 @@ def test_write_and_load_manifest(tmp_path, monkeypatch):
         # never read back from the manifest) -> keeps the manifest small
         assert "output_code" not in entry
         assert "frontend_imports" not in entry
-    # the app-wide merged imports round-trip cleanly
+    # the app-wide merged imports round-trip cleanly (duplicates collapsed)
     restored = disk_cache._deserialize_imports(manifest["all_imports"])
-    assert restored == ctx.all_imports
+    assert restored == {
+        lib: list(dict.fromkeys(ivs)) for lib, ivs in ctx.all_imports.items()
+    }
 
 
 def test_unchanged_pages_compile_identically(tmp_path, monkeypatch):

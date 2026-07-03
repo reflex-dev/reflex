@@ -96,6 +96,10 @@ def _reload_roots() -> list[Path]:
 def _under_roots(path: Path, roots: list[Path]) -> bool:
     """Whether ``path`` is one of, or lives under, the reload roots.
 
+    Compares path strings: this runs for every loaded module on every hot
+    reload, and ``root in path.parents`` constructs a Path object per ancestor
+    per check, which dominated the reset phase of a reload.
+
     Args:
         path: The resolved path to test.
         roots: The resolved reload roots.
@@ -103,7 +107,14 @@ def _under_roots(path: Path, roots: list[Path]) -> bool:
     Returns:
         True if the path is covered by a reload root.
     """
-    return any(path == root or root in path.parents for root in roots)
+    path_str = str(path)
+    for root in roots:
+        root_str = str(root)
+        if path_str == root_str or path_str.startswith(
+            root_str if root_str.endswith(os.sep) else root_str + os.sep
+        ):
+            return True
+    return False
 
 
 def _iter_source_files(root: Path):
