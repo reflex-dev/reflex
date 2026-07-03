@@ -365,14 +365,33 @@ def handle_library_doc(
         graphing_components[resolved.category].append(clist)
     else:
         component_list[resolved.category].append(clist)
+    # Library docs render via multi_docs (not make_docpage), so without this
+    # they'd inherit the generic site-wide meta description. Derive a
+    # page-specific meta description from the doc's frontmatter/body prose, and
+    # prefer an explicit frontmatter `title:` for the page title.
+    try:
+        source: str | None = Path(actual_path).read_text(encoding="utf-8")
+        document = parse_document(source)
+    except Exception:
+        source, document = None, None
+    frontmatter = document.frontmatter if document is not None else None
+    metadata = dict(frontmatter.metadata) if frontmatter is not None else None
+    description = extract_doc_description(source, metadata) if source else None
+    display_title = (
+        frontmatter.title
+        if frontmatter is not None and frontmatter.title
+        else resolved.display_title
+    )
     return multi_docs(
         path=resolved.route,
         virtual_path=doc,
         actual_path=actual_path,
         previews=previews,
         component_list=clist,
-        title=resolved.display_title,
+        title=display_title,
         ll_component_list=ll_clist,
+        description=description,
+        source=source,
     )
 
 

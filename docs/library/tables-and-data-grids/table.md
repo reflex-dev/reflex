@@ -1,4 +1,5 @@
 ---
+meta_description: "Build tables in Python with Reflex. The rx.table component is a semantic, composable React table for presenting tabular data with headers, rows, and cells — all in pure Python, no JavaScript."
 components:
   - rx.table.root
   - rx.table.header
@@ -149,7 +150,7 @@ class Customer(rx.Model, table=True):
 
 # Table
 
-A semantic table for presenting tabular data.
+The Reflex table component (`rx.table`) is a semantic, composable table for presenting tabular data in pure Python. It renders a standard React/HTML table with headers, rows, and cells that you compose yourself.
 
 If you just want to [represent static data](/docs/library/tables-and-data-grids/data-table) then the [`rx.data_table`](/docs/library/tables-and-data-grids/data-table) might be a better fit for your use case as it comes with in-built pagination, search and sorting.
 
@@ -1303,3 +1304,11 @@ rx.flex(
     spacing="2",
 )
 ```
+
+## Related
+
+Explore the other ways to work with tabular data in Reflex, all in pure Python:
+
+- [Data Table](/docs/library/tables-and-data-grids/data-table)
+- [Data Editor](/docs/library/tables-and-data-grids/data-editor)
+- [Tables and Data Grids](/docs/library/tables-and-data-grids/)
