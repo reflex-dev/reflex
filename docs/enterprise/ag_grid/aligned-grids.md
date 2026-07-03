@@ -1,4 +1,5 @@
 ---
+meta_description: "Build aligned grids with AG Grid in Reflex. Synchronize columns and horizontal scrolling across multiple data grids in Python, no JavaScript required."
 title: Aligned Grids
 ---
 
