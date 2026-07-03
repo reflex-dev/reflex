@@ -3,6 +3,7 @@ from reflex_base.utils.imports import (
     ImportDict,
     ImportVar,
     ParsedImportDict,
+    collapse_imports,
     merge_imports,
     parse_imports,
 )
@@ -118,3 +119,24 @@ def test_merge_imports(input_1, input_2, output):
 )
 def test_parse_imports(input: ImportDict, output: ParsedImportDict):
     assert parse_imports(input) == output
+
+
+def test_collapse_imports_preserves_order():
+    """Deduplication must preserve first-occurrence order.
+
+    Compiled JSX import order follows this ordering; a hash-seed-dependent
+    order rewrites every page/memo file on each dev reload and breaks
+    granular HMR.
+    """
+    import_vars = [
+        ImportVar(tag=f"Icon{i}", is_default=True, package_path=f"/Icon{i}")
+        for i in range(32)
+    ]
+    duplicated = [*import_vars, *import_vars[:5], import_vars[0]]
+    collapsed = collapse_imports({"@hugeicons/core-free-icons": duplicated})
+    assert collapsed == {"@hugeicons/core-free-icons": import_vars}
+    # Tuple-valued entries (already-immutable parsed imports) keep order too.
+    collapsed_tuple = collapse_imports((
+        ("@hugeicons/core-free-icons", tuple(duplicated)),
+    ))
+    assert collapsed_tuple == {"@hugeicons/core-free-icons": import_vars}

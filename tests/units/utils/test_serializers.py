@@ -207,6 +207,18 @@ def test_serialize(value: Any, expected: str):
     assert json.loads(json_dumps(value)) == json.loads(json_dumps(expected))
 
 
+def test_serialize_set_deterministic_order():
+    """Sortable sets serialize in sorted order regardless of the hash seed.
+
+    Compiled output and cache fingerprints embed serialized sets; a
+    hash-seed-dependent order churns files on every process restart.
+    """
+    assert serializers.serialize_set({"b", "c", "a"}) == ["a", "b", "c"]
+    assert serializers.serialize_set({3, 1, 2}) == [1, 2, 3]
+    # Unsortable element mixes fall back to iteration order.
+    assert set(serializers.serialize_set({1, "a"})) == {1, "a"}
+
+
 @pytest.mark.parametrize(
     ("value", "expected", "exp_var_is_string"),
     [

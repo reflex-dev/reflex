@@ -378,19 +378,22 @@ def _compile_root_stylesheet(
 
         target.parent.mkdir(parents=True, exist_ok=True)
 
+        # Skip rewriting an unchanged target: Vite watches .web/styles, and a
+        # rewrite-with-identical-content still fires an HMR update per reload.
         if stylesheet.suffix == ".css":
-            path_ops.cp(src=stylesheet, dest=target, overwrite=True)
+            data = stylesheet.read_bytes()
+            if not target.exists() or target.read_bytes() != data:
+                target.write_bytes(data)
         else:
             try:
                 from sass import compile as sass_compile
 
-                target.write_text(
-                    data=sass_compile(
-                        filename=str(stylesheet),
-                        output_style="compressed",
-                    ),
-                    encoding="utf8",
-                )
+                compiled_css = sass_compile(
+                    filename=str(stylesheet),
+                    output_style="compressed",
+                ).encode("utf8")
+                if not target.exists() or target.read_bytes() != compiled_css:
+                    target.write_bytes(compiled_css)
             except ImportError:
                 failed_to_import_sass = True
 
