@@ -34,6 +34,8 @@ AccessSpec = (
     | tuple[Literal["item"], Any]
     | tuple[Literal["iter"], None]
 )
+_ITER_ACCESS_SPEC: AccessSpec = ("iter", None)
+_ROOT_ITER_PATH: tuple[AccessSpec, ...] = (_ITER_ACCESS_SPEC,)
 
 # Cached filename of the dataclasses module, used to detect reads originating
 # from `dataclasses.asdict`/`astuple` internals on the proxy read hot-path.
@@ -614,15 +616,18 @@ class MutableProxy(wrapt.ObjectProxy):
         # Recursively wrap mutable types.
         if is_mutable_type(type(value)):
             base_cls = globals()[self.__base_proxy__]
+            path = self._self_path
+            if new_path_segment is not None:
+                path = (
+                    _ROOT_ITER_PATH
+                    if new_path_segment is _ITER_ACCESS_SPEC and not path
+                    else (*path, new_path_segment)
+                )
             return base_cls(
                 wrapped=value,
                 state=self._self_state,
                 field_name=self._self_field_name,
-                path=(
-                    self._self_path
-                    if new_path_segment is None
-                    else (*self._self_path, new_path_segment)
-                ),
+                path=path,
             )
         return value
 
@@ -715,7 +720,7 @@ class MutableProxy(wrapt.ObjectProxy):
         """
         for value in super().__iter__():  # pyright: ignore[reportAttributeAccessIssue]
             # Recursively wrap mutable items retrieved through this proxy.
-            yield self._wrap_recursive(value, ("iter", None))
+            yield self._wrap_recursive(value, _ITER_ACCESS_SPEC)
 
     def __delattr__(self, name: str):
         """Delete the attribute on the proxied object and mark state dirty.
