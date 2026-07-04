@@ -5151,6 +5151,40 @@ async def test_immutable_mutable_proxy_async_context_recovers_from_enter_failure
         assert state.data["a"] == [1, 2]
 
 
+@pytest.mark.asyncio
+async def test_immutable_mutable_proxy_async_context_clears_state_when_cleanup_fails(
+    token: str,
+    attached_mock_event_context: EventContext,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A failed cleanup while entering does not leave the proxy marked mutable."""
+    state_manager = attached_mock_event_context.state_manager
+
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=IterableMutableProxyState)
+    ) as state:
+        state.router = RouterData.from_router_data({
+            "query": {},
+            "token": token,
+            "sid": "test_sid",
+        })
+        state_proxy = StateProxy(state)
+        [items_proxy] = state_proxy.data
+
+    async def fail_exit(self: StateProxy, *exc_info: Any) -> None:
+        await asyncio.sleep(0)
+        msg = "cleanup failed"
+        raise RuntimeError(msg)
+
+    monkeypatch.setattr(StateProxy, "__aexit__", fail_exit)
+
+    with pytest.raises(RuntimeError, match="cleanup failed"):
+        async with items_proxy:
+            pass
+
+    assert items_proxy._self_actx_state is None
+
+
 def test_override_base_method_skips_event_handler_wrapping():
     """A method marked with __override_base_method__ should not be wrapped as an EventHandler."""
     from reflex.state import _override_base_method

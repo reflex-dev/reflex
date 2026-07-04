@@ -520,9 +520,11 @@ class MutableProxy(wrapt.ObjectProxy):
             else:
                 self._raise_refresh_error()
         except (Exception, asyncio.CancelledError):
-            if aenter_ok:
-                await context_state.__aexit__(*sys.exc_info())
-            self._self_actx_state = None
+            try:
+                if aenter_ok:
+                    await context_state.__aexit__(*sys.exc_info())
+            finally:
+                self._self_actx_state = None
             raise
         return self
 
