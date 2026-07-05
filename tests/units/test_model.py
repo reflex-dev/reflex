@@ -210,6 +210,101 @@ def test_automigration(
     assert len(list(versions.glob("*.py"))) == 6
 
 
+@pytest.mark.filterwarnings(
+    "ignore:This declarative base already contains a class with the same class name",
+)
+def test_automigration_add_column_with_callable_default(
+    tmp_working_dir: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    model_registry: type[ModelRegistry],
+):
+    """Test adding a column with a callable default to an existing table.
+
+    A callable default (e.g. ``default_factory=datetime.now``) is a per-row
+    Python default and cannot be rendered as a SQL literal server_default, so
+    autogeneration must leave server_default unset instead of crashing while
+    rendering the migration script. Scalar defaults still get a server_default.
+
+    Args:
+        tmp_working_dir: directory where database and migrations are stored
+        monkeypatch: pytest fixture to overwrite attributes
+        model_registry: clean reflex ModelRegistry
+    """
+    import datetime
+
+    import sqlmodel
+
+    alembic_ini = tmp_working_dir / "alembic.ini"
+    versions = tmp_working_dir / "alembic" / "versions"
+    monkeypatch.setattr(reflex.constants, "ALEMBIC_CONFIG", str(alembic_ini))
+
+    config_mock = mock.Mock()
+    config_mock.db_url = f"sqlite:///{tmp_working_dir}/reflex.db"
+    monkeypatch.setattr(reflex.model, "get_config", mock.Mock(return_value=config_mock))
+
+    alembic_init()
+
+    class AlembicCallable(Model, table=True):  # pyright: ignore [reportRedeclaration]
+        t1: str
+
+    with get_engine().connect() as connection:
+        assert alembic_autogenerate(connection=connection, message="Initial Revision")
+    assert migrate()
+
+    model_registry.get_metadata().clear()
+
+    # Add a non-nullable column with a callable default alongside a scalar
+    # default. Rendering the migration script previously raised CompileError
+    # because the callable was fed into sqlalchemy.literal(); the scalar default
+    # must still be carried as a server_default.
+    class AlembicCallable(Model, table=True):  # noqa: F811 # pyright: ignore [reportRedeclaration]
+        t1: str
+        created: datetime.datetime = sqlmodel.Field(
+            default_factory=datetime.datetime.now
+        )
+        count: int = 5
+
+    assert migrate(autogenerate=True)
+    assert len(list(versions.glob("*.py"))) == 2
+
+    now = datetime.datetime.now()
+    with reflex.model.session() as session:
+        session.add(AlembicCallable(t1="foo"))
+        session.commit()
+        result = session.exec(sqlmodel.select(AlembicCallable)).all()
+        assert len(result) == 1
+        assert result[0].t1 == "foo"
+        assert result[0].count == 5
+        assert result[0].created >= now
+
+    model_registry.get_metadata().clear()
+
+    # A nullable callable default can be added to a table that already has rows:
+    # existing rows keep NULL while new rows get the callable default.
+    class AlembicCallable(Model, table=True):
+        t1: str
+        created: datetime.datetime = sqlmodel.Field(
+            default_factory=datetime.datetime.now
+        )
+        count: int = 5
+        note: str | None = sqlmodel.Field(default_factory=lambda: "generated")
+
+    assert migrate(autogenerate=True)
+    assert len(list(versions.glob("*.py"))) == 3
+
+    with reflex.model.session() as session:
+        session.add(AlembicCallable(t1="bar"))
+        session.commit()
+        result = session.exec(sqlmodel.select(AlembicCallable)).all()
+        assert len(result) == 2
+        # Pre-existing row keeps NULL for the newly added nullable column.
+        assert result[0].t1 == "foo"
+        assert result[0].note is None
+        # Newly inserted row gets the callable default from sqlmodel.
+        assert result[1].t1 == "bar"
+        assert result[1].note == "generated"
+
+
 class ReflexModel(Model):
     """A model for testing."""
 

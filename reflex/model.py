@@ -408,8 +408,15 @@ if find_spec("sqlalchemy") and find_spec("alembic"):
             op: Any,
         ):
             # Carry the sqlmodel default as server_default so that newly added
-            # columns get the desired default value in existing rows.
-            if op.column.default is not None and op.column.server_default is None:
+            # columns get the desired default value in existing rows. Only scalar
+            # defaults can be rendered as a SQL literal; for callable defaults
+            # (e.g. default_factory=datetime.now) op.column.default.arg is the
+            # Python function itself, so leave server_default unset.
+            if (
+                op.column.default is not None
+                and op.column.default.is_scalar
+                and op.column.server_default is None
+            ):
                 op.column.server_default = sqlalchemy.DefaultClause(
                     sqlalchemy.sql.expression.literal(op.column.default.arg),
                 )
