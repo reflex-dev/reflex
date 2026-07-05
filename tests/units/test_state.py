@@ -3828,11 +3828,12 @@ def test_setvar_async_setter():
                 20000,
                 constants.Expiration.TOKEN,
                 constants.Expiration.LOCK_WARNING_THRESHOLD,
+                False,
             ),
         ),
         (
             {"redis_lock_expiration": 50000, "redis_token_expiration": 5600},
-            (50000, 5600, constants.Expiration.LOCK_WARNING_THRESHOLD),
+            (50000, 5600, constants.Expiration.LOCK_WARNING_THRESHOLD, False),
         ),
         (
             {"redis_token_expiration": 7600},
@@ -3840,15 +3841,16 @@ def test_setvar_async_setter():
                 constants.Expiration.LOCK,
                 7600,
                 constants.Expiration.LOCK_WARNING_THRESHOLD,
+                False,
             ),
         ),
         (
             {"redis_lock_expiration": 50000, "redis_lock_warning_threshold": 1500},
-            (50000, constants.Expiration.TOKEN, 1500),
+            (50000, constants.Expiration.TOKEN, 1500, False),
         ),
         (
             {"redis_token_expiration": 5600, "redis_lock_warning_threshold": 3000},
-            (constants.Expiration.LOCK, 5600, 3000),
+            (constants.Expiration.LOCK, 5600, 3000, False),
         ),
         (
             {
@@ -3856,7 +3858,16 @@ def test_setvar_async_setter():
                 "redis_token_expiration": 5600,
                 "redis_lock_warning_threshold": 2000,
             },
-            (50000, 5600, 2000),
+            (50000, 5600, 2000, False),
+        ),
+        (
+            {"redis_cluster": True},
+            (
+                constants.Expiration.LOCK,
+                constants.Expiration.TOKEN,
+                constants.Expiration.LOCK_WARNING_THRESHOLD,
+                True,
+            ),
         ),
     ],
 )
@@ -3887,6 +3898,7 @@ config = rx.Config(
         assert state_manager.lock_expiration == expected_values[0]  # pyright: ignore [reportAttributeAccessIssue]
         assert state_manager.token_expiration == expected_values[1]  # pyright: ignore [reportAttributeAccessIssue]
         assert state_manager.lock_warning_threshold == expected_values[2]  # pyright: ignore [reportAttributeAccessIssue]
+        assert state_manager.redis_cluster is expected_values[3]  # pyright: ignore [reportAttributeAccessIssue]
 
 
 @pytest.mark.parametrize(

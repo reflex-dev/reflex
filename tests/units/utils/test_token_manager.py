@@ -268,6 +268,7 @@ class TestRedisTokenManager:
         with patch("reflex_base.config.get_config") as mock_get_config:
             mock_config = Mock()
             mock_config.redis_token_expiration = 3600
+            mock_config.redis_cluster = False
             mock_get_config.return_value = mock_config
 
             return RedisTokenManager(mock_redis)
@@ -282,6 +283,36 @@ class TestRedisTokenManager:
         expected_key = f"token_manager_socket_record_{token}"
 
         assert manager._get_redis_key(token) == expected_key
+
+    def test_get_redis_key_cluster(self, manager):
+        """Test Redis Cluster key generation preserves logical key suffix.
+
+        Args:
+            manager: RedisTokenManager fixture instance.
+        """
+        token = "test_token_123"
+        manager.redis_cluster = True
+
+        redis_key = manager._get_redis_key(token)
+
+        assert redis_key.startswith("{")
+        assert redis_key.endswith(f":token_manager_socket_record_{token}")
+        assert manager._token_from_redis_key(redis_key) == token
+        assert manager._get_redis_key_pattern() == "{*}:token_manager_socket_record_*"
+
+    def test_lost_and_found_key_cluster(self, manager):
+        """Test Redis Cluster lost-and-found key generation.
+
+        Args:
+            manager: RedisTokenManager fixture instance.
+        """
+        instance_id = "instance-1"
+        manager.redis_cluster = True
+
+        redis_key = manager._get_lost_and_found_key(instance_id)
+
+        assert redis_key.startswith("{")
+        assert redis_key.endswith(f":token_manager_lost_and_found_{instance_id}")
 
     async def test_link_token_to_sid_normal_case(self, manager, mock_redis):
         """Test normal token linking stores in both Redis and local dicts.

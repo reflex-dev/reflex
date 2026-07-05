@@ -30,6 +30,7 @@ from reflex.istate.manager import (
 )
 from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
 from reflex.state import BaseState
+from reflex.utils.redis_keys import format_redis_key, logical_redis_key
 from reflex.utils.tasks import ensure_task
 
 
@@ -40,6 +41,15 @@ def _default_lock_expiration() -> int:
         The default lock expiration time.
     """
     return get_config().redis_lock_expiration
+
+
+def _default_redis_cluster() -> bool:
+    """Get whether Redis Cluster key tagging is enabled.
+
+    Returns:
+        Whether Redis Cluster key tagging is enabled.
+    """
+    return get_config().redis_cluster
 
 
 def _default_lock_warning_threshold() -> int:
@@ -92,6 +102,9 @@ class StateManagerRedis(StateManager):
 
     # The token expiration time (s).
     token_expiration: int = dataclasses.field(default_factory=_default_token_expiration)
+
+    # Whether Redis key names should include Redis Cluster hash tags.
+    redis_cluster: bool = dataclasses.field(default_factory=_default_redis_cluster)
 
     # The maximum time to hold a lock (ms).
     lock_expiration: int = dataclasses.field(default_factory=_default_lock_expiration)
@@ -284,7 +297,7 @@ class StateManagerRedis(StateManager):
         token = self._coerce_token(token)
         if not isinstance(token, BaseStateToken):
             # Non-BaseState token: simple single-key fetch.
-            redis_data = await self.redis.get(str(token))
+            redis_data = await self.redis.get(self._state_key(token))
             if redis_data is not None:
                 return token.deserialize(data=redis_data)
             return token.cls()
@@ -305,7 +318,7 @@ class StateManagerRedis(StateManager):
 
         redis_pipeline = self.redis.pipeline()
         for state_cls in required_state_classes:
-            redis_pipeline.get(str(token.with_cls(state_cls)))
+            redis_pipeline.get(self._state_key(token.with_cls(state_cls)))
 
         for state_cls, redis_state in zip(
             required_state_classes,
@@ -394,7 +407,9 @@ class StateManagerRedis(StateManager):
             # Non-BaseState token: simple single-key write.
             pickle_state = token.serialize(state)
             if pickle_state:
-                await self.redis.set(str(token), pickle_state, ex=self.token_expiration)
+                await self.redis.set(
+                    self._state_key(token), pickle_state, ex=self.token_expiration
+                )
             return
 
         base_state = cast(BaseState, state)
@@ -435,7 +450,7 @@ class StateManagerRedis(StateManager):
             pickle_state = base_state._serialize()
             if pickle_state:
                 await self.redis.set(
-                    str(token.with_cls(type(base_state))),
+                    self._state_key(token.with_cls(type(base_state))),
                     pickle_state,
                     ex=self.token_expiration,
                 )
@@ -730,8 +745,22 @@ class StateManagerRedis(StateManager):
                 return task
         return None
 
-    @staticmethod
-    def _lock_key(token: StateToken[Any]) -> bytes:
+    def _state_key(self, token: StateToken[Any]) -> str:
+        """Get the Redis key for a token's state.
+
+        Args:
+            token: The token to get the state key for.
+
+        Returns:
+            The Redis key for the token's state.
+        """
+        return format_redis_key(
+            str(token),
+            cluster=self.redis_cluster,
+            slot_key=token.lock_key,
+        )
+
+    def _lock_key(self, token: StateToken[Any]) -> bytes:
         """Get the redis key for a token's lock.
 
         Args:
@@ -740,7 +769,23 @@ class StateManagerRedis(StateManager):
         Returns:
             The redis lock key for the token.
         """
-        return f"{token.lock_key}_lock".encode()
+        return format_redis_key(
+            f"{token.lock_key}_lock",
+            cluster=self.redis_cluster,
+            slot_key=token.lock_key,
+        ).encode()
+
+    @staticmethod
+    def _logical_lock_key(lock_key: bytes) -> str:
+        """Get the local logical lock key from a Redis lock key.
+
+        Args:
+            lock_key: The Redis lock key.
+
+        Returns:
+            The logical lock key without Redis Cluster hash tags or suffixes.
+        """
+        return logical_redis_key(lock_key.decode()).rsplit("_lock", 1)[0]
 
     async def _try_extend_lock(self, lock_key: bytes) -> bool | None:
         """Extends the current lock for another lock_expiration period.
@@ -790,7 +835,8 @@ class StateManagerRedis(StateManager):
             message: The redis message.
         """
         # Opportunistic lock contention notification.
-        token = message["channel"].rsplit(b":", 1)[1][: -len(b"_lock_waiters")].decode()
+        redis_key = message["channel"].split(b":", 1)[1].decode()
+        token = logical_redis_key(redis_key).removesuffix("_lock_waiters")
         if (
             message["data"] == b"sadd"
             and (state_lock := self._cached_states_locks.get(token)) is not None
@@ -1001,7 +1047,7 @@ class StateManagerRedis(StateManager):
             lock_key: The redis key for the lock.
             lock_id: The ID of the lock.
         """
-        token = lock_key.decode().rsplit("_lock", 1)[0]
+        token = self._logical_lock_key(lock_key)
         if (
             # If there's not a line, try to get the lock immediately.
             not self._n_lock_waiters(lock_key)
