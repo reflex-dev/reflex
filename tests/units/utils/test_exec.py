@@ -1,5 +1,6 @@
 """Tests for development backend launchers in ``reflex.utils.exec``."""
 
+import inspect
 import os
 from pathlib import Path
 
@@ -78,3 +79,17 @@ def test_run_granian_backend_sets_reload_env_var_and_clears_marker(
     )
 
     assert seen["value"] == "True"
+
+
+def test_warn_user_about_uvicorn_does_not_reference_past_version(
+    mocker: MockerFixture,
+):
+    """The Uvicorn/Granian warning must not cite a version that has already shipped."""
+    warn = mocker.patch.object(exec_utils.console, "warn")
+
+    inspect.unwrap(exec_utils._warn_user_about_uvicorn)()
+
+    warn.assert_called_once()
+    message = warn.call_args.args[0]
+    assert "0.8.0" not in message
+    assert "Granian" in message
