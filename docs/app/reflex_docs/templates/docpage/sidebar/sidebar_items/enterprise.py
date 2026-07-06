@@ -63,6 +63,15 @@ def get_sidebar_items_enterprise_usage():
                 ),
             ],
         ),
+        SideBarItem(
+            names="Testing",
+            children=[
+                SideBarItem(
+                    names="End-to-End Testing",
+                    link=enterprise.testing.path,
+                ),
+            ],
+        ),
     ]
 
 
