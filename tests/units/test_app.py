@@ -2591,6 +2591,52 @@ def test_compile_dry_run_does_not_prune_or_write_manifest(
     )
 
 
+def test_compile_page_is_idempotent_for_component_state(
+    compilable_app: tuple[App, Path],
+    mocker,
+) -> None:
+    """Re-evaluating a stateful page in one process must not duplicate states.
+
+    In prod, granian forks workers that re-run the stateful-pages marker after
+    the parent process already compiled the page. Because ``ComponentState.create``
+    mutates a process-global counter and registry, an unguarded re-evaluation
+    creates a second set of dynamic state classes (the "2x states" bug).
+    """
+    import reflex.istate.dynamic as dynamic_mod
+
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app, _ = compilable_app
+
+    class DupCounter(rx.ComponentState):
+        count: int = 0
+
+        @classmethod
+        def get_component(cls, **props):
+            return rx.el.div(**props)
+
+    app.add_page(lambda: rx.vstack(DupCounter.create(), DupCounter.create()), route="/")
+    route = next(iter(app._unevaluated_pages))
+
+    # Parent process: full compile evaluates the page once.
+    app._compile(dry_run=True)
+    assert DupCounter._per_component_state_instance_count == 2
+
+    # Forked worker: re-running the stateful-pages marker via _compile_page must
+    # reuse the already-created state classes instead of creating new ones.
+    app._compile_page(route, save_page=False)
+    assert DupCounter._per_component_state_instance_count == 2
+    assert not hasattr(dynamic_mod, "DupCounter_n3")
+
+    # A save_page=True call for an already-compiled route must still leave the
+    # component in _pages (the skip must honour the save_page contract) without
+    # duplicating states.
+    assert route in app._pages
+    app._compile_page(route, save_page=True)
+    assert route in app._pages
+    assert DupCounter._per_component_state_instance_count == 2
+
+
 def test_compile_writes_upload_files_provider_app_wrap(
     compilable_app: tuple[App, Path],
     mocker,
