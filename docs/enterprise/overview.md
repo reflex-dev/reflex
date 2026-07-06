@@ -111,6 +111,20 @@ categories_data = [
         ],
     },
     {
+        "category": "Testing",
+        "description": "pytest plugin for end-to-end testing of Reflex apps",
+        "count": 1,
+        "components": [
+            {
+                "feature": "reflex_app fixture",
+                "description": "Boot the app under test with reflex run and drive it with browser tooling",
+                "cloud_tier": "Free",
+                "self_hosted_tier": "Free",
+                "link": "/docs/enterprise/testing",
+            },
+        ],
+    },
+    {
         "category": "AGGrid and AGChart",
         "description": "Advanced data visualization and grid components",
         "count": 2,

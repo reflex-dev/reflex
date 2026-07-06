@@ -47,6 +47,7 @@ SIDEBAR_ICON_MAP = {
     "Self Hosting": "server",
     "Custom Components": "blocks",
     "Usage": "chart-column",
+    "Testing": "beaker",
 }
 
 Scrollable_SideBar = """
