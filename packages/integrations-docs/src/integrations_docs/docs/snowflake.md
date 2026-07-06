@@ -50,8 +50,11 @@ Key-pair authentication connects as a Snowflake service user with a registered R
 ### Step 1: Generate an RSA key pair
 
 ```bash
-# Private key (unencrypted PKCS#8; add a passphrase with `-v2 aes256` instead of `-nocrypt`)
+# Private key (unencrypted PKCS#8)
 openssl genrsa 2048 | openssl pkcs8 -topk8 -inform PEM -out rsa_key.p8 -nocrypt
+
+# — or encrypted, if your organization requires passphrase-protected keys at rest
+openssl genrsa 2048 | openssl pkcs8 -topk8 -v2 aes256 -inform PEM -out rsa_key.p8
 
 # Public key
 openssl rsa -in rsa_key.p8 -pubout -out rsa_key.pub
@@ -68,6 +71,12 @@ GRANT ROLE <role> TO USER svc_reflex;
 ALTER USER svc_reflex SET RSA_PUBLIC_KEY='MIIBIjANBgkq...';
 ```
 
+To print the `ALTER USER` statement with the key already formatted on a single line:
+
+```bash
+echo "ALTER USER svc_reflex SET RSA_PUBLIC_KEY='$(grep -v '^-----' rsa_key.pub | tr -d '\n')';"
+```
+
 The `GRANT ROLE` is required — `DEFAULT_ROLE` only sets a preference and does not grant the role. The role needs `USAGE` on the warehouse, database, and schema the app will query. To verify the registration, compare `RSA_PUBLIC_KEY_FP` from `DESC USER svc_reflex` (Snowflake prefixes it with `SHA256:`) against the output of:
 
 ```bash
@@ -78,7 +87,7 @@ openssl rsa -pubin -in rsa_key.pub -outform DER | openssl dgst -sha256 -binary |
 
 - `SNOWFLAKE_USER`: the user the public key is registered on (e.g. `svc_reflex`)
 - `SNOWFLAKE_PRIVATE_KEY`: paste the full contents of `rsa_key.p8` (mangled newlines from copy/paste are fine)
-- `SNOWFLAKE_PRIVATE_KEY_PASSPHRASE`: only if the private key is encrypted
+- `SNOWFLAKE_PRIVATE_KEY_PASSPHRASE`: only if the private key is encrypted. It is stored with the integration secrets and used to decrypt the key at connect time. To strip a passphrase from an existing key instead: `openssl pkcs8 -topk8 -in rsa_key.p8 -nocrypt -out rsa_key_plain.p8`
 
 The warehouse and database dropdowns populate once the key pair authenticates, which doubles as a connection check.
 
