@@ -49,14 +49,21 @@ Key-pair authentication connects as a Snowflake service user with a registered R
 
 ### Step 1: Generate an RSA key pair
 
+Generate an unencrypted PKCS#8 private key:
+
 ```bash
-# Private key (unencrypted PKCS#8)
 openssl genrsa 2048 | openssl pkcs8 -topk8 -inform PEM -out rsa_key.p8 -nocrypt
+```
 
-# — or encrypted, if your organization requires passphrase-protected keys at rest
+Or generate an encrypted one, if your organization requires passphrase-protected keys at rest:
+
+```bash
 openssl genrsa 2048 | openssl pkcs8 -topk8 -v2 aes256 -inform PEM -out rsa_key.p8
+```
 
-# Public key
+Then derive the public key:
+
+```bash
 openssl rsa -in rsa_key.p8 -pubout -out rsa_key.pub
 ```
 
