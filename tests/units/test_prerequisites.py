@@ -1474,6 +1474,53 @@ from new_name
     assert updated_content == expected_content
 
 
+def test_rename_imports_and_app_name_preserves_utf8(
+    temp_directory, monkeypatch: pytest.MonkeyPatch
+):
+    """UTF-8 source is preserved even when the platform default encoding is not UTF-8.
+
+    Simulates a Western Windows locale (cp1252) where ``Path.read_text`` /
+    ``write_text`` without an explicit ``encoding`` would mis-decode UTF-8 source,
+    silently corrupting or aborting on non-ASCII characters (curly quotes, accents).
+
+    Args:
+        temp_directory: A temporary directory fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    original_read_text = Path.read_text
+    original_write_text = Path.write_text
+
+    def read_text(self, encoding=None, errors=None):
+        return original_read_text(
+            self, encoding=encoding if encoding is not None else "cp1252", errors=errors
+        )
+
+    def write_text(self, data, encoding=None, errors=None, newline=None):
+        return original_write_text(
+            self,
+            data,
+            encoding=encoding if encoding is not None else "cp1252",
+            errors=errors,
+            newline=newline,
+        )
+
+    monkeypatch.setattr(Path, "read_text", read_text)
+    monkeypatch.setattr(Path, "write_text", write_text)
+
+    source = (
+        "import old_name  # \u201cquoted\u201d caf\u00e9 na\u00efve r\u00e9sum\u00e9\n"
+    )
+    file_path = temp_directory / "example.py"
+    file_path.write_bytes(source.encode("utf-8"))
+
+    rename_imports_and_app_name(file_path, "old_name", "new_name")
+
+    expected = (
+        "import new_name  # \u201cquoted\u201d caf\u00e9 na\u00efve r\u00e9sum\u00e9\n"
+    )
+    assert file_path.read_bytes() == expected.encode("utf-8")
+
+
 def test_cli_rename_command(temp_directory):
     foo_dir = temp_directory / "foo"
     foo_dir.mkdir()

@@ -97,7 +97,7 @@ def rename_imports_and_app_name(file_path: str | Path, old_name: str, new_name: 
         new_name: The new name to use.
     """
     file_path = Path(file_path)
-    content = file_path.read_text()
+    content = file_path.read_text(encoding="utf-8")
 
     # Replace `from old_name.` or `from old_name` with `from new_name`
     content = re.sub(
@@ -127,7 +127,7 @@ def rename_imports_and_app_name(file_path: str | Path, old_name: str, new_name: 
         content,
     )
 
-    file_path.write_text(content)
+    file_path.write_text(content, encoding="utf-8")
 
 
 def process_directory(
