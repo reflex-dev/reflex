@@ -398,7 +398,11 @@ def _compile_root_stylesheet(
             except ImportError:
                 failed_to_import_sass = True
 
-        str_target_path = "./" + str(target_path)
+        # Use POSIX separators: this string is emitted verbatim into a CSS
+        # `@import url(...)`, where a backslash is an escape introducer, not a
+        # path separator, so `str(target_path)` would break nested stylesheets
+        # on Windows.
+        str_target_path = "./" + target_path.as_posix()
         sheets.append(str_target_path) if str_target_path not in sheets else None
 
     if failed_to_import_sass:
