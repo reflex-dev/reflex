@@ -19,7 +19,7 @@ chosen and controlled by the test suite.
 ```bash
 uv add "reflex-enterprise[testing]>=0.9.2"
 uv add pytest-playwright         # browser driver of your choice
-playwright install chromium
+uv run playwright install chromium
 ```
 
 The `[testing]` extra installs `pytest`, but does not include a browser driver.
@@ -47,7 +47,7 @@ def test_homepage(reflex_app: ReflexApp, page: Page):
 Run it:
 
 ```bash
-pytest
+uv run pytest
 ```
 
 The first test that requests `reflex_app` starts the app. A cold start
