@@ -56,6 +56,8 @@ _SUBMOD_ATTRS: dict = {
         "ScatterChart",
         "funnel_chart",
         "FunnelChart",
+        "sankey_chart",
+        "SankeyChart",
         "treemap",
         "Treemap",
     ],

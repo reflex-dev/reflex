@@ -5,6 +5,7 @@ from reflex_components_recharts.charts import (
     PieChart,
     RadarChart,
     RadialBarChart,
+    SankeyChart,
     ScatterChart,
 )
 from reflex_components_recharts.general import ResponsiveContainer
@@ -50,3 +51,10 @@ def test_scatter_chart():
     sc = ScatterChart.create()
     assert isinstance(sc, ResponsiveContainer)
     assert isinstance(sc.children[0], ScatterChart)
+
+
+def test_sankey_chart():
+    sc = SankeyChart.create()
+    assert isinstance(sc, ResponsiveContainer)
+    assert isinstance(sc.children[0], SankeyChart)
+    assert sc.children[0].render()["name"] == "RechartsSankeyChart"
