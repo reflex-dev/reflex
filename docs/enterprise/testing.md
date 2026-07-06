@@ -196,7 +196,7 @@ class ReflexAppTestSettings:
     workdir_root: Path = ...
     start_timeout: float = 300.0  # seconds
     reflex_run_args: tuple[str, ...] = ()
-    extra_env: Mapping[str, str] = {}
+    extra_env: Mapping[str, str] = field(default_factory=dict)
     share_reflex_dir: bool = True
 ```
 
