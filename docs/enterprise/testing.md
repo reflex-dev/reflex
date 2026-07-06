@@ -33,6 +33,15 @@ The fixture is registered through a `pytest11` entry point, so no
 
 Place a test anywhere at or below the directory containing `rxconfig.py`:
 
+```text
+my_app/
+  rxconfig.py
+  my_app/
+    my_app.py
+  tests/
+    test_homepage.py
+```
+
 ```python
 from playwright.sync_api import Page, expect
 
@@ -54,6 +63,23 @@ The first test that requests `reflex_app` starts the app. A cold start
 compiles the frontend; subsequent runs reuse a cached working directory and
 start quickly. The running app is shared by every test in the session and shut
 down when the session ends.
+
+```md alert warning
+# Shared app process, isolated per-test state.
+
+The app process stays alive across test cases, but the state does not carry
+over between them. Each browser context connects with its own `client_token`,
+and Reflex keys backend state by that token, so every test that opens a fresh
+`page` (the function-scoped `pytest-playwright` fixture) talks to a clean,
+independent state instance.
+
+This means tests never see each other's state, but it also means nothing a
+test does in the UI — logging in, navigating, opening a dialog — persists into
+the next test. Reproduce any required starting condition per test (see
+[Reusing setup steps](#reusing-setup-steps)). Reusing one `page`/context
+across tests would share a `client_token` and leak state between them; keep to
+one context per test.
+```
 
 ## How it works
 
@@ -88,6 +114,46 @@ The `reflex_app` fixture returns a `ReflexApp` object with a small, stable surfa
 | `reflex_app.backend_url` | Live backend URL, if available. |
 | `reflex_app.app_root` | The resolved app root (directory containing `rxconfig.py`). |
 | `reflex_app.logs()` | Captured `reflex run` output (stdout and stderr merged, most recent lines). |
+
+## Reusing setup steps
+
+Because every test starts from a clean state (see the warning above), any
+starting condition a test depends on — a logged-in session, a populated form,
+an open dialog — has to be re-established for that test. Factor those steps
+into a function-scoped fixture so each test body can assume the app is already
+in the state it cares about.
+
+For example, a fixture that clicks through a menu to open a settings modal, so
+the test starts with the modal already open:
+
+```python
+import pytest
+from playwright.sync_api import Page, expect
+
+from reflex_enterprise.testing import ReflexApp
+
+
+@pytest.fixture
+def settings_modal(reflex_app: ReflexApp, page: Page) -> Page:
+    """Open the settings modal and hand the test a page where it is visible."""
+    page.goto(reflex_app.url)
+    page.get_by_role("button", name="Menu").click()
+    page.get_by_role("menuitem", name="Settings").click()
+    expect(page.get_by_role("dialog", name="Settings")).to_be_visible()
+    return page
+
+
+def test_change_theme(settings_modal: Page):
+    # The modal is already open; go straight to the assertion.
+    settings_modal.get_by_label("Dark mode").check()
+    expect(settings_modal.get_by_label("Dark mode")).to_be_checked()
+```
+
+The fixture depends on `reflex_app` and `page`, both function-scoped, so it
+runs once per test against that test's own `client_token` — the setup is
+repeated for every test but the state never leaks between them. Fixtures like
+this compose: a `logged_in` fixture can navigate from the login page, and
+`settings_modal` can depend on it to open the modal as an authenticated user.
 
 ## Debugging failures
 
