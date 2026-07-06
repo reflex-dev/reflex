@@ -22,7 +22,7 @@ The full [End-User License Agreement (EULA)](https://raw.githubusercontent.com/r
 ```md alert info
 # Enterprise components are available to free users.
 Free apps can use these components with a "Built with Reflex" badge shown in the bottom right corner of the app.
-For more information on the badge, visit [Built with Reflex](/enterprise/built-with-reflex/).
+For more information on the badge, visit [Built with Reflex](/docs/enterprise/built-with-reflex/).
 ```
 
 ## Installation
