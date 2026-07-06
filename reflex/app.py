@@ -395,6 +395,13 @@ class App(MiddlewareMixin, LifespanMixin):
     # A mapping of pages which created states as they were being evaluated.
     _stateful_pages: dict[str, None] = dataclasses.field(default_factory=dict)
 
+    # Routes whose page function has already been evaluated in this process.
+    # Evaluating a page has global side effects (e.g. ComponentState.create
+    # registers dynamic state classes), so a route must not be evaluated twice
+    # in one process. A forked prod worker inherits this set from the parent
+    # that already compiled and skips re-evaluation.
+    _evaluated_pages: set[str] = dataclasses.field(default_factory=set)
+
     # The backend API object.
     _api: Starlette | None = None
 
@@ -980,6 +987,11 @@ class App(MiddlewareMixin, LifespanMixin):
             route: The route of the page to compile.
             save_page: If True, the compiled page is saved to self._pages.
         """
+        # Evaluating a page has global side effects (dynamic state creation), so
+        # skip routes already evaluated in this process to avoid duplicating them.
+        if route in self._evaluated_pages:
+            return
+
         n_states_before = len(all_base_state_classes)
         component = compiler.compile_unevaluated_page(
             route,
@@ -991,6 +1003,8 @@ class App(MiddlewareMixin, LifespanMixin):
         # Indicate that evaluating this page creates one or more state classes.
         if len(all_base_state_classes) > n_states_before:
             self._stateful_pages[route] = None
+
+        self._evaluated_pages.add(route)
 
         # Add the page.
         self._check_routes_conflict(route)
