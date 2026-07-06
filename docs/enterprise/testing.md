@@ -233,7 +233,7 @@ Then run with [pytest-cov](https://pytest-cov.readthedocs.io/):
 
 ```bash
 uv add "pytest-cov>=7.1"
-pytest --cov
+uv run pytest --cov
 ```
 
 Each app subprocess writes its own `.coverage.*` data file; pytest-cov
