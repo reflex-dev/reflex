@@ -989,7 +989,10 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         # Evaluating a page has global side effects (dynamic state creation), so
         # skip routes already evaluated in this process to avoid duplicating them.
-        if route in self._evaluated_pages:
+        # Only skip when there is nothing left to do: the caller does not want the
+        # page saved, or it is already saved. Otherwise fall through to build and
+        # store the component so ``save_page=True`` still populates ``_pages``.
+        if route in self._evaluated_pages and (not save_page or route in self._pages):
             return
 
         n_states_before = len(all_base_state_classes)

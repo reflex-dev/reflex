@@ -2628,6 +2628,14 @@ def test_compile_page_is_idempotent_for_component_state(
     assert DupCounter._per_component_state_instance_count == 2
     assert not hasattr(dynamic_mod, "DupCounter_n3")
 
+    # A save_page=True call for an already-compiled route must still leave the
+    # component in _pages (the skip must honour the save_page contract) without
+    # duplicating states.
+    assert route in app._pages
+    app._compile_page(route, save_page=True)
+    assert route in app._pages
+    assert DupCounter._per_component_state_instance_count == 2
+
 
 def test_compile_writes_upload_files_provider_app_wrap(
     compilable_app: tuple[App, Path],
