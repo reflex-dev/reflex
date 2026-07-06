@@ -214,8 +214,8 @@ const extractPoints = (points) => {
             x1: point.bbox.x1,
             y0: point.bbox.y0,
             y1: point.bbox.y1,
-            z0: point.bbox.y0,
-            z1: point.bbox.y1,
+            z0: point.bbox.z0,
+            z1: point.bbox.z1,
         }) : undefined;
         return removeUndefined({
             x: point.x,

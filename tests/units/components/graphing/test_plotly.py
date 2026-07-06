@@ -75,3 +75,22 @@ def test_plotly_basic_locale_option_merges_into_config(plotly_fig: go.Figure):
     assert "locale" not in rendered.props
     assert "_rxGetPlotlyLocaleConfig" in str(config_var)
     assert "fr" in str(config_var)
+
+
+def test_plotly_extract_points_bbox_z_source(plotly_fig: go.Figure):
+    """Test that the point extractor reads the z-bbox from the z fields.
+
+    The generated ``extractPoints`` helper must source the ``z0``/``z1`` bounding
+    box members from ``point.bbox.z0``/``point.bbox.z1`` so 3D-plot event data
+    reports the real z-extent instead of duplicating the y-extent.
+
+    Args:
+        plotly_fig: The figure to display.
+    """
+    component = rx.plotly(data=plotly_fig)
+    custom_code = "\n".join(component.add_custom_code())
+
+    assert "z0: point.bbox.z0" in custom_code
+    assert "z1: point.bbox.z1" in custom_code
+    assert "z0: point.bbox.y0" not in custom_code
+    assert "z1: point.bbox.y1" not in custom_code
