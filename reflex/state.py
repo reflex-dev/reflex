@@ -32,6 +32,7 @@ from reflex_base.environment import PerformanceMode, environment
 from reflex_base.event import (
     BACKGROUND_TASK_MARKER,
     EVENT_ACTIONS_MARKER,
+    SUPERSEDES_MARKER,
     Event,
     EventHandler,
     EventSpec,
@@ -737,8 +738,9 @@ class BaseState(EvenMoreBasicBaseState):
             closure=fn.__closure__,
         )
         newfn.__annotations__ = fn.__annotations__
-        if mark := getattr(fn, BACKGROUND_TASK_MARKER, None):
-            setattr(newfn, BACKGROUND_TASK_MARKER, mark)
+        for marker in (BACKGROUND_TASK_MARKER, SUPERSEDES_MARKER):
+            if mark := getattr(fn, marker, None):
+                setattr(newfn, marker, mark)
         # Preserve event_actions from @rx.event decorator
         if event_actions := getattr(fn, EVENT_ACTIONS_MARKER, None):
             object.__setattr__(newfn, EVENT_ACTIONS_MARKER, event_actions)
@@ -2462,6 +2464,15 @@ class OnLoadInternalState(State):
             ),
             State.set_is_hydrated(True),
         ]
+
+
+# A newer navigation supersedes the previous unfinished on_load chain for the
+# same client token, cancelling its stale work (#6593).
+setattr(
+    OnLoadInternalState.event_handlers["on_load_internal"].fn,
+    SUPERSEDES_MARKER,
+    True,
+)
 
 
 class ComponentState(State, mixin=True):

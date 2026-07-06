@@ -185,6 +185,7 @@ _IMMUTABLE_PAYLOAD_TYPES = (
 )
 
 BACKGROUND_TASK_MARKER = "_reflex_background_task"
+SUPERSEDES_MARKER = "_reflex_supersedes"
 EVENT_ACTIONS_MARKER = "_rx_event_actions"
 UPLOAD_FILES_CLIENT_HANDLER = "uploadFiles"
 
@@ -441,6 +442,19 @@ class EventHandler(EventActionsMixin):
             True if the event handler is marked as a background task.
         """
         return getattr(self.fn, BACKGROUND_TASK_MARKER, False)
+
+    @property
+    def supersedes(self) -> bool:
+        """Whether a newer chain-root invocation supersedes an older one.
+
+        When True, enqueuing this handler as a chain root cancels the previous
+        unfinished event chain rooted at the same handler for the same client
+        token.
+
+        Returns:
+            True if the event handler is marked as superseding.
+        """
+        return getattr(self.fn, SUPERSEDES_MARKER, False)
 
     def __call__(self, *args: Any, **kwargs: Any) -> "EventSpec":
         """Pass arguments to the handler to get an event spec.
@@ -2778,6 +2792,7 @@ class EventNamespace:
 
     # Constants
     BACKGROUND_TASK_MARKER = BACKGROUND_TASK_MARKER
+    SUPERSEDES_MARKER = SUPERSEDES_MARKER
     EVENT_ACTIONS_MARKER = EVENT_ACTIONS_MARKER
     _EVENT_FIELDS = _EVENT_FIELDS
     FORM_DATA = FORM_DATA
