@@ -63,11 +63,12 @@ Run as an administrator, pasting the contents of `rsa_key.pub` without the `BEGI
 
 ```sql
 CREATE USER IF NOT EXISTS svc_reflex TYPE = SERVICE DEFAULT_ROLE = <role>;
+GRANT ROLE <role> TO USER svc_reflex;
 
 ALTER USER svc_reflex SET RSA_PUBLIC_KEY='MIIBIjANBgkq...';
 ```
 
-The user's role needs `USAGE` on the warehouse, database, and schema the app will query. To verify the registration, compare `RSA_PUBLIC_KEY_FP` from `DESC USER svc_reflex` with:
+The `GRANT ROLE` is required — `DEFAULT_ROLE` only sets a preference and does not grant the role. The role needs `USAGE` on the warehouse, database, and schema the app will query. To verify the registration, compare `RSA_PUBLIC_KEY_FP` from `DESC USER svc_reflex` (Snowflake prefixes it with `SHA256:`) against the output of:
 
 ```bash
 openssl rsa -pubin -in rsa_key.pub -outform DER | openssl dgst -sha256 -binary | openssl enc -base64
