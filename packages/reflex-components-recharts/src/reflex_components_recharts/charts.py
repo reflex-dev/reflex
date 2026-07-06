@@ -10,6 +10,7 @@ from reflex_base.constants import EventTriggers
 from reflex_base.constants.colors import Color
 from reflex_base.event import EventHandler, no_args_event_spec
 from reflex_base.vars.base import Var
+from typing_extensions import NotRequired
 
 from reflex_components_recharts.general import ResponsiveContainer
 
@@ -516,15 +517,15 @@ class FunnelChart(ChartBase):
     ]
 
 
-class SankeyNode(TypedDict, total=False):
+class SankeyNode(TypedDict):
     """A node in a Sankey chart."""
 
     name: str
-    type: str
-    fill: str | Color
-    stroke: str | Color
-    strokeWidth: int | float
-    strokeOpacity: int | float
+    type: NotRequired[str]
+    fill: NotRequired[str | Color]
+    stroke: NotRequired[str | Color]
+    strokeWidth: NotRequired[int | float]
+    strokeOpacity: NotRequired[int | float]
 
 
 class SankeyLink(TypedDict):
@@ -533,6 +534,11 @@ class SankeyLink(TypedDict):
     source: int
     target: int
     value: int | float
+    fill: NotRequired[str | Color]
+    fillOpacity: NotRequired[int | float]
+    stroke: NotRequired[str | Color]
+    strokeWidth: NotRequired[int | float]
+    strokeOpacity: NotRequired[int | float]
 
 
 class SankeyData(TypedDict):
