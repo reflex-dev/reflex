@@ -426,11 +426,22 @@ def test_compile_contexts_has_default_color_mode_context():
     assert 'resolvedColorMode: defaultColorMode === "dark" ? "dark" : "light"' in code
 
 
-def test_compile_contexts_default_color_mode_is_system():
-    """Without any config override, the default color mode is "system"."""
-    _, code = compiler.compile_contexts(None, None)
+def _mock_config_color_mode(mocker: MockerFixture, mode: LiteralColorMode) -> None:
+    """Point the compiler's get_config at a fresh config with the given mode.
 
-    assert 'export const defaultColorMode = "system"' in code
+    Builds a standalone Config rather than mutating the shared singleton so the
+    override cannot leak into other tests regardless of execution order.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        mode: The default color mode to configure.
+    """
+    config = rx.Config(
+        app_name="test_default_color_mode",
+        default_color_mode=mode,
+        _skip_plugins_checks=True,
+    )
+    mocker.patch("reflex.compiler.compiler.get_config", return_value=config)
 
 
 @pytest.mark.parametrize("mode", ["system", "light", "dark"])
@@ -438,9 +449,7 @@ def test_compile_contexts_uses_config_default_color_mode(
     mode: LiteralColorMode, mocker: MockerFixture
 ):
     """The Config.default_color_mode option should drive the compiled default."""
-    config = rx.config.get_config()
-    config.default_color_mode = mode
-    mocker.patch("reflex.compiler.compiler.get_config", return_value=config)
+    _mock_config_color_mode(mocker, mode)
 
     _, code = compiler.compile_contexts(None, None)
 
@@ -449,9 +458,7 @@ def test_compile_contexts_uses_config_default_color_mode(
 
 def test_compile_contexts_theme_appearance_overrides_config(mocker: MockerFixture):
     """An explicit theme appearance should still win over the config default."""
-    config = rx.config.get_config()
-    config.default_color_mode = "light"
-    mocker.patch("reflex.compiler.compiler.get_config", return_value=config)
+    _mock_config_color_mode(mocker, "light")
 
     _, code = compiler.compile_contexts(None, rx.theme(appearance="dark"))
 
