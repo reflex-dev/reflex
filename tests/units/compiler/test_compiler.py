@@ -465,6 +465,53 @@ def test_compile_contexts_theme_appearance_overrides_config(mocker: MockerFixtur
     assert 'export const defaultColorMode = "dark"' in code
 
 
+@pytest.mark.parametrize(
+    ("theme", "config_mode", "expected"),
+    [
+        (None, "system", "system"),
+        (None, "dark", "dark"),
+        (None, "light", "light"),
+        # An explicit theme appearance wins over the config default.
+        (rx.theme(appearance="dark"), "light", "dark"),
+        # "inherit" (the default) falls back to the config default.
+        (rx.theme(appearance="inherit"), "dark", "dark"),
+        (rx.theme(), "dark", "dark"),
+    ],
+)
+def test_resolve_default_color_mode(
+    theme, config_mode: LiteralColorMode, expected: str, mocker: MockerFixture
+):
+    """The resolved default matches theme appearance, else the config default."""
+    _mock_config_color_mode(mocker, config_mode)
+
+    assert compiler._resolve_default_color_mode(theme) == expected
+
+
+@pytest.mark.parametrize("mode", ["system", "light", "dark"])
+def test_preload_color_theme_uses_default(mode: str):
+    """The preload script falls back to the given default when no theme is saved."""
+    from reflex.utils.misc import preload_color_theme
+
+    code = str(preload_color_theme(mode))
+
+    assert f"|| {mode!r}" in code
+
+
+def test_compile_document_root_bakes_default_color_mode(mocker: MockerFixture):
+    """compile_document_root threads the resolved default into the preload script."""
+    _mock_config_color_mode(mocker, "dark")
+    mocker.patch(
+        "reflex.compiler.compiler.get_web_dir",
+        return_value=Path("/tmp/does_not_matter"),
+    )
+
+    _, code = compiler.compile_document_root(
+        [], default_color_mode=compiler._resolve_default_color_mode(None)
+    )
+
+    assert "|| 'dark'" in code
+
+
 def test_compile_nonexistent_stylesheet(tmp_path, mocker: MockerFixture):
     """Test that an error is thrown for non-existent stylesheets.
 

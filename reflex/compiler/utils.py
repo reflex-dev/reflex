@@ -559,6 +559,7 @@ def create_document_root(
     head_components: Sequence[Component] | None = None,
     html_lang: str | None = None,
     html_custom_attrs: dict[str, Var | Any] | None = None,
+    default_color_mode: str = "system",
 ) -> Component:
     """Create the document root.
 
@@ -566,6 +567,8 @@ def create_document_root(
         head_components: The components to add to the head.
         html_lang: The language of the document, will be added to the html root element.
         html_custom_attrs: custom attributes added to the html root element.
+        default_color_mode: The color mode applied before hydration when no theme
+            is saved in the browser.
 
     Returns:
         The document root.
@@ -613,7 +616,7 @@ def create_document_root(
         )
 
     # Add theme preload script as the very first component to prevent FOUC
-    theme_preload_components = [preload_color_theme()]
+    theme_preload_components = [preload_color_theme(default_color_mode)]
 
     head_components = [
         *theme_preload_components,
