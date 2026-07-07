@@ -110,11 +110,11 @@ class FieldBasedMeta(type):
 
         # Collect inherited fields from base classes
         for base in bases[::-1]:
-            if hasattr(base, "_inherited_fields"):
-                inherited_fields.update(base._inherited_fields)
+            if (fields := getattr(base, "_inherited_fields", None)) is not None:
+                inherited_fields.update(fields)
         for base in bases[::-1]:
-            if hasattr(base, "_own_fields"):
-                inherited_fields.update(base._own_fields)
+            if (fields := getattr(base, "_own_fields", None)) is not None:
+                inherited_fields.update(fields)
 
         return inherited_fields
 

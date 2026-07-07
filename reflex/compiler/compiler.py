@@ -856,6 +856,8 @@ def into_component(component: Component | ComponentCallable) -> Component:
 
     # noqa: DAR401
     """
+    if isinstance(component, Component):
+        return component
     if (converted := _into_component_once(component)) is not None:
         return converted
     if not callable(component):
@@ -863,7 +865,7 @@ def into_component(component: Component | ComponentCallable) -> Component:
         raise TypeError(msg)
 
     try:
-        component_called = component()  # ty:ignore[call-top-callable]
+        component_called = component()
     except KeyError as e:
         if isinstance(e, ReflexError):
             _modify_exception(e)

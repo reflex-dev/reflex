@@ -37,7 +37,7 @@ def LifespanApp(
     async def lifespan_context(app, inc: int = 1):
         global lifespan_context_global  # ty:ignore[unresolved-global]
         print(f"Lifespan context entered: {app}.")
-        lifespan_context_global += inc  # ty:ignore[unresolved-reference]
+        lifespan_context_global += inc
         try:
             yield
         finally:

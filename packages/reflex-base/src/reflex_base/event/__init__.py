@@ -708,7 +708,7 @@ class EventChain(EventActionsMixin):
 
     args_spec: Callable | Sequence[Callable] | None = dataclasses.field(default=None)
 
-    invocation: Var | None = dataclasses.field(default=None)
+    invocation: FunctionVar | None = dataclasses.field(default=None)
 
     @classmethod
     def create(
@@ -2546,13 +2546,13 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
         call_args = arg_vars if sig.parameters else (Var(_js_expr="...args"),)
         statements = [
             (
-                event.call(*call_args)
+                event.call(*call_args)  # ty:ignore[no-matching-overload] https://github.com/astral-sh/ty/issues/1824
                 if isinstance(event, FunctionVar)
                 else invocation.call(
                     LiteralVar.create([LiteralVar.create(event)]),
                     arg_def_expr,
                     _EMPTY_EVENT_ACTIONS,
-                )  # ty:ignore[no-matching-overload]
+                )
             )
             for event in value.events
         ]
@@ -2563,7 +2563,7 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
                     _EMPTY_EVENTS,
                     arg_def_expr,
                     _EMPTY_EVENT_ACTIONS,
-                )  # ty:ignore[no-matching-overload]
+                )
             )
 
         if len(statements) == 1 and not value.event_actions:

@@ -421,7 +421,7 @@ class StateManagerRedis(StateManager):
         tasks = [
             asyncio.create_task(
                 self.set_state(
-                    token,
+                    token,  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/1824
                     substate,
                     lock_id=lock_id,
                     **context,
@@ -467,9 +467,9 @@ class StateManagerRedis(StateManager):
             return
 
         # Opportunistically reuse existing lock.
-        async with self._get_state_cached(token) as cached_state:  # ty:ignore[invalid-argument-type]
+        async with self._get_state_cached(token) as cached_state:
             if cached_state is not None:
-                yield cached_state  # ty:ignore[invalid-yield]
+                yield cached_state
                 self._notify_next_waiter(self._lock_key(token))
                 return
 
@@ -547,7 +547,7 @@ class StateManagerRedis(StateManager):
         """
         token = self._coerce_token(token)
         while True:
-            async with self._try_modify_state(token, **context) as state_instance:  # ty:ignore[invalid-argument-type]
+            async with self._try_modify_state(token, **context) as state_instance:
                 if state_instance is not None:
                     yield cast(TOKEN_TYPE, state_instance)
                     return

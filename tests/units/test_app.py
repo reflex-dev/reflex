@@ -1097,7 +1097,7 @@ async def test_upload_file_keeps_form_open_until_stream_completes(
     form_data = FormData([("files", file1), ("files", file2)])
     original_close = form_data.close
     form_close = AsyncMock(side_effect=original_close)
-    form_data.close = form_close  # ty:ignore[invalid-assignment]
+    form_data.close = form_close
 
     async def form():  # noqa: RUF029
         return form_data
@@ -1207,7 +1207,7 @@ async def test_upload_file_closes_form_on_form_error(
     form_data = FormData([("files", file1)])
     original_close = form_data.close
     form_close = AsyncMock(side_effect=original_close)
-    form_data.close = form_close  # ty:ignore[invalid-assignment]
+    form_data.close = form_close
 
     async def cancelled_form():
         await asyncio.sleep(0)
@@ -1243,7 +1243,7 @@ async def test_upload_file_closes_form_on_event_creation_cancellation(
     form_data = FormData([("files", file1)])
     original_close = form_data.close
     form_close = AsyncMock(side_effect=original_close)
-    form_data.close = form_close  # ty:ignore[invalid-assignment]
+    form_data.close = form_close
 
     async def form():  # noqa: RUF029
         return form_data
@@ -1252,7 +1252,7 @@ async def test_upload_file_closes_form_on_event_creation_cancellation(
 
     # Patch getlist on the form_data to raise CancelledError during event
     # creation (after form is parsed, before streaming begins).
-    form_data.getlist = Mock(side_effect=asyncio.CancelledError)  # ty:ignore[invalid-assignment]
+    form_data.getlist = Mock(side_effect=asyncio.CancelledError)
 
     upload_fn = upload(app)
     with pytest.raises(asyncio.CancelledError):
@@ -1290,7 +1290,7 @@ async def test_upload_file_closes_form_if_response_cancelled_before_stream_start
     form_data = FormData([("files", file1)])
     original_close = form_data.close
     form_close = AsyncMock(side_effect=original_close)
-    form_data.close = form_close  # ty:ignore[invalid-assignment]
+    form_data.close = form_close
 
     async def form():  # noqa: RUF029
         return form_data
@@ -1343,7 +1343,7 @@ async def test_upload_file_raises_client_disconnect_when_stream_send_fails(
     form_data = FormData([("files", file1)])
     original_close = form_data.close
     form_close = AsyncMock(side_effect=original_close)
-    form_data.close = form_close  # ty:ignore[invalid-assignment]
+    form_data.close = form_close
 
     async def form():  # noqa: RUF029
         return form_data
@@ -2058,7 +2058,7 @@ module.exports = {
     )
     reload_state_module(__name__)
     app = App(theme=None)
-    app._get_frontend_packages = unittest.mock.Mock()  # ty:ignore[invalid-assignment]
+    app._get_frontend_packages = unittest.mock.Mock()
     with chdir(app_path):
         yield app, web_dir
 
@@ -3059,7 +3059,7 @@ def test_raise_on_state():
 def test_call_app():
     """Test that the app can be called."""
     app = App()
-    app._compile = unittest.mock.Mock()  # ty:ignore[invalid-assignment]
+    app._compile = unittest.mock.Mock()
     api = app()
     assert isinstance(api, Starlette)
 

@@ -59,8 +59,8 @@ async def test_memory_state_manager_evicts_expired_state(
     """Expired states should be removed from the in-memory cache and locks."""
     state_token = BaseStateToken(ident=token, cls=ExpiringState)
 
-    async with state_manager_memory.modify_state(state_token) as state:  # ty:ignore[invalid-argument-type]
-        state.value = 42  # ty:ignore[unresolved-attribute]
+    async with state_manager_memory.modify_state(state_token) as state:
+        state.value = 42
 
     assert token in state_manager_memory.states
     assert token in state_manager_memory._states_locks
@@ -196,8 +196,8 @@ async def test_memory_state_manager_refreshes_expiration_after_locked_access(
     """Releasing a long-held state should start a fresh expiration window."""
     state_token = BaseStateToken(ident=token, cls=ExpiringState)
 
-    async with state_manager_memory.modify_state(state_token) as state:  # ty:ignore[invalid-argument-type]
-        state.value = 5  # ty:ignore[unresolved-attribute]
+    async with state_manager_memory.modify_state(state_token) as state:
+        state.value = 5
         expires_at = state_manager_memory._token_expires_at[token]
         await asyncio.sleep(1.2)
         assert token in state_manager_memory.states

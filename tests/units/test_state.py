@@ -1535,11 +1535,14 @@ def test_computed_var_depends_on_parent_non_cached():
 
 
 @pytest.mark.parametrize("use_partial", [True, False])
-def test_cached_var_depends_on_event_handler(use_partial: bool):
+def test_cached_var_depends_on_event_handler(
+    use_partial: bool, monkeypatch: pytest.MonkeyPatch
+):
     """A cached var that calls an event handler calculates deps correctly.
 
     Args:
         use_partial: if true, replace the EventHandler with functools.partial
+        monkeypatch: The pytest monkeypatch fixture.
     """
     counter = 0
 
@@ -1557,7 +1560,8 @@ def test_cached_var_depends_on_event_handler(use_partial: bool):
             return counter
 
     if use_partial:
-        HandlerState.handler = functools.partial(HandlerState.handler.fn)  # ty:ignore[unresolved-attribute]
+        handler_fn = HandlerState.event_handlers["handler"].fn
+        monkeypatch.setattr(HandlerState, "handler", functools.partial(handler_fn))
         assert isinstance(HandlerState.handler, functools.partial)
     else:
         assert isinstance(HandlerState.handler, EventHandler)
@@ -2045,11 +2049,11 @@ async def test_state_manager_lock_expire(
 
     asyncio.get_event_loop().set_exception_handler(loop_exception_handler)
 
-    async with state_manager_redis.modify_state(substate_token_redis):  # ty:ignore[invalid-argument-type]
+    async with state_manager_redis.modify_state(substate_token_redis):
         await asyncio.sleep(0.01)
 
     if environment.REFLEX_OPLOCK_ENABLED.get():
-        async with state_manager_redis.modify_state(substate_token_redis):  # ty:ignore[invalid-argument-type]
+        async with state_manager_redis.modify_state(substate_token_redis):
             await asyncio.sleep(LOCK_EXPIRE_SLEEP)
         await asyncio.sleep(LOCK_EXPIRE_SLEEP)
         assert loop_exception is not None
@@ -2057,7 +2061,7 @@ async def test_state_manager_lock_expire(
             raise loop_exception
     else:
         with pytest.raises(LockExpiredError):
-            async with state_manager_redis.modify_state(substate_token_redis):  # ty:ignore[invalid-argument-type]
+            async with state_manager_redis.modify_state(substate_token_redis):
                 await asyncio.sleep(LOCK_EXPIRE_SLEEP)
         assert loop_exception is None
 
@@ -2100,17 +2104,17 @@ async def test_state_manager_lock_expire_contend(
     waiter_event = asyncio.Event()
 
     async def _coro_blocker():
-        async with state_manager_redis.modify_state(substate_token_redis) as state:  # ty:ignore[invalid-argument-type]
+        async with state_manager_redis.modify_state(substate_token_redis) as state:
             order.append("blocker")
             waiter_event.set()
             await asyncio.sleep(LOCK_EXPIRE_SLEEP)
-            state.num1 = unexp_num1  # ty:ignore[unresolved-attribute]
+            state.num1 = unexp_num1
 
     async def _coro_waiter():
         await waiter_event.wait()
-        async with state_manager_redis.modify_state(substate_token_redis) as state:  # ty:ignore[invalid-argument-type]
+        async with state_manager_redis.modify_state(substate_token_redis) as state:
             order.append("waiter")
-            state.num1 = exp_num1  # ty:ignore[unresolved-attribute]
+            state.num1 = exp_num1
 
     tasks = [
         asyncio.create_task(_coro_blocker()),
@@ -2162,7 +2166,7 @@ async def test_state_manager_lock_warning_threshold_contend(
     order = []
 
     async def _coro_blocker():
-        async with state_manager_redis.modify_state(substate_token_redis):  # ty:ignore[invalid-argument-type]
+        async with state_manager_redis.modify_state(substate_token_redis):
             order.append("blocker")
             await asyncio.sleep(LOCK_WARN_SLEEP)
 
@@ -4318,10 +4322,10 @@ async def test_deserialize_gc_state_disk(token):
     bs_token = BaseStateToken(ident=token, cls=Root)
 
     dsm = StateManagerDisk()
-    async with dsm.modify_state(bs_token) as root:  # ty:ignore[invalid-argument-type]
-        s = await root.get_state(State)  # ty:ignore[unresolved-attribute]
+    async with dsm.modify_state(bs_token) as root:
+        s = await root.get_state(State)
         s.num += 1
-        c = await root.get_state(Child)  # ty:ignore[unresolved-attribute]
+        c = await root.get_state(Child)
         assert s._get_was_touched()
         assert not c._get_was_touched()
     await dsm.close()

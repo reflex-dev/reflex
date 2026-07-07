@@ -737,7 +737,7 @@ def _json_encoder_default_wrapper(self: json.JSONEncoder, o: Any) -> Any:
     return _orig_json_encoder_default(self, o)
 
 
-json.JSONEncoder.default = _json_encoder_default_wrapper  # ty:ignore[invalid-assignment]
+json.JSONEncoder.default = _json_encoder_default_wrapper
 
 
 class ImmutableMutableProxy(MutableProxy):

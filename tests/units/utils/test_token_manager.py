@@ -525,7 +525,7 @@ def event_namespace_factory() -> Generator[Callable[[], EventNamespace], None, N
         )
 
         event_namespace = EventNamespace(namespace=namespace, app=mock_app)
-        event_namespace.emit = AsyncMock()  # ty:ignore[invalid-assignment]
+        event_namespace.emit = AsyncMock()
         created_objs.append(event_namespace)
         return event_namespace
 
