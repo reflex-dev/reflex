@@ -53,6 +53,7 @@ from reflex_site_shared.components.blocks.typography import (
     text_comp,
 )
 from reflex_site_shared.constants import REFLEX_ASSETS_CDN
+from reflex_site_shared.integrations import rewrite_integration_doc_images_in_source
 
 # ---------------------------------------------------------------------------
 # Exec environment — mirrors reflex_docgen's module-based exec mechanism
@@ -847,6 +848,7 @@ def render_docgen_document(
     ``None`` if no FAQ block is found.
     """
     source = Path(actual_filepath).read_text(encoding="utf-8")
+    source = rewrite_integration_doc_images_in_source(source)
     source, faq_script = _extract_faqs_jsonld(source)
     transformer = ReflexDocTransformer(
         virtual_filepath=str(virtual_filepath), filename=str(actual_filepath)
@@ -872,6 +874,21 @@ def render_markdown(text: str) -> rx.Component:
     doc = parse_document(text)
     transformer = ReflexDocTransformer()
     return transformer.transform(doc)
+
+
+def render_markdown_with_toc(text: str) -> tuple[list[tuple[int, str]], rx.Component]:
+    """Render a plain markdown text string, also extracting its TOC headings.
+
+    Args:
+        text: The markdown source.
+
+    Returns:
+        A ``(toc, body)`` tuple where ``toc`` is a list of ``(level, text)``
+        heading tuples and ``body`` is the rendered component.
+    """
+    doc = parse_document(text)
+    toc = [(h.level, _spans_to_plaintext(h.children)) for h in doc.headings]
+    return toc, ReflexDocTransformer().transform(doc)
 
 
 def render_inline_markdown(text: str, class_name: str = "") -> rx.Component:

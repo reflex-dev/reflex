@@ -6,12 +6,16 @@ on:
     paths:
       - 'docs/**'
       - 'packages/reflex-components-core/src/reflex_components_core/core/upload.py'
+      - 'packages/reflex-site-shared/**'
+      - 'packages/integrations-docs/**'
       - '.github/workflows/docs_tests.yml'
   push:
     branches: ["main"]
     paths:
       - 'docs/**'
       - 'packages/reflex-components-core/src/reflex_components_core/core/upload.py'
+      - 'packages/reflex-site-shared/**'
+      - 'packages/integrations-docs/**'
       - '.github/workflows/docs_tests.yml'
 
 permissions:

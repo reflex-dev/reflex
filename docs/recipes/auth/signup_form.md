@@ -15,6 +15,7 @@ def signup_default() -> rx.Component:
             rx.center(
                 rx.image(
                     src="https://web.reflex-assets.dev/other/logo.jpg",
+                    alt="Reflex logo",
                     width="2.5em",
                     height="auto",
                     border_radius="25%",
@@ -95,6 +96,7 @@ def signup_default_icons() -> rx.Component:
             rx.center(
                 rx.image(
                     src="https://web.reflex-assets.dev/other/logo.jpg",
+                    alt="Reflex logo",
                     width="2.5em",
                     height="auto",
                     border_radius="25%",
@@ -181,6 +183,7 @@ def signup_single_thirdparty() -> rx.Component:
             rx.flex(
                 rx.image(
                     src="https://web.reflex-assets.dev/other/logo.jpg",
+                    alt="Reflex logo",
                     width="2.5em",
                     height="auto",
                     border_radius="25%",
@@ -281,6 +284,7 @@ def signup_multiple_thirdparty() -> rx.Component:
             rx.flex(
                 rx.image(
                     src="https://web.reflex-assets.dev/other/logo.jpg",
+                    alt="Reflex logo",
                     width="2.5em",
                     height="auto",
                     border_radius="25%",

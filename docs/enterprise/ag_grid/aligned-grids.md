@@ -1,6 +1,9 @@
 ---
+meta_description: "Build aligned grids with AG Grid in Reflex. Synchronize columns and horizontal scrolling across multiple data grids in Python, no JavaScript required."
 title: Aligned Grids
 ---
+
+# Aligned Grids
 
 AgGrid provides a way to align multiple grids together. This is useful when you want to display related data in a synchronized manner.
 

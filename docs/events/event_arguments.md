@@ -19,7 +19,7 @@ class EventArgStateSlider(rx.State):
 
 def slider_max_min_step():
     return rx.vstack(
-        rx.heading(EventArgStateSlider.value),
+        rx.heading(EventArgStateSlider.value, as_="h2"),
         rx.slider(
             default_value=40,
             on_value_commit=EventArgStateSlider.set_end,
@@ -57,7 +57,7 @@ def event_arg_example():
             reset_on_submit=True,
         ),
         rx.divider(),
-        rx.heading("Results"),
+        rx.heading("Results", as_="h2"),
         rx.text(EventArgState.form_data.to_string()),
     )
 ```

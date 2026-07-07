@@ -270,5 +270,6 @@ def img_comp_xd(src: rx.Var[str]) -> rx.Component:
     """
     return rx.image(
         src=src,
+        alt="Documentation image",
         class_name="rounded-lg border border-secondary-a4 mb-2",
     )

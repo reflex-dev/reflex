@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from reflex_base import constants
 from reflex_base.constants import Hooks
+from reflex_base.utils import memo_paths
 from reflex_base.utils.format import format_state_name, json_dumps
 from reflex_base.vars.base import VarData
 
@@ -192,7 +193,7 @@ def app_root_template(
     if hydrate_fallback_export is not None:
         hydrate_fallback_str = (
             f"export {{ {hydrate_fallback_export} as HydrateFallback }} "
-            f'from "$/{constants.Dirs.COMPONENTS_PATH}/{hydrate_fallback_export}";'
+            f'from "{memo_paths.unmirrored_library_specifier(hydrate_fallback_export)}";'
         )
 
     custom_code_str = "\n".join(custom_codes)
@@ -515,6 +516,7 @@ def package_json_template(
     dependencies: dict[str, str],
     dev_dependencies: dict[str, str],
     overrides: dict[str, str],
+    **additional_keys: Any,
 ):
     """Template for package.json.
 
@@ -523,17 +525,21 @@ def package_json_template(
         dependencies: The dependencies to include in the package.json file.
         dev_dependencies: The devDependencies to include in the package.json file.
         overrides: The overrides to include in the package.json file.
+        additional_keys: Additional keys to include in the package.json file.
 
     Returns:
         Rendered package.json content as string.
     """
+    # Ensure "type" is not duplicated since it's always set to "module"
+    additional_keys.pop("type", None)
     return json.dumps({
-        "name": "reflex",
+        "name": additional_keys.pop("name", "reflex"),
         "type": "module",
         "scripts": scripts,
         "dependencies": dependencies,
         "devDependencies": dev_dependencies,
         "overrides": overrides,
+        **additional_keys,
     })
 
 

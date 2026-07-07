@@ -29,7 +29,7 @@ For more information on the badge, visit [Built with Reflex](/docs/enterprise/bu
 
 `reflex-enterprise` must be installed alongside `reflex` to access the enterprise features.
 
-You can install it from pypi with the following command:
+Install it from PyPI:
 
 ```bash
 pip install reflex-enterprise
@@ -58,6 +58,69 @@ categories_data = [
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
                 "link": "/docs/enterprise/single-port-proxy",
+            },
+        ],
+    },
+    {
+        "category": "Authentication",
+        "description": "OIDC authentication with a secure-by-default model",
+        "count": 6,
+        "components": [
+            {
+                "feature": "AuthPlugin",
+                "description": "OIDC (OpenID Connect) authentication with secure-by-default protection",
+                "cloud_tier": "Enterprise",
+                "self_hosted_tier": "Enterprise",
+                "link": "/docs/enterprise/auth/overview",
+            },
+            {
+                "feature": "Secure by Default",
+                "description": "Pages, event handlers, fields, and computed vars require login unless opted out",
+                "cloud_tier": "Enterprise",
+                "self_hosted_tier": "Enterprise",
+                "link": "/docs/enterprise/auth/secure-by-default",
+            },
+            {
+                "feature": "OIDC Providers",
+                "description": "Built-in generic OIDC provider plus named and multi-provider setups",
+                "cloud_tier": "Enterprise",
+                "self_hosted_tier": "Enterprise",
+                "link": "/docs/enterprise/auth/providers",
+            },
+            {
+                "feature": "Custom Auth Pages",
+                "description": "Replace the rendered login, callback, and logout pages",
+                "cloud_tier": "Enterprise",
+                "self_hosted_tier": "Enterprise",
+                "link": "/docs/enterprise/auth/custom-pages",
+            },
+            {
+                "feature": "Testing",
+                "description": "Unit-test authorization checks and exercise the full OIDC flow against a mock IdP",
+                "cloud_tier": "Enterprise",
+                "self_hosted_tier": "Enterprise",
+                "link": "/docs/enterprise/auth/testing",
+            },
+            {
+                "feature": "Deploying to Production",
+                "description": "HTTPS and cookie requirements, the exact redirect URI, reverse proxies, and a troubleshooting reference",
+                "cloud_tier": "Enterprise",
+                "self_hosted_tier": "Enterprise",
+                "link": "/docs/enterprise/auth/deployment",
+            },
+        ],
+    },
+    {
+        "category": "Testing",
+        "description": "pytest plugin for end-to-end testing of Reflex apps",
+        "count": 1,
+        "components": [
+            {
+                "feature": "reflex_app fixture",
+                "description": "Boot the app under test with reflex run and drive it with browser tooling",
+                "cloud_tier": "Free",
+                "self_hosted_tier": "Free",
+                "link": "/docs/enterprise/testing",
             },
         ],
     },
@@ -289,11 +352,12 @@ grid
 
 ## Usage of reflex_enterprise.
 
-Using `rxe.App` as your `app` is required to use any of the components provided by the enterprise package, as well as config options provided by `rxe.Config`.
+Use `rxe.App` as your `app` to enable Enterprise components and `rxe.Config`
+options.
 
 ### In the main file
 
-Instead of the usual `rx.App()` to create your app, use the following:
+Create the app with `rxe.App()`:
 ```python
 import reflex_enterprise as rxe
 
@@ -305,6 +369,6 @@ app = rxe.App()
 import reflex_enterprise as rxe
 config = rxe.Config(
     app_name="MyApp",
-    ... # you can pass all rx.Config arguments as well as the one specific to rxe.Config
+    ... # accepts rx.Config arguments plus rxe.Config options
 )
 ```

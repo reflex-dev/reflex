@@ -20,7 +20,7 @@ from .sidebar_items.enterprise import (
 )
 from .sidebar_items.learn import backend, frontend, hosting, learn
 from .sidebar_items.recipes import recipes
-from .sidebar_items.reference import api_reference
+from .sidebar_items.reference import api_reference, changelog_items
 from .state import SideBarBase, SideBarItem
 
 SIDEBAR_ICON_MAP = {
@@ -47,6 +47,7 @@ SIDEBAR_ICON_MAP = {
     "Self Hosting": "server",
     "Custom Components": "blocks",
     "Usage": "chart-column",
+    "Testing": "beaker",
 }
 
 Scrollable_SideBar = """
@@ -317,6 +318,7 @@ append_to_items(
     + mcp_items
     + skills_items
     + api_reference
+    + changelog_items
     + enterprise_items,
     flat_items,
 )
@@ -404,6 +406,15 @@ def create_sidebar_section(
             class_name="h-8 mb-2 flex items-center justify-start ml-[2.5rem]",
         ),
         rx.el.ul(
+            *(
+                [
+                    rx.el.li(
+                        class_name="m-0 p-0 absolute left-[3rem] top-0 bottom-0 w-px bg-secondary-4 z-[-1] pointer-events-none !rounded-none list-none",
+                    )
+                ]
+                if connected_line
+                else []
+            ),
             *[
                 sidebar_item_comp(
                     item_index=item_index,
@@ -415,7 +426,7 @@ def create_sidebar_section(
             ],
             class_name=ui.cn(
                 "m-0 ml-0 p-0 pl-0 w-full !bg-transparent !shadow-none rounded-[0px] flex flex-col list-none",
-                "gap-0" if connected_line else "gap-1",
+                "gap-0 relative" if connected_line else "gap-1",
             ),
         ),
         class_name="m-0 p-0 flex flex-col items-start ml-0 w-full list-none",
@@ -450,6 +461,7 @@ def sidebar_comp(
     html_lib_index: rx.vars.ArrayVar[list[int]],
     graphing_libs_index: rx.vars.ArrayVar[list[int]],
     api_reference_index: rx.vars.ArrayVar[list[int]],
+    changelog_index: rx.vars.ArrayVar[list[int]],
     recipes_index: rx.vars.ArrayVar[list[int]],
     enterprise_usage_index: rx.vars.ArrayVar[list[int]],
     enterprise_component_index: rx.vars.ArrayVar[list[int]],
@@ -484,7 +496,7 @@ def sidebar_comp(
     )
 
     is_library = url.contains("library") | url.contains("/mcp-")
-    is_api_reference = url.contains("api-reference")
+    is_api_reference = url.contains("api-reference") | url.startswith("/changelog/")
     is_enterprise = url.contains("enterprise")
     is_default_docs = ~is_library & ~is_api_reference & ~is_enterprise
 
@@ -651,6 +663,14 @@ def sidebar_comp(
             api_reference_index,
             url,
         ),
+        create_sidebar_section(
+            "Changelog",
+            "/changelog/",
+            changelog_items,
+            changelog_index,
+            url,
+            connected_line=True,
+        ),
         class_name="m-0 p-0 flex flex-col items-start gap-8  w-full list-none list-style-none",
     )
     enterprise_content = rx.el.ul(
@@ -760,6 +780,7 @@ def sidebar(url=None, width: str = "100%") -> rx.Component:
             html_lib_index=calculate_index(html_lib, normalized_url),
             graphing_libs_index=calculate_index(graphing_libs, normalized_url),
             api_reference_index=calculate_index(api_reference, normalized_url),
+            changelog_index=calculate_index(changelog_items, normalized_url),
             recipes_index=calculate_index(recipes, normalized_url),
             enterprise_usage_index=calculate_index(
                 enterprise_usage_items, normalized_url
