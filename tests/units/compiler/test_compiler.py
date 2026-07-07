@@ -6,6 +6,7 @@ import pytest
 from pytest_mock import MockerFixture
 from reflex_base import constants
 from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
+from reflex_base.constants.base import LiteralColorMode
 from reflex_base.constants.compiler import PageNames
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
 from reflex_base.vars.base import Var
@@ -423,6 +424,38 @@ def test_compile_contexts_has_default_color_mode_context():
 
     assert "createContext({" in code
     assert 'resolvedColorMode: defaultColorMode === "dark" ? "dark" : "light"' in code
+
+
+def test_compile_contexts_default_color_mode_is_system():
+    """Without any config override, the default color mode is "system"."""
+    _, code = compiler.compile_contexts(None, None)
+
+    assert 'export const defaultColorMode = "system"' in code
+
+
+@pytest.mark.parametrize("mode", ["system", "light", "dark"])
+def test_compile_contexts_uses_config_default_color_mode(
+    mode: LiteralColorMode, mocker: MockerFixture
+):
+    """The Config.default_color_mode option should drive the compiled default."""
+    config = rx.config.get_config()
+    config.default_color_mode = mode
+    mocker.patch("reflex.compiler.compiler.get_config", return_value=config)
+
+    _, code = compiler.compile_contexts(None, None)
+
+    assert f'export const defaultColorMode = "{mode}"' in code
+
+
+def test_compile_contexts_theme_appearance_overrides_config(mocker: MockerFixture):
+    """An explicit theme appearance should still win over the config default."""
+    config = rx.config.get_config()
+    config.default_color_mode = "light"
+    mocker.patch("reflex.compiler.compiler.get_config", return_value=config)
+
+    _, code = compiler.compile_contexts(None, rx.theme(appearance="dark"))
+
+    assert 'export const defaultColorMode = "dark"' in code
 
 
 def test_compile_nonexistent_stylesheet(tmp_path, mocker: MockerFixture):

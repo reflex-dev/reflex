@@ -176,6 +176,12 @@ class ReactRouter(Javascript):
 
 
 # Color mode variables
+SYSTEM_COLOR_MODE: str = "system"
+LIGHT_COLOR_MODE: str = "light"
+DARK_COLOR_MODE: str = "dark"
+LiteralColorMode = Literal["system", "light", "dark"]
+
+
 class ColorMode(SimpleNamespace):
     """Constants related to ColorMode."""
 

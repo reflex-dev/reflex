@@ -31,7 +31,6 @@ from reflex_base.constants.compiler import PageNames, ResetStylesheet
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
-from reflex_base.style import SYSTEM_COLOR_MODE
 from reflex_base.utils import memo_paths
 from reflex_base.utils.exceptions import ReflexError
 from reflex_base.utils.format import to_title_case
@@ -188,7 +187,7 @@ def _compile_contexts(state: type[BaseState] | None, theme: Component | None) ->
     """
     appearance = getattr(theme, "appearance", None)
     if appearance is None or str(LiteralVar.create(appearance)) == '"inherit"':
-        appearance = LiteralVar.create(SYSTEM_COLOR_MODE)
+        appearance = LiteralVar.create(get_config().default_color_mode)
 
     return (
         templates.context_template(

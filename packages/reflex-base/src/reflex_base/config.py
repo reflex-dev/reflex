@@ -13,7 +13,7 @@ from types import ModuleType
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal
 
 from reflex_base import constants
-from reflex_base.constants.base import LogLevel
+from reflex_base.constants.base import LiteralColorMode, LogLevel
 from reflex_base.environment import EnvironmentVariables as EnvironmentVariables
 from reflex_base.environment import EnvVar as EnvVar
 from reflex_base.environment import (
@@ -177,6 +177,7 @@ class BaseConfig:
         redis_token_expiration: Token expiration time for redis state manager.
         env_file: Path to file containing key-values pairs to override in the environment; Dotenv format.
         state_auto_setters: Whether to automatically create setters for state base vars.
+        default_color_mode: The default color mode for the app: "system" (follow the OS preference), "light", or "dark". Applies to the built-in color mode switcher and `color_mode_cond` without requiring a radix theme.
         show_built_with_reflex: Whether to display the sticky "Built with Reflex" badge on all pages.
         is_reflex_cloud: Whether the app is running in the reflex cloud environment.
         extra_overlay_function: Extra overlay function to run after the app is built. Formatted such that `from path_0.path_1... import path[-1]`, and calling it with no arguments would work. For example, "reflex_components_moment.moment".
@@ -250,6 +251,8 @@ class BaseConfig:
     env_file: str | None = None
 
     state_auto_setters: bool = False
+
+    default_color_mode: LiteralColorMode = "system"
 
     show_built_with_reflex: bool | None = None
 
