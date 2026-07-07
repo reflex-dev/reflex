@@ -13,6 +13,7 @@ from reflex_site_shared.constants import (
     GITHUB_STARS,
     GITHUB_URL,
     REFLEX_ASSETS_CDN,
+    REFLEX_BUILD_LOGIN_URL,
     REFLEX_BUILD_URL,
 )
 from reflex_site_shared.views.sidebar import navbar_sidebar_button
@@ -196,7 +197,7 @@ def products_ship_column_body() -> rx.Component:
         ),
         rx.el.div(
             rx.image(
-                src=f"{REFLEX_ASSETS_CDN}landing/features/{rx.color_mode_cond('light', 'dark')}/ship_navbar_3.svg",
+                src=f"{REFLEX_ASSETS_CDN}landing/features/{rx.color_mode_cond('light', 'dark')}/ship_navbar_4.svg",
                 alt="Deploy, monitor & scale",
                 loading="lazy",
                 class_name="h-auto w-full max-w-full object-cover",
@@ -397,7 +398,7 @@ def blog_item(post: BlogPostDict) -> rx.Component:
             ),
             rx.image(
                 src=f"{REFLEX_ASSETS_CDN}common/{rx.color_mode_cond('light', 'dark')}/squares_blog.svg",
-                class_name="pointer-events-none",
+                class_name="pointer-events-none dark:opacity-50",
                 alt="Squares Blog",
             ),
             class_name="flex flex-row items-center justify-start gap-6",
@@ -478,7 +479,7 @@ def case_studies_column() -> rx.Component:
                 class_name="relative z-10",
             ),
             rx.el.elements.a(
-                href="/customers",
+                href="/customers/",
                 class_name="absolute inset-0",
                 custom_attrs={"aria-label": "View Autodesk case study"},
             ),
@@ -593,7 +594,7 @@ def resources_blog_column() -> rx.Component:
         rx.el.elements.a(
             "Read All in Blog",
             ui.icon("ArrowRight01Icon", class_name="size-4 shrink-0"),
-            href="/blog",
+            href="/blog/",
             class_name="text-secondary-12 text-sm font-[525] flex items-center gap-1.5 hover:text-primary-10 dark:hover:text-primary-9 mt-auto pt-3",
         ),
         on_mount=RecentBlogsState.fetch_recent_blogs,
@@ -686,8 +687,8 @@ def resources_content() -> rx.Component:
                             solutions_column(
                                 "Learn",
                                 [
-                                    ("Documentation", "File02Icon", "/docs"),
-                                    ("Templates", "Layout02Icon", "/templates"),
+                                    ("Documentation", "File02Icon", "/docs/"),
+                                    ("Templates", "Layout02Icon", "/templates/"),
                                     ("Changelog", "Clock02Icon", CHANGELOG_URL),
                                 ],
                             ),
@@ -738,7 +739,7 @@ def navigation_menu() -> rx.Component:
                         variant="ghost",
                         native_button=False,
                     ),
-                    href="/pricing",
+                    href="/pricing/",
                 ),
                 class_name="xl:flex hidden px-1",
                 custom_attrs={"role": "menuitem"},
@@ -750,7 +751,7 @@ def navigation_menu() -> rx.Component:
                         size="sm",
                         variant="ghost",
                     ),
-                    href="/docs",
+                    href="/docs/",
                 ),
                 class_name="xl:flex hidden px-1",
                 custom_attrs={"role": "menuitem"},
@@ -772,23 +773,22 @@ def navigation_menu() -> rx.Component:
                         variant="outline",
                         native_button=False,
                     ),
-                    href=REFLEX_BUILD_URL,
+                    href=REFLEX_BUILD_LOGIN_URL,
                     target="_blank",
                 ),
-                class_name="xl:flex hidden",
                 custom_attrs={"role": "menuitem"},
             ),
             ui.navigation_menu.item(
                 demo_form_dialog(
                     trigger=marketing_button(
-                        rx.el.span("Book a Demo", class_name="max-xl:hidden"),
-                        rx.el.span("Demo", class_name="xl:hidden"),
+                        "Book a Demo",
                         size="sm",
                         variant="primary",
                         class_name="whitespace-nowrap",
                         native_button=False,
                     ),
                 ),
+                class_name="max-xl:hidden",
                 unstyled=True,
                 custom_attrs={"role": "menuitem"},
             ),
@@ -824,9 +824,27 @@ def navigation_menu() -> rx.Component:
     )
 
 
+_NAVBAR_WRAPPER_CLASS = "flex flex-col w-full top-0 z-[9999] fixed self-center"
+
+
 @rx.memo
-def marketing_navbar() -> rx.Component:
-    """Fixed header: hosting banner plus logo and full navigation.
+def _navbar_header() -> rx.Component:
+    """Logo and navigation menu, memoized for reuse across pages.
+
+    Returns:
+        The component.
+    """
+    return rx.el.header(
+        logo(),
+        navigation_menu(),
+        class_name="w-full max-w-[81rem] h-[4.5rem] mx-auto flex flex-row items-center p-5 rounded-b-xl backdrop-blur-[16px] shadow-[0_-2px_2px_1px_rgba(0,0,0,0.02),0_1px_1px_0_rgba(0,0,0,0.08),0_4px_8px_0_rgba(0,0,0,0.03),0_0_0_1px_#FFF_inset] dark:shadow-none dark:border-x dark:border-b dark:border-secondary-4 bg-gradient-to-b from-secondary-2 to-secondary-1",
+    )
+
+
+@rx.memo
+def _default_marketing_navbar() -> rx.Component:
+    """Marketing navbar with the default shared hosting banner, memoized so it
+    is emitted once across the many pages that use the default banner.
 
     Returns:
         The component.
@@ -835,10 +853,26 @@ def marketing_navbar() -> rx.Component:
 
     return rx.el.div(
         hosting_banner(),
-        rx.el.header(
-            logo(),
-            navigation_menu(),
-            class_name="w-full max-w-[81rem] h-[4.5rem] mx-auto flex flex-row items-center p-5 rounded-b-xl backdrop-blur-[16px] shadow-[0_-2px_2px_1px_rgba(0,0,0,0.02),0_1px_1px_0_rgba(0,0,0,0.08),0_4px_8px_0_rgba(0,0,0,0.03),0_0_0_1px_#FFF_inset] dark:shadow-none dark:border-x dark:border-b dark:border-m-slate-10 bg-gradient-to-b from-white to-m-slate-1 dark:from-m-slate-11 dark:to-m-slate-12",
-        ),
-        class_name="flex flex-col w-full top-0 z-[9999] fixed self-center",
+        _navbar_header(),
+        class_name=_NAVBAR_WRAPPER_CLASS,
+    )
+
+
+def marketing_navbar(banner: rx.Component | None = None) -> rx.Component:
+    """Fixed header: hosting banner plus logo and full navigation.
+
+    Args:
+        banner: Banner to render above the header. Defaults to the shared
+            hosting banner.
+
+    Returns:
+        The component.
+    """
+    if banner is None:
+        return _default_marketing_navbar()
+
+    return rx.el.div(
+        banner,
+        _navbar_header(),
+        class_name=_NAVBAR_WRAPPER_CLASS,
     )

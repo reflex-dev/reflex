@@ -40,7 +40,13 @@ _FRONTMATTER_RE = re.compile(r"\A---\n(.*?\n)---\n", re.DOTALL)
 
 
 #: Known frontmatter keys that are not component preview lambdas.
-_KNOWN_KEYS = frozenset({"components", "only_low_level", "title"})
+_KNOWN_KEYS = frozenset({
+    "components",
+    "only_low_level",
+    "title",
+    "meta_description",
+    "description",
+})
 
 
 def _extract_frontmatter(source: str) -> tuple[FrontMatter | None, str]:
@@ -91,6 +97,7 @@ def _extract_frontmatter(source: str) -> tuple[FrontMatter | None, str]:
             only_low_level=only_low_level,
             title=title,
             component_previews=tuple(previews),
+            metadata=data,
         ),
         source[m.end() :],
     )
@@ -254,6 +261,7 @@ def _convert_block(token: BlockToken) -> Block | None:
                 name=flags[0],
                 args=flags[1:],
                 children=_parse_blocks(content),
+                content=content,
             )
 
         return CodeBlock(language=language, flags=flags, content=content)

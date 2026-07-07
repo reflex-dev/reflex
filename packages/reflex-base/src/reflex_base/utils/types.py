@@ -36,6 +36,7 @@ from typing import get_origin as get_origin_og
 from typing import get_type_hints as get_type_hints_og
 
 from typing_extensions import Self as Self
+from typing_extensions import TypeAliasType
 from typing_extensions import override as override
 
 from reflex_base import constants
@@ -159,13 +160,16 @@ ArgsSpec = (
     | _ArgsSpec7
 )
 
-Scope = MutableMapping[str, Any]
-Message = MutableMapping[str, Any]
+# Defined via TypeAliasType so the alias name survives type introspection
+# (e.g. get_type_hints) instead of expanding to its full definition; docs render
+# the short name. Reverting to plain assignment would regress that display.
+Scope = TypeAliasType("Scope", MutableMapping[str, Any])
+Message = TypeAliasType("Message", MutableMapping[str, Any])
 
-Receive = Callable[[], Awaitable[Message]]
-Send = Callable[[Message], Awaitable[None]]
+Receive = TypeAliasType("Receive", Callable[[], Awaitable[Message]])
+Send = TypeAliasType("Send", Callable[[Message], Awaitable[None]])
 
-ASGIApp = Callable[[Scope, Receive, Send], Awaitable[None]]
+ASGIApp = TypeAliasType("ASGIApp", Callable[[Scope, Receive, Send], Awaitable[None]])
 
 PrimitiveToAnnotation = {
     list: List,  # noqa: UP006
@@ -423,7 +427,32 @@ def get_property_hint(attr: Any | None) -> GenericType | None:
     return hints.get("return", None)
 
 
-def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None:
+_NO_DESCRIPTOR: Any = object()
+
+
+def get_attribute_descriptor(cls: GenericType, name: str) -> Any:
+    """Resolve the raw class attribute for ``name`` without raising.
+
+    Centralizes the lookup ``get_attribute_access_type`` performs so a caller that also
+    needs the descriptor itself (e.g. to detect a property-like class such as
+    ``HybridProperty``) can share one lookup instead of repeating it.
+
+    Args:
+        cls: The class to read the attribute from.
+        name: The attribute name.
+
+    Returns:
+        The resolved attribute/descriptor, or ``None`` if it is absent.
+    """
+    try:
+        return getattr(cls, name, None)
+    except NotImplementedError:
+        return None
+
+
+def get_attribute_access_type(
+    cls: GenericType, name: str, descriptor: Any = _NO_DESCRIPTOR
+) -> GenericType | None:
     """Check if an attribute can be accessed on the cls and return its type.
 
     Supports pydantic models, unions, and annotated attributes on rx.Model.
@@ -431,14 +460,17 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
     Args:
         cls: The class to check.
         name: The name of the attribute to check.
+        descriptor: A pre-resolved descriptor for ``name`` on ``cls`` (from
+            ``get_attribute_descriptor``); resolved here when not provided.
 
     Returns:
         The type of the attribute, if accessible, or None
     """
-    try:
-        attr = getattr(cls, name, None)
-    except NotImplementedError:
-        attr = None
+    attr = (
+        get_attribute_descriptor(cls, name)
+        if descriptor is _NO_DESCRIPTOR
+        else descriptor
+    )
 
     if hint := get_property_hint(attr):
         return hint

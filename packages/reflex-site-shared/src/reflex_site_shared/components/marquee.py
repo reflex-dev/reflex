@@ -26,7 +26,7 @@ class Marquee(rx.NoSSRComponent):
 
     # Gradient props
     gradient: rx.Var[bool] = rx.Var.create(True)
-    gradient_color: rx.Var[str] = rx.Var.create("var(--c-slate-1)")
+    gradient_color: rx.Var[str] = rx.Var.create("var(--secondary-1)")
     gradient_width: rx.Var[int | str] = rx.Var.create(250)
 
 

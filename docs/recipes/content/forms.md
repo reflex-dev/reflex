@@ -2,7 +2,7 @@
 import reflex as rx
 ```
 
-## Forms
+# Forms
 
 Forms are a common way to gather information from users. Below are some examples.
 
@@ -38,7 +38,7 @@ def event_form() -> rx.Component:
                     padding="0.65rem",
                 ),
                 rx.vstack(
-                    rx.heading("Create an event", size="4", weight="bold"),
+                    rx.heading("Create an event", as_="h2", size="4", weight="bold"),
                     rx.text("Fill the form to create a custom event", size="2"),
                     spacing="1",
                     height="100%",
@@ -108,7 +108,7 @@ def contact_form() -> rx.Component:
                     padding="0.65rem",
                 ),
                 rx.vstack(
-                    rx.heading("Send us a message", size="4", weight="bold"),
+                    rx.heading("Send us a message", as_="h2", size="4", weight="bold"),
                     rx.text("Fill the form to contact us", size="2"),
                     spacing="1",
                     height="100%",

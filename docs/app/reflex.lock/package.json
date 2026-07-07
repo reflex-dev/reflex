@@ -6,9 +6,9 @@
     "export": "react-router build"
   },
   "dependencies": {
-    "@base-ui/react": "1.5.0",
+    "@base-ui/react": "1.6.0",
     "@glideapps/glide-data-grid": "6.0.3",
-    "@hugeicons/core-free-icons": "4.1.1",
+    "@hugeicons/core-free-icons": "4.2.0",
     "@hugeicons/react": "1.1.6",
     "@inkeep/cxkit-react": "0.5.115",
     "@mantine/core": "8.3.9",
@@ -36,15 +36,15 @@
     "lucide-react": "1.14.0",
     "mergician": "v2.0.2",
     "moment": "2.30.1",
-    "moment-timezone": "^0.6.2",
+    "moment-timezone": "0.6.2",
     "plotly.js": "3.5.1",
+    "plotly.js-locales": "3.5.0",
     "react": "19.2.6",
     "react-colorful": "5.7.0",
     "react-debounce-input": "3.3.0",
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "19.2.6",
-    "react-dropzone": "15.0.0",
     "react-fast-marquee": "1.6.5",
     "react-helmet": "6.1.0",
     "react-leaflet": "5.0.0",
@@ -85,7 +85,7 @@
     "postcss": "8.5.14",
     "postcss-import": "16.1.1",
     "tailwindcss": "4.3.0",
-    "vite": "8.0.12"
+    "vite": "8.0.16"
   },
   "overrides": {
     "cookie": "1.1.1"

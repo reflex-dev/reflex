@@ -1,5 +1,5 @@
 import json
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 import pytest
 from reflex_base.components.component import Component
@@ -167,7 +167,8 @@ def test_cond_assert_types() -> None:
     text_comp = Text.create("hello")
     text_comp2 = Text.create("world")
     var_int: Var[int] = LiteralVar.create(1)
-    var_str: Var[str] = LiteralVar.create("a")
+    literal_var_str = LiteralVar.create("a")
+    widened_var_str = cast(Var[str], literal_var_str)
 
     # Component, Component -> Component
     _ = assert_type(cond(True, text_comp, text_comp2), Component)
@@ -181,23 +182,32 @@ def test_cond_assert_types() -> None:
     # non-component, Component -> Component
     _ = assert_type(cond(True, "hello", text_comp), Component)
 
-    # T, T -> Var[T]
-    _ = assert_type(cond(True, "hello", "world"), Var[str])  # ty:ignore[type-assertion-failure]
+    # literal str, literal str -> Var[Literal[...]]
+    _ = assert_type(cond(True, "hello", "world"), Var[Literal["hello", "world"]])
+
+    # non-string T, T -> Var[T] (only literal strings get the narrowing overloads)
+    _ = assert_type(cond(True, 1, 2), Var[int])  # ty:ignore[type-assertion-failure]
 
     # T, U -> Var[T | U]
     _ = assert_type(cond(True, "hello", 3), Var[str | int])  # ty:ignore[type-assertion-failure]
 
-    # T, Var[T] -> Var[T]
-    _ = assert_type(cond(True, "hello", var_str), Var[str])  # ty:ignore[type-assertion-failure]
+    # literal str, Var[Literal[...]] -> Var[Literal[...]]
+    _ = assert_type(cond(True, "hello", literal_var_str), Var[Literal["hello", "a"]])
 
-    # Var[T], T -> Var[T]
-    _ = assert_type(cond(True, var_str, "world"), Var[str])  # ty:ignore[type-assertion-failure]
+    # Var[Literal[...]], literal str -> Var[Literal[...]]
+    _ = assert_type(cond(True, literal_var_str, "world"), Var[Literal["a", "world"]])
 
-    # T, Var[U] -> Var[T | U]
-    _ = assert_type(cond(True, "hello", var_int), Var[str | int])  # ty:ignore[type-assertion-failure]
+    # literal str, Var[U] -> Var[Literal[...] | U]
+    _ = assert_type(cond(True, "hello", var_int), Var[int | Literal["hello"]])
+
+    # Var[T], literal str -> Var[T]
+    _ = assert_type(cond(True, widened_var_str, "world"), Var[str])
+
+    # literal str, Var[U] -> Var[U]
+    _ = assert_type(cond(True, "hello", widened_var_str), Var[str])
 
     # Var[T], U -> Var[T | U]
-    _ = assert_type(cond(True, var_str, 3), Var[int | Literal["a"]])  # ty:ignore[type-assertion-failure]
+    _ = assert_type(cond(True, widened_var_str, 3), Var[str | int])  # ty:ignore[type-assertion-failure]
 
     # Var[T], Var[U] -> Var[T | U]
-    _ = assert_type(cond(True, var_int, var_str), Var[int | Literal["a"]])
+    _ = assert_type(cond(True, var_int, widened_var_str), Var[int | str])

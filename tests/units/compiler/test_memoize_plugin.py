@@ -21,6 +21,7 @@ from reflex_base.components.memoize_helpers import (
 )
 from reflex_base.constants.compiler import MemoizationDisposition, MemoizationMode
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
+from reflex_base.utils import memo_paths
 from reflex_base.vars import VarData
 from reflex_base.vars.base import Field, LiteralVar, Var, field
 from reflex_components_core.base.bare import Bare
@@ -75,6 +76,19 @@ class LeafComponent(Component):
     _memoization_mode = MemoizationMode(recursive=False)
 
 
+class SnapshotWithSlot(Component):
+    tag = "SnapshotWithSlot"
+    library = "snapshot-with-slot-lib"
+    _memoization_mode = MemoizationMode(recursive=False)
+
+    slot: Component | None = component_field(default=None)
+
+
+class MemoAppWrapProvider(Component):
+    tag = "MemoAppWrapProvider"
+    library = "memo-app-wrap-provider-lib"
+
+
 class ChildrenViaProp(Component):
     """Stub mirroring ``CodeBlock`` — injects its content as ``children`` prop."""
 
@@ -120,6 +134,7 @@ class FakePage:
     description: Any = None
     image: str = ""
     meta: tuple[dict[str, Any], ...] = ()
+    _source_module: str | None = None
 
 
 def _compile_single_page(
@@ -204,7 +219,7 @@ def test_memoize_wrapper_uses_memo_component_and_call_site() -> None:
 
     assert len(ctx.memoize_wrappers) == 1
     wrapper_tag = next(iter(ctx.memoize_wrappers))
-    assert wrapper_tag in ctx.auto_memo_components
+    assert (wrapper_tag, None) in ctx.auto_memo_components
     output = page_ctx.output_code or ""
     assert f'import {{{wrapper_tag}}} from "$/utils/components/{wrapper_tag}"' in output
     assert f"jsx({wrapper_tag}," in (page_ctx.output_code or "")
@@ -232,10 +247,44 @@ def test_memoize_wrapper_deduped_across_repeated_subtrees() -> None:
     )
     assert len(ctx.memoize_wrappers) == 1
     wrapper_tag = next(iter(ctx.memoize_wrappers))
-    assert list(ctx.auto_memo_components) == [wrapper_tag]
+    assert list(ctx.auto_memo_components) == [(wrapper_tag, None)]
     assert (page_ctx.output_code or "").count(
         f'import {{{wrapper_tag}}} from "$/utils/components/{wrapper_tag}"'
     ) == 1
+
+
+def test_passthrough_memo_collects_var_app_wraps_from_replaced_component() -> None:
+    """Var app_wraps on passthrough-memoized components survive replacement."""
+    provider = MemoAppWrapProvider.create()
+    stateful_var_with_wrap = LiteralVar.create("needs-wrap")._replace(
+        merge_var_data=VarData(
+            hooks={"useNeedsWrap": None},
+            app_wraps=((70, provider),),
+        )
+    )
+
+    _ctx, page_ctx = _compile_single_page(
+        lambda: WithProp.create(label=stateful_var_with_wrap)
+    )
+
+    assert (70, "MemoAppWrapProvider") in page_ctx.app_wrap_components
+
+
+def test_snapshot_memo_collects_var_app_wraps_from_prop_components() -> None:
+    """Snapshot memo boundaries collect app_wraps buried in prop components."""
+    provider = MemoAppWrapProvider.create()
+    var_with_wrap = LiteralVar.create("needs-wrap")._replace(
+        merge_var_data=VarData(app_wraps=((70, provider),))
+    )
+
+    _ctx, page_ctx = _compile_single_page(
+        lambda: SnapshotWithSlot.create(
+            STATE_VAR,
+            slot=WithProp.create(label=var_with_wrap),
+        )
+    )
+
+    assert (70, "MemoAppWrapProvider") in page_ctx.app_wrap_components
 
 
 def test_memoize_wrappers_distinct_for_different_on_mount() -> None:
@@ -562,8 +611,14 @@ def test_passthrough_memo_definitions_are_not_shared_globally(monkeypatch) -> No
         lambda comp, page_context: comp,
     )
 
-    def fake_create_passthrough_component_memo(component: Component):
-        definition = SimpleNamespace(export_name=tag, component=component)
+    def fake_create_passthrough_component_memo(
+        component: Component, source_module: str | None = None
+    ):
+        definition = SimpleNamespace(
+            export_name=tag,
+            component=component,
+            source_module=source_module,
+        )
         return (lambda definition=definition: definition), definition
 
     monkeypatch.setattr(
@@ -578,7 +633,7 @@ def test_passthrough_memo_definitions_are_not_shared_globally(monkeypatch) -> No
     second_compile = cast(
         CompileContext, SimpleNamespace(memoize_wrappers={}, auto_memo_components={})
     )
-    page_context = cast(PageContext, SimpleNamespace())
+    page_context = cast(PageContext, SimpleNamespace(source_module=None))
 
     MemoizeStatefulPlugin._build_wrapper(
         first_component,
@@ -591,8 +646,8 @@ def test_passthrough_memo_definitions_are_not_shared_globally(monkeypatch) -> No
         compile_context=second_compile,
     )
 
-    first_definition = first_compile.auto_memo_components[tag]
-    second_definition = second_compile.auto_memo_components[tag]
+    first_definition = first_compile.auto_memo_components[tag, None]
+    second_definition = second_compile.auto_memo_components[tag, None]
     assert first_definition.component is first_component
     assert second_definition.component is second_component
     assert second_definition is not first_definition
@@ -612,11 +667,82 @@ def test_shared_subtree_across_pages_uses_same_tag() -> None:
 
     assert len(ctx.memoize_wrappers) == 1
     tag = next(iter(ctx.memoize_wrappers))
-    assert list(ctx.auto_memo_components) == [tag]
+    assert list(ctx.auto_memo_components) == [(tag, None)]
     for route in ("/a", "/b"):
         output = ctx.compiled_pages[route].output_code or ""
         assert f'import {{{tag}}} from "$/utils/components/{tag}"' in output
         assert f"jsx({tag}," in output
+
+
+def test_shared_subtree_in_distinct_source_modules_emits_per_module() -> None:
+    """Identical subtrees in different user modules emit one memo per module.
+
+    Regression: the auto-memo registry was keyed by tag only, so when two
+    pages from different user modules produced the same memoizable subtree
+    (and therefore the same tag), the second registration overwrote the
+    first. Only the surviving definition's source module got a mirrored
+    memo file, leaving the other page importing a tag from a file that
+    never exported it.
+    """
+    from reflex.compiler.compiler import compile_memo_components
+
+    ctx = CompileContext(
+        pages=[
+            FakePage(
+                route="/a",
+                component=lambda: Plain.create(STATE_VAR),
+                _source_module="memo_collision_test.module_a",
+            ),
+            FakePage(
+                route="/b",
+                component=lambda: Plain.create(STATE_VAR),
+                _source_module="memo_collision_test.module_b",
+            ),
+        ],
+        hooks=CompilerHooks(plugins=default_page_plugins()),
+    )
+    with ctx:
+        ctx.compile()
+
+    assert len(ctx.memoize_wrappers) == 1
+    tag = next(iter(ctx.memoize_wrappers))
+    # Both source modules survive registration as distinct entries.
+    assert set(ctx.auto_memo_components) == {
+        (tag, "memo_collision_test.module_a"),
+        (tag, "memo_collision_test.module_b"),
+    }
+
+    # Each module emits and imports the tag under a per-module symbol so the
+    # two pages never collide on a shared JS identifier.
+    symbol_a = memo_paths.mirrored_symbol(tag, "memo_collision_test.module_a")
+    symbol_b = memo_paths.mirrored_symbol(tag, "memo_collision_test.module_b")
+    page_a_output = ctx.compiled_pages["/a"].output_code or ""
+    page_b_output = ctx.compiled_pages["/b"].output_code or ""
+    assert (
+        f'import {{{symbol_a}}} from "$/app_components/memo_collision_test/module_a"'
+        in page_a_output
+    )
+    assert (
+        f'import {{{symbol_b}}} from "$/app_components/memo_collision_test/module_b"'
+        in page_b_output
+    )
+
+    output_files, _ = compile_memo_components(
+        memos=tuple(ctx.auto_memo_components.values()),
+    )
+    emitted = {Path(path).as_posix(): code for path, code in output_files}
+
+    def find_emitted(suffix: str) -> str | None:
+        return next(
+            (code for path, code in emitted.items() if path.endswith(suffix)), None
+        )
+
+    matched_a = find_emitted("memo_collision_test/module_a.jsx")
+    matched_b = find_emitted("memo_collision_test/module_b.jsx")
+    assert matched_a is not None, f"missing module_a memo file in {sorted(emitted)}"
+    assert matched_b is not None, f"missing module_b memo file in {sorted(emitted)}"
+    assert f"export const {symbol_a} = memo" in matched_a
+    assert f"export const {symbol_b} = memo" in matched_b
 
 
 def test_shared_parent_instance_across_pages_preserves_original() -> None:
@@ -1409,19 +1535,19 @@ def test_snapshot_boundary_with_event_trigger_descendant_is_wrapped() -> None:
     )
 
 
-def test_snapshot_boundary_with_no_arg_event_handler_descendant_is_wrapped() -> None:
-    """A boundary whose descendant has on_click without arg vars still wraps.
+def test_snapshot_boundary_with_no_arg_event_handler_descendant_not_wrapped() -> None:
+    """A boundary whose descendant has only a no-arg on_click is not wrapped.
 
-    No-arg handlers (``on_click=State.ping``) contribute to the page only
-    via the descendant's ``event_triggers`` and ``_get_events_hooks`` — the
-    per-Var subtree scan misses them. The reactive-data check must also
-    inspect ``event_triggers`` directly so the boundary wraps and the
-    callback's ``useCallback`` lands inside the snapshot body.
+    No-arg handlers (``on_click=State.ping``) surface only through the
+    descendant's ``event_triggers`` and reach ``addEvents`` via a
+    module-level import rather than a hoisted hook. The inline callback
+    carries no reactive data and never drives a re-render, so the boundary
+    gains nothing from memoization and is left to render in the page module.
     """
     inner = Plain.create()
     inner.event_triggers["on_click"] = Var(_js_expr="evt")
     boundary = LeafComponent.create(inner)
-    assert _should_memoize(boundary)
+    assert not _should_memoize(boundary)
 
 
 def test_title_with_stateful_var_child_does_not_wrap_bare_independently() -> None:
@@ -2157,11 +2283,11 @@ def test_restricted_content_element_with_id_and_stateful_child_still_memoizes() 
 
 
 def test_each_memo_wrapper_emits_one_component_module_file() -> None:
-    """Every wrapper tag corresponds to exactly one ``components/{tag}.jsx`` file.
+    """Every wrapper tag corresponds to exactly one ``utils/components/{tag}.jsx`` file.
 
-    Locks the per-wrapper file invariant: ``compile_memo_components`` must
-    emit one module per wrapper (plus the shared index), so that React can
-    code-split per wrapper. A wrapper without a file (or a file without a
+    Locks the per-wrapper file invariant for un-mirrored memos:
+    ``compile_memo_components`` must emit one module per wrapper, so that React
+    can code-split per wrapper. A wrapper without a file (or a file without a
     wrapper) would mean broken imports at runtime.
     """
     from reflex.compiler.compiler import compile_memo_components

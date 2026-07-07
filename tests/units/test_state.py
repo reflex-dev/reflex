@@ -4003,6 +4003,129 @@ config = rx.Config(
         assert "setvar" in TestState.event_handlers
 
 
+def test_state_defined_in_rxconfig_does_not_crash(tmp_path):
+    """A State subclass defined in rxconfig.py must not crash config loading.
+
+    Regression: _init_var read get_config().state_auto_setters at class-creation
+    time, which re-entered config loading while rxconfig was still importing and
+    raised AttributeError because the rxconfig module had no `config` attribute
+    yet.
+    """
+    proj_root = tmp_path / "project1"
+    proj_root.mkdir()
+
+    config_string = """
+import reflex as rx
+
+
+class RxconfigDefinedState(rx.State):
+    n: int = 0
+
+
+config = rx.Config(
+    app_name="project1",
+)
+"""
+
+    (proj_root / "rxconfig.py").write_text(dedent(config_string))
+
+    with chdir(proj_root):
+        # Must not raise (previously raised AttributeError mid-import).
+        reflex_base.config.get_config(reload=True)
+        del sys.modules[constants.Config.MODULE]
+
+
+def test_state_in_rxconfig_honors_env_auto_setters(tmp_path, monkeypatch):
+    """A State defined in rxconfig.py (pre-config) honors REFLEX_STATE_AUTO_SETTERS.
+
+    During rxconfig import the Config does not exist yet, so the cached value is
+    unset and get_state_auto_setters falls back to the env var.
+    """
+    # Simulate a fresh process where no Config has been built yet.
+    monkeypatch.setattr(reflex_base.config, "_state_auto_setters", None)
+    monkeypatch.setenv("REFLEX_STATE_AUTO_SETTERS", "true")
+
+    proj_root = tmp_path / "project1"
+    proj_root.mkdir()
+    config_string = """
+import reflex as rx
+
+
+class RxconfigEnvSetterState(rx.State):
+    n: int = 0
+
+
+config = rx.Config(app_name="project1")
+"""
+    (proj_root / "rxconfig.py").write_text(dedent(config_string))
+
+    with chdir(proj_root):
+        reflex_base.config.get_config(reload=True)
+        state_cls = sys.modules[constants.Config.MODULE].RxconfigEnvSetterState
+        assert "set_n" in state_cls.event_handlers
+        del sys.modules[constants.Config.MODULE]
+
+
+def test_state_in_rxconfig_defaults_to_no_auto_setters(tmp_path, monkeypatch):
+    """A State defined in rxconfig.py gets no auto-setters by default (pre-config)."""
+    monkeypatch.setattr(reflex_base.config, "_state_auto_setters", None)
+    monkeypatch.delenv("REFLEX_STATE_AUTO_SETTERS", raising=False)
+
+    proj_root = tmp_path / "project1"
+    proj_root.mkdir()
+    config_string = """
+import reflex as rx
+
+
+class RxconfigNoSetterState(rx.State):
+    n: int = 0
+
+
+config = rx.Config(app_name="project1")
+"""
+    (proj_root / "rxconfig.py").write_text(dedent(config_string))
+
+    with chdir(proj_root):
+        reflex_base.config.get_config(reload=True)
+        state_cls = sys.modules[constants.Config.MODULE].RxconfigNoSetterState
+        assert list(state_cls.event_handlers) == ["setvar"]
+        del sys.modules[constants.Config.MODULE]
+
+
+def test_state_auto_setters_cache_tracks_reload(tmp_path):
+    """The cached state_auto_setters value follows config reloads (no stale flag)."""
+    proj_root = tmp_path / "project1"
+    proj_root.mkdir()
+    rxconfig_path = proj_root / "rxconfig.py"
+    off_config = """
+import reflex as rx
+config = rx.Config(app_name="project1", state_auto_setters=False)
+"""
+    on_config = """
+import reflex as rx
+config = rx.Config(app_name="project1", state_auto_setters=True)
+"""
+
+    with chdir(proj_root):
+        rxconfig_path.write_text(dedent(off_config))
+        reflex_base.config.get_config(reload=True)
+        from reflex.state import State
+
+        class ReloadOffState(State):
+            num: int = 0
+
+        assert list(ReloadOffState.event_handlers) == ["setvar"]
+
+        rxconfig_path.write_text(dedent(on_config))
+        reflex_base.config.get_config(reload=True)
+
+        class ReloadOnState(State):
+            num: int = 0
+
+        assert "set_num" in ReloadOnState.event_handlers
+        del sys.modules[constants.Config.MODULE]
+
+
 class MixinState(State, mixin=True):
     """A mixin state for testing."""
 
@@ -4573,6 +4696,21 @@ async def test_get_var_value(
         "b": [4, 5, 6],
     }
 
+    # Regression for https://github.com/reflex-dev/reflex/issues/6629: a Var
+    # operation / derived var (arithmetic, indexed or item access) must not
+    # silently return the value of its first constituent field. Such vars have
+    # no retrievable value, so raise instead of returning a plausible-but-wrong one.
+    with pytest.raises(UnretrievableVarValueError):
+        await state.get_var_value(TestState.num1 + TestState.num2)
+    with pytest.raises(UnretrievableVarValueError):
+        # array[0] is a Var operation at runtime, though statically typed as the element.
+        await state.get_var_value(TestState.array[0])  # ty:ignore[invalid-argument-type]
+    with pytest.raises(UnretrievableVarValueError):
+        await state.get_var_value(TestState.mapping["a"])
+
+    # Computed vars are derived but state-bound, so they remain resolvable.
+    assert await state.get_var_value(TestState.sum) == pytest.approx(42 + 3.15)
+
 
 @pytest.mark.asyncio
 async def test_get_var_value_async_computed_var(
@@ -4968,3 +5106,54 @@ def test_descriptor_overrides_inherited_descriptor():
     parent_deps = ParentDescState._var_dependencies.get("_shared", set())
     assert (ChildDescState.get_full_name(), "child_view") in child_deps
     assert (ParentDescState.get_full_name(), "parent_view") in parent_deps
+
+
+async def test_resolve_delta_awaits_coroutines_and_keeps_plain_values():
+    """_resolve_delta awaits coroutine values and leaves plain values untouched."""
+    from reflex.state import _resolve_delta
+
+    async def _coro(value):  # noqa: RUF029 - a trivial coroutine value for the delta
+        return value
+
+    delta = {"s1": {"a": _coro(1), "b": 2}}
+    resolved = await _resolve_delta(delta)
+    assert resolved == {"s1": {"a": 1, "b": 2}}
+
+
+async def test_resolve_delta_drops_keys_resolving_to_sentinel():
+    """A coroutine resolving to _DROP_FROM_DELTA removes its key from the delta."""
+    from reflex.state import _DROP_FROM_DELTA, _resolve_delta
+
+    async def _coro(value):  # noqa: RUF029 - a trivial coroutine value for the delta
+        return value
+
+    delta = {"s1": {"gone": _coro(_DROP_FROM_DELTA), "stay": _coro("kept"), "plain": 3}}
+    resolved = await _resolve_delta(delta)
+    assert resolved == {"s1": {"stay": "kept", "plain": 3}}
+
+
+async def test_resolve_delta_pops_subdict_emptied_by_drops():
+    """A state subdict left empty after dropping all its keys is removed entirely."""
+    from reflex.state import _DROP_FROM_DELTA, _resolve_delta
+
+    async def _coro(value):  # noqa: RUF029 - a trivial coroutine value for the delta
+        return value
+
+    delta = {"s1": {"only": _coro(_DROP_FROM_DELTA)}, "s2": {"keep": 1}}
+    resolved = await _resolve_delta(delta)
+    assert resolved == {"s2": {"keep": 1}}
+
+
+async def test_resolve_delta_pops_subdict_when_all_keys_drop():
+    """A subdict is removed when multiple coroutines all resolve to _DROP_FROM_DELTA."""
+    from reflex.state import _DROP_FROM_DELTA, _resolve_delta
+
+    async def _coro(value):  # noqa: RUF029 - a trivial coroutine value for the delta
+        return value
+
+    delta = {
+        "s1": {"a": _coro(_DROP_FROM_DELTA), "b": _coro(_DROP_FROM_DELTA)},
+        "s2": {"keep": 1},
+    }
+    resolved = await _resolve_delta(delta)
+    assert resolved == {"s2": {"keep": 1}}

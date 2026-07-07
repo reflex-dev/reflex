@@ -28,6 +28,7 @@ def MemoApp():
 
     class MemoState(rx.State):
         last_value: str = ""
+        order: list[str] = ["row-a", "row-b", "row-c"]
         tree: TreeNode = TreeNode(
             name="root",
             children=[
@@ -50,6 +51,10 @@ def MemoApp():
                 children=[TreeNode(name="only-child", children=[])],
             )
 
+        @rx.event
+        def reverse_order(self):
+            self.order = list(reversed(self.order))
+
     @rx.memo
     def my_memoed_component(
         some_value: rx.Var[str],
@@ -68,6 +73,14 @@ def MemoApp():
             class_name="pl-4 border-l",
         )
 
+    @rx.memo
+    def keyed_row(label: rx.Var[str]) -> rx.Component:
+        # Uncontrolled input: its typed value lives in the DOM, not in state,
+        # so React only preserves it across a reorder when the element keeps
+        # its identity — i.e. when ``key`` is honored. ``label`` doubles as the
+        # element id so each row is locatable after reordering.
+        return rx.input(id=label)
+
     def index() -> rx.Component:
         return rx.vstack(
             rx.text(MemoState.last_value, id="memo-last-value"),
@@ -78,6 +91,15 @@ def MemoApp():
                 "replace-tree", id="replace-tree", on_click=MemoState.replace_tree
             ),
             rx.box(tree_node(data=MemoState.tree), id="tree-root"),
+            rx.button(
+                "reverse-order", id="reverse-order", on_click=MemoState.reverse_order
+            ),
+            rx.box(
+                rx.foreach(
+                    MemoState.order, lambda item: keyed_row(label=item, key=item)
+                ),
+                id="keyed-rows",
+            ),
         )
 
     app = rx.App()
@@ -167,3 +189,36 @@ def test_memo_recursive_tree_reacts_to_state(memo_app: AppHarness, page: Page) -
 
     expect(node_names).to_have_count(2)
     expect(node_names).to_have_text(["root2", "only-child"])
+
+
+def test_memo_key_preserves_identity_across_reorder(
+    memo_app: AppHarness, page: Page
+) -> None:
+    """``key`` on a memo under ``rx.foreach`` drives React's reconciliation.
+
+    Each row is a memo with an uncontrolled input keyed by its label. Type a
+    distinct value into each, reverse the list, and the values must follow
+    their labels rather than their positions — which only happens if the
+    ``key`` reaches React. (``rx.foreach`` would otherwise key by index, giving
+    positional identity, so this asserts the explicit ``key`` is honored.)
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    assert memo_app.frontend_url is not None
+    page.goto(memo_app.frontend_url)
+
+    rows = page.locator("#keyed-rows input")
+    expect(rows).to_have_count(3)
+    for row_id in ("row-a", "row-b", "row-c"):
+        page.locator(f"#{row_id}").fill(row_id.upper())
+
+    page.click("#reverse-order")
+
+    # Order reversed (positional proof the reorder happened) ...
+    expect(rows.first).to_have_attribute("id", "row-c")
+    expect(rows.last).to_have_attribute("id", "row-a")
+    # ... while each row kept the value typed into it, by key, not by slot.
+    for row_id in ("row-a", "row-b", "row-c"):
+        expect(page.locator(f"#{row_id}")).to_have_value(row_id.upper())

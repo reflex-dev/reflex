@@ -54,7 +54,7 @@ env:
 ### Obtain Required Tokens
 
 1. **Reflex Access Token**
-   - Visit [Reflex Cloud Tokens](https://build.reflex.dev/tokens/)
+   - Visit the [Reflex Cloud Tokens docs](/docs/hosting/tokens)
    - Navigate to Account Settings → Tokens
    - Create a new token and copy the value
    - Replace `your-token-here` in the configuration

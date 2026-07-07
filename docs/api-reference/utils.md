@@ -103,7 +103,7 @@ class RunInThreadState(rx.State):
 
 def run_in_thread_example():
     return rx.vstack(
-        rx.heading("run_in_thread Example", size="3"),
+        rx.heading("run_in_thread Example", as_="h2", size="3"),
         rx.hstack(
             rx.button(
                 "Run Quick Task",

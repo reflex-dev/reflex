@@ -32,14 +32,14 @@ Primarily this is a semantic component that is used to group related textual con
 ```python demo
 rx.box(
     rx.section(
-        rx.heading("First"),
+        rx.heading("First", as_="h2"),
         rx.text("This is the first content section"),
         padding_left="12px",
         padding_right="12px",
         background_color="var(--gray-2)",
     ),
     rx.section(
-        rx.heading("Second"),
+        rx.heading("Second", as_="h2"),
         rx.text("This is the second content section"),
         padding_left="12px",
         padding_right="12px",
