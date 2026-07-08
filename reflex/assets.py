@@ -8,6 +8,8 @@ from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.environment import EnvironmentVariables
 
+from reflex.utils import path_ops
+
 if TYPE_CHECKING:
     from typing_extensions import Buffer
 
@@ -202,14 +204,8 @@ def asset(
 
         dst_file = asset_folder / path
 
-        if not dst_file.exists() and (
-            not dst_file.is_symlink() or dst_file.resolve() != src_file_shared.resolve()
-        ):
-            try:
-                dst_file.symlink_to(src_file_shared)
-            except FileExistsError:
-                # This happens when Simon builds the app on a bind mount in a docker container.
-                dst_file.unlink()
-                dst_file.symlink_to(src_file_shared)
+        # Prefer a symlink, but fall back to a copy when symlinking is not
+        # permitted or possible (e.g. cross-device or missing privileges).
+        path_ops.link_or_copy(src_file_shared, dst_file)
 
     return AssetPathStr(f"/{external}/{subfolder}/{path}")

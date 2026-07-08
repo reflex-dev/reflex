@@ -163,6 +163,29 @@ def ln(src: str | Path, dest: str | Path, overwrite: bool = False) -> bool:
     return True
 
 
+def link_or_copy(target: str | Path, link_name: str | Path) -> None:
+    """Symlink ``link_name`` to ``target``, falling back to a copy.
+
+    Symlinks are preferred so edits to ``target`` are picked up without
+    recompiling. When the platform or filesystem cannot create the symlink
+    (missing privileges on Windows, cross-device links, unsupported OS), the
+    target is copied to ``link_name`` instead so the app can still start.
+
+    Args:
+        target: The existing file or directory the link should point to.
+        link_name: The path of the symlink (or copy) to create.
+    """
+    target, link_name = Path(target), Path(link_name)
+    if link_name.is_symlink() and link_name.resolve() == target.resolve():
+        return
+    if link_name.is_symlink() or link_name.exists():
+        rm(link_name)
+    try:
+        link_name.symlink_to(target)
+    except OSError:
+        cp(target, link_name)
+
+
 def which(program: str | Path) -> Path | None:
     """Find the path to an executable.
 

@@ -66,6 +66,48 @@ def test_shared_asset(mock_asset_path: Path) -> None:
     assert not Path(mock_asset_path / "assets" / "external").exists()
 
 
+def test_shared_asset_symlink_fallback_to_copy(
+    mock_asset_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A shared asset is copied when symlinking is not permitted.
+
+    Regression test for https://github.com/reflex-dev/reflex/issues/5997.
+
+    Args:
+        mock_asset_path: Fixture providing a temporary cwd for assets.
+        monkeypatch: A pytest fixture for patching.
+    """
+    original_symlink_to = Path.symlink_to
+
+    def _fail_symlink(self: Path, *args: object, **kwargs: object) -> None:
+        msg = "Operation not permitted"
+        raise OSError(msg)
+
+    monkeypatch.setattr(Path, "symlink_to", _fail_symlink)
+
+    asset = rx.asset(path="custom_script.js", shared=True)
+    assert asset == "/external/test_assets/custom_script.js"
+    result_file = Path(
+        mock_asset_path, "assets", "external", "test_assets", "custom_script.js"
+    )
+    # The asset is a real copy, not a symlink, and matches the source content.
+    assert result_file.exists()
+    assert not result_file.is_symlink()
+    src_file = Path(__file__).parent / "custom_script.js"
+    assert result_file.read_text() == src_file.read_text()
+
+    # Running a second time (still unable to symlink) should not raise.
+    rx.asset(path="custom_script.js", shared=True)
+    assert result_file.exists()
+    assert not result_file.is_symlink()
+
+    # Once symlinking becomes possible again, the copy is replaced by a symlink.
+    monkeypatch.setattr(Path, "symlink_to", original_symlink_to)
+    rx.asset(path="custom_script.js", shared=True)
+    assert result_file.is_symlink()
+    assert result_file.resolve() == src_file.resolve()
+
+
 @pytest.mark.parametrize(
     ("path", "shared"),
     [
