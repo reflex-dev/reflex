@@ -1339,14 +1339,12 @@ def test_extract_package_name():
     assert js_runtimes._extract_package_name("@scope/pkg@1.2.3") == "@scope/pkg"
 
 
-def test_cached_procedure():
+def test_cached_procedure(tmp_path: Path):
     call_count = 0
 
-    temp_file = tempfile.mktemp()
+    temp_file = tmp_path / "no_args_cache"
 
-    @cached_procedure(
-        cache_file_path=lambda: Path(temp_file), payload_fn=lambda: "constant"
-    )
+    @cached_procedure(cache_file_path=lambda: temp_file, payload_fn=lambda: "constant")
     def _function_with_no_args():
         nonlocal call_count
         call_count += 1
@@ -1358,10 +1356,10 @@ def test_cached_procedure():
 
     call_count = 0
 
-    another_temp_file = tempfile.mktemp()
+    another_temp_file = tmp_path / "some_args_cache"
 
     @cached_procedure(
-        cache_file_path=lambda: Path(another_temp_file),
+        cache_file_path=lambda: another_temp_file,
         payload_fn=lambda *args, **kwargs: f"{repr(args), repr(kwargs)}",
     )
     def _function_with_some_args(*args, **kwargs):
@@ -1380,7 +1378,8 @@ def test_cached_procedure():
     call_count = 0
 
     @cached_procedure(
-        cache_file_path=lambda: Path(tempfile.mktemp()), payload_fn=lambda: "constant"
+        cache_file_path=lambda: tmp_path / f"fresh_{uuid.uuid4().hex}",
+        payload_fn=lambda: "constant",
     )
     def _function_with_no_args_fn():
         nonlocal call_count
