@@ -4954,6 +4954,12 @@ class MutableProxyState(BaseState):
     data: dict[str, list[int]] = {"a": [1], "b": [2]}
 
 
+class NestedMutableProxyState(BaseState):
+    """A test state with nested mutable dict values."""
+
+    data: dict[str, dict[str, int]] = {"a": {"x": 1}, "b": {"y": 2}}
+
+
 class IterableMutableProxyState(BaseState):
     """A test state with mutable values that can be accessed by iteration."""
 
@@ -5047,7 +5053,7 @@ async def test_immutable_mutable_proxy_async_context_manager(
 
     async with data_proxy as mutable_data:
         assert mutable_data is data_proxy
-        with pytest.raises(RuntimeError, match="already mutable"):
+        with pytest.raises(RuntimeError, match="already in an async context"):
             async with data_proxy:
                 pass
         data_proxy["a"].append(3)
@@ -5069,6 +5075,53 @@ async def test_immutable_mutable_proxy_async_context_manager(
         assert isinstance(state, MutableProxyState)
         assert state.data["a"] == [1, 2, 3, 5]
         assert state.data["b"] == [2, 4]
+
+
+@pytest.mark.asyncio
+async def test_immutable_mutable_proxy_async_context_dict_method_paths(
+    token: str, attached_mock_event_context: EventContext
+) -> None:
+    """Dict method proxies refresh to the returned item, not the parent dict."""
+    state_manager = attached_mock_event_context.state_manager
+
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=NestedMutableProxyState)
+    ) as state:
+        state.router = RouterData.from_router_data({
+            "query": {},
+            "token": token,
+            "sid": "test_sid",
+        })
+        state_proxy = StateProxy(state)
+        existing_proxy = state_proxy.data.get("a")
+        default_proxy = state_proxy.data.get("missing", {"fallback": 4})
+
+    async with state_proxy:
+        new_proxy = state_proxy.data.setdefault("c", {"z": 3})
+
+    assert isinstance(existing_proxy, ImmutableMutableProxy)
+    assert isinstance(new_proxy, ImmutableMutableProxy)
+    assert isinstance(default_proxy, ImmutableMutableProxy)
+
+    async with existing_proxy as mutable_existing:
+        mutable_existing["x"] = 10
+
+    async with new_proxy as mutable_new:
+        mutable_new["z"] = 30
+
+    with pytest.raises(RuntimeError, match="Unable to refresh mutable proxy"):
+        async with default_proxy:
+            pass
+
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=NestedMutableProxyState)
+    ) as state:
+        assert isinstance(state, NestedMutableProxyState)
+        assert state.data == {
+            "a": {"x": 10},
+            "b": {"y": 2},
+            "c": {"z": 30},
+        }
 
 
 @pytest.mark.asyncio

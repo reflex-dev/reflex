@@ -488,11 +488,15 @@ class MutableProxy(wrapt.ObjectProxy):
 
         Returns:
             This proxy refreshed from the current state field.
+
+        Raises:
+            RuntimeError: If this proxy is already in an async context or cannot
+                be refreshed from its bound state field.
         """
         if self._self_actx_state is not None:
             msg = (
-                "Mutable proxy is already mutable. Do not nest `async with proxy` "
-                "blocks."
+                "Mutable proxy is already in an async context. Do not reuse the "
+                "same proxy in overlapping `async with proxy` blocks."
             )
             raise RuntimeError(msg)
         context_state = self._self_state
@@ -649,7 +653,17 @@ class MutableProxy(wrapt.ObjectProxy):
         Returns:
             The result of the wrapped function (possibly wrapped in a MutableProxy).
         """
-        return self._wrap_recursive(wrapped(*args, **kwargs))
+        new_path_segment = None
+        method_name = getattr(wrapped, "__name__", None)
+        if args:
+            key = args[0]
+            if method_name == "get":
+                new_path_segment = (
+                    ("item", key) if key in self.__wrapped__ else _ITER_ACCESS_SPEC
+                )
+            elif method_name == "setdefault":
+                new_path_segment = ("item", key)
+        return self._wrap_recursive(wrapped(*args, **kwargs), new_path_segment)
 
     def __getattr__(self, __name: str) -> Any:
         """Get the attribute on the proxied object and return a proxy if mutable.
