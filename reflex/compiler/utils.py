@@ -433,6 +433,14 @@ def compile_experimental_component_memo(
 
     imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
 
+    # The wrapper import (``memo`` from React by default) rides on the wrapper
+    # var itself, so a custom wrapper brings its own imports and ``None``
+    # pulls in nothing.
+    wrapper = definition.wrapper
+    if wrapper is not None and (wrapper_var_data := wrapper._get_all_var_data()):
+        for lib, fields in wrapper_var_data.imports:
+            imports.setdefault(lib, []).extend(fields)
+
     signature_fields = [
         field
         for param in definition.params
@@ -456,6 +464,7 @@ def compile_experimental_component_memo(
                 fields=tuple(signature_fields),
                 rest=rest_param.placeholder_name if rest_param is not None else None,
             ).to_javascript(),
+            "wrapper": str(wrapper) if wrapper is not None else None,
             "render": rendered,
             "hooks": hooks,
             "custom_code": custom_code,

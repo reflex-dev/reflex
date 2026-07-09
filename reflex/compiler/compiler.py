@@ -424,11 +424,12 @@ class _MemoGroup:
         _extend_imports_in_place(self.imports, memo_imports)
 
 
-# Imports every memo module needs regardless of its body: ``memo`` from React
-# for the wrapper, and ``isTrue`` for prop coercion. Shared by the grouped and
-# un-mirrored compile paths so they can't drift apart.
+# Imports every memo module needs regardless of its body: ``isTrue`` for prop
+# coercion. The component wrapper import (``memo`` from React by default)
+# rides on each definition's ``wrapper`` var data instead, so a module whose
+# memos swap or drop the default wrapper doesn't import it. Shared by the
+# grouped and un-mirrored compile paths so they can't drift apart.
 _MEMO_BASE_IMPORTS: dict[str, list[ImportVar]] = {
-    "react": [ImportVar(tag="memo")],
     f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
 }
 
