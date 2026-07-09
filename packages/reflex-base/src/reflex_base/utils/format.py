@@ -397,7 +397,7 @@ def format_prop(
         if isinstance(prop, str):
             if is_wrapped(prop, "{"):
                 return prop
-            return json_dumps(prop)
+            return orjson_dumps(prop)
 
         # For dictionaries, convert any properties to strings.
         if isinstance(prop, dict):
