@@ -12,7 +12,7 @@ from collections.abc import AsyncIterator, Callable, Coroutine
 from types import MappingProxyType
 from typing import TYPE_CHECKING, ClassVar
 
-from reflex.istate.manager.redis import StateManagerRedis
+from reflex.istate.manager.redis import enable_keyspace_notifications
 from reflex.state import StateUpdate
 from reflex.utils import console, prerequisites
 from reflex.utils.tasks import ensure_task
@@ -256,7 +256,7 @@ class RedisTokenManager(LocalTokenManager):
 
     async def _subscribe_socket_record_updates(self) -> None:
         """Subscribe to Redis keyspace notifications for socket record updates."""
-        await StateManagerRedis(redis=self.redis)._enable_keyspace_notifications()
+        await enable_keyspace_notifications(self.redis)
         redis_db = self.redis.get_connection_kwargs().get("db", 0)
 
         async with self.redis.pubsub() as pubsub:
