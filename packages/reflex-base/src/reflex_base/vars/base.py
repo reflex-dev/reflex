@@ -3441,6 +3441,19 @@ class Field(Generic[FIELD_TYPE]):
         else:
             self.outer_type_ = self.annotated_type = self.type_ = self.type_origin = Any
 
+    def _copy_custom_attrs_from(self, source: Field) -> Self:
+        """Copy source attrs that this field did not recompute.
+
+        Args:
+            source: The field to copy custom attributes from.
+
+        Returns:
+            This field.
+        """
+        for key, value in source.__dict__.items():
+            self.__dict__.setdefault(key, value)
+        return self
+
     def default_value(self) -> FIELD_TYPE:
         """Get the default value for the field.
 
@@ -3686,13 +3699,13 @@ class BaseStateMeta(ABCMeta):
                         default=value.default,
                         is_var=value.is_var,
                         annotated_type=figure_out_type(value.default),
-                    )
+                    )._copy_custom_attrs_from(value)
                 else:
                     new_value = Field(
                         default_factory=value.default_factory,
                         is_var=value.is_var,
                         annotated_type=Any,
-                    )
+                    )._copy_custom_attrs_from(value)
             elif (
                 not key.startswith("__")
                 and not callable(value)
@@ -3741,7 +3754,7 @@ class BaseStateMeta(ABCMeta):
                     default_factory=value.default_factory,
                     is_var=value.is_var,
                     annotated_type=annotation,
-                )
+                )._copy_custom_attrs_from(value)
 
             own_fields[key] = value
 
