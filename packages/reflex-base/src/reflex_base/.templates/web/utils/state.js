@@ -460,14 +460,14 @@ const resolveSocket = (socket) => {
   return socket?.current ?? socket;
 };
 
-// Non-finite floats have no JSON literal, so the Python socket emit path
-// substitutes sentinel strings via reflex_base.utils.format and the reviver
-// below restores them after JSON.parse. The fallback rewriter handles bare
-// Infinity/-Infinity/NaN tokens emitted by stdlib json.dumps (kept for
-// defense-in-depth; orjson never emits bare tokens).
+// Sentinels for non-finite floats, emitted by reflex_base.utils.format and
+// restored by the reviver below. Colliding user strings arrive escaped; the
+// reviver strips one escape level. The rewriter handles bare NaN/Infinity
+// tokens from stdlib json.dumps (defense-in-depth).
 const NAN_SENTINEL = "__reflex_nan__";
 const INF_SENTINEL = "__reflex_inf__";
 const NEG_INF_SENTINEL = "__reflex_neg_inf__";
+const SENTINEL_ESCAPE_PREFIX = "__reflex_esc__";
 const NON_FINITE_FLOAT_RE = /"(?:[^"\\]|\\.)*"|-?\bInfinity\b|\bNaN\b/g;
 const NON_FINITE_REPLACEMENTS = {
   Infinity: `"${INF_SENTINEL}"`,
@@ -479,9 +479,12 @@ const rewriteBareNonFiniteFloats = (str) =>
     match[0] === '"' ? match : NON_FINITE_REPLACEMENTS[match],
   );
 export const reviveNonFiniteFloats = (_k, v) => {
+  if (typeof v !== "string" || !v.startsWith("__reflex_")) return v;
   if (v === NAN_SENTINEL) return NaN;
   if (v === INF_SENTINEL) return Infinity;
   if (v === NEG_INF_SENTINEL) return -Infinity;
+  if (v.startsWith(SENTINEL_ESCAPE_PREFIX))
+    return v.slice(SENTINEL_ESCAPE_PREFIX.length);
   return v;
 };
 

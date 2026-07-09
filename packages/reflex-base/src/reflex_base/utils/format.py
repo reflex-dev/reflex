@@ -741,12 +741,15 @@ def orjson_loads(data: str | bytes) -> Any:
     return orjson.loads(data)
 
 
-# Shared with the JS-side reviver in state.js. orjson serializes non-finite
-# floats as null, so the socket emit path swaps them for sentinel strings
-# and the client revives them back to NaN/Infinity/-Infinity.
+# Shared with the JS-side reviver in state.js: non-finite floats become
+# sentinel strings (orjson would emit null). Colliding user strings get the
+# escape prefix; the reviver strips one level.
 NAN_SENTINEL = "__reflex_nan__"
 INF_SENTINEL = "__reflex_inf__"
 NEG_INF_SENTINEL = "__reflex_neg_inf__"
+SENTINEL_ESCAPE_PREFIX = "__reflex_esc__"
+_SENTINELS = frozenset({NAN_SENTINEL, INF_SENTINEL, NEG_INF_SENTINEL})
+_SENTINEL_COMMON_PREFIX = "__reflex_"
 _INF = float("inf")
 
 
@@ -754,6 +757,12 @@ def _replace_non_finite_floats(obj: Any) -> Any:
     # Copy-on-write: only allocate a new container if a child actually
     # changed. ``is`` works as a "did we replace this" check because
     # unchanged values are returned as the same object.
+    if isinstance(obj, str):
+        if obj.startswith(_SENTINEL_COMMON_PREFIX) and (
+            obj in _SENTINELS or obj.startswith(SENTINEL_ESCAPE_PREFIX)
+        ):
+            return SENTINEL_ESCAPE_PREFIX + obj
+        return obj
     if isinstance(obj, float):
         if obj != obj:
             return NAN_SENTINEL
@@ -787,8 +796,8 @@ def orjson_dumps_socket(obj: Any, **kwargs: Any) -> str:
     """Serialize obj for socket emit, preserving non-finite floats via sentinels.
 
     Routes custom types through ``serializers.serialize`` (matching the
-    stdlib ``json_dumps`` behavior) and substitutes sentinel strings for
-    NaN/Infinity floats so the JS reviver in state.js can restore them.
+    stdlib ``json_dumps`` behavior), substitutes sentinel strings for
+    NaN/Infinity floats, and escapes colliding user strings.
 
     Accepts and ignores ``**kwargs`` so the callable is compatible with
     socket.io's encoder, which calls ``dumps(data, separators=(',', ':'))``.

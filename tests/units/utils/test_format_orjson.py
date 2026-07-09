@@ -25,6 +25,7 @@ from reflex_base.utils.format import (
     INF_SENTINEL,
     NAN_SENTINEL,
     NEG_INF_SENTINEL,
+    SENTINEL_ESCAPE_PREFIX,
     _replace_non_finite_floats,
     json_dumps,
     orjson_dumps,
@@ -32,7 +33,7 @@ from reflex_base.utils.format import (
     orjson_loads,
 )
 
-# --- orjson_dumps + orjson_loads round-trip ---
+# orjson_dumps + orjson_loads round-trip
 
 
 @pytest.mark.parametrize(
@@ -57,8 +58,8 @@ def test_orjson_round_trip(value):
     assert orjson_loads(orjson_dumps(value)) == value
 
 
-# --- socket.io kwarg compat (regression test for the bug that broke
-#     integration tests: socket.io calls dumps(data, separators=(',',':')))
+# socket.io kwarg compat (regression test for the bug that broke
+# integration tests: socket.io calls dumps(data, separators=(',',':')))
 
 
 def test_orjson_dumps_socket_accepts_separators_kwarg():
@@ -71,7 +72,7 @@ def test_orjson_dumps_socket_ignores_arbitrary_kwargs():
     assert orjson_loads(out) == [1, 2, 3]
 
 
-# --- non-finite float sentinels ---
+# non-finite float sentinels
 
 
 def test_nan_top_level():
@@ -118,7 +119,54 @@ def test_nan_inside_dataclass_field():
     assert orjson_loads(out) == {"p": {"x": NAN_SENTINEL, "y": 1.0}}
 
 
-# --- copy-on-write walker behavior ---
+# user strings colliding with a sentinel must be escaped, not revived
+
+
+@pytest.mark.parametrize("sentinel", [NAN_SENTINEL, INF_SENTINEL, NEG_INF_SENTINEL])
+def test_sentinel_string_value_is_escaped(sentinel):
+    out = orjson_dumps_socket({"a": sentinel})
+    assert orjson_loads(out) == {"a": SENTINEL_ESCAPE_PREFIX + sentinel}
+
+
+def test_escape_prefixed_string_is_escaped_again():
+    value = SENTINEL_ESCAPE_PREFIX + "user data"
+    out = orjson_dumps_socket([value])
+    assert orjson_loads(out) == [SENTINEL_ESCAPE_PREFIX + value]
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "nan",
+        "__reflex_nan__ ",
+        "__reflex_nan",
+        "prefix__reflex_nan__",
+        "__reflex_custom__",
+        "__reflex",
+    ],
+)
+def test_non_sentinel_string_unchanged(value):
+    assert orjson_loads(orjson_dumps_socket([value])) == [value]
+
+
+def test_walker_escapes_sentinel_string():
+    """The walker escapes sentinel strings, covering the stdlib fallback too."""
+    assert (
+        _replace_non_finite_floats(NAN_SENTINEL)
+        == SENTINEL_ESCAPE_PREFIX + NAN_SENTINEL
+    )
+
+
+def test_sentinel_string_inside_dataclass_field():
+    @dataclasses.dataclass
+    class Message:
+        text: str
+
+    out = orjson_dumps_socket({"m": Message(NAN_SENTINEL)})
+    assert orjson_loads(out) == {"m": {"text": SENTINEL_ESCAPE_PREFIX + NAN_SENTINEL}}
+
+
+# copy-on-write walker behavior
 
 
 def test_walker_returns_unchanged_dict_as_is():
@@ -158,7 +206,7 @@ def test_walker_passes_through_unknown_types():
     assert _replace_non_finite_floats(s) is s
 
 
-# --- format compatibility with the existing json_dumps ---
+# format compatibility with the existing json_dumps
 
 
 @pytest.mark.parametrize(
@@ -220,7 +268,7 @@ def test_datetime_uses_space_separator_not_iso_t():
     assert orjson_loads(out) == {"dt": "2026-04-25 10:30:45"}
 
 
-# --- non-string dict keys ---
+# non-string dict keys
 
 
 def test_int_dict_keys_coerced_to_strings():
@@ -228,7 +276,7 @@ def test_int_dict_keys_coerced_to_strings():
     assert orjson_loads(out) == {"1": "a", "2": "b"}
 
 
-# --- unknown-type fallback ---
+# unknown-type fallback
 
 
 def test_unknown_type_serializes_to_null():
