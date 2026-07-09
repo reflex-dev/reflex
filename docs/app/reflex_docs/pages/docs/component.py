@@ -26,6 +26,7 @@ from reflex_docs.docgen_pipeline import (
     render_inline_markdown,
     render_markdown,
 )
+from reflex_docs.pages.docs.metadata import truncate_meta_description
 from reflex_docs.templates.docpage import docpage, h2_comp
 
 
@@ -1026,8 +1027,14 @@ def multi_docs(
         )
 
     # Differentiate the low-level page's meta description so search engines
-    # don't see it as a duplicate of the high-level page's description.
-    ll_description = f"{description} (low-level API reference)" if description else None
+    # don't see it as a duplicate of the high-level page's description. Truncate
+    # the base first so the differentiating suffix always survives the cap.
+    ll_suffix = " (low-level API reference)"
+    ll_description = (
+        f"{truncate_meta_description(description, max_len=155 - len(ll_suffix))}{ll_suffix}"
+        if description
+        else None
+    )
 
     @docpage(
         set_path=path + "low", t=title + " (Low Level)", description=ll_description
