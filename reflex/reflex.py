@@ -991,7 +991,11 @@ def _open_minify_session(*, require_exists: bool = True) -> MinifyConfig | None:
     if not exists:
         return None
 
-    config = _load_minify_config_uncached()
+    try:
+        config = _load_minify_config_uncached()
+    except ValueError as e:
+        console.error(str(e))
+        raise SystemExit(1) from e
     if config is None:
         console.error(f"Failed to load {MINIFY_JSON}.")
         raise SystemExit(1)
@@ -1137,7 +1141,8 @@ def minify_list(output_json: bool):
             A dictionary containing the state tree data.
         """
         state_path = get_state_full_path(state_cls)
-        state_id = states_map.get(state_path)
+        state_entry = states_map.get(state_path)
+        state_id = state_entry["id"] if state_entry is not None else None
 
         handler_ids = events_map.get(state_path, {})
         handlers: list[EventHandlerData] = [
@@ -1241,10 +1246,11 @@ def minify_lookup(output_json: bool, minified_path: str):
     config = _open_minify_session()
 
     # Build lookup: full_path -> minified_id (None if no entry).
-    path_to_id = {
-        get_state_full_path(s): config["states"].get(get_state_full_path(s))
-        for s in collect_all_states(State)
-    }
+    path_to_id: dict[str, str | None] = {}
+    for s in collect_all_states(State):
+        path = get_state_full_path(s)
+        entry = config["states"].get(path)
+        path_to_id[path] = entry["id"] if entry is not None else None
 
     parts = minified_path.split(".")
     result_parts = []

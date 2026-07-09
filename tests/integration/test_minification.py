@@ -10,7 +10,12 @@ import pytest
 from selenium.webdriver.common.by import By
 
 from reflex.environment import MinifyMode, environment
-from reflex.minify import MINIFY_JSON, clear_config_cache, int_to_minified_name
+from reflex.minify import (
+    MINIFY_JSON,
+    SCHEMA_VERSION,
+    clear_config_cache,
+    int_to_minified_name,
+)
 from reflex.testing import AppHarness
 
 if TYPE_CHECKING:
@@ -75,10 +80,16 @@ def MinificationApp():
 # Framework state classes (e.g. ``reflex.state.State``) are deliberately
 # absent — the resolver never minifies them.
 _MINIFY_CONFIG = {
-    "version": 1,
+    "version": SCHEMA_VERSION,
     "states": {
-        "minify_enabled.minify_enabled.State.RootState": "k",  # 10
-        "minify_enabled.minify_enabled.State.RootState.SubState": "l",  # 11
+        "minify_enabled.minify_enabled.State.RootState": {
+            "id": "k",  # 10
+            "parent": "reflex.state.State",
+        },
+        "minify_enabled.minify_enabled.State.RootState.SubState": {
+            "id": "l",  # 11
+            "parent": "minify_enabled.minify_enabled.State.RootState",
+        },
     },
     "events": {
         "minify_enabled.minify_enabled.State.RootState": {"increment": "f"},  # 5

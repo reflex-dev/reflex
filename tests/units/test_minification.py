@@ -5,6 +5,7 @@ from __future__ import annotations
 import contextlib
 import json
 from collections.abc import Iterator
+from pathlib import Path
 from unittest import mock
 
 import pytest
@@ -17,9 +18,11 @@ from reflex.minify import (
     SCHEMA_VERSION,
     MinifyConfig,
     MinifyNameResolver,
+    StateEntry,
     clear_config_cache,
     generate_minify_config,
     get_minify_config,
+    get_parent_key,
     get_state_full_path,
     int_to_minified_name,
     is_minify_enabled,
@@ -67,7 +70,7 @@ def _set_minify_modes(
 
 
 def _install_config(
-    states: dict[str, str] | None = None,
+    states: dict[str, str | StateEntry] | None = None,
     events: dict[str, dict[str, str]] | None = None,
     *,
     include_state_root: bool = False,
@@ -79,7 +82,8 @@ def _install_config(
     ``State.get_name.cache_clear()`` etc. by hand.
 
     Args:
-        states: ``state_path -> minified_id`` map.
+        states: ``state_path -> minified_id`` map. Plain string values are
+            wrapped into :class:`StateEntry` with ``parent=None``.
         events: ``state_path -> {handler -> minified_id}`` map.
         include_state_root: Add ``"reflex.state.State": "a"`` so subclasses
             of ``State`` resolve through the root entry.
@@ -87,9 +91,12 @@ def _install_config(
     Returns:
         The saved config.
     """
-    states_map = dict(states or {})
+    states_map: dict[str, StateEntry] = {
+        path: value if isinstance(value, dict) else StateEntry(id=value, parent=None)
+        for path, value in (states or {}).items()
+    }
     if include_state_root:
-        states_map.setdefault("reflex.state.State", "a")
+        states_map.setdefault("reflex.state.State", StateEntry(id="a", parent=None))
     config: MinifyConfig = {
         "version": SCHEMA_VERSION,
         "states": states_map,
@@ -278,7 +285,7 @@ class TestMinifyConfig:
         assert is_minify_enabled() is True
         loaded = get_minify_config()
         assert loaded is not None
-        assert loaded["states"]["test.module.MyState"] == "a"
+        assert loaded["states"]["test.module.MyState"] == {"id": "a", "parent": None}
         assert loaded["events"]["test.module.MyState"]["handler"] == "a"
 
     def test_invalid_version_raises(self, temp_minify_json, monkeypatch):
@@ -307,6 +314,23 @@ class TestMinifyConfig:
         with pytest.raises(ValueError, match="'states' must be"):
             is_mode_enabled("REFLEX_MINIFY_STATES")
 
+    def test_flat_string_states_raise(self, temp_minify_json, monkeypatch):
+        """Test that legacy flat string state values are rejected."""
+        _set_minify_modes(monkeypatch, states=MinifyMode.ENABLED)
+        config = {
+            "version": SCHEMA_VERSION,
+            "states": {"test.module.MyState": "a"},
+            "events": {},
+        }
+        path = temp_minify_json / MINIFY_JSON
+        with path.open("w") as f:
+            json.dump(config, f)
+
+        clear_config_cache()
+
+        with pytest.raises(ValueError, match="must be an object with a string 'id'"):
+            is_mode_enabled("REFLEX_MINIFY_STATES")
+
 
 class TestGenerateMinifyConfig:
     """Tests for generate_minify_config function."""
@@ -317,6 +341,7 @@ class TestGenerateMinifyConfig:
 
         assert config["version"] == SCHEMA_VERSION
         assert "reflex.state.State" in config["states"]
+        assert config["states"]["reflex.state.State"]["parent"] is None
         # State should have event handlers like set_is_hydrated
         state_path = "reflex.state.State"
         assert state_path in config["events"]
@@ -340,12 +365,15 @@ class TestGenerateMinifyConfig:
         child_a_path = get_state_full_path(ChildA)
         child_b_path = get_state_full_path(ChildB)
 
-        child_a_id = config["states"].get(child_a_path)
-        child_b_id = config["states"].get(child_b_path)
+        child_a_entry = config["states"].get(child_a_path)
+        child_b_entry = config["states"].get(child_b_path)
 
-        assert child_a_id is not None
-        assert child_b_id is not None
-        assert child_a_id != child_b_id
+        assert child_a_entry is not None
+        assert child_b_entry is not None
+        assert child_a_entry["id"] != child_b_entry["id"]
+        parent_path = get_state_full_path(ParentState)
+        assert child_a_entry["parent"] == parent_path
+        assert child_b_entry["parent"] == parent_path
 
 
 class TestValidateMinifyConfig:
@@ -364,9 +392,11 @@ class TestValidateMinifyConfig:
         config: MinifyConfig = {
             "version": SCHEMA_VERSION,
             "states": {
-                "test.Parent": "a",
-                "test.Parent.ChildA": "b",
-                "test.Parent.ChildB": "b",  # Duplicate!
+                "test.Parent": StateEntry(id="a", parent=None),
+                "test.Parent.ChildA": StateEntry(id="b", parent="test.Parent"),
+                "test.Parent.ChildB": StateEntry(  # Duplicate!
+                    id="b", parent="test.Parent"
+                ),
             },
             "events": {},
         }
@@ -378,6 +408,86 @@ class TestValidateMinifyConfig:
         errors, _warnings, _missing = validate_minify_config(config, Parent)
 
         assert any("Duplicate state_id='b'" in e for e in errors)
+
+    def test_validate_detects_orphan_sibling_collision(self):
+        """An orphaned entry sharing an id with a live sibling is an error."""
+
+        class OrphanCollisionParent(BaseState):
+            pass
+
+        class OrphanCollisionLiveChild(OrphanCollisionParent):
+            pass
+
+        parent_path = get_state_full_path(OrphanCollisionParent)
+        live_path = get_state_full_path(OrphanCollisionLiveChild)
+        orphan_path = f"{parent_path}.DeadChild"
+
+        config: MinifyConfig = {
+            "version": SCHEMA_VERSION,
+            "states": {
+                parent_path: StateEntry(id="a", parent=None),
+                live_path: StateEntry(id="b", parent=parent_path),
+                orphan_path: StateEntry(id="b", parent=parent_path),  # collision!
+            },
+            "events": {},
+        }
+
+        errors, _warnings, _missing = validate_minify_config(
+            config, OrphanCollisionParent
+        )
+
+        assert any(
+            "Duplicate state_id='b'" in e and "(orphaned)" in e for e in errors
+        ), f"Expected orphan collision error, got: {errors}"
+
+    def test_validate_no_cross_group_orphan_false_positive(self):
+        """An orphan of a different parent may share an id with a root state."""
+
+        class OrphanNoFalsePositiveRoot(BaseState):
+            pass
+
+        root_path = get_state_full_path(OrphanNoFalsePositiveRoot)
+        config: MinifyConfig = {
+            "version": SCHEMA_VERSION,
+            "states": {
+                root_path: StateEntry(id="a", parent=None),
+                # Orphan from an unrelated (deleted) parent, same id "a".
+                "gone.module.Gone.Child": StateEntry(id="a", parent="gone.module.Gone"),
+            },
+            "events": {},
+        }
+
+        errors, warnings, _missing = validate_minify_config(
+            config, OrphanNoFalsePositiveRoot
+        )
+
+        assert not errors, f"Unexpected errors: {errors}"
+        assert any("Orphaned state" in w for w in warnings)
+
+    def test_validate_warns_stale_parent(self):
+        """A live entry whose stored parent disagrees with the code is flagged."""
+
+        class StaleParentParent(BaseState):
+            pass
+
+        class StaleParentChild(StaleParentParent):
+            pass
+
+        parent_path = get_state_full_path(StaleParentParent)
+        child_path = get_state_full_path(StaleParentChild)
+        config: MinifyConfig = {
+            "version": SCHEMA_VERSION,
+            "states": {
+                parent_path: StateEntry(id="a", parent=None),
+                child_path: StateEntry(id="a", parent="wrong.Path"),
+            },
+            "events": {},
+        }
+
+        errors, warnings, _missing = validate_minify_config(config, StaleParentParent)
+
+        assert not errors, f"Unexpected errors: {errors}"
+        assert any("Stale parent" in w and child_path in w for w in warnings)
 
 
 class TestSyncMinifyConfig:
@@ -399,9 +509,10 @@ class TestSyncMinifyConfig:
 
         new_config = sync_minify_config(existing_config, TestState)
 
-        # Should have added the state
+        # Should have added the state with its parent key recorded
         state_path = get_state_full_path(TestState)
         assert state_path in new_config["states"]
+        assert new_config["states"][state_path]["parent"] == get_parent_key(TestState)
         assert state_path in new_config["events"]
         assert "handler" in new_config["events"][state_path]
 
@@ -417,17 +528,19 @@ class TestSyncMinifyConfig:
 
         state_path = get_state_full_path(TestState)
 
-        # Start with partial config (using string IDs in v2 format)
+        # Start with partial config
         existing_config: MinifyConfig = {
             "version": SCHEMA_VERSION,
-            "states": {state_path: "bU"},  # codespell:ignore
+            "states": {
+                state_path: StateEntry(id="bU", parent=None)  # codespell:ignore
+            },
             "events": {state_path: {"handler_a": "k"}},  # Another arbitrary name
         }
 
         new_config = sync_minify_config(existing_config, TestState)
 
         # Existing IDs should be preserved
-        assert new_config["states"][state_path] == "bU"  # codespell:ignore
+        assert new_config["states"][state_path]["id"] == "bU"  # codespell:ignore
         assert new_config["events"][state_path]["handler_a"] == "k"
         # New handler should be added with next ID (k=10, so next is l=11)
         assert "handler_b" in new_config["events"][state_path]
@@ -460,8 +573,8 @@ class TestSyncMinifyConfig:
         existing_config: MinifyConfig = {
             "version": SCHEMA_VERSION,
             "states": {
-                parent_path: "a",
-                child_a_path: "a",
+                parent_path: StateEntry(id="a", parent=None),
+                child_a_path: StateEntry(id="a", parent=parent_path),
             },
             "events": {},
         }
@@ -472,10 +585,11 @@ class TestSyncMinifyConfig:
         child_b_path = get_state_full_path(ChildB)
         assert child_b_path in new_config["states"]
         assert (
-            new_config["states"][child_a_path] != new_config["states"][child_b_path]
+            new_config["states"][child_a_path]["id"]
+            != new_config["states"][child_b_path]["id"]
         ), (
             f"Sibling collision: ChildA and ChildB both got "
-            f"'{new_config['states'][child_a_path]}'"
+            f"'{new_config['states'][child_a_path]['id']}'"
         )
 
     def test_validate_detects_sibling_collision(self):
@@ -498,9 +612,9 @@ class TestSyncMinifyConfig:
         bad_config: MinifyConfig = {
             "version": SCHEMA_VERSION,
             "states": {
-                parent_path: "a",
-                child_a_path: "a",
-                child_b_path: "a",  # collision!
+                parent_path: StateEntry(id="a", parent=None),
+                child_a_path: StateEntry(id="a", parent=parent_path),
+                child_b_path: StateEntry(id="a", parent=parent_path),  # collision!
             },
             "events": {},
         }
@@ -508,6 +622,119 @@ class TestSyncMinifyConfig:
         errors, _warnings, _missing = validate_minify_config(bad_config, ParentState)
         assert any("Duplicate" in e and "'a'" in e for e in errors), (
             f"Expected duplicate ID error, got: {errors}"
+        )
+
+    def test_sync_reserves_orphan_ids(self):
+        """A new sibling must not reuse the id of an orphaned entry."""
+
+        class OrphanReserveParent(BaseState):
+            pass
+
+        class OrphanReserveRenamedChild(OrphanReserveParent):
+            pass
+
+        parent_path = get_state_full_path(OrphanReserveParent)
+        orphan_path = f"{parent_path}.OldChild"
+
+        existing_config: MinifyConfig = {
+            "version": SCHEMA_VERSION,
+            "states": {
+                parent_path: StateEntry(id="a", parent=None),
+                orphan_path: StateEntry(id="a", parent=parent_path),
+            },
+            "events": {},
+        }
+
+        new_config = sync_minify_config(existing_config, OrphanReserveParent)
+
+        renamed_path = get_state_full_path(OrphanReserveRenamedChild)
+        assert new_config["states"][orphan_path] == StateEntry(
+            id="a", parent=parent_path
+        )
+        assert new_config["states"][renamed_path]["id"] != "a"
+
+    def test_sync_reassign_deleted_keeps_orphan_ids_reserved(self):
+        """``reassign_deleted`` fills gaps but never reuses retained orphan ids."""
+
+        class OrphanReassignParent(BaseState):
+            pass
+
+        class OrphanReassignChild(OrphanReassignParent):
+            pass
+
+        parent_path = get_state_full_path(OrphanReassignParent)
+        orphan_path = f"{parent_path}.OldChild"
+
+        existing_config: MinifyConfig = {
+            "version": SCHEMA_VERSION,
+            "states": {
+                parent_path: StateEntry(id="a", parent=None),
+                orphan_path: StateEntry(id="a", parent=parent_path),
+            },
+            "events": {},
+        }
+
+        new_config = sync_minify_config(
+            existing_config, OrphanReassignParent, reassign_deleted=True
+        )
+
+        child_path = get_state_full_path(OrphanReassignChild)
+        assert new_config["states"][child_path]["id"] != "a"
+
+    def test_sync_prune_frees_orphan_ids(self):
+        """``prune`` removes orphans, freeing their ids for reassignment."""
+
+        class OrphanPruneParent(BaseState):
+            pass
+
+        class OrphanPruneChild(OrphanPruneParent):
+            pass
+
+        parent_path = get_state_full_path(OrphanPruneParent)
+        orphan_path = f"{parent_path}.OldChild"
+
+        existing_config: MinifyConfig = {
+            "version": SCHEMA_VERSION,
+            "states": {
+                parent_path: StateEntry(id="a", parent=None),
+                orphan_path: StateEntry(id="a", parent=parent_path),
+            },
+            "events": {},
+        }
+
+        new_config = sync_minify_config(
+            existing_config, OrphanPruneParent, reassign_deleted=True, prune=True
+        )
+
+        child_path = get_state_full_path(OrphanPruneChild)
+        assert orphan_path not in new_config["states"]
+        assert new_config["states"][child_path]["id"] == "a"
+
+    def test_sync_heals_stale_parent(self):
+        """Sync rewrites a live entry's stored parent to the actual value."""
+
+        class HealParentParent(BaseState):
+            pass
+
+        class HealParentChild(HealParentParent):
+            pass
+
+        parent_path = get_state_full_path(HealParentParent)
+        child_path = get_state_full_path(HealParentChild)
+
+        existing_config: MinifyConfig = {
+            "version": SCHEMA_VERSION,
+            "states": {
+                parent_path: StateEntry(id="a", parent=None),
+                child_path: StateEntry(id="a", parent="wrong.Path"),
+            },
+            "events": {},
+        }
+
+        new_config = sync_minify_config(existing_config, HealParentParent)
+
+        assert new_config["states"][child_path] == StateEntry(
+            id="a", parent=parent_path
         )
 
 
@@ -895,6 +1122,21 @@ class TestMinifyLookupCLI:
         assert result.exit_code == 1
         assert "minify.json does not exist" in result.output
 
+    def test_lookup_fails_for_malformed_config(
+        self, temp_minify_json: Path, cli_runner: CliRunner
+    ) -> None:
+        """Test that a malformed minify.json exits cleanly, not with a traceback."""
+        from reflex.reflex import cli
+
+        (temp_minify_json / "minify.json").write_text("{not json", encoding="utf-8")
+        clear_config_cache()
+
+        result = cli_runner.invoke(cli, ["minify", "lookup", "a.b"])
+
+        assert result.exit_code == 1
+        assert isinstance(result.exception, SystemExit)
+        assert "Invalid JSON" in result.output
+
     def test_lookup_fails_for_invalid_path(self, temp_minify_json, cli_runner):
         """Test that lookup fails for non-existent minified path."""
         from reflex.reflex import cli
@@ -1048,7 +1290,11 @@ class TestMinifyNameResolver:
 
         config: MinifyConfig = {
             "version": SCHEMA_VERSION,
-            "states": {get_state_full_path(UserStateResolverCacheTest): "rs"},
+            "states": {
+                get_state_full_path(UserStateResolverCacheTest): StateEntry(
+                    id="rs", parent=None
+                )
+            },
             "events": {},
         }
         resolver = MinifyNameResolver(

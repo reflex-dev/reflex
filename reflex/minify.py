@@ -26,11 +26,22 @@ MINIFY_JSON = "minify.json"
 SCHEMA_VERSION = 1
 
 
+class StateEntry(TypedDict):
+    """A single state entry in ``minify.json``.
+
+    ``parent`` preserves the sibling scope of an entry even after the class is
+    renamed or deleted, keeping orphaned ids reserved in their sibling group.
+    """
+
+    id: str  # minified name, e.g. "a", "bU"
+    parent: str | None  # parent state_path, None for root states
+
+
 class MinifyConfig(TypedDict):
     """Schema for ``minify.json`` (version :data:`SCHEMA_VERSION`)."""
 
     version: int
-    states: dict[str, str]  # state_path -> minified_name
+    states: dict[str, StateEntry]  # state_path -> {id, parent}
     events: dict[str, dict[str, str]]  # state_path -> {handler_name -> minified_name}
 
 
@@ -75,10 +86,16 @@ def _load_minify_config_uncached() -> MinifyConfig | None:
         msg = f"Invalid {MINIFY_JSON}: 'events' must be a dictionary."
         raise ValueError(msg)
 
-    # Validate states: all values must be strings
+    # Validate states: all values must be {id: str, parent: str | None} entries
     for key, value in data["states"].items():
-        if not isinstance(value, str):
-            msg = f"Invalid {MINIFY_JSON}: state '{key}' has non-string id: {value}"
+        if not isinstance(value, dict) or not isinstance(value.get("id"), str):
+            msg = f"Invalid {MINIFY_JSON}: state '{key}' must be an object with a string 'id': {value}"
+            raise ValueError(msg)
+        parent = value.get("parent")
+        if parent is not None and not isinstance(parent, str):
+            msg = (
+                f"Invalid {MINIFY_JSON}: state '{key}' has non-string parent: {parent}"
+            )
             raise ValueError(msg)
 
     # Validate events: must be dict of dicts with string values
@@ -219,9 +236,11 @@ class MinifyNameResolver:
         cached = self._state_cache.get(state_cls)
         if cached is not None:
             return cached
-        resolved = self.config["states"].get(get_state_full_path(state_cls))
-        if resolved is not None:
-            self._state_cache[state_cls] = resolved
+        entry = self.config["states"].get(get_state_full_path(state_cls))
+        if entry is None:
+            return None
+        resolved = entry["id"]
+        self._state_cache[state_cls] = resolved
         return resolved
 
     def resolve_handler_name(  # noqa: D102
@@ -379,6 +398,19 @@ def get_state_full_path(state_cls: type[BaseState]) -> str:
     return ".".join([module, *class_hierarchy])
 
 
+def get_parent_key(state_cls: type[BaseState]) -> str | None:
+    """Return the config key of ``state_cls``'s parent state.
+
+    Args:
+        state_cls: The state class.
+
+    Returns:
+        The parent's :func:`get_state_full_path`, or ``None`` for root states.
+    """
+    parent = state_cls.get_parent_state()
+    return get_state_full_path(parent) if parent is not None else None
+
+
 def collect_all_states(
     root_state: type[BaseState] | None = None,
 ) -> list[type[BaseState]]:
@@ -427,7 +459,7 @@ def generate_minify_config(
     Returns:
         A complete :class:`MinifyConfig`.
     """
-    states: dict[str, str] = {}
+    states: dict[str, StateEntry] = {}
     events: dict[str, dict[str, str]] = {}
     sibling_counter: dict[type[BaseState] | None, int] = {}
 
@@ -438,7 +470,9 @@ def generate_minify_config(
         sibling_counter[parent] += 1
 
         state_path = get_state_full_path(state_cls)
-        states[state_path] = int_to_minified_name(state_id)
+        states[state_path] = StateEntry(
+            id=int_to_minified_name(state_id), parent=get_parent_key(state_cls)
+        )
 
         handler_names = sorted(state_cls.event_handlers.keys())
         if handler_names:
@@ -519,20 +553,33 @@ def validate_minify_config(
         * ``missing_entries`` — states/events in code but not in the config
     """
     errors: list[str] = []
+    warnings: list[str] = []
 
     all_states = collect_all_states(root_state)
 
-    # Group sibling states by their actual parent class (not by string-split
-    # path) since children of the same parent can live in different modules.
+    # Group siblings by parent key: live entries via their actual parent class,
+    # orphans via the parent recorded in the config — so id reuse between a
+    # dead entry and a live sibling is detected.
     path_to_cls = {get_state_full_path(s): s for s in all_states}
-    parent_to_pairs: dict[type[BaseState] | None, list[tuple[str, str]]] = {}
-    for state_path, minified_name in config["states"].items():
+    parent_to_pairs: dict[str | None, list[tuple[str, str]]] = {}
+    for state_path, entry in config["states"].items():
         state_cls = path_to_cls.get(state_path)
-        parent = state_cls.get_parent_state() if state_cls else None
-        parent_to_pairs.setdefault(parent, []).append((state_path, minified_name))
+        if state_cls is not None:
+            parent_key = get_parent_key(state_cls)
+            if entry["parent"] != parent_key:
+                warnings.append(
+                    f"Stale parent for '{state_path}': config has "
+                    f"{entry['parent']!r}, actual is {parent_key!r}. "
+                    "Run 'reflex minify sync' to fix."
+                )
+            label = state_path
+        else:
+            parent_key = entry["parent"]
+            label = f"{state_path} (orphaned)"
+        parent_to_pairs.setdefault(parent_key, []).append((label, entry["id"]))
 
-    for parent, pairs in parent_to_pairs.items():
-        parent_name = parent.__name__ if parent else "root"
+    for parent_key, pairs in parent_to_pairs.items():
+        parent_name = parent_key if parent_key is not None else "root"
         errors.extend(
             f"Duplicate state_id='{mid}' under '{parent_name}': {paths}"
             for mid, paths in _find_duplicate_ids(pairs).items()
@@ -563,11 +610,11 @@ def validate_minify_config(
         )
 
     # Check for orphaned entries (in config but not in code)
-    warnings: list[str] = [
+    warnings.extend(
         f"Orphaned state in config: {state_path}"
         for state_path in config["states"]
         if state_path not in code_state_paths
-    ]
+    )
 
     code_event_keys: dict[str, set[str]] = {}
     for state_cls in all_states:
@@ -599,7 +646,8 @@ def sync_minify_config(
         existing_config: The existing configuration to update.
         root_state: Optional subtree root. ``None`` syncs against every state
             in the active context.
-        reassign_deleted: If True, reassign IDs that are no longer in use.
+        reassign_deleted: If True, fill id gaps left by removed entries.
+            Retained orphan ids stay reserved unless pruned.
         prune: If True, remove entries for states/events that no longer exist.
 
     Returns:
@@ -614,7 +662,10 @@ def sync_minify_config(
         state_path = get_state_full_path(state_cls)
         code_events_by_state[state_path] = set(state_cls.event_handlers.keys())
 
-    new_states = dict(existing_config["states"])
+    new_states: dict[str, StateEntry] = {
+        k: StateEntry(id=v["id"], parent=v["parent"])
+        for k, v in existing_config["states"].items()
+    }
     new_events: dict[str, dict[str, str]] = {
         k: dict(v) for k, v in existing_config["events"].items()
     }
@@ -634,31 +685,31 @@ def sync_minify_config(
         # Remove empty event dicts
         new_events = {k: v for k, v in new_events.items() if v}
 
-    # Build a map from actual parent class to existing sibling minified IDs.
-    # Using the live state classes avoids the string-split bug where children
-    # of the same parent class defined in different modules get different
-    # string-based parent paths and are assigned colliding IDs.
-    parent_cls_to_existing_ids: dict[type[BaseState] | None, set[int]] = {}
-    for state_cls in all_states:
-        state_path = get_state_full_path(state_cls)
-        if state_path in new_states:
-            parent = state_cls.get_parent_state()
-            parent_cls_to_existing_ids.setdefault(parent, set()).add(
-                minified_name_to_int(new_states[state_path])
-            )
+    path_to_parent_key = {get_state_full_path(s): get_parent_key(s) for s in all_states}
 
-    # Find states that need IDs assigned, grouped by actual parent class.
-    parent_cls_to_new_children: dict[type[BaseState] | None, list[str]] = {}
-    for state_cls in all_states:
-        state_path = get_state_full_path(state_cls)
+    # Reserve every configured id within its sibling group — orphans under
+    # their recorded parent, so their ids are never reused. Live entries get
+    # their stored parent healed to the actual value.
+    parent_key_to_existing_ids: dict[str | None, set[int]] = {}
+    for state_path, entry in new_states.items():
+        parent_key = path_to_parent_key.get(state_path, entry["parent"])
+        entry["parent"] = parent_key
+        parent_key_to_existing_ids.setdefault(parent_key, set()).add(
+            minified_name_to_int(entry["id"])
+        )
+
+    # Find states that need IDs assigned, grouped by parent key.
+    parent_key_to_new_children: dict[str | None, list[str]] = {}
+    for state_path, parent_key in path_to_parent_key.items():
         if state_path not in new_states:
-            parent = state_cls.get_parent_state()
-            parent_cls_to_new_children.setdefault(parent, []).append(state_path)
+            parent_key_to_new_children.setdefault(parent_key, []).append(state_path)
 
-    # Assign new state IDs (unique among siblings of the same parent class).
-    for parent_cls, children in parent_cls_to_new_children.items():
-        existing_ids = parent_cls_to_existing_ids.get(parent_cls, set())
-        new_states.update(_assign_next_ids(children, existing_ids, reassign_deleted))
+    # Assign new state IDs (unique among siblings of the same parent).
+    for parent_key, children in parent_key_to_new_children.items():
+        existing_ids = parent_key_to_existing_ids.get(parent_key, set())
+        assigned = _assign_next_ids(children, existing_ids, reassign_deleted)
+        for state_path, minified_name in assigned.items():
+            new_states[state_path] = StateEntry(id=minified_name, parent=parent_key)
 
     # Assign new event IDs (unique within each state).
     for state_cls in all_states:
