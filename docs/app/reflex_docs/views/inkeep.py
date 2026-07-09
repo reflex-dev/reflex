@@ -1,13 +1,107 @@
 """UI and logic inkeep chat component."""
 
 import reflex as rx
+from reflex.event import EventSpec
+from reflex.experimental.client_state import ClientStateVar
 from reflex.utils.imports import ImportVar
 from reflex.vars import Var
+from reflex.vars.base import VarData
 
 
 class InkeepSearchBar(rx.NoSSRComponent):
     tag = "InkeepSearchBar"
     library = "@inkeep/cxkit-react@0.5.115"
+
+
+_INKEEP_LOADED_STATE = "inkeep_loaded"
+_INKEEP_OPEN_STATE = "inkeep_open"
+_SEARCH_TRIGGER_ID = "inkeep-search-trigger"
+
+# Inline copy of assets/icons/search.svg so the placeholder needs no extra request.
+_SEARCH_ICON_SVG = (
+    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none"'
+    ' viewBox="0 0 16 16" aria-hidden="true"><path stroke="currentColor"'
+    ' stroke-linecap="round" stroke-linejoin="round" stroke-width="1.25"'
+    ' d="M11.332 11.333 13.999 14"/><path stroke="currentColor"'
+    ' stroke-linecap="round" stroke-linejoin="round" stroke-width="1.25"'
+    ' d="M12.667 7.333A5.333 5.333 0 1 0 2 7.333a5.333 5.333 0 0 0 10.667 0"/></svg>'
+)
+
+# Cmd/Ctrl+K opens search before the widget has been loaded: forward the
+# shortcut to the placeholder trigger, which mounts the real widget with its
+# modal open. Once the widget is mounted, its own shortcut handler takes over.
+_HOTKEY_SCRIPT = f"""
+(function () {{
+  if (window.__inkeepLazyHotkey) return;
+  window.__inkeepLazyHotkey = true;
+  document.addEventListener('keydown', function (event) {{
+    if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 'k') return;
+
+    var trigger = document.getElementById('{_SEARCH_TRIGGER_ID}');
+    if (!trigger) return;
+
+    event.preventDefault();
+    trigger.click();
+  }});
+}})();
+"""
+
+
+def _controlled_modal_settings(opened: ClientStateVar) -> Var:
+    """Create controlled modal settings for the Inkeep search bar.
+
+    Args:
+        opened: Client state var tracking whether the modal is open.
+
+    Returns:
+        A Var containing the Inkeep props and client state dependencies.
+    """
+    is_open = opened.value
+    on_open_change = opened.set
+    return Var(
+        "{...searchBarProps, modalSettings: "
+        f"{{isOpen: {is_open!s}, onOpenChange: {on_open_change!s}}}}}"
+    )._replace(
+        merge_var_data=VarData.merge(
+            is_open._get_all_var_data(),
+            on_open_change._get_all_var_data(),
+        )
+    )
+
+
+def _search_trigger_placeholder(on_click: EventSpec) -> rx.Component:
+    """Lightweight stand-in for the Inkeep search bar button.
+
+    Mirrors the widget's trigger styling so mounting the real search bar does
+    not shift layout, while keeping the ~276 KB Inkeep chunk (and the Google
+    Fonts stylesheet it injects) off the critical path until first use.
+
+    Args:
+        on_click: Event handler that mounts the real search widget.
+
+    Returns:
+        The placeholder button component.
+    """
+    return rx.el.button(
+        rx.html(_SEARCH_ICON_SVG, class_name="flex shrink-0"),
+        rx.el.span("Search", class_name="max-xl:hidden"),
+        rx.el.kbd(
+            "⌘K",
+            class_name="max-xl:hidden ml-auto flex items-center justify-center px-1 h-5 rounded bg-secondary-3 text-[0.8125rem] font-[475] leading-5 font-sans",
+        ),
+        id=_SEARCH_TRIGGER_ID,
+        type="button",
+        aria_label="Search documentation",
+        on_click=on_click,
+        class_name=(
+            "flex flex-row items-center justify-center xl:justify-start gap-2 rounded-lg "
+            "h-8 min-h-8 w-8 xl:w-40 px-0 xl:px-2 "
+            "bg-secondary-1 dark:bg-secondary-2 hover:bg-secondary-2 dark:hover:bg-secondary-3 "
+            "text-secondary-11 text-sm font-medium leading-6 border-none cursor-pointer "
+            "shadow-[0_-1px_0_0_rgba(0,0,0,0.08)_inset,0_0_0_1px_rgba(0,0,0,0.08)_inset,0_1px_2px_0_rgba(0,0,0,0.02),0_1px_4px_0_rgba(0,0,0,0.02)] "
+            "dark:shadow-[0_-1px_0_0_rgba(255,255,255,0.06)_inset,0_0_0_1px_rgba(255,255,255,0.04)_inset]"
+        ),
+    )
 
 
 class Search(rx.el.Div):
@@ -135,6 +229,9 @@ const searchBarProps = {
       forcedColorMode: resolvedColorMode, // options: 'light' or dark'
     },
     theme: {
+      // The site ships its own fonts; skip the widget's default Google Fonts
+      // (Inter) stylesheet injection.
+      disableLoadingDefaultFont: true,
       // Add inline styles using the recommended approach from the docs
       styles: [
         {
@@ -390,11 +487,30 @@ const searchBarProps = {
 
     @classmethod
     def create(cls):
-        """Create the search component."""
+        """Create the search component.
+
+        The Inkeep widget is not mounted until the user interacts with the
+        search trigger, keeping its large bundle out of the initial page load.
+        The modal is controlled and starts open, so the interaction that
+        mounts the widget also opens search.
+        """
+        loaded = ClientStateVar.create(
+            _INKEEP_LOADED_STATE, default=False, global_ref=False
+        )
+        opened = ClientStateVar.create(
+            _INKEEP_OPEN_STATE, default=True, global_ref=False
+        )
         return super().create(
-            InkeepSearchBar.create(
-                special_props=[Var("{...searchBarProps}")],
-            )
+            rx.cond(
+                loaded.value,
+                InkeepSearchBar.create(
+                    special_props=[_controlled_modal_settings(opened)],
+                ),
+                _search_trigger_placeholder(
+                    on_click=rx.call_function(loaded.set_value(True)),
+                ),
+            ),
+            rx.el.script(_HOTKEY_SCRIPT),
         )
 
 

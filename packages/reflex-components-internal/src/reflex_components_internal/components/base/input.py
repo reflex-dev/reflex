@@ -178,6 +178,7 @@ class HighLevelInput(InputBaseComponent):
         return Button.create(
             hi("CancelCircleIcon"),
             type="button",
+            aria_label="Clear input",
             on_click=[
                 set_value(id, ""),
                 set_focus(id).stop_propagation,

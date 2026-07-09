@@ -38,7 +38,7 @@ def docs_item(
             description,
             class_name="text-secondary-11 text-sm font-[475]",
         ),
-        rx.el.a(to=href, class_name="absolute inset-0"),
+        rx.el.a(to=href, aria_label=title, class_name="absolute inset-0"),
         class_name="flex flex-col gap-2 py-8 pr-8 relative group lg:max-w-[21rem] w-full max-lg:text-start hover:bg-[linear-gradient(243deg,var(--secondary-2)_0%,var(--secondary-1)_100%)]",
     )
 
