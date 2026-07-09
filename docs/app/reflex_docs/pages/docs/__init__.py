@@ -23,6 +23,7 @@ from reflex_docs.docgen_pipeline import (
     render_markdown_with_toc,
 )
 from reflex_docs.pages.docs.component import multi_docs
+from reflex_docs.pages.docs.metadata import truncate_meta_description
 from reflex_docs.pages.library_previews import components_previews_pages
 from reflex_docs.templates.docpage import docpage
 from reflex_docs.whitelist import _check_whitelisted_path
@@ -241,8 +242,10 @@ def extract_doc_description(
     if metadata:
         for key in ("meta_description", "description"):
             value = metadata.get(key)
-            if isinstance(value, str) and len(value.strip()) >= min_len:
-                return value.strip()
+            # Normalize before the length gate so a whitespace-padded value
+            # can't pass min_len yet collapse below it after truncation.
+            if isinstance(value, str) and len(" ".join(value.split())) >= min_len:
+                return truncate_meta_description(value, max_len=max_len)
     if not markdown_text:
         return None
     try:
@@ -260,7 +263,7 @@ def extract_doc_description(
                 if key_value:
                     value = key_value.group(1).strip().strip("\"'")
                     if len(value) >= min_len:
-                        return value
+                        return truncate_meta_description(value, max_len=max_len)
                     # Too short: keep scanning in case a later key
                     # (e.g. `description:` after a short `meta_description:`)
                     # holds a long-enough value before falling to body prose.
@@ -316,9 +319,7 @@ def extract_doc_description(
         # fallback (~115 chars) is used instead of a too-short description.
         if len(para) < min_len:
             return None
-        if len(para) > max_len:
-            para = para[:max_len].rsplit(" ", 1)[0].rstrip(",.;:") + "…"
-        return para or None
+        return truncate_meta_description(para, max_len=max_len) or None
     except Exception:
         return None
 
