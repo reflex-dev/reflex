@@ -1,4 +1,5 @@
 ---
+meta_description: "Build tables in Python with Reflex. The rx.table component is a semantic, composable React table for presenting tabular data with headers, rows, and cells — all in pure Python, no JavaScript."
 components:
   - rx.table.root
   - rx.table.header
@@ -149,7 +150,7 @@ class Customer(rx.Model, table=True):
 
 # Table
 
-A semantic table for presenting tabular data.
+The Reflex table component (`rx.table`) is a semantic, composable table for presenting tabular data in pure Python. It renders a standard React/HTML table with headers, rows, and cells that you compose yourself.
 
 If you just want to [represent static data](/docs/library/tables-and-data-grids/data-table) then the [`rx.data_table`](/docs/library/tables-and-data-grids/data-table) might be a better fit for your use case as it comes with in-built pagination, search and sorting.
 
@@ -366,7 +367,7 @@ For in-memory data, we use Python operations like `sorted()` and list comprehens
 
 The state variable `_people` is set to be a backend-only variable. This is done in case the variable is very large in order to reduce network traffic and improve performance.
 
-When a `select` item is selected, the `on_change` event trigger is hooked up to the `set_sort_value` event handler. Every base var has a built-in event handler to set its value for convenience, called `set_VARNAME`.
+When a `select` item is selected, the `on_change` event trigger is hooked up to the `set_sort_value` event handler, which updates the `sort_value` state var.
 
 `current_people` is an `rx.var(cache=True)`. It is a var that is only recomputed when the other state vars it depends on change. This ensures that the `People` shown in the table are always up to date whenever they are searched or sorted.
 
@@ -464,7 +465,7 @@ def in_memory_table_example():
 
 Both approaches provide the same user experience with filtering and sorting functionality.
 
-# Database
+## Database
 
 The more common use case for building an `rx.table` is to use data from a database.
 
@@ -1047,7 +1048,7 @@ def loading_data_table_example3():
 
 The real power of the `rx.table` comes where you are able to visualise, add and edit data live in your app. Check out these apps and code to see how this is done: app: https://customer-data-app.reflex.run code: https://github.com/reflex-dev/templates/tree/main/customer_data_app and code: https://github.com/reflex-dev/templates/tree/main/sales.
 
-# Download
+## Download
 
 Most users will want to download their data after they have got the subset that they would like in their table.
 
@@ -1260,11 +1261,11 @@ def download_data_table_example():
     )
 ```
 
-# Real World Example UI
+## Real World Example UI
 
 ```python demo
 rx.flex(
-    rx.heading("Your Team"),
+    rx.heading("Your Team", as_="h2"),
     rx.text("Invite and manage your team members"),
     rx.flex(
         rx.input(placeholder="Email Address"),
@@ -1303,3 +1304,11 @@ rx.flex(
     spacing="2",
 )
 ```
+
+## Related
+
+Explore the other ways to work with tabular data in Reflex, all in pure Python:
+
+- [Data Table](/docs/library/tables-and-data-grids/data-table)
+- [Data Editor](/docs/library/tables-and-data-grids/data-editor)
+- [Tables and Data Grids](/docs/library/tables-and-data-grids/)

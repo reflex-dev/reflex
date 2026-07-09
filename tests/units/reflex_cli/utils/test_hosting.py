@@ -4,17 +4,26 @@ import json
 from unittest.mock import mock_open
 
 import click
+import httpx
 import pytest
 from pytest_mock import MockerFixture, MockFixture
 from reflex_cli.utils.hosting import (
+    AuthenticatedClient,
     ScaleParams,
     ScaleType,
+    SecurityReviewError,
     authenticated_token,
     delete_token_from_config,
     get_authenticated_client,
     get_existing_access_token,
+    get_security_review,
+    get_selected_project,
+    normalize_project_id,
     save_token_to_config,
+    submit_security_review,
 )
+
+_CLIENT = AuthenticatedClient(token="fake-token", validated_data={})
 
 
 @pytest.mark.parametrize(
@@ -177,3 +186,155 @@ def test_scale_params_as_json_is_pure_when_type_is_unspecified():
 
     assert scale_params.type is None
     assert first == second == {"type": ScaleType.REGION.value, "regions": {}}
+
+
+@pytest.mark.parametrize(
+    "config_content, expected",
+    [
+        ('{"project": "abc-uuid"}', "abc-uuid"),
+        ('{"project": ""}', None),
+        ('{"project": "   "}', None),
+        ('{"project": null}', None),
+        ('{"project": 123}', None),
+        ('{"project": []}', None),
+        ("{}", None),
+    ],
+)
+def test_get_selected_project_normalizes_empty_to_none(
+    mocker: MockerFixture, config_content: str, expected: str | None
+):
+    mocker.patch("pathlib.Path.open", mock_open(read_data=config_content))
+    assert get_selected_project() == expected
+
+
+@pytest.mark.parametrize(
+    "value, expected",
+    [
+        ("abc-uuid", "abc-uuid"),
+        ("  abc-uuid  ", "abc-uuid"),
+        ("", None),
+        ("   ", None),
+        (None, None),
+        (123, None),
+        ([], None),
+        ({}, None),
+    ],
+)
+def test_normalize_project_id(value: object, expected: str | None):
+    assert normalize_project_id(value) == expected
+
+
+def _ok(mocker: MockerFixture, payload: dict | None = None):
+    """Build a mock 2xx response returning ``payload`` from ``.json()``."""
+    response = mocker.Mock()
+    response.raise_for_status.return_value = None
+    response.json.return_value = payload or {}
+    return response
+
+
+def _error(mocker: MockerFixture, status_code: int, detail: str):
+    """Build a mock response whose ``raise_for_status`` raises with ``detail``."""
+    response = mocker.Mock()
+    response.status_code = status_code
+    response.json.return_value = {"detail": detail}
+    response.raise_for_status.side_effect = httpx.HTTPStatusError(
+        "error", request=mocker.Mock(), response=response
+    )
+    return response
+
+
+def test_submit_security_review_uploads_then_submits(mocker: MockerFixture):
+    """The three-step flow requests a URL, PUTs the bytes, then submits the key."""
+    upload_url = _ok(
+        mocker,
+        {
+            "key": "staging/security-review/u/abc.zip",
+            "url": "https://bucket.s3/abc?sig=1",
+            "headers": {"Content-Type": "application/zip"},
+        },
+    )
+    submit = _ok(mocker, {"job_id": "job-1"})
+    mock_post = mocker.patch("httpx.post", side_effect=[upload_url, submit])
+    mock_put = mocker.patch("httpx.put", return_value=_ok(mocker))
+
+    assert submit_security_review(b"zip-bytes", _CLIENT) == "job-1"
+
+    # Presigned URL requested with the exact content length.
+    assert (
+        mock_post
+        .call_args_list[0]
+        .args[0]
+        .endswith("/api/v1/agents/security-review/jobs/upload-url")
+    )
+    assert mock_post.call_args_list[0].kwargs["json"] == {
+        "content_length": len(b"zip-bytes"),
+        "content_type": "application/zip",
+    }
+    # Bytes PUT straight to storage with the returned headers, no auth header.
+    assert mock_put.call_args.args[0] == "https://bucket.s3/abc?sig=1"
+    assert mock_put.call_args.kwargs["content"] == b"zip-bytes"
+    assert mock_put.call_args.kwargs["headers"] == {"Content-Type": "application/zip"}
+    assert "X-API-TOKEN" not in mock_put.call_args.kwargs["headers"]
+    # Job submitted by key, not by raw bytes.
+    assert (
+        mock_post
+        .call_args_list[1]
+        .args[0]
+        .endswith("/api/v1/agents/security-review/jobs")
+    )
+    assert mock_post.call_args_list[1].kwargs["json"] == {
+        "key": "staging/security-review/u/abc.zip"
+    }
+
+
+def test_submit_security_review_surfaces_server_detail(mocker: MockerFixture):
+    """A 403 on the URL request surfaces the server's detail verbatim."""
+    mocker.patch(
+        "httpx.post",
+        return_value=_error(mocker, 403, "This feature requires the Enterprise tier."),
+    )
+
+    with pytest.raises(
+        SecurityReviewError, match="This feature requires the Enterprise tier"
+    ):
+        submit_security_review(b"zip-bytes", _CLIENT)
+
+
+def test_submit_security_review_upload_failure(mocker: MockerFixture):
+    """A storage PUT failure is reported and the job is never submitted."""
+    upload_url = _ok(mocker, {"key": "k", "url": "https://bucket.s3/k", "headers": {}})
+    mock_post = mocker.patch("httpx.post", side_effect=[upload_url])
+    mocker.patch("httpx.put", return_value=_error(mocker, 403, "signature expired"))
+
+    with pytest.raises(SecurityReviewError, match="failed to upload app source"):
+        submit_security_review(b"zip-bytes", _CLIENT)
+
+    # Only the upload-url call happened; the job submit was never reached.
+    assert mock_post.call_count == 1
+
+
+def test_submit_security_review_submit_failure(mocker: MockerFixture):
+    """A 404 (object not uploaded / not owned) on submit surfaces the detail."""
+    upload_url = _ok(mocker, {"key": "k", "url": "https://bucket.s3/k", "headers": {}})
+    submit = _error(mocker, 404, "Job not found.")
+    mocker.patch("httpx.post", side_effect=[upload_url, submit])
+    mocker.patch("httpx.put", return_value=_ok(mocker))
+
+    with pytest.raises(SecurityReviewError, match="Job not found"):
+        submit_security_review(b"zip-bytes", _CLIENT)
+
+
+def test_get_security_review_returns_payload(mocker: MockerFixture):
+    """Polling returns the parsed job status payload."""
+    response = mocker.Mock()
+    response.raise_for_status.return_value = None
+    response.json.return_value = {"job_id": "job-1", "status": "pending"}
+    mock_get = mocker.patch("httpx.get", return_value=response)
+
+    assert get_security_review("job-1", _CLIENT) == {
+        "job_id": "job-1",
+        "status": "pending",
+    }
+    assert mock_get.call_args.args[0].endswith(
+        "/api/v1/agents/security-review/jobs/job-1"
+    )

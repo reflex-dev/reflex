@@ -44,6 +44,8 @@ This is where the compiled Javascript files will be stored. You will never need 
 
 Each Reflex page will compile to a corresponding `.js` file in the `.web/pages` directory.
 
+If Reflex installs frontend dependencies with Bun, the canonical `bun.lock` lives in a `reflex.lock/` directory at your project root and should be committed to version control. The dedicated directory keeps the file from clashing with a `bun.lock` from a user-managed bun project that may live alongside the Reflex project. Reflex mirrors `reflex.lock/bun.lock` into `.web` when it needs to run the package manager.
+
 ## Assets
 
 The `assets` directory is where you can store any static assets you want to be publicly available. This includes images, fonts, and other files.
@@ -51,7 +53,7 @@ The `assets` directory is where you can store any static assets you want to be p
 For example, if you save an image to `assets/image.png` you can display it from your app like this:
 
 ```python
-rx.image(src="https://web.reflex-assets.dev/other/image.png")
+rx.image(src="https://web.reflex-assets.dev/other/image.png", alt="Example image asset")
 ```
 
 ## Main Project

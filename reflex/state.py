@@ -21,6 +21,7 @@ from typing import (
     Any,
     BinaryIO,
     ClassVar,
+    Final,
     ParamSpec,
     TypeVar,
     get_type_hints,
@@ -60,6 +61,7 @@ from reflex_base.vars.base import (
     ComputedVar,
     DynamicRouteVar,
     EvenMoreBasicBaseState,
+    ToOperation,
     Var,
     computed_var,
     dispatch,
@@ -266,14 +268,25 @@ def get_var_for_field(cls: type[BaseState], name: str, f: Field) -> Var:
     )
 
 
+# Sentinel a delta-value coroutine may resolve to in order to suppress its key:
+# when ``_resolve_delta`` awaits a coroutine value and gets this object back, it
+# drops the key from the delta instead of writing it. Lets a value whose
+# inclusion can only be decided asynchronously be deferred into the delta as a
+# coroutine and then omitted post-hoc. Compared by identity (the object itself is
+# the contract); never serialized into a delta sent to the client.
+_DROP_FROM_DELTA: Final = object()
+
+
 async def _resolve_delta(delta: Delta) -> Delta:
-    """Await all coroutines in the delta.
+    """Await all coroutines in the delta, dropping keys that resolve to the drop sentinel.
 
     Args:
         delta: The delta to process.
 
     Returns:
-        The same delta dict with all coroutines resolved to their return value.
+        The same delta dict with all coroutines resolved to their return value,
+        and any key whose coroutine resolved to ``_DROP_FROM_DELTA`` removed
+        (along with any state subdict left empty by such removals).
     """
     tasks = {}
     for state_name, state_delta in delta.items():
@@ -284,7 +297,13 @@ async def _resolve_delta(delta: Delta) -> Delta:
                     name=f"reflex_resolve_delta|{state_name}|{var_name}|{time.time()}",
                 )
     for (state_name, var_name), task in tasks.items():
-        delta[state_name][var_name] = await task
+        resolved = await task
+        if resolved is _DROP_FROM_DELTA:
+            del delta[state_name][var_name]
+            if not delta[state_name]:
+                del delta[state_name]
+        else:
+            delta[state_name][var_name] = resolved
     return delta
 
 
@@ -1156,7 +1175,7 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             VarTypeError: if the variable has an incorrect type
         """
-        from reflex_base.config import get_config
+        from reflex_base.config import get_state_auto_setters
         from reflex_base.utils.exceptions import VarTypeError
 
         if not types.is_valid_var_type(prop._var_type):
@@ -1168,7 +1187,7 @@ class BaseState(EvenMoreBasicBaseState):
             )
             raise VarTypeError(msg)
         cls._set_var(name, prop)
-        if cls.is_user_defined() and get_config().state_auto_setters is True:
+        if cls.is_user_defined() and get_state_auto_setters() is True:
             cls._create_setter(name, prop)
         cls._set_default_value(name, prop)
 
@@ -1770,8 +1789,18 @@ class BaseState(EvenMoreBasicBaseState):
         ) is not unset and not isinstance(var_value, Var):
             return var_value  # pyright: ignore [reportReturnType]
 
-        var_data = var._get_all_var_data()
-        if var_data is None or not var_data.state:
+        # Unwrap any cast wrappers and resolve via the underlying var's *own*
+        # var data, not the recursive _get_all_var_data(). For an operation or
+        # derived var (e.g. State.a + State.b or State.items[0]), the recursive
+        # merge back-fills state/field_name from the first operand, which would
+        # make us silently return that operand's value instead of the operation's
+        # result. Only a plain field or computed var reference carries
+        # state + field_name on its own var data.
+        inner_var = var
+        while isinstance(inner_var, ToOperation):
+            inner_var = inner_var._original
+        var_data = inner_var._var_data
+        if var_data is None or not var_data.state or not var_data.field_name:
             msg = f"Unable to retrieve value for {var._js_expr}: not associated with any state."
             raise UnretrievableVarValueError(msg)
         # Fastish case: this var belongs to this state

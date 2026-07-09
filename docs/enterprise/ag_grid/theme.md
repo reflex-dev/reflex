@@ -1,4 +1,5 @@
 ---
+meta_description: "Theme and style AG Grid in Python with Reflex. Customize your data grid with built-in AG Grid themes and custom styling — all in pure Python, no JavaScript required."
 order: 3
 ---
 
@@ -33,6 +34,10 @@ class AGGridThemeState(rx.State):
 
     theme: str = "quartz"
     themes: list[str] = ["quartz", "balham", "alpine", "material"]
+
+    @rx.event
+    def set_theme(self, value: str):
+        self.theme = value
 
 
 df = pd.read_csv("data/gapminder2007.csv")

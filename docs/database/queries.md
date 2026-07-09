@@ -194,6 +194,35 @@ class State(rx.State):
 
 Reflex provides an async version of the session function called `rx.asession` for asynchronous database operations. This is useful when you need to perform database operations in an async context, such as within async event handlers.
 
+### Configuring the Async Database URL
+
+`rx.asession` needs its own `async_db_url` in `rxconfig.py`. It must point at
+the same database as `db_url` but use an async driver. Calling `rx.asession()`
+when it is unset raises an error.
+
+```python
+config = rx.Config(
+    app_name="my_app",
+    db_url="sqlite:///reflex.db",
+    async_db_url="sqlite+aiosqlite:///reflex.db",
+)
+```
+
+The matching async DBAPI driver is not part of the `reflex[db]` extra, so
+install it separately. For the SQLite URL above, install `aiosqlite`:
+
+```bash
+pip install aiosqlite
+```
+
+For PostgreSQL, install `psycopg` (psycopg3). It works as both the sync and
+async driver, so `db_url` and `async_db_url` can share one
+`postgresql+psycopg://...` scheme:
+
+```bash
+pip install "psycopg[binary]"
+```
+
 The `rx.asession` function returns an async SQLAlchemy session that must be used with an async context manager. Most operations against the `asession` must be awaited.
 
 ```python

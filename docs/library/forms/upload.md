@@ -2,9 +2,6 @@
 components:
   - rx.upload
   - rx.upload.root
-
-Upload: |
-  lambda **props: rx.center(rx.upload(id="my_upload", **props))
 ---
 
 ```python exec
@@ -40,7 +37,10 @@ def upload_component():
     return rx.vstack(
         rx.upload(id="upload"),
         rx.button("Upload", on_click=State.handle_upload(rx.upload_files("upload"))),
-        rx.foreach(State.uploaded_files, lambda f: rx.image(src=rx.get_upload_url(f))),
+        rx.foreach(
+            State.uploaded_files,
+            lambda f: rx.image(src=rx.get_upload_url(f), alt="Uploaded file preview"),
+        ),
     )
 ```
 
@@ -141,7 +141,9 @@ def upload_component():
         # Display uploaded files using rx.get_upload_url()
         rx.foreach(
             State.uploaded_files,
-            lambda filename: rx.image(src=rx.get_upload_url(filename)),
+            lambda filename: rx.image(
+                src=rx.get_upload_url(filename), alt="Uploaded file preview"
+            ),
         ),
     )
 ```
@@ -151,7 +153,10 @@ def upload_component():
 Below is an example of how to allow multiple file uploads (in this case images).
 
 ```python demo box
-rx.image(src="https://web.reflex-assets.dev/other/upload.webp")
+rx.image(
+    src="https://web.reflex-assets.dev/other/upload.webp",
+    alt="Multiple file upload component example",
+)
 ```
 
 ```python
@@ -206,7 +211,12 @@ def index():
             "Clear",
             on_click=rx.clear_selected_files("upload1"),
         ),
-        rx.foreach(State.img, lambda img: rx.image(src=rx.get_upload_url(img))),
+        rx.foreach(
+            State.img,
+            lambda img: rx.image(
+                src=rx.get_upload_url(img), alt="Uploaded file preview"
+            ),
+        ),
         padding="5em",
     )
 ```
@@ -355,7 +365,7 @@ def index():
             rx.foreach(
                 State.img,
                 lambda img: rx.vstack(
-                    rx.image(src=rx.get_upload_url(img)),
+                    rx.image(src=rx.get_upload_url(img), alt="Uploaded file preview"),
                     rx.text(img),
                 ),
             ),
@@ -370,7 +380,7 @@ def index():
 
 To use a completely unstyled upload component and apply your own customization, use `rx.upload.root` instead:
 
-```python demo
+```python
 rx.upload.root(
     rx.box(
         rx.icon(

@@ -1,12 +1,8 @@
 """Integration tests for all routes in Reflex."""
 
-import sys
 from collections import Counter
-from pathlib import Path
 
 import pytest
-
-sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 
 @pytest.fixture
@@ -32,6 +28,18 @@ def test_unique_routes(routes_fixture):
     print(f"Test passed. All {len(paths)} routes are unique.")
 
 
+def test_changelog_routes(routes_fixture):
+    """Every discovered package changelog is served under /changelog/."""
+    from reflex_docs.pages.docs import changelog_packages
+
+    paths = {route.path for route in routes_fixture if route.path}
+
+    assert changelog_packages["reflex"] == "/changelog/"
+    assert "/changelog/reflex-base/" in paths
+    for changelog_route in changelog_packages.values():
+        assert changelog_route in paths
+
+
 def test_ai_builder_routes_use_ai_prefix(routes_fixture):
     paths = {route.path for route in routes_fixture if route.path}
 
@@ -43,3 +51,14 @@ def test_ai_builder_routes_use_ai_prefix(routes_fixture):
     assert "/ai-builder/integrations/ai-onboarding/" not in paths
     assert "/ai-builder/integrations/mcp-overview/" not in paths
     assert "/ai-builder/integrations/skills/" not in paths
+
+
+def test_docs_route_descriptions_fit_search_snippet_length(routes_fixture):
+    """Generated docs meta descriptions should not exceed the SEO snippet cap."""
+    overlong = {
+        route.path: len(route.description or "")
+        for route in routes_fixture
+        if route.description and len(route.description) > 155
+    }
+
+    assert overlong == {}

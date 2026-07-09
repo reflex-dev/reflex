@@ -95,7 +95,7 @@ edges: list[Edge] = [
 ]
 ```
 
-# Custom Edges
+## Custom Edges
 
 React Flow in Reflex also allows you to define custom edge types. This is useful when you want edges to carry extra functionality (like buttons, labels, or dynamic styling) beyond the default straight or bezier connectors.
 
@@ -165,7 +165,7 @@ def button_edge(
     sourcePosition: rx.Var[Position],
     targetPosition: rx.Var[Position],
     markerEnd: rx.Var[str],
-):
+) -> rx.Fragment:
     bezier_path = rxe.components.flow.util.get_bezier_path(
         source_x=sourceX,
         source_y=sourceY,

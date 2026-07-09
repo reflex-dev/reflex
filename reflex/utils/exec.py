@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import importlib.util
 import json
@@ -13,12 +14,12 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any, NamedTuple, TypedDict
-from urllib.parse import urljoin
 
 from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.constants.base import LogLevel
 from reflex_base.environment import environment
+from reflex_base.telemetry_context import CompileTrigger
 from reflex_base.utils import console
 from reflex_base.utils.decorator import once
 
@@ -28,6 +29,47 @@ from reflex.utils.prerequisites import get_web_dir
 
 # For uvicorn windows bug fix (#2335)
 frontend_process = None
+
+DEV_BACKEND_RELOAD_MARKER = ".reflex_dev_backend_started"
+
+
+def get_dev_backend_reload_marker() -> Path:
+    """Get the marker path for dev backend reload-capable worker starts.
+
+    Returns:
+        The path to the reload marker.
+    """
+    return get_web_dir() / DEV_BACKEND_RELOAD_MARKER
+
+
+def reset_dev_backend_reload_marker() -> None:
+    """Remove the reload marker at the start of a fresh dev backend session."""
+    with contextlib.suppress(OSError):
+        get_dev_backend_reload_marker().unlink(missing_ok=True)
+
+
+def get_backend_compile_trigger() -> CompileTrigger:
+    """Determine the compile trigger and claim the dev backend reload marker.
+
+    Atomically creates the marker so a failed first compile is still treated
+    as the first worker boot: the next worker (after the user fixes the
+    error) will see the marker and report ``hot_reload``. If the marker
+    cannot be created (e.g. permission error, missing parent dir), falls
+    back to ``backend_startup``.
+
+    Returns:
+        ``"backend_startup"`` for non-dev startups and the first dev
+        reload-capable worker boot, ``"hot_reload"`` for subsequent boots.
+    """
+    if not environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.get():
+        return "backend_startup"
+    try:
+        os.close(os.open(get_dev_backend_reload_marker(), os.O_CREAT | os.O_EXCL))
+    except FileExistsError:
+        return "hot_reload"
+    except OSError:
+        pass
+    return "backend_startup"
 
 
 def get_package_json_and_hash(package_json_path: Path) -> tuple[PackageJson, str]:
@@ -227,8 +269,6 @@ def run_process_and_launch_url(
                 if match:
                     if first_run:
                         url = match.group(1)
-                        if get_config().frontend_path != "":
-                            url = urljoin(url, get_config().frontend_path)
 
                         notify_frontend(url, backend_present)
                         if backend_present:
@@ -279,19 +319,24 @@ def get_frontend_mount():
         A Mount serving the compiled frontend static files.
     """
     from starlette.routing import Mount
-    from starlette.staticfiles import StaticFiles
 
     from reflex.utils import prerequisites
+    from reflex.utils.precompressed_staticfiles import PrecompressedStaticFiles
 
     config = get_config()
 
+    static_dir = (
+        prerequisites.get_web_dir()
+        / constants.Dirs.STATIC
+        / config.frontend_path.strip("/")
+    ).resolve()
+
     return Mount(
         config.prepend_frontend_path("/"),
-        app=StaticFiles(
-            directory=prerequisites.get_web_dir()
-            / constants.Dirs.STATIC
-            / config.frontend_path.strip("/"),
+        app=PrecompressedStaticFiles(
+            directory=static_dir,
             html=True,
+            encodings=config.frontend_compression_formats,
         ),
         name="frontend",
     )
@@ -455,6 +500,14 @@ def get_reload_paths() -> Sequence[Path]:
     Raises:
         RuntimeError: If the `__init__.py` file is found in the app root directory.
     """
+    override_dirs = tuple(
+        map(Path.absolute, environment.REFLEX_HOT_RELOAD_OVERRIDE_PATHS.get())
+    )
+
+    if override_dirs:
+        console.debug(f"Reload paths (override): {list(map(str, override_dirs))}")
+        return override_dirs
+
     config = get_config()
     reload_paths = [Path.cwd()]
     app_module = config.module
@@ -499,7 +552,11 @@ def get_reload_paths() -> Sequence[Path]:
             if path.name.startswith("__"):
                 # ignore things like __pycache__
                 return True
-        return path.name in (".gitignore", "uploaded_files")
+        return path.name in (
+            ".gitignore",
+            "uploaded_files",
+            constants.Bun.ROOT_LOCKFILE_DIR,
+        )
 
     reload_paths = (
         tuple(
@@ -532,6 +589,9 @@ def run_uvicorn_backend(host: str, port: int, loglevel: LogLevel):
         loglevel: The log level.
     """
     import uvicorn
+
+    reset_dev_backend_reload_marker()
+    environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.set(True)
 
     uvicorn.run(
         app=f"{get_app_instance()}",
@@ -583,6 +643,9 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     from granian.log import LogLevels
     from granian.server import Server as Granian
     from reflex_base.environment import _load_dotenv_from_env
+
+    reset_dev_backend_reload_marker()
+    environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.set(True)
 
     granian_app = Granian(
         target=get_app_instance_from_file(),

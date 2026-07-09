@@ -31,13 +31,13 @@ With Databricks, your app can:
    - Copy the Server hostname (this is your **DATABRICKS_HOST**).
    - Copy the HTTP path removing the `/sql/1.0/warehouses/` prefix (this is your **DATABRICKS_WAREHOUSE_ID**).
 
-![databricks_integration_1.webp](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_integration_1.webp)
+![Databricks SQL Warehouse connection details](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_integration_1.webp)
 
 ### 3 - Get your **DATABRICKS_CATALOG** and **DATABRICKS_SCHEMA**:
    - Click the SQL Editor from the sidebar.
    - Choose the **DATABRICKS_CATALOG** and **DATABRICKS_SCHEMA** from the dropdowns as shown below.
 
-![databricks_integration_4.webp](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_integration_4.webp)
+![Selecting Databricks catalog and schema in SQL Editor](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_integration_4.webp)
 
 
 ### 4 - Obtain your authentication credentials:
@@ -45,48 +45,48 @@ With Databricks, your app can:
 There are two methods to authenticate your app with Databricks: using interactive U2M **OAuth** or via registered M2M **Service Principal**. Choose one of the methods below to obtain the necessary credentials.
 
 
----md tabs
+`````md tabs
 
---tab OAuth with Databricks
+## OAuth with Databricks
+
 #### Interactive Login with your Databricks Account
 
 If your workspace administrator has already added Reflex as a Connected App in your Databricks workspace, you should see a "Login with Databricks" button after entering your DATABRICKS_HOST.
 
---
---tab Service Principal
+
+## Service Principal
+
 #### M2M Service Principal (DATABRICKS_CLIENT_ID and DATABRICKS_CLIENT_SECRET)
 
 - Open the dropdown in the top right corner and select **Manage Account**.
 
-![databricks_integration_oauth_1.webp](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_integration_oauth_1.webp)
+![Opening Manage Account in Databricks](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_integration_oauth_1.webp)
 
 - Select `Users and Groups`
 
-![databricks_integration_oauth_2.webp](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_integration_oauth_2.webp)
+![Selecting Users and Groups in Databricks account](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_integration_oauth_2.webp)
 
 - Select the `Service Principals` tab and click `Add Service Principal`.
 
-![databricks_integration_oauth_3.webp](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_integration_oauth_3.webp)
+![Adding a Databricks service principal](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_integration_oauth_3.webp)
 
 - Fill in the details and click `Add Service Principal`.
 
-![databricks_integration_oauth_4.webp](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_integration_oauth_4.webp)
+![Entering Databricks service principal details](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_integration_oauth_4.webp)
 
 - Click the `Credentials and Secrets` tab and click `Generate Secret`.
 
-![databricks_integration_oauth_5.webp](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_integration_oauth_5.webp)
+![Generating a Databricks service principal secret](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_integration_oauth_5.webp)
 
 - Set a lifetime for the secrets and click `Generate`.
 
-![databricks_integration_oauth_6.webp](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_integration_oauth_6.webp)
+![Setting Databricks secret lifetime](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_integration_oauth_6.webp)
 
 - Copy the generated **DATABRICKS_CLIENT_ID** and **DATABRICKS_CLIENT_SECRET**.
 
-![databricks_integration_oauth_7.webp](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_integration_oauth_7.webp)
+![Copying Databricks client ID and secret](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_integration_oauth_7.webp)
 
---
-
----
+`````
 
 
 
@@ -113,18 +113,18 @@ Once connected, the AI Builder can execute queries directly against your Databri
 * **Combine with AI:** Use query outputs to power models, summaries, or alerts in real time.
 
 
-# How to Enable Login as an Admin
+## How to Enable Login as an Admin
 
 - Login to Databricks
 - Go to manage account
 
-![databricks_admin_auth_1.webp](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_admin_auth_1.webp)
+![Opening Manage Account as Databricks admin](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_admin_auth_1.webp)
 
 - Go to **Settings** → **Apps Connections** → **Add new connection**
 
-![databricks_admin_auth_2.webp](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_admin_auth_2.webp)
+![Adding a new app connection in Databricks settings](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_admin_auth_2.webp)
 
 - Give it a name, enter the redirect URL that Reflex Build provides, Click `All APIs` and uncheck `Generate a client secret` and then add.
    - URL: `https://build.reflex.dev/_reflex_oidc_databricks/authorization-code/callback`
 
-![databricks_admin_auth_3.webp](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_admin_auth_3.webp)
+![Configuring the Reflex redirect URL in Databricks](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/databricks_admin_auth_3.webp)

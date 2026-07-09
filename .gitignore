@@ -1,5 +1,10 @@
 **/.DS_Store
 **/*.pyc
+**/__pycache__/
+.pytest_cache/
+.ruff_cache/
+**/.ruff_cache/
+.mypy_cache/
 assets/external/*
 dist/*
 examples/
@@ -23,3 +28,6 @@ package-lock.json
 *.pyi
 .pre-commit-config.yaml
 uploaded_files/*
+.claude/.worktrees
+.claude/settings.local.json
+CLAUDE.local.md

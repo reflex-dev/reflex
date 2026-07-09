@@ -46,7 +46,7 @@ def pill_group_page():
 ```
 
 
-# PillsInput
+## PillsInput
 
 `rxe.mantine.pills_input` is a wrapping of the mantine component [PillsInput](https://mantine.dev/core/pills-input/). It is an utility component that can be used to display a list of tags or labels. It can be used in various contexts, such as in a form or as a standalone component.
 By itself it does not include any logic, it only renders given children.

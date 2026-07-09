@@ -26,6 +26,7 @@ def get_sidebar_items_ai_builder_overview():
                 ai_builder.features.installing_external_packages,
                 ai_builder.features.integration_shortcut,
                 ai_builder.features.connect_to_github,
+                ai_builder.features.connect_to_git_providers,
                 ai_builder.features.knowledge,
                 ai_builder.features.image_as_prompt,
                 # ai_builder.features.automated_testing,
