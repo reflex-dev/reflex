@@ -83,3 +83,16 @@ def test_chart_frontmatter_meta_description_from_frontmatter():
         "# Bar Chart\n\nBar charts in Reflex are built on Recharts.\n"
     )
     assert extract_doc_description(source) == long_desc
+
+
+def test_frontmatter_description_is_truncated_to_max_len():
+    """A long frontmatter description should be capped for search snippets."""
+    long_desc = (
+        "Build an editable data grid in Python with Reflex. The rx.data_editor "
+        "component is a fast, spreadsheet-like data grid based on Glide Data Grid "
+        "for editing tabular data, all in pure Python."
+    )
+    result = extract_doc_description(None, {"meta_description": long_desc})
+    assert result is not None
+    assert len(result) <= 155
+    assert result.endswith("…")

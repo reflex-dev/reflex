@@ -1072,9 +1072,14 @@ def docpage(
         # Always provide a non-empty, page-specific meta description. Real
         # descriptions come from the doc (see make_docpage); otherwise fall back
         # to a concise, title-derived sentence so the page is never description-less.
-        seo_description = description or (
-            f"{title} — Reflex docs. Reflex is the open-source Python framework "
-            "for building full-stack web apps and internal tools."
+        from reflex_docs.pages.docs.metadata import truncate_meta_description
+
+        seo_description = truncate_meta_description(
+            description
+            or (
+                f"{title} — Reflex docs. Reflex is the open-source Python framework "
+                "for building full-stack web apps and internal tools."
+            )
         )
 
         return Route(

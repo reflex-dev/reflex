@@ -51,3 +51,14 @@ def test_ai_builder_routes_use_ai_prefix(routes_fixture):
     assert "/ai-builder/integrations/ai-onboarding/" not in paths
     assert "/ai-builder/integrations/mcp-overview/" not in paths
     assert "/ai-builder/integrations/skills/" not in paths
+
+
+def test_docs_route_descriptions_fit_search_snippet_length(routes_fixture):
+    """Generated docs meta descriptions should not exceed the SEO snippet cap."""
+    overlong = {
+        route.path: len(route.description or "")
+        for route in routes_fixture
+        if route.description and len(route.description) > 155
+    }
+
+    assert overlong == {}
