@@ -27,23 +27,34 @@ _SEARCH_ICON_SVG = (
     ' d="M12.667 7.333A5.333 5.333 0 1 0 2 7.333a5.333 5.333 0 0 0 10.667 0"/></svg>'
 )
 
-# Cmd/Ctrl+K opens search before the widget has been loaded: forward the
-# shortcut to the placeholder trigger, which mounts the real widget with its
-# modal open. Once the widget is mounted, its own shortcut handler takes over.
-_HOTKEY_SCRIPT = f"""
-(function () {{
-  if (window.__inkeepLazyHotkey) return;
-  window.__inkeepLazyHotkey = true;
-  document.addEventListener('keydown', function (event) {{
-    if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 'k') return;
-
-    var trigger = document.getElementById('{_SEARCH_TRIGGER_ID}');
+# Runs on mount (as a real effect, not an inert rendered <script>) to:
+#   1. Fix the placeholder's keyboard hint for non-Mac platforms, which can't
+#      be known during SSR (the default label is the Mac glyph).
+#   2. Forward Cmd/Ctrl+K to the placeholder trigger before the widget loads,
+#      mounting the real widget with its modal open. Once mounted, the
+#      placeholder is gone so this no-ops and Inkeep's own handler takes over.
+_HOTKEY_AND_HINT_HOOK = f"""
+useEffect(() => {{
+  const triggerId = "{_SEARCH_TRIGGER_ID}";
+  const platform =
+    (navigator.userAgentData && navigator.userAgentData.platform) ||
+    navigator.platform ||
+    navigator.userAgent ||
+    "";
+  if (!/mac|iphone|ipad|ipod/i.test(platform)) {{
+    const hint = document.getElementById(triggerId)?.querySelector("kbd");
+    if (hint) hint.textContent = "Ctrl K";
+  }}
+  const onKeydown = (event) => {{
+    if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== "k") return;
+    const trigger = document.getElementById(triggerId);
     if (!trigger) return;
-
     event.preventDefault();
     trigger.click();
-  }});
-}})();
+  }};
+  document.addEventListener("keydown", onKeydown);
+  return () => document.removeEventListener("keydown", onKeydown);
+}}, [])
 """
 
 
@@ -108,7 +119,7 @@ class Search(rx.el.Div):
     def add_imports(self):
         """Add the imports for the component."""
         return {
-            "react": {ImportVar(tag="useContext")},
+            "react": {ImportVar(tag="useContext"), ImportVar(tag="useEffect")},
             "$/utils/context": {ImportVar(tag="ColorModeContext")},
         }
 
@@ -116,6 +127,7 @@ class Search(rx.el.Div):
         """Add the hooks for the component."""
         return [
             "const { resolvedColorMode } = useContext(ColorModeContext)",
+            _HOTKEY_AND_HINT_HOOK,
             """
 const escalationParams = {
   type: "object",
@@ -510,7 +522,6 @@ const searchBarProps = {
                     on_click=rx.call_function(loaded.set_value(True)),
                 ),
             ),
-            rx.el.script(_HOTKEY_SCRIPT),
         )
 
 
