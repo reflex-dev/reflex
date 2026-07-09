@@ -65,7 +65,7 @@ db = [
   "pydantic >=2.12.0,<3.0",
   "sqlmodel >=0.0.24,<0.1",
 ]
-orjson = ["orjson >=3.10,<4.0"]
+orjson = ["orjson >=3.11.1,<4.0"]
 
 [project.urls]
 homepage = "https://reflex.dev"
