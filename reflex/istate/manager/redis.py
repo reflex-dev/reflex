@@ -32,6 +32,35 @@ from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
 from reflex.state import BaseState
 from reflex.utils.tasks import ensure_task
 
+NOTIFY_KEYSPACE_EVENTS = (
+    "K"  # Enable keyspace notifications (target a particular key)
+    "$"  # For String commands (like setting keys)
+    "s"  # For Set commands (SADD, SREM, etc)
+    "g"  # For generic commands (DEL, EXPIRE, etc)
+    "x"  # For expired events
+    "e"  # For evicted events (i.e. maxmemory exceeded)
+)
+
+
+async def enable_keyspace_notifications(
+    redis: Redis, events: str = NOTIFY_KEYSPACE_EVENTS
+) -> None:
+    """Enable keyspace notifications for the redis server.
+
+    Args:
+        redis: The redis client to configure.
+        events: The keyspace notification flags to set.
+
+    Raises:
+        ResponseError: when the keyspace config cannot be set.
+    """
+    try:
+        await redis.config_set("notify-keyspace-events", events)
+    except ResponseError:
+        # Some redis servers only allow out-of-band configuration, so ignore errors here.
+        if not environment.REFLEX_IGNORE_REDIS_CONFIG_ERROR.get():
+            raise
+
 
 def _default_lock_expiration() -> int:
     """Get the default lock expiration time.
@@ -108,12 +137,7 @@ class StateManagerRedis(StateManager):
 
     # The keyspace subscription string when redis is waiting for lock to be released.
     _redis_notify_keyspace_events: str = dataclasses.field(
-        default="K"  # Enable keyspace notifications (target a particular key)
-        "$"  # For String commands (like setting keys)
-        "s"  # For Set commands (SADD, SREM, etc)
-        "g"  # For generic commands (DEL, EXPIRE, etc)
-        "x"  # For expired events
-        "e"  # For evicted events (i.e. maxmemory exceeded)
+        default=NOTIFY_KEYSPACE_EVENTS
     )
 
     # These events indicate that a lock is no longer held.
@@ -866,15 +890,9 @@ class StateManagerRedis(StateManager):
         if self._redis_notify_keyspace_events_enabled:
             return
 
-        try:
-            await self.redis.config_set(
-                "notify-keyspace-events",
-                self._redis_notify_keyspace_events,
-            )
-        except ResponseError:
-            # Some redis servers only allow out-of-band configuration, so ignore errors here.
-            if not environment.REFLEX_IGNORE_REDIS_CONFIG_ERROR.get():
-                raise
+        await enable_keyspace_notifications(
+            self.redis, self._redis_notify_keyspace_events
+        )
         self._redis_notify_keyspace_events_enabled = True
 
     @contextlib.asynccontextmanager
