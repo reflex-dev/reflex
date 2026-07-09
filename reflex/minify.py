@@ -33,7 +33,7 @@ class StateEntry(TypedDict):
     renamed or deleted, keeping orphaned ids reserved in their sibling group.
     """
 
-    id: str  # minified name, e.g. "a", "bU"
+    id: str  # minified name, e.g. "a"
     parent: str | None  # parent state_path, None for root states
 
 
