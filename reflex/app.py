@@ -389,6 +389,9 @@ class App(MiddlewareMixin, LifespanMixin):
         default_factory=dict
     )
 
+    # Whether the plugins' ``register_route`` hooks have run for this app.
+    _plugin_routes_registered: bool = False
+
     # A map from a page route to the component to render. Users should use `add_page`.
     _pages: dict[str, Component] = dataclasses.field(default_factory=dict)
 
@@ -979,6 +982,7 @@ class App(MiddlewareMixin, LifespanMixin):
         )
 
         self._unevaluated_pages[route] = unevaluated_page
+        self.__dict__.pop("router", None)
 
     def _compile_page(self, route: str, save_page: bool = True):
         """Compile a page.

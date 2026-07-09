@@ -3,9 +3,11 @@
 from collections.abc import Callable, Sequence
 from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, ParamSpec, Protocol, TypedDict
+from typing import TYPE_CHECKING, Any, ClassVar, ParamSpec, Protocol, TypedDict, TypeVar
 
 from typing_extensions import Unpack
+
+from reflex_base.utils.exceptions import ConfigError
 
 
 class HookOrder(str, Enum):
@@ -128,6 +130,13 @@ class Plugin:
             A list of paths to the stylesheets required by the plugin.
         """
         return []
+
+    def register_route(self, app: "App") -> None:
+        """Register routes on the app before its first compilation.
+
+        Args:
+            app: The app to register routes on.
+        """
 
     def pre_compile(self, **context: Unpack[PreCompileContext]) -> None:
         """Called before the compilation of the plugin.
@@ -263,3 +272,35 @@ class Plugin:
             A string representation of the plugin.
         """
         return f"{self.__class__.__name__}()"
+
+
+_PluginT = TypeVar("_PluginT", bound=Plugin)
+
+
+def get_plugin(plugin_cls: type[_PluginT]) -> _PluginT | None:
+    """Return the configured plugin instance of the given type, if any.
+
+    Args:
+        plugin_cls: The plugin type (or base type) to look up.
+
+    Returns:
+        The configured plugin that is an instance of ``plugin_cls``, or
+        ``None`` when no such plugin is configured.
+
+    Raises:
+        ConfigError: When more than one configured plugin matches — behavior
+            must not silently depend on the configuration order.
+    """
+    # Inline import: reflex_base.config imports this module for the Plugin type.
+    from reflex_base.config import get_config
+
+    matches = (p for p in get_config().plugins if isinstance(p, plugin_cls))
+    match = next(matches, None)
+    if next(matches, None) is not None:
+        msg = (
+            f"Multiple {plugin_cls.__name__} instances are configured, but "
+            "get_plugin() requires an unambiguous match. Request a more specific "
+            "type or remove duplicate entries from the rxconfig plugins list."
+        )
+        raise ConfigError(msg)
+    return match

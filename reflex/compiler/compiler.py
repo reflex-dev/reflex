@@ -1090,6 +1090,21 @@ def _resolve_radix_themes_plugin(
     return plugin_chain, radix_plugin
 
 
+def _register_plugin_routes(app: App, plugins: Sequence[Plugin]) -> None:
+    """Run each plugin's ``register_route`` hook, once per app instance.
+
+    Args:
+        app: The app being compiled.
+        plugins: The active plugins, in configuration order.
+    """
+    if app._plugin_routes_registered:
+        return
+
+    for plugin in plugins:
+        plugin.register_route(app)
+    app._plugin_routes_registered = True
+
+
 def compile_app(
     app: App,
     *,
@@ -1107,6 +1122,8 @@ def compile_app(
     from reflex_base.utils.exceptions import ReflexRuntimeError
 
     app._apply_decorated_pages()
+    config = get_config()
+    _register_plugin_routes(app, config.plugins)
     app._pages = {}
 
     should_compile = app._should_compile()
@@ -1126,7 +1143,6 @@ def compile_app(
         app.add_page(route=constants.Page404.SLUG)
 
     app.style = evaluate_style_namespaces(app.style)
-    config = get_config()
 
     if not should_compile and not dry_run:
         with console.timing("Evaluate Pages (Backend)"):

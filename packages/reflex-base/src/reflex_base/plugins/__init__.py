@@ -8,6 +8,7 @@ from .base import (
     PostBuildContext,
     PostCompileContext,
     PreCompileContext,
+    get_plugin,
 )
 from .compiler import (
     BaseContext,
@@ -40,6 +41,7 @@ __all__ = [
     "TailwindV4Plugin",
     "_ScreenshotPlugin",
     "embed",
+    "get_plugin",
     "sitemap",
     "tailwind_v3",
     "tailwind_v4",

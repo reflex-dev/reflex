@@ -535,3 +535,30 @@ def test_create_document_root_with_meta_viewport():
     assert str(root.children[0].children[2].name) == '"viewport"'  # pyright: ignore [reportAttributeAccessIssue]
     assert str(root.children[0].children[2].content) == '"foo"'  # pyright: ignore [reportAttributeAccessIssue]
     assert str(root.children[0].children[3].char_set) == '"utf-8"'  # pyright: ignore [reportAttributeAccessIssue]
+
+
+class _RoutePlugin(rx.plugins.Plugin):
+    """Plugin that records how often it contributes its route."""
+
+    calls = 0
+
+    def register_route(self, app):
+        """Register a page through the app in the hook context.
+
+        Args:
+            app: The app being compiled.
+        """
+        self.calls += 1
+        app.add_page(lambda: rx.el.div("plugin page"), route="/plugin-page")
+
+
+def test_register_plugin_routes_runs_once_per_app():
+    """Route hooks run once and retain their contributed pages."""
+    app = rx.App()
+    plugin = _RoutePlugin()
+
+    compiler._register_plugin_routes(app, [plugin])
+    compiler._register_plugin_routes(app, [plugin])
+
+    assert plugin.calls == 1
+    assert "plugin-page" in app._unevaluated_pages
