@@ -1,5 +1,5 @@
-import JSON5 from "json5";
 import env from "$/env.json";
+import { reviveNonFiniteFloats } from "$/utils/state";
 
 /**
  * Upload files to the server.
@@ -8,8 +8,9 @@ import env from "$/env.json";
  * @param handler The handler to use.
  * @param upload_id The upload id to use.
  * @param on_upload_progress The function to call on upload progress.
- * @param socket the websocket connection
  * @param extra_headers Extra headers to send with the request.
+ * @param extra_args Extra bound handler args to forward to the backend handler.
+ * @param socket the websocket connection
  * @param refs The refs object to store the abort controller in.
  * @param getBackendURL Function to get the backend URL.
  * @param getToken Function to get the Reflex token.
@@ -22,6 +23,7 @@ export const uploadFiles = async (
   upload_id,
   on_upload_progress,
   extra_headers,
+  extra_args,
   socket,
   refs,
   getBackendURL,
@@ -45,7 +47,7 @@ export const uploadFiles = async (
     // So only process _new_ chunks beyond resp_idx.
     chunks.slice(resp_idx).map((chunk_json) => {
       try {
-        const chunk = JSON5.parse(chunk_json);
+        const chunk = JSON.parse(chunk_json, reviveNonFiniteFloats);
         event_callbacks.map((f, ix) => {
           f(chunk)
             .then(() => {
@@ -73,6 +75,13 @@ export const uploadFiles = async (
 
   const controller = new AbortController();
   const formdata = new FormData();
+
+  // Bound handler args are sent as a JSON form field that must precede the
+  // files, so the streaming chunk parser reads it before the first file part.
+  // Field name kept in sync with UPLOAD_EVENT_ARGS_FIELD in _upload.py.
+  if (extra_args && Object.keys(extra_args).length > 0) {
+    formdata.append("__reflex_event_args", JSON.stringify(extra_args));
+  }
 
   // Add the token and handler to the file name.
   files.forEach((file) => {

@@ -6,15 +6,21 @@ import asyncio
 import contextlib
 import dataclasses
 from collections import deque
-from collections.abc import AsyncGenerator, AsyncIterator, MutableMapping
+from collections.abc import (
+    AsyncGenerator,
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    MutableMapping,
+)
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, BinaryIO, cast
 
 from python_multipart.multipart import MultipartParser, parse_options_header
 from reflex_base.utils import exceptions
-from reflex_base.utils.format import json_dumps
+from reflex_base.utils.format import orjson_dumps_socket, orjson_loads
 from reflex_base.utils.streaming_response import DisconnectAwareStreamingResponse
-from starlette.datastructures import Headers
+from starlette.datastructures import FormData, Headers
 from starlette.datastructures import UploadFile as StarletteUploadFile
 from starlette.exceptions import HTTPException
 from starlette.formparsers import MultiPartException, _user_safe_decode
@@ -231,6 +237,7 @@ class _UploadChunkPart:
     offset: int = 0
     bytes_emitted: int = 0
     is_upload_chunk: bool = False
+    is_text_field: bool = False
 
 
 @dataclasses.dataclass(kw_only=True, slots=True)
@@ -240,6 +247,9 @@ class _UploadChunkMultipartParser:
     headers: Headers
     stream: AsyncGenerator[bytes, None]
     chunk_iter: UploadChunkIterator
+    # Dispatched with the raw bound-args field once it is parsed (before any file
+    # chunk is pushed), or at end-of-parse if the upload carried no files.
+    on_args_ready: Callable[[str | None], Awaitable[None]]
     _charset: str = ""
     _current_partial_header_name: bytes = b""
     _current_partial_header_value: bytes = b""
@@ -247,6 +257,9 @@ class _UploadChunkMultipartParser:
         default_factory=_UploadChunkPart
     )
     _chunks_to_emit: deque[UploadChunk] = dataclasses.field(default_factory=deque)
+    _args_buffer: bytearray = dataclasses.field(default_factory=bytearray)
+    _extra_args_raw: str | None = None
+    _started: bool = False
     _seen_upload_chunk: bool = False
     _part_count: int = 0
     _emitted_chunk_count: int = 0
@@ -259,6 +272,12 @@ class _UploadChunkMultipartParser:
 
     def on_part_data(self, data: bytes, start: int, end: int) -> None:
         """Record streamed chunk data for the current part."""
+        if self._current_part.is_text_field:
+            self._args_buffer += data[start:end]
+            if len(self._args_buffer) > MAX_UPLOAD_EVENT_ARGS_BYTES:
+                msg = "Upload event args field is too large."
+                raise MultiPartException(msg)
+            return
         if (
             not self._current_part.is_upload_chunk
             or self._current_part.filename is None
@@ -279,7 +298,12 @@ class _UploadChunkMultipartParser:
         self._emitted_bytes += len(message_bytes)
 
     def on_part_end(self) -> None:
-        """Emit a zero-byte chunk for empty file parts."""
+        """Finalize the bound-args field, or emit a zero-byte chunk for empty files."""
+        if self._current_part.is_text_field:
+            # Use the same charset-tolerant decode as the file/field-name parsing
+            # so a bogus request charset falls back instead of raising LookupError.
+            self._extra_args_raw = _user_safe_decode(self._args_buffer, self._charset)
+            return
         if (
             self._current_part.is_upload_chunk
             and self._current_part.filename is not None
@@ -330,11 +354,23 @@ class _UploadChunkMultipartParser:
             msg = 'The Content-Disposition header field "name" must be provided.'
             raise MultiPartException(msg) from err
 
-        try:
-            filename = _user_safe_decode(options[b"filename"], self._charset)
-        except KeyError:
-            # Ignore non-file form fields entirely.
+        if b"filename" not in options:
+            # Capture the bound-args field; ignore any other non-file field.
+            if field_name == UPLOAD_EVENT_ARGS_FIELD:
+                if self._seen_upload_chunk:
+                    # The handler is dispatched at the first file part, so a late
+                    # args field would be silently dropped; reject it loudly.
+                    msg = "Upload event args must precede the file parts."
+                    raise MultiPartException(msg)
+                self._current_part.is_text_field = True
+                self._args_buffer = bytearray()
             return
+        if field_name == UPLOAD_EVENT_ARGS_FIELD:
+            # A file under the args field name would otherwise be pushed as a
+            # phantom file upload; reject it instead of silently dropping it.
+            msg = "Upload event args must be a text field, not a file."
+            raise MultiPartException(msg)
+        filename = _user_safe_decode(options[b"filename"], self._charset)
         filename = Path(filename.lstrip("/")).name
 
         content_type = ""
@@ -349,6 +385,8 @@ class _UploadChunkMultipartParser:
         self._current_part.offset = 0
         self._current_part.bytes_emitted = 0
         self._current_part.is_upload_chunk = True
+        # The args field precedes the files, so by the first file part the bound
+        # args are fully parsed and the handler can be dispatched.
         self._seen_upload_chunk = True
         self._part_count += 1
 
@@ -360,12 +398,27 @@ class _UploadChunkMultipartParser:
         while self._chunks_to_emit:
             await self.chunk_iter.push(self._chunks_to_emit.popleft())
 
+    async def _maybe_start_handler(self, *, force: bool = False) -> None:
+        """Dispatch the handler once the bound args are parsed.
+
+        Called before chunks are flushed so the consumer task is registered
+        ahead of the first pushed chunk.
+
+        Args:
+            force: Dispatch even if no file part was seen (args-only/empty upload).
+        """
+        if self._started or not (self._seen_upload_chunk or force):
+            return
+        self._started = True
+        await self.on_args_ready(self._extra_args_raw)
+
     async def parse(self) -> None:
         """Parse the incoming request stream and push chunks to the iterator.
 
         Raises:
             MultiPartException: If the request is not valid multipart upload data.
             RuntimeError: If the upload handler exits before consuming all chunks.
+            HTTPException: If the bound-args field is not a valid JSON object.
         """
         _, params = parse_options_header(self.headers["Content-Type"])
         charset = params.get(b"charset", "utf-8")
@@ -394,9 +447,11 @@ class _UploadChunkMultipartParser:
         async for chunk in self.stream:
             self._stream_chunk_count += 1
             parser.write(chunk)
+            await self._maybe_start_handler()
             await self._flush_emitted_chunks()
 
         parser.finalize()
+        await self._maybe_start_handler(force=True)
         await self._flush_emitted_chunks()
 
 
@@ -422,6 +477,66 @@ def _require_upload_headers(request: Request) -> tuple[str, str]:
         )
 
     return token, handler
+
+
+# Multipart form field carrying the JSON-encoded extra bound handler args.
+# Uploads travel over a REST endpoint instead of the socket, so args bound to
+# the handler (e.g. ``State.on_drop(rx.upload_files(...), field)``) ride in this
+# field. Kept in sync with the matching literal in the web upload template.
+UPLOAD_EVENT_ARGS_FIELD = "__reflex_event_args"
+
+# Cap on the buffered bound-args field for streaming uploads. The args are small
+# identifiers, so this only bounds the in-memory buffer against a hostile client
+# (file parts are backpressured via the chunk iterator; this field is not).
+MAX_UPLOAD_EVENT_ARGS_BYTES = 1024 * 1024
+
+
+def _decode_event_args(encoded: str | None) -> dict[str, Any]:
+    """Decode the extra bound handler args sent alongside an upload.
+
+    Args:
+        encoded: The JSON-encoded args form field value, or ``None`` if absent.
+
+    Returns:
+        The decoded extra args, or an empty mapping if none were sent.
+
+    Raises:
+        HTTPException: If the value is present but not a valid JSON object.
+    """
+    if not encoded:
+        return {}
+    try:
+        decoded = orjson_loads(encoded)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400, detail="Malformed upload event args."
+        ) from exc
+    if not isinstance(decoded, dict):
+        raise HTTPException(
+            status_code=400, detail="Upload event args must be a JSON object."
+        )
+    return decoded
+
+
+def _buffered_upload_args(form_data: FormData) -> dict[str, Any]:
+    """Decode the bound handler args from a buffered upload's form data.
+
+    Args:
+        form_data: The parsed multipart form data.
+
+    Returns:
+        The decoded extra args, or an empty mapping if none were sent.
+
+    Raises:
+        HTTPException: If the args field is a file or not a valid JSON object.
+    """
+    raw_args = form_data.get(UPLOAD_EVENT_ARGS_FIELD)
+    if raw_args is not None and not isinstance(raw_args, str):
+        raise HTTPException(
+            status_code=400,
+            detail="Upload event args must be a text field, not a file.",
+        )
+    return _decode_event_args(raw_args)
 
 
 async def _upload_buffered_file(
@@ -463,6 +578,7 @@ async def _upload_buffered_file(
         Returns:
             The upload event backed by the parsed files.
         """
+        extra_args = _buffered_upload_args(form_data)
         files = form_data.getlist("files")
         file_uploads = []
         for file in files:
@@ -481,7 +597,7 @@ async def _upload_buffered_file(
 
         return Event(
             name=handler_name,
-            payload={handler_upload_param[0]: file_uploads},
+            payload={**extra_args, handler_upload_param[0]: file_uploads},
         )
 
     event: Event | None = None
@@ -513,7 +629,7 @@ async def _upload_buffered_file(
             return
         # Enqueue the task on the main event loop, but emit deltas to the local queue.
         async for delta in app.event_processor.enqueue_stream_delta(token, event):
-            yield json_dumps(StateUpdate(delta=delta)) + "\n"
+            yield orjson_dumps_socket(StateUpdate(delta=delta)) + "\n"
 
     return DisconnectAwareStreamingResponse(
         _ndjson_updates(),
@@ -553,26 +669,39 @@ async def _upload_chunk_file(
     from reflex_base.event import Event
 
     chunk_iter = UploadChunkIterator(maxsize=8)
-    event = Event(
-        name=handler_name,
-        payload={handler_upload_param[0]: chunk_iter},
-    )
-    task_future = await app.event_processor.enqueue(token, event)
+    task_future: asyncio.Future[Any] | None = None
 
-    chunk_iter.set_consumer_task(task_future)
+    async def _start_handler(extra_args_raw: str | None) -> None:
+        """Dispatch the streaming handler once the bound args are parsed.
+
+        Args:
+            extra_args_raw: The raw JSON args form field, or ``None`` if absent.
+        """
+        nonlocal task_future
+        event = Event(
+            name=handler_name,
+            payload={
+                **_decode_event_args(extra_args_raw),
+                handler_upload_param[0]: chunk_iter,
+            },
+        )
+        task_future = await app.event_processor.enqueue(token, event)
+        chunk_iter.set_consumer_task(task_future)
 
     parser = _UploadChunkMultipartParser(
         headers=request.headers,
         stream=request.stream(),
         chunk_iter=chunk_iter,
+        on_args_ready=_start_handler,
     )
 
     try:
         await parser.parse()
     except ClientDisconnect:
-        task_future.cancel()
-        with contextlib.suppress(asyncio.CancelledError):
-            await task_future
+        if task_future is not None:
+            task_future.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await task_future
         return Response()
     except (MultiPartException, RuntimeError, ValueError) as err:
         await chunk_iter.fail(err)

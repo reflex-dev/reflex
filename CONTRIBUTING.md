@@ -6,7 +6,7 @@ Here is a quick guide on how to run Reflex repo locally so you can start contrib
 
 **Prerequisites:**
 
-- uv version >= 0.6.0 and add it to your path (see [UV Docs](https://docs.astral.sh/uv/getting-started/installation/) for more info).
+- uv version >= 0.9.17 and add it to your path (see [UV Docs](https://docs.astral.sh/uv/getting-started/installation/) for more info).
 
 **1. Fork this repository:**
 Fork this repository by clicking on the `Fork` button on the top right.
@@ -95,6 +95,13 @@ following command to generate the `CHANGELOG.md` file in each subpackage.
 ```bash
 uv run towncrier build --config pyproject.toml --version v0.9.4
 ```
+
+**Where changelogs are published:** the docs site renders every `CHANGELOG.md`
+in the repo (repo root and `packages/*/`) under
+[reflex.dev/docs/changelog/](https://reflex.dev/docs/changelog/). The
+`reflex-enterprise` changelog is read from the installed `reflex-enterprise`
+distribution at docs build time; it appears once the published wheel ships a
+`CHANGELOG.md` and the docs app's lockfile picks up that version.
 
 ## ✅ Making a PR
 

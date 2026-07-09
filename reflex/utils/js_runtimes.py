@@ -1,7 +1,6 @@
 """This module provides utilities for managing JavaScript runtimes like Node.js and Bun."""
 
 import functools
-import json
 import os
 import tempfile
 from collections.abc import Sequence
@@ -15,6 +14,7 @@ from reflex_base.utils.decorator import cached_procedure, once
 from reflex_base.utils.exceptions import SystemPackageMissingError
 
 from reflex.utils import console, frontend_skeleton, net, path_ops, processes
+from reflex.utils.format import orjson_loads
 from reflex.utils.prerequisites import get_web_dir, windows_check_onedrive_in_path
 
 
@@ -426,12 +426,14 @@ def _existing_web_package_sections() -> tuple[set[str], set[str]]:
         A tuple ``(deps, dev_deps)`` of bare package names. Both empty if
         the file is missing or unreadable.
     """
-    web_pkg_json_path = frontend_skeleton.get_web_package_json_path()
+    web_pkg_json_path = frontend_skeleton.get_web_lockfile_path(
+        constants.PackageJson.PATH
+    )
     if not web_pkg_json_path.exists():
         return set(), set()
     try:
-        data = json.loads(web_pkg_json_path.read_text())
-    except (json.JSONDecodeError, OSError) as e:
+        data = orjson_loads(web_pkg_json_path.read_bytes())
+    except (ValueError, OSError) as e:
         console.warn(
             f"Failed to read {web_pkg_json_path}: {e}; skipping existing package check."
         )
@@ -757,4 +759,3 @@ def install_frontend_packages(packages: set[str], config: Config):
     _sync_root_lockfiles_for_frontend_install()
     _install_frontend_packages(set(packages), config, install_package_managers)
     frontend_skeleton.sync_web_lockfiles_to_root()
-    frontend_skeleton.sync_web_package_json_to_root()

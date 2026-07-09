@@ -6,6 +6,7 @@ import inspect
 import json
 import os
 import re
+from functools import lru_cache
 from typing import TYPE_CHECKING, Any
 
 from reflex_base import constants
@@ -169,6 +170,7 @@ def to_snake_case(text: str) -> str:
     return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", s1).lower().replace("-", "_")
 
 
+@lru_cache(maxsize=4096)
 def to_camel_case(text: str, treat_hyphens_as_underscores: bool = True) -> str:
     """Convert a string to camel case.
 

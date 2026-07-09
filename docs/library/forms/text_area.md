@@ -29,7 +29,7 @@ class TextAreaBlur(rx.State):
 
 def blur_example():
     return rx.vstack(
-        rx.heading(TextAreaBlur.text),
+        rx.heading(TextAreaBlur.text, as_="h2"),
         rx.text_area(
             placeholder="Type here...",
             on_blur=TextAreaBlur.set_text,

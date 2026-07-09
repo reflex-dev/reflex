@@ -13,13 +13,32 @@ from reflex.testing import DEFAULT_TIMEOUT, AppHarness, WebDriver
 
 def HybridProperties():
     """Test app for hybrid properties."""
+    from dataclasses import dataclass
+
     import reflex as rx
     from reflex.experimental import hybrid_property
     from reflex.vars import Var
 
+    @dataclass
+    class Info:
+        """A nested dataclass exposing a hybrid property."""
+
+        a: str
+        b: str
+
+        @hybrid_property
+        def a_b(self) -> str:
+            """Combine the two fields, usable on both frontend and backend.
+
+            Returns:
+                str: The two fields joined with a dash.
+            """
+            return f"{self.a} - {self.b}"
+
     class State(rx.State):
         first_name: str = "John"
         last_name: str = "Doe"
+        info: Info = Info(a="a", b="b")
 
         @property
         def python_full_name(self) -> str:
@@ -84,6 +103,15 @@ def HybridProperties():
             """
             self.last_name = value
 
+        @rx.event
+        def update_info_a(self, value: str):
+            """Update the `a` field of the nested info dataclass.
+
+            Args:
+                value: The new value for `info.a`.
+            """
+            self.info = Info(a=value, b=self.info.b)
+
     def index() -> rx.Component:
         return rx.center(
             rx.vstack(
@@ -109,6 +137,12 @@ def HybridProperties():
                     value=State.last_name,
                     on_change=State.update_last_name,
                     id="set_last_name",
+                ),
+                rx.text(f"info_a_b: {State.info.a_b}", id="info_a_b"),
+                rx.el.input(
+                    value=State.info.a,
+                    on_change=State.update_info_a,
+                    id="set_info_a",
                 ),
             ),
         )
@@ -191,6 +225,27 @@ def test_hybrid_properties(
     """
     assert hybrid_properties.app_instance is not None
     assert token
+
+    info_a_b = driver.find_element(By.ID, "info_a_b")
+    assert info_a_b.text == "info_a_b: a - b"
+
+    # Updating the nested dataclass re-renders the hybrid property accessed via the object var.
+    set_info_a = driver.find_element(By.ID, "set_info_a")
+    set_info_a.send_keys(Keys.CONTROL + "a")
+    set_info_a.send_keys(Keys.DELETE)
+    # Wait for the cleared value to round-trip before typing. The input is controlled
+    # by State.info.a, so typing while the clear is still in flight is racy: a late
+    # empty-state delta can drop the new key ("- b") or it can be appended to a stale
+    # "a" ("az - b"). Polling the backend-derived text gates on the clear landing.
+    assert (
+        hybrid_properties.poll_for_content(info_a_b, exp_not_equal="info_a_b: a - b")
+        == "info_a_b: - b"
+    )
+    set_info_a.send_keys("z")
+    assert (
+        hybrid_properties.poll_for_content(info_a_b, exp_not_equal="info_a_b: - b")
+        == "info_a_b: z - b"
+    )
 
     full_name = driver.find_element(By.ID, "full_name")
     assert full_name.text == "full_name: John Doe"

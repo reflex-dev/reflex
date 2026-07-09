@@ -205,6 +205,7 @@ class DefaultPagePlugin(Plugin):
             name=getattr(page_fn, "__name__", page.route),
             route=page.route,
             root_component=component,
+            source_module=getattr(page, "_source_module", None),
         )
 
 

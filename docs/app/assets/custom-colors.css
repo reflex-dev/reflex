@@ -63,51 +63,23 @@
   --glow: #ebe4ff;
   --wave-line-1: #d4cafe;
   --wave-line-2: #ebe4ff;
-  /* Marketing Colors */
-  --m-slate-1: #fcfcfd;
-  --m-slate-2: #f6f7f9;
-  --m-slate-3: #eeeff2;
-  --m-slate-4: #e5e8eb;
-  --m-slate-5: #cacdd4;
-  --m-slate-6: #979faa;
-  --m-slate-7: #67707e;
-  --m-slate-8: #3c434e;
-  --m-slate-9: #2a3037;
-  --m-slate-10: #21252b;
-  --m-slate-11: #1d2025;
-  --m-slate-12: #151618;
-  --m-slate-13: #1c2024;
-  --m-slate-14: #1a1b1d;
-  --m-slate-15: #151618;
-  --m-violet-1: #fdfcfe;
-  --m-violet-2: #faf8ff;
-  --m-violet-3: #f4f0fe;
-  --m-violet-4: #ebe4ff;
-  --m-violet-5: #e1d9ff;
-  --m-violet-6: #d4cafe;
-  --m-violet-7: #c2b5f5;
-  --m-violet-8: #aa99ec;
-  --m-violet-9: #6e56cf;
-  --m-violet-10: #654dc4;
-  --m-violet-11: #6550b9;
-  --m-violet-12: #2f265f;
 }
 
 .dark,
 .dark-theme {
   /* Slate */
-  --slate-1: #141619;
-  --slate-2: #1b1d20;
-  --slate-3: #22252a;
-  --slate-4: #282b31;
-  --slate-5: #2e3238;
-  --slate-6: #353a42;
-  --slate-7: #414852;
-  --slate-8: #58616f;
-  --slate-9: #656e7d;
-  --slate-10: #737c8a;
-  --slate-11: #adb4bf;
-  --slate-12: #eceef1;
+  --slate-1: #090A0B;
+  --slate-2: #101213;
+  --slate-3: #121417;
+  --slate-4: #1E2025;
+  --slate-5: #272B30;
+  --slate-6: #292D33;
+  --slate-7: #363C44;
+  --slate-8: #444B55;
+  --slate-9: #656E7D;
+  --slate-10: #8A929E;
+  --slate-11: #ADB4BF;
+  --slate-12: #E2E5E9;
   --c-slate-1: #151618;
   --c-slate-2: #1a1b1d;
   /* #1A1B1D */
@@ -151,32 +123,8 @@
   --c-red-9: #e5484d;
   --c-red-10: #dc3e42;
   /* White */
-  --c-white-1: #1b1d20;
+  --c-white-1: #050506;
   --glow: #261958;
   --wave-line-1: #2f1c78;
   --wave-line-2: #261958;
-  --m-slate-1: #fcfcfd;
-  --m-slate-2: #f6f7f9;
-  --m-slate-3: #eeeff2;
-  --m-slate-4: #e5e8eb;
-  --m-slate-5: #cacdd4;
-  --m-slate-6: #979faa;
-  --m-slate-7: #67707e;
-  --m-slate-8: #3c434e;
-  --m-slate-9: #2a3037;
-  --m-slate-10: #21252b;
-  --m-slate-11: #1d2025;
-  --m-slate-12: #151618;
-  --m-violet-1: #fdfcfe;
-  --m-violet-2: #faf8ff;
-  --m-violet-3: #f4f0fe;
-  --m-violet-4: #ebe4ff;
-  --m-violet-5: #e1d9ff;
-  --m-violet-6: #d4cafe;
-  --m-violet-7: #c2b5f5;
-  --m-violet-8: #aa99ec;
-  --m-violet-9: #6e56cf;
-  --m-violet-10: #654dc4;
-  --m-violet-11: #6550b9;
-  --m-violet-12: #2f265f;
 }

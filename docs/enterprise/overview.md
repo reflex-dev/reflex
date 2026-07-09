@@ -29,7 +29,7 @@ For more information on the badge, visit [Built with Reflex](/docs/enterprise/bu
 
 `reflex-enterprise` must be installed alongside `reflex` to access the enterprise features.
 
-You can install it from pypi with the following command:
+Install it from PyPI:
 
 ```bash
 pip install reflex-enterprise
@@ -50,14 +50,77 @@ categories_data = [
                 "description": "Toggle the 'Built with Reflex' badge in your app",
                 "cloud_tier": "Enterprise",
                 "self_hosted_tier": "Enterprise",
-                "link": "/docs/enterprise/built-with-reflex",
+                "link": "/enterprise/built-with-reflex",
             },
             {
                 "feature": "use_single_port",
                 "description": "Enable single-port deployment by proxying backend to frontend",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/single-port-proxy",
+                "link": "/enterprise/single-port-proxy",
+            },
+        ],
+    },
+    {
+        "category": "Authentication",
+        "description": "OIDC authentication with a secure-by-default model",
+        "count": 6,
+        "components": [
+            {
+                "feature": "AuthPlugin",
+                "description": "OIDC (OpenID Connect) authentication with secure-by-default protection",
+                "cloud_tier": "Enterprise",
+                "self_hosted_tier": "Enterprise",
+                "link": "/enterprise/auth/overview",
+            },
+            {
+                "feature": "Secure by Default",
+                "description": "Pages, event handlers, fields, and computed vars require login unless opted out",
+                "cloud_tier": "Enterprise",
+                "self_hosted_tier": "Enterprise",
+                "link": "/enterprise/auth/secure-by-default",
+            },
+            {
+                "feature": "OIDC Providers",
+                "description": "Built-in generic OIDC provider plus named and multi-provider setups",
+                "cloud_tier": "Enterprise",
+                "self_hosted_tier": "Enterprise",
+                "link": "/enterprise/auth/providers",
+            },
+            {
+                "feature": "Custom Auth Pages",
+                "description": "Replace the rendered login, callback, and logout pages",
+                "cloud_tier": "Enterprise",
+                "self_hosted_tier": "Enterprise",
+                "link": "/enterprise/auth/custom-pages",
+            },
+            {
+                "feature": "Testing",
+                "description": "Unit-test authorization checks and exercise the full OIDC flow against a mock IdP",
+                "cloud_tier": "Enterprise",
+                "self_hosted_tier": "Enterprise",
+                "link": "/enterprise/auth/testing",
+            },
+            {
+                "feature": "Deploying to Production",
+                "description": "HTTPS and cookie requirements, the exact redirect URI, reverse proxies, and a troubleshooting reference",
+                "cloud_tier": "Enterprise",
+                "self_hosted_tier": "Enterprise",
+                "link": "/enterprise/auth/deployment",
+            },
+        ],
+    },
+    {
+        "category": "Testing",
+        "description": "pytest plugin for end-to-end testing of Reflex apps",
+        "count": 1,
+        "components": [
+            {
+                "feature": "reflex_app fixture",
+                "description": "Boot the app under test with reflex run and drive it with browser tooling",
+                "cloud_tier": "Free",
+                "self_hosted_tier": "Free",
+                "link": "/enterprise/testing",
             },
         ],
     },
@@ -71,14 +134,14 @@ categories_data = [
                 "description": "Advanced data grid with enterprise features (sorting, filtering, grouping)",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/ag-grid",
+                "link": "/enterprise/ag-grid",
             },
             {
                 "feature": "AGCharts",
                 "description": "Interactive charts and data visualization components",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/ag-chart",
+                "link": "/enterprise/ag-chart",
             },
         ],
     },
@@ -92,14 +155,14 @@ categories_data = [
                 "description": "Drag and drop functionality for interactive UI elements",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/drag-and-drop",
+                "link": "/enterprise/drag-and-drop",
             },
             {
                 "feature": "Mapping",
                 "description": "Interactive maps with markers, layers, and controls",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/map",
+                "link": "/enterprise/map",
             },
         ],
     },
@@ -113,98 +176,98 @@ categories_data = [
                 "description": "Auto-completing text input with dropdown suggestions",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/mantine/autocomplete",
+                "link": "/enterprise/mantine/autocomplete",
             },
             {
                 "feature": "Combobox",
                 "description": "Searchable dropdown with custom options and filtering",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/mantine/combobox",
+                "link": "/enterprise/mantine/combobox",
             },
             {
                 "feature": "Multi Select",
                 "description": "Multi-selection dropdown with tags and search",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/mantine/multi-select",
+                "link": "/enterprise/mantine/multi-select",
             },
             {
                 "feature": "Tags Input",
                 "description": "Input field for creating and managing tags",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/mantine/tags-input",
+                "link": "/enterprise/mantine/tags-input",
             },
             {
                 "feature": "Json Input",
                 "description": "JSON editor with syntax highlighting and validation",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/mantine/json-input",
+                "link": "/enterprise/mantine/json-input",
             },
             {
                 "feature": "Pill",
                 "description": "Small rounded elements for tags, badges, and labels",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/mantine/pill",
+                "link": "/enterprise/mantine/pill",
             },
             {
                 "feature": "Tree",
                 "description": "Hierarchical tree view with expandable nodes",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/mantine/tree",
+                "link": "/enterprise/mantine/tree",
             },
             {
                 "feature": "Timeline",
                 "description": "Timeline component for displaying chronological events",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/mantine/timeline",
+                "link": "/enterprise/mantine/timeline",
             },
             {
                 "feature": "Number Formatter",
                 "description": "Format and display numbers with customizable formatting",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/mantine/number-formatter",
+                "link": "/enterprise/mantine/number-formatter",
             },
             {
                 "feature": "Ring Progress",
                 "description": "Circular progress indicator with customizable styling",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/mantine/ring-progress",
+                "link": "/enterprise/mantine/ring-progress",
             },
             {
                 "feature": "Semi Circle Progress",
                 "description": "Semi-circular progress indicator for dashboards",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/mantine/semi-circle-progress",
+                "link": "/enterprise/mantine/semi-circle-progress",
             },
             {
                 "feature": "Loading Overlay",
                 "description": "Loading overlay with spinner for async operations",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/mantine/loading-overlay",
+                "link": "/enterprise/mantine/loading-overlay",
             },
             {
                 "feature": "Spoiler",
                 "description": "Collapsible content container with show/hide toggle",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/mantine/spoiler",
+                "link": "/enterprise/mantine/spoiler",
             },
             {
                 "feature": "Collapse",
                 "description": "Animated collapsible content with smooth transitions",
                 "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
-                "link": "/docs/enterprise/mantine/collapse",
+                "link": "/enterprise/mantine/collapse",
             },
         ],
     },
@@ -289,11 +352,12 @@ grid
 
 ## Usage of reflex_enterprise.
 
-Using `rxe.App` as your `app` is required to use any of the components provided by the enterprise package, as well as config options provided by `rxe.Config`.
+Use `rxe.App` as your `app` to enable Enterprise components and `rxe.Config`
+options.
 
 ### In the main file
 
-Instead of the usual `rx.App()` to create your app, use the following:
+Create the app with `rxe.App()`:
 ```python
 import reflex_enterprise as rxe
 
@@ -305,6 +369,6 @@ app = rxe.App()
 import reflex_enterprise as rxe
 config = rxe.Config(
     app_name="MyApp",
-    ... # you can pass all rx.Config arguments as well as the one specific to rxe.Config
+    ... # accepts rx.Config arguments plus rxe.Config options
 )
 ```

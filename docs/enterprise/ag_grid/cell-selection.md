@@ -1,4 +1,5 @@
 ---
+meta_description: "Configure cell and range selection in AG Grid with Reflex. Track selected cells and ranges in your Python data grid, all in pure Python, no JavaScript required."
 title: "Cell Selection"
 order: 8
 ---

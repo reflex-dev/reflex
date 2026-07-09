@@ -9,7 +9,7 @@ The main app module is responsible for importing all other modules that make up 
 
 **All other modules containing pages, state, and models MUST be imported by the main app module or package** for Reflex to include them in the compiled output.
 
-# Breaking the App into Smaller Pieces
+## Breaking the App into Smaller Pieces
 
 As applications scale, effective organization is crucial. This is achieved by breaking the application down into smaller, manageable modules and organizing them into logical packages that avoid circular dependencies.
 

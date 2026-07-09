@@ -99,7 +99,7 @@ node_with_handles = {
 }
 ```
 
-# Custom Nodes
+## Custom Nodes
 
 Creating custom nodes is as easy as building a regular React component and passing it to the `node_types`. Since they’re standard React components, you can display any content and implement any functionality you need. Plus, you’ll have access to a range of props that allow you to extend and customize the default node behavior.
 
