@@ -55,6 +55,7 @@ from reflex_base.utils.exceptions import ImmutableStateError as ImmutableStateEr
 from reflex_base.utils.serializers import serializer
 from reflex_base.utils.types import _isinstance, _validation_depth
 from reflex_base.vars import Field, VarData, field
+from reflex_base.vars import base as reflex_base_vars_base
 from reflex_base.vars.base import (
     ComputedVar,
     DynamicRouteVar,
@@ -368,6 +369,7 @@ CLASS_VAR_NAMES = frozenset({
     "_always_dirty_computed_vars",
     "_always_dirty_substates",
     "_potentially_dirty_states",
+    "_interval_computed_vars",
 })
 
 
@@ -406,6 +408,11 @@ class BaseState(EvenMoreBasicBaseState):
 
     # Set of states which might need to be recomputed if vars in this state change.
     _potentially_dirty_states: ClassVar[set[str]] = set()
+
+    # Names of computed vars with an update interval, refreshed whenever
+    # computed_vars changes. Empty for most classes, which lets dirty
+    # propagation skip the per-mutation expiry scan.
+    _interval_computed_vars: ClassVar[tuple[str, ...]] = ()
 
     # The parent state.
     parent_state: BaseState | None = field(default=None, is_var=False)
@@ -723,8 +730,21 @@ class BaseState(EvenMoreBasicBaseState):
         # Initialize per-class var dependency tracking.
         cls._var_dependencies = {}
         cls._init_var_dependency_dicts()
+        cls._refresh_interval_computed_vars()
 
         all_base_state_classes[cls.get_full_name()] = None
+
+    @classmethod
+    def _refresh_interval_computed_vars(cls) -> None:
+        """Recompute the names of computed vars that have an update interval.
+
+        Must be called whenever cls.computed_vars is modified.
+        """
+        cls._interval_computed_vars = tuple(
+            name
+            for name, cvar in cls.computed_vars.items()
+            if cvar._update_interval is not None
+        )
 
     @classmethod
     def _add_event_handler(
@@ -830,6 +850,7 @@ class BaseState(EvenMoreBasicBaseState):
 
         setattr(cls, unique_var_name, computed_var_func_arg)
         cls.computed_vars[unique_var_name] = computed_var_func_arg
+        cls._refresh_interval_computed_vars()
         cls.vars[unique_var_name] = computed_var_func_arg
         cls._update_substate_inherited_vars({unique_var_name: computed_var_func_arg})
         cls._always_dirty_computed_vars.add(unique_var_name)
@@ -1403,6 +1424,7 @@ class BaseState(EvenMoreBasicBaseState):
 
         # Update tracking dicts.
         cls.computed_vars.update(dynamic_vars)
+        cls._refresh_interval_computed_vars()
         cls.vars.update(dynamic_vars)
         cls._update_substate_inherited_vars(dynamic_vars)
 
@@ -1812,14 +1834,31 @@ class BaseState(EvenMoreBasicBaseState):
 
     def _mark_dirty_computed_vars(self) -> None:
         """Mark ComputedVars that need to be recalculated based on dirty_vars."""
-        # Append expired computed vars to dirty_vars to trigger recalculation
-        self.dirty_vars.update(self._expired_computed_vars())
+        if self._interval_computed_vars:
+            # Append expired computed vars to dirty_vars to trigger recalculation
+            self.dirty_vars.update(self._expired_computed_vars())
         # Append always dirty computed vars to dirty_vars to trigger recalculation
         self.dirty_vars.update(self._always_dirty_computed_vars)
 
-        dirty_vars = self.dirty_vars
-        while dirty_vars:
-            calc_vars, dirty_vars = dirty_vars, set()
+        # Track which dirty vars already had their dependency closure
+        # propagated, so repeated mutations only process newly-dirty vars.
+        # Recomputing any cached var re-materializes a cache that a later
+        # mutation must invalidate again, so the frontier is only valid for
+        # the recompute generation it was built in.
+        instance_dict = self.__dict__
+        propagated = instance_dict.get("_propagated_dirty_vars")
+        current_gen = reflex_base_vars_base._computed_var_recompute_generation
+        if propagated is None:
+            propagated = set()
+            object.__setattr__(self, "_propagated_dirty_vars", propagated)
+        elif instance_dict.get("_propagated_generation") != current_gen:
+            propagated.clear()
+        object.__setattr__(self, "_propagated_generation", current_gen)
+
+        new_dirty = self.dirty_vars - propagated
+        while new_dirty:
+            propagated |= new_dirty
+            calc_vars, new_dirty = new_dirty, set()
             for state_name, cvar in self._dirty_computed_vars(from_vars=calc_vars):
                 if state_name == self.get_full_name():
                     defining_state = self
@@ -1832,7 +1871,8 @@ class BaseState(EvenMoreBasicBaseState):
                 if actual_var is not None:
                     actual_var.mark_dirty(instance=defining_state)
                 if defining_state is self:
-                    dirty_vars.add(cvar)
+                    if cvar not in propagated:
+                        new_dirty.add(cvar)
                 else:
                     # mark dirty where this var is defined
                     defining_state._mark_dirty()
@@ -1843,10 +1883,11 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             Set of computed vars to include in the delta.
         """
+        computed_vars = self.computed_vars
         return {
             cvar
-            for cvar, cvar_obj in self.computed_vars.items()
-            if cvar_obj.needs_update(instance=self)
+            for cvar in self._interval_computed_vars
+            if computed_vars[cvar].needs_update(instance=self)
         }
 
     def _dirty_computed_vars(
@@ -1966,6 +2007,8 @@ class BaseState(EvenMoreBasicBaseState):
         # Clean this state.
         self.dirty_vars = set()
         self.dirty_substates = set()
+        # Discard the propagation frontier along with the dirty vars it tracked.
+        self.__dict__.pop("_propagated_dirty_vars", None)
 
     def get_value(self, key: str) -> Any:
         """Get the value of a field (without proxying).
@@ -2085,6 +2128,9 @@ class BaseState(EvenMoreBasicBaseState):
         state.pop("_was_touched", None)
         # Proxies wrap live state references and are rebuilt on access.
         state.pop("_mutable_proxy_cache", None)
+        # The propagation frontier is transient and rebuilt on demand.
+        state.pop("_propagated_dirty_vars", None)
+        state.pop("_propagated_generation", None)
         # Remove all inherited vars.
         for inherited_var_name in self.inherited_vars:
             state.pop(inherited_var_name, None)
