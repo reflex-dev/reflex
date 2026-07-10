@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import Any, ClassVar, TypedDict
 
 from reflex_base.components.component import Component, field
@@ -559,7 +559,7 @@ class SankeyChart(ChartBase):
 
     data_key: Var[str | int] = field(doc='The key of each link value. Default: "value"')
 
-    data: Var[SankeyData] = field(
+    data: Var[SankeyData | Mapping[str, Any]] = field(
         doc="The source data, including nodes and the weighted links between them."
     )
 
@@ -582,8 +582,6 @@ class SankeyChart(ChartBase):
     node_padding: Var[int] = field(doc="The padding between nodes.")
 
     node_width: Var[int] = field(doc="The width of each node.")
-
-    link_width: Var[int] = field(doc="The width of each link.")
 
     link_curvature: Var[float] = field(doc="The curvature of each link.")
 

@@ -10,6 +10,8 @@ from reflex_components_recharts.charts import (
 )
 from reflex_components_recharts.general import ResponsiveContainer
 
+import reflex as rx
+
 
 def test_area_chart():
     ac = AreaChart.create()
@@ -58,3 +60,15 @@ def test_sankey_chart():
     assert isinstance(sc, ResponsiveContainer)
     assert isinstance(sc.children[0], SankeyChart)
     assert sc.children[0].render()["name"] == "RechartsSankeyChart"
+    assert "link_width" not in SankeyChart.get_props()
+
+
+def test_sankey_chart_accepts_unannotated_state_data():
+    class SankeyState(rx.State):
+        data = {
+            "nodes": [{"name": "A"}, {"name": "B"}],
+            "links": [{"source": 0, "target": 1, "value": 1}],
+        }
+
+    sc = SankeyChart.create(data=SankeyState.data)
+    assert isinstance(sc, ResponsiveContainer)
