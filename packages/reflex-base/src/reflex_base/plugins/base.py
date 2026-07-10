@@ -139,8 +139,9 @@ class Plugin:
     def post_compile(self, **context: Unpack[PostCompileContext]) -> None:
         """Called after the compilation of the plugin.
 
-        Runs at most once per app instance, even when the ASGI app is
-        constructed repeatedly, so hooks may mutate the app (e.g.
+        Runs at most once per app instance — even when the ASGI app is
+        constructed repeatedly, and even when another plugin's failed hook
+        forces a retry — so hooks may mutate the app (e.g.
         ``add_middleware``) without their own idempotency guard.
 
         Args:

@@ -42,6 +42,7 @@ from reflex_base.event import (
 )
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
+from reflex_base.plugins import Plugin
 from reflex_base.registry import RegistrationContext
 from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
 from reflex_base.utils import console, memo_paths
@@ -402,10 +403,16 @@ class App(MiddlewareMixin, LifespanMixin):
     # that already compiled and skips re-evaluation.
     _evaluated_pages: set[str] = dataclasses.field(default_factory=set)
 
-    # Whether the plugins' post_compile hooks already ran for this app
-    # instance (they mutate the app, so they must not run again when the
-    # ASGI app is re-constructed).
-    _plugins_post_compiled: bool = False
+    # Plugins whose post_compile hook already ran for this app instance.
+    # The hooks mutate the app (add_middleware, mounting routes), so each
+    # must run at most once, even when another plugin's failed hook forces
+    # the ASGI app assembly to be retried.
+    _post_compiled_plugins: set[Plugin] = dataclasses.field(default_factory=set)
+
+    # The ASGI app assembled by __call__, built at most once per app
+    # instance: assembly mutates persistent objects (self._api, a Starlette
+    # api_transformer), so re-constructing the ASGI app must not re-run it.
+    _cached_asgi_app: ASGIApp | None = None
 
     # The backend API object.
     _api: Starlette | None = None
@@ -713,9 +720,6 @@ class App(MiddlewareMixin, LifespanMixin):
 
         Returns:
             The backend api.
-
-        Raises:
-            ValueError: If the app has not been initialized.
         """
         from reflex_base.vars.base import GLOBAL_CACHE
 
@@ -730,19 +734,28 @@ class App(MiddlewareMixin, LifespanMixin):
             trigger=get_backend_compile_trigger(),
         )
 
-        config = get_config()
-
-        # Run the hooks at most once per app instance: post_compile mutates
-        # the app (add_middleware, mounting routes), so re-constructing the
-        # ASGI app (a test harness, repeated __call__) must not re-apply them.
-        # Set after the loop so a failed hook is retried, not latched as done.
-        if not self._plugins_post_compiled:
-            for plugin in config.plugins:
-                plugin.post_compile(app=self)
-            self._plugins_post_compiled = True
+        # Assembly runs at most once per app instance; _compile stays per-call.
+        if self._cached_asgi_app is None:
+            self._cached_asgi_app = self._assemble_asgi_app()
 
         # We will not be making more vars, so we can clear the global cache to free up memory.
         GLOBAL_CACHE.clear()
+
+        return self._cached_asgi_app
+
+    def _assemble_asgi_app(self) -> ASGIApp:
+        """Run plugin post_compile hooks and wrap the backend api into an ASGI app.
+
+        Returns:
+            The assembled ASGI app.
+
+        Raises:
+            ValueError: If the app has not been initialized.
+        """
+        for plugin in get_config().plugins:
+            if plugin not in self._post_compiled_plugins:
+                plugin.post_compile(app=self)
+                self._post_compiled_plugins.add(plugin)
 
         if not self._api:
             msg = "The app has not been initialized."

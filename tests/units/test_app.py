@@ -3064,6 +3064,23 @@ def test_call_app():
     assert isinstance(api, Starlette)
 
 
+def _app_with_plugins(mocker: MockerFixture, *plugins: unittest.mock.Mock) -> App:
+    """Create an app configured with the given plugin doubles.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        plugins: Plugin doubles to install in the app's config.
+
+    Returns:
+        An app with a mocked-out ``_compile``.
+    """
+    conf = rx.Config(app_name="testing", plugins=list(plugins))
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app = App()
+    app._compile = unittest.mock.Mock()
+    return app
+
+
 def test_call_app_runs_plugin_post_compile_once(mocker: MockerFixture):
     """Constructing the ASGI app twice runs each plugin's post_compile once.
 
@@ -3072,55 +3089,65 @@ def test_call_app_runs_plugin_post_compile_once(mocker: MockerFixture):
     them when the ASGI app is constructed again on the same app instance
     (e.g. a test harness rebuilding it).
     """
-
-    class RecordingPlugin(rx.plugins.Plugin):
-        def __init__(self) -> None:
-            self.post_compile_calls = 0
-
-        def post_compile(self, **context) -> None:
-            self.post_compile_calls += 1
-
-    plugin = RecordingPlugin()
-    conf = rx.Config(app_name="testing", plugins=[plugin])
-    mocker.patch("reflex_base.config._get_config", return_value=conf)
-
-    app = App()
-    app._compile = unittest.mock.Mock()
+    plugin = unittest.mock.Mock(spec=rx.plugins.Plugin)
+    app = _app_with_plugins(mocker, plugin)
     app()
     app()
 
-    assert plugin.post_compile_calls == 1
+    plugin.post_compile.assert_called_once()
 
 
 def test_call_app_retries_post_compile_after_failure(mocker: MockerFixture):
     """A post_compile failure is not latched as done.
 
     If a hook raises (e.g. a plugin rejecting a misconfigured app), the next
-    ASGI construction must run the hooks again rather than silently skipping
-    them.
+    ASGI construction must run the hook again rather than silently skipping
+    it.
     """
-
-    class FlakyPlugin(rx.plugins.Plugin):
-        def __init__(self) -> None:
-            self.post_compile_calls = 0
-
-        def post_compile(self, **context) -> None:
-            self.post_compile_calls += 1
-            if self.post_compile_calls == 1:
-                msg = "misconfigured"
-                raise ValueError(msg)
-
-    plugin = FlakyPlugin()
-    conf = rx.Config(app_name="testing", plugins=[plugin])
-    mocker.patch("reflex_base.config._get_config", return_value=conf)
-
-    app = App()
-    app._compile = unittest.mock.Mock()
+    plugin = unittest.mock.Mock(spec=rx.plugins.Plugin)
+    plugin.post_compile.side_effect = [ValueError("misconfigured"), None]
+    app = _app_with_plugins(mocker, plugin)
     with pytest.raises(ValueError, match="misconfigured"):
         app()
     app()
 
-    assert plugin.post_compile_calls == 2
+    assert plugin.post_compile.call_count == 2
+
+
+def test_call_app_partial_post_compile_failure(mocker: MockerFixture):
+    """A failed hook is retried without re-running already-succeeded hooks.
+
+    With multiple plugins, a failure in a later plugin's post_compile must
+    not cause the earlier plugins' (non-idempotent) hooks to run again on
+    the next ASGI construction.
+    """
+    ok_plugin = unittest.mock.Mock(spec=rx.plugins.Plugin)
+    flaky_plugin = unittest.mock.Mock(spec=rx.plugins.Plugin)
+    flaky_plugin.post_compile.side_effect = [ValueError("misconfigured"), None]
+    app = _app_with_plugins(mocker, ok_plugin, flaky_plugin)
+    with pytest.raises(ValueError, match="misconfigured"):
+        app()
+    app()
+
+    ok_plugin.post_compile.assert_called_once()
+    assert flaky_plugin.post_compile.call_count == 2
+
+
+def test_call_app_caches_asgi_app(mocker: MockerFixture):
+    """Repeated ASGI construction returns the same app without re-assembly.
+
+    Assembly mutates persistent objects (``self._api``, ``api_transformer``),
+    e.g. appending the frontend mount or re-adding CORS middleware, so it must
+    run at most once per app instance while ``_compile`` still runs per call.
+    """
+    app = _app_with_plugins(mocker)
+    compile_mock = unittest.mock.Mock()
+    app._compile = compile_mock
+    first = app()
+    second = app()
+
+    assert first is second
+    assert compile_mock.call_count == 2
 
 
 @pytest.fixture
