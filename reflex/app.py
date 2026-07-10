@@ -1712,11 +1712,15 @@ class EventNamespace(AsyncNamespace):
                     f"Attempting to send delta to disconnected client {token!r}"
                 )
             return
-        # Creating a task prevents the update from being blocked behind other coroutines.
-        await asyncio.create_task(
-            self.emit(str(constants.SocketEvent.EVENT), update, to=socket_record.sid),
-            name=f"reflex_emit_event|{token}|{socket_record.sid}|{time.time()}",
-        )
+        # Await the emit directly: wrapping it in a task does not unblock the
+        # caller (awaiting the task blocks just the same) and only adds task
+        # creation/scheduling overhead on every update.
+        await self.emit(str(constants.SocketEvent.EVENT), update, to=socket_record.sid)
+        # The emit may complete without suspending (the packet is queued, not
+        # sent). Yield one loop tick so the websocket writer can flush the
+        # packet before the caller potentially blocks the event loop (e.g. a
+        # sync event handler resuming after a yield).
+        await asyncio.sleep(0)
 
     async def on_event(self, sid: str, data: Any):
         """Event for receiving front-end websocket events.
