@@ -1,0 +1,76 @@
+# Temporary benchmark harness used to collect before/after numbers for the
+# framework performance PRs. Lives only on a scratch branch; never merged.
+name: claude-perf-bench
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_ref:
+        description: Baseline ref to benchmark
+        required: true
+        default: main
+      head_ref:
+        description: Ref with the change applied
+        required: true
+      bench_script:
+        description: Benchmark script path on this branch
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  REFLEX_TELEMETRY_ENABLED: false
+  PYTHONUNBUFFERED: 1
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.base_ref }}
+          path: base
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.head_ref }}
+          path: head
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+
+      - name: Sync base
+        run: uv sync
+        working-directory: base
+
+      - name: Sync head
+        run: uv sync
+        working-directory: head
+
+      - name: Bench BASE (${{ inputs.base_ref }})
+        run: uv run --no-sync python "$GITHUB_WORKSPACE/${{ inputs.bench_script }}"
+        working-directory: base
+
+      - name: Bench HEAD (${{ inputs.head_ref }})
+        run: uv run --no-sync python "$GITHUB_WORKSPACE/${{ inputs.bench_script }}"
+        working-directory: head
+
+      - name: Bench BASE pass 2 (${{ inputs.base_ref }})
+        run: uv run --no-sync python "$GITHUB_WORKSPACE/${{ inputs.bench_script }}"
+        working-directory: base
+
+      - name: Bench HEAD pass 2 (${{ inputs.head_ref }})
+        run: uv run --no-sync python "$GITHUB_WORKSPACE/${{ inputs.bench_script }}"
+        working-directory: head
