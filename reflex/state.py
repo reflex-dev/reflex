@@ -1519,6 +1519,9 @@ class BaseState(EvenMoreBasicBaseState):
 
         if name in self.backend_vars:
             self._backend_vars.__setitem__(name, value)
+            if (cache := self.__dict__.get("_mutable_proxy_cache")) is not None:
+                # Drop the proxy wrapping the replaced value.
+                cache.pop(name, None)
             self.dirty_vars.add(name)
             self._mark_dirty()
             return
@@ -1551,6 +1554,10 @@ class BaseState(EvenMoreBasicBaseState):
 
         # Set the attribute.
         object.__setattr__(self, name, value)
+
+        if (cache := self.__dict__.get("_mutable_proxy_cache")) is not None:
+            # Drop the proxy wrapping the replaced value.
+            cache.pop(name, None)
 
         # Add the var to the dirty list.
         if name in self.base_vars:

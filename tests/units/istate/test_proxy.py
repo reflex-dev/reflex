@@ -88,6 +88,10 @@ def test_mutable_proxy_cached_per_field():
     # In-place mutation keeps the same wrapped object, so the proxy is reused.
     second.append(Item(3))
     assert state.items is second
+    # Reassignment immediately evicts the cache entry, so no strong reference
+    # to the replaced value lingers until the next read.
+    state.items = [Item(4)]
+    assert "items" not in state.__dict__["_mutable_proxy_cache"]
 
 
 def test_mutable_proxy_cache_not_serialized():
