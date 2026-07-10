@@ -1,5 +1,5 @@
 {
   "base_ref": "main",
-  "head_ref": "claude/reflex-perf-optimizations-01l7a3-eng-10093",
-  "bench_script": "benchmarks_scratch/bench_fix1_type_validation.py"
+  "head_ref": "claude/reflex-perf-optimizations-01l7a3-eng-10094",
+  "bench_script": "benchmarks_scratch/bench_fix2_mutable_proxy.py"
 }
