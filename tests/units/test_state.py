@@ -1454,6 +1454,54 @@ def test_computed_var_cached():
     assert comp_v_calls == 2
 
 
+def test_get_skip_vars_cached_per_class():
+    """get_skip_vars is cached per class and includes inherited vars."""
+
+    class SkipVarsParentState(BaseState):
+        p: int = 0
+
+    class SkipVarsChildState(SkipVarsParentState):
+        c: int = 0
+
+    parent_skip = SkipVarsParentState.get_skip_vars()
+    assert SkipVarsParentState.get_skip_vars() is parent_skip
+    assert "parent_state" in parent_skip
+    child_skip = SkipVarsChildState.get_skip_vars()
+    assert child_skip is not parent_skip
+    assert "p" in child_skip
+    assert "p" not in parent_skip
+
+
+def test_frontend_computed_var_names_precomputed():
+    """Classes precompute which computed vars are sent to the frontend."""
+
+    class FrontendCvarState(BaseState):
+        @rx.var
+        def visible(self) -> int:
+            return 1
+
+        @rx.var(backend=True)
+        def _hidden(self) -> int:
+            return 2
+
+    assert FrontendCvarState._frontend_computed_var_names == {"visible"}
+
+
+def test_framework_bookkeeping_fields_not_proxied():
+    """Framework bookkeeping containers are returned raw, not proxied."""
+
+    class BookkeepingState(BaseState):
+        values: list[int] = []
+
+    state = BookkeepingState()
+    assert type(state.dirty_vars) is set
+    assert type(state.substates) is dict
+    assert type(state._backend_vars) is dict
+    assert state.parent_state is None
+    # Actual state vars still get proxied for mutation tracking.
+    assert isinstance(state.values, MutableProxy)
+
+
 async def test_computed_var_cached_depends_on_non_cached():
     """Test that a cached var is recalculated if it depends on non-cached ComputedVar."""
 

@@ -766,6 +766,13 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
     # the dependency dicts, i.e. at class creation and after any var is added.
     _interval_computed_var_names: ClassVar[frozenset[str]] = frozenset()
 
+    # Non-backend computed vars on this class, sent to the frontend in deltas;
+    # recomputed alongside _interval_computed_var_names.
+    _frontend_computed_var_names: ClassVar[frozenset[str]] = frozenset()
+
+    # Cached result of get_skip_vars(), rebuilt lazily after inherited_vars changes.
+    _skip_var_names: ClassVar[frozenset[str] | None] = None
+
     # The parent state.
     parent_state: BaseState | None = field(default=None, is_var=False)
 
@@ -1292,6 +1299,9 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             for name, cvar in cls.computed_vars.items()
             if cvar._update_interval is not None
         )
+        cls._frontend_computed_var_names = frozenset(
+            name for name, cvar in cls.computed_vars.items() if not cvar._backend
+        )
         for cvar_name, cvar in cls.computed_vars.items():
             if not cvar._cache:
                 # Do not perform dep calculation when cache=False (these are always dirty).
@@ -1447,28 +1457,32 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             raise BaseVarShadowsInheritedVarError(msg)
 
     @classmethod
-    def get_skip_vars(cls) -> set[str]:
+    def get_skip_vars(cls) -> frozenset[str]:
         """Get the vars to skip when serializing.
 
         Returns:
             The vars to skip when serializing.
         """
-        return (
-            set(cls.inherited_vars)
-            | {
-                "parent_state",
-                "substates",
-                "dirty_vars",
-                "dirty_substates",
-                "router_data",
-                # Listed in `vars` but backed by no field of its own, so a
-                # `router` annotation must never become a base var that would
-                # half-shadow the descriptor. Substates are already covered by
-                # `inherited_vars` above; this catches a root state class.
-                constants.ROUTER,
-            }
-            | types.RESERVED_BACKEND_VAR_NAMES
-        )
+        # Cached per class; invalidated when inherited_vars changes.
+        if (skip_vars := cls.__dict__.get("_skip_var_names")) is None:
+            skip_vars = (
+                frozenset(cls.inherited_vars)
+                | {
+                    "parent_state",
+                    "substates",
+                    "dirty_vars",
+                    "dirty_substates",
+                    "router_data",
+                    # Listed in `vars` but backed by no field of its own, so a
+                    # `router` annotation must never become a base var that would
+                    # half-shadow the descriptor. Substates are already covered by
+                    # `inherited_vars` above; this catches a root state class.
+                    constants.ROUTER,
+                }
+                | types.RESERVED_BACKEND_VAR_NAMES
+            )
+            cls._skip_var_names = skip_vars
+        return skip_vars
 
     @classmethod
     @functools.lru_cache
@@ -1812,6 +1826,8 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                     substate_class.vars.setdefault(name, var)
                     substate_class.inherited_vars.setdefault(name, var)
                 substate_class._update_substate_inherited_vars(vars_to_add)
+            # The skip vars cache incorporates inherited_vars.
+            substate_class._skip_var_names = None
         # Reinitialize dependency tracking dicts.
         cls._init_var_dependency_dicts()
 
@@ -2454,9 +2470,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         delta = {}
 
         self._mark_dirty_computed_vars()
-        frontend_computed_vars: set[str] = {
-            name for name, cv in self.computed_vars.items() if not cv._backend
-        }
+        frontend_computed_vars = type(self)._frontend_computed_var_names
 
         # Return the dirty vars for this instance, any cached/dependent computed vars,
         # and always dirty computed vars (cache=False)
