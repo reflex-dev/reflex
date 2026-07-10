@@ -633,6 +633,23 @@ def does_obj_satisfy_typed_dict(
     return required_keys.issubset(frozenset(obj))
 
 
+@lru_cache
+def _validation_depth() -> int:
+    """Get the container depth for hot-path state var type validation.
+
+    The result of these checks only gates a diagnostic log, so production
+    mode skips the per-element walk of large containers and only validates
+    the outer type.
+
+    Returns:
+        The `nested` depth to pass to `_isinstance`.
+    """
+    from reflex_base import constants
+    from reflex_base.environment import environment
+
+    return 0 if environment.REFLEX_ENV_MODE.get() == constants.Env.PROD else 1
+
+
 def _isinstance(
     obj: Any,
     cls: GenericType,

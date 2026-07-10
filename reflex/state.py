@@ -53,7 +53,7 @@ from reflex_base.utils.exceptions import (
 )
 from reflex_base.utils.exceptions import ImmutableStateError as ImmutableStateError
 from reflex_base.utils.serializers import serializer
-from reflex_base.utils.types import _isinstance
+from reflex_base.utils.types import _isinstance, _validation_depth
 from reflex_base.vars import Field, VarData, field
 from reflex_base.vars.base import (
     ComputedVar,
@@ -1531,7 +1531,9 @@ class BaseState(EvenMoreBasicBaseState):
 
         if (field := fields.get(name)) is not None and field.is_var:
             field_type = field.outer_type_
-            if not _isinstance(value, field_type, nested=1, treat_var_as_type=False):
+            if not _isinstance(
+                value, field_type, nested=_validation_depth(), treat_var_as_type=False
+            ):
                 console.error(
                     f"Expected field '{type(self).__name__}.{name}' to receive type '{escape(str(field_type))}',"
                     f" but got '{value}' of type '{type(value)}'."
