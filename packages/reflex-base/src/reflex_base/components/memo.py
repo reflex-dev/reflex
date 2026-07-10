@@ -1694,9 +1694,29 @@ def _create_component_wrapper(
     return _MemoComponentWrapper(definition)
 
 
+def _passthrough_signature(children: Var[Component]) -> Component:
+    """Signature template for auto-memoize passthrough wrappers.
+
+    Never called — ``_analyze_params`` reads only its signature. Every
+    passthrough wrapper shares this exact signature, so the analysis
+    (``inspect.signature`` + ``get_type_hints``, which eval-compiles the
+    stringized annotations) is hoisted to import time and shared instead of
+    being recomputed per memoized component.
+
+    Raises:
+        NotImplementedError: Always; only the signature is meaningful.
+    """
+    raise NotImplementedError
+
+
+_PASSTHROUGH_PARAMS = _analyze_params(_passthrough_signature, for_component=True)
+
+
 def create_passthrough_component_memo(
     component: Component,
     source_module: str | None = None,
+    existing_definitions: Mapping[tuple[str, str | None], MemoComponentDefinition]
+    | None = None,
 ) -> tuple[
     Callable[..., MemoComponent],
     MemoComponentDefinition,
@@ -1717,6 +1737,10 @@ def create_passthrough_component_memo(
         component: The component to wrap.
         source_module: The user-app Python module that triggered creation of
             this memo (typically the page that contained the wrapped subtree).
+        existing_definitions: Previously built definitions keyed by
+            ``(tag, source_module)`` (e.g. ``CompileContext.auto_memo_components``).
+            When the computed tag is already present, the cached definition is
+            reused instead of building a duplicate.
 
     Returns:
         The callable memo wrapper and its component definition.
@@ -1766,11 +1790,10 @@ def create_passthrough_component_memo(
         object.__setattr__(new_component, "_get_all_refs", component._get_all_refs)
         return new_component
 
-    # Evaluate once to compute the tag from the rendered memo body shape.
-    # ``_create_component_definition`` will evaluate again internally; the
-    # second pass overwrites ``captured_hole_child`` but the captured value
-    # is identical.
-    params = _analyze_params(passthrough, for_component=True)
+    # Evaluate once to compute the tag from the rendered memo body shape; the
+    # same evaluated body is reused as the definition's component so the memo
+    # function does not run a second time.
+    params = _PASSTHROUGH_PARAMS
     preview = _normalize_component_return(_evaluate_memo_function(passthrough, params))
     if preview is None:
         msg = (
@@ -1780,18 +1803,24 @@ def create_passthrough_component_memo(
         raise TypeError(msg)
     tag = preview._compute_memo_tag()
 
+    if existing_definitions is not None:
+        cached = existing_definitions.get((tag, source_module))
+        if cached is not None:
+            return _create_component_wrapper(cached), cached
+
     passthrough.__name__ = format.to_snake_case(tag)
     passthrough.__qualname__ = passthrough.__name__
     passthrough.__module__ = __name__
 
-    definition = _create_component_definition(passthrough, Component, source_module)
-    replacements: dict[str, Any] = {}
-    if definition.export_name != tag:
-        replacements["export_name"] = tag
-    if captured_hole_child:
-        replacements["passthrough_hole_child"] = captured_hole_child[0]
-    if replacements:
-        definition = dataclasses.replace(definition, **replacements)
+    definition = MemoComponentDefinition(
+        fn=passthrough,
+        python_name=passthrough.__name__,
+        params=params,
+        source_module=source_module,
+        export_name=tag,
+        _component=_LazyBody.ready(_lift_rest_props(preview)),
+        passthrough_hole_child=captured_hole_child[0] if captured_hole_child else None,
+    )
 
     return _create_component_wrapper(definition), definition
 

@@ -381,9 +381,13 @@ class MemoizeStatefulPlugin(Plugin):
         # tag is derived from the rendered memo body inside
         # ``create_passthrough_component_memo`` after the ``{children}`` hole
         # is substituted, so passthrough wrappers that differ only in their
-        # children collapse to a single definition.
+        # children collapse to a single definition. Passing the already-built
+        # definitions lets identical subtrees reuse the first definition
+        # instead of rebuilding an equivalent one per call site.
         wrapper_factory, definition = create_passthrough_component_memo(
-            comp, source_module=page_context.source_module
+            comp,
+            source_module=page_context.source_module,
+            existing_definitions=compile_context.auto_memo_components,
         )
         tag = definition.export_name
         compile_context.memoize_wrappers[tag] = None
