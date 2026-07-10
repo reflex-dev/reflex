@@ -723,7 +723,7 @@ class MutableProxy(wrapt.ObjectProxy):
             indices = range(len(self.__wrapped__))[key]
             return [
                 self._wrap_recursive(item, ("item", index))
-                for item, index in zip(value, indices, strict=False)
+                for item, index in zip(value, indices, strict=True)
             ]
         # Recursively wrap mutable items retrieved through this proxy.
         return self._wrap_recursive(value, ("item", key))
