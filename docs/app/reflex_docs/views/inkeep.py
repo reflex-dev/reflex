@@ -1,6 +1,7 @@
 """UI and logic inkeep chat component."""
 
 import reflex as rx
+from reflex.constants import MemoizationMode
 from reflex.event import EventSpec
 from reflex.experimental.client_state import ClientStateVar
 from reflex.utils.imports import ImportVar
@@ -15,7 +16,12 @@ class InkeepSearchBar(rx.NoSSRComponent):
 
 _INKEEP_LOADED_STATE = "inkeep_loaded"
 _INKEEP_OPEN_STATE = "inkeep_open"
+_SEARCH_WRAPPER_ID = "inkeep-search-wrapper"
 _SEARCH_TRIGGER_ID = "inkeep-search-trigger"
+_SEARCH_TRIGGER_FALLBACK_STYLE = (
+    f"#{_SEARCH_WRAPPER_ID}:has(> [id^='inkeep-shadow']) "
+    f"> #{_SEARCH_TRIGGER_ID} {{ display: none; }}"
+)
 
 # Inline copy of assets/icons/search.svg so the placeholder needs no extra request.
 _SEARCH_ICON_SVG = (
@@ -31,11 +37,12 @@ _SEARCH_ICON_SVG = (
 #   1. Fix the placeholder's keyboard hint for non-Mac platforms, which can't
 #      be known during SSR (the default label is the Mac glyph).
 #   2. Forward Cmd/Ctrl+K to the placeholder trigger before the widget loads,
-#      mounting the real widget with its modal open. Once mounted, the
-#      placeholder is gone so this no-ops and Inkeep's own handler takes over.
+#      mounting the real widget with its modal open. Once Inkeep's shadow host
+#      mounts, this no-ops and Inkeep's own handler takes over.
 _HOTKEY_AND_HINT_HOOK = f"""
 useEffect(() => {{
   const triggerId = "{_SEARCH_TRIGGER_ID}";
+  const wrapperId = "{_SEARCH_WRAPPER_ID}";
   const platform =
     (navigator.userAgentData && navigator.userAgentData.platform) ||
     navigator.platform ||
@@ -48,7 +55,10 @@ useEffect(() => {{
   const onKeydown = (event) => {{
     if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== "k") return;
     const trigger = document.getElementById(triggerId);
-    if (!trigger) return;
+    const widgetReady = document
+      .getElementById(wrapperId)
+      ?.querySelector("[id^='inkeep-shadow']");
+    if (!trigger || widgetReady) return;
     event.preventDefault();
     trigger.click();
   }};
@@ -116,6 +126,8 @@ def _search_trigger_placeholder(on_click: EventSpec) -> rx.Component:
 
 
 class Search(rx.el.Div):
+    _memoization_mode = MemoizationMode(recursive=False)
+
     def add_imports(self):
         """Add the imports for the component."""
         return {
@@ -389,7 +401,8 @@ const searchBarProps = {
               width: auto;
             }
 
-            .ikp-search-bar__kbd-wrapper {
+            [data-theme='light'] .ikp-search-bar__kbd-wrapper,
+            [data-theme='dark'] .ikp-search-bar__kbd-wrapper {
               padding: 0px 0.25rem;
               justify-content: center;
               align-items: center;
@@ -408,8 +421,10 @@ const searchBarProps = {
               width: fit-content;
             }
 
-            .ikp-search-bar__text,
-            .ikp-search-bar__icon {
+            [data-theme='light'] .ikp-search-bar__text,
+            [data-theme='dark'] .ikp-search-bar__text,
+            [data-theme='light'] .ikp-search-bar__icon,
+            [data-theme='dark'] .ikp-search-bar__icon {
               color: var(--secondary-11);
               font-weight: 500;
               font-style: normal;
@@ -513,15 +528,18 @@ const searchBarProps = {
             _INKEEP_OPEN_STATE, default=True, global_ref=False
         )
         return super().create(
+            rx.el.style(_SEARCH_TRIGGER_FALLBACK_STYLE),
             rx.cond(
                 loaded.value,
                 InkeepSearchBar.create(
                     special_props=[_controlled_modal_settings(opened)],
                 ),
-                _search_trigger_placeholder(
-                    on_click=rx.call_function(loaded.set_value(True)),
-                ),
+                rx.fragment(),
             ),
+            _search_trigger_placeholder(
+                on_click=rx.call_function(loaded.set_value(True)),
+            ),
+            id=_SEARCH_WRAPPER_ID,
         )
 
 
