@@ -51,6 +51,21 @@ def test_search_placeholder_stays_mounted_until_shadow_host_exists():
     assert ".ikp-search-bar__container" not in _HOTKEY_AND_HINT_HOOK
 
 
+def test_search_widget_kbd_hint_matches_placeholder():
+    """Keep the widget's kbd hint visually identical to the placeholder's.
+
+    Inkeep's base styles give the inner <kbd> keys a monospace font stack, so
+    the hint visibly changes font (and width) when the real widget replaces
+    the placeholder unless the keys inherit the wrapper's font.
+    """
+    styles = "\n".join(Search.create().add_hooks())
+    assert re.search(
+        r"\.ikp-search-bar__kbd-wrapper kbd\s*\{[^{}]*font:\s*inherit", styles
+    )
+    # The hook targets the placeholder's first key span to swap ⌘ for Ctrl.
+    assert 'querySelector("kbd > span")' in _HOTKEY_AND_HINT_HOOK
+
+
 def test_search_widget_dark_colors_match_placeholder():
     """Override Inkeep's higher-specificity dark colors with the placeholder color."""
     styles = "\n".join(Search.create().add_hooks())

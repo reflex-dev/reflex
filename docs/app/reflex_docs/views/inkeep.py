@@ -49,8 +49,8 @@ useEffect(() => {{
     navigator.userAgent ||
     "";
   if (!/mac|iphone|ipad|ipod/i.test(platform)) {{
-    const hint = document.getElementById(triggerId)?.querySelector("kbd");
-    if (hint) hint.textContent = "Ctrl K";
+    const hint = document.getElementById(triggerId)?.querySelector("kbd > span");
+    if (hint) hint.textContent = "Ctrl";
   }}
   const onKeydown = (event) => {{
     if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== "k") return;
@@ -107,8 +107,10 @@ def _search_trigger_placeholder(on_click: EventSpec) -> rx.Component:
         rx.html(_SEARCH_ICON_SVG, class_name="flex shrink-0"),
         rx.el.span("Search", class_name="max-xl:hidden"),
         rx.el.kbd(
-            "⌘K",
-            class_name="max-xl:hidden ml-auto flex items-center justify-center px-1 h-5 rounded bg-secondary-3 text-[0.8125rem] font-[475] leading-5 font-sans",
+            # Two keys with a 2px gap, mirroring Inkeep's kbd-wrapper markup.
+            rx.el.span("⌘"),
+            rx.el.span("K"),
+            class_name="max-xl:hidden ml-auto flex items-center justify-center gap-0.5 px-1 h-5 rounded bg-secondary-3 text-[0.8125rem] font-[475] leading-5 font-sans",
         ),
         id=_SEARCH_TRIGGER_ID,
         type="button",
@@ -419,6 +421,13 @@ const searchBarProps = {
               font-style: normal;
               margin-left: auto;
               width: fit-content;
+            }
+
+            .ikp-search-bar__kbd-wrapper kbd {
+              /* Inkeep's base styles give the inner keys a monospace stack;
+                 inherit the wrapper's font so the hint matches the
+                 pre-mount placeholder trigger. */
+              font: inherit;
             }
 
             [data-theme='light'] .ikp-search-bar__text,
