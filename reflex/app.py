@@ -6,10 +6,12 @@ import asyncio
 import contextlib
 import copy
 import dataclasses
+import decimal
 import functools
 import importlib
 import inspect
 import json
+import math
 import operator
 import sys
 import time
@@ -130,13 +132,46 @@ except ImportError:  # pragma: no cover
     orjson = None
 
 
+def _contains_non_finite(value: Any) -> bool:
+    """Check if a payload value contains non-finite floats or Decimals.
+
+    The stdlib encoder emits the non-standard NaN/Infinity/-Infinity tokens,
+    which the frontend understands; orjson would silently emit null instead.
+
+    Args:
+        value: The payload value to scan.
+
+    Returns:
+        Whether a non-finite float or Decimal is reachable in the payload.
+    """
+    cls = type(value)
+    if cls is float:
+        return not math.isfinite(value)
+    if cls is list or cls is tuple or cls is set or cls is frozenset:
+        return any(_contains_non_finite(item) for item in value)
+    if cls is dict:
+        # items() pairs are tuples, covering non-str float keys as well.
+        return any(_contains_non_finite(item) for item in value.items())
+    if isinstance(value, float):
+        return not math.isfinite(value)
+    if isinstance(value, decimal.Decimal):
+        return not value.is_finite()
+    if dataclasses.is_dataclass(value) and not isinstance(value, type):
+        return any(
+            _contains_non_finite(getattr(value, field.name))
+            for field in dataclasses.fields(value)
+        )
+    return False
+
+
 def _socket_json_dumps(obj: Any, **kwargs) -> str:
     """Serialize an outgoing socket.io payload to a JSON string.
 
-    Uses orjson when available (~5x faster on large deltas), falling back to
-    the stdlib encoder for payloads orjson cannot represent (e.g. integers
-    beyond 64 bits) or for kwargs other than the compact separators that
-    python-socketio/engineio pass.
+    Uses orjson when available (~3x faster on large deltas), falling back to
+    the stdlib encoder for payloads orjson cannot represent faithfully:
+    integers beyond 64 bits, non-finite floats (the frontend expects the
+    stdlib NaN/Infinity tokens), or kwargs other than the compact separators
+    that python-socketio/engineio pass.
 
     Args:
         obj: The object to serialize.
@@ -149,11 +184,17 @@ def _socket_json_dumps(obj: Any, **kwargs) -> str:
         not kwargs or (len(kwargs) == 1 and kwargs.get("separators") == (",", ":"))
     ):
         try:
-            return orjson.dumps(
+            encoded = orjson.dumps(
                 obj, default=serializers.serialize, option=_ORJSON_OPTIONS
-            ).decode("utf-8")
+            )
         except TypeError:
             pass
+        else:
+            # orjson writes non-finite floats as null; only outputs that
+            # contain null anywhere can be affected, so the payload scan
+            # is skipped entirely for most updates.
+            if b"null" not in encoded or not _contains_non_finite(obj):
+                return encoded.decode("utf-8")
     kwargs.setdefault("separators", (",", ":"))
     return format.json_dumps(obj, **kwargs)
 

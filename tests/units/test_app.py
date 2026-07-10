@@ -3915,3 +3915,16 @@ def test_socket_json_dumps_matches_stdlib(payload):
     assert json.loads(_socket_json_dumps(payload, separators=(",", ":"))) == json.loads(
         expected
     )
+
+
+def test_socket_json_dumps_special_floats():
+    """Non-finite floats keep stdlib's NaN/Infinity wire tokens."""
+    payload = {"vals": [42.9, float("nan"), float("inf"), float("-inf")], "opt": None}
+    expected = format.json_dumps(payload, separators=(",", ":"))
+    assert _socket_json_dumps(payload) == expected
+
+    update = StateUpdate(delta={"s": {"v" + FIELD_MARKER: float("nan")}})
+    assert "NaN" in _socket_json_dumps(update)
+
+    dec = {"d": decimal.Decimal("nan")}
+    assert _socket_json_dumps(dec) == format.json_dumps(dec, separators=(",", ":"))

@@ -201,21 +201,22 @@ async def chain_updates(
         events: The events to queue with the update.
         handler_name: The name of the handler that yielded the events, used for error messages.
         root_state: The root state of the app, no delta emitted if omitted.
-        deferred: If provided, emission callables are appended here instead of
-            being awaited, so the caller can run them after releasing the
-            state lock. Delta resolution and event validation still happen
-            inline (under the lock).
+        deferred: If provided, the routing of the chained events is appended
+            here instead of being awaited, so the caller can run it after
+            releasing the state lock. The delta is always emitted inline: its
+            values reference live state containers (``get_value`` unwraps
+            proxies without copying), so it must be serialized before another
+            lock holder can mutate them.
     """
     from reflex.event import Event
 
     ctx = EventContext.get()
 
-    delta = None
     if root_state is not None:
         # Emit deltas first, so any frontend events are processed with the latest state.
         try:
             delta = await root_state._get_resolved_delta()
-            if delta and deferred is None:
+            if delta:
                 await ctx.emit_delta(delta)
         finally:
             root_state._clean()
@@ -224,13 +225,11 @@ async def chain_updates(
     fixed_events = Event.from_event_type(
         _check_valid_yield(events, handler_name=handler_name),
     )
-    if deferred is not None:
-        if delta:
-            deferred.append(functools.partial(ctx.emit_delta, delta))
-        if fixed_events:
+    if fixed_events:
+        if deferred is not None:
             deferred.append(functools.partial(_route_events, ctx, fixed_events))
-    elif fixed_events:
-        await _route_events(ctx, fixed_events)
+        else:
+            await _route_events(ctx, fixed_events)
 
 
 async def process_event(
@@ -247,10 +246,10 @@ async def process_event(
         payload: The event payload.
         state: State to process the handler.
         root_state: The root state of the app, used for emitting deltas.
-        deferred: If provided, the handler's final emissions are appended here
-            instead of being awaited, so the caller can run them after
-            releasing the state lock. Intermediate (streamed) updates are
-            always emitted inline.
+        deferred: If provided, routing of the handler's final chained events
+            is appended here instead of being awaited, so the caller can run
+            it after releasing the state lock. Deltas are always emitted
+            inline.
 
     Raises:
         ValueError: If a string value is received for an int or float type and cannot be converted.
@@ -362,7 +361,6 @@ class BaseStateEventProcessor(EventProcessor):
         ctx = entry.ctx
         event = entry.event
         router_data = event.router_data or {}
-        preprocess_update = None
         deferred_emits: list[Callable[[], Awaitable[None]]] | None = None
         background_states: tuple[BaseState, BaseState] | None = None
         # Get the state for the session exclusively.
@@ -386,44 +384,42 @@ class BaseStateEventProcessor(EventProcessor):
                 if state.router != (router := RouterData.from_router_data(router_data)):
                     state.router = router
 
-            # Preprocess the event. A returned update is emitted after the
-            # lock is released.
+            # Preprocess the event.
             if (
                 self.middleware is not None
-                and (
-                    preprocess_update := await self.middleware._preprocess(state, event)
-                )
+                and (update := await self.middleware._preprocess(state, event))
                 is not None
             ):
-                pass
+                # If there was an update, yield it.
+                if update.delta:
+                    await ctx.emit_delta(update.delta)
+                if update.events:
+                    await _route_events(ctx, update.events)
+                return
+
+            # Get the event's substate.
+            substate = await state.get_state(event.state_cls)
+            root_state = state._get_root_state()
+
+            if needs_to_rehydrate:
+                await self._rehydrate(root_state)
+
+            # Process non-background events while holding the lock. The
+            # routing of any final chained events is collected and run after
+            # the lock is released, shortening the hold time; deltas are
+            # emitted inline since their values reference live state data.
+            if not registered_handler.handler.is_background:
+                deferred_emits = []
+                await process_event(
+                    handler=registered_handler.handler,
+                    payload=event.payload,
+                    state=substate,
+                    root_state=root_state,
+                    deferred=deferred_emits,
+                )
             else:
-                # Get the event's substate.
-                substate = await state.get_state(event.state_cls)
-                root_state = state._get_root_state()
-
-                if needs_to_rehydrate:
-                    await self._rehydrate(root_state)
-
-                # Process non-background events while holding the lock, but
-                # collect the final emissions (socket encode + send) to run
-                # after the lock is released, shortening the hold time.
-                if not registered_handler.handler.is_background:
-                    deferred_emits = []
-                    await process_event(
-                        handler=registered_handler.handler,
-                        payload=event.payload,
-                        state=substate,
-                        root_state=root_state,
-                        deferred=deferred_emits,
-                    )
-                else:
-                    background_states = (substate, root_state)
-        if preprocess_update is not None:
-            if preprocess_update.delta:
-                await ctx.emit_delta(preprocess_update.delta)
-            if preprocess_update.events:
-                await _route_events(ctx, preprocess_update.events)
-        elif deferred_emits is not None:
+                background_states = (substate, root_state)
+        if deferred_emits is not None:
             for emit in deferred_emits:
                 await emit()
         elif background_states is not None:
