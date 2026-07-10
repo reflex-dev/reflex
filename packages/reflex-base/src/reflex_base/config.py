@@ -412,6 +412,14 @@ class Config(BaseConfig):
             msg = f"{self._prefixes[0]}REDIS_URL is required when using the redis state manager."
             raise ConfigError(msg)
 
+        allowed_color_modes = constants.LiteralColorMode.__args__
+        if self.default_color_mode not in allowed_color_modes:
+            msg = (
+                f"default_color_mode must be one of "
+                f"{allowed_color_modes}, but got {self.default_color_mode!r}."
+            )
+            raise ConfigError(msg)
+
     def _normalize_plugins(self):
         """Normalize ``plugins`` entries to Plugin instances.
 
