@@ -144,16 +144,11 @@ class Event:
                 msg = f"Unexpected event type, {type(e)}."
                 raise ValueError(msg)
             name = format.format_event_handler(e.handler)
-            # Deepcopy mutable values to detach them from any state-bound
-            # proxies (e.g. ImmutableMutableProxy from a background task's
-            # StateProxy).
+            # Detach mutable values from any state-bound proxies (e.g.
+            # ImmutableMutableProxy from a background task's StateProxy),
+            # copying only subtrees that are actually proxied.
             payload = {
-                k._js_expr: (
-                    decoded
-                    if isinstance(decoded := v._decode(), _IMMUTABLE_PAYLOAD_TYPES)
-                    else copy.deepcopy(decoded)
-                )
-                for k, v in e.args
+                k._js_expr: _detach_state_proxies(v._decode(), {}) for k, v in e.args
             }
 
             # Create an event and append it to the list.
@@ -183,6 +178,95 @@ _IMMUTABLE_PAYLOAD_TYPES = (
     frozenset,
     type(None),
 )
+
+# Proxy types that bind a value to a state instance. Populated by higher
+# layers (reflex.istate.proxy) at import time; this package cannot import
+# them directly without inverting the dependency direction.
+_STATE_PROXY_TYPES: tuple[type, ...] = ()
+
+
+def _register_state_proxy_type(proxy_type: type) -> None:
+    """Register a proxy type whose payload values must be detached by copy.
+
+    Args:
+        proxy_type: The state-bound proxy type (e.g. MutableProxy).
+    """
+    global _STATE_PROXY_TYPES
+    if not issubclass(proxy_type, _STATE_PROXY_TYPES):
+        _STATE_PROXY_TYPES = (*_STATE_PROXY_TYPES, proxy_type)
+
+
+# Exact-type fast path for the scalar scan below; isinstance against the
+# _IMMUTABLE_PAYLOAD_TYPES tuple is ~5x slower per element.
+_SCALAR_PAYLOAD_TYPES = frozenset(_IMMUTABLE_PAYLOAD_TYPES)
+
+
+def _detach_state_proxies(value: Any, memo: dict[int, Any]) -> Any:
+    """Detach state-bound proxies from an event payload value.
+
+    Subtrees containing no proxies are passed through by reference; each
+    proxied subtree is deep-copied off its proxy. Mutable values that are not
+    plain containers may hold proxies internally and are deep-copied whole,
+    as before.
+
+    Args:
+        value: The decoded payload value to detach.
+        memo: Deepcopy memo shared across one payload argument, preserving
+            aliasing between the copied subtrees of that argument.
+
+    Returns:
+        The value with every state-bound proxy replaced by a detached copy.
+    """
+    cls = type(value)
+    if cls in _SCALAR_PAYLOAD_TYPES:
+        return value
+    # A state proxy's exact type is never a plain container type.
+    if cls is list or cls is tuple:
+        copied = None
+        for index, item in enumerate(value):
+            detached = (
+                item
+                if type(item) in _SCALAR_PAYLOAD_TYPES
+                else _detach_state_proxies(item, memo)
+            )
+            if copied is None:
+                if detached is item:
+                    continue
+                copied = list(value[:index])
+            copied.append(detached)
+        if copied is None:
+            return value
+        return cls(copied) if cls is tuple else copied
+    if cls is dict:
+        replacements = None
+        for key, item in value.items():
+            if type(item) in _SCALAR_PAYLOAD_TYPES:
+                continue
+            detached = _detach_state_proxies(item, memo)
+            if detached is not item:
+                if replacements is None:
+                    replacements = {}
+                replacements[key] = detached
+        if replacements is None:
+            return value
+        copied_dict = dict(value)
+        copied_dict.update(replacements)
+        return copied_dict
+    if isinstance(value, _STATE_PROXY_TYPES):
+        # The proxy's __deepcopy__ unwraps it and snapshots the wrapped data.
+        return copy.deepcopy(value, memo)
+    if isinstance(value, _IMMUTABLE_PAYLOAD_TYPES):
+        # Subclasses of the immutable scalar types.
+        return value
+    if cls is set:
+        # Set members are hashable, so they cannot be mutable-container
+        # proxies; only opaque hashable objects need the copy fallback.
+        if all(type(item) in _SCALAR_PAYLOAD_TYPES for item in value):
+            return value
+        return copy.deepcopy(value, memo)
+    # Opaque mutable object: may reference proxies internally, snapshot it.
+    return copy.deepcopy(value, memo)
+
 
 BACKGROUND_TASK_MARKER = "_reflex_background_task"
 EVENT_ACTIONS_MARKER = "_rx_event_actions"
