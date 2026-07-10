@@ -113,6 +113,78 @@ _var_subclasses: list[VarSubclassEntry] = []
 _var_literal_subclasses: list[tuple[type[LiteralVar], VarSubclassEntry]] = []
 
 
+@functools.cache
+def _var_subclass_for_conversion(python_type: GenericType) -> VarSubclassEntry | None:
+    """Find the registry entry ``Var.to`` maps a python type to.
+
+    Later-registered entries take priority, matching the reversed scan the
+    cache replaces. The registry only grows at import time; registration
+    clears this cache (see ``Var.__init_subclass__``).
+
+    Args:
+        python_type: The (origin-normalized) python type to look up.
+
+    Returns:
+        The matching entry, or ``None`` if no entry matches.
+    """
+    for var_subclass in reversed(_var_subclasses):
+        if python_type in var_subclass.python_types or safe_issubclass(
+            python_type, var_subclass.python_types
+        ):
+            return var_subclass
+    return None
+
+
+@functools.cache
+def _var_subclass_matching_python_types(
+    python_types: tuple[GenericType, ...],
+) -> VarSubclassEntry | None:
+    """Find the registry entry whose python types cover all ``python_types``.
+
+    Used by ``Var.guess_type`` with the (origin-normalized) inner types of
+    the var type — a 1-tuple for plain types, the union members otherwise.
+    Later-registered entries take priority; registration clears this cache.
+
+    Args:
+        python_types: The python types that must all match one entry.
+
+    Returns:
+        The matching entry, or ``None`` if no entry matches.
+    """
+    for var_subclass in reversed(_var_subclasses):
+        if all(
+            safe_issubclass(python_type, var_subclass.python_types)
+            for python_type in python_types
+        ):
+            return var_subclass
+    return None
+
+
+@functools.cache
+def _var_subclass_for_var_output(output: type) -> VarSubclassEntry | None:
+    """Find the registry entry for a ``Var``-subclass conversion target.
+
+    Later-registered entries take priority; registration clears this cache.
+
+    Args:
+        output: The ``Var`` subclass passed to ``Var.to``.
+
+    Returns:
+        The matching entry, or ``None`` if no entry matches.
+    """
+    for var_subclass in reversed(_var_subclasses):
+        if safe_issubclass(output, var_subclass.var_subclass):
+            return var_subclass
+    return None
+
+
+def _clear_var_subclass_lookup_caches() -> None:
+    """Drop cached registry lookups after a new Var subclass registers."""
+    _var_subclass_for_conversion.cache_clear()
+    _var_subclass_matching_python_types.cache_clear()
+    _var_subclass_for_var_output.cache_clear()
+
+
 _AppWrap = TypeVar("_AppWrap", bound="BaseComponent")
 
 
@@ -587,6 +659,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
             ToVarOperation.__name__ = new_to_var_operation_name
 
             _var_subclasses.append(VarSubclassEntry(cls, ToVarOperation, python_types))
+            _clear_var_subclass_lookup_caches()
 
     def __post_init__(self):
         """Post-initialize the var.
@@ -913,11 +986,9 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         fixed_output_type = get_origin(output) or output
 
         # If the first argument is a python type, we map it to the corresponding Var type.
-        for var_subclass in _var_subclasses[::-1]:
-            if fixed_output_type in var_subclass.python_types or safe_issubclass(
-                fixed_output_type, var_subclass.python_types
-            ):
-                return self.to(var_subclass.var_subclass, output)
+        conversion_entry = _var_subclass_for_conversion(fixed_output_type)
+        if conversion_entry is not None:
+            return self.to(conversion_entry.var_subclass, output)
 
         if fixed_output_type is None:
             return get_to_operation(NoneVar).create(self)  # pyright: ignore [reportReturnType]
@@ -927,16 +998,16 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
             return self.to(ObjectVar, output)
 
         if isinstance(output, type):
-            for var_subclass in _var_subclasses[::-1]:
-                if safe_issubclass(output, var_subclass.var_subclass):
-                    current_var_type = self._var_type
-                    if current_var_type is Any:
-                        new_var_type = var_type
-                    else:
-                        new_var_type = var_type or current_var_type
-                    return var_subclass.to_var_subclass.create(  # pyright: ignore [reportReturnType]
-                        value=self, _var_type=new_var_type
-                    )
+            output_entry = _var_subclass_for_var_output(output)
+            if output_entry is not None:
+                current_var_type = self._var_type
+                if current_var_type is Any:
+                    new_var_type = var_type
+                else:
+                    new_var_type = var_type or current_var_type
+                return output_entry.to_var_subclass.create(  # pyright: ignore [reportReturnType]
+                    value=self, _var_type=new_var_type
+                )
 
             # If we can't determine the first argument, we just replace the _var_type.
             if not safe_issubclass(output, Var) or var_type is None:
@@ -1003,12 +1074,9 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
                 for inner_type in non_optional_inner_types
             ]
 
-            for var_subclass in _var_subclasses[::-1]:
-                if all(
-                    safe_issubclass(t, var_subclass.python_types)
-                    for t in fixed_inner_types
-                ):
-                    return self.to(var_subclass.var_subclass, self._var_type)
+            union_entry = _var_subclass_matching_python_types(tuple(fixed_inner_types))
+            if union_entry is not None:
+                return self.to(union_entry.var_subclass, self._var_type)
 
             if can_use_in_object_var(var_type):
                 return self.to(ObjectVar, self._var_type)
@@ -1026,9 +1094,9 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         if fixed_type is None:
             return self.to(None)
 
-        for var_subclass in _var_subclasses[::-1]:
-            if safe_issubclass(fixed_type, var_subclass.python_types):
-                return self.to(var_subclass.var_subclass, self._var_type)
+        guessed_entry = _var_subclass_matching_python_types((fixed_type,))
+        if guessed_entry is not None:
+            return self.to(guessed_entry.var_subclass, self._var_type)
 
         if can_use_in_object_var(fixed_type):
             return self.to(ObjectVar, self._var_type)
