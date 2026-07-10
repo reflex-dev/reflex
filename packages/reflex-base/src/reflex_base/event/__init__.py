@@ -148,7 +148,7 @@ class Event:
             # ImmutableMutableProxy from a background task's StateProxy),
             # copying only subtrees that are actually proxied.
             payload = {
-                k._js_expr: _detach_state_proxies(v._decode(), {}) for k, v in e.args
+                k._js_expr: _detach_state_proxies(v._decode()) for k, v in e.args
             }
 
             # Create an event and append it to the list.
