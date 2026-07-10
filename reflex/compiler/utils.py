@@ -390,12 +390,12 @@ def compile_experimental_component_memo(
     """
     hole_child = definition.passthrough_hole_child
     if hole_child is not None:
-        # Passthrough memo: shallow-copy the root only — ``render.children``
-        # still aliases the user-authored descendants so root-level walkers
-        # (e.g. ``Form._get_form_refs``) can introspect the real subtree, but
-        # we skip the O(n) deepcopy + recursive style pass. Descendants are
-        # rendered AND styled in the page scope, not here, so only the root
-        # needs app-level style merged.
+        # Passthrough memo: the body's only child is the ``{children}`` hole
+        # (the user-authored descendants render in the page scope), so a
+        # shallow copy of the root suffices — no O(n) deepcopy or recursive
+        # style pass. Root-level walkers that need the real subtree
+        # (e.g. ``Form._get_form_refs``) reach it via the body's delegated
+        # ``_get_all_refs``. Only the root needs app-level style merged.
         render = copy.copy(definition.component)
         _apply_root_style(render)
 
@@ -411,9 +411,6 @@ def compile_experimental_component_memo(
         # aliasing above is fine.
         all_imports = render._get_all_imports()
 
-        # Swap children for JSX render: the memo body template emits a
-        # ``{children}`` hole in place of the real descendants.
-        render.children = [hole_child]
         rendered = render.render()
     else:
         render = _apply_component_style_for_compile(copy.deepcopy(definition.component))

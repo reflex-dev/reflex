@@ -5,7 +5,7 @@ from __future__ import annotations
 import dataclasses
 import inspect
 import sys
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Mapping, MutableMapping, Sequence
 from copy import copy
 from enum import Enum
 from functools import cache, partial, update_wrapper
@@ -296,12 +296,12 @@ class MemoComponentDefinition(MemoDefinition):
     export_name: str
     _component: _LazyBody[Component]
     # For passthrough wrappers built by the auto-memoize plugin: the
-    # ``Bare``-wrapped ``{children}`` placeholder used when rendering the memo
-    # body. The ``component`` keeps its ORIGINAL children so compile-time
-    # walkers (``Form._get_form_refs`` etc.) can introspect the subtree; the
-    # compiler swaps to this placeholder only for the JSX render and for
-    # imports collection, so descendants emit their refs/imports/hooks in the
-    # page scope rather than being duplicated inside the memo body.
+    # ``Bare``-wrapped ``{children}`` placeholder that stands in as the memo
+    # body's only child (the ``component``'s original descendants stay in the
+    # page scope, which renders them into the hole). Compile-time walkers that
+    # need the real subtree (``Form._get_form_refs`` etc.) reach it through
+    # the body's ``_get_all_refs``, which delegates to the source component.
+    # ``None`` for snapshot bodies and components without structural children.
     passthrough_hole_child: Component | None = None
     # The JS function the compiled function component is wrapped in — React's
     # ``memo`` by default. ``None`` exports the bare function component. The
@@ -1700,8 +1700,8 @@ def _passthrough_signature(children: Var[Component]) -> Component:
     Never called — ``_analyze_params`` reads only its signature. Every
     passthrough wrapper shares this exact signature, so the analysis
     (``inspect.signature`` + ``get_type_hints``, which eval-compiles the
-    stringized annotations) is hoisted to import time and shared instead of
-    being recomputed per memoized component.
+    stringized annotations) runs once and is shared instead of being
+    recomputed per memoized component.
 
     Raises:
         NotImplementedError: Always; only the signature is meaningful.
@@ -1709,14 +1709,66 @@ def _passthrough_signature(children: Var[Component]) -> Component:
     raise NotImplementedError
 
 
-_PASSTHROUGH_PARAMS = _analyze_params(_passthrough_signature, for_component=True)
+@cache
+def _passthrough_params() -> tuple[MemoParam, ...]:
+    """The analyzed params shared by every passthrough wrapper.
+
+    Returns:
+        The analyzed ``(children: Var[Component])`` params.
+    """
+    return _analyze_params(_passthrough_signature, for_component=True)
+
+
+@cache
+def _passthrough_hole_render() -> dict:
+    """The rendered dict of the constant ``{children}`` hole child.
+
+    Every passthrough wrapper's hole is ``Bare.create(<children placeholder>)``
+    with the same placeholder Var, so its render output is a compile-wide
+    constant; tag computation hashes this instead of building and rendering a
+    fresh ``Bare`` per call site.
+
+    Returns:
+        The hole child's render dict.
+    """
+    from reflex_components_core.base.bare import Bare
+
+    (children_param,) = _passthrough_params()
+    return Bare.create(children_param.make_placeholder()).render()
+
+
+def _compute_passthrough_tag(component: Component, render_snapshot: bool) -> str:
+    """Compute the memo tag for ``component`` without building its memo body.
+
+    For passthrough wrappers with children, this hashes the hypothetical
+    ``{children}``-holed render — ``component``'s own render dict with the
+    constant hole child substituted — so call sites differing only in their
+    children collapse to one tag, without copying the component or touching
+    its render cache.
+
+    Args:
+        component: The component being auto-memoized.
+        render_snapshot: Whether the memo body renders the full subtree
+            (snapshot strategy) rather than a ``{children}``-holed passthrough.
+
+    Returns:
+        The stable memo tag.
+    """
+    if render_snapshot or not component.children:
+        # Snapshot bodies hash the full subtree; components without structural
+        # children get no hole substituted, so their own render is the body.
+        return component._compute_memo_tag()
+    rendered = dict(component._render().set(children=[_passthrough_hole_render()]))
+    component._replace_prop_names(rendered)
+    return component._compute_memo_tag(rendered=rendered)
 
 
 def create_passthrough_component_memo(
     component: Component,
     source_module: str | None = None,
-    existing_definitions: Mapping[tuple[str, str | None], MemoComponentDefinition]
+    registry: MutableMapping[tuple[str, str | None], MemoComponentDefinition]
     | None = None,
+    prepare_body: Callable[[Component], Component] | None = None,
 ) -> tuple[
     Callable[..., MemoComponent],
     MemoComponentDefinition,
@@ -1727,20 +1779,26 @@ def create_passthrough_component_memo(
     through the memo pipeline instead of emitting ad-hoc page-local
     ``React.memo`` declarations.
 
-    The exported memo name is derived from ``component._compute_memo_tag()``
-    after the ``{children}`` hole has been substituted into the wrapped
-    component's children (passthrough mode), so two call-sites differing only
-    in their children — whose generated memo bodies are identical — collapse
-    to one wrapper.
+    The exported memo name is a content hash of ``component`` with the
+    ``{children}`` hole standing in for its children (passthrough mode), so
+    two call-sites differing only in their children — whose generated memo
+    bodies are identical — collapse to one wrapper. The tag is computed
+    before ``prepare_body`` runs, which is sound because ``prepare_body``
+    must be a deterministic function of the component's content: equal
+    inputs produce equal prepared bodies.
 
     Args:
         component: The component to wrap.
         source_module: The user-app Python module that triggered creation of
             this memo (typically the page that contained the wrapped subtree).
-        existing_definitions: Previously built definitions keyed by
-            ``(tag, source_module)`` (e.g. ``CompileContext.auto_memo_components``).
-            When the computed tag is already present, the cached definition is
-            reused instead of building a duplicate.
+        registry: Definitions built so far this compile, keyed by
+            ``(tag, source_module)`` (``CompileContext.auto_memo_components``).
+            On a tag hit the cached definition is reused — skipping
+            ``prepare_body`` and the body build entirely — and on a miss the
+            new definition is registered before returning.
+        prepare_body: Content-deterministic transform applied to ``component``
+            only when a memo body is actually built (e.g. rewriting event
+            triggers to memoized ``useCallback`` forms).
 
     Returns:
         The callable memo wrapper and its component definition.
@@ -1755,6 +1813,16 @@ def create_passthrough_component_memo(
     render_snapshot = (
         get_memoization_strategy(component) is MemoizationStrategy.SNAPSHOT
     )
+
+    tag = _compute_passthrough_tag(component, render_snapshot)
+
+    if registry is not None:
+        cached = registry.get((tag, source_module))
+        if cached is not None:
+            return _create_component_wrapper(cached), cached
+
+    if prepare_body is not None:
+        component = prepare_body(component)
 
     captured_hole_child: list[Component] = []
 
@@ -1790,37 +1858,33 @@ def create_passthrough_component_memo(
         object.__setattr__(new_component, "_get_all_refs", component._get_all_refs)
         return new_component
 
-    # Evaluate once to compute the tag from the rendered memo body shape; the
-    # same evaluated body is reused as the definition's component so the memo
-    # function does not run a second time.
-    params = _PASSTHROUGH_PARAMS
-    preview = _normalize_component_return(_evaluate_memo_function(passthrough, params))
-    if preview is None:
+    params = _passthrough_params()
+    body = _normalize_component_return(_evaluate_memo_function(passthrough, params))
+    if body is None:
         msg = (
             "`create_passthrough_component_memo` requires a component that "
             "normalizes to `rx.Component`."
         )
         raise TypeError(msg)
-    tag = preview._compute_memo_tag()
-
-    if existing_definitions is not None:
-        cached = existing_definitions.get((tag, source_module))
-        if cached is not None:
-            return _create_component_wrapper(cached), cached
 
     passthrough.__name__ = format.to_snake_case(tag)
     passthrough.__qualname__ = passthrough.__name__
     passthrough.__module__ = __name__
 
+    # No ``_lift_rest_props`` pass: the fixed ``(children)`` signature admits
+    # no rest param, so a ``RestProp`` child can never appear in the body.
     definition = MemoComponentDefinition(
         fn=passthrough,
         python_name=passthrough.__name__,
         params=params,
         source_module=source_module,
         export_name=tag,
-        _component=_LazyBody.ready(_lift_rest_props(preview)),
+        _component=_LazyBody.ready(body),
         passthrough_hole_child=captured_hole_child[0] if captured_hole_child else None,
     )
+
+    if registry is not None:
+        registry[tag, source_module] = definition
 
     return _create_component_wrapper(definition), definition
 
