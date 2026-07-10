@@ -59,6 +59,7 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
         // on app startup, make sure the application color mode is persisted correctly.
         setColorMode(defaultColorMode);
         localStorage.setItem("last_compiled_theme", defaultColorMode);
+        localStorage.setItem("theme", defaultColorMode);
         setIsInitialized(true);
         return;
       }
