@@ -89,13 +89,24 @@ class FeedbackState(rx.State):
         pass
 
 
-def footer_link(text: str, href: str):
-    return rx.link(
-        text,
-        class_name="font-small text-secondary-9 hover:!text-secondary-11 transition-color",
-        href=href,
-        underline="none",
+def footer_link(text: str, href: str, *, root_site: bool = False) -> rx.Component:
+    """Create a footer link, optionally bypassing the docs router basename.
+
+    Args:
+        text: The visible link label.
+        href: The link destination.
+        root_site: Whether the destination is outside the docs router basename.
+
+    Returns:
+        The styled footer link.
+    """
+    class_name = (
+        "font-small text-secondary-9 hover:!text-secondary-11 "
+        "transition-color no-underline"
     )
+    if root_site:
+        return rx.el.elements.a(text, href=href, class_name=class_name)
+    return rx.link(text, href=href, class_name=class_name, underline="none")
 
 
 def footer_link_flex(heading: str, links):
@@ -360,7 +371,7 @@ def docpage_footer(path: rx.Var[str]) -> rx.Component:
                     "Links",
                     [
                         footer_link("Home", "/"),
-                        footer_link("Blog", "/blog"),
+                        footer_link("Blog", "/blog/", root_site=True),
                         footer_link("Changelog", "/changelog/"),
                     ],
                 ),
@@ -376,7 +387,7 @@ def docpage_footer(path: rx.Var[str]) -> rx.Component:
                 footer_link_flex(
                     "Resources",
                     [
-                        footer_link("FAQ", "/faq/"),
+                        footer_link("FAQ", "/faq/", root_site=True),
                         footer_link("Roadmap", ROADMAP_URL),
                         footer_link("Forum", FORUM_URL),
                     ],
@@ -1072,9 +1083,14 @@ def docpage(
         # Always provide a non-empty, page-specific meta description. Real
         # descriptions come from the doc (see make_docpage); otherwise fall back
         # to a concise, title-derived sentence so the page is never description-less.
-        seo_description = description or (
-            f"{title} — Reflex docs. Reflex is the open-source Python framework "
-            "for building full-stack web apps and internal tools."
+        from reflex_docs.pages.docs.metadata import truncate_meta_description
+
+        seo_description = truncate_meta_description(
+            description
+            or (
+                f"{title} — Reflex docs. Reflex is the open-source Python framework "
+                "for building full-stack web apps and internal tools."
+            )
         )
 
         return Route(
