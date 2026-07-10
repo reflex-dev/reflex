@@ -15,7 +15,7 @@ from types import MethodType
 from typing import TYPE_CHECKING, Any, SupportsIndex, TypeVar
 
 import wrapt
-from reflex_base.event import Event, _register_state_proxy_type
+from reflex_base.event import Event
 from reflex_base.event.context import EventContext
 from reflex_base.utils.exceptions import ImmutableStateError
 from reflex_base.utils.serializers import can_serialize, serialize, serializer
@@ -702,11 +702,6 @@ class MutableProxy(wrapt.ObjectProxy):
 def _unwrap_for_pickle(obj: T) -> T:
     """Return the object unchanged. Used by MutableProxy.__reduce_ex__."""
     return obj
-
-
-# Event payloads containing MutableProxy values (or its subclasses) must be
-# detached from the state by copying; anything else passes by reference.
-_register_state_proxy_type(MutableProxy)
 
 
 @serializer

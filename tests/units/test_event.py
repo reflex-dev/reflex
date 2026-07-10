@@ -178,7 +178,7 @@ class _ProxyPayloadState(BaseState):
 
 
 def _payload_for(value: Any) -> Any:
-    """Build a fixed event passing value as the single handler arg.
+    """Build an event passing value as the single handler arg.
 
     Args:
         value: The value to pass to the handler.
@@ -191,11 +191,11 @@ def _payload_for(value: Any) -> Any:
         pass
 
     fn_with_arg.__qualname__ = "fn_with_arg"
-    event = fix_events([EventHandler(fn=fn_with_arg)(value)])[0]
+    event = Event.from_event_type([EventHandler(fn=fn_with_arg)(value)])[0]
     return event.payload["arg"]
 
 
-def test_fix_events_shares_plain_payload_values():
+def test_from_event_type_shares_plain_payload_values():
     """Payload values without state-bound proxies pass by reference."""
     rows = [{"a": 1}, {"b": 2}]
     assert _payload_for(rows) is rows
@@ -203,7 +203,7 @@ def test_fix_events_shares_plain_payload_values():
     assert _payload_for(mapping) is mapping
 
 
-def test_fix_events_detaches_proxied_payload_values():
+def test_from_event_type_detaches_proxied_payload_values():
     """A MutableProxy payload value is detached from the state by copy."""
     from reflex.istate.proxy import MutableProxy
 
@@ -220,7 +220,7 @@ def test_fix_events_detaches_proxied_payload_values():
     assert "rows" not in state.dirty_vars
 
 
-def test_fix_events_detaches_nested_proxied_payload_values():
+def test_from_event_type_detaches_nested_proxied_payload_values():
     """Proxies nested in plain containers are detached; clean parts shared."""
     from reflex.istate.proxy import MutableProxy
 
@@ -239,7 +239,7 @@ def test_fix_events_detaches_nested_proxied_payload_values():
     assert state.rows == [{"a": 1}]
 
 
-def test_fix_events_copies_opaque_payload_objects():
+def test_from_event_type_copies_opaque_payload_objects():
     """Non-container mutable objects are still snapshotted by deepcopy."""
     import dataclasses as dc
 
@@ -253,6 +253,25 @@ def test_fix_events_copies_opaque_payload_objects():
     assert detached[0].items == [1]
     detached[0].items.append(2)
     assert obj.items == [1]
+
+
+def test_detach_state_proxies_handles_cyclic_payloads():
+    """Self-referential containers fall back to deepcopy, preserving cycles."""
+    from reflex_base.event import _detach_state_proxies
+
+    cyclic_list: list = [1]
+    cyclic_list.append(cyclic_list)
+    out = _detach_state_proxies(cyclic_list)
+    assert out is not cyclic_list
+    assert out[0] == 1
+    assert out[1] is out
+
+    cyclic_dict: dict = {"a": 1}
+    cyclic_dict["self"] = cyclic_dict
+    out = _detach_state_proxies(cyclic_dict)
+    assert out is not cyclic_dict
+    assert out["a"] == 1
+    assert out["self"] is out
 
 
 @pytest.mark.parametrize(

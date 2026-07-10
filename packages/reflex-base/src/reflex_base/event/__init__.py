@@ -179,82 +179,103 @@ _IMMUTABLE_PAYLOAD_TYPES = (
     type(None),
 )
 
-# Proxy types that bind a value to a state instance. Populated by higher
-# layers (reflex.istate.proxy) at import time; this package cannot import
-# them directly without inverting the dependency direction.
-_STATE_PROXY_TYPES: tuple[type, ...] = ()
-
-
-def _register_state_proxy_type(proxy_type: type) -> None:
-    """Register a proxy type whose payload values must be detached by copy.
-
-    Args:
-        proxy_type: The state-bound proxy type (e.g. MutableProxy).
-    """
-    global _STATE_PROXY_TYPES
-    if not issubclass(proxy_type, _STATE_PROXY_TYPES):
-        _STATE_PROXY_TYPES = (*_STATE_PROXY_TYPES, proxy_type)
-
-
 # Exact-type fast path for the scalar scan below; isinstance against the
 # _IMMUTABLE_PAYLOAD_TYPES tuple is ~5x slower per element.
 _SCALAR_PAYLOAD_TYPES = frozenset(_IMMUTABLE_PAYLOAD_TYPES)
 
 
-def _detach_state_proxies(value: Any, memo: dict[int, Any]) -> Any:
+class _PayloadCycleError(Exception):
+    """Internal: a payload container references itself."""
+
+
+def _detach_state_proxies(value: Any) -> Any:
     """Detach state-bound proxies from an event payload value.
 
-    Subtrees containing no proxies are passed through by reference; each
-    proxied subtree is deep-copied off its proxy. Mutable values that are not
-    plain containers may hold proxies internally and are deep-copied whole,
-    as before.
+    Subtrees containing no proxies are passed through by reference. Mutable
+    values that are not plain containers are deep-copied whole, as before:
+    this covers state-bound MutableProxy values (whose exact type is never a
+    plain container type, and whose ``__deepcopy__`` unwraps the proxy and
+    snapshots the wrapped data) as well as opaque objects that may reference
+    proxies internally.
 
     Args:
         value: The decoded payload value to detach.
-        memo: Deepcopy memo shared across one payload argument, preserving
-            aliasing between the copied subtrees of that argument.
 
     Returns:
         The value with every state-bound proxy replaced by a detached copy.
+    """
+    try:
+        return _scan_detach(value, {}, set())
+    except _PayloadCycleError:
+        # Self-referential containers: deepcopy preserves cycles via its memo.
+        return copy.deepcopy(value)
+
+
+def _scan_detach(value: Any, memo: dict[int, Any], active: set[int]) -> Any:
+    """Recursive copy-on-write scan behind ``_detach_state_proxies``.
+
+    Args:
+        value: The payload value (or subtree) to detach.
+        memo: Deepcopy memo shared across one payload argument, preserving
+            aliasing between the copied subtrees of that argument.
+        active: ids of the containers on the current descent path, used to
+            detect self-referential payloads.
+
+    Returns:
+        The value with every state-bound proxy replaced by a detached copy.
+
+    Raises:
+        _PayloadCycleError: If a container references itself.
     """
     cls = type(value)
     if cls in _SCALAR_PAYLOAD_TYPES:
         return value
     # A state proxy's exact type is never a plain container type.
     if cls is list or cls is tuple:
-        copied = None
-        for index, item in enumerate(value):
-            detached = (
-                item
-                if type(item) in _SCALAR_PAYLOAD_TYPES
-                else _detach_state_proxies(item, memo)
-            )
-            if copied is None:
-                if detached is item:
-                    continue
-                copied = list(value[:index])
-            copied.append(detached)
+        value_id = id(value)
+        if value_id in active:
+            raise _PayloadCycleError
+        active.add(value_id)
+        try:
+            copied = None
+            for index, item in enumerate(value):
+                detached = (
+                    item
+                    if type(item) in _SCALAR_PAYLOAD_TYPES
+                    else _scan_detach(item, memo, active)
+                )
+                if copied is None:
+                    if detached is item:
+                        continue
+                    copied = list(value[:index])
+                copied.append(detached)
+        finally:
+            active.discard(value_id)
         if copied is None:
             return value
         return cls(copied) if cls is tuple else copied
     if cls is dict:
-        replacements = None
-        for key, item in value.items():
-            if type(item) in _SCALAR_PAYLOAD_TYPES:
-                continue
-            detached = _detach_state_proxies(item, memo)
-            if detached is not item:
-                if replacements is None:
-                    replacements = {}
-                replacements[key] = detached
+        value_id = id(value)
+        if value_id in active:
+            raise _PayloadCycleError
+        active.add(value_id)
+        try:
+            replacements = None
+            for key, item in value.items():
+                if type(item) in _SCALAR_PAYLOAD_TYPES:
+                    continue
+                detached = _scan_detach(item, memo, active)
+                if detached is not item:
+                    if replacements is None:
+                        replacements = {}
+                    replacements[key] = detached
+        finally:
+            active.discard(value_id)
         if replacements is None:
             return value
         copied_dict = dict(value)
         copied_dict.update(replacements)
         return copied_dict
-    if isinstance(value, _STATE_PROXY_TYPES):
-        # The proxy's __deepcopy__ unwraps it and snapshots the wrapped data.
-        return copy.deepcopy(value, memo)
     if isinstance(value, _IMMUTABLE_PAYLOAD_TYPES):
         # Subclasses of the immutable scalar types.
         return value
@@ -264,7 +285,8 @@ def _detach_state_proxies(value: Any, memo: dict[int, Any]) -> Any:
         if all(type(item) in _SCALAR_PAYLOAD_TYPES for item in value):
             return value
         return copy.deepcopy(value, memo)
-    # Opaque mutable object: may reference proxies internally, snapshot it.
+    # State proxy or other opaque mutable object: snapshot it. A proxy's
+    # __deepcopy__ unwraps it, detaching the copy from the state.
     return copy.deepcopy(value, memo)
 
 
