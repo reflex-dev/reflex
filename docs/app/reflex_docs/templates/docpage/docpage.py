@@ -371,7 +371,7 @@ def docpage_footer(path: rx.Var[str]) -> rx.Component:
                     "Links",
                     [
                         footer_link("Home", "/"),
-                        footer_link("Blog", "/blog", root_site=True),
+                        footer_link("Blog", "/blog/", root_site=True),
                         footer_link("Changelog", "/changelog/"),
                     ],
                 ),
