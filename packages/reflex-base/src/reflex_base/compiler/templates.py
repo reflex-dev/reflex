@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Iterable, Mapping
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -706,6 +707,16 @@ def dynamic_components_module_template(
     return f"{imports_str}\n{memoized_code}"
 
 
+# Wrapper expressions that are unambiguous JS callees — identifier or member
+# chains like ``memo`` / ``React.memo``. Anything else (an inline arrow
+# function, a call expression, bracket access) is parenthesized before the
+# component function is appended, so the parens bind as the wrapper's call
+# rather than being swallowed by the wrapper expression's own grammar (e.g.
+# ``(c) => track(c)`` followed by ``(...)`` would otherwise parse the call as
+# part of the arrow body).
+_MEMO_WRAPPER_CALLEE_RE = re.compile(r"[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*")
+
+
 def _render_memo_component(component: dict[str, Any]) -> str:
     """Render the ``export const`` statement for one memoized component.
 
@@ -724,6 +735,8 @@ def _render_memo_component(component: dict[str, Any]) -> str:
     )
 }})"""
     wrapper = component.get("wrapper")
+    if wrapper and not _MEMO_WRAPPER_CALLEE_RE.fullmatch(wrapper):
+        wrapper = f"({wrapper})"
     export_expr = f"{wrapper}{function_expr}" if wrapper else function_expr
     return f"\nexport const {component['name']} = {export_expr};\n"
 

@@ -1065,6 +1065,34 @@ def test_component_memo_custom_wrapper():
     assert any(imp.tag == "trackRender" for imp in imports.get("my-render-lib", []))
 
 
+def test_component_memo_inline_function_wrapper_is_parenthesized():
+    """A wrapper that isn't a bare callee is parenthesized before the call.
+
+    An inline arrow expression concatenated directly against the component
+    function would swallow the call into its own body (``(c) => track(c)((...))``);
+    the emitted code must invoke the wrapper with the component instead.
+    """
+    inline = FunctionStringVar.create(
+        "(Comp) => trackRender(Comp)",
+        _var_data=VarData(imports={"my-render-lib": [ImportVar(tag="trackRender")]}),
+    )
+
+    @rx.memo(wrapper=inline)
+    def inline_wrapped(label: rx.Var[str]) -> rx.Component:
+        return rx.text(label)
+
+    definition = MEMOS["InlineWrapped", __name__]
+    assert isinstance(definition, MemoComponentDefinition)
+
+    files, _ = compiler.compile_memo_components((definition,))
+    code = "\n".join(c for _, c in files)
+    sym = memo_paths.mirrored_symbol("InlineWrapped", __name__)
+    assert (
+        f"export const {sym} = ((Comp) => trackRender(Comp))(({{label:labelRxMemo}}) => {{"
+        in code
+    )
+
+
 def test_component_memo_wrapper_none_in_unmirrored_module():
     """The per-name fallback module honors ``wrapper=None`` too."""
     definition = MemoComponentDefinition(
