@@ -113,12 +113,12 @@ def test_merge_imports_dedups_duplicates():
 def test_merge_imports_keeps_distinct_fields():
     """Entries differing in any field (e.g. alias) are not collapsed."""
     parsed = {"react": [ImportVar(tag="useEffect"), ImportVar(tag="useState")]}
-    aliased = {"react": [ImportVar(tag="useEffect", alias="uE")]}
+    aliased = {"react": [ImportVar(tag="useEffect", alias="effectAlias")]}
     merged = merge_imports(parsed, aliased)
     assert merged["react"] == [
         ImportVar(tag="useEffect"),
         ImportVar(tag="useState"),
-        ImportVar(tag="useEffect", alias="uE"),
+        ImportVar(tag="useEffect", alias="effectAlias"),
     ]
 
 
