@@ -4306,7 +4306,7 @@ def test_copy_fn_preserves_kwonly_defaults() -> None:
     """Test that _copy_fn preserves keyword-only default arguments."""
     handler_fn = UsesMarkerMixin.event_handlers["kwonly_default_handler"].fn
     assert handler_fn.__kwdefaults__ == {"count": 1}
-    instance = UsesMarkerMixin(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    instance = UsesMarkerMixin()
     assert handler_fn(instance) == 1
 
 
