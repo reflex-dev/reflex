@@ -67,7 +67,7 @@ def test_docs_route_descriptions_fit_search_snippet_length(routes_fixture):
 
 @pytest.mark.parametrize(
     ("label", "href"),
-    [("Blog", "/blog"), ("FAQ", "/faq/")],
+    [("Blog", "/blog/"), ("FAQ", "/faq/")],
 )
 def test_docpage_footer_uses_root_site_anchors(label: str, href: str):
     """Root-site footer links should not inherit the /docs router basename."""
