@@ -422,18 +422,30 @@ class MutableProxy(wrapt.ObjectProxy):
 
     # Dynamically generated classes for tracking dataclass mutations.
     __dataclass_proxies__: dict[str, type] = {}
+    # Dynamically generated classes for root iteration-sourced proxies.
+    __iter_path_proxies__: dict[type, type] = {}
+    _self_path: tuple[AccessSpec, ...] = ()
+    _self_actx_state: Any = None
 
-    def __new__(cls, wrapped: Any, *args, **kwargs) -> MutableProxy:
+    def __new__(
+        cls,
+        wrapped: Any,
+        *args,
+        path: tuple[AccessSpec, ...] | None = None,
+        **kwargs,
+    ) -> MutableProxy:
         """Create a proxy instance for a mutable object that tracks changes.
 
         Args:
             wrapped: The object to proxy.
             *args: Other args passed to MutableProxy (ignored).
+            path: Access path from the state field to this wrapped object.
             **kwargs: Other kwargs passed to MutableProxy (ignored).
 
         Returns:
             The proxy instance.
         """
+        root_iter_path = path is _ROOT_ITER_PATH
         if dataclasses.is_dataclass(wrapped):
             wrapped_cls = type(wrapped)
             wrapper_cls_name = wrapped_cls.__name__ + cls.__name__
@@ -451,6 +463,16 @@ class MutableProxy(wrapt.ObjectProxy):
                     },
                 )
             cls = cls.__dataclass_proxies__[wrapper_cls_name]
+        if root_iter_path:
+            try:
+                cls = MutableProxy.__iter_path_proxies__[cls]
+            except KeyError:
+                MutableProxy.__iter_path_proxies__[cls] = type(
+                    cls.__name__ + "IterPath",
+                    (cls,),
+                    {"_self_path": _ROOT_ITER_PATH},
+                )
+                cls = MutableProxy.__iter_path_proxies__[cls]
         return super().__new__(cls)  # pyright: ignore[reportArgumentType]
 
     def __init__(
@@ -472,8 +494,8 @@ class MutableProxy(wrapt.ObjectProxy):
         super().__init__(wrapped)
         self._self_state = state
         self._self_field_name = field_name
-        self._self_path = path or ()
-        self._self_actx_state = None
+        if path is not None and path is not _ROOT_ITER_PATH:
+            self._self_path = path
 
     def __repr__(self) -> str:
         """Get the representation of the wrapped object.
@@ -633,7 +655,31 @@ class MutableProxy(wrapt.ObjectProxy):
                 wrapped=value,
                 state=self._self_state,
                 field_name=self._self_field_name,
-                path=path,
+                path=path or None,
+            )
+        return value
+
+    def _wrap_iter_value(self, value: Any) -> Any:
+        """Wrap an iterated value while marking the path as non-refreshable.
+
+        Args:
+            value: The iterated value to wrap.
+
+        Returns:
+            The wrapped value.
+        """
+        if self._is_called_from_dataclasses_internal():
+            return value
+        if isinstance(value, MutableProxy):
+            value = value.__wrapped__
+        if is_mutable_type(type(value)):
+            base_cls = globals()[self.__base_proxy__]
+            path = self._self_path
+            return base_cls(
+                wrapped=value,
+                state=self._self_state,
+                field_name=self._self_field_name,
+                path=_ROOT_ITER_PATH if not path else (*path, _ITER_ACCESS_SPEC),
             )
         return value
 
@@ -734,9 +780,10 @@ class MutableProxy(wrapt.ObjectProxy):
         Yields:
             Each item value (possibly wrapped in MutableProxy).
         """
+        wrap_iter_value = self._wrap_iter_value
         for value in super().__iter__():  # pyright: ignore[reportAttributeAccessIssue]
             # Recursively wrap mutable items retrieved through this proxy.
-            yield self._wrap_recursive(value, _ITER_ACCESS_SPEC)
+            yield wrap_iter_value(value)
 
     def __delattr__(self, name: str):
         """Delete the attribute on the proxied object and mark state dirty.
