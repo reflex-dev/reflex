@@ -9,7 +9,7 @@ from reflex.compiler import compiler
 from reflex.compiler.plugins import DefaultCollectorPlugin, default_page_plugins
 from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
 
-from .fixtures import ImportOnlyCollectorPlugin
+from .fixtures import ImportOnlyCollectorPlugin, _duplicated_rows_page
 
 
 def import_templates():
@@ -106,6 +106,18 @@ def test_compile_page_full_context(
     import_templates()
 
     benchmark(lambda: _compile_page_full_context(unevaluated_page))
+
+
+def test_compile_page_duplicated_rows(benchmark: BenchmarkFixture):
+    """Compile a page of many identical stateful rows.
+
+    Stresses auto-memoize dedup: every row produces the same memo tag, so
+    the compile should pay for each unique memo definition once, not per
+    call site.
+    """
+    import_templates()
+
+    benchmark(lambda: _compile_page_full_context(_duplicated_rows_page))
 
 
 def test_get_all_imports(evaluated_page: Component, benchmark: BenchmarkFixture):

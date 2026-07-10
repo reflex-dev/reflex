@@ -619,7 +619,9 @@ def test_passthrough_memo_definitions_are_not_shared_globally(monkeypatch) -> No
     )
 
     def fake_create_passthrough_component_memo(
-        component: Component, source_module: str | None = None
+        component: Component,
+        source_module: str | None = None,
+        existing_definitions: dict | None = None,
     ):
         definition = SimpleNamespace(
             export_name=tag,
@@ -654,6 +656,65 @@ def test_passthrough_memo_definitions_are_not_shared_globally(monkeypatch) -> No
     assert first_definition.component is first_component
     assert second_definition.component is second_component
     assert second_definition is not first_definition
+
+
+def test_create_passthrough_component_memo_reuses_existing_definition() -> None:
+    """A tag hit in ``existing_definitions`` returns the cached definition.
+
+    Regression: the auto-memoize plugin built a full definition (evaluating
+    the memo body) for every call site and deduped by tag only afterwards,
+    so N identical subtrees paid N definition builds for one surviving
+    definition.
+    """
+    _wrapper_factory, definition = create_passthrough_component_memo(
+        WithProp.create(label=STATE_VAR)
+    )
+    existing = {(definition.export_name, None): definition}
+
+    wrapper_factory, cached = create_passthrough_component_memo(
+        WithProp.create(label=STATE_VAR),
+        existing_definitions=existing,
+    )
+    assert cached is definition
+    wrapper = wrapper_factory(Plain.create())
+    assert isinstance(wrapper, MemoComponent)
+    assert wrapper.tag == definition.export_name
+
+    # A different source module misses the cache and builds its own definition.
+    _wrapper_factory, other_module = create_passthrough_component_memo(
+        WithProp.create(label=STATE_VAR),
+        source_module="memo_dedup_test.module_b",
+        existing_definitions=existing,
+    )
+    assert other_module is not definition
+    assert other_module.export_name == definition.export_name
+
+
+def test_passthrough_memo_body_evaluated_once(monkeypatch) -> None:
+    """Building a passthrough definition runs the memo body exactly once.
+
+    The body evaluation (``copy`` of the wrapped component + hole
+    substitution) previously ran twice per definition: once to compute the
+    tag and again inside the definition build.
+    """
+    import reflex_base.components.memo as memo_mod
+
+    calls = 0
+    real_copy = memo_mod.copy
+
+    def counting_copy(value):
+        nonlocal calls
+        calls += 1
+        return real_copy(value)
+
+    monkeypatch.setattr(memo_mod, "copy", counting_copy)
+    _wrapper_factory, definition = create_passthrough_component_memo(
+        WithProp.create(label=STATE_VAR)
+    )
+    assert calls == 1
+    assert definition.passthrough_hole_child is None
+    # The evaluated preview is reused as the definition body.
+    assert type(definition.component) is WithProp
 
 
 def test_shared_subtree_across_pages_uses_same_tag() -> None:
