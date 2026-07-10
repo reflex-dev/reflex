@@ -357,6 +357,26 @@ def _is_user_descriptor(value: Any) -> bool:
 
 all_base_state_classes: dict[str, None] = {}
 
+# Bumped whenever the state class hierarchy changes (subclass creation or
+# module reload), invalidating caches derived from class-level data.
+_state_hierarchy_generation: int = 0
+
+
+def _get_state_hierarchy_generation() -> int:
+    """Get the current state hierarchy generation.
+
+    Returns:
+        A counter that increases whenever the state class hierarchy changes.
+    """
+    return _state_hierarchy_generation
+
+
+def _bump_state_hierarchy_generation() -> None:
+    """Invalidate caches keyed on the state class hierarchy."""
+    global _state_hierarchy_generation
+    _state_hierarchy_generation += 1
+
+
 CLASS_VAR_NAMES = frozenset({
     "vars",
     "base_vars",
@@ -739,6 +759,7 @@ class BaseState(EvenMoreBasicBaseState):
         cls._refresh_interval_computed_vars()
 
         all_base_state_classes[cls.get_full_name()] = None
+        _bump_state_hierarchy_generation()
 
     @classmethod
     def _refresh_interval_computed_vars(cls) -> None:
@@ -2755,3 +2776,4 @@ def reload_state_module(
             state._var_dependencies = {}
             state._init_var_dependency_dicts()
     state.get_class_substate.cache_clear()
+    _bump_state_hierarchy_generation()
