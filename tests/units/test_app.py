@@ -3064,6 +3064,65 @@ def test_call_app():
     assert isinstance(api, Starlette)
 
 
+def test_call_app_runs_plugin_post_compile_once(mocker: MockerFixture):
+    """Constructing the ASGI app twice runs each plugin's post_compile once.
+
+    ``post_compile`` hooks mutate the app (add middleware, mount routes) and
+    are not required to be idempotent, so ``App.__call__`` must not re-run
+    them when the ASGI app is constructed again on the same app instance
+    (e.g. a test harness rebuilding it).
+    """
+
+    class RecordingPlugin(rx.plugins.Plugin):
+        def __init__(self) -> None:
+            self.post_compile_calls = 0
+
+        def post_compile(self, **context) -> None:
+            self.post_compile_calls += 1
+
+    plugin = RecordingPlugin()
+    conf = rx.Config(app_name="testing", plugins=[plugin])
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+
+    app = App()
+    app._compile = unittest.mock.Mock()
+    app()
+    app()
+
+    assert plugin.post_compile_calls == 1
+
+
+def test_call_app_retries_post_compile_after_failure(mocker: MockerFixture):
+    """A post_compile failure is not latched as done.
+
+    If a hook raises (e.g. a plugin rejecting a misconfigured app), the next
+    ASGI construction must run the hooks again rather than silently skipping
+    them.
+    """
+
+    class FlakyPlugin(rx.plugins.Plugin):
+        def __init__(self) -> None:
+            self.post_compile_calls = 0
+
+        def post_compile(self, **context) -> None:
+            self.post_compile_calls += 1
+            if self.post_compile_calls == 1:
+                msg = "misconfigured"
+                raise ValueError(msg)
+
+    plugin = FlakyPlugin()
+    conf = rx.Config(app_name="testing", plugins=[plugin])
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+
+    app = App()
+    app._compile = unittest.mock.Mock()
+    with pytest.raises(ValueError, match="misconfigured"):
+        app()
+    app()
+
+    assert plugin.post_compile_calls == 2
+
+
 @pytest.fixture
 def upload_enabled(monkeypatch):
     """Fixture that enables Upload and cleans up afterward."""

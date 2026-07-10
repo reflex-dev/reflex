@@ -402,6 +402,11 @@ class App(MiddlewareMixin, LifespanMixin):
     # that already compiled and skips re-evaluation.
     _evaluated_pages: set[str] = dataclasses.field(default_factory=set)
 
+    # Whether the plugins' post_compile hooks already ran for this app
+    # instance (they mutate the app, so they must not run again when the
+    # ASGI app is re-constructed).
+    _plugins_post_compiled: bool = False
+
     # The backend API object.
     _api: Starlette | None = None
 
@@ -727,8 +732,14 @@ class App(MiddlewareMixin, LifespanMixin):
 
         config = get_config()
 
-        for plugin in config.plugins:
-            plugin.post_compile(app=self)
+        # Run the hooks at most once per app instance: post_compile mutates
+        # the app (add_middleware, mounting routes), so re-constructing the
+        # ASGI app (a test harness, repeated __call__) must not re-apply them.
+        # Set after the loop so a failed hook is retried, not latched as done.
+        if not self._plugins_post_compiled:
+            for plugin in config.plugins:
+                plugin.post_compile(app=self)
+            self._plugins_post_compiled = True
 
         # We will not be making more vars, so we can clear the global cache to free up memory.
         GLOBAL_CACHE.clear()
