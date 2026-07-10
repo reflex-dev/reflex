@@ -1,6 +1,15 @@
 """Tests for reflex_base.utils.types."""
 
-from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
+from reflex_base import constants
+from reflex_base.environment import environment
+from reflex_base.utils.types import (
+    ASGIApp,
+    Message,
+    Receive,
+    Scope,
+    Send,
+    _validation_depth,
+)
 from typing_extensions import TypeAliasType
 
 
@@ -14,3 +23,18 @@ def test_asgi_aliases_keep_their_names():
     assert Receive.__name__ == "Receive"
     assert Send.__name__ == "Send"
     assert ASGIApp.__name__ == "ASGIApp"
+
+
+def test_validation_depth_by_env_mode():
+    """Hot-path validation walks containers in dev but stays shallow in prod."""
+    initial = environment.REFLEX_ENV_MODE.getenv()
+    _validation_depth.cache_clear()
+    try:
+        environment.REFLEX_ENV_MODE.set(constants.Env.PROD)
+        assert _validation_depth() == 0
+        _validation_depth.cache_clear()
+        environment.REFLEX_ENV_MODE.set(constants.Env.DEV)
+        assert _validation_depth() == 1
+    finally:
+        environment.REFLEX_ENV_MODE.set(initial)
+        _validation_depth.cache_clear()
