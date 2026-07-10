@@ -106,6 +106,8 @@ else:
     from warnings import deprecated
 
 if TYPE_CHECKING:
+    from reflex_base.plugins import Plugin
+    from reflex_base.plugins.base import AddPageProtocol
     from reflex_base.vars import Var
 
     # Define custom types.
@@ -306,6 +308,26 @@ class UnevaluatedPage:
             if self._source_module is not None
             else other._source_module,
         )
+
+
+@dataclasses.dataclass(frozen=True)
+class _PreparedPage:
+    """A validated page descriptor awaiting registration."""
+
+    page: UnevaluatedPage
+    route_args: dict[str, str]
+
+
+def _route_arg_label(arg_type: str) -> str:
+    """Return the human-readable label for a dynamic route argument type.
+
+    Args:
+        arg_type: The ``RouteArgType`` value.
+
+    Returns:
+        ``"list"`` for catch-all arguments, otherwise ``"single"``.
+    """
+    return "list" if arg_type == constants.RouteArgType.LIST else "single"
 
 
 @dataclasses.dataclass()
@@ -871,6 +893,25 @@ class App(MiddlewareMixin, LifespanMixin):
 
         return into_component(component)
 
+    @staticmethod
+    def _page_route_key(
+        component: Component | ComponentCallable | None, route: str | None
+    ) -> str | None:
+        """Derive the normalized route used to register a page.
+
+        Args:
+            component: The page component or component callable.
+            route: The explicit route, if any.
+
+        Returns:
+            The normalized route, or ``None`` when no route can be derived.
+        """
+        if route is not None:
+            return format.format_route(route)
+        if isinstance(component, Callable):
+            return format.format_route(format.to_kebab_case(component.__name__))
+        return None
+
     def add_page(
         self,
         component: Component | ComponentCallable | None = None,
@@ -900,23 +941,66 @@ class App(MiddlewareMixin, LifespanMixin):
         Raises:
             PageValueError: When the component is not set for a non-404 page.
             RouteValueError: When the specified route name already exists.
+            ValueError: When the route syntax is invalid.
         """
-        # If the route is not set, get it from the callable.
+        self._register_prepared_page(
+            self._prepare_page(
+                component,
+                route,
+                title,
+                description,
+                image,
+                on_load,
+                meta,
+                context,
+            )
+        )
+
+    def _prepare_page(
+        self,
+        component: Component | ComponentCallable | None = None,
+        route: str | None = None,
+        title: str | Var | None = None,
+        description: str | Var | None = None,
+        image: str = constants.DefaultPage.IMAGE,
+        on_load: EventType[()] | None = None,
+        meta: Sequence[Mapping[str, Any] | Component] = constants.DefaultPage.META_LIST,
+        context: dict[str, Any] | None = None,
+    ) -> _PreparedPage:
+        """Validate and normalize a page without mutating app route state.
+
+        App subclasses that extend ``add_page`` arguments should perform their
+        pure argument normalization here so staged plugin contributions and
+        direct page registration share the same preparation path.
+
+        Args:
+            component: The component to display at the page.
+            route: The route to display the component at.
+            title: The title of the page.
+            description: The description of the page.
+            image: The image to display on the page.
+            on_load: The event handler(s) called each time the page loads.
+            meta: The metadata of the page.
+            context: Values passed to page for custom page-specific logic.
+
+        Returns:
+            The validated page descriptor and its dynamic route arguments.
+
+        Raises:
+            PageValueError: When the component is not set for a non-404 page.
+            RouteValueError: When a route cannot be derived.
+            ValueError: When the route syntax is invalid.
+        """
+        route = self._page_route_key(component, route)
         if route is None:
-            if not isinstance(component, Callable):
-                msg = "Route must be set if component is not a callable."
-                raise exceptions.RouteValueError(msg)
-            # Format the route.
-            route = format.format_route(format.to_kebab_case(component.__name__))
-        else:
-            route = format.format_route(route)
+            msg = "Route must be set if component is not a callable."
+            raise exceptions.RouteValueError(msg)
 
         if route == constants.Page404.SLUG:
             if component is None:
                 from reflex_components_core.el.elements import span
 
                 component = span("404: Page not found")
-            component = self._generate_component(component)
             title = title or constants.Page404.TITLE
             description = description or constants.Page404.DESCRIPTION
             image = image or constants.Page404.IMAGE
@@ -947,42 +1031,235 @@ class App(MiddlewareMixin, LifespanMixin):
             _source_module=source_module,
         )
 
-        if route in self._unevaluated_pages:
-            if self._unevaluated_pages[route].component is component:
-                unevaluated_page = unevaluated_page.merged_with(
-                    self._unevaluated_pages[route]
+        return _PreparedPage(
+            page=unevaluated_page,
+            route_args=get_route_args(route),
+        )
+
+    def _register_prepared_page(self, prepared: _PreparedPage) -> None:
+        """Resolve conflicts and commit one directly added page.
+
+        Args:
+            prepared: The validated page descriptor to register.
+
+        Raises:
+            RouteValueError: When another component already owns the route.
+        """
+        page = prepared.page
+        if page.route in self._unevaluated_pages:
+            existing_page = self._unevaluated_pages[page.route]
+            if existing_page.component is page.component:
+                prepared = dataclasses.replace(
+                    prepared,
+                    page=page.merged_with(existing_page),
                 )
                 console.warn(
-                    f"Page {route} is being redefined with the same component."
+                    f"Page {page.route} is being redefined with the same component."
                 )
             else:
                 route_name = (
-                    f"`{route}` or `/`"
-                    if route == constants.PageNames.INDEX_ROUTE
-                    else f"`{route}`"
+                    f"`{page.route}` or `/`"
+                    if page.route == constants.PageNames.INDEX_ROUTE
+                    else f"`{page.route}`"
                 )
-                existing_component = self._unevaluated_pages[route].component
                 msg = (
-                    f"Tried to add page {readable_name_from_component(component)} with route {route_name} but "
-                    f"page {readable_name_from_component(existing_component)} with the same route already exists. "
+                    f"Tried to add page {readable_name_from_component(page.component)} with route {route_name} but "
+                    f"page {readable_name_from_component(existing_page.component)} with the same route already exists. "
                     "Make sure you do not have two pages with the same route."
                 )
                 raise exceptions.RouteValueError(msg)
+        self._commit_page(prepared)
 
-        # Setup dynamic args for the route.
-        # this state assignment is only required for tests using the deprecated state kwarg for App
-        state = self._state or State
-        route_args = get_route_args(route)
-        state.setup_dynamic_args(route_args)
+    def _commit_page(
+        self, prepared: _PreparedPage, *, setup_dynamic_args: bool = True
+    ) -> None:
+        """Commit a prepared page to the app.
 
-        self._load_events[route] = (
-            (on_load if isinstance(on_load, list) else [on_load])
-            if on_load is not None
+        This is the fixed, non-fallible final write. Staged plugin batches
+        invoke this framework implementation directly so an override cannot
+        make the batch partially commit — subclasses must customize page
+        registration in ``_prepare_page``, not here.
+
+        Args:
+            prepared: The validated page descriptor to register.
+            setup_dynamic_args: Whether to install its dynamic route variables.
+                A staged plugin batch installs all variables once before
+                committing its descriptors.
+        """
+        page = prepared.page
+        if setup_dynamic_args:
+            # This state assignment is only required for tests using the
+            # deprecated state kwarg for App.
+            state = self._state or State
+            state.setup_dynamic_args(prepared.route_args)
+
+        self._load_events[page.route] = (
+            (page.on_load if isinstance(page.on_load, list) else [page.on_load])
+            if page.on_load is not None
             else []
         )
 
-        self._unevaluated_pages[route] = unevaluated_page
+        self._unevaluated_pages[page.route] = page
         self.__dict__.pop("router", None)
+
+    def _register_plugin_pages(self, plugins: Sequence[Plugin]) -> None:
+        """Collect and commit plugin page contributions, once per app instance.
+
+        Hooks receive a staged ``add_page`` capability. No live app route
+        state is mutated until every hook succeeds, so a hook exception cannot
+        leave partial routes or dynamic route variables behind.
+
+        Args:
+            plugins: The active plugins, in configuration order.
+        """
+        if self._plugin_routes_registered:
+            return
+
+        # Snapshot preserving definition order for deterministic error messages.
+        app_routes = dict.fromkeys(self._unevaluated_pages)
+        contributions: list[_PreparedPage] = []
+        route_owners: dict[str, str] = {}
+
+        def has_app_page(route: str) -> bool:
+            """Return whether the app defines a normalized route.
+
+            Args:
+                route: The route to check.
+
+            Returns:
+                Whether the route belongs to the app rather than a plugin.
+            """
+            return format.format_route(route) in app_routes
+
+        def make_add_page(plugin_name: str) -> AddPageProtocol:
+            """Create a staged page registrar bound to one plugin.
+
+            Args:
+                plugin_name: Name identifying the contributing plugin.
+
+            Returns:
+                A registrar recording contributions under ``plugin_name``.
+            """
+
+            def add_page(
+                component: Component | ComponentCallable | None = None,
+                route: str | None = None,
+                **page_args: Any,
+            ) -> None:
+                """Stage a page contribution owned by the active plugin.
+
+                Args:
+                    component: The component or component callable to register.
+                    route: The explicit page route, if any.
+                    page_args: Additional keyword page-preparation arguments.
+
+                Raises:
+                    RouteValueError: If a route cannot be derived or is
+                        already owned.
+                """
+                prepared = self._prepare_page(component, route, **page_args)
+                route_key = prepared.page.route
+
+                if route_key in app_routes:
+                    msg = (
+                        f"Plugin {plugin_name} tried to register route "
+                        f"`{route_key}`, but that route is already defined by "
+                        "the app; use has_app_page(route) to keep the "
+                        "app-defined page."
+                    )
+                    raise exceptions.RouteValueError(msg)
+
+                if (owner := route_owners.get(route_key)) is not None:
+                    msg = (
+                        f"Plugin {plugin_name} tried to register route "
+                        f"`{route_key}`, but that route is already defined by "
+                        f"plugin {owner}; a route can only be registered by "
+                        "one plugin."
+                    )
+                    raise exceptions.RouteValueError(msg)
+
+                existing_routes = app_routes.keys() | route_owners.keys()
+                if conflict := self._find_route_conflict(existing_routes, route_key):
+                    existing_route, existing_segment, new_segment = conflict
+                    existing_owner = (
+                        "the app"
+                        if existing_route in app_routes
+                        else f"plugin {route_owners[existing_route]}"
+                    )
+                    msg = (
+                        f"Plugin {plugin_name} tried to register route "
+                        f"`{route_key}`, but it conflicts with route "
+                        f"`{existing_route}` defined by {existing_owner}; "
+                        "dynamic segment names must match "
+                        f"(`{existing_segment}` != `{new_segment}`)."
+                    )
+                    raise exceptions.RouteValueError(msg)
+
+                route_owners[route_key] = plugin_name
+                contributions.append(prepared)
+
+            return add_page
+
+        class_names = [type(plugin).__name__ for plugin in plugins]
+        duplicated = {name for name in class_names if class_names.count(name) > 1}
+        for index, (plugin, class_name) in enumerate(
+            zip(plugins, class_names, strict=True)
+        ):
+            plugin_name = (
+                f"{class_name} (plugins[{index}])"
+                if class_name in duplicated
+                else class_name
+            )
+            plugin.register_route(
+                app_type=type(self),
+                add_page=make_add_page(plugin_name),
+                has_app_page=has_app_page,
+            )
+
+        # This state assignment is only required for tests using the
+        # deprecated state kwarg for App.
+        state = self._state or State
+        staged_args: dict[str, str] = {}
+        # First recorded source of each dynamic argument wins: stale variables
+        # from an earlier app in this process, then app routes, then staged
+        # contributions in commit order.
+        arg_sources: dict[str, tuple[str, str]] = {
+            name: (arg_type, "an earlier app in this process (restart to clear it)")
+            for name, arg_type in state._dynamic_route_arg_types().items()
+        }
+        for route in app_routes:
+            for name, arg_type in get_route_args(route).items():
+                arg_sources.setdefault(
+                    name, (arg_type, f"route `{route}` defined by the app")
+                )
+        for prepared in contributions:
+            route = prepared.page.route
+            owner = route_owners[route]
+            for name, arg_type in prepared.route_args.items():
+                existing_type, source = arg_sources.setdefault(
+                    name, (arg_type, f"route `{route}` defined by plugin {owner}")
+                )
+                if existing_type != arg_type:
+                    msg = (
+                        f"Plugin {owner} tried to register route `{route}` with "
+                        f"dynamic argument `{name}` of type "
+                        f"`{_route_arg_label(arg_type)}`, but {source} already "
+                        f"uses it as type `{_route_arg_label(existing_type)}`. "
+                        "Dynamic argument types must be consistent across routes."
+                    )
+                    raise exceptions.RouteValueError(msg)
+                staged_args.setdefault(name, arg_type)
+        if staged_args:
+            state.setup_dynamic_args(staged_args)
+
+        # Commit through the framework implementation: concrete App extensions
+        # normalize extra arguments in ``_prepare_page``; the final writes are
+        # intentionally fixed and non-fallible so the batch cannot partially
+        # commit.
+        for prepared in contributions:
+            App._commit_page(self, prepared, setup_dynamic_args=False)
+
+        self._plugin_routes_registered = True
 
     def _compile_page(self, route: str, save_page: bool = True):
         """Compile a page.
@@ -1061,15 +1338,38 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         from reflex_base.utils.exceptions import RouteValueError
 
+        conflict = self._find_route_conflict(self._pages, new_route)
+        if conflict is not None:
+            route, existing_segment, new_segment = conflict
+            msg = (
+                "You cannot use different slug names for the same dynamic path "
+                f"in  {route} and {new_route} "
+                f"('{existing_segment}' != '{new_segment}')"
+            )
+            raise RouteValueError(msg)
+
+    @staticmethod
+    def _find_route_conflict(
+        existing_routes: Collection[str], new_route: str
+    ) -> tuple[str, str, str] | None:
+        """Find an existing route with incompatible dynamic segment names.
+
+        Args:
+            existing_routes: Routes already occupying the router tree.
+            new_route: The route being added.
+
+        Returns:
+            The conflicting route and differing segment names, or ``None``.
+        """
         if "[" not in new_route:
-            return
+            return None
 
         segments = (
             constants.RouteRegex.SINGLE_SEGMENT,
             constants.RouteRegex.DOUBLE_SEGMENT,
             constants.RouteRegex.DOUBLE_CATCHALL_SEGMENT,
         )
-        for route in self._pages:
+        for route in existing_routes:
             replaced_route = replace_brackets_with_keywords(route)
             for rw, r, nr in zip(
                 replaced_route.split("/"),
@@ -1078,15 +1378,14 @@ class App(MiddlewareMixin, LifespanMixin):
                 strict=False,
             ):
                 if rw in segments and r != nr:
-                    # If the slugs in the segments of both routes are not the same, then the route is invalid
-                    msg = f"You cannot use different slug names for the same dynamic path in  {route} and {new_route} ('{r}' != '{nr}')"
-                    raise RouteValueError(msg)
+                    return route, r, nr
                 if rw not in segments and r != nr:
                     # if the section being compared in both routes is not a dynamic segment(i.e not wrapped in brackets)
                     # then we are guaranteed that the route is valid and there's no need checking the rest.
                     # eg. /posts/[id]/info/[slug1] and /posts/[id]/info1/[slug1] is always going to be valid since
                     # info1 will break away into its own tree.
                     break
+        return None
 
     def _setup_admin_dash(self):
         """Setup the admin dash."""

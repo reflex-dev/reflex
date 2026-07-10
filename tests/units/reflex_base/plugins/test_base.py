@@ -58,3 +58,15 @@ def test_get_plugin_rejects_ambiguous_matches(mocker: MockerFixture):
 
     with pytest.raises(ConfigError, match="Multiple ConfiguredPlugin instances"):
         get_plugin(ConfiguredPlugin)
+
+
+def test_register_route_default_is_noop():
+    """The base route hook accepts the staged context and contributes nothing."""
+    assert (
+        Plugin().register_route(
+            app_type=object,  # pyright: ignore[reportArgumentType]
+            add_page=lambda *args, **kwargs: None,
+            has_app_page=lambda route: False,
+        )
+        is None
+    )

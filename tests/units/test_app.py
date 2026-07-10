@@ -3889,13 +3889,14 @@ def test_compile_registers_plugin_routes(
     class RoutePlugin(Plugin):
         """Plugin contributing one page for the compile test."""
 
-        def register_route(self, app):
-            """Add the test page to the compiling app.
+        def register_route(self, *, add_page, **_):
+            """Contribute the test page through the staged capability.
 
             Args:
-                app: The app being compiled.
+                add_page: The staged page-adding capability.
+                _: Additional hook context.
             """
-            app.add_page(lambda: rx.el.div("plugin page"), route="/from-plugin")
+            add_page(lambda: rx.el.div("plugin page"), route="/from-plugin")
 
     plugin = RoutePlugin()
     conf = rx.Config(app_name="testing", plugins=[plugin])
@@ -3908,3 +3909,4 @@ def test_compile_registers_plugin_routes(
 
     assert "from-plugin" in app._unevaluated_pages
     assert "from-plugin" in app._pages
+    assert app._plugin_routes_registered

@@ -1,6 +1,6 @@
 """Base class for all plugins."""
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, ParamSpec, Protocol, TypedDict, TypeVar
@@ -20,8 +20,10 @@ class HookOrder(str, Enum):
 
 if TYPE_CHECKING:
     from reflex.app import App, UnevaluatedPage
-    from reflex_base.components.component import BaseComponent
+    from reflex_base.components.component import BaseComponent, Component
+    from reflex_base.event import EventType
     from reflex_base.plugins.compiler import ComponentAndChildren, PageContext
+    from reflex_base.vars.base import Var
 
 
 class CommonContext(TypedDict):
@@ -57,6 +59,51 @@ class PreCompileContext(CommonContext):
     add_modify_task: Callable[[str, Callable[[str], str]], None]
     radix_themes_plugin: Any
     unevaluated_pages: Sequence["UnevaluatedPage"]
+
+
+class AddPageProtocol(Protocol):
+    """Protocol for staging a page contribution during route registration.
+
+    Mirrors the keyword surface of ``App.add_page``; page options are
+    keyword-only. Concrete ``App`` subclasses may accept extra keywords, which
+    are forwarded to their ``_prepare_page`` extension.
+    """
+
+    def __call__(
+        self,
+        component: "Component | Callable[[], Any] | None" = None,
+        route: str | None = None,
+        *,
+        title: "str | Var | None" = None,
+        description: "str | Var | None" = None,
+        image: str = ...,
+        on_load: "EventType[()] | None" = None,
+        meta: Sequence["Mapping[str, Any] | Component"] = ...,
+        context: dict[str, Any] | None = None,
+        **extra_page_args: Any,
+    ) -> None:
+        """Stage a page contribution owned by the calling plugin.
+
+        Args:
+            component: The component or component callable to display.
+            route: The route to display the component at.
+            title: The title of the page.
+            description: The description of the page.
+            image: The image to display on the page.
+            on_load: The event handler(s) called each time the page loads.
+            meta: The metadata of the page.
+            context: Values passed to the page for custom page-specific logic.
+            extra_page_args: Keyword arguments added by concrete ``App``
+                subclasses that extend page registration.
+        """
+
+
+class RegisterRouteContext(CommonContext):
+    """Context for the ``register_route`` hook."""
+
+    app_type: type["App"]
+    add_page: AddPageProtocol
+    has_app_page: Callable[[str], bool]
 
 
 class PostCompileContext(CommonContext):
@@ -131,11 +178,20 @@ class Plugin:
         """
         return []
 
-    def register_route(self, app: "App") -> None:
-        """Register routes on the app before its first compilation.
+    def register_route(self, **context: Unpack[RegisterRouteContext]) -> None:
+        """Contribute pages before the app's first compilation.
+
+        The hook runs once per app, after app-defined pages are collected and
+        before any page is evaluated. Calls to ``context["add_page"]`` are
+        prepared without mutating app route state, then committed after every
+        plugin hook succeeds. ``context["app_type"]`` supports concrete-app
+        compatibility checks without exposing the mutable app. Use
+        ``context["has_app_page"]`` to let an app-defined page override an
+        optional plugin page; it intentionally ignores other plugins so
+        plugin-versus-plugin route conflicts cannot be hidden by ordering.
 
         Args:
-            app: The app to register routes on.
+            context: The route registration context.
         """
 
     def pre_compile(self, **context: Unpack[PreCompileContext]) -> None:

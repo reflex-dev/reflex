@@ -1091,18 +1091,16 @@ def _resolve_radix_themes_plugin(
 
 
 def _register_plugin_routes(app: App, plugins: Sequence[Plugin]) -> None:
-    """Run each plugin's ``register_route`` hook, once per app instance.
+    """Run plugin ``register_route`` hooks at their point in the compile lifecycle.
+
+    Fires after app-defined pages are collected and before any page is
+    evaluated. The staging and atomic-commit machinery lives on ``App``.
 
     Args:
         app: The app being compiled.
         plugins: The active plugins, in configuration order.
     """
-    if app._plugin_routes_registered:
-        return
-
-    for plugin in plugins:
-        plugin.register_route(app)
-    app._plugin_routes_registered = True
+    app._register_plugin_pages(plugins)
 
 
 def compile_app(
