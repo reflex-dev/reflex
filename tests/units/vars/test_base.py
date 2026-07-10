@@ -53,9 +53,8 @@ def test_chained_var_operations_var_data_stays_bounded() -> None:
     """
     base = Var(
         _js_expr="a",
-        _var_type=int,
         _var_data=VarData(imports={"my-lib": [ImportVar(tag="thing")]}),
-    ).guess_type()
+    ).to(int)
 
     chained = base
     for i in range(18):
