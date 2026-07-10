@@ -621,13 +621,16 @@ def test_passthrough_memo_definitions_are_not_shared_globally(monkeypatch) -> No
     def fake_create_passthrough_component_memo(
         component: Component,
         source_module: str | None = None,
-        existing_definitions: dict | None = None,
+        registry: dict | None = None,
+        prepare_body: Callable[[Component], Component] | None = None,
     ):
         definition = SimpleNamespace(
             export_name=tag,
             component=component,
             source_module=source_module,
         )
+        if registry is not None:
+            registry[tag, source_module] = definition
         return (lambda definition=definition: definition), definition
 
     monkeypatch.setattr(
@@ -658,26 +661,34 @@ def test_passthrough_memo_definitions_are_not_shared_globally(monkeypatch) -> No
     assert second_definition is not first_definition
 
 
-def test_create_passthrough_component_memo_reuses_existing_definition() -> None:
-    """A tag hit in ``existing_definitions`` returns the cached definition.
+def test_create_passthrough_component_memo_reuses_registered_definition() -> None:
+    """A tag hit in ``registry`` returns the cached definition.
 
     Regression: the auto-memoize plugin built a full definition (evaluating
     the memo body) for every call site and deduped by tag only afterwards,
     so N identical subtrees paid N definition builds for one surviving
     definition.
     """
+    registry: dict[tuple[str, str | None], MemoComponentDefinition] = {}
+    prepared: list[Component] = []
+
+    def prepare_body(component: Component) -> Component:
+        prepared.append(component)
+        return component
+
     _wrapper_factory, definition = create_passthrough_component_memo(
-        WithProp.create(label=STATE_VAR)
+        WithProp.create(label=STATE_VAR), registry=registry, prepare_body=prepare_body
     )
-    existing: dict[tuple[str, str | None], MemoComponentDefinition] = {
-        (definition.export_name, None): definition
-    }
+    # A cache miss registers the new definition itself.
+    assert registry[definition.export_name, None] is definition
+    assert len(prepared) == 1
 
     wrapper_factory, cached = create_passthrough_component_memo(
-        WithProp.create(label=STATE_VAR),
-        existing_definitions=existing,
+        WithProp.create(label=STATE_VAR), registry=registry, prepare_body=prepare_body
     )
     assert cached is definition
+    # A cache hit skips ``prepare_body`` along with the body build.
+    assert len(prepared) == 1
     wrapper = wrapper_factory(Plain.create())
     assert isinstance(wrapper, MemoComponent)
     assert wrapper.tag == definition.export_name
@@ -686,10 +697,13 @@ def test_create_passthrough_component_memo_reuses_existing_definition() -> None:
     _wrapper_factory, other_module = create_passthrough_component_memo(
         WithProp.create(label=STATE_VAR),
         source_module="memo_dedup_test.module_b",
-        existing_definitions=existing,
+        registry=registry,
+        prepare_body=prepare_body,
     )
     assert other_module is not definition
     assert other_module.export_name == definition.export_name
+    assert len(prepared) == 2
+    assert registry[definition.export_name, "memo_dedup_test.module_b"] is other_module
 
 
 def test_passthrough_memo_body_evaluated_once(monkeypatch) -> None:
@@ -715,8 +729,92 @@ def test_passthrough_memo_body_evaluated_once(monkeypatch) -> None:
     )
     assert calls == 1
     assert definition.passthrough_hole_child is None
-    # The evaluated preview is reused as the definition body.
+    # The single evaluation is the definition body; the tag is computed from
+    # the source component directly, without copying it.
     assert type(definition.component) is WithProp
+
+
+def _stateful_with_trigger(child_text: str, event_js: str) -> Component:
+    """Build a stateful component with a child and an ``on_click`` trigger.
+
+    Args:
+        child_text: Literal text for the (page-scope) child.
+        event_js: JS expression for the ``on_click`` event chain var.
+
+    Returns:
+        A component the auto-memoize plugin will wrap.
+    """
+    from reflex_base.event import EventChain
+
+    comp = WithProp.create(Plain.create(LiteralVar.create(child_text)), label=STATE_VAR)
+    comp.event_triggers["on_click"] = Var(_js_expr=event_js)._replace(
+        _var_type=EventChain,
+        merge_var_data=VarData(state="TestState"),
+    )
+    return comp
+
+
+def test_plugin_dedups_identical_subtrees_and_fixes_triggers_once(monkeypatch) -> None:
+    """Identical subtrees share one definition; trigger rewrite runs per definition.
+
+    Call sites differing only in their children collapse to one memo tag, so
+    the plugin must reuse the first definition — including skipping the
+    ``fix_event_triggers_for_memo`` rewrite — while a call site with a
+    different event trigger gets its own tag and definition.
+    """
+    fix_calls: list[Component] = []
+    real_fix = memoize_plugin.fix_event_triggers_for_memo
+
+    def counting_fix(comp: Component, page_context: PageContext) -> Component:
+        fix_calls.append(comp)
+        return real_fix(comp, page_context)
+
+    monkeypatch.setattr(memoize_plugin, "fix_event_triggers_for_memo", counting_fix)
+
+    ctx, _page_ctx = _compile_single_page(
+        lambda: Fragment.create(
+            _stateful_with_trigger("a", "handlerOne"),
+            # Differs only in its (page-scope) child: same tag, reused definition.
+            _stateful_with_trigger("b", "handlerOne"),
+            # Different event trigger: distinct tag, own definition.
+            _stateful_with_trigger("a", "handlerTwo"),
+        )
+    )
+
+    assert len(ctx.auto_memo_components) == 2
+    assert len(ctx.memoize_wrappers) == 2
+    assert len(fix_calls) == 2
+    # The reused definition's body carries the memoized useCallback trigger
+    # even for the call site that skipped the rewrite.
+    for definition in ctx.auto_memo_components.values():
+        (trigger,) = definition.component.event_triggers.values()
+        assert isinstance(trigger, Var)
+        assert trigger._js_expr.startswith("on_click_")
+
+
+def test_memo_tag_covers_dynamic_imports() -> None:
+    """Components differing only in dynamic imports must not share a tag.
+
+    The dedup in ``create_passthrough_component_memo`` is sound only while
+    ``_get_component_hash`` covers everything the memo module emission reads;
+    dynamic imports are emitted (``_root_only_dynamic_imports``) and so must
+    be hashed.
+    """
+
+    class DynImport(Component):
+        tag = "DynImport"
+        library = "dyn-import-lib"
+
+        def _get_dynamic_imports(self) -> str | None:
+            return getattr(self, "_test_dynamic_import", None)
+
+    plain = DynImport.create()
+    dynamic = DynImport.create()
+    object.__setattr__(dynamic, "_test_dynamic_import", "import('dyn-import-lib')")
+
+    _f1, plain_definition = create_passthrough_component_memo(plain)
+    _f2, dynamic_definition = create_passthrough_component_memo(dynamic)
+    assert plain_definition.export_name != dynamic_definition.export_name
 
 
 def test_shared_subtree_across_pages_uses_same_tag() -> None:
