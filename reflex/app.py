@@ -44,7 +44,7 @@ from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
 from reflex_base.registry import RegistrationContext
 from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
-from reflex_base.utils import console, memo_paths
+from reflex_base.utils import console, memo_paths, serializers
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
 from reflex_components_core.base.error_boundary import ErrorBoundary
@@ -114,6 +114,48 @@ else:
     ComponentCallable = Callable[[], Component | tuple[Component, ...] | str]
 
 Reducer = Callable[[Event], Coroutine[Any, Any, StateUpdate]]
+
+try:
+    import orjson
+
+    # Match stdlib json + reflex serializers semantics: datetimes and
+    # dataclasses route through the default hook (reflex serializers) instead
+    # of orjson's native formats, and non-str keys are coerced like stdlib.
+    _ORJSON_OPTIONS = (
+        orjson.OPT_NON_STR_KEYS
+        | orjson.OPT_PASSTHROUGH_DATETIME
+        | orjson.OPT_PASSTHROUGH_DATACLASS
+    )
+except ImportError:  # pragma: no cover
+    orjson = None
+
+
+def _socket_json_dumps(obj: Any, **kwargs) -> str:
+    """Serialize an outgoing socket.io payload to a JSON string.
+
+    Uses orjson when available (~5x faster on large deltas), falling back to
+    the stdlib encoder for payloads orjson cannot represent (e.g. integers
+    beyond 64 bits) or for kwargs other than the compact separators that
+    python-socketio/engineio pass.
+
+    Args:
+        obj: The object to serialize.
+        kwargs: Additional keyword arguments for stdlib json.dumps.
+
+    Returns:
+        The serialized JSON string.
+    """
+    if orjson is not None and (
+        not kwargs or (len(kwargs) == 1 and kwargs.get("separators") == (",", ":"))
+    ):
+        try:
+            return orjson.dumps(
+                obj, default=serializers.serialize, option=_ORJSON_OPTIONS
+            ).decode("utf-8")
+        except TypeError:
+            pass
+    kwargs.setdefault("separators", (",", ":"))
+    return format.json_dumps(obj, **kwargs)
 
 
 def default_frontend_exception_handler(exception: Exception) -> None:
@@ -551,7 +593,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 ping_interval=environment.REFLEX_SOCKET_INTERVAL.get(),
                 ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get(),
                 json=SimpleNamespace(
-                    dumps=staticmethod(format.json_dumps),
+                    dumps=staticmethod(_socket_json_dumps),
                     loads=staticmethod(json.loads),
                 ),
                 allow_upgrades=False,
@@ -1618,6 +1660,9 @@ class EventNamespace(AsyncNamespace):
         # Use TokenManager for distributed duplicate tab prevention
         self._token_manager = TokenManager.create()
 
+        # Decoded headers and client IP per sid; fixed for a connection's lifetime.
+        self._sid_client_info: dict[str, tuple[dict[str, str], str]] = {}
+
     @property
     def token_to_sid(self) -> Mapping[str, str]:
         """Get token to SID mapping for backward compatibility.
@@ -1672,6 +1717,7 @@ class EventNamespace(AsyncNamespace):
         Returns:
             An asyncio Task for cleaning up the token, or None.
         """
+        self._sid_client_info.pop(sid, None)
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
         if disconnect_token:
@@ -1773,29 +1819,30 @@ class EventNamespace(AsyncNamespace):
             msg = "Socket.IO environ is not initialized."
             raise RuntimeError(msg)
 
-        # Get the client headers.
-        headers = {
-            k.decode("utf-8"): v.decode("utf-8")
-            for (k, v) in environ["asgi.scope"]["headers"]
-        }
-
-        # Get the client IP
-        try:
-            client_ip = environ["asgi.scope"]["client"][0]
-            headers["asgi-scope-client"] = client_ip
-        except (KeyError, IndexError):
-            client_ip = environ.get("REMOTE_ADDR", "0.0.0.0")
-
-        # Unroll reverse proxy forwarded headers.
-        client_ip = (
-            headers
-            .get(
-                "x-forwarded-for",
-                client_ip,
+        # Get the client headers and IP, decoded once per connection since
+        # they are fixed for the lifetime of a sid.
+        client_info = self._sid_client_info.get(sid)
+        if client_info is None:
+            cached_headers = {
+                k.decode("utf-8"): v.decode("utf-8")
+                for (k, v) in environ["asgi.scope"]["headers"]
+            }
+            try:
+                client_ip = environ["asgi.scope"]["client"][0]
+                cached_headers["asgi-scope-client"] = client_ip
+            except (KeyError, IndexError):
+                client_ip = environ.get("REMOTE_ADDR", "0.0.0.0")
+            # Unroll reverse proxy forwarded headers.
+            client_ip = (
+                cached_headers
+                .get("x-forwarded-for", client_ip)
+                .partition(",")[0]
+                .strip()
             )
-            .partition(",")[0]
-            .strip()
-        )
+            client_info = self._sid_client_info[sid] = (cached_headers, client_ip)
+        # Copy so downstream router_data mutations cannot leak into the cache.
+        headers = dict(client_info[0])
+        client_ip = client_info[1]
         router_data = event.router_data
         router_data.update({
             constants.RouteVar.QUERY: format.format_query_params(event.router_data),

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import re
 from collections.abc import Callable
 
@@ -203,6 +204,10 @@ def get_router(routes: list[str]) -> Callable[[str], str | None]:
         for keyworded_route, original_route in sorted_routes_by_specificity
     ]
 
+    # Cached per router: the route set is fixed for the router's lifetime and
+    # clients mostly re-send the same path, so the linear regex scan runs once
+    # per distinct path instead of on every event.
+    @functools.lru_cache(maxsize=1024)
     def get_route(path: str) -> str | None:
         """Get the first matching route for a given path.
 
