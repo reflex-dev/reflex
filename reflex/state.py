@@ -377,6 +377,10 @@ def _bump_state_hierarchy_generation() -> None:
     _state_hierarchy_generation += 1
 
 
+# Attribute names resolved directly via object.__getattribute__, bypassing the
+# inherited-var / event-handler / proxying logic in _get_attribute. Class-level
+# tracking dicts as well as per-instance framework bookkeeping fields that are
+# never state vars belong here.
 CLASS_VAR_NAMES = frozenset({
     "vars",
     "base_vars",
@@ -390,6 +394,11 @@ CLASS_VAR_NAMES = frozenset({
     "_always_dirty_substates",
     "_potentially_dirty_states",
     "_interval_computed_vars",
+    "parent_state",
+    "substates",
+    "dirty_vars",
+    "dirty_substates",
+    "_backend_vars",
 })
 
 
@@ -433,6 +442,12 @@ class BaseState(EvenMoreBasicBaseState):
     # computed_vars changes. Empty for most classes, which lets dirty
     # propagation skip the per-mutation expiry scan.
     _interval_computed_vars: ClassVar[tuple[str, ...]] = ()
+    # Cached result of get_skip_vars(), rebuilt lazily after inherited_vars changes.
+    _skip_var_names: ClassVar[frozenset[str] | None] = None
+
+    # Cached names of non-backend computed vars, rebuilt lazily after
+    # computed_vars changes.
+    _frontend_computed_vars: ClassVar[frozenset[str] | None] = None
 
     # The parent state.
     parent_state: BaseState | None = field(default=None, is_var=False)
@@ -878,6 +893,7 @@ class BaseState(EvenMoreBasicBaseState):
         setattr(cls, unique_var_name, computed_var_func_arg)
         cls.computed_vars[unique_var_name] = computed_var_func_arg
         cls._refresh_interval_computed_vars()
+        cls._frontend_computed_vars = None
         cls.vars[unique_var_name] = computed_var_func_arg
         cls._update_substate_inherited_vars({unique_var_name: computed_var_func_arg})
         cls._always_dirty_computed_vars.add(unique_var_name)
@@ -1042,23 +1058,42 @@ class BaseState(EvenMoreBasicBaseState):
                 raise ComputedVarShadowsStateVarError(msg)
 
     @classmethod
-    def get_skip_vars(cls) -> set[str]:
+    def get_skip_vars(cls) -> frozenset[str]:
         """Get the vars to skip when serializing.
 
         Returns:
             The vars to skip when serializing.
         """
-        return (
-            set(cls.inherited_vars)
-            | {
-                "parent_state",
-                "substates",
-                "dirty_vars",
-                "dirty_substates",
-                "router_data",
-            }
-            | types.RESERVED_BACKEND_VAR_NAMES
-        )
+        # Cached per class; invalidated when inherited_vars changes.
+        if (skip_vars := cls.__dict__.get("_skip_var_names")) is None:
+            skip_vars = (
+                frozenset(cls.inherited_vars)
+                | {
+                    "parent_state",
+                    "substates",
+                    "dirty_vars",
+                    "dirty_substates",
+                    "router_data",
+                }
+                | types.RESERVED_BACKEND_VAR_NAMES
+            )
+            cls._skip_var_names = skip_vars
+        return skip_vars
+
+    @classmethod
+    def _get_frontend_computed_var_names(cls) -> frozenset[str]:
+        """Get the names of computed vars that are sent to the frontend.
+
+        Returns:
+            The names of non-backend computed vars.
+        """
+        # Cached per class; invalidated when computed_vars changes.
+        if (cached := cls.__dict__.get("_frontend_computed_vars")) is None:
+            cached = frozenset(
+                name for name, cv in cls.computed_vars.items() if not cv._backend
+            )
+            cls._frontend_computed_vars = cached
+        return cached
 
     @classmethod
     @functools.lru_cache
@@ -1393,6 +1428,8 @@ class BaseState(EvenMoreBasicBaseState):
                     substate_class.vars.setdefault(name, var)
                     substate_class.inherited_vars.setdefault(name, var)
                 substate_class._update_substate_inherited_vars(vars_to_add)
+            # The skip vars cache incorporates inherited_vars.
+            substate_class._skip_var_names = None
         # Reinitialize dependency tracking dicts.
         cls._init_var_dependency_dicts()
 
@@ -1452,6 +1489,7 @@ class BaseState(EvenMoreBasicBaseState):
         # Update tracking dicts.
         cls.computed_vars.update(dynamic_vars)
         cls._refresh_interval_computed_vars()
+        cls._frontend_computed_vars = None
         cls.vars.update(dynamic_vars)
         cls._update_substate_inherited_vars(dynamic_vars)
 
@@ -1525,9 +1563,9 @@ class BaseState(EvenMoreBasicBaseState):
             if parent_state is not None:
                 return getattr(parent_state, name)
 
-        if is_mutable_type(type(value)) and (
+        if (
             name in super().__getattribute__("base_vars") or name in backend_vars
-        ):
+        ) and is_mutable_type(type(value)):
             # track changes in mutable containers (list, dict, set, etc)
             cache = super().__getattribute__("_mutable_proxy_cache")
             proxy = cache.get(name)
@@ -1945,9 +1983,7 @@ class BaseState(EvenMoreBasicBaseState):
         delta = {}
 
         self._mark_dirty_computed_vars()
-        frontend_computed_vars: set[str] = {
-            name for name, cv in self.computed_vars.items() if not cv._backend
-        }
+        frontend_computed_vars = type(self)._get_frontend_computed_var_names()
 
         # Return the dirty vars for this instance, any cached/dependent computed vars,
         # and always dirty computed vars (cache=False)
