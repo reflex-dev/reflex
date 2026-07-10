@@ -1,4 +1,5 @@
 import reflex as rx
+from reflex_site_shared.static_shiki import StaticShikiPlugin
 
 from agent_files import AgentFilesPlugin
 
@@ -14,5 +15,6 @@ config = rx.Config(
         rx.plugins.TailwindV4Plugin(),
         rx.plugins.SitemapPlugin(trailing_slash="always"),
         AgentFilesPlugin(),
+        StaticShikiPlugin(),
     ],
 )

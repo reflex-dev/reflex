@@ -1,5 +1,6 @@
 ```python exec
 import reflex as rx
+from reflex_site_shared.components.blocks.code import literal_shiki_code_block
 ```
 
 # Introduction
@@ -58,8 +59,9 @@ class IntroTabsState(rx.State):
 def counter_code_section(code: str, tab: str) -> rx.Component:
     active = IntroTabsState.value == tab
     return rx.box(
-        rx.code_block(
+        literal_shiki_code_block(
             code,
+            client_component=rx.code_block,
             class_name="code-block counter-code-block",
         ),
         background=rx.cond(active, "var(--c-violet-3)", "transparent"),
@@ -86,25 +88,43 @@ def tabs():
             class_name="pill-tab-list",
         ),
         rx.tabs.content(
-            rx.markdown(
-                """The frontend is built declaratively with Reflex components, which compile to JS and run in the browser. Use `rx.cond` and `rx.foreach` instead of `if` and `for` for dynamic UIs. Any non-UI logic belongs in `State`.
-                """,
+            rx.text(
+                "The frontend is built declaratively with Reflex components, which compile to JS and run in the browser. Use ",
+                rx.code("rx.cond"),
+                " and ",
+                rx.code("rx.foreach"),
+                " instead of ",
+                rx.code("if"),
+                " and ",
+                rx.code("for"),
+                " for dynamic UIs. Any non-UI logic belongs in ",
+                rx.code("State"),
+                ".",
+                class_name="font-[475] text-secondary-11 mb-4 leading-7",
             ),
             value="tab1",
             class_name="pt-4",
         ),
         rx.tabs.content(
-            rx.markdown(
-                """Write your backend in the `State` class. Here you can define functions and variables that can be referenced in the frontend. This code runs directly on the server and is not compiled, so there are no special caveats. Here you can use any Python external library and call any method/function.
-                """,
+            rx.text(
+                "Write your backend in the ",
+                rx.code("State"),
+                " class. Here you can define functions and variables that can be referenced in the frontend. This code runs directly on the server and is not compiled, so there are no special caveats. Here you can use any Python external library and call any method/function.",
+                class_name="font-[475] text-secondary-11 mb-4 leading-7",
             ),
             value="tab2",
             class_name="pt-4",
         ),
         rx.tabs.content(
-            rx.markdown(
-                """Each page is a Python function returning a Reflex component. Add as many as you want and link between them — see [Routing](/docs/pages/overview) for details.
-                """,
+            rx.text(
+                "Each page is a Python function returning a Reflex component. Add as many as you want and link between them — see ",
+                rx.link(
+                    "Routing",
+                    href="/pages/overview/",
+                    class_name="text-secondary-12 decoration-secondary-12 underline",
+                ),
+                " for details.",
+                class_name="font-[475] text-secondary-11 mb-4 leading-7",
             ),
             value="tab3",
             class_name="pt-4",
