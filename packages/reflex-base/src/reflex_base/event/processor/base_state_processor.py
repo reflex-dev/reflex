@@ -364,6 +364,7 @@ class BaseStateEventProcessor(EventProcessor):
         router_data = event.router_data or {}
         preprocess_update = None
         deferred_emits: list[Callable[[], Awaitable[None]]] | None = None
+        background_states: tuple[BaseState, BaseState] | None = None
         # Get the state for the session exclusively.
         async with ctx.state_manager.modify_state_with_links(
             BaseStateToken(
@@ -415,24 +416,26 @@ class BaseStateEventProcessor(EventProcessor):
                         root_state=root_state,
                         deferred=deferred_emits,
                     )
+                else:
+                    background_states = (substate, root_state)
         if preprocess_update is not None:
             if preprocess_update.delta:
                 await ctx.emit_delta(preprocess_update.delta)
             if preprocess_update.events:
                 await _route_events(ctx, preprocess_update.events)
-            return
-        if deferred_emits is not None:
+        elif deferred_emits is not None:
             for emit in deferred_emits:
                 await emit()
-            return
-        # Otherwise the state lock was dropped above; process the background
-        # task with a proxy state.
-        await process_event(
-            handler=registered_handler.handler,
-            state=StateProxy(substate),
-            payload=event.payload,
-            root_state=root_state,
-        )
+        elif background_states is not None:
+            # The state lock was dropped above; process the background task
+            # with a proxy state.
+            substate, root_state = background_states
+            await process_event(
+                handler=registered_handler.handler,
+                state=StateProxy(substate),
+                payload=event.payload,
+                root_state=root_state,
+            )
 
     async def _handle_backend_exception(
         self, ex: Exception, ev_ctx: EventContext | None = None
