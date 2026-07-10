@@ -257,18 +257,21 @@ def test_from_event_type_copies_opaque_payload_objects():
 
 def test_detach_state_proxies_handles_cyclic_payloads():
     """Self-referential containers fall back to deepcopy, preserving cycles."""
-    from reflex_base.event import _detach_state_proxies
+    # The reflex_base.event module replaces itself in sys.modules with the
+    # EventNamespace class, so private module names are only reachable
+    # through the globals of a function defined in that module.
+    detach = Event.from_event_type.__func__.__globals__["_detach_state_proxies"]
 
     cyclic_list: list = [1]
     cyclic_list.append(cyclic_list)
-    out = _detach_state_proxies(cyclic_list)
+    out = detach(cyclic_list)
     assert out is not cyclic_list
     assert out[0] == 1
     assert out[1] is out
 
     cyclic_dict: dict = {"a": 1}
     cyclic_dict["self"] = cyclic_dict
-    out = _detach_state_proxies(cyclic_dict)
+    out = detach(cyclic_dict)
     assert out is not cyclic_dict
     assert out["a"] == 1
     assert out["self"] is out
