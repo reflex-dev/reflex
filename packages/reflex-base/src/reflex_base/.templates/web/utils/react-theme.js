@@ -8,7 +8,7 @@ import {
   useMemo,
 } from "react";
 
-import { isDevMode, defaultColorMode } from "$/utils/context";
+import { isDevMode, defaultColorMode, ColorModeContext } from "$/utils/context";
 
 const ThemeContext = createContext({
   theme: defaultColorMode,
@@ -22,6 +22,21 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
     defaultTheme !== "system" ? defaultTheme : "light",
   );
   const [isInitialized, setIsInitialized] = useState(false);
+
+  const toggleColorMode = () => {
+    setTheme(resolvedTheme === "light" ? "dark" : "light");
+  };
+
+  const setColorMode = (mode) => {
+    const allowedModes = ["light", "dark", "system"];
+    if (!allowedModes.includes(mode)) {
+      console.error(
+        `Invalid color mode "${mode}". Defaulting to "${defaultColorMode}".`,
+      );
+      mode = defaultColorMode;
+    }
+    setTheme(mode);
+  };
 
   const firstRender = useRef(true);
 
@@ -90,7 +105,18 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
   return createElement(
     ThemeContext.Provider,
     { value: { theme, resolvedTheme, setTheme } },
-    children,
+    createElement(
+      ColorModeContext.Provider,
+      {
+        value: {
+          rawColorMode: theme,
+          resolvedColorMode: resolvedTheme,
+          toggleColorMode,
+          setColorMode,
+        },
+      },
+      children,
+    ),
   );
 }
 
