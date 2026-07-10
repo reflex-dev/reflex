@@ -3,6 +3,9 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import contextvars
+import datetime
+import decimal
+import enum
 import functools
 import io
 import json
@@ -43,7 +46,13 @@ from starlette_admin.auth import AuthProvider
 import reflex as rx
 from reflex import AdminDash, constants
 from reflex._upload import upload
-from reflex.app import App, ComponentCallable, EventNamespace, default_overlay_component
+from reflex.app import (
+    App,
+    ComponentCallable,
+    EventNamespace,
+    _socket_json_dumps,
+    default_overlay_component,
+)
 from reflex.compiler.compiler import (
     _compile_app,
     _memoize_stateful_app_wraps,
@@ -58,7 +67,13 @@ from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.model import Model
-from reflex.state import BaseState, OnLoadInternalState, State, reload_state_module
+from reflex.state import (
+    BaseState,
+    OnLoadInternalState,
+    State,
+    StateUpdate,
+    reload_state_module,
+)
 from reflex.utils import exec as exec_utils
 
 from .conftest import chdir
@@ -4256,4 +4271,37 @@ def test_client_error_constants_match_frontend():
     assert (
         f'const ERROR_TYPE_STATE_UPDATE = "{constants.ClientErrorType.STATE_UPDATE}"'
         in state_js
+    )
+
+
+class _AppEnum(enum.Enum):
+    A = 1
+    B = "two"
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"state": {"var" + FIELD_MARKER: [1, 2.5, True, None, "x"]}},
+        {"nested": {"a": [{"b": {"c": "déjà vu ❤"}}]}},
+        datetime.datetime(2026, 1, 2, 3, 4, 5, 123456),
+        [datetime.date(2026, 1, 2), datetime.timedelta(seconds=90)],
+        {"id": uuid.UUID("12345678-1234-5678-1234-567812345678")},
+        {"dec": decimal.Decimal("1.25"), "set": {1, 2, 3} & {1}},
+        {1: "int key", 2.5: "float key", None: "none key"},
+        {"big": 2**100},
+        StateUpdate(delta={"s": {"v" + FIELD_MARKER: 1}}),
+        ["42", _AppEnum.A, _AppEnum.B],
+    ],
+)
+def test_socket_json_dumps_matches_stdlib(payload):
+    """The socket wire encoder produces the same JSON as the stdlib encoder.
+
+    Args:
+        payload: A representative outgoing socket payload.
+    """
+    expected = format.json_dumps(payload, separators=(",", ":"))
+    assert json.loads(_socket_json_dumps(payload)) == json.loads(expected)
+    assert json.loads(_socket_json_dumps(payload, separators=(",", ":"))) == json.loads(
+        expected
     )
