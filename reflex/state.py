@@ -1474,7 +1474,17 @@ class BaseState(EvenMoreBasicBaseState):
             name in super().__getattribute__("base_vars") or name in backend_vars
         ):
             # track changes in mutable containers (list, dict, set, etc)
-            return MutableProxy(wrapped=value, state=self, field_name=name)
+            cache = super().__getattribute__("__dict__").get("_mutable_proxy_cache")
+            if cache is None:
+                cache = {}
+                object.__setattr__(self, "_mutable_proxy_cache", cache)
+            proxy = cache.get(name)
+            # isinstance also rejects entries degraded by deepcopy, which
+            # copies a MutableProxy as its unwrapped value.
+            if not isinstance(proxy, MutableProxy) or proxy.__wrapped__ is not value:
+                proxy = MutableProxy(wrapped=value, state=self, field_name=name)
+                cache[name] = proxy
+            return proxy
 
         return value
 
@@ -2067,6 +2077,8 @@ class BaseState(EvenMoreBasicBaseState):
         state.pop("parent_state", None)
         state.pop("substates", None)
         state.pop("_was_touched", None)
+        # Proxies wrap live state references and are rebuilt on access.
+        state.pop("_mutable_proxy_cache", None)
         # Remove all inherited vars.
         for inherited_var_name in self.inherited_vars:
             state.pop(inherited_var_name, None)
