@@ -669,7 +669,9 @@ def test_create_passthrough_component_memo_reuses_existing_definition() -> None:
     _wrapper_factory, definition = create_passthrough_component_memo(
         WithProp.create(label=STATE_VAR)
     )
-    existing = {(definition.export_name, None): definition}
+    existing: dict[tuple[str, str | None], MemoComponentDefinition] = {
+        (definition.export_name, None): definition
+    }
 
     wrapper_factory, cached = create_passthrough_component_memo(
         WithProp.create(label=STATE_VAR),
