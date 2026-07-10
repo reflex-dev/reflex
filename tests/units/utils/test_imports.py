@@ -4,6 +4,7 @@ from reflex_base.utils.imports import (
     ImportVar,
     ParsedImportDict,
     merge_imports,
+    merge_parsed_imports,
     parse_imports,
 )
 
@@ -89,6 +90,39 @@ def test_merge_imports(input_1, input_2, output):
 
     for key in output:
         assert set(res[key]) == set(output[key])
+
+
+def test_merge_imports_dedups_duplicates():
+    """Duplicate ImportVars collapse to one entry, preserving first-seen order.
+
+    Regression: without dedup, chained var operations (which merge the same
+    operand imports via both ``_args`` and ``_return``) doubled the entry
+    count per nesting level.
+    """
+    merged = merge_imports(
+        {"react": ["useEffect", "useState", "useEffect"]},
+        {"react": ["useState", "useMemo"]},
+    )
+    assert merged["react"] == [
+        ImportVar(tag="useEffect"),
+        ImportVar(tag="useState"),
+        ImportVar(tag="useMemo"),
+    ]
+
+
+def test_merge_parsed_imports_dedups_duplicates():
+    """merge_parsed_imports drops exact duplicates but keeps distinct fields."""
+    parsed = {"react": [ImportVar(tag="useEffect"), ImportVar(tag="useState")]}
+    merged = merge_parsed_imports(parsed, parsed)
+    assert merged["react"] == [ImportVar(tag="useEffect"), ImportVar(tag="useState")]
+
+    aliased = {"react": [ImportVar(tag="useEffect", alias="uE")]}
+    merged = merge_parsed_imports(parsed, aliased)
+    assert merged["react"] == [
+        ImportVar(tag="useEffect"),
+        ImportVar(tag="useState"),
+        ImportVar(tag="useEffect", alias="uE"),
+    ]
 
 
 @pytest.mark.parametrize(
