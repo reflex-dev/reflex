@@ -10,6 +10,8 @@ import {
 
 import { isDevMode, defaultColorMode, ColorModeContext } from "$/utils/context";
 
+const allowedModes = ["light", "dark", "system"];
+
 const ThemeContext = createContext({
   theme: defaultColorMode,
   resolvedTheme: defaultColorMode !== "system" ? defaultColorMode : "light",
@@ -23,12 +25,7 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
   );
   const [isInitialized, setIsInitialized] = useState(false);
 
-  const toggleColorMode = () => {
-    setTheme(resolvedTheme === "light" ? "dark" : "light");
-  };
-
   const setColorMode = (mode) => {
-    const allowedModes = ["light", "dark", "system"];
     if (!allowedModes.includes(mode)) {
       console.error(
         `Invalid color mode "${mode}". Defaulting to "${defaultColorMode}".`,
@@ -36,6 +33,15 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
       mode = defaultColorMode;
     }
     setTheme(mode);
+  };
+
+  const resolvedTheme = useMemo(
+    () => (theme === "system" ? systemTheme : theme),
+    [theme, systemTheme],
+  );
+
+  const toggleColorMode = () => {
+    setColorMode(resolvedTheme === "light" ? "dark" : "light");
   };
 
   const firstRender = useRef(true);
@@ -51,6 +57,7 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
       const lastCompiledTheme = localStorage.getItem("last_compiled_theme");
       if (lastCompiledTheme !== defaultColorMode) {
         // on app startup, make sure the application color mode is persisted correctly.
+        setColorMode(defaultColorMode);
         localStorage.setItem("last_compiled_theme", defaultColorMode);
         setIsInitialized(true);
         return;
@@ -59,14 +66,9 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
 
     // Load saved theme from localStorage
     const savedTheme = localStorage.getItem("theme") || defaultTheme;
-    setTheme(savedTheme);
+    setColorMode(savedTheme);
     setIsInitialized(true);
   });
-
-  const resolvedTheme = useMemo(
-    () => (theme === "system" ? systemTheme : theme),
-    [theme, systemTheme],
-  );
 
   useEffect(() => {
     // Set up media query for system preference detection
