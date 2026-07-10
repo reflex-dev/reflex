@@ -1,20 +1,13 @@
 # Temporary benchmark harness used to collect before/after numbers for the
 # framework performance PRs. Lives only on a scratch branch; never merged.
+# Triggered by pushing to the scratch branch; parameters come from
+# benchmarks_scratch/run.json ({"base_ref", "head_ref", "bench_script"}).
 name: claude-perf-bench
 
 on:
-  workflow_dispatch:
-    inputs:
-      base_ref:
-        description: Baseline ref to benchmark
-        required: true
-        default: main
-      head_ref:
-        description: Ref with the change applied
-        required: true
-      bench_script:
-        description: Benchmark script path on this branch
-        required: true
+  push:
+    branches:
+      - "claude/reflex-perf-optimizations-01l7a3-bench"
 
 permissions:
   contents: read
@@ -30,20 +23,6 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          persist-credentials: false
-
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: ${{ inputs.base_ref }}
-          path: base
-          fetch-depth: 0
-          fetch-tags: true
-          persist-credentials: false
-
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: ${{ inputs.head_ref }}
-          path: head
           fetch-depth: 0
           fetch-tags: true
           persist-credentials: false
@@ -51,26 +30,46 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
 
+      - name: Prepare base and head worktrees
+        run: |
+          BASE_REF=$(jq -r .base_ref benchmarks_scratch/run.json)
+          HEAD_REF=$(jq -r .head_ref benchmarks_scratch/run.json)
+          BENCH_SCRIPT=$(jq -r .bench_script benchmarks_scratch/run.json)
+          echo "BASE_REF=$BASE_REF" >> "$GITHUB_ENV"
+          echo "HEAD_REF=$HEAD_REF" >> "$GITHUB_ENV"
+          echo "BENCH_SCRIPT=$BENCH_SCRIPT" >> "$GITHUB_ENV"
+          git fetch origin "$BASE_REF" "$HEAD_REF"
+          git worktree add /tmp/bench-base "origin/$BASE_REF"
+          git worktree add /tmp/bench-head "origin/$HEAD_REF"
+
       - name: Sync base
         run: uv sync
-        working-directory: base
+        working-directory: /tmp/bench-base
 
       - name: Sync head
         run: uv sync
-        working-directory: head
+        working-directory: /tmp/bench-head
 
-      - name: Bench BASE (${{ inputs.base_ref }})
-        run: uv run --no-sync python "$GITHUB_WORKSPACE/${{ inputs.bench_script }}"
-        working-directory: base
+      - name: Bench BASE
+        run: |
+          echo "=== BASE ($BASE_REF) pass 1 ==="
+          uv run --no-sync python "$GITHUB_WORKSPACE/$BENCH_SCRIPT"
+        working-directory: /tmp/bench-base
 
-      - name: Bench HEAD (${{ inputs.head_ref }})
-        run: uv run --no-sync python "$GITHUB_WORKSPACE/${{ inputs.bench_script }}"
-        working-directory: head
+      - name: Bench HEAD
+        run: |
+          echo "=== HEAD ($HEAD_REF) pass 1 ==="
+          uv run --no-sync python "$GITHUB_WORKSPACE/$BENCH_SCRIPT"
+        working-directory: /tmp/bench-head
 
-      - name: Bench BASE pass 2 (${{ inputs.base_ref }})
-        run: uv run --no-sync python "$GITHUB_WORKSPACE/${{ inputs.bench_script }}"
-        working-directory: base
+      - name: Bench BASE pass 2
+        run: |
+          echo "=== BASE ($BASE_REF) pass 2 ==="
+          uv run --no-sync python "$GITHUB_WORKSPACE/$BENCH_SCRIPT"
+        working-directory: /tmp/bench-base
 
-      - name: Bench HEAD pass 2 (${{ inputs.head_ref }})
-        run: uv run --no-sync python "$GITHUB_WORKSPACE/${{ inputs.bench_script }}"
-        working-directory: head
+      - name: Bench HEAD pass 2
+        run: |
+          echo "=== HEAD ($HEAD_REF) pass 2 ==="
+          uv run --no-sync python "$GITHUB_WORKSPACE/$BENCH_SCRIPT"
+        working-directory: /tmp/bench-head
