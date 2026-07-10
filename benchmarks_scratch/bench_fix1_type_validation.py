@@ -26,7 +26,7 @@ def build_state():
         def big(self) -> list[dict[str, int]]:
             return [{"a": i} for i in range(10_000)]
 
-    return BenchFix1State()  # pyright: ignore [reportCallIssue]
+    return BenchFix1State(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
 
 
 def bench_assign(state, n: int = 10) -> float:
