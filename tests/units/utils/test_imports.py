@@ -110,19 +110,23 @@ def test_merge_imports_dedups_duplicates():
     ]
 
 
-def test_merge_parsed_imports_dedups_duplicates():
-    """merge_parsed_imports drops exact duplicates but keeps distinct fields."""
+def test_merge_imports_keeps_distinct_fields():
+    """Entries differing in any field (e.g. alias) are not collapsed."""
     parsed = {"react": [ImportVar(tag="useEffect"), ImportVar(tag="useState")]}
-    merged = merge_parsed_imports(parsed, parsed)
-    assert merged["react"] == [ImportVar(tag="useEffect"), ImportVar(tag="useState")]
-
     aliased = {"react": [ImportVar(tag="useEffect", alias="uE")]}
-    merged = merge_parsed_imports(parsed, aliased)
+    merged = merge_imports(parsed, aliased)
     assert merged["react"] == [
         ImportVar(tag="useEffect"),
         ImportVar(tag="useState"),
         ImportVar(tag="useEffect", alias="uE"),
     ]
+
+
+def test_merge_parsed_imports_concatenates():
+    """The component-tree fold concatenates without dedup (collapsed later)."""
+    parsed = {"react": [ImportVar(tag="useEffect")]}
+    merged = merge_parsed_imports(parsed, parsed)
+    assert merged["react"] == [ImportVar(tag="useEffect"), ImportVar(tag="useEffect")]
 
 
 @pytest.mark.parametrize(
