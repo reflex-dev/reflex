@@ -421,7 +421,7 @@ class MutableProxy(wrapt.ObjectProxy):
     }
 
     # Dynamically generated classes for tracking dataclass mutations.
-    __dataclass_proxies__: dict[str, type] = {}
+    __dataclass_proxies__: dict[tuple[type, type], type] = {}
     # Dynamically generated classes for root iteration-sourced proxies.
     __iter_path_proxies__: dict[type, type] = {}
     _self_path: tuple[AccessSpec, ...] = ()
@@ -448,11 +448,12 @@ class MutableProxy(wrapt.ObjectProxy):
         root_iter_path = path is _ROOT_ITER_PATH
         if dataclasses.is_dataclass(wrapped):
             wrapped_cls = type(wrapped)
-            wrapper_cls_name = wrapped_cls.__name__ + cls.__name__
+            wrapper_cls_key = (cls, wrapped_cls)
             # Find the associated class
-            if wrapper_cls_name not in cls.__dataclass_proxies__:
+            if wrapper_cls_key not in cls.__dataclass_proxies__:
                 # Create a new class that has the __dataclass_fields__ defined
-                cls.__dataclass_proxies__[wrapper_cls_name] = type(
+                wrapper_cls_name = wrapped_cls.__name__ + cls.__name__
+                cls.__dataclass_proxies__[wrapper_cls_key] = type(
                     wrapper_cls_name,
                     (cls,),
                     {
@@ -462,7 +463,7 @@ class MutableProxy(wrapt.ObjectProxy):
                         ),
                     },
                 )
-            cls = cls.__dataclass_proxies__[wrapper_cls_name]
+            cls = cls.__dataclass_proxies__[wrapper_cls_key]
         if root_iter_path:
             try:
                 cls = MutableProxy.__iter_path_proxies__[cls]
