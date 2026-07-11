@@ -44,6 +44,8 @@ rx.image(
 
 The `rx.asset` function provides a more flexible way to reference assets in your app. It supports both local assets (in the app's `assets/` directory) and shared assets (placed next to your Python files).
 
+`rx.asset` appends a short content hash query parameter to the generated URL. For example, `rx.asset("logo.svg")` returns a URL like `/logo.svg?v=a1b2c3d4`, so browsers fetch a new version only when the file content changes.
+
 #### Local Assets
 
 Local assets are stored in the app's `assets/` directory and are referenced using `rx.asset`:

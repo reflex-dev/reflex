@@ -1,5 +1,6 @@
 """Helper functions for adding assets to the app."""
 
+import hashlib
 import inspect
 from pathlib import Path
 from typing import TYPE_CHECKING, overload
@@ -25,12 +26,20 @@ class AssetPathStr(str):
     construction time.
     """
 
-    __slots__ = ("importable_path",)
+    __slots__ = ("_raw_path", "importable_path")
 
+    _raw_path: str
     importable_path: str
 
     @overload
     def __new__(cls, object: object = "") -> "AssetPathStr": ...
+    @overload
+    def __new__(
+        cls,
+        object: object = "",
+        *,
+        importable_path: str | None = None,
+    ) -> "AssetPathStr": ...
     @overload
     def __new__(
         cls,
@@ -44,6 +53,8 @@ class AssetPathStr(str):
         object: object = "",
         encoding: str | None = None,
         errors: str | None = None,
+        *,
+        importable_path: str | None = None,
     ) -> "AssetPathStr":
         """Construct from an unprefixed, leading-slash asset path.
 
@@ -56,6 +67,7 @@ class AssetPathStr(str):
             object: The object to stringify (str, bytes, or any object).
             encoding: Encoding to decode ``object`` with when it is bytes-like.
             errors: Error handler for decoding.
+            importable_path: Optional unversioned path to use for build-time imports.
 
         Returns:
             A new ``AssetPathStr`` instance.
@@ -72,7 +84,8 @@ class AssetPathStr(str):
         instance = super().__new__(
             cls, get_config().prepend_frontend_path(relative_path)
         )
-        instance.importable_path = f"$/public{relative_path}"
+        instance._raw_path = relative_path
+        instance.importable_path = f"$/public{importable_path or relative_path}"
         return instance
 
     def __getnewargs__(self) -> tuple[str]:
@@ -87,7 +100,44 @@ class AssetPathStr(str):
         Returns:
             A one-tuple containing the unprefixed asset path.
         """
-        return (self.importable_path[len("$/public") :],)
+        return (self._raw_path,)
+
+    def __getnewargs_ex__(self) -> tuple[tuple[str], dict[str, str]]:
+        """Return constructor args and kwargs for pickle/copy reconstruction.
+
+        Returns:
+            Constructor args and kwargs preserving the unversioned import path.
+        """
+        return (
+            (self._raw_path,),
+            {"importable_path": self.importable_path[len("$/public") :]},
+        )
+
+
+def _short_content_hash(path: Path) -> str:
+    """Get a short content hash for an asset file.
+
+    Args:
+        path: The file to hash.
+
+    Returns:
+        The first 8 hex characters of the file's SHA-256 hash.
+    """
+    return hashlib.sha256(path.read_bytes()).hexdigest()[:8]
+
+
+def _versioned_asset_path(relative_path: str, source_file: Path) -> AssetPathStr:
+    """Create an asset URL with a content-hash query parameter.
+
+    Args:
+        relative_path: The unprefixed public asset path.
+        source_file: The source file used to calculate the content hash.
+
+    Returns:
+        A versioned asset URL that preserves an unversioned import path.
+    """
+    versioned_path = f"{relative_path}?v={_short_content_hash(source_file)}"
+    return AssetPathStr(versioned_path, importable_path=relative_path)
 
 
 def remove_stale_external_asset_symlinks():
@@ -176,7 +226,10 @@ def asset(
         if not backend_only and not src_file_local.exists():
             msg = f"File not found: {src_file_local}"
             raise FileNotFoundError(msg)
-        return AssetPathStr(f"/{path}")
+        relative_path = f"/{path}"
+        if backend_only and not src_file_local.exists():
+            return AssetPathStr(relative_path)
+        return _versioned_asset_path(relative_path, src_file_local)
 
     # Shared asset handling
     # Determine the file by which the asset is exposed.
@@ -212,4 +265,7 @@ def asset(
                 dst_file.unlink()
                 dst_file.symlink_to(src_file_shared)
 
-    return AssetPathStr(f"/{external}/{subfolder}/{path}")
+    return _versioned_asset_path(
+        f"/{external}/{subfolder}/{path}",
+        src_file_shared,
+    )
