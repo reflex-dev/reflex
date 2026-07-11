@@ -185,6 +185,21 @@ def _clear_var_subclass_lookup_caches() -> None:
     _var_subclass_for_var_output.cache_clear()
 
 
+def _register_var_subclass_entry(entry: VarSubclassEntry) -> None:
+    """Register a Var subclass entry and invalidate cached lookups.
+
+    Every append to ``_var_subclasses`` must go through here — including
+    manual registrations like ``ReflexURLVar`` — since a bare append would
+    leave previously cached lookups returning stale results for types the
+    new entry claims.
+
+    Args:
+        entry: The entry to append to the registry.
+    """
+    _var_subclasses.append(entry)
+    _clear_var_subclass_lookup_caches()
+
+
 _AppWrap = TypeVar("_AppWrap", bound="BaseComponent")
 
 
@@ -658,8 +673,9 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
             )
             ToVarOperation.__name__ = new_to_var_operation_name
 
-            _var_subclasses.append(VarSubclassEntry(cls, ToVarOperation, python_types))
-            _clear_var_subclass_lookup_caches()
+            _register_var_subclass_entry(
+                VarSubclassEntry(cls, ToVarOperation, python_types)
+            )
 
     def __post_init__(self):
         """Post-initialize the var.
