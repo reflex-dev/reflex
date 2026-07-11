@@ -377,6 +377,80 @@ def _app_style() -> ComponentStyle | Style:
         return {}
 
 
+def _collect_subtree_artifacts(
+    component: Component,
+    in_prop_tree: bool = False,
+) -> tuple[dict[str, VarData | None], dict[str, None], set[str], ParsedImportDict]:
+    """Collect hooks, custom code, dynamic imports, and imports in one walk.
+
+    Equivalent to calling ``_get_all_hooks``, ``_get_all_custom_code``,
+    ``_get_all_dynamic_imports``, and ``_get_all_imports`` on ``component``,
+    but traverses the subtree once: each artifact is combined at every node
+    in the same order as its dedicated recursion, while per-node getters
+    (notably ``_get_components_in_props``) run once per node instead of once
+    per artifact walk.
+
+    Args:
+        component: The root of the subtree to collect from.
+        in_prop_tree: Whether ``component`` was reached through a prop rather
+            than structural children. Hooks are only collected from the
+            structural tree, matching ``_get_all_hooks``.
+
+    Returns:
+        A tuple of (hooks, custom code, dynamic imports, imports).
+    """
+    hooks: dict[str, VarData | None] = {}
+    if not in_prop_tree:
+        hooks.update(component._get_hooks_internal())
+        component_hooks = component._get_hooks()
+        if component_hooks is not None:
+            hooks[component_hooks] = None
+        hooks.update(component._get_added_hooks())
+
+    custom_code: dict[str, None] = {}
+    component_custom_code = component._get_custom_code()
+    if component_custom_code is not None:
+        custom_code[component_custom_code] = None
+
+    dynamic_imports: set[str] = set()
+    dynamic_import = component._get_dynamic_imports()
+    if dynamic_import:
+        dynamic_imports.add(dynamic_import)
+
+    prop_parts = [
+        _collect_subtree_artifacts(prop_component, in_prop_tree=True)
+        for prop_component in component._get_components_in_props()
+    ]
+    # Custom code pulls prop subtrees in before the component's own
+    # ``add_custom_code`` contributions, matching ``_get_all_custom_code``.
+    for _, prop_custom_code, _, _ in prop_parts:
+        custom_code |= prop_custom_code
+
+    for clz in component._iter_parent_classes_with_method("add_custom_code"):
+        for item in clz.add_custom_code(component):
+            custom_code[item] = None
+
+    child_parts = [
+        _collect_subtree_artifacts(child, in_prop_tree=in_prop_tree)
+        for child in component.children
+    ]
+    for child_hooks, child_custom_code, child_dynamic_imports, _ in child_parts:
+        hooks.update(child_hooks)
+        custom_code |= child_custom_code
+        dynamic_imports |= child_dynamic_imports
+
+    for _, _, prop_dynamic_imports, _ in prop_parts:
+        dynamic_imports |= prop_dynamic_imports
+
+    all_imports = imports.merge_parsed_imports(
+        component._get_imports(),
+        *(child_imports for _, _, _, child_imports in child_parts),
+        *(prop_imports for _, _, _, prop_imports in prop_parts),
+    )
+
+    return hooks, custom_code, dynamic_imports, all_imports
+
+
 def compile_experimental_component_memo(
     definition: MemoComponentDefinition,
 ) -> tuple[dict, ParsedImportDict]:
@@ -414,11 +488,13 @@ def compile_experimental_component_memo(
         rendered = render.render()
     else:
         render = _apply_component_style_for_compile(copy.deepcopy(definition.component))
-        hooks = render._get_all_hooks()
+        # One fused walk replaces the four independent subtree recursions.
+        # It runs before ``render()`` so ``add_hooks`` side effects (derived
+        # props) land first, matching the legacy hooks-walk-then-render order.
+        hooks, custom_code, dynamic_imports, all_imports = _collect_subtree_artifacts(
+            render
+        )
         rendered = render.render()
-        custom_code = render._get_all_custom_code()
-        dynamic_imports = render._get_all_dynamic_imports()
-        all_imports = render._get_all_imports()
 
     # Each un-mirrored memo lives in ``web/utils/components/<name>.jsx`` and is
     # imported from ``$/utils/components/<name>``. Strip a self-import so a memo
