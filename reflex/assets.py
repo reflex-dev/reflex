@@ -9,6 +9,9 @@ from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.environment import EnvironmentVariables
 
+_HASH_CHUNK_SIZE = 1024 * 1024
+_MAX_HASH_ATTEMPTS = 3
+
 if TYPE_CHECKING:
     from typing_extensions import Buffer
 
@@ -123,7 +126,20 @@ def _short_content_hash(path: Path) -> str:
     Returns:
         The first 8 hex characters of the file's SHA-256 hash.
     """
-    return hashlib.sha256(path.read_bytes()).hexdigest()[:8]
+    digest = hashlib.sha256()
+    for _ in range(_MAX_HASH_ATTEMPTS):
+        digest = hashlib.sha256()
+        start_stat = path.stat()
+        with path.open("rb") as file:
+            while chunk := file.read(_HASH_CHUNK_SIZE):
+                digest.update(chunk)
+        end_stat = path.stat()
+        if (
+            start_stat.st_size == end_stat.st_size
+            and start_stat.st_mtime_ns == end_stat.st_mtime_ns
+        ):
+            break
+    return digest.hexdigest()[:8]
 
 
 def _versioned_asset_path(relative_path: str, source_file: Path) -> AssetPathStr:

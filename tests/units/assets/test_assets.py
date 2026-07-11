@@ -1,9 +1,12 @@
 import copy
 import hashlib
+import io
 import pickle
 import shutil
 from collections.abc import Generator
+from dataclasses import dataclass
 from pathlib import Path
+from typing import cast
 
 import pytest
 
@@ -141,6 +144,66 @@ def test_local_asset_hash_changes_with_content(
     )
     assert second_asset == (
         f"/custom_script.js?v={hashlib.sha256(b'second').hexdigest()[:8]}"
+    )
+
+
+def test_asset_hash_reads_in_chunks(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Hashing handles assets larger than one read chunk.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+        monkeypatch: A pytest fixture for patching.
+    """
+    import reflex.assets as assets_module
+
+    monkeypatch.setattr(assets_module, "_HASH_CHUNK_SIZE", 3)
+    asset_file = tmp_path / "large.bin"
+    asset_file.write_bytes(b"abcdefghi")
+
+    assert (
+        assets_module._short_content_hash(asset_file)
+        == hashlib.sha256(b"abcdefghi").hexdigest()[:8]
+    )
+
+
+def test_asset_hash_retries_when_file_changes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Hashing retries when the file changes while it is being read.
+
+    Args:
+        monkeypatch: A pytest fixture for patching.
+    """
+    import reflex.assets as assets_module
+
+    @dataclass
+    class _Stat:
+        st_size: int
+        st_mtime_ns: int
+
+    class _ChangingPath:
+        content = b"old"
+        stat_calls = 0
+
+        def stat(self) -> _Stat:
+            self.stat_calls += 1
+            if self.stat_calls == 2:
+                self.content = b"final"
+                return _Stat(st_size=3, st_mtime_ns=1)
+            return _Stat(st_size=len(self.content), st_mtime_ns=2)
+
+        def open(self, mode: str):
+            assert mode == "rb"
+            return io.BytesIO(self.content)
+
+    monkeypatch.setattr(assets_module, "_HASH_CHUNK_SIZE", 2)
+    changing_path = _ChangingPath()
+
+    assert (
+        assets_module._short_content_hash(cast(Path, changing_path))
+        == hashlib.sha256(b"final").hexdigest()[:8]
     )
 
 
