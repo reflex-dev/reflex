@@ -13,6 +13,7 @@ config = rx.Config(
     plugins=[
         rx.plugins.TailwindV4Plugin(),
         rx.plugins.SitemapPlugin(trailing_slash="always"),
+        rx.plugins.FrontendInspectorPlugin(),
         AgentFilesPlugin(),
     ],
 )
